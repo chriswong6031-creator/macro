@@ -444,7 +444,7 @@ def test_nav_checks_pass_on_rendered_page(tmp_path):
         # content inside its own responsive shell.
         assert html.count('<nav class="site-nav">') == 1, "darkpool.html should render one shared nav"
         assert 'class="dp-shell"' in html, "darkpool.html missing responsive content shell"
-        assert "<title>Dark Pool — where the big money trades off the public tape</title>" in html
+        assert "<title>Dark Pool — how much of each stock trades off the public tape</title>" in html
         assert '<meta name="description" content="<span' not in html
 
     finally:
@@ -459,6 +459,7 @@ def test_nav_checks_pass_on_rendered_page(tmp_path):
 # 6. Interim Terminal Dark Pool pane artifact (site/darkpool_eod.json)
 # ---------------------------------------------------------------------------
 import json as _json
+import re
 
 from scripts.build_darkpool_desk import _emit_pane_json
 
@@ -497,13 +498,15 @@ def test_pane_json_emitter_contract(tmp_path):
     )
     doc = _json.loads(out.read_text(encoding="utf-8"))
 
-    assert doc["schema"] == "darkpool_eod.v1"
+    assert doc["schema"] == "darkpool_eod.v2"
     assert doc["tier"] == "eod"                       # interim; not "intraday" yet
     assert doc["source"] == "finra_facilities"        # debranded
     assert doc["asof"] == "2026-07-14"
     # Full universe passes through, including the null-oe_share tail row
     assert [r["ticker"] for r in doc["universe"]] == ["AAPL", "ZZZZ"]
     assert doc["universe"][0]["oe_share"] == 0.42
+    # gauge + coverage ride along so a pane consumer can state what was NOT covered
+    assert "gauge" in doc and "coverage" in doc
     # Weekly venues + lag note preserved
     assert doc["venues"]["week_start"] == "2026-06-08"
     assert doc["venues"]["lag_note"].startswith("2")
@@ -529,110 +532,186 @@ def test_pane_json_no_data_vendor_name(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# 7. darkpool_context — actionable leans + change-feed (darkpool_context.v1)
+# 7. darkpool_context — observed conjunctions + change-feed (darkpool_context.v2)
+#
+# v1 tagged accumulation/distribution/unusual and rendered "leaning up/down".
+# That construction is forbidden by DO_NOT_REBUILD (PSS-AF1 row): "Raw short
+# ratio/off-exchange share remains forbidden as a standalone direction signal."
+# v2 groups by the CONJUNCTION observed (heavy hidden volume + what price did),
+# which is a description of settled data and is not standalone.
 # ---------------------------------------------------------------------------
 from engine import darkpool_context as dctx
 
 
-def _row(ticker, oe_z, oe_share, trend_pp=0.0, ratio_z=0.0, oe_share_40d=None, short_ratio=0.5):
-    return {"ticker": ticker, "oe_z": oe_z, "oe_share": oe_share, "trend_pp": trend_pp,
-            "ratio_z": ratio_z, "oe_share_40d": oe_share_40d if oe_share_40d is not None else oe_share * 0.7,
-            "short_ratio": short_ratio, "oe_trend_pp": 1.0, "ats_top_venue": None}
+def _row(ticker, z, participation, price_change_pct=None, streak=0,
+         participation_norm=None, ats_frac=None, pattern="__auto__"):
+    """A desk row in v2 shape. `pattern` defaults to what signals._pattern would set."""
+    if pattern == "__auto__":
+        from engine.darkpool_signals import _pattern
+        pattern = _pattern(z, price_change_pct)
+    return {
+        "ticker": ticker, "participation_z": z, "participation": participation,
+        "participation_norm": participation_norm if participation_norm is not None else participation * 0.7,
+        "price_change_pct": price_change_pct, "streak": streak, "pattern": pattern,
+        "ats_frac": ats_frac, "short_rate": 0.5, "short_trend_pp": 0.0,
+        "short_rate_z": 0.0, "offex_dollars": 1e8, "top_ats_venue": None,
+    }
 
 
-def test_classify_leans_by_short_trend():
-    """Standout lean is driven by the CHANGE in short-marking, not the raw level."""
-    assert dctx.classify(_row("ACC", oe_z=2.0, oe_share=0.55, trend_pp=-3.0)) == "accumulation"
-    assert dctx.classify(_row("DIS", oe_z=2.0, oe_share=0.50, trend_pp=5.0)) == "distribution"
-    assert dctx.classify(_row("UNC", oe_z=2.0, oe_share=0.50, trend_pp=1.0, ratio_z=0.0)) == "unusual"
+def test_classify_names_the_conjunction_not_a_direction():
+    """The tag says what price was doing alongside the volume — never where it goes."""
+    assert dctx.classify(_row("W", 2.0, 0.55, price_change_pct=-4.0)) == "heavy_into_weakness"
+    assert dctx.classify(_row("S", 2.0, 0.50, price_change_pct=+5.0)) == "heavy_into_strength"
+    assert dctx.classify(_row("F", 2.0, 0.50, price_change_pct=+0.2)) == "heavy_price_flat"
 
 
-def test_classify_lean_by_own_norm_ratio_z():
-    """A name at/above its own short-ratio norm leans distribution even with a flat trend."""
-    assert dctx.classify(_row("D2", oe_z=2.0, oe_share=0.5, trend_pp=0.0, ratio_z=1.4)) == "distribution"
-    assert dctx.classify(_row("A2", oe_z=2.0, oe_share=0.5, trend_pp=0.0, ratio_z=-1.2)) == "accumulation"
+def test_classify_returns_none_without_price():
+    """No price ⇒ no conjunction. Tagging on off-exchange share alone is the
+    construction DO_NOT_REBUILD forbids, so it must not be reachable."""
+    assert dctx.classify(_row("NOPX", 2.5, 0.60, price_change_pct=None)) is None
 
 
 def test_standout_gate_excludes_low_z_low_share_and_null():
-    assert dctx.classify(_row("LOWZ", oe_z=0.5, oe_share=0.60)) is None      # not unusual vs own norm
-    assert dctx.classify(_row("LOWSH", oe_z=2.5, oe_share=0.30)) is None     # not materially dark
-    assert dctx.classify({"ticker": "NOZ", "oe_z": None, "oe_share": 0.6}) is None  # no history → honest null
+    assert dctx.classify(_row("LOWZ", 0.5, 0.60, price_change_pct=-3.0)) is None    # not unusual vs own norm
+    assert dctx.classify(_row("LOWSH", 2.5, 0.30, price_change_pct=-3.0)) is None   # not materially dark
+    assert dctx.classify({"ticker": "NOZ", "participation_z": None,
+                          "participation": 0.6, "pattern": None}) is None           # no history → honest null
+
+
+def test_no_direction_vocabulary_anywhere_in_the_snapshot():
+    """Guards the standing kill: the rendered payload must never lean a direction.
+
+    Pins the WORDS a reader sees. If someone reintroduces a directional label the
+    page would ship it silently — this is the check that can see that.
+    """
+    rows = [_row("W1", 2.5, 0.60, price_change_pct=-4.0),
+            _row("S1", 2.2, 0.52, price_change_pct=+6.0),
+            _row("F1", 1.8, 0.48, price_change_pct=+0.1)]
+    snap = dctx.build_snapshot(rows, None, "2026-08-04")
+    blob = _json.dumps(snap, ensure_ascii=False).lower()
+
+    # Phrases that CONSTITUTE a call. Matched on word boundaries: explanatory prose
+    # legitimately contains "buyers"/"sellers" (e.g. "as consistent with sellers meeting
+    # demand as with buyers chasing"), and a substring test would fail that sentence for
+    # saying the opposite of a direction call.
+    banned_en = ("leaning up", "leaning down", "accumulation", "distribution",
+                 "bullish", "bearish", "validated", "buy signal", "sell signal")
+    for phrase in banned_en:
+        assert not re.search(r"\b" + re.escape(phrase) + r"\b", blob), \
+            f"directional/unvalidated vocabulary leaked: {phrase!r}"
+    for zh in ("偏多", "偏空", "吸筹", "派发"):
+        assert zh not in blob, f"directional vocabulary leaked (zh): {zh!r}"
 
 
 def test_build_snapshot_shape_and_hero_honesty():
     rows = [
-        _row("ACC1", 2.5, 0.60, trend_pp=-4.0), _row("ACC2", 2.0, 0.55, trend_pp=-3.0),
-        _row("DIS1", 2.2, 0.52, trend_pp=6.0),
-        _row("UNC1", 1.8, 0.48, trend_pp=1.0),
-        _row("SKIP", 0.2, 0.60),   # not a standout
+        _row("W1", 2.5, 0.60, price_change_pct=-4.0), _row("W2", 2.0, 0.55, price_change_pct=-3.0),
+        _row("S1", 2.2, 0.52, price_change_pct=+6.0),
+        _row("F1", 1.8, 0.48, price_change_pct=+0.1),
+        _row("SKIP", 0.2, 0.60, price_change_pct=-3.0),   # not a standout
     ]
-    snap = dctx.build_snapshot(rows, None, "2026-07-21")
-    assert snap["tally"] == {"accumulation": 2, "distribution": 1, "unusual": 1}
+    snap = dctx.build_snapshot(rows, None, "2026-08-04")
+    assert snap["tally"] == {"heavy_into_weakness": 2, "heavy_into_strength": 1,
+                             "heavy_price_flat": 1}
     assert snap["n_standouts"] == 4
     assert "SKIP" not in [s["ticker"] for s in snap["standouts"]]
-    # accumulation leads → hero says so, and never gives a trade call
     hero = snap["hero"]["en"].lower()
-    assert "accumulation" in hero and "distribution" in hero
-    for banned in ("buy", "sell", "validated"):
+    for banned in ("buy", "sell", "validated", "leaning"):
         assert banned not in hero
-    # every stance is a Watch-family heads-up, never an entry
-    for k in ("accumulation", "distribution", "unusual"):
-        st = snap["leans"][k]["stance"]["en"].lower()
-        assert "watch" in st or "weakness" in st
+    # every group closes on a WATCH condition, never an entry
+    for k in ("heavy_into_weakness", "heavy_into_strength", "heavy_price_flat"):
+        assert "watching" in snap["patterns"][k]["watch"]["en"].lower()
 
 
 def test_standout_depth_marker_carries_own_norm():
-    """The depth-bar 'norm' marker uses the name's own 40-day baseline."""
-    snap = dctx.build_snapshot([_row("X", 2.0, 0.60, trend_pp=-3.0, oe_share_40d=0.42)], None, "2026-07-21")
+    """The depth-bar 'norm' marker uses the name's own trailing baseline."""
+    snap = dctx.build_snapshot(
+        [_row("X", 2.0, 0.60, price_change_pct=-3.0, participation_norm=0.42)], None, "2026-08-04")
     s = snap["standouts"][0]
-    assert s["oe_share"] == 0.60 and s["oe_share_40d"] == 0.42
+    assert s["participation"] == 0.60 and s["participation_norm"] == 0.42
+
+
+def test_venue_character_separates_pools_from_internalisation():
+    """ats_frac is rendered in words so "dark volume" is never read as "institutions"."""
+    hi = dctx._venue_character(0.55)["en"].lower()
+    lo = dctx._venue_character(0.12)["en"].lower()
+    assert "institution" in hi
+    assert "retail" in lo and "internalized" in lo
+    assert dctx._venue_character(None)["en"].startswith("Venue mix not")
 
 
 def test_change_feed_first_run_is_empty():
-    snap = dctx.build_snapshot([_row("A", 2.0, 0.55, trend_pp=-3.0)], None, "2026-07-21")
-    changes, prev = dctx.build_changes(None, snap, "2026-07-21")
+    snap = dctx.build_snapshot([_row("A", 2.0, 0.55, price_change_pct=-3.0)], None, "2026-08-04")
+    changes, prev = dctx.build_changes(None, snap, "2026-08-04")
     assert changes == {"vs_asof": None, "items": []}
 
 
 def test_change_feed_detects_new_day_entrant():
-    prior = dctx.build_context_feed([_row("A", 2.0, 0.55, trend_pp=-3.0)], None,
-                                    asof="2026-07-20", built="t", write=False)
-    today = dctx.build_snapshot([_row("A", 2.0, 0.55, trend_pp=-3.0),
-                                 _row("B", 2.0, 0.55, trend_pp=-3.0)], None, "2026-07-21")
-    changes, _ = dctx.build_changes(prior, today, "2026-07-21")
+    prior = dctx.build_context_feed([_row("A", 2.0, 0.55, price_change_pct=-3.0)], None,
+                                    asof="2026-08-03", built="t", write=False)
+    today = dctx.build_snapshot([_row("A", 2.0, 0.55, price_change_pct=-3.0),
+                                 _row("B", 2.0, 0.55, price_change_pct=-3.0)], None, "2026-08-04")
+    changes, _ = dctx.build_changes(prior, today, "2026-08-04")
     joined = " ".join(i["en"] for i in changes["items"])
-    assert "B entered quiet-accumulation watch" in joined
+    assert "B started printing dark into weakness" in joined
     assert "A " not in joined  # A was already there → no phantom entry
 
 
 def test_change_feed_same_day_rebuild_is_idempotent():
     """A same-day rebuild reuses prev_state so the day's diff isn't wiped/duplicated."""
-    y = dctx.build_context_feed([_row("A", 2.0, 0.55, trend_pp=-3.0)], None,
-                                asof="2026-07-20", built="t", write=False)
-    # First run today: B enters
-    today = dctx.build_snapshot([_row("A", 2.0, 0.55, trend_pp=-3.0),
-                                 _row("B", 2.0, 0.55, trend_pp=-3.0)], None, "2026-07-21")
-    ch1, prev1 = dctx.build_changes(y, today, "2026-07-21")
-    # Reassemble today's contract (as build_context_feed would persist it) and rebuild same day
-    contract = {"asof": "2026-07-21", "leans": today["leans"], "venues": today["venues"],
+    y = dctx.build_context_feed([_row("A", 2.0, 0.55, price_change_pct=-3.0)], None,
+                                asof="2026-08-03", built="t", write=False)
+    today = dctx.build_snapshot([_row("A", 2.0, 0.55, price_change_pct=-3.0),
+                                 _row("B", 2.0, 0.55, price_change_pct=-3.0)], None, "2026-08-04")
+    ch1, prev1 = dctx.build_changes(y, today, "2026-08-04")
+    contract = {"asof": "2026-08-04", "patterns": today["patterns"], "venues": today["venues"],
                 "prev_state": prev1}
-    ch2, _ = dctx.build_changes(contract, today, "2026-07-21")
+    ch2, _ = dctx.build_changes(contract, today, "2026-08-04")
     assert [i["en"] for i in ch1["items"]] == [i["en"] for i in ch2["items"]]
 
 
 def test_context_feed_artifact_contract(tmp_path):
-    rows = [_row("ACC1", 2.5, 0.60, trend_pp=-4.0), _row("DIS1", 2.2, 0.52, trend_pp=6.0)]
-    ats = {"week_start": "2026-06-15", "lag_note": "2–4 wk publication lag",
+    rows = [_row("W1", 2.5, 0.60, price_change_pct=-4.0),
+            _row("S1", 2.2, 0.52, price_change_pct=+6.0)]
+    ats = {"week_start": "2026-06-22", "lag_note": "6 wk publication lag", "lag_days": 44,
            "venues": [{"mpid": "BLUE", "venue_name": "BLUE BOATS", "share_of_total_pct": 7.4,
                        "wow_pp": 2.9, "wow_is_new": False}]}
-    art = dctx.build_context_feed(rows, ats, asof="2026-07-21", built="2026-07-21 00:00 UTC",
+    art = dctx.build_context_feed(rows, ats, asof="2026-08-04", built="2026-08-04 00:00 UTC",
                                   root=tmp_path)
-    assert art["schema"] == "darkpool_context.v1"
+    assert art["schema"] == "darkpool_context.v2"
     assert art["is_context_only"] is True and art["display_only"] is True
-    assert art["tally"]["accumulation"] == 1 and art["tally"]["distribution"] == 1
+    assert art["tally"]["heavy_into_weakness"] == 1 and art["tally"]["heavy_into_strength"] == 1
     assert art["venues"]["mover"]["name"] == "BLUE BOATS"
-    # persisted to data/darkpool/context/latest.json under the given root
+    assert art["venues"]["lag_days"] == 44
     on_disk = _json.loads((tmp_path / "data" / "darkpool" / "context" / "latest.json").read_text(encoding="utf-8"))
-    assert on_disk["schema"] == "darkpool_context.v1"
-    # honesty: the artifact never claims a validated edge
+    assert on_disk["schema"] == "darkpool_context.v2"
     assert "validated" not in _json.dumps(art).lower()
+
+
+def test_forward_ledger_accrues_and_is_same_day_idempotent(tmp_path):
+    """v1 shipped a call and recorded nothing, so it could never be graded.
+
+    The ledger records the observed state at tag time; a same-day rebuild must
+    REPLACE that day's block rather than append a duplicate.
+    """
+    rows = [_row("W1", 2.5, 0.60, price_change_pct=-4.0)]
+    ats = {"week_start": "2026-06-22", "venues": []}
+    dctx.build_context_feed(rows, ats, asof="2026-08-04", built="t", root=tmp_path)
+    led = tmp_path / "data" / "darkpool" / "ledger" / "forward.jsonl"
+    assert led.exists()
+    first = [l for l in led.read_text().splitlines() if l.strip()]
+    assert len(first) == 1 and _json.loads(first[0])["ticker"] == "W1"
+
+    # same-day rebuild → still one row for that asof
+    dctx.build_context_feed(rows, ats, asof="2026-08-04", built="t", root=tmp_path)
+    again = [l for l in led.read_text().splitlines() if l.strip()]
+    assert len(again) == 1, "same-day rebuild duplicated the ledger block"
+
+    # next day appends rather than replacing history
+    dctx.build_context_feed(rows, ats, asof="2026-08-05", built="t", root=tmp_path)
+    two = [l for l in led.read_text().splitlines() if l.strip()]
+    assert len(two) == 2
+    assert {_json.loads(l)["asof"] for l in two} == {"2026-08-04", "2026-08-05"}
+    # records inputs only — never an outcome or a direction
+    rec = _json.loads(two[0])
+    assert "direction" not in rec and "score" not in rec and "outcome" not in rec

@@ -15,8 +15,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dark Pool — where the big money trades off the public tape</title>
-{% set seo_title = "Dark Pool — Mastermind" %}{% set seo_desc = "Where the biggest players trade off the public tape — and which way today's hidden flow leans. Accumulation vs distribution footprints and standout names, nightly." %}{% set seo_path = "darkpool.html" %}
+<title>Dark Pool — how much of each stock trades off the public tape</title>
+{% set seo_title = "Dark Pool — Mastermind" %}{% set seo_desc = "How much of each stock's volume trades away from the public tape, how far that sits from the name's own norm, and whether it reached a real dark pool. Nightly." %}{% set seo_path = "darkpool.html" %}
 {% include "_seo_head.html.j2" %}
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
@@ -49,6 +49,20 @@
   .dp-verdict { font-size:clamp(20px,3vw,28px); font-weight:800; color:var(--ink); letter-spacing:-.022em; line-height:1.3; margin:18px 0 4px; max-width:900px; }
   .dp-asof { display:inline-flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); margin-top:8px; }
   .dp-dot { width:7px; height:7px; border-radius:50%; background:var(--up); animation:dpBreathe 2.8s ease-in-out infinite; flex:none; }
+
+  /* ---------- market gauge ---------- */
+  .dp-gauge { margin:16px 0 2px; }
+  .gg { display:inline-flex; align-items:baseline; gap:11px; flex-wrap:wrap; padding:11px 16px; border-radius:13px; border:1px solid var(--line); background:var(--panel); }
+  .gg-k { font-size:11.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+  .gg-v { font-size:22px; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+  .gg-n { font-size:12px; color:var(--muted); }
+
+  /* ---------- coverage / limits ---------- */
+  .dp-limits { margin:30px 0 0; padding:15px 17px; border:1px solid var(--line); border-radius:13px; background:var(--panel); }
+  .dp-limits .lh { font-size:10.5px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .dp-limits ul { margin:0; padding-left:17px; }
+  .dp-limits li { font-size:12.5px; color:var(--muted); line-height:1.6; }
+  .dp-limits b { color:var(--ink); font-weight:700; font-variant-numeric:tabular-nums; }
 
   /* ---------- what changed ---------- */
   .dp-changes { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:22px 0 2px; }
@@ -199,8 +213,11 @@
 {% include "_site_nav.html.j2" ignore missing %}
 
 <main class="dp-shell">
-{% set LC = {'accumulation':'acc','distribution':'dis','unusual':'unc'} %}
-{% set LEAN_ORDER = ['accumulation','distribution','unusual'] %}
+{# Pattern → colour class. These describe what PRICE did (a fact), so --acc/--dis stay
+   direction hues and keep the html[data-lang=zh] 红涨绿跌 swap; flat is non-directional. #}
+{% set LC = {'heavy_into_strength':'acc','heavy_into_weakness':'dis','heavy_price_flat':'unc'} %}
+{% set PAT_ORDER = ['heavy_into_weakness','heavy_into_strength','heavy_price_flat'] %}
+{% set CHG = {'weakness':'dis','strength':'acc','flat':'unc','mover':'unc','new':'unc'} %}
 
 <!-- ═══════════════════════════════ HERO ═══════════════════════════════ -->
 <header class="dp-hero">
@@ -208,11 +225,26 @@
     <span class="dp-mark"><svg viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13" fill="none" stroke="var(--dpb)" stroke-width="1.4" opacity=".5"/><path d="M15 2a13 13 0 0 0 0 26z" fill="var(--acc)" opacity=".9"/><circle cx="15" cy="15" r="4.4" fill="var(--bg)"/></svg></span>
     <span class="gn">{{ t('Dark Pool', '暗池') }}</span>
   </div>
-  <p class="dp-sub">{{ t("Where the biggest players trade off the public tape — and which way today's hidden flow leans.", '最大的参与者在公开报价带之外的成交所在——以及今日暗池资金的倾向。') }}</p>
+  <p class="dp-sub">{{ t("How much of each stock's volume traded away from the public tape today — and what the price was doing while it did.", '今日每只个股有多少成交发生在公开报价带之外——以及成交发生时股价的表现。') }}</p>
   {% if dp and dp.hero %}<div class="dp-verdict">{{ bl(dp.hero) }}</div>{% endif %}
   <div class="dp-asof"><span class="dp-dot"></span>{{ t('As of', '截至') }} {{ panel_latest }}
     {% if below_floor %}· <span style="color:var(--warn)">{{ t('thin history (' ~ panel_dates ~ ' dates)', '历史较短（' ~ panel_dates ~ ' 天）') }}</span>{% endif %}
     · {{ t('settled off-exchange tape · positioning context, not trade calls', '结算后的场外成交 · 仅为仓位背景，非交易信号') }}</div>
+
+  {# Market gauge — dollar-weighted, so a $3 name and a $300 name do not count the same. #}
+  {% if gauge and gauge.participation_dollar_wtd is not none %}
+  <div class="dp-gauge">
+    <div class="gg">
+      <span class="gg-k">{{ t('Off-exchange share of market dollar volume', '场外成交占全市场成交金额比重') }}</span>
+      <span class="gg-v">{{ '%.1f'|format(gauge.participation_dollar_wtd*100) }}%</span>
+      {# "above their own norm" is a WIDER gate than the board's (which also demands
+         ≥40% of volume and a price). Saying "unusually dark" in both places printed
+         two different counts on one screen. #}
+      <span class="gg-n">{{ t('across', '覆盖') }} {{ gauge.n_names }} {{ t('names', '只个股') }}
+        · {{ gauge.n_heavy }} {{ t('above their own norm', '高于自身常态') }}</span>
+    </div>
+  </div>
+  {% endif %}
 </header>
 
 {% if dp and dp.n_standouts and dp.n_standouts > 0 %}
@@ -220,21 +252,21 @@
 <div class="dp-changes">
   <span class="eb">{{ t('What changed', '最新变化') }}</span>
   {% if dp.changes and dp.changes['items'] %}
-    {% for it in dp.changes['items'] %}<span class="cchip {{ LC.get(it.key.split('_')[-1], '') }}"><span class="cd"></span>{{ bl(it) }}</span>{% endfor %}
+    {% for it in dp.changes['items'] %}<span class="cchip {{ CHG.get(it.key.split('_')[-1], '') }}"><span class="cd"></span>{{ bl(it) }}</span>{% endfor %}
   {% else %}
-    <span class="cchip calm"><span class="cd"></span>{{ t('No new leans since the last session.', '自上一交易日以来无新的倾向变化。') }}</span>
+    <span class="cchip calm"><span class="cd"></span>{{ t('No change since the last session.', '自上一交易日以来无变化。') }}</span>
   {% endif %}
 </div>
 
-<!-- ═══════════════════════════ LEAN RAIL ═════════════════════════════ -->
-<div class="sec"><span class="sd" style="--sc:var(--acc)"></span><h2>{{ t('Which way is the dark flow leaning', '暗池资金倾向哪一边') }}</h2></div>
-<p class="sec-sub">{{ t("Off-exchange volume hides direction. Pairing it with the change in short-marked selling gives an honest lean — a heads-up to watch, never a buy or sell call.", '场外成交本身隐藏方向。将其与卖空标记的变化结合，才得出一个诚实的倾向——仅供留意，绝非买卖信号。') }}</p>
+<!-- ═══════════════════════════ PATTERN RAIL ══════════════════════════ -->
+<div class="sec"><span class="sd" style="--sc:var(--dpb)"></span><h2>{{ t('What the hidden volume showed up alongside', '暗池放量时，股价在做什么') }}</h2></div>
+<p class="sec-sub">{{ t("Off-exchange volume hides who is trading, so it cannot call a direction on its own. What it can do is show where an unusual amount of size changed hands — and what the price was doing at the time.", '场外成交隐藏了交易者身份，因此其本身无法判断方向。它能显示的是：异常规模的筹码在何处易手——以及当时股价的表现。') }}</p>
 <div class="rail">
-  {% for k in LEAN_ORDER %}{% set L = dp.leans[k] %}
+  {% for k in PAT_ORDER %}{% set L = dp.patterns[k] %}
   <section class="lc {{ LC[k] }}">
     <div class="pool"><i></i><i></i><i></i><i></i></div>
     <div class="lc-k">◐ {{ bl(L.label) }}</div>
-    <div class="lc-state">{{ L.n }} {{ t('names', '只') }} <small>{{ bl(L.dir) }}</small></div>
+    <div class="lc-state">{{ L.n }} {{ t('names', '只') }}</div>
     <div class="lc-read">{{ bl(L.read) }}</div>
     {% if L.names %}
     <div class="lc-names">
@@ -242,7 +274,7 @@
       {% if L.names|length > 5 %}<span class="tag">+{{ L.names|length - 5 }}</span>{% endif %}
     </div>
     {% endif %}
-    <div class="lc-foot"><span class="stance"><span class="sdot"></span>{{ bl(L.stance) }}</span></div>
+    <div class="lc-foot"><span class="stance"><span class="sdot"></span>{{ bl(L.watch) }}</span></div>
   </section>
   {% endfor %}
 </div>
@@ -250,24 +282,26 @@
 <!-- ═════════════════════════ STANDOUTS BOARD ═════════════════════════ -->
 <div class="sec"><span class="sd" style="--sc:var(--unc)"></span><h2>{{ t('Standouts today', '今日焦点个股') }}</h2>
   <span class="cnt">{{ dp.standouts|length }} {{ t('of', '/') }} {{ dp.n_standouts }} {{ t('names with unusual dark activity', '只出现异常暗池活动') }}</span></div>
-<p class="sec-sub">{{ t("The names where off-exchange volume is most unusual right now — laid out so you don't have to hunt a full table. The complete desk is one click below.", '当前场外成交最异常的个股——直接呈现，无需在整张表格中翻找。完整数据台见下方一键展开。') }}</p>
+<p class="sec-sub">{{ t("The names trading furthest from their OWN off-exchange norm right now — ranked by how unusual they are, not by how dark they always are. The complete desk is one click below.", '当前最偏离自身场外成交常态的个股——按异常程度排序，而非按其一贯的暗池占比。完整数据台见下方一键展开。') }}</p>
 <div class="board">
   {% for s in dp.standouts %}
-  <div class="name {{ LC[s.lean] }}">
+  <div class="name {{ LC[s.pattern] }}">
     <div class="n-top">
       <div class="n-tk">{{ s.ticker }}</div>
-      <span class="n-lean">◐ {{ bl(s.lean_label) }}</span>
+      <span class="n-lean">◐ {{ bl(s.pattern_label) }}</span>
     </div>
     <div class="n-depth">
-      <div class="dl"><span>{{ t('Volume trading in the dark', '暗池成交占比') }}</span><b>{{ '%.1f'|format((s.oe_share or 0)*100) }}%</b></div>
+      <div class="dl"><span>{{ t('Volume trading in the dark', '暗池成交占比') }}</span><b>{{ '%.1f'|format((s.participation or 0)*100) }}%</b></div>
       <div class="dtrack">
-        <span class="dfill" style="width:{{ '%.1f'|format((s.oe_share or 0)*100) }}%"></span>
-        {% if s.oe_share_40d is not none %}<span class="dnorm" data-le="norm" data-lz="常态" style="left:{{ '%.1f'|format((s.oe_share_40d)*100) }}%"></span>{% endif %}
+        <span class="dfill" style="width:{{ '%.1f'|format((s.participation or 0)*100) }}%"></span>
+        {% if s.participation_norm is not none %}<span class="dnorm" data-le="norm" data-lz="常态" style="left:{{ '%.1f'|format((s.participation_norm)*100) }}%"></span>{% endif %}
       </div>
     </div>
     <div class="n-facts">
       <div class="nf">{{ t('vs its own norm', '相对自身常态') }}<b>{{ bl(s.norm_label) }}</b></div>
-      <div class="nf">{{ t('Short-marked selling', '卖空标记') }}<b class="{{ 'up' if s.lean == 'distribution' else 'dn' if s.lean == 'accumulation' else '' }}">{{ bl(s.short_label) }}</b></div>
+      <div class="nf">{{ t('Elevated for', '已持续') }}<b>{{ bl(s.streak_label) }}</b></div>
+      <div class="nf">{{ t('Price, past week', '过去一周股价') }}<b class="{{ 'up' if (s.price_change_pct or 0) > 0 else 'dn' if (s.price_change_pct or 0) < 0 else '' }}">{% if s.price_change_pct is not none %}{{ '%+.1f'|format(s.price_change_pct) }}%{% else %}—{% endif %}</b></div>
+      <div class="nf">{{ t('Where it printed', '成交场所构成') }}<b>{{ bl(s.venue_character) }}</b></div>
     </div>
     <div class="n-read"><b>{{ t('Read:', '解读：') }}</b> {{ bl(s.read) }}</div>
   </div>
@@ -280,8 +314,8 @@
 <!-- ═══════════════════════════ VENUE FLOW ════════════════════════════ -->
 {% if dp and dp.venues and dp.venues.top %}
 <div class="sec"><span class="sd" style="--sc:var(--dpb)"></span><h2>{{ t('Where the dark volume pools', '暗池成交流向何处') }}</h2>
-  {% if dp.venues.week_start %}<span class="cnt">{{ t('week of', '报告周') }} {{ dp.venues.week_start }} · {{ dp.venues.lag_note }}</span>{% endif %}</div>
-<p class="sec-sub">{{ t('Which off-exchange venues the reported volume ran through, and how each pool\'s share shifted week over week.', '上报的场外成交流经了哪些交易场所，以及各暗池的占比如何周环比变化。') }}</p>
+  {% if dp.venues.week_start %}<span class="cnt">{{ t('week of', '报告周') }} {{ dp.venues.week_start }}{% if dp.venues.lag_note %} · {{ dp.venues.lag_note }}{% endif %}</span>{% endif %}</div>
+<p class="sec-sub">{{ t('Registered dark pools (ATS) only, and these are the SMALLER half of off-exchange volume — most of it is order flow internalized by wholesalers rather than crossed in a pool. The share of each name that actually reached a dark pool is shown on its card above.', '仅涵盖注册暗池（ATS），而这是场外成交中较小的一半——大部分是被批发商内部化的订单流，而非在暗池中撮合。每只个股真正进入暗池的比例见上方个股卡片。') }}</p>
 {% set vmax = (dp.venues.top[0].share_pct or 1) %}
 <div class="vcard">
   {% for v in dp.venues.top %}
@@ -340,19 +374,24 @@
             <tr>
               <th data-col="ticker" data-type="str">{{ t('Ticker','代码') }}</th>
               <th data-col="asof" data-type="str" class="sc-hide-sm">{{ t('Date','日期') }}</th>
-              <th data-col="oe_share" data-type="num">{{ t('Off-Ex Share','场外占比') }}
+              <th data-col="participation" data-type="num">{{ t('Off-Ex Share','场外占比') }}
                 {{ tip('FINRA-facility total volume ÷ consolidated day volume (exact date match). What fraction of this name\'s daily volume routed through off-exchange facilities.','FINRA设施总成交量÷综合日成交量（精确日期匹配）。该股当日成交量中路由至场外设施的比例。') }}</th>
               <th data-col="spark" data-type="none" class="spark-cell sc-hide">{{ t('20d trend','20日走势') }}</th>
-              <th data-col="oe_trend_pp" data-type="num">{{ t('OE trend pp','场外趋势pp') }}
+              <th data-col="participation_trend_pp" data-type="num">{{ t('OE trend pp','场外趋势pp') }}
                 {{ tip('5-day mean off-exchange share minus 40-day mean, in percentage points. Positive = off-exchange share rising recently vs its own longer-term level.','近5日平均场外占比减去40日平均，单位百分点。正值=场外占比近期相对自身较长期水平上升。') }}</th>
-              <th data-col="oe_z" data-type="num">{{ t('vs norm','对比基准') }}
-                {{ tip('Today\'s off-exchange share z-scored against own history (≥20 obs). Well above ≥2σ; above ≥1σ; normal −1..1σ; below ≤−1σ; well below ≤−2σ.','当日场外占比相对自身历史（≥20个观测值）的Z值。远高≥2σ；高于≥1σ；正常−1..1σ；低于≤−1σ；远低≤−2σ。') }}</th>
-              <th data-col="short_ratio" data-type="num">{{ t('Short Ratio','融券比率') }}
+              <th data-col="participation_z" data-type="num">{{ t('vs norm','对比基准') }}
+                {{ tip('Today\'s off-exchange share against this name\'s OWN trailing baseline (median/MAD over up to 252 sessions, EXCLUDING today, ≥40 obs required). Blank means not enough comparable history — never a substituted zero. A baseline is restarted after a share split, because the vendor re-bases its volume history and FINRA does not.','当日场外占比相对该股自身滚动基准的Z值（最多252个交易日的中位数/MAD，不含当日，需≥40个观测值）。空白表示可比历史不足——绝不以0代替。股票拆分后基准将重新起算，因为数据商会追溯调整成交量历史而FINRA不会。') }}</th>
+              <th data-col="short_rate" data-type="num">{{ t('Short Ratio','融券比率') }}
                 {{ tip('Short-sale volume ÷ FINRA-facility total volume for this session. NOT the NYSE/Nasdaq consolidated tape ratio.','卖空成交量÷当日FINRA设施总成交量，非NYSE/纳斯达克综合报价带比率。') }}</th>
-              <th data-col="trend_pp" data-type="num" class="sc-hide-sm">{{ t('SR trend pp','融券趋势pp') }}
+              <th data-col="short_trend_pp" data-type="num" class="sc-hide-sm">{{ t('SR trend pp','融券趋势pp') }}
                 {{ tip('Recent 5d volume-weighted short ratio minus 40d baseline, in pp. Positive = short-marked selling building.','近5日量加权融券比率减去40日基准，单位百分点。正值=卖空标记增加。') }}</th>
-              <th data-col="ats_top_venue" data-type="str" class="sc-hide">{{ t('ATS top venue','ATS主场所') }}
-                {{ tip('Top ATS venue by share for the latest published week (2–4 wk lag). Source: FINRA OTC Transparency.','最新公布周（滞后2–4周）按成交量排名第一的ATS场所。来源：FINRA场外透明度。') }}</th>
+              <th data-col="top_ats_venue" data-type="str" class="sc-hide">{{ t('ATS top venue','ATS主场所') }}
+                {{ tip('Top registered dark pool (ATS) by share for the latest published week. The publication lag is measured and shown beside the venue section. Source: FINRA OTC Transparency.','最新公布周按成交量排名第一的注册暗池（ATS）。公布延迟为实测值，显示于场所板块旁。来源：FINRA场外透明度。') }}</th>
+              <th data-col="streak" data-type="num">{{ t('Run','连续') }}
+                {{ tip('Consecutive sessions with off-exchange share strictly above this name\'s own trailing median. A ten-session run is a campaign; one session is noise.','场外占比连续严格高于该股自身滚动中位数的交易日数。连续十日属于持续行为；单日则多为噪音。') }}</th>
+              <th data-col="ats_frac" data-type="num" class="sc-hide-sm">{{ t('In dark pools','进入暗池比例') }}
+                {{ tip('Share of this name\'s off-exchange volume that reached a REGISTERED dark pool (ATS), as opposed to being internalized by a wholesaler against retail order flow. Weekly, lagged. Typically 17–31% for large names — so most "dark" volume is not dark-pool volume.','该股场外成交中真正进入注册暗池（ATS）的比例，其余为批发商针对散户订单流的内部化成交。数据为周频且有延迟。大型个股通常为17–31%——因此多数「暗池」成交其实并非暗池成交。') }}</th>
+              <th data-col="price_change_pct" data-type="num" class="sc-hide">{{ t('Price 5d %','5日涨跌%') }}</th>
               <th data-col="finra_total_vol" data-type="num" class="sc-hide-xs">{{ t('FINRA vol','FINRA量') }}</th>
               <th data-col="n_days" data-type="num" class="sc-hide">{{ t('Days','天数') }}</th>
             </tr>
@@ -375,15 +414,40 @@
       <p><b>{{ t('What "dark" means here.', '这里的「暗池」指什么。') }}</b>
         {{ t('The share of a stock\'s daily volume reported to FINRA\'s off-exchange facilities (dark pools + broker internalisers) rather than the lit exchanges. This is settled end-of-day tape — NOT live prints, and NOT direct dark-pool trade records. "Off-exchange share" = FINRA-facility volume ÷ consolidated day volume (exact date match).',
            '个股当日成交量中上报至FINRA场外设施（暗池+券商内部化）而非公开交易所的比例。此为结算后的日终成交数据——非实时成交，亦非直接的暗池成交记录。「场外占比」=FINRA设施成交量÷综合日成交量（精确日期匹配）。') }}</p>
-      <p><b>{{ t('Why the lean is honest but soft.', '为何这个倾向诚实但偏软。') }}</b>
-        {{ t('Off-exchange volume hides who is trading, so it can\'t call direction on its own. Roughly half of off-exchange volume is short-marked by default, so we read the change in short-marking (recent vs 40-day baseline) and each name\'s own norm — never the raw level. A name is a "standout" only when its off-exchange share is both well above its own norm (≥1.5σ) and material (≥40% of volume). Heavy dark volume with short-marking fading leans accumulation; with short-marking building fast, distribution; mixed, unusual. A broad-market off-exchange spike can light up many names at once — this is context, a heads-up, never a trade signal.',
-           '场外成交隐藏了交易方身份，因此本身无法判断方向。约一半的场外成交默认被标记为卖空，故我们观察卖空标记的变化（近期对比40日基准）与各股自身常态——绝不看绝对水平。个股仅在其场外占比既明显高于自身常态（≥1.5σ）又足够显著（≥成交量40%）时才列为「焦点」。暗池成交沉重而卖空标记回落偏向吸筹；卖空标记快速上升偏向派发；混合则为异常。全市场场外占比整体跳升可能同时点亮多只个股——这是背景提示，绝非交易信号。') }}</p>
+      <p><b>{{ t('Why there is no direction call.', '为何这里没有方向判断。') }}</b>
+        {{ t('Off-exchange volume hides who is trading and which side initiated, so it cannot call direction on its own — and roughly half of it is short-marked by default, which is a feature of how market makers hedge rather than evidence of bearish intent. This desk therefore reports what was observed: how far a name\'s off-exchange share ran from its OWN norm, how long the run has lasted, where it printed, and what the price did over the same stretch. It does not tell you which way the stock goes next.',
+           '场外成交隐藏了交易方身份与主动方，因此本身无法判断方向——且其中约一半默认被标记为卖空，这是做市商对冲机制的特征，而非看空意图的证据。因此本数据台只报告观察到的事实：个股场外占比偏离自身常态的幅度、已持续多久、成交发生在哪里，以及同期股价的表现。它不预测股价接下来的走向。') }}</p>
+      <p><b>{{ t('How a name gets on the board.', '个股如何进入焦点板。') }}</b>
+        {{ t('Its off-exchange share must be both well above its own norm (≥1.5σ against a trailing baseline that EXCLUDES the day being measured) and material (≥40% of that day\'s volume). Ranking is by distance from each name\'s own norm, not by raw level — a stock that always prints 55% off-exchange is not news, a stock that normally prints 28% and printed 42% today is. Names without enough comparable history show no score at all rather than a made-up one.',
+           '其场外占比必须既明显高于自身常态（相对于一个不含当日的滚动基准 ≥1.5σ），又足够显著（≥当日成交量的40%）。排序依据是偏离自身常态的程度，而非绝对水平——一只长期场外占比55%的个股并非新闻，而一只常态28%、今日却达42%的个股才是。历史可比数据不足的个股不显示评分，而非给出杜撰的数值。') }}</p>
+      <p><b>{{ t('Dark pools are the smaller half.', '暗池只是较小的一半。') }}</b>
+        {{ t('Off-exchange volume is registered dark pools (ATS) PLUS wholesaler internalisation — broker-dealers filling order flow, largely retail, against their own book. The second is the bigger half: across large names only about 17–31% of off-exchange volume actually reaches a dark pool. Each card shows that split, so "trading in the dark" is never confused with "institutions are accumulating".',
+           '场外成交由注册暗池（ATS）与批发商内部化两部分构成——后者是券商以自有账簿承接订单流（多为散户订单）。后者才是较大的一半：在大型个股中，实际进入暗池的场外成交通常仅占约17–31%。每张卡片都显示这一构成，以免将「暗池成交」误读为「机构在吸筹」。') }}</p>
       <p><b>{{ t('Venues.', '交易场所。') }}</b>
-        {{ t('FINRA OTC Transparency weekly per-ATS breakdown, published 2–4 weeks after the reporting week. Bar length is each venue\'s share of that week\'s total ATS volume; the arrow is the week-over-week change in percentage points.',
-           'FINRA场外透明度每周各ATS分项，于报告周后2–4周公布。条形长度为各场所占该周ATS总成交量的比例；箭头为周环比变化（百分点）。') }}</p>
+        {{ t('FINRA OTC Transparency weekly per-ATS breakdown. The publication lag is measured and printed next to the week label rather than assumed — it runs longer than the nominal 2–4 weeks. Bar length is each venue\'s share of that week\'s total ATS volume; the arrow is the week-over-week change in percentage points.',
+           'FINRA场外透明度每周各ATS分项。公布延迟为实测值并标注于报告周旁，而非按名义值假定——实际延迟长于名义的2–4周。条形长度为各场所占该周ATS总成交量的比例；箭头为周环比变化（百分点）。') }}</p>
     </div>
   </details>
 </div>
+
+{# Printed nulls — house doctrine. What the desk could NOT see today, stated plainly. #}
+{% if coverage %}
+<div class="dp-limits">
+  <div class="lh">{{ t('What this read could not see today', '今日数据未能覆盖的部分') }}</div>
+  <ul>
+    <li>{{ t('Off-exchange share computed for', '已计算场外占比的个股') }}
+        <b>{{ coverage.n_with_participation }}</b> / <b>{{ coverage.n_total }}</b>
+        {{ t('names; the rest have no matching consolidated-volume record.', '只；其余个股无匹配的综合成交量记录。') }}</li>
+    <li>{{ t('Price was available for', '有价格数据的个股') }}
+        <b>{{ coverage.n_with_price }}</b>
+        {{ t('names —', '只——') }} <b>{{ coverage.n_no_price }}</b>
+        {{ t('names carry no price, so they can never reach the board (the pattern needs both).', '只缺少价格数据，因此无法进入焦点板（该判断需同时具备两者）。') }}</li>
+    <li>{{ t('Enough comparable history for a vs-own-norm score:', '具备足够可比历史以计算「相对自身常态」评分的个股：') }}
+        <b>{{ coverage.n_with_z }}</b> {{ t('names.', '只。') }}</li>
+    <li>{{ t('This is settled end-of-day tape. There are no live prints, no individual block records, and no per-trade price levels — those need an equity tick feed this desk does not have.', '此为结算后的日终成交数据。不含实时成交、单笔大宗成交记录或逐笔价格水平——这些需要本数据台尚不具备的股票逐笔行情源。') }}</li>
+  </ul>
+</div>
+{% endif %}
 
 <p class="disc">{{ t('Positioning context, not trade calls. Off-exchange & short-volume data from FINRA facility reporting; consolidated volume from end-of-day data. Nothing here is a buy or sell recommendation. Updated nightly.', '仓位背景，非交易信号。场外与卖空成交量数据来自FINRA设施上报；综合成交量来自日终数据。此处内容均非买卖建议。每晚更新。') }}</p>
 
@@ -408,7 +472,7 @@
   var allRows = [];
   try { allRows = JSON.parse(rawEl ? rawEl.textContent : '[]'); } catch(e) {}
 
-  var sortCol = 'oe_share';
+  var sortCol = 'participation_z';
   var sortDir = -1;
   var activePreset = null;
   var hiddenRatioZ = null;
@@ -449,26 +513,30 @@
   function esc(s) { return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
   function renderRow(r) {
-    var tc = trendCls(r.oe_trend_pp);
-    var sc = srTrendCls(r.trend_pp);
+    var tc = trendCls(r.participation_trend_pp);
+    var sc = srTrendCls(r.short_trend_pp);
     return '<tr>' +
       '<td>' + esc(r.ticker) + '</td>' +
       '<td class="muted sc-hide-sm">' + esc(r.asof || '') + '</td>' +
-      '<td>' + (r.oe_share !== null && r.oe_share !== undefined ? fmtPct(r.oe_share) : '<span class="muted">—</span>') + '</td>' +
+      '<td>' + (r.participation !== null && r.participation !== undefined ? fmtPct(r.participation) : '<span class="muted">—</span>') + '</td>' +
       '<td class="spark-cell sc-hide">' + sparkSVG(r.spark20) + '</td>' +
-      '<td class="' + tc + '">' + (r.oe_trend_pp !== null && r.oe_trend_pp !== undefined ? fmtPP(r.oe_trend_pp) : '<span class="muted">—</span>') + '</td>' +
-      '<td>' + normChip(r.oe_z) + '</td>' +
-      '<td>' + fmtPct(r.short_ratio) + '</td>' +
-      '<td class="' + sc + ' sc-hide-sm">' + fmtPP(r.trend_pp) + '</td>' +
-      '<td class="sc-hide">' + (r.ats_top_venue ? '<span class="chip" style="font-size:10.5px;padding:1px 6px;">' + esc(r.ats_top_venue.substring(0, 22)) + '</span>' : '<span class="muted">—</span>') + '</td>' +
+      '<td class="' + tc + '">' + (r.participation_trend_pp !== null && r.participation_trend_pp !== undefined ? fmtPP(r.participation_trend_pp) : '<span class="muted">—</span>') + '</td>' +
+      '<td>' + normChip(r.participation_z) + '</td>' +
+      '<td>' + fmtPct(r.short_rate) + '</td>' +
+      '<td class="' + sc + ' sc-hide-sm">' + fmtPP(r.short_trend_pp) + '</td>' +
+      '<td class="sc-hide">' + (r.top_ats_venue ? '<span class="chip" style="font-size:10.5px;padding:1px 6px;">' + esc(r.top_ats_venue.substring(0, 22)) + '</span>' : '<span class="muted">—</span>') + '</td>' +
+      '<td>' + (r.streak ? r.streak : '<span class="muted">—</span>') + '</td>' +
+      '<td class="sc-hide-sm">' + (r.ats_frac !== null && r.ats_frac !== undefined ? fmtPct(r.ats_frac, 0) : '<span class="muted">—</span>') + '</td>' +
+      '<td class="sc-hide ' + trendCls(r.price_change_pct) + '">' + (r.price_change_pct !== null && r.price_change_pct !== undefined ? fmtPP(r.price_change_pct) + '%' : '<span class="muted">—</span>') + '</td>' +
       '<td class="sc-hide-xs muted">' + fmtM(r.finra_total_vol) + '</td>' +
       '<td class="sc-hide muted">' + (r.n_days || '—') + '</td>' +
       '</tr>';
   }
 
   function getValue(r, col) {
-    var map = { ticker:r.ticker, asof:r.asof, oe_share:r.oe_share, spark:r.oe_share, oe_trend_pp:r.oe_trend_pp,
-      oe_z:r.oe_z, short_ratio:r.short_ratio, trend_pp:r.trend_pp, ats_top_venue:r.ats_top_venue,
+    var map = { ticker:r.ticker, asof:r.asof, participation:r.participation, spark:r.participation, participation_trend_pp:r.participation_trend_pp,
+      participation_z:r.participation_z, short_rate:r.short_rate, short_trend_pp:r.short_trend_pp, top_ats_venue:r.top_ats_venue,
+      streak:r.streak, ats_frac:r.ats_frac, price_change_pct:r.price_change_pct,
       finra_total_vol:r.finra_total_vol, n_days:r.n_days };
     return map[col] !== undefined ? map[col] : null;
   }
@@ -488,11 +556,11 @@
     var norm = document.getElementById('dp-norm').value;
     return allRows.filter(function(r) {
       if (q && (r.ticker || '').toUpperCase().indexOf(q) === -1) return false;
-      if (minPct > 0 && (r.oe_share === null || r.oe_share === undefined || r.oe_share * 100 < minPct)) return false;
-      if (trend === 'rising'  && (r.oe_trend_pp === null || r.oe_trend_pp === undefined || r.oe_trend_pp < 1))  return false;
-      if (trend === 'falling' && (r.oe_trend_pp === null || r.oe_trend_pp === undefined || r.oe_trend_pp > -1)) return false;
-      if (norm  === 'above'   && (r.oe_z === null || r.oe_z === undefined || r.oe_z < 1))  return false;
-      if (norm  === 'below'   && (r.oe_z === null || r.oe_z === undefined || r.oe_z > -1)) return false;
+      if (minPct > 0 && (r.participation === null || r.participation === undefined || r.participation * 100 < minPct)) return false;
+      if (trend === 'rising'  && (r.participation_trend_pp === null || r.participation_trend_pp === undefined || r.participation_trend_pp < 1))  return false;
+      if (trend === 'falling' && (r.participation_trend_pp === null || r.participation_trend_pp === undefined || r.participation_trend_pp > -1)) return false;
+      if (norm  === 'above'   && (r.participation_z === null || r.participation_z === undefined || r.participation_z < 1))  return false;
+      if (norm  === 'below'   && (r.participation_z === null || r.participation_z === undefined || r.participation_z > -1)) return false;
       if (hiddenRatioZ !== null && (r.ratio_z === null || r.ratio_z === undefined || r.ratio_z < hiddenRatioZ)) return false;
       return true;
     });
@@ -552,8 +620,9 @@
   });
   document.getElementById('dp-export').addEventListener('click', function() {
     var filtered = sortRows(getFiltered());
-    var cols = ['ticker','asof','oe_share','oe_share_5d','oe_share_40d','oe_trend_pp','oe_z',
-                'short_ratio','trend_pp','ratio_z','ats_top_venue','ats_shares','ats_share_pct','finra_total_vol','n_days'];
+    var cols = ['ticker','asof','participation','participation_5d','participation_norm','participation_trend_pp','participation_z',
+                'streak','price_change_pct','pattern','ats_frac','offex_dollars','short_rate','short_trend_pp','short_rate_z',
+                'exempt_rate','top_ats_venue','top_nonats_firm','ats_block_shares','nonats_block_shares','finra_total_vol','n_days','history_rebased'];
     var header = cols.join(',') + '\n';
     var body = filtered.map(function(r) {
       return cols.map(function(c) {
@@ -571,7 +640,7 @@
     URL.revokeObjectURL(url);
   });
   document.addEventListener('langchange', renderTable);
-  var defaultTh = document.querySelector('th[data-col="oe_share"]');
+  var defaultTh = document.querySelector('th[data-col="participation_z"]');
   if (defaultTh) defaultTh.classList.add('sort-desc');
   renderTable();
 })();

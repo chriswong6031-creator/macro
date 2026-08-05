@@ -1,31 +1,51 @@
-"""Dark-pool positioning context — turns the raw off-exchange desk into an
-actionable, plain-word read plus a same-day-idempotent change-feed.
+"""Dark-pool positioning context — the plain-word read over the off-exchange desk,
+plus a same-day-idempotent change-feed and the forward ledger that makes it gradeable.
 
-WHAT THIS IS (and is not)
--------------------------
-The Dark Pool desk reports, per name, what share of the day's volume printed
-off-exchange (`oe_share` = FINRA-facility volume ÷ consolidated volume), how that
-compares to the name's own history (`oe_z`), and how short-marked that off-exchange
-selling is (`short_ratio`, `trend_pp` = recent-minus-baseline short ratio in pp,
-`ratio_z` = short ratio vs own norm).
+WHAT CHANGED IN v2 (2026-08-05) AND WHY
+---------------------------------------
+v1 tagged each standout name `accumulation` / `distribution` / `unusual` and rendered
+that as "leaning up" / "leaning down". Two independent problems killed it:
 
-Off-exchange volume hides *who* is trading, so on its own it cannot call direction.
-Pairing heavy, unusual-vs-own-norm dark volume with the *change* in short-marked
-selling gives an honest LEAN — a heads-up to watch, never a buy or sell call:
+  1. HOUSE LAW FORBADE THE CONSTRUCTION. `research/DO_NOT_REBUILD.md` (PSS-AF1 row)
+     and the PSS-AF1 charter:
 
-    accumulation  heavy dark volume, short-marking light or fading      → leaning up
-    distribution  heavy dark volume, short-marking building fast         → leaning down
-    unusual       heavy dark volume, short-marking mixed/flat            → direction unclear
+         "FINRA short volume is not short interest, net selling, or institutional
+          buying. Raw short ratio/off-exchange share remains forbidden as a
+          standalone direction signal."
+
+     v1 derived a direction from exactly raw off-exchange share + raw short ratio,
+     standalone, and shipped it in the hero, the rail and every name card.
+
+  2. MEASUREMENT GAVE IT NOTHING TO STAND ON. Walk-forward over the panel available
+     at the time (47 dates; n=86 accumulation / 61 distribution):
+
+         horizon   acc-minus-dist    t      p
+         1d            +0.22%       0.33   0.74
+         5d            -0.87%      -0.63   0.53
+         10d           -0.10%      -0.05   0.96
+
+     The sign flips between 1d and 5d and nothing is near significance. 47 dates
+     cannot refute a signal — but they also never supported one, and the copy was
+     asserting a direction anyway.
+
+v2 keeps every fact and drops the claim. Names are grouped by the CONJUNCTION that was
+actually observed — heavy hidden volume together with which way price went over the
+same stretch — which is a description of settled data, and is not standalone (price is
+required). The direction question is now *accrued* rather than assumed: every tagged
+name is written to `data/darkpool/ledger/forward.jsonl` nightly so it can be graded
+against outcomes later.
+
+Front-facing language follows the operator's 2026-07-27 rule: projection windows and
+"what we're watching" conditions, never verdict or refutation vocabulary.
 
 EPISTEMICS (house law)
 ----------------------
-Every tag here is a DETERMINISTIC threshold on already-observed data — no model, no
-LLM origination, no score with authority. This is display / context tier only
-(is_context_only=True, display_only=True): it never gates, ranks, sizes, or escalates
-any surface, and the word "validated" is never emitted. Roughly half of off-exchange
-volume is short-marked by default, so we read the short-marking *trend* and each name's
-*own norm* — never the raw level. Mirrors the existing `short_volume.py` /
-`altdata.offexchange_flow` "context confirmer, not a scored factor" discipline.
+Every tag is a deterministic threshold on already-observed data — no model, no LLM
+origination, no score with authority. Display/context tier only (is_context_only=True,
+display_only=True): it never gates, ranks, sizes, or escalates any surface, and the
+word "validated" is never emitted. Roughly half of off-exchange volume is short-marked
+by default, so the short tape is read as a CHANGE vs each name's own norm, never as a
+raw level.
 
 The change-feed (compact_state / diff_changes / build_changes) mirrors
 `transmission_context` exactly: same-day rebuilds reuse the stored prev_state so the
@@ -39,174 +59,207 @@ from pathlib import Path
 
 log = logging.getLogger(__name__)
 
-SCHEMA = "darkpool_context.v1"
+SCHEMA = "darkpool_context.v2"
 
-# ── Standout + lean thresholds (deterministic; documented on the page) ──────────
-STANDOUT_Z   = 1.5    # oe_z ≥ this → off-exchange share unusually high vs own norm
-STANDOUT_OE  = 0.40   # and ≥ 40% of the day's volume printed off-exchange
-ACC_TREND    = -2.0   # short-marking fading ≥ 2pp vs baseline → accumulation lean
-ACC_RZ       = -0.75  # …or short ratio ≥ 0.75σ below the name's own norm
-DIS_TREND    = 4.0    # short-marking building ≥ 4pp vs baseline → distribution lean
-DIS_RZ       = 1.0    # …or short ratio ≥ 1σ above the name's own norm
-BOARD_CAP    = 16     # standouts laid out on the glance board (rest live in the desk)
-VENUE_MOVE   = 1.0    # |WoW share change| ≥ this (pp) → a venue "mover"
+# ── standout gate (deterministic; documented on the page) ──────────────────────
+STANDOUT_Z    = 1.5    # participation this far above the name's OWN norm
+STANDOUT_PART = 0.40   # and at least this share of the day's volume printed off-exchange
+BOARD_CAP     = 16     # standouts laid out on the glance board (rest live in the desk)
+VENUE_MOVE    = 1.0    # |WoW share change| ≥ this (pp) → a venue "mover"
 
-_LEAN_KEYS = ("accumulation", "distribution", "unusual")
+# The three observed conjunctions. NOT directions — see the module docstring.
+_PATTERN_KEYS = ("heavy_into_weakness", "heavy_into_strength", "heavy_price_flat")
 
-
-# ── plain-word copy (bilingual; ZH kept equally plain — house doctrine) ─────────
-_LEAN_LABEL = {
-    "accumulation": {"en": "Quiet accumulation", "zh": "悄然吸筹"},
-    "distribution": {"en": "Distribution pressure", "zh": "派发压力"},
-    "unusual":      {"en": "Unusual, unclear", "zh": "异常但方向不明"},
+_PATTERN_LABEL = {
+    "heavy_into_weakness": {"en": "Hidden volume, price falling", "zh": "暗池放量，股价下跌"},
+    "heavy_into_strength": {"en": "Hidden volume, price rising",  "zh": "暗池放量，股价上涨"},
+    "heavy_price_flat":    {"en": "Hidden volume, price flat",    "zh": "暗池放量，股价横盘"},
 }
-_LEAN_DIR = {
-    "accumulation": {"en": "leaning up", "zh": "偏多"},
-    "distribution": {"en": "leaning down", "zh": "偏空"},
-    "unusual":      {"en": "off their norm", "zh": "偏离常态"},
-}
-_LEAN_READ = {
-    "accumulation": {
-        "en": "Big blocks trading in the dark while short-marked selling stays light — "
-              "the footprint left when institutions build a position quietly.",
-        "zh": "大额成交在暗池进行，而卖空标记偏轻——机构悄然建仓时留下的痕迹。",
+_PATTERN_READ = {
+    "heavy_into_weakness": {
+        "en": "An unusual amount of these names' volume printed away from the public "
+              "tape while the price fell. Someone took the other side of that selling — "
+              "the tape cannot say who, or whether they were early.",
+        "zh": "这些个股有异常高比例的成交发生在公开盘面之外，同时股价下跌。有人承接了这些卖盘——"
+              "但成交数据无法说明是谁，也无法说明他们是否过早入场。",
     },
-    "distribution": {
-        "en": "Heavy dark volume with short-marked selling building faster than usual for "
-              "the name — the footprint of quiet distribution or a short campaign.",
-        "zh": "暗池成交沉重，且卖空标记的增速快于该股常态——悄然派发或做空行动的痕迹。",
+    "heavy_into_strength": {
+        "en": "Heavy off-exchange volume alongside a rising price. Big orders were being "
+              "worked while the name was already moving up — which is as consistent with "
+              "sellers meeting demand as with buyers chasing.",
+        "zh": "场外成交沉重，同时股价上涨。大单在股价已经上行时被执行——这既可能是卖方在满足需求，"
+              "也可能是买方在追高。",
     },
-    "unusual": {
-        "en": "Off-exchange share is running well above each name's own baseline, but "
-              "short-marked selling is mixed — something is happening, direction not yet readable.",
-        "zh": "场外占比明显高于各自基线，但卖空标记方向不一——有异动，但方向尚不明朗。",
+    "heavy_price_flat": {
+        "en": "Unusually heavy hidden volume with the price going nowhere. Large size "
+              "changed hands without moving the quote, which is what working an order "
+              "quietly is supposed to look like.",
+        "zh": "暗池成交异常沉重，但股价几乎未动。大量筹码易手却没有推动报价——"
+              "这正是悄然执行大单应有的样子。",
     },
 }
-_LEAN_STANCE = {
-    "accumulation": {"en": "Watch — don't chase", "zh": "观察——勿追高"},
-    "distribution": {"en": "Watch for weakness", "zh": "留意走弱"},
-    "unusual":      {"en": "Watch closely", "zh": "密切观察"},
+# "What we're watching" — conditions, not calls (operator 2026-07-27).
+_PATTERN_WATCH = {
+    "heavy_into_weakness": {
+        "en": "Watching whether the hidden volume keeps up once the price stops falling.",
+        "zh": "观察股价止跌后，暗池成交是否仍然维持。",
+    },
+    "heavy_into_strength": {
+        "en": "Watching whether the off-exchange share fades as the move extends.",
+        "zh": "观察随着涨势延伸，场外占比是否回落。",
+    },
+    "heavy_price_flat": {
+        "en": "Watching which way the quote breaks once the size stops printing.",
+        "zh": "观察大额成交结束后，报价向哪个方向突破。",
+    },
 }
 
 
-# ── per-name label helpers ──────────────────────────────────────────────────────
+# ── per-name label helpers ─────────────────────────────────────────────────────
 
-def _norm_label(oe_z: float | None) -> dict:
-    """Plain-word 'vs its own norm' from oe_z (already display-tier on the desk)."""
-    if oe_z is None:
+def _norm_label(z: float | None) -> dict:
+    """Plain-word 'vs its own norm' from the participation z."""
+    if z is None:
         return {"en": "—", "zh": "—"}
-    if oe_z >= 2.5:
+    if z >= 3.0:
         return {"en": "Far above", "zh": "远超常态"}
-    if oe_z >= 1.5:
+    if z >= 2.0:
         return {"en": "Well above", "zh": "明显高于"}
     return {"en": "Above", "zh": "高于常态"}
 
 
-def _short_label(trend_pp: float | None, short_ratio: float | None, ratio_z: float | None) -> dict:
-    """Plain-word short-marking read, leaning on the CHANGE not the raw level."""
-    if trend_pp is not None and trend_pp >= DIS_TREND:
-        return {"en": f"Building ▲{abs(trend_pp):.0f}pp", "zh": f"上升 ▲{abs(trend_pp):.0f}pp"}
-    if trend_pp is not None and trend_pp <= ACC_TREND:
-        return {"en": f"Fading ▼{abs(trend_pp):.0f}pp", "zh": f"回落 ▼{abs(trend_pp):.0f}pp"}
-    if ratio_z is not None and ratio_z <= ACC_RZ:
-        return {"en": "Light vs norm", "zh": "低于常态"}
-    if ratio_z is not None and ratio_z >= DIS_RZ:
-        return {"en": "Heavy vs norm", "zh": "高于常态"}
-    return {"en": "About normal", "zh": "大致正常"}
+def _streak_label(streak: int) -> dict:
+    """A campaign reads differently from a one-day spike."""
+    # Reads under an "Elevated for" label on the card, so the value carries the COUNT
+    # only. Earlier drafts rendered "Running for 6 sessions running" (en) and
+    # "已持续 连续 6 日" (zh) — the label's verb repeated in the value in both languages.
+    # Phrased so streak == 1 also reads cleanly ("Elevated for 1 session").
+    return {"en": f"{streak} session" + ("s" if streak != 1 else ""),
+            "zh": f"{streak} 日"}
 
 
-def _name_read(lean: str, oe_share: float | None, trend_pp: float | None) -> dict:
-    """One-line, name-level plain read for the standout card."""
-    if lean == "accumulation":
-        return {
-            "en": "Heavy dark footprint and short-marked selling backing off — a quiet-accumulation lean.",
-            "zh": "暗池痕迹沉重、卖空标记回落——偏向悄然吸筹。",
-        }
-    if lean == "distribution":
-        return {
-            "en": "Dark volume elevated and short-marked selling climbing fast — a distribution lean.",
-            "zh": "暗池成交偏高、卖空标记快速攀升——偏向派发。",
-        }
-    return {
-        "en": "Dark volume well above its norm with mixed short-marking — heavy activity, direction unclear.",
-        "zh": "暗池成交远高于常态、卖空标记不一——异动明显，方向不明。",
-    }
+def _venue_character(ats_frac: float | None) -> dict:
+    """Where the hidden volume ran: institutional venues vs internalized retail flow.
+
+    This is the distinction the old desk could not draw at all — it called the whole
+    off-exchange blob "dark pool" while only ever showing the ATS quarter of it.
+    Thresholds are descriptive cuts on an observed ratio, not a scored signal.
+    """
+    if ats_frac is None:
+        return {"en": "Venue mix not yet reported", "zh": "场所构成尚未公布"}
+    pct = ats_frac * 100
+    if ats_frac >= 0.40:
+        return {"en": f"{pct:.0f}% through dark pools — institution-heavy",
+                "zh": f"{pct:.0f}% 经由暗池——机构占比偏高"}
+    if ats_frac >= 0.25:
+        return {"en": f"{pct:.0f}% through dark pools — mixed",
+                "zh": f"{pct:.0f}% 经由暗池——构成混合"}
+    return {"en": f"{pct:.0f}% through dark pools — mostly internalized retail flow",
+            "zh": f"{pct:.0f}% 经由暗池——多为内部化的散户订单流"}
 
 
-# ── classification ──────────────────────────────────────────────────────────────
+def _name_read(pattern: str, streak: int, ats_frac: float | None) -> dict:
+    """One-line, name-level plain read. Describes; never calls a direction."""
+    if streak >= 5:
+        en_pre, zh_pre = f"{streak} sessions of above-normal hidden volume", f"连续 {streak} 日暗池成交高于常态"
+    else:
+        en_pre, zh_pre = "Above-normal hidden volume", "暗池成交高于常态"
+    if pattern == "heavy_into_weakness":
+        en_mid, zh_mid = "while the price fell", "同时股价下跌"
+    elif pattern == "heavy_into_strength":
+        en_mid, zh_mid = "while the price rose", "同时股价上涨"
+    else:
+        en_mid, zh_mid = "with the price barely moving", "而股价几乎未动"
+    tail_en = ""
+    tail_zh = ""
+    if ats_frac is not None and ats_frac >= 0.40:
+        tail_en, tail_zh = ", and an unusually large slice ran through dark pools", "，且其中经由暗池的比例异常偏高"
+    elif ats_frac is not None and ats_frac < 0.25:
+        tail_en, tail_zh = ", though most of it was internalized retail flow", "，但其中多数是内部化的散户订单流"
+    return {"en": f"{en_pre} {en_mid}{tail_en}.", "zh": f"{zh_pre}{zh_mid}{tail_zh}。"}
+
+
+# ── classification ─────────────────────────────────────────────────────────────
 
 def classify(row: dict) -> str | None:
-    """Deterministic lean tag for one desk row, or None if the name is not a standout.
+    """Deterministic conjunction tag for one desk row, or None if not a standout.
 
-    A *standout* has off-exchange share both unusually high vs its own norm
-    (oe_z ≥ STANDOUT_Z) and materially dark (oe_share ≥ STANDOUT_OE). Requires
-    oe_z (needs ≥20 matched days upstream) — names without enough history are
-    never tagged (honest-null, not forced).
+    A *standout* has off-exchange participation both unusually high vs its own norm
+    (participation_z ≥ STANDOUT_Z) and materially dark (≥ STANDOUT_PART of the day's
+    volume). Requires the z — names without enough history are never tagged
+    (honest-null, never forced).
+
+    Returns None when price is unavailable: without price there is no conjunction to
+    name, and naming one from off-exchange share alone is the forbidden construction.
     """
-    oe_z = row.get("oe_z")
-    oe = row.get("oe_share")
-    if oe_z is None or oe is None:
+    z = row.get("participation_z")
+    part = row.get("participation")
+    if z is None or part is None:
         return None
-    if oe_z < STANDOUT_Z or oe < STANDOUT_OE:
+    if z < STANDOUT_Z or part < STANDOUT_PART:
         return None
-
-    tpp = row.get("trend_pp")
-    rz = row.get("ratio_z")
-    building = (tpp is not None and tpp >= DIS_TREND) or (rz is not None and rz >= DIS_RZ)
-    fading = (tpp is not None and tpp <= ACC_TREND) or (rz is not None and rz <= ACC_RZ)
-    if building and not fading:
-        return "distribution"
-    if fading and not building:
-        return "accumulation"
-    return "unusual"
+    return row.get("pattern")
 
 
 def _conviction(row: dict) -> float:
-    """Display-only ordering key for the standout board (NOT a scored signal).
+    """Display-only ordering key (NOT a scored signal).
 
-    Bigger = more worth a look: more unusual vs norm, deeper in the dark, and a
-    stronger short-marking swing either way.
+    Delegates to signals.unusualness so the standout board and the sortable desk below
+    it agree on what "most unusual" means — two different orderings on one page reads
+    as a bug to anyone who scrolls.
     """
-    oe_z = row.get("oe_z") or 0.0
-    oe = row.get("oe_share") or 0.0
-    tpp = abs(row.get("trend_pp") or 0.0)
-    return float(oe_z) + 2.0 * float(oe) + min(tpp / 10.0, 1.0)
+    from engine.darkpool_signals import NameMetrics, unusualness
+    return unusualness(NameMetrics(
+        ticker=row.get("ticker", ""),
+        participation=row.get("participation"),
+        participation_z=row.get("participation_z"),
+        streak=row.get("streak") or 0,
+        offex_dollars=row.get("offex_dollars"),
+        short_rate_z=row.get("short_rate_z"),
+    ))
 
 
-# ── snapshot ────────────────────────────────────────────────────────────────────
+# ── snapshot ───────────────────────────────────────────────────────────────────
 
-def _hero(tally: dict) -> dict:
-    """Deterministic plain-word verdict from the balance of leans."""
-    acc, dis, unc = tally["accumulation"], tally["distribution"], tally["unusual"]
-    total = acc + dis + unc
+def _hero(tally: dict, gauge: dict | None, n_no_price: int = 0) -> dict:
+    """Deterministic plain-word state of the tape. Describes; never calls direction."""
+    total = sum(tally.values())
+    g = gauge or {}
+    dw = g.get("participation_dollar_wtd")
+    mkt_en = ""
+    mkt_zh = ""
+    if dw is not None:
+        mkt_en = f" Across the desk, {dw * 100:.0f}% of dollar volume printed off-exchange."
+        mkt_zh = f"全盘来看，{dw * 100:.0f}% 的成交金额发生在场外。"
     if total == 0:
         return {
-            "en": "Off-exchange activity is quiet today — no names are trading unusually in the dark.",
-            "zh": "今日场外活动平静——没有个股在暗池出现异常成交。",
+            "en": "No name is trading unusually far off its own off-exchange norm today."
+                  + mkt_en,
+            "zh": "今日没有个股的场外成交明显偏离自身常态。" + mkt_zh,
         }
-    if acc > dis:
-        return {
-            "en": f"Hidden volume is running hot in {total} names — quiet-accumulation "
-                  f"footprints lead distribution, {acc} to {dis}.",
-            "zh": f"暗池成交在{total}只个股中异常活跃——悄然吸筹的痕迹以{acc}比{dis}领先派发。",
-        }
-    if dis > acc:
-        return {
-            "en": f"Hidden volume is running hot in {total} names — distribution "
-                  f"footprints lead accumulation, {dis} to {acc}.",
-            "zh": f"暗池成交在{total}只个股中异常活跃——派发的痕迹以{dis}比{acc}领先吸筹。",
-        }
-    return {
-        "en": f"Hidden volume is running hot in {total} names — accumulation and "
-              f"distribution footprints are balanced, {acc} each.",
-        "zh": f"暗池成交在{total}只个股中异常活跃——吸筹与派发的痕迹势均力敌，各{acc}只。",
-    }
+    weak = tally.get("heavy_into_weakness", 0)
+    strong = tally.get("heavy_into_strength", 0)
+    flat = tally.get("heavy_price_flat", 0)
+    lead = max(_PATTERN_KEYS, key=lambda k: tally.get(k, 0))
+    if lead == "heavy_into_weakness":
+        body_en = (f"{total} names are trading unusually dark; in {weak} of them the "
+                   f"hidden volume showed up while the price was falling.")
+        body_zh = f"{total} 只个股场外成交异常偏重，其中 {weak} 只是在股价下跌时出现的。"
+    elif lead == "heavy_into_strength":
+        body_en = (f"{total} names are trading unusually dark; in {strong} of them the "
+                   f"hidden volume showed up while the price was rising.")
+        body_zh = f"{total} 只个股场外成交异常偏重，其中 {strong} 只是在股价上涨时出现的。"
+    else:
+        body_en = (f"{total} names are trading unusually dark; in {flat} of them large "
+                   f"size changed hands without moving the quote.")
+        body_zh = f"{total} 只个股场外成交异常偏重，其中 {flat} 只是在报价几乎未动的情况下完成的。"
+    return {"en": body_en + mkt_en, "zh": body_zh + mkt_zh}
 
 
 def _venue_block(ats_table: dict | None) -> dict:
     """Prettified venue rollup: top venues by share + the biggest WoW mover."""
     if not ats_table or not ats_table.get("venues"):
-        return {"week_start": None, "lag_note": None, "top": [], "mover": None}
+        return {"week_start": None, "lag_note": None, "lag_days": None, "top": [], "mover": None}
     top = []
     for v in ats_table["venues"][:8]:
         top.append({
@@ -216,9 +269,9 @@ def _venue_block(ats_table: dict | None) -> dict:
             "wow_pp": v.get("wow_pp"),
             "is_new": bool(v.get("wow_is_new")),
         })
-    # mover = largest |WoW| among established venues, or the first genuinely-new one
     movers = [v for v in ats_table["venues"]
-              if v.get("wow_pp") is not None and abs(v["wow_pp"]) >= VENUE_MOVE and not v.get("wow_is_new")]
+              if v.get("wow_pp") is not None and abs(v["wow_pp"]) >= VENUE_MOVE
+              and not v.get("wow_is_new")]
     mover = None
     if movers:
         m = max(movers, key=lambda v: abs(v["wow_pp"]))
@@ -226,92 +279,95 @@ def _venue_block(ats_table: dict | None) -> dict:
                  "wow_pp": m.get("wow_pp"), "share_pct": m.get("share_of_total_pct")}
     return {
         "week_start": ats_table.get("week_start"),
-        "lag_note": ats_table.get("lag_note") or "2–4 wk publication lag",
+        "lag_note": ats_table.get("lag_note"),
+        "lag_days": ats_table.get("lag_days"),
         "top": top,
         "mover": mover,
     }
 
 
-def build_snapshot(rows: list[dict], ats_table: dict | None, asof: str) -> dict:
-    """Classify the desk rows into leans + a laid-out standout board + hero verdict.
-
-    Returns the display payload consumed by the page template and (compactly) by the
-    Neural Web lobe. Pure — no IO.
-    """
+def build_snapshot(rows: list[dict], ats_table: dict | None, asof: str,
+                   gauge: dict | None = None, coverage: dict | None = None) -> dict:
+    """Group desk rows by observed conjunction + a laid-out board + hero state. Pure."""
     tagged: list[tuple[str, dict]] = []
     for r in rows:
-        lean = classify(r)
-        if lean is not None:
-            tagged.append((lean, r))
+        pat = classify(r)
+        if pat is not None:
+            tagged.append((pat, r))
 
-    tally = {k: sum(1 for lean, _ in tagged if lean == k) for k in _LEAN_KEYS}
+    tally = {k: sum(1 for pat, _ in tagged if pat == k) for k in _PATTERN_KEYS}
 
-    leans: dict = {}
-    for k in _LEAN_KEYS:
-        names = [r["ticker"] for lean, r in
+    patterns: dict = {}
+    for k in _PATTERN_KEYS:
+        names = [r["ticker"] for pat, r in
                  sorted((t for t in tagged if t[0] == k), key=lambda t: -_conviction(t[1]))]
-        leans[k] = {
+        patterns[k] = {
             "n": tally[k],
-            "label": _LEAN_LABEL[k],
-            "dir": _LEAN_DIR[k],
-            "read": _LEAN_READ[k],
-            "stance": _LEAN_STANCE[k],
+            "label": _PATTERN_LABEL[k],
+            "read": _PATTERN_READ[k],
+            "watch": _PATTERN_WATCH[k],
             "names": names,
         }
 
     standouts = []
-    for lean, r in sorted(tagged, key=lambda t: -_conviction(t[1]))[:BOARD_CAP]:
+    for pat, r in sorted(tagged, key=lambda t: -_conviction(t[1]))[:BOARD_CAP]:
         standouts.append({
             "ticker": r.get("ticker"),
-            "lean": lean,
-            "lean_label": _LEAN_LABEL[lean],
-            "oe_share": r.get("oe_share"),
-            "oe_share_40d": r.get("oe_share_40d"),   # the name's own baseline → depth-bar 'norm' marker
-            "oe_z": r.get("oe_z"),
-            "oe_trend_pp": r.get("oe_trend_pp"),
-            "short_ratio": r.get("short_ratio"),
-            "trend_pp": r.get("trend_pp"),
-            "ratio_z": r.get("ratio_z"),
-            "ats_top_venue": r.get("ats_top_venue"),
-            "norm_label": _norm_label(r.get("oe_z")),
-            "short_label": _short_label(r.get("trend_pp"), r.get("short_ratio"), r.get("ratio_z")),
-            "read": _name_read(lean, r.get("oe_share"), r.get("trend_pp")),
+            "pattern": pat,
+            "pattern_label": _PATTERN_LABEL[pat],
+            "participation": r.get("participation"),
+            "participation_norm": r.get("participation_norm"),
+            "participation_z": r.get("participation_z"),
+            "streak": r.get("streak") or 0,
+            "price_change_pct": r.get("price_change_pct"),
+            "offex_dollars": r.get("offex_dollars"),
+            "short_rate": r.get("short_rate"),
+            "short_trend_pp": r.get("short_trend_pp"),
+            "exempt_rate": r.get("exempt_rate"),
+            "ats_frac": r.get("ats_frac"),
+            "ats_block_shares": r.get("ats_block_shares"),
+            "nonats_block_shares": r.get("nonats_block_shares"),
+            "top_ats_venue": r.get("top_ats_venue"),
+            "top_nonats_firm": r.get("top_nonats_firm"),
+            "norm_label": _norm_label(r.get("participation_z")),
+            "streak_label": _streak_label(r.get("streak") or 0),
+            "venue_character": _venue_character(r.get("ats_frac")),
+            "read": _name_read(pat, r.get("streak") or 0, r.get("ats_frac")),
         })
 
     return {
         "asof": asof,
-        "hero": _hero(tally),
+        "hero": _hero(tally, gauge, (coverage or {}).get("n_no_price", 0)),
+        "gauge": gauge or {},
+        "coverage": coverage or {},
         "tally": tally,
-        "leans": leans,
+        "patterns": patterns,
         "standouts": standouts,
         "n_standouts": len(tagged),
         "venues": _venue_block(ats_table),
     }
 
 
-# ── change-feed (mirrors engine/transmission_context.py idempotence) ────────────
+# ── change-feed (mirrors engine/transmission_context.py idempotence) ───────────
 
 _DIFF_ORDER = [
-    "into_distribution", "into_accumulation", "into_unusual",
-    "left_distribution", "left_accumulation", "left_unusual",
+    "into_weakness", "into_strength", "into_flat",
+    "left_weakness", "left_strength", "left_flat",
     "venue_mover", "venue_new",
 ]
 _MAX_CHANGES = 6
 
 
 def compact_state(snapshot: dict) -> dict:
-    """Comparison fingerprint: which names sit in each lean + the venue leader/mover."""
-    leans = snapshot.get("leans") or {}
+    """Comparison fingerprint: which names sit in each pattern + the venue leader/mover."""
+    pats = snapshot.get("patterns") or {}
     venues = snapshot.get("venues") or {}
     top = venues.get("top") or []
-    return {
-        "accumulation": sorted((leans.get("accumulation") or {}).get("names") or []),
-        "distribution": sorted((leans.get("distribution") or {}).get("names") or []),
-        "unusual": sorted((leans.get("unusual") or {}).get("names") or []),
-        "venue_leader": top[0]["name"] if top else None,
-        "venue_mover": (venues.get("mover") or {}).get("name") if venues.get("mover") else None,
-        "venue_mover_pp": (venues.get("mover") or {}).get("wow_pp") if venues.get("mover") else None,
-    }
+    out = {k: sorted((pats.get(k) or {}).get("names") or []) for k in _PATTERN_KEYS}
+    out["venue_leader"] = top[0]["name"] if top else None
+    out["venue_mover"] = (venues.get("mover") or {}).get("name") if venues.get("mover") else None
+    out["venue_mover_pp"] = (venues.get("mover") or {}).get("wow_pp") if venues.get("mover") else None
+    return out
 
 
 def _names_phrase(names: list[str], zh: bool = False) -> str:
@@ -339,26 +395,27 @@ def diff_changes(prev: dict, curr: dict) -> list[dict]:
         candidates.append((idx, {"key": key, "en": en, "zh": zh}))
 
     moves = [
-        ("distribution", "into_distribution", "left_distribution",
-         ("entered distribution watch", "进入派发观察"),
-         ("left distribution watch", "移出派发观察")),
-        ("accumulation", "into_accumulation", "left_accumulation",
-         ("entered quiet-accumulation watch", "进入悄然吸筹观察"),
-         ("left quiet-accumulation watch", "移出悄然吸筹观察")),
-        ("unusual", "into_unusual", "left_unusual",
-         ("flagged unusual dark activity", "出现异常暗池活动"),
-         ("cleared unusual dark activity", "异常暗池活动消退")),
+        ("heavy_into_weakness", "into_weakness", "left_weakness",
+         ("started printing dark into weakness", "开始在下跌中出现暗池放量"),
+         ("stopped printing dark into weakness", "不再于下跌中出现暗池放量")),
+        ("heavy_into_strength", "into_strength", "left_strength",
+         ("started printing dark into strength", "开始在上涨中出现暗池放量"),
+         ("stopped printing dark into strength", "不再于上涨中出现暗池放量")),
+        ("heavy_price_flat", "into_flat", "left_flat",
+         ("started absorbing size without moving", "开始在价格未动时承接大量成交"),
+         ("stopped absorbing size quietly", "不再于价格未动时承接大量成交")),
     ]
-    for lean, in_key, out_key, (in_en, in_zh), (out_en, out_zh) in moves:
-        pset, cset = set(prev.get(lean) or []), set(curr.get(lean) or [])
+    for pat, in_key, out_key, (in_en, in_zh), (out_en, out_zh) in moves:
+        pset, cset = set(prev.get(pat) or []), set(curr.get(pat) or [])
         entered = sorted(cset - pset)
         left = sorted(pset - cset)
         if entered:
-            _add(in_key, f"{_names_phrase(entered)} {in_en}", f"{_names_phrase(entered, zh=True)}{in_zh}")
+            _add(in_key, f"{_names_phrase(entered)} {in_en}",
+                 f"{_names_phrase(entered, zh=True)}{in_zh}")
         if left:
-            _add(out_key, f"{_names_phrase(left)} {out_en}", f"{_names_phrase(left, zh=True)}{out_zh}")
+            _add(out_key, f"{_names_phrase(left)} {out_en}",
+                 f"{_names_phrase(left, zh=True)}{out_zh}")
 
-    # venue mover (WoW) — only when the mover changed identity or is fresh
     mover, pp = curr.get("venue_mover"), curr.get("venue_mover_pp")
     if mover and pp is not None and mover != prev.get("venue_mover"):
         arrow = "▲" if pp > 0 else "▼"
@@ -383,7 +440,7 @@ def build_changes(old_contract: dict | None, new_snapshot: dict, new_asof: str) 
     new_cs = compact_state(new_snapshot)
     old_asof = old_contract.get("asof")
     if old_asof != new_asof:
-        base = compact_state(old_contract)   # old_contract carries the same top-level shape
+        base = compact_state(old_contract)
         base_asof = old_asof
     else:
         prev_stored = old_contract.get("prev_state") or {}
@@ -394,7 +451,66 @@ def build_changes(old_contract: dict | None, new_snapshot: dict, new_asof: str) 
     return {"vs_asof": base_asof, "items": items}, {"as_of": base_asof, "state": base}
 
 
-# ── artifact assembly + persistence (the only IO in this module) ────────────────
+# ── forward ledger — makes the read gradeable instead of assumed ───────────────
+
+def _ledger_path(root: Path | str | None = None) -> Path:
+    if root is None:
+        from lib import config
+        root = config.ROOT
+    return Path(root) / "data" / "darkpool" / "ledger" / "forward.jsonl"
+
+
+def append_ledger(snapshot: dict, asof: str, root: Path | str | None = None) -> int:
+    """Append one row per tagged name for `asof`. Same-day idempotent.
+
+    v1 shipped a directional call and never wrote down what it called, so after months
+    of running there was nothing to grade it against — the null in the module docstring
+    had to be reconstructed after the fact. This records the state at the time of the
+    tag so the direction question becomes answerable from the desk's own history.
+
+    Deliberately records ONLY observed inputs — no outcome, no score, no direction.
+    Grading is a separate, later read over this file.
+
+    Nightly is the sole advancer of forward ledgers (house law); an intraday rebuild
+    rewrites the same `asof` block rather than appending a second one.
+    """
+    path = _ledger_path(root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    kept: list[str] = []
+    if path.exists():
+        try:
+            for line in path.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    if json.loads(line).get("asof") != asof:
+                        kept.append(line)
+                except json.JSONDecodeError:
+                    kept.append(line)      # never drop a line we cannot parse
+        except OSError as exc:
+            log.warning("darkpool ledger unreadable (%s) — not appending", exc)
+            return 0
+
+    rows = []
+    for s in snapshot.get("standouts") or []:
+        rows.append(json.dumps({
+            "asof": asof,
+            "ticker": s.get("ticker"),
+            "pattern": s.get("pattern"),
+            "participation": s.get("participation"),
+            "participation_z": s.get("participation_z"),
+            "streak": s.get("streak"),
+            "price_change_pct": s.get("price_change_pct"),
+            "ats_frac": s.get("ats_frac"),
+            "short_trend_pp": s.get("short_trend_pp"),
+        }, separators=(",", ":")))
+
+    path.write_text("\n".join(kept + rows) + ("\n" if (kept or rows) else ""), encoding="utf-8")
+    return len(rows)
+
+
+# ── artifact assembly + persistence ────────────────────────────────────────────
 
 def _default_path(root: Path | str | None = None) -> Path:
     if root is None:
@@ -410,20 +526,22 @@ def build_context_feed(
     asof: str,
     built: str,
     tier: str = "eod",
+    gauge: dict | None = None,
+    coverage: dict | None = None,
     root: Path | str | None = None,
     write: bool = True,
 ) -> dict:
-    """Assemble + (optionally) persist the darkpool_context.v1 artifact.
+    """Assemble + (optionally) persist the darkpool_context.v2 artifact.
 
-    Reads the prior artifact BEFORE overwriting so the change-feed can diff against
-    it (same-day-idempotent via build_changes). Returns the full artifact — the page
+    Reads the prior artifact BEFORE overwriting so the change-feed can diff against it
+    (same-day-idempotent via build_changes). Returns the full artifact — the page
     template renders it directly and the Neural Web lobe reads a compact projection.
 
     Fail-open by construction: a missing prior file just means empty changes; the
     caller (build_darkpool_desk) wraps this so it can never break the HTML desk.
     """
     out_path = _default_path(root)
-    snapshot = build_snapshot(rows, ats_table, asof)
+    snapshot = build_snapshot(rows, ats_table, asof, gauge=gauge, coverage=coverage)
 
     old_contract: dict | None = None
     if out_path.exists():
@@ -442,8 +560,10 @@ def build_context_feed(
         "is_context_only": True,
         "display_only": True,
         "hero": snapshot["hero"],
+        "gauge": snapshot["gauge"],
+        "coverage": snapshot["coverage"],
         "tally": snapshot["tally"],
-        "leans": snapshot["leans"],
+        "patterns": snapshot["patterns"],
         "standouts": snapshot["standouts"],
         "n_standouts": snapshot["n_standouts"],
         "venues": snapshot["venues"],
@@ -455,9 +575,10 @@ def build_context_feed(
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(json.dumps(artifact, ensure_ascii=False, separators=(",", ":")),
                             encoding="utf-8")
-        log.info("wrote %s (%d standouts: %d acc / %d dist / %d unusual, %d changes)",
-                 out_path, snapshot["n_standouts"], snapshot["tally"]["accumulation"],
-                 snapshot["tally"]["distribution"], snapshot["tally"]["unusual"],
-                 len(changes["items"]))
+        n_led = append_ledger(snapshot, asof, root)
+        log.info("wrote %s (%d standouts: %s, %d changes, %d ledger rows)",
+                 out_path, snapshot["n_standouts"],
+                 " / ".join(f"{k.replace('heavy_', '')} {snapshot['tally'][k]}" for k in _PATTERN_KEYS),
+                 len(changes["items"]), n_led)
 
     return artifact

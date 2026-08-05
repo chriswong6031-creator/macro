@@ -3458,8 +3458,15 @@ def _compose_stage_analysis(root: "Path | str | None" = None) -> dict:
 def _compose_darkpool_flow(root: "Path | str | None" = None) -> dict:
     """Compose darkpool_flow lobe from data/darkpool/context/latest.json.
 
-    Off-exchange positioning context (darkpool_context.v1): quiet-accumulation /
-    distribution / unusual leans, a laid-out standout board, and weekly venue shifts.
+    Off-exchange positioning context (darkpool_context.v2): names grouped by the
+    CONJUNCTION observed — unusually heavy hidden volume together with what price did
+    over the same stretch — plus a laid-out standout board and weekly venue shifts.
+
+    v2 replaced v1's accumulation/distribution/unusual "leans". Those rendered a
+    DIRECTION out of raw off-exchange share + raw short ratio, which DO_NOT_REBUILD
+    (PSS-AF1 row) forbids as a standalone directional signal, and which walk-forward
+    testing gave no support (sign flipped across horizons, p 0.53-0.96). The keys moved
+    with the meaning: reading v1 keys off a v2 artifact would return silent nulls.
     Follows the _compose_stage_analysis discipline: all IO here, _clean() every scalar,
     display_only=True + is_context_only=True ALWAYS (incl. the null fallback), absent
     artifact → honest-null block (caller appends NO gap).
@@ -3472,8 +3479,8 @@ def _compose_darkpool_flow(root: "Path | str | None" = None) -> dict:
     path = repo / "data" / "darkpool" / "context" / "latest.json"
 
     null_out: dict = {
-        "as_of": None, "tally": None, "leans": None, "standouts": None,
-        "venue_mover": None, "changes": None,
+        "as_of": None, "tally": None, "patterns": None, "standouts": None,
+        "venue_mover": None, "changes": None, "gauge": None,
         "display_only": True, "is_context_only": True,
     }
 
@@ -3486,21 +3493,22 @@ def _compose_darkpool_flow(root: "Path | str | None" = None) -> dict:
         tally_out = {k: _clean(v) for k, v in tally_raw.items()} \
             if isinstance(tally_raw, dict) and tally_raw else None
 
-        # leans — n + top names + plain stance (drop the long bilingual reads)
-        leans_raw = raw.get("leans") or {}
-        leans_out: dict | None = None
-        if isinstance(leans_raw, dict) and leans_raw:
-            leans_out = {}
-            for k in ("accumulation", "distribution", "unusual"):
-                L = leans_raw.get(k) or {}
-                leans_out[k] = {
+        # patterns — n + top names + the plain WATCH condition (drop the long reads)
+        pats_raw = raw.get("patterns") or {}
+        pats_out: dict | None = None
+        if isinstance(pats_raw, dict) and pats_raw:
+            pats_out = {}
+            for k in ("heavy_into_weakness", "heavy_into_strength", "heavy_price_flat"):
+                L = pats_raw.get(k) or {}
+                pats_out[k] = {
                     "n": _clean(L.get("n")),
                     "names": [str(n) for n in (L.get("names") or [])[:8]],
-                    "stance": (L.get("stance") or {}).get("en") if isinstance(L.get("stance"), dict) else None,
+                    "watch": (L.get("watch") or {}).get("en") if isinstance(L.get("watch"), dict) else None,
                 }
 
         # standouts — cap 8, trimmed to a display subset
-        _KEEP = ("ticker", "lean", "oe_share", "oe_share_40d", "oe_z", "short_ratio", "trend_pp")
+        _KEEP = ("ticker", "pattern", "participation", "participation_norm", "participation_z",
+                 "streak", "price_change_pct", "ats_frac", "short_rate", "short_trend_pp")
         top_raw = raw.get("standouts") or []
         standouts_out: list[dict] = []
         if isinstance(top_raw, list):
@@ -3519,13 +3527,18 @@ def _compose_darkpool_flow(root: "Path | str | None" = None) -> dict:
                 if isinstance(item, dict):
                     changes_out.append({k: _clean(v) for k, v in item.items()})
 
+        gauge_raw = raw.get("gauge") or {}
+        gauge_out = ({k: _clean(v) for k, v in gauge_raw.items()}
+                     if isinstance(gauge_raw, dict) and gauge_raw else None)
+
         return {
             "as_of": _clean(raw.get("asof")),
             "tally": tally_out,
-            "leans": leans_out,
+            "patterns": pats_out,
             "standouts": standouts_out,
             "venue_mover": venue_mover,
             "changes": changes_out,
+            "gauge": gauge_out,
             "display_only": True,
             "is_context_only": True,
         }
@@ -4452,8 +4465,9 @@ def build_world_state(
         log.warning("world_state: darkpool_flow lobe failed — %s", exc)
         gaps.append(f"darkpool_flow: {exc}")
         darkpool_flow_block = {
-            "as_of": None, "tally": None, "leans": None, "standouts": None,
-            "venue_mover": None, "changes": None, "display_only": True, "is_context_only": True,
+            "as_of": None, "tally": None, "patterns": None, "standouts": None,
+            "venue_mover": None, "changes": None, "gauge": None,
+            "display_only": True, "is_context_only": True,
         }
     sources[str(_dpf_path.relative_to(repo))] = (darkpool_flow_block or {}).get("as_of")
     # TXI W4 — transmission chains staged-cascade context lobe (transmission_chains.v1,

@@ -38,9 +38,10 @@ log = logging.getLogger("build_darkpool_desk")
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-PANEL_PATH = config.data_dir() / "finra_short_volume" / "panel.parquet"
-ATS_DIR    = config.data_dir() / "finra_ats"
-YAHOO_DIR  = config.data_dir() / "yahoo"
+PANEL_PATH  = config.data_dir() / "finra_short_volume" / "panel.parquet"
+ATS_DIR     = config.data_dir() / "finra_ats"
+NONATS_DIR  = config.data_dir() / "finra_otc_nonats"
+YAHOO_DIR   = config.data_dir() / "yahoo"
 
 # Min dates in panel for the page to be useful (roadmap 30-date floor)
 MIN_DATES = 30
@@ -58,7 +59,12 @@ OE_Z_MIN_OBS  = 20
 # intraday per-print fields (off-exchange %, price levels, biggest prints) stay
 # null until an equity-tick feed is wired — display-tier "data pending", never
 # faked. Bumps to "intraday" tier when that lands. Debranded: no data-vendor name.
-PANE_SCHEMA    = "darkpool_eod.v1"
+# v2 (2026-08-05): per-name rows changed shape — `oe_share`/`oe_z`/`oe_trend_pp` became
+# `participation`/`participation_z`/`participation_norm`, and rows gained `streak`,
+# `price_change_pct`, `offex_dollars`, `ats_frac`, block sizes and venue names. A
+# consumer reading v1 keys off a v2 payload would silently render blanks, so the schema
+# string moves with the shape rather than leaving readers to discover it at runtime.
+PANE_SCHEMA    = "darkpool_eod.v2"
 PANE_JSON_NAME = "darkpool_eod.json"
 
 
@@ -82,24 +88,63 @@ def _load_panel() -> pd.DataFrame | None:
     return df.sort_values(["date", "ticker"])
 
 
-def _load_yahoo_volume(tickers: list[str]) -> dict[str, pd.Series]:
-    """Load consolidated daily volume for the display universe from data/yahoo/.
-    Returns {ticker: pd.Series(date->volume)}. Missing tickers are omitted gracefully."""
-    out: dict[str, pd.Series] = {}
+def _load_yahoo(tickers: list[str]) -> tuple[dict[str, pd.Series], dict[str, pd.Series]]:
+    """Load consolidated daily volume AND close for the display universe.
+
+    Returns ({ticker: volume}, {ticker: close}); missing tickers are omitted gracefully.
+
+    Close was NOT loaded before 2026-08-05 — the desk read only `volume`. Without price
+    there is no way to pair hidden-volume intensity with what the quote actually did,
+    which is the confluence that makes the read lawful (raw off-exchange share is
+    forbidden as a STANDALONE direction signal — DO_NOT_REBUILD, PSS-AF1 row) and is
+    also how desks actually read this data. Price coverage is thinner than volume
+    coverage, so `n_with_price` is reported and rendered rather than assumed.
+    """
+    vol: dict[str, pd.Series] = {}
+    close: dict[str, pd.Series] = {}
     for tk in tickers:
         p = YAHOO_DIR / f"{tk}.parquet"
         if not p.exists():
             continue
         try:
-            df = pd.read_parquet(p, columns=["volume"])
+            df = pd.read_parquet(p)
             df.index = pd.to_datetime(df.index).normalize()
-            s = df["volume"].dropna()
-            if not s.empty:
-                out[tk] = s
+            if "volume" in df.columns:
+                s = df["volume"].dropna()
+                if not s.empty:
+                    vol[tk] = s
+            if "close" in df.columns:
+                c = df["close"].dropna()
+                if not c.empty:
+                    close[tk] = c
         except Exception:  # noqa: BLE001
             continue
-    log.info("yahoo volume loaded for %d/%d tickers", len(out), len(tickers))
-    return out
+    log.info("yahoo loaded: volume %d/%d, close %d/%d tickers",
+             len(vol), len(tickers), len(close), len(tickers))
+    return vol, close
+
+
+def _load_nonats_latest(ats_week_start: pd.Timestamp | None) -> pd.DataFrame | None:
+    """Load the non-ATS (wholesaler internalization) week matching the ATS week.
+
+    Off-exchange volume is ATS + non-ATS, and non-ATS is the bigger half. Matching the
+    WEEK matters: pairing an ATS week against a different non-ATS week would produce a
+    meaningless ats_frac. Returns None when the matching week is absent, and every
+    downstream ats_frac then stays null rather than being computed from mismatched legs.
+    """
+    if not NONATS_DIR.exists() or ats_week_start is None:
+        return None
+    p = NONATS_DIR / f"{ats_week_start.strftime('%Y%m%d')}.parquet"
+    if not p.exists():
+        log.info("non-ATS week %s not stored yet — venue split stays null",
+                 ats_week_start.date())
+        return None
+    try:
+        df = pd.read_parquet(p)
+        return df if not df.empty else None
+    except Exception as e:  # noqa: BLE001
+        log.warning("non-ATS load failed %s: %s", p.name, e)
+        return None
 
 
 def _load_ats_two() -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
@@ -131,16 +176,74 @@ def _safe_load_ats(path: Path) -> pd.DataFrame | None:
 # Computation
 # ---------------------------------------------------------------------------
 
+def _compute_ticker_stats_v2(
+    panel: pd.DataFrame,
+    yahoo_vol: dict[str, pd.Series],
+    yahoo_close: dict[str, pd.Series],
+    venue_by_ticker: dict[str, dict],
+) -> tuple[list[dict], dict]:
+    """Per-name metrics via engine.darkpool_signals + a coverage report.
+
+    SEMANTICS: participation = FINRA-facility off-exchange volume ÷ consolidated volume
+    (yahoo). The denominator is labeled explicitly in the page copy.
+
+    Every metric that lacks its input stays None — nulls are printed on the page, never
+    imputed. Returns (rows, coverage).
+    """
+    from engine.darkpool_signals import compute_name_metrics
+    from dataclasses import asdict
+
+    rows: list[dict] = []
+    cov = {"n_total": 0, "n_with_participation": 0, "n_with_price": 0,
+           "n_with_z": 0, "n_with_venue": 0, "n_no_price": 0}
+
+    for ticker, grp in panel.groupby("ticker"):
+        tk = str(ticker)
+        grp = grp.sort_values("date")
+        if len(grp) < 3:
+            continue
+        cov["n_total"] += 1
+
+        m = compute_name_metrics(
+            tk, grp,
+            yahoo_vol.get(tk),
+            yahoo_close.get(tk),
+            venue_by_ticker.get(tk),
+        )
+        d = asdict(m)
+        d["asof"] = str(grp["date"].iloc[-1].date())
+        d["finra_total_vol"] = int(grp.iloc[-1]["total_vol"])
+        d["n_days"] = int(len(grp))
+        # flatten the spark out of extras for the client table
+        d["spark20"] = (m.extras or {}).get("spark", [])
+        d.pop("extras", None)
+
+        if m.participation is not None:
+            cov["n_with_participation"] += 1
+        if m.price_change_pct is not None:
+            cov["n_with_price"] += 1
+        else:
+            cov["n_no_price"] += 1
+        if m.participation_z is not None:
+            cov["n_with_z"] += 1
+        if m.ats_frac is not None:
+            cov["n_with_venue"] += 1
+        rows.append(d)
+
+    return rows, cov
+
+
 def _compute_ticker_stats(
     panel: pd.DataFrame,
     yahoo_vol: dict[str, pd.Series],
     ats_latest: pd.DataFrame | None,
     ats_week_start: pd.Timestamp | None,
 ) -> tuple[list[dict], int, int]:
-    """Per-name off-exchange share series, short ratio, z-scores, trends, ATS join.
+    """LEGACY v1 per-name computation — retained only for the ATS per-ticker join path
+    exercised by tests/test_darkpool_desk.py. The live build uses
+    _compute_ticker_stats_v2 + engine.darkpool_signals.
 
     SEMANTICS: off_ex_share = FINRA-facility total_vol / yahoo consolidated volume.
-    The denominator is labeled explicitly in the page copy.
 
     Returns: (rows, n_with_oe, n_with_ats)
     """
@@ -261,12 +364,38 @@ def _compute_ticker_stats(
 
 
 def _sort_ticker_stats(ticker_stats: list[dict]) -> list[dict]:
-    """Sort ticker rows by off-exchange share (desc), then by short_ratio (desc)."""
-    with_share    = [r for r in ticker_stats if r["oe_share"] is not None]
-    without_share = [r for r in ticker_stats if r["oe_share"] is None]
+    """Rank by UNUSUALNESS vs each name's own norm — not by the raw level.
+
+    Sorting by raw off-exchange share (what this did before 2026-08-05) put the same
+    structurally-dark names at the top every session: a variance decomposition over the
+    panel attributed 42.7% of participation variance to a fixed per-name effect, with
+    45% day-over-day overlap in the top 20 and rank autocorrelation of 0.58 at lag 1.
+    Retail-heavy and thin names simply always print more off-exchange. Ranking on the
+    deviation from each name's OWN norm puts what changed at the front instead.
+
+    Names without enough history for a z (honest null) sort last on participation, so
+    they are still browsable but never occupy the board.
+    """
+    from engine.darkpool_signals import unusualness  # local: keeps import cost off the stub path
+
+    rated   = [r for r in ticker_stats if r.get("participation_z") is not None]
+    unrated = [r for r in ticker_stats if r.get("participation_z") is None]
     return (
-        sorted(with_share, key=lambda r: r["oe_share"], reverse=True)
-        + sorted(without_share, key=lambda r: r["short_ratio"], reverse=True)
+        sorted(rated, key=lambda r: -unusualness(_as_metrics(r)))
+        + sorted(unrated, key=lambda r: (r.get("participation") is None, -(r.get("participation") or 0)))
+    )
+
+
+def _as_metrics(row: dict):
+    """Adapt a plain desk row back to the NameMetrics shape `unusualness` expects."""
+    from engine.darkpool_signals import NameMetrics
+    return NameMetrics(
+        ticker=row.get("ticker", ""),
+        participation=row.get("participation"),
+        participation_z=row.get("participation_z"),
+        streak=row.get("streak") or 0,
+        offex_dollars=row.get("offex_dollars"),
+        short_rate_z=row.get("short_rate_z"),
     )
 
 
@@ -359,6 +488,8 @@ def _emit_pane_json(
     n_with_ats: int,
     ats_lag_note: str | None,
     built: str,
+    gauge: dict | None = None,
+    coverage: dict | None = None,
     out_path: Path | None = None,
 ) -> Path:
     """Write the interim Terminal Dark Pool pane artifact → site/darkpool_eod.json.
@@ -382,17 +513,22 @@ def _emit_pane_json(
         "below_floor": below_floor,
         "n_with_oe": n_with_oe,
         "n_with_ats": n_with_ats,
-        "universe": rows_clean,                # full ranked per-ticker list (oe_share, oe_trend_pp, oe_z, spark20, ats_*)
+        "gauge": gauge or {},                  # dollar-weighted market-wide participation
+        "coverage": coverage or {},            # which inputs were actually available
+        "universe": rows_clean,                # full ranked per-ticker list (participation, z, streak, ats_frac, venue, spark20)
         "venues": {                            # weekly ATS venue rollup + WoW
             "week_start": ats_table.get("week_start"),
             "lag_note": ats_lag_note,
+            "lag_days": ats_table.get("lag_days"),
             "n_symbols_total": ats_table.get("n_symbols_total"),
             "rows": ats_table.get("venues", []),
         },
         "pending": {                           # intraday tick-feed fields — explicit null, never faked
             "intraday_oe_share": None,
             "price_levels": None,
-            "biggest_prints": None,
+            "biggest_prints": None,            # INDIVIDUAL prints still need ticks; the
+                                               # per-venue AVERAGE print size now ships in
+                                               # universe[].ats_block_shares (weekly, EOD).
             "note": "intraday per-print off-exchange data pending equity-tick feed",
         },
         "built": built,
@@ -452,10 +588,10 @@ def main() -> int:
     panel_universe = panel[panel["ticker"].isin(display_universe)] if display_universe else panel
     tickers = list(panel_universe["ticker"].unique())
 
-    # Load yahoo volumes for off-exchange share computation
-    yahoo_vol = _load_yahoo_volume(tickers)
+    # Load yahoo volume + close (close drives the price confluence — see _load_yahoo)
+    yahoo_vol, yahoo_close = _load_yahoo(tickers)
 
-    # Load ATS (latest two weeks for wow_pp)
+    # Load ATS (latest two weeks for wow_pp) + the MATCHING non-ATS week
     ats_latest, ats_prior = _load_ats_two()
     ats_week_start: pd.Timestamp | None = None
     if ats_latest is not None and not ats_latest.empty:
@@ -463,12 +599,29 @@ def main() -> int:
         log.info("ATS latest week: %s, prior: %s",
                  str(ats_week_start.date()) if ats_week_start is not None else "none",
                  str(ats_prior["week_start"].iloc[0].date()) if ats_prior is not None else "none")
+    nonats_latest = _load_nonats_latest(ats_week_start)
+
+    # Venue split: institutional dark pools vs wholesaler internalization
+    from engine.darkpool_signals import venue_split, market_gauge, NameMetrics
+    venue_by_ticker = venue_split(ats_latest, nonats_latest)
+    log.info("venue split: %d tickers (non-ATS week %s)",
+             len(venue_by_ticker), "present" if nonats_latest is not None else "MISSING")
 
     # Compute per-name stats (all qualifying names, no cap)
-    ticker_stats, n_with_oe, n_with_ats = _compute_ticker_stats(
-        panel_universe, yahoo_vol, ats_latest, ats_week_start
+    ticker_stats, coverage = _compute_ticker_stats_v2(
+        panel_universe, yahoo_vol, yahoo_close, venue_by_ticker
     )
     ticker_stats = _sort_ticker_stats(ticker_stats)
+
+    gauge = market_gauge([
+        NameMetrics(ticker=r["ticker"], participation=r.get("participation"),
+                    participation_z=r.get("participation_z"),
+                    offex_dollars=r.get("offex_dollars"))
+        for r in ticker_stats
+    ])
+
+    n_with_oe  = coverage["n_with_participation"]
+    n_with_ats = coverage["n_with_venue"]
 
     # ATS venue table (with wow_pp)
     ats_table = _compute_ats_venue_table(ats_latest, ats_prior)
@@ -478,7 +631,18 @@ def main() -> int:
     panel_dates    = n_dates
     below_floor    = n_dates < MIN_DATES
     ats_week_label = ats_table.get("week_start")
-    ats_lag_note   = "2–4 wk publication lag" if ats_week_label else None
+
+    # Publication lag is COMPUTED, never asserted. The hardcoded "2–4 wk" chip
+    # understated reality: on 2026-08-05 the newest stored week was 2026-06-22, i.e.
+    # 44 days (6.3 weeks) old. A lag chip that is itself stale is worse than none.
+    ats_lag_days = None
+    ats_lag_note = None
+    if ats_week_label:
+        ats_lag_days = int((pd.Timestamp(panel_latest) - pd.Timestamp(ats_week_label)).days)
+        ats_lag_note = f"{ats_lag_days // 7} wk publication lag" if ats_lag_days >= 7 \
+            else f"{ats_lag_days} d publication lag"
+    ats_table["lag_days"] = ats_lag_days
+    ats_table["lag_note"] = ats_lag_note
 
     # JSON payload for client-side rendering — all qualifying rows, no cap
     # Use a custom encoder that safely handles numpy types and None
@@ -517,8 +681,10 @@ def main() -> int:
             rows_clean,
             {"week_start": ats_table.get("week_start"),
              "venues": ats_table.get("venues", []),
-             "lag_note": ats_lag_note},
+             "lag_note": ats_lag_note,
+             "lag_days": ats_lag_days},
             asof=panel_latest, built=built, root=config.ROOT,
+            gauge=gauge, coverage=coverage,
         )
     except Exception as e:  # noqa: BLE001
         log.warning("darkpool_context build failed (non-fatal): %s", e)
@@ -537,10 +703,13 @@ def main() -> int:
         below_floor=below_floor,
         ats_table=ats_table,
         ats_lag_note=ats_lag_note,
+        ats_lag_days=ats_lag_days,
         n_tickers_total=len(ticker_stats),
         display_universe_size=len(display_universe) or len(tickers),
         n_with_oe=n_with_oe,
         n_with_ats=n_with_ats,
+        coverage=coverage,
+        gauge=gauge,
         table_json=table_json,
         dp=dp_ctx,
     )
@@ -556,6 +725,7 @@ def main() -> int:
             rows_clean, ats_table,
             panel_latest=panel_latest, panel_dates=panel_dates, below_floor=below_floor,
             n_with_oe=n_with_oe, n_with_ats=n_with_ats, ats_lag_note=ats_lag_note, built=built,
+            gauge=gauge, coverage=coverage,
         )
     except Exception as e:  # noqa: BLE001
         log.warning("pane json emit failed (non-fatal): %s", e)
