@@ -236,9 +236,20 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
     Data/site-only commits intentionally do not trigger the baseline workflow.
     Their current-main descendants therefore accept the latest source proof when
     GitHub's compare endpoint confirms ancestry.
+
+    A ``cancelled`` newest run is SKIPPED, not read as red. `integration-baseline.yml`
+    runs under `concurrency: integration-baseline-main` with `cancel-in-progress: true`,
+    so any push to main that lands while a baseline is in flight cancels it — a routine
+    event on a branch this repo pushes to every few minutes, and NOT evidence that main
+    is broken. Reading `per_page=1` and treating `cancelled` as a non-clean conclusion
+    latched this breaker red for 8.5h on 2026-08-05 (run 31014967682, cancelled 14:23Z)
+    and held 49 armed PRs behind it until a baseline was dispatched by hand. The walk
+    below falls through superseded runs to the newest one that actually CONCLUDED, and
+    still fails closed: a genuine `failure`/`timed_out` stops the walk and returns red,
+    and an all-cancelled window returns ``unproven`` rather than green.
     """
     workflow = urllib.parse.quote(BASELINE_WORKFLOW, safe="")
-    query = urllib.parse.urlencode({"branch": "main", "per_page": "1"})
+    query = urllib.parse.urlencode({"branch": "main", "per_page": "20"})
     status, payload = _request(
         "GET",
         f"{GITHUB_API}/repos/{repo}/actions/workflows/{workflow}/runs?{query}",
@@ -250,7 +261,28 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
     if not runs:
         return "unproven", "integration-baseline has not published a run"
 
-    run = runs[0]
+    # An in-flight newest run is genuinely pending; older ones cannot overrule it.
+    if str(runs[0].get("status") or "").lower() != "completed":
+        head = runs[0]
+        return "pending", (
+            f"{str(head.get('head_sha') or '')[:12] or 'unknown-sha'} "
+            f"{str(head.get('html_url') or '')}"
+        ).strip()
+
+    run = next(
+        (
+            candidate
+            for candidate in runs
+            if str(candidate.get("status") or "").lower() == "completed"
+            and str(candidate.get("conclusion") or "").lower() != "cancelled"
+        ),
+        None,
+    )
+    if run is None:
+        return "unproven", (
+            f"the last {len(runs)} integration-baseline runs were all cancelled "
+            "(superseded by concurrency); none concluded"
+        )
     run_status = str(run.get("status") or "").lower()
     conclusion = str(run.get("conclusion") or "").lower()
     run_sha = str(run.get("head_sha") or "")

@@ -400,7 +400,9 @@ def test_integration_baseline_accepts_a_green_ancestor_of_data_only_main(monkeyp
     [
         ("in_progress", None, "pending"),
         ("completed", "failure", "red"),
-        ("completed", "cancelled", "red"),
+        # A lone cancelled run proves nothing either way: it is a superseded run,
+        # not a broken main. Still non-green, so it still fails closed.
+        ("completed", "cancelled", "unproven"),
     ],
 )
 def test_integration_baseline_fail_closes_non_green_runs(
@@ -424,6 +426,79 @@ def test_integration_baseline_fail_closes_non_green_runs(
 
     monkeypatch.setattr(MOG, "_request", fake_request)
     assert MOG.integration_baseline_state("acme/widgets", "read")[0] == expected
+
+
+def _baseline_runs(monkeypatch, runs, main_sha):
+    """Serve `runs` newest-first from the workflow-runs endpoint."""
+
+    def fake_request(method, url, token, payload=None):
+        if "/actions/workflows/" in url:
+            return 200, {"workflow_runs": runs}
+        if "/git/ref/heads/main" in url:
+            return 200, {"object": {"sha": main_sha}}
+        if "/compare/" in url:
+            return 200, {"status": "ahead"}
+        raise AssertionError(url)
+
+    monkeypatch.setattr(MOG, "_request", fake_request)
+
+
+def _baseline_run(conclusion, sha, status="completed"):
+    return {
+        "status": status,
+        "conclusion": conclusion,
+        "head_sha": sha,
+        "html_url": f"https://example.test/run/{conclusion}",
+    }
+
+
+def test_a_superseded_cancelled_run_does_not_latch_the_breaker(monkeypatch):
+    """The 2026-08-05 outage: `integration-baseline.yml` cancels itself on every
+    push to main (cancel-in-progress), so the newest run is routinely `cancelled`.
+    Reading only that run held 49 armed PRs behind a red breaker for 8.5h while
+    main was in fact green. The walk must fall through to the concluded proof."""
+    green = "e" * 40
+    _baseline_runs(
+        monkeypatch,
+        [_baseline_run("cancelled", "f" * 40), _baseline_run("cancelled", "0" * 40), _baseline_run("success", green)],
+        main_sha=green,
+    )
+    state, detail = MOG.integration_baseline_state("acme/widgets", "read")
+    assert state == "green"
+    assert green[:12] in detail
+
+
+def test_falling_through_cancelled_runs_still_stops_at_a_real_red(monkeypatch):
+    """Fail-closed: skipping superseded runs must not skip a genuine failure."""
+    sha = "a" * 40
+    _baseline_runs(
+        monkeypatch,
+        [_baseline_run("cancelled", "b" * 40), _baseline_run("failure", sha), _baseline_run("success", "c" * 40)],
+        main_sha=sha,
+    )
+    assert MOG.integration_baseline_state("acme/widgets", "read")[0] == "red"
+
+
+def test_an_all_cancelled_window_is_unproven_not_green(monkeypatch):
+    sha = "d" * 40
+    _baseline_runs(
+        monkeypatch, [_baseline_run("cancelled", sha), _baseline_run("cancelled", "e" * 40)], main_sha=sha
+    )
+    state, detail = MOG.integration_baseline_state("acme/widgets", "read")
+    assert state == "unproven"
+    assert "cancelled" in detail
+
+
+def test_an_in_flight_newest_run_outranks_an_older_green(monkeypatch):
+    """A baseline still running is pending — an older green cannot vouch for the
+    commit it has not finished testing."""
+    sha = "f" * 40
+    _baseline_runs(
+        monkeypatch,
+        [_baseline_run(None, sha, status="in_progress"), _baseline_run("success", "a" * 40)],
+        main_sha=sha,
+    )
+    assert MOG.integration_baseline_state("acme/widgets", "read")[0] == "pending"
 
 
 def test_one_bad_pull_request_does_not_fail_the_sweep(monkeypatch, capsys):
