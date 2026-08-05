@@ -1171,51 +1171,37 @@ def _round_metric(value: Any, digits: int = 2) -> float | None:
     return round(number, digits)
 
 
+# Enough history for every technical this module computes (SMA200 is the longest
+# leg) with room to spare, without holding a full 40-year series in memory.
+_TECHNICAL_CLOSES_BARS = 520
+
+
 def _load_symbol_closes(symbol: str, root: Path) -> tuple[list[str], list[float]] | None:
-    """Read current daily closes across US, China, HK, Canada, and intl stores."""
+    """Read current daily closes across US, China, HK, Canada, and intl stores.
+
+    Delegates to ``chart_render.load_closes`` — the SAME ladder the chart surface
+    uses. It used to hand-roll its own, and the two drifted into disagreeing about
+    which symbols exist: this one reached A-shares, HK names and the TSX wide
+    matrix while the chart ladder was US-only, so the brain would quote Tencent's
+    RSI and 20-day return in one breath and answer "no chart data available" in the
+    next. One ladder, one answer. (It also drifted the other way: neither ladder
+    reached data/hk, data/china or data/canada, so an index like the Hang Seng or
+    2800.HK had no technicals at all — the shared ladder now carries those too.)
+    """
     try:
-        import pandas as pd  # noqa: PLC0415
+        from engine.marketing.chart_render import load_closes  # noqa: PLC0415
     except Exception:  # noqa: BLE001
         return None
-
-    direct = (
-        root / "data" / "baskets" / "ohlcv" / f"{symbol}.parquet",
-        root / "data" / "stocks" / f"{symbol}.parquet",
-        root / "data" / "china_stocks" / f"{symbol}.parquet",
-        root / "data" / "hk_stocks" / f"{symbol}.parquet",
-    )
-    for path in direct:
-        if not path.exists():
-            continue
-        try:
-            frame = pd.read_parquet(path, columns=["close"])
-            series = frame["close"].sort_index().dropna()
-            if len(series) >= 2:
-                return [str(x)[:10] for x in series.index], [float(x) for x in series]
-        except Exception:  # noqa: BLE001
-            continue
-
-    suffix = symbol.rsplit(".", 1)[-1] if "." in symbol else ""
-    if suffix in {"SS", "SZ"}:
-        wide = root / "data" / "china_search" / "closes.parquet"
-    elif suffix == "HK":
-        wide = root / "data" / "hk_search" / "closes_deep.parquet"
-    elif suffix in {"TO", "V"}:
-        wide = root / "data" / "canada_search" / "closes.parquet"
-    elif suffix:
-        wide = root / "data" / "intl_search" / "closes.parquet"
-    else:
-        return None
-    if not wide.exists():
-        return None
     try:
-        frame = pd.read_parquet(wide, columns=[symbol])
-        series = frame[symbol].sort_index().dropna()
-        if len(series) >= 2:
-            return [str(x)[:10] for x in series.index], [float(x) for x in series]
+        loaded = load_closes(symbol, root, n=_TECHNICAL_CLOSES_BARS)
     except Exception:  # noqa: BLE001
-        pass
-    return None
+        return None
+    # One close is a price, not a history: nothing downstream (a return, an MA, RSI,
+    # MACD) can be computed from it. The hand-rolled ladder required two rows and the
+    # shared loader does not, so the guard is kept here rather than silently widened.
+    if not loaded or len(loaded[1]) < 2:
+        return None
+    return loaded
 
 
 def _ema_series(values: list[float], period: int) -> list[float]:
@@ -1274,8 +1260,14 @@ def _technical_snapshot(symbol: str, root: Path) -> dict:
         trend = "above tracked moving averages"
     elif len(known) >= 2 and not any(known):
         trend = "below tracked moving averages"
-    else:
+    elif known:
         trend = "mixed / transition"
+    else:
+        # NOT "mixed / transition". With no moving average computable at all, that
+        # label asserts a trend read backed by nothing — and it is reachable
+        # whenever a symbol has fewer bars than the shortest MA, which the wide
+        # regional matrices make easy to hit. Say the history is short instead.
+        trend = "too little history for a trend read"
 
     return {
         "as_of": dates[-1],
@@ -1926,23 +1918,56 @@ def _scalar(value: Any) -> Any:
     return value
 
 
+# Per-ticker fundamentals are baked into a DIFFERENT site tree per region — the
+# US bake is site/stockdata/, but scripts/build_{china,hk,canada}_library.py write
+# site/{china,hk,canada}stockdata/ (all gitignored, all nightly). get_fundamentals
+# read only the US tree, so every non-US ticker came back "not found (baked
+# nightly)" forever — the file was there the whole time, one directory over.
+# Keyed by ticker suffix; the US tree stays the default and is also tried as a
+# fallback so a dual-listed name is never lost.
+_STOCKDATA_DIRS = {
+    "SS": "chinastockdata", "SZ": "chinastockdata",
+    "HK": "hkstockdata",
+    "TO": "canadastockdata", "V": "canadastockdata",
+}
+_STOCKDATA_INTL = "intlstockdata"
+
+
+def _stockdata_path(symbol: str, root: Path) -> tuple[Path | None, str]:
+    """(path, source_label) for a symbol's baked fundamentals JSON, region-aware."""
+    suffix = symbol.rsplit(".", 1)[-1] if "." in symbol else ""
+    if suffix:
+        primary = _STOCKDATA_DIRS.get(suffix, _STOCKDATA_INTL)
+        order = [primary, "stockdata"]
+    else:
+        order = ["stockdata"]
+    for sub in order:
+        candidate = root / "site" / sub / f"{symbol}.json"
+        if candidate.exists():
+            return candidate, f"site/{sub}/{symbol}.json"
+    return None, f"site/{order[0]}/{symbol}.json"
+
+
 def _tool_get_fundamentals(
     params: dict,
     root: Path,
     *,
     include_forensics: bool = False,
 ) -> dict:
-    """Read site/stockdata/{SYM}.json — profile, valuation, financials, quality, revisions.
+    """Read the symbol's baked fundamentals JSON — profile, valuation, financials,
+    quality, revisions.
 
-    Baked nightly by the SEO ticker-pages program.  {en,zh}-blob fields are un-nested to
-    English; description is truncated to 400 chars; missing keys are omitted, never raise.
+    Baked nightly by the SEO ticker-pages program, into a per-region tree
+    (see ``_stockdata_path``: US → site/stockdata/, A-shares → site/chinastockdata/,
+    HK → site/hkstockdata/, TSX → site/canadastockdata/, rest → site/intlstockdata/).
+    {en,zh}-blob fields are un-nested to English; description is truncated to 400
+    chars; missing keys are omitted, never raise.
     """
     symbol = _safe_symbol(params.get("symbol") or "")
     if not symbol:
         return {"error": "symbol required"}
-    path = root / "site" / "stockdata" / f"{symbol}.json"
-    src = f"site/stockdata/{symbol}.json"
-    if not path.exists():
+    path, src = _stockdata_path(symbol, root)
+    if path is None:
         return {"symbol": symbol, "available": False, "note": f"{src} not found (baked nightly)"}
     try:
         d = json.loads(path.read_text(encoding="utf-8"))

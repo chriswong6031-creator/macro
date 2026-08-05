@@ -16,9 +16,9 @@
     "volume": "Quiet tape"
   },
   "heat": {
-    "funding": "Balanced",
-    "open_interest": "Leverage normal",
-    "volatility": "Volatility compressed",
+    "funding": "Unavailable",
+    "open_interest": "Unavailable",
+    "volatility": "Unavailable",
     "altseason": "Mixed participation"
   },
   "assets": {

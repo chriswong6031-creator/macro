@@ -1,0 +1,952 @@
+{
+ "instrument": "W5.2 FRESH_TICKS-extension frozen-frame replay",
+ "frame_asof_pin": "2026-07-31",
+ "gate_ticks_from_engine": 2,
+ "ext_ticks": 6,
+ "loser_def": "excess vs SPY < -3.0pp at H=10",
+ "fill_convention": "next-bar (entry = close of the session after the state bar), matching engine.grading.forward_metrics",
+ "reproduction_gate": {
+  "status": "PASS \u2014 exact",
+  "rebuilt": [
+   {
+    "ticks": 0,
+    "n": 53,
+    "loser_rate_pct": 20.8,
+    "median_excess_pp": 1.54,
+    "median_excess_dm_pp": 0.1
+   },
+   {
+    "ticks": 1,
+    "n": 30,
+    "loser_rate_pct": 10.0,
+    "median_excess_pp": 2.77,
+    "median_excess_dm_pp": 0.92
+   },
+   {
+    "ticks": 2,
+    "n": 26,
+    "loser_rate_pct": 11.5,
+    "median_excess_pp": 5.06,
+    "median_excess_dm_pp": 3.04
+   }
+  ],
+  "frozen": [
+   {
+    "ticks": 0,
+    "n": 53,
+    "loser_rate_pct": 20.8,
+    "median_excess_pp": 1.54,
+    "median_excess_dm_pp": 0.1
+   },
+   {
+    "ticks": 1,
+    "n": 30,
+    "loser_rate_pct": 10.0,
+    "median_excess_pp": 2.77,
+    "median_excess_dm_pp": 0.92
+   },
+   {
+    "ticks": 2,
+    "n": 26,
+    "loser_rate_pct": 11.5,
+    "median_excess_pp": 5.06,
+    "median_excess_dm_pp": 3.04
+   }
+  ],
+  "cell_diffs": [],
+  "frame": {
+   "rows": 403,
+   "names": 243,
+   "dates": [
+    "2026-06-16",
+    "2026-07-16"
+   ],
+   "base_loser_rate_pct": 25.8,
+   "base_median_excess_pp": 1.81
+  },
+  "note": "If this ever FAILs, the frame must be re-pinned at a REPRO_ASOF and every number below re-read against the new anchor \u2014 the CN replay law."
+ },
+ "eval_window": {
+  "start": "2023-06-27",
+  "end": "2026-06-30",
+  "sessions": 755,
+  "note": "cut so every row has full H=21 forward coverage inside the pin \u2014 H=10 and H=21 grade the SAME rows"
+ },
+ "construction_checks": {
+  "admitted_states_not_on_board_today": 0,
+  "admitted_check_note": "MUST be 0: for ticks <= FRESH_TICKS the extended stream and the shipped gate agree by construction; a non-zero here would mean the counterfactual moved something other than the clock",
+  "reconstruction_fidelity": {
+   "names": 1493,
+   "days": 939611,
+   "not_topped_mismatch": 0,
+   "t1_ticks_mismatch": 0,
+   "t2_ticks_mismatch": 0
+  },
+  "fidelity_note": "mismatches MUST be 0 \u2014 the reconstructed legs reproduce tier_stream's own not_topped on every day and its ticks on every admitted day, for every name",
+  "leg_fire_counts": {
+   "stoch_ob": {
+    "days": 244829,
+    "pct": 26.1
+   },
+   "stoch_bear": {
+    "days": 387619,
+    "pct": 41.3
+   },
+   "macd_bear": {
+    "days": 292254,
+    "pct": 31.1
+   },
+   "rsi_ok": {
+    "days": 735999,
+    "pct": 78.3
+   },
+   "long_bias": {
+    "days": 263030,
+    "pct": 28.0
+   },
+   "recent3": {
+    "days": 659256,
+    "pct": 70.2
+   },
+   "confirm3": {
+    "days": 526219,
+    "pct": 56.0
+   },
+   "recent2": {
+    "days": 712365,
+    "pct": 75.8
+   },
+   "confirm2": {
+    "days": 533890,
+    "pct": 56.8
+   },
+   "above200": {
+    "days": 377848,
+    "pct": 40.2
+   },
+   "imm2": {
+    "days": 46393,
+    "pct": 4.9
+   }
+  },
+  "leg_fire_note": "a leg at 0 days is a DEAD leg (the numpy `x is True` trap) \u2014 these counts exist so a dead leg is visible in the output, not merely wrong",
+  "leg_days_total": 939611
+ },
+ "A_primary_by_tick_episode_unit": {
+  "unit": "one row per cross episode per tick level (first eligible session at that age)",
+  "all_states": [
+   {
+    "n": 9003,
+    "names": 1485,
+    "dates": 354,
+    "loser_rate_pct": 31.2,
+    "median_excess_pp": -0.25,
+    "median_excess_dm_pp": -0.25,
+    "median_excess_vs_univ_pp": 0.01,
+    "per_name_median_pp": -0.13,
+    "mean_excess_pp": 0.22,
+    "win_pct": 48.1,
+    "median_excess_pp_h21": -1.14,
+    "loser_rate_pct_h21": 41.0,
+    "ticks": 0,
+    "gate_status": "admitted today"
+   },
+   {
+    "n": 8600,
+    "names": 1458,
+    "dates": 348,
+    "loser_rate_pct": 31.3,
+    "median_excess_pp": -0.34,
+    "median_excess_dm_pp": -0.24,
+    "median_excess_vs_univ_pp": -0.0,
+    "per_name_median_pp": -0.35,
+    "mean_excess_pp": 0.08,
+    "win_pct": 47.5,
+    "median_excess_pp_h21": -1.29,
+    "loser_rate_pct_h21": 42.4,
+    "ticks": 1,
+    "gate_status": "admitted today"
+   },
+   {
+    "n": 5008,
+    "names": 1405,
+    "dates": 338,
+    "loser_rate_pct": 32.5,
+    "median_excess_pp": -0.59,
+    "median_excess_dm_pp": -0.28,
+    "median_excess_vs_univ_pp": -0.03,
+    "per_name_median_pp": -0.41,
+    "mean_excess_pp": -0.11,
+    "win_pct": 45.8,
+    "median_excess_pp_h21": -1.33,
+    "loser_rate_pct_h21": 42.0,
+    "ticks": 2,
+    "gate_status": "admitted today"
+   },
+   {
+    "n": 2929,
+    "names": 1291,
+    "dates": 308,
+    "loser_rate_pct": 32.6,
+    "median_excess_pp": -0.73,
+    "median_excess_dm_pp": -0.19,
+    "median_excess_vs_univ_pp": -0.01,
+    "per_name_median_pp": -0.51,
+    "mean_excess_pp": -0.31,
+    "win_pct": 44.6,
+    "median_excess_pp_h21": -1.18,
+    "loser_rate_pct_h21": 42.2,
+    "ticks": 3,
+    "gate_status": "EXCLUDED \u2014 the W5.2 question"
+   },
+   {
+    "n": 1838,
+    "names": 1116,
+    "dates": 272,
+    "loser_rate_pct": 32.2,
+    "median_excess_pp": -0.7,
+    "median_excess_dm_pp": -0.29,
+    "median_excess_vs_univ_pp": -0.22,
+    "per_name_median_pp": -0.56,
+    "mean_excess_pp": -0.36,
+    "win_pct": 44.0,
+    "median_excess_pp_h21": -0.92,
+    "loser_rate_pct_h21": 40.9,
+    "ticks": 4,
+    "gate_status": "EXCLUDED \u2014 the W5.2 question"
+   },
+   {
+    "n": 1393,
+    "names": 957,
+    "dates": 243,
+    "loser_rate_pct": 34.7,
+    "median_excess_pp": -0.86,
+    "median_excess_dm_pp": -0.1,
+    "median_excess_vs_univ_pp": 0.0,
+    "per_name_median_pp": -0.77,
+    "mean_excess_pp": -0.62,
+    "win_pct": 43.5,
+    "median_excess_pp_h21": -1.08,
+    "loser_rate_pct_h21": 42.5,
+    "ticks": 5,
+    "gate_status": "EXCLUDED \u2014 decay context only"
+   },
+   {
+    "n": 1048,
+    "names": 776,
+    "dates": 223,
+    "loser_rate_pct": 32.6,
+    "median_excess_pp": -0.44,
+    "median_excess_dm_pp": 0.05,
+    "median_excess_vs_univ_pp": 0.09,
+    "per_name_median_pp": -0.34,
+    "mean_excess_pp": -0.18,
+    "win_pct": 46.8,
+    "median_excess_pp_h21": -1.08,
+    "loser_rate_pct_h21": 41.6,
+    "ticks": 6,
+    "gate_status": "EXCLUDED \u2014 decay context only"
+   }
+  ],
+  "marginal_only": [
+   {
+    "n": 9003,
+    "names": 1485,
+    "dates": 354,
+    "loser_rate_pct": 31.2,
+    "median_excess_pp": -0.25,
+    "median_excess_dm_pp": -0.25,
+    "median_excess_vs_univ_pp": 0.01,
+    "per_name_median_pp": -0.13,
+    "mean_excess_pp": 0.22,
+    "win_pct": 48.1,
+    "median_excess_pp_h21": -1.14,
+    "loser_rate_pct_h21": 41.0,
+    "ticks": 0,
+    "gate_status": "admitted today"
+   },
+   {
+    "n": 8600,
+    "names": 1458,
+    "dates": 348,
+    "loser_rate_pct": 31.3,
+    "median_excess_pp": -0.34,
+    "median_excess_dm_pp": -0.24,
+    "median_excess_vs_univ_pp": -0.0,
+    "per_name_median_pp": -0.35,
+    "mean_excess_pp": 0.08,
+    "win_pct": 47.5,
+    "median_excess_pp_h21": -1.29,
+    "loser_rate_pct_h21": 42.4,
+    "ticks": 1,
+    "gate_status": "admitted today"
+   },
+   {
+    "n": 5008,
+    "names": 1405,
+    "dates": 338,
+    "loser_rate_pct": 32.5,
+    "median_excess_pp": -0.59,
+    "median_excess_dm_pp": -0.28,
+    "median_excess_vs_univ_pp": -0.03,
+    "per_name_median_pp": -0.41,
+    "mean_excess_pp": -0.11,
+    "win_pct": 45.8,
+    "median_excess_pp_h21": -1.33,
+    "loser_rate_pct_h21": 42.0,
+    "ticks": 2,
+    "gate_status": "admitted today"
+   },
+   {
+    "n": 2875,
+    "names": 1289,
+    "dates": 308,
+    "loser_rate_pct": 32.6,
+    "median_excess_pp": -0.71,
+    "median_excess_dm_pp": -0.18,
+    "median_excess_vs_univ_pp": -0.01,
+    "per_name_median_pp": -0.48,
+    "mean_excess_pp": -0.3,
+    "win_pct": 44.7,
+    "median_excess_pp_h21": -1.18,
+    "loser_rate_pct_h21": 42.3,
+    "ticks": 3,
+    "gate_status": "EXCLUDED \u2014 the W5.2 question"
+   },
+   {
+    "n": 1809,
+    "names": 1113,
+    "dates": 272,
+    "loser_rate_pct": 32.2,
+    "median_excess_pp": -0.7,
+    "median_excess_dm_pp": -0.29,
+    "median_excess_vs_univ_pp": -0.23,
+    "per_name_median_pp": -0.56,
+    "mean_excess_pp": -0.39,
+    "win_pct": 43.9,
+    "median_excess_pp_h21": -0.93,
+    "loser_rate_pct_h21": 40.9,
+    "ticks": 4,
+    "gate_status": "EXCLUDED \u2014 the W5.2 question"
+   },
+   {
+    "n": 1353,
+    "names": 947,
+    "dates": 243,
+    "loser_rate_pct": 34.7,
+    "median_excess_pp": -0.88,
+    "median_excess_dm_pp": -0.12,
+    "median_excess_vs_univ_pp": -0.02,
+    "per_name_median_pp": -0.77,
+    "mean_excess_pp": -0.66,
+    "win_pct": 43.3,
+    "median_excess_pp_h21": -1.08,
+    "loser_rate_pct_h21": 42.5,
+    "ticks": 5,
+    "gate_status": "EXCLUDED \u2014 decay context only"
+   },
+   {
+    "n": 1000,
+    "names": 761,
+    "dates": 219,
+    "loser_rate_pct": 32.4,
+    "median_excess_pp": -0.44,
+    "median_excess_dm_pp": 0.08,
+    "median_excess_vs_univ_pp": 0.12,
+    "per_name_median_pp": -0.38,
+    "mean_excess_pp": -0.16,
+    "win_pct": 46.9,
+    "median_excess_pp_h21": -0.95,
+    "loser_rate_pct_h21": 41.2,
+    "ticks": 6,
+    "gate_status": "EXCLUDED \u2014 decay context only"
+   }
+  ],
+  "marginal_note": "marginal_only drops the ext_relabel rows \u2014 sessions already on the board tonight via a projection tier. Those are what the extension would RE-TIER (T3 weight 0.6 -> T1 0.9), not what it would ADD."
+ },
+ "B_supporting_by_tick_all_sessions": {
+  "unit": "every eligible session (overlapping inside a tick bucket \u2014 not independent)",
+  "all_states": [
+   {
+    "n": 32029,
+    "names": 1485,
+    "dates": 603,
+    "loser_rate_pct": 30.9,
+    "median_excess_pp": -0.26,
+    "median_excess_dm_pp": -0.18,
+    "median_excess_vs_univ_pp": 0.05,
+    "per_name_median_pp": -0.16,
+    "mean_excess_pp": 0.14,
+    "win_pct": 48.2,
+    "median_excess_pp_h21": -1.27,
+    "loser_rate_pct_h21": 41.6,
+    "ticks": 0,
+    "gate_status": "admitted today"
+   },
+   {
+    "n": 23066,
+    "names": 1458,
+    "dates": 600,
+    "loser_rate_pct": 31.8,
+    "median_excess_pp": -0.4,
+    "median_excess_dm_pp": -0.21,
+    "median_excess_vs_univ_pp": 0.02,
+    "per_name_median_pp": -0.3,
+    "mean_excess_pp": -0.01,
+    "win_pct": 47.3,
+    "median_excess_pp_h21": -1.28,
+    "loser_rate_pct_h21": 42.1,
+    "ticks": 1,
+    "gate_status": "admitted today"
+   },
+   {
+    "n": 12412,
+    "names": 1405,
+    "dates": 596,
+    "loser_rate_pct": 33.5,
+    "median_excess_pp": -0.61,
+    "median_excess_dm_pp": -0.27,
+    "median_excess_vs_univ_pp": -0.04,
+    "per_name_median_pp": -0.51,
+    "mean_excess_pp": -0.17,
+    "win_pct": 45.8,
+    "median_excess_pp_h21": -1.3,
+    "loser_rate_pct_h21": 42.0,
+    "ticks": 2,
+    "gate_status": "admitted today"
+   },
+   {
+    "n": 6823,
+    "names": 1291,
+    "dates": 583,
+    "loser_rate_pct": 33.6,
+    "median_excess_pp": -0.71,
+    "median_excess_dm_pp": -0.21,
+    "median_excess_vs_univ_pp": -0.05,
+    "per_name_median_pp": -0.53,
+    "mean_excess_pp": -0.37,
+    "win_pct": 45.1,
+    "median_excess_pp_h21": -1.16,
+    "loser_rate_pct_h21": 41.9,
+    "ticks": 3,
+    "gate_status": "EXCLUDED \u2014 the W5.2 question"
+   },
+   {
+    "n": 4120,
+    "names": 1116,
+    "dates": 548,
+    "loser_rate_pct": 33.2,
+    "median_excess_pp": -0.75,
+    "median_excess_dm_pp": -0.24,
+    "median_excess_vs_univ_pp": -0.15,
+    "per_name_median_pp": -0.49,
+    "mean_excess_pp": -0.45,
+    "win_pct": 44.0,
+    "median_excess_pp_h21": -0.99,
+    "loser_rate_pct_h21": 40.9,
+    "ticks": 4,
+    "gate_status": "EXCLUDED \u2014 the W5.2 question"
+   },
+   {
+    "n": 3118,
+    "names": 957,
+    "dates": 502,
+    "loser_rate_pct": 33.1,
+    "median_excess_pp": -0.57,
+    "median_excess_dm_pp": 0.1,
+    "median_excess_vs_univ_pp": 0.11,
+    "per_name_median_pp": -0.56,
+    "mean_excess_pp": -0.4,
+    "win_pct": 45.3,
+    "median_excess_pp_h21": -0.93,
+    "loser_rate_pct_h21": 41.3,
+    "ticks": 5,
+    "gate_status": "EXCLUDED \u2014 decay context only"
+   },
+   {
+    "n": 2359,
+    "names": 776,
+    "dates": 468,
+    "loser_rate_pct": 33.7,
+    "median_excess_pp": -0.63,
+    "median_excess_dm_pp": 0.02,
+    "median_excess_vs_univ_pp": -0.0,
+    "per_name_median_pp": -0.48,
+    "mean_excess_pp": -0.3,
+    "win_pct": 45.6,
+    "median_excess_pp_h21": -1.1,
+    "loser_rate_pct_h21": 41.7,
+    "ticks": 6,
+    "gate_status": "EXCLUDED \u2014 decay context only"
+   }
+  ]
+ },
+ "C_headline_contrast": {
+  "episode_unit_primary": {
+   "label": "episode-tick unit (primary)",
+   "admitted_ticks_0_2": {
+    "n": 22611,
+    "names": 1486,
+    "dates": 432,
+    "loser_rate_pct": 31.5,
+    "median_excess_pp": -0.37,
+    "median_excess_dm_pp": -0.25,
+    "median_excess_vs_univ_pp": 0.0,
+    "per_name_median_pp": -0.33,
+    "mean_excess_pp": 0.09,
+    "win_pct": 47.4,
+    "median_excess_pp_h21": -1.23,
+    "loser_rate_pct_h21": 41.7
+   },
+   "ext_ticks_3_4_marginal": {
+    "n": 4684,
+    "names": 1315,
+    "dates": 333,
+    "loser_rate_pct": 32.4,
+    "median_excess_pp": -0.71,
+    "median_excess_dm_pp": -0.21,
+    "median_excess_vs_univ_pp": -0.09,
+    "per_name_median_pp": -0.5,
+    "mean_excess_pp": -0.34,
+    "win_pct": 44.4,
+    "median_excess_pp_h21": -1.08,
+    "loser_rate_pct_h21": 41.7
+   },
+   "ext_ticks_3_4_all": {
+    "n": 4767,
+    "names": 1317,
+    "dates": 333,
+    "loser_rate_pct": 32.5,
+    "median_excess_pp": -0.71,
+    "median_excess_dm_pp": -0.23,
+    "median_excess_vs_univ_pp": -0.09,
+    "per_name_median_pp": -0.55,
+    "mean_excess_pp": -0.33,
+    "win_pct": 44.3,
+    "median_excess_pp_h21": -1.07,
+    "loser_rate_pct_h21": 41.7
+   },
+   "decay_ticks_5_6_context": {
+    "n": 2441,
+    "names": 1047,
+    "dates": 282,
+    "loser_rate_pct": 33.8,
+    "median_excess_pp": -0.74,
+    "median_excess_dm_pp": -0.03,
+    "median_excess_vs_univ_pp": 0.05,
+    "per_name_median_pp": -0.64,
+    "mean_excess_pp": -0.43,
+    "win_pct": 44.9,
+    "median_excess_pp_h21": -1.08,
+    "loser_rate_pct_h21": 42.1
+   },
+   "tick_3_alone": {
+    "n": 2875,
+    "names": 1289,
+    "dates": 308,
+    "loser_rate_pct": 32.6,
+    "median_excess_pp": -0.71,
+    "median_excess_dm_pp": -0.18,
+    "median_excess_vs_univ_pp": -0.01,
+    "per_name_median_pp": -0.48,
+    "mean_excess_pp": -0.3,
+    "win_pct": 44.7,
+    "median_excess_pp_h21": -1.18,
+    "loser_rate_pct_h21": 42.3
+   },
+   "tick_4_alone": {
+    "n": 1809,
+    "names": 1113,
+    "dates": 272,
+    "loser_rate_pct": 32.2,
+    "median_excess_pp": -0.7,
+    "median_excess_dm_pp": -0.29,
+    "median_excess_vs_univ_pp": -0.23,
+    "per_name_median_pp": -0.56,
+    "mean_excess_pp": -0.39,
+    "win_pct": 43.9,
+    "median_excess_pp_h21": -0.93,
+    "loser_rate_pct_h21": 40.9
+   },
+   "delta_ext_minus_admitted": {
+    "median_dm_pp": 0.04,
+    "median_raw_pp": -0.34,
+    "loser_rate_pp": 0.9,
+    "per_name_median_pp": -0.17,
+    "median_h21_pp": 0.16
+   }
+  },
+  "all_sessions_supporting": {
+   "label": "all eligible sessions (supporting)",
+   "admitted_ticks_0_2": {
+    "n": 65162,
+    "names": 1486,
+    "dates": 604,
+    "loser_rate_pct": 31.8,
+    "median_excess_pp": -0.36,
+    "median_excess_dm_pp": -0.19,
+    "median_excess_vs_univ_pp": 0.03,
+    "per_name_median_pp": -0.28,
+    "mean_excess_pp": 0.04,
+    "win_pct": 47.5,
+    "median_excess_pp_h21": -1.22,
+    "loser_rate_pct_h21": 41.7
+   },
+   "ext_ticks_3_4_marginal": {
+    "n": 10731,
+    "names": 1317,
+    "dates": 594,
+    "loser_rate_pct": 33.4,
+    "median_excess_pp": -0.71,
+    "median_excess_dm_pp": -0.22,
+    "median_excess_vs_univ_pp": -0.08,
+    "per_name_median_pp": -0.43,
+    "mean_excess_pp": -0.4,
+    "win_pct": 44.8,
+    "median_excess_pp_h21": -1.07,
+    "loser_rate_pct_h21": 41.6
+   },
+   "ext_ticks_3_4_all": {
+    "n": 10943,
+    "names": 1317,
+    "dates": 594,
+    "loser_rate_pct": 33.4,
+    "median_excess_pp": -0.72,
+    "median_excess_dm_pp": -0.23,
+    "median_excess_vs_univ_pp": -0.09,
+    "per_name_median_pp": -0.42,
+    "mean_excess_pp": -0.4,
+    "win_pct": 44.7,
+    "median_excess_pp_h21": -1.07,
+    "loser_rate_pct_h21": 41.6
+   },
+   "decay_ticks_5_6_context": {
+    "n": 5477,
+    "names": 1047,
+    "dates": 553,
+    "loser_rate_pct": 33.4,
+    "median_excess_pp": -0.6,
+    "median_excess_dm_pp": 0.07,
+    "median_excess_vs_univ_pp": 0.05,
+    "per_name_median_pp": -0.44,
+    "mean_excess_pp": -0.36,
+    "win_pct": 45.4,
+    "median_excess_pp_h21": -1.01,
+    "loser_rate_pct_h21": 41.5
+   },
+   "tick_3_alone": {
+    "n": 6687,
+    "names": 1290,
+    "dates": 583,
+    "loser_rate_pct": 33.5,
+    "median_excess_pp": -0.69,
+    "median_excess_dm_pp": -0.21,
+    "median_excess_vs_univ_pp": -0.03,
+    "per_name_median_pp": -0.51,
+    "mean_excess_pp": -0.37,
+    "win_pct": 45.3,
+    "median_excess_pp_h21": -1.14,
+    "loser_rate_pct_h21": 41.9
+   },
+   "tick_4_alone": {
+    "n": 4044,
+    "names": 1115,
+    "dates": 548,
+    "loser_rate_pct": 33.2,
+    "median_excess_pp": -0.74,
+    "median_excess_dm_pp": -0.24,
+    "median_excess_vs_univ_pp": -0.15,
+    "per_name_median_pp": -0.48,
+    "mean_excess_pp": -0.47,
+    "win_pct": 44.0,
+    "median_excess_pp_h21": -1.0,
+    "loser_rate_pct_h21": 41.0
+   },
+   "delta_ext_minus_admitted": {
+    "median_dm_pp": -0.03,
+    "median_raw_pp": -0.35,
+    "loser_rate_pp": 1.6,
+    "per_name_median_pp": -0.15,
+    "median_h21_pp": 0.15
+   }
+  },
+  "intervals": {
+   "loser_rate_wilson95_admitted_0_2": [
+    30.9,
+    32.2
+   ],
+   "loser_rate_wilson95_ext_3_4": [
+    31.1,
+    33.8
+   ],
+   "date_blocked_bootstrap_ext_minus_admitted": {
+    "draws": 1000,
+    "blocks": 449,
+    "delta_median_dm_pp_ci95": [
+     -0.18,
+     0.24
+    ],
+    "delta_loser_pp_ci95": [
+     -1.9,
+     3.6
+    ],
+    "pct_draws_delta_dm_positive": 63.1,
+    "straddles_zero": true
+   },
+   "note": "Wilson assumes independent rows and therefore reads TIGHTER than the data earns (one cross contributes several sessions); the date-blocked bootstrap resamples trading days and is the honest interval."
+  }
+ },
+ "C_half_split_robustness": {
+  "label": "ticks-3/4 marginal MINUS ticks-0/2 admitted, episode unit",
+  "split_date": "2025-05-06",
+  "first_half": {
+   "n_a": 2538,
+   "n_b": 11121,
+   "delta_median_dm_pp": 0.13,
+   "delta_loser_pp": 1.3
+  },
+  "second_half": {
+   "n_a": 2146,
+   "n_b": 11490,
+   "delta_median_dm_pp": -0.1,
+   "delta_loser_pp": 0.5
+  }
+ },
+ "D_paired_within_cross": {
+  "question": "does WAITING pay on the same cross (mechanism), or are the crosses that survive to tick 3-4 simply better crosses (selection)? The marginal-admission contrast above is the DECISION; this block is the mechanism.",
+  "pairs": {
+   "tick0_vs_tick3": {
+    "n_crosses": 2645,
+    "median_tick0_pp": -0.03,
+    "median_tick3_pp": -0.74,
+    "median_paired_delta_pp": -0.53,
+    "pct_late_better": 46.5,
+    "thin": false
+   },
+   "tick0_vs_tick4": {
+    "n_crosses": 1688,
+    "median_tick0_pp": -0.22,
+    "median_tick4_pp": -0.68,
+    "median_paired_delta_pp": -0.38,
+    "pct_late_better": 47.5,
+    "thin": false
+   }
+  }
+ },
+ "E_veto_leg_mix_at_excluded_ticks": {
+  "question": "of the sessions whose 3D-master cross clock reads 0-6 ticks, how many are blocked, and by WHICH leg? This is what the prereg's tripwire has to watch: the leg that carries the exclusion is the leg that would carry the risk if the freshness window widened.",
+  "scope": "T1-clock sessions only. On the T1 path the tick window and the not-topped veto are the ONLY gates (tier_stream line 451: t1_fresh = a cross exists AND its age <= ft), so a blocked T1-clock session is by construction a veto story \u2014 which is exactly the tripwire's subject.",
+  "by_tick": {
+   "0": {
+    "stoch_bear": 2477,
+    "_total": 3206,
+    "stoch_ob": 729
+   },
+   "1": {
+    "stoch_bear": 2136,
+    "stoch_ob": 5767,
+    "_total": 9672,
+    "macd_bear": 1769
+   },
+   "2": {
+    "stoch_ob": 13204,
+    "_total": 19093,
+    "macd_bear": 795,
+    "stoch_bear": 5094
+   },
+   "3": {
+    "stoch_ob": 13595,
+    "_total": 22996,
+    "stoch_bear": 9287,
+    "macd_bear": 114
+   },
+   "4": {
+    "stoch_ob": 13706,
+    "_total": 24104,
+    "stoch_bear": 9771,
+    "macd_bear": 627
+   },
+   "5": {
+    "stoch_ob": 12817,
+    "_total": 23151,
+    "stoch_bear": 8822,
+    "macd_bear": 1512
+   },
+   "6": {
+    "stoch_ob": 11667,
+    "_total": 22552,
+    "stoch_bear": 8766,
+    "macd_bear": 2119
+   }
+  },
+  "attribution": "first failing leg in the engine's own evaluation order (the not-topped veto is checked before any tier); `_total` = all blocked sessions at that clock reading"
+ },
+ "H_volume_what_yes_buys": {
+  "admitted_ticks_0_2": {
+   "episode_tick_rows": 22611,
+   "distinct_crosses": 9600,
+   "per_session_mean": 37.44
+  },
+  "added_ticks_3_4": {
+   "episode_tick_rows": 4684,
+   "distinct_crosses": 3138,
+   "per_session_mean": 7.75
+  },
+  "added_ticks_5_6": {
+   "episode_tick_rows": 2353,
+   "distinct_crosses": 1639,
+   "per_session_mean": 3.9
+  },
+  "board_size_effect_all_sessions": {
+   "eligible_now_per_session": 107.9,
+   "added_per_session_ticks_3_4": 17.8,
+   "pct_widening": 16.5
+  },
+  "retier_only": {
+   "ext_relabel_rows": 83,
+   "note": "sessions already on the board via a projection tier whose T1/T2 clock reads 3-4: the extension would not ADD them, it would re-tier them (T3 weight 0.6 -> T1 0.9) and move them up the ordering \u2014 a real secondary effect"
+  }
+ },
+ "F_sector_concentration": {
+  "ticks_3_4_pct": {
+   "Financials": 19.8,
+   "Industrials": 16.0,
+   "Consumer Discretionary": 15.3,
+   "Information Technology": 11.8,
+   "Health Care": 9.6,
+   "Real Estate": 8.2,
+   "Consumer Staples": 4.6,
+   "Materials": 4.5
+  },
+  "ticks_0_2_pct": {
+   "Financials": 19.9,
+   "Industrials": 16.7,
+   "Consumer Discretionary": 14.5,
+   "Information Technology": 11.1,
+   "Health Care": 10.3,
+   "Real Estate": 7.8,
+   "Materials": 5.0,
+   "Consumer Staples": 4.5
+  },
+  "top_sector_share_pct": 19.8,
+  "verdict": "no single sector dominates the ticks-3/4 cohort"
+ },
+ "G_board_selection_delta": {
+  "window": [
+   "2026-06-16",
+   "2026-07-16"
+  ],
+  "synthetic_same_window": [
+   {
+    "n": 233,
+    "names": 233,
+    "dates": 8,
+    "loser_rate_pct": 33.5,
+    "median_excess_pp": -0.73,
+    "median_excess_dm_pp": 0.92,
+    "median_excess_vs_univ_pp": 0.07,
+    "per_name_median_pp": -0.73,
+    "mean_excess_pp": -0.24,
+    "win_pct": 46.4,
+    "median_excess_pp_h21": 0.53,
+    "loser_rate_pct_h21": 34.8,
+    "ticks": 0
+   },
+   {
+    "n": 244,
+    "names": 242,
+    "dates": 8,
+    "loser_rate_pct": 28.3,
+    "median_excess_pp": 1.53,
+    "median_excess_dm_pp": 0.51,
+    "median_excess_vs_univ_pp": 0.13,
+    "per_name_median_pp": 1.48,
+    "mean_excess_pp": 0.63,
+    "win_pct": 59.0,
+    "median_excess_pp_h21": 2.85,
+    "loser_rate_pct_h21": 30.3,
+    "ticks": 1
+   },
+   {
+    "n": 180,
+    "names": 180,
+    "dates": 8,
+    "loser_rate_pct": 27.8,
+    "median_excess_pp": 0.49,
+    "median_excess_dm_pp": 0.23,
+    "median_excess_vs_univ_pp": -0.3,
+    "per_name_median_pp": 0.49,
+    "mean_excess_pp": 0.7,
+    "win_pct": 56.1,
+    "median_excess_pp_h21": 2.62,
+    "loser_rate_pct_h21": 23.9,
+    "ticks": 2
+   }
+  ],
+  "sb_measured_admissions": [
+   {
+    "ticks": 0,
+    "n": 53,
+    "loser_rate_pct": 20.8,
+    "median_excess_pp": 1.54,
+    "median_excess_dm_pp": 0.1
+   },
+   {
+    "ticks": 1,
+    "n": 30,
+    "loser_rate_pct": 10.0,
+    "median_excess_pp": 2.77,
+    "median_excess_dm_pp": 0.92
+   },
+   {
+    "ticks": 2,
+    "n": 26,
+    "loser_rate_pct": 11.5,
+    "median_excess_pp": 5.06,
+    "median_excess_dm_pp": 3.04
+   }
+  ],
+  "per_tick_delta": [
+   {
+    "ticks": 0,
+    "n_synthetic": 233,
+    "n_sb_admissions": 53,
+    "loser_rate_synthetic_pct": 33.5,
+    "loser_rate_sb_pct": 20.8,
+    "loser_delta_pp": 12.7,
+    "median_dm_synthetic_pp": 0.92,
+    "median_dm_sb_pp": 0.1
+   },
+   {
+    "ticks": 1,
+    "n_synthetic": 244,
+    "n_sb_admissions": 30,
+    "loser_rate_synthetic_pct": 28.3,
+    "loser_rate_sb_pct": 10.0,
+    "loser_delta_pp": 18.3,
+    "median_dm_synthetic_pp": 0.51,
+    "median_dm_sb_pp": 0.92
+   },
+   {
+    "ticks": 2,
+    "n_synthetic": 180,
+    "n_sb_admissions": 26,
+    "loser_rate_synthetic_pct": 27.8,
+    "loser_rate_sb_pct": 11.5,
+    "loser_delta_pp": 16.3,
+    "median_dm_synthetic_pp": 0.23,
+    "median_dm_sb_pp": 3.04
+   }
+  ],
+  "reading": "this delta IS the board-selection effect \u2014 S-B measured names the board ACTUALLY admitted (ranked, capped, human-shaped), this panel measures every name that reached the state. It also bundles a fill-convention difference: S-B reads tier ON the ledger's fill bar and grades from that same bar, this instrument reads state on day d and fills at d+1. Both sources of divergence are named; neither is netted out."
+ },
+ "caveats": [
+  "FROZEN REPLAY, PINNED AT 2026-07-31. Every price series is truncated there before anything is computed. Re-running against a later snapshot is a DIFFERENT measurement and needs its own pin (the CN #4522 precedent).",
+  "SYNTHETIC ELIGIBILITY, NOT ADMISSIONS. Cohorts are per-name PIT states from the production stream, not board rows: no ranking, no cap, no lane, no operator. The board-selection delta in block G measures how far that is from what S-B saw.",
+  "SURVIVORSHIP IS THE COHORT, NOT A BUG. A ticks-3 state is a cross that survived three ticks un-topped. The conditioning is ex-ante observable on the firing evening (no lookahead), and block D separates 'waiting pays' from 'survivors were better'.",
+  "ERA. The panel spans the pre- AND post-cascade-gate eras; S-B's frame is the pre-gate month only. Tier composition and admission behaviour differ across that boundary \u2014 the block-G comparison is era-matched, the rest is not.",
+  "T3/T4 EXCLUDED FROM THE TICK COMPARISON. Their `ticks` is 0 by construction (a projection has no cross to age), so they are labelled `projection` and counted separately rather than pooled into the tick-0 cell.",
+  "OVERLAP. Sessions inside one tick bucket are the same cross on consecutive days. The episode-tick unit is primary for that reason; the all-sessions table is supporting and its n is NOT an independent sample size.",
+  "NO AUTHORITY. Exploratory; confers nothing, changes no gate, and is not a forward read. FRESH_TICKS is untouched by this PR."
+ ]
+}
