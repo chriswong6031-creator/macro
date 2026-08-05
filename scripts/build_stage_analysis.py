@@ -118,8 +118,20 @@ def main(argv: list[str] | None = None) -> int:
     # unreadable ticker frame must not take the stage build down with it.
     try:
         from scripts.heal_stage_forward_ledger import heal as _heal_stage_ledger
-        _hs = _heal_stage_ledger(root)
-        if _hs.get("n_restamped") or _hs.get("n_quarantined_now"):
+        # heal() takes the REPO root (it resolves root/"data"/...), while this
+        # script's `root` is the DATA root and defaults to None. Reuse the
+        # engine's own resolver rather than hand-rolling the parent walk — it
+        # honours MACRO_DATA_ROOT and the None default identically. Passing
+        # `root` straight through would have made the heal permanently dark:
+        # None raises TypeError, and an explicit data root resolves to
+        # <data>/data/stage_analysis, which never exists.
+        _hs = _heal_stage_ledger(stage_analysis._repo_root(root))
+        if _hs.get("error"):
+            # Never silent: a heal that cannot find its ledger is a defect, not
+            # a no-op, and this is the only place it would ever be visible.
+            print(f"::warning title=stage-ledger-heal-unreachable::"
+                  f"forward-ledger heal did not run ({_hs['error']})", flush=True)
+        elif _hs.get("n_restamped") or _hs.get("n_quarantined_now"):
             log.info("forward ledger heal: restamped %s, quarantined %s",
                      _hs.get("n_restamped"), _hs.get("n_quarantined_now"))
     except SystemExit as e:  # fail-closed abort inside the heal — never fatal here

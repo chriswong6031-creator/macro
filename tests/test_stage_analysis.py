@@ -1138,3 +1138,79 @@ def test_snapshot_unreadable_existing_file_refuses_overwrite(tmp_path, capsys):
     out = capsys.readouterr().out
     warn_lines = [l for l in out.splitlines() if "refusing to overwrite" in l]
     assert warn_lines and warn_lines[0].startswith("::warning")
+
+
+# ---------------------------------------------------------------------------
+# Nightly heal wiring (forward-ledger calendar-asof audit 2026-08-05)
+# ---------------------------------------------------------------------------
+class TestNightlyHealWiring:
+    """The nightly lane is the ONLY lane allowed to repair this ledger.
+
+    `.gitignore:574` scopes a house law to this file — "nightly is the SOLE
+    advancer ... never commit from a worktree" — so the heal is invoked from
+    scripts/build_stage_analysis.py rather than run in the PR that wrote it.
+    That makes a mis-rooted call there far worse than a no-op: the repair
+    simply never happens, and the only symptom is silence. `heal()` takes the
+    REPO root while this CLI's `--root` is the DATA root, so the two differ by
+    exactly one level and a straight pass-through resolves to
+    <data>/data/stage_analysis — a path that never exists.
+    """
+
+    def _fixture_contract(self, tmp_path: Path) -> Path:
+        fx = tmp_path / "contract.json"
+        fx.write_text(json.dumps({
+            "schema": "stage_context.v1",
+            "asof": "2026-08-03",
+            "data_session": "2026-07-31",
+            "counts": {},
+            "top_stage2": [],
+        }))
+        return fx
+
+    def test_builder_hands_the_heal_a_root_it_can_resolve(self, tmp_path, monkeypatch):
+        """The root the builder passes must locate the real ledger path."""
+        import scripts.build_stage_analysis as bsa
+        import scripts.heal_stage_forward_ledger as heal_mod
+
+        ledger = tmp_path / "data" / "stage_analysis" / "forward_ledger.jsonl"
+        ledger.parent.mkdir(parents=True)
+        ledger.write_text("")
+
+        seen: dict = {}
+
+        def _spy(root, *a, **kw):
+            seen["root"] = Path(root)
+            return {"n_restamped": 0, "n_quarantined_now": 0}
+
+        monkeypatch.setattr(heal_mod, "heal", _spy)
+        rc = bsa.main(["--fixture", str(self._fixture_contract(tmp_path)),
+                       "--root", str(tmp_path / "data")])
+
+        assert rc == 0
+        assert "root" in seen, "the nightly builder never invoked the heal at all"
+        # The REPO root, not the data root — and it must actually find the ledger.
+        assert seen["root"] == tmp_path
+        assert (seen["root"] / "data" / "stage_analysis"
+                / "forward_ledger.jsonl").exists()
+
+    def test_unreachable_ledger_is_announced_not_swallowed(self, tmp_path, monkeypatch,
+                                                           capsys):
+        """A heal that cannot find its ledger is a defect, and must say so.
+
+        Before this guard the caller logged only on a non-zero restamp/quarantine
+        count, so the {"error": ...} return printed nothing at all.
+        """
+        import scripts.build_stage_analysis as bsa
+        import scripts.heal_stage_forward_ledger as heal_mod
+
+        monkeypatch.setattr(heal_mod, "heal",
+                            lambda root, *a, **kw: {"error": "no such ledger"})
+        rc = bsa.main(["--fixture", str(self._fixture_contract(tmp_path)),
+                       "--root", str(tmp_path / "data")])
+
+        assert rc == 0  # fail-open: never fatal to the nightly
+        out = capsys.readouterr().out
+        lines = [l for l in out.splitlines() if "heal did not run" in l]
+        assert lines, "an unreachable heal printed nothing — the guard is dark"
+        # GitHub only parses a workflow command when "::" STARTS the line.
+        assert lines[0].startswith("::warning")
