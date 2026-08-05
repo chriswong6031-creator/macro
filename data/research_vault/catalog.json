@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T14:32:23.133850+00:00",
-  "count": 808,
+  "generated_at": "2026-08-05T14:47:24.268503+00:00",
+  "count": 809,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -72,6 +72,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-f8hlqmuhhsq-6761f4",
+      "title": "Europe Capital Markets Retail platforms monthly metrics July 26",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T11:07:58Z",
+      "summary_points": [
+        "**Customer Base Contraction & Lending Imbalance**: Net customer additions negative across platforms (Avanza -17% y/y, FlatexDEGIRO -39% y/y, Nordnet -43% m/m) while lending balances surge (+24-31% y/y), signaling credit risk and product misalignment.",
+        "**Savings Capital Surge Amid Declining Customers**: Savings capital up +23% YoY (Avanza +62% y/y, Nordnet +24% y/y) despite falling net additions, indicating dangerous product mix shift toward savings and regulatory exposure (EU rules).",
+        "**FTK Segment Dominance**: FTK drives +11% YoY client growth, +23% savings capital, +8% cash deposits, and elevated July 2026 transaction activity (vs.",
+        "July 2025), signaling concentrated retail inflow strength.",
+        "**Flow Volatility in Critical Drivers**: Elevated volatility in FTK transactions and Net new money (SAVE) with widened 25th-75th percentile ranges (July 2026 vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
