@@ -35,6 +35,19 @@ from engine.capital_structure.source_identity import (
     ManifestIdentityError,
     manifest_id_for,
 )
+from engine.capital_structure.source_ledger_io import (
+    encode_source_ledger,
+    read_source_ledger,
+    source_ledger_path,
+)
+
+
+def _write_ledger(path, records):
+    """Write a source-manifest ledger fixture, bypassing the validating writer.
+
+    Fixtures deliberately include ledgers the identity law rejects.
+    """
+    path.write_bytes(encode_source_ledger(list(records)))
 
 
 INDEX = """\
@@ -360,7 +373,7 @@ def test_source_inspector_defers_suspect_complete_submission_and_extension_confl
 
 
 def test_only_clean_eligible_complete_submission_closes_retrieval_queue():
-    manifests = pd.DataFrame([
+    manifests = [
         {
             "filing": {
                 "accession": "clean",
@@ -391,7 +404,7 @@ def test_only_clean_eligible_complete_submission_closes_retrieval_queue():
             "document": {"document_role": "complete_submission"},
             "parser": {"eligibility": "eligible", "corruption_state": "clean"},
         },
-    ])
+    ]
 
     assert sec._eligible_complete_accessions(manifests) == {"clean"}
 
@@ -402,12 +415,12 @@ def test_legacy_complete_manifest_gets_one_bounded_provenance_backfill():
         "filing_date": "2026-08-01", "collection_scope": None,
         "_first_seen": "2026-08-01T11:00:00Z",
     }])
-    legacy = pd.DataFrame([{
+    legacy = [{
         "filing": {"accession": "legacy", "file_number": "333-123456"},
         "document": {"document_role": "complete_submission"},
         "parser": {"eligibility": "eligible", "corruption_state": "clean"},
-    }])
-    hardened = pd.concat([legacy, pd.DataFrame([{
+    }]
+    hardened = [*legacy, {
         "filing": {
             "accession": "legacy", "file_number": None,
             "file_number_provenance": {
@@ -417,7 +430,7 @@ def test_legacy_complete_manifest_gets_one_bounded_provenance_backfill():
         },
         "document": {"document_role": "complete_submission"},
         "parser": {"eligibility": "eligible", "corruption_state": "clean"},
-    }])], ignore_index=True)
+    }]
     now = datetime(2026, 8, 2, 13, 0, tzinfo=timezone.utc)
 
     first = select_retrieval_queue(
@@ -980,7 +993,7 @@ def test_adapter_materializes_discovery_coverage_verified_manifests_and_attempts
     root = tmp_path / "capital_structure"
     discovery = pd.read_parquet(root / "discovery.parquet")
     coverage = pd.read_parquet(root / "index_coverage.parquet")
-    manifests = pd.read_parquet(root / "source_manifest.parquet")
+    manifests = pd.DataFrame(read_source_ledger(source_ledger_path(root)))
     attempts = pd.read_parquet(root / "retrieval_attempts.parquet")
     queue_receipt = json.loads((root / "retrieval_queue_receipt.json").read_text())
     assert len(discovery) == 4
@@ -1008,7 +1021,7 @@ def test_adapter_materializes_discovery_coverage_verified_manifests_and_attempts
     assert int(heartbeat.iloc[0]["retrieved"]) == 4
 
     rerun = adapter.fetch()["sec_evidence__ingest"]
-    assert len(pd.read_parquet(root / "source_manifest.parquet")) == len(manifests)
+    assert len(pd.DataFrame(read_source_ledger(source_ledger_path(root)))) == len(manifests)
     assert len(pd.read_parquet(root / "retrieval_attempts.parquet")) == len(attempts)
     assert int(rerun.iloc[0]["retrieved"]) == 0
 
@@ -1083,13 +1096,13 @@ def test_existing_manifest_identity_mismatch_aborts_before_append(
         max_filings_per_run=1,
     )
     adapter.fetch()
-    path = tmp_path / "capital_structure" / "source_manifest.parquet"
-    manifests = pd.read_parquet(path)
-    manifests.at[0, "rights"] = {
-        **manifests.at[0, "rights"],
+    path = source_ledger_path(tmp_path / "capital_structure")
+    records = read_source_ledger(path)
+    records[0]["rights"] = {
+        **records[0]["rights"],
         "license_note": "tampered after identity assignment",
     }
-    manifests.to_parquet(path, index=False)
+    _write_ledger(path, records)
 
     with pytest.raises(ManifestIdentityError, match="source ledger row 0"):
         adapter.fetch()
@@ -1123,7 +1136,7 @@ def test_manifest_clock_is_stamped_after_bundle_readback_completion(
 
     root = tmp_path / "capital_structure"
     attempts = pd.read_parquet(root / "retrieval_attempts.parquet")
-    manifests = pd.read_parquet(root / "source_manifest.parquet")
+    manifests = pd.DataFrame(read_source_ledger(source_ledger_path(root)))
     assert attempts.iloc[0]["attempted_at"] == "2026-08-01T13:01:00+00:00"
     assert {
         retrieval["retrieved_at"] for retrieval in manifests["retrieval"]
@@ -1153,7 +1166,7 @@ def test_storage_failure_records_retryable_attempt_and_emits_no_manifest(tmp_pat
     adapter.fetch()
 
     root = tmp_path / "capital_structure"
-    manifests = pd.read_parquet(root / "source_manifest.parquet")
+    manifests = pd.DataFrame(read_source_ledger(source_ledger_path(root)))
     attempts = pd.read_parquet(root / "retrieval_attempts.parquet")
     assert manifests.empty
     assert attempts.iloc[0]["state"] == "storage_deferred"
@@ -1199,7 +1212,7 @@ def test_manifest_first_seen_clock_starts_at_successful_evidence_retention(
 
     root = tmp_path / "capital_structure"
     discovery = pd.read_parquet(root / "discovery.parquet")
-    manifests = pd.read_parquet(root / "source_manifest.parquet")
+    manifests = pd.DataFrame(read_source_ledger(source_ledger_path(root)))
     attempts = pd.read_parquet(root / "retrieval_attempts.parquet")
     accession = manifests.iloc[0]["filing"]["accession"]
     discovery_time = discovery.loc[
@@ -1259,7 +1272,7 @@ def test_suspect_bundle_retry_advances_closed_version_and_compiles(
     second_heartbeat = adapter.fetch()["sec_evidence__ingest"]
 
     root = tmp_path / "capital_structure"
-    manifests = pd.read_parquet(root / "source_manifest.parquet")
+    manifests = pd.DataFrame(read_source_ledger(source_ledger_path(root)))
     attempts = pd.read_parquet(root / "retrieval_attempts.parquet")
     records = dataframe_records(manifests)
     version_one = [

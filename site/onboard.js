@@ -350,7 +350,11 @@
       { l: ["Special situations", "特殊机会"],             v: [1, 1, 1] },
       { l: ["Bitcoin · Commodities · FX", "比特币 · 大宗 · 外汇"], v: [1, 1, 1] },
       { l: ["Insider & Congress desks", "内部人 & 国会台席"], v: [0, 1, 1] },
-      { l: ["13F institutional flows", "13F 机构资金流"],  v: [0, 1, 1] }
+      { l: ["13F institutional flows", "13F 机构资金流"],  v: [0, 1, 1] },
+      { l: ["Earnings Intelligence", "财报情报"],          v: [0, 1, 1] },
+      { l: ["Filing Forensics", "财报取证"],               v: [0, 0, 1] },
+      { l: ["Biopharma pipeline intelligence", "生物医药管线情报"], v: [0, 0, 1] },
+      { l: ["Government procurement intelligence", "政府采购情报"], v: [0, 0, 1] }
     ] },
     { g: ["SIGNALS", "信号"], rows: [
       { l: ["Daily buy signals", "每日买入信号"], v: [["3 / list", "每列表 3 条"], ["Full book", "完整名册"], ["Full book", "完整名册"]] },
@@ -359,9 +363,12 @@
     ] },
     { g: ["TERMINAL", "TERMINAL"], rows: [
       { l: ["Live charting", "实时图表"],                  v: [1, 1, 1] },
-      { l: ["Advanced indicator modules", "高级指标模块"], v: [["1 / 31", "1 / 31"], ["15 / 31", "15 / 31"], ["All 31", "全部 31 个"]] },
-      { l: ["Intraday options flow", "日内期权流"],        v: [0, 1, 1] },
-      { l: ["Earnings call transcripts", "财报电话会记录"], v: [0, 1, 1] }
+      // Fractions out, ticks in (2026-08-04, with the landing matrix): "1 / 31 · 15 / 31
+      // · All 31" made the reader hold three ratios to learn one thing. `some` is the
+      // partial tick — grey where a full one is green, same distinction the landing
+      // draws with .mx .ok.some. The ladder itself lives in the landing row's ⓘ.
+      { l: ["Advanced indicator modules", "高级指标模块"], v: [0, "some", 1] },
+      { l: ["Intraday options flow", "日内期权流"],        v: [0, 1, 1] }
     ] },
     { g: ["MASTERMIND AI", "MASTERMIND AI"], rows: [
       { l: ["Flash AI", "Flash AI"], v: [["5 / wk", "5 次/周"], ["300 / mo", "300 次/月"], ["Unlimited", "无限量"]] },
@@ -1434,6 +1441,9 @@
   function compareCell(v, col) {
     var cell = h("div", "obm-cmp-cell" + (S.plan === col ? " obm-cmp-live" : ""), { "data-col": col });
     if (v === 1) { cell.innerHTML = svgCheck(""); cell.setAttribute("aria-label", "included"); }
+    // "some" — the same tick, drawn quiet: the tier gets part of what the row names.
+    // Colour alone cannot carry that, so the aria-label says which kind of tick it is.
+    else if (v === "some") { cell.innerHTML = svgCheck("obm-cmp-part"); cell.setAttribute("aria-label", "partly included"); }
     else if (v === 0) { cell.classList.add("obm-cmp-no"); cell.setAttribute("aria-label", "not included"); }
     else if (v === "soon") { cell.innerHTML = '<span class="obm-cmp-soon" data-k="cmpSoon">' + tx("cmpSoon") + '</span>'; }
     else { cell.setAttribute("data-obm-zh", v[1]); cell.textContent = lang() === "zh" ? v[1] : v[0]; }

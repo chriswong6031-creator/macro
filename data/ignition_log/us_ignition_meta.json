@@ -1,0 +1,26 @@
+{
+  "log": "us_ignition.jsonl",
+  "keying": "one row per underlying US trading session. Runtime rows stamp `session` from the SPY tape (ignition_radar data_session); rows healed 2026-08-05 carry session_inferred=true (scripts/heal_us_ignition_log.py, census PR #4564 charter §4). Idempotency: first-writer-wins per session.",
+  "known_gaps": [
+    {
+      "missing_sessions": [
+        "2026-07-14"
+      ],
+      "cause": "Tuesday 07-14's evening ledger-advancing daily (created 2026-07-15T04:44Z) was cancelled; the 05:20Z retry concluded success but left no ignition row — the radar/audit leg is additive-never-fatal, so a degraded in-run step leaves no trace. No engine ledger commit exists between 2026-07-14T02:51-07:00 and 2026-07-16T00:54-07:00; the session's tape was never captured."
+    },
+    {
+      "missing_sessions": [
+        "2026-07-22",
+        "2026-07-23"
+      ],
+      "cause": "The ledger-advancing daily runs created 2026-07-22T23:29Z and 2026-07-23T23:27Z were cancelled and 2026-07-24T23:31Z failed — the Mag-7 incident-response / Ignition Radar suspension window (#3359 merged 2026-07-23T20:50-07:00). The engine ledger leg never ran on those nights; off-lane engine-render re-renders during the window correctly self-gated (read-only). Session 2026-07-24's tape was captured one day late by the Saturday 07-25 run (row asof=2026-07-25, session=2026-07-24)."
+    }
+  ],
+  "quarantine": {
+    "file": "us_ignition_quarantine.jsonl",
+    "n_rows": 6,
+    "reason": "duplicate re-log of an already-recorded US session (pre-session-keying weekend/off-session nightly re-run; census PR #4564 charter §4)",
+    "healed_by": "scripts/heal_us_ignition_log.py",
+    "last_heal": "2026-08-05T05:31:13+00:00"
+  }
+}

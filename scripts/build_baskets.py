@@ -131,6 +131,51 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("theme rotation desk failed: %s", e)
 
+    # 🔵 BOTTOMING WATCH (engine.us_act_now, W-A) — the US port of China's
+    # bottoming lane + FT-R1 dual-read law. The nightly cycle engine already
+    # writes data/sector_cycles/forward_log.parquet; before this, nothing carried
+    # a Trough+rising row to a decision surface (gold_miners sat on reduce/avoid
+    # while the log printed Trough pos=2.0 osc_slope=+1.3). Display tier, zero
+    # scored authority. EXTENDS theme_intel.act_now with two new keys plus its
+    # authority block; the buy / add_on_pullback / reduce lanes are read ONLY
+    # (for the dual-read id set) and are never mutated — G0.3 keeps their
+    # membership byte-identical. Additive, never fatal.
+    try:
+        _ti_ba = data.get("theme_intel")
+        if _ti_ba and isinstance(_ti_ba.get("act_now"), dict):
+            from engine.us_act_now import assemble_bottoming_watch, load_cycle_rows
+            _an_ba = _ti_ba["act_now"]
+            # Bilingual law (G0.5): the forward log is English-only. Basket zh names
+            # come from the theme desk; sector-ETF zh names from the sector board.
+            _zh_ba: dict = {}
+            for _t_ba in (_ti_ba.get("themes") or []):
+                if _t_ba.get("id") and _t_ba.get("name_zh"):
+                    _zh_ba[_t_ba["id"]] = _t_ba["name_zh"]
+            try:
+                _sc_ba = site / "sectordata" / "sector_central.json"
+                if _sc_ba.exists():
+                    with open(_sc_ba, encoding="utf-8") as _f_ba:
+                        for _s_ba in (json.load(_f_ba).get("sectors") or []):
+                            if _s_ba.get("id") and _s_ba.get("name_zh"):
+                                _zh_ba[_s_ba["id"]] = _s_ba["name_zh"]
+            except Exception as _e_ba:  # noqa: BLE001 — names only, never fatal
+                log.warning("bottoming watch: sector zh names unavailable: %s", _e_ba)
+            _bw = assemble_bottoming_watch(
+                load_cycle_rows(),
+                reduce_ids=[x.get("id") for x in (_an_ba.get("reduce") or []) if x.get("id")],
+                names_zh=_zh_ba,
+            )
+            _an_ba["bottoming_watch"] = _bw["bottoming_watch"]
+            _an_ba["dual_read_ids"] = _bw["dual_read_ids"]
+            _an_ba["bottoming_authority"] = _bw["authority"]
+            log.info(
+                "bottoming watch: %d row(s), %d dual-read id(s)%s",
+                len(_bw["bottoming_watch"]), len(_bw["dual_read_ids"]),
+                (" — " + "; ".join(_bw["notes"])) if _bw["notes"] else "",
+            )
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("bottoming watch lane failed: %s", e)
+
     # 🔥 FORMING NARRATIVES (engine.narrative_emergence) — fuse the theme-discovery radar
     # (coherent, TIGHTENING name-groups not yet in a basket) with the GDELT attention
     # backdrop + the AI desk's emerging_watch into a ranked, surfaced read with clean-entry

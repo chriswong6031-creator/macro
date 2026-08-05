@@ -2823,3 +2823,7 @@
 {"date": "2026-07-31", "ticker": "BEKE", "score": 47.0, "percentile": 47.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-07-31", "ticker": "HEI", "score": 34.0, "percentile": 34.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-07-31", "ticker": "OI", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-31", "ticker": "BHP", "score": 8.0, "percentile": 8.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-31", "ticker": "GDS", "score": 77.0, "percentile": 77.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-31", "ticker": "WRLD", "score": 37.0, "percentile": 37.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-31", "ticker": "WU", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
