@@ -1163,6 +1163,37 @@ wire_routing:
     # (both of its first booked items were BEA prints), so moving it would zero
     # the flagship's wire on the same night we are trying to raise volume.
     macro_print: flagship
+    # macro_print.minor — A REFINEMENT OF THE ROW ABOVE, not a new class. The
+    # item is still event_class=macro_print everywhere else (its label, its
+    # self-evident citation status, the nexus-gate exemption and the revision
+    # penalty are all keyed on that string and all keep working); this row only
+    # answers "which desk owns it".
+    #
+    # WHY IT EXISTS (operator, 2026-08-05, reading the flagship timeline): "These
+    # posts are so boring, we get absolutely no engagement on them... These arent
+    # the ones people really care about." Measured on the seven breaking posts
+    # the flagship shipped after the 2026-08-03 clustering fix, NOT ONE was a
+    # top-tier US release: South Korea core inflation, a US payrolls lookahead, a
+    # UK trucking-union pay settlement, JOLTS, the Canadian trade balance, an
+    # Asia-Pacific FX wrap and the US trade balance.
+    #
+    # The cause is that `macro_print` is one class covering two products. The
+    # taxonomy in breaking_relevance is a FLAT keyword list, so "SWITZERLAND
+    # (JUL) CPI CORE YOY" and "US CPI rises 0.3% m/m" both score base 55.0 —
+    # byte-identical — and the row above sent both to the brand account.
+    #
+    # `breaking_relevance.macro_print_tier` supplies the missing dimension: a
+    # print is minor unless it is BOTH a tape-moving release (CPI, PCE, payrolls,
+    # FOMC, GDP, retail sales, ISM, PPI, jobless claims — the ratified list) AND
+    # a US one. Both halves bind: tier alone leaves GERMANY RETAIL SALES on the
+    # flagship, economy alone leaves JOLTS and the US trade balance there.
+    #
+    # RELAYED, NOT DELETED. The minor print goes to the desk whose charter job is
+    # stance-free relay, so the record stays complete and only the brand account
+    # gets quieter. Point this row at `flagship` to undo the split entirely; the
+    # bare `macro_print` row above is the fallback, so DELETING this row restores
+    # the pre-2026-08-05 behaviour exactly.
+    macro_print.minor: mastermind_news
     # policy — Fed/White House/tariffs. Two reasons it stays. (1) The register is
     # ATTRIBUTIVE (wire_voice's TRUMP/White-House opener pools), and mis-attribution
     # here is the exact defect that shipped a fabricated "White House, minutes ago:"

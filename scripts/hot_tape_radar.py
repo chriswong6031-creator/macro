@@ -78,9 +78,22 @@ HEATMAP_REL = "site/marketdata/sp500_heatmap.json"
 
 #: Daily-bar stores searched before hydrating from R2. This lane is the ONLY
 #: caller that opts into data/massive_stock_day; chart_render's default order
-#: stops at the two curated trees (see chart_render.HOT_TAPE_PRICE_SUBDIRS —
+#: stops at the curated trees (see chart_render.HOT_TAPE_PRICE_SUBDIRS —
 #: a test pins these two tuples equal so they cannot drift).
-PRICE_SUBDIRS = ("data/baskets/ohlcv", "data/stocks", "data/massive_stock_day")
+#:
+#: DUPLICATED ON PURPOSE, not derivable: this module's import discipline (see the
+#: module docstring) keeps chart_render out of the module body so the thin radar
+#: host can import it with pytest+pyyaml alone. The equality test in
+#: tests/test_marketing_hot_tape_radar.py IS the coupling — edit both together.
+#: The five regional trees arrived 2026-08-04 with the Mastermind regional-access
+#: fix; they are inert for this lane (every name in them is exchange-qualified and
+#: a US intraday tape never emits one) and massive_stock_day still resolves for a
+#: bare US ticker exactly as before, because no regional file can match one.
+PRICE_SUBDIRS = (
+    "data/baskets/ohlcv", "data/stocks",
+    "data/china_stocks", "data/hk_stocks", "data/china", "data/hk", "data/canada",
+    "data/massive_stock_day",
+)
 #: Where a hydrated parquet lands (gitignored — runner-local cache, never committed).
 HYDRATE_SUBDIR = "data/massive_stock_day"
 #: Same literal media_publish._public_base() falls back to.

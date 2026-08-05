@@ -421,6 +421,31 @@ def _reco_flipped(
     return None
 
 
+def _spy_last_bar(data_root: Path | None = None) -> str | None:
+    """ISO date of the newest bar in data/yahoo/SPY.parquet — the tape bound.
+
+    The maturity clock's data-plane default (forward-ledger audit 2026-08-05,
+    #4568 pattern): a window is only elapsed as far as the tape actually runs,
+    so the calendar must never advance it.  Mirrors the loading idiom of
+    ``_spy_trading_sessions_since``.  Returns None on any failure (absent
+    store, unreadable frame, empty index) so the caller can fall back.
+    """
+    root = data_root if data_root is not None else config.data_dir()
+    spy_p = root / "yahoo" / "SPY.parquet"
+    if not spy_p.exists():
+        return None
+    try:
+        spy_df = pd.read_parquet(spy_p, columns=["close"])
+        spy_df.index = pd.to_datetime(spy_df.index)
+        spy_df = spy_df.sort_index()
+        spy_df = spy_df[~spy_df.index.duplicated(keep="last")]
+        if spy_df.empty:
+            return None
+        return str(pd.Timestamp(spy_df.index[-1]).date())
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _spy_trading_sessions_since(
     event_date: str,
     as_of: str,
@@ -547,12 +572,24 @@ def nightly_run(
     Gated on COLLECT_LANE=nightly (FT-R5).  Exit-0-always: any error is
     captured, a ::warning:: is emitted, and the summary dict carries ok=False.
 
+    DEFAULTS COME FROM THE DATA PLANE (forward-ledger audit 2026-08-05, #4568
+    pattern) — the calendar never decides which session is being processed:
+
+    - detection keys off the turn-watch ledger's own max stamp, pairing
+      tonight's stamped rows with tonight's baskets.json.  That eliminates
+      cross-store skew and sweeps up a previously-missed night idempotently
+      (keep-first per (basket_id, event_date) already guards re-registration;
+      a ≤1-session reco vintage skew is immaterial against the SKIP_D=21
+      structural allocation-flip latency this family meters).  An empty ledger
+      means there is no session to detect for and detection is skipped.
+    - maturity keys off the SPY store's newest bar — a window is only elapsed
+      as far as the tape actually ran.
+
+    An explicit ``as_of`` from the caller still governs both, unchanged.
+
     Returns summary dict for the build log.
     """
     try:
-        if as_of is None:
-            as_of = date.today().isoformat()
-
         if not _ledger_advance_enabled():
             log.info(
                 "tape_disagreement: COLLECT_LANE gate not set — detection ran "
@@ -569,11 +606,28 @@ def nightly_run(
         turn_watch_rows = _load_turn_watch_ledger(data_root)
         baskets_map = _load_baskets_site_artifact(r)
 
-        # 1. Detect new disagreement events for today
-        new_events = detect_disagreement_events(
-            as_of=as_of,
-            turn_watch_rows=turn_watch_rows,
-            baskets_map=baskets_map,
+        # --- data-plane session defaults (see docstring) ---
+        if as_of is not None:
+            detect_asof: str | None = as_of
+            mature_asof: str = as_of
+        else:
+            _stamps = [
+                s for s in ((w.get("date") or w.get("as_of")) for w in turn_watch_rows) if s
+            ]
+            detect_asof = max(_stamps) if _stamps else None
+            # date.today() is the never-fatal last resort only: unreachable
+            # whenever the SPY store or the turn-watch ledger exists at all.
+            mature_asof = _spy_last_bar(data_root) or detect_asof or date.today().isoformat()
+
+        # 1. Detect new disagreement events for the ledger's latest stamped session
+        new_events = (
+            detect_disagreement_events(
+                as_of=detect_asof,
+                turn_watch_rows=turn_watch_rows,
+                baskets_map=baskets_map,
+            )
+            if detect_asof
+            else []
         )
 
         # 2. Load existing ledger
@@ -593,11 +647,11 @@ def nightly_run(
                 existing_keys.add(key)
                 appended += 1
 
-        # 3. Update outcomes for matured rows
+        # 3. Update outcomes for matured rows (maturity clock = the tape bound)
         updated_rows = update_outcomes(
             rows=existing_rows,
             baskets_map=baskets_map,
-            as_of=as_of,
+            as_of=mature_asof,
             data_root=data_root,
         )
 

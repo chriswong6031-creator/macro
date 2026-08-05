@@ -1,0 +1,70 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "AGNT-2026-06-30-watch",
+  "ticker": "AGNT",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "AGNT",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "AGNT",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_break",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Real Estate",
+    "excess_spy": -0.28992791660550554,
+    "excess_sector": -0.3083697776742538,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 3.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "AGNT was a watch-list name that was stopped out with a negative excess return, classified as an idiosyncratic break with clean process.",
+    "root_cause": "AGNT was a watch-list name that was stopped out with a negative excess return, classified as an idiosyncratic break with clean process.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "Watch-list entry failed due to a break, indicating the entry conditioning did not account for the risk.",
+    "engines_credit": "The watch-list signal was not sufficient to avoid a negative idiosyncratic event.",
+    "causal_chain": [],
+    "alternate_explanations": [
+      "Real Estate sector weakness may have contributed to the break.",
+      "A company-specific catalyst caused the failure."
+    ],
+    "missing_evidence": [
+      "Real Estate sector performance",
+      "AGNT-specific news or events",
+      "Watch-list entry criteria and risk flags"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "watch_break_prior_vol",
+        "feature": "Average prior 20-day volatility of watch-list names that break vs those that lift off",
+        "measurement": "Compare 20-day historical volatility pre-entry for broken vs successful watch names",
+        "expected_direction": "Broken names should have higher pre-entry volatility",
+        "falsifier": "If volatility is not higher, volatility is not a good conditioning variable for watch failures.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-05",
+  "asof": "2026-08-05",
+  "ts": "2026-08-05T09:23:44+00:00"
+}

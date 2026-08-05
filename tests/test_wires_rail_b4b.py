@@ -425,7 +425,19 @@ def test_client_strips_the_embedded_stamp_and_re_renders_the_gloss():
     body = NEWS_TPL.split("LIVE WIRE (B4b)")[-1]
     assert "var tail = ' · ' + tape;" in body
     assert "text.slice(-tail.length) === tail" in body
-    assert "'since this crossed'" in body and "'自该消息出现以来'" in body
+    # THE WINDOW MUST BE THE ONE THE NUMBER HAS (2026-08-05). Every leg of a
+    # stamp is the quote's changePct == (price / prevClose - 1), so the honest
+    # window is the prior close. The old gloss claimed the detected_at delta
+    # that tape_stamp.py documents itself as unable to compute, and the US macro
+    # reaction basket would have shipped that mislabel at volume.
+    #
+    # Asserted on the RENDER CALL, not on the file: the fix's own comment quotes
+    # the retired wording to explain it, so a bare "not in body" scan would be
+    # red on the explanation rather than on the defect.
+    sfx = [ln for ln in body.splitlines() if "nxw-tapesfx" in ln and "el(" in ln]
+    assert len(sfx) == 1, f"expected one tape-suffix render, got {len(sfx)}"
+    assert "'vs prior close'" in sfx[0] and "'较前收盘'" in sfx[0]
+    assert "since this crossed" not in sfx[0] and "自该消息出现以来" not in sfx[0]
     assert "indexOf(tape) < 0" not in body, "the dead guard must be gone"
 
 

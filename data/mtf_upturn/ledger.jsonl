@@ -497,3 +497,5 @@
 {"session": "2026-07-31", "symbol": "WDAY", "state": "UPTURN_WATCH", "k": 2, "legs": {"d_macd": true, "d3_confluence": false, "w_macd": "none", "w2_macd": true}, "baskets": ["ai_software", "non_ai_software", "us_sector_tech"], "hysteresis_sessions_held": 0}
 {"session": "2026-07-31", "symbol": "WMT", "state": "UPTURN_WATCH", "k": 2, "legs": {"d_macd": true, "d3_confluence": true, "w_macd": "none", "w2_macd": false}, "baskets": ["defensives", "retail", "us_sector_staples"], "hysteresis_sessions_held": 0}
 {"session": "2026-08-03", "symbol": "XLC", "state": "UPTURN_WATCH", "k": 2, "legs": {"d_macd": true, "d3_confluence": true, "w_macd": "none", "w2_macd": false}, "baskets": ["spdr_sector"], "hysteresis_sessions_held": 0}
+{"session": "2026-08-04", "symbol": "SPY", "state": "UPTURN_WATCH", "k": 2, "legs": {"d_macd": true, "d3_confluence": false, "w_macd": "cross", "w2_macd": false}, "baskets": ["index_etf"], "hysteresis_sessions_held": 0}
+{"session": "2026-08-04", "symbol": "XLC", "state": "UPTURN_WATCH", "k": 2, "legs": {"d_macd": true, "d3_confluence": true, "w_macd": "none", "w2_macd": false}, "baskets": ["spdr_sector"], "hysteresis_sessions_held": 0}
