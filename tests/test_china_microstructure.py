@@ -69,6 +69,11 @@ class TestBoardFromTicker:
     def test_chinext_301(self):
         assert _board_from_ticker("301020.SZ") == "chinext"
 
+    def test_chinext_302(self):
+        # 302xxx is ChiNext (±20%). Read as "main" it took a 10% band, which
+        # mis-sizes every limit test built on this helper.
+        assert _board_from_ticker("302132.SZ") == "chinext"
+
     def test_main_600(self):
         assert _board_from_ticker("600519.SS") == "main"
 
@@ -564,6 +569,7 @@ class TestBoardFromTickerParity:
         ("689009.SS", "star"),
         ("300750.SZ", "chinext"),
         ("301020.SZ", "chinext"),
+        ("302132.SZ", "chinext"),
         ("600519.SS", "main"),
         ("000001.SZ", "main"),
         ("601318.SS", "main"),

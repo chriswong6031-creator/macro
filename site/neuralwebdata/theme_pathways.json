@@ -5122,7 +5122,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-08-05T09:16:55Z",
+  "produced_at": "2026-08-05T16:19:59Z",
   "inputs_hash": "sha256:647c74ae5cb9883e889716caf20ff34dea971b3196d6f9624d86db60bbc09df2",
   "tier": "display"
 }

@@ -1,25 +1,19 @@
 {
-  "appended": 7,
+  "appended": 0,
   "asof": "2026-07-31",
   "candidates": {
     "R": 1,
     "T": 6
   },
   "deduped": {
-    "R": 0,
-    "T": 0
+    "R": 1,
+    "T": 6
   },
   "dry_run": false,
   "feature_source": {
     "enabled": true,
     "foresight": {
-      "asof": "2026-08-05",
-      "consulted": true,
-      "n_keys": 27,
-      "n_themes": 18,
-      "ok": true,
-      "reason": null,
-      "source": "site/basketdata/foresight_cascade.json"
+      "consulted": false
     },
     "keys": [
       "relay_count_3d",
@@ -31,43 +25,23 @@
       "foresight_covered"
     ],
     "relay": {
-      "consulted": true,
-      "high_lookback": 63,
-      "members_indexed": 128,
-      "n_covered": 81,
-      "reason": null,
-      "window_sessions": 21
+      "consulted": false
     },
     "turnover": {
-      "consulted": true,
-      "last_session": "2026-07-31",
-      "n_tickers": 1539,
-      "ok": true,
-      "reason": null,
-      "source": "data/{breadth,midcap_breadth,smallcap_breadth}/_volume_cache.parquet",
-      "window_max": 60
+      "consulted": false
     }
   },
   "flag_tickers": {
-    "R": [
-      "SFM"
-    ],
-    "T": [
-      "AMZN",
-      "APPF",
-      "CELH",
-      "WMT",
-      "BRBR",
-      "KR"
-    ]
+    "R": [],
+    "T": []
   },
-  "n_universe": 1493,
+  "n_universe": 1495,
   "overflow": {
     "R": 0,
     "T": 0
   },
-  "run_utc": "2026-08-05 08:46:45",
-  "runtime_s": 161.5,
+  "run_utc": "2026-08-05 15:49:32",
+  "runtime_s": 160.6,
   "schema": "prophet_doors/v1",
   "theme_source": {
     "age_days": -2,
