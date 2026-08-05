@@ -13,7 +13,7 @@ Integrity rules:
   :func:`engine.china_standout_track.session_status`;
 * every raw-eligible name must have an exact Prophet board lane;
 * raw-ineligible names are stamped ``not_raw_eligible``;
-* keep-first on ``(date, ticker, board_definition)`` prevents reruns from
+* keep-first on ``(stamp_date, ticker, board_definition)`` prevents reruns from
   rewriting the decision users could have seen; and
 * parquet appends use a schema union so definition additions do not discard
   old or out-of-band columns.
@@ -51,7 +51,7 @@ SCORE_COMPONENTS = (
 )
 
 _OBJECT_COLUMNS = (
-    "date",
+    "stamp_date",
     "ticker",
     "name",
     "sector",
@@ -356,7 +356,7 @@ def _row_record(
     coiled_value, coiled_star = _coiled_receipt(coiled)
 
     record: dict[str, Any] = {
-        "date": asof,
+        "stamp_date": asof,
         "ticker": ticker,
         "name": _text(row.get("name")),
         "sector": _text(row.get("sector")),
@@ -545,7 +545,7 @@ def append_candidates(
             combined = new
 
         combined = combined.drop_duplicates(
-            subset=["date", "ticker", "board_definition"],
+            subset=["stamp_date", "ticker", "board_definition"],
             keep="first",
         )
         combined = _coerce_nullable_objects(combined)

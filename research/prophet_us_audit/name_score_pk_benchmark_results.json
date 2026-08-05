@@ -1,0 +1,621 @@
+{
+ "instrument": "research/prophet_us_audit/name_score_pk_benchmark.py",
+ "roadmap": "research/PROPHET_US_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md \u00a74.4 action 2",
+ "tier": "research \u2014 exploratory; confers no authority and changes no gate",
+ "frame": {
+  "source": "data/us_board_ledger/retro_grades.parquet",
+  "filter": "lane == 'buy' and horizon == 10",
+  "rows": 403,
+  "names": 243,
+  "entry_dates": [
+   "2026-06-16",
+   "2026-07-16"
+  ],
+  "n_cohorts": 10,
+  "cohort_sizes": {
+   "2026-06-16": 89,
+   "2026-06-17": 88,
+   "2026-07-01": 34,
+   "2026-07-02": 39,
+   "2026-07-06": 24,
+   "2026-07-07": 19,
+   "2026-07-10": 21,
+   "2026-07-13": 31,
+   "2026-07-15": 30,
+   "2026-07-16": 28
+  },
+  "loser_def": "excess_spy < -3.0pp at H=10",
+  "base_loser_rate_pct": 25.8,
+  "base_median_excess_pp": 1.81,
+  "era_caveat": "the frame ENDS the day the cascade inclusion gate began (2026-07-16); era + n caveats bind every cell below"
+ },
+ "key_identity": {
+  "ledger": "data/name_score/us_calls.parquet",
+  "claim": "board conviction.score == name_score.potential_score (scripts/build_stock_library.py overwrites c['score'] with the potential score for backward compatibility)",
+  "join_on_entry_date": {
+   "n_joined": 195,
+   "exact_match_rate": 0.918,
+   "spearman": 0.9727,
+   "n_mismatch": 16,
+   "mismatch_by_date": {
+    "2026-07-01": 1,
+    "2026-07-06": 15
+   }
+  },
+  "join_on_as_of": {
+   "n_joined": 226,
+   "exact_match_rate": 0.177,
+   "spearman": 0.3602,
+   "n_mismatch": 186,
+   "mismatch_by_date": {
+    "2026-06-30": 24,
+    "2026-07-01": 37,
+    "2026-07-02": 22,
+    "2026-07-06": 14,
+    "2026-07-09": 20,
+    "2026-07-10": 29,
+    "2026-07-14": 17,
+    "2026-07-15": 23
+   }
+  },
+  "note": "the ledger overlaps only the tail of this frame (the name_score store begins after the frame's first cohorts), so the receipt is a partial verification of a full-frame identity \u2014 stated, not glossed"
+ },
+ "us_prophet_v1_partial": {
+  "tier_recompute": {
+   "basis": "engine.confluence_tiers.tier_stream (completed buckets, raw-3D-cross T1)",
+   "n_rows": 403,
+   "n_pit_tier": 109,
+   "n_stamped_tier_cascade": 34,
+   "pit_tier_hist": {
+    "nan": 294,
+    "T1": 109
+   }
+  },
+  "definition_date": "2026-08-02 \u2014 AFTER this frame's era; no row carries a stamped us_prophet_v1 score, so this ordering is an explicit counterfactual from PIT inputs, never a recovered stamp",
+  "attainable_points": 80.0,
+  "legs_scored": {
+   "signal": {
+    "weight": 30.0,
+    "source": "PIT tier_stream recompute",
+    "n_nonzero": 109
+   },
+   "entry": {
+    "weight": 25.0,
+    "source": "ledger entry_status (stamped)",
+    "n_nonzero": 218
+   },
+   "edge": {
+    "weight": 25.0,
+    "source": "us_board_rank.alpha_percentiles + edge_value over the cohort",
+    "n_nonzero": 299
+   }
+  },
+  "legs_dark": {
+   "runway": {
+    "weight": 10.0,
+    "reason": "ext_z is absent from the retro_grades schema \u2014 scored 0 for every row by the module's fail-closed rule; a dark leg cannot reorder anything, it only lowers the ceiling"
+   },
+   "quality": {
+    "weight": 10.0,
+    "reason": "coiled / washout_ctx are absent from the retro_grades schema \u2014 same treatment"
+   }
+  },
+  "n_rows": 403,
+  "n_scored": 403
+ },
+ "orderings": {
+  "score": "name_score potential_score (= board conviction.score)",
+  "v1_partial": "us_prophet_v1 partial reconstruction (signal+entry+edge)",
+  "alpha_pctile": "alpha percentile inside the cohort"
+ },
+ "precision_at_k": {
+  "score": {
+   "ordering": "score",
+   "hit_definition": "excess_spy beats that admission cohort's median excess_spy",
+   "loser_definition": "excess_spy < -3.0pp at H=10",
+   "min_cohort_rule": "a cohort contributes to P@k only with >= 2k rows",
+   "tie_handling": "expected hit share of a uniformly random draw from the tie group at the k-th boundary \u2014 never an alphabetical tie-break",
+   "perm_null": "each cohort's top-k drawn as a uniform random subset of that cohort (B=20000, seed=20260804); one-sided, disclosure only",
+   "by_k": {
+    "p_at_1": {
+     "value": 0.764,
+     "base_rate": 0.492,
+     "lift_vs_base": 0.273,
+     "n_cohorts": 10,
+     "n_cohorts_skipped_thin": 0,
+     "perm_p_one_sided": 0.0496,
+     "tie_depth_at_k": {
+      "mean": 2.1,
+      "max": 7
+     },
+     "per_cohort": {
+      "2026-06-16": 0.5,
+      "2026-06-17": 0.143,
+      "2026-07-01": 1.0,
+      "2026-07-02": 1.0,
+      "2026-07-06": 1.0,
+      "2026-07-07": 1.0,
+      "2026-07-10": 1.0,
+      "2026-07-13": 1.0,
+      "2026-07-15": 0.0,
+      "2026-07-16": 1.0
+     },
+     "pick_pool": {
+      "n": 21,
+      "names": 15,
+      "loser_rate_pct": 33.3,
+      "median_excess_pp": 1.23,
+      "median_excess_dm_pp": 0.36,
+      "per_name_median_pp": 1.23
+     }
+    },
+    "p_at_3": {
+     "value": 0.614,
+     "base_rate": 0.492,
+     "lift_vs_base": 0.123,
+     "n_cohorts": 10,
+     "n_cohorts_skipped_thin": 0,
+     "perm_p_one_sided": 0.0775,
+     "tie_depth_at_k": {
+      "mean": 2.4,
+      "max": 7
+     },
+     "per_cohort": {
+      "2026-06-16": 0.5,
+      "2026-06-17": 0.143,
+      "2026-07-01": 0.667,
+      "2026-07-02": 1.0,
+      "2026-07-06": 0.333,
+      "2026-07-07": 0.667,
+      "2026-07-10": 0.833,
+      "2026-07-13": 0.667,
+      "2026-07-15": 0.333,
+      "2026-07-16": 1.0
+     },
+     "pick_pool": {
+      "n": 38,
+      "names": 29,
+      "loser_rate_pct": 26.3,
+      "median_excess_pp": 1.97,
+      "median_excess_dm_pp": 1.28,
+      "per_name_median_pp": 1.48
+     }
+    },
+    "p_at_5": {
+     "value": 0.524,
+     "base_rate": 0.492,
+     "lift_vs_base": 0.033,
+     "n_cohorts": 10,
+     "n_cohorts_skipped_thin": 0,
+     "perm_p_one_sided": 0.2817,
+     "tie_depth_at_k": {
+      "mean": 2.3,
+      "max": 7
+     },
+     "per_cohort": {
+      "2026-06-16": 0.5,
+      "2026-06-17": 0.143,
+      "2026-07-01": 0.8,
+      "2026-07-02": 0.6,
+      "2026-07-06": 0.2,
+      "2026-07-07": 0.4,
+      "2026-07-10": 0.6,
+      "2026-07-13": 0.6,
+      "2026-07-15": 0.6,
+      "2026-07-16": 0.8
+     },
+     "pick_pool": {
+      "n": 54,
+      "names": 42,
+      "loser_rate_pct": 27.8,
+      "median_excess_pp": 1.71,
+      "median_excess_dm_pp": 0.28,
+      "per_name_median_pp": 1.35
+     }
+    },
+    "p_at_10": {
+     "value": 0.478,
+     "base_rate": 0.494,
+     "lift_vs_base": -0.016,
+     "n_cohorts": 9,
+     "n_cohorts_skipped_thin": 1,
+     "perm_p_one_sided": 0.6808,
+     "tie_depth_at_k": {
+      "mean": 2.56,
+      "max": 8
+     },
+     "per_cohort": {
+      "2026-06-16": 0.55,
+      "2026-06-17": 0.25,
+      "2026-07-01": 0.5,
+      "2026-07-02": 0.5,
+      "2026-07-06": 0.3,
+      "2026-07-10": 0.7,
+      "2026-07-13": 0.5,
+      "2026-07-15": 0.6,
+      "2026-07-16": 0.4
+     },
+     "pick_pool": {
+      "n": 98,
+      "names": 75,
+      "loser_rate_pct": 27.6,
+      "median_excess_pp": 1.82,
+      "median_excess_dm_pp": 0.2,
+      "per_name_median_pp": 1.54
+     }
+    }
+   },
+   "n_rows_ranked": 403,
+   "n_rows_unrankable": 0
+  },
+  "v1_partial": {
+   "ordering": "v1_partial",
+   "hit_definition": "excess_spy beats that admission cohort's median excess_spy",
+   "loser_definition": "excess_spy < -3.0pp at H=10",
+   "min_cohort_rule": "a cohort contributes to P@k only with >= 2k rows",
+   "tie_handling": "expected hit share of a uniformly random draw from the tie group at the k-th boundary \u2014 never an alphabetical tie-break",
+   "perm_null": "each cohort's top-k drawn as a uniform random subset of that cohort (B=20000, seed=20260804); one-sided, disclosure only",
+   "by_k": {
+    "p_at_1": {
+     "value": 0.4,
+     "base_rate": 0.492,
+     "lift_vs_base": -0.092,
+     "n_cohorts": 10,
+     "n_cohorts_skipped_thin": 0,
+     "perm_p_one_sided": 0.8131,
+     "tie_depth_at_k": {
+      "mean": 1.0,
+      "max": 1
+     },
+     "per_cohort": {
+      "2026-06-16": 1.0,
+      "2026-06-17": 0.0,
+      "2026-07-01": 1.0,
+      "2026-07-02": 0.0,
+      "2026-07-06": 1.0,
+      "2026-07-07": 0.0,
+      "2026-07-10": 0.0,
+      "2026-07-13": 0.0,
+      "2026-07-15": 1.0,
+      "2026-07-16": 0.0
+     },
+     "pick_pool": {
+      "n": 10,
+      "names": 10,
+      "loser_rate_pct": 20.0,
+      "median_excess_pp": 1.29,
+      "median_excess_dm_pp": -0.84,
+      "per_name_median_pp": 1.29
+     }
+    },
+    "p_at_3": {
+     "value": 0.533,
+     "base_rate": 0.492,
+     "lift_vs_base": 0.042,
+     "n_cohorts": 10,
+     "n_cohorts_skipped_thin": 0,
+     "perm_p_one_sided": 0.3818,
+     "tie_depth_at_k": {
+      "mean": 1.0,
+      "max": 1
+     },
+     "per_cohort": {
+      "2026-06-16": 1.0,
+      "2026-06-17": 0.333,
+      "2026-07-01": 0.667,
+      "2026-07-02": 0.667,
+      "2026-07-06": 0.667,
+      "2026-07-07": 0.333,
+      "2026-07-10": 0.333,
+      "2026-07-13": 0.333,
+      "2026-07-15": 0.667,
+      "2026-07-16": 0.333
+     },
+     "pick_pool": {
+      "n": 30,
+      "names": 26,
+      "loser_rate_pct": 20.0,
+      "median_excess_pp": 1.94,
+      "median_excess_dm_pp": -0.08,
+      "per_name_median_pp": 1.88
+     }
+    },
+    "p_at_5": {
+     "value": 0.54,
+     "base_rate": 0.492,
+     "lift_vs_base": 0.048,
+     "n_cohorts": 10,
+     "n_cohorts_skipped_thin": 0,
+     "perm_p_one_sided": 0.2817,
+     "tie_depth_at_k": {
+      "mean": 1.2,
+      "max": 2
+     },
+     "per_cohort": {
+      "2026-06-16": 0.6,
+      "2026-06-17": 0.6,
+      "2026-07-01": 0.8,
+      "2026-07-02": 0.6,
+      "2026-07-06": 0.4,
+      "2026-07-07": 0.2,
+      "2026-07-10": 0.4,
+      "2026-07-13": 0.4,
+      "2026-07-15": 0.8,
+      "2026-07-16": 0.6
+     },
+     "pick_pool": {
+      "n": 50,
+      "names": 42,
+      "loser_rate_pct": 14.0,
+      "median_excess_pp": 1.94,
+      "median_excess_dm_pp": 0.39,
+      "per_name_median_pp": 1.72
+     }
+    },
+    "p_at_10": {
+     "value": 0.522,
+     "base_rate": 0.494,
+     "lift_vs_base": 0.029,
+     "n_cohorts": 9,
+     "n_cohorts_skipped_thin": 1,
+     "perm_p_one_sided": 0.3004,
+     "tie_depth_at_k": {
+      "mean": 1.44,
+      "max": 4
+     },
+     "per_cohort": {
+      "2026-06-16": 0.7,
+      "2026-06-17": 0.6,
+      "2026-07-01": 0.5,
+      "2026-07-02": 0.6,
+      "2026-07-06": 0.4,
+      "2026-07-10": 0.4,
+      "2026-07-13": 0.5,
+      "2026-07-15": 0.5,
+      "2026-07-16": 0.5
+     },
+     "pick_pool": {
+      "n": 93,
+      "names": 76,
+      "loser_rate_pct": 16.1,
+      "median_excess_pp": 2.28,
+      "median_excess_dm_pp": 0.26,
+      "per_name_median_pp": 1.95
+     }
+    }
+   },
+   "n_rows_ranked": 403,
+   "n_rows_unrankable": 0
+  },
+  "alpha_pctile": {
+   "ordering": "alpha_pctile",
+   "hit_definition": "excess_spy beats that admission cohort's median excess_spy",
+   "loser_definition": "excess_spy < -3.0pp at H=10",
+   "min_cohort_rule": "a cohort contributes to P@k only with >= 2k rows",
+   "tie_handling": "expected hit share of a uniformly random draw from the tie group at the k-th boundary \u2014 never an alphabetical tie-break",
+   "perm_null": "each cohort's top-k drawn as a uniform random subset of that cohort (B=20000, seed=20260804); one-sided, disclosure only",
+   "by_k": {
+    "p_at_1": {
+     "value": 0.3,
+     "base_rate": 0.492,
+     "lift_vs_base": -0.192,
+     "n_cohorts": 10,
+     "n_cohorts_skipped_thin": 0,
+     "perm_p_one_sided": 0.9397,
+     "tie_depth_at_k": {
+      "mean": 1.0,
+      "max": 1
+     },
+     "per_cohort": {
+      "2026-06-16": 0.0,
+      "2026-06-17": 0.0,
+      "2026-07-01": 0.0,
+      "2026-07-02": 0.0,
+      "2026-07-06": 0.0,
+      "2026-07-07": 0.0,
+      "2026-07-10": 1.0,
+      "2026-07-13": 1.0,
+      "2026-07-15": 0.0,
+      "2026-07-16": 1.0
+     },
+     "pick_pool": {
+      "n": 10,
+      "names": 8,
+      "loser_rate_pct": 30.0,
+      "median_excess_pp": 0.01,
+      "median_excess_dm_pp": -1.56,
+      "per_name_median_pp": -1.55
+     }
+    },
+    "p_at_3": {
+     "value": 0.433,
+     "base_rate": 0.492,
+     "lift_vs_base": -0.058,
+     "n_cohorts": 10,
+     "n_cohorts_skipped_thin": 0,
+     "perm_p_one_sided": 0.7998,
+     "tie_depth_at_k": {
+      "mean": 1.0,
+      "max": 1
+     },
+     "per_cohort": {
+      "2026-06-16": 0.333,
+      "2026-06-17": 0.0,
+      "2026-07-01": 0.667,
+      "2026-07-02": 0.333,
+      "2026-07-06": 0.333,
+      "2026-07-07": 0.667,
+      "2026-07-10": 0.333,
+      "2026-07-13": 0.667,
+      "2026-07-15": 0.0,
+      "2026-07-16": 1.0
+     },
+     "pick_pool": {
+      "n": 30,
+      "names": 23,
+      "loser_rate_pct": 26.7,
+      "median_excess_pp": 0.88,
+      "median_excess_dm_pp": -0.46,
+      "per_name_median_pp": 0.73
+     }
+    },
+    "p_at_5": {
+     "value": 0.44,
+     "base_rate": 0.492,
+     "lift_vs_base": -0.052,
+     "n_cohorts": 10,
+     "n_cohorts_skipped_thin": 0,
+     "perm_p_one_sided": 0.8282,
+     "tie_depth_at_k": {
+      "mean": 1.0,
+      "max": 1
+     },
+     "per_cohort": {
+      "2026-06-16": 0.2,
+      "2026-06-17": 0.2,
+      "2026-07-01": 0.8,
+      "2026-07-02": 0.2,
+      "2026-07-06": 0.4,
+      "2026-07-07": 0.6,
+      "2026-07-10": 0.4,
+      "2026-07-13": 0.6,
+      "2026-07-15": 0.4,
+      "2026-07-16": 0.6
+     },
+     "pick_pool": {
+      "n": 50,
+      "names": 38,
+      "loser_rate_pct": 26.0,
+      "median_excess_pp": 0.88,
+      "median_excess_dm_pp": -0.46,
+      "per_name_median_pp": 1.17
+     }
+    },
+    "p_at_10": {
+     "value": 0.522,
+     "base_rate": 0.494,
+     "lift_vs_base": 0.029,
+     "n_cohorts": 9,
+     "n_cohorts_skipped_thin": 1,
+     "perm_p_one_sided": 0.3004,
+     "tie_depth_at_k": {
+      "mean": 1.0,
+      "max": 1
+     },
+     "per_cohort": {
+      "2026-06-16": 0.4,
+      "2026-06-17": 0.4,
+      "2026-07-01": 0.5,
+      "2026-07-02": 0.5,
+      "2026-07-06": 0.6,
+      "2026-07-10": 0.5,
+      "2026-07-13": 0.6,
+      "2026-07-15": 0.5,
+      "2026-07-16": 0.7
+     },
+     "pick_pool": {
+      "n": 90,
+      "names": 64,
+      "loser_rate_pct": 23.3,
+      "median_excess_pp": 1.84,
+      "median_excess_dm_pp": 0.3,
+      "per_name_median_pp": 1.91
+     }
+    }
+   },
+   "n_rows_ranked": 403,
+   "n_rows_unrankable": 0
+  }
+ },
+ "rank_ic": {
+  "score": {
+   "ordering": "score",
+   "rank_ic_by_date": -0.015,
+   "rank_ic_by_date_median": -0.0147,
+   "n_ic_cohorts": 10,
+   "cohort_sizes": {
+    "min": 19,
+    "median": 30,
+    "max": 89
+   },
+   "per_cohort_ic": [
+    -0.0888,
+    -0.292,
+    0.0858,
+    0.056,
+    -0.0662,
+    0.0026,
+    0.1638,
+    -0.0321,
+    0.1449,
+    -0.124
+   ],
+   "rank_ic_pooled_raw": -0.0876,
+   "rank_ic_pooled_demeaned": -0.0059
+  },
+  "v1_partial": {
+   "ordering": "v1_partial",
+   "rank_ic_by_date": -0.034,
+   "rank_ic_by_date_median": -0.0524,
+   "n_ic_cohorts": 10,
+   "cohort_sizes": {
+    "min": 19,
+    "median": 30,
+    "max": 89
+   },
+   "per_cohort_ic": [
+    0.1194,
+    -0.0255,
+    -0.0026,
+    0.0371,
+    -0.0945,
+    -0.2408,
+    -0.0793,
+    0.1877,
+    -0.1473,
+    -0.0944
+   ],
+   "rank_ic_pooled_raw": 0.0403,
+   "rank_ic_pooled_demeaned": -0.0061
+  },
+  "alpha_pctile": {
+   "ordering": "alpha_pctile",
+   "rank_ic_by_date": -0.0427,
+   "rank_ic_by_date_median": -0.0121,
+   "n_ic_cohorts": 10,
+   "cohort_sizes": {
+    "min": 19,
+    "median": 30,
+    "max": 89
+   },
+   "per_cohort_ic": [
+    -0.0532,
+    -0.269,
+    -0.0915,
+    0.0536,
+    -0.0826,
+    0.0667,
+    0.1182,
+    0.1246,
+    -0.3224,
+    0.029
+   ],
+   "rank_ic_pooled_raw": -0.0947,
+   "rank_ic_pooled_demeaned": -0.0974
+  }
+ },
+ "ordering_agreement": {
+  "score__vs__v1_partial": {
+   "mean_within_cohort_spearman": 0.0517,
+   "n_cohorts": 10
+  },
+  "score__vs__alpha_pctile": {
+   "mean_within_cohort_spearman": -0.2508,
+   "n_cohorts": 10
+  },
+  "v1_partial__vs__alpha_pctile": {
+   "mean_within_cohort_spearman": 0.4155,
+   "n_cohorts": 10
+  }
+ }
+}

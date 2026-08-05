@@ -146,3 +146,59 @@ def test_canada_dead_fred_does_not_starve_boc_statcan():
     frames = c.fetch()
     assert fred_calls["n"] == CA_ABORT, "FRED source should abort fast"
     assert len(frames) == n_boc + n_sc, "healthy BoC/StatsCan series must all resolve"
+
+
+# ---------------------------------------------------------------------------
+# run_adapter duck-typing degradation (daily 2026-08-02/08-03 collect outage).
+#
+# #4311 made run_adapter call adapter.fetch_result_status(frames) UNCONDITIONALLY
+# after a successful fetch, but only 2 of ~228 collector modules define that
+# protocol.  Worse, the except handler read adapter.expected_failure — also
+# optional — so the first adapter lacking BOTH attributes (gaming_ny) raised
+# inside the handler and killed the whole collect pass: every source after it
+# went uncollected for two nights and every source before it took a false
+# "failed" breaker strike.  These tests pin the contract in the step's own
+# name: graceful degradation NEVER fails the build on one source.
+# ---------------------------------------------------------------------------
+from collectors.base import run_adapter  # noqa: E402
+
+
+class _BareAdapter:
+    """The pre-#4311 adapter surface: name/group/stale_after_days/fetch only."""
+
+    name = "bare_test_source"
+    group = "test_group"
+    stale_after_days = 9
+
+    def __init__(self, exc: Exception | None = None):
+        self._exc = exc
+
+    def fetch(self, full_history: bool = False) -> dict:
+        if self._exc is not None:
+            raise self._exc
+        return {}
+
+    def validate(self, series_name, df):
+        return df
+
+
+def test_bare_adapter_success_survives_missing_status_protocol():
+    res = run_adapter(_BareAdapter())
+    assert res.status == "ok"
+
+
+def test_bare_adapter_failure_survives_missing_expected_failure():
+    res = run_adapter(_BareAdapter(exc=RuntimeError("boom")))
+    assert res.status == "failed"
+    assert "RuntimeError" in (res.error or "")
+
+
+def test_declared_status_protocol_still_honored():
+    class _Declaring(_BareAdapter):
+        name = "declaring_test_source"
+
+        def fetch_result_status(self, frames) -> str:
+            return "blocked"
+
+    res = run_adapter(_Declaring())
+    assert res.status == "blocked"

@@ -145,12 +145,18 @@
      Recomposed over the ink tokens so the tint tracks the theme (and the zh flip)
      instead of a frozen literal. Fills stay light on purpose: a heavier tint
      darkens the surface and pushes the chip's own label back under AA. */
-  html[data-theme="light"] .si-stage :is(.ftr-strip-chip.up, .tc-chip.up, .tc-chip.aln, .fs-chip.tailwind, .sr-tw-chip.up) { --si-chip: var(--up); }
-  html[data-theme="light"] .si-stage :is(.ftr-strip-chip.dn, .tc-chip.dn, .tc-chip.was1, .sr-tw-chip.dn) { --si-chip: var(--down); }
+  /* .ftr-strip-chip left this family in V2.1 (see "the session tape's rank chips"
+     below): the tape strip's movers have no box at all any more, so there is no
+     dark-era rgba here to recompose. It stayed listed, and because this layer
+     out-specifies V2.1's `background:transparent` (0,4,1 vs 0,2,0) light mode kept
+     painting a tint behind a chip whose padding V2.1 had already taken to `1px 0` —
+     a colour smear clamped to the glyphs and bleeding into the next mover (operator
+     crop, 2026-08-03). Ink carries the state here; nothing else. */
+  html[data-theme="light"] .si-stage :is(.tc-chip.up, .tc-chip.aln, .fs-chip.tailwind, .sr-tw-chip.up) { --si-chip: var(--up); }
+  html[data-theme="light"] .si-stage :is(.tc-chip.dn, .tc-chip.was1, .sr-tw-chip.dn) { --si-chip: var(--down); }
   html[data-theme="light"] .si-stage .fs-chip.headwind { --si-chip: var(--warn); }
   html[data-theme="light"] .si-stage .tc-chip.mig { --si-chip: var(--link); }
   html[data-theme="light"] .si-stage :is(
-    .ftr-strip-chip.up, .ftr-strip-chip.dn,
     .tc-chip.up, .tc-chip.dn, .tc-chip.aln, .tc-chip.was1, .tc-chip.mig,
     .fs-chip.headwind, .fs-chip.tailwind
   ) {

@@ -344,3 +344,86 @@ def test_t1_text_all_themes_have_text_band_returns_live(tmp_path):
 
     assert h["legs"]["t1_text"]["status"] == "LIVE"
     assert h["mode"] == "FULL"
+
+
+# ── W5a: t1_fingerprint coherence (2026-08-04 regression) ────────────────────
+# site/basketdata/foresight_cascade.json shipped themes staged
+# "PRECIPICE (fingerprint)" / "BROADENING (fingerprint)" while the health block
+# printed t1_fingerprint DARK 0/18: the assessor counted t["fingerprint"]["n_legs_live"],
+# a bottleneck-payload key the cascade rows did not carry then. Invariant pinned here:
+# a theme carrying fingerprint-variant evidence ⇒ the leg is never reported fully DARK.
+
+def _fp_theme(stage="PRECIPICE (fingerprint)", band="TIGHTENING (fingerprint)",
+              fingerprint_only=True, fingerprint=None):
+    """Cascade row shaped like the shipped fingerprint-staged themes."""
+    t = _theme(bottleneck_band=band)
+    t["stage"] = stage
+    t["bottleneck_fingerprint_only"] = fingerprint_only
+    if fingerprint is not None:
+        t["fingerprint"] = fingerprint
+    return t
+
+
+def test_fingerprint_stage_without_subobject_not_dark(tmp_path):
+    """The shipped regression shape: fingerprint-variant stage + band but NO fingerprint
+    sub-object on the row (older committed cascade vintage) → band/stage evidence floors
+    the theme at 1 live leg; the leg must not read DARK."""
+    themes = [_fp_theme(), _theme(bottleneck_band="TIGHT")]
+    cascade = {"themes": themes, "asof": "2026-08-04"}
+
+    with mock.patch("engine.foresight_health._health_log_path", return_value=tmp_path / "h.jsonl"):
+        h = compute_foresight_health(cascade=cascade)
+
+    leg = h["legs"]["t1_fingerprint"]
+    assert leg["status"] == "PARTIAL"
+    assert leg["detail"] == "1/2"
+
+
+def test_fingerprint_subobject_counts_legs(tmp_path):
+    """Sub-object passthrough drives the count: n_legs_live=2 → both-legs; =1 → one leg;
+    rows without fingerprint evidence count as none."""
+    themes = [
+        _fp_theme(band="TIGHT (fingerprint)",
+                  fingerprint={"n_legs_live": 2, "basis": "annual"}),
+        _fp_theme(stage="BROADENING (fingerprint)",
+                  fingerprint={"n_legs_live": 1, "basis": "annual"}),
+        _theme(bottleneck_band="TIGHT"),
+    ]
+    cascade = {"themes": themes, "asof": "2026-08-04"}
+
+    with mock.patch("engine.foresight_health._health_log_path", return_value=tmp_path / "h.jsonl"):
+        h = compute_foresight_health(cascade=cascade)
+
+    leg = h["legs"]["t1_fingerprint"]
+    assert leg["status"] == "PARTIAL"
+    assert leg["detail"] == "2/3 (1 both legs)"
+
+
+def test_fingerprint_subobject_on_numeric_band_theme_counts(tmp_path):
+    """A FRED-mapped theme (plain numeric band, fingerprint_only False) whose bottleneck
+    payload still carried fingerprint data counts toward coverage — the leg measures data
+    liveness, not band flavor."""
+    themes = [dict(_theme(bottleneck_band="TIGHT"),
+                   fingerprint={"n_legs_live": 1, "basis": "annual"})]
+    cascade = {"themes": themes, "asof": "2026-08-04"}
+
+    with mock.patch("engine.foresight_health._health_log_path", return_value=tmp_path / "h.jsonl"):
+        h = compute_foresight_health(cascade=cascade)
+
+    leg = h["legs"]["t1_fingerprint"]
+    assert leg["status"] == "PARTIAL"
+    assert leg["detail"] == "1/1"
+
+
+def test_fingerprint_no_evidence_stays_dark(tmp_path):
+    """No sub-object, no fingerprint band/flag/stage anywhere → the leg stays DARK
+    (the evidence fallback must not make it vacuously alive)."""
+    themes = [_theme(bottleneck_band="TIGHT"), _theme(bottleneck_band="AWAITING_DATA")]
+    cascade = {"themes": themes, "asof": "2026-08-04"}
+
+    with mock.patch("engine.foresight_health._health_log_path", return_value=tmp_path / "h.jsonl"):
+        h = compute_foresight_health(cascade=cascade)
+
+    leg = h["legs"]["t1_fingerprint"]
+    assert leg["status"] == "DARK"
+    assert leg["detail"] == "0/2"

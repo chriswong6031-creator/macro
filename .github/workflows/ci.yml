@@ -2322,6 +2322,7 @@ on:
       - "tests/test_board_contradictions.py"
       - "tests/test_bottom_ledger.py"
       - "tests/test_cn_board_unified_grid.py"
+      - "tests/test_cn_prophet_candidates_schema.py"
       - "tests/test_cn_track_ledger_eras.py"
       - "tests/test_pick_lab_book.py"
       - "tests/test_pick_lab_cn_runner.py"
@@ -2339,6 +2340,11 @@ on:
       - "scripts/build_stock_board_v2.py"
       - "scripts/grade_bottom_calls.py"
       - "engine/us_board_rank.py"
+      # The CN candidate store is the SUBJECT of test_cn_prophet_candidates_schema.py,
+      # so a nightly append (or a hand rewrite like the 2026-08-04 stamp_date rename)
+      # that reintroduced the pre-rename column must be able to start this workflow.
+      # The producer engine/china_prophet_shadow.py is already covered by engine/**.
+      - "data/china_prophet_rank/**"
       # unrun-prophet-learning-loop
       - "tests/test_prophet_postmortem.py"
       - "tests/test_exit_policy_study.py"

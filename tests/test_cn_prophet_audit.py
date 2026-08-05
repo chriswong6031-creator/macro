@@ -610,7 +610,7 @@ class TestMissFunnel:
         cand = tmp_path / "china_prophet_rank"
         cand.mkdir(parents=True)
         birth = str(idx[-1].date())
-        pd.DataFrame([{"date": birth, "ticker": "600000.SS", "lane": "featured"}]) \
+        pd.DataFrame([{"stamp_date": birth, "ticker": "600000.SS", "lane": "featured"}]) \
             .to_parquet(cand / "candidates.parquet", index=False)
 
         out = cpa.miss_funnel()
@@ -640,7 +640,7 @@ class TestMissFunnel:
                      index=idx[:295]).to_parquet(stocks / "600001.SS.parquet")
         cand = tmp_path / "china_prophet_rank"
         cand.mkdir(parents=True)
-        pd.DataFrame([{"date": str(idx[-1].date()), "ticker": "600000.SS",
+        pd.DataFrame([{"stamp_date": str(idx[-1].date()), "ticker": "600000.SS",
                        "lane": "featured"}]).to_parquet(
             cand / "candidates.parquet", index=False)
 
@@ -659,7 +659,7 @@ class TestMissFunnel:
                      index=short_idx).to_parquet(stocks / "301000.SZ.parquet")
         cand = tmp_path / "china_prophet_rank"
         cand.mkdir(parents=True)
-        pd.DataFrame([{"date": str(short_idx[-1].date()), "ticker": "301000.SZ",
+        pd.DataFrame([{"stamp_date": str(short_idx[-1].date()), "ticker": "301000.SZ",
                        "lane": "forming"}]).to_parquet(
             cand / "candidates.parquet", index=False)
 
