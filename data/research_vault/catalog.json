@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T10:59:52.034675+00:00",
-  "count": 798,
+  "generated_at": "2026-08-05T11:30:15.228042+00:00",
+  "count": 799,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -187,6 +187,26 @@
         "**ROK Estimate Revision & Growth Outlook**: Revised FY26 organic sales guidance to +7.5%–9.5% (from +5%–9%) and raised FY26–28 EPS to $13.30/$14.90/$16.60, with 12-month price target lifted to $510 (+14.5% upside).",
         "**Strong EBITDA Growth & Margin Expansion**: EBITDA growth accelerated to 26.3% YoY (9/26 vs 6.8% 9/25), EBIT margin improved to 22.7% (9/28E), reflecting operational efficiency and pricing power in industrial automation.",
         "**ROK Key Risks**: Upside drivers include accelerating orders, margin expansion, and M&A; downside risks involve muted order momentum, softening price realization, and slower internal margin progress."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mf0juhopn2c-537d29",
+      "title": "Devon Energy Corp",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:20:22Z",
+      "summary_points": [
+        "**Q2 Earnings & Production Beat**: DVN reported $3.48bn EBITDA (+6% vs estimates) and $1.57/shr EPS (+9%), with oil production guidance at 550-560 Mboe/d (slight below prior but strong execution).",
+        "**Debt Reduction & Valuation Upside**: $1.25bn debt reduction post-merger and EBITDA yield expanding to 16.3% by 2028 support Goldman Sachs' $53 target (20.3% upside from $44.05).",
+        "**Fundamental Driver**: Core metrics show EBITDA growth to $14.17B by 2028 and rising EPS, underpinning 12.5% FCF yield valuation basis.",
+        "**Bullish Rating & Momentum**: Goldman Sachs \"Buy\" rating with consistent target prices above current levels (e.g., $53 vs $41.99), reflecting strong institutional conviction."
       ],
       "tags": [],
       "tickers": [],
