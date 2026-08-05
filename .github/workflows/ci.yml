@@ -948,6 +948,17 @@ on:
       - "tests/test_state_of_themes.py"
       - "engine/portfolio_brief.py"
       - "tests/test_portfolio_brief.py"
+      # unrun-subsector-themes — subsector rotation/turn engines + the Theme
+      # Tracker page suite (subsector CI-wiring audit 2026-08-05). The engine
+      # subjects are covered by engine/**, and the page builder + its suite are
+      # whitelisted just above; only the test halves below were missing, so a
+      # test-only edit could not start this workflow.
+      - "tests/test_subsector_turn.py"
+      - "tests/test_subsector_rotation.py"
+      - "tests/test_subsector_rotation_alerts.py"
+      - "tests/test_subsector_scan.py"
+      - "tests/test_subsector_confluence.py"
+      - "tests/test_themes_heatmap.py"
       # Research Factory W1 (RF-11): authority guard, ledger schemas, state machine.
       - "scripts/research_factory*.py"
       - "scripts/*research_factory*.py"

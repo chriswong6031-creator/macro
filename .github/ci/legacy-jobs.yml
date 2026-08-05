@@ -5049,3 +5049,35 @@ jobs:
         run: python -m pytest tests/test_hk_board_rank.py -q
       - name: hk board ui — the unified board template contract
         run: python -m pytest tests/test_hk_board_ui.py -q
+
+  unrun-subsector-themes:
+    # The subsector rotation/turn engine family + the Theme Tracker page suite —
+    # named by NO run: step in any workflow before this (subsector CI-wiring
+    # audit 2026-08-05, following the #4584 calendar-asof heal): the TURN
+    # engine (#4085), the rotation state machine, its alerts/scan/confluence
+    # organs, and the themes heatmap ran only when someone happened to run
+    # them locally.  The Theme Tracker suite runs FULL here on purpose: the
+    # portfolio-ctx job deliberately selects the theme_lanes/byte-identity
+    # subset (5 of 42 tests) as the Portfolio-brief contract, so the other 37
+    # — live render off the committed artifacts, banned-word and title= scans,
+    # node --check over inline JS (the pack runners ship setup-node), and the
+    # TIL section wiring — were dark.  All seven suites measured green in a
+    # clean venv with exactly the install below: 119 tests / ~87s, the live
+    # renders dominating.  Deps: the engine suites reach numpy+pandas; the
+    # page builder reaches jinja2 + pyyaml (theme_crosswalk lane projection).
+    # The shared unrun-* install repeated BYTE-FOR-BYTE keeps this job inside
+    # the census set's single venv instead of adding one.
+    if: ${{ false }}
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: subsector rotation family — turn engine, state machine, alerts, scan, confluence
+        run: python -m pytest tests/test_subsector_turn.py tests/test_subsector_rotation.py tests/test_subsector_rotation_alerts.py tests/test_subsector_scan.py tests/test_subsector_confluence.py -q
+      - name: themes heatmap + Theme Tracker page (full suite; portfolio-ctx keeps its subset)
+        run: python -m pytest tests/test_themes_heatmap.py tests/test_state_of_themes.py -q
