@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T09:43:54.575679+00:00",
-  "count": 794,
+  "generated_at": "2026-08-05T10:23:13.592484+00:00",
+  "count": 796,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -70,6 +70,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-d2hwbkvjkbz-5ae392",
+      "title": "Advanced Micro Devices Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:21:44Z",
+      "summary_points": [
+        "**Growth Narrative Mismatch**: Management's 2027 guidance (Datcenter GPU >100% YoY, server CPU 70%+ growth) underdelivers vs.",
+        "bullish investor sentiment despite Q2 beat (revenue $11.5B, gross margin 56.2%), triggering expected stock pullback.",
+        "**Critical Risk Concentration**: Slower agentic AI adoption, delayed Meta GPU deployment, x86 erosion in enterprise, and lack of operating leverage threaten near-term growth trajectory.",
+        "**Extreme Valuation Volatility**: Goldman Sachs price target range spans $120 (44% downside) to $875 (100% upside), highlighting semiconductor valuation fragility and significant downside risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
@@ -360,6 +380,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 28,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-oswdd1ofbfu-7f8e3c",
+      "title": "Markets unhinging is a feature not a bug",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:05:13Z",
+      "summary_points": [
+        "**AI Infrastructure Bottleneck Opportunity**: MLCC manufacturers (Murata, Samsung Electro-Mechanics, Yageo) offer 23x upside potential with 50% cushion amid AI hardware demand, targeting critical infrastructure bottleneck.",
+        "**FX Stress Drives GFSI Positive**: FX volatility (USDJPY skew, implied vol) pushed GFSI to +0.03 (highest since Apr 2023), with credit now least stressed asset class amid FOMC/BoJ intervention risks.",
+        "**US Cybersecurity & Healthcare Bubble Risk**: Elevated BRI scores (0.87/0.84) signal bubble-like dynamics; medical device stocks show largest BRI jump, cybersecurity ranks highest in bubble indicators.",
+        "**Magnificent 7 Earnings Fragility**: All six stocks (GOOGL, TSLA, META, MSFT, AAPL, AMZN) exceeded options-implied earnings moves in Q3-26, with S&P tech fragility at 2025’s record pace.",
+        "**SPX Tech Dispersion Near Dotcom Peaks**: S&P tech dispersion hit near all-time highs (30-Jul), with realized volatility dispersion trending toward Dotcom-era peaks amid AI megacap volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 34,
       "language": "en",
       "needs_metadata": false
     },
