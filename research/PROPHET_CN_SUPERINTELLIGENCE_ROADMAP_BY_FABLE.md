@@ -103,6 +103,55 @@ Zero authority at birth. Its value is that the ENTIRE dashboard's knowledge
 becomes joinable evidence the night it ships — the difference between "we have
 the data somewhere" and "every episode carries its context forever."
 
+### P-SI-2.5 — The stored-energy ranking doctrine + the Rank Effectiveness Ledger (added 2026-08-04, operator ordering directive)
+
+**The ordering problem, stated first-principles:** the user reads the top of the
+board, not all hundred rows. Selection quality (who is admitted) and ordering
+quality (who is FIRST) are different instruments; V1 proved they can point in
+opposite directions (good membership record, anti-predictive rank-IC +0.073).
+
+**The doctrine the evidence converged on — rank by STORED energy, never
+RELEASED energy.** V1's setup score ranked kinetic energy (recent thrust, day-0
+pops, hot trails) — energy already spent; it put the loser cohort on top. Every
+measured winning cohort is a stored-energy marker: deep dislocation with a
+quiet tape (bottom-half turnover 17.7% loser rate vs 42.5% at p90), the
+pre-confirmation timing states (bounce_wait 93% win — the coil before the
+release), WARMING themes and Trough+ sectors (accumulating), early relay
+(propagation just starting). Compression (squeeze/NR/vol-contraction — the
+US Ignition Layer's S-COIL family, market-agnostic detectors in
+engine/compression_signals.py) is the same theory's missing measurable axis.
+Risk ordering falls out for free: stored-energy entries have structurally
+bounded give-back (winner MAE −1.1% vs loser −13.7%) — one axis serves return
+AND risk. Fences that bind any score iteration from this doctrine: depth ALONE
+is a killed ranker (#1747-A3); no pre-onset universe claims (rows 114-115);
+no composite black box (each leg separately measured, capped, revertible);
+the armed/compressed state is never SURFACED as a user-facing signal
+(ESX §9 / DT-R5 family — internal ordering features are a different
+construction and must cite the fence).
+
+**The Rank Effectiveness Ledger (ops-telemetry; the operator's
+track-record-that-tracks-everything requirement).** The score grades ITSELF
+nightly, per board_definition, never pooled:
+1. Rank-IC ladder vs EVERY outcome dimension the spine already computes —
+   excess_h10, fwd_mfe_5/10/21/63, MAE, catastrophic flag, terminal states,
+   post-cushion breach — so "maybe top-ranked picks win on a dimension we
+   don't track" becomes measured, not speculative.
+2. Top-k ORACLE REGRET + capture@k: of each date's pool, how much of the
+   best-possible top-6 did the score actually put on top. This is the direct
+   metric for "buying the top future winners inside the shortlisted pool."
+3. Risk/time profile by score tercile: loser rate, MAE, catastrophic rate,
+   clean-liftoff share, time-to-payoff — the lower-risk and longer-duration
+   lenses named explicitly.
+4. Per-component attribution: every score leg's own IC nightly (glass-box —
+   which leg earns its weight is public inside the artifact).
+5. Wrong-sign tripwire: a definition whose excess-IC turns anti-predictive
+   over ≥60 matured episodes pages with a revert proposal.
+Evidence instruments feeding the next score iteration:
+`rank_feature_battery.py` (within-pool ordering ICs, date-demeaned, dual-era
+stability, winners-only magnitude) + the S-COIL CN port test. Score changes
+remain one-axis-per-adjudication under P-SI-3; this section only fixes the
+DOCTRINE and the measurement so ordering can never silently rot again.
+
 ### P-SI-3 — The bounded-authority ladder (one axis per adjudication, glass-box law)
 
 Each context axis that shows separation follows EXACTLY the theme_timing
