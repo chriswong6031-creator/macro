@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T05:53:50.595308+00:00",
-  "count": 852,
+  "generated_at": "2026-08-06T06:08:49.229253+00:00",
+  "count": 853,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -256,6 +256,27 @@
         "**Guidance Upgrade & Segment Divergence**: 2026 EPS guidance raised to 18%-23% growth (vs prior 15%-20%), but Cap Markets declined 1% YoY due to Americas multifamily slowdown; Services (8% growth) and Leasing (27.5% growth) beat consensus, while EMEA Cap Markets weakened from macro uncertainty.",
         "**Earnings Beat with Segment Risks**: Adjusted EBITDA $183.6M beat consensus ($175.7M), but leasing outperformed (27.5% vs 10.8% consensus) while Cap Markets underperformed (-0.7% vs 9.4%); EMEA margin pressures offset growth.",
         "**Key Valuation Risks**: $17 target (10.6x EPS) faces macro/geopolitical disruptions, reduced capital availability, and margin pressures from slower business growth; current price ($14.08) offers 20.7% upside but hinges on sustaining revenue growth (10.288bn → 12.456bn by 12/28E)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7gej9c0mc43-152e85",
+      "title": "SiTime Corp. (SITM) Strong quarter driven by datacenter timing and smartphone wins, with Renesas business driving material a...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:01:53Z",
+      "summary_points": [
+        "**Datacenter & Smartphone Momentum**: Q2 revenue driven by 181% YoY datacenter growth and smartphone wins; Renesas acquisition contributed $85m (75% CID, 25% Auto/Industrial), exceeding Street expectations.",
+        "**Revenue & Margin Beat with Upgraded Guidance**: Revenue $157m (vs.",
+        "Street $147m), gross margin 67.1% (vs.",
+        "Street 64.9%); guidance raised to $290m revenue (vs.",
+        "Street $220m) and 68% non-GAAP gross margin (vs."
       ],
       "tags": [],
       "tickers": [],
