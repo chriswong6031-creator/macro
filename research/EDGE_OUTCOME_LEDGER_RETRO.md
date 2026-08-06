@@ -21,9 +21,19 @@ already graded. It is a *join*, and its unit of record — the edge — is the
 object CHF-R15's Phase-3 clock (2027-01-15) will be asked to judge.
 
 **The headline is a coverage result, not a finding.** One edge of 58 cleared
-the n=10 floor, and its effective evidence is two independent windows. Nothing
-here supports or refutes any linkage. The deliverable is that the record now
-exists and its gaps are named.
+the n=10 floor; its agreement rate (0.278) sits within 0.002 of its own matched
+base rate (0.280), and its effective evidence is two independent windows.
+Nothing here supports or refutes any linkage. The deliverable is that the
+record now exists and its gaps are named.
+
+**This document was corrected after adversarial review.** Its first cut
+reported that same edge at base 0.200 and lift **+0.078** — a small positive
+edge — because the control used the wrong estimator over the wrong span. Under
+a base matched to the numerator it is **−0.002**: no detectable signal either
+way. §4 carries the full restatement. Three structural defects were fixed in
+the same pass: the prospective lane could never reach a graded row at all, the
+unsigned-outcome guard covered one of four affected ledgers, and the base rate
+was latched to a stale value. Details in §3, §4 and §8.
 
 ## §1 Inventory
 
@@ -171,6 +181,16 @@ Every lag came back null, under two reasons: `no_horizon_crossed_1sigma` and
 years, the trailing dispersion floor (MIN_N_LAG=10 observations before the
 fire) is rarely met, and where it is met the move does not clear 1σ.
 
+**The trailing window is not strictly point-in-time, and the code no longer
+claims it is.** σ_H is built from dst rows whose `as_of` precedes the fire, but
+each of those rows carries a *forward* outcome that resolves after its own
+as_of — so for rows dated a few sessions before the fire, the outcome window
+overlaps the fire itself. That is trailing-by-selection, not a clean "no
+peeking" guarantee. It is tolerable only because the lag is report-only: it
+feeds no rate, no rank, and no gate. A promotion-tier use would need a
+`graded_at`-based cutoff instead, and this paragraph is the reason that would
+not be a small change.
+
 **Disclosed deviation from the charter phrasing.** The charter asks for "first
 *session* in (t, t+21] where |dst cumulative excess| crosses 1σ". A
 session-resolution cumulative-excess path per subject is not derivable from the
@@ -210,10 +230,15 @@ Named plainly, in the order they bind:
    windows — roughly a year of accrual at current fire density.
 3. **H=21 grading breadth on the targets.** `us_board` and `intel_hub` have 1
    and 4 sessions graded at H=21. Until targets are graded at the primary
-   horizon across more sessions, base rates stay uninterpretable.
-4. **A signed outcome column for `track_record`**, or an explicit decision that
-   the three edges targeting it stay permanently ungradeable by direction. As
-   built, the guard refuses them rather than printing a fake ~100%.
+   horizon across more sessions, both the numerators and the base rates rest on
+   a handful of observations read repeatedly.
+4. **A signed outcome column for the four MFE ledgers** (`track_record`,
+   `board_hk`, `board_ca`, `board_cn`), or an explicit decision that edges
+   targeting them stay permanently ungradeable by direction. As built, the
+   guard refuses them rather than printing a fake ~100%.
+5. **Nightly accrual actually running.** The prospective lane is what turns
+   every item above from a limitation into a countdown, and it is not yet wired
+   (see §8). Until the follow-up PR lands the dag node, nothing accrues.
 
 ## §8 Status and constraints
 
@@ -231,8 +256,24 @@ Named plainly, in the order they bind:
 - Retro and prospective ledgers never mix: `--retro` writes only
   `edge_outcomes_retro.jsonl`, `--nightly` writes only `edge_outcomes.jsonl` and
   refuses unless `COLLECT_LANE=nightly`. The forward ledger is nightly-only from
-  day one.
-- Re-running is idempotent: the second retro run appended 0 rows, all 273
-  skipped by content hash.
+  day one, and `--fire-def tape_transition` is refused on that lane (§6).
+- **The two lanes have different write semantics, deliberately.** `--retro`
+  rewrites its file whole and atomically — it is a replay artifact, so this
+  run's output *is* the file. Appending instead double-counted: summary rows
+  are keyed by the fire span they cover, so an advanced store minted a second
+  summary for the same edge and both were counted. `--nightly` appends, with
+  monotonic supersede: a settled grading replaces the stub written for the same
+  `(edge_id, fire_date)` before its outcomes existed, and a stub can never
+  replace a grading, so a degraded night cannot un-grade history. Readers go
+  through `resolve_ledger`, which collapses each key to its settled row.
+- **The nightly lane sweeps a 68-session lookback, not just the newest
+  session.** A fire cannot be graded on the day it fires — its outcomes live in
+  `[t, t+5]` and its longest horizon settles 63 sessions later. A latest-only
+  lane wrote an ungraded stub every night and keep-first dedup then blocked the
+  only run that could ever grade it: 0 graded rows over a 60-night simulation,
+  against 39 for a retro over the same store. That failure is now pinned by
+  `tests/test_edge_outcomes.py::TestNightlyAccrual`.
+- Re-running is idempotent in both lanes: a repeated retro produces a
+  byte-equivalent replay, and a repeated nightly appends nothing new.
 
 *Reproduce: `python -m scripts.build_edge_outcomes --retro --results-json research/edge_outcome_retro_results.json`*
