@@ -869,7 +869,11 @@
           ph: 'Search any S&P 500 stock, ETF, commodity or crypto… (e.g. AAPL, Energy, Bitcoin)',
           th_state: 'state', th_n: 'samples', th_up: 'up next month', th_avg: 'avg next month',
           th_dipm: 'typical dip', th_dipb: 'bad-case dip',
-          feedstale_pre: '· no new data for ', feedstale_post: ' days — not scored' },
+          feedstale_pre: '· no new data for ', feedstale_post: ' days — not scored',
+          delisted_pre: '· stopped trading ', delisted_by: ' — bought by ',
+          delisted_post: '; no longer scored', delisted_only: ' — no longer scored',
+          months: ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                   'August', 'September', 'October', 'November', 'December'] },
     zh: { asof: '数据截至', notlib: '不在库中',
           notlibmsg: '不在每晚更新的标的库中（标普500 ＋ 跟踪的 ETF／大宗商品／加密货币）。一行即可添加：config.yml → stock_search.extra_tickers。',
           season: '季节性', failed: '⚠ 失败周期 — 价格已跌破启动本周期的低点；此时更大的趋势通常正在转向下行。',
@@ -878,11 +882,39 @@
           ph: '搜索任意标普500股票、ETF、大宗商品或加密货币…（例如 AAPL、Energy、Bitcoin）',
           th_state: '状态', th_n: '样本数', th_up: '下月上涨', th_avg: '下月均值',
           th_dipm: '典型回撤', th_dipb: '最坏回撤',
-          feedstale_pre: '· 已 ', feedstale_post: ' 天无新数据 — 暂不评分' } };
+          feedstale_pre: '· 已 ', feedstale_post: ' 天无新数据 — 暂不评分',
+          // No padding around the acquirer slot: Chinese sets Latin runs off with
+          // spaces ("被 Devon Energy 收购") but sets CJK names solid ("被住友林业
+          // 收购"). Hardcoding either one is wrong for the other name, so the
+          // spacing is decided at render time — see zhPad() in render().
+          delisted_pre: '· ', delisted_by: '停止交易 — 被',
+          delisted_post: '收购；不再评分', delisted_only: '停止交易 — 不再评分',
+          months: null } };
   function L(k) { return (T[lang()] || T.en)[k]; }
   // pick the Chinese variant of a composed analysis string when in zh mode
   // (the per-stock JSON carries parallel *_zh fields from engine/cycles.py)
   function lz(en, zh) { return lang() === 'zh' && zh ? zh : (en || ''); }
+  // ISO date -> the reader's own convention: "7 May 2026" / "2026年5月7日".
+  // Parsed by hand rather than through Date(): `new Date('2026-05-07')` is UTC
+  // midnight, which renders as the PREVIOUS day for every viewer west of Greenwich
+  // — and a delisting note that names the wrong date is worse than no note.
+  // Falls back to the raw ISO string on anything unexpected; never throws.
+  function fmtDate(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+    if (!m) { return String(iso || ''); }
+    var y = m[1], mo = parseInt(m[2], 10), d = parseInt(m[3], 10);
+    if (lang() === 'zh') { return y + '年' + mo + '月' + d + '日'; }
+    var names = L('months');
+    return (names && names[mo - 1]) ? (d + ' ' + names[mo - 1] + ' ' + y) : String(iso);
+  }
+  // Chinese sets a Latin run off with spaces ("被 Devon Energy 收购") and a CJK
+  // name solid ("被住友林业收购"). English carries its own spacing in the string
+  // table, so this is a no-op there. Returns '' or ' ' for the given edge.
+  function zhPad(s, edge) {
+    if (lang() !== 'zh' || !s) { return ''; }
+    var ch = edge === 'end' ? s.charAt(s.length - 1) : s.charAt(0);
+    return /[A-Za-z0-9]/.test(ch) ? ' ' : '';
+  }
 
   // ===== fundamentals suite (Phase 1) — render panels baked by engine/stock_fundamentals.py =====
   var TF = {
@@ -3068,13 +3100,33 @@
     document.getElementById('r_summary').textContent = lz(d.ladder.summary_line, d.ladder.summary_line_zh);
     var r_asof = document.getElementById('r_asof');
     r_asof.textContent = L('asof') + ' ' + d.asof;
-    // R1 feed-freshness disclosure (research/ADJUDICATION_20260803_UNIVERSE_SIDE_STORE_
-    // FRESHNESS.md): a full rec whose feed froze >7d behind the library keeps its page
-    // but loses scoring authority (scripts/build_stock_library.py::_apply_feed_demotion).
-    // Cause-neutral copy — never "stale"/"delisted" (cause is not established per name).
-    // Uses behind_days (not d.asof again) — the r_asof line above already states the
-    // date once; repeating it here read as a self-quoting non-sequitur.
-    if (d.feed_stale && d.feed_stale.behind_days != null) {
+    // Two mutually exclusive honesty notes on the as-of line, never both.
+    //
+    // `delisted` (config/delisted_symbols.yml -> _apply_delisting): the security
+    // stopped existing and we have the SEC receipts, so the page says so and names
+    // who bought it. #4616's law — delisted is not stale — and the cause-neutral
+    // wording the #4643 adjudication mandated applied only while the cause was
+    // unresolved; it is resolved for these names (research/RESOLUTION_20260806_
+    // SIDE_STORE_SYMBOLS.md). No apology, no hedge: what happened, and what it
+    // means for the score.
+    //
+    // `feed_stale` (R1, research/ADJUDICATION_20260803_UNIVERSE_SIDE_STORE_
+    // FRESHNESS.md): a full rec whose feed froze >7d behind the library keeps its
+    // page but loses scoring authority. Cause-neutral on purpose — "stale" vs
+    // "delisted" is exactly what is NOT known for a name in this branch. Uses
+    // behind_days (not d.asof again): the r_asof line above already states the date
+    // once, and repeating it here read as a self-quoting non-sequitur.
+    if (d.delisted && d.delisted.on) {
+      var dl = document.createElement('span');
+      dl.className = 'feed-stale-note';
+      var who = lang() === 'zh' ? (d.delisted.acquirer_zh || d.delisted.acquirer)
+                                : d.delisted.acquirer;
+      dl.textContent = ' ' + L('delisted_pre') + fmtDate(d.delisted.on) +
+        (who ? L('delisted_by') + zhPad(who, 'start') + who + zhPad(who, 'end') +
+               L('delisted_post')
+             : L('delisted_only'));
+      r_asof.appendChild(dl);
+    } else if (d.feed_stale && d.feed_stale.behind_days != null) {
       var fs = document.createElement('span');
       fs.className = 'feed-stale-note';
       fs.textContent = ' ' + L('feedstale_pre') + d.feed_stale.behind_days + L('feedstale_post');
