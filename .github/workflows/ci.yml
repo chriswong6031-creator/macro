@@ -2088,6 +2088,13 @@ on:
       - "tests/fixtures/hk_board_2026_07_31.json"
       - "tests/fixtures/hk_standouts_2026_07_31.json"
       - "data/hk_search/**"
+      # The regenerator's own suite (job: regen-hk-g1-fixture-guard).  Its subject
+      # scripts/regen_hk_g1_fixture.py rides the "scripts/*.py" catch-all below,
+      # but tests/** is deliberately NOT broad, so without this line a test-only
+      # edit could not start the packs that run it — the #3488 shape ("a guard the
+      # guarded change cannot trigger is not a guard"), and the same darkness the
+      # two entries above were added to close.
+      - "tests/test_regen_hk_g1_fixture.py"
       # The HK reclaim-veto admission policy (operator ruling 2026-08-03),
       # joined to unrun-hk-board 2026-08-05 — dark since it landed. Its two
       # subjects reach this list already (engine/** for signal_quality /

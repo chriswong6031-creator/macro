@@ -2397,6 +2397,27 @@ jobs:
       - name: hkrv w3 banner tests
         run: python -m pytest tests/test_hkrv_w3_banner.py -q
 
+  regen-hk-g1-fixture-guard:
+    if: ${{ false }}
+    # Guards scripts/regen_hk_g1_fixture.py — the regeneration remedy for the G1
+    # staleness tripwire: byte-idempotency on an unchanged panel, the
+    # ADJUSTMENT-SIGNATURE receipts on a constant-ratio re-pricing, the refusals
+    # (non-constant drift, calendar surgery, derived-only drift) that leave the
+    # fixture untouched, and the window law — each ticker is re-cut from its OWN
+    # committed first date, never a flat tail(N), because the 2026-07-31 freeze is
+    # 3B-phase-aligned and a flat re-pin took 123 of its 157 windows off-grid.
+    # Synthetic panels only — no repo data.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow
+      - name: hk g1 fixture regenerator tests
+        run: python -m pytest tests/test_regen_hk_g1_fixture.py -q
+
   basket-staleness-warn:
     if: ${{ false }}
     # M7C-R8: basket store staleness warning in scripts/build_baskets.py —
