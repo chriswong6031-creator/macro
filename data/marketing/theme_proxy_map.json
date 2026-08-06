@@ -1,0 +1,5605 @@
+{
+ "schema": "theme_proxy_map/1",
+ "produced_by": "scripts/build_theme_proxy_map.py",
+ "produced_at": "2026-08-06T00:53:41Z",
+ "inputs": {
+  "themes": "finviz_themes/finviz_themes_map.json",
+  "tiers": "data/marketing/cashtag_tiers.json",
+  "holdings_dir": "data/etf_holdings",
+  "etfs_with_holdings": 69,
+  "bar_trees": [
+   "data/baskets/ohlcv",
+   "data/stocks",
+   "data/yahoo"
+  ],
+  "corr_days": 252
+ },
+ "gate": {
+  "min_cohesion": 0.65,
+  "min_reach_ratio": 1.0,
+  "min_row_coverage": 0.5,
+  "min_weight_coverage": 10.0
+ },
+ "themes": {
+  "Artificial Intelligence": {
+   "diagnostic_cohesion_rho": 0.1977,
+   "diagnostic_cohesion_panel_n": 80,
+   "n_members": 83,
+   "candidates": [
+    {
+     "ticker": "SMH",
+     "basis": "holdings",
+     "adv20_musd": 7486.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMAT",
+      "AMD",
+      "ARM",
+      "ASML",
+      "AVGO",
+      "INTC",
+      "KLAC",
+      "LRCX",
+      "MRVL",
+      "MU",
+      "NVDA",
+      "NXPI",
+      "QCOM",
+      "TER",
+      "TSM"
+     ],
+     "weights": {
+      "AMAT": 4.86,
+      "AMD": 5.74,
+      "ARM": 0.97,
+      "ASML": 5.1,
+      "AVGO": 6.6,
+      "INTC": 4.1,
+      "KLAC": 4.07,
+      "LRCX": 4.46,
+      "MRVL": 3.5,
+      "MU": 5.25,
+      "NVDA": 20.83,
+      "NXPI": 1.22,
+      "QCOM": 3.74,
+      "TER": 1.38,
+      "TSM": 9.58
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AAPL",
+      "ADBE",
+      "AI",
+      "AMBA",
+      "AMD",
+      "AMZN",
+      "APP",
+      "AVGO",
+      "BABA",
+      "BIDU",
+      "CRM",
+      "CSCO",
+      "DDOG",
+      "GOOGL",
+      "HPE",
+      "IBM",
+      "INTC",
+      "META",
+      "MRVL",
+      "MSFT",
+      "MU",
+      "NOW",
+      "NVDA",
+      "NXPI",
+      "OKTA",
+      "ORCL",
+      "PATH",
+      "PLTR",
+      "QCOM",
+      "SAP",
+      "SMCI",
+      "SNAP",
+      "SNOW",
+      "SOUN",
+      "TSLA",
+      "TSM",
+      "WDAY",
+      "ZBRA",
+      "ZS"
+     ],
+     "weights": {
+      "AAPL": 2.81,
+      "ADBE": 0.85,
+      "AI": 0.33,
+      "AMBA": 0.36,
+      "AMD": 2.58,
+      "AMZN": 3.4,
+      "APP": 1.03,
+      "AVGO": 2.9,
+      "BABA": 2.49,
+      "BIDU": 0.3,
+      "CRM": 1.28,
+      "CSCO": 3.01,
+      "DDOG": 0.75,
+      "GOOGL": 3.28,
+      "HPE": 0.54,
+      "IBM": 1.79,
+      "INTC": 2.64,
+      "META": 2.69,
+      "MRVL": 1.4,
+      "MSFT": 3.57,
+      "MU": 2.44,
+      "NOW": 0.97,
+      "NVDA": 2.82,
+      "NXPI": 0.49,
+      "OKTA": 0.31,
+      "ORCL": 3.17,
+      "PATH": 0.37,
+      "PLTR": 2.92,
+      "QCOM": 1.32,
+      "SAP": 1.92,
+      "SMCI": 0.27,
+      "SNAP": 0.31,
+      "SNOW": 0.86,
+      "SOUN": 0.29,
+      "TSLA": 2.85,
+      "TSM": 2.85,
+      "WDAY": 0.37,
+      "ZBRA": 0.34,
+      "ZS": 0.32
+     }
+    },
+    {
+     "ticker": "SHLD",
+     "basis": "holdings",
+     "adv20_musd": 73.2,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AVAV",
+      "BBAI",
+      "PLTR"
+     ],
+     "weights": {
+      "AVAV": 0.86,
+      "BBAI": 0.2,
+      "PLTR": 7.37
+     }
+    },
+    {
+     "ticker": "PSI",
+     "basis": "holdings",
+     "adv20_musd": 59.9,
+     "asof": "2026-08-01",
+     "holdings": [
+      "AMAT",
+      "AMD",
+      "INTC",
+      "KLAC",
+      "LRCX",
+      "LSCC",
+      "MU",
+      "NVDA",
+      "TER"
+     ],
+     "weights": {
+      "AMAT": 6.6337,
+      "AMD": 5.6164,
+      "INTC": 4.3397,
+      "KLAC": 5.4024,
+      "LRCX": 5.3972,
+      "LSCC": 2.6794,
+      "MU": 5.4608,
+      "NVDA": 5.5532,
+      "TER": 3.0633
+     }
+    },
+    {
+     "ticker": "BUG",
+     "basis": "holdings",
+     "adv20_musd": 58.3,
+     "asof": "2026-07-31",
+     "holdings": [
+      "CHKP",
+      "CRWD",
+      "FTNT",
+      "OKTA",
+      "PANW",
+      "S",
+      "ZS"
+     ],
+     "weights": {
+      "CHKP": 3.59,
+      "CRWD": 7.26,
+      "FTNT": 8.14,
+      "OKTA": 8.16,
+      "PANW": 7.84,
+      "S": 4.28,
+      "ZS": 4.9
+     }
+    },
+    {
+     "ticker": "XSD",
+     "basis": "holdings",
+     "adv20_musd": 57.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMBA",
+      "AMD",
+      "AVGO",
+      "CEVA",
+      "INTC",
+      "LSCC",
+      "MRVL",
+      "MU",
+      "NVDA",
+      "NXPI",
+      "QCOM",
+      "SYNA"
+     ],
+     "weights": {
+      "AMBA": 3.2182,
+      "AMD": 2.9183,
+      "AVGO": 2.8237,
+      "CEVA": 0.8541,
+      "INTC": 2.3155,
+      "LSCC": 2.5589,
+      "MRVL": 1.9737,
+      "MU": 2.6675,
+      "NVDA": 2.6362,
+      "NXPI": 2.3259,
+      "QCOM": 2.1564,
+      "SYNA": 2.2986
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMD",
+      "AMZN",
+      "ANET",
+      "ARM",
+      "ASML",
+      "AVGO",
+      "BIDU",
+      "CRWD",
+      "DELL",
+      "GOOGL",
+      "HPE",
+      "INTC",
+      "META",
+      "MRVL",
+      "MSFT",
+      "MU",
+      "NVDA",
+      "ORCL",
+      "SMCI",
+      "SNOW",
+      "VRT"
+     ],
+     "weights": {
+      "AMD": 3.39,
+      "AMZN": 2.81,
+      "ANET": 2.17,
+      "ARM": 2.35,
+      "ASML": 2.71,
+      "AVGO": 4.31,
+      "BIDU": 1.31,
+      "CRWD": 1.51,
+      "DELL": 1.44,
+      "GOOGL": 5.92,
+      "HPE": 1.33,
+      "INTC": 1.04,
+      "META": 1.96,
+      "MRVL": 1.51,
+      "MSFT": 2.78,
+      "MU": 3.22,
+      "NVDA": 6.43,
+      "ORCL": 2.02,
+      "SMCI": 1.65,
+      "SNOW": 1.61,
+      "VRT": 1.73
+     }
+    },
+    {
+     "ticker": "DTCR",
+     "basis": "holdings",
+     "adv20_musd": 40.1,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "AVGO",
+      "DLR",
+      "EQIX",
+      "HPE",
+      "INTC",
+      "MRVL",
+      "MU",
+      "NVDA",
+      "SMCI"
+     ],
+     "weights": {
+      "AMD": 1.83,
+      "AVGO": 2.01,
+      "DLR": 13.09,
+      "EQIX": 12.19,
+      "HPE": 2.06,
+      "INTC": 1.78,
+      "MRVL": 1.85,
+      "MU": 1.85,
+      "NVDA": 1.93,
+      "SMCI": 2.15
+     }
+    },
+    {
+     "ticker": "BOTZ",
+     "basis": "holdings",
+     "adv20_musd": 29.5,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AVAV",
+      "BIDU",
+      "CGNX",
+      "CRNC",
+      "GOOGL",
+      "ISRG",
+      "NVDA",
+      "PATH",
+      "SYM",
+      "TSLA"
+     ],
+     "weights": {
+      "AVAV": 1.69,
+      "BIDU": 1.9,
+      "CGNX": 2.45,
+      "CRNC": 0.09,
+      "GOOGL": 2.39,
+      "ISRG": 5.75,
+      "NVDA": 8.85,
+      "PATH": 1.33,
+      "SYM": 1.23,
+      "TSLA": 1.55
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "AMZN",
+      "AVAV",
+      "GOOGL",
+      "NVDA",
+      "PLTR",
+      "TER",
+      "TSLA",
+      "TSM"
+     ],
+     "weights": {
+      "AMD": 5.07,
+      "AMZN": 4.28,
+      "AVAV": 4.49,
+      "GOOGL": 0.28,
+      "NVDA": 3.32,
+      "PLTR": 2.94,
+      "TER": 3.97,
+      "TSLA": 3.04,
+      "TSM": 1.82
+     }
+    }
+   ]
+  },
+  "Cloud Computing": {
+   "diagnostic_cohesion_rho": 0.2305,
+   "diagnostic_cohesion_panel_n": 50,
+   "n_members": 57,
+   "candidates": [
+    {
+     "ticker": "SMH",
+     "basis": "holdings",
+     "adv20_musd": 7486.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMD",
+      "AVGO",
+      "INTC",
+      "MRVL",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 5.74,
+      "AVGO": 6.6,
+      "INTC": 4.1,
+      "MRVL": 3.5,
+      "NVDA": 20.83
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "ADBE",
+      "AMD",
+      "AMZN",
+      "AVGO",
+      "BABA",
+      "CRM",
+      "CSCO",
+      "DDOG",
+      "DT",
+      "GOOGL",
+      "HPE",
+      "IBM",
+      "INTC",
+      "MRVL",
+      "MSFT",
+      "NOW",
+      "NVDA",
+      "OKTA",
+      "ORCL",
+      "SHOP",
+      "SMCI",
+      "SNOW",
+      "TWLO",
+      "WDAY",
+      "ZS"
+     ],
+     "weights": {
+      "ADBE": 0.85,
+      "AMD": 2.58,
+      "AMZN": 3.4,
+      "AVGO": 2.9,
+      "BABA": 2.49,
+      "CRM": 1.28,
+      "CSCO": 3.01,
+      "DDOG": 0.75,
+      "DT": 0.32,
+      "GOOGL": 3.28,
+      "HPE": 0.54,
+      "IBM": 1.79,
+      "INTC": 2.64,
+      "MRVL": 1.4,
+      "MSFT": 3.57,
+      "NOW": 0.97,
+      "NVDA": 2.82,
+      "OKTA": 0.31,
+      "ORCL": 3.17,
+      "SHOP": 1.22,
+      "SMCI": 0.27,
+      "SNOW": 0.86,
+      "TWLO": 0.31,
+      "WDAY": 0.37,
+      "ZS": 0.32
+     }
+    },
+    {
+     "ticker": "PSI",
+     "basis": "holdings",
+     "adv20_musd": 59.9,
+     "asof": "2026-08-01",
+     "holdings": [
+      "AMD",
+      "INTC",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 5.6164,
+      "INTC": 4.3397,
+      "NVDA": 5.5532
+     }
+    },
+    {
+     "ticker": "BUG",
+     "basis": "holdings",
+     "adv20_musd": 58.3,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AKAM",
+      "CRWD",
+      "FTNT",
+      "OKTA",
+      "PANW",
+      "S",
+      "ZS"
+     ],
+     "weights": {
+      "AKAM": 4.74,
+      "CRWD": 7.26,
+      "FTNT": 8.14,
+      "OKTA": 8.16,
+      "PANW": 7.84,
+      "S": 4.28,
+      "ZS": 4.9
+     }
+    },
+    {
+     "ticker": "XSD",
+     "basis": "holdings",
+     "adv20_musd": 57.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMD",
+      "AVGO",
+      "INTC",
+      "MRVL",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 2.9183,
+      "AVGO": 2.8237,
+      "INTC": 2.3155,
+      "MRVL": 1.9737,
+      "NVDA": 2.6362
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMD",
+      "AMZN",
+      "ANET",
+      "AVGO",
+      "CRWD",
+      "DELL",
+      "GOOGL",
+      "HPE",
+      "INTC",
+      "MRVL",
+      "MSFT",
+      "NVDA",
+      "ORCL",
+      "SMCI",
+      "SNOW",
+      "VRT"
+     ],
+     "weights": {
+      "AMD": 3.39,
+      "AMZN": 2.81,
+      "ANET": 2.17,
+      "AVGO": 4.31,
+      "CRWD": 1.51,
+      "DELL": 1.44,
+      "GOOGL": 5.92,
+      "HPE": 1.33,
+      "INTC": 1.04,
+      "MRVL": 1.51,
+      "MSFT": 2.78,
+      "NVDA": 6.43,
+      "ORCL": 2.02,
+      "SMCI": 1.65,
+      "SNOW": 1.61,
+      "VRT": 1.73
+     }
+    },
+    {
+     "ticker": "DTCR",
+     "basis": "holdings",
+     "adv20_musd": 40.1,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "AVGO",
+      "DLR",
+      "EQIX",
+      "HPE",
+      "INTC",
+      "MRVL",
+      "NVDA",
+      "SMCI"
+     ],
+     "weights": {
+      "AMD": 1.83,
+      "AVGO": 2.01,
+      "DLR": 13.09,
+      "EQIX": 12.19,
+      "HPE": 2.06,
+      "INTC": 1.78,
+      "MRVL": 1.85,
+      "NVDA": 1.93,
+      "SMCI": 2.15
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "AMZN",
+      "GOOGL",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 5.07,
+      "AMZN": 4.28,
+      "GOOGL": 0.28,
+      "NVDA": 3.32
+     }
+    }
+   ]
+  },
+  "Semiconductors": {
+   "diagnostic_cohesion_rho": 0.4788,
+   "diagnostic_cohesion_panel_n": 40,
+   "n_members": 46,
+   "candidates": [
+    {
+     "ticker": "SMH",
+     "basis": "holdings",
+     "adv20_musd": 7486.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "ADI",
+      "AMAT",
+      "AMD",
+      "ARM",
+      "ASML",
+      "AVGO",
+      "CDNS",
+      "INTC",
+      "KLAC",
+      "LRCX",
+      "MCHP",
+      "MPWR",
+      "MRVL",
+      "MU",
+      "NVDA",
+      "NXPI",
+      "ON",
+      "QCOM",
+      "SNPS",
+      "STM",
+      "SWKS",
+      "TER",
+      "TSM",
+      "TXN"
+     ],
+     "weights": {
+      "ADI": 4.5,
+      "AMAT": 4.86,
+      "AMD": 5.74,
+      "ARM": 0.97,
+      "ASML": 5.1,
+      "AVGO": 6.6,
+      "CDNS": 2.32,
+      "INTC": 4.1,
+      "KLAC": 4.07,
+      "LRCX": 4.46,
+      "MCHP": 0.9,
+      "MPWR": 1.41,
+      "MRVL": 3.5,
+      "MU": 5.25,
+      "NVDA": 20.83,
+      "NXPI": 1.22,
+      "ON": 0.63,
+      "QCOM": 3.74,
+      "SNPS": 1.83,
+      "STM": 1.09,
+      "SWKS": 0.18,
+      "TER": 1.38,
+      "TSM": 9.58,
+      "TXN": 4.74
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "AVGO",
+      "CDNS",
+      "INTC",
+      "MRVL",
+      "MU",
+      "NVDA",
+      "NXPI",
+      "QCOM",
+      "SNPS",
+      "STX",
+      "TSM"
+     ],
+     "weights": {
+      "AMD": 2.58,
+      "AVGO": 2.9,
+      "CDNS": 0.8,
+      "INTC": 2.64,
+      "MRVL": 1.4,
+      "MU": 2.44,
+      "NVDA": 2.82,
+      "NXPI": 0.49,
+      "QCOM": 1.32,
+      "SNPS": 0.63,
+      "STX": 1.63,
+      "TSM": 2.85
+     }
+    },
+    {
+     "ticker": "PSI",
+     "basis": "holdings",
+     "adv20_musd": 59.9,
+     "asof": "2026-08-01",
+     "holdings": [
+      "ADI",
+      "AMAT",
+      "AMD",
+      "AMKR",
+      "COHU",
+      "FORM",
+      "INTC",
+      "KLAC",
+      "LRCX",
+      "LSCC",
+      "MPWR",
+      "MU",
+      "NVDA",
+      "TER"
+     ],
+     "weights": {
+      "ADI": 5.2001,
+      "AMAT": 6.6337,
+      "AMD": 5.6164,
+      "AMKR": 2.2007,
+      "COHU": 3.1153,
+      "FORM": 2.5227,
+      "INTC": 4.3397,
+      "KLAC": 5.4024,
+      "LRCX": 5.3972,
+      "LSCC": 2.6794,
+      "MPWR": 2.7804,
+      "MU": 5.4608,
+      "NVDA": 5.5532,
+      "TER": 3.0633
+     }
+    },
+    {
+     "ticker": "XSD",
+     "basis": "holdings",
+     "adv20_musd": 57.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "ADI",
+      "AMD",
+      "AVGO",
+      "INTC",
+      "LSCC",
+      "MCHP",
+      "MPWR",
+      "MRAM",
+      "MRVL",
+      "MU",
+      "NVDA",
+      "NVEC",
+      "NVTS",
+      "NXPI",
+      "ON",
+      "POWI",
+      "QCOM",
+      "QRVO",
+      "RMBS",
+      "SWKS",
+      "TXN",
+      "WOLF"
+     ],
+     "weights": {
+      "ADI": 2.5296,
+      "AMD": 2.9183,
+      "AVGO": 2.8237,
+      "INTC": 2.3155,
+      "LSCC": 2.5589,
+      "MCHP": 2.321,
+      "MPWR": 2.4206,
+      "MRAM": 0.4769,
+      "MRVL": 1.9737,
+      "MU": 2.6675,
+      "NVDA": 2.6362,
+      "NVEC": 0.5637,
+      "NVTS": 1.4608,
+      "NXPI": 2.3259,
+      "ON": 2.059,
+      "POWI": 2.2186,
+      "QCOM": 2.1564,
+      "QRVO": 2.5875,
+      "RMBS": 1.7569,
+      "SWKS": 2.4079,
+      "TXN": 2.6645,
+      "WOLF": 1.4899
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMD",
+      "ARM",
+      "ASML",
+      "AVGO",
+      "INTC",
+      "MPWR",
+      "MRVL",
+      "MU",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 3.39,
+      "ARM": 2.35,
+      "ASML": 2.71,
+      "AVGO": 4.31,
+      "INTC": 1.04,
+      "MPWR": 1.0,
+      "MRVL": 1.51,
+      "MU": 3.22,
+      "NVDA": 6.43
+     }
+    },
+    {
+     "ticker": "DTCR",
+     "basis": "holdings",
+     "adv20_musd": 40.1,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "AVGO",
+      "INTC",
+      "MCHP",
+      "MRVL",
+      "MU",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 1.83,
+      "AVGO": 2.01,
+      "INTC": 1.78,
+      "MCHP": 1.75,
+      "MRVL": 1.85,
+      "MU": 1.85,
+      "NVDA": 1.93
+     }
+    },
+    {
+     "ticker": "PBW",
+     "basis": "holdings",
+     "adv20_musd": 27.4,
+     "asof": "2026-08-01",
+     "holdings": [
+      "IONQ",
+      "MPWR",
+      "NVTS"
+     ],
+     "weights": {
+      "IONQ": 1.0638,
+      "MPWR": 1.6564,
+      "NVTS": 0.8149
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "NVDA",
+      "SNPS",
+      "TER",
+      "TSM"
+     ],
+     "weights": {
+      "AMD": 5.07,
+      "NVDA": 3.32,
+      "SNPS": 0.93,
+      "TER": 3.97,
+      "TSM": 1.82
+     }
+    }
+   ]
+  },
+  "Cybersecurity": {
+   "diagnostic_cohesion_rho": 0.31,
+   "diagnostic_cohesion_panel_n": 18,
+   "n_members": 20,
+   "candidates": [
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMZN",
+      "AVGO",
+      "CSCO",
+      "GOOGL",
+      "IBM",
+      "MSFT",
+      "OKTA",
+      "ZS"
+     ],
+     "weights": {
+      "AMZN": 3.4,
+      "AVGO": 2.9,
+      "CSCO": 3.01,
+      "GOOGL": 3.28,
+      "IBM": 1.79,
+      "MSFT": 3.57,
+      "OKTA": 0.31,
+      "ZS": 0.32
+     }
+    },
+    {
+     "ticker": "BUG",
+     "basis": "holdings",
+     "adv20_musd": 58.3,
+     "asof": "2026-07-31",
+     "holdings": [
+      "CHKP",
+      "CRWD",
+      "FTNT",
+      "OKTA",
+      "PANW",
+      "QLYS",
+      "RPD",
+      "S",
+      "SAIL",
+      "TENB",
+      "ZS"
+     ],
+     "weights": {
+      "CHKP": 3.59,
+      "CRWD": 7.26,
+      "FTNT": 8.14,
+      "OKTA": 8.16,
+      "PANW": 7.84,
+      "QLYS": 5.29,
+      "RPD": 0.96,
+      "S": 4.28,
+      "SAIL": 4.67,
+      "TENB": 4.97,
+      "ZS": 4.9
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMZN",
+      "AVGO",
+      "CRWD",
+      "GOOGL",
+      "MSFT"
+     ],
+     "weights": {
+      "AMZN": 2.81,
+      "AVGO": 4.31,
+      "CRWD": 1.51,
+      "GOOGL": 5.92,
+      "MSFT": 2.78
+     }
+    }
+   ]
+  },
+  "Software": {
+   "diagnostic_cohesion_rho": 0.2778,
+   "diagnostic_cohesion_panel_n": 66,
+   "n_members": 77,
+   "candidates": [
+    {
+     "ticker": "SMH",
+     "basis": "holdings",
+     "adv20_musd": 7486.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AVGO",
+      "CDNS",
+      "SNPS"
+     ],
+     "weights": {
+      "AVGO": 6.6,
+      "CDNS": 2.32,
+      "SNPS": 1.83
+     }
+    },
+    {
+     "ticker": "XRT",
+     "basis": "holdings",
+     "adv20_musd": 375.5,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMZN",
+      "CPNG",
+      "EBAY",
+      "ETSY",
+      "WMT"
+     ],
+     "weights": {
+      "AMZN": 1.2946,
+      "CPNG": 1.3922,
+      "EBAY": 1.3958,
+      "ETSY": 1.5829,
+      "WMT": 1.2055
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AAPL",
+      "ADBE",
+      "AMZN",
+      "AVGO",
+      "BABA",
+      "CDNS",
+      "CRM",
+      "CSCO",
+      "DDOG",
+      "DT",
+      "GOOGL",
+      "IBM",
+      "MSFT",
+      "NOW",
+      "OKTA",
+      "ORCL",
+      "PLTR",
+      "SAP",
+      "SHOP",
+      "SNOW",
+      "SNPS",
+      "TDC",
+      "TWLO",
+      "WDAY",
+      "ZS"
+     ],
+     "weights": {
+      "AAPL": 2.81,
+      "ADBE": 0.85,
+      "AMZN": 3.4,
+      "AVGO": 2.9,
+      "BABA": 2.49,
+      "CDNS": 0.8,
+      "CRM": 1.28,
+      "CSCO": 3.01,
+      "DDOG": 0.75,
+      "DT": 0.32,
+      "GOOGL": 3.28,
+      "IBM": 1.79,
+      "MSFT": 3.57,
+      "NOW": 0.97,
+      "OKTA": 0.31,
+      "ORCL": 3.17,
+      "PLTR": 2.92,
+      "SAP": 1.92,
+      "SHOP": 1.22,
+      "SNOW": 0.86,
+      "SNPS": 0.63,
+      "TDC": 0.33,
+      "TWLO": 0.31,
+      "WDAY": 0.37,
+      "ZS": 0.32
+     }
+    },
+    {
+     "ticker": "BUG",
+     "basis": "holdings",
+     "adv20_musd": 58.3,
+     "asof": "2026-07-31",
+     "holdings": [
+      "CHKP",
+      "CRWD",
+      "FTNT",
+      "OKTA",
+      "PANW",
+      "QLYS",
+      "S",
+      "TENB",
+      "ZS"
+     ],
+     "weights": {
+      "CHKP": 3.59,
+      "CRWD": 7.26,
+      "FTNT": 8.14,
+      "OKTA": 8.16,
+      "PANW": 7.84,
+      "QLYS": 5.29,
+      "S": 4.28,
+      "TENB": 4.97,
+      "ZS": 4.9
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMZN",
+      "AVGO",
+      "CRWD",
+      "GOOGL",
+      "MSFT",
+      "ORCL",
+      "SNOW"
+     ],
+     "weights": {
+      "AMZN": 2.81,
+      "AVGO": 4.31,
+      "CRWD": 1.51,
+      "GOOGL": 5.92,
+      "MSFT": 2.78,
+      "ORCL": 2.02,
+      "SNOW": 1.61
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMZN",
+      "GOOGL",
+      "PLTR",
+      "SNPS",
+      "TRMB"
+     ],
+     "weights": {
+      "AMZN": 4.28,
+      "GOOGL": 0.28,
+      "PLTR": 2.94,
+      "SNPS": 0.93,
+      "TRMB": 3.4
+     }
+    }
+   ]
+  },
+  "Hardware": {
+   "diagnostic_cohesion_rho": 0.2596,
+   "diagnostic_cohesion_panel_n": 56,
+   "n_members": 66,
+   "candidates": [
+    {
+     "ticker": "SMH",
+     "basis": "holdings",
+     "adv20_musd": 7486.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "ADI",
+      "AMD",
+      "ASML",
+      "AVGO",
+      "INTC",
+      "MRVL",
+      "NVDA",
+      "QCOM",
+      "TSM",
+      "TXN"
+     ],
+     "weights": {
+      "ADI": 4.5,
+      "AMD": 5.74,
+      "ASML": 5.1,
+      "AVGO": 6.6,
+      "INTC": 4.1,
+      "MRVL": 3.5,
+      "NVDA": 20.83,
+      "QCOM": 3.74,
+      "TSM": 9.58,
+      "TXN": 4.74
+     }
+    },
+    {
+     "ticker": "PAVE",
+     "basis": "holdings",
+     "adv20_musd": 122.1,
+     "asof": "2026-07-31",
+     "holdings": [
+      "EMR",
+      "ETN",
+      "ROK",
+      "TRMB"
+     ],
+     "weights": {
+      "EMR": 3.16,
+      "ETN": 3.06,
+      "ROK": 3.19,
+      "TRMB": 0.75
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AAPL",
+      "AMD",
+      "AVGO",
+      "CSCO",
+      "ERIC",
+      "HPE",
+      "IBM",
+      "INTC",
+      "META",
+      "MRVL",
+      "MSFT",
+      "NVDA",
+      "QCOM",
+      "SMCI",
+      "STX",
+      "TSLA",
+      "TSM",
+      "ZBRA"
+     ],
+     "weights": {
+      "AAPL": 2.81,
+      "AMD": 2.58,
+      "AVGO": 2.9,
+      "CSCO": 3.01,
+      "ERIC": 0.31,
+      "HPE": 0.54,
+      "IBM": 1.79,
+      "INTC": 2.64,
+      "META": 2.69,
+      "MRVL": 1.4,
+      "MSFT": 3.57,
+      "NVDA": 2.82,
+      "QCOM": 1.32,
+      "SMCI": 0.27,
+      "STX": 1.63,
+      "TSLA": 2.85,
+      "TSM": 2.85,
+      "ZBRA": 0.34
+     }
+    },
+    {
+     "ticker": "PSI",
+     "basis": "holdings",
+     "adv20_musd": 59.9,
+     "asof": "2026-08-01",
+     "holdings": [
+      "ADI",
+      "AMD",
+      "INTC",
+      "NVDA"
+     ],
+     "weights": {
+      "ADI": 5.2001,
+      "AMD": 5.6164,
+      "INTC": 4.3397,
+      "NVDA": 5.5532
+     }
+    },
+    {
+     "ticker": "XSD",
+     "basis": "holdings",
+     "adv20_musd": 57.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "ADI",
+      "AMD",
+      "AVGO",
+      "INTC",
+      "MRVL",
+      "NVDA",
+      "PI",
+      "QCOM",
+      "RGTI",
+      "TXN"
+     ],
+     "weights": {
+      "ADI": 2.5296,
+      "AMD": 2.9183,
+      "AVGO": 2.8237,
+      "INTC": 2.3155,
+      "MRVL": 1.9737,
+      "NVDA": 2.6362,
+      "PI": 3.2562,
+      "QCOM": 2.1564,
+      "RGTI": 2.0701,
+      "TXN": 2.6645
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMD",
+      "ANET",
+      "ASML",
+      "AVGO",
+      "DELL",
+      "HPE",
+      "INTC",
+      "LITE",
+      "META",
+      "MRVL",
+      "MSFT",
+      "NVDA",
+      "SMCI",
+      "VRT"
+     ],
+     "weights": {
+      "AMD": 3.39,
+      "ANET": 2.17,
+      "ASML": 2.71,
+      "AVGO": 4.31,
+      "DELL": 1.44,
+      "HPE": 1.33,
+      "INTC": 1.04,
+      "LITE": 1.37,
+      "META": 1.96,
+      "MRVL": 1.51,
+      "MSFT": 2.78,
+      "NVDA": 6.43,
+      "SMCI": 1.65,
+      "VRT": 1.73
+     }
+    },
+    {
+     "ticker": "DTCR",
+     "basis": "holdings",
+     "adv20_musd": 40.1,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "AVGO",
+      "HPE",
+      "INTC",
+      "MRVL",
+      "NVDA",
+      "SMCI"
+     ],
+     "weights": {
+      "AMD": 1.83,
+      "AVGO": 2.01,
+      "HPE": 2.06,
+      "INTC": 1.78,
+      "MRVL": 1.85,
+      "NVDA": 1.93,
+      "SMCI": 2.15
+     }
+    },
+    {
+     "ticker": "PPA",
+     "basis": "holdings",
+     "adv20_musd": 30.8,
+     "asof": "2026-08-01",
+     "holdings": [
+      "APH",
+      "AVAV",
+      "ETN",
+      "KTOS"
+     ],
+     "weights": {
+      "APH": 2.5179,
+      "AVAV": 0.7497,
+      "ETN": 2.1473,
+      "KTOS": 0.7421
+     }
+    },
+    {
+     "ticker": "BOTZ",
+     "basis": "holdings",
+     "adv20_musd": 29.5,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AVAV",
+      "ISRG",
+      "NVDA",
+      "TSLA"
+     ],
+     "weights": {
+      "AVAV": 1.69,
+      "ISRG": 5.75,
+      "NVDA": 8.85,
+      "TSLA": 1.55
+     }
+    },
+    {
+     "ticker": "PBW",
+     "basis": "holdings",
+     "adv20_musd": 27.4,
+     "asof": "2026-08-01",
+     "holdings": [
+      "IONQ",
+      "QBTS",
+      "TSLA"
+     ],
+     "weights": {
+      "IONQ": 1.0638,
+      "QBTS": 1.2579,
+      "TSLA": 1.3938
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "AVAV",
+      "KTOS",
+      "NVDA",
+      "TRMB",
+      "TSLA",
+      "TSM"
+     ],
+     "weights": {
+      "AMD": 5.07,
+      "AVAV": 4.49,
+      "KTOS": 6.21,
+      "NVDA": 3.32,
+      "TRMB": 3.4,
+      "TSLA": 3.04,
+      "TSM": 1.82
+     }
+    }
+   ]
+  },
+  "Quantum Computing": {
+   "diagnostic_cohesion_rho": 0.254,
+   "diagnostic_cohesion_panel_n": 14,
+   "n_members": 16,
+   "candidates": [
+    {
+     "ticker": "SMH",
+     "basis": "holdings",
+     "adv20_musd": 7486.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMD",
+      "INTC",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 5.74,
+      "INTC": 4.1,
+      "NVDA": 20.83
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "AMZN",
+      "GOOGL",
+      "IBM",
+      "INTC",
+      "MSFT",
+      "NVDA",
+      "QUBT"
+     ],
+     "weights": {
+      "AMD": 2.58,
+      "AMZN": 3.4,
+      "GOOGL": 3.28,
+      "IBM": 1.79,
+      "INTC": 2.64,
+      "MSFT": 3.57,
+      "NVDA": 2.82,
+      "QUBT": 0.3
+     }
+    },
+    {
+     "ticker": "PSI",
+     "basis": "holdings",
+     "adv20_musd": 59.9,
+     "asof": "2026-08-01",
+     "holdings": [
+      "AMD",
+      "INTC",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 5.6164,
+      "INTC": 4.3397,
+      "NVDA": 5.5532
+     }
+    },
+    {
+     "ticker": "XSD",
+     "basis": "holdings",
+     "adv20_musd": 57.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMD",
+      "INTC",
+      "NVDA",
+      "RGTI"
+     ],
+     "weights": {
+      "AMD": 2.9183,
+      "INTC": 2.3155,
+      "NVDA": 2.6362,
+      "RGTI": 2.0701
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMD",
+      "AMZN",
+      "GOOGL",
+      "INTC",
+      "MSFT",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 3.39,
+      "AMZN": 2.81,
+      "GOOGL": 5.92,
+      "INTC": 1.04,
+      "MSFT": 2.78,
+      "NVDA": 6.43
+     }
+    },
+    {
+     "ticker": "DTCR",
+     "basis": "holdings",
+     "adv20_musd": 40.1,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "INTC",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 1.83,
+      "INTC": 1.78,
+      "NVDA": 1.93
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "AMZN",
+      "GOOGL",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 5.07,
+      "AMZN": 4.28,
+      "GOOGL": 0.28,
+      "NVDA": 3.32
+     }
+    }
+   ]
+  },
+  "Virtual & Augmented Reality": {
+   "diagnostic_cohesion_rho": 0.1842,
+   "diagnostic_cohesion_panel_n": 24,
+   "n_members": 26,
+   "candidates": [
+    {
+     "ticker": "SMH",
+     "basis": "holdings",
+     "adv20_musd": 7486.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMD",
+      "NVDA",
+      "QCOM"
+     ],
+     "weights": {
+      "AMD": 5.74,
+      "NVDA": 20.83,
+      "QCOM": 3.74
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AAPL",
+      "ADBE",
+      "AMD",
+      "AMZN",
+      "GOOGL",
+      "META",
+      "MSFT",
+      "NVDA",
+      "QCOM",
+      "SNAP"
+     ],
+     "weights": {
+      "AAPL": 2.81,
+      "ADBE": 0.85,
+      "AMD": 2.58,
+      "AMZN": 3.4,
+      "GOOGL": 3.28,
+      "META": 2.69,
+      "MSFT": 3.57,
+      "NVDA": 2.82,
+      "QCOM": 1.32,
+      "SNAP": 0.31
+     }
+    },
+    {
+     "ticker": "XSD",
+     "basis": "holdings",
+     "adv20_musd": 57.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMD",
+      "KOPN",
+      "NVDA",
+      "QCOM"
+     ],
+     "weights": {
+      "AMD": 2.9183,
+      "KOPN": 1.1844,
+      "NVDA": 2.6362,
+      "QCOM": 2.1564
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMD",
+      "AMZN",
+      "COHR",
+      "GOOGL",
+      "LITE",
+      "META",
+      "MSFT",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 3.39,
+      "AMZN": 2.81,
+      "COHR": 1.35,
+      "GOOGL": 5.92,
+      "LITE": 1.37,
+      "META": 1.96,
+      "MSFT": 2.78,
+      "NVDA": 6.43
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "AMZN",
+      "GOOGL",
+      "NVDA",
+      "TRMB"
+     ],
+     "weights": {
+      "AMD": 5.07,
+      "AMZN": 4.28,
+      "GOOGL": 0.28,
+      "NVDA": 3.32,
+      "TRMB": 3.4
+     }
+    }
+   ]
+  },
+  "Biometrics": {
+   "diagnostic_cohesion_rho": 0.1342,
+   "diagnostic_cohesion_panel_n": 21,
+   "n_members": 26,
+   "candidates": [
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AAPL",
+      "ACN",
+      "GOOGL",
+      "META",
+      "MSFT",
+      "NVDA",
+      "OKTA",
+      "PLTR",
+      "QCOM"
+     ],
+     "weights": {
+      "AAPL": 2.81,
+      "ACN": 0.86,
+      "GOOGL": 3.28,
+      "META": 2.69,
+      "MSFT": 3.57,
+      "NVDA": 2.82,
+      "OKTA": 0.31,
+      "PLTR": 2.92,
+      "QCOM": 1.32
+     }
+    },
+    {
+     "ticker": "SHLD",
+     "basis": "holdings",
+     "adv20_musd": 73.2,
+     "asof": "2026-07-31",
+     "holdings": [
+      "BBAI",
+      "LDOS",
+      "LHX",
+      "LMT",
+      "NOC",
+      "PLTR",
+      "PSN"
+     ],
+     "weights": {
+      "BBAI": 0.2,
+      "LDOS": 2.19,
+      "LHX": 4.09,
+      "LMT": 8.95,
+      "NOC": 8.01,
+      "PLTR": 7.37,
+      "PSN": 0.71
+     }
+    },
+    {
+     "ticker": "XAR",
+     "basis": "holdings",
+     "adv20_musd": 60.6,
+     "asof": "2026-07-30",
+     "holdings": [
+      "LHX",
+      "LMT",
+      "NOC"
+     ],
+     "weights": {
+      "LHX": 2.4966,
+      "LMT": 3.0424,
+      "NOC": 2.7448
+     }
+    },
+    {
+     "ticker": "XSD",
+     "basis": "holdings",
+     "adv20_musd": 57.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "NVDA",
+      "QCOM",
+      "SYNA"
+     ],
+     "weights": {
+      "NVDA": 2.6362,
+      "QCOM": 2.1564,
+      "SYNA": 2.2986
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "GOOGL",
+      "META",
+      "MSFT",
+      "NVDA"
+     ],
+     "weights": {
+      "GOOGL": 5.92,
+      "META": 1.96,
+      "MSFT": 2.78,
+      "NVDA": 6.43
+     }
+    },
+    {
+     "ticker": "UFO",
+     "basis": "holdings",
+     "adv20_musd": 31.0,
+     "asof": "2026-08-03",
+     "holdings": [
+      "GRMN",
+      "LHX",
+      "LMT",
+      "NOC"
+     ],
+     "weights": {
+      "GRMN": 6.97,
+      "LHX": 2.54,
+      "LMT": 3.05,
+      "NOC": 2.79
+     }
+    },
+    {
+     "ticker": "PPA",
+     "basis": "holdings",
+     "adv20_musd": 30.8,
+     "asof": "2026-08-01",
+     "holdings": [
+      "LDOS",
+      "LHX",
+      "LMT",
+      "NOC",
+      "PLTR",
+      "PSN"
+     ],
+     "weights": {
+      "LDOS": 1.0074,
+      "LHX": 3.8271,
+      "LMT": 6.6355,
+      "NOC": 4.7496,
+      "PLTR": 1.2245,
+      "PSN": 0.1566
+     }
+    },
+    {
+     "ticker": "BOTZ",
+     "basis": "holdings",
+     "adv20_musd": 29.5,
+     "asof": "2026-07-31",
+     "holdings": [
+      "CGNX",
+      "GOOGL",
+      "NVDA"
+     ],
+     "weights": {
+      "CGNX": 2.45,
+      "GOOGL": 2.39,
+      "NVDA": 8.85
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "GOOGL",
+      "LHX",
+      "LMT",
+      "NVDA",
+      "PLTR"
+     ],
+     "weights": {
+      "GOOGL": 0.28,
+      "LHX": 7.45,
+      "LMT": 1.02,
+      "NVDA": 3.32,
+      "PLTR": 2.94
+     }
+    }
+   ]
+  },
+  "Big Data": {
+   "diagnostic_cohesion_rho": 0.1785,
+   "diagnostic_cohesion_panel_n": 35,
+   "n_members": 41,
+   "candidates": [
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AI",
+      "AMD",
+      "AMZN",
+      "CRM",
+      "CSCO",
+      "DDOG",
+      "EFX",
+      "GOOGL",
+      "HPE",
+      "MSFT",
+      "NOW",
+      "NVDA",
+      "ORCL",
+      "PLTR",
+      "SAP",
+      "SMCI",
+      "SNOW",
+      "STX",
+      "TDC",
+      "TRI"
+     ],
+     "weights": {
+      "AI": 0.33,
+      "AMD": 2.58,
+      "AMZN": 3.4,
+      "CRM": 1.28,
+      "CSCO": 3.01,
+      "DDOG": 0.75,
+      "EFX": 0.3,
+      "GOOGL": 3.28,
+      "HPE": 0.54,
+      "MSFT": 3.57,
+      "NOW": 0.97,
+      "NVDA": 2.82,
+      "ORCL": 3.17,
+      "PLTR": 2.92,
+      "SAP": 1.92,
+      "SMCI": 0.27,
+      "SNOW": 0.86,
+      "STX": 1.63,
+      "TDC": 0.33,
+      "TRI": 0.36
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMD",
+      "AMZN",
+      "DELL",
+      "GOOGL",
+      "HPE",
+      "MSFT",
+      "NVDA",
+      "ORCL",
+      "SMCI",
+      "SNOW"
+     ],
+     "weights": {
+      "AMD": 3.39,
+      "AMZN": 2.81,
+      "DELL": 1.44,
+      "GOOGL": 5.92,
+      "HPE": 1.33,
+      "MSFT": 2.78,
+      "NVDA": 6.43,
+      "ORCL": 2.02,
+      "SMCI": 1.65,
+      "SNOW": 1.61
+     }
+    },
+    {
+     "ticker": "DTCR",
+     "basis": "holdings",
+     "adv20_musd": 40.1,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "DLR",
+      "EQIX",
+      "HPE",
+      "NVDA",
+      "SMCI"
+     ],
+     "weights": {
+      "AMD": 1.83,
+      "DLR": 13.09,
+      "EQIX": 12.19,
+      "HPE": 2.06,
+      "NVDA": 1.93,
+      "SMCI": 2.15
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "AMZN",
+      "GOOGL",
+      "NVDA",
+      "PLTR"
+     ],
+     "weights": {
+      "AMD": 5.07,
+      "AMZN": 4.28,
+      "GOOGL": 0.28,
+      "NVDA": 3.32,
+      "PLTR": 2.94
+     }
+    }
+   ]
+  },
+  "Electric Vehicles": {
+   "diagnostic_cohesion_rho": 0.2447,
+   "diagnostic_cohesion_panel_n": 39,
+   "n_members": 54,
+   "candidates": [
+    {
+     "ticker": "SMH",
+     "basis": "holdings",
+     "adv20_musd": 7486.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "NVDA",
+      "NXPI",
+      "ON",
+      "QCOM",
+      "STM",
+      "TXN"
+     ],
+     "weights": {
+      "NVDA": 20.83,
+      "NXPI": 1.22,
+      "ON": 0.63,
+      "QCOM": 3.74,
+      "STM": 1.09,
+      "TXN": 4.74
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMBA",
+      "GOOGL",
+      "NVDA",
+      "NXPI",
+      "QCOM",
+      "TSLA",
+      "UBER"
+     ],
+     "weights": {
+      "AMBA": 0.36,
+      "GOOGL": 3.28,
+      "NVDA": 2.82,
+      "NXPI": 0.49,
+      "QCOM": 1.32,
+      "TSLA": 2.85,
+      "UBER": 1.22
+     }
+    },
+    {
+     "ticker": "XSD",
+     "basis": "holdings",
+     "adv20_musd": 57.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMBA",
+      "NVDA",
+      "NVTS",
+      "NXPI",
+      "ON",
+      "QCOM",
+      "TE",
+      "TXN",
+      "WOLF"
+     ],
+     "weights": {
+      "AMBA": 3.2182,
+      "NVDA": 2.6362,
+      "NVTS": 1.4608,
+      "NXPI": 2.3259,
+      "ON": 2.059,
+      "QCOM": 2.1564,
+      "TE": 1.5024,
+      "TXN": 2.6645,
+      "WOLF": 1.4899
+     }
+    },
+    {
+     "ticker": "REMX",
+     "basis": "holdings",
+     "adv20_musd": 54.3,
+     "asof": "2026-07-30",
+     "holdings": [
+      "ALB",
+      "LAC",
+      "MP",
+      "SQM"
+     ],
+     "weights": {
+      "ALB": 8.12,
+      "LAC": 2.11,
+      "MP": 5.93,
+      "SQM": 5.85
+     }
+    },
+    {
+     "ticker": "BOTZ",
+     "basis": "holdings",
+     "adv20_musd": 29.5,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AUR",
+      "GOOGL",
+      "HSAI",
+      "NVDA",
+      "TSLA",
+      "XPEV"
+     ],
+     "weights": {
+      "AUR": 2.4,
+      "GOOGL": 2.39,
+      "HSAI": 0.5,
+      "NVDA": 8.85,
+      "TSLA": 1.55,
+      "XPEV": 1.35
+     }
+    },
+    {
+     "ticker": "PBW",
+     "basis": "holdings",
+     "adv20_musd": 27.4,
+     "asof": "2026-08-01",
+     "holdings": [
+      "ALB",
+      "ENVX",
+      "EVGO",
+      "LAC",
+      "MP",
+      "NIO",
+      "NVTS",
+      "QS",
+      "RIVN",
+      "SES",
+      "SLDP",
+      "SQM",
+      "TE",
+      "THRM",
+      "TSLA",
+      "XPEV"
+     ],
+     "weights": {
+      "ALB": 1.3636,
+      "ENVX": 1.0541,
+      "EVGO": 1.4484,
+      "LAC": 1.2128,
+      "MP": 1.2514,
+      "NIO": 1.7186,
+      "NVTS": 0.8149,
+      "QS": 1.2464,
+      "RIVN": 1.7926,
+      "SES": 0.9525,
+      "SLDP": 1.3368,
+      "SQM": 1.5489,
+      "TE": 0.768,
+      "THRM": 2.1001,
+      "TSLA": 1.3938,
+      "XPEV": 1.7319
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "GOOGL",
+      "NVDA",
+      "TRMB",
+      "TSLA"
+     ],
+     "weights": {
+      "GOOGL": 0.28,
+      "NVDA": 3.32,
+      "TRMB": 3.4,
+      "TSLA": 3.04
+     }
+    }
+   ]
+  },
+  "Industrial Automation": {
+   "diagnostic_cohesion_rho": 0.2428,
+   "diagnostic_cohesion_panel_n": 35,
+   "n_members": 43,
+   "candidates": [
+    {
+     "ticker": "SMH",
+     "basis": "holdings",
+     "adv20_musd": 7486.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "CDNS",
+      "NVDA",
+      "ON",
+      "SNPS",
+      "TER",
+      "TXN"
+     ],
+     "weights": {
+      "CDNS": 2.32,
+      "NVDA": 20.83,
+      "ON": 0.63,
+      "SNPS": 1.83,
+      "TER": 1.38,
+      "TXN": 4.74
+     }
+    },
+    {
+     "ticker": "PAVE",
+     "basis": "holdings",
+     "adv20_musd": 122.1,
+     "asof": "2026-07-31",
+     "holdings": [
+      "CRS",
+      "EMR",
+      "ETN",
+      "ROK",
+      "RRX"
+     ],
+     "weights": {
+      "CRS": 1.48,
+      "EMR": 3.16,
+      "ETN": 3.06,
+      "ROK": 3.19,
+      "RRX": 0.78
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMBA",
+      "AMZN",
+      "CDNS",
+      "CSCO",
+      "MSFT",
+      "NVDA",
+      "ORCL",
+      "SNPS",
+      "ZBRA"
+     ],
+     "weights": {
+      "AMBA": 0.36,
+      "AMZN": 3.4,
+      "CDNS": 0.8,
+      "CSCO": 3.01,
+      "MSFT": 3.57,
+      "NVDA": 2.82,
+      "ORCL": 3.17,
+      "SNPS": 0.63,
+      "ZBRA": 0.34
+     }
+    },
+    {
+     "ticker": "XSD",
+     "basis": "holdings",
+     "adv20_musd": 57.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMBA",
+      "NVDA",
+      "ON",
+      "TXN"
+     ],
+     "weights": {
+      "AMBA": 3.2182,
+      "NVDA": 2.6362,
+      "ON": 2.059,
+      "TXN": 2.6645
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMZN",
+      "MSFT",
+      "NVDA",
+      "ORCL"
+     ],
+     "weights": {
+      "AMZN": 2.81,
+      "MSFT": 2.78,
+      "NVDA": 6.43,
+      "ORCL": 2.02
+     }
+    },
+    {
+     "ticker": "PPA",
+     "basis": "holdings",
+     "adv20_musd": 30.8,
+     "asof": "2026-08-01",
+     "holdings": [
+      "CRS",
+      "ETN",
+      "GE",
+      "TDY"
+     ],
+     "weights": {
+      "CRS": 1.6085,
+      "ETN": 2.1473,
+      "GE": 7.1079,
+      "TDY": 0.8318
+     }
+    },
+    {
+     "ticker": "BOTZ",
+     "basis": "holdings",
+     "adv20_musd": 29.5,
+     "asof": "2026-07-31",
+     "holdings": [
+      "CGNX",
+      "NVDA",
+      "OUST",
+      "SYM"
+     ],
+     "weights": {
+      "CGNX": 2.45,
+      "NVDA": 8.85,
+      "OUST": 0.56,
+      "SYM": 1.23
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMZN",
+      "NVDA",
+      "SNPS",
+      "TDY",
+      "TER"
+     ],
+     "weights": {
+      "AMZN": 4.28,
+      "NVDA": 3.32,
+      "SNPS": 0.93,
+      "TDY": 1.33,
+      "TER": 3.97
+     }
+    }
+   ]
+  },
+  "Defense & Aerospace": {
+   "diagnostic_cohesion_rho": 0.3035,
+   "diagnostic_cohesion_panel_n": 30,
+   "n_members": 35,
+   "candidates": [
+    {
+     "ticker": "PAVE",
+     "basis": "holdings",
+     "adv20_musd": 122.1,
+     "asof": "2026-07-31",
+     "holdings": [
+      "ATI",
+      "CRS",
+      "HWM"
+     ],
+     "weights": {
+      "ATI": 1.46,
+      "CRS": 1.48,
+      "HWM": 3.0
+     }
+    },
+    {
+     "ticker": "SHLD",
+     "basis": "holdings",
+     "adv20_musd": 73.2,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AVAV",
+      "BKSY",
+      "BWXT",
+      "GD",
+      "KTOS",
+      "LDOS",
+      "LHX",
+      "LMT",
+      "MRCY",
+      "NOC",
+      "PL",
+      "PLTR",
+      "PSN",
+      "RCAT",
+      "RTX"
+     ],
+     "weights": {
+      "AVAV": 0.86,
+      "BKSY": 0.11,
+      "BWXT": 2.33,
+      "GD": 9.16,
+      "KTOS": 1.31,
+      "LDOS": 2.19,
+      "LHX": 4.09,
+      "LMT": 8.95,
+      "MRCY": 0.87,
+      "NOC": 8.01,
+      "PL": 0.85,
+      "PLTR": 7.37,
+      "PSN": 0.71,
+      "RCAT": 0.15,
+      "RTX": 9.97
+     }
+    },
+    {
+     "ticker": "XAR",
+     "basis": "holdings",
+     "adv20_musd": 60.6,
+     "asof": "2026-07-30",
+     "holdings": [
+      "ATI",
+      "AVAV",
+      "BA",
+      "BWXT",
+      "CRS",
+      "CW",
+      "GD",
+      "GE",
+      "HEI",
+      "HWM",
+      "HXL",
+      "KTOS",
+      "LHX",
+      "LMT",
+      "MRCY",
+      "NOC",
+      "RCAT",
+      "RKLB",
+      "RTX",
+      "TDG",
+      "TXT"
+     ],
+     "weights": {
+      "ATI": 2.7599,
+      "AVAV": 2.3581,
+      "BA": 2.9406,
+      "BWXT": 2.5175,
+      "CRS": 2.6793,
+      "CW": 2.7731,
+      "GD": 3.1177,
+      "GE": 3.0994,
+      "HEI": 3.0709,
+      "HWM": 3.0921,
+      "HXL": 3.1268,
+      "KTOS": 2.3432,
+      "LHX": 2.4966,
+      "LMT": 3.0424,
+      "MRCY": 1.9061,
+      "NOC": 2.7448,
+      "RCAT": 0.9957,
+      "RKLB": 1.713,
+      "RTX": 3.362,
+      "TDG": 2.8684,
+      "TXT": 2.6531
+     }
+    },
+    {
+     "ticker": "UFO",
+     "basis": "holdings",
+     "adv20_musd": 31.0,
+     "asof": "2026-08-03",
+     "holdings": [
+      "BA",
+      "BKSY",
+      "IRDM",
+      "LHX",
+      "LMT",
+      "NOC",
+      "PL",
+      "RKLB",
+      "RTX",
+      "SPIR",
+      "VSAT"
+     ],
+     "weights": {
+      "BA": 2.79,
+      "BKSY": 0.6,
+      "IRDM": 3.65,
+      "LHX": 2.54,
+      "LMT": 3.05,
+      "NOC": 2.79,
+      "PL": 3.72,
+      "RKLB": 3.58,
+      "RTX": 3.31,
+      "SPIR": 0.31,
+      "VSAT": 6.2
+     }
+    },
+    {
+     "ticker": "PPA",
+     "basis": "holdings",
+     "adv20_musd": 30.8,
+     "asof": "2026-08-01",
+     "holdings": [
+      "ATI",
+      "AVAV",
+      "BA",
+      "BAH",
+      "BKSY",
+      "BWXT",
+      "CACI",
+      "CRS",
+      "CW",
+      "GD",
+      "GE",
+      "HEI",
+      "HWM",
+      "HXL",
+      "IRDM",
+      "KTOS",
+      "LDOS",
+      "LHX",
+      "LMT",
+      "MRCY",
+      "NOC",
+      "ONDS",
+      "PL",
+      "PLTR",
+      "PSN",
+      "RKLB",
+      "RTX",
+      "TDG",
+      "TXT",
+      "VSAT"
+     ],
+     "weights": {
+      "ATI": 1.559,
+      "AVAV": 0.7497,
+      "BA": 6.8613,
+      "BAH": 0.6285,
+      "BKSY": 0.0776,
+      "BWXT": 0.9274,
+      "CACI": 0.8749,
+      "CRS": 1.6085,
+      "CW": 1.6925,
+      "GD": 4.9806,
+      "GE": 7.1079,
+      "HEI": 1.6433,
+      "HWM": 4.472,
+      "HXL": 0.7103,
+      "IRDM": 0.1651,
+      "KTOS": 0.7421,
+      "LDOS": 1.0074,
+      "LHX": 3.8271,
+      "LMT": 6.6355,
+      "MRCY": 0.5392,
+      "NOC": 4.7496,
+      "ONDS": 0.1656,
+      "PL": 0.5831,
+      "PLTR": 1.2245,
+      "PSN": 0.1566,
+      "RKLB": 1.5665,
+      "RTX": 8.2974,
+      "TDG": 3.0847,
+      "TXT": 1.1217,
+      "VSAT": 0.8465
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMZN",
+      "AVAV",
+      "BWXT",
+      "HEI",
+      "IRDM",
+      "KTOS",
+      "LHX",
+      "LMT",
+      "PLTR"
+     ],
+     "weights": {
+      "AMZN": 4.28,
+      "AVAV": 4.49,
+      "BWXT": 1.61,
+      "HEI": 1.92,
+      "IRDM": 1.84,
+      "KTOS": 6.21,
+      "LHX": 7.45,
+      "LMT": 1.02,
+      "PLTR": 2.94
+     }
+    }
+   ]
+  },
+  "Transportation & Logistics": {
+   "diagnostic_cohesion_rho": 0.2686,
+   "diagnostic_cohesion_panel_n": 44,
+   "n_members": 64,
+   "candidates": [
+    {
+     "ticker": "PAVE",
+     "basis": "holdings",
+     "adv20_musd": 122.1,
+     "asof": "2026-07-31",
+     "holdings": [
+      "CSX",
+      "DE",
+      "NSC",
+      "TRMB",
+      "UNP",
+      "WNC"
+     ],
+     "weights": {
+      "CSX": 2.92,
+      "DE": 2.97,
+      "NSC": 2.94,
+      "TRMB": 0.75,
+      "UNP": 2.93,
+      "WNC": 0.29
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "GOOGL",
+      "NVDA",
+      "TSLA",
+      "UBER"
+     ],
+     "weights": {
+      "GOOGL": 3.28,
+      "NVDA": 2.82,
+      "TSLA": 2.85,
+      "UBER": 1.22
+     }
+    },
+    {
+     "ticker": "XAR",
+     "basis": "holdings",
+     "adv20_musd": 60.6,
+     "asof": "2026-07-30",
+     "holdings": [
+      "ACHR",
+      "GE",
+      "TXT"
+     ],
+     "weights": {
+      "ACHR": 2.6114,
+      "GE": 3.0994,
+      "TXT": 2.6531
+     }
+    },
+    {
+     "ticker": "PPA",
+     "basis": "holdings",
+     "adv20_musd": 30.8,
+     "asof": "2026-08-01",
+     "holdings": [
+      "GE",
+      "OSK",
+      "TXT"
+     ],
+     "weights": {
+      "GE": 7.1079,
+      "OSK": 0.2778,
+      "TXT": 1.1217
+     }
+    },
+    {
+     "ticker": "BOTZ",
+     "basis": "holdings",
+     "adv20_musd": 29.5,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AUR",
+      "GOOGL",
+      "NVDA",
+      "SERV",
+      "TSLA"
+     ],
+     "weights": {
+      "AUR": 2.4,
+      "GOOGL": 2.39,
+      "NVDA": 8.85,
+      "SERV": 0.08,
+      "TSLA": 1.55
+     }
+    },
+    {
+     "ticker": "PBW",
+     "basis": "holdings",
+     "adv20_musd": 27.4,
+     "asof": "2026-08-01",
+     "holdings": [
+      "ACHR",
+      "JOBY",
+      "RIVN",
+      "TSLA"
+     ],
+     "weights": {
+      "ACHR": 1.5587,
+      "JOBY": 1.3227,
+      "RIVN": 1.7926,
+      "TSLA": 1.3938
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "ACHR",
+      "DE",
+      "GOOGL",
+      "JOBY",
+      "NVDA",
+      "TRMB",
+      "TSLA"
+     ],
+     "weights": {
+      "ACHR": 3.21,
+      "DE": 5.52,
+      "GOOGL": 0.28,
+      "JOBY": 2.22,
+      "NVDA": 3.32,
+      "TRMB": 3.4,
+      "TSLA": 3.04
+     }
+    }
+   ]
+  },
+  "Space Tech": {
+   "diagnostic_cohesion_rho": 0.3474,
+   "diagnostic_cohesion_panel_n": 21,
+   "n_members": 23,
+   "candidates": [
+    {
+     "ticker": "SHLD",
+     "basis": "holdings",
+     "adv20_musd": 73.2,
+     "asof": "2026-07-31",
+     "holdings": [
+      "BKSY",
+      "GD",
+      "KTOS",
+      "LDOS",
+      "LHX",
+      "LMT",
+      "NOC",
+      "PL",
+      "RTX"
+     ],
+     "weights": {
+      "BKSY": 0.11,
+      "GD": 9.16,
+      "KTOS": 1.31,
+      "LDOS": 2.19,
+      "LHX": 4.09,
+      "LMT": 8.95,
+      "NOC": 8.01,
+      "PL": 0.85,
+      "RTX": 9.97
+     }
+    },
+    {
+     "ticker": "XAR",
+     "basis": "holdings",
+     "adv20_musd": 60.6,
+     "asof": "2026-07-30",
+     "holdings": [
+      "BA",
+      "FLY",
+      "GD",
+      "KTOS",
+      "LHX",
+      "LMT",
+      "LUNR",
+      "NOC",
+      "RDW",
+      "RKLB",
+      "RTX",
+      "SPCE"
+     ],
+     "weights": {
+      "BA": 2.9406,
+      "FLY": 0.712,
+      "GD": 3.1177,
+      "KTOS": 2.3432,
+      "LHX": 2.4966,
+      "LMT": 3.0424,
+      "LUNR": 1.2844,
+      "NOC": 2.7448,
+      "RDW": 1.1972,
+      "RKLB": 1.713,
+      "RTX": 3.362,
+      "SPCE": 0.2597
+     }
+    },
+    {
+     "ticker": "UFO",
+     "basis": "holdings",
+     "adv20_musd": 31.0,
+     "asof": "2026-08-03",
+     "holdings": [
+      "ASTS",
+      "BA",
+      "BKSY",
+      "FLY",
+      "GSAT",
+      "IRDM",
+      "LHX",
+      "LMT",
+      "LUNR",
+      "MNTS",
+      "NOC",
+      "PL",
+      "RDW",
+      "RKLB",
+      "RTX",
+      "SPCE",
+      "SPIR",
+      "TSAT",
+      "VSAT"
+     ],
+     "weights": {
+      "ASTS": 4.04,
+      "BA": 2.79,
+      "BKSY": 0.6,
+      "FLY": 1.82,
+      "GSAT": 3.65,
+      "IRDM": 3.65,
+      "LHX": 2.54,
+      "LMT": 3.05,
+      "LUNR": 1.33,
+      "MNTS": 0.04,
+      "NOC": 2.79,
+      "PL": 3.72,
+      "RDW": 1.36,
+      "RKLB": 3.58,
+      "RTX": 3.31,
+      "SPCE": 0.22,
+      "SPIR": 0.31,
+      "TSAT": 0.43,
+      "VSAT": 6.2
+     }
+    },
+    {
+     "ticker": "PPA",
+     "basis": "holdings",
+     "adv20_musd": 30.8,
+     "asof": "2026-08-01",
+     "holdings": [
+      "BA",
+      "BKSY",
+      "FLY",
+      "GD",
+      "IRDM",
+      "KTOS",
+      "LDOS",
+      "LHX",
+      "LMT",
+      "NOC",
+      "PL",
+      "RDW",
+      "RKLB",
+      "RTX",
+      "VSAT"
+     ],
+     "weights": {
+      "BA": 6.8613,
+      "BKSY": 0.0776,
+      "FLY": 0.1693,
+      "GD": 4.9806,
+      "IRDM": 0.1651,
+      "KTOS": 0.7421,
+      "LDOS": 1.0074,
+      "LHX": 3.8271,
+      "LMT": 6.6355,
+      "NOC": 4.7496,
+      "PL": 0.5831,
+      "RDW": 0.1979,
+      "RKLB": 1.5665,
+      "RTX": 8.2974,
+      "VSAT": 0.8465
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "IRDM",
+      "KTOS",
+      "LHX",
+      "LMT",
+      "LUNR"
+     ],
+     "weights": {
+      "IRDM": 1.84,
+      "KTOS": 6.21,
+      "LHX": 7.45,
+      "LMT": 1.02,
+      "LUNR": 1.72
+     }
+    }
+   ]
+  },
+  "Robotics": {
+   "diagnostic_cohesion_rho": 0.1911,
+   "diagnostic_cohesion_panel_n": 28,
+   "n_members": 34,
+   "candidates": [
+    {
+     "ticker": "SMH",
+     "basis": "holdings",
+     "adv20_musd": 7486.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "NVDA",
+      "ON",
+      "QCOM",
+      "TER"
+     ],
+     "weights": {
+      "NVDA": 20.83,
+      "ON": 0.63,
+      "QCOM": 3.74,
+      "TER": 1.38
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AAPL",
+      "AMBA",
+      "AMZN",
+      "GOOGL",
+      "NVDA",
+      "PATH",
+      "QCOM",
+      "TSLA",
+      "ZBRA"
+     ],
+     "weights": {
+      "AAPL": 2.81,
+      "AMBA": 0.36,
+      "AMZN": 3.4,
+      "GOOGL": 3.28,
+      "NVDA": 2.82,
+      "PATH": 0.37,
+      "QCOM": 1.32,
+      "TSLA": 2.85,
+      "ZBRA": 0.34
+     }
+    },
+    {
+     "ticker": "PSI",
+     "basis": "holdings",
+     "adv20_musd": 59.9,
+     "asof": "2026-08-01",
+     "holdings": [
+      "LSCC",
+      "NVDA",
+      "TER"
+     ],
+     "weights": {
+      "LSCC": 2.6794,
+      "NVDA": 5.5532,
+      "TER": 3.0633
+     }
+    },
+    {
+     "ticker": "XSD",
+     "basis": "holdings",
+     "adv20_musd": 57.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMBA",
+      "LSCC",
+      "NVDA",
+      "ON",
+      "QCOM"
+     ],
+     "weights": {
+      "AMBA": 3.2182,
+      "LSCC": 2.5589,
+      "NVDA": 2.6362,
+      "ON": 2.059,
+      "QCOM": 2.1564
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMZN",
+      "GOOGL",
+      "LITE",
+      "NVDA"
+     ],
+     "weights": {
+      "AMZN": 2.81,
+      "GOOGL": 5.92,
+      "LITE": 1.37,
+      "NVDA": 6.43
+     }
+    },
+    {
+     "ticker": "BOTZ",
+     "basis": "holdings",
+     "adv20_musd": 29.5,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AUR",
+      "CGNX",
+      "GOOGL",
+      "ISRG",
+      "NVDA",
+      "OUST",
+      "PATH",
+      "PRCT",
+      "SERV",
+      "SYM",
+      "TSLA"
+     ],
+     "weights": {
+      "AUR": 2.4,
+      "CGNX": 2.45,
+      "GOOGL": 2.39,
+      "ISRG": 5.75,
+      "NVDA": 8.85,
+      "OUST": 0.56,
+      "PATH": 1.33,
+      "PRCT": 0.24,
+      "SERV": 0.08,
+      "SYM": 1.23,
+      "TSLA": 1.55
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMZN",
+      "GOOGL",
+      "NVDA",
+      "TDY",
+      "TER",
+      "TSLA"
+     ],
+     "weights": {
+      "AMZN": 4.28,
+      "GOOGL": 0.28,
+      "NVDA": 3.32,
+      "TDY": 1.33,
+      "TER": 3.97,
+      "TSLA": 3.04
+     }
+    }
+   ]
+  },
+  "Telecommunications": {
+   "diagnostic_cohesion_rho": 0.1153,
+   "diagnostic_cohesion_panel_n": 35,
+   "n_members": 39,
+   "candidates": [
+    {
+     "ticker": "SMH",
+     "basis": "holdings",
+     "adv20_musd": 7486.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "ADI",
+      "AVGO",
+      "INTC",
+      "MRVL",
+      "QCOM",
+      "SWKS"
+     ],
+     "weights": {
+      "ADI": 4.5,
+      "AVGO": 6.6,
+      "INTC": 4.1,
+      "MRVL": 3.5,
+      "QCOM": 3.74,
+      "SWKS": 0.18
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMZN",
+      "AVGO",
+      "CSCO",
+      "GOOGL",
+      "INTC",
+      "MRVL",
+      "MSFT",
+      "QCOM",
+      "TWLO"
+     ],
+     "weights": {
+      "AMZN": 3.4,
+      "AVGO": 2.9,
+      "CSCO": 3.01,
+      "GOOGL": 3.28,
+      "INTC": 2.64,
+      "MRVL": 1.4,
+      "MSFT": 3.57,
+      "QCOM": 1.32,
+      "TWLO": 0.31
+     }
+    },
+    {
+     "ticker": "XSD",
+     "basis": "holdings",
+     "adv20_musd": 57.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "ADI",
+      "AVGO",
+      "INTC",
+      "MRVL",
+      "QCOM",
+      "QRVO",
+      "SWKS"
+     ],
+     "weights": {
+      "ADI": 2.5296,
+      "AVGO": 2.8237,
+      "INTC": 2.3155,
+      "MRVL": 1.9737,
+      "QCOM": 2.1564,
+      "QRVO": 2.5875,
+      "SWKS": 2.4079
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMZN",
+      "ANET",
+      "AVGO",
+      "GOOGL",
+      "INTC",
+      "MRVL",
+      "MSFT"
+     ],
+     "weights": {
+      "AMZN": 2.81,
+      "ANET": 2.17,
+      "AVGO": 4.31,
+      "GOOGL": 5.92,
+      "INTC": 1.04,
+      "MRVL": 1.51,
+      "MSFT": 2.78
+     }
+    },
+    {
+     "ticker": "DTCR",
+     "basis": "holdings",
+     "adv20_musd": 40.1,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMT",
+      "AVGO",
+      "CCI",
+      "EQIX",
+      "INTC",
+      "MRVL",
+      "SBAC"
+     ],
+     "weights": {
+      "AMT": 12.57,
+      "AVGO": 2.01,
+      "CCI": 8.81,
+      "EQIX": 12.19,
+      "INTC": 1.78,
+      "MRVL": 1.85,
+      "SBAC": 4.44
+     }
+    },
+    {
+     "ticker": "UFO",
+     "basis": "holdings",
+     "adv20_musd": 31.0,
+     "asof": "2026-08-03",
+     "holdings": [
+      "ASTS",
+      "CMCSA",
+      "GSAT",
+      "IRDM",
+      "TSAT",
+      "VSAT"
+     ],
+     "weights": {
+      "ASTS": 4.04,
+      "CMCSA": 1.05,
+      "GSAT": 3.65,
+      "IRDM": 3.65,
+      "TSAT": 0.43,
+      "VSAT": 6.2
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMZN",
+      "GOOGL",
+      "IRDM"
+     ],
+     "weights": {
+      "AMZN": 4.28,
+      "GOOGL": 0.28,
+      "IRDM": 1.84
+     }
+    }
+   ]
+  },
+  "Nanotechnology": {
+   "diagnostic_cohesion_rho": 0.1782,
+   "diagnostic_cohesion_panel_n": 41,
+   "n_members": 47,
+   "candidates": [
+    {
+     "ticker": "SMH",
+     "basis": "holdings",
+     "adv20_musd": 7486.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMAT",
+      "AMD",
+      "ASML",
+      "INTC",
+      "KLAC",
+      "LRCX",
+      "NVDA",
+      "TSM"
+     ],
+     "weights": {
+      "AMAT": 4.86,
+      "AMD": 5.74,
+      "ASML": 5.1,
+      "INTC": 4.1,
+      "KLAC": 4.07,
+      "LRCX": 4.46,
+      "NVDA": 20.83,
+      "TSM": 9.58
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "INTC",
+      "NVDA",
+      "TSLA",
+      "TSM"
+     ],
+     "weights": {
+      "AMD": 2.58,
+      "INTC": 2.64,
+      "NVDA": 2.82,
+      "TSLA": 2.85,
+      "TSM": 2.85
+     }
+    },
+    {
+     "ticker": "PSI",
+     "basis": "holdings",
+     "adv20_musd": 59.9,
+     "asof": "2026-08-01",
+     "holdings": [
+      "AMAT",
+      "AMD",
+      "INTC",
+      "KLAC",
+      "LRCX",
+      "NVDA",
+      "ONTO"
+     ],
+     "weights": {
+      "AMAT": 6.6337,
+      "AMD": 5.6164,
+      "INTC": 4.3397,
+      "KLAC": 5.4024,
+      "LRCX": 5.3972,
+      "NVDA": 5.5532,
+      "ONTO": 3.0576
+     }
+    },
+    {
+     "ticker": "XSD",
+     "basis": "holdings",
+     "adv20_musd": 57.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMD",
+      "FSLR",
+      "INTC",
+      "NVDA",
+      "NVEC"
+     ],
+     "weights": {
+      "AMD": 2.9183,
+      "FSLR": 2.2387,
+      "INTC": 2.3155,
+      "NVDA": 2.6362,
+      "NVEC": 0.5637
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMD",
+      "ASML",
+      "INTC",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 3.39,
+      "ASML": 2.71,
+      "INTC": 1.04,
+      "NVDA": 6.43
+     }
+    },
+    {
+     "ticker": "DTCR",
+     "basis": "holdings",
+     "adv20_musd": 40.1,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "INTC",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 1.83,
+      "INTC": 1.78,
+      "NVDA": 1.93
+     }
+    },
+    {
+     "ticker": "PBW",
+     "basis": "holdings",
+     "adv20_musd": 27.4,
+     "asof": "2026-08-01",
+     "holdings": [
+      "ASPN",
+      "ENPH",
+      "FSLR",
+      "PLUG",
+      "QS",
+      "SLDP",
+      "TSLA"
+     ],
+     "weights": {
+      "ASPN": 1.2927,
+      "ENPH": 1.3066,
+      "FSLR": 1.5347,
+      "PLUG": 1.3468,
+      "QS": 1.2464,
+      "SLDP": 1.3368,
+      "TSLA": 1.3938
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "NVDA",
+      "TSLA",
+      "TSM"
+     ],
+     "weights": {
+      "AMD": 5.07,
+      "NVDA": 3.32,
+      "TSLA": 3.04,
+      "TSM": 1.82
+     }
+    }
+   ]
+  },
+  "Internet of Things": {
+   "diagnostic_cohesion_rho": 0.1784,
+   "diagnostic_cohesion_panel_n": 40,
+   "n_members": 43,
+   "candidates": [
+    {
+     "ticker": "SMH",
+     "basis": "holdings",
+     "adv20_musd": 7486.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "ADI",
+      "AMD",
+      "INTC",
+      "MCHP",
+      "NVDA",
+      "NXPI",
+      "QCOM",
+      "TXN"
+     ],
+     "weights": {
+      "ADI": 4.5,
+      "AMD": 5.74,
+      "INTC": 4.1,
+      "MCHP": 0.9,
+      "NVDA": 20.83,
+      "NXPI": 1.22,
+      "QCOM": 3.74,
+      "TXN": 4.74
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AI",
+      "AMD",
+      "AMZN",
+      "CSCO",
+      "DDOG",
+      "GOOGL",
+      "IBM",
+      "INTC",
+      "MSFT",
+      "NVDA",
+      "NXPI",
+      "OKTA",
+      "ORCL",
+      "PLTR",
+      "QCOM",
+      "SMCI"
+     ],
+     "weights": {
+      "AI": 0.33,
+      "AMD": 2.58,
+      "AMZN": 3.4,
+      "CSCO": 3.01,
+      "DDOG": 0.75,
+      "GOOGL": 3.28,
+      "IBM": 1.79,
+      "INTC": 2.64,
+      "MSFT": 3.57,
+      "NVDA": 2.82,
+      "NXPI": 0.49,
+      "OKTA": 0.31,
+      "ORCL": 3.17,
+      "PLTR": 2.92,
+      "QCOM": 1.32,
+      "SMCI": 0.27
+     }
+    },
+    {
+     "ticker": "PSI",
+     "basis": "holdings",
+     "adv20_musd": 59.9,
+     "asof": "2026-08-01",
+     "holdings": [
+      "ADI",
+      "AMD",
+      "INTC",
+      "LSCC",
+      "NVDA",
+      "SMTC"
+     ],
+     "weights": {
+      "ADI": 5.2001,
+      "AMD": 5.6164,
+      "INTC": 4.3397,
+      "LSCC": 2.6794,
+      "NVDA": 5.5532,
+      "SMTC": 2.3222
+     }
+    },
+    {
+     "ticker": "BUG",
+     "basis": "holdings",
+     "adv20_musd": 58.3,
+     "asof": "2026-07-31",
+     "holdings": [
+      "CRWD",
+      "FTNT",
+      "OKTA",
+      "PANW",
+      "TENB"
+     ],
+     "weights": {
+      "CRWD": 7.26,
+      "FTNT": 8.14,
+      "OKTA": 8.16,
+      "PANW": 7.84,
+      "TENB": 4.97
+     }
+    },
+    {
+     "ticker": "XSD",
+     "basis": "holdings",
+     "adv20_musd": 57.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "ADI",
+      "AMD",
+      "INTC",
+      "LSCC",
+      "MCHP",
+      "NVDA",
+      "NXPI",
+      "PI",
+      "QCOM",
+      "SMTC",
+      "TXN"
+     ],
+     "weights": {
+      "ADI": 2.5296,
+      "AMD": 2.9183,
+      "INTC": 2.3155,
+      "LSCC": 2.5589,
+      "MCHP": 2.321,
+      "NVDA": 2.6362,
+      "NXPI": 2.3259,
+      "PI": 3.2562,
+      "QCOM": 2.1564,
+      "SMTC": 2.0123,
+      "TXN": 2.6645
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMD",
+      "AMZN",
+      "CRWD",
+      "GOOGL",
+      "INTC",
+      "MSFT",
+      "NVDA",
+      "ORCL",
+      "SMCI"
+     ],
+     "weights": {
+      "AMD": 3.39,
+      "AMZN": 2.81,
+      "CRWD": 1.51,
+      "GOOGL": 5.92,
+      "INTC": 1.04,
+      "MSFT": 2.78,
+      "NVDA": 6.43,
+      "ORCL": 2.02,
+      "SMCI": 1.65
+     }
+    },
+    {
+     "ticker": "DTCR",
+     "basis": "holdings",
+     "adv20_musd": 40.1,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "INTC",
+      "MCHP",
+      "NVDA",
+      "SMCI"
+     ],
+     "weights": {
+      "AMD": 1.83,
+      "INTC": 1.78,
+      "MCHP": 1.75,
+      "NVDA": 1.93,
+      "SMCI": 2.15
+     }
+    },
+    {
+     "ticker": "UFO",
+     "basis": "holdings",
+     "adv20_musd": 31.0,
+     "asof": "2026-08-03",
+     "holdings": [
+      "GRMN",
+      "GSAT",
+      "IRDM",
+      "VSAT"
+     ],
+     "weights": {
+      "GRMN": 6.97,
+      "GSAT": 3.65,
+      "IRDM": 3.65,
+      "VSAT": 6.2
+     }
+    },
+    {
+     "ticker": "PPA",
+     "basis": "holdings",
+     "adv20_musd": 30.8,
+     "asof": "2026-08-01",
+     "holdings": [
+      "GE",
+      "IRDM",
+      "PLTR",
+      "VSAT"
+     ],
+     "weights": {
+      "GE": 7.1079,
+      "IRDM": 0.1651,
+      "PLTR": 1.2245,
+      "VSAT": 0.8465
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "AMZN",
+      "GOOGL",
+      "IRDM",
+      "NVDA",
+      "PLTR"
+     ],
+     "weights": {
+      "AMD": 5.07,
+      "AMZN": 4.28,
+      "GOOGL": 0.28,
+      "IRDM": 1.84,
+      "NVDA": 3.32,
+      "PLTR": 2.94
+     }
+    }
+   ]
+  },
+  "Autonomous Systems": {
+   "diagnostic_cohesion_rho": 0.2159,
+   "diagnostic_cohesion_panel_n": 39,
+   "n_members": 43,
+   "candidates": [
+    {
+     "ticker": "SMH",
+     "basis": "holdings",
+     "adv20_musd": 7486.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMD",
+      "NVDA",
+      "ON",
+      "QCOM",
+      "TER"
+     ],
+     "weights": {
+      "AMD": 5.74,
+      "NVDA": 20.83,
+      "ON": 0.63,
+      "QCOM": 3.74,
+      "TER": 1.38
+     }
+    },
+    {
+     "ticker": "PAVE",
+     "basis": "holdings",
+     "adv20_musd": 122.1,
+     "asof": "2026-07-31",
+     "holdings": [
+      "DE",
+      "EMR",
+      "ROK",
+      "TRMB"
+     ],
+     "weights": {
+      "DE": 2.97,
+      "EMR": 3.16,
+      "ROK": 3.19,
+      "TRMB": 0.75
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMBA",
+      "AMD",
+      "AMZN",
+      "GOOGL",
+      "MSFT",
+      "NVDA",
+      "ORCL",
+      "PATH",
+      "PLTR",
+      "QCOM",
+      "TSLA",
+      "UBER",
+      "ZBRA"
+     ],
+     "weights": {
+      "AMBA": 0.36,
+      "AMD": 2.58,
+      "AMZN": 3.4,
+      "GOOGL": 3.28,
+      "MSFT": 3.57,
+      "NVDA": 2.82,
+      "ORCL": 3.17,
+      "PATH": 0.37,
+      "PLTR": 2.92,
+      "QCOM": 1.32,
+      "TSLA": 2.85,
+      "UBER": 1.22,
+      "ZBRA": 0.34
+     }
+    },
+    {
+     "ticker": "SHLD",
+     "basis": "holdings",
+     "adv20_musd": 73.2,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AVAV",
+      "BBAI",
+      "KTOS",
+      "LHX",
+      "LMT",
+      "NOC",
+      "PLTR",
+      "RCAT",
+      "RTX"
+     ],
+     "weights": {
+      "AVAV": 0.86,
+      "BBAI": 0.2,
+      "KTOS": 1.31,
+      "LHX": 4.09,
+      "LMT": 8.95,
+      "NOC": 8.01,
+      "PLTR": 7.37,
+      "RCAT": 0.15,
+      "RTX": 9.97
+     }
+    },
+    {
+     "ticker": "XAR",
+     "basis": "holdings",
+     "adv20_musd": 60.6,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AVAV",
+      "KTOS",
+      "LHX",
+      "LMT",
+      "NOC",
+      "RCAT",
+      "RTX",
+      "TXT"
+     ],
+     "weights": {
+      "AVAV": 2.3581,
+      "KTOS": 2.3432,
+      "LHX": 2.4966,
+      "LMT": 3.0424,
+      "NOC": 2.7448,
+      "RCAT": 0.9957,
+      "RTX": 3.362,
+      "TXT": 2.6531
+     }
+    },
+    {
+     "ticker": "PSI",
+     "basis": "holdings",
+     "adv20_musd": 59.9,
+     "asof": "2026-08-01",
+     "holdings": [
+      "AMD",
+      "NVDA",
+      "TER"
+     ],
+     "weights": {
+      "AMD": 5.6164,
+      "NVDA": 5.5532,
+      "TER": 3.0633
+     }
+    },
+    {
+     "ticker": "XSD",
+     "basis": "holdings",
+     "adv20_musd": 57.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMBA",
+      "AMD",
+      "NVDA",
+      "ON",
+      "QCOM"
+     ],
+     "weights": {
+      "AMBA": 3.2182,
+      "AMD": 2.9183,
+      "NVDA": 2.6362,
+      "ON": 2.059,
+      "QCOM": 2.1564
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMD",
+      "AMZN",
+      "GOOGL",
+      "MSFT",
+      "NVDA",
+      "ORCL"
+     ],
+     "weights": {
+      "AMD": 3.39,
+      "AMZN": 2.81,
+      "GOOGL": 5.92,
+      "MSFT": 2.78,
+      "NVDA": 6.43,
+      "ORCL": 2.02
+     }
+    },
+    {
+     "ticker": "UFO",
+     "basis": "holdings",
+     "adv20_musd": 31.0,
+     "asof": "2026-08-03",
+     "holdings": [
+      "KVHI",
+      "LHX",
+      "LMT",
+      "NOC",
+      "RTX",
+      "TRMB"
+     ],
+     "weights": {
+      "KVHI": 0.09,
+      "LHX": 2.54,
+      "LMT": 3.05,
+      "NOC": 2.79,
+      "RTX": 3.31,
+      "TRMB": 6.34
+     }
+    },
+    {
+     "ticker": "PPA",
+     "basis": "holdings",
+     "adv20_musd": 30.8,
+     "asof": "2026-08-01",
+     "holdings": [
+      "AVAV",
+      "KTOS",
+      "LHX",
+      "LMT",
+      "NOC",
+      "PLTR",
+      "RTX",
+      "TDY",
+      "TXT"
+     ],
+     "weights": {
+      "AVAV": 0.7497,
+      "KTOS": 0.7421,
+      "LHX": 3.8271,
+      "LMT": 6.6355,
+      "NOC": 4.7496,
+      "PLTR": 1.2245,
+      "RTX": 8.2974,
+      "TDY": 0.8318,
+      "TXT": 1.1217
+     }
+    },
+    {
+     "ticker": "BOTZ",
+     "basis": "holdings",
+     "adv20_musd": 29.5,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AUR",
+      "AVAV",
+      "CGNX",
+      "GOOGL",
+      "NVDA",
+      "OUST",
+      "PATH",
+      "SYM",
+      "TSLA"
+     ],
+     "weights": {
+      "AUR": 2.4,
+      "AVAV": 1.69,
+      "CGNX": 2.45,
+      "GOOGL": 2.39,
+      "NVDA": 8.85,
+      "OUST": 0.56,
+      "PATH": 1.33,
+      "SYM": 1.23,
+      "TSLA": 1.55
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "AMZN",
+      "AVAV",
+      "DE",
+      "GOOGL",
+      "KTOS",
+      "LHX",
+      "LMT",
+      "NVDA",
+      "PLTR",
+      "TDY",
+      "TER",
+      "TRMB",
+      "TSLA"
+     ],
+     "weights": {
+      "AMD": 5.07,
+      "AMZN": 4.28,
+      "AVAV": 4.49,
+      "DE": 5.52,
+      "GOOGL": 0.28,
+      "KTOS": 6.21,
+      "LHX": 7.45,
+      "LMT": 1.02,
+      "NVDA": 3.32,
+      "PLTR": 2.94,
+      "TDY": 1.33,
+      "TER": 3.97,
+      "TRMB": 3.4,
+      "TSLA": 3.04
+     }
+    }
+   ]
+  },
+  "E-commerce": {
+   "diagnostic_cohesion_rho": 0.1607,
+   "diagnostic_cohesion_panel_n": 41,
+   "n_members": 53,
+   "candidates": [
+    {
+     "ticker": "XRT",
+     "basis": "holdings",
+     "adv20_musd": 375.5,
+     "asof": "2026-07-30",
+     "holdings": [
+      "ACI",
+      "AMZN",
+      "BBY",
+      "CART",
+      "CHWY",
+      "COST",
+      "CPNG",
+      "EBAY",
+      "ETSY",
+      "KR",
+      "M",
+      "REAL",
+      "SFM",
+      "TDUP",
+      "TGT",
+      "WMT",
+      "WRBY"
+     ],
+     "weights": {
+      "ACI": 0.9932,
+      "AMZN": 1.2946,
+      "BBY": 1.5191,
+      "CART": 1.4208,
+      "CHWY": 1.4943,
+      "COST": 1.2689,
+      "CPNG": 1.3922,
+      "EBAY": 1.3958,
+      "ETSY": 1.5829,
+      "KR": 1.1744,
+      "M": 1.4084,
+      "REAL": 1.7086,
+      "SFM": 1.3088,
+      "TDUP": 1.214,
+      "TGT": 1.4773,
+      "WMT": 1.2055,
+      "WRBY": 1.3606
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "ADBE",
+      "AMZN",
+      "CRM",
+      "GOOGL",
+      "META",
+      "SHOP",
+      "SNAP",
+      "UBER",
+      "WIX"
+     ],
+     "weights": {
+      "ADBE": 0.85,
+      "AMZN": 3.4,
+      "CRM": 1.28,
+      "GOOGL": 3.28,
+      "META": 2.69,
+      "SHOP": 1.22,
+      "SNAP": 0.31,
+      "UBER": 1.22,
+      "WIX": 0.33
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMZN",
+      "GOOGL",
+      "META"
+     ],
+     "weights": {
+      "AMZN": 2.81,
+      "GOOGL": 5.92,
+      "META": 1.96
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMZN",
+      "DASH",
+      "GOOGL",
+      "TRMB"
+     ],
+     "weights": {
+      "AMZN": 4.28,
+      "DASH": 1.81,
+      "GOOGL": 0.28,
+      "TRMB": 3.4
+     }
+    }
+   ]
+  },
+  "Social Media": {
+   "diagnostic_cohesion_rho": 0.2533,
+   "diagnostic_cohesion_panel_n": 17,
+   "n_members": 19,
+   "candidates": [
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMZN",
+      "APP",
+      "GOOGL",
+      "META",
+      "MSFT",
+      "SNAP"
+     ],
+     "weights": {
+      "AMZN": 3.4,
+      "APP": 1.03,
+      "GOOGL": 3.28,
+      "META": 2.69,
+      "MSFT": 3.57,
+      "SNAP": 0.31
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMZN",
+      "GOOGL",
+      "META",
+      "MSFT"
+     ],
+     "weights": {
+      "AMZN": 2.81,
+      "GOOGL": 5.92,
+      "META": 1.96,
+      "MSFT": 2.78
+     }
+    }
+   ]
+  },
+  "Digital Entertainment": {
+   "diagnostic_cohesion_rho": 0.1467,
+   "diagnostic_cohesion_panel_n": 36,
+   "n_members": 42,
+   "candidates": [
+    {
+     "ticker": "SMH",
+     "basis": "holdings",
+     "adv20_musd": 7486.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMD",
+      "AVGO",
+      "INTC",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 5.74,
+      "AVGO": 6.6,
+      "INTC": 4.1,
+      "NVDA": 20.83
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AAPL",
+      "AMD",
+      "AMZN",
+      "AVGO",
+      "GOOGL",
+      "INTC",
+      "MSFT",
+      "NFLX",
+      "NVDA"
+     ],
+     "weights": {
+      "AAPL": 2.81,
+      "AMD": 2.58,
+      "AMZN": 3.4,
+      "AVGO": 2.9,
+      "GOOGL": 3.28,
+      "INTC": 2.64,
+      "MSFT": 3.57,
+      "NFLX": 3.05,
+      "NVDA": 2.82
+     }
+    },
+    {
+     "ticker": "PSI",
+     "basis": "holdings",
+     "adv20_musd": 59.9,
+     "asof": "2026-08-01",
+     "holdings": [
+      "AMD",
+      "INTC",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 5.6164,
+      "INTC": 4.3397,
+      "NVDA": 5.5532
+     }
+    },
+    {
+     "ticker": "XSD",
+     "basis": "holdings",
+     "adv20_musd": 57.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMD",
+      "AVGO",
+      "INTC",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 2.9183,
+      "AVGO": 2.8237,
+      "INTC": 2.3155,
+      "NVDA": 2.6362
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMD",
+      "AMZN",
+      "ANET",
+      "AVGO",
+      "GOOGL",
+      "INTC",
+      "MSFT",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 3.39,
+      "AMZN": 2.81,
+      "ANET": 2.17,
+      "AVGO": 4.31,
+      "GOOGL": 5.92,
+      "INTC": 1.04,
+      "MSFT": 2.78,
+      "NVDA": 6.43
+     }
+    },
+    {
+     "ticker": "DTCR",
+     "basis": "holdings",
+     "adv20_musd": 40.1,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "AVGO",
+      "INTC",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 1.83,
+      "AVGO": 2.01,
+      "INTC": 1.78,
+      "NVDA": 1.93
+     }
+    },
+    {
+     "ticker": "ARKX",
+     "basis": "holdings",
+     "adv20_musd": 25.4,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMD",
+      "AMZN",
+      "GOOGL",
+      "NVDA"
+     ],
+     "weights": {
+      "AMD": 5.07,
+      "AMZN": 4.28,
+      "GOOGL": 0.28,
+      "NVDA": 3.32
+     }
+    }
+   ]
+  },
+  "Real Estate & REITs": {
+   "diagnostic_cohesion_rho": 0.3456,
+   "diagnostic_cohesion_panel_n": 42,
+   "n_members": 59,
+   "candidates": [
+    {
+     "ticker": "DTCR",
+     "basis": "holdings",
+     "adv20_musd": 40.1,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMT",
+      "CCI",
+      "DLR",
+      "EQIX",
+      "SBAC",
+      "UNIT"
+     ],
+     "weights": {
+      "AMT": 12.57,
+      "CCI": 8.81,
+      "DLR": 13.09,
+      "EQIX": 12.19,
+      "SBAC": 4.44,
+      "UNIT": 3.5
+     }
+    }
+   ]
+  },
+  "Consumer Goods": {
+   "diagnostic_cohesion_rho": 0.1732,
+   "diagnostic_cohesion_panel_n": 41,
+   "n_members": 51,
+   "candidates": [
+    {
+     "ticker": "XRT",
+     "basis": "holdings",
+     "adv20_musd": 375.5,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMZN",
+      "ANF",
+      "CVNA",
+      "EBAY",
+      "ETSY",
+      "REAL",
+      "SFIX",
+      "SFM",
+      "SIG",
+      "TDUP",
+      "WMT"
+     ],
+     "weights": {
+      "AMZN": 1.2946,
+      "ANF": 1.5373,
+      "CVNA": 1.1954,
+      "EBAY": 1.3958,
+      "ETSY": 1.5829,
+      "REAL": 1.7086,
+      "SFIX": 1.0258,
+      "SFM": 1.3088,
+      "SIG": 1.46,
+      "TDUP": 1.214,
+      "WMT": 1.2055
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AMZN",
+      "SHOP",
+      "TSLA",
+      "UBER"
+     ],
+     "weights": {
+      "AMZN": 3.4,
+      "SHOP": 1.22,
+      "TSLA": 2.85,
+      "UBER": 1.22
+     }
+    }
+   ]
+  },
+  "Smart Home": {
+   "diagnostic_cohesion_rho": 0.1814,
+   "diagnostic_cohesion_panel_n": 26,
+   "n_members": 29,
+   "candidates": [
+    {
+     "ticker": "XHB",
+     "basis": "holdings",
+     "adv20_musd": 258.0,
+     "asof": "2026-07-30",
+     "holdings": [
+      "ALLE",
+      "CARR",
+      "JCI"
+     ],
+     "weights": {
+      "ALLE": 4.2318,
+      "CARR": 3.1477,
+      "JCI": 3.5985
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AAPL",
+      "AMZN",
+      "AVGO",
+      "GOOGL",
+      "MSFT",
+      "QCOM",
+      "SOUN"
+     ],
+     "weights": {
+      "AAPL": 2.81,
+      "AMZN": 3.4,
+      "AVGO": 2.9,
+      "GOOGL": 3.28,
+      "MSFT": 3.57,
+      "QCOM": 1.32,
+      "SOUN": 0.29
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMZN",
+      "AVGO",
+      "GOOGL",
+      "MSFT"
+     ],
+     "weights": {
+      "AMZN": 2.81,
+      "AVGO": 4.31,
+      "GOOGL": 5.92,
+      "MSFT": 2.78
+     }
+    },
+    {
+     "ticker": "PBW",
+     "basis": "holdings",
+     "adv20_musd": 27.4,
+     "asof": "2026-08-01",
+     "holdings": [
+      "AEIS",
+      "ENPH",
+      "ITRI",
+      "SEDG"
+     ],
+     "weights": {
+      "AEIS": 1.3598,
+      "ENPH": 1.3066,
+      "ITRI": 2.1679,
+      "SEDG": 1.3059
+     }
+    }
+   ]
+  },
+  "Wearables": {
+   "diagnostic_cohesion_rho": 0.2021,
+   "diagnostic_cohesion_panel_n": 22,
+   "n_members": 23,
+   "candidates": [
+    {
+     "ticker": "SMH",
+     "basis": "holdings",
+     "adv20_musd": 7486.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "ADI",
+      "AVGO",
+      "MCHP",
+      "NXPI",
+      "ON",
+      "QCOM",
+      "STM",
+      "TXN"
+     ],
+     "weights": {
+      "ADI": 4.5,
+      "AVGO": 6.6,
+      "MCHP": 0.9,
+      "NXPI": 1.22,
+      "ON": 0.63,
+      "QCOM": 3.74,
+      "STM": 1.09,
+      "TXN": 4.74
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AAPL",
+      "AVGO",
+      "GEHC",
+      "GOOGL",
+      "META",
+      "NXPI",
+      "QCOM"
+     ],
+     "weights": {
+      "AAPL": 2.81,
+      "AVGO": 2.9,
+      "GEHC": 0.32,
+      "GOOGL": 3.28,
+      "META": 2.69,
+      "NXPI": 0.49,
+      "QCOM": 1.32
+     }
+    },
+    {
+     "ticker": "XSD",
+     "basis": "holdings",
+     "adv20_musd": 57.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "ADI",
+      "AVGO",
+      "MCHP",
+      "NXPI",
+      "ON",
+      "QCOM",
+      "SYNA",
+      "TXN"
+     ],
+     "weights": {
+      "ADI": 2.5296,
+      "AVGO": 2.8237,
+      "MCHP": 2.321,
+      "NXPI": 2.3259,
+      "ON": 2.059,
+      "QCOM": 2.1564,
+      "SYNA": 2.2986,
+      "TXN": 2.6645
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AVGO",
+      "GOOGL",
+      "META"
+     ],
+     "weights": {
+      "AVGO": 4.31,
+      "GOOGL": 5.92,
+      "META": 1.96
+     }
+    }
+   ]
+  },
+  "Education Technology": {
+   "diagnostic_cohesion_rho": 0.1831,
+   "diagnostic_cohesion_panel_n": 17,
+   "n_members": 22,
+   "candidates": [
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "ADBE",
+      "GOOGL",
+      "MSFT"
+     ],
+     "weights": {
+      "ADBE": 0.85,
+      "GOOGL": 3.28,
+      "MSFT": 3.57
+     }
+    }
+   ]
+  },
+  "Energy Renewable": {
+   "diagnostic_cohesion_rho": 0.1568,
+   "diagnostic_cohesion_panel_n": 61,
+   "n_members": 74,
+   "candidates": [
+    {
+     "ticker": "XOP",
+     "basis": "holdings",
+     "adv20_musd": 528.4,
+     "asof": "2026-07-30",
+     "holdings": [
+      "CLMT",
+      "CLNE",
+      "CVX",
+      "GEVO",
+      "GPRE",
+      "VLO"
+     ],
+     "weights": {
+      "CLMT": 2.4001,
+      "CLNE": 0.1548,
+      "CVX": 2.4315,
+      "GEVO": 0.3888,
+      "GPRE": 1.0879,
+      "VLO": 2.8887
+     }
+    },
+    {
+     "ticker": "PAVE",
+     "basis": "holdings",
+     "adv20_musd": 122.1,
+     "asof": "2026-07-31",
+     "holdings": [
+      "ACA",
+      "ETN",
+      "HUBB",
+      "PWR"
+     ],
+     "weights": {
+      "ACA": 0.41,
+      "ETN": 3.06,
+      "HUBB": 1.43,
+      "PWR": 3.12
+     }
+    },
+    {
+     "ticker": "REMX",
+     "basis": "holdings",
+     "adv20_musd": 54.3,
+     "asof": "2026-07-30",
+     "holdings": [
+      "ALB",
+      "LAC",
+      "MP",
+      "SQM"
+     ],
+     "weights": {
+      "ALB": 8.12,
+      "LAC": 2.11,
+      "MP": 5.93,
+      "SQM": 5.85
+     }
+    },
+    {
+     "ticker": "TAN",
+     "basis": "holdings",
+     "adv20_musd": 49.5,
+     "asof": "2026-08-01",
+     "holdings": [
+      "CSIQ",
+      "CWEN",
+      "DQ",
+      "ENLT",
+      "ENPH",
+      "FSLR",
+      "JKS",
+      "NXT",
+      "RUN",
+      "SEDG"
+     ],
+     "weights": {
+      "CSIQ": 1.8256,
+      "CWEN": 3.5299,
+      "DQ": 1.5959,
+      "ENLT": 7.567,
+      "ENPH": 6.5105,
+      "FSLR": 9.963,
+      "JKS": 1.3343,
+      "NXT": 9.3055,
+      "RUN": 4.1888,
+      "SEDG": 4.3217
+     }
+    },
+    {
+     "ticker": "PBW",
+     "basis": "holdings",
+     "adv20_musd": 27.4,
+     "asof": "2026-08-01",
+     "holdings": [
+      "ALB",
+      "AMSC",
+      "BE",
+      "BLDP",
+      "CDLR",
+      "CSIQ",
+      "DAR",
+      "ENPH",
+      "EOSE",
+      "FCEL",
+      "FLNC",
+      "FSLR",
+      "GEVO",
+      "ITRI",
+      "JKS",
+      "LAC",
+      "MP",
+      "MPWR",
+      "NRGV",
+      "NXT",
+      "OPAL",
+      "ORA",
+      "PLUG",
+      "PWR",
+      "RUN",
+      "SEDG",
+      "SQM",
+      "TSLA"
+     ],
+     "weights": {
+      "ALB": 1.3636,
+      "AMSC": 1.1033,
+      "BE": 1.0856,
+      "BLDP": 1.1274,
+      "CDLR": 1.9076,
+      "CSIQ": 1.8029,
+      "DAR": 2.0781,
+      "ENPH": 1.3066,
+      "EOSE": 0.784,
+      "FCEL": 1.6162,
+      "FLNC": 0.9414,
+      "FSLR": 1.5347,
+      "GEVO": 1.9011,
+      "ITRI": 2.1679,
+      "JKS": 1.6136,
+      "LAC": 1.2128,
+      "MP": 1.2514,
+      "MPWR": 1.6564,
+      "NRGV": 1.0978,
+      "NXT": 1.334,
+      "OPAL": 2.4082,
+      "ORA": 1.4429,
+      "PLUG": 1.3468,
+      "PWR": 1.5302,
+      "RUN": 1.2262,
+      "SEDG": 1.3059,
+      "SQM": 1.5489,
+      "TSLA": 1.3938
+     }
+    }
+   ]
+  },
+  "Energy Traditional": {
+   "diagnostic_cohesion_rho": 0.1915,
+   "diagnostic_cohesion_panel_n": 49,
+   "n_members": 57,
+   "candidates": [
+    {
+     "ticker": "XOP",
+     "basis": "holdings",
+     "adv20_musd": 528.4,
+     "asof": "2026-07-30",
+     "holdings": [
+      "APA",
+      "CVX",
+      "DINO",
+      "DVN",
+      "EOG",
+      "FANG",
+      "MPC",
+      "OXY",
+      "PSX",
+      "VLO",
+      "XOM"
+     ],
+     "weights": {
+      "APA": 2.2943,
+      "CVX": 2.4315,
+      "DINO": 3.1351,
+      "DVN": 2.2746,
+      "EOG": 2.4892,
+      "FANG": 2.4389,
+      "MPC": 2.8629,
+      "OXY": 2.3514,
+      "PSX": 2.7814,
+      "VLO": 2.8887,
+      "XOM": 2.5009
+     }
+    },
+    {
+     "ticker": "XME",
+     "basis": "holdings",
+     "adv20_musd": 213.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AMR",
+      "BTU",
+      "CNR",
+      "HCC",
+      "LEU",
+      "METC",
+      "UEC"
+     ],
+     "weights": {
+      "AMR": 1.9183,
+      "BTU": 3.2743,
+      "CNR": 3.9276,
+      "HCC": 3.7308,
+      "LEU": 5.0848,
+      "METC": 0.5051,
+      "UEC": 4.5691
+     }
+    },
+    {
+     "ticker": "OIH",
+     "basis": "holdings",
+     "adv20_musd": 121.1,
+     "asof": "2026-07-30",
+     "holdings": [
+      "BKR",
+      "FTI",
+      "HAL",
+      "NOV",
+      "OII",
+      "PTEN",
+      "SLB"
+     ],
+     "weights": {
+      "BKR": 12.67,
+      "FTI": 7.16,
+      "HAL": 5.95,
+      "NOV": 3.71,
+      "OII": 3.78,
+      "PTEN": 3.07,
+      "SLB": 19.79
+     }
+    },
+    {
+     "ticker": "URA",
+     "basis": "holdings",
+     "adv20_musd": 118.6,
+     "asof": "2026-07-31",
+     "holdings": [
+      "LEU",
+      "OKLO",
+      "SMR",
+      "UEC"
+     ],
+     "weights": {
+      "LEU": 3.46,
+      "OKLO": 6.09,
+      "SMR": 3.04,
+      "UEC": 4.81
+     }
+    },
+    {
+     "ticker": "NLR",
+     "basis": "holdings",
+     "adv20_musd": 49.4,
+     "asof": "2026-07-30",
+     "holdings": [
+      "BWXT",
+      "CCJ",
+      "CEG",
+      "LEU",
+      "OKLO",
+      "SMR",
+      "UEC"
+     ],
+     "weights": {
+      "BWXT": 6.18,
+      "CCJ": 7.8,
+      "CEG": 9.14,
+      "LEU": 5.7,
+      "OKLO": 4.39,
+      "SMR": 4.38,
+      "UEC": 4.89
+     }
+    },
+    {
+     "ticker": "MLPX",
+     "basis": "holdings",
+     "adv20_musd": 35.2,
+     "asof": "2026-07-31",
+     "holdings": [
+      "ENB",
+      "EPD",
+      "ET",
+      "KMI",
+      "OKE",
+      "PAA",
+      "WMB"
+     ],
+     "weights": {
+      "ENB": 8.78,
+      "EPD": 4.38,
+      "ET": 4.52,
+      "KMI": 7.69,
+      "OKE": 6.95,
+      "PAA": 3.86,
+      "WMB": 8.34
+     }
+    }
+   ]
+  },
+  "Commodities Energy": {
+   "diagnostic_cohesion_rho": 0.2199,
+   "diagnostic_cohesion_panel_n": 34,
+   "n_members": 39,
+   "candidates": [
+    {
+     "ticker": "USO",
+     "basis": "declared",
+     "adv20_musd": 850.9
+    },
+    {
+     "ticker": "XOP",
+     "basis": "holdings",
+     "adv20_musd": 528.4,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AR",
+      "CLMT",
+      "CLNE",
+      "CVX",
+      "DVN",
+      "EOG",
+      "EQT",
+      "EXE",
+      "FANG",
+      "GEVO",
+      "MPC",
+      "OXY",
+      "VLO",
+      "XOM"
+     ],
+     "weights": {
+      "AR": 2.3769,
+      "CLMT": 2.4001,
+      "CLNE": 0.1548,
+      "CVX": 2.4315,
+      "DVN": 2.2746,
+      "EOG": 2.4892,
+      "EQT": 2.4043,
+      "EXE": 2.5043,
+      "FANG": 2.4389,
+      "GEVO": 0.3888,
+      "MPC": 2.8629,
+      "OXY": 2.3514,
+      "VLO": 2.8887,
+      "XOM": 2.5009
+     }
+    },
+    {
+     "ticker": "XME",
+     "basis": "holdings",
+     "adv20_musd": 213.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "LEU",
+      "UEC",
+      "URG"
+     ],
+     "weights": {
+      "LEU": 5.0848,
+      "UEC": 4.5691,
+      "URG": 0.6074
+     }
+    },
+    {
+     "ticker": "URA",
+     "basis": "holdings",
+     "adv20_musd": 118.6,
+     "asof": "2026-07-31",
+     "holdings": [
+      "LEU",
+      "SMR",
+      "UEC",
+      "URG"
+     ],
+     "weights": {
+      "LEU": 3.46,
+      "SMR": 3.04,
+      "UEC": 4.81,
+      "URG": 0.48
+     }
+    },
+    {
+     "ticker": "UNG",
+     "basis": "declared",
+     "adv20_musd": 79.3
+    },
+    {
+     "ticker": "NLR",
+     "basis": "holdings",
+     "adv20_musd": 49.4,
+     "asof": "2026-07-30",
+     "holdings": [
+      "BWXT",
+      "CCJ",
+      "DNN",
+      "LEU",
+      "NXE",
+      "SMR",
+      "UEC",
+      "URG",
+      "UUUU"
+     ],
+     "weights": {
+      "BWXT": 6.18,
+      "CCJ": 7.8,
+      "DNN": 4.88,
+      "LEU": 5.7,
+      "NXE": 5.28,
+      "SMR": 4.38,
+      "UEC": 4.89,
+      "URG": 0.75,
+      "UUUU": 4.04
+     }
+    },
+    {
+     "ticker": "MLPX",
+     "basis": "holdings",
+     "adv20_musd": 35.2,
+     "asof": "2026-07-31",
+     "holdings": [
+      "CQP",
+      "ET",
+      "KMI",
+      "LNG",
+      "NEXT",
+      "OKE",
+      "WMB"
+     ],
+     "weights": {
+      "CQP": 0.9,
+      "ET": 4.52,
+      "KMI": 7.69,
+      "LNG": 4.94,
+      "NEXT": 0.26,
+      "OKE": 6.95,
+      "WMB": 8.34
+     }
+    },
+    {
+     "ticker": "PBW",
+     "basis": "holdings",
+     "adv20_musd": 27.4,
+     "asof": "2026-08-01",
+     "holdings": [
+      "DAR",
+      "GEVO",
+      "OPAL"
+     ],
+     "weights": {
+      "DAR": 2.0781,
+      "GEVO": 1.9011,
+      "OPAL": 2.4082
+     }
+    }
+   ]
+  },
+  "Commodities Metals": {
+   "diagnostic_cohesion_rho": 0.3946,
+   "diagnostic_cohesion_panel_n": 29,
+   "n_members": 51,
+   "candidates": [
+    {
+     "ticker": "GLD",
+     "basis": "declared",
+     "adv20_musd": 2321.3
+    },
+    {
+     "ticker": "GDX",
+     "basis": "holdings",
+     "adv20_musd": 1321.2,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AEM",
+      "AG",
+      "AU",
+      "B",
+      "BVN",
+      "CDE",
+      "EXK",
+      "FNV",
+      "GFI",
+      "HL",
+      "KGC",
+      "NEM",
+      "PAAS",
+      "RGLD",
+      "SVM",
+      "WPM"
+     ],
+     "weights": {
+      "AEM": 10.19,
+      "AG": 1.3,
+      "AU": 5.04,
+      "B": 8.02,
+      "BVN": 0.84,
+      "CDE": 2.21,
+      "EXK": 0.36,
+      "FNV": 5.11,
+      "GFI": 3.99,
+      "HL": 1.31,
+      "KGC": 4.32,
+      "NEM": 10.49,
+      "PAAS": 2.87,
+      "RGLD": 1.95,
+      "SVM": 0.36,
+      "WPM": 5.56
+     }
+    },
+    {
+     "ticker": "SLV",
+     "basis": "declared",
+     "adv20_musd": 770.4
+    },
+    {
+     "ticker": "GDXJ",
+     "basis": "holdings",
+     "adv20_musd": 424.6,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AG",
+      "BVN",
+      "CDE",
+      "CTGO",
+      "EXK",
+      "HL",
+      "MTA",
+      "SVM",
+      "TFPM"
+     ],
+     "weights": {
+      "AG": 2.5,
+      "BVN": 1.62,
+      "CDE": 4.82,
+      "CTGO": 0.16,
+      "EXK": 0.69,
+      "HL": 2.53,
+      "MTA": 0.19,
+      "SVM": 0.69,
+      "TFPM": 0.75
+     }
+    },
+    {
+     "ticker": "XME",
+     "basis": "holdings",
+     "adv20_musd": 213.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "AA",
+      "ABAT",
+      "CDE",
+      "CENX",
+      "CLF",
+      "CMC",
+      "CTGO",
+      "FCX",
+      "HL",
+      "MP",
+      "NEM",
+      "NUE",
+      "RGLD",
+      "STLD",
+      "USAR"
+     ],
+     "weights": {
+      "AA": 3.0316,
+      "ABAT": 0.3984,
+      "CDE": 4.4161,
+      "CENX": 3.3591,
+      "CLF": 4.1412,
+      "CMC": 4.109,
+      "CTGO": 0.6985,
+      "FCX": 4.5158,
+      "HL": 4.6957,
+      "MP": 3.4442,
+      "NEM": 4.5614,
+      "NUE": 4.5346,
+      "RGLD": 4.5528,
+      "STLD": 4.1581,
+      "USAR": 3.1843
+     }
+    },
+    {
+     "ticker": "PAVE",
+     "basis": "holdings",
+     "adv20_musd": 122.1,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AA",
+      "CENX",
+      "CLF",
+      "CMC",
+      "NUE",
+      "STLD"
+     ],
+     "weights": {
+      "AA": 0.68,
+      "CENX": 0.29,
+      "CLF": 0.38,
+      "CMC": 0.43,
+      "NUE": 3.26,
+      "STLD": 2.07
+     }
+    },
+    {
+     "ticker": "SIL",
+     "basis": "holdings",
+     "adv20_musd": 70.8,
+     "asof": "2026-07-31",
+     "holdings": [
+      "BVN",
+      "CDE",
+      "EXK",
+      "HL",
+      "PAAS",
+      "WPM"
+     ],
+     "weights": {
+      "BVN": 4.18,
+      "CDE": 10.59,
+      "EXK": 1.66,
+      "HL": 4.63,
+      "PAAS": 12.54,
+      "WPM": 22.38
+     }
+    },
+    {
+     "ticker": "REMX",
+     "basis": "holdings",
+     "adv20_musd": 54.3,
+     "asof": "2026-07-30",
+     "holdings": [
+      "ALB",
+      "IPX",
+      "LAC",
+      "LAR",
+      "MP",
+      "SGML",
+      "SQM"
+     ],
+     "weights": {
+      "ALB": 8.12,
+      "IPX": 1.12,
+      "LAC": 2.11,
+      "LAR": 1.75,
+      "MP": 5.93,
+      "SGML": 1.36,
+      "SQM": 5.85
+     }
+    },
+    {
+     "ticker": "PBW",
+     "basis": "holdings",
+     "adv20_musd": 27.4,
+     "asof": "2026-08-01",
+     "holdings": [
+      "ALB",
+      "ATLX",
+      "LAC",
+      "LAR",
+      "MP",
+      "SGML",
+      "SQM",
+      "USAR"
+     ],
+     "weights": {
+      "ALB": 1.3636,
+      "ATLX": 0.4652,
+      "LAC": 1.2128,
+      "LAR": 1.2175,
+      "MP": 1.2514,
+      "SGML": 1.3485,
+      "SQM": 1.5489,
+      "USAR": 1.1305
+     }
+    }
+   ]
+  },
+  "Commodities Agriculture": {
+   "diagnostic_cohesion_rho": 0.1627,
+   "diagnostic_cohesion_panel_n": 19,
+   "n_members": 26,
+   "candidates": [
+    {
+     "ticker": "XOP",
+     "basis": "holdings",
+     "adv20_musd": 528.4,
+     "asof": "2026-07-30",
+     "holdings": [
+      "GEVO",
+      "GPRE",
+      "REX",
+      "VLO"
+     ],
+     "weights": {
+      "GEVO": 0.3888,
+      "GPRE": 1.0879,
+      "REX": 0.4542,
+      "VLO": 2.8887
+     }
+    },
+    {
+     "ticker": "PBW",
+     "basis": "holdings",
+     "adv20_musd": 27.4,
+     "asof": "2026-08-01",
+     "holdings": [
+      "DAR",
+      "GEVO",
+      "REX"
+     ],
+     "weights": {
+      "DAR": 2.0781,
+      "GEVO": 1.9011,
+      "REX": 1.7852
+     }
+    }
+   ]
+  },
+  "Healthcare & Biotech": {
+   "diagnostic_cohesion_rho": 0.1673,
+   "diagnostic_cohesion_panel_n": 66,
+   "n_members": 83,
+   "candidates": [
+    {
+     "ticker": "XBI",
+     "basis": "holdings",
+     "adv20_musd": 1363.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "ABBV",
+      "ALNY",
+      "ALT",
+      "AMGN",
+      "BEAM",
+      "CDNA",
+      "CRSP",
+      "EXEL",
+      "GILD",
+      "MRNA",
+      "NTLA",
+      "NTRA",
+      "REGN",
+      "SANA",
+      "TNGX",
+      "TWST",
+      "VKTX",
+      "VRTX"
+     ],
+     "weights": {
+      "ABBV": 1.1278,
+      "ALNY": 0.6954,
+      "ALT": 0.2394,
+      "AMGN": 1.1309,
+      "BEAM": 0.8851,
+      "CDNA": 0.4322,
+      "CRSP": 0.9655,
+      "EXEL": 1.0489,
+      "GILD": 1.065,
+      "MRNA": 1.241,
+      "NTLA": 0.6317,
+      "NTRA": 1.2273,
+      "REGN": 1.2095,
+      "SANA": 0.2282,
+      "TNGX": 0.7887,
+      "TWST": 1.3279,
+      "VKTX": 1.1757,
+      "VRTX": 1.0894
+     }
+    },
+    {
+     "ticker": "ARKG",
+     "basis": "holdings",
+     "adv20_musd": 128.8,
+     "asof": "2026-07-31",
+     "holdings": [
+      "BEAM",
+      "CDNA",
+      "CMPS",
+      "CRSP",
+      "GH",
+      "ILMN",
+      "LLY",
+      "NTLA",
+      "NTRA",
+      "PACB",
+      "TEM",
+      "TWST",
+      "TXG"
+     ],
+     "weights": {
+      "BEAM": 3.86,
+      "CDNA": 3.69,
+      "CMPS": 3.27,
+      "CRSP": 6.25,
+      "GH": 4.39,
+      "ILMN": 4.67,
+      "LLY": 4.64,
+      "NTLA": 1.87,
+      "NTRA": 4.1,
+      "PACB": 0.99,
+      "TEM": 6.52,
+      "TWST": 7.59,
+      "TXG": 9.67
+     }
+    },
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "AAPL",
+      "AMZN",
+      "GEHC",
+      "ORCL"
+     ],
+     "weights": {
+      "AAPL": 2.81,
+      "AMZN": 3.4,
+      "GEHC": 0.32,
+      "ORCL": 3.17
+     }
+    }
+   ]
+  },
+  "Aging Population & Longevity": {
+   "diagnostic_cohesion_rho": 0.1807,
+   "diagnostic_cohesion_panel_n": 26,
+   "n_members": 31,
+   "candidates": [
+    {
+     "ticker": "XBI",
+     "basis": "holdings",
+     "adv20_musd": 1363.7,
+     "asof": "2026-07-30",
+     "holdings": [
+      "BIIB",
+      "CRSP",
+      "GERN"
+     ],
+     "weights": {
+      "BIIB": 1.0547,
+      "CRSP": 0.9655,
+      "GERN": 0.2901
+     }
+    }
+   ]
+  },
+  "Healthy Food & Nutrition": {
+   "diagnostic_cohesion_rho": 0.0909,
+   "diagnostic_cohesion_panel_n": 19,
+   "n_members": 26,
+   "candidates": [
+    {
+     "ticker": "XRT",
+     "basis": "holdings",
+     "adv20_musd": 375.5,
+     "asof": "2026-07-30",
+     "holdings": [
+      "ACI",
+      "AMZN",
+      "COST",
+      "KR",
+      "SFM",
+      "WMT"
+     ],
+     "weights": {
+      "ACI": 0.9932,
+      "AMZN": 1.2946,
+      "COST": 1.2689,
+      "KR": 1.1744,
+      "SFM": 1.3088,
+      "WMT": 1.2055
+     }
+    }
+   ]
+  },
+  "FinTech": {
+   "diagnostic_cohesion_rho": 0.2201,
+   "diagnostic_cohesion_panel_n": 40,
+   "n_members": 45,
+   "candidates": [
+    {
+     "ticker": "WGMI",
+     "basis": "holdings",
+     "adv20_musd": 34.4,
+     "asof": "2026-07-30",
+     "holdings": [
+      "CLSK",
+      "MARA",
+      "NVDA",
+      "RIOT",
+      "XYZ"
+     ],
+     "weights": {
+      "CLSK": 5.45,
+      "MARA": 4.82,
+      "NVDA": 2.33,
+      "RIOT": 4.73,
+      "XYZ": 0.67
+     }
+    }
+   ]
+  },
+  "Crypto & Blockchain": {
+   "diagnostic_cohesion_rho": 0.2492,
+   "diagnostic_cohesion_panel_n": 27,
+   "n_members": 27,
+   "candidates": [
+    {
+     "ticker": "AIQ",
+     "basis": "holdings",
+     "adv20_musd": 117.0,
+     "asof": "2026-07-31",
+     "holdings": [
+      "ACN",
+      "AMZN",
+      "CRM",
+      "HUT",
+      "IBM",
+      "MSFT",
+      "ORCL"
+     ],
+     "weights": {
+      "ACN": 0.86,
+      "AMZN": 3.4,
+      "CRM": 1.28,
+      "HUT": 0.27,
+      "IBM": 1.79,
+      "MSFT": 3.57,
+      "ORCL": 3.17
+     }
+    },
+    {
+     "ticker": "CHAT",
+     "basis": "holdings",
+     "adv20_musd": 52.8,
+     "asof": "2026-08-03",
+     "holdings": [
+      "AMZN",
+      "MSFT",
+      "ORCL"
+     ],
+     "weights": {
+      "AMZN": 2.81,
+      "MSFT": 2.78,
+      "ORCL": 2.02
+     }
+    },
+    {
+     "ticker": "WGMI",
+     "basis": "holdings",
+     "adv20_musd": 34.4,
+     "asof": "2026-07-30",
+     "holdings": [
+      "BTDR",
+      "CIFR",
+      "CLSK",
+      "CORZ",
+      "HUT",
+      "IREN",
+      "MARA",
+      "RIOT",
+      "XYZ"
+     ],
+     "weights": {
+      "BTDR": 3.89,
+      "CIFR": 19.93,
+      "CLSK": 5.45,
+      "CORZ": 2.88,
+      "HUT": 12.03,
+      "IREN": 10.02,
+      "MARA": 4.82,
+      "RIOT": 4.73,
+      "XYZ": 0.67
+     }
+    }
+   ]
+  }
+ }
+}
