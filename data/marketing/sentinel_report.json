@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-05T16:33:59Z",
-  "as_of": "2026-08-05",
+  "produced_at": "2026-08-06T06:11:07Z",
+  "as_of": "2026-08-06",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 2,
-    "passed": 2,
+    "items": 11,
+    "passed": 11,
     "quarantined": 0,
     "quarantined_policy": 0,
     "quarantined_overflow": 0,
@@ -19,25 +19,97 @@
   "quarantined": [],
   "passed": [
     {
-      "id": "post-founder-017",
-      "account": "founder",
-      "slot": "D1-S17",
+      "id": "post-flagship-011",
+      "account": "flagship",
+      "slot": "D1-S11",
+      "type": "event",
+      "cashtag": "",
+      "headline": "AI and chips are carrying a narrow tape"
+    },
+    {
+      "id": "post-flagship-012",
+      "account": "flagship",
+      "slot": "D1-S12",
       "type": "chart",
-      "cashtag": "$TEAM",
+      "cashtag": "$MDB",
       "headline": ""
+    },
+    {
+      "id": "post-conf-flagship-001",
+      "account": "flagship",
+      "slot": "CONF-01",
+      "type": "signal",
+      "cashtag": "$AMZN",
+      "headline": "$AMZN just lined up a pattern we track."
+    },
+    {
+      "id": "post-theme-003",
+      "account": "flagship",
+      "slot": "D1-S3",
+      "type": "theme_list",
+      "cashtag": "$AMBA",
+      "headline": "Autonomous Systems ripping, +1.9% avg on Wednesday"
+    },
+    {
+      "id": "post-founder-008",
+      "account": "founder",
+      "slot": "D1-S8",
+      "type": "watchlist",
+      "cashtag": "$AVNT",
+      "headline": "$AVNT has closed red 3 sessions in a row"
+    },
+    {
+      "id": "post-founder-015",
+      "account": "founder",
+      "slot": "D1-S15",
+      "type": "signal",
+      "cashtag": "$KWR",
+      "headline": ""
+    },
+    {
+      "id": "post-founder-021",
+      "account": "founder",
+      "slot": "D1-S21",
+      "type": "watchlist",
+      "cashtag": "$CWK",
+      "headline": "$CWK held. I’m still waiting."
     },
     {
       "id": "post-sophia-007",
       "account": "sophia",
       "slot": "D1-S7",
       "type": "watchlist",
-      "cashtag": "$SOC",
+      "cashtag": "$AMBA",
+      "headline": ""
+    },
+    {
+      "id": "post-mover-002",
+      "account": "sophia",
+      "slot": "D1-S6",
+      "type": "mover",
+      "cashtag": "$ALHC",
+      "headline": "$ALHC -20.2% on Wednesday"
+    },
+    {
+      "id": "post-kelly-009",
+      "account": "kelly",
+      "slot": "D1-S9",
+      "type": "macro",
+      "cashtag": "",
+      "headline": ""
+    },
+    {
+      "id": "post-cici-001",
+      "account": "cici",
+      "slot": "D1-S1",
+      "type": "macro",
+      "cashtag": "",
       "headline": ""
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 1,
+      "pairs_checked": 45,
       "hits": 0,
       "shared_media_hits": 0
     },
@@ -63,7 +135,7 @@
       "cherry_pick_detected": false
     },
     "stale_receipts": {
-      "age_days": 2,
+      "age_days": 3,
       "max": 7
     },
     "kill_switch": {
@@ -94,7 +166,7 @@
       "graduate_after_days": 21,
       "weeks_1_2_days": 5,
       "weeks_3_4_days": 10,
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "as_of_usable": true,
       "base": {
         "max_posts_per_account_per_day": null,
@@ -110,7 +182,7 @@
       "accounts": {
         "flagship": {
           "created": "2026-07-24",
-          "age_days": 12,
+          "age_days": 13,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -223,12 +295,12 @@
         },
         "founder": {
           "created": "2026-07-27",
-          "age_days": 9,
-          "tier": "weeks_3_4",
+          "age_days": 10,
+          "tier": "week_5_plus",
           "enabled": true,
           "caps": {
-            "max_posts_per_account_per_day": 18,
-            "max_media_posts_per_account_per_day": 18,
+            "max_posts_per_account_per_day": 20,
+            "max_media_posts_per_account_per_day": 20,
             "max_same_cashtag_per_account_per_day": 3,
             "max_replies_per_account_per_day": 0,
             "max_new_follows_per_account_per_day": 0,
@@ -241,7 +313,7 @@
         },
         "meagan": {
           "created": "2026-07-28",
-          "age_days": 8,
+          "age_days": 9,
           "tier": "weeks_3_4",
           "enabled": true,
           "caps": {
@@ -259,7 +331,7 @@
         },
         "sophia": {
           "created": "2026-07-28",
-          "age_days": 8,
+          "age_days": 9,
           "tier": "weeks_3_4",
           "enabled": true,
           "caps": {
@@ -277,7 +349,7 @@
         },
         "kelly": {
           "created": "2026-07-28",
-          "age_days": 8,
+          "age_days": 9,
           "tier": "weeks_3_4",
           "enabled": true,
           "caps": {
@@ -295,7 +367,7 @@
         },
         "cici": {
           "created": "2026-07-28",
-          "age_days": 8,
+          "age_days": 9,
           "tier": "weeks_3_4",
           "enabled": true,
           "caps": {
@@ -313,7 +385,7 @@
         },
         "mastermind_news": {
           "created": "2026-08-02",
-          "age_days": 3,
+          "age_days": 4,
           "tier": "weeks_1_2",
           "enabled": true,
           "caps": {

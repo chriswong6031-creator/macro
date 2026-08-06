@@ -451,11 +451,11 @@
         "state": "Neutral",
         "null_reason": null,
         "bottom_score": 16.0,
-        "top_score": 18.2,
+        "top_score": 0.0,
         "capitulation_score": 15.4,
         "turn_score": 16.7,
         "euphoria_score": 0.0,
-        "rollover_score": 44.4,
+        "rollover_score": 0.0,
         "bottom_fired": [
           {
             "code": "oversold_htf",
@@ -468,15 +468,12 @@
             "label_zh": "\u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf"
           }
         ],
-        "top_fired": [
-          {
-            "code": "divergence",
-            "label_en": "Momentum diverging from trend",
-            "label_zh": "\u52a8\u91cf\u4e0e\u8d8b\u52bf\u80cc\u79bb"
-          }
-        ],
+        "top_fired": [],
         "n_bottom_applicable": 9,
-        "n_top_applicable": 8
+        "n_top_applicable": 7,
+        "turn_developing": true,
+        "basing": true,
+        "armed_recent": true
       },
       {
         "name": "silver",
@@ -485,11 +482,11 @@
         "state": "Neutral",
         "null_reason": null,
         "bottom_score": 16.0,
-        "top_score": 18.2,
+        "top_score": 0.0,
         "capitulation_score": 15.4,
         "turn_score": 16.7,
         "euphoria_score": 0.0,
-        "rollover_score": 44.4,
+        "rollover_score": 0.0,
         "bottom_fired": [
           {
             "code": "oversold_htf",
@@ -502,15 +499,12 @@
             "label_zh": "\u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf"
           }
         ],
-        "top_fired": [
-          {
-            "code": "divergence",
-            "label_en": "Momentum diverging from trend",
-            "label_zh": "\u52a8\u91cf\u4e0e\u8d8b\u52bf\u80cc\u79bb"
-          }
-        ],
+        "top_fired": [],
         "n_bottom_applicable": 9,
-        "n_top_applicable": 8
+        "n_top_applicable": 7,
+        "turn_developing": true,
+        "basing": false,
+        "armed_recent": false
       },
       {
         "name": "platinum",
@@ -519,11 +513,11 @@
         "state": "Neutral",
         "null_reason": null,
         "bottom_score": 8.0,
-        "top_score": 27.3,
+        "top_score": 11.1,
         "capitulation_score": 0.0,
         "turn_score": 16.7,
         "euphoria_score": 15.4,
-        "rollover_score": 44.4,
+        "rollover_score": 0.0,
         "bottom_fired": [
           {
             "code": "cycle_bottom",
@@ -536,15 +530,13 @@
             "code": "overbought_ltf",
             "label_en": "Overbought short-term",
             "label_zh": "\u77ed\u5468\u671f\u8d85\u4e70"
-          },
-          {
-            "code": "divergence",
-            "label_en": "Momentum diverging from trend",
-            "label_zh": "\u52a8\u91cf\u4e0e\u8d8b\u52bf\u80cc\u79bb"
           }
         ],
         "n_bottom_applicable": 9,
-        "n_top_applicable": 8
+        "n_top_applicable": 7,
+        "turn_developing": true,
+        "basing": false,
+        "armed_recent": false
       },
       {
         "name": "palladium",
@@ -567,7 +559,10 @@
         ],
         "top_fired": [],
         "n_bottom_applicable": 9,
-        "n_top_applicable": 8
+        "n_top_applicable": 8,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
       },
       {
         "name": "copper",
@@ -606,7 +601,10 @@
           }
         ],
         "n_bottom_applicable": 9,
-        "n_top_applicable": 8
+        "n_top_applicable": 8,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
       },
       {
         "name": "oil",
@@ -629,7 +627,10 @@
         ],
         "top_fired": [],
         "n_bottom_applicable": 8,
-        "n_top_applicable": 8
+        "n_top_applicable": 8,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
       },
       {
         "name": "natgas",
@@ -662,7 +663,10 @@
         ],
         "top_fired": [],
         "n_bottom_applicable": 7,
-        "n_top_applicable": 7
+        "n_top_applicable": 7,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
       },
       {
         "name": "gasoline",
@@ -696,7 +700,10 @@
           }
         ],
         "n_bottom_applicable": 7,
-        "n_top_applicable": 7
+        "n_top_applicable": 7,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
       },
       {
         "name": "heating_oil",
@@ -719,7 +726,10 @@
           }
         ],
         "n_bottom_applicable": 6,
-        "n_top_applicable": 6
+        "n_top_applicable": 6,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
       },
       {
         "name": "corn",
@@ -753,7 +763,10 @@
           }
         ],
         "n_bottom_applicable": 8,
-        "n_top_applicable": 8
+        "n_top_applicable": 8,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
       },
       {
         "name": "wheat",
@@ -776,7 +789,10 @@
           }
         ],
         "n_bottom_applicable": 9,
-        "n_top_applicable": 8
+        "n_top_applicable": 8,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
       },
       {
         "name": "soybeans",
@@ -805,7 +821,10 @@
           }
         ],
         "n_bottom_applicable": 9,
-        "n_top_applicable": 8
+        "n_top_applicable": 8,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
       },
       {
         "name": "live_cattle",
@@ -839,7 +858,10 @@
           }
         ],
         "n_bottom_applicable": 7,
-        "n_top_applicable": 7
+        "n_top_applicable": 7,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
       },
       {
         "name": "coffee",
@@ -868,7 +890,10 @@
           }
         ],
         "n_bottom_applicable": 7,
-        "n_top_applicable": 7
+        "n_top_applicable": 7,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
       },
       {
         "name": "sugar",
@@ -907,7 +932,10 @@
           }
         ],
         "n_bottom_applicable": 8,
-        "n_top_applicable": 7
+        "n_top_applicable": 7,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
       },
       {
         "name": "cocoa",
@@ -946,7 +974,10 @@
           }
         ],
         "n_bottom_applicable": 8,
-        "n_top_applicable": 7
+        "n_top_applicable": 7,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
       },
       {
         "name": "cotton",
@@ -980,7 +1011,10 @@
           }
         ],
         "n_bottom_applicable": 8,
-        "n_top_applicable": 7
+        "n_top_applicable": 7,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
       }
     ],
     "index": {
