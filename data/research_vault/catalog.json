@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T14:56:26.243817+00:00",
-  "count": 878,
+  "generated_at": "2026-08-06T15:05:00.847705+00:00",
+  "count": 879,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -196,6 +196,27 @@
       "tags": [],
       "tickers": [],
       "top_pick": true,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-otprwrbdfqa-025a5c",
+      "title": "Taiwan CCL July revenue trending much better than our bullish estimate on high end CCL players, with solid pricing uptrend",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T11:17:49Z",
+      "summary_points": [
+        "**<Revenue Beat & Pricing Momentum>**: EMC/TUC exceeded July revenue estimates (+8%/+22% MoM, +21%/+98% YoY) with AI-driven demand (EMC) and M7-grade CCL pricing (TUC); Q3 guidance raised (EMC: +22% QoQ, TUC: +144% YoY).",
+        "**<Valuation & Upside>**: Buy ratings maintained with 100% upside potential (EMC: NT$10,200 TP at 27x P/E, TUC: NT$3,010 TP at 22x P/E), aligned with historical AI component supplier multiples.",
+        "**<Market Share Expansion>**: EMC targets 15-20% Purley market share (vs <10%) and 40%/30%+ switch market share (vs <5% pre-2019); TUC leads M7+ CCL for AI servers (20%+ market share).",
+        "**<Geopolitical Risk>**: Taiwan CCL suppliers face heightened US-China tension exposure impacting regulatory environment and market sentiment, requiring active monitoring.",
+        "**<Price Target Gap>**: Institutional bullishness evident as target prices (EMC: NT$10,200, TUC: NT$3,010) significantly exceed current prices (e.g., TUC: NT$3,010 vs NT$1,020)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
       "pages": 9,
       "language": "en",
       "needs_metadata": false
