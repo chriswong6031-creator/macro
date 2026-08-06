@@ -144,8 +144,43 @@ days whose windows share no session at all) and the report prints it beside ever
 that flag appears. No correction is applied — a correction would need a covariance model
 this sample cannot support; the overlap is DISCLOSED instead.
 
+FROZEN REPLAY — why this study does NOT read the live stores
+------------------------------------------------------------
+The report is a COMMITTED artifact and ``tests/test_exit_policy_study.py`` asserts it
+still matches a fresh render, so "fresh" has to be deterministic. Read from the live
+caches it is not, and not merely because prices advance:
+
+* The panel END advances nightly. Between the 2026-08-01 collection and 2026-08-06 the
+  cohort went 173 episodes / 8 board days -> 257 / 11 — a different study.
+* The panel START advances too, and that is the subtle one. ``_closes_cache.parquet`` for
+  the smallcap/midcap groups is a ROLLING window: over those same three sessions its
+  first date moved 2023-06-27 -> 2023-07-03, and 91 of the 152 cohort tickers moved with
+  it. ``grade_us_board._ob_mask`` — the incumbent's own target leg — reads the 3D
+  StochRSI through ``confluence_tiers._tf_bars``, i.e. ``resample("3B")``, whose bins are
+  START-ANCHORED. Move the first date and every 3D bucket in the WHOLE history re-phases,
+  so overbought flags from weeks ago flip and P0's exits move underneath a cohort that
+  never changed. An as-of pin on the END cannot reach this: it re-broke the report the
+  day after it would have been applied.
+* Vendor revisions land on bars at or below the as-of (2 cohort tickers over the same
+  three sessions: OHI, REZI).
+
+So the study replays a FROZEN INPUT SLICE committed under ``research/exit_policy_replay/``
+— the price and board stores exactly as they stood at ``PRICE_ASOF``. That is what makes
+the committed report reproducible BY CONSTRUCTION rather than until the next collection,
+and it is what keeps the Calibration section honest: the shipped ledger it reconciles
+against is itself a frozen artifact, so the study has to meet it on its own grid.
+
+Refreshing the study is a DELIBERATE act, never a nightly one: ``--freeze`` re-cuts the
+replay slice from the live stores at a new as-of, then a normal run regenerates the
+report. Both land in the same commit, and the report's numbers change together with the
+data that produced them. ``--live`` renders straight from the live stores WITHOUT
+re-freezing — use it to see what current data would say (it will not match the committed
+report; that is the point).
+
 Run:  python -m scripts.exit_policy_study                 # writes reports/exit-policy-horserace.md
       python -m scripts.exit_policy_study --json out.json # also dump the raw result dict
+      python -m scripts.exit_policy_study --live          # render from the LIVE stores
+      python -m scripts.exit_policy_study --freeze --price-asof 2026-08-05
 """
 from __future__ import annotations
 
@@ -181,6 +216,26 @@ from scripts.grade_us_board import (  # noqa: E402
 )
 
 REPORT_PATH = ROOT / "reports" / "exit-policy-horserace.md"
+
+# --------------------------------------------------------------------------- #
+# frozen replay — see the FROZEN REPLAY block in the module docstring
+# --------------------------------------------------------------------------- #
+# The as-of the committed report was cut at. This is the LAST BAR of the frozen price
+# slice, not a wall-clock read: a study whose price reach follows the clock rewrites its
+# own committed artifact every night. Bumping it is a deliberate refresh — re-freeze
+# (`--freeze`) and regenerate the report in the SAME commit, so the numbers and the data
+# that produced them move together.
+PRICE_ASOF = "2026-07-31"
+
+# The frozen input slice: a `data/`-shaped subtree, so `run_study(root=...)` reads it
+# through the ordinary loaders with no replay-only code path to drift out of sync.
+REPLAY_ROOT = ROOT / "research" / "exit_policy_replay"
+
+# Panels the freeze carries. Closes AND high/low are frozen over their FULL history on
+# purpose: `_ob_mask`'s `resample("3B")` is start-anchored and `wilder_atr`'s RMA is a
+# recursive `ewm(adjust=False)`, so both read the beginning of the series. Trimming the
+# slice's start to save bytes would silently re-phase the study.
+_FREEZE_FIELDS = ("closes", "high", "low")
 
 # Close panel = engine.equity_factors._closes("broad") — breadth (S&P 500) + smallcap +
 # midcap, first-hit-wins — so the price basis is byte-identical to the grader's. Russell
@@ -1181,8 +1236,32 @@ def calibrate(board_days: Mapping[str, Iterable[str]], closes: pd.DataFrame,
 # --------------------------------------------------------------------------- #
 # study
 # --------------------------------------------------------------------------- #
+def resolve_root(root: Path | None = None) -> Path:
+    """Where the study reads its inputs from. Defaults to the FROZEN REPLAY slice.
+
+    Fail-closed on a missing slice rather than falling back to the live stores: a silent
+    fallback would render a different study under the committed report's own filename and
+    surface as an unexplained "report is stale", which is precisely the failure this
+    replay exists to end.
+    """
+    if root is not None:
+        return root
+    if not REPLAY_ROOT.exists():
+        raise FileNotFoundError(
+            f"frozen replay slice missing at {REPLAY_ROOT} — the study reads it, not the "
+            f"live stores (see the FROZEN REPLAY block in this module's docstring). "
+            f"Re-cut it with: python -m scripts.exit_policy_study --freeze"
+        )
+    return REPLAY_ROOT
+
+
 def run_study(root: Path | None = None) -> dict:
-    """Everything, deterministically. Returns the full result dict the report renders."""
+    """Everything, deterministically. Returns the full result dict the report renders.
+
+    ``root`` defaults to the committed frozen replay slice — NOT the live stores. See
+    ``resolve_root`` and the FROZEN REPLAY block in the module docstring.
+    """
+    root = resolve_root(root)
     closes, highs, lows, bench = load_prices(root)
     board_days, invalidation, prov = load_board_days(root)
     cohort, exclusions = build_cohort(board_days, invalidation, closes, highs, lows)
@@ -1593,6 +1672,15 @@ def render_report(res: Mapping[str, Any]) -> str:
     A(f"* **Boards** — {res['board_days']['n']} board days, "
       f"{res['board_days']['first']} → {res['board_days']['last']}. "
       f"Prices run to **{res['price_asof']}**.")
+    A(f"* **Inputs — frozen, not live.** Every number here is replayed from the price and "
+      f"board stores exactly as they stood at {res['price_asof']}, committed under "
+      f"`research/exit_policy_replay/`. Read against the live caches this study is not "
+      f"reproducible: the panel's END advances nightly (which grows the cohort) and its "
+      f"START rolls too, re-phasing the start-anchored 3D buckets the incumbent's own "
+      f"target leg is read from — so overbought flags from weeks ago flip and P0's exits "
+      f"move underneath a cohort that never changed. Refreshing the study is a deliberate "
+      f"re-freeze, not a nightly one; `--live` renders from current data and will NOT "
+      f"match this file.")
     A(f"* **Episodes** — **{coh['n_episodes']} episodes across "
       f"{coh['n_board_days']} board days.** Forward bars available per episode: "
       f"{coh['bars_available_min']} min / {coh['bars_available_median']} median / "
@@ -2010,14 +2098,124 @@ def _read_paragraphs(res: Mapping[str, Any]) -> str:
 
 
 # --------------------------------------------------------------------------- #
+def freeze_replay(asof: str = PRICE_ASOF, *, src: Path | None = None,
+                  dest: Path | None = None) -> dict[str, int]:
+    """Re-cut the frozen replay slice from the LIVE stores at ``asof``.
+
+    A deliberate refresh, never a nightly one — see the FROZEN REPLAY block in the module
+    docstring. Writes a `data/`-shaped subtree so the ordinary loaders read it unchanged.
+
+    What is preserved, and why each choice is load-bearing:
+
+    * The panels are frozen from ``_panel`` output — i.e. AFTER the four breadth groups
+      are merged first-hit-wins — so the replay carries the already-resolved column for
+      each ticker and cannot re-resolve it differently later.
+    * Rows are cut at ``asof`` but the slice keeps its FULL history: `_ob_mask`'s
+      ``resample("3B")`` is start-anchored and `wilder_atr` is a recursive RMA, so a
+      trimmed start would silently re-phase the study (docstring, FROZEN REPLAY).
+    * Columns are restricted to tickers that appear on the boards, and a board ticker with
+      no live column is left absent rather than filled — the report PRINTS that exclusion
+      count, so inventing a column would quietly change a disclosed number.
+    """
+    src = src or ROOT
+    dest = dest or REPLAY_ROOT
+    cut = pd.Timestamp(asof)
+
+    board_days, _, _ = load_board_days(src if src != ROOT else None)
+    board_tickers = {ep["ticker"] for ep in ts.build_episodes(dict(board_days))}
+
+    (dest / "data" / "breadth").mkdir(parents=True, exist_ok=True)
+    (dest / "data" / "yahoo").mkdir(parents=True, exist_ok=True)
+    (dest / "data" / "us_board_ledger").mkdir(parents=True, exist_ok=True)
+
+    wrote: dict[str, int] = {}
+    for kind in _FREEZE_FIELDS:
+        panel = _panel(kind, src if src != ROOT else None)
+        keep = sorted(t for t in board_tickers if t in panel.columns)
+        sub = panel.loc[panel.index <= cut, keep]
+        out = dest / "data" / "breadth" / f"_{kind}_cache.parquet"
+        sub.to_parquet(out, compression="zstd")
+        wrote[kind] = int(sub.shape[1])
+
+    bp = (src / "data" / "yahoo" / f"{BENCH}.parquet")
+    b = pd.read_parquet(bp)
+    b.index = pd.to_datetime(b.index)
+    b = b.sort_index()
+    b[b.index <= cut].to_parquet(dest / "data" / "yahoo" / f"{BENCH}.parquet",
+                                 compression="zstd")
+
+    # Board membership, PROJECTED to the fields `load_board_days` actually reads:
+    # `as_of`, and per buy-lane row `ticker` + `hold.invalidation`. The live store is a
+    # 17 MB forward snapshot carrying every scored column for every name; freezing it
+    # whole would pin ~17 MB of another lane's payload into this study's inputs for three
+    # fields' worth of signal. ONE PROJECTED LINE PER SOURCE LINE — `prov` counts lines,
+    # not days, so collapsing duplicates here would change a printed provenance number.
+    # If the loader ever reads a fourth field, the committed-report test goes red rather
+    # than the study quietly reading a hole.
+    snap_src = src / "data" / "us_board_ledger" / "snapshots.jsonl"
+    kept_lines, n_snap = [], 0
+    for line in snap_src.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            d = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if str(d.get("as_of") or "") < LEDGER_HISTORY_FROM:
+            continue
+        rows = []
+        for r in d.get("buy") or []:
+            if not isinstance(r, dict) or not r.get("ticker"):
+                continue
+            hold = r.get("hold") or {}
+            inv = hold.get("invalidation") if isinstance(hold, dict) else None
+            rows.append({"ticker": r["ticker"], "hold": {"invalidation": inv}})
+        kept_lines.append(json.dumps({"as_of": d["as_of"], "buy": rows},
+                                     separators=(",", ":"), sort_keys=True))
+        n_snap += 1
+    (dest / "data" / "us_board_ledger" / "snapshots.jsonl").write_text(
+        "\n".join(kept_lines) + ("\n" if kept_lines else ""))
+    wrote["snapshot_lines"] = n_snap
+
+    # Projected to the three columns `load_board_days` actually reads — the other 82 are
+    # a different lane's payload and freezing them would pin unrelated churn into this
+    # study's inputs.
+    rg_src = src / "data" / "us_board_ledger" / "retro_grades.parquet"
+    rg = pd.read_parquet(rg_src, columns=["as_of", "lane", "ticker"])
+    rg = rg[rg["as_of"].astype(str) >= LEDGER_HISTORY_FROM]
+    rg.to_parquet(dest / "data" / "us_board_ledger" / "retro_grades.parquet",
+                  compression="zstd", index=False)
+    wrote["retro_rows"] = int(len(rg))
+    return wrote
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--out", default=str(REPORT_PATH), help="markdown report path")
     ap.add_argument("--json", default=None, help="also dump the raw result dict here")
     ap.add_argument("--quiet", action="store_true")
+    ap.add_argument("--live", action="store_true",
+                    help="render from the LIVE stores instead of the frozen replay slice "
+                         "(will NOT match the committed report — that is the point)")
+    ap.add_argument("--freeze", action="store_true",
+                    help="re-cut the frozen replay slice from the live stores, then render")
+    ap.add_argument("--price-asof", default=PRICE_ASOF,
+                    help=f"as-of for --freeze (default {PRICE_ASOF})")
     args = ap.parse_args(argv)
 
-    res = run_study()
+    if args.freeze:
+        wrote = freeze_replay(args.price_asof)
+        if not args.quiet:
+            print(f"[exit_policy_study] froze replay at {args.price_asof} → "
+                  f"{REPLAY_ROOT.relative_to(ROOT)} ({wrote})")
+        if args.price_asof != PRICE_ASOF:
+            print(f"::warning title=exit-policy-replay-asof::froze at "
+                  f"{args.price_asof} but PRICE_ASOF is still {PRICE_ASOF} — bump the "
+                  f"constant in the same commit or the study replays a slice it does "
+                  f"not describe", flush=True)
+
+    res = run_study(ROOT if args.live else None)
     md = render_report(res)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)

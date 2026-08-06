@@ -2541,6 +2541,13 @@ on:
       - "engine/postmortem.py"
       - "scripts/prophet_postmortem.py"
       - "scripts/exit_policy_study.py"
+      # The FROZEN REPLAY slice is the input grid of test_exit_policy_study.py's
+      # committed-report reproduction (PRICE_ASOF-cut), and the report is the artifact
+      # that reproduction pins — same reason data/china_standout_track/** is listed
+      # below. A re-freeze or a hand edit of either must be able to start this workflow,
+      # or the study's own guard sits out the change that broke it.
+      - "research/exit_policy_replay/**"
+      - "reports/exit-policy-horserace.md"
       # The COMMITTED CN board store + china_stocks price panel are the input grid
       # of test_cn_prophet_audit.py's frozen reproduction (REPRO_ASOF-truncated),
       # so a hand rewrite of either store — a re-adjustment sweep, an era edit —

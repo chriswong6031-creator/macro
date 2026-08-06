@@ -28,6 +28,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import track_scoring as ts  # noqa: E402
+from scripts import exit_policy_study as eps  # noqa: E402
 from scripts.exit_policy_study import (  # noqa: E402
     BE_ARM_ATR,
     CAP_PLAN,
@@ -39,6 +40,8 @@ from scripts.exit_policy_study import (  # noqa: E402
     POLICY_SHORT,
     PLAN_ATR_MULT,
     PLAN_R_MULT,
+    PRICE_ASOF,
+    REPLAY_ROOT,
     R_DATA_END,
     R_HORIZON,
     R_PLAN_STOP,
@@ -49,10 +52,13 @@ from scripts.exit_policy_study import (  # noqa: E402
     decompose,
     evaluate,
     excursions,
+    load_board_days,
+    load_prices,
     paired_delta,
     policy_metrics,
     reconcile_round,
     render_report,
+    resolve_root,
     run_study,
     walk_fixed,
     walk_target_stop,
@@ -60,7 +66,7 @@ from scripts.exit_policy_study import (  # noqa: E402
     wilder_atr,
     window_overlap,
 )
-from scripts.grade_us_board import _TROUGH_LB, _TROUGH_TOL  # noqa: E402
+from scripts.grade_us_board import _TROUGH_LB, _TROUGH_TOL, _ob_mask  # noqa: E402
 
 
 # --------------------------------------------------------------------------- #
@@ -982,3 +988,77 @@ class TestCommittedReportIsCurrent:
         strip = lambda ls: [l for l in ls if "**Study date:**" not in l]  # noqa: E731
         assert strip(fresh) == strip(on_disk), \
             "reports/exit-policy-horserace.md is stale — re-run scripts/exit_policy_study.py"
+
+
+# --------------------------------------------------------------------------- #
+# frozen replay — what makes "a fresh render" deterministic at all
+# --------------------------------------------------------------------------- #
+class TestFrozenReplay:
+    """The test above is only satisfiable if `run_study()` is deterministic, and read
+    from the live stores it is not: the panel's end advances nightly (cohort 173 -> 257
+    over three sessions) and its start rolls too, re-phasing the start-anchored 3D
+    buckets `_ob_mask` reads. These pin the replay that fixes it — including the reason
+    the slice may never be trimmed to save bytes.
+    """
+
+    def test_the_study_reads_the_frozen_slice_not_the_live_stores(self):
+        """Resolves the ACTUAL default rather than asserting the constant equals itself:
+        a default quietly changed back to the live caches is the whole failure mode."""
+        assert resolve_root() == REPLAY_ROOT
+        assert (REPLAY_ROOT / "data").is_dir(), "frozen replay slice is not committed"
+
+    def test_a_missing_slice_fails_closed_instead_of_falling_back_to_live(self, tmp_path,
+                                                                         monkeypatch):
+        """A fallback would render a DIFFERENT study under the committed report's own
+        filename and surface as an unexplained 'report is stale'."""
+        monkeypatch.setattr(eps, "REPLAY_ROOT", tmp_path / "absent")
+        with pytest.raises(FileNotFoundError, match="frozen replay"):
+            eps.resolve_root()
+
+    def test_the_frozen_panels_end_exactly_at_the_pin(self):
+        """The pin is the slice's real reach, not a label sitting beside a live read."""
+        closes, highs, lows, bench = load_prices(REPLAY_ROOT)
+        assert str(closes.index.max().date()) == PRICE_ASOF
+        assert str(highs.index.max().date()) == PRICE_ASOF
+        assert str(lows.index.max().date()) == PRICE_ASOF
+        assert bench is not None and str(bench.index.max().date()) == PRICE_ASOF
+
+    def test_the_reported_reach_is_the_pin_not_the_clock(self, study):
+        assert study["price_asof"] == PRICE_ASOF
+
+    def test_the_frozen_board_slice_still_carries_its_invalidation_levels(self):
+        """The freeze PROJECTS snapshots.jsonl down to the three fields the loader reads.
+        Drop `hold.invalidation` and P3 silently falls back to its ATR stop for every
+        episode — a different policy printed under the same name."""
+        board_days, invalidation, prov = load_board_days(REPLAY_ROOT)
+        assert len(board_days) == 17
+        assert invalidation, "projected snapshot lost hold.invalidation"
+        assert prov["n_days_snapshots"] == 17
+
+    def test_trimming_the_slice_start_re_phases_the_incumbents_own_target_leg(self):
+        """MUTATION PIN on the freeze's most counter-intuitive rule: keep FULL history.
+
+        `_ob_mask` reads the 3D StochRSI through `resample("3B")`, whose bins are
+        START-anchored, so dropping leading sessions re-buckets the ENTIRE history and
+        flips overbought flags from weeks ago. This is what a rolling cache did to the
+        live study between two collections (91 of 152 cohort tickers moved), and it is
+        why `freeze_replay` may not trim the slice's start to save bytes. If this test
+        ever passes with `moved == 0`, the re-phasing is gone and the rule can be
+        revisited — until then, trimming silently rewrites the report.
+        """
+        closes, _, _, _ = load_prices(REPLAY_ROOT)
+        moved = scanned = 0
+        for tk in list(closes.columns)[:40]:
+            ser = closes[tk].dropna()
+            if len(ser) < 250:
+                continue
+            full, trimmed = _ob_mask(ser), _ob_mask(ser.iloc[4:])
+            if full is None or trimmed is None:
+                continue
+            scanned += 1
+            if not full.reindex(trimmed.index).astype(bool).equals(trimmed.astype(bool)):
+                moved += 1
+        assert scanned >= 10, "not enough history to exercise the pin"
+        assert moved > 0, (
+            "dropping 4 leading sessions no longer moves the 3D overbought mask — the "
+            "start-anchoring this freeze defends against may have changed")

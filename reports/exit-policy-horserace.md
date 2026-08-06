@@ -1,6 +1,6 @@
 # Exit-policy horse race — US buy-lane episodes
 
-**Study date:** 2026-08-03T04:08Z · **Script:** `scripts/exit_policy_study.py` · **Charter:** `research/PROPHET_LEARNING_LOOP_MASTERPLAN_BY_FABLE.md` §0 G3/G4, §1
+**Study date:** 2026-08-06T19:38Z · **Script:** `scripts/exit_policy_study.py` · **Charter:** `research/PROPHET_LEARNING_LOOP_MASTERPLAN_BY_FABLE.md` §0 G3/G4, §1
 
 **Tier: measurement / display. Nothing here promotes anything.** The public track record keeps the incumbent rule. Every verdict below is descriptive — what this sample shows, on this cohort, at this size. A policy that eventually replaces the incumbent has to be pre-registered first; see *Promotion path* at the end.
 
@@ -12,6 +12,7 @@ One question: **on identical entries, what does a holder-with-rules capture?** T
 
 * **Cohort** — buy-lane episodes on boards from **2026-06-25** onward (the board-definition cut; earlier boards published a 120-name broad screen and are a different instrument). One episode = one contiguous board run. Entry = the **next session's close** after the board date, identical for every policy — the board is computed from that close and published that evening, so the signal bar is unbuyable.
 * **Boards** — 17 board days, 2026-06-30 → 2026-07-31. Prices run to **2026-07-31**.
+* **Inputs — frozen, not live.** Every number here is replayed from the price and board stores exactly as they stood at 2026-07-31, committed under `research/exit_policy_replay/`. Read against the live caches this study is not reproducible: the panel's END advances nightly (which grows the cohort) and its START rolls too, re-phasing the start-anchored 3D buckets the incumbent's own target leg is read from — so overbought flags from weeks ago flip and P0's exits move underneath a cohort that never changed. Refreshing the study is a deliberate re-freeze, not a nightly one; `--live` renders from current data and will NOT match this file.
 * **Episodes** — **173 episodes across 8 board days.** Forward bars available per episode: 11 min / 18 median / 21 max.
 * **Benchmark** — SPY total return over each episode's own fill→exit window.
 * **Provenance** — board membership is `snapshots.jsonl` UNION the buy-lane rows of `retro_grades.parquet`. In this run the snapshot store already covered the whole post-cut era: retro contributed 0 extra board days and 0 extra tickers. The union is kept anyway so a future gap in the forward store heals from git archaeology instead of silently shrinking the cohort.
