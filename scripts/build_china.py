@@ -102,13 +102,41 @@ def _is_current_prophet_artifact(doc: dict | None) -> bool:
     )
 
 
-def _prophet_outage_shell(reason: str) -> dict:
-    """Never render a superseded board beneath the current Prophet heading.
+#: What this path tells the reader. It carries its OWN headline rather than
+#: inheriting the W0.7 buy-count-collapse banner's, because that headline —
+#: "data coverage degraded — board incomplete today" — is affirmatively FALSE
+#: here and is the sentence that cost two days: on 2026-08-06 the data was
+#: complete and current (24 names, as_of today) and the renderer simply refused
+#: it, so the page reported a China FEED outage and that is what got chased.
+#: "Incomplete" also understates the shell, which is empty, not partial.
+#:
+#: The wording asserts nothing about internals, because one `else` covers four
+#: causes and each sentence has to be true on all of them: the live build may
+#: have crashed OR built fine and been refused on a stamp, and the stored board
+#: may be superseded, absent, or (after an engine rollback) NEWER. "Isn't
+#: available" and "we won't show one from a different ranking" hold in every
+#: case; "could not be built" and "an older board was withheld" did not. The
+#: diagnosis belongs in the log line at the call site, not on the page.
+#:
+#: Version-free on purpose: the old copy named "v2" outright, so the moment the
+#: engine moved to v3 the banner asserted a version that no longer existed —
+#: and raw internal slugs are banned from glance-tier copy regardless. The
+#: closing clause is the stance DESIGN_DOCTRINE requires, since on this path
+#: the banner IS the whole panel.
+_PROPHET_OUTAGE_HEADLINE = "no Prophet board today"
+_PROPHET_OUTAGE_HEADLINE_ZH = "今日暂无先知榜单"
+_PROPHET_OUTAGE_REASON = (
+    "Today's board isn't available, and we won't show one from a different "
+    "ranking in its place. Nothing to act on here today."
+)
+_PROPHET_OUTAGE_REASON_ZH = (
+    "今日榜单暂不可用，我们不会用另一套排序的榜单顶替。今日此处无可操作标的。"
+)
 
-    Copy here stays version-free on purpose. The old wording named "v2" outright,
-    so once the engine moved to v3 the banner asserted a version that no longer
-    existed — and raw internal slugs are banned from glance-tier copy anyway.
-    """
+
+def _prophet_outage_shell(reason: str = _PROPHET_OUTAGE_REASON,
+                          reason_zh: str = _PROPHET_OUTAGE_REASON_ZH) -> dict:
+    """Never render a superseded board beneath the current Prophet heading."""
     return {
         "schema_version": "2.0.0",
         "as_of": None,
@@ -148,8 +176,10 @@ def _prophet_outage_shell(reason: str) -> dict:
         "ran": [],
         "data_outage": {
             "flag": True,
+            "headline": _PROPHET_OUTAGE_HEADLINE,
+            "headline_zh": _PROPHET_OUTAGE_HEADLINE_ZH,
             "reason": reason,
-            "reason_zh": "今日中国先知榜单未能生成；旧版榜单已被阻止，避免误认为今日结果。",
+            "reason_zh": reason_zh,
         },
     }
 
@@ -1263,10 +1293,7 @@ def main() -> int:
                     len(fallback.get("buy") or []),
                 )
             else:
-                vm["setups"] = _prophet_outage_shell(
-                    "Today's China Prophet board could not be built. An older "
-                    "stored board was withheld rather than shown as today's."
-                )
+                vm["setups"] = _prophet_outage_shell()
                 log.error(
                     "China Prophet board unavailable; rejected persisted fallback "
                     "stamped %r (current definition is %r)",
