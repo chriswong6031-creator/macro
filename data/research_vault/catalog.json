@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T23:51:12.619962+00:00",
-  "count": 835,
+  "generated_at": "2026-08-06T00:06:37.818709+00:00",
+  "count": 836,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -705,6 +705,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-0mwrf2uu0pz-168c83",
+      "title": "Japan June Wages Growth Maintains High Level of Over 3",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:20:17Z",
+      "summary_points": [
+        "**Wage Acceleration & Real Wage Momentum**: Nominal cash wages rose +3.4% yoy (May: +3.3%), driven by special (+3.5%) and basic wages (+3.4%); real wages positive for six consecutive months (+1.6% yoy June), signaling sustained consumer purchasing power growth.",
+        "**Shunto Agreement Dynamics**: Shunto agreements set 6.2% part-timer wage growth (exceeding 2024's 5.8%), but current part-timer wage growth slowed to +4.3% yoy (May: +5.0%), indicating potential future inflationary pressure not yet reflected in data.",
+        "**Data Reliability Risk**: \"Same sample\" wage data suffers from persistent bias due to Monthly Labour Survey rotation (5-29 employee firms: Jan/Jul rotation; larger firms: Jan revised figures), distorting headline wage growth accuracy for portfolio decisions.",
+        "**Shunto Base Pay Slowdown**: Shunto agreements narrowed large/mid-sized enterprise gaps with base pay rise slowing to 3.5% (from 3.7% in 2025), signaling moderation in wage growth trajectory despite high overall hikes."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
