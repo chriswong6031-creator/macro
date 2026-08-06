@@ -269,6 +269,25 @@ reads that artifact and computes one live cross-section only.
    and the committed study stamps describe the narrow-universe study and stay until the
    study re-runs on the widened panel (that re-run is the remaining W2-A follow-through,
    after which W2-F should re-stratify on the true small-cap band).
+
+   **Measured end-to-end (local rebuild, 2026-08-05).** Panel 1,552 → **2,826 tickers**
+   (22,458 → 35,953 rows, FY2009–2025); fetch wall-clock ~18 min, unchanged from the
+   narrow build as predicted. Archetype store rebuilt from it in 3.8 s → 2,826 tickers;
+   `heal_candidates_archetype` dry-run on 2026-07: **1,457 → 835 still-absent (622
+   filled)**.
+
+   **The next binding constraint is the PRICE universe, not the panel.** Of the 1,457,
+   1,221 gained panel rows but only 622 labeled, because the archetype store labels
+   100% of rows carrying a factor-table row (22,070/22,070) and only 46% of `fac_present
+   =False` rows (6,349/13,883) — the fac-less path withholds a label rather than
+   fabricating "mixed". 1,278 of the 1,316 never-factor-covered tickers are russell-only
+   names: `equity_factors._closes()` reads `_UNIVERSE_GROUPS["broad"]` = the three S&P
+   groups only, so R2000 names get no price → no mktcap → no factor row. Widening THAT
+   is not a mechanical follow-through — it re-percentiles every rank on a user-facing
+   surface across a 2× wider population, and `russell_breadth/_closes_cache.parquet` is
+   a gitignored CI artifact absent from fresh checkouts — so it needs its own charter.
+   The remaining 236 with no panel rows at all are foreign 20-F/IFRS filers, funds, and
+   crypto tickers, unreachable from the us-gaap frames endpoint.
 2. **W2-B · Point-in-time debt and cash on the annual spine.** Backfill `debt_cur` / `cash`
    into `fundamentals_panel` from the quarterly filed-date store so EV and invested capital
    stop depending on a ~49% debt column.
