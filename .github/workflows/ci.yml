@@ -186,6 +186,14 @@ on:
       # flip-isolation construction still isolates exactly one leg.
       - "research/prophet_us_audit/reclaim_veto_packet.py"
       - "tests/test_us_reclaim_veto_packet.py"
+      # ...and the packet's OWN ARTIFACTS, which tests/test_merge_on_green.py reads
+      # by path literal. Same #3488 shape one level out: the suite and its module
+      # were wired above, but the two files the suite actually opens were not, so a
+      # PR editing only the packet's findings never started the workflow-yaml job
+      # that runs the guard reading them. check_ci_trigger_closure.py hard-fails on
+      # exactly this and was red on main until these two lines existed.
+      - "research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md"
+      - "research/prophet_us_audit/reclaim_veto_packet_results_2026-08-05.json"
       # W1d trial-budget gate: any new multiple-testing harness must register its budget.
       - "scripts/*_phase0.py"
       - "scripts/*_phase1.py"
