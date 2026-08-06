@@ -2018,6 +2018,13 @@ on:
       - "tests/fixtures/hk_board_2026_07_31.json"
       - "tests/fixtures/hk_standouts_2026_07_31.json"
       - "data/hk_search/**"
+      # The regenerator's own suite (job: regen-hk-g1-fixture-guard).  Its subject
+      # scripts/regen_hk_g1_fixture.py rides the "scripts/*.py" catch-all below,
+      # but tests/** is deliberately NOT broad, so without this line a test-only
+      # edit could not start the packs that run it — the #3488 shape ("a guard the
+      # guarded change cannot trigger is not a guard"), and the same darkness the
+      # two entries above were added to close.
+      - "tests/test_regen_hk_g1_fixture.py"
       # nyse-calendar-freshness — the exchange-calendar reference under every
       # freshness SLA. lib/** above already triggers on lib/nyse_calendar.py, but
       # a test-only edit must reach its own guard too (#3488: "a guard the guarded
