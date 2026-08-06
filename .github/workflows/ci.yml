@@ -863,6 +863,15 @@ on:
       - "contracts/government_revenue/government_revenue_candidate.v1.schema.json"
       - "contracts/government_revenue/government_revenue_candidate_queue.v1.schema.json"
       - "contracts/government_revenue/government_revenue_dossiers.v1.schema.json"
+      # Subjects of the nineteen suites this PR un-darkens. They were not
+      # triggers before because no job ran the suites that read them, so
+      # check_ci_trigger_closure.py had nothing to close over. Wiring the suites
+      # is what makes these reachable — and the closure guard failed until they
+      # were named, which is the guard doing its job.
+      - "contracts/government_revenue/government_procurement_event.v2.schema.json"
+      - "contracts/government_revenue/government_procurement_workspace.v2.schema.json"
+      - "contracts/government_revenue/government_subaward_dossiers.v1.schema.json"
+      - "config/government_revenue/idv_discovery.v1.json"
       - "contracts/marketing_publication_receipt.schema.json"
       - "research/DISLOCATION_VALIDATION.md"
       - "research/MARKETING_REPLY_DOCTRINE_BY_FABLE.md"
