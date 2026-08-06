@@ -45,6 +45,20 @@ WHAT IT MEASURES (nightly, over the committed S&P-1500 close caches)
      is printed with a plain reason (roadmap
      ``research/PROPHET_US_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md`` §4.4 action 1).
 
+  F. PRIORITY_SCORE SCORECARD — the forward grade of the ``us_prophet_v1`` PRIORITY score,
+     over the FULL analyzed universe.  ``engine/us_prophet_grades.py`` grades every stamped
+     Context Vector row (~1,579 names a night, not the ~12 that become plans) at H=10/21
+     sessions excess-vs-SPY; this block joins those outcomes to the score the system gave
+     each name that night and reports rank-IC, P@k (k=1/5/10/25), a decile lift table and
+     the per-decile loser rate — the operator's question (2026-08-05) in its bluntest form:
+     "it would be a disaster if high-scored names underperform."  Because EVERY name is
+     graded, a pick's hit is judged against that night's whole universe rather than against
+     the picks alone — something the plan-only record could never do.  Read-only telemetry:
+     no threshold, no alarm, no gate; coverage is disclosed (the builder computes the
+     itemized legs on the buy lane only, so most stamped rows carry no score, and a missing
+     score is a null, never a zero).  Masterplan
+     ``research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md`` §W7.3.
+
 BASES (two, named — they are NOT interchangeable)
 
   ``tier_stream``  the vectorized per-day production twin of ``cascade``, on COMPLETED buckets.
@@ -204,6 +218,25 @@ PK_MIN_XS = 20
 # Disclosure rule (not a gate): a horizon graded on fewer than this many IC dates is
 # marked thin so no reader mistakes a two-date sample for a measurement.
 THIN_MIN_IC_DATES = 5
+
+# --- F. priority_score scorecard (read-only mirror of the full-population grade store) ---
+# PROPHET US §W7.3. The score whose robustness the operator asked about (2026-08-05) is the
+# us_prophet_v1 priority score; the grade store now carries an outcome for EVERY stamped
+# name, so this block can ask both "is the ordering right?" (rank-IC / P@k / deciles over
+# the scored rows) and "does the board beat the universe at all?" (the population leg).
+PRIORITY_GRADES_REL = "data/us_prophet_rank/grades/YYYY-MM/YYYY-MM-DD.parquet"
+PRIORITY_CANDIDATES_REL = "data/us_prophet_rank/candidates/YYYY-MM.parquet"
+#: Mirrors engine.us_prophet_grades.HORIZONS — imported there, restated here only as the
+#: forward-log row's column set (the log is flat and its columns must be stable).
+PRIORITY_HORIZONS = (10, 21, 42, 63)
+PRIORITY_PK_K = (1, 5, 10, 25)   # the depths the ranked all-picks surface actually shows
+# A decile table needs a cross-section wide enough that a decile is not one name. STATED,
+# not tuned; it excludes dates from a table, it gates nothing.
+PRIORITY_DECILE_MIN_XS = 20
+# Below this many scored rows the horizon is summarised as accruing rather than measured.
+PRIORITY_MIN_SCORED = 20
+# A lane's forward read is printed only once it has this many graded rows behind it.
+PRIORITY_MIN_LANE_N = 10
 
 # excluder vocabulary (stable strings — the histogram keys downstream reads)
 EXC_ELIGIBLE = "ELIGIBLE"
@@ -1187,6 +1220,442 @@ def name_score_scorecard(root: Path = ROOT, degraded: list[dict] | None = None, 
 
 
 # --------------------------------------------------------------------------- #
+# F. priority_score scorecard — read-only mirror of the full-population grade store
+# --------------------------------------------------------------------------- #
+def _population_leg(g: pd.DataFrame) -> dict:
+    """The whole graded universe's own read at one horizon — the "more data" half.
+
+    This block exists because the record is no longer ~12 plans a night: every stamped
+    name is graded, so the board's cohort can finally be compared against the universe it
+    was drawn from instead of against nothing.
+    """
+    excess = pd.to_numeric(g["excess_spy"], errors="coerce").dropna()
+    out: dict[str, Any] = {
+        "n": int(len(g)),
+        "n_excess": int(len(excess)),
+        "n_dates": int(g["stamp_date"].nunique()),
+        "mean_excess": (round(float(excess.mean()), 5) if len(excess) else None),
+        "median_excess": (round(float(excess.median()), 5) if len(excess) else None),
+        "pos_rate": (round(float((excess > 0).mean()), 4) if len(excess) else None),
+        "by_lane": {},
+    }
+    if not len(excess):
+        out["null_reason"] = ("no graded row carries an excess mark — the SPY cache was "
+                              "missing on every grading night (absolute marks may still "
+                              "exist; a null excess is not a zero excess)")
+        return out
+    if "lane" in g.columns:
+        for lane, sub in g.groupby(g["lane"].fillna("not_on_board")):
+            vals = pd.to_numeric(sub["excess_spy"], errors="coerce").dropna()
+            if len(vals) < PRIORITY_MIN_LANE_N:
+                continue
+            out["by_lane"][str(lane)] = {
+                "n": int(len(vals)),
+                "mean_excess": round(float(vals.mean()), 5),
+                "median_excess": round(float(vals.median()), 5),
+                "pos_rate": round(float((vals > 0).mean()), 4),
+            }
+    return out
+
+
+def _score_deciles(g: pd.DataFrame, *, min_xs: int = PRIORITY_DECILE_MIN_XS) -> dict:
+    """Decile lift + loser rate, deciles cut WITHIN each stamp date.
+
+    DEFINITIONS, stated (this block gates nothing):
+      * decile     — 1 = lowest priority score of that date's scored cross-section,
+                     10 = highest.  Cut per date, so a day when every score is high cannot
+                     masquerade as a top decile.
+      * hit        — excess vs SPY above that date's median excess across the graded
+                     population OF THE SAME COHORT.  That comparator is the point of
+                     grading the whole universe: it asks "did this name beat a name drawn
+                     at random that night", which the 12-plans-a-night record could never
+                     answer.  It is taken WITHIN the cohort because curated and scan names
+                     are different populations — judging a curated pick against a median
+                     dominated by scan names would flatter it by construction.
+      * loser_rate — share of the decile with excess < 0.  The operator's question in its
+                     bluntest form: are high-scored names losing money against SPY?
+      * lift       — top decile mean excess − bottom decile mean excess.
+
+    A date whose scored cross-section is thinner than ``min_xs`` is EXCLUDED and counted;
+    it is never padded into a decile it cannot support.
+    """
+    out: dict[str, Any] = {
+        "definition": (f"deciles cut within each stamp date (10 = highest priority score); "
+                       f"hit = excess vs SPY above that date's median excess across the "
+                       f"FULL graded population (every stamped name); loser = excess < 0; "
+                       f"dates with fewer than {min_xs} scored names are excluded and "
+                       f"counted"),
+        "min_cross_section": min_xs,
+        "n_dates_eligible": 0, "n_dates_excluded_thin": 0,
+        "by_decile": {}, "top_minus_bottom_excess": None,
+    }
+    if g.empty:
+        out["null_reason"] = "no graded rows at this horizon"
+        return out
+    frames: list[pd.DataFrame] = []
+    thin = 0
+    for _date, sub in g.groupby("stamp_date"):
+        scored = sub[sub["prophet_score"].notna() & sub["excess_spy"].notna()]
+        if len(scored) < min_xs:
+            thin += 1
+            continue
+        pop_median = pd.to_numeric(sub["excess_spy"], errors="coerce").dropna()
+        if pop_median.empty:
+            thin += 1
+            continue
+        try:
+            decile = pd.qcut(scored["prophet_score"].rank(method="first"), 10,
+                             labels=False, duplicates="drop") + 1
+        except ValueError:      # fewer distinct ranks than requested bins
+            thin += 1
+            continue
+        frames.append(scored.assign(_decile=decile.astype(int),
+                                    _hit=scored["excess_spy"] > float(pop_median.median())))
+    out["n_dates_excluded_thin"] = thin
+    out["n_dates_eligible"] = len(frames)
+    if not frames:
+        out["null_reason"] = (f"no stamp date carries {min_xs}+ scored names with a graded "
+                              f"excess ({thin} date(s) too thin) — a decile table is not "
+                              f"computable, which is not the same as a flat one")
+        return out
+    pooled = pd.concat(frames, ignore_index=True)
+    for decile, sub in pooled.groupby("_decile"):
+        vals = pd.to_numeric(sub["excess_spy"], errors="coerce").dropna()
+        if vals.empty:
+            continue
+        out["by_decile"][f"d{int(decile)}"] = {
+            "n": int(len(vals)),
+            "mean_excess": round(float(vals.mean()), 5),
+            "median_excess": round(float(vals.median()), 5),
+            "hit_rate": round(float(sub["_hit"].mean()), 4),
+            "loser_rate": round(float((vals < 0).mean()), 4),
+        }
+    top, bottom = out["by_decile"].get("d10"), out["by_decile"].get("d1")
+    if top and bottom:
+        out["top_minus_bottom_excess"] = round(
+            top["mean_excess"] - bottom["mean_excess"], 5)
+    return out
+
+
+def _priority_precision_at_k(g: pd.DataFrame, *, ks: tuple[int, ...] = PRIORITY_PK_K,
+                             min_xs: int = PK_MIN_XS) -> dict:
+    """P@k of the priority score's OWN ordering, scored against the FULL population.
+
+    Same shape as :func:`precision_at_k` (the name_score block's), with one deliberate
+    difference stated here rather than left to be discovered: ``hit`` compares against the
+    median of every graded name that night, not against the median of the ranked cohort.
+    The name_score block cannot do that — its ledger holds only the names it stamped — and
+    it is exactly what the full-population grade store was built to make possible.
+    """
+    out: dict[str, Any] = {
+        "definition": (f"hit = excess vs SPY above that stamp date's FULL-population median "
+                       f"excess WITHIN THIS COHORT (every graded name in it, not just the "
+                       f"ranked ones); dates whose scored cross-section is < {min_xs} are "
+                       f"excluded and counted"),
+        "min_cross_section": min_xs,
+        "n_dates_eligible": 0, "n_dates_excluded_thin": 0,
+        "cross_section": None, "base_rate": None,
+        "by_k": {f"p_at_{k}": None for k in ks},
+    }
+    if g.empty:
+        out["null_reason"] = "no graded rows at this horizon"
+        return out
+    cohorts: list[pd.DataFrame] = []
+    bases: list[float] = []
+    sizes: list[int] = []
+    thin = 0
+    for _date, sub in g.groupby("stamp_date"):
+        pop = pd.to_numeric(sub["excess_spy"], errors="coerce").dropna()
+        scored = sub[sub["prophet_score"].notna() & sub["excess_spy"].notna()]
+        if pop.empty or len(scored) < min_xs:
+            thin += 1
+            continue
+        med = float(pop.median())
+        cohorts.append(scored.assign(_hit=scored["excess_spy"] > med))
+        # the base a reader compares P@k against is the RANKED cohort's own hit rate:
+        # "did the top of the list beat the rest of the list", never an assumed coin flip.
+        bases.append(float((scored["excess_spy"] > med).mean()))
+        sizes.append(int(len(scored)))
+    out["n_dates_excluded_thin"] = thin
+    out["n_dates_eligible"] = len(cohorts)
+    if not cohorts:
+        out["null_reason"] = (f"no stamp date carries a scored cross-section of {min_xs}+ "
+                              f"names ({thin} date(s) too thin) — P@k is not computable, "
+                              f"which is not the same as 50%")
+        return out
+    out["cross_section"] = {"min": min(sizes), "median": int(np.median(sizes)),
+                            "max": max(sizes)}
+    out["base_rate"] = round(float(np.mean(bases)), 3)
+    for k in ks:
+        vals = []
+        for cohort in cohorts:
+            top = cohort.sort_values(["prophet_score", "ticker"],
+                                     ascending=[False, True]).head(k)
+            vals.append(float(top["_hit"].mean()))
+        out["by_k"][f"p_at_{k}"] = {
+            "value": round(float(np.mean(vals)), 3),
+            "lift_vs_base": round(float(np.mean(vals) - np.mean(bases)), 3),
+            "n_dates": len(vals),
+            "n_picks": int(sum(min(k, len(c)) for c in cohorts)),
+        }
+    return out
+
+
+def _class_legs(g: pd.DataFrame) -> dict:
+    """Per signal class, the population read at THIS horizon — basing beside momentum.
+
+    Operator ruling 2026-08-05: a basing pick and a momentum pick are different bets, and a
+    single 10-session headline grades the wait instead of the call.  Every class is reported
+    at EVERY horizon in the ladder, so nothing is hidden; ``chartered_horizon`` (fixed in
+    :mod:`engine.us_prophet_grades` BEFORE any long-horizon data matured) says which one is
+    that class's HEADLINE read, so no one can pick the flattering horizon after the fact.
+    """
+    out: dict[str, Any] = {}
+    if "signal_class" not in g.columns:
+        return out
+    for label, sub in g.groupby(g["signal_class"].fillna("unclassified")):
+        vals = pd.to_numeric(sub["excess_spy"], errors="coerce").dropna()
+        leg: dict[str, Any] = {"n": int(len(sub)), "n_excess": int(len(vals))}
+        if len(vals) < PRIORITY_MIN_LANE_N:
+            leg["null_reason"] = (f"{len(vals)} graded row(s) with an excess mark — below "
+                                  f"the {PRIORITY_MIN_LANE_N}-row floor for a printed read")
+        else:
+            leg.update({
+                "mean_excess": round(float(vals.mean()), 5),
+                "median_excess": round(float(vals.median()), 5),
+                "pos_rate": round(float((vals > 0).mean()), 4),
+                "loser_rate": round(float((vals < 0).mean()), 4),
+            })
+        out[str(label)] = leg
+    return out
+
+
+def priority_horizon_scorecard(g: pd.DataFrame, h: int) -> dict:
+    """One horizon's read of the priority score: rank-IC, P@k, deciles, population.
+
+    Computed on ONE cohort's rows — the caller splits curated from scan before calling, so
+    nothing here ever pools the two.  Nulls carry a plain reason; nothing here is a
+    threshold and nothing gates on it.
+    """
+    scored = g[g["prophet_score"].notna() & g["excess_spy"].notna()]
+    out: dict[str, Any] = {
+        "horizon_d": h,
+        "n_graded": int(len(g)),
+        "n_scored": int(len(scored)),
+        "n_dates": int(g["stamp_date"].nunique()) if len(g) else 0,
+        "population": _population_leg(g),
+        "by_signal_class": _class_legs(g),
+    }
+    if len(scored) < PRIORITY_MIN_SCORED:
+        out.update({
+            "rank_ic": None, "n_ic_dates": 0, "ic_cross_section": None,
+            "precision_at_k": None, "deciles": None, "thin": True,
+            "null_reason": (
+                f"still accruing — {len(scored)} graded row(s) carry a stamped priority "
+                f"score at H={h} (the builder computes the itemized legs on the buy lane "
+                f"only, so most stamped names have no score); below {PRIORITY_MIN_SCORED} "
+                f"nothing is summarised"),
+        })
+        return out
+    ics: list[float] = []
+    ic_ns: list[int] = []
+    degenerate = 0
+    for _date, sub in scored.groupby("stamp_date"):
+        if sub["prophet_score"].nunique() < 5:
+            continue
+        value = float(sub["prophet_score"].rank().corr(sub["excess_spy"].rank()))
+        # A cross-section whose forward returns are all identical has ZERO variance, so
+        # Spearman is undefined and pandas returns NaN. Averaging that NaN in would poison
+        # the whole horizon, and json.dumps would then emit a bare `NaN` — invalid JSON
+        # that a strict reader rejects. Drop the date and COUNT it: an undefined
+        # correlation is a missing observation, never a 0.0 correlation.
+        if not np.isfinite(value):
+            degenerate += 1
+            continue
+        ics.append(value)
+        ic_ns.append(int(len(sub)))
+    out.update({
+        "rank_ic": (round(float(np.mean(ics)), 4) if ics else None),
+        "n_ic_dates": len(ics),
+        "n_ic_dates_degenerate": degenerate,
+        "ic_cross_section": ({"min": min(ic_ns), "median": int(np.median(ic_ns)),
+                              "max": max(ic_ns)} if ic_ns else None),
+        "precision_at_k": _priority_precision_at_k(g),
+        "deciles": _score_deciles(g),
+        "thin": len(ics) < THIN_MIN_IC_DATES,
+    })
+    if not ics:
+        out["null_reason"] = (
+            f"no stamp date yields a defined rank-IC — {degenerate} date(s) had 5+ distinct "
+            f"scores but zero variance in their forward returns (correlation undefined), "
+            f"and the rest carry fewer than 5 distinct scores. Not computable is not zero"
+            if degenerate else
+            "no stamp date carries 5+ distinct priority scores in its graded "
+            "cross-section — rank-IC is not computable")
+    elif out["thin"]:
+        out["thin_reason"] = (f"{len(ics)} IC date(s) — below the {THIN_MIN_IC_DATES}-date "
+                              f"disclosure floor; read as a sample, not a measurement")
+    return out
+
+
+def priority_score_scorecard(root: Path = ROOT, degraded: list[dict] | None = None) -> dict:
+    """The read-only ``priority_score`` block (PROPHET US §W7.3).
+
+    Answers the operator's question — "how robust and correct is our scoring system?" — by
+    joining the score the system stamped on a name (the Context Vector store) to what that
+    name then did (the full-population grade store).  It RECOMPUTES NOTHING: both stores are
+    read through their own modules' readers, exactly as this file's ``name_score`` block
+    mirrors ``name_score_grader`` rather than re-deriving it.
+
+    Fail-soft: any missing input degrades to nulls with a named reason and a ``degraded``
+    row, never an exception into the nightly.
+    """
+    deg = degraded if degraded is not None else []
+    block: dict[str, Any] = {
+        "tier": "ops_telemetry",
+        "authority": "none — read-only join of two zero-authority stores; no rank, gate, "
+                     "size, board, plan or user-facing consumer",
+        "source": f"{PRIORITY_GRADES_REL} joined to {PRIORITY_CANDIDATES_REL}",
+        "scored_field": "prophet_score — the us_prophet_v1 priority score exactly as "
+                        "us_board_rank.score_rows stamped it that night (itemized legs sit "
+                        "beside it in the candidates store; no composite is built here)",
+        "graded_by": "engine.us_prophet_grades — engine.grading.forward_metrics (next-bar "
+                     "fill, positional session horizons), excess vs SPY",
+        "available": False,
+    }
+    try:
+        from engine import us_prophet_grades as upg
+    except Exception as exc:  # noqa: BLE001 — minimal-deps lanes
+        deg.append({"input": PRIORITY_GRADES_REL, "severity": "unexpected",
+                    "reason": f"grade store module unavailable: {exc}"})
+        block["null_reason"] = f"grade store module unavailable: {exc}"
+        return block
+    block["population"] = (
+        "EVERY stamped candidate row is graded, not only the ~12 that become plans "
+        "(operator order 2026-08-05). Two populations are carried separately and never "
+        "pooled: CURATED (board-admissible) and SCAN (seen and stamped, never admitted). "
+        "Within each, basing and momentum picks are reported separately at every horizon "
+        "in the ladder")
+    try:
+        block["store"] = upg.coverage(root)
+        frame = upg.load_graded_frame(root, score_columns=["lane", "sector"])
+    except Exception as exc:  # noqa: BLE001
+        deg.append({"input": PRIORITY_GRADES_REL, "severity": "unexpected",
+                    "reason": f"grade store unreadable: {exc} — scorecard is null, not zero"})
+        block["null_reason"] = f"grade store unreadable: {exc}"
+        return block
+    if frame is None or frame.empty or "excess_spy" not in frame.columns:
+        block["null_reason"] = (
+            "no graded rows yet — the grade store accrues prospectively from the first "
+            "nightly after merge (H=10 marks land ~11 sessions after a stamp, H=21 ~22). "
+            "An absent record is not a null result")
+        return block
+
+    scored_mask = frame["prophet_score"].notna()
+    cohort_col = upg.DISCRIMINATOR_COLUMN
+    cohorts = (frame[cohort_col] if cohort_col in frame.columns
+               else pd.Series([None] * len(frame), index=frame.index))
+    split_available = bool(cohorts.notna().any())
+    block.update({
+        "available": True,
+        "horizon_ladder": list(upg.HORIZONS),
+        "chartered_horizon": dict(upg.CHARTERED_HORIZON),
+        "chartered_horizon_note": (
+            "PRE-REGISTERED before any H=42/63 data matured (operator ruling 2026-08-05). "
+            "Every class is graded and reported at EVERY horizon below, so nothing is "
+            "hidden; this map only fixes which horizon is each class's HEADLINE read, so "
+            "that 'grade each class at the horizon that flatters it, chosen after seeing "
+            "the results' is impossible. PROPOSED pending commissioner adjudication"),
+        "score_coverage": {
+            "n_rows": int(len(frame)),
+            "n_scored": int(scored_mask.sum()),
+            "coverage_pct": round(100.0 * float(scored_mask.mean()), 2),
+            "note": "the US builder runs us_board_rank.score_rows on the BUY LANE only, so "
+                    "a row off the board carries no priority score. That is a MEASURED "
+                    "coverage fact, never a zero score — the ranking legs below are "
+                    "computed on the scored subset and the population leg on everything",
+        },
+        "cohort_split": {
+            "available": split_available,
+            "column": cohort_col,
+            "n_by_cohort": {str(k): int(v)
+                            for k, v in cohorts.value_counts(dropna=True).to_dict().items()},
+            "n_unsplit": int(cohorts.isna().sum()),
+            "note": ("curated and scan are DIFFERENT POPULATIONS and are never pooled: "
+                     "every statistic below is computed inside one cohort, including the "
+                     "median a hit is measured against. Rows graded before the scan-tier "
+                     "discriminator landed carry no cohort and are reported under "
+                     "'unsplit' — never folded into 'curated'"
+                     if split_available else
+                     "the scan-tier discriminator has not landed in the candidates store "
+                     "yet, so every graded row is one UNSPLIT population. It is labelled "
+                     "'unsplit' rather than 'curated' because calling it curated would "
+                     "assert a split that has not been measured"),
+        },
+    })
+    # NEVER POOLED: the horizon legs are computed per cohort. There is deliberately no
+    # top-level pooled rank-IC or P@k for a reader to misquote across populations.
+    by_cohort: dict[str, Any] = {}
+    for name, sub in frame.groupby(cohorts.fillna("unsplit")):
+        by_cohort[str(name)] = {
+            f"{int(h)}d": priority_horizon_scorecard(part, int(h))
+            for h, part in sub.groupby("horizon")
+        }
+    block["by_cohort"] = by_cohort
+    # Belt on top of the per-leg braces: nothing non-finite may leave this block. A bare
+    # NaN/Infinity is what json.dumps emits for these, and that is INVALID JSON — a strict
+    # reader downstream would reject the whole nightly artifact over one degenerate
+    # cross-section. _num() is the module's existing numpy->JSON-safe coercion.
+    return _scrub_non_finite(block)
+
+
+def _scrub_non_finite(value: Any) -> Any:
+    """Recursively replace NaN/Infinity with None so the artifact stays strict JSON."""
+    if isinstance(value, dict):
+        return {k: _scrub_non_finite(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_scrub_non_finite(v) for v in value]
+    if isinstance(value, (float, np.floating, np.integer, np.bool_)):
+        return _num(value)
+    return value
+
+
+def priority_score_row_fields(doc: dict) -> dict:
+    """The priority scorecard's HEADLINE figures, flattened for the forward-log row.
+
+    Compact by design — the full block lives in the artifact; the forward log carries only
+    the series a reader would plot. ``priority_score_available`` keeps a null unambiguous:
+    available + null rank-IC is the ACCRUING state (the block carries the plain reason);
+    not-available means the store or the join was unreadable that night, and the artifact's
+    ``degraded`` list names which. Null-safe on every path, including a doc with no block.
+    """
+    ps = doc.get("priority_score_scorecard") or {}
+    by_cohort = ps.get("by_cohort") or {}
+    split = ps.get("cohort_split") or {}
+    out: dict = {
+        "priority_score_available": bool(ps.get("available")),
+        "priority_score_n_rows": (ps.get("score_coverage") or {}).get("n_rows"),
+        "priority_score_coverage_pct": (ps.get("score_coverage") or {}).get("coverage_pct"),
+        "priority_cohort_split_available": bool(split.get("available")),
+    }
+    # One flat column set per (cohort, horizon). The cohort names are FIXED here — a log
+    # whose columns depend on tonight's data is not a series anyone can plot.
+    for cohort in ("curated", "scan", "unsplit"):
+        legs = by_cohort.get(cohort) or {}
+        for h in PRIORITY_HORIZONS:
+            cell = legs.get(f"{h}d") or {}
+            out[f"priority_{cohort}_rank_ic_{h}d"] = cell.get("rank_ic")
+            out[f"priority_{cohort}_n_{h}d"] = cell.get("n_graded")
+            classes = cell.get("by_signal_class") or {}
+            for signal_class in ("basing", "momentum"):
+                leg = classes.get(signal_class) or {}
+                out[f"priority_{cohort}_{signal_class}_n_{h}d"] = leg.get("n")
+                out[f"priority_{cohort}_{signal_class}_mean_excess_{h}d"] = leg.get(
+                    "mean_excess")
+    return out
+
+
+# --------------------------------------------------------------------------- #
 # build
 # --------------------------------------------------------------------------- #
 def _hist(values: list) -> dict:
@@ -1238,6 +1707,7 @@ def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP
                 lookback: int = LOOKBACK, with_gate: bool = True,
                 with_cascade_basis: bool = True, with_name_score: bool = True,
                 with_scan_tier: bool = True,
+                with_priority_score: bool = True,
                 with_baskets: bool = True) -> dict:
     """Compute the full audit document. Pure read: writes nothing."""
     degraded: list[dict] = []
@@ -1293,6 +1763,9 @@ def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP
     scan_tier = scan_tier_coverage(root, degraded) if with_scan_tier else {
         "available": False, "asof": None,
         "null_reason": "not mirrored (with_scan_tier=False)"}
+    priority_score = (priority_score_scorecard(root, degraded) if with_priority_score else
+                      {"tier": "ops_telemetry", "available": False,
+                       "null_reason": "not computed (with_priority_score=False)"})
 
     days = [r["days_eligible"] for r in runner_rows if r.get("days_eligible") is not None]
     never = sum(1 for d in days if d == 0)
@@ -1341,6 +1814,13 @@ def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP
                           "joined through engine.grading (next-bar fill, survivorship-aware). "
                           "Read-only: this audit mirrors the grader's numbers, it does not "
                           "change what the grader computes.",
+            "priority_score": "engine.us_prophet_grades' full-population grade store "
+                              "(H=10/21 sessions, excess vs SPY, next-bar fill) joined to "
+                              "the priority score the US Context Vector store stamped for "
+                              "that name on that night. Read-only: this audit recomputes "
+                              "neither the score nor the grade. EVERY stamped name is "
+                              "graded, so a pick's hit is judged against that night's "
+                              "whole universe, not against the picks alone.",
         },
         "summary": summary,
         "top63_excluder_hist": _hist([r["excluder"] for r in runner_rows]),
@@ -1355,6 +1835,7 @@ def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP
         "basket_misses": basket_block,
         "name_score_scorecard": name_score,
         "scan_tier": scan_tier,
+        "priority_score_scorecard": priority_score,
         "top63_runners": runner_rows,
         "top21_runners": fast_rows,
         "eligible_today": cascade_elig,
@@ -1613,6 +2094,7 @@ def summary_row(doc: dict) -> dict:
                           ((doc.get("basket_misses") or {}).get("misses") or [])],
         **name_score_row_fields(doc),
         **scan_tier_row_fields(doc),
+        **priority_score_row_fields(doc),
         "degraded_n": len(doc["degraded"]),
     }
 
@@ -1817,6 +2299,37 @@ def print_summary(doc: dict, *, wrote_artifact: bool, wrote_log: bool,
               f"{st.get('runners_never_eligible_n')} never eligible{stale}")
     elif st:
         print(f"  scan tier: null — {st.get('null_reason')}")
+    ps = doc.get("priority_score_scorecard") or {}
+    if ps.get("available"):
+        cov = ps.get("score_coverage") or {}
+        split = ps.get("cohort_split") or {}
+        print(f"  priority_score: {cov.get('n_rows')} graded row(s), "
+              f"{cov.get('n_scored')} carry a stamped score ({cov.get('coverage_pct')}%); "
+              f"cohorts {split.get('n_by_cohort') or 'UNSPLIT'}")
+        for cohort, legs in (ps.get("by_cohort") or {}).items():
+            print(f"    [{cohort}]")
+            for key, h in legs.items():
+                pop = h.get("population") or {}
+                classes = h.get("by_signal_class") or {}
+                class_txt = " ".join(
+                    f"{c}:n={v.get('n')}/x={v.get('mean_excess')}"
+                    for c, v in sorted(classes.items()))
+                if h.get("null_reason"):
+                    print(f"      {key}: null — {h['null_reason']} "
+                          f"(population n={pop.get('n')}, mean excess "
+                          f"{pop.get('mean_excess')}) {class_txt}")
+                    continue
+                pk = (h.get("precision_at_k") or {}).get("by_k") or {}
+                dec = h.get("deciles") or {}
+                print(f"      {key}: rank_ic={h.get('rank_ic')} over "
+                      f"{h.get('n_ic_dates')} IC date(s), scored n={h.get('n_scored')} of "
+                      f"{h.get('n_graded')} graded, "
+                      f"P@1={(pk.get('p_at_1') or {}).get('value')} "
+                      f"P@10={(pk.get('p_at_10') or {}).get('value')}, "
+                      f"d10-d1={dec.get('top_minus_bottom_excess')}"
+                      f"{'  [THIN]' if h.get('thin') else ''} {class_txt}")
+    elif ps:
+        print(f"  priority_score: null — {ps.get('null_reason')}")
     if doc["degraded"]:
         print(f"  DEGRADED ({len(doc['degraded'])}):")
         for d in doc["degraded"]:

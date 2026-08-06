@@ -393,14 +393,14 @@ def _surface_screen(proposal: dict[str, Any], root: Path | None = None) -> dict[
 # ── Genesis deterministic screen (R-V6-3 — deny-only, kind=="charter") ──────
 
 # CHF-family token patterns (case-insensitive substring match on any single
-# distinctive token from this list).  DO_NOT_REBUILD §4 lines ~41/110/111.
+# distinctive token from this list).  DNR:KILL-CAUSAL-DAG-ALPHA + DNR:HOLD-STRUCTURE-LEARNERS + DNR:HOLD-CHF-METABOLISM-FAMILY.
 # Extended with structure-learner constructs per TASK 5 m2.
 _CHF_DENY_TOKENS: tuple[str, ...] = (
     "causal",
     "chf",
     "hypothesis-factory",
     "machine-registration",
-    # Structure-learner constructs (DO_NOT_REBUILD §4 ~line 110: killed for v1)
+    # Structure-learner constructs (DNR:HOLD-STRUCTURE-LEARNERS: killed for v1)
     "notears",
     "dag-gnn",
     "loram",
@@ -452,7 +452,7 @@ def _genesis_screen(
           (R-V6-3b REVISED: capacity gate, not a count cap).
           FAIL-CLOSED: unreadable charters → deny.
       (c) CHF-family deferral — unconditional deny for CHF/structure-learner family
-          tokens; DO_NOT_REBUILD §4 line ~111.  Lifting requires a fresh operator
+          tokens; DNR:HOLD-CHF-METABOLISM-FAMILY.  Lifting requires a fresh operator
           ruling after 2026-10-15 — there is NO auto-lift (TASK 5 m1).
     """
     try:
@@ -553,7 +553,7 @@ def _genesis_screen(
             }
 
         # (c) CHF-family deferral — unconditional deny; NO auto-lift on date.
-        # DO_NOT_REBUILD §4 line ~111: lifting requires a fresh operator ruling
+        # DNR:HOLD-CHF-METABOLISM-FAMILY: lifting requires a fresh operator ruling
         # after 2026-10-15 plus ≥8 matured candidates.  The clock is a
         # PRECONDITION, not an auto-lift trigger.
         try:
@@ -568,7 +568,7 @@ def _genesis_screen(
                         "allow": False,
                         "reason": (
                             f"genesis screen: CHF-family deferral — token {token!r} "
-                            f"matched; DO_NOT_REBUILD §4 lines ~41/110/111 — "
+                            f"matched; DNR:KILL-CAUSAL-DAG-ALPHA / DNR:HOLD-STRUCTURE-LEARNERS / DNR:HOLD-CHF-METABOLISM-FAMILY — "
                             f"lifting requires fresh operator ruling after {_CHF_DEFER_UNTIL} "
                             f"(R-V6-3c)"
                         ),

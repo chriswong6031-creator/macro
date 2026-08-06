@@ -438,6 +438,34 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
                         therefore `armed`) additionally requires the flatness
                         gate to pass.
     armed             : basing AND (stoch_curl OR macd_curl).
+
+    armed_recent      : W-C(2) DISPLAY-TIER state, NOT part of the v1.1 prereg
+                        construction.  `armed`'s 3-bar stoch window closes fast:
+                        silver on 2026-08-03 was basing with days_in_base=23 yet
+                        armed=False purely because the curl had aged out (%K had
+                        already traversed to 55).  armed_recent = basing AND
+                        (stoch_curl_recent OR stoch_traverse), both scanned over
+                        `armed_recent_window` = max(`armed_recent_lookback`,
+                        `days_in_base`) — the CURRENT BASE, floored at the
+                        constant.  Base-scoped rather than clock-scoped because
+                        the curl belongs to this base for as long as the base
+                        persists; a fixed window forgets it mid-base, which is
+                        the same shutter defect.  A base RESTART resets
+                        days_in_base, so a curl from a previous base correctly
+                        falls out of the window.
+                          stoch_curl_recent : the same %K-over-%D-while-oversold
+                            cross, scanned across the base;
+                          stoch_traverse    : inside the base %K was below
+                            `stoch_oversold` and LATER rose above
+                            `armed_recent_traverse_high` (the curl already
+                            happened and ran).
+                        `armed` is computed from the untouched 3-bar
+                        `stoch_curl`; armed_recent never feeds it, and neither
+                        feeds any score.  Note armed_recent is NOT a superset of
+                        armed: a macd_curl-only arming has armed=True with
+                        armed_recent=False by construction.
+    armed_recent_window : the effective bar window used above (a receipt, so the
+                        page/PR can state what "within the base" resolved to).
     """
     acfg = cfg.get("technical_arming", {})
     # --- parameters (v1-frozen unless noted as v1.1 additions) ---------------
@@ -461,6 +489,9 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
     # v1.1: scale-invariant minimum per-diff for the MACD rising test
     # each positive diff must exceed (macd_rise_min_frac × rolling mean |histogram|)
     macd_rise_min_frac = float(acfg.get("macd_rise_min_frac", 0.02))
+    # W-C(2) display-tier: wider window for `armed_recent` (never touches `armed`)
+    armed_recent_lookback = int(acfg.get("armed_recent_lookback", 10))
+    armed_recent_traverse_high = float(acfg.get("armed_recent_traverse_high", 50.0))
 
     params = {
         "stoch_k_period": k_period, "stoch_smooth_k": smooth_k,
@@ -475,6 +506,9 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
         "base_flat_max_abs_return": base_flat_max_abs_return,
         "macd_rise_min_frac": macd_rise_min_frac,
         "version": "v1.1",
+        # W-C(2) display-tier additions — outside the v1.1 prereg construction
+        "armed_recent_lookback": armed_recent_lookback,
+        "armed_recent_traverse_high": armed_recent_traverse_high,
     }
 
     null_result = {
@@ -482,7 +516,10 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
         "stoch_curl": False, "macd_curl": False,
         "basing": False, "days_in_base": 0,
         "flatness": None,
-        "armed": False, "params": params,
+        "armed": False,
+        "stoch_curl_recent": False, "stoch_traverse": False,
+        "armed_recent": False, "armed_recent_window": armed_recent_lookback,
+        "params": params,
     }
 
     close = px["close"].dropna()
@@ -584,6 +621,58 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
     basing = bool(days_in_base >= base_min_days and dd_120 <= drawdown_min and flat_ok)
     armed = bool(basing and (stoch_curl or macd_curl))
 
+    # ----------------------------------------------------------------------- #
+    # W-C(2) DISPLAY-TIER: `armed_recent` — BASE-scoped, not clock-scoped.
+    #
+    # These scans deliberately sit AFTER the strict block and never write to
+    # `stoch_curl` / `macd_curl` / `armed`: the 3-bar construction is what the
+    # prereg references and must stay bit-for-bit what a gauntlet would grade.
+    #
+    # The window is the CURRENT BASE, floored at `armed_recent_lookback`.  A
+    # fixed-bar window is the same shutter defect this wave exists to fix: the
+    # curl belongs to this base for as long as the base persists, so forgetting
+    # it on bar 11 of a 23-day base is arbitrary.  Silver on 2026-08-03 is the
+    # case — days_in_base=23 with its curl 12 bars back, i.e. inside its own base
+    # but outside any 10-bar clock.  When the base RESTARTS the counter resets,
+    # so a curl belonging to a previous base correctly drops out of the window.
+    # The floor covers the degenerate short-base case.
+    armed_recent_window = max(armed_recent_lookback, days_in_base)
+
+    # leg 1 — the same oversold %K-over-%D cross, scanned across the base
+    stoch_curl_recent = False
+    look_recent = min(armed_recent_window, len(k) - 1)
+    for i in range(1, look_recent + 1):
+        idx = -(i)
+        k_now = k.iloc[idx] if pd.notna(k.iloc[idx]) else np.nan
+        d_now = d.iloc[idx] if pd.notna(d.iloc[idx]) else np.nan
+        k_prev = k.iloc[idx - 1] if pd.notna(k.iloc[idx - 1]) else np.nan
+        d_prev = d.iloc[idx - 1] if pd.notna(d.iloc[idx - 1]) else np.nan
+        if (np.isfinite(k_now) and np.isfinite(d_now) and
+                np.isfinite(k_prev) and np.isfinite(d_prev)):
+            if k_now > d_now and k_prev <= d_prev and k_now < stoch_oversold:
+                stoch_curl_recent = True
+                break
+
+    # leg 2 — %K traversal <oversold -> >traverse_high inside the base.  Catches
+    # what a cross test structurally cannot see: the curl fired and then RAN, so
+    # %K is already mid-range by the time the page renders.  Direction is
+    # enforced — the oversold reading must PRECEDE the high reading.
+    stoch_traverse = False
+    if armed_recent_window > 0:
+        k_win = k.dropna().iloc[-armed_recent_window:]
+        seen_oversold = False
+        for v in k_win.to_numpy(dtype=float):
+            if not np.isfinite(v):
+                continue
+            if v < stoch_oversold:
+                seen_oversold = True
+            if seen_oversold and v > armed_recent_traverse_high:
+                stoch_traverse = True
+                break
+
+    # reads only the stoch legs, never macd_curl, and never feeds `armed` above
+    armed_recent = bool(basing and (stoch_curl_recent or stoch_traverse))
+
     return {
         "stoch_k": round(stoch_k_last, 2) if stoch_k_last is not None else None,
         "stoch_d": round(stoch_d_last, 2) if stoch_d_last is not None else None,
@@ -593,6 +682,11 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
         "days_in_base": days_in_base,
         "flatness": round(flatness, 4) if flatness is not None else None,
         "armed": armed,
+        # --- W-C(2) display-tier (never scored) ------------------------------
+        "stoch_curl_recent": stoch_curl_recent,
+        "stoch_traverse": stoch_traverse,
+        "armed_recent": armed_recent,
+        "armed_recent_window": int(armed_recent_window),
         "params": params,
     }
 

@@ -20,13 +20,30 @@ COVERAGE:
  17. _discover_recent_cycle_ids: cycle older than max age is excluded from scan results.
  18. _discover_recent_cycle_ids: cycle within max age is included.
  19. _discover_recent_cycle_ids: cycle_id with no date passes through (max-age filter skips undated).
+ 20. _branch_merged_into_main: branch rebased ahead of origin/main with unpushed
+     commits → NOT merged (the pre-fix inverted `git log <branch>..origin/main`
+     check called exactly this shape merged → reap-eligible).
+ 21. _branch_merged_into_main: tip-equal-to-main → merged (a commit is its own
+     ancestor under merge-base --is-ancestor).
+ 22. _branch_merged_into_main: absorbed branch behind an advanced main → merged
+     (the pre-fix check said NOT merged here — ancestry reaping never fired).
+ 23. _branch_merged_into_main: squash-merged branch is invisible to ancestry
+     (documented limit — journal-terminal path reaps those); unknown ref →
+     fail-safe False.
+ 24. gc() eligibility end-to-end on real worktrees: rebased-ahead skipped,
+     tip-equal reaped.
 
-All tests HERMETIC — no network, no real git, no subprocess except where mocked.
+All tests HERMETIC — no network; subprocess is mocked everywhere EXCEPT the
+_branch_merged_into_main direction pins (## 20–24), which run real git against
+throwaway tmp-dir repos: the bug being pinned was a wrong belief about git
+range direction, and a mocked subprocess would re-encode the belief instead of
+testing git.
 """
 from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 import tempfile
 from datetime import datetime, timedelta, timezone
@@ -575,3 +592,129 @@ def test_merge_workflow_yaml_enumerates_dockets_and_keeps_branch():
     assert '"$_merged_any" -eq 1' in wf and '"$_inflight" -eq 0' in wf, (
         "workflow-owned branch deletion must be gated on sweep-terminal state"
     )
+
+
+# ── _branch_merged_into_main direction pins (real git — the inversion trap) ────
+#
+# Real throwaway repos, offline, under tmp_path — still hermetic.  The pre-fix
+# check ran `git log <branch>..origin/main` and treated EMPTY as merged; that
+# range is the inverse (empty ⇔ origin/main is an ancestor of the BRANCH), so a
+# freshly-rebased worktree with unpushed commits read as merged while a branch
+# genuinely absorbed behind an advanced main read as unmerged.  These tests pin
+# both directions against real git.  Keep consistent with scripts/worktree_gc.py
+# (fleet session-worktree sweeper), which documents the same trap.
+
+def _git(cwd: Path, *args: str) -> str:
+    r = subprocess.run(["git", *args], cwd=str(cwd),
+                       capture_output=True, text=True, timeout=30)
+    assert r.returncode == 0, f"git {args} failed: {r.stderr}"
+    return r.stdout.strip()
+
+
+def _make_repo_with_origin_main(tmp_path: Path) -> Path:
+    """Local repo with one base commit on main and refs/remotes/origin/main
+    pointing at it (update-ref — no clone, no network)."""
+    repo = (tmp_path / "repo").resolve()
+    repo.mkdir()
+    _git(repo, "init")
+    _git(repo, "config", "user.email", "gc-test@example.invalid")
+    _git(repo, "config", "user.name", "gc-test")
+    _git(repo, "config", "commit.gpgsign", "false")
+    _git(repo, "checkout", "-B", "main")
+    (repo / "base.txt").write_text("base\n", encoding="utf-8")
+    _git(repo, "add", "base.txt")
+    _git(repo, "commit", "-m", "base")
+    _git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+    return repo
+
+
+def _commit_file(repo: Path, fname: str, msg: str) -> None:
+    (repo / fname).write_text(f"{fname}\n", encoding="utf-8")
+    _git(repo, "add", fname)
+    _git(repo, "commit", "-m", msg)
+
+
+def test_branch_rebased_ahead_with_local_commits_not_merged(tmp_path):
+    """Branch rebased onto the origin/main tip with UNPUSHED commits is NOT
+    merged.  The inverted pre-fix check called this merged → live rebased
+    worktrees were reap-eligible (only the lsof guard saved them)."""
+    from scripts.metabolism_gc import _branch_merged_into_main
+    repo = _make_repo_with_origin_main(tmp_path)
+    _git(repo, "checkout", "-b", "wf_ahead", "main")
+    _commit_file(repo, "local.txt", "unpushed local commit")
+    assert _branch_merged_into_main("wf_ahead", repo) is False
+
+
+def test_branch_tip_equal_to_main_is_merged(tmp_path):
+    """Branch whose tip IS the origin/main tip (nothing local) is merged —
+    merge-base --is-ancestor counts a commit as its own ancestor."""
+    from scripts.metabolism_gc import _branch_merged_into_main
+    repo = _make_repo_with_origin_main(tmp_path)
+    _git(repo, "branch", "wf_equal", "main")
+    assert _branch_merged_into_main("wf_equal", repo) is True
+
+
+def test_branch_absorbed_behind_advanced_main_is_merged(tmp_path):
+    """Branch fully reachable from origin/main whose tip sits BEHIND an
+    advanced main IS merged.  The pre-fix check said NOT merged here, so
+    ancestry-based reaping never fired for genuinely absorbed branches."""
+    from scripts.metabolism_gc import _branch_merged_into_main
+    repo = _make_repo_with_origin_main(tmp_path)
+    _git(repo, "branch", "wf_behind", "main")  # tip = base commit
+    _commit_file(repo, "advance.txt", "main advances past the absorbed branch")
+    _git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+    assert _branch_merged_into_main("wf_behind", repo) is True
+
+
+def test_branch_squash_merged_invisible_to_ancestry(tmp_path):
+    """Documented limit: a squash merge rewrites content into a new commit, so
+    the branch tip is never an ancestor of origin/main — ancestry says NOT
+    merged.  Squash-merged worktrees are reaped via the journal-terminal path
+    (guard 4), not this check."""
+    from scripts.metabolism_gc import _branch_merged_into_main
+    repo = _make_repo_with_origin_main(tmp_path)
+    _git(repo, "checkout", "-b", "wf_squash", "main")
+    _commit_file(repo, "feature.txt", "feature work")
+    _git(repo, "checkout", "main")
+    _git(repo, "merge", "--squash", "wf_squash")
+    _git(repo, "commit", "-m", "squash: feature work")
+    _git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+    assert _branch_merged_into_main("wf_squash", repo) is False
+
+
+def test_branch_unknown_ref_fail_safe_false(tmp_path):
+    """An errored ancestry check (exit 128, unknown ref) must read as NOT
+    merged — never reap on an error."""
+    from scripts.metabolism_gc import _branch_merged_into_main
+    repo = _make_repo_with_origin_main(tmp_path)
+    assert _branch_merged_into_main("no_such_branch", repo) is False
+
+
+def test_gc_eligibility_rebased_ahead_skipped_tip_equal_reaped(tmp_path):
+    """End-to-end through gc() on real worktrees: the rebased-ahead worktree
+    with unpushed commits must NOT be reap-eligible (the inverted check made
+    exactly this shape eligible); the tip-equal-to-main worktree must be.
+    lsof guard is patched out (host-dependent); dry_run so nothing is removed."""
+    from scripts.metabolism_gc import gc
+    repo = _make_repo_with_origin_main(tmp_path)
+    wts = (tmp_path / "wts").resolve()
+    wts.mkdir()
+
+    ahead_wt = wts / "wf_ahead"
+    _git(repo, "worktree", "add", "-b", "wf_ahead", str(ahead_wt), "main")
+    _commit_file(ahead_wt, "local.txt", "unpushed local commit")
+
+    equal_wt = wts / "wf_equal"
+    _git(repo, "worktree", "add", "-b", "wf_equal", str(equal_wt), "main")
+
+    with patch("scripts.metabolism_gc._has_open_files", return_value=False):
+        summary = gc(repo, dry_run=True)
+
+    # Compare by leaf name — path normalization (/var vs /private/var) varies.
+    reaped_names = {Path(p).name for p in summary["reaped"]}
+    skipped_names = {Path(p).name for p in summary["skipped_alive"]}
+    assert "wf_equal" in reaped_names, f"tip-equal worktree not reaped: {summary}"
+    assert "wf_ahead" not in reaped_names, (
+        f"rebased-ahead worktree with unpushed commits was reap-eligible: {summary}"
+    )
+    assert "wf_ahead" in skipped_names, f"rebased-ahead worktree missing from skipped: {summary}"

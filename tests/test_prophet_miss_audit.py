@@ -439,6 +439,7 @@ _ARTIFACT_KEYS = {
     "veto_leg_hist", "runner_sector_hist", "eligible_today_sector_hist",
     "conversion", "themes", "basket_misses", "name_score_scorecard",
     "scan_tier",
+    "priority_score_scorecard",
     "top63_runners", "top21_runners", "eligible_today", "degraded",
 }
 _SUMMARY_KEYS = {
@@ -1207,7 +1208,13 @@ def test_no_module_outside_the_runner_imports_the_audit():
     # may still name this module.
     allowed = {"engine/prophet_miss_audit.py", "scripts/run_prophet_miss_audit.py",
                "tests/test_prophet_miss_audit.py",
-               "scripts/run_us_scan_tier.py", "tests/test_us_scan_tier.py"}
+               "scripts/run_us_scan_tier.py", "tests/test_us_scan_tier.py",
+               # W7: the priority_score_scorecard block reads the full-population grade
+               # store, and its tests live beside that store's suite (which is wired into a
+               # CI pack) rather than here. A TEST importing the audit is not an authority
+               # path — the fence is about production modules — so the allowance is scoped
+               # to that one file, not widened to tests/*.
+               "tests/test_us_prophet_grades.py"}
     offenders = []
     for d in ("engine", "scripts", "app", "admin", "collectors", "lib", "tools", "tests"):
         for p in (root / d).rglob("*.py"):

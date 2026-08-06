@@ -83,3 +83,110 @@ def test_analyze_marker_dates_are_pre_resolution_anchors():
         assert m["date"] < last_bar, (
             f"resolved buy marker {m['date']} sits on/after the last bar {last_bar} — impossible "
             "unless the label peeked; marker-date grading would embed that peek")
+
+
+# --------------------------------------------------------------------------- #
+# confirmation_date — the anchor a forward return is ALLOWED to use
+# --------------------------------------------------------------------------- #
+def _synth(periods: int = 420) -> pd.Series:
+    t = np.arange(periods)
+    return pd.Series(100 + 10 * np.sin(t / 25) + 0.10 * t + 3 * np.sin(t / 6),
+                     index=pd.bdate_range("2024-01-01", periods=periods))
+
+
+def test_confirmation_date_is_bucket_i_plus_2s_last_daily_session():
+    """The derivation, checked against the 3B geometry re-derived independently here.
+
+    A mid-panel marker: its bucket sits well inside the frame, so ``i + 2`` exists and
+    the answer is that bucket's last DAILY session — not its label, which is the 3B
+    bucket's LEFT edge and precedes even its own close.
+    """
+    close = _synth()
+    sig = _sig_for(close)
+    lastday = (pd.Series(close.index, index=close.index)
+               .resample("3B").last().dropna().reindex(sig.index))
+    mid = len(sig) // 2
+    for i in (mid, mid + 7, mid + 13):
+        got = sq.confirmation_date(close, sig.index[i])
+        assert got == lastday.iloc[i + sq.CONFIRM_BARS]
+        # ...and it is strictly LATER than the marker label, by more than one session:
+        # that gap is the look-ahead the anchor exists to remove.
+        assert got > sig.index[i]
+        assert int((close.index > sig.index[i]).sum() - (close.index > got).sum()) >= 5
+
+
+def test_a_marker_inside_its_own_confirmation_window_degrades_to_null():
+    """Near the series end bar i+2 does not exist — the caller must get None, not a date.
+
+    This is the live-edge case and the one that must never silently produce a number:
+    a block whose confirmation close has not printed yet has no honest forward return,
+    and the lanes turn this None into a disclosed ``pct_since: null``.
+    """
+    close = _synth()
+    sig = _sig_for(close)
+    for back in range(sq.CONFIRM_BARS):              # the last CONFIRM_BARS buckets
+        assert sq.confirmation_date(close, sig.index[len(sig) - 1 - back]) is None
+    # the first bucket that CAN confirm is exactly one further back — the boundary is
+    # pinned from both sides so an off-by-one in either direction fails here.  It is
+    # the same boundary _buy_filter draws with `if i + 2 >= n: pending confirmation`.
+    edge = sig.index[len(sig) - 1 - sq.CONFIRM_BARS]
+    lastday = (pd.Series(close.index, index=close.index)
+               .resample("3B").last().dropna().reindex(sig.index))
+    assert sq.confirmation_date(close, edge) == lastday.iloc[-1]
+    # and it is the SAME boundary _buy_filter draws with `if i + 2 >= n: pending`
+    assert sq._buy_filter(len(sig) - 1, sig, False, len(sig)) == (None, "pending confirmation")
+
+
+def test_confirmation_date_refuses_a_date_that_is_not_a_bucket_label():
+    """A marker off THIS series' 3B grid is unanswerable — never approximated.
+
+    ``3B`` bins are anchored on the first index date, so a differently-trimmed copy of
+    the series re-phases every label.  Returning the nearest bucket there would put the
+    move on a bar the signal never saw, so the only safe answer is None.
+    """
+    close = _synth()
+    sig = _sig_for(close)
+    mid = sig.index[len(sig) // 2]
+    assert sq.confirmation_date(close, mid) is not None
+    for offset in (1, 2):                            # inside the bucket, not its label
+        assert sq.confirmation_date(close, mid + pd.tseries.offsets.BDay(offset)) is None
+    assert sq.confirmation_date(close, "2019-01-02") is None      # off the panel entirely
+
+
+def test_confirmation_date_is_null_when_the_frame_cannot_be_built():
+    """Too short for signal_frame → None. A short series is why the lanes print nulls."""
+    assert sq.confirmation_date(_synth(60), "2024-02-01") is None
+    assert sq.confirmation_date(pd.Series(dtype=float), "2024-02-01") is None
+    assert sq.confirmation_date(_synth(), None) is None
+    assert sq.confirmation_date(_synth(), "not-a-date") is None
+
+
+def test_every_buy_filter_label_is_settled_by_bar_i_plus_CONFIRM_BARS():
+    """Why CONFIRM_BARS is 2 and not 1 — the bound, re-derived rather than asserted.
+
+    The plain branch reads only ``c[i+1]``, which would suggest 1.  It is reached only
+    when ``bear`` is False, and ``bear`` runs ``_swing_highs(..., w=2)`` whose candidate
+    list includes a swing high AT bar ``i`` — confirmed against ``v[i-2:i+3]``.  So
+    perturbing bar ``i + 2`` alone can still flip a label, and an anchor at ``i + 1``
+    would be measuring from a close that did not yet know the answer.
+    """
+    close = _synth()
+    sig = _sig_for(close)
+    highs = sig["high"]
+    found = sq._swing_highs(highs)
+    assert found, "fixture must produce swing highs"
+    # every detected swing high is the max of a FIVE-bar window centred on itself, so
+    # two bars after it are load-bearing in the decision
+    values = highs.to_numpy()
+    for j in found:
+        assert len(values[j - 2:j + 3]) == 5
+        assert values[j - 2:j + 3].max() == values[j]
+    # ...and that is not academic: cut the series one bar short of j+2 and the swing
+    # high at j is invisible, so `bear` at bar j cannot have been settled at j+1.
+    j = max(h for h in found if h < len(sig) - 3)
+    assert j not in sq._swing_highs(highs.iloc[: j + 2])
+    assert j in sq._swing_highs(highs.iloc[: j + 3])
+    # _bear_div's candidate window is `i - look < h <= i`, so a swing high AT bar i is
+    # in scope for bar i's own bear test — which is what carries the bound to i+2.
+    assert [h for h in found if j - 12 < h <= j][-1] == j
+    assert sq.CONFIRM_BARS == 2

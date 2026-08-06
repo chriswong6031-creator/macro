@@ -23,6 +23,11 @@ DOCTRINE
   accepted as a legacy alias for tests.
 - Idempotent re-runs: keep-first per (date, basket_id).
 - 2-session hysteresis on state downgrade (TI-R3 shape).
+- COVERAGE IS DISCLOSED, NOT ASSUMED (W-B).  Every basket row carries
+  `members_read` / `members_total`, and a basket read below
+  COVERAGE_WARN_FRACTION of its active membership raises a GitHub annotation.
+  A basket scored on a fraction of its members must never print
+  indistinguishably from a fully-read one.
 
 SIX LEGS v1 (FROZEN per FT-R9)
 --------------------------------
@@ -131,6 +136,13 @@ _SHOCK_FAMILIES: frozenset[str] = frozenset({"geopolitical"})
 # State thresholds
 STATE_WATCH_K = 2
 STATE_IGNITION_K = 3
+
+# Member-coverage disclosure (W-B).  NOT a leg and NOT a gate — a thin basket is
+# still scored and still stamped, exactly as before; it is only no longer
+# scored SILENTLY.  Below this fraction of active members the run raises a
+# GitHub annotation so a coverage hole shows up in the Actions summary the night
+# it opens, instead of a month later in an audit.
+COVERAGE_WARN_FRACTION = 0.6
 
 # Hysteresis: sessions before state downgrade
 HYSTERESIS_SESSIONS = 2
@@ -254,26 +266,53 @@ def stamp_ledger(
 # Price-store helpers
 # ---------------------------------------------------------------------------
 
-# Basket members are collected into data/stocks/.  SPY is the rs_z BENCHMARK and
-# is a member of no basket (verified against data/baskets/membership.json), so
-# the member collector never writes data/stocks/SPY.parquet — SPY only ever
-# lands in data/yahoo/.  Looking it up under "stocks" alone therefore missed
-# unconditionally, which left spy_ret None and made the three legs that require
-# it (rs_z, complex_confirm, shock_relative_bid) unable to fire — and IGNITION,
-# which is gated on `k >= STATE_IGNITION_K AND rs_z`, arithmetically unreachable.
-# This ladder is PLUMBING: it changes where the benchmark series is read from,
-# not any leg formula or threshold.
+# SPY is the rs_z BENCHMARK and is a member of no basket (verified against
+# data/baskets/membership.json), so the member collector never writes
+# data/stocks/SPY.parquet — SPY only ever lands in data/yahoo/.  Looking it up
+# under "stocks" alone therefore missed unconditionally, which left spy_ret None
+# and made the three legs that require it (rs_z, complex_confirm,
+# shock_relative_bid) unable to fire — and IGNITION, which is gated on
+# `k >= STATE_IGNITION_K AND rs_z`, arithmetically unreachable.  The benchmark
+# ladder below is #4579 verbatim and MUST stay benchmark-scoped: data/yahoo/ is
+# an index/ETF store, not a member store, and a member that fell through to it
+# would be reading a different collector's tape.
 _STORE_LADDER: dict[str, tuple[str, ...]] = {"SPY": ("stocks", "yahoo")}
-_DEFAULT_STORES: tuple[str, ...] = ("stocks",)
+
+# MEMBER ladder (W-B, #4579's sibling defect D12).  data/stocks/ is the deep
+# adjusted store but it only holds ~235 names, while the 47 baskets' membership
+# union is ~683 — so a member absent from it was SILENTLY skipped from
+# closes_map and the basket was scored on whatever fraction happened to be
+# there.  Measured on the real store 2026-08-05, during the exact week both
+# baskets ignited: gold_miners read 1/12 members (NEM alone), space_economy
+# 0/15.  Full member history for the remainder lives in data/baskets/ohlcv/
+# (~2,768 names; ASTS 1,694 bars, AEM 3,163 bars) — the same store
+# scripts/audit_universe.py already walks as
+# `MembershipResolver(data_dir, ["stocks", "baskets/ohlcv"])`.
+#
+# ORDER IS LOAD-BEARING.  data/stocks/ keeps first refusal for the ~235 names it
+# has: it is the deeper adjusted series (NEM 11,688 bars from 1980 vs 3,163 from
+# 2014) that the rolling legs — breadth_surge's 50d MA over a 60-session
+# distribution, volume_confirm's 20d median — were shaped against.
+# data/baskets/ohlcv/ is the FALLBACK rung, consulted only where stocks/ has
+# nothing.  (The two stores agree where they overlap: NEM's last two closes are
+# byte-identical across them.)
+#
+# This is PLUMBING + DISCLOSURE.  No leg formula, threshold, or state rule
+# moves; what changes is how many members each leg gets to read, and that the
+# count is now printed (members_read/members_total below).  The pre-fix window
+# is era-stamped in data/basket_turn/README.md (G0.6): its emptiness is an
+# instrument artifact and may not be graded as a null.
+_DEFAULT_STORES: tuple[str, ...] = ("stocks", "baskets/ohlcv")
 
 
 def _load_prices(ticker: str, data_root: Path | None = None) -> pd.DataFrame | None:
     """Load the price parquet for a single ticker.
 
-    Members resolve out of data/stocks/ exactly as before; only tickers listed in
-    _STORE_LADDER consult a second store.  A rung that exists but carries no
-    usable `close` column falls through to the next rung rather than returning a
-    frame the legs cannot read.
+    Members walk `_DEFAULT_STORES` (data/stocks/ first, data/baskets/ohlcv/ as
+    the fallback rung); only tickers listed in `_STORE_LADDER` — the SPY
+    benchmark — walk their own, which deliberately does NOT include
+    baskets/ohlcv.  A rung that exists but carries no usable `close` column falls
+    through to the next rung rather than returning a frame the legs cannot read.
 
     Returns a DataFrame indexed by Date carrying at least a `close` column, or
     None if no rung yielded one.
@@ -1078,6 +1117,27 @@ def _compute_inner(
             closes_map[tk] = df["close"].astype(float)
             price_data[tk] = df
 
+    # --- member coverage: how much of each basket the legs could actually read -
+    # Derived HERE, off closes_map itself, before any leg runs — so the count is
+    # the tape the legs get, not a re-derivation that could drift from it, and a
+    # basket whose leg computation later throws still has its coverage recorded.
+    # Warnings are emitted in one deterministic pass in membership order.
+    member_coverage: dict[str, tuple[int, int]] = {}
+    for _bid, _basket in us_baskets.items():
+        _tks = _active_tickers(_basket)
+        _total = len(_tks)
+        _read = sum(1 for _tk in _tks if _tk in closes_map)
+        member_coverage[_bid] = (_read, _total)
+        if _total > 0 and (_read / _total) < COVERAGE_WARN_FRACTION:
+            # BARE print at line start, never a logger: GitHub only parses '::'
+            # at column 0, and every builder here logs with a prefixing format
+            # (tests/test_gh_annotation_line_start.py).
+            print(
+                f"::warning title=basket-turn-coverage::"
+                f"{_bid} reads {_read}/{_total} members",
+                flush=True,
+            )
+
     # --- underlying session: the newest bar the legs actually read ---
     # Forward-ledger audit 2026-08-05 (#4568 pattern): the ledger stamp must key
     # off the data plane, not the calendar.  A run against a frozen store then
@@ -1195,6 +1255,8 @@ def _compute_inner(
                     if 0 < sessions_since <= HYSTERESIS_SESSIONS:
                         state = "DOWNGRADE"  # hysteresis hold
 
+            members_read, members_total = member_coverage.get(bid, (0, len(tickers)))
+
             row = {
                 "basket_id": bid,
                 "state": state,
@@ -1202,6 +1264,12 @@ def _compute_inner(
                 "legs": legs,
                 "rs_z_value": rs_z_computed,
                 "ew_1d_ret": round(ew_ret, 5) if ew_ret is not None else None,
+                # How much of the basket the six legs above could actually read.
+                # Display/provenance only — never a leg, never in K, never a
+                # gate.  A row at 3/12 is a different claim from the same row at
+                # 12/12, and until this shipped they printed identically.
+                "members_read": members_read,
+                "members_total": members_total,
                 "as_of": as_of,
             }
             basket_states.append(row)

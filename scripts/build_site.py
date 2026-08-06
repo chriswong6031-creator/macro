@@ -3325,6 +3325,29 @@ def build_signal_lab_page(env: Environment, site: Path, generated: str) -> None:
              payload["summary"]["factor_total"])
 
 
+def build_quant_lab_page(env: Environment, site: Path, generated: str) -> None:
+    """🧪 Quant Lab — external quant models, rebuilt on our panel and measured.
+
+    Pure assembler over engine.quant_lab.page. The EXPENSIVE half (the point-in-time
+    study across the rebalance grid) runs off the render path in
+    `scripts.build_quant_lab` and lands in data/quant_lab/study.json; this only reads
+    that artifact plus one live cross-section. Additive + graceful: never fatal.
+    """
+    from engine.quant_lab import page as ql_page
+    payload = ql_page.build_payload()
+    payload["generated_utc"] = generated
+    html = env.get_template("quant_lab.html.j2").render(**payload)
+    write_page(site / "quant_lab.html", html)
+    fdir = site / "labdata"
+    fdir.mkdir(parents=True, exist_ok=True)
+    (fdir / "quant_lab.json").write_text(
+        json.dumps(payload, separators=(",", ":"), default=str))
+    log.info("wrote quant_lab.html (%d models, study=%s, live n=%s)",
+             len(payload.get("models") or []),
+             "yes" if payload.get("has_study") else "no",
+             (payload.get("live") or {}).get("n_universe"))
+
+
 def build_alerts_page(env: Environment, site: Path, generated: str) -> None:
     """🚨 Alert Command Center — the honest triage board over every alert engine.
 
@@ -4443,6 +4466,10 @@ def main() -> int:
         build_signal_lab_page(env, site, generated)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("signal lab page failed: %s", e)
+    try:
+        build_quant_lab_page(env, site, generated)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("quant lab page failed: %s", e)
     try:
         build_alerts_page(env, site, generated)
     except Exception as e:  # noqa: BLE001 — additive, never fatal

@@ -1,0 +1,5279 @@
+{
+ "meta": {
+  "host": "Mac-Studio.ts.net lan",
+  "ts": "2026-08-05T04:16:36+00:00",
+  "mode": "report",
+  "fetch_ok": true,
+  "proc_scan": true,
+  "pr_states": "file",
+  "primary": "/Users/chriswong/Documents/Cluade/Macro Dashboard",
+  "registered_total": 218,
+  "in_scope": 212,
+  "orphans": 4
+ },
+ "summary": {
+  "RECENT": {
+   "count": 143,
+   "kb": 472472212
+  },
+  "DIRTY": {
+   "count": 4,
+   "kb": 9133404
+  },
+  "LIVE_PROC": {
+   "count": 62,
+   "kb": 212869424
+  },
+  "LOCKED": {
+   "count": 1,
+   "kb": 3423768
+  },
+  "SELF": {
+   "count": 1,
+   "kb": 0
+  },
+  "MISSING": {
+   "count": 1,
+   "kb": 0
+  },
+  "ORPHAN": {
+   "count": 4,
+   "kb": 32
+  }
+ },
+ "apply": null,
+ "worktrees": [
+  {
+   "path": "/Users/chriswong/.codex/worktrees/capital-share-materializer-20260803/Macro Dashboard",
+   "name": "capital-share-materializer-20260803/Macro Dashboard",
+   "branch": "codex/capital-structure-share-materializer-20260803",
+   "head": "b980315d29d60e73fa11ca4f4f2b8381e42ccc79",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.9d < min_age 7d"
+   ],
+   "size_kb": 3348012,
+   "age_days": 1.94,
+   "age_sources": {
+    "weak:worktree_dir": 1.94,
+    "weak:dot_git": 2.06,
+    "weak:gitdir_HEAD": 1.94,
+    "weak:gitdir_index": 1.94,
+    "reflog_entry": 1.94
+   },
+   "procs": [],
+   "root": "/Users/chriswong/.codex/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/.codex/worktrees/capital-structure-wave01-20260801/Macro Dashboard",
+   "name": "capital-structure-wave01-20260801/Macro Dashboard",
+   "branch": "codex/capital-structure-wave01-dagfix",
+   "head": "30be8b91e7c1ce1fb7dbfa3ff520a3c40fa76e5b",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.6d < min_age 7d"
+   ],
+   "size_kb": 3162592,
+   "age_days": 3.59,
+   "age_sources": {
+    "weak:worktree_dir": 3.61,
+    "weak:dot_git": 3.8,
+    "weak:gitdir_HEAD": 3.59,
+    "weak:gitdir_index": 3.59,
+    "reflog_entry": 3.59
+   },
+   "procs": [],
+   "root": "/Users/chriswong/.codex/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/.codex/worktrees/codex-account-3-load-balancer-20260803/Macro Dashboard",
+   "name": "codex-account-3-load-balancer-20260803/Macro Dashboard",
+   "branch": "codex/codex-account-3-load-balancer-20260803",
+   "head": "f6dccd00eec9dd0fcf7db8d329f1dcebcaa65d2c",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.8d < min_age 7d"
+   ],
+   "size_kb": 3360124,
+   "age_days": 1.79,
+   "age_sources": {
+    "weak:worktree_dir": 1.79,
+    "weak:dot_git": 1.79,
+    "weak:gitdir_HEAD": 1.79,
+    "weak:gitdir_index": 1.79,
+    "reflog_entry": 1.79
+   },
+   "procs": [],
+   "root": "/Users/chriswong/.codex/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/.codex/worktrees/company-intelligence-parity-w1-20260801/Macro Dashboard",
+   "name": "company-intelligence-parity-w1-20260801/Macro Dashboard",
+   "branch": "codex/company-intelligence-parity-w1-20260801",
+   "head": "6d214a4f8a1bdd82bdef2c69cb0a902e9d45f081",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.2d < min_age 7d"
+   ],
+   "size_kb": 3213616,
+   "age_days": 3.16,
+   "age_sources": {
+    "weak:worktree_dir": 3.21,
+    "weak:dot_git": 3.26,
+    "weak:gitdir_HEAD": 3.26,
+    "weak:gitdir_index": 3.16,
+    "reflog_entry": 3.16
+   },
+   "procs": [],
+   "root": "/Users/chriswong/.codex/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/.codex/worktrees/earnings-nav-runtime-bridge-20260803/Macro Dashboard",
+   "name": "earnings-nav-runtime-bridge-20260803/Macro Dashboard",
+   "branch": "codex/earnings-nav-runtime-bridge-20260803",
+   "head": "29285167768d178596277bc4174c8fc02ed0533c",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.8d < min_age 7d"
+   ],
+   "size_kb": 3357628,
+   "age_days": 1.8,
+   "age_sources": {
+    "weak:worktree_dir": 1.8,
+    "weak:dot_git": 1.8,
+    "weak:gitdir_HEAD": 1.8,
+    "weak:gitdir_index": 1.8,
+    "reflog_entry": 1.8
+   },
+   "procs": [],
+   "root": "/Users/chriswong/.codex/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/.codex/worktrees/earnings-private-idempotence-20260803/Macro Dashboard",
+   "name": "earnings-private-idempotence-20260803/Macro Dashboard",
+   "branch": "codex/earnings-private-idempotence-20260803",
+   "head": "24493ce0ad497bcaa19e4fc6620fe8029ba9cc55",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 3370224,
+   "age_days": 1.69,
+   "age_sources": {
+    "weak:worktree_dir": 1.78,
+    "weak:dot_git": 1.78,
+    "weak:gitdir_HEAD": 1.73,
+    "weak:gitdir_index": 1.67,
+    "reflog_entry": 1.69
+   },
+   "procs": [],
+   "root": "/Users/chriswong/.codex/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/.codex/worktrees/eb5f/Macro Dashboard",
+   "name": "eb5f/Macro Dashboard",
+   "branch": null,
+   "head": "aac6beaf125a36b3e8d665427de57b384d851af1",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.8d < min_age 7d"
+   ],
+   "size_kb": 3189356,
+   "age_days": 2.82,
+   "age_sources": {
+    "weak:worktree_dir": 2.82,
+    "weak:dot_git": 2.82,
+    "weak:gitdir_HEAD": 2.82,
+    "weak:gitdir_index": 2.82,
+    "reflog_entry": 2.82
+   },
+   "procs": [],
+   "root": "/Users/chriswong/.codex/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/.codex/worktrees/govrev-render-unwedge-20260803/Macro Dashboard",
+   "name": "govrev-render-unwedge-20260803/Macro Dashboard",
+   "branch": "codex/govrev-render-unwedge-20260803",
+   "head": "6d38f4b09f6b08ba9759809624d22476bf21deb0",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 3379584,
+   "age_days": 1.73,
+   "age_sources": {
+    "weak:worktree_dir": 1.73,
+    "weak:dot_git": 1.74,
+    "weak:gitdir_HEAD": 1.73,
+    "weak:gitdir_index": 1.73,
+    "reflog_entry": 1.73
+   },
+   "procs": [],
+   "root": "/Users/chriswong/.codex/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/.codex/worktrees/july-market-navigation/Macro Dashboard",
+   "name": "july-market-navigation/Macro Dashboard",
+   "branch": "codex/july-2026-market-navigation",
+   "head": "42d9a38a358f8802d583b04d41c2101100a39334",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 2025356,
+   "age_days": 21.85,
+   "age_sources": {
+    "weak:worktree_dir": 21.88,
+    "weak:dot_git": 21.88,
+    "weak:gitdir_HEAD": 21.85,
+    "weak:gitdir_index": 21.85,
+    "reflog_entry": 21.85
+   },
+   "procs": [],
+   "root": "/Users/chriswong/.codex/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/.codex/worktrees/large-cap-leader-study-20260714/Macro Dashboard",
+   "name": "large-cap-leader-study-20260714/Macro Dashboard",
+   "branch": "codex/large-cap-leader-study-20260714",
+   "head": "c5cac0808e0f7b3368ac7be8492420004b56146d",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 2063296,
+   "age_days": 21.32,
+   "age_sources": {
+    "weak:worktree_dir": 21.34,
+    "weak:dot_git": 21.35,
+    "weak:gitdir_HEAD": 21.35,
+    "weak:gitdir_index": 21.32,
+    "reflog_entry": 21.32
+   },
+   "procs": [],
+   "root": "/Users/chriswong/.codex/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/.codex/worktrees/mag7-q2-earnings-2026/Macro Dashboard",
+   "name": "mag7-q2-earnings-2026/Macro Dashboard",
+   "branch": "codex/mag7-q2-earnings-2026",
+   "head": "952357e33f76f137d3ccf33bcc6c8324f0d21bb6",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 2170732,
+   "age_days": 17.69,
+   "age_sources": {
+    "weak:worktree_dir": 17.7,
+    "weak:dot_git": 17.7,
+    "weak:gitdir_HEAD": 17.7,
+    "weak:gitdir_index": 17.69,
+    "reflog_entry": 17.69
+   },
+   "procs": [],
+   "root": "/Users/chriswong/.codex/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/.codex/worktrees/us-stocks-static-filter-20260803/Macro Dashboard",
+   "name": "us-stocks-static-filter-20260803/Macro Dashboard",
+   "branch": "codex/us-stocks-static-filter-20260803",
+   "head": "f0e30bb50614a7bd58857e8f276e6b5b22a42a5c",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.6d < min_age 7d"
+   ],
+   "size_kb": 3384052,
+   "age_days": 1.64,
+   "age_sources": {
+    "weak:worktree_dir": 1.67,
+    "weak:dot_git": 1.67,
+    "weak:gitdir_HEAD": 1.67,
+    "weak:gitdir_index": 1.64,
+    "reflog_entry": 1.64
+   },
+   "procs": [],
+   "root": "/Users/chriswong/.codex/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/adoring-montalcini-1104e6",
+   "name": "adoring-montalcini-1104e6",
+   "branch": null,
+   "head": "b0f313f91cb47fe5efae28da067a0300e738d90a",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.9d < min_age 7d"
+   ],
+   "size_kb": 3340920,
+   "age_days": 0.93,
+   "age_sources": {
+    "weak:worktree_dir": 1.97,
+    "weak:dot_git": 1.98,
+    "weak:gitdir_HEAD": 0.93,
+    "weak:gitdir_index": 0.93,
+    "reflog_entry": 0.93,
+    "session_dir": 1.77
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/affectionate-poitras-dae3a4",
+   "name": "affectionate-poitras-dae3a4",
+   "branch": "claude/affectionate-poitras-dae3a4",
+   "head": "8eaaba504283edb7b9e254cbbe049281c9f17580",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "2 process(es) cwd inside"
+   ],
+   "size_kb": 3397476,
+   "age_days": 0.86,
+   "age_sources": {
+    "weak:worktree_dir": 0.86,
+    "weak:dot_git": 0.87,
+    "weak:gitdir_HEAD": 0.87,
+    "weak:gitdir_index": 0.86,
+    "reflog_entry": 0.86,
+    "session_dir": 0.86
+   },
+   "procs": [
+    "7983:disclaimer",
+    "7984:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a1121c63b9fc7a09e",
+   "name": "agent-a1121c63b9fc7a09e",
+   "branch": "claude/seo-w1b-baskets-china-spec",
+   "head": "87a17cdea329c48df52dbd9d459063c6574eade7",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.1d < min_age 7d"
+   ],
+   "size_kb": 3332716,
+   "age_days": 2.09,
+   "age_sources": {
+    "weak:worktree_dir": 2.12,
+    "weak:dot_git": 2.12,
+    "weak:gitdir_HEAD": 2.12,
+    "weak:gitdir_index": 2.09,
+    "reflog_entry": 2.09
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a18ff619a52582dc6",
+   "name": "agent-a18ff619a52582dc6",
+   "branch": "claude/prophet-doors-relay-features",
+   "head": "951c0dedbd4de5f022c43ac207eed8ea18a64b59",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.7d < min_age 7d"
+   ],
+   "size_kb": 3420208,
+   "age_days": 0.66,
+   "age_sources": {
+    "weak:worktree_dir": 0.67,
+    "weak:dot_git": 0.68,
+    "weak:gitdir_HEAD": 0.67,
+    "weak:gitdir_index": 0.66,
+    "reflog_entry": 0.66
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a1981cb7c96a7d789",
+   "name": "agent-a1981cb7c96a7d789",
+   "branch": "claude/us-indicator-floor-measured-warmup",
+   "head": "1dec3e903d45b76e13a1b227b6a33f7b39e6db34",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.0d < min_age 7d"
+   ],
+   "size_kb": 3430956,
+   "age_days": 0.05,
+   "age_sources": {
+    "weak:worktree_dir": 0.06,
+    "weak:dot_git": 0.07,
+    "weak:gitdir_HEAD": 0.06,
+    "weak:gitdir_index": 0.05,
+    "reflog_entry": 0.05
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a275e01ad968a9192",
+   "name": "agent-a275e01ad968a9192",
+   "branch": "claude/withdraw-unearned-authority-claims-20260803",
+   "head": "25e23370f44b35500d8b97cfaa871f52e6df7156",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.0d < min_age 7d"
+   ],
+   "size_kb": 3500828,
+   "age_days": 1.96,
+   "age_sources": {
+    "weak:worktree_dir": 1.97,
+    "weak:dot_git": 1.99,
+    "weak:gitdir_HEAD": 1.99,
+    "weak:gitdir_index": 1.96,
+    "reflog_entry": 1.96
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a2b6e9107e817cad8",
+   "name": "agent-a2b6e9107e817cad8",
+   "branch": "claude/seo-w1a-shells-public",
+   "head": "44529de801238e316d5b68fd52b04dc341495617",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.1d < min_age 7d"
+   ],
+   "size_kb": 3340824,
+   "age_days": 2.11,
+   "age_sources": {
+    "weak:worktree_dir": 2.12,
+    "weak:dot_git": 2.12,
+    "weak:gitdir_HEAD": 2.12,
+    "weak:gitdir_index": 2.11,
+    "reflog_entry": 2.11
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a338cba813affcfa6",
+   "name": "agent-a338cba813affcfa6",
+   "branch": "claude/name-score-adjudication-w0",
+   "head": "5943f4ce82c2317671d70548c866d46809d342ea",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.5d < min_age 7d"
+   ],
+   "size_kb": 3438072,
+   "age_days": 0.53,
+   "age_sources": {
+    "weak:worktree_dir": 0.58,
+    "weak:dot_git": 0.61,
+    "weak:gitdir_HEAD": 0.61,
+    "weak:gitdir_index": 0.58,
+    "reflog_entry": 0.53
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a4b15a7419d2c942a",
+   "name": "agent-a4b15a7419d2c942a",
+   "branch": "claude/foresight-theme-tape-w5a",
+   "head": "8a1e575d732e73a9aa1786ac9113d4612b60cdb4",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.5d < min_age 7d"
+   ],
+   "size_kb": 3438292,
+   "age_days": 0.53,
+   "age_sources": {
+    "weak:worktree_dir": 0.57,
+    "weak:dot_git": 0.61,
+    "weak:gitdir_HEAD": 0.6,
+    "weak:gitdir_index": 0.57,
+    "reflog_entry": 0.53
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a57a66ec65d030b28",
+   "name": "agent-a57a66ec65d030b28",
+   "branch": "claude/prophet-us-scan-tier",
+   "head": "5bb16b514f1f2c52a59f0a1247df1e3ff538dd5d",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.0d < min_age 7d"
+   ],
+   "size_kb": 3426868,
+   "age_days": 0.03,
+   "age_sources": {
+    "weak:worktree_dir": 0.04,
+    "weak:dot_git": 0.07,
+    "weak:gitdir_HEAD": 0.04,
+    "weak:gitdir_index": 0.03,
+    "reflog_entry": 0.03
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a5a330920de16d5dd",
+   "name": "agent-a5a330920de16d5dd",
+   "branch": "claude/seo-w2-heatmap-build",
+   "head": "f6c61b5ed8b7b6a895c3afbe49d03a97ecd4f2df",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.5d < min_age 7d"
+   ],
+   "size_kb": 3568148,
+   "age_days": 1.46,
+   "age_sources": {
+    "weak:worktree_dir": 1.5,
+    "weak:dot_git": 1.51,
+    "weak:gitdir_HEAD": 1.51,
+    "weak:gitdir_index": 1.46,
+    "reflog_entry": 1.46
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a68284cc1cf4d23f8",
+   "name": "agent-a68284cc1cf4d23f8",
+   "branch": "claude/fresh-ticks-extension-packet-w52",
+   "head": "9acba9f9e80912ad100a3a8c15d1854b84d06acb",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.2d < min_age 7d"
+   ],
+   "size_kb": 3441064,
+   "age_days": 0.15,
+   "age_sources": {
+    "weak:worktree_dir": 0.16,
+    "weak:dot_git": 0.18,
+    "weak:gitdir_HEAD": 0.17,
+    "weak:gitdir_index": 0.15,
+    "reflog_entry": 0.15
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a6847310105abec72",
+   "name": "agent-a6847310105abec72",
+   "branch": "claude/seo-w1b-baskets-china-build",
+   "head": "726420e1ee8a0d08598d762c1d13d4b10d094ad7",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.8d < min_age 7d"
+   ],
+   "size_kb": 3523536,
+   "age_days": 1.83,
+   "age_sources": {
+    "weak:worktree_dir": 1.81,
+    "weak:dot_git": 1.83,
+    "weak:gitdir_HEAD": 1.83,
+    "weak:gitdir_index": 1.77,
+    "reflog_entry": 1.83
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a6df9bd1cbb5b1020",
+   "name": "agent-a6df9bd1cbb5b1020",
+   "branch": "claude/us-context-vector-pit-store",
+   "head": "f9bc07792f65aa3a4beaaf14a94d1ef2b27e455c",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.5d < min_age 7d"
+   ],
+   "size_kb": 3443124,
+   "age_days": 0.53,
+   "age_sources": {
+    "weak:worktree_dir": 0.53,
+    "weak:dot_git": 0.61,
+    "weak:gitdir_HEAD": 0.6,
+    "weak:gitdir_index": 0.53,
+    "reflog_entry": 0.53
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a736667eb726a9624",
+   "name": "agent-a736667eb726a9624",
+   "branch": "claude/prophet-w1-intake-repair",
+   "head": "463bf6c7b2583b2d9928d653a450377c36f82049",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.9d < min_age 7d"
+   ],
+   "size_kb": 3501372,
+   "age_days": 0.93,
+   "age_sources": {
+    "weak:worktree_dir": 0.94,
+    "weak:dot_git": 0.95,
+    "weak:gitdir_HEAD": 0.95,
+    "weak:gitdir_index": 0.93,
+    "reflog_entry": 0.93
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a7c1b61941c6ac004",
+   "name": "agent-a7c1b61941c6ac004",
+   "branch": "claude/prophet-w0-miss-audit",
+   "head": "32b66b4eb53489a1e2b067488130787a95416ce2",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.9d < min_age 7d"
+   ],
+   "size_kb": 3493980,
+   "age_days": 0.94,
+   "age_sources": {
+    "weak:worktree_dir": 0.94,
+    "weak:dot_git": 0.96,
+    "weak:gitdir_HEAD": 0.95,
+    "weak:gitdir_index": 0.94,
+    "reflog_entry": 0.94
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a7e540ac82a9830b0",
+   "name": "agent-a7e540ac82a9830b0",
+   "branch": "claude/seo-w2-heatmap-etfs-spec",
+   "head": "6d63cf57aef8ec394c29faa9f57eda4048ea845d",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 3379776,
+   "age_days": 1.68,
+   "age_sources": {
+    "weak:worktree_dir": 1.71,
+    "weak:dot_git": 1.71,
+    "weak:gitdir_HEAD": 1.7,
+    "weak:gitdir_index": 1.68,
+    "reflog_entry": 1.68
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a8ae89f8369ab3eee",
+   "name": "agent-a8ae89f8369ab3eee",
+   "branch": "claude/chart-render-annotation-grammar",
+   "head": "85a61f9f1d284aedfe1697d00cd2a18cf8904f3a",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.1d < min_age 7d"
+   ],
+   "size_kb": 3495812,
+   "age_days": 2.1,
+   "age_sources": {
+    "weak:worktree_dir": 2.12,
+    "weak:dot_git": 2.13,
+    "weak:gitdir_HEAD": 2.13,
+    "weak:gitdir_index": 2.1,
+    "reflog_entry": 2.1
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a8d14891ce5966175",
+   "name": "agent-a8d14891ce5966175",
+   "branch": "claude/us-label-grading-battery-lgb1",
+   "head": "b251bd1c354e70f925f3a2dde3c22c6b9099bfe5",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.2d < min_age 7d"
+   ],
+   "size_kb": 3439860,
+   "age_days": 0.15,
+   "age_sources": {
+    "weak:worktree_dir": 0.16,
+    "weak:dot_git": 0.18,
+    "weak:gitdir_HEAD": 0.18,
+    "weak:gitdir_index": 0.15,
+    "reflog_entry": 0.15
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-aaa6b753b46428fcc",
+   "name": "agent-aaa6b753b46428fcc",
+   "branch": "claude/seo-w2-etfs-build",
+   "head": "d05c2d2a3fa8a3dcadeeadc8f92edc3821d242c4",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.6d < min_age 7d"
+   ],
+   "size_kb": 3388976,
+   "age_days": 1.65,
+   "age_sources": {
+    "weak:worktree_dir": 1.65,
+    "weak:dot_git": 1.68,
+    "weak:gitdir_HEAD": 1.65,
+    "weak:gitdir_index": 1.65,
+    "reflog_entry": 1.65
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-aadbeb80980125b74",
+   "name": "agent-aadbeb80980125b74",
+   "branch": "claude/ext-panel-crypto-calendar-fix",
+   "head": "92457962b1330e80270e06b7597cec4cabf9122b",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.9d < min_age 7d"
+   ],
+   "size_kb": 3357612,
+   "age_days": 1.88,
+   "age_sources": {
+    "weak:worktree_dir": 1.89,
+    "weak:dot_git": 1.9,
+    "weak:gitdir_HEAD": 1.89,
+    "weak:gitdir_index": 1.88,
+    "reflog_entry": 1.88
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-ab24240b0b16d2785",
+   "name": "agent-ab24240b0b16d2785",
+   "branch": "claude/prophet-w3-doors",
+   "head": "81ea747d82a8f359afca264debb4b3185f70378f",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.8d < min_age 7d"
+   ],
+   "size_kb": 3416324,
+   "age_days": 0.77,
+   "age_sources": {
+    "weak:worktree_dir": 0.94,
+    "weak:dot_git": 0.95,
+    "weak:gitdir_HEAD": 0.77,
+    "weak:gitdir_index": 0.77,
+    "reflog_entry": 0.77
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-abeb819723ea21c11",
+   "name": "agent-abeb819723ea21c11",
+   "branch": "claude/chart-director-integration",
+   "head": "3c9eb57a7f626badc216db25712ad4b7f38e90a4",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.0d < min_age 7d"
+   ],
+   "size_kb": 3344252,
+   "age_days": 1.96,
+   "age_sources": {
+    "weak:worktree_dir": 1.98,
+    "weak:dot_git": 2.0,
+    "weak:gitdir_HEAD": 2.0,
+    "weak:gitdir_index": 1.96,
+    "reflog_entry": 1.96
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-ac1f54ba04f4baad4",
+   "name": "agent-ac1f54ba04f4baad4",
+   "branch": "claude/w8-ignition-layer-charter",
+   "head": "b891bb07b34d137685129dc1b1bd6df7ee1c43ff",
+   "verdict": "LOCKED",
+   "proof": "",
+   "reasons": [
+    "claude agent agent-ac1f54ba04f4baad4 (pid 93794 start Tue Aug  4 01:53:38 2026)"
+   ],
+   "size_kb": 3423768,
+   "age_days": null,
+   "age_sources": {},
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-ad0937cd3d4129e92",
+   "name": "agent-ad0937cd3d4129e92",
+   "branch": "prophet-us/w7-all-picks-grades",
+   "head": "71e8bbdad9bbd2acc845645088e936f16fd2cfbf",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.0d < min_age 7d"
+   ],
+   "size_kb": 3426116,
+   "age_days": 0.04,
+   "age_sources": {
+    "weak:worktree_dir": 0.05,
+    "weak:dot_git": 0.1,
+    "weak:gitdir_HEAD": 0.09,
+    "weak:gitdir_index": 0.04,
+    "reflog_entry": 0.04
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-ad140df11033eac14",
+   "name": "agent-ad140df11033eac14",
+   "branch": "claude/prophet-w2-theme-tape",
+   "head": "1c2b01fce342c7d201a5c1c46d458c3e87dbf120",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.9d < min_age 7d"
+   ],
+   "size_kb": 3493736,
+   "age_days": 0.91,
+   "age_sources": {
+    "weak:worktree_dir": 0.92,
+    "weak:dot_git": 0.95,
+    "weak:gitdir_HEAD": 0.95,
+    "weak:gitdir_index": 0.91,
+    "reflog_entry": 0.91
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-ad360a5c3831d097a",
+   "name": "agent-ad360a5c3831d097a",
+   "branch": "claude/marketing-supply-feeds",
+   "head": "7e2143524de4333aa36d54e74fc04031db83dd74",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.1d < min_age 7d"
+   ],
+   "size_kb": 3493416,
+   "age_days": 2.08,
+   "age_sources": {
+    "weak:worktree_dir": 2.08,
+    "weak:dot_git": 2.13,
+    "weak:gitdir_HEAD": 2.13,
+    "weak:gitdir_index": 2.08,
+    "reflog_entry": 2.08
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-ad7d55dd5a63df179",
+   "name": "agent-ad7d55dd5a63df179",
+   "branch": "claude/oip-w16b-one-door-flip",
+   "head": "2be8d72b8a7010619e3de12f14c2733b511f2bc1",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 3369788,
+   "age_days": 1.7,
+   "age_sources": {
+    "weak:worktree_dir": 1.7,
+    "weak:dot_git": 2.19,
+    "weak:gitdir_HEAD": 1.7,
+    "weak:gitdir_index": 1.7,
+    "reflog_entry": 1.7
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-ae2d180e606987c27",
+   "name": "agent-ae2d180e606987c27",
+   "branch": "claude/prophet-w4-earnings-feed",
+   "head": "2f97b5b06b4d28760547dc5c6b0472098c2dc55f",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.9d < min_age 7d"
+   ],
+   "size_kb": 3495584,
+   "age_days": 0.93,
+   "age_sources": {
+    "weak:worktree_dir": 0.93,
+    "weak:dot_git": 0.95,
+    "weak:gitdir_HEAD": 0.95,
+    "weak:gitdir_index": 0.93,
+    "reflog_entry": 0.93
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-afcfa477979433c13",
+   "name": "agent-afcfa477979433c13",
+   "branch": "claude/board-ledger-row-persistence-2026-08-05",
+   "head": "b74917de5ad1a3ae6d6348a47b7590350986ad40",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.1d < min_age 7d"
+   ],
+   "size_kb": 3428588,
+   "age_days": 0.08,
+   "age_sources": {
+    "weak:worktree_dir": 0.08,
+    "weak:dot_git": 0.1,
+    "weak:gitdir_HEAD": 0.08,
+    "weak:gitdir_index": 0.08,
+    "reflog_entry": 0.08
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agitated-swartz-5cca97",
+   "name": "agitated-swartz-5cca97",
+   "branch": "claude/agitated-swartz-5cca97",
+   "head": "b5c821a23caa1d641d28933343dc4cad0bceb9c1",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "2 process(es) cwd inside"
+   ],
+   "size_kb": 3398048,
+   "age_days": 0.88,
+   "age_sources": {
+    "weak:worktree_dir": 0.89,
+    "weak:dot_git": 0.9,
+    "weak:gitdir_HEAD": 0.89,
+    "weak:gitdir_index": 0.88,
+    "reflog_entry": 0.89,
+    "session_dir": 0.88
+   },
+   "procs": [
+    "63476:disclaimer",
+    "63477:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/amazing-shtern-5488a6",
+   "name": "amazing-shtern-5488a6",
+   "branch": "claude/amazing-shtern-5488a6",
+   "head": "d46962b66873272be5c46d7ff292e4560779ff7a",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3428444,
+   "age_days": 0.11,
+   "age_sources": {
+    "weak:worktree_dir": 0.12,
+    "weak:dot_git": 0.12,
+    "weak:gitdir_HEAD": 0.11,
+    "weak:gitdir_index": 0.11,
+    "reflog_entry": 0.11,
+    "session_dir": 0.11
+   },
+   "procs": [
+    "33184:disclaimer",
+    "33185:claude",
+    "51388:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/analyst-ratings",
+   "name": "analyst-ratings",
+   "branch": "claude/analyst-ratings-lane",
+   "head": "f929e6b963ca94410c79b3fceee1ca04d4218cbb",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 3558852,
+   "age_days": 1.65,
+   "age_sources": {
+    "weak:worktree_dir": 1.62,
+    "weak:dot_git": 1.65,
+    "weak:gitdir_HEAD": 1.65,
+    "weak:gitdir_index": 1.6,
+    "reflog_entry": 1.65
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/awesome-panini-283531",
+   "name": "awesome-panini-283531",
+   "branch": "claude/awesome-panini-283531",
+   "head": "b891bb07b34d137685129dc1b1bd6df7ee1c43ff",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "2 process(es) cwd inside"
+   ],
+   "size_kb": 3426128,
+   "age_days": -0.0,
+   "age_sources": {
+    "weak:worktree_dir": 0.01,
+    "weak:dot_git": 0.03,
+    "weak:gitdir_HEAD": 0.03,
+    "weak:gitdir_index": 0.03,
+    "reflog_entry": 0.03,
+    "session_dir": -0.0
+   },
+   "procs": [
+    "99850:disclaimer",
+    "99851:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/beautiful-haslett-d0e24d",
+   "name": "beautiful-haslett-d0e24d",
+   "branch": "claude/gracious-williams-c0e807",
+   "head": "b1c6cfde833786117a6dc5af8d52a1a9f6908752",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "1 process(es) cwd inside"
+   ],
+   "size_kb": 3382796,
+   "age_days": 0.8,
+   "age_sources": {
+    "weak:worktree_dir": 1.61,
+    "weak:dot_git": 3.81,
+    "weak:gitdir_HEAD": 1.55,
+    "weak:gitdir_index": 1.55,
+    "reflog_entry": 1.55,
+    "session_dir": 0.8
+   },
+   "procs": [
+    "65058:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/biocatalyst-b4d-prospective-20260802",
+   "name": "biocatalyst-b4d-prospective-20260802",
+   "branch": "claude/biocatalyst-b4d-prospective-20260802",
+   "head": "46f036f3b0610c291a8bf19159da50f71c5d5255",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.4d < min_age 7d"
+   ],
+   "size_kb": 3294120,
+   "age_days": 2.36,
+   "age_sources": {
+    "weak:worktree_dir": 2.36,
+    "weak:dot_git": 2.41,
+    "weak:gitdir_HEAD": 2.36,
+    "weak:gitdir_index": 2.36,
+    "reflog_entry": 2.36
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/biocatalyst-b4e-signal-intake-20260802",
+   "name": "biocatalyst-b4e-signal-intake-20260802",
+   "branch": "codex/biocatalyst-b4e-signal-intake-20260802",
+   "head": "444ff4be3ddee9793cfe9e59575568981e035e76",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.3d < min_age 7d"
+   ],
+   "size_kb": 3318700,
+   "age_days": 2.26,
+   "age_sources": {
+    "weak:worktree_dir": 2.28,
+    "weak:dot_git": 2.3,
+    "weak:gitdir_HEAD": 2.26,
+    "weak:gitdir_index": 2.26,
+    "reflog_entry": 2.26
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/biocatalyst-bc-f0-launch-slo-20260802",
+   "name": "biocatalyst-bc-f0-launch-slo-20260802",
+   "branch": "claude/biocatalyst-bc-f0-launch-slo-20260802",
+   "head": "ee22926266453d13cd70342437553d6f34870ce4",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.0d < min_age 7d"
+   ],
+   "size_kb": 3336752,
+   "age_days": 2.03,
+   "age_sources": {
+    "weak:worktree_dir": 2.05,
+    "weak:dot_git": 2.07,
+    "weak:gitdir_HEAD": 2.03,
+    "weak:gitdir_index": 2.03,
+    "reflog_entry": 2.03
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/biocatalyst-bc-n0a-sector-packet-20260802",
+   "name": "biocatalyst-bc-n0a-sector-packet-20260802",
+   "branch": "claude/biocatalyst-bc-n0a-sector-packet-20260802",
+   "head": "8a3b9174cff6f26099df9bbb4f24e5984dc2351c",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.8d < min_age 7d"
+   ],
+   "size_kb": 3357400,
+   "age_days": 1.82,
+   "age_sources": {
+    "weak:worktree_dir": 1.89,
+    "weak:dot_git": 1.95,
+    "weak:gitdir_HEAD": 1.86,
+    "weak:gitdir_index": 1.82,
+    "reflog_entry": 1.82
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/biocatalyst-bc-o2a-offline-verifier-20260802",
+   "name": "biocatalyst-bc-o2a-offline-verifier-20260802",
+   "branch": "claude/biocatalyst-bc-o2a-offline-verifier-20260802",
+   "head": "c1e2bd41405c377ca1cb1fddffa4ea603768ac0b",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.0d < min_age 7d"
+   ],
+   "size_kb": 3341116,
+   "age_days": 1.96,
+   "age_sources": {
+    "weak:worktree_dir": 1.96,
+    "weak:dot_git": 2.01,
+    "weak:gitdir_HEAD": 1.96,
+    "weak:gitdir_index": 1.96,
+    "reflog_entry": 1.96
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/biocatalyst-bc-t2a-endpoint-alignment-20260803",
+   "name": "biocatalyst-bc-t2a-endpoint-alignment-20260803",
+   "branch": "claude/biocatalyst-bc-t2a-endpoint-alignment-20260803",
+   "head": "419a108334e3658f976992bc392d22a00f170520",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.8d < min_age 7d"
+   ],
+   "size_kb": 3359780,
+   "age_days": 1.83,
+   "age_sources": {
+    "weak:worktree_dir": 1.89,
+    "weak:dot_git": 1.94,
+    "weak:gitdir_HEAD": 1.83,
+    "weak:gitdir_index": 1.83,
+    "reflog_entry": 1.83
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/biocatalyst-bc-t2b-prep-20260803",
+   "name": "biocatalyst-bc-t2b-prep-20260803",
+   "branch": "claude/biocatalyst-bc-t2b-prep-20260803",
+   "head": "6d2daa61d21764befb03e847ac9b25d96e546895",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 3371392,
+   "age_days": 1.7,
+   "age_sources": {
+    "weak:worktree_dir": 1.78,
+    "weak:dot_git": 1.8,
+    "weak:gitdir_HEAD": 1.7,
+    "weak:gitdir_index": 1.7,
+    "reflog_entry": 1.7
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/biocatalyst-bc-x1a-shipping-interop-20260803",
+   "name": "biocatalyst-bc-x1a-shipping-interop-20260803",
+   "branch": "claude/biocatalyst-bc-x1a-shipping-interop-20260803",
+   "head": "1f8ea2870c74ae0925d9ee381d661d822c3c904f",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.8d < min_age 7d"
+   ],
+   "size_kb": 3358560,
+   "age_days": 1.84,
+   "age_sources": {
+    "weak:worktree_dir": 1.89,
+    "weak:dot_git": 1.9,
+    "weak:gitdir_HEAD": 1.84,
+    "weak:gitdir_index": 1.84,
+    "reflog_entry": 1.84
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/biocatalyst-ci-timeout-20260802",
+   "name": "biocatalyst-ci-timeout-20260802",
+   "branch": "claude/biocatalyst-ci-timeout-20260802",
+   "head": "ac7b9ea300c3494d1fdfc6dd63d49aa13fb64352",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.9d < min_age 7d"
+   ],
+   "size_kb": 2855452,
+   "age_days": 2.86,
+   "age_sources": {
+    "weak:worktree_dir": 2.87,
+    "weak:dot_git": 2.92,
+    "weak:gitdir_HEAD": 2.86,
+    "weak:gitdir_index": 2.86,
+    "reflog_entry": 2.86
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/biocatalyst-d0a-design-contract-20260802",
+   "name": "biocatalyst-d0a-design-contract-20260802",
+   "branch": "codex/biocatalyst-d0a-design-contract-20260802",
+   "head": "b1f40126cd5ec294c533fc9a85337165576e8f3d",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.0d < min_age 7d"
+   ],
+   "size_kb": 3344392,
+   "age_days": 1.95,
+   "age_sources": {
+    "weak:worktree_dir": 2.0,
+    "weak:dot_git": 2.02,
+    "weak:gitdir_HEAD": 1.95,
+    "weak:gitdir_index": 1.95,
+    "reflog_entry": 1.95
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/biocatalyst-full-parity-fable-handoff-20260802",
+   "name": "biocatalyst-full-parity-fable-handoff-20260802",
+   "branch": "claude/biocatalyst-full-parity-fable-handoff-20260802",
+   "head": "27205b1a02f88af1cbf3dfccb0a9a046911cb866",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.2d < min_age 7d"
+   ],
+   "size_kb": 3335868,
+   "age_days": 2.17,
+   "age_sources": {
+    "weak:worktree_dir": 2.18,
+    "weak:dot_git": 2.19,
+    "weak:gitdir_HEAD": 2.17,
+    "weak:gitdir_index": 2.17,
+    "reflog_entry": 2.17
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/biocatalyst-t1a-protocol-peer-matrix-20260802",
+   "name": "biocatalyst-t1a-protocol-peer-matrix-20260802",
+   "branch": "codex/biocatalyst-t1a-protocol-peer-matrix-20260802",
+   "head": "9b1621474903542512560149170cb9f6f6393d86",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.0d < min_age 7d"
+   ],
+   "size_kb": 3342984,
+   "age_days": 1.96,
+   "age_sources": {
+    "weak:worktree_dir": 2.02,
+    "weak:dot_git": 2.03,
+    "weak:gitdir_HEAD": 1.96,
+    "weak:gitdir_index": 1.96,
+    "reflog_entry": 1.96
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/biocatalyst-t2b-postmerge-verify-20260803",
+   "name": "biocatalyst-t2b-postmerge-verify-20260803",
+   "branch": "claude/biocatalyst-t2b-postmerge-verify-20260803",
+   "head": "b3410b54fde46bb7b768ce0bdf3fb98c3243a359",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.6d < min_age 7d"
+   ],
+   "size_kb": 3388700,
+   "age_days": 1.64,
+   "age_sources": {
+    "weak:worktree_dir": 1.67,
+    "weak:dot_git": 1.67,
+    "weak:gitdir_HEAD": 1.67,
+    "weak:gitdir_index": 1.64,
+    "reflog_entry": 1.64
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/calcbench-parity-wave3a-resume-20260801",
+   "name": "calcbench-parity-wave3a-resume-20260801",
+   "branch": "codex/calcbench-parity-wave3a-resume-20260801",
+   "head": "c6970d0b2f7ce95dbcd540d3ba4b552843116f43",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.0d < min_age 7d"
+   ],
+   "size_kb": 3188400,
+   "age_days": 2.96,
+   "age_sources": {
+    "weak:worktree_dir": 2.98,
+    "weak:dot_git": 2.98,
+    "weak:gitdir_HEAD": 2.98,
+    "weak:gitdir_index": 2.96,
+    "reflog_entry": 2.96
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/calcbench-wave3b-readonly-operator-20260803",
+   "name": "calcbench-wave3b-readonly-operator-20260803",
+   "branch": "codex/calcbench-wave3b-readonly-operator-20260803",
+   "head": "dd83d970ba11ef2be7f775d9afc3ec51e6bc7a77",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 972004,
+   "age_days": 1.73,
+   "age_sources": {
+    "weak:worktree_dir": 1.79,
+    "weak:dot_git": 1.85,
+    "weak:gitdir_HEAD": 1.81,
+    "weak:gitdir_index": 1.73,
+    "reflog_entry": 1.73
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/calcbench-wave3b-receipt-ui-20260802",
+   "name": "calcbench-wave3b-receipt-ui-20260802",
+   "branch": "codex/calcbench-wave3b-receipt-ui-20260802",
+   "head": "577ab3d465c6e6880b1644d6ad3b54f86859a918",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 3389076,
+   "age_days": 1.73,
+   "age_sources": {
+    "weak:worktree_dir": 1.79,
+    "weak:dot_git": 1.86,
+    "weak:gitdir_HEAD": 1.82,
+    "weak:gitdir_index": 1.73,
+    "reflog_entry": 1.73
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/calcbench-wave3bb4b-attested-history-api-20260802",
+   "name": "calcbench-wave3bb4b-attested-history-api-20260802",
+   "branch": "codex/calcbench-wave3bb4b-attested-history-api-20260802",
+   "head": "036e8273b979000b4baaaca1e61c111db2041b14",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.0d < min_age 7d"
+   ],
+   "size_kb": 3342844,
+   "age_days": 1.95,
+   "age_sources": {
+    "weak:worktree_dir": 2.01,
+    "weak:dot_git": 2.02,
+    "weak:gitdir_HEAD": 1.96,
+    "weak:gitdir_index": 1.95,
+    "reflog_entry": 1.95
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/calcbench-wave3bb4d-materializer-foundation-20260802",
+   "name": "calcbench-wave3bb4d-materializer-foundation-20260802",
+   "branch": "codex/calcbench-wave3bb4d-materializer-foundation-20260802",
+   "head": "07bf1b0b372b01cca853f37267ccd71cc88499bd",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.9d < min_age 7d"
+   ],
+   "size_kb": 3348032,
+   "age_days": 1.92,
+   "age_sources": {
+    "weak:worktree_dir": 1.97,
+    "weak:dot_git": 1.98,
+    "weak:gitdir_HEAD": 1.92,
+    "weak:gitdir_index": 1.92,
+    "reflog_entry": 1.92
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/calcbench-wave3bb4e-pointer-cas-20260802",
+   "name": "calcbench-wave3bb4e-pointer-cas-20260802",
+   "branch": "codex/calcbench-wave3bb4e-pointer-cas-20260802",
+   "head": "35401b346d4cd41977061c4ca39f8ab46e4d02da",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.9d < min_age 7d"
+   ],
+   "size_kb": 3346436,
+   "age_days": 1.89,
+   "age_sources": {
+    "weak:worktree_dir": 1.91,
+    "weak:dot_git": 1.92,
+    "weak:gitdir_HEAD": 1.92,
+    "weak:gitdir_index": 1.89,
+    "reflog_entry": 1.89
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/candidate-dag-baseline-audit.l5NMtc",
+   "name": "candidate-dag-baseline-audit.l5NMtc",
+   "branch": null,
+   "head": "be9c65fa6bc8ac8f19a5c7ed193443aa22ff05cf",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.2d < min_age 7d"
+   ],
+   "size_kb": 3331328,
+   "age_days": 2.19,
+   "age_sources": {
+    "weak:worktree_dir": 2.19,
+    "weak:dot_git": 2.19,
+    "weak:gitdir_HEAD": 2.19,
+    "weak:gitdir_index": 2.19,
+    "reflog_entry": 2.19
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/capital-share-cas-reconcile-20260803",
+   "name": "capital-share-cas-reconcile-20260803",
+   "branch": "claude/capital-share-cas-reconcile-20260803",
+   "head": "16a27086e9e08c68349acbbc5f7da9950ad004ff",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.0d < min_age 7d"
+   ],
+   "size_kb": 3400380,
+   "age_days": 1.05,
+   "age_sources": {
+    "weak:worktree_dir": 1.06,
+    "weak:dot_git": 1.06,
+    "weak:gitdir_HEAD": 1.06,
+    "weak:gitdir_index": 1.05,
+    "reflog_entry": 1.05
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/capital-share-head-v3-fence-20260803",
+   "name": "capital-share-head-v3-fence-20260803",
+   "branch": "claude/capital-share-head-v3-fence-20260803",
+   "head": "90592c381885e0712ac937ef412acf80dd68d599",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.4d < min_age 7d"
+   ],
+   "size_kb": 3405036,
+   "age_days": 1.35,
+   "age_sources": {
+    "weak:worktree_dir": 1.37,
+    "weak:dot_git": 1.38,
+    "weak:gitdir_HEAD": 1.38,
+    "weak:gitdir_index": 1.35,
+    "reflog_entry": 1.35
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/capital-share-head-v4-20260803",
+   "name": "capital-share-head-v4-20260803",
+   "branch": "claude/capital-share-head-v4-20260803",
+   "head": "3e2ad69bfbb13e3bbbf30f6817b0289d77ee62f6",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.2d < min_age 7d"
+   ],
+   "size_kb": 3408180,
+   "age_days": 1.18,
+   "age_sources": {
+    "weak:worktree_dir": 1.26,
+    "weak:dot_git": 1.27,
+    "weak:gitdir_HEAD": 1.27,
+    "weak:gitdir_index": 1.18,
+    "reflog_entry": 1.18
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/capital-share-r2-concurrency-20260803",
+   "name": "capital-share-r2-concurrency-20260803",
+   "branch": "claude/capital-share-r2-concurrency-20260803",
+   "head": "6e71c59cbcaf9be7afef3b6eae501df4f7006531",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.0d < min_age 7d"
+   ],
+   "size_kb": 3417264,
+   "age_days": 1.0,
+   "age_sources": {
+    "weak:worktree_dir": 1.02,
+    "weak:dot_git": 1.04,
+    "weak:gitdir_HEAD": 1.0,
+    "weak:gitdir_index": 1.0,
+    "reflog_entry": 1.0
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/capital-share-r2-conformance-20260803",
+   "name": "capital-share-r2-conformance-20260803",
+   "branch": "codex/capital-share-r2-conformance-20260803",
+   "head": "8a93cfd95421f781e308daae8ef251db8dd6d250",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.1d < min_age 7d"
+   ],
+   "size_kb": 3401492,
+   "age_days": 1.06,
+   "age_sources": {
+    "weak:worktree_dir": 1.15,
+    "weak:dot_git": 1.15,
+    "weak:gitdir_HEAD": 1.15,
+    "weak:gitdir_index": 1.06,
+    "reflog_entry": 1.06
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/capital-share-selector-highwater-20260803",
+   "name": "capital-share-selector-highwater-20260803",
+   "branch": "claude/capital-share-selector-highwater-20260803",
+   "head": "adc3a45d03959d657eb885eb24df756ff0a3e85c",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.4d < min_age 7d"
+   ],
+   "size_kb": 3388380,
+   "age_days": 1.38,
+   "age_sources": {
+    "weak:worktree_dir": 1.43,
+    "weak:dot_git": 1.43,
+    "weak:gitdir_HEAD": 1.42,
+    "weak:gitdir_index": 1.38,
+    "reflog_entry": 1.38
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/capital-share-single-journal-20260803",
+   "name": "capital-share-single-journal-20260803",
+   "branch": "claude/capital-share-single-journal-20260803",
+   "head": "75cb8154d247837bda27e2886862c5003ea3c893",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.3d < min_age 7d"
+   ],
+   "size_kb": 3407780,
+   "age_days": 1.3,
+   "age_sources": {
+    "weak:worktree_dir": 1.33,
+    "weak:dot_git": 1.33,
+    "weak:gitdir_HEAD": 1.33,
+    "weak:gitdir_index": 1.3,
+    "reflog_entry": 1.3
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/capital-structure-companyfacts-intake",
+   "name": "capital-structure-companyfacts-intake",
+   "branch": "codex/capital-structure-companyfacts-intake",
+   "head": "bcdef8c77c1529f05665ac29db40b3d09d37610c",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.3d < min_age 7d"
+   ],
+   "size_kb": 3325624,
+   "age_days": 2.25,
+   "age_sources": {
+    "weak:worktree_dir": 2.26,
+    "weak:dot_git": 2.87,
+    "weak:gitdir_HEAD": 2.25,
+    "weak:gitdir_index": 2.25,
+    "reflog_entry": 2.25
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/capital-structure-instrument-candidate-terms",
+   "name": "capital-structure-instrument-candidate-terms",
+   "branch": "codex/capital-structure-instrument-candidate-terms",
+   "head": "22b21975b24bd626b3de40214d19a3a6168f1220",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.2d < min_age 7d"
+   ],
+   "size_kb": 3491640,
+   "age_days": 2.17,
+   "age_sources": {
+    "weak:worktree_dir": 2.2,
+    "weak:dot_git": 2.85,
+    "weak:gitdir_HEAD": 2.2,
+    "weak:gitdir_index": 2.17,
+    "reflog_entry": 2.17
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/china-hk-canada-ui-parity-d907dc",
+   "name": "china-hk-canada-ui-parity-d907dc",
+   "branch": null,
+   "head": "194f7b28ffbe7e20ca5fb049d2faa98b6d043c66",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.6d < min_age 7d"
+   ],
+   "size_kb": 3671596,
+   "age_days": 0.6,
+   "age_sources": {
+    "weak:worktree_dir": 2.0,
+    "weak:dot_git": 2.03,
+    "weak:gitdir_HEAD": 0.6,
+    "weak:gitdir_index": 0.6,
+    "reflog_entry": 0.6,
+    "session_dir": 1.61
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/china-prophet-v1-audit-f3cea9",
+   "name": "china-prophet-v1-audit-f3cea9",
+   "branch": "claude/china-prophet-v1-audit-f3cea9",
+   "head": "4175ff79df9c586e1bc9eb1f94a01051ca537b49",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "5 process(es) cwd inside"
+   ],
+   "size_kb": 3414024,
+   "age_days": 0.18,
+   "age_sources": {
+    "weak:worktree_dir": 0.9,
+    "weak:dot_git": 0.9,
+    "weak:gitdir_HEAD": 0.82,
+    "weak:gitdir_index": 0.71,
+    "reflog_entry": 0.82,
+    "session_dir": 0.18
+   },
+   "procs": [
+    "33313:zsh",
+    "34654:sleep",
+    "63480:disclaimer",
+    "63481:claude",
+    "96029:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/china-prophet-v3-era-retro-08041100",
+   "name": "china-prophet-v3-era-retro-08041100",
+   "branch": "claude/china-prophet-v3-era-retro-08041100",
+   "head": "fba994f60f98cb51a0a4a985fe581766ba2c38f3",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.7d < min_age 7d"
+   ],
+   "size_kb": 3420108,
+   "age_days": 0.7,
+   "age_sources": {
+    "weak:worktree_dir": 0.71,
+    "weak:dot_git": 0.72,
+    "weak:gitdir_HEAD": 0.7,
+    "weak:gitdir_index": 0.7,
+    "reflog_entry": 0.7
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/china-prophet-v3-relay",
+   "name": "china-prophet-v3-relay",
+   "branch": "claude/china-prophet-v3-relay-08040037",
+   "head": "c4fa7641c88f8e04fa140c70be787c6f157e1a3b",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.8d < min_age 7d"
+   ],
+   "size_kb": 3590480,
+   "age_days": 0.79,
+   "age_sources": {
+    "weak:worktree_dir": 0.84,
+    "weak:dot_git": 0.86,
+    "weak:gitdir_HEAD": 0.79,
+    "weak:gitdir_index": 0.79,
+    "reflog_entry": 0.79
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/clever-diffie-14a4c2",
+   "name": "clever-diffie-14a4c2",
+   "branch": "claude/clever-diffie-14a4c2",
+   "head": "b440dc97243d95199c941cbf42a978a13de87fa2",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "2 process(es) cwd inside"
+   ],
+   "size_kb": 3402448,
+   "age_days": 0.68,
+   "age_sources": {
+    "weak:worktree_dir": 0.69,
+    "weak:dot_git": 0.69,
+    "weak:gitdir_HEAD": 0.69,
+    "weak:gitdir_index": 0.69,
+    "reflog_entry": 0.69,
+    "session_dir": 0.68
+   },
+   "procs": [
+    "26176:disclaimer",
+    "26177:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/cn-exit-policy-study-7a2e10",
+   "name": "cn-exit-policy-study-7a2e10",
+   "branch": "claude/cn-exit-policy-study-7a2e10",
+   "head": "b555844652f24269abbf99c4f9b7a0707e71689e",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.8d < min_age 7d"
+   ],
+   "size_kb": 3414772,
+   "age_days": 0.81,
+   "age_sources": {
+    "weak:worktree_dir": 0.85,
+    "weak:dot_git": 0.86,
+    "weak:gitdir_HEAD": 0.81,
+    "weak:gitdir_index": 0.81,
+    "reflog_entry": 0.81
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/cn-flow-exante-battery",
+   "name": "cn-flow-exante-battery",
+   "branch": "claude/cn-flow-exante-battery",
+   "head": "717fca575e1eb693d5806ed271c0438307f2d012",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.7d < min_age 7d"
+   ],
+   "size_kb": 3400608,
+   "age_days": 0.71,
+   "age_sources": {
+    "weak:worktree_dir": 0.71,
+    "weak:dot_git": 0.72,
+    "weak:gitdir_HEAD": 0.72,
+    "weak:gitdir_index": 0.71,
+    "reflog_entry": 0.71
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/cn-ignition-chase-20260804",
+   "name": "cn-ignition-chase-20260804",
+   "branch": "claude/cn-ignition-chase-study-20260804",
+   "head": "2a2339f63d0f60ee86144f8793dc641c904eea37",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.8d < min_age 7d"
+   ],
+   "size_kb": 3413440,
+   "age_days": 0.81,
+   "age_sources": {
+    "weak:worktree_dir": 0.86,
+    "weak:dot_git": 0.86,
+    "weak:gitdir_HEAD": 0.81,
+    "weak:gitdir_index": 0.81,
+    "reflog_entry": 0.81
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/cn-prophet-legacy-ledger-restore",
+   "name": "cn-prophet-legacy-ledger-restore",
+   "branch": "claude/cn-prophet-legacy-ledger-restore",
+   "head": "7a45f0a5a0c5ce858a58b2e383c22449e6516837",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.8d < min_age 7d"
+   ],
+   "size_kb": 3355992,
+   "age_days": 1.85,
+   "age_sources": {
+    "weak:worktree_dir": 1.85,
+    "weak:dot_git": 1.93,
+    "weak:gitdir_HEAD": 1.93,
+    "weak:gitdir_index": 1.85,
+    "reflog_entry": 1.85
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/cn-prophet-w0-telemetry",
+   "name": "cn-prophet-w0-telemetry",
+   "branch": "claude/cn-prophet-w0-telemetry",
+   "head": "4533ba2161e0c43f34b872616a960f87b3718a25",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.8d < min_age 7d"
+   ],
+   "size_kb": 3420156,
+   "age_days": 0.82,
+   "age_sources": {
+    "weak:worktree_dir": 0.86,
+    "weak:dot_git": 0.87,
+    "weak:gitdir_HEAD": 0.82,
+    "weak:gitdir_index": 0.82,
+    "reflog_entry": 0.82
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/cn-prophet-wc-plumbing",
+   "name": "cn-prophet-wc-plumbing",
+   "branch": "claude/cn-prophet-wc-plumbing-20260804",
+   "head": "76305328eca778c8f5f264964252912575a7c31d",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.7d < min_age 7d"
+   ],
+   "size_kb": 3425712,
+   "age_days": 0.69,
+   "age_sources": {
+    "weak:worktree_dir": 0.7,
+    "weak:dot_git": 0.71,
+    "weak:gitdir_HEAD": 0.69,
+    "weak:gitdir_index": 0.69,
+    "reflog_entry": 0.69
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/cn-si-roadmap",
+   "name": "cn-si-roadmap",
+   "branch": "claude/cn-prophet-si-roadmap",
+   "head": "4c896b7536369a4899625425545c3140e553b57a",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.2d < min_age 7d"
+   ],
+   "size_kb": 3400508,
+   "age_days": 0.18,
+   "age_sources": {
+    "weak:worktree_dir": 0.71,
+    "weak:dot_git": 0.71,
+    "weak:gitdir_HEAD": 0.71,
+    "weak:gitdir_index": 0.18,
+    "reflog_entry": 0.18
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/cn-us-handoff",
+   "name": "cn-us-handoff",
+   "branch": "claude/cn-to-us-prophet-handoff",
+   "head": "bc7d1b4e6efec62281df3d8c849eb27db8f716c4",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.2d < min_age 7d"
+   ],
+   "size_kb": 3439424,
+   "age_days": 0.18,
+   "age_sources": {
+    "weak:worktree_dir": 0.18,
+    "weak:dot_git": 0.18,
+    "weak:gitdir_HEAD": 0.18,
+    "weak:gitdir_index": 0.18,
+    "reflog_entry": 0.18
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/codex-biocatalyst-change-tape-20260803",
+   "name": "codex-biocatalyst-change-tape-20260803",
+   "branch": "codex/biocatalyst-change-tape-20260803",
+   "head": "38f16ad7ba6e3df280c01243ff17a947bd27aadc",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.6d < min_age 7d"
+   ],
+   "size_kb": 3384188,
+   "age_days": 1.56,
+   "age_sources": {
+    "weak:worktree_dir": 1.62,
+    "weak:dot_git": 1.62,
+    "weak:gitdir_HEAD": 1.59,
+    "weak:gitdir_index": 1.56,
+    "reflog_entry": 1.56
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/codex-biocatalyst-ctgov-discovery-control-v1-20260803",
+   "name": "codex-biocatalyst-ctgov-discovery-control-v1-20260803",
+   "branch": "codex/biocatalyst-ctgov-discovery-control-v1-20260803",
+   "head": "9404d6334c1567641961b2ff3a0e99ef57672b15",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.4d < min_age 7d"
+   ],
+   "size_kb": 3404684,
+   "age_days": 1.35,
+   "age_sources": {
+    "weak:worktree_dir": 1.42,
+    "weak:dot_git": 1.43,
+    "weak:gitdir_HEAD": 1.43,
+    "weak:gitdir_index": 1.35,
+    "reflog_entry": 1.35
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/codex-biocatalyst-ctgov-fixed-cohort-v1-20260803",
+   "name": "codex-biocatalyst-ctgov-fixed-cohort-v1-20260803",
+   "branch": "codex/biocatalyst-ctgov-fixed-cohort-v1-20260803",
+   "head": "10eff9baedf075a1558ab2f5b29d417d97440800",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.3d < min_age 7d"
+   ],
+   "size_kb": 3405872,
+   "age_days": 1.29,
+   "age_sources": {
+    "weak:worktree_dir": 1.31,
+    "weak:dot_git": 1.32,
+    "weak:gitdir_HEAD": 1.32,
+    "weak:gitdir_index": 1.29,
+    "reflog_entry": 1.29
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/codex-biocatalyst-transcript-span-20260803",
+   "name": "codex-biocatalyst-transcript-span-20260803",
+   "branch": "codex/biocatalyst-transcript-span-20260803",
+   "head": "24ed77b11b24eac65430f0bd3861b0e441099a65",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.5d < min_age 7d"
+   ],
+   "size_kb": 3385820,
+   "age_days": 1.52,
+   "age_sources": {
+    "weak:worktree_dir": 1.55,
+    "weak:dot_git": 1.62,
+    "weak:gitdir_HEAD": 1.55,
+    "weak:gitdir_index": 1.52,
+    "reflog_entry": 1.52
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/codex-biocatalyst-trial-screen-facets-draft-20260803",
+   "name": "codex-biocatalyst-trial-screen-facets-draft-20260803",
+   "branch": "codex/biocatalyst-trial-screen-facets-draft-20260803",
+   "head": "b38fbc35f239eb4b194475b8a374d15cd8fbfca5",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.4d < min_age 7d"
+   ],
+   "size_kb": 3403528,
+   "age_days": 1.44,
+   "age_sources": {
+    "weak:worktree_dir": 1.45,
+    "weak:dot_git": 1.46,
+    "weak:gitdir_HEAD": 1.46,
+    "weak:gitdir_index": 1.44,
+    "reflog_entry": 1.44
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/codex-biocatalyst-trial-screen-facets-v1-20260803",
+   "name": "codex-biocatalyst-trial-screen-facets-v1-20260803",
+   "branch": "codex/biocatalyst-trial-screen-facets-v1-20260803",
+   "head": "c882c8f10d1f9df19b4a74e8215dd91ccd089671",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.4d < min_age 7d"
+   ],
+   "size_kb": 3386348,
+   "age_days": 1.38,
+   "age_sources": {
+    "weak:worktree_dir": 1.43,
+    "weak:dot_git": 1.44,
+    "weak:gitdir_HEAD": 1.44,
+    "weak:gitdir_index": 1.38,
+    "reflog_entry": 1.38
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/codex-biocatalyst-trial-screen-v1-20260803",
+   "name": "codex-biocatalyst-trial-screen-v1-20260803",
+   "branch": "codex/biocatalyst-trial-screen-v1-20260803",
+   "head": "b3a84db8ee6fa22b14def6177b959a08044a48f5",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.5d < min_age 7d"
+   ],
+   "size_kb": 3403284,
+   "age_days": 1.46,
+   "age_sources": {
+    "weak:worktree_dir": 1.5,
+    "weak:dot_git": 1.51,
+    "weak:gitdir_HEAD": 1.48,
+    "weak:gitdir_index": 1.46,
+    "reflog_entry": 1.46
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/codex-fix-marketing-publish-runner-test-20260803",
+   "name": "codex-fix-marketing-publish-runner-test-20260803",
+   "branch": "codex/fix-marketing-publish-runner-test-20260803",
+   "head": "15c8c24f2306d4e9b12878f6827e05746aa9f2e2",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.5d < min_age 7d"
+   ],
+   "size_kb": 3395652,
+   "age_days": 1.52,
+   "age_sources": {
+    "weak:worktree_dir": 1.52,
+    "weak:dot_git": 1.52,
+    "weak:gitdir_HEAD": 1.52,
+    "weak:gitdir_index": 1.52,
+    "reflog_entry": 1.52
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/codex-unsubscribe-public-boundary-freeze-20260803",
+   "name": "codex-unsubscribe-public-boundary-freeze-20260803",
+   "branch": "codex/unsubscribe-public-boundary-freeze-20260803",
+   "head": "e026820c5dc399507b565135b3611e3a9a26927f",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.4d < min_age 7d"
+   ],
+   "size_kb": 3382452,
+   "age_days": 1.4,
+   "age_sources": {
+    "weak:worktree_dir": 1.41,
+    "weak:dot_git": 1.41,
+    "weak:gitdir_HEAD": 1.41,
+    "weak:gitdir_index": 1.4,
+    "reflog_entry": 1.4
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/company-intelligence-dag-20260802",
+   "name": "company-intelligence-dag-20260802",
+   "branch": "codex/company-intelligence-dag-20260802",
+   "head": "a43f028555a397fd9e9ce70043edc989d5aa8ad3",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.2d < min_age 7d"
+   ],
+   "size_kb": 3331608,
+   "age_days": 2.18,
+   "age_sources": {
+    "weak:worktree_dir": 2.18,
+    "weak:dot_git": 2.18,
+    "weak:gitdir_HEAD": 2.18,
+    "weak:gitdir_index": 2.18,
+    "reflog_entry": 2.18
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/company-intelligence-launch-hardening-20260802",
+   "name": "company-intelligence-launch-hardening-20260802",
+   "branch": "codex/company-intelligence-launch-hardening-20260802",
+   "head": "141fe5bcae3eea52e6da48248bd58f857299073c",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.2d < min_age 7d"
+   ],
+   "size_kb": 3335068,
+   "age_days": 2.16,
+   "age_sources": {
+    "weak:worktree_dir": 2.17,
+    "weak:dot_git": 2.17,
+    "weak:gitdir_HEAD": 2.17,
+    "weak:gitdir_index": 2.16,
+    "reflog_entry": 2.16
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/company-intelligence-product-layer-20260802",
+   "name": "company-intelligence-product-layer-20260802",
+   "branch": "claude/company-intelligence-product-layer-20260802",
+   "head": "8c634892c2daa180936bb80c665c9cc8c05b68a3",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.3d < min_age 7d"
+   ],
+   "size_kb": 3336380,
+   "age_days": 2.29,
+   "age_sources": {
+    "weak:worktree_dir": 2.33,
+    "weak:dot_git": 2.41,
+    "weak:gitdir_HEAD": 2.33,
+    "weak:gitdir_index": 2.28,
+    "reflog_entry": 2.29
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/company-intelligence-transcript-index-20260801",
+   "name": "company-intelligence-transcript-index-20260801",
+   "branch": "claude/company-intelligence-transcript-index-20260801",
+   "head": "be426b016590db2925b064cb958532c3007cd856",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.1d < min_age 7d"
+   ],
+   "size_kb": 3172648,
+   "age_days": 3.12,
+   "age_sources": {
+    "weak:worktree_dir": 3.14,
+    "weak:dot_git": 3.14,
+    "weak:gitdir_HEAD": 3.14,
+    "weak:gitdir_index": 3.12,
+    "reflog_entry": 3.12
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/companyfacts-signal-bus-ci-fix-20260802",
+   "name": "companyfacts-signal-bus-ci-fix-20260802",
+   "branch": "main",
+   "head": "b891bb07b34d137685129dc1b1bd6df7ee1c43ff",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.0d < min_age 7d"
+   ],
+   "size_kb": 3425748,
+   "age_days": 0.03,
+   "age_sources": {
+    "weak:worktree_dir": 1.11,
+    "weak:dot_git": 2.23,
+    "weak:gitdir_HEAD": 2.21,
+    "weak:gitdir_index": 0.03,
+    "reflog_entry": 0.03
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/confident-napier-e56e3e",
+   "name": "confident-napier-e56e3e",
+   "branch": "claude/confident-napier-e56e3e",
+   "head": "a6638a5b9a2cdc8b6e0699b42878188a21b9310e",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "2 process(es) cwd inside"
+   ],
+   "size_kb": 3415696,
+   "age_days": 0.8,
+   "age_sources": {
+    "weak:worktree_dir": 0.91,
+    "weak:dot_git": 0.92,
+    "weak:gitdir_HEAD": 0.83,
+    "weak:gitdir_index": 0.83,
+    "reflog_entry": 0.83,
+    "session_dir": 0.8
+   },
+   "procs": [
+    "27669:disclaimer",
+    "27670:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/content-studio-outbox-fixes-4119b6",
+   "name": "content-studio-outbox-fixes-4119b6",
+   "branch": "claude/marketing-factory-floor-console",
+   "head": "91b0877057fe522be67f792754036e3fc0336a1d",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3235944,
+   "age_days": 0.03,
+   "age_sources": {
+    "weak:worktree_dir": 4.91,
+    "weak:dot_git": 6.99,
+    "weak:gitdir_HEAD": 4.91,
+    "weak:gitdir_index": 4.69,
+    "reflog_entry": 4.69,
+    "session_dir": 0.03
+   },
+   "procs": [
+    "1515:zsh",
+    "96454:disclaimer",
+    "96470:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/content-studio-post-logic-b0a4ad",
+   "name": "content-studio-post-logic-b0a4ad",
+   "branch": "claude/earnings-edgar-wire",
+   "head": "862fea2e989171063159262a078f52dec8116009",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3581512,
+   "age_days": 0.66,
+   "age_sources": {
+    "weak:worktree_dir": 1.02,
+    "weak:dot_git": 1.04,
+    "weak:gitdir_HEAD": 0.69,
+    "weak:gitdir_index": 0.66,
+    "reflog_entry": 0.66,
+    "session_dir": 0.66
+   },
+   "procs": [
+    "43410:disclaimer",
+    "43411:claude",
+    "43437:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/copywriter-ci-wire",
+   "name": "copywriter-ci-wire",
+   "branch": "ci/wire-test-copywriter",
+   "head": "c15665f4644f3cbe048e8dd87cf043131ae520c2",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.2d < min_age 7d"
+   ],
+   "size_kb": 3399672,
+   "age_days": 1.2,
+   "age_sources": {
+    "weak:worktree_dir": 1.2,
+    "weak:dot_git": 1.2,
+    "weak:gitdir_HEAD": 1.2,
+    "weak:gitdir_index": 1.2,
+    "reflog_entry": 1.2
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/cranky-lichterman-59e527",
+   "name": "cranky-lichterman-59e527",
+   "branch": null,
+   "head": "716c84ea33f6e359c72063d643cd92c87a56fe08",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.6d < min_age 7d"
+   ],
+   "size_kb": 3190552,
+   "age_days": 0.62,
+   "age_sources": {
+    "weak:worktree_dir": 2.96,
+    "weak:dot_git": 5.86,
+    "weak:gitdir_HEAD": 0.62,
+    "weak:gitdir_index": 0.62,
+    "reflog_entry": 0.62,
+    "session_dir": 1.61
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/dazzling-hertz-a07681",
+   "name": "dazzling-hertz-a07681",
+   "branch": "claude/china-sector-ui-upgrade-970030",
+   "head": "a1fbeb3a2402364ec5236a437c7be4011f096e36",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3412116,
+   "age_days": 0.72,
+   "age_sources": {
+    "weak:worktree_dir": 0.76,
+    "weak:dot_git": 2.28,
+    "weak:gitdir_HEAD": 0.72,
+    "weak:gitdir_index": 0.72,
+    "reflog_entry": 0.72,
+    "session_dir": 0.72
+   },
+   "procs": [
+    "22634:disclaimer",
+    "22635:claude",
+    "81534:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/distracted-hertz-14bb7d",
+   "name": "distracted-hertz-14bb7d",
+   "branch": "claude/quirky-meninsky-f5a7ef",
+   "head": "4d90d975e9076213dcfeac9f10069663a8315acf",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3443896,
+   "age_days": 0.11,
+   "age_sources": {
+    "weak:worktree_dir": 0.12,
+    "weak:dot_git": 1.88,
+    "weak:gitdir_HEAD": 0.13,
+    "weak:gitdir_index": 0.11,
+    "reflog_entry": 0.11,
+    "session_dir": 0.11
+   },
+   "procs": [
+    "32000:disclaimer",
+    "32001:claude",
+    "33146:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/eager-jennings-95d54f",
+   "name": "eager-jennings-95d54f",
+   "branch": "claude/eager-jennings-95d54f",
+   "head": "b412aa38a6a48988ce98feb38a2a6ba4a292107f",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3425560,
+   "age_days": 0.62,
+   "age_sources": {
+    "weak:worktree_dir": 0.63,
+    "weak:dot_git": 0.65,
+    "weak:gitdir_HEAD": 0.62,
+    "weak:gitdir_index": 0.62,
+    "reflog_entry": 0.62,
+    "session_dir": 0.62
+   },
+   "procs": [
+    "34220:zsh",
+    "87289:disclaimer",
+    "87291:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/eager-williamson-19151b",
+   "name": "eager-williamson-19151b",
+   "branch": "claude/eager-williamson-19151b",
+   "head": "4dc51dc3fd45feec661c65c8a832f484d05cb162",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "2 process(es) cwd inside"
+   ],
+   "size_kb": 3403472,
+   "age_days": 0.84,
+   "age_sources": {
+    "weak:worktree_dir": 0.89,
+    "weak:dot_git": 0.9,
+    "weak:gitdir_HEAD": 0.9,
+    "weak:gitdir_index": 0.86,
+    "reflog_entry": 0.86,
+    "session_dir": 0.84
+   },
+   "procs": [
+    "63478:disclaimer",
+    "63479:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/earnings-brain-press-consumers-20260801",
+   "name": "earnings-brain-press-consumers-20260801",
+   "branch": "codex/earnings-brain-press-consumers-20260801",
+   "head": "c2a27e845a26967e125d21161d69b48f950eb771",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.5d < min_age 7d"
+   ],
+   "size_kb": 3165768,
+   "age_days": 3.53,
+   "age_sources": {
+    "weak:worktree_dir": 3.55,
+    "weak:dot_git": 3.56,
+    "weak:gitdir_HEAD": 3.56,
+    "weak:gitdir_index": 3.53,
+    "reflog_entry": 3.53
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/earnings-canonical-story-20260802",
+   "name": "earnings-canonical-story-20260802",
+   "branch": "claude/earnings-canonical-story-20260802",
+   "head": "c46aadf2efa119d306bc2c1d67e84fe5ba29207e",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.8d < min_age 7d"
+   ],
+   "size_kb": 3191948,
+   "age_days": 2.78,
+   "age_sources": {
+    "weak:worktree_dir": 2.82,
+    "weak:dot_git": 2.83,
+    "weak:gitdir_HEAD": 2.83,
+    "weak:gitdir_index": 2.78,
+    "reflog_entry": 2.78
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/earnings-chronicle-bridge-20260801",
+   "name": "earnings-chronicle-bridge-20260801",
+   "branch": "claude/earnings-chronicle-bridge-20260801",
+   "head": "9a6b6795e0d179b5d1e43cbb3d5078eb3543c9e9",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.5d < min_age 7d"
+   ],
+   "size_kb": 3159148,
+   "age_days": 3.55,
+   "age_sources": {
+    "weak:worktree_dir": 3.58,
+    "weak:dot_git": 3.59,
+    "weak:gitdir_HEAD": 3.59,
+    "weak:gitdir_index": 3.55,
+    "reflog_entry": 3.55
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/earnings-evidence-spine-w2-20260803",
+   "name": "earnings-evidence-spine-w2-20260803",
+   "branch": "codex/earnings-evidence-spine-w2-20260803",
+   "head": "4d985f915d262fe9f836cd2c765e52d0f849d5db",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.8d < min_age 7d"
+   ],
+   "size_kb": 3365300,
+   "age_days": 1.82,
+   "age_sources": {
+    "weak:worktree_dir": 1.82,
+    "weak:dot_git": 1.89,
+    "weak:gitdir_HEAD": 1.82,
+    "weak:gitdir_index": 1.82,
+    "reflog_entry": 1.82
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/earnings-press-admission-source-20260802",
+   "name": "earnings-press-admission-source-20260802",
+   "branch": "claude/earnings-press-admission-source-20260802",
+   "head": "8fcce61d53cdf015dbd4ce88d709c3faf269570c",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.7d < min_age 7d"
+   ],
+   "size_kb": 3280680,
+   "age_days": 2.72,
+   "age_sources": {
+    "weak:worktree_dir": 2.73,
+    "weak:dot_git": 2.74,
+    "weak:gitdir_HEAD": 2.74,
+    "weak:gitdir_index": 2.72,
+    "reflog_entry": 2.72
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/earnings-press-stage-source-20260802",
+   "name": "earnings-press-stage-source-20260802",
+   "branch": "claude/earnings-press-stage-source-20260802",
+   "head": "14f96c1e8a6d53805449a490599e21ec69e325b8",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.7d < min_age 7d"
+   ],
+   "size_kb": 3282272,
+   "age_days": 2.72,
+   "age_sources": {
+    "weak:worktree_dir": 2.73,
+    "weak:dot_git": 2.73,
+    "weak:gitdir_HEAD": 2.73,
+    "weak:gitdir_index": 2.72,
+    "reflog_entry": 2.72
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/earnings-story-packets-r2-20260802",
+   "name": "earnings-story-packets-r2-20260802",
+   "branch": "claude/earnings-story-packets-r2-20260802",
+   "head": "e1b907330ff91637a5b6a6a7a06411d589279aec",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.7d < min_age 7d"
+   ],
+   "size_kb": 3271112,
+   "age_days": 2.75,
+   "age_sources": {
+    "weak:worktree_dir": 2.77,
+    "weak:dot_git": 2.78,
+    "weak:gitdir_HEAD": 2.78,
+    "weak:gitdir_index": 2.75,
+    "reflog_entry": 2.75
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/earnings-wire-cta-contrast-20260802",
+   "name": "earnings-wire-cta-contrast-20260802",
+   "branch": "codex/earnings-wire-cta-contrast-20260802",
+   "head": "36539ad4c7e71955a712dd9abc6cbeda4ae57543",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.3d < min_age 7d"
+   ],
+   "size_kb": 3314016,
+   "age_days": 2.26,
+   "age_sources": {
+    "weak:worktree_dir": 2.26,
+    "weak:dot_git": 2.26,
+    "weak:gitdir_HEAD": 2.26,
+    "weak:gitdir_index": 2.26,
+    "reflog_entry": 2.26
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/earnings-x-derivative-20260801",
+   "name": "earnings-x-derivative-20260801",
+   "branch": "claude/earnings-x-derivative-20260801",
+   "head": "c750271b6f5730f2e82d411595dcf81df497e5eb",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.5d < min_age 7d"
+   ],
+   "size_kb": 3161156,
+   "age_days": 3.54,
+   "age_sources": {
+    "weak:worktree_dir": 3.56,
+    "weak:dot_git": 3.56,
+    "weak:gitdir_HEAD": 3.56,
+    "weak:gitdir_index": 3.54,
+    "reflog_entry": 3.54
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/ecstatic-jang-ba1366",
+   "name": "ecstatic-jang-ba1366",
+   "branch": "claude/mega-menu-translations-fixes-e7daa8",
+   "head": "ec6baf45fca13293fa3c2873df096e790c74c550",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3591280,
+   "age_days": 0.71,
+   "age_sources": {
+    "weak:worktree_dir": 0.77,
+    "weak:dot_git": 2.26,
+    "weak:gitdir_HEAD": 0.79,
+    "weak:gitdir_index": 0.71,
+    "reflog_entry": 0.71,
+    "session_dir": 0.71
+   },
+   "procs": [
+    "36961:disclaimer",
+    "36962:claude",
+    "36975:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/elastic-swartz-c56765",
+   "name": "elastic-swartz-c56765",
+   "branch": null,
+   "head": "57631bcd1ede6d0d16cfb4c2ab0c506c583a4cc0",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.2d < min_age 7d"
+   ],
+   "size_kb": 3312780,
+   "age_days": 0.22,
+   "age_sources": {
+    "weak:worktree_dir": 2.26,
+    "weak:dot_git": 2.27,
+    "weak:gitdir_HEAD": 0.22,
+    "weak:gitdir_index": 0.22,
+    "reflog_entry": 0.22,
+    "session_dir": 1.23
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/eloquent-bouman-b8af29",
+   "name": "eloquent-bouman-b8af29",
+   "branch": "claude/eloquent-bouman-b8af29",
+   "head": "18653275def3ee2c91dda21fa913556b0e91cbff",
+   "verdict": "SELF",
+   "proof": "",
+   "reasons": [],
+   "size_kb": null,
+   "age_days": null,
+   "age_sources": {},
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/eod-options-consolidation-dd2db8",
+   "name": "eod-options-consolidation-dd2db8",
+   "branch": "claude/eod-options-consolidation-dd2db8",
+   "head": "281208cd5843d552fe9ac854fbb2ca6c7bbd1b3d",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.9d < min_age 7d"
+   ],
+   "size_kb": 3190004,
+   "age_days": 0.88,
+   "age_sources": {
+    "weak:worktree_dir": 3.04,
+    "weak:dot_git": 3.08,
+    "weak:gitdir_HEAD": 3.01,
+    "weak:gitdir_index": 2.99,
+    "reflog_entry": 2.99,
+    "session_dir": 0.88
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/exciting-jennings-7f08de",
+   "name": "exciting-jennings-7f08de",
+   "branch": "claude/exciting-jennings-7f08de",
+   "head": "5fa2fe69fba9d149682b73d9336f9ef0c88ae91d",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "1 process(es) cwd inside"
+   ],
+   "size_kb": 3357168,
+   "age_days": 0.78,
+   "age_sources": {
+    "weak:worktree_dir": 1.88,
+    "weak:dot_git": 1.88,
+    "weak:gitdir_HEAD": 1.88,
+    "weak:gitdir_index": 1.87,
+    "reflog_entry": 1.87,
+    "session_dir": 0.78
+   },
+   "procs": [
+    "51182:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/fix-us-hold-english-20260803",
+   "name": "fix-us-hold-english-20260803",
+   "branch": "fix/us-hold-english-20260803",
+   "head": "f9259749f7748de5a201b0910402f59b7e6df76e",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.1d < min_age 7d"
+   ],
+   "size_kb": 3398440,
+   "age_days": 1.14,
+   "age_sources": {
+    "weak:worktree_dir": 1.16,
+    "weak:dot_git": 1.17,
+    "weak:gitdir_HEAD": 1.16,
+    "weak:gitdir_index": 1.14,
+    "reflog_entry": 1.14
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/focused-mclean-65dd2f",
+   "name": "focused-mclean-65dd2f",
+   "branch": "claude/focused-mclean-65dd2f",
+   "head": "192af340a5ab4db4f4cc8f591271d3ea5ffe6144",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "2 process(es) cwd inside"
+   ],
+   "size_kb": 3499840,
+   "age_days": 0.87,
+   "age_sources": {
+    "weak:worktree_dir": 0.9,
+    "weak:dot_git": 0.9,
+    "weak:gitdir_HEAD": 0.87,
+    "weak:gitdir_index": 0.87,
+    "reflog_entry": 0.87,
+    "session_dir": 0.87
+   },
+   "procs": [
+    "63474:disclaimer",
+    "63475:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/focused-nash-e5df25",
+   "name": "focused-nash-e5df25",
+   "branch": "claude/adoring-proskuriakova-1996c0",
+   "head": "e5b96282cca02443a78e8901664250344af2b567",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3588948,
+   "age_days": 0.05,
+   "age_sources": {
+    "weak:worktree_dir": 0.07,
+    "weak:dot_git": 1.99,
+    "weak:gitdir_HEAD": 0.07,
+    "weak:gitdir_index": 0.06,
+    "reflog_entry": 0.06,
+    "session_dir": 0.05
+   },
+   "procs": [
+    "28375:disclaimer",
+    "28376:claude",
+    "57322:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/frosty-jang-c1b4a4",
+   "name": "frosty-jang-c1b4a4",
+   "branch": "claude/frosty-jang-c1b4a4",
+   "head": "463b0834c3212ec2c311aff2efe4c0c65dbb191d",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3446888,
+   "age_days": 0.18,
+   "age_sources": {
+    "weak:worktree_dir": 0.18,
+    "weak:dot_git": 0.19,
+    "weak:gitdir_HEAD": 0.19,
+    "weak:gitdir_index": 0.18,
+    "reflog_entry": 0.18,
+    "session_dir": 0.18
+   },
+   "procs": [
+    "53531:disclaimer",
+    "53532:claude",
+    "55348:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/goofy-williamson-5171d0",
+   "name": "goofy-williamson-5171d0",
+   "branch": "claude/goofy-williamson-5171d0",
+   "head": "e352b887d774eb4034650a7b384ba282f5da1eb7",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "1 process(es) cwd inside"
+   ],
+   "size_kb": 3335872,
+   "age_days": 0.78,
+   "age_sources": {
+    "weak:worktree_dir": 1.96,
+    "weak:dot_git": 1.96,
+    "weak:gitdir_HEAD": 1.96,
+    "weak:gitdir_index": 1.96,
+    "reflog_entry": 1.96,
+    "session_dir": 0.78
+   },
+   "procs": [
+    "51524:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/government-revenue-parity-wave7-20260802",
+   "name": "government-revenue-parity-wave7-20260802",
+   "branch": "codex/government-revenue-parity-wave7-20260802",
+   "head": "0dff2146653b2e6a379fcff72cf5254ba7dfc3ef",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.3d < min_age 7d"
+   ],
+   "size_kb": 3319076,
+   "age_days": 2.26,
+   "age_sources": {
+    "weak:worktree_dir": 2.34,
+    "weak:dot_git": 2.38,
+    "weak:gitdir_HEAD": 2.34,
+    "weak:gitdir_index": 2.22,
+    "reflog_entry": 2.26
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/government-revenue-wave8-foundations-20260802",
+   "name": "government-revenue-wave8-foundations-20260802",
+   "branch": "claude/government-revenue-wave8-foundations-20260802",
+   "head": "bd6f9c35e77c00c517f5fc9a11ee7c2716b29c55",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.0d < min_age 7d"
+   ],
+   "size_kb": 3603512,
+   "age_days": 1.96,
+   "age_sources": {
+    "weak:worktree_dir": 2.06,
+    "weak:dot_git": 2.22,
+    "weak:gitdir_HEAD": 2.03,
+    "weak:gitdir_index": 1.96,
+    "reflog_entry": 1.96
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/government-revenue-wave9-candidate-ledger-20260803",
+   "name": "government-revenue-wave9-candidate-ledger-20260803",
+   "branch": "claude/government-revenue-wave9-candidate-ledger-20260803",
+   "head": "e81c7d7c43645838c69122fb73c81d1261a6079c",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.9d < min_age 7d"
+   ],
+   "size_kb": 3353632,
+   "age_days": 1.89,
+   "age_sources": {
+    "weak:worktree_dir": 1.89,
+    "weak:dot_git": 1.9,
+    "weak:gitdir_HEAD": 1.89,
+    "weak:gitdir_index": 1.89,
+    "reflog_entry": 1.89
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/government-revenue-wave9a-candidate-foundation-20260803",
+   "name": "government-revenue-wave9a-candidate-foundation-20260803",
+   "branch": "claude/government-revenue-wave9a-candidate-foundation-20260803",
+   "head": "6d734524e34bb5101e99815f29d91e45f47652eb",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 3371084,
+   "age_days": 1.7,
+   "age_sources": {
+    "weak:worktree_dir": 1.8,
+    "weak:dot_git": 1.89,
+    "weak:gitdir_HEAD": 1.79,
+    "weak:gitdir_index": 1.7,
+    "reflog_entry": 1.7
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/government-revenue-wave9b-exact-issuer-20260803",
+   "name": "government-revenue-wave9b-exact-issuer-20260803",
+   "branch": "claude/government-revenue-wave9b-exact-issuer-20260803",
+   "head": "09644dbd99f4dcd505dbdb7102e03e95b3d03f91",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.6d < min_age 7d"
+   ],
+   "size_kb": 3380956,
+   "age_days": 1.6,
+   "age_sources": {
+    "weak:worktree_dir": 1.62,
+    "weak:dot_git": 1.63,
+    "weak:gitdir_HEAD": 1.6,
+    "weak:gitdir_index": 1.6,
+    "reflog_entry": 1.6
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/happy-mccarthy-4bfbc3",
+   "name": "happy-mccarthy-4bfbc3",
+   "branch": "claude/happy-mccarthy-4bfbc3",
+   "head": "5dc21f2a1d28a98e9cf5bcc6aff624c111ce7cf6",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "1 process(es) cwd inside"
+   ],
+   "size_kb": 3340476,
+   "age_days": 0.78,
+   "age_sources": {
+    "weak:worktree_dir": 1.92,
+    "weak:dot_git": 1.93,
+    "weak:gitdir_HEAD": 1.93,
+    "weak:gitdir_index": 1.92,
+    "reflog_entry": 1.92,
+    "session_dir": 0.78
+   },
+   "procs": [
+    "51464:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/hk-stocks-logout-bug-06fb6d",
+   "name": "hk-stocks-logout-bug-06fb6d",
+   "branch": "claude/hk-stocks-logout-bug-06fb6d",
+   "head": "dc710ce39cf1aa9cedc0937aee544ef4af7b2115",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "2 process(es) cwd inside"
+   ],
+   "size_kb": 3495480,
+   "age_days": 0.92,
+   "age_sources": {
+    "weak:worktree_dir": 0.93,
+    "weak:dot_git": 0.94,
+    "weak:gitdir_HEAD": 0.92,
+    "weak:gitdir_index": 0.92,
+    "reflog_entry": 0.92,
+    "session_dir": 0.92
+   },
+   "procs": [
+    "310:disclaimer",
+    "311:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/hk-vetoed-anchor",
+   "name": "hk-vetoed-anchor",
+   "branch": "claude/hk-vetoed-lane-honest-anchor",
+   "head": "d20ac9cded69e51308e89c19ba524a7f5c396fb8",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.1d < min_age 7d"
+   ],
+   "size_kb": 3389232,
+   "age_days": 1.07,
+   "age_sources": {
+    "weak:worktree_dir": 1.11,
+    "weak:dot_git": 1.11,
+    "weak:gitdir_HEAD": 1.11,
+    "weak:gitdir_index": 1.07,
+    "reflog_entry": 1.07
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/infallible-bose-1e0db0",
+   "name": "infallible-bose-1e0db0",
+   "branch": "claude/infallible-bose-1e0db0",
+   "head": "99293be429938c7addc67aaf44674707879d0012",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3445684,
+   "age_days": 0.22,
+   "age_sources": {
+    "weak:worktree_dir": 0.22,
+    "weak:dot_git": 0.23,
+    "weak:gitdir_HEAD": 0.23,
+    "weak:gitdir_index": 0.22,
+    "reflog_entry": 0.22,
+    "session_dir": 0.22
+   },
+   "procs": [
+    "53120:zsh",
+    "8491:disclaimer",
+    "8492:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/interesting-hopper-7a68b0",
+   "name": "interesting-hopper-7a68b0",
+   "branch": null,
+   "head": "6e049bafd47d8de75eecfc8bd0704007336da4db",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.9d < min_age 7d"
+   ],
+   "size_kb": 3339000,
+   "age_days": 0.93,
+   "age_sources": {
+    "weak:worktree_dir": 1.93,
+    "weak:dot_git": 1.94,
+    "weak:gitdir_HEAD": 0.93,
+    "weak:gitdir_index": 0.93,
+    "reflog_entry": 0.93,
+    "session_dir": 1.77
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/interesting-raman-4816c9",
+   "name": "interesting-raman-4816c9",
+   "branch": null,
+   "head": "178081407c07a4d39876279f7238d3817fe73669",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.9d < min_age 7d"
+   ],
+   "size_kb": 3339520,
+   "age_days": 0.93,
+   "age_sources": {
+    "weak:worktree_dir": 1.93,
+    "weak:dot_git": 1.94,
+    "weak:gitdir_HEAD": 0.93,
+    "weak:gitdir_index": 0.93,
+    "reflog_entry": 0.93,
+    "session_dir": 1.77
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/keen-hertz-4b4544",
+   "name": "keen-hertz-4b4544",
+   "branch": "claude/keen-hertz-4b4544",
+   "head": "f43453563771c6de5db5e1a2f080c2090e9cc1bb",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "1 process(es) cwd inside"
+   ],
+   "size_kb": 3354300,
+   "age_days": 0.78,
+   "age_sources": {
+    "weak:worktree_dir": 1.86,
+    "weak:dot_git": 1.88,
+    "weak:gitdir_HEAD": 1.88,
+    "weak:gitdir_index": 1.86,
+    "reflog_entry": 1.86,
+    "session_dir": 0.78
+   },
+   "procs": [
+    "51009:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/levels-grades-r24b",
+   "name": "levels-grades-r24b",
+   "branch": "claude/r24b-null-gate",
+   "head": "b8bc973c8789dcb360c508ae7bec7fae68a18990",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.1d < min_age 7d"
+   ],
+   "size_kb": 3319964,
+   "age_days": 2.06,
+   "age_sources": {
+    "weak:worktree_dir": 2.06,
+    "weak:dot_git": 2.12,
+    "weak:gitdir_HEAD": 2.06,
+    "weak:gitdir_index": 2.06,
+    "reflog_entry": 2.06
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/light-mode-design-issues-e2c4c6",
+   "name": "light-mode-design-issues-e2c4c6",
+   "branch": "claude/light-mode-design-issues-e2c4c6",
+   "head": "ac522a03bb7d8bc1e6cf751c0bf1932c7baf8f9c",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "2 process(es) cwd inside"
+   ],
+   "size_kb": 3420456,
+   "age_days": 0.74,
+   "age_sources": {
+    "weak:worktree_dir": 0.91,
+    "weak:dot_git": 0.94,
+    "weak:gitdir_HEAD": 0.74,
+    "weak:gitdir_index": 0.74,
+    "reflog_entry": 0.74,
+    "session_dir": 0.74
+   },
+   "procs": [
+    "99425:disclaimer",
+    "99426:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/macro-pull-review-65d3bd",
+   "name": "macro-pull-review-65d3bd",
+   "branch": "claude/confident-moore-1f38f1",
+   "head": "99efac0f436d9d9f5d306916f062122fb8412913",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "11 process(es) cwd inside"
+   ],
+   "size_kb": 3587712,
+   "age_days": 0.03,
+   "age_sources": {
+    "weak:worktree_dir": 0.05,
+    "weak:dot_git": 3.26,
+    "weak:gitdir_HEAD": 0.05,
+    "weak:gitdir_index": 0.04,
+    "reflog_entry": 0.04,
+    "session_dir": 0.03
+   },
+   "procs": [
+    "25753:sleep",
+    "35118:sleep",
+    "57512:disclaimer",
+    "57513:claude",
+    "75801:zsh",
+    "75803:zsh",
+    "75804:head",
+    "75805:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/magical-austin-53fbed",
+   "name": "magical-austin-53fbed",
+   "branch": "claude/magical-austin-53fbed",
+   "head": "dd8c6bf957a39df267c597072ad3bb740f1fceba",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3415676,
+   "age_days": 0.61,
+   "age_sources": {
+    "weak:worktree_dir": 0.62,
+    "weak:dot_git": 0.62,
+    "weak:gitdir_HEAD": 0.62,
+    "weak:gitdir_index": 0.62,
+    "reflog_entry": 0.62,
+    "session_dir": 0.61
+   },
+   "procs": [
+    "8909:zsh",
+    "97831:disclaimer",
+    "97832:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/mastermind-ai-superintelligence-65c16e",
+   "name": "mastermind-ai-superintelligence-65c16e",
+   "branch": "claude/mastermind-analyst-os-w5-records",
+   "head": "a4330fb4bc037c692dd6688e700f0ea3189387e6",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "1 process(es) cwd inside"
+   ],
+   "size_kb": 3426576,
+   "age_days": 0.81,
+   "age_sources": {
+    "weak:worktree_dir": 3.14,
+    "weak:dot_git": 6.29,
+    "weak:gitdir_HEAD": 2.77,
+    "weak:gitdir_index": 2.77,
+    "reflog_entry": 2.77,
+    "session_dir": 0.81
+   },
+   "procs": [
+    "45193:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/mastermind-nav-gating-3d8a4e",
+   "name": "mastermind-nav-gating-3d8a4e",
+   "branch": "claude/nav-ungate-auth-sheet-3d8a4e",
+   "head": "d4af358ae8e1cada40789befb0eae5d490487365",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3411040,
+   "age_days": 0.71,
+   "age_sources": {
+    "weak:worktree_dir": 0.72,
+    "weak:dot_git": 0.73,
+    "weak:gitdir_HEAD": 0.71,
+    "weak:gitdir_index": 0.71,
+    "reflog_entry": 0.71,
+    "session_dir": 0.71
+   },
+   "procs": [
+    "79226:disclaimer",
+    "79227:claude",
+    "79249:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/mastermind-regional-data-access-ebf787",
+   "name": "mastermind-regional-data-access-ebf787",
+   "branch": "claude/mastermind-regional-data-access-ebf787",
+   "head": "9c68c9acf10fad548d5c4ecf3b5aa5f756e3dc9a",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "10 process(es) cwd inside"
+   ],
+   "size_kb": 3608904,
+   "age_days": 0.01,
+   "age_sources": {
+    "weak:worktree_dir": 0.11,
+    "weak:dot_git": 0.12,
+    "weak:gitdir_HEAD": 0.12,
+    "weak:gitdir_index": 0.01,
+    "reflog_entry": 0.04,
+    "session_dir": 0.01
+   },
+   "procs": [
+    "34854:sleep",
+    "35417:disclaimer",
+    "35418:claude",
+    "35441:zsh",
+    "36189:sleep",
+    "72318:zsh",
+    "72804:zsh",
+    "73907:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/mastermind-ui-enhancement-163226",
+   "name": "mastermind-ui-enhancement-163226",
+   "branch": "claude/menu-consolidate-intelligence-6bcc6d",
+   "head": "b3fef253b0df4ff25027218d444766eb97fd15e5",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3534972,
+   "age_days": 0.12,
+   "age_sources": {
+    "weak:worktree_dir": 0.94,
+    "weak:dot_git": 5.73,
+    "weak:gitdir_HEAD": 0.88,
+    "weak:gitdir_index": 0.12,
+    "reflog_entry": 0.86,
+    "session_dir": 0.12
+   },
+   "procs": [
+    "97201:disclaimer",
+    "97202:claude",
+    "97231:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/mega-menu-special-situations-499151",
+   "name": "mega-menu-special-situations-499151",
+   "branch": "claude/mega-menu-special-situations-499151",
+   "head": "32a49bfbc4ab9f4efeb4bec9dbabd2f3ba9ee279",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.2d < min_age 7d"
+   ],
+   "size_kb": 3492712,
+   "age_days": 1.2,
+   "age_sources": {
+    "weak:worktree_dir": 2.17,
+    "weak:dot_git": 2.17,
+    "weak:gitdir_HEAD": 2.17,
+    "weak:gitdir_index": 2.16,
+    "reflog_entry": 2.16,
+    "session_dir": 1.2
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/merge-blocked-prs-d8cdb3",
+   "name": "merge-blocked-prs-d8cdb3",
+   "branch": "claude/merge-blocked-prs-d8cdb3",
+   "head": "d58715aaefedee0bec825cf94980adb40e043f3c",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "1 process(es) cwd inside"
+   ],
+   "size_kb": 3383272,
+   "age_days": 0.8,
+   "age_sources": {
+    "weak:worktree_dir": 1.77,
+    "weak:dot_git": 1.8,
+    "weak:gitdir_HEAD": 1.62,
+    "weak:gitdir_index": 1.62,
+    "reflog_entry": 1.62,
+    "session_dir": 0.8
+   },
+   "procs": [
+    "39915:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/musing-bassi-cf5a7b",
+   "name": "musing-bassi-cf5a7b",
+   "branch": "claude/musing-bassi-cf5a7b",
+   "head": "371d0327c6dc00cf8eb83d3b7ea057458d235954",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3593304,
+   "age_days": 0.67,
+   "age_sources": {
+    "weak:worktree_dir": 0.9,
+    "weak:dot_git": 0.9,
+    "weak:gitdir_HEAD": 0.67,
+    "weak:gitdir_index": 0.67,
+    "reflog_entry": 0.67,
+    "session_dir": 0.67
+   },
+   "procs": [
+    "57589:disclaimer",
+    "57590:claude",
+    "68419:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/musing-panini-5484bc",
+   "name": "musing-panini-5484bc",
+   "branch": "claude/musing-panini-5484bc",
+   "head": "80719d3f07f6babc6907ee876d781512e4c53ec2",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3442212,
+   "age_days": 0.22,
+   "age_sources": {
+    "weak:worktree_dir": 0.22,
+    "weak:dot_git": 0.23,
+    "weak:gitdir_HEAD": 0.23,
+    "weak:gitdir_index": 0.22,
+    "reflog_entry": 0.22,
+    "session_dir": 0.22
+   },
+   "procs": [
+    "53145:zsh",
+    "8495:disclaimer",
+    "8496:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/mystifying-bohr-6d855b",
+   "name": "mystifying-bohr-6d855b",
+   "branch": "claude/exciting-mcnulty-31e4ea",
+   "head": "edfb5d7dbc251854b5b509dc4daa118a2f892b53",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3383296,
+   "age_days": 1.07,
+   "age_sources": {
+    "weak:worktree_dir": 1.11,
+    "weak:dot_git": 2.25,
+    "weak:gitdir_HEAD": 1.11,
+    "weak:gitdir_index": 1.11,
+    "reflog_entry": 1.11,
+    "session_dir": 1.07
+   },
+   "procs": [
+    "40059:zsh",
+    "70329:disclaimer",
+    "70330:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/nervous-hellman-bd404a",
+   "name": "nervous-hellman-bd404a",
+   "branch": "claude/nervous-hellman-bd404a",
+   "head": "546f862b1756fce28fcd3ae266ff7a712435ea81",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3417200,
+   "age_days": 0.64,
+   "age_sources": {
+    "weak:worktree_dir": 0.64,
+    "weak:dot_git": 0.65,
+    "weak:gitdir_HEAD": 0.65,
+    "weak:gitdir_index": 0.64,
+    "reflog_entry": 0.64,
+    "session_dir": 0.64
+   },
+   "procs": [
+    "34329:zsh",
+    "87287:disclaimer",
+    "87288:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/nervous-pasteur-337004",
+   "name": "nervous-pasteur-337004",
+   "branch": null,
+   "head": "5eca8613904ebf51fd75c41d8eee4c7f143cca7a",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.6d < min_age 7d"
+   ],
+   "size_kb": 3332620,
+   "age_days": 0.62,
+   "age_sources": {
+    "weak:worktree_dir": 2.17,
+    "weak:dot_git": 2.17,
+    "weak:gitdir_HEAD": 0.62,
+    "weak:gitdir_index": 0.62,
+    "reflog_entry": 0.62,
+    "session_dir": 1.61
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/news-earnings-structure-integration-a549b2",
+   "name": "news-earnings-structure-integration-a549b2",
+   "branch": "claude/news-earnings-structure-integration-a549b2",
+   "head": "ec435879540d8f35a4aae2f52951b0ae81de074e",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3423408,
+   "age_days": 0.09,
+   "age_sources": {
+    "weak:worktree_dir": 0.09,
+    "weak:dot_git": 0.1,
+    "weak:gitdir_HEAD": 0.1,
+    "weak:gitdir_index": 0.09,
+    "reflog_entry": 0.09,
+    "session_dir": 0.09
+   },
+   "procs": [
+    "67840:disclaimer",
+    "67841:claude",
+    "78223:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/nostalgic-maxwell-c2216b",
+   "name": "nostalgic-maxwell-c2216b",
+   "branch": "claude/nostalgic-maxwell-c2216b",
+   "head": "5563dbbd794edd8e704020f198c0ab09d5445cb7",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3416024,
+   "age_days": 0.64,
+   "age_sources": {
+    "weak:worktree_dir": 0.64,
+    "weak:dot_git": 0.65,
+    "weak:gitdir_HEAD": 0.65,
+    "weak:gitdir_index": 0.64,
+    "reflog_entry": 0.64,
+    "session_dir": 0.64
+   },
+   "procs": [
+    "34283:zsh",
+    "87285:disclaimer",
+    "87286:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/objective-shaw-ec6048",
+   "name": "objective-shaw-ec6048",
+   "branch": null,
+   "head": "6f67753ea1ebf84e767e9b8b9560ed2fa49778ee",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.6d < min_age 7d"
+   ],
+   "size_kb": 3145816,
+   "age_days": 0.62,
+   "age_sources": {
+    "weak:worktree_dir": 3.71,
+    "weak:dot_git": 3.81,
+    "weak:gitdir_HEAD": 0.62,
+    "weak:gitdir_index": 0.62,
+    "reflog_entry": 0.62,
+    "session_dir": 1.61
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/oip-w1-rebase2",
+   "name": "oip-w1-rebase2",
+   "branch": "oip-w1-rebase2-local",
+   "head": "093792d19ca2d86a10b67baee0b5d5e292e5f9ba",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.0d < min_age 7d"
+   ],
+   "size_kb": 3552584,
+   "age_days": 4.99,
+   "age_sources": {
+    "weak:worktree_dir": 4.99,
+    "weak:dot_git": 4.99,
+    "weak:gitdir_HEAD": 4.99,
+    "weak:gitdir_index": 4.97,
+    "reflog_entry": 4.99
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/orcl-name-score-fix",
+   "name": "orcl-name-score-fix",
+   "branch": "fix/name-score-orcl-frozen",
+   "head": "ea25d8085d89376484f429c6a696ae9961e979a8",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.5d < min_age 7d"
+   ],
+   "size_kb": 3398548,
+   "age_days": 1.52,
+   "age_sources": {
+    "weak:worktree_dir": 1.55,
+    "weak:dot_git": 1.58,
+    "weak:gitdir_HEAD": 1.53,
+    "weak:gitdir_index": 1.52,
+    "reflog_entry": 1.52
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/page-obstruction-formatting-ad6f1d",
+   "name": "page-obstruction-formatting-ad6f1d",
+   "branch": "claude/page-obstruction-formatting-ad6f1d",
+   "head": "8878daf85588983a6363de60924a150c1d520a50",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3424864,
+   "age_days": 0.07,
+   "age_sources": {
+    "weak:worktree_dir": 0.08,
+    "weak:dot_git": 0.1,
+    "weak:gitdir_HEAD": 0.08,
+    "weak:gitdir_index": 0.08,
+    "reflog_entry": 0.08,
+    "session_dir": 0.07
+   },
+   "procs": [
+    "66260:disclaimer",
+    "66261:claude",
+    "78438:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/pensive-newton-83c472",
+   "name": "pensive-newton-83c472",
+   "branch": "claude/pensive-newton-83c472",
+   "head": "651cded4d80885d88754ca58eaac0aad1af9da53",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "2 process(es) cwd inside"
+   ],
+   "size_kb": 3426772,
+   "age_days": 0.01,
+   "age_sources": {
+    "weak:worktree_dir": 0.01,
+    "weak:dot_git": 0.03,
+    "weak:gitdir_HEAD": 0.03,
+    "weak:gitdir_index": 0.01,
+    "reflog_entry": 0.01,
+    "session_dir": 0.01
+   },
+   "procs": [
+    "99860:disclaimer",
+    "99861:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/popup-container-redesign-9a6528",
+   "name": "popup-container-redesign-9a6528",
+   "branch": "claude/popup-container-redesign-9a6528",
+   "head": "dca1c8e2e3fa8af95bfe34537ef3df59e575616b",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3441936,
+   "age_days": 0.59,
+   "age_sources": {
+    "weak:worktree_dir": 0.6,
+    "weak:dot_git": 0.62,
+    "weak:gitdir_HEAD": 0.6,
+    "weak:gitdir_index": 0.6,
+    "reflog_entry": 0.6,
+    "session_dir": 0.59
+   },
+   "procs": [
+    "98541:disclaimer",
+    "98542:claude",
+    "98562:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/prophet-us-trend-detection-d69822",
+   "name": "prophet-us-trend-detection-d69822",
+   "branch": "claude/hk-g1-fixture-dividend-heal-0805",
+   "head": "f567984439bfaded72b35456fcfd6bc32aafa227",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "7 process(es) cwd inside"
+   ],
+   "size_kb": 3429380,
+   "age_days": 0.01,
+   "age_sources": {
+    "weak:worktree_dir": 0.61,
+    "weak:dot_git": 1.1,
+    "weak:gitdir_HEAD": 0.04,
+    "weak:gitdir_index": 0.04,
+    "reflog_entry": 0.04,
+    "session_dir": 0.01
+   },
+   "procs": [
+    "18957:zsh",
+    "34054:sleep",
+    "34640:sleep",
+    "71928:zsh",
+    "93793:disclaimer",
+    "93794:claude",
+    "93807:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/publish-runner",
+   "name": "publish-runner",
+   "branch": "claude/wire-volume-remove-caps",
+   "head": "bceeb61ece2bf910bacd8bd668f0e2169bed550a",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.7d < min_age 7d"
+   ],
+   "size_kb": 3594640,
+   "age_days": 0.75,
+   "age_sources": {
+    "weak:worktree_dir": 1.02,
+    "weak:dot_git": 1.57,
+    "weak:gitdir_HEAD": 0.75,
+    "weak:gitdir_index": 0.75,
+    "reflog_entry": 0.75
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/recursing-elgamal-76391e",
+   "name": "recursing-elgamal-76391e",
+   "branch": "claude/recursing-elgamal-76391e",
+   "head": "8e5af81f58de9722470d6ac017e0daaaf454c59e",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3563356,
+   "age_days": 0.67,
+   "age_sources": {
+    "weak:worktree_dir": 0.67,
+    "weak:dot_git": 0.69,
+    "weak:gitdir_HEAD": 0.69,
+    "weak:gitdir_index": 0.67,
+    "reflog_entry": 0.67,
+    "session_dir": 0.67
+   },
+   "procs": [
+    "26178:disclaimer",
+    "26179:claude",
+    "85062:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/repair-cn-reversal-contract-20260803",
+   "name": "repair-cn-reversal-contract-20260803",
+   "branch": "codex/repair-cn-reversal-contract-20260803",
+   "head": "16896d4412185984be92b9614e307ab55332d6e8",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.2d < min_age 7d"
+   ],
+   "size_kb": 3381132,
+   "age_days": 1.21,
+   "age_sources": {
+    "weak:worktree_dir": 1.21,
+    "weak:dot_git": 1.21,
+    "weak:gitdir_HEAD": 1.21,
+    "weak:gitdir_index": 1.21,
+    "reflog_entry": 1.21
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/sad-pascal-596383",
+   "name": "sad-pascal-596383",
+   "branch": "claude/sad-pascal-596383",
+   "head": "a0c4054543b3ee8e15968c865ff174c6b8409159",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "1 process(es) cwd inside"
+   ],
+   "size_kb": 3370228,
+   "age_days": 0.76,
+   "age_sources": {
+    "weak:worktree_dir": 1.83,
+    "weak:dot_git": 1.88,
+    "weak:gitdir_HEAD": 1.88,
+    "weak:gitdir_index": 1.81,
+    "reflog_entry": 1.81,
+    "session_dir": 0.76
+   },
+   "procs": [
+    "50811:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/seasonality-handoff-continue-0de3ae",
+   "name": "seasonality-handoff-continue-0de3ae",
+   "branch": "claude/market-leaders-terminal-links-92d7d8",
+   "head": "30011c625f6fb5cff40bea2e61f58f594926e0d9",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "2 process(es) cwd inside"
+   ],
+   "size_kb": 3665140,
+   "age_days": 0.92,
+   "age_sources": {
+    "weak:worktree_dir": 0.94,
+    "weak:dot_git": 2.12,
+    "weak:gitdir_HEAD": 0.94,
+    "weak:gitdir_index": 0.92,
+    "reflog_entry": 0.92,
+    "session_dir": 0.92
+   },
+   "procs": [
+    "7703:disclaimer",
+    "7704:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/seasonax-foundation-methodology-965109",
+   "name": "seasonax-foundation-methodology-965109",
+   "branch": "claude/recursing-hermann-1a52e8",
+   "head": "20f8aec8c265d44fc8abb142cb611c9486426afd",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3354436,
+   "age_days": 0.03,
+   "age_sources": {
+    "weak:worktree_dir": 1.86,
+    "weak:dot_git": 3.07,
+    "weak:gitdir_HEAD": 1.86,
+    "weak:gitdir_index": 1.86,
+    "reflog_entry": 1.86,
+    "session_dir": 0.03
+   },
+   "procs": [
+    "65114:zsh",
+    "96771:disclaimer",
+    "96786:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/sector-central-dark-mode-alerts-b17060",
+   "name": "sector-central-dark-mode-alerts-b17060",
+   "branch": "claude/lucid-varahamihira-11de01",
+   "head": "a15c59959d23ac175a1ef9553a81e57b304d11a1",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "2 process(es) cwd inside"
+   ],
+   "size_kb": 3402864,
+   "age_days": 0.71,
+   "age_sources": {
+    "weak:worktree_dir": 0.94,
+    "weak:dot_git": 0.96,
+    "weak:gitdir_HEAD": 0.72,
+    "weak:gitdir_index": 0.71,
+    "reflog_entry": 0.71,
+    "session_dir": 0.71
+   },
+   "procs": [
+    "81942:disclaimer",
+    "81943:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/sector-intelligence-consolidation-2b7c9f",
+   "name": "sector-intelligence-consolidation-2b7c9f",
+   "branch": "claude/si-v2-visual-language",
+   "head": "5f587840241972861ce49d84affed44a0edde54d",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "2 process(es) cwd inside"
+   ],
+   "size_kb": 3392612,
+   "age_days": 0.89,
+   "age_sources": {
+    "weak:worktree_dir": 1.68,
+    "weak:dot_git": 3.09,
+    "weak:gitdir_HEAD": 1.61,
+    "weak:gitdir_index": 1.61,
+    "reflog_entry": 1.61,
+    "session_dir": 0.89
+   },
+   "procs": [
+    "18553:python3.12",
+    "82183:python3.12"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/seo-entity-package-ship",
+   "name": "seo-entity-package-ship",
+   "branch": "claude/seo-entity-package",
+   "head": "fd5a4997fa27564662ef32c5ef742ce7687cb625",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.2d < min_age 7d"
+   ],
+   "size_kb": 3332844,
+   "age_days": 2.16,
+   "age_sources": {
+    "weak:worktree_dir": 2.16,
+    "weak:dot_git": 2.16,
+    "weak:gitdir_HEAD": 2.16,
+    "weak:gitdir_index": 2.16,
+    "reflog_entry": 2.16
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/sharp-cohen-a63957",
+   "name": "sharp-cohen-a63957",
+   "branch": null,
+   "head": "3f904d6209032626344d0a1b4133f28e34e8b159",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "1 process(es) cwd inside"
+   ],
+   "size_kb": 3184252,
+   "age_days": 0.03,
+   "age_sources": {
+    "weak:worktree_dir": 3.06,
+    "weak:dot_git": 4.9,
+    "weak:gitdir_HEAD": 0.03,
+    "weak:gitdir_index": 0.03,
+    "reflog_entry": 0.03,
+    "session_dir": 1.04
+   },
+   "procs": [
+    "41876:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/si-v2-w5",
+   "name": "si-v2-w5",
+   "branch": "claude/si-v2-china-shell",
+   "head": "89b40c4f39930df1db657b551791c71097507901",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 3357220,
+   "age_days": 1.68,
+   "age_sources": {
+    "weak:worktree_dir": 1.68,
+    "weak:dot_git": 1.79,
+    "weak:gitdir_HEAD": 1.79,
+    "weak:gitdir_index": 1.68,
+    "reflog_entry": 1.68
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/side-store-freshness-20260803",
+   "name": "side-store-freshness-20260803",
+   "branch": "fix/side-store-freshness-20260803",
+   "head": "04d659e46045e8e193bcc19a1649e7b17d0e419d",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.2d < min_age 7d"
+   ],
+   "size_kb": 3397316,
+   "age_days": 1.18,
+   "age_sources": {
+    "weak:worktree_dir": 1.2,
+    "weak:dot_git": 1.2,
+    "weak:gitdir_HEAD": 1.2,
+    "weak:gitdir_index": 1.18,
+    "reflog_entry": 1.18
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/silly-feistel-3d3acc",
+   "name": "silly-feistel-3d3acc",
+   "branch": "claude/silly-feistel-3d3acc",
+   "head": "9ef8df64245854c5c6c5f87b680ec6a2f241c810",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3421048,
+   "age_days": 0.61,
+   "age_sources": {
+    "weak:worktree_dir": 0.62,
+    "weak:dot_git": 0.62,
+    "weak:gitdir_HEAD": 0.62,
+    "weak:gitdir_index": 0.62,
+    "reflog_entry": 0.62,
+    "session_dir": 0.61
+   },
+   "procs": [
+    "8964:zsh",
+    "97829:disclaimer",
+    "97830:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/sleepy-blackwell-63b44b",
+   "name": "sleepy-blackwell-63b44b",
+   "branch": "claude/sleepy-blackwell-63b44b",
+   "head": "eebcd2ebac851c8c4997a48c71f18a4fac4cba96",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "2 process(es) cwd inside"
+   ],
+   "size_kb": 3397536,
+   "age_days": 0.86,
+   "age_sources": {
+    "weak:worktree_dir": 0.86,
+    "weak:dot_git": 0.87,
+    "weak:gitdir_HEAD": 0.87,
+    "weak:gitdir_index": 0.86,
+    "reflog_entry": 0.86,
+    "session_dir": 0.86
+   },
+   "procs": [
+    "7985:disclaimer",
+    "7986:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/stage-analysis-earnings-repair-20260802",
+   "name": "stage-analysis-earnings-repair-20260802",
+   "branch": "codex/stage-analysis-earnings-repair-20260802",
+   "head": "7eefeccddde6678b6b3adb52a5e008335fc364bb",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.7d < min_age 7d"
+   ],
+   "size_kb": 3270128,
+   "age_days": 2.75,
+   "age_sources": {
+    "weak:worktree_dir": 2.76,
+    "weak:dot_git": 2.77,
+    "weak:gitdir_HEAD": 2.77,
+    "weak:gitdir_index": 2.75,
+    "reflog_entry": 2.75
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/stock-dashboard-redesign-25f9d9",
+   "name": "stock-dashboard-redesign-25f9d9",
+   "branch": "claude/stock-dashboard-redesign-25f9d9",
+   "head": "eae7ddd7bb84b42b818b03f3e4f13ba7e1bf362f",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "5 process(es) cwd inside"
+   ],
+   "size_kb": 3423444,
+   "age_days": 0.05,
+   "age_sources": {
+    "weak:worktree_dir": 0.07,
+    "weak:dot_git": 0.09,
+    "weak:gitdir_HEAD": 0.09,
+    "weak:gitdir_index": 0.05,
+    "reflog_entry": 0.05,
+    "session_dir": 0.05
+   },
+   "procs": [
+    "10443:disclaimer",
+    "10444:python3.12",
+    "73219:disclaimer",
+    "73220:claude",
+    "73249:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/stock-picks-sorting-dashboard-d6c0d7",
+   "name": "stock-picks-sorting-dashboard-d6c0d7",
+   "branch": "claude/hk-v2-followups",
+   "head": "e41c63f3c1aadae7b5b93e92eb056cb9fc5c16ee",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.8d < min_age 7d"
+   ],
+   "size_kb": 3591404,
+   "age_days": 0.79,
+   "age_sources": {
+    "weak:worktree_dir": 1.16,
+    "weak:dot_git": 2.18,
+    "weak:gitdir_HEAD": 0.89,
+    "weak:gitdir_index": 0.83,
+    "reflog_entry": 0.83,
+    "session_dir": 0.79
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/stocks-freshness",
+   "name": "stocks-freshness",
+   "branch": "fix/stocks-collector-freshness-20260803",
+   "head": "d1540e27778e630cc3d929e508abdc84da7559be",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.2d < min_age 7d"
+   ],
+   "size_kb": 3404004,
+   "age_days": 1.23,
+   "age_sources": {
+    "weak:worktree_dir": 1.2,
+    "weak:dot_git": 1.23,
+    "weak:gitdir_HEAD": 1.23,
+    "weak:gitdir_index": 1.22,
+    "reflog_entry": 1.23
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/stocks-menu-button-animations-e13c0f",
+   "name": "stocks-menu-button-animations-e13c0f",
+   "branch": "claude/stocks-menu-button-animations-e13c0f",
+   "head": "6679d6b40016ee9ff9b87a7b396982f7cd01c4cb",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3420576,
+   "age_days": 0.72,
+   "age_sources": {
+    "weak:worktree_dir": 0.74,
+    "weak:dot_git": 0.75,
+    "weak:gitdir_HEAD": 0.72,
+    "weak:gitdir_index": 0.72,
+    "reflog_entry": 0.72,
+    "session_dir": 0.72
+   },
+   "procs": [
+    "50502:disclaimer",
+    "50503:claude",
+    "50538:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/suspicious-knuth-4c3b4e",
+   "name": "suspicious-knuth-4c3b4e",
+   "branch": "claude/china-stock-dashboard-style-8ed399",
+   "head": "0f4e0c8bb40c5462b601201249df2846acdd7a17",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3572148,
+   "age_days": 0.87,
+   "age_sources": {
+    "weak:worktree_dir": 0.89,
+    "weak:dot_git": 2.17,
+    "weak:gitdir_HEAD": 0.88,
+    "weak:gitdir_index": 0.88,
+    "reflog_entry": 0.88,
+    "session_dir": 0.87
+   },
+   "procs": [
+    "71191:disclaimer",
+    "71192:claude",
+    "71212:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/sweet-stonebraker-1469b3",
+   "name": "sweet-stonebraker-1469b3",
+   "branch": "claude/sweet-stonebraker-1469b3",
+   "head": "fdbb3899843bf68b6d0337a378e745a928dce455",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3418508,
+   "age_days": 0.64,
+   "age_sources": {
+    "weak:worktree_dir": 0.64,
+    "weak:dot_git": 0.65,
+    "weak:gitdir_HEAD": 0.65,
+    "weak:gitdir_index": 0.64,
+    "reflog_entry": 0.64,
+    "session_dir": 0.64
+   },
+   "procs": [
+    "34371:zsh",
+    "87290:disclaimer",
+    "87292:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/ticker-dossier-render-wiring-20260802",
+   "name": "ticker-dossier-render-wiring-20260802",
+   "branch": "codex/company-intelligence-release-20260802",
+   "head": "eea0e8c66e46868facc4348ec95134d519c9e383",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.2d < min_age 7d"
+   ],
+   "size_kb": 126656,
+   "age_days": 2.2,
+   "age_sources": {
+    "weak:worktree_dir": 2.23,
+    "weak:dot_git": 2.23,
+    "weak:gitdir_HEAD": 2.2,
+    "weak:gitdir_index": 2.21,
+    "reflog_entry": 2.2
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/uscalls-integrity-0803",
+   "name": "uscalls-integrity-0803",
+   "branch": "fix/us-calls-ledger-integrity-20260803",
+   "head": "786077a64031ca2145400c9c4145ffd11b55aeba",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.2d < min_age 7d"
+   ],
+   "size_kb": 3382428,
+   "age_days": 1.18,
+   "age_sources": {
+    "weak:worktree_dir": 1.21,
+    "weak:dot_git": 1.23,
+    "weak:gitdir_HEAD": 1.23,
+    "weak:gitdir_index": 1.21,
+    "reflog_entry": 1.18
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/vigorous-raman-4b8045",
+   "name": "vigorous-raman-4b8045",
+   "branch": "claude/vigorous-raman-4b8045",
+   "head": "ffbf0c4942811f99a838d0ee370c66b5e0c9afd0",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "2 process(es) cwd inside"
+   ],
+   "size_kb": 3493480,
+   "age_days": 0.91,
+   "age_sources": {
+    "weak:worktree_dir": 0.92,
+    "weak:dot_git": 0.92,
+    "weak:gitdir_HEAD": 0.92,
+    "weak:gitdir_index": 0.91,
+    "reflog_entry": 0.91,
+    "session_dir": 0.91
+   },
+   "procs": [
+    "32807:disclaimer",
+    "32808:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/wire-dedup",
+   "name": "wire-dedup",
+   "branch": "claude/wire-dedup",
+   "head": "f200ea771f7748e9bdb08580bee16fc86b841172",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.6d < min_age 7d"
+   ],
+   "size_kb": 3539608,
+   "age_days": 1.6,
+   "age_sources": {
+    "weak:worktree_dir": 1.65,
+    "weak:dot_git": 1.66,
+    "weak:gitdir_HEAD": 1.66,
+    "weak:gitdir_index": 1.6,
+    "reflog_entry": 1.6
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/wizardly-chaplygin-61795f",
+   "name": "wizardly-chaplygin-61795f",
+   "branch": "claude/wizardly-chaplygin-61795f-prb",
+   "head": "b0f41f63a677279b4427114ae72279ec88315c82",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "1 process(es) cwd inside"
+   ],
+   "size_kb": 3365552,
+   "age_days": 0.78,
+   "age_sources": {
+    "weak:worktree_dir": 1.95,
+    "weak:dot_git": 1.96,
+    "weak:gitdir_HEAD": 1.9,
+    "weak:gitdir_index": 1.89,
+    "reflog_entry": 1.89,
+    "session_dir": 0.78
+   },
+   "procs": [
+    "51228:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/wizardly-matsumoto-f9fa39",
+   "name": "wizardly-matsumoto-f9fa39",
+   "branch": "claude/ci-backfill-marketing-desk",
+   "head": "7875f487670a3797422465b8c98233b8fd15ca93",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "1 process(es) cwd inside"
+   ],
+   "size_kb": 3354028,
+   "age_days": 0.78,
+   "age_sources": {
+    "weak:worktree_dir": 1.93,
+    "weak:dot_git": 1.93,
+    "weak:gitdir_HEAD": 1.91,
+    "weak:gitdir_index": 1.9,
+    "reflog_entry": 1.9,
+    "session_dir": 0.78
+   },
+   "procs": [
+    "51297:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/x-ad-redesign-prophet-6d838c",
+   "name": "x-ad-redesign-prophet-6d838c",
+   "branch": null,
+   "head": "37c64dab32785e369338f3e7529d42150060934e",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "1 process(es) cwd inside"
+   ],
+   "size_kb": 3289956,
+   "age_days": 0.03,
+   "age_sources": {
+    "weak:worktree_dir": 2.33,
+    "weak:dot_git": 2.88,
+    "weak:gitdir_HEAD": 0.03,
+    "weak:gitdir_index": 0.03,
+    "reflog_entry": 0.03,
+    "session_dir": 1.04
+   },
+   "procs": [
+    "21705:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/x-growth-overhaul",
+   "name": "x-growth-overhaul",
+   "branch": "claude/reply-desk-arming",
+   "head": "72b355ae9942137fdd1389dee8d2f1ccd170a11b",
+   "verdict": "MISSING",
+   "proof": "",
+   "reasons": [
+    "registered but directory gone (git worktree prune)"
+   ],
+   "size_kb": null,
+   "age_days": null,
+   "age_sources": {},
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/zealous-lovelace-97d3a2",
+   "name": "zealous-lovelace-97d3a2",
+   "branch": "claude/zealous-lovelace-97d3a2",
+   "head": "cc8e6b206ce563e884b602b00e02897a4fe8a845",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3440548,
+   "age_days": 0.22,
+   "age_sources": {
+    "weak:worktree_dir": 0.23,
+    "weak:dot_git": 0.23,
+    "weak:gitdir_HEAD": 0.23,
+    "weak:gitdir_index": 0.23,
+    "reflog_entry": 0.23,
+    "session_dir": 0.22
+   },
+   "procs": [
+    "53200:zsh",
+    "8493:disclaimer",
+    "8494:claude"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/zen-bun-6a6a3f",
+   "name": "zen-bun-6a6a3f",
+   "branch": "claude/zen-bun-6a6a3f",
+   "head": "a5979803a00d5b5b72f87c67932715aaccc794da",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3436532,
+   "age_days": 0.59,
+   "age_sources": {
+    "weak:worktree_dir": 0.6,
+    "weak:dot_git": 0.6,
+    "weak:gitdir_HEAD": 0.6,
+    "weak:gitdir_index": 0.59,
+    "reflog_entry": 0.59,
+    "session_dir": 0.59
+   },
+   "procs": [
+    "34804:disclaimer",
+    "34805:claude",
+    "7474:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/zen-merkle-10d401",
+   "name": "zen-merkle-10d401",
+   "branch": "claude/zen-merkle-10d401",
+   "head": "8947f9bf1c30c4f9532e7627c749ce28a334eb3f",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 3492680,
+   "age_days": 0.89,
+   "age_sources": {
+    "weak:worktree_dir": 0.9,
+    "weak:dot_git": 0.9,
+    "weak:gitdir_HEAD": 0.9,
+    "weak:gitdir_index": 0.89,
+    "reflog_entry": 0.89,
+    "session_dir": 0.89
+   },
+   "procs": [
+    "57587:disclaimer",
+    "57588:claude",
+    "68358:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees/calcbench-b4f-dedicated-r2-20260803",
+   "name": "calcbench-b4f-dedicated-r2-20260803",
+   "branch": "codex/calcbench-b4f-dedicated-r2-20260803",
+   "head": "2672771a9b129e7881dcc4c984a79f17dcdeb564",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.5d < min_age 7d"
+   ],
+   "size_kb": 3396224,
+   "age_days": 1.51,
+   "age_sources": {
+    "weak:worktree_dir": 1.51,
+    "weak:dot_git": 1.52,
+    "weak:gitdir_HEAD": 1.51,
+    "weak:gitdir_index": 1.51,
+    "reflog_entry": 1.51
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees/calcbench-b4f-first-receipt-20260803",
+   "name": "calcbench-b4f-first-receipt-20260803",
+   "branch": "codex/calcbench-b4f-first-receipt-20260803",
+   "head": "5db948a10f44f2e054a246381da249094aa8ff88",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.6d < min_age 7d"
+   ],
+   "size_kb": 256516,
+   "age_days": 1.58,
+   "age_sources": {
+    "weak:worktree_dir": 1.6,
+    "weak:dot_git": 1.69,
+    "weak:gitdir_HEAD": 1.6,
+    "weak:gitdir_index": 1.58,
+    "reflog_entry": 1.58
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees/crypto-cockpit-w1-20260729",
+   "name": "crypto-cockpit-w1-20260729",
+   "branch": "codex/crypto-cockpit-w1-20260729",
+   "head": "a32754dbf2db1bf7a002b27f3563bc5f3492b0a9",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 6.1d < min_age 7d"
+   ],
+   "size_kb": 3123480,
+   "age_days": 6.13,
+   "age_sources": {
+    "weak:worktree_dir": 6.16,
+    "weak:dot_git": 6.17,
+    "weak:gitdir_HEAD": 6.17,
+    "weak:gitdir_index": 6.13,
+    "reflog_entry": 6.13
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees/crypto-cockpit-w1-render-fix-20260729",
+   "name": "crypto-cockpit-w1-render-fix-20260729",
+   "branch": "codex/crypto-cockpit-w1-render-fix-20260729",
+   "head": "5da960ae3761dd8d157a40259372cef02eb05963",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 6.1d < min_age 7d"
+   ],
+   "size_kb": 3001560,
+   "age_days": 6.12,
+   "age_sources": {
+    "weak:worktree_dir": 6.12,
+    "weak:dot_git": 6.12,
+    "weak:gitdir_HEAD": 6.12,
+    "weak:gitdir_index": 6.12,
+    "reflog_entry": 6.12
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees/crypto-cockpit-w1-render-fix-sync-20260729",
+   "name": "crypto-cockpit-w1-render-fix-sync-20260729",
+   "branch": "codex/crypto-cockpit-w1-render-fix-sync-20260729",
+   "head": "5fd23fa5fc66c71d3f7fda8cb1ad1d5b18b357ba",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 6.1d < min_age 7d"
+   ],
+   "size_kb": 3006404,
+   "age_days": 6.12,
+   "age_sources": {
+    "weak:worktree_dir": 6.11,
+    "weak:dot_git": 6.12,
+    "weak:gitdir_HEAD": 6.12,
+    "weak:gitdir_index": 3.89,
+    "reflog_entry": 6.12
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees/earnings-wire-retry-budget-20260803",
+   "name": "earnings-wire-retry-budget-20260803",
+   "branch": "codex/earnings-wire-retry-budget-20260803",
+   "head": "a9945605a987e0169dae74d2501433dcb303b6c6",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 3370220,
+   "age_days": 1.69,
+   "age_sources": {
+    "weak:worktree_dir": 1.78,
+    "weak:dot_git": 1.78,
+    "weak:gitdir_HEAD": 1.78,
+    "weak:gitdir_index": 1.69,
+    "reflog_entry": 1.69
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees/fix-etfs-paywall-contract-20260803",
+   "name": "fix-etfs-paywall-contract-20260803",
+   "branch": "codex/fix-etfs-paywall-contract-20260803",
+   "head": "d34cf6c808f17e591fa33bbb8521fe8972789835",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.5d < min_age 7d"
+   ],
+   "size_kb": 3398828,
+   "age_days": 1.48,
+   "age_sources": {
+    "weak:worktree_dir": 1.49,
+    "weak:dot_git": 1.49,
+    "weak:gitdir_HEAD": 1.48,
+    "weak:gitdir_index": 1.48,
+    "reflog_entry": 1.48
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees/integration-control-plane-20260803",
+   "name": "integration-control-plane-20260803",
+   "branch": "codex/integration-control-plane-20260803",
+   "head": "c1b71e58199f25f9dae28137c3c6789971b0f2c7",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 3365572,
+   "age_days": 1.7,
+   "age_sources": {
+    "weak:worktree_dir": 1.7,
+    "weak:dot_git": 1.71,
+    "weak:gitdir_HEAD": 1.7,
+    "weak:gitdir_index": 1.7,
+    "reflog_entry": 1.7
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees/launch-beta-sale-20260802",
+   "name": "launch-beta-sale-20260802",
+   "branch": "codex/launch-beta-sale-20260802",
+   "head": "2f23f8e242ac97a9feef809701f9dc2f3bab25da",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.9d < min_age 7d"
+   ],
+   "size_kb": 3191228,
+   "age_days": 2.86,
+   "age_sources": {
+    "weak:worktree_dir": 2.84,
+    "weak:dot_git": 2.86,
+    "weak:gitdir_HEAD": 2.86,
+    "weak:gitdir_index": 2.86,
+    "reflog_entry": 2.86
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees/main-red-seo-repair-20260803",
+   "name": "main-red-seo-repair-20260803",
+   "branch": "codex/main-red-seo-repair-20260803",
+   "head": "51464926481ffd989a8ad29450dc5b6879ba7949",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.6d < min_age 7d"
+   ],
+   "size_kb": 3383608,
+   "age_days": 1.65,
+   "age_sources": {
+    "weak:worktree_dir": 1.65,
+    "weak:dot_git": 1.65,
+    "weak:gitdir_HEAD": 1.65,
+    "weak:gitdir_index": 1.65,
+    "reflog_entry": 1.65
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees/ollama-tailnet-provider-20260803",
+   "name": "ollama-tailnet-provider-20260803",
+   "branch": "codex/ollama-tailnet-provider",
+   "head": "2cd42e099b9258ddba67fd8d8ba958d78c28e05f",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.2d < min_age 7d"
+   ],
+   "size_kb": 3398892,
+   "age_days": 1.17,
+   "age_sources": {
+    "weak:worktree_dir": 1.17,
+    "weak:dot_git": 1.18,
+    "weak:gitdir_HEAD": 1.18,
+    "weak:gitdir_index": 1.17,
+    "reflog_entry": 1.17
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees/publish-macro-typography-20260729",
+   "name": "publish-macro-typography-20260729",
+   "branch": "codex/publish-macro-typography-20260729",
+   "head": "cc8b61d5f57f0c404a6fe230e5468ac06e5d138a",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 6.1d < min_age 7d"
+   ],
+   "size_kb": 3011220,
+   "age_days": 6.1,
+   "age_sources": {
+    "weak:worktree_dir": 6.1,
+    "weak:dot_git": 6.1,
+    "weak:gitdir_HEAD": 6.1,
+    "weak:gitdir_index": 3.89,
+    "reflog_entry": 6.1
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees/research-vault-dark-theme-20260728",
+   "name": "research-vault-dark-theme-20260728",
+   "branch": "codex/research-vault-dark-theme-20260728",
+   "head": "47024a7f30d9d7fc5cee9fd3ad0ca9f58c3c758a",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 2874020,
+   "age_days": 7.13,
+   "age_sources": {
+    "weak:worktree_dir": 7.13,
+    "weak:dot_git": 7.13,
+    "weak:gitdir_HEAD": 7.13,
+    "weak:gitdir_index": 3.89,
+    "reflog_entry": 7.13
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.codex-worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/.pytest_cache",
+   "name": ".pytest_cache",
+   "branch": null,
+   "head": "",
+   "verdict": "ORPHAN",
+   "proof": "",
+   "reasons": [
+    "directory has no live worktree registration"
+   ],
+   "size_kb": 24,
+   "age_days": 10.05,
+   "age_sources": {
+    "weak:worktree_dir": 10.05
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees",
+   "orphan": true
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claire/worktrees/agent-ad1fb685d9982ae27",
+   "name": "agent-ad1fb685d9982ae27",
+   "branch": null,
+   "head": "",
+   "verdict": "ORPHAN",
+   "proof": "",
+   "reasons": [
+    "directory has no live worktree registration"
+   ],
+   "size_kb": 4,
+   "age_days": 10.08,
+   "age_sources": {
+    "weak:worktree_dir": 10.08
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claire/worktrees",
+   "orphan": true
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claire/worktrees/distracted-panini-b59772",
+   "name": "distracted-panini-b59772",
+   "branch": null,
+   "head": "",
+   "verdict": "ORPHAN",
+   "proof": "",
+   "reasons": [
+    "directory has no live worktree registration"
+   ],
+   "size_kb": 0,
+   "age_days": 10.08,
+   "age_sources": {
+    "weak:worktree_dir": 10.08
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claire/worktrees",
+   "orphan": true
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claire/worktrees/hardcore-hoover-589bd9",
+   "name": "hardcore-hoover-589bd9",
+   "branch": null,
+   "head": "",
+   "verdict": "ORPHAN",
+   "proof": "",
+   "reasons": [
+    "directory has no live worktree registration"
+   ],
+   "size_kb": 4,
+   "age_days": 10.08,
+   "age_sources": {
+    "weak:worktree_dir": 10.08
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claire/worktrees",
+   "orphan": true
+  }
+ ]
+}

@@ -150,7 +150,9 @@ each market's own call.
 
 Per-column provenance, measured coverage and the three named debts live in
 `data/us_prophet_rank/README.md`. The schema is pinned by
-`tests/test_us_context_vector.py::TestSchemaContract`.
+`tests/test_us_context_vector.py::TestSchemaContract`, wired into the
+`unrun-picks-boards` CI pack 2026-08-04 (dark before that — the suite was in no
+run list).
 
 ## §5 What this note does NOT do
 

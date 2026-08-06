@@ -234,7 +234,17 @@ def test_ths_builder_renders_the_fork_not_the_stub() -> None:
 # ------------------------------------------------------------------ nav
 
 def test_china_nav_collapsed_to_the_merged_page() -> None:
-    """Gate 6: the 5-entry China Sector Central flyout collapses to flat rows."""
+    """Gate 6: the 5-entry China Sector Central flyout collapses to flat rows.
+
+    2026-08 rail-view addition: the 同花顺 subsector-confluence board became the merged
+    page's #confluence rail VIEW (operator: "a new Confluence rail view … lives on the one
+    consolidated page instead of the standalone subsectors_china.html"). So the "Subsector
+    Confluence" nav row now deep-links to sector_central_china.html#confluence rather than to
+    the standalone subsectors_china.html. The standalone page still exists — it is its SEO
+    twin (own SEO head, still linked from china_intel/chat) — it is simply no longer the nav
+    target. (The US "Subsector Confluence" row is untouched: the US page has no equivalent
+    rail view yet.)
+    """
     s = _read(TPL / "_navlinks.html.j2")
     assert 'href="{{ NP }}sector_central_china.html"' in s
     assert 'href="{{ NP }}baskets_china.html"' not in s, (
@@ -243,8 +253,16 @@ def test_china_nav_collapsed_to_the_merged_page() -> None:
     assert 'href="{{ NP }}subsector_rotation_china.html"' not in s, (
         "absorbed page still has a China nav entry"
     )
-    # the two survivors keep their rows
-    assert 'href="{{ NP }}subsectors_china.html"' in s
+    # Subsector Confluence now deep-links into the merged page's #confluence rail view;
+    # the standalone subsectors_china.html is no longer the nav target (but survives as its
+    # SEO twin — the merged Sector Intelligence row + Market Heatmap keep their own rows).
+    assert 'href="{{ NP }}sector_central_china.html#confluence"' in s, (
+        "the Subsector Confluence row must deep-link to the merged page's #confluence view"
+    )
+    assert 'href="{{ NP }}subsectors_china.html"' not in s, (
+        "Subsector Confluence still points at the standalone page — it should target the "
+        "merged page's #confluence rail view now (the standalone page itself survives)"
+    )
     assert 'href="{{ NP }}china_heatmap.html"' in s
     assert "China Sector Intelligence consolidation" in s, (
         "the collapse must stay documented in the partial — the next nav editor "

@@ -1,7 +1,8 @@
 """scripts/metabolism_gc.py — Orphan-worktree GC helper (A1 companion).
 
-Reaps wf_*/metabolism worktrees whose branch is squash-merged or whose
-journal is in a terminal state (done/failed), subject to safety checks:
+Reaps wf_*/metabolism worktrees whose branch is fully absorbed into
+origin/main or whose journal is in a terminal state (done/failed), subject
+to safety checks:
 
   1. rev-parse --show-toplevel guard (dead-worktree-hits-main trap):
      If the worktree's `.git` file resolves to the MAIN repo root rather than
@@ -12,8 +13,14 @@ journal is in a terminal state (done/failed), subject to safety checks:
      a live session is parked there. Skip it.
 
   3. Branch merged check:
-     ``git log --oneline <branch>..origin/main`` is empty iff the branch tip
-     is fully reachable from origin/main (squash-merged or otherwise absorbed).
+     ``git merge-base --is-ancestor <branch> origin/main`` — merged iff the
+     branch tip is reachable from origin/main (tip-equal-to-main counts: a
+     commit is its own ancestor).  NOT an empty ``git log <branch>..origin/main``
+     — that range is the INVERSE (empty means origin/main is an ancestor of the
+     branch, true for a worktree freshly rebased onto the origin/main tip with
+     unpushed local commits).  Squash merges rewrite content into a new commit
+     and are invisible to ancestry — the journal-terminal check (4) is the path
+     that reaps those.
 
   4. Journal terminal check:
      The worktree's ``data/metabolism/journal/`` contains at least one journal
@@ -93,15 +100,41 @@ def _has_open_files(worktree_path: Path) -> bool:
 
 
 def _branch_merged_into_main(branch: str, worktree_path: Path) -> bool:
-    """Return True if branch is fully reachable from origin/main (squash-merged)."""
+    """Return True if the branch tip is an ancestor of origin/main (absorbed).
+
+    ``git merge-base --is-ancestor <branch> origin/main`` exits 0 iff the branch
+    tip is reachable from origin/main; a commit counts as its own ancestor, so a
+    branch whose tip IS the origin/main tip is merged.  Exit 1 means not an
+    ancestor; any other exit (e.g. 128 for an unknown ref) is treated as NOT
+    merged — fail-safe, never reap on an errored check.
+
+    Direction trap: an empty ``git log <branch>..origin/main`` is NOT this
+    predicate — that range lists commits reachable from origin/main but not the
+    branch, so empty means origin/main is an ancestor of the BRANCH.  A worktree
+    freshly rebased onto the origin/main tip with unpushed local commits reads
+    as "merged" under that check (reap-eligible), while a branch genuinely
+    absorbed behind an advanced main reads as unmerged.  Keep this proof
+    consistent with scripts/worktree_gc.py (fleet session-worktree sweeper),
+    which documents the same trap.
+
+    KNOWN LIMIT: a squash-merged branch is never an ancestor of origin/main
+    (the squash rewrites content into a new commit), so ancestry cannot see it —
+    squash-merged worktrees are reaped via the journal-terminal path (guard 4).
+    """
     try:
         result = subprocess.run(
-            ["git", "log", "--oneline", f"{branch}..origin/main"],
+            ["git", "merge-base", "--is-ancestor", branch, "origin/main"],
             cwd=str(worktree_path),
             capture_output=True, text=True, timeout=15,
         )
-        # Empty output means branch tip is already in origin/main's history.
-        return result.returncode == 0 and not result.stdout.strip()
+        if result.returncode == 0:
+            return True
+        if result.returncode != 1:
+            log.warning(
+                "GC: branch-merged ancestry check errored for %s (exit %s): %s",
+                branch, result.returncode, (result.stderr or "").strip()[:200],
+            )
+        return False
     except Exception as exc:  # noqa: BLE001
         log.warning("GC: branch-merged check failed for %s: %s", branch, exc)
         return False
