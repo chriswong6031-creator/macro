@@ -2748,6 +2748,17 @@ on:
       - "tests/test_fix43_analyst_and_whitehouse.py"
       - "tests/test_sector_central.py"
       - "tests/test_spotlight.py"
+      # ── W-A US bottoming-watch lane (2026-08-05) ────────────────────────────
+      # The suite shipped DARK with #4599: `tests/test_us_act_now.py` was in no
+      # pack, so it never ran once — while its CN sibling test_china_act_now.py
+      # had been enumerated all along. It was found red on committed data (the
+      # receipt asserted gold_miners was on the lane; the cycle engine graduated
+      # it Trough→Recovery and the assertion silently became false). Now runs in
+      # engine-render-guards beside the CN sibling. Subject engine/us_act_now.py
+      # rides the engine/** catch-all above; tests/** is deliberately NOT broad,
+      # so the test half needs this entry or a test-only edit stays dark.
+      # engine-render-guards
+      - "tests/test_us_act_now.py"
       # ── Breakdown event tape (BD Phase-0/0b) + AVOID-1 stamper (2026-07-27) ──
       # Subjects (scripts/research/dump_breakdown_events.py, bd_avoid1_stamper.py,
       # engine/grading.py) ride the scripts/** + engine/** catch-alls above, so

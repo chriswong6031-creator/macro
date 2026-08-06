@@ -2562,7 +2562,14 @@ function actRow(x){
   // Both rows are kept as-is — never merged, never re-ranked — the chip just tells
   // the reader the two lenses disagree. (CN precedent: china_act_now.py dual_chip.)
   const dual=(!x._conflicted&&BOT_DUAL.has(String(x.id)))?'<span class="mlcchip" data-tip-en="The longer trend still says reduce, but the cycle read shows a low forming. This name is also on Bottoming watch — both reads are shown so you can see the disagreement." data-tip-zh="长期趋势仍建议减仓，但周期读数显示底部正在形成。该名称同时出现在筑底观察栏——两种判读并列显示，便于看清分歧。">'+L('may be bottoming','或正筑底')+'</span>':'';
-  return '<a class="rvx-trow" data-mlc-bid="'+esc(x.id)+'" href="basket/'+encodeURIComponent(x.id)+'.html"><span class="tnm">'+L(esc(x.name),esc(x.name_zh))+kchip+conf+dual+'<span class="rsn">'+sub+ern+'</span></span>'+tick+ret+'</a>';
+  // W-A graduation gap: the cycle engine has moved this name PAST Trough (so it has
+  // left Bottoming watch) while the momentum label still holds it on reduce/avoid
+  // until its 20d relative flips positive — between those two events it sits on no
+  // lane. Deliberately NOT the FT-R1 chip: that chip's copy says "also on Bottoming
+  // watch", which is false here. Separate id set, separate sentence; the two are
+  // disjoint by construction (phase is exclusive) and gated so a row gets one chip.
+  const recov=(!x._conflicted&&!BOT_DUAL.has(String(x.id))&&BOT_REC.has(String(x.id)))?'<span class="mlcchip" data-tip-en="'+esc(BOT_REC_TIP_EN)+'" data-tip-zh="'+esc(BOT_REC_TIP_ZH)+'">'+L(esc(BOT_REC_EN),esc(BOT_REC_ZH))+'</span>':'';
+  return '<a class="rvx-trow" data-mlc-bid="'+esc(x.id)+'" href="basket/'+encodeURIComponent(x.id)+'.html"><span class="tnm">'+L(esc(x.name),esc(x.name_zh))+kchip+conf+dual+recov+'<span class="rsn">'+sub+ern+'</span></span>'+tick+ret+'</a>';
 }
 // W-A bottoming-watch row. Deliberately NOT actRow: these come from the cycle
 // forward log, not from a theme score. Two source fields are payload-only and are
@@ -2593,6 +2600,11 @@ function actLane(cls,ic,head,desc,arr,opts){
 // W-A: ids carried on BOTH the reduce/avoid lane and the bottoming lane (FT-R1).
 // Populated per render from act_now.dual_read_ids; actRow reads it for the chip.
 let BOT_DUAL=new Set();
+// W-A graduation gap: reduce/avoid ids the cycle organ reads as recovering off a
+// low, which have already left the bottoming lane. Disjoint from BOT_DUAL. The
+// chip's words ship from the engine (bottoming_authority) so the page cannot
+// drift from the measured basis; an older artifact without them renders no chip.
+let BOT_REC=new Set(), BOT_REC_EN='', BOT_REC_ZH='', BOT_REC_TIP_EN='', BOT_REC_TIP_ZH='';
 function renderActBoard(){
   const el=document.getElementById('actnow'); if(!el) return;
   const a=(THEME&&THEME.act_now)||{};
@@ -2607,6 +2619,11 @@ function renderActBoard(){
   // Absent key (older artifact) → empty lane + honest null, never a crash.
   const bot=a.bottoming_watch||[];
   BOT_DUAL=new Set((a.dual_read_ids||[]).map(String));
+  const _ba=a.bottoming_authority||{};
+  BOT_REC_EN=_ba.recovering_chip_en||''; BOT_REC_ZH=_ba.recovering_chip_zh||BOT_REC_EN;
+  BOT_REC_TIP_EN=_ba.recovering_tip_en||''; BOT_REC_TIP_ZH=_ba.recovering_tip_zh||BOT_REC_TIP_EN;
+  // No engine-shipped copy → no chip, rather than a blank one.
+  BOT_REC=BOT_REC_EN?new Set((a.recovering_ids||[]).map(String)):new Set();
   el.innerHTML=actLane('buy','🟢',L('Buy now','立即买入'),L('In favour and a clean entry is set up right now.','看好且当前有干净入场点。'),buy)
     +actLane('wait','🔵',L('Wait for a pullback','等待回调'),L('In favour, but stretched — no clean entry yet.','看好但已拉伸 — 暂无干净入场点。'),wait)
     +actLane('trim','🟠',L('Take profits','止盈'),L('Was leading — momentum now rolling over.','曾领涨 — 动能正在回落。'),trim)
@@ -2620,6 +2637,9 @@ function renderActBoard(){
     // wording so the page cannot drift from the measured basis.
     const ba=a.bottoming_authority;
     if(bot.length&&ba&&ba.null_disclosure_en) parts.push(L(esc(ba.null_disclosure_en),esc(ba.null_disclosure_zh||ba.null_disclosure_en)));
+    // Graduation-gap disclosure — only when a row actually carries the chip, so
+    // the footnote never explains a chip that is not on the page.
+    if(BOT_REC.size&&ba&&ba.recovering_disclosure_en) parts.push(L(esc(ba.recovering_disclosure_en),esc(ba.recovering_disclosure_zh||ba.recovering_disclosure_en)));
     fn.innerHTML=parts.join(' '); }
   try{ renderStanceChips(); }catch(e){}
 }
