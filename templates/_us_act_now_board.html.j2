@@ -150,6 +150,110 @@
   /* ── TS-R6: two-reads reconciliation chip ───────────────────────────────── */
   .two-reads-chip { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:600; white-space:nowrap; background:color-mix(in srgb,var(--info) 9%,var(--panel2)); border:1px solid color-mix(in srgb,var(--info) 28%,var(--line)); color:var(--info,var(--link)); cursor:help; }
   .two-reads-chip .tr-sep { opacity:.45; margin:0 2px; }
+  /* ══ BOTTOM WATCH shelf (W-A #4599, amended #4614) ═══════════════════════════
+     NOT a sixth lane. The five .actcol cards are raised surfaces you act FROM;
+     this is a well recessed INTO the panel beneath them, so the eye files it as
+     context rather than as a lane it forgot to read. Its header runs horizontally
+     (label · count · stance on one line) where a lane header stacks, and the 3px
+     rail on its left edge is the ratified "watch — don't chase" shelf marker from
+     the Prophet basing shelf (#4609, dashboard.html.j2 .nb-stage-hd .sg-basing).
+
+     ACCENT — direction-neutral by construction. Every lane hue is spoken for
+     (up-green / info-blue / run-violet / warn-amber / muted-grey) and the two
+     directional families (--up/--down, and everything derived from them) are
+     remapped under the zh 红涨绿跌 convention — a watch shelf that changes meaning
+     with the language switch would be a defect. #2aa2ae is a literal for exactly
+     the reason .act-run's #8b5cf6 is: it must survive that remap untouched.
+     (Verified: --up/--down swap between data-lang en/zh; every token below does
+     not.) It reads as depth below a waterline — an instrument, not a verdict.
+     Text-grade twins follow the --act-accent-ink precedent above. Measured with
+     getComputedStyle against the surfaces each ink is actually painted on, every
+     layer's alpha composited (dark / light): shelf title 9.15 / 6.16, turn figure
+     8.81 / 6.68, turn chip 7.09 / 5.43, reduce-lane chip 7.06 / 5.65, gate chip
+     4.78 / 4.51, depth + footnote 5.69 / 4.88. --bw-accent itself is fill-grade
+     only (the rail), never text. */
+  #action-board { --bw-accent: #2aa2ae; --bw-ink: #5ec6d4;
+                  --bw-well: color-mix(in srgb, var(--bg) 62%, var(--panel)); }
+  html[data-theme="light"] #action-board { --bw-accent: #0e7a86; --bw-ink: #0a646e;
+                  --bw-well: color-mix(in srgb, var(--panel2) 88%, var(--panel)); }
+  .bw-shelf { margin-top: 14px; padding: 11px 14px 12px; border-radius: 12px;
+              background: var(--bw-well); border: 1px solid var(--line);
+              box-shadow: inset 0 1px 2px rgba(0,0,0,.24); }
+  html[data-theme="light"] .bw-shelf { box-shadow: inset 0 1px 2px rgba(20,32,64,.05); }
+  .bw-hd { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 9px;
+           position: relative; padding-left: 10px; margin-bottom: 9px; }
+  .bw-hd::before { content: ''; position: absolute; left: 0; top: 2px; bottom: 2px; width: 3px;
+                   border-radius: 999px; background: var(--bw-accent); }
+  .bw-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+              color: var(--bw-ink); }
+  html[data-lang="zh"] .bw-title { letter-spacing: 0; }
+  .bw-count { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .bw-count::before { content: "("; } .bw-count::after { content: ")"; }
+  .bw-sub { font-size: 10.5px; color: var(--muted); line-height: 1.4; }
+  /* auto-fill (not auto-fit): a two-name shelf stays a two-card shelf instead of
+     stretching into two half-page slabs. A short night should look short. */
+  .bw-rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+             gap: 8px; align-items: start; }
+  .bw-card { display: block; padding: 8px 10px 9px; border-radius: 9px; min-width: 0;
+             background: color-mix(in srgb, var(--panel) 72%, transparent);
+             border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+             text-decoration: none; color: inherit;
+             transition: background .12s ease, border-color .12s ease; }
+  /* light: a white card on the deeper well needs its own edge + lift, or the two
+     near-whites read as one flat surface (doctrine §5.8 panel-on-canvas rule). */
+  html[data-theme="light"] .bw-card { border-color: var(--line); box-shadow: var(--card-shadow); }
+  a.bw-card:hover { background: var(--panel);
+                    border-color: color-mix(in srgb, var(--bw-accent) 42%, var(--line)); }
+  a.bw-card:focus-visible { background: var(--panel); outline: 2px solid var(--link); outline-offset: 2px; }
+  .bw-top { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .bw-mark { flex: none; font-size: 11.5px; opacity: .85; }
+  .bw-name { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; color: var(--text);
+             line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bw-turn { flex: none; font-size: 10.5px; font-weight: 700; font-variant-numeric: tabular-nums;
+             color: var(--bw-ink); cursor: help; }
+  /* the sounding rail — the shelf's one non-verbal encoding. An HONEST shared
+     scale: every row is drawn on the same 0→100 cycle-range track, so a shelf of
+     markers all hugging the left IS the statement "these are at the floor", and a
+     row further up its range visibly sits further right. Never a magnitude bar
+     comparing rows against each other (the vetoed ftr-tape idiom). */
+  .bw-gauge { display: flex; align-items: center; gap: 8px; margin-top: 6px; cursor: help; }
+  .bw-rail { flex: none; position: relative; width: 62px; height: 5px; border-radius: 999px;
+             background: color-mix(in srgb, var(--muted) 30%, transparent);
+             box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--muted) 16%, transparent); }
+  .bw-rail-fill { position: absolute; left: 0; top: 0; bottom: 0; min-width: 5px;
+                  border-radius: 999px; background: var(--bw-accent);
+                  box-shadow: 0 0 0 2px color-mix(in srgb, var(--bw-accent) 22%, transparent); }
+  /* honest null slot: no reading tonight draws a hatched empty track, never a zero */
+  .bw-rail--none { background: repeating-linear-gradient(90deg,
+                     color-mix(in srgb, var(--muted) 34%, transparent) 0 2px, transparent 2px 5px); }
+  .bw-depth { min-width: 0; font-size: 10.5px; color: var(--muted); line-height: 1.35;
+              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bw-depth b { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+  /* These two strings are SENTENCES, not labels, so they take the board's
+     .two-reads-chip register (10px / 600 / sentence case) rather than the shouting
+     uppercase .ab-chip one. Setting a sentence in caps is what makes a watch-only
+     line read as an alarm. */
+  .bw-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+  .bw-chip { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 6px;
+             line-height: 16px; cursor: help; }
+  .bw-chip--turn { background: color-mix(in srgb, var(--bw-accent) 15%, transparent);
+                   color: var(--bw-ink);
+                   border: 1px solid color-mix(in srgb, var(--bw-accent) 32%, transparent); }
+  /* the trend gate is a condition NOT met, not a danger — neutral grey keeps the
+     amber reserved for Take profits, one aisle up. */
+  .bw-chip--gate { background: color-mix(in srgb, var(--muted) 12%, transparent); color: var(--muted);
+                   border: 1px solid color-mix(in srgb, var(--muted) 26%, transparent); }
+  .bw-none { margin: 0; padding: 5px 2px 3px; font-size: 12px; color: var(--muted); }
+  .bw-foot { margin: 9px 0 0; padding-top: 8px; font-size: 10.5px; line-height: 1.5;
+             color: var(--muted);
+             border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+  /* the shelf's chip on a reduce-side lane row — same family, so a reader connects
+     the chip above to the shelf below without a legend. */
+  .ab-chip--bw { background: color-mix(in srgb, var(--bw-accent) 14%, transparent);
+                 color: var(--bw-ink); cursor: help;
+                 border: 1px solid color-mix(in srgb, var(--bw-accent) 30%, transparent); }
+  @media (max-width: 560px) { .bw-shelf { padding: 10px 11px 11px; } .bw-rows { gap: 7px; } }
+  @media (prefers-reduced-motion: reduce) { .bw-card { transition: none; } }
   </style>
   <div class="panel span12" id="action-board">
     <h2>{{ t('What to act on now', '当前可操作') }}
@@ -188,6 +292,27 @@
     {%- endmacro -%}
     {%- macro ab_gate(x) -%}
     {%- if x.get('gate_override') %}<span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: {{ x.get('ew', {}).get('label', '') }}" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：{{ x.get('ew', {}).get('label_zh', '') or x.get('ew', {}).get('label', '') }}">&#10003;</span>{% endif -%}
+    {%- endmacro -%}
+    {#- Bottom-watch chip for a REDUCE-SIDE row (take profits / stand aside).
+        Two disjoint id sets, two different sentences, never both (the assembler
+        guarantees the disjointness; this only has to pick one):
+          dual_read_ids  — the row is ALSO on the shelf below (FT-R1)
+          recovering_ids — the cycle read has it off its low but it has left the
+                           shelf, so it is on no lane at all (#4614 graduation gap)
+        One-extra-chip rule: a row that already carries the demotion chip keeps
+        just that one — two amber-and-teal chips on a three-line row is noise, and
+        the demotion is the more actionable of the two. The recovering wording is
+        QUOTED from the engine authority block so the page cannot drift from the
+        measured basis; absent keys (an artifact built before #4614) render nothing. -#}
+    {%- macro ab_bw_chip(x, reduce_side, rid) -%}
+    {%- if reduce_side and rid and not x.get('conflict_chip_en') -%}
+    {%- set _bwauth = action_board.get('bottoming_authority') or {} -%}
+    {%- if rid in (action_board.get('dual_read_ids') or []) -%}
+    <span class="ab-chip ab-chip--bw" data-tip-en="The longer trend still says reduce, but the cycle read shows a low forming. This name is also on Bottom watch below — both reads are shown so you can see the disagreement." data-tip-zh="长期趋势仍建议减仓，但周期读数显示底部正在形成。该名称同时出现在下方筑底观察——两种判读并列显示，便于看清分歧。"><span class="l-en">may be bottoming</span><span class="l-zh">或正筑底</span></span>
+    {%- elif rid in (action_board.get('recovering_ids') or []) and _bwauth.get('recovering_chip_en') -%}
+    <span class="ab-chip ab-chip--bw" data-tip-en="{{ _bwauth.get('recovering_tip_en', '') }}" data-tip-zh="{{ _bwauth.get('recovering_tip_zh') or _bwauth.get('recovering_tip_en', '') }}"><span class="l-en">{{ _bwauth.get('recovering_chip_en') }}</span><span class="l-zh">{{ _bwauth.get('recovering_chip_zh') or _bwauth.get('recovering_chip_en') }}</span></span>
+    {%- endif -%}
+    {%- endif -%}
     {%- endmacro -%}
     {#- Popover source for a SECTOR row (hidden inline, cloned by JS) -#}
     {#- Compact decision card for a SECTOR row. Keep this payload intentionally
@@ -303,19 +428,23 @@
     }) }}
     {%- endmacro -%}
     {#- V2 sector row macro — anv2-row anatomy (name row / chips row / stat line) -#}
-    {%- macro ab_sector_row(x) -%}
+    {%- macro ab_sector_row(x, reduce_side=false) -%}
+    {#- reduce_side: set at the take-profits / stand-aside call sites so the row can
+        carry the bottom-watch chip. Default false — the buy-side lanes are untouched. -#}
+    {%- set _bwchip = ab_bw_chip(x, reduce_side, (x.get('ticker') or '')|lower) -%}
     <a class="actitem" data-rpop href="{{ x.href }}">
       <span class="act-row-top">
         <span class="ai-bdg">🏛</span>
         <span class="act-row-name"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></span>
       </span>
-      {%- if x.get('chip_en') or x.get('gate_override') or x.get('ew_two_reads') or x.get('conflict_chip_en') %}
+      {%- if x.get('chip_en') or x.get('gate_override') or x.get('ew_two_reads') or x.get('conflict_chip_en') or _bwchip|trim %}
       <span class="act-row-chips">
         {{- ab_chip(x.get('chip_en',''), x.get('chip_zh',''), x.get('chip_tone','muted')) -}}
         {{- ab_gate(x) -}}
         {{- ab_ew_two_reads(x) -}}
         {#- W2b/W4 demotion receipt lifted from the EW overlay (MLC-R7) -#}
         {{- ab_chip(x.get('conflict_chip_en',''), x.get('conflict_chip_zh', x.get('conflict_chip_en','')), 'warn') -}}
+        {{- _bwchip -}}
       </span>
       {%- endif %}
       {%- if x.get('stat_en') %}<span class="act-row-stat"><span class="l-en">{{ x.stat_en }}</span><span class="l-zh">{{ x.get('stat_zh', x.stat_en) }}</span></span>{%- endif %}
@@ -325,7 +454,8 @@
     {#- V2 theme (narrative basket) row macro — composite score rides the name row;
         provenance glyphs (★ book / ✓ gate / ≈ lens / ⟳ run-reason) sit inline after
         the name instead of an orphan chips line; china-style 20d-vs-market stat. -#}
-    {%- macro ab_theme_row(x) -%}
+    {%- macro ab_theme_row(x, reduce_side=false) -%}
+    {%- set _bwchip = ab_bw_chip(x, reduce_side, x.get('slug') or '') -%}
     <a class="actitem ai-theme" data-rpop href="{{ x.href }}">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
@@ -338,9 +468,10 @@
         {%- endif %}
       </span>
       {#- FIX 1: conflict chip (warn tone) when theme was demoted from buy lanes -#}
-      {%- if x.get('conflict_chip_en') %}
+      {%- if x.get('conflict_chip_en') or _bwchip|trim %}
       <span class="act-row-chips">
         {{- ab_chip(x.conflict_chip_en, x.get('conflict_chip_zh', x.conflict_chip_en), 'warn') -}}
+        {{- _bwchip -}}
       </span>
       {%- endif %}
       {%- if x.get('perf_20d_rel') is not none and x.get('perf_20d_rel') is defined %}
@@ -429,7 +560,8 @@
         </div>
         <div class="actbody ab-trim-fold is-collapsed" id="ab-trim-fold">
           {% for x in action_board.take_profits %}
-            {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
+            {# reduce_side=true: this lane may carry the bottom-watch chip (FT-R1 / #4614) #}
+            {% if x.kind == 'theme' %}{{ ab_theme_row(x, true) }}{% else %}{{ ab_sector_row(x, true) }}{% endif %}
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('Nothing topping.', '无标的做顶。') }}</p>{% endfor %}
           {%- if _more_tp > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_tp }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_tp }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
         </div>
@@ -449,10 +581,11 @@
         <div class="actbody lst-collapse lst-cap3 is-collapsed" id="dash-hold-fold">
           {% for x in action_board.hold %}
             {#- TS-R5: data-theme-id wrapper enables client-side auto-expand -#}
-            {% if x.kind == 'theme' %}<div data-theme-id="{{ x.slug or x.ticker }}">{{ ab_theme_row(x) }}</div>{% else %}{{ ab_sector_row(x) }}{% endif %}
+            {# reduce_side=true: this lane may carry the bottom-watch chip (FT-R1 / #4614) #}
+            {% if x.kind == 'theme' %}<div data-theme-id="{{ x.slug or x.ticker }}">{{ ab_theme_row(x, true) }}</div>{% else %}{{ ab_sector_row(x, true) }}{% endif %}
           {% endfor %}
           {% for x in action_board.avoid %}
-            {% if x.kind == 'theme' %}<div data-theme-id="{{ x.slug or x.ticker }}">{{ ab_theme_row(x) }}</div>{% else %}{{ ab_sector_row(x) }}{% endif %}
+            {% if x.kind == 'theme' %}<div data-theme-id="{{ x.slug or x.ticker }}">{{ ab_theme_row(x, true) }}</div>{% else %}{{ ab_sector_row(x, true) }}{% endif %}
           {% endfor %}
           {%- if _more_hold > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_hold }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_hold }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
         </div>
@@ -461,5 +594,78 @@
         {% endif %}
       </div>
     </div>
+    {#- ══ BOTTOM WATCH shelf (W-A #4599, amended #4614) ═════════════════════════
+        Restores the fifth surface of the pre-#4642 board. Deliberately NOT a sixth
+        grid column: these names have no action attached, so giving them a lane
+        beside "Buy now" would read as a sixth thing to do. They sit BELOW every
+        lane on their own shelf — the W-E basing-shelf semantics (#4609).
+
+        Renders whenever the key is PRESENT, including as an empty list: "nothing
+        is basing tonight" is a real read, and a shelf that vanishes on quiet
+        nights teaches the reader it is optional. Key absent entirely (an
+        action_board.json persisted before this wiring) → no shelf at all, and the
+        five lanes above render exactly as they did.
+
+        Every rendered string here is watch vocabulary; `signal` and `timing_state`
+        are payload-only and never touched (engine/us_act_now.py's display fence). -#}
+    {%- if action_board.get('bottoming_watch') is not none %}
+    {%- set _bwrows = action_board.get('bottoming_watch') or [] -%}
+    {%- set _bwauth = action_board.get('bottoming_authority') or {} -%}
+    {%- set _bwrec = action_board.get('recovering_ids') or [] -%}
+    {%- macro bw_card_body(x) -%}
+      <span class="bw-top">
+        <span class="bw-mark" aria-hidden="true">{{ '🏛' if x.get('kind') == 'SECTOR' else '🧩' }}</span>
+        <span class="bw-name"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ (x.name_zh or x.name)|e }}</span></span>
+        {%- if x.get('osc_slope') is not none %}
+        <span class="bw-turn" data-tip-en="How fast the cycle read is turning up off the low — a bigger number is a sharper turn. A first hint only, never a call to act." data-tip-zh="周期读数自低位回升的速度——数字越大，转向越明显。仅为初步迹象，绝非行动建议。">&#8599;&#8202;{{ '%.1f'|format(x.osc_slope) }}</span>
+        {%- endif %}
+      </span>
+      {%- if x.get('pos') is not none %}
+      {%- set _bwp = [[x.pos|float, 0.0]|max, 100.0]|min -%}
+      <span class="bw-gauge" data-tip-en="Where this name sits in the full high-to-low span the nightly cycle read measures: 0% is the floor of that span, 100% the top. The rail shows the same reading, drawn on the same scale for every row." data-tip-zh="该名称在今晚周期读数所测的完整高低区间中的位置：0% 为区间底部，100% 为顶部。左侧标尺为同一读数，所有行使用同一刻度。">
+        <span class="bw-rail" aria-hidden="true"><span class="bw-rail-fill" style="width:{{ '%.1f'|format(_bwp) }}%"></span></span>
+        <span class="bw-depth"><span class="l-en">bottom <b>{{ '<1' if _bwp < 0.5 else '%.0f'|format(_bwp) }}%</b> of its cycle range</span><span class="l-zh">周期区间底部 <b>{{ '<1' if _bwp < 0.5 else '%.0f'|format(_bwp) }}%</b></span></span>
+      </span>
+      {%- else %}
+      <span class="bw-gauge" data-tip-en="The nightly cycle read placed this name on the shelf but shipped no position for it tonight. An unknown reading is printed as unknown rather than drawn as a zero." data-tip-zh="今晚周期读数将该名称列入本层，但未给出具体位置。未知读数按未知显示，不会当作 0 绘制。">
+        <span class="bw-rail bw-rail--none" aria-hidden="true"></span>
+        <span class="bw-depth"><span class="l-en">no position reading tonight</span><span class="l-zh">今晚无位置读数</span></span>
+      </span>
+      {%- endif %}
+      {%- if x.get('cycle_signal') %}
+      <span class="bw-chips">
+        <span class="bw-chip bw-chip--turn" data-tip-en="The nightly cycle read registered a turn on this name. It is quoted here as that engine's own output, never as a call of ours — a forming low on its own has not been shown to predict what comes next." data-tip-zh="今晚周期读数在该名称上登记了一次转折。此处原样引用该引擎的输出，并非本站的判断——单独的底部形成迹象尚未被证明能预测后续走势。"><span class="l-en">cycle turn signal — watch only</span><span class="l-zh">周期转折信号——仅观察</span></span>
+        {%- if x.get('gate_conflict') %}
+        <span class="bw-chip bw-chip--gate" data-tip-en="The same name is still below its 200-day trend line, so the trend gate this board runs on has not opened. The two reads disagree and both are printed." data-tip-zh="该名称仍低于其200日趋势线，本板所依据的趋势闸门尚未开启。两种判读并不一致，此处两者并列打印。"><span class="l-en">below 200-day trend — gate shut</span><span class="l-zh">低于200日趋势——闸门关闭</span></span>
+        {%- endif %}
+      </span>
+      {%- endif %}
+    {%- endmacro -%}
+    <div class="bw-shelf">
+      <div class="bw-hd">
+        <span class="bw-title"><span class="l-en">Bottom watch</span><span class="l-zh">筑底观察</span></span>
+        <span class="bw-count">{{ _bwrows | length }}</span>
+        <span class="bw-sub"><span class="l-en">Cycle lows forming — watch, don't chase</span><span class="l-zh">周期底部形成中——观察，勿追</span></span>
+        {{ help('What this is: names the nightly cycle read has working on a low — deepest first, at most eight. What it is not: a call to act; nothing on this shelf has confirmed anything. A name can sit here and on a reduce lane at the same time — when it does, both reads are shown side by side rather than one being picked for you.', '这是什么：今晚周期读数中正在低位筑底的名称——最深的排在最前，最多八个。这不是什么：不是行动建议；本层没有任何标的已确认转向。同一名称可以同时出现在这里和减仓泳道——出现时，两种判读会并列显示，而不是替你二选一。') }}
+      </div>
+      {%- if _bwrows %}
+      <div class="bw-rows">
+        {%- for x in _bwrows %}
+        {%- if x.get('href') %}<a class="bw-card" href="{{ x.href }}">{{ bw_card_body(x) }}</a>
+        {%- else %}<div class="bw-card">{{ bw_card_body(x) }}</div>{% endif %}
+        {%- endfor %}
+      </div>
+      {%- else %}
+      <p class="bw-none">{{ t("no basing candidates tonight", '今晚无筑底候选') }}</p>
+      {%- endif %}
+      {#- ONE footnote per section (Law 4): the engine's honest null, quoted verbatim,
+          with the graduation-gap sentence MERGED into the same line when at least
+          one reduce-side row carries that chip — never stacked as a second note. -#}
+      <p class="bw-foot">
+        <span class="l-en">{{ _bwauth.get('null_disclosure_en', '') }}{% if _bwrec and _bwauth.get('recovering_disclosure_en') %} {{ _bwauth.get('recovering_disclosure_en') }}{% endif %}</span>
+        <span class="l-zh">{{ _bwauth.get('null_disclosure_zh', '') }}{% if _bwrec and _bwauth.get('recovering_disclosure_zh') %} {{ _bwauth.get('recovering_disclosure_zh') }}{% endif %}</span>
+      </p>
+    </div>
+    {%- endif %}
   </div>{# /panel — What to act on now (standouts split into their own panel 2026-07-11) #}
 {% endif %}

@@ -19,18 +19,21 @@ state must name the session it is a receipt for.
 as the receipt for the opposite half: off the lane, and carrying the recovering
 chip instead.
 
-DISPLAY REGRESSION (#4642): no US template renders this lane any more. The
-template tests here used to pin sector_central's client renderer by function name
-(botRow/actRow); #4642 deleted that renderer when it transplanted the shared
-server-rendered act board, and its replacement ships no bottoming lane. The
-display fences survive as `test_surface_*`, parametrised over
-`_us_bottoming_surfaces()` so they cover the shipped board today and arm
-themselves against a restored lane automatically. See the DISPLAY REGRESSION
-block further down for the full record.
+DISPLAY RESTORATION (after the #4642 regression): the payload is rendered again.
+#4642 replaced sector_central's client renderer (botRow/actRow, which the template
+tests here used to pin by function name) with the shared server-rendered act board,
+and that replacement shipped no bottoming lane — so W-A was dark on the US site for
+one release while the builder kept writing every key. The lane is back as a
+full-width WATCH SHELF under the five action lanes of
+`templates/_us_act_now_board.html.j2` (not a sixth lane: these names carry no
+action). The display fences live as `test_surface_*`, parametrised over
+`_us_bottoming_surfaces()`, and the DISPLAY RESTORATION block further down pins
+what the shelf must render.
 """
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -58,11 +61,12 @@ from engine.us_act_now import (
 
 TEMPLATES = ROOT / "templates"
 
-# The US act board's home since #4642. Before it, sector_central.html.j2 carried a
-# client-side renderer (renderActBoard/actRow/actLane/botRow) that these template
-# tests pinned by function name; #4642 replaced it with this shared, server-rendered
-# include and deleted the client renderer outright. See the DISPLAY REGRESSION note
-# above `test_the_bottoming_payload_is_built_but_no_us_surface_renders_it`.
+# The US act board's home since #4642, and the bottoming shelf's home since the
+# restoration. Before #4642, sector_central.html.j2 carried a client-side renderer
+# (renderActBoard/actRow/actLane/botRow) that these template tests pinned by function
+# name; #4642 replaced it with this shared, server-rendered include and deleted the
+# client renderer outright. See the DISPLAY RESTORATION note above
+# `test_the_bottoming_payload_is_built_and_the_act_board_renders_it`.
 ACT_BOARD = TEMPLATES / "_us_act_now_board.html.j2"
 
 
@@ -752,33 +756,32 @@ def test_recovering_tip_does_not_claim_bottoming_lane_membership():
     assert "筑底观察" not in RECOVERING_TIP_ZH
 
 
-# ── DISPLAY REGRESSION: the US bottoming lane has no renderer ────────────────
+# ── DISPLAY RESTORATION: the shelf that renders the W-A payload ──────────────
 #
 # #4642 ("transplant the V2 five-lane action board onto US Sector Intelligence")
 # replaced sector_central's client-rendered act board with the shared server-
 # rendered templates/_us_act_now_board.html.j2. Its summary describes the board it
 # deleted as "the client-rendered 4-lane themes-only board" — but the deleted code
 # ran FIVE actLane() calls: buy, wait, trim, avoid, AND bottom. The replacement
-# board has no bottoming lane (`grep -c bottoming templates/_us_act_now_board.html.j2`
-# → 0), so the W-A lane shipped by #4599 and amended by #4614 is DARK on the US
-# site while engine/us_act_now.py and scripts/build_baskets.py still compute and
-# ship its payload. China's board (`_china_act_now_board.html.j2`) still renders
-# its equivalent lane, so this is a US-only display loss.
+# board shipped no bottoming lane, so the W-A lane of #4599 (amended #4614) went
+# DARK on the US site while engine/us_act_now.py and scripts/build_baskets.py kept
+# computing and shipping its payload. China's board never lost its equivalent lane.
 #
-# The four tests that used to live here pinned that deleted renderer by function
-# name (actRow's BOT_REC chip, its one-chip-per-row gate, its footnote wiring).
-# They are replaced by the payload-liveness pin below plus the surface fences
-# above, which arm themselves against whatever renders the lane next. Restoring
-# the lane is a product decision with its own owner, not a CI heal — see the PR
-# that healed this suite.
+# The lane is now restored as a full-width WATCH SHELF below the five action lanes
+# (never a sixth lane — a name with no action attached must not sit beside "Buy
+# now"), following the W-E basing-shelf semantics of #4609. The four tests that
+# pinned the deleted client renderer by function name are replaced by the four
+# below, which pin the same intents against whatever markup renders the shelf:
+# engine-sourced chip copy, the one-extra-chip rule, the conditional footnote, and
+# the dual-read id lookup.
 
-def test_the_bottoming_payload_is_built_but_no_us_surface_renders_it():
-    """Records the #4642 display regression and keeps the restore path alive.
+def test_the_bottoming_payload_is_built_and_the_act_board_renders_it():
+    """Builder ships the payload AND the shipped board renders it.
 
-    The loss is display-only: the assembler still runs and the builder still
-    writes every key a renderer would need. If this test starts failing because
-    the BUILDER stopped writing them, the lane is no longer merely dark — the
-    data is gone too, and the restore is a rebuild rather than a re-render.
+    Two halves, deliberately in one test: a green build-side assertion with a dark
+    renderer is exactly the state #4642 left behind, and it read as healthy for a
+    whole release. If the BUILDER half fails the payload is gone (a rebuild); if
+    the RENDER half fails the lane is merely dark again (a re-render).
     """
     src = (ROOT / "scripts" / "build_baskets.py").read_text(encoding="utf-8")
     for key in ("bottoming_watch", "dual_read_ids", "recovering_ids",
@@ -792,16 +795,230 @@ def test_the_bottoming_payload_is_built_but_no_us_surface_renders_it():
     assert set(out) >= {"bottoming_watch", "dual_read_ids", "recovering_ids",
                         "authority"}
 
+    # ── the render half ──────────────────────────────────────────────────────
+    board = ACT_BOARD.read_text(encoding="utf-8")
+    # it iterates the payload rows
+    assert "bottoming_watch" in board, "the act board renders no bottoming payload"
+    assert "for x in _bwrows" in board, (
+        "the act board must loop the bottoming rows, not just mention the key"
+    )
+    # it quotes the engine's honest null rather than re-typing a disclosure
+    assert "null_disclosure_en" in board and "null_disclosure_zh" in board
+    # the empty state is a real read, not a vanished shelf
+    assert "no basing candidates tonight" in board
+    assert "今晚无筑底候选" in board
+    # both fixed sanctioned row phrases, in both languages
+    for phrase in ("cycle turn signal — watch only", "周期转折信号——仅观察",
+                   "below 200-day trend — gate shut", "低于200日趋势——闸门关闭"):
+        assert phrase in board, f"the shelf stopped rendering {phrase!r}"
 
-def test_the_recovering_chip_copy_is_still_shipped_for_a_future_renderer():
-    """The chip's words ship from the engine so a page cannot drift from the
-    measured basis. Pinned at the authority block — the source a restored
-    renderer must quote — now that no template carries the wording."""
+
+def _render_board(**board) -> str:
+    """Render the shipped act board with a synthetic payload.
+
+    Scans of the SOURCE can only ever prove a string is present; this renders the
+    real template so the fences below judge what actually ships — and it fails on
+    a broken template instead of silently matching nothing.
+    """
+    jinja2 = pytest.importorskip("jinja2")
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(str(TEMPLATES)), autoescape=True)
+    env.globals.update(t=lambda en, zh="": en, tr=lambda en: en, td=lambda en: en)
+    vm = {"buy_now": [], "buy_soon": [], "on_the_run": [], "take_profits": [],
+          "hold": [], "avoid": [], "more": {}, "notable": []}
+    vm.update(board)
+    return env.get_template(ACT_BOARD.name).render(action_board=vm)
+
+
+def _shelf_html() -> str:
+    """The shelf's rendered markup plus any bottom-watch chip, and nothing else.
+
+    Scoped on purpose: the five ACTION lanes above legitimately say "Buy now" and
+    "no new buying" — those are their stances. The shelf is a WATCH surface where a
+    buy verb is a defect (engine/us_act_now.py, BUY-WORD PROHIBITION).
+    """
+    rows = assemble_bottoming_watch(
+        [_row(id_="b-uranium_miners", name="Uranium", pos=0.8, slope=0.4, signal=None),
+         _row(id_="b-comm", name="Comm Services", pos=3.6, slope=2.3),
+         _row(id_="xlu", kind="sector", name="Utilities", pos=6.7, slope=5.0,
+              above200d=True),
+         _row(id_="b-housing", name="Housing", pos=None, slope=0.9, signal=None)],
+        reduce_ids=["uranium_miners", "gold_miners"],
+    )
+    recovering = assemble_bottoming_watch(
+        [_row(id_="b-gold_miners", phase="Recovery", pos=2.3, slope=1.5)],
+        reduce_ids=["gold_miners"],
+    )["recovering_ids"]
+    html = _render_board(
+        bottoming_watch=rows["bottoming_watch"],
+        dual_read_ids=rows["dual_read_ids"],
+        recovering_ids=recovering,
+        bottoming_authority=rows["authority"],
+        # two reduce-side rows so BOTH chips actually render
+        avoid=[{"kind": "theme", "slug": "uranium_miners", "name": "Uranium",
+                "name_zh": "铀", "href": "basket/uranium_miners.html"},
+               {"kind": "theme", "slug": "gold_miners", "name": "Gold Miners",
+                "name_zh": "黄金矿业", "href": "basket/gold_miners.html"}],
+    )
+    i = html.find('<div class="bw-shelf">')
+    assert i != -1, "the shelf did not render — this fence would scan nothing"
+    chips = re.findall(r'<span class="ab-chip ab-chip--bw".*?</span></span>', html, re.S)
+    assert len(chips) == 2, f"expected both reduce-side chips, rendered {len(chips)}"
+    return html[i:] + "".join(chips)
+
+
+def _shelf_strings() -> list[str]:
+    """Every string the rendered shelf shows a reader — element text and hover copy."""
+    html = _shelf_html()
+    out = re.findall(r'data-tip-(?:en|zh)="([^"]*)"', html)
+    out += [s.strip() for s in re.findall(r">([^<>]+)<", html)]
+    return [s for s in (x.strip() for x in out) if s]
+
+
+def test_no_rendered_shelf_string_carries_a_buy_verb():
+    """The shelf's own copy — visible text AND hover text, both languages.
+
+    `contains_buy_word` is the law (CN F1/W8-R3 parity). The lane exists to say
+    "watch", so a single buy verb anywhere on it contradicts the whole surface.
+    """
+    strings = _shelf_strings()
+    assert len(strings) > 20, f"the fence only found {len(strings)} strings to check"
+    for s in strings:
+        assert not contains_buy_word(s), f"buy verb on the watch shelf: {s!r}"
+
+
+def test_the_shelf_carries_no_internal_vocabulary_in_its_copy():
+    """Glance-tier law: no engine state names, field names or study ids in copy.
+
+    'Trough', 'Recovery' and 'osc_slope' are what the payload hands the template;
+    all three must be translated into plain words before reaching a reader.
+    """
+    strings = _shelf_strings()
+    assert len(strings) > 20, f"the fence only found {len(strings)} strings to check"
+    for term in ("Trough", "Recovery", "osc_slope", "forward log", "forward_log",
+                 "display tier", "display-tier", "organ", "FT-R1", "W-A",
+                 "#4599", "#4614", "b-uranium", "cycle_signal", "timing_state"):
+        for s in strings:
+            assert term not in s, f"internal vocabulary {term!r} in copy: {s!r}"
+
+
+def test_the_rendered_shelf_translates_the_position_into_plain_words():
+    """Law 3 — a number on the glance tier arrives with its meaning, and an
+    unknown position is printed as unknown rather than drawn as a zero."""
+    html = _shelf_html()
+    # Pinned as the full rendered fragment, number included. A bare
+    # `"of its cycle range" in html` passes on a stripped depth line, because the
+    # engine's own recovering-chip tip happens to contain the same five words —
+    # a fence that can be satisfied by a sibling string cannot see its defect.
+    assert "bottom <b>1%</b> of its cycle range" in html, (
+        "the shelf prints a bare position figure with no plain-word reading"
+    )
+    assert "周期区间底部 <b>1%</b>" in html, "the zh position read lost its number"
+    assert "no position reading tonight" in html and "今晚无位置读数" in html
+    assert "bw-rail--none" in html, "a null position still draws a filled rail"
+    # the sanctioned phrases only where the payload earns them: one row carries a
+    # turn with the gate shut, one carries a turn above trend, two carry neither
+    assert html.count("cycle turn signal — watch only") == 2
+    assert html.count("below 200-day trend — gate shut") == 1
+
+
+def test_the_turn_chip_reads_cycle_signal_not_the_raw_signal_field():
+    """The two fields are NOT interchangeable, and swapping them is silent.
+
+    `signal` is 'BUY'|'SELL' (and is display-forbidden); `cycle_signal` is 'BUY'
+    or None. A shelf gated on the raw field would print "cycle turn signal" over a
+    SELL row — a turn the engine never registered — and every count-based
+    assertion would still pass, because the rows that carry a turn also carry a
+    signal. Only a SELL row can tell the two gates apart.
+    """
+    out = assemble_bottoming_watch(
+        [_row(id_="b-sell", name="Sold Down", pos=4.0, slope=1.0, signal="SELL")])
+    r = out["bottoming_watch"][0]
+    assert r["signal"] == "SELL" and r["cycle_signal"] is None
+    html = _render_board(bottoming_watch=out["bottoming_watch"],
+                         bottoming_authority=out["authority"])
+    assert "Sold Down" in html, "the row did not render at all"
+    assert "cycle turn signal — watch only" not in html, (
+        "a SELL row printed a turn chip — the shelf is gated on `signal`, not "
+        "`cycle_signal`, and is quoting a turn the cycle engine never registered"
+    )
+
+
+def test_the_rendered_shelf_shows_both_reads_on_a_dual_read_row():
+    """FT-R1 end to end: the same name is on the shelf AND chipped on its reduce
+    row, and the graduated name is chipped without being sent to a shelf it left."""
+    html = _shelf_html()
+    assert "may be bottoming" in html, "the dual-read chip did not render"
+    assert RECOVERING_CHIP_EN in html, "the recovering chip did not render"
+    assert RECOVERING_TIP_ZH in html, "the recovering chip lost its zh hover copy"
+
+
+def test_the_recovering_chip_is_rendered_from_the_engine_copy_keys():
+    """The chip's words ship from the engine so the page cannot drift from the
+    measured basis — the board must QUOTE the authority keys, never re-type them.
+
+    Replaces the retired pin on the deleted renderer's BOT_REC chip.
+    """
     auth = assemble_bottoming_watch([])["authority"]
     for key in ("recovering_chip_en", "recovering_chip_zh",
                 "recovering_tip_en", "recovering_tip_zh",
                 "recovering_disclosure_en", "recovering_disclosure_zh"):
         assert auth[key].strip(), f"engine stopped shipping {key}"
+
+    board = ACT_BOARD.read_text(encoding="utf-8")
+    for key in ("recovering_chip_en", "recovering_chip_zh",
+                "recovering_tip_en", "recovering_tip_zh"):
+        assert key in board, f"the board does not read authority[{key!r}]"
+    # ...and it must not have re-typed the wording as a literal
+    assert RECOVERING_CHIP_EN not in board, (
+        "the recovering chip's words are hard-coded in the template — they must be "
+        "quoted from the engine authority block so the two cannot drift apart"
+    )
+    assert RECOVERING_TIP_EN not in board
+
+
+def test_the_bottom_watch_chip_obeys_the_one_extra_chip_rule():
+    """A reduce-side row that already carries the demotion chip gets no second one.
+
+    The deleted renderer enforced this inline (`!x._conflicted && !BOT_DUAL.has`);
+    the shelf's chip macro enforces it with the same gate, so pin the gate.
+    """
+    board = ACT_BOARD.read_text(encoding="utf-8")
+    assert "macro ab_bw_chip(x, reduce_side, rid)" in board
+    assert "if reduce_side and rid and not x.get('conflict_chip_en')" in board, (
+        "the bottom-watch chip is no longer gated on the absence of the demotion "
+        "chip — a demoted row would render two chips"
+    )
+    # and the flag is opt-in, so the buy-side lanes cannot pick the chip up
+    assert "macro ab_sector_row(x, reduce_side=false)" in board
+    assert "macro ab_theme_row(x, reduce_side=false)" in board
+    # exactly the three reduce-side lanes turn it on (take_profits / hold / avoid),
+    # each with a theme + a sector call site
+    assert board.count("ab_theme_row(x, true)") == 3
+    assert board.count("ab_sector_row(x, true)") == 3
+
+
+def test_the_dual_read_chip_consults_the_dual_read_id_set():
+    """FT-R1: the chip fires off `dual_read_ids`, and the recovering chip off the
+    separate `recovering_ids` — the two sets are never conflated in the render."""
+    board = ACT_BOARD.read_text(encoding="utf-8")
+    assert "rid in (action_board.get('dual_read_ids') or [])" in board
+    assert "rid in (action_board.get('recovering_ids') or [])" in board
+    # the FT-R1 wording claims shelf membership; the recovering wording must not
+    assert "This name is also on Bottom watch below" in board
+
+
+def test_the_recovering_disclosure_prints_only_when_a_row_carries_the_chip():
+    """Law 4 — one footnote per section. The graduation-gap sentence is MERGED
+    into the honest-null line, and only when `recovering_ids` is non-empty."""
+    board = ACT_BOARD.read_text(encoding="utf-8")
+    assert "set _bwrec = action_board.get('recovering_ids') or []" in board
+    for lang in ("en", "zh"):
+        assert (f"{{% if _bwrec and _bwauth.get('recovering_disclosure_{lang}') %}}"
+                in board), (
+            f"the {lang} recovering disclosure is not conditioned on recovering_ids "
+            f"being non-empty — it would print on nights nothing carries the chip"
+        )
 
 
 def test_the_recovering_and_dual_read_sets_stay_disjoint():
@@ -856,3 +1073,58 @@ def test_build_wiring_ships_the_recovering_key():
     """The engine key is inert unless the builder actually writes it."""
     src = (ROOT / "scripts" / "build_baskets.py").read_text(encoding="utf-8")
     assert '_an_ba["recovering_ids"] = _bw["recovering_ids"]' in src
+
+
+def test_build_site_carries_all_four_keys_onto_the_board_dict():
+    """The shelf reads `action_board.<key>`, so build_site must lift the payload
+    off baskets.json AND pass it through onto the board dict it renders and
+    persists. build_sector_central reads that persisted file as-is, so this one
+    hop covers both US surfaces.
+
+    Shaped like `test_build_wiring_ships_the_recovering_key`: the render is inert
+    unless the builder actually hands it the keys.
+    """
+    src = (ROOT / "scripts" / "build_site.py").read_text(encoding="utf-8")
+    # lifted out of theme_intel.act_now, gated on the payload being present
+    assert 'if isinstance(_an, dict) and "bottoming_watch" in _an:' in src, (
+        "build_site no longer gates the lift on the payload being present — an "
+        "older baskets.json would render an empty shell instead of no shelf"
+    )
+    assert 'buckets["bottoming"] = {' in src
+    for key in ("bottoming_watch", "dual_read_ids", "recovering_ids",
+                "bottoming_authority"):
+        assert f'"{key}"' in src, f"build_site stopped carrying {key!r}"
+    # ...and passed through onto the board dict action_board() returns
+    assert 'for _k, _v in ((bi.get("bottoming") or {}).items()):' in src
+    assert "board[_k] = _v" in src
+
+
+def test_build_site_pass_through_never_touches_the_existing_lanes():
+    """G0.3 executed against the real builder, not a replay: the same board built
+    with and without the bottoming block must be identical lane for lane, and the
+    board must simply LACK the keys when the block is absent."""
+    pytest.importorskip("pandas")
+    sys.path.insert(0, str(ROOT))
+    from scripts.build_site import action_board, basket_action_items
+
+    bi = basket_action_items(ROOT / "site")
+    if not (bi.get("bottoming") or {}).get("bottoming_watch"):
+        pytest.skip("committed baskets.json carries no bottoming payload")
+    with_block = action_board({}, [], bi)
+    bare = {k: v for k, v in bi.items() if k != "bottoming"}
+    without = action_board({}, [], bare)
+
+    lanes = ("buy_now", "buy_soon", "on_the_run", "take_profits", "hold",
+             "avoid", "more", "notable")
+    for lane in lanes:
+        assert (json.dumps(with_block[lane], sort_keys=True, default=str)
+                == json.dumps(without[lane], sort_keys=True, default=str)), (
+            f"the bottoming pass-through changed the {lane!r} lane"
+        )
+    assert with_block["bottoming_watch"]
+    for key in ("bottoming_watch", "dual_read_ids", "recovering_ids",
+                "bottoming_authority"):
+        assert key not in without, (
+            f"an absent payload still put {key!r} on the board — the template "
+            f"would render an empty shell on a stale artifact"
+        )

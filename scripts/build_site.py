@@ -1646,6 +1646,21 @@ def basket_action_items(site) -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("basket action: baskets.json unreadable (%s)", e)
         return buckets
+
+    # ── W-A bottoming watch (engine/us_act_now.py, shipped by build_baskets) ──
+    # Lifted VERBATIM: this function never computes, re-ranks or edits any of it —
+    # it only carries the assembler's four keys forward so action_board() can hand
+    # them to the shelf under the board (G0.3: the buy/wait/reduce lanes above are
+    # read-only inputs to that lane and are not touched here).
+    # Gated on the payload actually being present so an older baskets.json simply
+    # yields no key at all, and the board renders its five lanes with no shelf.
+    _an = ti.get("act_now")
+    if isinstance(_an, dict) and "bottoming_watch" in _an:
+        buckets["bottoming"] = {
+            k: _an.get(k) for k in ("bottoming_watch", "dual_read_ids",
+                                    "recovering_ids", "bottoming_authority")
+        }
+
     themes = ti.get("themes") or []
     if not themes:
         return buckets
@@ -2157,14 +2172,22 @@ def action_board(sector_timing: dict, notable: list[dict],
     bi = basket_items or {}
     # FIX 3 — pass more counts from basket_items through to the VM
     _bi_more = bi.get("more") or {}
-    return {"buy_now": (bi.get("buy_now") or []) + buy_now,
-            "buy_soon": (bi.get("buy_soon") or []) + buy_soon,
-            "on_the_run": (bi.get("on_the_run") or []) + on_the_run,
-            "take_profits": (bi.get("take_profits") or []) + take_profits,
-            "hold": (bi.get("hold") or []) + hold,
-            "avoid": (bi.get("avoid") or []) + avoid,
-            "more": _bi_more,
-            "notable": notable_clean[:CAP]}
+    board = {"buy_now": (bi.get("buy_now") or []) + buy_now,
+             "buy_soon": (bi.get("buy_soon") or []) + buy_soon,
+             "on_the_run": (bi.get("on_the_run") or []) + on_the_run,
+             "take_profits": (bi.get("take_profits") or []) + take_profits,
+             "hold": (bi.get("hold") or []) + hold,
+             "avoid": (bi.get("avoid") or []) + avoid,
+             "more": _bi_more,
+             "notable": notable_clean[:CAP]}
+    # W-A bottoming watch — pure pass-through onto the board dict so the shared
+    # include (and the persisted action_board.json that build_sector_central reads)
+    # carries the shelf payload. No lane above is added to, removed from or
+    # reordered by this; when basket_items has no 'bottoming' block the board dict
+    # simply lacks the keys and the template renders no shelf.
+    for _k, _v in ((bi.get("bottoming") or {}).items()):
+        board[_k] = _v
+    return board
 
 
 def sector_setup_view(latest: dict, timing: dict | None = None) -> dict | None:
