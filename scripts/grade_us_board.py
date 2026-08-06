@@ -83,6 +83,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import math
 import subprocess
@@ -199,6 +200,73 @@ _GICS_ETF = {
     "Communication Services": "XLC", "Communications": "XLC",
 }
 BENCH = "SPY"
+
+
+# --------------------------------------------------------------------------- #
+# Input-vintage stamp — the calibration contract with scripts/exit_policy_study.py
+# --------------------------------------------------------------------------- #
+# The exit-policy study's calibration block re-derives this ledger's summary from the
+# committed inputs and asserts exactness KEY-FOR-KEY — a claim that is only defined
+# against the SAME input content this generator read. The total-return panel
+# re-adjusts history in place on every collection, so "same content" cannot be
+# recovered from dates or from the working tree after the fact; the ledger's true
+# vintage exists only at generation time. The ledger therefore stamps `meta.inputs`
+# with a digest of the calibration input files AT generation; the study recomputes
+# the digest on its own tree and attributes a non-zero delta to reconstruction drift
+# ONLY when the digests match. Scope is deliberately the STUDY's input closure (the
+# breadth close caches + the benchmark + the two board stores), not this grader's
+# wider one (dead-name terminals, sector ETFs): at a matched digest the study's
+# rebuild is deterministic, so any remaining inequality is a real calibration break —
+# code drift, or a cohort the study's narrower panel can no longer see — never a
+# vintage race.
+CALIBRATION_CLOSE_GROUPS = ("breadth", "smallcap_breadth", "midcap_breadth",
+                            "russell_breadth")
+
+
+def calibration_input_paths(root: Path | None = None, *,
+                            with_high_low: bool = False) -> list[Path]:
+    """The files whose content decides the calibration rebuild, in a fixed order.
+
+    ``with_high_low`` widens the list to the study's FULL price closure (the high/low
+    caches feed ATR14 and the horse-race walkers, never the calibration) — the scope
+    the committed report's input-state line is stamped with.
+    """
+    base = Path(root) if root is not None else ROOT
+    kinds = ("closes", "high", "low") if with_high_low else ("closes",)
+    paths = [base / "data" / grp / f"_{kind}_cache.parquet"
+             for grp in CALIBRATION_CLOSE_GROUPS for kind in kinds]
+    paths.append(base / "data" / "yahoo" / f"{BENCH}.parquet")
+    paths.append(base / "data" / "us_board_ledger" / "snapshots.jsonl")
+    paths.append(base / "data" / "us_board_ledger" / "retro_grades.parquet")
+    return paths
+
+
+def _content_digest(paths: list[Path], base: Path) -> str:
+    """hex12 over (relative path, content hash) pairs; a missing file hashes as absent
+    rather than erroring, so the digest is total on every tree."""
+    h = hashlib.sha256()
+    for p in paths:
+        h.update(str(p.relative_to(base)).encode())
+        h.update(b"\0")
+        if p.exists():
+            h.update(hashlib.sha256(p.read_bytes()).digest())
+        h.update(b"\1")
+    return h.hexdigest()[:12]
+
+
+def input_vintage(root: Path | None = None) -> dict:
+    """{digest, report_digest} for the tree at ``root`` (repo root by default).
+
+    ``digest`` covers the calibration closure; ``report_digest`` additionally covers
+    the high/low caches. Content hashes only — file mtimes are observer-stamped
+    repo-wide and prove nothing.
+    """
+    base = Path(root) if root is not None else ROOT
+    return {
+        "digest": _content_digest(calibration_input_paths(base), base),
+        "report_digest": _content_digest(
+            calibration_input_paths(base, with_high_low=True), base),
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -1915,7 +1983,16 @@ def emit_ledger(boards: list[dict], names: pd.DataFrame,
                           "last_board": _days[-1] if _days else None,
                           "n_boards": len(_days),
                           "scored_from": LEDGER_HISTORY_FROM,
-                          "n_boards_before_current_definition": n_boards_predefinition}}
+                          "n_boards_before_current_definition": n_boards_predefinition},
+              # Content digest of the calibration input files as they exist RIGHT NOW
+              # (post-snapshot-append) — the vintage identity the exit-policy study's
+              # calibration reads to tell reconstruction drift from a lane race. See
+              # the block comment on CALIBRATION_CLOSE_GROUPS.
+              "inputs": {**input_vintage(),
+                         "panel_asof": (str(names.index.max().date())
+                                        if len(names.index) else None),
+                         "stamped_utc": dt.datetime.now(dt.timezone.utc)
+                         .strftime("%Y-%m-%dT%H:%MZ")}}
     # Outage disclosure: sessions after the newest snapshot on which no board was
     # recorded. Present in the artifact so the dialog can say so in one quiet line
     # instead of the reader inferring a healthy record from a frozen one.

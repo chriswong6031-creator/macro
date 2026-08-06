@@ -54,6 +54,7 @@ from scripts.exit_policy_study import (  # noqa: E402
     reconcile_round,
     render_report,
     run_study,
+    vintage_attribution,
     walk_fixed,
     walk_target_stop,
     walk_trail,
@@ -706,12 +707,43 @@ def study():
 
 class TestCalibration:
     def test_p0_reproduces_the_shipped_ledger_key_for_key(self, study):
-        """G3's calibration check. P0 is the incumbent rule run through track_scoring on
-        the ledger's own cohort, so any non-zero delta means the reconstruction drifted —
-        not that the cohorts differ."""
+        """G3's calibration check, scoped to where its claim is DEFINED.
+
+        At MATCHED inputs (the ledger's ``meta.inputs`` digest equals this tree's) the
+        rebuild runs on the generator's own bytes, so any non-zero delta means the
+        reconstruction drifted — not that the cohorts differ — and this test is red.
+
+        At MOVED inputs the claim is not testable on this tree at all: the collection
+        lane advances the panel independently of the regime-update lane that writes the
+        ledger, episodes mature against tape the ledger never saw, and in-place
+        total-return re-adjustment means even the shared history is not the history the
+        ledger read (its true vintage exists only in git — deliberately NOT re-read
+        here: blob availability depends on clone depth, which would turn a data race
+        into CI flakiness). The test then pins the honest thing instead — that the race
+        was DETECTED and DISCLOSED in the render — and skips the equality claim with
+        the race named. The next regime-update run re-aligns the lanes and the matched
+        branch runs again; ledger non-advance itself is the zero-accrual alarm's beat,
+        not this test's.
+        """
         cal = study["calibration"]
         if not cal["shipped"]:
             pytest.skip("site/factordata/us_track_ledger.json absent")
+        v = cal["vintage"]
+        att = v["attribution"]
+        if att != "matched":
+            md = render_report(study)
+            if att == "inputs_moved":
+                assert "have moved since this ledger was generated" in md
+                assert "not reconstruction drift" in md
+            else:
+                assert "predates the input-vintage stamp" in md
+            assert "would mean the reconstruction drifted" not in md, \
+                "the render still makes the matched-inputs drift claim on an unmatched tree"
+            pytest.skip(
+                f"ledger/panel vintage {att} (ledger "
+                f"{(v.get('ledger_inputs') or {}).get('panel_asof') or v.get('ledger_last_session')} "
+                f"vs panel {v.get('panel_asof')}): exactness is defined only at matched "
+                f"inputs — the nightly regime-update lane re-aligns them")
         bad = {k: v for k, v in cal["deltas"].items() if v not in (0, 0.0)}
         assert not bad, f"calibration drifted on {bad}"
         assert cal["exact_match"] is True
@@ -970,15 +1002,77 @@ class TestReportWording:
         assert "Which way that pushes the estimate is unknown" in md
 
 
+class TestVintageAttribution:
+    """Pins for the pure attribution rule. Without these, a bug that always answers
+    'inputs_moved' would silently disarm the exactness guard above — every run would
+    skip, forever, and read as healthy (the guard-dark failure mode)."""
+
+    _LOCAL = "aaaaaaaaaaaa"
+
+    def test_equal_digests_are_matched(self):
+        meta = {"inputs": {"digest": self._LOCAL}}
+        assert vintage_attribution(meta, self._LOCAL, "2026-08-05") == "matched"
+
+    def test_differing_digests_are_moved_even_on_the_same_panel_date(self):
+        """Same-day recollection re-adjusts content without adding a session — the
+        digest, not the date, carries the identity (2026-08-01 double-collection)."""
+        meta = {"inputs": {"digest": "bbbbbbbbbbbb", "panel_asof": "2026-08-05"}}
+        assert vintage_attribution(meta, self._LOCAL, "2026-08-05") == "inputs_moved"
+
+    def test_legacy_ledger_with_a_lagging_continuity_clock_is_moved(self):
+        meta = {"continuity": {"last_session": "2026-08-04"}}
+        assert vintage_attribution(meta, self._LOCAL, "2026-08-05") == "inputs_moved"
+
+    def test_legacy_ledger_with_a_current_clock_is_unverifiable_not_matched(self):
+        """A date probe can prove movement, never identity — content may re-adjust in
+        place under an unchanged max session."""
+        meta = {"continuity": {"last_session": "2026-08-05"}}
+        assert vintage_attribution(meta, self._LOCAL, "2026-08-05") == "unverifiable"
+
+    def test_legacy_ledger_with_no_probe_at_all_is_unverifiable(self):
+        assert vintage_attribution({}, self._LOCAL, "2026-08-05") == "unverifiable"
+        assert vintage_attribution(None, self._LOCAL, None) == "unverifiable"
+
+    def test_a_stamped_digest_outranks_the_continuity_clock(self):
+        """The clock says moved, the digest says matched — content identity wins
+        (the clock is a coarse fallback for pre-stamp ledgers only)."""
+        meta = {"inputs": {"digest": self._LOCAL},
+                "continuity": {"last_session": "2026-08-01"}}
+        assert vintage_attribution(meta, self._LOCAL, "2026-08-05") == "matched"
+
+
 class TestCommittedReportIsCurrent:
     def test_the_committed_report_matches_a_fresh_render(self, study):
-        """The report is a committed artifact; a stale one is a wrong one. Only the
-        generated-at stamp may differ."""
+        """The report is a committed artifact; stale AT MATCHED INPUTS is wrong.
+
+        Byte equality across two different input states is not a property anything
+        guarantees — the collection lane advances the panel nightly and re-adjusts
+        history in place, and the report is re-rendered by the regime-update lane, not
+        by every data commit. So the diff is gated on the report's own machine-readable
+        `**Input state:**` line: when it matches this tree, the render must reproduce
+        the committed file exactly (code drift and nondeterminism are red); when it
+        differs, the inputs moved since the render and the re-render belongs to the
+        nightly lane, not to this test. A committed report WITHOUT the line predates
+        the vintage contract and fails closed.
+        """
         path = Path(__file__).resolve().parent.parent / "reports" / "exit-policy-horserace.md"
         if not path.exists():
             pytest.skip("report not committed yet")
         fresh = render_report(study).splitlines()
         on_disk = path.read_text().splitlines()
+        state = lambda ls: next(  # noqa: E731
+            (l for l in ls if l.startswith("**Input state:**")), None)
+        disk_state, fresh_state = state(on_disk), state(fresh)
+        assert disk_state is not None, (
+            "reports/exit-policy-horserace.md carries no `**Input state:**` line — it "
+            "predates the vintage contract; re-run scripts/exit_policy_study.py and "
+            "commit the result")
+        if disk_state != fresh_state:
+            pytest.skip(
+                "report inputs moved since it was rendered — the nightly regime-update "
+                f"lane re-renders it; committed {disk_state!r} vs tree {fresh_state!r}")
         strip = lambda ls: [l for l in ls if "**Study date:**" not in l]  # noqa: E731
         assert strip(fresh) == strip(on_disk), \
-            "reports/exit-policy-horserace.md is stale — re-run scripts/exit_policy_study.py"
+            ("reports/exit-policy-horserace.md is stale AT MATCHED INPUTS — a code "
+             "change altered the render without re-committing the report; re-run "
+             "scripts/exit_policy_study.py")

@@ -2459,6 +2459,22 @@ jobs:
         # Context-only (never feeds a score); the ledger accrues forward from here. The commit
         # step below (git add data/ site/) lands both artifacts. Idempotent per as_of. Resilient.
         run: python -m scripts.grade_us_board --nightly || true
+      - name: Exit-policy horse race report (measurement-tier; re-render at tonight's vintage)
+        # Re-renders reports/exit-policy-horserace.md against the ledger the step above
+        # just wrote, so the committed report and its inputs stay at ONE vintage — the
+        # committed-report freshness guard (tests/test_exit_policy_study.py) byte-diffs
+        # the render only at a matched `**Input state:**` line, and the calibration
+        # exactness guard runs only at a matched `meta.inputs` digest; this step is what
+        # keeps both matched branches alive night to night (adjudicated 2026-08-06 after
+        # the two vintage-race reds pinned the fleet). ~15s measured. Fail-soft: a red
+        # study leaves the prior report in place and the guards skip on the vintage gate
+        # rather than redding the fleet. Output rides the "commit engine outputs" step
+        # below (git add data/ site/ reports/) — the pathspec already covers reports/.
+        run: |
+          set +e
+          python -m scripts.exit_policy_study --quiet; rc=$?
+          if [ "$rc" -ne 0 ]; then echo "::warning title=exit_policy_study::rc=$rc (non-fatal) — report stays at its prior vintage; freshness guard will skip, not red"; fi
+          exit 0
       - name: Prophet doors — accrue Door T (theme-relay) + Door R (re-arm) flags (shadow, zero authority)
         # Prophet W3 shadow doors (research/PROPHET_DOORS_PREREG.md, frozen before first accrual).
         # Evaluates both doors on the committed caches and appends to data/prophet_doors/flags.jsonl.

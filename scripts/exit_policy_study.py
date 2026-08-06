@@ -26,7 +26,9 @@ THE POLICIES (identical entries, identical cohort)
   P0   incumbent as shipped — 10-session forced verdict, 3D-StochRSI>=80 target leg,
        90-session-trough x0.97 stop leg. This is literally ``track_scoring.score_episode``
        called with the grader's own parameters, so the calibration block below can
-       reproduce ``site/factordata/us_track_ledger.json`` key-for-key.
+       reproduce ``site/factordata/us_track_ledger.json`` key-for-key — at MATCHED input
+       vintage (``vintage_attribution``): the collection and regime-update lanes advance
+       independently, and between them the ledger's generating bytes exist only in git.
   P0f  pure fixed H=10 — the SAME horizon with both early-exit legs removed. This is the
        policy-free reference the decomposition is anchored on, because the operator's
        question is literally about bar 10 ("winners extended beyond 10d, losers cut
@@ -170,6 +172,7 @@ from engine import track_scoring as ts  # noqa: E402
 # silently measuring a different cohort.
 from scripts.grade_us_board import (  # noqa: E402
     BENCH,
+    CALIBRATION_CLOSE_GROUPS,
     LEDGER_HISTORY_FROM,
     LEDGER_HORIZON,
     LEDGER_JSON,
@@ -178,6 +181,7 @@ from scripts.grade_us_board import (  # noqa: E402
     _TROUGH_LB,
     _TROUGH_TOL,
     _ob_mask,
+    input_vintage,
 )
 
 REPORT_PATH = ROOT / "reports" / "exit-policy-horserace.md"
@@ -185,8 +189,10 @@ REPORT_PATH = ROOT / "reports" / "exit-policy-horserace.md"
 # Close panel = engine.equity_factors._closes("broad") — breadth (S&P 500) + smallcap +
 # midcap, first-hit-wins — so the price basis is byte-identical to the grader's. Russell
 # is appended for the high/low panel only (it ships no close cache); listing it here
-# costs nothing and keeps the two loaders symmetric.
-_CLOSE_GROUPS = ("breadth", "smallcap_breadth", "midcap_breadth", "russell_breadth")
+# costs nothing and keeps the two loaders symmetric. The group list is IMPORTED from the
+# grader because it is also the ledger's `meta.inputs` digest scope — one definition, or
+# the vintage identity and the loaded panel drift apart.
+_CLOSE_GROUPS = CALIBRATION_CLOSE_GROUPS
 
 ATR_N = 14                 # Wilder period
 H_LONG = 21                # the ladder's next rung — P1's fixed horizon
@@ -1119,14 +1125,51 @@ _CALIB_KEYS = ("n_matured", "n_board_days", "win_pct", "expectancy_pct", "median
                "mfe_median_pct", "mae_median_pct")
 
 
+def vintage_attribution(ledger_meta: Mapping[str, Any] | None,
+                        local_digest: str | None,
+                        panel_asof: str | None) -> str:
+    """What a non-zero calibration delta MEANS on this tree — decided BEFORE looking
+    at the deltas, from input identity alone.
+
+    'matched'       the ledger's ``meta.inputs`` digest equals the digest of the same
+                    files on this tree: the rebuild runs on the generator's own bytes,
+                    so any inequality is a real calibration break — reconstruction
+                    drift, or a cohort the study's panel can no longer see. Red-worthy.
+    'inputs_moved'  provably NOT the same content: a stamped digest that differs, or —
+                    for ledgers predating the stamp — the ledger's own continuity clock
+                    strictly behind this tree's panel. The daily-collection lane has
+                    advanced (and in-place total-return re-adjustment means even the
+                    shared history is not the history the ledger saw); deltas measure
+                    the tape's advance, not drift. The regime-update lane re-aligns.
+    'unverifiable'  no stamp and no clock disagreement: nothing in the artifact can
+                    attribute a delta either way. (Legacy ledgers only — every ledger
+                    generated from 2026-08-06 on carries the stamp.)
+    """
+    meta = dict(ledger_meta or {})
+    stamp = (meta.get("inputs") or {}).get("digest")
+    if stamp and local_digest:
+        return "matched" if stamp == local_digest else "inputs_moved"
+    last_session = (meta.get("continuity") or {}).get("last_session")
+    if last_session and panel_asof and str(panel_asof) > str(last_session):
+        return "inputs_moved"
+    return "unverifiable"
+
+
 def calibrate(board_days: Mapping[str, Iterable[str]], closes: pd.DataFrame,
-              bench: pd.Series | None, *, ledger_path: Path | None = None) -> dict:
+              bench: pd.Series | None, *, ledger_path: Path | None = None,
+              local_vintage: Mapping[str, Any] | None = None) -> dict:
     """Re-derive the shipped ledger summary on the FULL (uncoverage-filtered) cohort.
 
     Deliberately NOT the horse-race cohort: the ledger scores every episode with a close
     path, while the horse race additionally requires a high/low path for ATR. Running the
     calibration on the ledger's own cohort is what makes a non-zero delta mean "the
-    reconstruction drifted" rather than "the cohorts differ".
+    reconstruction drifted" rather than "the cohorts differ" — AT MATCHED INPUTS. The
+    two nightly lanes are independent (daily collection advances the panel; the regime
+    update regenerates the ledger), so between them the working tree holds a ledger
+    generated from bytes that no longer exist on disk: episodes mature against tape the
+    ledger never saw, and the total-return panel re-adjusts shared history in place.
+    ``vintage_attribution`` decides which reading applies; the returned ``vintage``
+    block carries the verdict so the report and the test never claim drift on a race.
     """
     scored, n_inflight, skipped = [], 0, []
     ob: dict[str, pd.Series | None] = {}
@@ -1162,8 +1205,11 @@ def calibrate(board_days: Mapping[str, Iterable[str]], closes: pd.DataFrame,
 
     path = ledger_path if ledger_path is not None else LEDGER_JSON
     shipped: dict[str, Any] = {}
+    ledger_meta: dict[str, Any] = {}
     if Path(path).exists():
-        shipped = (json.loads(Path(path).read_text()) or {}).get("summary") or {}
+        doc = json.loads(Path(path).read_text()) or {}
+        shipped = doc.get("summary") or {}
+        ledger_meta = doc.get("meta") or {}
     deltas = {}
     for k in _CALIB_KEYS:
         a, b = rebuilt.get(k), shipped.get(k)
@@ -1172,10 +1218,21 @@ def calibrate(board_days: Mapping[str, Iterable[str]], closes: pd.DataFrame,
         else:
             deltas[k] = round(float(a) - float(b), 6)
     exact = all(v == 0 for v in deltas.values() if v is not None)
+    panel_asof = str(closes.index.max().date()) if len(closes.index) else None
+    lv = dict(local_vintage or {})
     return {"rebuilt": rebuilt, "shipped": shipped, "deltas": deltas,
             "n_skipped_no_price": len(skipped),
             "tickers_skipped": sorted(set(skipped)),
-            "exact_match": bool(exact and shipped)}
+            "exact_match": bool(exact and shipped),
+            "vintage": {
+                "attribution": vintage_attribution(ledger_meta, lv.get("digest"),
+                                                   panel_asof),
+                "ledger_inputs": (ledger_meta.get("inputs") or None),
+                "ledger_last_session": (ledger_meta.get("continuity") or {}
+                                        ).get("last_session"),
+                "local_digest": lv.get("digest"),
+                "panel_asof": panel_asof,
+            }}
 
 
 # --------------------------------------------------------------------------- #
@@ -1183,6 +1240,7 @@ def calibrate(board_days: Mapping[str, Iterable[str]], closes: pd.DataFrame,
 # --------------------------------------------------------------------------- #
 def run_study(root: Path | None = None) -> dict:
     """Everything, deterministically. Returns the full result dict the report renders."""
+    vintage = input_vintage(root)
     closes, highs, lows, bench = load_prices(root)
     board_days, invalidation, prov = load_board_days(root)
     cohort, exclusions = build_cohort(board_days, invalidation, closes, highs, lows)
@@ -1225,6 +1283,7 @@ def run_study(root: Path | None = None) -> dict:
         "definition_cut": LEDGER_HISTORY_FROM,
         "incumbent_horizon": LEDGER_HORIZON,
         "bench": BENCH,
+        "input_vintage": vintage,
         "provenance": prov,
         "board_days": {"n": len(board_days),
                        "first": min(board_days) if board_days else None,
@@ -1256,7 +1315,7 @@ def run_study(root: Path | None = None) -> dict:
             "r_pct_p90": round(float(np.percentile(plan_r, 90)), 2) if plan_r else None,
             "target_pct_median": round(float(np.median(plan_r)) * PLAN_R_MULT, 2) if plan_r else None,
         },
-        "calibration": calibrate(board_days, closes, bench),
+        "calibration": calibrate(board_days, closes, bench, local_vintage=vintage),
     }
 
 
@@ -1428,8 +1487,8 @@ def _method_section(res: Mapping[str, Any]) -> list[str]:
              "when the incumbent's target leg exited on bar 3; the headline table then "
              "mixed two definitions in one column. Only those three columns moved: P0's "
              "P&L legs (`pnl`, `excess`, `held`, `exit`, `exit_reason`) still come "
-             "straight from the grader, which is why the calibration below is unchanged "
-             "and still lands on 0.0000. **The cost of the fix:** the P0 row's "
+             "straight from the grader, which is why the calibration comparison below "
+             "is untouched by the change. **The cost of the fix:** the P0 row's "
              "`capture`/`MFE`/`MAE` are no longer the shipped ledger's numbers — the "
              "ledger keeps the full-horizon window. The Calibration table, not the horse "
              "race, is the ledger-comparable surface.")
@@ -1568,6 +1627,15 @@ def render_report(res: Mapping[str, Any]) -> str:
       f"**Script:** `scripts/exit_policy_study.py` · "
       f"**Charter:** `research/PROPHET_LEARNING_LOOP_MASTERPLAN_BY_FABLE.md` §0 G3/G4, §1")
     A("")
+    # The machine-readable vintage of everything below. The committed-report freshness
+    # guard (tests/test_exit_policy_study.py) byte-compares a fresh render against the
+    # committed file ONLY when this line matches — content equality is not defined
+    # across two different input states, and the total-return panel re-adjusts history
+    # in place, so the date alone cannot carry the identity.
+    A(f"**Input state:** prices to {res['price_asof']} · boards "
+      f"{res['board_days']['first']} → {res['board_days']['last']} "
+      f"({res['board_days']['n']}) · inputs `{res['input_vintage']['report_digest']}`")
+    A("")
     A("**Tier: measurement / display. Nothing here promotes anything.** The public track "
       "record keeps the incumbent rule. Every verdict below is descriptive — what this "
       "sample shows, on this cohort, at this size. A policy that eventually replaces the "
@@ -1680,12 +1748,39 @@ def render_report(res: Mapping[str, Any]) -> str:
     A("## Calibration — does P0 reproduce the shipped ledger?")
     A("")
     if cal["shipped"]:
-        A("P0 is the incumbent rule executed through `engine.track_scoring` itself, on the "
-          "ledger's own cohort (close path only, no ATR requirement) so a non-zero delta "
-          "would mean the reconstruction drifted rather than that the cohorts differ. "
-          "This table is untouched by the held-window change described in *Method*: it "
-          "runs the grader end to end, including the grader's own full-horizon `capture`, "
-          "`mfe` and `mae`.")
+        v = cal.get("vintage") or {}
+        att = v.get("attribution")
+        led_v = ((v.get("ledger_inputs") or {}).get("panel_asof")
+                 or v.get("ledger_last_session"))
+        if att == "matched":
+            A("P0 is the incumbent rule executed through `engine.track_scoring` itself, "
+              "on the ledger's own cohort (close path only, no ATR requirement), and the "
+              "ledger's `meta.inputs` digest matches this tree's input files — the "
+              "rebuild runs on the generator's own bytes, so a non-zero delta would mean "
+              "the reconstruction drifted rather than that the cohorts differ. This "
+              "table is untouched by the held-window change described in *Method*: it "
+              "runs the grader end to end, including the grader's own full-horizon "
+              "`capture`, `mfe` and `mae`.")
+        elif att == "inputs_moved":
+            A(f"P0 is the incumbent rule executed through `engine.track_scoring` itself, "
+              f"on the ledger's own cohort (close path only, no ATR requirement). **The "
+              f"input files have moved since this ledger was generated** (ledger "
+              f"vintage: {led_v or 'unstamped'} · this render: prices to "
+              f"{res['price_asof']}): the daily-collection lane advances the panel "
+              f"independently of the regime-update lane that regenerates the ledger, so "
+              f"the deltas below measure the tape's advance — episodes that matured "
+              f"after the ledger was written, plus in-place total-return re-adjustments "
+              f"to shared history — not reconstruction drift. Exactness is defined only "
+              f"at matched inputs; the next regime-update run regenerates the ledger "
+              f"against the current panel and re-renders this report at one vintage.")
+        else:
+            A(f"P0 is the incumbent rule executed through `engine.track_scoring` itself, "
+              f"on the ledger's own cohort (close path only, no ATR requirement). This "
+              f"ledger predates the input-vintage stamp (`meta.inputs`, added "
+              f"2026-08-06), so whether its input files match this tree cannot be read "
+              f"from the artifact — the deltas below cannot be attributed between "
+              f"reconstruction drift and the tape's advance. The next regime-update run "
+              f"stamps the ledger. (This render's prices run to {res['price_asof']}.)")
         A("")
         A("| Key | Shipped `us_track_ledger.json` | Rebuilt here | Δ |")
         A("|---|---:|---:|---:|")
@@ -1693,7 +1788,15 @@ def render_report(res: Mapping[str, Any]) -> str:
             A(f"| `{k}` | {_f(cal['shipped'].get(k))} | {_f(cal['rebuilt'].get(k))} | "
               f"{_f(cal['deltas'].get(k), 4)} |")
         A("")
-        A(f"**Calibration delta: {'exact — 0.0000 on every key' if cal['exact_match'] else 'NON-ZERO — see the table'}.** "
+        if cal["exact_match"]:
+            verdict = "exact — 0.0000 on every key"
+        elif att == "matched":
+            verdict = ("NON-ZERO AT MATCHED INPUTS — the reconstruction has drifted; "
+                       "see the table")
+        else:
+            verdict = ("non-zero at unmatched inputs — expected under the tape's "
+                       "advance, and not attributable to drift from this tree")
+        A(f"**Calibration delta: {verdict}.** "
           "The horse-race cohort is a strict subset of this one (it additionally requires a "
           "high/low path for ATR14).")
     else:
