@@ -186,9 +186,15 @@ def test_live_theme_inputs_are_closed_accounted_and_contract_valid() -> None:
     unmapped_count = active_count - mapped_count
     # +10 on every unmapped-side count: silver_miners' ten members appear in no other
     # basket, so each is a NEW active ticker whose only basket is unmapped.
-    assert (active_count, mapped_count, unmapped_count) == (1019, 246, 773)
-    assert len(active) == 701
-    assert sum(not bool(baskets & set(theme_by_basket)) for baskets in active.values()) == 499
+    # -1 on the active/unmapped pair (2026-08-05): BLD left the ACTIVE census when the
+    # exit ledger became its ruler. TopBuild was acquired by QXO (trading suspended
+    # 2026-07-01, Form 15-12G 2026-07-13), so no successor ticker carries its series.
+    # `mapped_count` is unmoved because BLD's only basket is an unmapped one, and BLD is
+    # the only WHOLLY removed ticker — FUTU/NSSC/YOU are cross-listed and stay active
+    # under another basket, which is why one delisting moves these counts by exactly one.
+    assert (active_count, mapped_count, unmapped_count) == (1018, 246, 772)
+    assert len(active) == 700   # 701 - BLD (see the exit-ledger note above)
+    assert sum(not bool(baskets & set(theme_by_basket)) for baskets in active.values()) == 498   # 499 - BLD (unmapped-only ticker)
 
     assert theme_state["schema"] == "neuralweb.theme_state.v1"
     state_as_of = date.fromisoformat(theme_state["as_of"])
