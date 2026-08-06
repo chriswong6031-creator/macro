@@ -157,7 +157,7 @@ print on the score's card, not a licence to widen the leg's authority.
   card, per the roadmap's §4.4 adjudication set (demote / mine the legs / keep-with-card).
 * **G0.4** — the graded `us_board_ledger` population is not touched; this is a read-only
   replay.
-* **G0.5 / DNR row 49** — no blended ranking is proposed, tested, or implied. The question
+* **G0.5 / DNR:KILL-PROPHET-POP-MERGE** — no blended ranking is proposed, tested, or implied. The question
   is about a FILTER's asymmetry, not about a new composite.
 * **Sole-advancer law** — the study writes only a results JSON beside this note; it advances
   no forward ledger.

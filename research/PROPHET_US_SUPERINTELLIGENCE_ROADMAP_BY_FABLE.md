@@ -56,7 +56,7 @@ from the CN adjudications and this repo's kill registry:
 
 - **Glass-box law / no composite blend, ever.** Every authority is a bounded, individually
   revertible leg earned through its own adjudication (the conviction composite measured
-  anti-predictive; DNR row 49 forbids blended rankings; PSF killed stage-as-win-gate). The
+  anti-predictive; DNR:KILL-PROPHET-POP-MERGE forbids blended rankings; PSF killed stage-as-win-gate). The
   priority score stays a sum of defensible legs; new axes join it one at a time or not at all.
 - **Confirmation is not free.** CN-RC0 measured confirmation as negatively priced at entry
   timing; the US operator independently ratified T2-above-T1 in 2026-07. §5 re-measures this
@@ -184,7 +184,7 @@ with its measured card printed.
 `build_polygon_universe` already maintains ~8.7k names with sector + cap for the charting
 app. Charter (not build yet): a liquidity-floored SCAN tier — context vector + miss-audit
 coverage over the widened set, board ADMISSION untouched (curated universe stays the
-population; DNR row 49). "See everything, admit selectively." The CRCL incident becomes
+population; DNR:KILL-PROPHET-POP-MERGE). "See everything, admit selectively." The CRCL incident becomes
 structurally impossible: an off-index runner would at minimum be SEEN and counted missed.
 
 ## §5 Frozen-frame stand-ins — RUN, results frozen alongside

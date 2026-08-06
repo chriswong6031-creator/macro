@@ -21,7 +21,7 @@ A chain in this directory is:
 A chain in this directory is **NOT**:
 
 - **armed on any signal surface.** It is **display/context tier only**. It never emits an
-  alpha score, gate, size, rank, or escalation (DNR row 45 / TXI Article 1/2). The ingest
+  alpha score, gate, size, rank, or escalation (DNR:KILL-CAUSAL-DAG-ALPHA / TXI Article 1/2). The ingest
   rejects any proposal carrying an authority field.
 - **promoted.** Promotion to authority (and to the top-level library) is **human-only** and
   gauntlet-gated (TXI-R5). The LLM proposes; it never grants authority (CHF-R17: LLMs

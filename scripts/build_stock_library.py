@@ -38,6 +38,7 @@ from engine.setups import (  # noqa: E402
 from engine import stock_score  # noqa: E402
 from engine import name_score  # noqa: E402  — per-name POTENTIAL (buy-readiness) score, edge-blended
 from engine import name_score_grader  # noqa: E402  — forward-grades the POTENTIAL score
+from engine.name_score_grader import _MAX_BAR_LAG_DAYS  # noqa: E402  — single staleness law (R1)
 from engine import entry_signal  # noqa: E402
 from engine import risk_sizing  # noqa: E402 — vol-managed inverse-vol sizing (the validated Sharpe lever)
 from engine import dispersion  # noqa: E402 — cross-sectional dispersion regime (selection-gross dial)
@@ -386,6 +387,164 @@ def _collect_potential_calls(to_write) -> list[dict]:
     return calls
 
 
+_FEED_DEMOTION_BREAKER = 0.20  # R2: >20% of full recs demoting reads as a collector
+# outage, not per-name staleness — the gate disarms rather than blank most of the site.
+
+
+def _feed_freshness(recs) -> tuple[str | None, dict[str, int], int]:
+    """Scan-side freshness read over the raw rec list, BEFORE any board/profile
+    admission (research/ADJUDICATION_20260803_UNIVERSE_SIDE_STORE_FRESHNESS.md
+    R1/R2). Considers ONLY full recs (rec truthy, `not rec.get("limited")`) — a
+    LIMITED record carries no comparable asof depth and is exempt (R1 invariant
+    I4). `lib_asof` is the max parseable `asof` among those full recs — the
+    library's own tip, self-relative so no wall-clock/calendar dependency.
+
+    A rec whose `asof` cannot be parsed is fail-open (never demoted) and counted
+    in `n_dark` (CSP-R1 — an unusable stamp must never silently darken a name).
+    A rec demotes iff strictly more than `_MAX_BAR_LAG_DAYS` calendar days behind
+    `lib_asof`. This is the SAME 7-day constant as the ledger admission gate
+    (name_score_grader), but a DIFFERENT reference: the ledger gate measures
+    against a wall-clock stamp, this measures against the library's OWN max tip
+    (self-relative) — strictly LOOSER, and in the safe direction (a demotion
+    here can only ever be as late or later than the ledger gate's own refusal,
+    never earlier). Real headroom is closer to ~3 days than 7 on an ordinary
+    build, since a 24/7 crypto tip typically leads the equity pack by 1-2 days
+    even mid-week; the full 7 is the worst-case NYSE closure margin.
+
+    CIRCUIT BREAKER (R2): if the demotion set would exceed
+    `_FEED_DEMOTION_BREAKER` (20%) of the ASSESSABLE population — recs with a
+    parseable asof, i.e. `len(parsed)`, NOT `len(full)` — the gate DISARMS for
+    this run. Dark recs (unparseable asof) are excluded from the denominator on
+    purpose: they carry no freshness read at all, so diluting the ratio with
+    them would let a mass-dark run (most asof fields unparseable) mask a
+    genuinely mass-stale assessable population and keep the gate armed when it
+    shouldn't be. An empty demotion map is returned and this function prints
+    the loud ::warning itself (so a direct caller/test sees it without needing
+    main()'s plumbing); a universe-wide freeze reads as a collector outage, and
+    blanking every board would itself be fail-dark (CSP-R1).
+
+    Returns (lib_asof as an ISO date string or None when no full rec has a
+    parseable asof, {ticker: behind_days} for the (possibly disarmed) demotion
+    set, n_dark)."""
+    full = [r for r in recs if r and not r.get("limited")]
+    parsed: dict[str, pd.Timestamp] = {}
+    n_dark = 0
+    for r in full:
+        tk = r.get("ticker")
+        if not tk:
+            continue
+        ts = None
+        try:
+            ts = pd.Timestamp(r.get("asof"))
+            if pd.isna(ts):
+                ts = None
+            elif ts.tzinfo is not None:
+                # tz-aware asof (e.g. an ISO stamp carrying "+00:00") would TypeError
+                # against a tz-naive peer at max()/subtraction below — normalize to
+                # naive (calendar-day math only; no true cross-timezone comparison
+                # is intended here, same as every other asof this module compares).
+                ts = ts.tz_localize(None)
+        except (TypeError, ValueError):
+            ts = None
+        if ts is None:
+            n_dark += 1
+        else:
+            parsed[tk] = ts
+    if not parsed:
+        return None, {}, n_dark
+    lib_ts = max(parsed.values())
+    lib_asof = str(lib_ts.date())
+    demoted = {tk: int((lib_ts - ts).days) for tk, ts in parsed.items()
+               if (lib_ts - ts).days > _MAX_BAR_LAG_DAYS}
+    # M2: denominator is the ASSESSABLE population (parsed), not `full` — a dark
+    # rec (unparseable asof) was never classifiable as fresh OR stale, so it must
+    # not pad the denominator and understate the true stale fraction among names
+    # the gate can actually see.
+    if parsed and (len(demoted) / len(parsed)) > _FEED_DEMOTION_BREAKER:
+        frac = len(demoted) / len(parsed)
+        print(f"::warning title=stock-library freshness gate disarmed::demotion set "
+              f"{len(demoted)}/{len(parsed)} ({frac:.0%}) exceeds the "
+              f"{_FEED_DEMOTION_BREAKER:.0%} circuit breaker — a universe-wide freeze "
+              "reads as a collector outage, not per-name staleness; gate DISARMED for "
+              "this run, no demotions applied", flush=True)
+        return lib_asof, {}, n_dark
+    return lib_asof, demoted, n_dark
+
+
+def _lib_tip_wall_clock_warning(lib_asof: str | None) -> str | None:
+    """M1 backstop: every R1/R2 guard is self-relative to the library's OWN max tip
+    (`lib_asof`), which is exactly right for demotion (never a wall-clock/calendar
+    dependency, per R1) but has one blind spot — a TOTAL freeze (every feed frozen
+    together, e.g. the whole collector host down) is invisible to a purely self-
+    relative check, since every rec is still "on time" relative to a tip that itself
+    never advanced. This is DISCLOSURE ONLY (the demotion gate stays self-relative;
+    this never feeds it) against wall-clock now.
+
+    Returns the bare ::warning line to print, or None when `lib_asof` is absent/
+    unparseable or not stale enough to warrant one — pulled out as a pure function
+    (rather than inlined in main()) purely so this decision is unit-testable without
+    invoking the full nightly build."""
+    if lib_asof is None:
+        return None
+    try:
+        lib_ts = pd.Timestamp(lib_asof)
+        if pd.isna(lib_ts):
+            return None
+        if lib_ts.tzinfo is not None:
+            lib_ts = lib_ts.tz_localize(None)
+        now_naive = pd.Timestamp.utcnow().tz_localize(None)
+        behind_wall = (now_naive.normalize() - lib_ts.normalize()).days
+    except (TypeError, ValueError):
+        return None
+    if behind_wall <= _MAX_BAR_LAG_DAYS:
+        return None
+    return (f"::warning title=stock-library tip stale::library max tip {lib_asof} "
+            f"is >{_MAX_BAR_LAG_DAYS}d behind today — possible collector outage "
+            "(demotion gate unaffected)")
+
+
+def _authority_admits(ticker: str, demote_map: dict) -> bool:
+    """B1: True iff `ticker` may enter a SCORING-AUTHORITY collection this run — a
+    board/rank/setups/ran-lane admission set, as opposed to a display-only chip map
+    (disp_map, coil/donor/hold state, W3 evidence, …, which stay unguarded — see the
+    call-site comments in main()). A demoted ticker (frozen feed, R1) is excluded.
+
+    Guards `sig_verdict` (site/factordata/signal_gate.json — the discovery board's
+    PRIMARY buy gate — AND us_board_rank.build_ran_rows' own admission set, since it
+    iterates sig_verdict's keys directly) and `cand` (setups.json's "Top setups"
+    strip, and wide["universe"] = len(cand)) at THEIR population sites, which run
+    earlier in the per-ticker loop than the profiles/entry_sig/risk_sig demotion
+    branch — populating either one before checking this predicate would leak scoring
+    authority through a path the later guard never touches."""
+    return ticker not in demote_map
+
+
+def _apply_feed_demotion(rec: dict, behind_days: int, lib_asof: str) -> None:
+    """Strip scoring authority from a full rec whose feed is frozen (R1): the page
+    and JSON keep the record (search + deep links stay alive — deleting a name
+    would be fail-dark, CSP-R1), disclosed via `feed_stale`, but
+    `conviction.potential` is removed so `_collect_potential_calls` emits no call
+    for this name (the grader's own bar_asof gate is the second line of
+    defense). The caller additionally excludes the ticker from
+    `profiles`/`entry_sig`/`risk_sig` so it drops out of every board/standout/
+    percentile cohort (I2) — this helper only touches the rec itself (I1).
+
+    B2: `conviction.score` (the raw per-name logistic value stock_score.
+    conviction_profile computes) is ALSO cleared to None. `attach_panel_scores`
+    would normally overwrite it with a within-market percentile — but it only
+    runs over `profiles`, and a demoted name is excluded from `profiles` (I2),
+    so its raw logistic score would otherwise survive untouched and render on
+    the page as a scale-mixed NN/100 "board rank" gauge sitting right next to
+    the "not scored" banner — a self-contradicting page. None flows through
+    engine/stock_view.py's score_view() to suppress both the gauge and its
+    rank_note tooltip (see the stock_view.py / stockview.js changes)."""
+    rec["feed_stale"] = {"behind_days": int(behind_days), "lib_asof": lib_asof}
+    conv = rec.get("conviction")
+    if isinstance(conv, dict):
+        conv.pop("potential", None)
+        conv["score"] = None
+
+
 def _one(ticker: str, close: pd.Series, high: pd.Series | None,
          name: str, sector: str, liquidity: str | None = None,
          macro_drag: float | None = None, macro_beta: float = 0.0,
@@ -452,6 +611,21 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
             rec["anticipation"] = a
     except Exception:  # noqa: BLE001 — additive; one cone error must not drop the name
         pass
+    # Blow-off (terminal) risk context — DISPLAY-ONLY, zero score authority.
+    # Mirrors the measured S-ROC12-TERM construction (engine/roc_blowoff.py; evidence
+    # research/prophet_us_audit/roc_extremes_battery{,_results}.json).  Computed HERE
+    # because `c` is already in hand — no extra store read — and because _one() runs in
+    # the process pool, so the ~1.1 ms/name cost is spread across workers.
+    # US EQUITIES ONLY: the battery's panel was the US equity book, so a crypto name
+    # would be a read on a population that was never measured.  It gets no chip.
+    if kind == "equity":
+        try:
+            from engine import roc_blowoff as _rb
+            _bo = _rb.assess(c)
+            if _bo:
+                rec["blowoff"] = _bo
+        except Exception:  # noqa: BLE001 — display-only; never drops the name
+            pass
     return rec
 
 
@@ -1075,21 +1249,32 @@ def _enforce_blocked_buy_invariant(buy_rows: list[dict]) -> int:
     return touched
 
 
-def _compute_board_staleness(ohlcv_dir: "Path | None" = None, now: "datetime | None" = None) -> dict:
+def _compute_board_staleness(ohlcv_dir: "Path | None" = None, now: "datetime | None" = None,
+                             panel_reach: "dict | None" = None) -> dict:
     """CSP-W5: compute staleness metadata for the US standout board.
 
-    Scans data/baskets/ohlcv/*.parquet to find the maximum (most recent) date
-    present in any per-ticker close store — this is the date the board is priced
-    from, the same store the cascade gate reads.
+    Scans data/baskets/ohlcv/*.parquet (the store the cascade gate reads) AND —
+    when the caller passes panel_reach from _panel_price_reach() — the ranked
+    universe panel's actual last-close distribution. price_through is the MAX
+    across both: the freshest close any input actually contributed to this
+    build. The ohlcv scan alone is a side store that can sit sessions behind
+    the panel (2026-08-03→05: 22 consecutive builds all stamped price_through=
+    2026-07-31 off this scan while half of them ranked yahoo-store closes
+    through 08-03/04 — the buy lane oscillated 55↔76 names with the artifact
+    claiming identical data reach throughout).
 
     Returns:
         {
-          "price_through": "2026-07-15",  # ISO date of most recent close in the store
+          "price_through": "2026-07-15",  # ISO date of freshest close actually used
           "age_days":      0,             # calendar days since price_through (int)
           "delayed":       False,         # True when >= 2 trading sessions behind expected
+          "inputs": {                     # per-input reach disclosure (display-only)
+            "baskets_ohlcv_through": "2026-07-15",  # the cascade-gate store scan (or None)
+            "panel": {...} | None,                   # _panel_price_reach() summary (or None)
+          },
         }
 
-    Fail-soft: if the store is absent or unreadable, returns
+    Fail-soft: if no input is readable, returns
         {"price_through": None, "age_days": None, "delayed": False}
     so the badge is silently suppressed — never crashes a build.
 
@@ -1103,24 +1288,33 @@ def _compute_board_staleness(ohlcv_dir: "Path | None" = None, now: "datetime | N
     try:
         _root = ohlcv_dir or (config.data_dir() / "baskets" / "ohlcv")
         _root = _root if isinstance(_root, Path) else Path(_root)
-        if not _root.is_dir():
-            return _sentinel
-        _max_date: "date | None" = None
-        for _fname in os.listdir(str(_root)):
-            if not _fname.endswith(".parquet"):
-                continue
-            try:
-                _df = pd.read_parquet(str(_root / _fname), columns=["close"])
-                if _df.empty:
+        _ohlcv_through: "date | None" = None
+        if _root.is_dir():
+            for _fname in os.listdir(str(_root)):
+                if not _fname.endswith(".parquet"):
                     continue
-                _idx = pd.to_datetime(_df.index)
-                _last = _idx.max().date()
-                if _max_date is None or _last > _max_date:
-                    _max_date = _last
-            except Exception:  # noqa: BLE001 — per-file failure is non-fatal
-                continue
-        if _max_date is None:
+                try:
+                    _df = pd.read_parquet(str(_root / _fname), columns=["close"])
+                    if _df.empty:
+                        continue
+                    _idx = pd.to_datetime(_df.index)
+                    _last = _idx.max().date()
+                    if _ohlcv_through is None or _last > _ohlcv_through:
+                        _ohlcv_through = _last
+                except Exception:  # noqa: BLE001 — per-file failure is non-fatal
+                    continue
+        # Union with the ranked panel's actual reach (CSP-W5b disclosure): a build
+        # that ranked on fresher closes than the ohlcv scan must not under-claim.
+        _panel_through: "date | None" = None
+        if panel_reach and panel_reach.get("through"):
+            try:
+                _panel_through = _dt.strptime(str(panel_reach["through"]), "%Y-%m-%d").date()
+            except Exception:  # noqa: BLE001 — malformed reach never breaks the badge
+                _panel_through = None
+        _candidates = [d for d in (_ohlcv_through, _panel_through) if d is not None]
+        if not _candidates:
             return _sentinel
+        _max_date = max(_candidates)
 
         _now = now or _dt.now(_tz.utc)
         _expected = _nyse.expected_last_session(_now)
@@ -1148,10 +1342,145 @@ def _compute_board_staleness(ohlcv_dir: "Path | None" = None, now: "datetime | N
             "price_through": str(_max_date),
             "age_days": _age_days,
             "delayed": _delayed,
+            "inputs": {
+                "baskets_ohlcv_through": (str(_ohlcv_through) if _ohlcv_through else None),
+                "panel": panel_reach or None,
+            },
         }
     except Exception as _e:  # noqa: BLE001 — never crashes a build
         log.warning("_compute_board_staleness: failed (%s) — suppressing badge", _e)
         return _sentinel
+
+
+def _panel_price_reach(uni: "list | None",
+                       exclude: "frozenset[str] | set[str] | None" = None) -> "dict | None":
+    """CSP-W5b: measure the actual price reach of the ranked universe panel.
+
+    universe() assembles the panel from stores with independent advancement
+    cadences: data/stocks (nightly data commit), the four breadth
+    _closes_cache.parquet groups (actions/cache restore), and data/yahoo
+    (also re-pulled in-run by check_price_store_freshness --heal lanes).
+    When one store advances without the others, the board ranks a MIXED-
+    vintage cross-section and the buy lane oscillates between lanes with no
+    disclosure anywhere in the artifact — 2026-08-03→05, across 22 builds,
+    the only leak was the display-only donor.asof field (yahoo healed to
+    08-03/04 while the wedged nightly pinned every other store at 07-31).
+
+    24/7 members are EXCLUDED from the measurement (exclude=None → the
+    config.yml yahoo.tickers.crypto block, the same set the extension-panel
+    calendar split uses): the board's staleness is judged on the NYSE session
+    calendar, and a weekend/holiday crypto bar must never claim session reach
+    for — or clear the DELAYED badge of — the equity board. (Measured on the
+    2026-08-04 checkout: 3 crypto members reached 08-04 while no equity close
+    passed 08-03.)
+
+    Returns a compact reach summary for the staleness block (display-only):
+      through              max last-valid close date across members (ISO)
+      majority_through     modal last-valid close date (ISO) — where the bulk
+                           of the panel actually ends
+      members_at_through / members_total — how many members reach `through`
+      mixed_vintage        True when the freshest date is NOT the modal date:
+                           a material bloc of the panel is staler than the
+                           freshest members (delisted stragglers alone never
+                           trigger this — they lose the mode)
+    None when the panel is empty/unreadable. Never raises.
+    """
+    from collections import Counter
+    _skip = _crypto_tickers() if exclude is None else frozenset(exclude)
+    _by_date: "Counter" = Counter()
+    for _item in (uni or []):
+        try:
+            if str(_item[0]) in _skip:
+                continue
+            _close = _item[1]
+            if _close is None:
+                continue
+            _ts = _close.last_valid_index()
+            if _ts is None:
+                continue
+            _by_date[pd.Timestamp(_ts).date()] += 1
+        except Exception:  # noqa: BLE001 — one unreadable member never breaks the summary
+            continue
+    if not _by_date:
+        return None
+    _max_d = max(_by_date)
+    # modal date; ties broken toward the fresher date so a 50/50 split still
+    # reports majority == through (i.e. not flagged as mixed by a coin flip)
+    _majority_d = max(_by_date.items(), key=lambda kv: (kv[1], kv[0]))[0]
+    return {
+        "through": str(_max_d),
+        "majority_through": str(_majority_d),
+        "members_at_through": int(_by_date[_max_d]),
+        "members_total": int(sum(_by_date.values())),
+        "mixed_vintage": _majority_d != _max_d,
+    }
+
+
+# Two consecutive builds claiming the SAME as_of are re-renders of the same
+# board and should agree almost exactly. Measured separation (22 builds,
+# 2026-08-03→05): same-vintage adjacent builds sit at Jaccard >= 0.95 while
+# cross-vintage flips sit at <= 0.87 — 0.90 splits the two populations.
+_BOARD_CONTINUITY_JACCARD_MIN = 0.90
+_BOARD_CONTINUITY_MIN_NAMES = 5   # below this, set overlap is too coarse to judge
+
+
+def _board_continuity_warning(prev_doc: "dict | None", wide: "dict | None") -> "str | None":
+    """CSP-W5b: line-start ::warning when two builds at the same as_of disagree.
+
+    Compares the previous artifact's buy lane (loaded BEFORE overwrite, same
+    idiom as the B4 conviction delta) against the fresh build's. Two builds
+    stamping the SAME as_of that produce materially different buy lanes mean
+    the lanes read different data vintages — 2026-08-03→05 the lane swung
+    55↔76 names (VALE present 7/7 stale-vintage builds, 0/15 fresh) across
+    22 builds all claiming as_of=2026-07-31.
+
+    Returns the fully-formed annotation line (caller prints it BARE at line
+    start with flush=True — repo annotation law: a logger prefix makes GitHub
+    drop it), or None when continuity holds / inputs are unusable.
+    Display-only: never a gate, never changes the artifact. Never raises.
+    """
+    try:
+        _prev_as_of = (prev_doc or {}).get("as_of")
+        _cur_as_of = (wide or {}).get("as_of")
+        if not _prev_as_of or not _cur_as_of or _prev_as_of != _cur_as_of:
+            return None
+
+        def _lane(doc: dict) -> set:
+            return {str(r.get("ticker")) for r in (doc.get("buy") or [])
+                    if isinstance(r, dict) and r.get("ticker")}
+
+        _prev_t, _cur_t = _lane(prev_doc), _lane(wide)
+        if max(len(_prev_t), len(_cur_t)) < _BOARD_CONTINUITY_MIN_NAMES:
+            return None
+        _union = _prev_t | _cur_t
+        if not _union:
+            return None
+        _jac = len(_prev_t & _cur_t) / len(_union)
+        if _jac >= _BOARD_CONTINUITY_JACCARD_MIN:
+            return None
+        _added = sorted(_cur_t - _prev_t)
+        _dropped = sorted(_prev_t - _cur_t)
+        _flips = _added[:4] + _dropped[:4]
+        _more = len(_added) + len(_dropped) - len(_flips)
+
+        def _reach(doc: "dict | None") -> str:
+            _st = (doc or {}).get("staleness") or {}
+            _panel = (_st.get("inputs") or {}).get("panel") or {}
+            return (f"price_through={_st.get('price_through')}"
+                    f" panel_majority={_panel.get('majority_through')}")
+
+        return (
+            f"::warning title=us-board-continuity::buy lane flipped between consecutive "
+            f"builds at the same as_of={_cur_as_of}: {len(_prev_t)}->{len(_cur_t)} names, "
+            f"jaccard={_jac:.2f} (<{_BOARD_CONTINUITY_JACCARD_MIN}), "
+            f"+{len(_added)}/-{len(_dropped)} "
+            f"({', '.join(_flips)}{f' +{_more} more' if _more > 0 else ''}). "
+            f"Same-as_of builds disagreeing this much means the lanes read different "
+            f"data vintages — compare staleness.inputs/donor.asof "
+            f"(prev {_reach(prev_doc)}; new {_reach(wide)})."
+        )
+    except Exception:  # noqa: BLE001 — a guard must never break the render
+        return None
 
 
 def _count_trading_sessions_between(start_date: "date", end_date: "date") -> int:
@@ -1320,8 +1649,10 @@ def _spotlight_context() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("spotlight sector stage table unavailable (%s)", e)
     alloc_by_id = _basket_alloc_map(theme_by_id)
-    log.info("spotlight context: %d scored themes · %d sector stages · %d basket alloc states",
-             len(theme_by_id), len(sector_by_etf), len(alloc_by_id))
+    turn_by_id = _basket_turn_map()
+    log.info("spotlight context: %d scored themes · %d sector stages · %d basket alloc states "
+             "· %d baskets turning up off a low",
+             len(theme_by_id), len(sector_by_etf), len(alloc_by_id), len(turn_by_id))
     # Oracle dark-tilt channel — {} unless config oracle.tilt_enabled (R4: default off).
     try:
         from engine.oracle.tilt import oracle_tilt_by_etf
@@ -1332,7 +1663,8 @@ def _spotlight_context() -> dict:
     if oracle_by_etf:
         log.info("spotlight context: oracle tilt ENABLED for %d sector ETFs", len(oracle_by_etf))
     return {"theme_by_id": theme_by_id, "sector_by_etf": sector_by_etf,
-            "alloc_by_id": alloc_by_id, "oracle_tilt_by_etf": oracle_by_etf, "unmapped": set()}
+            "alloc_by_id": alloc_by_id, "turn_by_id": turn_by_id,
+            "oracle_tilt_by_etf": oracle_by_etf, "unmapped": set()}
 
 
 def _basket_alloc_map(theme_by_id: dict) -> dict:
@@ -1371,6 +1703,45 @@ def _basket_alloc_map(theme_by_id: dict) -> dict:
             "name": th.get("name") or r.get("name"), "name_zh": th.get("name_zh"),
             "signal_grade": (th.get("signal_strength") or {}).get("grade"),
         }
+    return out
+
+
+def _basket_turn_map() -> dict[str, dict]:
+    """Baskets whose CYCLE says they are turning up off a low, keyed by slug.
+
+    The rule is the cycle engine's own registered bottoming condition and is
+    quoted, not invented: `phase == "Trough" AND osc_slope > 0` on the latest
+    `data/sector_cycles/forward_log.parquet` rows — character for character the
+    CN `bottoming_watch` rule (engine/china_act_now.py:352-359), including the
+    leading `b-` strip that maps a basket forward-log id onto a basket slug.
+
+    Feeds the caution DUAL-READ only (engine.stock_score._basket_risk). It can
+    change no size, no rank and no haircut: a name whose best-ranked basket earns
+    a caution gains one extra SENTENCE when a different basket it also belongs to
+    is turning. Best-effort — {} on any failure, and the caution then reads
+    exactly as it read before this map existed.
+    """
+    out: dict[str, dict] = {}
+    try:
+        fwd = pd.read_parquet(config.data_dir() / "sector_cycles" / "forward_log.parquet")
+        if fwd.empty:
+            return out
+        fwd["date"] = pd.to_datetime(fwd["date"])
+        latest = fwd.sort_values("date").groupby("id").last().reset_index()
+        for _, row in latest.iterrows():
+            slug = str(row["id"])
+            if not slug.startswith("b-"):
+                continue                    # sector ETF rows are not basket memberships
+            slope = row.get("osc_slope")
+            if str(row.get("phase") or "") != "Trough":
+                continue
+            if slope is None or pd.isna(slope) or float(slope) <= 0:
+                continue
+            out[slug[2:]] = {"name": (str(row["name"]) if pd.notna(row.get("name")) else None),
+                             "pos": (float(row["pos"]) if pd.notna(row.get("pos")) else None),
+                             "osc_slope": float(slope)}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("basket turn map unavailable (%s)", e)
     return out
 
 
@@ -2255,6 +2626,9 @@ def main() -> int:
     # composite z (set once all names are profiled), not a per-name logistic skin.
     profiles: dict[str, dict] = {}
     entry_sig: dict[str, dict] = {}             # entry-timing gauge per name (board rows)
+    entry_sig_null: dict[str, str] = {}         # gauge disclosed-null reason per name — a board
+                                                # row must carry entry_signal OR this reason, so
+                                                # the forward ledger never grades a silent null
     risk_sig: dict[str, dict] = {}              # vol-managed sizing per name (board rows)
     disp_map: dict[str, dict] = {}              # price / off-high / sparkline per name
     _liq_map: dict[str, dict] = {}              # P0.3 liquidity/capacity hygiene (display-only, R10)
@@ -2369,6 +2743,44 @@ def main() -> int:
         recs = [_one_task(item) for item in uni]
         log.info("stock library: analysed %d names in %.0fs (serial)", len(uni), time.time() - t0)
 
+    # ---- feed-freshness scan (R1/R2, research/ADJUDICATION_20260803_UNIVERSE_SIDE_STORE_FRESHNESS.md)
+    # A full rec whose own asof lags the library's max tip by >_MAX_BAR_LAG_DAYS is a name
+    # scored off a dead side-store feed (CTRA/TPH/TCNNF/CWEN-A class). Demotion is applied
+    # per-rec below, right where profiles/entry_sig/risk_sig are populated. Bare prints, NOT
+    # logger calls — see the annotation-line-start law at the top of this module's imports.
+    # B3: this gate must never abort the nightly build — a crash here (e.g. a shape it
+    # doesn't defend against) fails OPEN (no demotions this run), never fails the lane.
+    _lib_asof, _demote_map, _n_dark = None, {}, 0
+    try:
+        _lib_asof, _demote_map, _n_dark = _feed_freshness(recs)
+        print(f"::notice title=stock-library feed-freshness::lib_asof={_lib_asof} "
+              f"demoted={len(_demote_map)} dark={_n_dark}", flush=True)
+        if _demote_map:
+            _tip_by = {r.get("ticker"): r.get("asof") for r in recs if r}
+            _demoted_sorted = sorted(_demote_map)
+            _shown = [f"{t}({_tip_by.get(t)})" for t in _demoted_sorted[:15]]
+            _more = len(_demoted_sorted) - len(_shown)
+            print(f"::warning title=stock-library frozen feeds::{len(_demote_map)} name(s) "
+                  f"frozen >{_MAX_BAR_LAG_DAYS}d behind {_lib_asof}, demoted from scoring "
+                  f"(page kept): {', '.join(_shown)}"
+                  f"{f', +{_more} more' if _more > 0 else ''}", flush=True)
+        if _n_dark:
+            print(f"::warning title=stock-library freshness gate DARK::{_n_dark} full rec(s) "
+                  "carry an unparseable/unusable asof — fail-open (not demoted); the "
+                  "feed-freshness gate cannot see them", flush=True)
+        # M1: self-relative wall-clock blindness backstop — every guard above compares a
+        # rec's asof against the LIBRARY's own max tip, so a TOTAL freeze (every feed
+        # frozen together, e.g. the whole collector host down) is invisible to all three:
+        # every rec is "on time" relative to a tip that itself never moved. This is
+        # DISCLOSURE ONLY (never a gate — R1/R2 stay self-relative) against wall-clock now.
+        _wall_warning = _lib_tip_wall_clock_warning(_lib_asof)
+        if _wall_warning:
+            print(_wall_warning, flush=True)
+    except Exception as _ff_e:  # noqa: BLE001 — the gate must never abort the nightly build
+        print(f"::warning title=stock-library freshness gate crashed::{_ff_e} — "
+              "gate fail-open, no demotions this run", flush=True)
+        _lib_asof, _demote_map, _n_dark = None, {}, 0
+
     # ---- flow_score pre-loop load (FS-4 Lane C, schema flow_score.stock/v1) --------
     # Loads ledger + scores once; looked up per-ticker inside the main rec loop below.
     # OMITTED entirely (block never written) when:
@@ -2418,16 +2830,31 @@ def main() -> int:
     # Insider fields (insider_buyers/bps/net_mn) are already attached to the cand row at L1248.
     # evidence_health carries staleness markers: {source: 'stale-Nd'} when the artifact is stale.
     _w3_evidence: dict[str, dict] = {}   # ticker -> evidence payload for board-row propagation
+    # Blow-off risk context (engine/roc_blowoff) — staged here and folded onto board rows
+    # in the enrichment pass below.  Same two-step as the W3 evidence stack: the close
+    # series lives in THIS loop, the board row is assembled later with only ticker-keyed
+    # lookups available.  Read straight off rec — _one() already computed it, so nothing
+    # is recomputed here.  DISPLAY-ONLY: zero admission / ordering / sizing power.
+    _blowoff_map: dict[str, dict] = {}
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
             continue
+        _bo_rec = rec.get("blowoff")
+        if isinstance(_bo_rec, dict):
+            _blowoff_map[ticker] = _bo_rec
         # COMBINE: the confluence T1->T4 cascade is computed alongside main's bottoming-alignment
         # gate. It NEVER changes which names are eligible (alignment stays the inclusion gate) —
         # it only adds the per-card tier badge and re-ranks WITHIN the aligned set (below).
-        sig_verdict[ticker] = signal_gate.gate(ticker, close)
+        # B1 (_authority_admits): a demoted name (frozen feed, R1) must NEVER enter
+        # sig_verdict — see the helper's docstring for why. `_demote_map` is already
+        # fully known at this point (computed before the loop starts).
+        if _authority_admits(ticker, _demote_map):
+            sig_verdict[ticker] = signal_gate.gate(ticker, close)
         # W6-C HOLD tracker: derive anchor from the §7 take/pending marker (open buy only),
-        # fall back to the last 3D cross. Additive + graceful: failure -> None entry.
+        # fall back to the last 3D cross. Additive + graceful: failure -> None entry (also the
+        # fail-open path for a demoted ticker, which has no sig_verdict entry above — display-
+        # only, not an authority map, so no separate guard needed here).
         try:
             _sv = sig_verdict[ticker]
             _last_m = _sv.get("last")
@@ -2471,7 +2898,12 @@ def main() -> int:
                 sconf = sue_confirmer(sue_z.get(ticker))    # earnings-momentum confirmer (display only)
                 if sconf is not None:
                     row["sue_z"] = sconf
-                cand.append(sc)
+                # B1 (_authority_admits): `cand` feeds setups.json's "Top setups" strip
+                # AND `row_by_t`/`wide["universe"] = len(cand)` below — same authority-
+                # leak class as sig_verdict above. rec["alpha"] (display) is still set
+                # unconditionally above this guard (I1).
+                if _authority_admits(ticker, _demote_map):
+                    cand.append(sc)
         if smart_money.get(ticker):
             rec["smart_money"] = smart_money[ticker]
         if beneficial_ownership.get(ticker):
@@ -2617,6 +3049,7 @@ def main() -> int:
         # de-risk caution to that minor basket is a credibility misattribution. The
         # spotlight tilt (used for scoring) is UNCHANGED; only the caution anchor differs.
         _alloc_by_id = spotlight_ctx.get("alloc_by_id") or {}
+        _turn_by_id = spotlight_ctx.get("turn_by_id") or {}
         _bslug = None
         if bsk_mem.get(ticker):
             _cands = [m.get("slug") for m in bsk_mem[ticker] if m.get("slug") in _alloc_by_id]
@@ -2625,6 +3058,38 @@ def main() -> int:
         _balloc = _alloc_by_id.get(_bslug) if _bslug else None
         if _balloc:
             rec["basket_alloc"] = {**_balloc, "slug": _bslug}
+            # DUAL-READ (W-D.3): the rule above picks ONE basket and the caution then
+            # speaks as if that were the name's whole story. ASTS was sized down on
+            # 2026-07-30/31 citing "Defense & Aerospace below its long-term trend"
+            # while its space_economy membership was the washout-recovery read —
+            # one membership's state silently overwrote the other's, which is a
+            # narrower failure of the same detection-without-narration class the
+            # theme tape exists to close.
+            #
+            # DISCLOSURE, NOT RESOLUTION. The anchor above is unchanged, the haircut
+            # is unchanged, and no size moves: the second membership's state is
+            # attached here and _basket_risk appends ONE sentence to a caution it
+            # was going to emit anyway. A name with no caution gains nothing, and
+            # a name whose other baskets are not turning gains nothing.
+            # Reads today (2026-08-04) on NEM — cited basket Materials
+            # (deteriorating, rank 21) while its gold_miners membership sits at
+            # Trough pos 2.0 with a rising oscillator: the missed-gold case itself.
+            _turning = [
+                (m.get("slug"), _turn_by_id[m["slug"]])
+                for m in bsk_mem[ticker]
+                if m.get("slug") and m.get("slug") != _bslug and m.get("slug") in _turn_by_id
+            ]
+            if _turning:
+                # Most-advanced turn first, so the sentence names the strongest one.
+                _tslug, _tinfo = max(_turning, key=lambda kv: kv[1].get("osc_slope") or 0.0)
+                _talloc = _alloc_by_id.get(_tslug) or {}
+                rec["basket_alloc"]["also_turning"] = {
+                    "slug": _tslug,
+                    "name": _talloc.get("name") or _tinfo.get("name") or _tslug,
+                    "name_zh": _talloc.get("name_zh"),
+                    "pos": _tinfo.get("pos"),
+                    "osc_slope": _tinfo.get("osc_slope"),
+                }
         norm = stock_score.normalize_rec(
             rec, "US", sue=sue_z.get(ticker), sue_fresh_days=sue_fresh.get(ticker),
             insider_bps=ins_bps, revision_z=revision_z.get(ticker), basket=basket_tw.get(ticker),
@@ -2661,8 +3126,15 @@ def main() -> int:
                                      buyable=signal_gate.is_buyable(sig_verdict.get(ticker)))
             if es:
                 rec["entry_signal"] = es
+            else:
+                # gauge self-gated (no ladder state / <60 closes): record WHY, so the
+                # board row — and the graded ledger row downstream — carries a named
+                # null instead of a silent one (the 06-15..17 boards graded 442 rows
+                # entry_status=None with no cause on record).
+                entry_sig_null[ticker] = entry_signal.null_reason(close, rec)
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("entry-signal for %s failed (%s)", ticker, e)
+            entry_sig_null[ticker] = f"gauge_error:{type(e).__name__}"
         # ---- Confluence cascade verdict (T1->T4) on the per-stock JSON ---------
         # The owner's MACD-2D x StochRSI-3D gate (already computed above as sig_verdict),
         # persisted per name so the theme/basket-detail Holdings table can surface a fresh
@@ -2697,11 +3169,24 @@ def main() -> int:
                 regime_stress=float((prof.get("risk") or {}).get("macro_stress") or 0.0))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("US potential score for %s failed (%s)", ticker, e)
-        profiles[ticker] = prof
-        if rec.get("entry_signal"):
-            entry_sig[ticker] = rec["entry_signal"]    # attached to standout rows below
-        if rec.get("risk_sizing"):
-            risk_sig[ticker] = rec["risk_sizing"]      # attached to standout rows below
+        # ---- feed-staleness demotion (R1) — strip scoring authority, keep the page ----
+        # A full rec frozen >_MAX_BAR_LAG_DAYS behind the library's own tip (side-store
+        # collector silence — CTRA/TPH/TCNNF/CWEN-A class) never enters profiles/
+        # entry_sig/risk_sig, so it can't land on any board/standout/percentile cohort
+        # (I2), and carries no conviction.potential so _collect_potential_calls emits
+        # nothing for it (I3) — the grader's own bar_asof gate is the second line of
+        # defense. LIMITED recs are never in _demote_map (I4, _feed_freshness excludes
+        # them). The JSON write below still happens for every rec (I1) — search + deep
+        # links stay alive (CSP-R1), now carrying an honest `feed_stale` disclosure.
+        _demoted_days = _demote_map.get(ticker)
+        if _demoted_days is not None:
+            _apply_feed_demotion(rec, _demoted_days, _lib_asof)
+        else:
+            profiles[ticker] = prof
+            if rec.get("entry_signal"):
+                entry_sig[ticker] = rec["entry_signal"]    # attached to standout rows below
+            if rec.get("risk_sizing"):
+                risk_sig[ticker] = rec["risk_sizing"]      # attached to standout rows below
         # ---- Macro sensitivity (display-only, never scored) -------------------
         # rate-beta tier + duration bucket + live-regime head/tailwind + inflation
         # label. Uses the archetype merged from fpanels above + the shared context.
@@ -3825,6 +4310,20 @@ def main() -> int:
                 r["antichase_shadow_blocked"] = bool(_extz_float > _ANTICHASE_Z_THRESH)
             else:
                 r["antichase_shadow_blocked"] = False
+            # Blow-off (terminal) risk context — DISPLAY-ONLY, zero score authority
+            # (engine/us_board_rank.ZERO_SCORE_AUTHORITY lists blowoff_risk).
+            # A DIFFERENT construction from ext_z above: ext_z is px/SMA200 z-scored,
+            # this is a 12-session ROC at its own trailing p99 inside a burst-mover
+            # uptrend.  The battery's PM4 redundancy read puts max |rho| at 0.43 between
+            # them, so both may legitimately appear on one card — but the copy must not
+            # collide, which is why this chip is labelled "Blow-off risk" and never the
+            # bare word "Extended" (see templates/dashboard.html.j2).
+            # Attached whenever measurable (not only when it fires) so a reader can tell
+            # "measured, quiet" from "never measured" — a name under 300 bars carries
+            # no key at all rather than a false-y default.
+            _bo = _blowoff_map.get(t)
+            if _bo:
+                r["blowoff"] = _bo
             # P2.4 Step C: above_trend propagation — final catch-all for rows that
             # weren't captured in Step A (e.g. laggard rows not in buy/watch lists).
             # Source: sig_verdict[t].above200 (consistent with Step A fix above).
@@ -3835,6 +4334,14 @@ def main() -> int:
             r["signal"] = signal_gate.compact(sig_verdict.get(t))   # confluence T1->T4 tier badge
             if entry_sig.get(t):
                 r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
+            else:
+                # entry_status disclosure law: a board row never ships a SILENT gauge
+                # absence — the graded ledger stamps entry_status from this row, and an
+                # unexplained null there poisons the by_entry_status stratification
+                # (43.9% of matured buy rows, the worst-performing cell, battery §1).
+                # "not_assessed" = the name never reached the gauge loop (unreachable
+                # today; disclosed if a future path adds board rows outside `uni`).
+                r["entry_signal_null_reason"] = entry_sig_null.get(t, "not_assessed")
             if risk_sig.get(t):
                 r["risk_sizing"] = risk_sig[t]       # the vol-managed sizing for the card / bot
             if composite_pt.get(t):
@@ -4063,7 +4570,7 @@ def main() -> int:
         # It changes ORDER and adds FIELDS. It does not change MEMBERSHIP: the
         # confluence cascade gate above is still the only thing that decides who is
         # on the buy lane, and `featured` is a flag inside that lane, never an
-        # admission (DNR §1 row 49 fence). The old terminal sort was alpha-desc
+        # admission (DNR:KILL-PROPHET-POP-MERGE fence). The old terminal sort was alpha-desc
         # within lane (W8, forward ledger #1062) — alpha survives as the `edge` leg,
         # 25 of the 100 points and the only leg the measurement found positive-IC;
         # what changes is that a name you cannot act on today can no longer sit at
@@ -4163,6 +4670,14 @@ def main() -> int:
                  "theme-confirmed)", len(wide["ran"]), us_board_rank.RAN_CAP,
                  us_board_rank.RAN_TICKS_MIN, us_board_rank.RAN_TICKS_MAX,
                  sum(1 for r in wide["ran"] if r.get("theme_confirmed")))
+        # entry_status disclosure law: ran rows carry NO entry_signal BY DESIGN
+        # (§3.5 above — context rows, "wait for the next entry"). The grader still
+        # grades this lane (LANES includes "ran"), so stamp the machine-readable
+        # reason: the ledger then records entry_status=None + "lane_not_stamped"
+        # instead of a silent null. Display code reads only named fields — no UI
+        # change; the §3.5 no-gauge design is untouched.
+        for _r_rn in wide["ran"]:
+            _r_rn["entry_signal_null_reason"] = "lane_not_stamped"
 
         wide["eligible"] = eligible
         wide["universe"] = len(cand)
@@ -4614,20 +5129,32 @@ def main() -> int:
 
         # CSP-W5 — Board staleness block + pending-buy expiry (display-tier, demotion-only)
         # ────────────────────────────────────────────────────────────────────────────────
-        # (1) Staleness: compute price_through / age_days / delayed from the max-date in
-        #     data/baskets/ohlcv — the same store the cascade gate reads.  Emit into
-        #     wide["staleness"] so the template can render the BOARD DELAYED badge.
+        # (1) Staleness: compute price_through / age_days / delayed from the UNION of
+        #     the data/baskets/ohlcv scan (the store the cascade gate reads) and the
+        #     ranked panel's actual reach (_panel_price_reach(uni): data/stocks +
+        #     breadth caches + yahoo extras). CSP-W5b honesty fix — 2026-08-03→05
+        #     the ohlcv scan sat at 07-31 while --heal lanes ranked yahoo closes
+        #     through 08-03/04, so 22 builds claimed identical price_through while
+        #     the buy lane swung 55↔76 names. staleness.inputs now discloses each
+        #     input's reach + the panel majority/mix.  Emit into wide["staleness"]
+        #     so the template can render the BOARD DELAYED badge.
         # (2) Expiry: move any pending buy that is > 3 trading sessions old and still
         #     unconfirmed from buy to watch.  Demotion-only: adds nothing to the buy side.
         # Both are fail-soft: any exception leaves the artifact unchanged.
         try:
-            _staleness = _compute_board_staleness()
+            _staleness = _compute_board_staleness(panel_reach=_panel_price_reach(uni))
             wide["staleness"] = _staleness
+            _st_panel = ((_staleness.get("inputs") or {}).get("panel") or {})
             log.info(
-                "CSP-W5 staleness: price_through=%s age_days=%s delayed=%s",
+                "CSP-W5 staleness: price_through=%s age_days=%s delayed=%s "
+                "(ohlcv_through=%s panel_through=%s panel_majority=%s mixed_vintage=%s)",
                 _staleness.get("price_through"),
                 _staleness.get("age_days"),
                 _staleness.get("delayed"),
+                (_staleness.get("inputs") or {}).get("baskets_ohlcv_through"),
+                _st_panel.get("through"),
+                _st_panel.get("majority_through"),
+                _st_panel.get("mixed_vintage"),
             )
         except Exception as _stale_e:  # noqa: BLE001
             log.warning("CSP-W5 staleness: failed (%s) — block absent from artifact", _stale_e)
@@ -4672,6 +5199,23 @@ def main() -> int:
                          len(_delta.get("entries", [])), _prev_as_of, _cur_as_of)
         except Exception as _dlt_e:  # noqa: BLE001 — display-only; never fatal
             log.debug("conviction_delta: skipped (%s)", _dlt_e)
+
+        # CSP-W5b board-continuity guard: compare the outgoing artifact (still on
+        # disk — same load-prev-before-overwrite idiom as B4 above, own failure
+        # domain) against the fresh build. Two builds at the same as_of that
+        # disagree materially on the buy lane read different data vintages;
+        # 2026-08-03→05 this happened silently across 22 builds. Warn-only,
+        # display-tier: the annotation is a BARE line-start print with flush=True
+        # (house law — a logger prefix makes GitHub drop it silently); it never
+        # gates, never edits the artifact.
+        try:
+            from engine.conviction_delta import load_prev_standouts as _lps_cont
+            _cont_msg = _board_continuity_warning(
+                _lps_cont(site / "factordata" / "us_standouts.json"), wide)
+            if _cont_msg:
+                print(_cont_msg, flush=True)
+        except Exception as _cont_e:  # noqa: BLE001 — guard must never break the render
+            log.debug("board-continuity guard skipped (%s)", _cont_e)
 
         (site / "factordata" / "us_standouts.json").write_text(
             json.dumps(_json_safe(wide), separators=(",", ":"), default=str, allow_nan=False))

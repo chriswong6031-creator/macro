@@ -35,7 +35,7 @@ change, the acceptance gate **written down in advance**, and the replay plan.
 5. **Not a re-proposal of any killed topic.** Checked against
    `research/DO_NOT_REBUILD.md` and `docs/ACTIVE_BUILD_MAP.md` on 2026-07-29. §13 in
    particular is NOT a re-proposal of "election / midterm cycle as standalone signal"
-   (REFUTED, `DO_NOT_REBUILD.md` line 84) — it is a coherence question about an
+   (REFUTED, DNR:KILL-ELECTION-CYCLE) — it is a coherence question about an
    already-display-only modulator's interaction with the band ladder.
 
 **Verified-today numbers used below** (so a later reader can tell measurement from
@@ -641,7 +641,7 @@ context gate (`context_gate_live`) is what decides `risk_on`. When the context g
 shut the modulator is inactive — which is when the gap is normal — so the widened gap
 occurs specifically while the gate is open.
 
-**Not a re-proposal.** `research/DO_NOT_REBUILD.md` line 84 REFUTES the election cycle
+**Not a re-proposal.** `research/DO_NOT_REBUILD.md` DNR:KILL-ELECTION-CYCLE REFUTES the election cycle
 as a standalone signal, surviving only as this US-only modulator. This item does not
 propose strengthening the calendar signal in any way; it asks whether an
 asymmetric band nudge is the right *shape* for a modulator that is already display and
@@ -650,7 +650,7 @@ sizing only.
 **Evidence pointer.** `engine/election_cycle.py:174-210` (`modulation`, `band_delta`,
 `_BAND_NUDGE`, `_GROSS_MULT`); `engine/risk_radar.py:856-877` (application, and the
 comment stating elevated/risk_off are deliberately untouched); `:1264` (conjunction uses
-the nudged cut); `research/DO_NOT_REBUILD.md` line 84.
+the nudged cut); `research/DO_NOT_REBUILD.md` DNR:KILL-ELECTION-CYCLE.
 
 **Proposed change (one of).**
 * **A. Gap-preserving nudge.** Shift `elevated` by the same `band_delta` so the ladder
@@ -754,7 +754,7 @@ reading. The complaint is that accumulation is the wrong construction for detect
 scored leg's contribution in the escalating direction on today's tape, i.e. exactly the
 shape of an LLM originating an escalation. It therefore goes through the gauntlet.
 Compounding reasons for restraint: the leg carries weight 0.15 and is unvalidated
-(`lift_2020` 0.38 vs `_VALIDATED_MIN` 1.20), and `research/DO_NOT_REBUILD.md` row 117 KILLED
+(`lift_2020` 0.38 vs `_VALIDATED_MIN` 1.20), and `research/DO_NOT_REBUILD.md` DNR:KILL-FORCED-CALLS KILLED
 operator force-add of un-gauntleted directional calls to signal surfaces as a process class
 after the 2026-07-11 Mag-7 incident.
 
@@ -780,7 +780,7 @@ after the 2026-07-11 Mag-7 incident.
 3. Representativeness (B) is **display-tier by construction and stays display-tier** — it
    may never rank, size, or gate. Promotion to authority requires its own Wilson-CI lift
    ≥ 1.20 at h21 against the unconditional base, matching `_VALIDATED_MIN`.
-4. PSS-CD1 (`DO_NOT_REBUILD.md` row 135) already freezes the correlation-one / low-dispersion
+4. PSS-CD1 (DNR:HOLD-PSS-CD1-CROWDING) already freezes the correlation-one / low-dispersion
    crowding overlay as prospective-only accrual: nothing here may be presented as a validated
    crowding or sell gate, and forward accrual must start dark.
 
@@ -837,7 +837,7 @@ authority-tier verdict flip rests on ONE leg reading **below its own `thr_pct` o
 (`lift_2020` 0.44, `era_robust` False, i.e. unvalidated).
 
 Shipping that would be originating an escalation on the exact day an operator complained the
-score was too calm — the failure mode `DO_NOT_REBUILD.md` row 117 exists to prevent. Reverted.
+score was too calm — the failure mode DNR:KILL-FORCED-CALLS exists to prevent. Reverted.
 
 **What ships instead (display tier, no gate change).** `weight_coverage`,
 `partial_composition`, `n_legs_resolved` per scare, and a `display_only_legs` payload block

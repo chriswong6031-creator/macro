@@ -1796,6 +1796,12 @@
     errSdk:    ['Could not load sign-in. Check your connection.', '无法加载登录组件，请检查网络。'],
     errGen:    ['Something went wrong — please try again.', '出错了，请重试。'],
     legal:     ['Research, not investment advice.', '本产品为研究工具，非投资建议。'],
+    forgot:    ['Forgot your password?', '忘记密码？'],
+    // One line, because _authShow re-localises by KEY. Names the one-hour expiry and
+    // the same-browser constraint PKCE imposes (the emailed code is worthless without
+    // the verifier this browser stored) — both are how the link actually fails.
+    sentOk:    ['Check your inbox for a reset link — open it in this browser, and within the hour.',
+                '请查收重置链接——请在此浏览器中打开，且需在一小时内。'],
     close:     ['Close', '关闭'],
     showpw:    ['Show password', '显示密码'],
     signedin:  ['Synced across your devices', '已在各设备间同步'],
@@ -1850,6 +1856,8 @@
     '.auth-msg.err{background:color-mix(in srgb,var(--down,#ff5c6c) 14%,transparent);color:var(--down,#ff5c6c);border:1px solid color-mix(in srgb,var(--down,#ff5c6c) 30%,transparent)}',
     '.auth-msg.ok{background:color-mix(in srgb,var(--up,#23c08a) 14%,transparent);color:var(--up,#23c08a);border:1px solid color-mix(in srgb,var(--up,#23c08a) 30%,transparent)}',
     '.auth-foot{margin:15px 0 0;text-align:center}',
+    '.auth-forgot-row{margin:9px 0 0}',
+    '.auth-forgot{color:var(--muted,var(--ink-3));font-weight:600;font-size:12px}',
     '.auth-switch{background:none;border:0;color:var(--link,var(--blue,#4f8cff));font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;padding:4px}',
     '.auth-switch:hover{text-decoration:underline}',
     '.auth-legal{margin:12px 0 0;font-size:10px;line-height:1.5;color:var(--muted,var(--ink-3));text-align:center}',
@@ -1890,6 +1898,7 @@
               '<button type="button" class="auth-reveal" id="auth-reveal">' + EYE_SVG + '</button></div></div>' +
           '<button type="submit" class="auth-submit" id="auth-submit"></button>' +
         '</form>' +
+        '<div class="auth-foot auth-forgot-row"><button type="button" class="auth-switch auth-forgot" id="auth-forgot"></button></div>' +
         '<div class="auth-msg" id="auth-msg" role="alert"></div>' +
         '<div class="auth-foot"><button type="button" class="auth-switch" id="auth-switch"></button></div>' +
         '<p class="auth-legal" id="auth-legal"></p>' +
@@ -1915,6 +1924,9 @@
     _setTxt('auth-submit', _authBusyState ? _authL('working') : _authL(si ? 'si' : 'su'));
     _setTxt('auth-switch', _authL(si ? 'toSignup' : 'toSignin'));
     _setTxt('auth-legal', _authL('legal'));
+    // Recovery is a sign-in concern only — a signup form has no password to forget.
+    var fg = document.getElementById('auth-forgot');
+    if (fg) { fg.textContent = _authL('forgot'); fg.parentNode.style.display = si ? '' : 'none'; }
     var em = document.getElementById('auth-email'); if (em) em.placeholder = _authL('emailPh');
     var pw = document.getElementById('auth-pw');
     if (pw) { pw.placeholder = _authL('pwPh'); pw.setAttribute('autocomplete', si ? 'current-password' : 'new-password'); }
@@ -1960,6 +1972,7 @@
       var pw = document.getElementById('auth-pw'); if (!pw) return;
       pw.type = pw.type === 'password' ? 'text' : 'password';
     });
+    document.getElementById('auth-forgot').addEventListener('click', _authForgot);
     document.getElementById('auth-google').addEventListener('click', _authGoogle);
     document.getElementById('auth-xbtn').addEventListener('click', _authX);
     document.getElementById('auth-wechat').addEventListener('click', function () { _authShow('wechatSoon', 'ok'); });
@@ -2007,6 +2020,25 @@
       return sb.auth.signInWithOAuth({ provider: provider, options: { redirectTo: location.href.split('#')[0] } });
     }).then(function (res) {
       if (res && res.error) { _authBusy(false); _authShow(_authErrKey(res.error), 'err'); }
+    }).catch(function () { _authBusy(false); _authShow('errSdk', 'err'); });
+  }
+  // "Forgot your password?" — mail a recovery link. The redirect is the SITE ROOT,
+  // not this page: onboard.js owns the return leg (the form that calls updateUser),
+  // and index.html is the one page that loads it as a real <script> tag. gotrue
+  // answers /recover identically for an unknown address (anti-enumeration), so a
+  // non-null error here is a genuine failure — a cooldown, a mail-transport fault,
+  // or a redirect the project has not allow-listed — and is shown verbatim.
+  function _authForgot() {
+    var emEl = document.getElementById('auth-email');
+    var email = (emEl && emEl.value || '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { _authShow('errEmail', 'err'); if (emEl) emEl.focus(); return; }
+    _authBusy(true); _authMsg('', null);
+    getSupabaseClient().then(function (sb) {
+      return sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/?onboard=recovery' });
+    }).then(function (res) {
+      _authBusy(false);
+      if (res && res.error) { _authMsgKey = null; _authMsg(res.error.message, 'err'); return; }
+      _authShow('sentOk', 'ok');
     }).catch(function () { _authBusy(false); _authShow('errSdk', 'err'); });
   }
   function _authGoogle() { _authOAuth('google', 'redirect'); }
@@ -4906,27 +4938,26 @@
       'border-color:color-mix(in srgb,var(--info,var(--blue,#5b9bf0)) 55%,transparent);' +
       'background:color-mix(in srgb,var(--info,var(--blue,#5b9bf0)) 13%,transparent);' +
       'box-shadow:0 0 0 3px color-mix(in srgb,var(--info,var(--blue,#5b9bf0)) 12%,transparent)}' +
+    /* One glass shell, shared with the rotation hover card and the heatmap card so
+       every popup on a page reads as one component. --glass-* are theme-aware
+       (theme.css rebinds them for light); the dark values stay inlined as fallbacks
+       for vector-family pages that carry their own token set. */
     '.lens-pop{--lens-panel:var(--panel,var(--card,#181b21));--lens-text:var(--text,var(--ink,#d7dce3));' +
       '--lens-mut:var(--muted,var(--mut,#8b93a1));--lens-accent:var(--info,var(--blue,#5b9bf0));' +
-      'position:fixed;left:0;top:0;z-index:12600;width:min(304px,calc(100vw - 24px));border-radius:16px;' +
-      'background:linear-gradient(180deg,color-mix(in srgb,#fff 4%,transparent),transparent 46%),color-mix(in srgb,var(--lens-panel) 88%,transparent);' +
-      '-webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px);' +
-      'box-shadow:0 24px 64px -18px rgba(3,7,18,.72),0 8px 22px -10px rgba(3,7,18,.5);' +
-      'opacity:0;pointer-events:none;transform:translateY(7px) scale(.96);transition:opacity .12s ease,transform .12s ease;' +
+      'position:fixed;left:0;top:0;z-index:12600;width:min(300px,calc(100vw - 24px));border-radius:15px;' +
+      'background:var(--glass-bg,color-mix(in srgb,var(--lens-panel) 88%,transparent));' +
+      '-webkit-backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));' +
+      'box-shadow:var(--glass-shadow,0 24px 64px -18px rgba(3,7,18,.72),0 8px 22px -10px rgba(3,7,18,.5));' +
+      'opacity:0;pointer-events:none;transform:translateY(6px) scale(.97);transition:opacity .12s ease,transform .12s ease;' +
       'font-family:var(--font-ui,Inter,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif);' +
       'text-align:left;text-transform:none;letter-spacing:normal;white-space:normal}' +
     '@supports not (backdrop-filter:blur(1px)){.lens-pop{background:color-mix(in srgb,var(--panel,var(--card,#181b21)) 98%,#fff)}}' +
-    '.lens-pop.open{opacity:1;pointer-events:auto;transform:none;transition:opacity .2s ease,transform .28s cubic-bezier(.34,1.26,.4,1)}' +
+    '.lens-pop.open{opacity:1;pointer-events:auto;transform:none;transition:opacity .18s ease,transform .26s cubic-bezier(.34,1.26,.4,1)}' +
     '.lens-pop::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;' +
-      'background:radial-gradient(140px 70px at 22% -4%,color-mix(in srgb,var(--lens-accent) 75%,transparent),transparent 72%),' +
-      'linear-gradient(180deg,color-mix(in srgb,var(--lens-text) 17%,transparent),color-mix(in srgb,var(--lens-text) 7%,transparent));' +
+      'background:radial-gradient(150px 74px at 20% -6%,color-mix(in srgb,var(--lens-accent) 72%,transparent),transparent 70%),' +
+      'var(--glass-brd,color-mix(in srgb,var(--lens-text) 14%,transparent));' +
       '-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;' +
       'mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude;pointer-events:none}' +
-    '.lens-pop::after{content:"";position:absolute;inset:1px;border-radius:inherit;pointer-events:none;' +
-      'background:linear-gradient(112deg,transparent 40%,rgba(255,255,255,.07) 50%,transparent 60%);' +
-      'background-size:240% 100%;background-position:130% 0;opacity:0}' +
-    '.lens-pop.open::after{animation:lensSheen .95s cubic-bezier(.4,.1,.2,1) .1s 1 both}' +
-    '@keyframes lensSheen{0%{opacity:0;background-position:130% 0}18%{opacity:1}100%{opacity:0;background-position:-40% 0}}' +
     '.lens-pop[data-kind=define]{--lens-accent:var(--info,var(--blue,#5b9bf0))}' +
     '.lens-pop[data-kind=read]{--lens-accent:var(--q2,#d4a017)}' +
     '.lens-pop[data-kind=record]{--lens-accent:var(--ok,var(--up,#3da564))}' +
@@ -4949,10 +4980,18 @@
     '.lens-receipt .r-i{display:inline-flex;align-items:baseline;gap:5px;white-space:nowrap}' +
     '.lens-receipt .r-k{font:700 8.5px/1 var(--font-ui,Inter,sans-serif);letter-spacing:.12em;text-transform:uppercase;' +
       'color:color-mix(in srgb,var(--lens-mut) 75%,transparent)}' +
+    /* String tier. Most of the site's ~780 tips land here, so this is the container
+       that has to carry itself with no illustrated anatomy to lean on: a headline
+       when the author supplies one (data-tip-t-en/zh), a comfortable measure, and
+       nothing else. A tip that needs more structure than this belongs in the rich
+       tier — that is what it is for. */
     '.lens-pop.lens-plain{width:auto;max-width:min(300px,calc(100vw - 24px))}' +
-    '.lens-pop.lens-plain .lens-body{padding:11px 14px 12px;font-size:12px}' +
-    '.lens-pop.lens-plain .lens-receipt{margin:0 14px}' +
-    '.lens-pop.open .lens-hd,.lens-pop.open .lens-body,.lens-pop.open .lens-receipt{animation:lensRise .34s cubic-bezier(.34,1.26,.4,1) both}' +
+    '.lens-ttl{display:block;padding:13px 15px 0;font:700 12.5px/1.38 var(--font-ui,Inter,sans-serif);' +
+      'letter-spacing:-.012em;color:var(--lens-text)}' +
+    '.lens-pop.lens-plain .lens-body{padding:12px 15px 13px;font-size:12.5px;line-height:1.6}' +
+    '.lens-ttl+.lens-body{padding-top:5px}' +
+    '.lens-pop.lens-plain .lens-receipt{margin:0 15px}' +
+    '.lens-pop.open .lens-hd,.lens-pop.open .lens-ttl,.lens-pop.open .lens-body,.lens-pop.open .lens-receipt{animation:lensRise .34s cubic-bezier(.34,1.26,.4,1) both}' +
     '.lens-pop.open .lens-body{animation-delay:.045s}' +
     '.lens-pop.open .lens-receipt{animation-delay:.09s}' +
     '@keyframes lensRise{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}' +
@@ -4977,13 +5016,14 @@
         'color:var(--lens-mut);background:color-mix(in srgb,var(--lens-mut) 14%,transparent);cursor:pointer}' +
       '.lens-hd{padding-top:8px}' +
       '.lens-ill{width:38px;height:38px}' +
+      '.lens-ttl{padding:8px 18px 0;font-size:14px}' +
       '.lens-pop.lens-plain .lens-body{font-size:13px;padding:12px 18px 6px}' +
+      '.lens-ttl+.lens-body{padding-top:6px}' +
       '.lens-pop.lens-plain .lens-receipt{margin:0 18px}' +
     '}' +
     '@media (prefers-reduced-motion:reduce){' +
       '.lens-pop,.lens-pop.open{transition:opacity .12s ease;transform:none}' +
-      '.lens-pop.open::after{animation:none}' +
-      '.lens-pop.open .lens-hd,.lens-pop.open .lens-body,.lens-pop.open .lens-receipt{animation:none}' +
+      '.lens-pop.open .lens-hd,.lens-pop.open .lens-ttl,.lens-pop.open .lens-body,.lens-pop.open .lens-receipt{animation:none}' +
     '}';
 
   function injectCss() {
@@ -5052,7 +5092,12 @@
     var en = t.getAttribute('data-tip-en');
     if (!en) return null;
     var rcEn = t.getAttribute('data-tip-rc-en') || '';
+    /* Optional headline for the string tier. Without one the card opens on a
+       paragraph and the reader has to parse before they know what they are
+       reading; with one they can stop after four words. */
+    var tEn = t.getAttribute('data-tip-t-en') || '';
     return { kind: t.getAttribute('data-lens-kind') || '',
+             tEn: tEn, tZh: t.getAttribute('data-tip-t-zh') || tEn,
              en: en, zh: t.getAttribute('data-tip-zh') || en,
              rcEn: rcEn, rcZh: t.getAttribute('data-tip-rc-zh') || rcEn };
   }
@@ -5094,6 +5139,11 @@
       while (wrap.firstChild) pop.appendChild(wrap.firstChild);
     } else {
       pop.classList.add('lens-plain');
+      if (c.tEn) {
+        var ttl = document.createElement('div'); ttl.className = 'lens-ttl';
+        ttl.appendChild(mkSpan('l-en', c.tEn)); ttl.appendChild(mkSpan('l-zh', c.tZh));
+        pop.appendChild(ttl);
+      }
       var body = document.createElement('div'); body.className = 'lens-body';
       body.appendChild(mkSpan('l-en', c.en)); body.appendChild(mkSpan('l-zh', c.zh));
       pop.appendChild(body);

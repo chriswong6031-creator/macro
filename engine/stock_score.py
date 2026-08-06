@@ -480,6 +480,36 @@ _SPOTLIGHT_LEG_GAIN = 0.4
 _BASKET_RISK_MAX = 0.5    # max risk_total contribution from a below-trend / deteriorating basket
 
 
+def _also_turning(ba: dict, caution: dict | None) -> dict | None:
+    """Append the OTHER membership's turn to a caution the anchor already earned.
+
+    The caution above speaks for ONE basket — the name's best-ranked membership —
+    and says nothing about the others, so a name sized down for a flat basket
+    while a different basket it belongs to is turning up off a low reads as an
+    unqualified "size down". ASTS on 2026-07-30/31 is the case that named this:
+    cited Defense & Aerospace below trend, silent on its space membership.
+
+    DISCLOSURE, NOT RESOLUTION (masterplan §W-D.3). The haircut is decided before
+    this runs and is not passed in — there is nothing here that could change a
+    size. It adds one sentence, in watch vocabulary, and only to a caution that
+    already exists: `scripts/build_stock_library.py` attaches `also_turning` from
+    the cycle engine's own Trough-and-rising rows, so the state is quoted rather
+    than recomputed.
+    """
+    if caution is None:
+        return None
+    turn = ba.get("also_turning")
+    if not isinstance(turn, dict):
+        return caution
+    name = turn.get("name")
+    if not isinstance(name, str) or not name:
+        return caution
+    return {
+        "en": f"{caution['en']} {name} turning from washout.",
+        "zh": f"{caution['zh']}{turn.get('name_zh') or name}正从洗盘中转折。",
+    }
+
+
 def _basket_risk(rec: dict) -> tuple[float, dict | None]:
     """(haircut in [0, _BASKET_RISK_MAX], bilingual caution|None) from rec['basket_alloc']."""
     ba = rec.get("basket_alloc")
@@ -489,19 +519,19 @@ def _basket_risk(rec: dict) -> tuple[float, dict | None]:
     below = (ba.get("above_trend") is False) or (ba.get("eligible") is False)
     nm = ba.get("name") or "theme"
     if below:
-        return _BASKET_RISK_MAX, {
+        return _BASKET_RISK_MAX, _also_turning(ba, {
             "en": f"Its {nm} basket is below its long-term trend. Size down: the tape is "
                   "rewarding leaders, and this basket is not one.",
-            "zh": f"所属 {ba.get('name_zh') or nm} 篮子已跌破长期趋势。减小仓位：当前行情奖励领先板块，该篮子并不在其中。"}
+            "zh": f"所属 {ba.get('name_zh') or nm} 篮子已跌破长期趋势。减小仓位：当前行情奖励领先板块，该篮子并不在其中。"})
     if label in ("fading", "deteriorating"):
         zh = "衰退" if label == "fading" else "恶化"
-        return _BASKET_RISK_MAX * 0.7, {
+        return _BASKET_RISK_MAX * 0.7, _also_turning(ba, {
             "en": f"Its {nm} basket is {label}. Trim, or take a smaller position than usual.",
-            "zh": f"所属 {ba.get('name_zh') or nm} 篮子正在{zh}。减仓，或将仓位控制在平常水平以下。"}
+            "zh": f"所属 {ba.get('name_zh') or nm} 篮子正在{zh}。减仓，或将仓位控制在平常水平以下。"})
     if ba.get("crowded"):
-        return _BASKET_RISK_MAX * 0.4, {
+        return _BASKET_RISK_MAX * 0.4, _also_turning(ba, {
             "en": f"Its {nm} basket is crowded and stretched. Cap your size and do not add aggressively.",
-            "zh": f"所属 {ba.get('name_zh') or nm} 篮子拥挤且过度拉伸。控制仓位，不要激进加仓。"}
+            "zh": f"所属 {ba.get('name_zh') or nm} 篮子拥挤且过度拉伸。控制仓位，不要激进加仓。"})
     return 0.0, None
 
 

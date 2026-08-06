@@ -894,3 +894,55 @@ def test_new1_promoted_event_in_active_and_alerts(tmp_path, monkeypatch):
     assert any(a["asset"] == pair_id for a in alerts), (
         f"Alert for promoted pair not found; alerts={alerts}"
     )
+
+
+def test_cross_closure_row_carries_display_names(monkeypatch):
+    """The v2 closure row must ship the SAME from_/to_ display-name pair as the v1 row.
+
+    The "Closed recently" strip reads ledger rows after the pair has left active[], so
+    names that live only on the active event are gone by the time the strip renders —
+    it would print `xlk_etf → xlu_etf` (DESIGN_DOCTRINE Law 2) with no zh at all.
+    """
+    import engine.rotation_events as re_mod
+    from engine.rotation_events import step_cross_pairs
+    from engine.rotation_universe import PARAMS_V2
+
+    universe, closes = _build_cross_universe()
+    bench_close = closes[universe["bench"]["key"]]
+    pair_id = "xlk_etf->xlu_etf"
+
+    p2 = dict(PARAMS_V2)
+    p2["confirm_days"] = 2
+
+    receipts_val = {"event_type": "into_strength", "donor_signature": "contagion_bleed",
+                    "donor": {"state": "contagion_bleed"}, "receiver": {"off_low_pct": 0.12},
+                    "ratio": None, "blowoff": None, "turn": None, "asof": "2026-07-17"}
+    monkeypatch.setattr(re_mod, "evaluate_cross",
+                        lambda *a, **k: receipts_val)
+
+    state = {}
+    for _ in range(2):                       # candidate → promoted to active
+        state, _, _, _ = step_cross_pairs(
+            universe, closes, bench_close, state,
+            breadth_by_sector=None, breadth_series_by_sector=None, p2=p2)
+    assert pair_id in state.get("active", {}), "pair never reached active"
+
+    # conditions gone → lapse the pair out
+    monkeypatch.setattr(re_mod, "evaluate_cross", lambda *a, **k: None)
+    closed_seen = []
+    for _ in range(p2.get("lapse_run", 3) + 5):
+        state, _, _, closed = step_cross_pairs(
+            universe, closes, bench_close, state,
+            breadth_by_sector=None, breadth_series_by_sector=None, p2=p2)
+        closed_seen += closed
+        if closed:
+            break
+
+    assert closed_seen, "cross pair never closed on lapse"
+    row = closed_seen[0]
+    assert row["donor"] == "xlk_etf" and row["receiver"] == "xlu_etf"   # identity additive
+    assert row["from_name_en"] == "Technology" and row["from_name_zh"] == "科技"
+    assert row["to_name_en"] == "Utilities" and row["to_name_zh"] == "公用事业"
+    # a regression echoing the series key back as a "name" must fail here
+    assert row["from_name_zh"] != row["donor"]
+    assert row["to_name_zh"] != row["receiver"]
