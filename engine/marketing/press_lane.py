@@ -2276,8 +2276,18 @@ def run_press_tick(
                 wire_llm = None
 
         # Summarize-with-citation + build the outbox-shaped payload.
+        # THE CITATION RULING TRAVELS WITH THE ITEM. `decision` (step 4 above)
+        # already answered "whose name goes on this" for the POST BODY; the card
+        # used to re-derive its own answer from `source_name` and printed the
+        # masthead the body had refused to name. One ruling, both surfaces.
+        _citation = {
+            "credit": str(decision.get("attribution", "") or ""),
+            "tier": str(decision.get("citation_tier", "") or ""),
+            "reason": str(decision.get("citation_reason", "") or ""),
+        }
         payload = build_breaking_payload(
-            s, cfg, root=root, _llm_override=llm_override, wire=wire_llm
+            s, cfg, root=root, _llm_override=llm_override, wire=wire_llm,
+            citation=_citation,
         )
 
         headline = payload.get("headline", "")
@@ -2519,12 +2529,18 @@ def run_press_tick(
         # SVG exists but its raster and R2 upload happen inside
         # _emit_outbox_item, so a dropped card costs nothing downstream. Expect
         # most short wire flashes to go card-less; that is the intent.
+        #
+        # SCORE WHAT THE READER SEES. This used to pass `headline` — the raw
+        # wire field — while the renderer draws `card_headline` (the W4g
+        # sentence-bounded hero), and `card_summary` — the full producer text —
+        # while the box draws at most three lines of it. Both gates were
+        # therefore judging strings that never appeared on the card.
         _card_svg = payload.get("card_svg", "")
         if _card_svg:
             _attach, _card_why = card_earns_attachment(
                 _clamp["text"],
-                headline,
-                payload.get("card_summary") or "",
+                payload.get("card_headline") or headline,
+                payload.get("card_summary_drawn") or "",
                 payload.get("card_tickers") or [],
             )
             if not _attach:

@@ -359,10 +359,20 @@ def _emitting_items() -> list[dict]:
         # keywords -> salience clears the flagship floor (base 45 + kw 10 + ticker
         # 20 = 75 in market hours); corroboration_decision = instant (single
         # primary OK for a mirror-verified own post).
+        # THE HEADLINE CARRIES A FIGURE ON PURPOSE (2026-08-05). value_gate
+        # requires `hard` proof for a `breaking` post, and a cashtag alone only
+        # reaches `instrument`. This fixture used to rest its hard proof on
+        # HAVING A CARD (`_proof_tier(has_media=True) -> "hard"`), which stopped
+        # being reliable when card_earns_attachment gained the power to refuse a
+        # card that restates the post — and in short form the post IS the
+        # headline, so the card's hero restates it by construction. The five
+        # tests that share this fixture are about voice, language and the X
+        # clamp; none of them is about proof, and none should be able to go
+        # vacuous because a picture was correctly dropped somewhere else.
         {"id": "trumpstruth:strong", "source": "trumpstruth",
          "source_name": "Truth Social (via trumpstruth.org)", "source_tier": "mirror",
          "url": "u1", "published_at": "2026-07-27T13:59:00Z",
-         "headline": "Trump orders new tariff and export controls on $AAPL and $NVDA",
+         "headline": "Trump orders a new 25% tariff and export controls on $AAPL and $NVDA",
          "body_snippet": "The president said tariffs and export controls on $AAPL and $NVDA rise.",
          "truth_status_id": "strong", "corroboration_class": "direct-quote"},
         # Weak macro item -> below the post floor but above the rail floor.
@@ -744,8 +754,11 @@ class TestB1LanguageLaw:
         press_cfg = yaml.safe_load((ROOT / "config" / "press_sources.yml").read_text())
         marketing_cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text())
         items = _emitting_items()
+        # Keeps the fixture's figure (see _emitting_items) so the item reaches
+        # the LANGUAGE gate rather than being turned away earlier for want of
+        # proof — the em dash is what this test is about.
         items[0]["headline"] = (
-            "Trump orders new tariff — and export controls on $AAPL and $NVDA")
+            "Trump orders a new 25% tariff — and export controls on $AAPL and $NVDA")
         result = run_press_tick(items, root=str(ROOT), now=now,
                                 cfg=marketing_cfg, press_cfg=press_cfg, state={},
                                 seen_ids=set(), dry_run=True)

@@ -277,18 +277,32 @@ def test_sparse_card_fills_the_column_instead_of_centring_a_void():
 
 
 def test_dense_card_fills_the_column():
-    """The other end: the real 814-char item must reach the bottom of its column."""
+    """The other end: the real 814-char item must reach the bottom of its column.
+
+    THE SUMMARY IS NOW COMPLETE, WHICH MOVED THE LAST BASELINE UP (2026-08-05).
+    This card used to reach ~92% of the column with three 41px lines whose last
+    one was HARD-CLIPPED with an ellipsis — the fill was bought with the exact
+    truncation the no-clip law now forbids. The second voice steps down its own
+    size ladder instead, so all 267 characters are on the card (asserted below,
+    which the old renderer could never have satisfied) across four 26px lines.
+    Four short lines end higher than three tall ones, hence 0.88: the ink fills
+    ~96% of the box and a genuine VOID — the defect this guards — scores ~0.5.
+    """
+    fit: dict = {}
     svg = render_breaking_card(
         _live_iran_headline(), "Truth Social", "aggregator",
-        "2026-08-02T03:48:20Z", summary=IRAN_SUMMARY,
+        "2026-08-02T03:48:20Z", summary=IRAN_SUMMARY, fit=fit,
     )
+    # STRONGER THAN THE OLD PIN: nothing was dropped and nothing was clipped.
+    assert fit["summary_chars_dropped"] == 0, "the dense card lost copy"
+    assert "…" not in svg, "the dense card was clipped to fill its column"
     body_ys = [float(m.group(1)) for m in re.finditer(
         r'<text x="[0-9.]+" y="([0-9.]+)" fill="#C8D4EA"', svg)]
     # The 1080 square card's copy box: below the masthead+rule+eyebrow
     # chrome (253) and above the provenance-slug/footer reservation (826).
     box_top, box_bottom = 253.0, 826.0
     reach = (max(body_ys) - box_top) / (box_bottom - box_top)
-    assert reach >= 0.90, f"content only reaches {reach:.0%} of the text column"
+    assert reach >= 0.88, f"content only reaches {reach:.0%} of the text column"
 
 
 _WIDE_HEADLINE = (
