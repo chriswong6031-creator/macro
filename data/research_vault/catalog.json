@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T00:06:37.818709+00:00",
-  "count": 836,
+  "generated_at": "2026-08-06T00:22:12.235232+00:00",
+  "count": 837,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -1236,6 +1236,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-d7kwdyfhe3a-e93471",
+      "title": "Weekly CIO commentary",
+      "institution": "Nuveen",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T01:58:27Z",
+      "summary_points": [
+        "**Fed's Data-Dependent Stance**: Chair Warsh prioritizes \"just facts\" over forward guidance, with Dallas Fed Trimmed-Mean PCE above 2% target signaling persistent inflation despite headline moderation, demanding durable stability before policy shifts.",
+        "**Mixed Macro Data**: Q2 GDP at +1.5% (missed forecast) contrasts with strong consumer spending (+3.2%), but PCE headline (3.7%) and trimmed-mean PCE remain elevated, fueling inflation concerns amid soft growth.",
+        "**CMBS Yield Premium**: BBB-rated CMBS yields 10.8% vs.",
+        "BBB corporate bonds at 5.6% (Figure 2), offering significant income advantage amid rate volatility, with A-rated CMBS at 7.5% vs.",
+        "A corporate bonds at 5.3%."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
