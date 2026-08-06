@@ -1,18 +1,24 @@
 {
   "status": "stale",
-  "checked_at": "2026-08-05T10:24:45.141302+00:00",
+  "checked_at": "2026-08-06T09:05:26.765199+00:00",
   "threshold_sessions": 3,
-  "store_max": "2026-08-04",
-  "n_members": 694,
+  "store_max": "2026-08-05",
+  "n_members": 704,
   "n_stale": 1,
-  "n_behind_within_threshold": 692,
+  "n_behind_within_threshold": 0,
   "stale": {
     "BLD": {
       "last": "2026-07-02",
-      "sessions_behind": 22
+      "sessions_behind": 23
     }
   },
-  "missing": [],
-  "absent_all_rungs": [],
-  "n_absent_all_rungs": 0
+  "missing": [
+    "GATO",
+    "MAG"
+  ],
+  "absent_all_rungs": [
+    "GATO",
+    "MAG"
+  ],
+  "n_absent_all_rungs": 2
 }
