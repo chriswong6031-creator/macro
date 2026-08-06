@@ -895,12 +895,15 @@ jobs:
       - name: install capital-structure test deps
         run: pip install pytest pandas numpy pyarrow jsonschema==4.26.0 requests pyyaml jinja2 fastapi httpx boto3
       - name: capital-structure contracts, compilers, projection, graph, source store, and legacy boundary
-        # test_daily_collect_commit_path.py rides HERE on purpose: it names the set
-        # of collect-job steps allowed to fail before "commit data", and every entry
-        # in that allowlist is a capital-structure step. Its sibling pin
-        # (test_capital_structure_compiler.py::test_nightly_order_and_render_network
-        # _firewall_are_pinned) asserts the same step stays fatal, so the two must
-        # move together — co-locating means a change to either surfaces the other.
+        # test_daily_collect_commit_path.py rides HERE on purpose. It owns the
+        # market side of daily.yml's two-checkpoint split (2026-08-06): the five
+        # capital-structure steps must stay BELOW "commit market data"/"push market
+        # data" and answer only to their own "commit capital-structure data". Its
+        # sibling pin (test_capital_structure_compiler.py::test_nightly_order_and
+        # _render_network_firewall_are_pinned) states the same invariant from the
+        # compiler side — market checkpoint first, compile still fatal for its own
+        # checkpoint — so the two must move together. Co-locating means a change to
+        # either surfaces the other; splitting them lets one drift green.
         run: >
           python -m pytest
           tests/test_daily_collect_commit_path.py
