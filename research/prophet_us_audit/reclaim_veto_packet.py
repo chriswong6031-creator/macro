@@ -82,10 +82,13 @@ sys.path.insert(0, REPO)
 
 from engine import signal_quality as sq  # noqa: E402
 
-# The exact string `_buy_filter` returns on the branch this packet is about. Pinned by a
-# test that drives the REAL function, so a wording change fails loudly instead of silently
-# emptying the refusal set (a paraphrased constant here would be a vacuous filter).
-BLOCK_REASON = "counter-trend, no 200-reclaim/hold"
+# The exact string `_buy_filter` returns on the branch this packet is about. BOUND to the
+# engine constant, never copied: #4583 split the single counter-trend refusal into
+# CT_BOTH_FAIL (both legs tested, both failed) and CT_RECLAIM_FAIL (the hold PASSED, the
+# reclaim did not). This packet is about the SECOND — a name that held and was refused
+# anyway — so the pre-split literal kept here silently became the OTHER case's label and
+# emptied the refusal set. A copy could drift again; a reference cannot.
+BLOCK_REASON = sq.CT_RECLAIM_FAIL
 TAKE_QUALITY = "take"
 
 WINDOW_SESSIONS = 126           # the trailing panel window refusals are drawn from
