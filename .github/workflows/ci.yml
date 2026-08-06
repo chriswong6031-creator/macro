@@ -792,6 +792,52 @@ on:
       # the trigger has to reach the guard for it to say so.
       - "tests/test_check_skip_only_suites.py"
       - "requirements.txt"
+      # TRIGGER-CLOSURE guard (job: workflow-yaml). scripts/*.py already reaches
+      # the checker; this is its other half, per the same two-halves law the guard
+      # enforces on everything else.
+      - "tests/test_ci_trigger_closure.py"
+      # ── the 31 subjects that guard found unreachable on its first run ──────
+      # Each line is a file some suite in the packed legacy jobs actually reads
+      # (import, whole-string path literal, or a __file__-rooted path join) and
+      # that NO entry above matched — so a PR touching only that file merged
+      # without ever running the suite that measures it. That is the #3488 shape
+      # exactly, 31 times, none of it visible to audit_unrun_tests.py because
+      # every one of those suites is reachable through its own test file.
+      # These are cheap to carry: config/, contracts/, research/ pre-registrations
+      # and unit files change rarely, so they widen the trigger surface barely at
+      # all. Do not delete a line here without deleting the read that needs it —
+      # scripts/check_ci_trigger_closure.py will fail the PR.
+      - "admin/deploy/admin.service"
+      - "admin/static/styles.css"
+      - "app/deploy/codex-runtime-setup.sh"
+      - "app/deploy/macro-live-fast.service"
+      - "app/deploy/marketing-press-feeds.service"
+      - "app/deploy/marketing-reply-desk.service"
+      - "app/tape_symbols.py"
+      - "config/causal_priors.yml"
+      - "config/fable_mode_core.md"
+      - "config/metabolism_schedule.yml"
+      - "config/reflexes.yml"
+      - "config/trade_flow_codes.yml"
+      - "config/ux_simplicity_rules.yml"
+      - "contracts/government_revenue/government_revenue_candidate.v1.schema.json"
+      - "contracts/government_revenue/government_revenue_candidate_queue.v1.schema.json"
+      - "contracts/government_revenue/government_revenue_dossiers.v1.schema.json"
+      - "contracts/marketing_publication_receipt.schema.json"
+      - "research/DISLOCATION_VALIDATION.md"
+      - "research/MARKETING_REPLY_DOCTRINE_BY_FABLE.md"
+      - "research/OPTIONS_HISTORY_GAUNTLET_E1.md"
+      - "research/PSS_RH1_RELIEF_HAZARD_PROSPECTIVE_CHARTER.md"
+      - "research/US_BOARD_MEASUREMENT.md"
+      - "research/VECTOR_IMPULSE_PREDICTION.md"
+      - "research/WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md"
+      - "research/agentic_media/X_GROWTH_UNIFIED_OPERATION_BY_FABLE.md"
+      - "research/cycle_masterplan/PREREGISTRATION.md"
+      - "research/cycle_masterplan/W42_HAZARD_VERDICT.md"
+      - "research/entry_timing/WAVE2_REPORT.md"
+      - "research/fable_exit/05_ENTITY_THESIS_MECHANISM_REGISTRY_HANDOFF.md"
+      - "research/release_playbook/results/playbook_v1.json"
+      - "tools/earnings_worker/run_worker.py"
       # render.yml scope contract (job: workflow-yaml). .github/workflows/**
       # already reaches render.yml itself; this entry is so a test-only edit
       # still starts CI, per the two-halves law.
