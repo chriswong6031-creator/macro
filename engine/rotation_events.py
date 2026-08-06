@@ -234,6 +234,20 @@ def _copy(sec: dict, out_cfg: dict, in_cfg: dict, receipts: dict, day_n: int) ->
     return en, zh
 
 
+def _leg_names(spec: dict | None) -> tuple[str | None, str | None]:
+    """Display names for one leg/series spec: (name_en, name_zh).
+
+    v1 leg configs (config/sector_legs*.json) carry name_en/name_zh; v2 universe
+    series (config/rotation_universe.json) carry label_en/label_zh. Returns
+    (None, None) when the spec is missing or unnamed, so a caller stores nothing
+    rather than persisting a slug dressed up as a display name — the view can then
+    tell "no name" from "the name really is that string" and fall back.
+    """
+    s = spec or {}
+    return (s.get("name_en") or s.get("label_en"),
+            s.get("name_zh") or s.get("label_zh"))
+
+
 def step_pairs(sectors: dict, state: dict, p: dict = PARAMS) -> tuple[dict, list, list, list]:
     """One nightly step over every registered ordered pair.
 
@@ -305,9 +319,17 @@ def step_pairs(sectors: dict, state: dict, p: dict = PARAMS) -> tuple[dict, list
                 if reason:
                     active_out.pop(pair_id, None)
                     closed_prev[pair_id] = asof
+                    # Display names travel WITH the row: the closures strip renders
+                    # ledger rows long after the pair left active[], so there is
+                    # nothing left to look a name up from (doctrine Law 2 — never
+                    # print a machine slug on the glance tier).
+                    c_out_en, c_out_zh = _leg_names(legs_cfg.get(out_key))
+                    c_in_en, c_in_zh = _leg_names(legs_cfg.get(in_key))
                     closed.append({"pair_id": pair_id, "sector": skey, "from_leg": out_key,
                                    "to_leg": in_key, "started": prev["started"],
-                                   "closed_asof": asof, "reason": reason, "day_n": day_n})
+                                   "closed_asof": asof, "reason": reason, "day_n": day_n,
+                                   "from_name_en": c_out_en, "from_name_zh": c_out_zh,
+                                   "to_name_en": c_in_en, "to_name_zh": c_in_zh})
                     continue
 
                 # event row for the display payload (receipts may be tonight's or, during a
@@ -887,10 +909,16 @@ def step_cross_pairs(
                 reason = "ttl"
             if reason:
                 closed_prev[pair_id] = asof
+                # same uniform from_/to_ display-name pair as the v1 closure row, so
+                # the closures strip reads ONE field pair whatever wrote the row
+                c_d_en, c_d_zh = _leg_names(series_index.get(donor_key))
+                c_r_en, c_r_zh = _leg_names(series_index.get(recv_key))
                 closed.append({
                     "pair_id": pair_id, "donor": donor_key, "receiver": recv_key,
                     "tier": tier, "started": active_ev["started"],
                     "closed_asof": asof, "reason": reason, "day_n": day_n,
+                    "from_name_en": c_d_en, "from_name_zh": c_d_zh,
+                    "to_name_en": c_r_en, "to_name_zh": c_r_zh,
                 })
                 continue
 
@@ -1072,6 +1100,46 @@ def closed_recent(ledger_path, n_sessions: int = 5) -> list:
             if len(seen_dates) >= n_sessions:
                 break
     return list(reversed(rows))
+
+
+def _label_index(sectors: dict | None = None, universe: dict | None = None) -> dict:
+    """{leg-or-series key: (name_en, name_zh)} over every registered v1 leg and v2 series."""
+    out: dict = {}
+    for sec in (sectors or {}).values():
+        for leg in ((sec or {}).get("cfg") or {}).get("legs", []):
+            en, zh = _leg_names(leg)
+            if leg.get("key") and (en or zh):
+                out[leg["key"]] = (en, zh)
+    for s in (universe or {}).get("series", []):
+        en, zh = _leg_names(s)
+        if s.get("key") and (en or zh):
+            out.setdefault(s["key"], (en, zh))
+    return out
+
+
+def backfill_leg_names(rows: list, labels: dict) -> list:
+    """Fill display names on closure rows written BEFORE the writer persisted them.
+
+    Rows already on the ledger carry bare slugs and no names, so without this the
+    closures strip keeps printing slugs until every one of them ages out. Names are
+    looked up by key from the live registry; a key that is no longer registered stays
+    unnamed and the view falls back. Never overwrites a name already on the row (the
+    row's own name is what was true at close time). Returns new rows — inputs unchanged.
+    """
+    sides = (("from", ("from_leg", "from_sector", "donor")),
+             ("to", ("to_leg", "to_sector", "receiver")))
+    out = []
+    for row in rows:
+        r = dict(row)
+        for side, key_fields in sides:
+            if r.get(f"{side}_name_en") or r.get(f"{side}_name_zh"):
+                continue
+            key = next((r[k] for k in key_fields if isinstance(r.get(k), str) and r[k]), None)
+            en, zh = labels.get(key, (None, None))
+            if en or zh:
+                r[f"{side}_name_en"], r[f"{side}_name_zh"] = en, zh
+        out.append(r)
+    return out
 
 
 # ------------------------------------------------------------------ emit_v2 ----
@@ -1318,8 +1386,10 @@ def run_nightly(sectors: dict, data_dir, p: dict = PARAMS,
 
     vboard = _vb(universe, closes, flow_receipts, bench_key)
 
-    # closed_recent strip
+    # closed_recent strip — heal rows written before the writer stored display names,
+    # so the strip stops printing slugs tonight instead of once they age out
     cr_rows = closed_recent(ledger_p, n_sessions=5) if ledger_p.exists() else []
+    cr_rows = backfill_leg_names(cr_rows, _label_index(sectors, universe))
 
     n_cross = len(universe.get("pairs", []))
     payload = emit_v2(base, cross_events, cross_created,
