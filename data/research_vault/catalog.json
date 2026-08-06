@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T14:26:15.730443+00:00",
-  "count": 877,
+  "generated_at": "2026-08-06T14:56:26.243817+00:00",
+  "count": 878,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -75,6 +75,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-nxay6wy80iz-72448a",
+      "title": "Warby Parker Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:52:02Z",
+      "summary_points": [
+        "**Revenue miss masks core weakness**: Q2 revenue growth at 9.8% Y/Y (vs 11.0% consensus) driven by $11.8m tariff refunds, not organic performance, signaling underlying business deterioration.",
+        "**Guidance shows uneven recovery**: FY26 sales growth guide (10-12%) implies sharp 2H acceleration (12.9% vs Q2 9.8%), but Q3 guide (10-11%) below consensus (11.8%/14.3%), with AI glasses launch timing critical for trajectory.",
+        "**Structural margin compression**: Operating income fell 42.4% YoY (to $3.2m) despite revenue growth, with gross profit down 9.4% and SG&A up 8.2%, indicating deteriorating cost structure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
