@@ -54,6 +54,23 @@ one. The sweeper now asks GitHub to merge main into the head itself
 applied exactly as before. The merge gate is unchanged: an updated head is
 UNPROVEN until its fresh checks conclude, and a later sweep judges it on those.
 
+CONCURRENT SWEEPS ARE ALLOWED (2026-08-06). The workflow no longer serialises
+this lane. The old `concurrency: {group: merge-on-green, cancel-in-progress:
+false}` did not serialise WORK — it serialised the wait for a GitHub-hosted
+runner, which is 25-107 minutes here because `ci` and `fences` saturate the same
+pool, while the sweep itself takes 46 seconds. GitHub keeps one pending run per
+group and cancels it on each new arrival, so with triggers every 50 s the lane
+managed 0 successful sweeps in 100 consecutive runs. The full measurement is in
+.github/workflows/merge-on-green.yml.
+
+Overlap is safe because this is a LEVEL-TRIGGERED RECONCILER: every run re-lists
+the labeled pull requests and re-derives every verdict from GitHub's live state,
+and no state is carried between runs. Losing a wake-up therefore costs nothing so
+long as some sweep runs; running two at once costs a few duplicate reads. The one
+genuine race — a losing sweep reading "another sweep already merged this" as a
+conflict and labelling a merged PR `merge-blocked` — is guarded by
+`already_settled`, which is called before any 405/409 is allowed to mean conflict.
+
 Individual pull-request outcomes are ANNOTATIONS, never job failures: one PR with
 a red check must not fail a sweep that also had clean PRs to merge. The process
 exits non-zero only when the sweep itself could not run.
@@ -336,6 +353,49 @@ def delete_head_ref(repo: str, pull: dict[str, Any], token: str) -> None:
     )
 
 
+def already_settled(repo: str, number: Any, token: str) -> tuple[bool, str]:
+    """Did this pull request already merge (or close) out from under this sweep?
+
+    WHY (2026-08-06). Sweeps may now overlap. The workflow-level `concurrency`
+    group that used to serialise them was removed because it did not serialise
+    work — it serialised a multi-hour wait for a GitHub-hosted runner, and killed
+    98 of 100 consecutive sweeps in the pending slot while doing it (see the
+    postmortem in .github/workflows/merge-on-green.yml).
+
+    Overlapping sweeps are safe by construction almost everywhere: this script is
+    a level-triggered reconciler that re-reads every labeled pull request and
+    re-derives every verdict from GitHub's live state, carrying nothing across
+    runs. Re-reading a check twice costs a call and changes nothing; two sweeps
+    racing the same squash merge cannot double-merge, because GitHub answers the
+    loser 405/409.
+
+    There is exactly ONE unsafe spot, and it is this one. `sweep_pull` reads a
+    405/409 as "the base moved or the branch conflicts", tries `update-branch`,
+    and on refusal applies `merge-blocked` plus a one-shot comment saying *not
+    merging*. Against a pull request another sweep merged one second earlier,
+    every one of those steps is wrong: update-branch answers 422 on a merged PR,
+    so the loser would label a SUCCESSFULLY MERGED pull request `merge-blocked`
+    and comment a falsehood on it — and because `mark_blocked` fires its comment
+    only on the label transition, that lie is the one that sticks.
+
+    So before a refused merge is allowed to mean "conflict", ask GitHub what the
+    pull request actually is now.
+
+    FAILS CLOSED. An unreadable answer returns ``(False, "")``, which falls
+    through to the pre-existing update-branch/label path. That is noisier but it
+    is exactly the behaviour that shipped before this guard existed, so a broken
+    read can never cause a merge or suppress a genuine conflict report.
+    """
+    status, payload = _request("GET", f"{GITHUB_API}/repos/{repo}/pulls/{number}", token)
+    if status >= 400 or not isinstance(payload, dict):
+        return False, ""
+    if payload.get("merged") is True:
+        return True, "merged"
+    if str(payload.get("state") or "").lower() == "closed":
+        return True, "closed"
+    return False, ""
+
+
 def update_branch(repo: str, pull: dict[str, Any], token: str) -> bool:
     """Merge `main` into a clean-but-stale head. True when GitHub accepted it.
 
@@ -456,6 +516,19 @@ def sweep_pull(
         # base that moved under us. Only the second is genuinely a human's
         # problem-free case, so try to clear it before reaching for a label.
         detail = str((body or {}).get("message") or f"HTTP {status}")
+        # ...but a THIRD shape produces the same 405/409 now that sweeps overlap:
+        # another sweep merged this pull request between our check read and our
+        # merge call. Treating that as a conflict would label a merged PR
+        # `merge-blocked` and comment a falsehood on it. Ask before accusing.
+        settled, how = already_settled(repo, number, read_token)
+        if settled:
+            _annotate(
+                "notice",
+                "merge-on-green",
+                f"PR #{number}: already {how} by the time this sweep called merge — "
+                "a concurrent sweep won the race. Nothing to do, nothing labeled.",
+            )
+            return f"already-{how}"
         if update_branch(repo, pull, merge_token):
             # The head now carries main. It is UNPROVEN until its fresh checks
             # conclude, so nothing merges on this pass and the label stays armed
