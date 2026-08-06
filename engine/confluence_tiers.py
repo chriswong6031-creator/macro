@@ -74,9 +74,24 @@ EARLY_CROSS_BARS = 1.5            # 2D cross "projected within ~1-2 days" (bars-
 # real holidays — with the window slid across 14 consecutive reference sessions, which
 # covers every 2D/3D/weekly/fortnight phase. Method per offset: truncate to N trailing daily
 # bars, ask whether the leg is non-NaN at the final bar, take the smallest N that holds for
-# all N' >= N; the tabled floor is the MAX over offsets. (The pre-era basis was a pure
-# business-day index, which is phase-0-only and therefore blind to the straddle case; it also
-# never contains a holiday, which no real 391-session window can say.)
+# all N' >= N; the tabled floor is the MAX over offsets.
+#
+# OUTCOME: every session-counted leg re-measured to its INCUMBENT value — the phase-worst
+# case IS the old phase-0 business-day measurement, because a window that starts exactly on a
+# bucket boundary yields ceil(N/n) TF bars either way, and a real session maps to a
+# CONSECUTIVE reference position (holidays are absent from both sides). MIN_HISTORY therefore
+# stays 159 and no cohort boundary moves under this era.
+#
+# The two CALENDAR-WEEK legs (`wbull`, `htf_2w`) are the exception, and NOT because of the
+# anchor: `wbull` runs on the untouched pandas W-FRI path, and both are dominated by how many
+# calendar weeks a window spans, which depends on HOLIDAY DENSITY rather than bucket phase.
+# On real sessions they measure lower (14-phase worst case 376 / 759; worst over a decade of
+# window ends 379 / 764) than the tabled 391 / 776. The tabled values are kept: they are the
+# NO-HOLIDAY worst case, they are the null-SAFE direction (over-disclosing a leg as
+# not-yet-knowable costs nothing; under-disclosing asserts a leg is live when it is not —
+# the PLTR error class), neither leg gates any tier, and relaxing them is a separate decision
+# from this anchor change (R8 keeps warmup-floor SEMANTICS put). Both numbers are pinned in
+# tests/test_confluence_warmup_floor.py so the gap is measured, not assumed.
 #
 #   leg                          daily bars  gates          short of it, TODAY
 #   ---------------------------  ----------  -------------  ---------------------------------
