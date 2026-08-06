@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T09:24:44.571859+00:00",
-  "count": 862,
+  "generated_at": "2026-08-06T09:39:48.138639+00:00",
+  "count": 863,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -57,6 +57,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-ooz7py7uvxm-31287a",
+      "title": "JPM Interntational Market Intell | Morning Briefing 2026 08 06",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T09:18:50Z",
+      "summary_points": [
+        "**SPX Call Volume Surge**: Record total call volume signals extreme bullish positioning, indicating potential short-term overbought conditions and critical equity risk management warning.",
+        "**TMT Sector Outflows & Tech Exposure Risk**: TMT Equity hedge funds lost 10% in July; Multi-Strat funds’ 2.3% July loss (4th worst in history) highlights structural limits on tech holdings and heightened volatility risk from retail leverage.",
+        "**Geopolitical Energy Catalysts**: Iran-Oman shipping agreement sustains lower energy prices; competing Hormuz transit routes escalate geopolitical friction over oil trade security amid territorial tensions.",
+        "**PMI-GDP Leading Indicator**: Regression formula (GDP = -1.03 + 0.25*PMI) confirms PMI as a leading GDP driver, with PMI peaks preceding GDP expansions (2022-2026 data).",
+        "**Gold-Dollar Inverse Dynamics**: XAU and DXY display strong inverse correlation, with \"Gold Peaks\" and \"War Starts\" (geopolitical events) as key inflection points for macro-driven volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 19,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-c9uc5rgsvua-69dfee",
       "title": "Brazil Softer July Manufacturing and Services PMI",
