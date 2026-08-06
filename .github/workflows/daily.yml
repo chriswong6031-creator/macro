@@ -941,7 +941,36 @@ jobs:
       # Measured 2026-07-12 (Mac Studio, warm venv): W9-W11 6.6s + 0.5s + 0.5s
       # + 1.4s ≈ 9s total; W8 keyless/invalid-key no-op 0.8s + 0.6s; W8 keyed
       # runs hard-capped (see step comment) — no material claim on the budget.
+      #
+      # STEP CAPS ON THE TIL/MLC/CCW BAND (thetadata wedge postmortem 2026-08-06):
+      # every step below was `python -m … || echo "::warning::…"` with a measured
+      # budget in its comment and NO duration bound. `||` bounds the EXIT CODE, never
+      # the DURATION: a step that hangs never exits, so the `||` never fires and the
+      # step silently eats the job's whole 200m cap, taking every step behind it down
+      # as SKIPPED — the exact starvation shape the shadow-importance band below was
+      # capped for (07-29→08-02), including the "commit tail data" step, so even
+      # completed work evaporates on the next clean checkout.
+      # This is not hypothetical for W11: on 2026-08-06 the thetadata_eod store moved
+      # to an external volume (/Volumes/STORAGE), and a launchd-context process that
+      # opens a file there parks forever in open() on the macOS removable-volume
+      # access gate — uninterruptible, no timeout, no error. The M1's backfill lane
+      # accrued nothing for 3h in exactly that state. W11 reads that same store on
+      # that same host, so an unbounded W11 is one permission drift away from a
+      # 200m nightly.
+      # Caps are sized ~3-4x the measured budget: generous enough that a slow night
+      # never trips them, tight enough that a HANG is truncated loudly instead of
+      # silently. As the band below says: if a step starts hitting its bound
+      # nightly, fix ITS runtime — do not silently raise the bound.
+      # `continue-on-error: true` is REQUIRED alongside each cap and is not
+      # decoration: when the runner kills a timed-out step it kills the shell, so the
+      # `|| echo` never runs and the step is marked FAILED. Without the pair, adding a
+      # cap would convert these non-fatal steps into job-killers — strictly worse than
+      # the bug being fixed. Same pairing law as the shadow-importance band below.
       - name: TIL W8 — Census HS-code import-flow ingest (non-fatal)
+        # Cap: --max-requests 450 already self-bounds to ~7-8m; 15m is the backstop
+        # for a hang in a single request (the cap is on requests, not on wall time).
+        timeout-minutes: 15
+        continue-on-error: true
         # Requires the CENSUS_API_KEY repo secret (API is NOT keyless — verified
         # 2026-07-09; keyless/invalid key 302s and the run no-ops honest-null in
         # ~1s, exit 0). --max-requests 450 hard-bounds every run to ~7-8 min
@@ -957,6 +986,9 @@ jobs:
           python -m collectors.census_trade --max-requests 450 \
             || echo "::warning::census_trade ingest failed (non-fatal)"
       - name: TIL W8 — theme trade-flow rollup (non-fatal)
+        # Cap: measured 0.6s — 5m is a pure hang backstop.
+        timeout-minutes: 5
+        continue-on-error: true
         # Rolls the parquet above into per-theme YoY/accel/confirmation reads
         # (measured 0.6s on the honest-null path). Emits honest null with a
         # fresh as_of when the parquet is absent — keeps both W8 lobes' as_of
@@ -967,6 +999,9 @@ jobs:
           python -m engine.theme_trade_flows \
             || echo "::warning::theme_trade_flows rollup failed (non-fatal)"
       - name: TIL W10 — ClinicalTrials.gov theme pipeline ingest (non-fatal)
+        # Cap: measured 6.6s; 10m covers a slow CT.gov night and bounds a stalled fetch.
+        timeout-minutes: 10
+        continue-on-error: true
         # Keyless CT.gov v2 full fetch (9 modalities, ~2.5k rows, measured 6.6s).
         # Writes data/clinical_trials/modality_monthly.parquet (git-stored via
         # `git add data/` below). Per-modality isolation; always exits 0.
@@ -974,12 +1009,23 @@ jobs:
           python -m collectors.clinicaltrials_themes \
             || echo "::warning::clinicaltrials_themes ingest failed (non-fatal)"
       - name: TIL W10 — theme clinical rollup (non-fatal)
+        # Cap: measured 0.5s — 5m is a pure hang backstop.
+        timeout-minutes: 5
+        continue-on-error: true
         # Pure in-memory aggregation of the parquet above (measured 0.5s).
         # Produces data/neuralweb/theme_clinical.json + site/basketdata/clinical_pipeline.json.
         run: |
           python -m engine.theme_clinical \
             || echo "::warning::theme_clinical rollup failed (non-fatal)"
       - name: TIL W11 — options-tape crowding witness (non-fatal)
+        # Cap: measured 4m35s on mac-builder-1 (2026-07-26) → 15m (~3x) bounds the
+        # real compute path. THIS is the step the band comment above is about: it
+        # reads the thetadata_eod store on the M1, and that store now lives on an
+        # external volume whose open() can park forever under a launchd context
+        # (2026-08-06). Unbounded, that hang would consume the job's 200m cap and
+        # SKIP the ~10 steps behind it, including "commit tail data".
+        timeout-minutes: 15
+        continue-on-error: true
         # Since the theta-m1 pin (2026-07-26) this job runs on the store-bearing
         # M1 host: the canonical resolver finds the thetadata_eod store via the
         # ops-wt path (engine/thetadata_store.py), so this step takes the REAL
@@ -996,6 +1042,9 @@ jobs:
           python -m engine.theme_options_witness \
             || echo "::warning::theme_options_witness failed (non-fatal)"
       - name: TIL W9 — discovery-confluence join (non-fatal)
+        # Cap: measured 1.4s — 5m is a pure hang backstop.
+        timeout-minutes: 5
+        continue-on-error: true
         # Two-source join (measured 1.4s): EDGAR phrase velocity over the
         # git-tracked data/edgar/{bottleneck,emergence}_hits.parquet (dripped by
         # the engine job) × GitHub star velocity over data/github/repo_stars.parquet
@@ -1007,6 +1056,10 @@ jobs:
           python -m scripts.build_discovery_confluence \
             || echo "::warning::discovery confluence join failed (non-fatal)"
       - name: MLC-W5 — US earnings calendar sweep (non-fatal)
+        # Cap: measured ~3.5m/night (66 calendar calls ~155s + surprise drip ~60s)
+        # → 12m bounds a stalled Nasdaq call without tripping on a slow night.
+        timeout-minutes: 12
+        continue-on-error: true
         # Root-cause fix (MLC postmortem 07-14): collectors/equity_earnings.py was never
         # wired into the nightly pipeline — earnings.parquet was permanently empty/missing,
         # making the W1.5 blackout gate and the W5 display chips always stale-fail-open.
@@ -1037,6 +1090,9 @@ jobs:
           python -m collectors.equity_earnings \
             || echo "::warning::equity_earnings sweep failed (non-fatal)"
       - name: MLC-W5 — earnings freshness tripwire (non-fatal)
+        # Cap: single-parquet read + audit (seconds) — 5m is a pure hang backstop.
+        timeout-minutes: 5
+        continue-on-error: true
         # Reads the just-written data/earnings/earnings.parquet and checks that
         # the store's as_of is within the expected SLA (2 trading days).
         # Writes data/quality/earnings_freshness_audit.json for observability.
@@ -1096,6 +1152,10 @@ jobs:
           fi
           exit 0
       - name: CCW W2 — corporate credit g-spread engine (non-fatal)
+        # Cap: measured 3.8s locally (2026-07-14); the step's own comment says
+        # "revisit if it nears ~2m", so 10m bounds a hang well clear of that line.
+        timeout-minutes: 10
+        continue-on-error: true
         # Reads tonight's holdings from collect-core's commit (data/corp_bonds/holdings/*)
         # plus data/fred/DGS*.parquet (CMT curve pillars) and
         # data/corp_bonds/issuer_themes.json (issuer registry from W1).
@@ -2119,7 +2179,16 @@ jobs:
         # writes honest partial records (the shortfall printed in each record's coverage block)
         # plus a ::warning, which a killed step could not do.
         # Non-fatal: absent archives/creds degrade to printed nulls and the builder exits 0.
+        # continue-on-error pairs with the cap (added 2026-08-06): the note above is right that
+        # "a killed step could not" emit the ::warning — but it also could not exit 0, and an
+        # UNPAIRED timeout-minutes marks the step FAILED, which fails the whole engine job and
+        # SKIPS every step behind it including "commit engine outputs". BUDGET_SECONDS=180 only
+        # fires if the builder reaches its own budget check; a hang below it (socket, or an
+        # open() parked on the removable-volume access gate — see the collect_tail band note)
+        # never does. This step declares itself non-fatal, so it must be non-fatal on the
+        # timeout path too.
         timeout-minutes: 8
+        continue-on-error: true
         env:
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
