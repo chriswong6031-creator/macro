@@ -111,11 +111,34 @@ def test_theme_js_pins_the_storage_key_to_ref():
     assert "ref" in body.split("hostname")[0], "ref must be checked BEFORE the url fallback"
 
 
+def _account_js() -> str:
+    return (site_assets.Path(__file__).resolve().parent.parent
+            / "templates" / "account.js").read_text()
+
+
 def test_account_js_pins_the_storage_key_to_ref():
-    src = (site_assets.Path(__file__).resolve().parent.parent
-           / "templates" / "account.js").read_text()
+    src = _account_js()
     assert "storageKey" in src, "account.js must not rely on supabase-js's url-derived default"
     assert "SUPA.ref" in src
+
+
+def test_account_js_normalisation_carries_ref_through():
+    """The pin above is DEAD unless normSupa preserves `ref`.
+
+    This is the bug that shipped in the first cut of this PR: normSupa returned
+    {url, anonKey} only, so SUPA.ref was always undefined, `storageKey` was never
+    set, and supabase-js fell back to the url-derived default — the exact failure
+    the pin exists to prevent. The source still CONTAINED "SUPA.ref", so a
+    string-grep test passed while the code did nothing. Pin the return literal.
+    """
+    import re
+    src = _account_js()
+    m = re.search(r"function normSupa\(c\)\s*\{(.*?)\n  \}", src, re.S)
+    assert m, "normSupa not found — did account.js change shape?"
+    body = m.group(1)
+    ret = body[body.index("return"):]
+    assert "ref" in ret, (
+        "normSupa drops `ref`, so SUPA.ref is undefined and the storageKey pin is dead")
 
 
 # --------------------------------------------------------------------------- #

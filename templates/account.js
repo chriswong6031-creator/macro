@@ -37,10 +37,14 @@
   var trigger = null, scrim = null, panel = null;
 
   // -------------------------------------------------------------- helpers ----
+  // `ref` MUST survive this normalisation. It is the project id that pins the session
+  // storage key (see sbClient); dropping it here silently re-enables supabase-js's
+  // url-derived default, which is the whole bug the pin exists to prevent — and it
+  // fails INVISIBLY, because the pin is still there in the source, just fed undefined.
   function normSupa(c) {
     if (!c) return null;
     var url = c.url, key = c.anonKey || c.anon_key;
-    return (url && key) ? { url: url, anonKey: key } : null;
+    return (url && key) ? { url: url, anonKey: key, ref: c.ref || '' } : null;
   }
   function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
   function curTheme() { return document.documentElement.getAttribute('data-theme') || 'dark'; }
