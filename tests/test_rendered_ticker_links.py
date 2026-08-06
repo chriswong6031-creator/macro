@@ -130,6 +130,115 @@ def test_peer_linkable_none_links_everything():
     assert all(p["href"] for p in peers)
 
 
+# ── basket pages (the same defect one level up) ──────────────────────────────
+# A ticker page links basket/<slug>.html for every membership row it holds, but
+# a basket page is only BUILT once 3+ of its members carry price history
+# (engine/baskets.py:206). Membership is curated by hand, so a new sleeve is
+# linkable-looking and unbuilt for at least a night. silver_miners was curated
+# 2026-08-05 with 10 members and 404'd from stocks/HL.html and stocks/SSRM.html
+# — which failed check_site_asset_refs on EVERY render from 03:24Z on
+# 2026-08-06 and wedged the whole render lane: no page body was rebuilt for
+# ~28h, so merged UI work sat in templates/ and never reached the VPS.
+
+def _basket_repo(tmp_path: Path, ids: tuple[str, ...]) -> Path:
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    bdir = tmp_path / "site" / "basket"
+    bdir.mkdir(parents=True)
+    for b in ids:
+        (bdir / f"{b}.html").write_text("<html></html>", encoding="utf-8")
+    (bdir / "index.html").write_text("<html></html>", encoding="utf-8")
+    subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "seed"],
+        cwd=tmp_path, check=True, capture_output=True,
+    )
+    return tmp_path / "site"
+
+
+def test_rendered_basket_pages_reads_disk_and_drops_the_index(tmp_path):
+    from lib.pages import rendered_basket_pages
+
+    site = _basket_repo(tmp_path, ("gold_miners", "mag7"))
+    got = rendered_basket_pages(site)
+    assert got == frozenset({"gold_miners", "mag7"})
+    assert "index" not in got
+
+
+def test_rendered_basket_pages_survives_a_partial_checkout(tmp_path):
+    """A scoped render must not un-link every basket it merely did not fetch."""
+    from lib.pages import rendered_basket_pages
+
+    site = _basket_repo(tmp_path, ("gold_miners", "mag7"))
+    (site / "basket" / "mag7.html").unlink()          # committed but not on disk
+    assert rendered_basket_pages(site) == frozenset({"gold_miners", "mag7"})
+
+
+def test_rendered_basket_pages_absent_tree_is_empty_not_an_error(tmp_path):
+    from lib.pages import rendered_basket_pages
+
+    assert rendered_basket_pages(tmp_path / "nope") == frozenset()
+
+
+def test_a_basket_without_a_page_keeps_its_row_and_loses_its_link():
+    from scripts.build_ticker_pages import _build_themes
+
+    blob = {"baskets_membership": [
+        {"slug": "gold_miners", "name": "Gold Miners", "name_zh": "黄金矿业",
+         "theme": "Gold producer sleeve."},
+        {"slug": "silver_miners", "name": "Silver Miners", "name_zh": "白银矿业",
+         "theme": "Silver producer sleeve."},
+    ]}
+    rows = _build_themes(blob, [], {}, frozenset({"gold_miners"}))["baskets"]
+    by_id = {r["id"]: r for r in rows}
+
+    assert set(by_id) == {"gold_miners", "silver_miners"}, "the ROW always survives"
+    assert by_id["gold_miners"]["linked"] is True
+    assert by_id["silver_miners"]["linked"] is False
+    # the substance is still there to read, unlinked
+    assert by_id["silver_miners"]["name_en"] == "Silver Miners"
+    assert by_id["silver_miners"]["theme"] == "Silver producer sleeve."
+
+
+def test_a_basket_row_from_member_context_is_gated_too():
+    """The second row source. Gating only the membership branch would leave the
+    dead link reachable through member_context, which is how a half-swept fix
+    ships looking complete."""
+    from scripts.build_ticker_pages import _build_themes
+
+    rows = _build_themes(
+        None,
+        [{"basket_id": "silver_miners", "basket": "Silver Miners",
+          "band_en": "mid", "band_zh": "中"}],
+        {}, frozenset({"gold_miners"}),
+    )["baskets"]
+    assert [r["id"] for r in rows] == ["silver_miners"]
+    assert rows[0]["linked"] is False
+
+
+def test_basket_linkable_none_links_everything():
+    """The pre-filter behaviour, for callers with no site tree to consult."""
+    from scripts.build_ticker_pages import _build_themes
+
+    blob = {"baskets_membership": [{"slug": "anything", "name": "Any"}]}
+    rows = _build_themes(blob, [], {}, None)["baskets"]
+    assert rows[0]["linked"] is True
+
+
+def test_basket_row_template_emits_no_anchor_when_unlinked():
+    frag = _slice(_TEMPLATES / "ticker.html.j2",
+                  '<div class="throw">', "</div>")
+    out = _render(frag, b={"id": "silver_miners", "name_en": "Silver Miners",
+                           "name_zh": "白银矿业", "theme": "Silver producer sleeve.",
+                           "rationale": "", "band_en": "", "linked": False})
+    assert "<a " not in out and "href=" not in out
+    assert "Silver Miners" in out and "Silver producer sleeve." in out
+
+    linked = _render(frag, b={"id": "gold_miners", "name_en": "Gold Miners",
+                              "name_zh": "黄金矿业", "theme": "Gold sleeve.",
+                              "rationale": "", "band_en": "", "linked": True})
+    assert 'href="../basket/gold_miners.html"' in linked
+
+
 # ── movers board (scripts/build_movers_page) ─────────────────────────────────
 
 def _movers_data() -> dict:
@@ -263,6 +372,53 @@ def test_no_shipped_page_links_a_ticker_page_that_does_not_exist():
     assert n_refs > 1000, f"only {n_refs} ticker refs scanned — scan is not covering site/"
     assert not dead, (
         f"{len(dead)} ticker page(s) linked but never rendered, "
+        f"across {sum(len(v) for v in dead.values())} link(s): "
+        + ", ".join(f"{k} (from {v[0]}{', +%d more' % (len(v) - 1) if len(v) > 1 else ''})"
+                    for k, v in sorted(dead.items())[:10])
+    )
+
+
+def test_no_shipped_page_links_a_basket_page_that_does_not_exist():
+    """The basket-class half of the same invariant.
+
+    This is the one that actually fired: `silver_miners` was curated into
+    membership.json on 2026-08-05, linked from two shipping stock pages, and
+    never built — engine/baskets.py skips a basket with fewer than 3 members in
+    the returns cache, and a day-old sleeve has none. check_site_asset_refs
+    caught it in the render lane, which is the right place to catch it and the
+    worst place to be blocked by it: the render aborts before committing, so
+    every page body on the site froze for ~28h while the failure looked like a
+    basket problem rather than a site-wide publish outage.
+    """
+    import re
+
+    if not _SITE.is_dir():
+        pytest.skip("site/ not present in this checkout")
+    n_pages = len(list((_SITE / "basket").glob("*.html"))) if (_SITE / "basket").is_dir() else 0
+    if n_pages < 20:
+        pytest.skip(f"partial checkout — only {n_pages} basket page(s) present")
+
+    rx = re.compile(
+        r"""(?<![\w-])(?:href|src)\s*=\s*["']([^"']*basket/[A-Za-z0-9._\-]+\.html)["']"""
+    )
+    dead: dict[str, list[str]] = {}
+    n_refs = 0
+    for page in _SITE.rglob("*.html"):
+        try:
+            text = page.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        for ref in rx.findall(text):
+            if ref.startswith(("http://", "https://", "//")):
+                continue
+            n_refs += 1
+            target = (_SITE / ref.lstrip("/")) if ref.startswith("/") else (page.parent / ref)
+            if not target.exists():
+                dead.setdefault(target.name, []).append(page.name)
+
+    assert n_refs > 100, f"only {n_refs} basket refs scanned — scan is not covering site/"
+    assert not dead, (
+        f"{len(dead)} basket page(s) linked but never built, "
         f"across {sum(len(v) for v in dead.values())} link(s): "
         + ", ".join(f"{k} (from {v[0]}{', +%d more' % (len(v) - 1) if len(v) > 1 else ''})"
                     for k, v in sorted(dead.items())[:10])
