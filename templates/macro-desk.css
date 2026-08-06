@@ -68,28 +68,51 @@ body.macro-desk :is(.card, .gcard, .lcard, .rc-card, .rc-card-cn,
     0 18px 36px -22px color-mix(in srgb, var(--link) 36%, rgba(0,0,0,.45));
 }
 
-/* Sector Central's chart and readout are complete panels. Drop the redundant
-   opaque frame that wrapped both, and keep the two useful surfaces independent. */
 body.macro-desk.page-sector-central .scc-wrap {
   max-width: 1400px;
   padding: var(--desk-sp-5) var(--desk-sp-6) 72px;
 }
+/* ── The cycle map and its rotation read-out are ONE container ───────────────
+   Operator 2026-08-04. This block used to do the opposite: it stripped the stage
+   to a bare grid and gave .cyc-hero AND .cyc-detail their own frame + shadow, so
+   the section read as two stacked cards (cycle.css already frames both, and the
+   page template frames the stage — three nested boxes for one section).
+   Now the STAGE is the single island, in the Overview verdict-hero idiom the rest
+   of the estate uses: panel fill, TRANSPARENT border, soft drop shadow. The two
+   children are flattened and separated by one hairline.
+   Scope note: `page-sector-central` is the CHINA desk — the US sibling
+   (sector_central.html) ships `page-baskets` and is untouched by this file. */
 body.macro-desk.page-sector-central .scc-cycle .cyc-stage {
-  gap: var(--desk-sp-5);
-  padding: 0;
+  gap: 0;
+  padding: var(--desk-sp-4, 14px) var(--desk-sp-5, 18px) var(--desk-sp-5, 18px);
+  border: 1px solid transparent;
+  border-radius: var(--desk-r-lg);
+  background: var(--desk-tile, var(--panel));
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
+              0 12px 32px -14px color-mix(in srgb, var(--text) 12%, transparent);
+}
+/* children carry no chrome of their own — the stage above is the container */
+body.macro-desk.page-sector-central .scc-cycle :is(.cyc-hero, .cyc-detail) {
   border: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
 }
-body.macro-desk.page-sector-central .scc-cycle :is(.cyc-hero, .cyc-detail),
+body.macro-desk.page-sector-central .scc-cycle .cyc-hero::before { content: none; }
+/* .cyc-stage is a single column at every width (cycle.css), so a top rule always
+   divides chart from read-out and never becomes a seam in a two-column split */
+body.macro-desk.page-sector-central .scc-cycle .cyc-detail {
+  border-top: 1px solid color-mix(in srgb, var(--desk-hair-strong, var(--line)) 55%, transparent);
+  margin-top: var(--desk-sp-4, 14px);
+}
 body.macro-desk.page-sector-central :is(.regime .rg-headline-row, .grader,
   .scf-wrap, .lead-wrap, .card) {
   border-color: var(--desk-hair-strong);
   border-radius: var(--desk-r-lg);
   box-shadow: var(--card-shadow);
 }
-body.macro-desk.page-sector-central .scc-cycle .cyc-hero { padding: 20px 22px 14px; }
+body.macro-desk.page-sector-central .scc-cycle .cyc-hero { padding: 6px 2px 14px; }
+body.macro-desk.page-sector-central .scc-cycle .cyc-panels { padding: 16px 2px 2px; }
 body.macro-desk.page-sector-central .scc-section-h {
   display: grid;
   grid-template-columns: 3px minmax(0, 1fr);
@@ -178,7 +201,9 @@ body.macro-desk.page-baskets #theme-context-hero h2 {
     padding-left: var(--desk-sp-3);
     padding-right: var(--desk-sp-3);
   }
-  body.macro-desk.page-sector-central .scc-cycle .cyc-hero { padding: 14px 12px 8px; }
+  /* the hero is flush inside the stage island now — only the stage insets */
+  body.macro-desk.page-sector-central .scc-cycle .cyc-hero { padding: 4px 0 8px; }
+  body.macro-desk.page-sector-central .scc-cycle .cyc-stage { padding: 12px 12px 14px; }
   body.macro-desk.page-sector-central .scc-section-h { margin-top: var(--desk-sp-5); }
   body.macro-desk.page-rotation .tm-unit-row { padding-bottom: 4px; }
 }

@@ -634,6 +634,7 @@ lanes:
             - scripts.build_options_screener
             - scripts.build_options_skew
             - scripts.build_options_ivspread
+            - scripts.build_options_dislocation
             - scripts.build_options_entry_state
             - scripts.build_intraday_flow --mode nightly
             - scripts.build_darkpool_desk
@@ -885,6 +886,10 @@ lanes:
         module: scripts.grade_bottom_calls
         args: [--nightly]
         note: "Bottom Ledger P1 — policy-free bottom-calling learning instrument. Sole forward advancer (nightly-only). Accrues board buy-lane + washout WAIT + Prophet-plan flags from snapshots.jsonl (must run AFTER grade_us_board appends today's snapshot), matures at H=60, writes data/bottom_ledger/rows.parquet + emits site/factordata/us_bottom_ledger.json (both committed by nightly like every sibling forward ledger). Display-tier; no exits/stops/authority."
+      - id: grade_us_prophet_candidates
+        module: scripts.grade_us_prophet_candidates
+        args: [--nightly]
+        note: "Prophet US trend-intelligence W7 — full-population forward grader over the US Context Vector store. Grades EVERY stamped candidate row (~1,579 names/night, not the ~12 that become plans) across the H=10/21/42/63 session ladder excess-vs-SPY into data/us_prophet_rank/grades/YYYY-MM/YYYY-MM-DD.parquet (month-grouped DAILY parts keyed by the GRADING RUN, so a nightly writes a new file, rewrites nothing, and every earlier part is byte-identical forever; a single monthly file would cost 11x the git history at this scale). Every row carries universe_tier (curated vs scan, roadmap §4.5) and signal_class (basing/momentum/other from the EXISTING cycle vocabulary), so the scorecard reports those populations separately and never pools them. Sole forward advancer, nightly-only (engine.ledger_lane.nightly_advance_enabled is the first statement of append_grades); idempotent — a graded (stamp_date, ticker, board_definition, horizon) is frozen and a re-run appends nothing. Ruler REUSED not forked: engine.grading.forward_metrics (next-bar fill, positional session horizons), pinned mark-for-mark against scripts.grade_prophet_doors.grade_flag by tests/test_us_prophet_grades.py. Must run AFTER build_stock_library (which stamps tonight's candidate rows) and BEFORE run_prophet_miss_audit (whose priority_score_scorecard block reads this store). Ops telemetry; ZERO authority — no rank/gate/size/board/plan consumer (the suite greps every engine/scripts/app/admin/lib module to pin that). Operator order 2026-08-05; masterplan research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md §W7."
       - id: run_prophet_miss_audit
         module: scripts.run_prophet_miss_audit
         args: [--nightly]
@@ -1050,13 +1055,18 @@ lanes:
         module: scripts.externalize_css
       - id: optimize_assets
         module: scripts.optimize_assets
+      - id: fetch_oracle_panels
+        module: scripts.fetch_oracle_panels
+        note: >
+          non-fatal; PR-C1 RUL-7 — downloads oracle panel_s.parquet + panel_m.parquet
+          from R2. MUST precede oracle_nightly: personality (3b) + turn-desk Steps 15-19
+          read panel_s and sentinel-skip when absent (run 30960328285, 2026-08-05 measured
+          the old after-ordering starving them); also feeds build_bottom_sensors
+          sponsorship_state. Degrades gracefully when R2 creds absent.
       - id: oracle_nightly
         module: scripts.oracle_nightly
       - id: build_world_state
         module: scripts.build_world_state
-      - id: fetch_oracle_panels
-        module: scripts.fetch_oracle_panels
-        note: non-fatal; PR-C1 RUL-7 — downloads oracle panel_s.parquet + panel_m.parquet from R2 so build_bottom_sensors can populate sponsorship_state; degrades gracefully when R2 creds absent
       - id: build_bottom_sensors
         module: scripts.build_bottom_sensors
         note: non-fatal; display-only bottom-sensor envelope (Amendment 1 Lane B0) — wired 2026-07-06 after build_world_state; benchmark 2.29s
@@ -1915,6 +1925,7 @@ lanes:
             - scripts.build_flow_desk
             - scripts.build_options_skew
             - scripts.build_options_ivspread
+            - scripts.build_options_dislocation
             # OIP E8 (2026-07-29): options_screener.html had NO express coverage in
             # either intraday lane (the flow_leaders #3515 freeze class). Pure function
             # of committed data/, zero network, site/-only writes. Placed AFTER the skew
@@ -2574,6 +2585,22 @@ lanes:
       - id: build_vector_on_change
         module: scripts.build_vector
         note: conditional on rc=10 only; event-driven sentinel
+      - id: inject_data_base
+        module: scripts.inject_data_base
+      - id: externalize_css
+        module: scripts.externalize_css
+      - id: optimize_assets
+        module: scripts.optimize_assets
+        note: >
+          normalize chain inside the commit step, before `git add` (P0 2026-08-04,
+          9a997e9da3f — the #4492 follow-up). This lane commits site/vector.html but
+          had no sweep of any kind, so every flash-crash alert shipped a RAW page:
+          inline <style>, no assets/css/<hash>.css ref, stale ?v=, held until the
+          next full-tree render re-baked it. All three are idempotent and non-fatal
+          (|| echo) so a sweep failure can never cost an alert its publish. The step
+          also stages templates/index.html — index.html is a plain-copy PAIR and
+          these sweeps write the template side too, so staging the site copy alone
+          would land the pair diverged and red the pages.yml publish gate.
 
   # ── commodity-sentinel.yml / shock ──────────────────────────────────────
   - workflow: .github/workflows/commodity-sentinel.yml
@@ -2584,6 +2611,19 @@ lanes:
       - id: build_commodities_on_change
         module: scripts.build_commodities
         note: conditional on rc=10 only; event-driven sentinel
+      - id: inject_data_base
+        module: scripts.inject_data_base
+      - id: externalize_css
+        module: scripts.externalize_css
+      - id: optimize_assets
+        module: scripts.optimize_assets
+        note: >
+          normalize chain inside the commit step, before `git add` (P0 2026-08-04,
+          9a997e9da3f — the #4492 follow-up). This lane commits site/commodities.html
+          but had no sweep of any kind, so every shock alert shipped a RAW page:
+          inline <style>, no assets/css/<hash>.css ref, stale ?v=, held until the
+          next full-tree render re-baked it. All three are idempotent and non-fatal
+          (|| echo) so a sweep failure can never cost an alert its publish.
 
   # ── whitehouse-sentinel.yml / monitor ───────────────────────────────────
   - workflow: .github/workflows/whitehouse-sentinel.yml
@@ -2592,6 +2632,20 @@ lanes:
       - id: build_whitehouse
         module: scripts.build_whitehouse
         note: event-driven; commit only on change (rc=10)
+      - id: inject_data_base
+        module: scripts.inject_data_base
+      - id: externalize_css
+        module: scripts.externalize_css
+      - id: optimize_assets
+        module: scripts.optimize_assets
+        note: >
+          normalize chain inside the commit step, before `git add` (P0 2026-08-04,
+          9a997e9da3f — the #4492 follow-up). This lane commits site/whitehouse.html
+          but had no sweep of any kind, so every activated alert shipped a RAW page:
+          inline <style>, no assets/css/<hash>.css ref, stale ?v=. An alert page is
+          read the same hour it lands, which makes it the worst one to ship raw. All
+          three are idempotent (~20s over the tree, inside this job's 10m budget) and
+          non-fatal (|| echo) so a sweep failure can never cost an alert its publish.
 
   # ── government-revenue-live.yml / refresh ───────────────────────────────
   - workflow: .github/workflows/government-revenue-live.yml
@@ -3875,6 +3929,6 @@ modules:
       and engine.event_window.stamp_ex_ante() (ledger-lane-gated, COLLECT_LANE=nightly).
       Reads only committed artifacts (no ThetaData/T1 reads). Display-only:
       is_context_only=True, no score path, no _SCARES entry. Calendar/event-window-gated
-      risk legs FORBIDDEN (DO_NOT_REBUILD.md §4). Pre-FOMC drift expected DEAD post-2016
+      risk legs FORBIDDEN (DNR:KILL-CALENDAR-GATED-RISK). Pre-FOMC drift expected DEAD post-2016
       (house ruling). cl_gex cluster (daily.yml), after build_vol_regime so
       site/vol/regime.json is available.

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Template for the per-host worktree GC launchd agent.
+  Installed by scripts/install_worktree_gc_launchd.sh, which substitutes
+  __REPO_ROOT__ and __HOME__.  launchd (not a repo workflow) on purpose: a
+  disk-full host takes its own runners offline (M1, 2026-08-04), so the
+  sweeper must not depend on the runner fleet it protects.
+
+  Runs apply mode daily; while config/worktree_gc.json has armed:false the
+  tool self-gates to a report (exit 2), so installing this before ratification
+  is safe and gives a daily report in the log.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.macro.worktree-gc</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/python3</string>
+    <string>__REPO_ROOT__/scripts/worktree_gc.py</string>
+    <string>--apply</string>
+    <string>--repo-root</string>
+    <string>__REPO_ROOT__</string>
+    <string>--json-out</string>
+    <string>__HOME__/Library/Logs/macro_worktree_gc/last_run.json</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>5</integer>
+    <key>Minute</key>
+    <integer>17</integer>
+  </dict>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>Nice</key>
+  <integer>15</integer>
+  <key>StandardOutPath</key>
+  <string>__HOME__/Library/Logs/macro_worktree_gc/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>__HOME__/Library/Logs/macro_worktree_gc/launchd.err.log</string>
+</dict>
+</plist>

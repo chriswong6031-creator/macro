@@ -23,6 +23,7 @@ from scripts.build_stock_library import (
     _compute_board_staleness,
     _count_trading_sessions_between,
     _expire_pending_buys,
+    _panel_price_reach,
 )
 import scripts.check_surface_freshness as freshness_mod
 from scripts.check_surface_freshness import _ARTIFACTS
@@ -190,6 +191,178 @@ class TestComputeBoardStaleness:
         result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=now_sat)
         assert result["price_through"] == "2026-07-17"
         assert result["delayed"] is False
+
+
+class TestStalenessPanelReachUnion:
+    """CSP-W5b: price_through must be the freshest close ANY input contributed.
+
+    2026-08-03→05 regression: the ohlcv scan sat at 07-31 while --heal lanes
+    ranked yahoo closes through 08-03/04 — 22 consecutive builds claimed
+    price_through=2026-07-31 while the buy lane swung 55↔76 names. A build
+    that read fresher data must not under-claim its reach.
+    """
+
+    _NOW = TestComputeBoardStaleness._NOW  # expected session = 2026-07-16
+
+    def test_panel_fresher_than_store_wins(self, tmp_path):
+        """Store at 07-14 (2 sessions behind → delayed) but panel ranked closes
+        through 07-16: price_through = 07-16 and the badge clears — the build
+        genuinely had the expected session's data."""
+        ohlcv_dir = _make_ohlcv_store(tmp_path, {"AAPL": date(2026, 7, 14)})
+        reach = {"through": "2026-07-16", "majority_through": "2026-07-14",
+                 "members_at_through": 150, "members_total": 1500,
+                 "mixed_vintage": True}
+        result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=self._NOW,
+                                          panel_reach=reach)
+        assert result["price_through"] == "2026-07-16"
+        assert result["delayed"] is False
+        assert result["inputs"]["baskets_ohlcv_through"] == "2026-07-14"
+        assert result["inputs"]["panel"]["mixed_vintage"] is True
+        assert result["inputs"]["panel"]["majority_through"] == "2026-07-14"
+
+    def test_store_fresher_than_panel_wins(self, tmp_path):
+        """Max is symmetric: a fresher ohlcv store still wins over a stale panel."""
+        ohlcv_dir = _make_ohlcv_store(tmp_path, {"AAPL": date(2026, 7, 16)})
+        reach = {"through": "2026-07-14", "majority_through": "2026-07-14",
+                 "members_at_through": 1500, "members_total": 1500,
+                 "mixed_vintage": False}
+        result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=self._NOW,
+                                          panel_reach=reach)
+        assert result["price_through"] == "2026-07-16"
+        assert result["inputs"]["panel"]["through"] == "2026-07-14"
+
+    def test_missing_store_with_panel_is_not_sentinel(self, tmp_path):
+        """Absent ohlcv store no longer suppresses the badge when the panel
+        reach is known — the board WAS priced from something."""
+        result = _compute_board_staleness(ohlcv_dir=tmp_path / "nonexistent",
+                                          now=self._NOW,
+                                          panel_reach={"through": "2026-07-15"})
+        assert result["price_through"] == "2026-07-15"
+        assert result["delayed"] is False
+        assert result["inputs"]["baskets_ohlcv_through"] is None
+
+    def test_malformed_panel_date_is_ignored(self, tmp_path):
+        """A garbage panel date never breaks the badge — the store scan wins."""
+        ohlcv_dir = _make_ohlcv_store(tmp_path, {"AAPL": date(2026, 7, 16)})
+        result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=self._NOW,
+                                          panel_reach={"through": "not-a-date"})
+        assert result["price_through"] == "2026-07-16"
+
+    def test_malformed_panel_and_missing_store_is_sentinel(self, tmp_path):
+        result = _compute_board_staleness(ohlcv_dir=tmp_path / "nonexistent",
+                                          now=self._NOW,
+                                          panel_reach={"through": "not-a-date"})
+        assert result["price_through"] is None
+        assert result["delayed"] is False
+
+    def test_no_panel_keeps_inputs_block(self, tmp_path):
+        """Without panel_reach the result still carries the disclosure block
+        (panel None) so consumers get a stable shape."""
+        ohlcv_dir = _make_ohlcv_store(tmp_path, {"AAPL": date(2026, 7, 16)})
+        result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=self._NOW)
+        assert result["inputs"]["panel"] is None
+        assert result["inputs"]["baskets_ohlcv_through"] == "2026-07-16"
+
+
+class TestPanelPriceReach:
+    """_panel_price_reach: last-close distribution of the ranked panel."""
+
+    @staticmethod
+    def _member(ticker: str, last: date, periods: int = 10,
+                nan_tail: int = 0) -> tuple:
+        idx = pd.date_range(end=last, periods=periods, freq="B")
+        vals = [100.0] * periods
+        for i in range(nan_tail):
+            vals[-(i + 1)] = float("nan")
+        # (ticker, close, high, name, sector) — the universe() tuple shape
+        return (ticker, pd.Series(vals, index=idx), None, ticker, "Materials")
+
+    def test_mixed_vintage_panel(self):
+        """1 fresh member vs 3 stale: through=max, majority=modal, mixed=True —
+        the 2026-08-04 shape (yahoo extras at 08-03, everything else 07-31)."""
+        uni = [self._member("FRESH", date(2026, 7, 16))] + [
+            self._member(t, date(2026, 7, 14)) for t in ("A", "B", "C")]
+        reach = _panel_price_reach(uni)
+        assert reach["through"] == "2026-07-16"
+        assert reach["majority_through"] == "2026-07-14"
+        assert reach["members_at_through"] == 1
+        assert reach["members_total"] == 4
+        assert reach["mixed_vintage"] is True
+
+    def test_uniform_panel_is_not_mixed(self):
+        uni = [self._member(t, date(2026, 7, 16)) for t in ("A", "B", "C")]
+        reach = _panel_price_reach(uni)
+        assert reach["through"] == "2026-07-16"
+        assert reach["majority_through"] == "2026-07-16"
+        assert reach["mixed_vintage"] is False
+
+    def test_delisted_straggler_does_not_flag_mixed(self):
+        """A dead name whose series stops months earlier loses the mode —
+        majority == through, mixed stays False."""
+        uni = [self._member(t, date(2026, 7, 16)) for t in ("A", "B", "C")] + [
+            self._member("DEAD", date(2026, 4, 1))]
+        reach = _panel_price_reach(uni)
+        assert reach["through"] == "2026-07-16"
+        assert reach["majority_through"] == "2026-07-16"
+        assert reach["mixed_vintage"] is False
+
+    def test_even_split_ties_toward_fresher(self):
+        """A 50/50 split reports majority == through (not flagged by a coin flip)."""
+        uni = [self._member(t, date(2026, 7, 16)) for t in ("A", "B")] + [
+            self._member(t, date(2026, 7, 14)) for t in ("C", "D")]
+        reach = _panel_price_reach(uni)
+        assert reach["majority_through"] == "2026-07-16"
+        assert reach["mixed_vintage"] is False
+
+    def test_nan_tail_uses_last_valid_close(self):
+        """A breadth-panel column with a NaN tail (name stopped trading) reports
+        its last VALID close, not the panel's index end."""
+        uni = [self._member("NANTAIL", date(2026, 7, 16), periods=10, nan_tail=2),
+               self._member("A", date(2026, 7, 16))]
+        reach = _panel_price_reach(uni)
+        # NANTAIL's last valid bar is 2 business days before 07-16 → 07-14
+        assert reach["through"] == "2026-07-16"
+        assert reach["members_total"] == 2
+        assert reach["members_at_through"] == 1
+
+    def test_empty_and_unreadable_members(self):
+        assert _panel_price_reach([]) is None
+        assert _panel_price_reach(None) is None
+        all_bad = [("X", None, None, "X", ""),
+                   ("Y", pd.Series(dtype=float), None, "Y", "")]
+        assert _panel_price_reach(all_bad) is None
+        # unreadable members are skipped, not fatal
+        uni = all_bad + [self._member("A", date(2026, 7, 16))]
+        reach = _panel_price_reach(uni)
+        assert reach["members_total"] == 1
+        assert reach["through"] == "2026-07-16"
+
+    def test_crypto_member_never_moves_through(self):
+        """A 24/7 member with a weekend-fresh bar must not claim session reach
+        for the equity board (it would clear the DELAYED badge while every
+        equity is stale — the exact masking this disclosure exists to stop)."""
+        uni = [self._member(t, date(2026, 7, 14)) for t in ("A", "B", "C")] + [
+            self._member("FAKE-USD", date(2026, 7, 16))]
+        reach = _panel_price_reach(uni, exclude={"FAKE-USD"})
+        assert reach["through"] == "2026-07-14"
+        assert reach["members_total"] == 3
+        assert reach["mixed_vintage"] is False
+
+    def test_default_exclusion_is_config_crypto_set(self, monkeypatch):
+        """exclude=None wires to _crypto_tickers() — the same config block
+        universe() sources crypto from (never a hardcoded coin list)."""
+        import scripts.build_stock_library as bsl
+        monkeypatch.setattr(bsl, "_crypto_tickers",
+                            lambda: frozenset({"FAKE-USD"}))
+        uni = [self._member("A", date(2026, 7, 14)),
+               self._member("FAKE-USD", date(2026, 7, 16))]
+        reach = _panel_price_reach(uni)
+        assert reach["through"] == "2026-07-14"
+        assert reach["members_total"] == 1
+        # an explicit empty exclusion set overrides the default (nothing skipped)
+        reach_all = _panel_price_reach(uni, exclude=frozenset())
+        assert reach_all["through"] == "2026-07-16"
+        assert reach_all["members_total"] == 2
 
 
 # ---------------------------------------------------------------------------

@@ -220,17 +220,22 @@
       var wEnd   = st.window_end   || '—';
       var nf = st.n_flags != null ? st.n_flags : '—';
 
-      // Tooltip content: rates + window (registration §3 copy)
-      var tipEn = nf+' historical flags ('+wStart+'→'+wEnd+'): '
-        +p5+' reach smoothed onset in 5d; '
-        +fp5+' noise rate (5d); '
-        +p10+' reach confirmed episode in 10d. Not a forecast.';
-      var tipZh = nf+'次历史标记（'+wStart+'→'+wEnd+'）：'
-        +p5+'在5日内达到平滑启动；'
-        +fp5+'噪声率（5日）；'
-        +p10+'在10日内达到确认情节。非预测。';
+      // Hover card: what past flags like this one went on to do (registration §3).
+      // Plain words in the body; counts, dates and the raw rates in the receipt.
+      var tipEn = 'Of the flags like this one already logged, '+p5+' started a real move within '
+        +'a week and '+p10+' were still going two weeks on. '+fp5+' came to nothing. '
+        +'That is a record of the past, not a forecast for this one.';
+      var tipZh = '在已记录的同类标记中，'+p5+'在一周内启动了真实行情，'+p10+'在两周后仍在延续，'
+        +fp5+'无果而终。这是历史记录，并非对本次的预测。';
+      var tipRcEn = nf+' flags · measured '+wStart+' → '+wEnd
+        +' · 5d onset '+p5+' · 5d noise '+fp5+' · 10d confirmed '+p10;
+      var tipRcZh = nf+' 次标记 · 实测 '+wStart+' → '+wEnd
+        +' · 5日启动 '+p5+' · 5日噪声 '+fp5+' · 10日确认 '+p10;
 
-      html += '<div class="tpo-node-card" data-tip-en="'+esc(tipEn)+'" data-tip-zh="'+esc(tipZh)+'">'
+      html += '<div class="tpo-node-card"'
+        + ' data-tip-t-en="What these flags did before" data-tip-t-zh="同类标记的历史表现"'
+        + ' data-tip-en="'+esc(tipEn)+'" data-tip-zh="'+esc(tipZh)+'"'
+        + ' data-tip-rc-en="'+esc(tipRcEn)+'" data-tip-rc-zh="'+esc(tipRcZh)+'">'
         + '<div class="tpo-node-name">'
         + esc(_nodeName(nid))
         + '<span class="tpo-flag-badge">'
@@ -260,10 +265,18 @@
      worse than no stat. ── */
   function _footHtml(td, tpo){
     var asof = (tpo && tpo.asof) || (td && td.asof) || '—';
-    var partsEn = [], partsZh = [];
+    /* Rewritten with the popup overhaul 2026-08-04. This tip used to run four
+       paragraphs — A15, T1–T3 cascade, WR21, holdout Δ / CI, accel z, lineage IDs,
+       registration dates — roughly 130 words of machine text in the container the
+       doctrine demotes jargon INTO. The body now explains the two halves in plain
+       words; every figure, ID and date rides the receipt line beneath it. */
+    var bodyEn = [], bodyZh = [], rcEn = [], rcZh = [];
 
-    partsEn.push('Armed windows (Turn Desk): when A15 fires (washout + ≥2 opposite-complex sectors rotating out) the entry window opens for up to 10 sessions; the desk lists the armed sectors and which member stocks currently carry a T1–T3 cascade signal. In these windows, member signals have worked out somewhat more often than outside them — a modest, still-accruing edge, not a forecast.');
-    partsZh.push('已武装窗口（轮动入场台）：当A15触发（洗盘 + ≥2个对立复合板块轮出），入场窗口开启，持续最多10个交易日；此处列出处于窗口的板块，以及当前带有T1–T3级联信号的成员股票。在这些窗口内，成员信号的兑现频率略高于窗口外——这是一个仍在累积的温和优势，而非预测。');
+    bodyEn.push('Two watch lists. The first opens when a sector washes out and money leaves two '
+      + 'opposing sectors; it runs ten sessions and names the member stocks moving with it. The '
+      + 'second catches the earliest flow signs, before anything is confirmed.');
+    bodyZh.push('两份观察名单。第一份在某板块洗盘、且至少两个对立板块出现资金流出时开启，'
+      + '持续十个交易日，并列出同向移动的成分股。第二份捕捉最早期的资金迹象，此时尚无任何确认。');
 
     if(td){
       var br = td.base_rates || {};
@@ -278,26 +291,39 @@
       var ciHi  = br.holdout_ci_hi_pp != null ? br.holdout_ci_hi_pp.toFixed(1) : '17.9';
       var nw    = br.n_windows || 31;
       var from  = br.modern_track_from || '2022-06-30';
-      partsEn.push('WR21 '+wrIn+' in-window vs '+wrOut+' outside; holdout Δ'+delta+' CI [+'+ciLo+', +'+ciHi+'pp]. '+nw+' modern-track windows, ≥'+from+'. Growth/cyclical tilt; defensive sectors negative. Lineage: #1533. Track record: '+accrued+' of '+required+' windows counted so far.');
-      partsZh.push('窗口内WR21 '+wrIn+' vs 窗口外'+wrOut+'；持出集Δ'+delta+' CI [+'+ciLo+', +'+ciHi+'pp]。'+nw+'个现代追踪窗口，≥'+from+'。成长/周期偏向；防御性板块为负。来源：#1533。跟踪进度：已计入 '+accrued+' / '+required+' 个窗口。');
+      bodyEn.push('Inside an open window, member signals have worked out somewhat more often than '
+        + 'outside one — a modest edge, still being counted.');
+      bodyZh.push('在开启的窗口内，成分股信号的兑现频率略高于窗口之外——优势温和，且仍在累计中。');
+      rcEn.push('WR21 '+wrIn+' in-window vs '+wrOut+' outside · holdout Δ'+delta+' CI ['+ciLo+', '+ciHi
+        +'pp] · '+nw+' modern-track windows from '+from+' · growth/cyclical tilt, defensives negative'
+        +' · lineage #1533 · '+accrued+' of '+required+' windows counted');
+      rcZh.push('窗口内 WR21 '+wrIn+' vs 窗口外 '+wrOut+' · 持出集 Δ'+delta+' CI ['+ciLo+', '+ciHi
+        +'pp] · '+nw+' 个现代追踪窗口，自 '+from+' · 成长/周期偏向，防御性为负'
+        +' · 来源 #1533 · 已计入 '+accrued+'/'+required+' 个窗口');
       if(qualNote){
-        partsEn.push(qualNote+' Qualitative filters log context at window open; accrual is descriptive-only — no ranking or gating.');
-        partsZh.push(qualNote+' 定性过滤器在窗口开启时记录上下文；积累数据为描述性——不排名不设门控。');
+        rcEn.push(qualNote+' context filters log at window open; accrual is descriptive only');
+        rcZh.push(qualNote+' 定性过滤器于窗口开启时记录上下文；积累仅为描述性');
       }
     }
 
-    partsEn.push('Earliest flow signs (tape-onset): a watch list, not signals — each card shows how often past flags like it went on to a real move. How it fires: a momentum jump (accel z ≥ 1.0, unsmoothed) with short-term speed above long-term and no confirmed episode. Rates computed from data, not hardcoded. Registered 2026-07-09; review 2026-10-09.');
-    partsZh.push('最早期资金迹象（tape-onset）：观察名单，非信号——每项显示历史上类似标记后续演变为真实行情的频率。触发方式：动量跳升（加速度 z ≥ 1.0，未平滑），短期速度高于长期，且无已确认情节。发生率来自数据，非硬编码。登记于2026-07-09；复评2026-10-09。');
-
-    partsEn.push('Both halves are display/context only — they feed no score, gate, or ordering surface.');
-    partsZh.push('两部分均仅供展示/参考——不驱动任何评分、门控或排序。');
+    bodyEn.push('Each card shows how often past flags like it went on to a real move. Context '
+      + 'only — nothing here ranks, gates or sizes anything.');
+    bodyZh.push('每张卡片显示历史上类似标记后续演变为真实行情的频率。两份名单均仅供参考——不排名、不门控、不调仓。');
+    rcEn.push('earliest signs fire on a momentum jump (accel z ≥ 1.0, unsmoothed) with short-term '
+      + 'speed above long-term and no confirmed episode · rates computed from data, not hardcoded '
+      + '· registered 2026-07-09, review 2026-10-09');
+    rcZh.push('最早期迹象触发于动量跳升（加速度 z ≥ 1.0，未平滑），短期速度高于长期且无已确认情节'
+      + ' · 发生率来自数据，非硬编码 · 登记于 2026-07-09，复评 2026-10-09');
 
     return '<div class="dw-foot">'
       + '<span class="l-en">Watch material, not calls — display only, and nothing here ranks, gates or sizes anything. as of '+esc(asof)+'</span>'
       + '<span class="l-zh">仅供观察，并非操作判断——仅展示，此处不排名、不门控、不调仓。截至 '+esc(asof)+'</span>'
       + ' <span class="dw-help" tabindex="0" role="button" aria-label="details"'
-      + ' data-tip-en="'+esc(partsEn.join(' '))+'"'
-      + ' data-tip-zh="'+esc(partsZh.join(' '))+'">?</span>'
+      + ' data-tip-t-en="What you are looking at" data-tip-t-zh="这里显示的是什么"'
+      + ' data-tip-en="'+esc(bodyEn.join(' '))+'"'
+      + ' data-tip-zh="'+esc(bodyZh.join(''))+'"'
+      + ' data-tip-rc-en="'+esc(rcEn.join(' · '))+'"'
+      + ' data-tip-rc-zh="'+esc(rcZh.join(' · '))+'">?</span>'
       + '</div>';
   }
 

@@ -167,10 +167,15 @@ def main() -> int:
             )
             _an_ba["bottoming_watch"] = _bw["bottoming_watch"]
             _an_ba["dual_read_ids"] = _bw["dual_read_ids"]
+            # Graduation gap: reduce/avoid rows the cycle organ reads as
+            # recovering off a low but which have left the bottoming lane.
+            # Disjoint from dual_read_ids — a separate chip, separate sentence.
+            _an_ba["recovering_ids"] = _bw["recovering_ids"]
             _an_ba["bottoming_authority"] = _bw["authority"]
             log.info(
-                "bottoming watch: %d row(s), %d dual-read id(s)%s",
+                "bottoming watch: %d row(s), %d dual-read id(s), %d recovering id(s)%s",
                 len(_bw["bottoming_watch"]), len(_bw["dual_read_ids"]),
+                len(_bw["recovering_ids"]),
                 (" — " + "; ".join(_bw["notes"])) if _bw["notes"] else "",
             )
     except Exception as e:  # noqa: BLE001 — additive, never fatal

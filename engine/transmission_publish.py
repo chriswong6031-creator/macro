@@ -13,7 +13,7 @@ WHY A LAG NOTE (verified pipeline fact): in ``.github/workflows/daily.yml`` the
 the site-published JSON is derived from LAST night's chain_state — one nightly stale. We
 stamp ``lag_note`` in the emit so every consumer is honest about it (masterplan §7).
 
-DISCIPLINE (masterplan §4; DNR row 45; TXI Article 1/2): the subset carries
+DISCIPLINE (masterplan §4; DNR:KILL-CAUSAL-DAG-ALPHA; TXI Article 1/2): the subset carries
 ``display_only=True`` and is context/watch tier only — it never scores, ranks, sizes, or
 escalates. The word "validated" never appears. Chain-level and hop-level bilingual DISPLAY
 labels come from the YAML (``title`` for the chain; the W4 hop ``label``); the resolver's

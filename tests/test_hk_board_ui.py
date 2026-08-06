@@ -243,16 +243,24 @@ def _witness_buy_row(w, status: str, block_reason: str | None = None) -> dict:
 
 
 def _witness_ran_row(w, *, sessions: int | None, pct: float | None,
-                     anchor: str) -> dict:
+                     anchor: str, measured_from: str | None = None) -> dict:
     """A ran-lane row shape.  No `theme_confirmed` leg: the HK cohort organ emits no
     per-name turn, so that branch was unreachable in production and is gone from the
-    template — a fixture that kept stamping it would be guarding deleted markup."""
+    template — a fixture that kept stamping it would be guarding deleted markup.
+
+    A move may ride ONLY on the `confirm` anchor (see hk_board_rank.build_ran_rows), so
+    a `pct` without a `measured_from` is a shape the engine cannot emit and the fixture
+    refuses to invent — a UI test standing on an impossible row proves nothing.
+    """
     from engine import hk_board_rank as hbr
 
+    assert (pct is None) or (anchor == hbr.ANCHOR_CONFIRM and measured_from), (
+        "a measured move requires the confirm anchor and its measured_from date")
     tk, name, name_zh, sector, price, run = w
     return {"ticker": tk, "name": name, "name_zh": name_zh, "sector": sector,
             "sector_zh": sector, "price": price, "sessions_since": sessions,
             "cross_date": "2026-07-14", "pct_since": pct, "anchor": anchor,
+            "measured_from": measured_from,
             # the ENGINE's own stance string — a shape row that disagrees would
             # split the lane's shared stance line into per-row chips and hide the
             # "printed once" contract behind a fixture detail
@@ -454,10 +462,15 @@ def shapes_fixture() -> dict:
     ran_extra = [
         _witness_ran_row(("8801.HK", "Sample Holdings A", "样本控股甲",
                           "Industrials", 42.0, 18.0),
-                         sessions=11, pct=18.0, anchor="marker"),
+                         sessions=11, pct=18.0, anchor="confirm",
+                         measured_from="2026-07-24"),
+        # `approx` — no marker date resolved, so the age is worked back from recent
+        # bars AND the move is unmeasurable: the confirmation anchor is derived from
+        # the marker's bucket, and there is no marker.
         _witness_ran_row(("8802.HK", "Sample Holdings B", "样本控股乙",
                           "Industrials", 31.0, 9.0),
-                         sessions=9, pct=9.0, anchor="approx"),
+                         sessions=9, pct=None, anchor="approx"),
+        # `marker` — an exact age, but bar i+2 has not printed yet
         _witness_ran_row(("8803.HK", "Sample Holdings C", "样本控股丙",
                           "Industrials", 12.0, 0.0),
                          sessions=6, pct=None, anchor="marker"),
@@ -914,6 +927,87 @@ def test_vetoed_move_is_signed_and_direction_coloured(prio_html):
         row = _veto_row(seg, r["ticker"])
         cls = "az-up" if r["pct_since"] >= 0 else "az-dn"
         assert '<span class="%s">%+.1f%%</span>' % (cls, r["pct_since"]) in row
+
+
+def test_vetoed_move_says_it_is_measured_from_the_confirmation_close(prio_html):
+    """The figure must not silently answer "since the signal fired".
+
+    It is measured from the close at which the entry check could first reach its
+    verdict — about eight sessions after the marker — so the label has to say which,
+    and the hover has to name both dates.  Printing the confirmation figure under the
+    old "since the block" label would be the same overstatement wearing new numbers.
+    """
+    su = shapes_fixture()
+    seg = _veto_block(prio_html)
+    assert "since the check finished" in seg
+    assert "（检查完成后）" in seg
+    assert "since the block</span>" not in seg, "the old marker-anchored label is gone"
+    row = _veto_row(seg, su["vetoed"][0]["ticker"])
+    measured = su["vetoed"][0]["measured_from"]
+    assert measured and measured != su["vetoed"][0]["signal_date"]
+    assert "It finished on %s" % measured in row
+    assert "到 %s 才完成" % measured in row
+    assert "The signal fired on %s" % su["vetoed"][0]["signal_date"] in row
+
+
+def test_vetoed_section_prints_the_population_behind_its_truncated_rows(prio_html):
+    """Twelve rows ranked BY the move and cut at a cap are the winning tail of it.
+
+    Without the count and the middle move of the whole refused set beside them they
+    read as a P&L claim the lane never made — the operator's own reading of the
+    2026-08-03 board, where the section was cited as evidence in an admission change.
+    """
+    su = shapes_fixture()
+    seg = _veto_block(prio_html)
+    row0 = su["vetoed"][0]
+    population, median = row0["population"], row0["population_median_pct"]
+    assert population > len(su["vetoed"]), "the fixture must actually truncate"
+    assert '<div class="pbv-pop">' in seg
+    assert "Showing the %d biggest movers of %d refused signals." % (
+        len(su["vetoed"]), population) in seg
+    assert "the middle move is %+.1f%%" % median in seg
+    assert "显示 %d 个被拒信号中涨幅最大的 %d 个。" % (
+        population, len(su["vetoed"])) in seg
+    assert "中位涨跌幅为 %+.1f%%" % median in seg
+    # it reads BEFORE the rows: a reader who meets twelve green figures first has
+    # already formed the impression the line exists to prevent
+    assert seg.index('<div class="pbv-pop">') < seg.index('<a class="pbr-r pbr-veto"')
+
+
+def test_the_population_line_is_fail_soft_on_a_pre_population_artifact(prio_html):
+    """Every artifact written before this change carries none of the three keys."""
+    su = shapes_fixture()
+    su["vetoed"] = [{k: v for k, v in dict(r).items()
+                     if not k.startswith("population")} for r in su["vetoed"]]
+    seg = _veto_block(_render(su))
+    assert '<div class="pbv-pop">' not in seg
+    assert seg.count('<a class="pbr-r pbr-veto"') == len(su["vetoed"]), (
+        "the rows must render exactly as before")
+
+
+def test_a_stale_marker_anchored_artifact_prints_no_move_at_all(prio_html):
+    """The transitional half, and it fails CLOSED.
+
+    Every artifact written before 2026-08-03 carries a marker-anchored `pct_since`
+    with `anchor: marker`, and the nightly that regenerates it can land a day after
+    this template does.  Rendering those numbers under a label promising the
+    confirmation close would wrap the old overstatement in a new claim — worse than
+    the defect.  So the figure keys on the ANCHOR, not merely on the value.
+    """
+    su = shapes_fixture()
+    legacy = dict(su["vetoed"][0], ticker="9998.HK", anchor="marker",
+                  pct_since=20.1, measured_from=None)
+    su["vetoed"] = [legacy]
+    seg = _veto_block(_render(su))
+    row = _veto_row(seg, "9998.HK")
+    assert "20.1%" not in row, "a marker-anchored move must not reach the page"
+    assert '<span class="pbr-na"' in row and ">—</span>" in row
+    assert "az-up" not in row and "az-dn" not in row
+    # the same law on the ran lane
+    su2 = shapes_fixture()
+    su2["ran"] = [dict(su2["ran"][0], ticker="9997.HK", anchor="marker",
+                       pct_since=29.2, measured_from=None)]
+    assert "29.2%" not in _ran_row(_ran_block(_render(su2)), "9997.HK")
 
 
 def test_vetoed_row_with_no_measurable_move_prints_an_em_dash(prio_html):

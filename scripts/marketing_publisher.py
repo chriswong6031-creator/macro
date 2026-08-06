@@ -60,6 +60,9 @@ _CODE_ROOT = str(Path(__file__).resolve().parent.parent)
 if _CODE_ROOT not in sys.path:
     sys.path.insert(0, _CODE_ROOT)
 from engine.marketing.copywriter import banned_language as _banned_language  # noqa: E402
+from engine.marketing.media_publish import (  # noqa: E402
+    card_ticker_mismatch as _card_ticker_mismatch,
+)
 from engine.marketing.copywriter import headline_fragments as _headline_fragments  # noqa: E402
 from engine.marketing.copywriter import queued_voice_violations as _queued_voice_violations  # noqa: E402
 from engine.marketing.copywriter import queued_relay_violations as _queued_relay_violations  # noqa: E402
@@ -2111,6 +2114,33 @@ def main(argv: list[str] | None = None) -> int:
                 # Dry-run parks nothing, so it announces nothing (and does not
                 # spend the next live run's annotation budget).
                 _warn_dark_park(account)
+            _parked_post.append(iid)
+            continue
+
+        # -- card/ticker agreement: never post another company's chart --------
+        # THE DEFECT (live, flagship, 2026-08-05): "$DVN 45.1. Signals are lining
+        # up..." shipped over an RMBS chart. The item was right and the FILE at
+        # its chart_id was another company's, because content_studio's id counter
+        # restarted at 1 each run while the media key is per-DAY, so a second run
+        # overwrote the first run's charts at the same public URLs.
+        # `_next_chart_id` closes that cause. This closes the CLASS: a reader
+        # caught the DVN post, and the audit it prompted then found eight more
+        # nobody had caught, across flagship, sophia and meagan. Posting the
+        # wrong company's chart under a ticker is the single worst thing this
+        # pipeline can do, so it is checked here, at the last gate before the
+        # network, against the artifact itself rather than against metadata that
+        # was correct the whole time.
+        # Abstains on an absent file, an unlabelled card, and a multi-name card
+        # (see card_ticker_mismatch) — it fires only on a card that names a
+        # symbol and not the claimed one.
+        _card_bad = _card_ticker_mismatch(it.get("media"), root=root)
+        if _card_bad:
+            log.error("item %s (%s) QUARANTINED — %s", iid, account, _card_bad)
+            print(f"::error title=card-ticker-mismatch::{iid} ({account}): "
+                  f"{_card_bad}", flush=True)
+            if live:
+                _outbox.transition(iid, "quarantined", actor="publisher",
+                                   root=root, note=_card_bad)
             _parked_post.append(iid)
             continue
 

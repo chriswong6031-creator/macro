@@ -35,8 +35,9 @@ from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_
                codex_panel,
                config_store,
                content, context_lobe, email_center, entitlements, experiments,
-               flags, ga4, github_api, github_config, gitops, health, long_hold,
+               flags, ga4, github_api, github_config, gitops, health, key_alerts, long_hold,
                live_runs,
+               macro_thesis,
                marketing,
                marketing_floor,
                mastermind_logs,
@@ -373,6 +374,7 @@ def _summary_payload() -> dict:
         "system": _safe(system.snapshot),
         "services": _safe(services.status),
         "experiments": _safe(experiments.alert_summary),
+        "key_alerts": _safe(key_alerts.panel),
     }
     if isinstance(result["health"], dict) and "error" not in result["health"]:
         result["health"] = {
@@ -669,6 +671,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(prophet.panel())
             if path == "/api/prophet/trade-memory":
                 return self._json(trade_memory.panel())
+            # Macro Thesis Ledger — operator-conviction register at THESIS grain.
+            # ops/journal tier, ZERO AUTHORITY: a track record OF macro synthesis,
+            # never a signal into any surface.  Sibling of Trade Memory (per-trade,
+            # Supabase); this one is thesis-grain over a committed JSONL ledger.
+            if path == "/api/macro-thesis":
+                return self._json(macro_thesis.panel())
             # Marketing lobe admin pages
             # The floor/model-desk/lanes trio is the operator's view INSIDE the
             # factory: per-station yield with every loss named, model routing +
@@ -1095,6 +1103,13 @@ class Handler(BaseHTTPRequestHandler):
                 result = trade_memory.record(b)
                 return self._json(result, 200 if result.get("ok") else 400)
 
+            # Macro Thesis registration. Append-only + keep-first on thesis_id:
+            # a re-registered id is REFUSED, never overwritten, so the register
+            # cannot be quietly rewritten after the outcome is known.
+            if path == "/api/macro-thesis":
+                result = macro_thesis.register(b)
+                return self._json(result, 200 if result.get("ok") else 400)
+
             # REJECT — terminal kill WITH a reason, unlike hold (reversible,
             # stays in the rail). Writes data/marketing/rejections.jsonl, which
             # the review-sheet export reads.
@@ -1387,6 +1402,18 @@ class Handler(BaseHTTPRequestHandler):
             # Comp-over-live-Stripe is refused unless force+cancel_stripe (see entitlements.py).
             if path == "/api/entitlements/action":
                 payload, code = entitlements.act(b, operator="operator")
+                return self._json(payload, code)
+
+            # Operator password reset (Users panel). Sets the password DIRECTLY through
+            # the GoTrue admin API — a server-issued recovery LINK cannot work against
+            # this site's PKCE-pinned browser client (see admin/users.py module docstring),
+            # so a link-based action here would be a button that silently does nothing.
+            # Omit `password` to have a strong one generated and returned once.
+            if path == "/api/users/reset_password":
+                payload, code = users.set_password(
+                    b.get("email") or b.get("user_id") or "",
+                    b.get("password") or None,
+                    operator="operator")
                 return self._json(payload, code)
 
             # Support ticket transitions (SEE W1): reply / resolve / close / reopen.

@@ -128,6 +128,23 @@ def _horizon_read(rec: dict, eq_score: float | None, spot: float,
     return {"d3": round(d3, 2), "d21": round(d21, 2), "d63": round(d63, 2)}
 
 
+def null_reason(close: pd.Series, rec: dict) -> str:
+    """Why ``assess`` returned None for this name — the disclosed-null reason the
+    board writer stamps as ``entry_signal_null_reason`` so a graded ledger row can
+    never carry a silently-absent entry_status (177/403 matured buy rows graded
+    entry_status=None with no cause on record before this existed).
+
+    Mirrors ``assess``'s self-gates one-for-one, in order. The terminal
+    "not_assessed" is unreachable while the mirror is exact; if a new self-gate is
+    ever added to ``assess`` without updating this mirror, rows fall through to
+    "not_assessed" — still a disclosed null, never a silent one."""
+    if not (rec.get("ladder") or {}).get("state"):
+        return "no_cycle_ladder"
+    if len(close.dropna()) < 60:
+        return "short_history"
+    return "not_assessed"
+
+
 def assess(close: pd.Series, high: pd.Series | None, rec: dict, *,
            buyable: bool | None = None) -> dict | None:
     """Build the structured entry-timing block for one name, or None when the
