@@ -1431,7 +1431,13 @@ def _emit_outbox_item(
                 # The run-level tally reads this. Set only when the refusal is
                 # ARMED (a shadow-mode verdict ships the post, so counting it
                 # would report holds that never happened).
-                refusal["held_card_withheld"] = True
+                #
+                # Carries the REASON, not a bare True: this flag is set for any
+                # armed abstention on a withheld-card post, and the ratified
+                # hold is specifically `gift:no_informational_surplus`. A notice
+                # that hardcodes that string would report a proof failure, a
+                # dedup, or a future reason as the operator's ruling.
+                refusal["held_card_withheld"] = str(_why or "unknown")
         elif not _ob.value_gate_kind_is_measured(cfg, "breaking"):
             # The kind is outside the armed set: the verdict is EVIDENCE being
             # collected, not a judgment being applied. Say so, or the next
@@ -2256,7 +2262,7 @@ def run_press_tick(
     # as a restatement of the copy. The operator ratified holding them; the ask
     # was that the class be COUNTABLE, not alarmed. See the measurement and its
     # method in _emit_outbox_item's value-gate block.
-    held_card_withheld = 0
+    held_card_withheld: dict[str, int] = {}
     for s in scored:
         iid = str(s.get("id", ""))
         ck = _corroboration_key(s)
@@ -2764,8 +2770,10 @@ def run_press_tick(
         if out_item is None:
             _reason = str(_refusal.get("reason") or "outbox_refused")
             _ekey = _emission_key(s)
-            if _refusal.get("held_card_withheld"):
-                held_card_withheld += 1
+            _hcw = _refusal.get("held_card_withheld")
+            if _hcw:
+                _k = str(_hcw)
+                held_card_withheld[_k] = held_card_withheld.get(_k, 0) + 1
             # A BOUNDED TRANSIENT HAS RUN OUT OF TICKS (round-3 review, F6).
             # `card_render_degraded` names a deterministic pure-Python layout
             # exception, so a per-item renderer bug raised the same refusal on
@@ -2774,8 +2782,18 @@ def run_press_tick(
             # FIRST and demoting it to the terminal branch is what bounds that;
             # `media_unhosted` is absent from the map and still retries forever,
             # because during a genuine R2 outage giving up would be a mass kill.
+            # KEYED BY (STORY, REASON), NOT BY STORY. The streak bounds ONE
+            # fault, so it has to count one fault. Keyed by the emission key
+            # alone, a story that had already retried under the UNBOUNDED
+            # `media_unhosted` (a real R2 outage retries forever, deliberately)
+            # arrives at its first `card_render_degraded` with the counter
+            # already past the bound, and the give-up fires on attempt one —
+            # killing a story for a renderer hiccup because the HOST had been
+            # down earlier. The two faults also send an operator to different
+            # places, so their streaks are different facts.
+            _tkey = f"{_ekey}\x1f{_reason}"
             _give_up_at = _TRANSIENT_GIVE_UP_AT.get(_reason)
-            _prior_tries = int(transient_tries.get(_ekey, 0) or 0)
+            _prior_tries = int(transient_tries.get(_tkey, 0) or 0)
             _exhausted = bool(_give_up_at) and _prior_tries + 1 >= _give_up_at
             if _exhausted:
                 print("::warning title=press-lane-transient-refusal-exhausted::"
@@ -2794,8 +2812,8 @@ def run_press_tick(
                 # The retry is COUNTED so it cannot be silent: a host that is
                 # genuinely down would otherwise re-render, re-pay and re-refuse
                 # the same item every tick with nothing in the summary.
-                _tries = int(transient_tries.get(_ekey, 0) or 0) + 1
-                transient_tries[_ekey] = _tries
+                _tries = int(transient_tries.get(_tkey, 0) or 0) + 1
+                transient_tries[_tkey] = _tries
                 if _tries >= _TRANSIENT_RETRY_ALARM_AT and \
                         _tries % _TRANSIENT_RETRY_ALARM_AT == 0:
                     # BARE print, line-start, flushed — never through the logger
@@ -2902,11 +2920,15 @@ def run_press_tick(
     # press-lane emissions (5.3%) are in this class, counted from their persisted
     # source.value_gate.components.surplus. Expect roughly one per busy day.
     if held_card_withheld:
+        _n = sum(held_card_withheld.values())
+        _by = ", ".join(f"{k} x{v}" for k, v in
+                        sorted(held_card_withheld.items(), key=lambda kv: -kv[1]))
         print("::notice title=press-lane-held-card-withheld::"
-              f"{held_card_withheld} post(s) held on "
-              "gift:no_informational_surplus with the card withheld as a "
-              "restatement — the picture was their only surplus (operator "
-              "ruling 2026-08-06: hold them)", flush=True)
+              f"{_n} post(s) held with the card withheld as a restatement "
+              f"({_by}). The ratified class is gift:no_informational_surplus "
+              "- the picture was their only surplus (operator ruling "
+              "2026-08-06: hold them). Any OTHER reason here is a "
+              "different fault wearing the same flag.", flush=True)
 
     # ── B4a rail ───────────────────────────────────────────────────────────────
     # The rail shows EVERYTHING above a LOWER floor (incl. digest-class items X
