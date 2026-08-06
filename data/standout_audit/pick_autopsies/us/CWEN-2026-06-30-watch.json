@@ -1,0 +1,116 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "CWEN-2026-06-30-watch",
+  "ticker": "CWEN",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "CWEN",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "CWEN",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_break",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Utilities",
+    "excess_spy": -0.05510396814300378,
+    "excess_sector": -0.04401965491750015,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 7.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "CWEN stopped and underperformed SPY, with an idiosyncratic break recorded and no process fault. Its existing board tenure raises a path-dependence question, but does not by itself establish stale data or late action.",
+    "root_cause": "CWEN stopped and underperformed SPY, with an idiosyncratic break recorded and no process fault. Its existing board tenure raises a path-dependence question, but does not by itself establish stale data or late action.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The watch book retained CWEN, while the company-break, Utilities-rotation, and path-risk books lacked enough evidence to identify whether conditions deteriorated during tenure.",
+    "engines_credit": "The process organ remains clean on the supplied taxonomy; the tenure-monitoring, company-alpha, catalyst, and Utilities-conditioning organs are the evidence laggards.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "The supplied taxonomy attributes CWEN's failure to an issuer-specific break.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "If renewable-power and Utilities peers shared the decline, systematic exposure would be a stronger explanation.",
+        "evidence_refs": [
+          "outcome_cause=idio_break",
+          "excess_spy=-0.05510396814300378",
+          "terminal_state=STOPPED"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "Board tenure created an interval during which thesis quality or market conditions could have changed before the recorded pick date.",
+        "evidence_status": "claimed",
+        "timing_status": "known_at_entry",
+        "counterfactual": "Unchanged features throughout tenure would weaken the deterioration-during-tenure explanation.",
+        "evidence_refs": [
+          "board_tenure_days=7.0",
+          "lane=watch"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The subsequent adverse path reached the stopping condition.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "Avoiding the stop would change the terminal outcome but not determine whether tenure monitoring was adequate.",
+        "evidence_refs": [
+          "terminal_state=STOPPED",
+          "process_fault=clean"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Utilities or renewable-power rotation may have driven the decline.",
+      "Rate, financing, regulatory, or project-specific developments may have contributed.",
+      "Feature deterioration during board tenure may have gone undetected.",
+      "The stop may have resulted from temporary path volatility."
+    ],
+    "missing_evidence": [
+      "Feature snapshots across board tenure",
+      "Renewable-power peer-relative returns",
+      "Rate and financing-condition chronology",
+      "Company and regulatory event timestamps",
+      "Entry-to-stop path and thesis-invalidation markers",
+      "Data freshness audit"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "cwen_tenure_feature_decay",
+        "feature": "Feature decay during board tenure",
+        "measurement": "Compare company, sector-relative, and price-volume features from initial board inclusion through the pick date.",
+        "expected_direction": "Greater pre-pick deterioration should be associated with subsequent stopping outcomes.",
+        "falsifier": "Features remain stable or improve before entry, or decay has no relationship with outcomes.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T05:48:19+00:00"
+}

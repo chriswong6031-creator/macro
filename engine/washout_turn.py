@@ -50,11 +50,36 @@ The own-history base rates are likewise a descriptive receipt, not a forecast:
 they are printed with their n, immature (right-censored) events are dropped from
 the medians, and nothing here ranks, gates, sizes, or escalates.
 
+HISTORY-DEEPENING SPLICE (W2)
+-----------------------------
+`_load_close` prefers data/baskets/ohlcv/, which for long-listed names is the
+SHORTEST store: MCD's ohlcv history starts 2014 (~580 weekly line bars) while
+data/stocks/MCD.parquet starts 1966 (~3,000).  A depth percentile over the
+name's own history is only as deep as the store behind it — off the truncated
+store the 2026-07-31 MCD cross read depth 8.6 / n=8; off the full store it reads
+6.3 / n=36 (same state, same since; the evidence doc's numbers).  So the DEPTH
+legs (the percentile wherever it is read, including the qualification gate) and
+the OWN-HISTORY BASE RATES evaluate a DEEPENED series: the preferred store
+extended backward with the longest available store (data/stocks/ first, then
+data/yahoo/) via a prepend-only splice at the preferred store's first bar
+(`_splice_prepend`; precedent: the #4561 GOLD heal).  The splice only ever ADDS
+bars strictly BEFORE the preferred store's first date — recent-close
+disagreements between stores are real (split/dividend adjustment epochs differ;
+the prepended segment is ratio-aligned at the boundary for exactly that reason)
+— so the SIGNAL legs (cross detection, graduation/failure exits, watch
+momentum, every last-bar indicator receipt) keep reading the preferred store's
+values unchanged, and a name with no deeper store evaluates byte-identically.
+`mtf_upturn` is deliberately NOT deepened: every field it emits is a
+recent-window cross/state read (no own-history percentile, no base rates), so
+deepening would add per-name store I/O for zero receipt change.
+
 CN LANE DELIBERATELY NOT BUILT — operator sequencing is US first, CN after the US
 lane ships.  No `compute_cn` / `_cn_*` twins exist in this module on purpose.
 
 Amendment log:
   2026-08-05 W1: initial US lane (this file).
+  2026-08-05 W2: history-deepening splice for the depth/base-rate legs
+                 (prepend-only; signal legs unchanged on the preferred store).
 """
 from __future__ import annotations
 
@@ -141,6 +166,20 @@ DD_LOOKBACK_SESSIONS = 252
 STATE_TURN = "WASHOUT_TURN"
 STATE_WATCH = "TURN_WATCH"
 STATE_NONE = "NONE"
+
+#: History-deepening stores, in preference order, as data_root-relative dirs.
+#: data/stocks/ is the house deep store (MCD 1966→); data/yahoo/ is the last
+#: resort (usually 2023→, but reaches 1999 for some names the stocks store
+#: lacks).  Both are derived from data_root — unlike mtf_upturn._try_yahoo's
+#: ROOT-pinned path — so a tmp data_root in tests never reads the real store
+#: (prod is identical: config.data_dir() == ROOT/"data").
+DEEPEN_STORES = ("stocks", "yahoo")
+
+#: A deep store must actually REACH the preferred store's first bar for the
+#: splice to engage.  A join across a longer hole would fabricate a multi-week
+#: gap-jump bar inside the depth distribution; better to keep the shallow read
+#: (which prints its own truncation via history_weeks / history_start).
+MAX_SPLICE_GAP_DAYS = 14
 
 #: Canon params actually consumed here — emitted in the artifact as an audit
 #: trail so a param drift in canon is visible in the shipped JSON.
@@ -247,6 +286,83 @@ def _stamp_ledger(transition_rows: list[dict], data_root: Path | None = None) ->
 
 
 # ---------------------------------------------------------------------------
+# History-deepening splice (W2) — depth/base-rate legs only
+# ---------------------------------------------------------------------------
+
+def _load_store_close(path: Path) -> pd.Series | None:
+    """One store parquet → clean close Series (mtf `_load_close` conventions)."""
+    if not path.exists():
+        return None
+    try:
+        df = pd.read_parquet(path)
+        df.index = pd.to_datetime(df.index)
+        col = "close" if "close" in df.columns else "close_price"
+        s = pd.to_numeric(df[col], errors="coerce").dropna().sort_index()
+        return s if len(s) else None
+    except Exception:  # noqa: BLE001 — a broken deep store must never break the read
+        return None
+
+
+def _splice_prepend(preferred: pd.Series, deeper: pd.Series | None) -> pd.Series:
+    """Prepend-only idempotent splice (the #4561 GOLD-heal shape).
+
+    Only bars of ``deeper`` STRICTLY BEFORE ``preferred``'s first date are
+    taken; every overlapping date keeps ``preferred``'s value and the recent
+    end is never extended (data/yahoo/ runs a session or two PAST the ohlcv
+    store — those trailing bars must not leak in).  The prepended segment is
+    ratio-aligned at the boundary because the stores' split/dividend
+    adjustment epochs differ (JPM: 0.45% level offset on the same dates); a
+    raw prepend would fabricate a jump bar inside the depth distribution.
+
+    Returns the ``preferred`` OBJECT ITSELF when nothing is prepended — the
+    caller uses identity (`spliced is close`) as the no-deepening signal.
+    Idempotent: splicing an already-spliced series prepends nothing new.
+    """
+    if deeper is None or preferred.empty or deeper.empty:
+        return preferred
+    d0 = preferred.index[0]
+    old = deeper.loc[deeper.index < d0]
+    if old.empty:
+        return preferred
+    if (d0 - old.index[-1]).days > MAX_SPLICE_GAP_DAYS:
+        return preferred
+    anchor = float(deeper.loc[d0]) if d0 in deeper.index else float(old.iloc[-1])
+    p0 = float(preferred.iloc[0])
+    if not (np.isfinite(anchor) and anchor > 0.0 and np.isfinite(p0) and p0 > 0.0):
+        return preferred
+    out = pd.concat([old * (p0 / anchor), preferred])
+    # Disjoint by construction (old < d0 <= preferred); belt-and-braces only.
+    if not out.index.is_monotonic_increasing or out.index.has_duplicates:
+        out = out[~out.index.duplicated(keep="last")].sort_index()
+    return out
+
+
+def _deepen_close(sym: str, close: pd.Series, data_root: Path | None = None) -> pd.Series:
+    """The deepened series for the DEPTH/BASE-RATE legs, or ``close`` itself.
+
+    Tries DEEPEN_STORES in order; the first store that actually deepens (starts
+    strictly earlier AND reaches the boundary) wins.  Never raises — any
+    failure falls back to the preferred series unchanged.
+    """
+    try:
+        if close is None or close.empty:
+            return close
+        from lib import config
+        root = data_root if data_root is not None else config.data_dir()
+        for store in DEEPEN_STORES:
+            cand = _load_store_close(root / store / f"{sym}.parquet")
+            if cand is None or cand.index[0] >= close.index[0]:
+                continue
+            spliced = _splice_prepend(close, cand)
+            if spliced is not close:
+                return spliced
+        return close
+    except Exception as e:  # noqa: BLE001 — deepening is a receipt upgrade, never a gate
+        log.debug("washout_turn._deepen_close %s failed: %s", sym, e)
+        return close
+
+
+# ---------------------------------------------------------------------------
 # PIT weekly grid
 # ---------------------------------------------------------------------------
 
@@ -313,15 +429,26 @@ def _base_rates(wk_closes: np.ndarray, event_idx: list[int]) -> dict:
 # Per-symbol evaluation
 # ---------------------------------------------------------------------------
 
-def _evaluate(close: pd.Series) -> dict:
+def _evaluate(close: pd.Series, deep_close: pd.Series | None = None) -> dict:
     """Full per-symbol evaluation.
 
     Returns ``{"insufficient": bool, "state": str|None, "receipts": dict|None,
-    "none_reason": str|None}``.  ``insufficient`` is the SKIP signal (too little
-    weekly history to read a depth percentile at all) and is distinct from a
-    clean no-state read.
+    "none_reason": str|None, "deepened": bool}``.  ``insufficient`` is the SKIP
+    signal (too little weekly history to read a depth percentile at all) and is
+    distinct from a clean no-state read.
+
+    ``deep_close`` is the SAME series extended backward by ``_splice_prepend``
+    (never a different store's recent values).  It feeds ONLY the depth
+    percentile — wherever depth is read, including the qualification gate —
+    and the own-history base rates; admission (MIN_WEEKLY_BARS), cross
+    detection, the graduation/failure exits, watch momentum, and every
+    last-bar indicator receipt evaluate the preferred ``close`` unchanged.
+    When ``deep_close`` IS ``close`` (identity — the no-deepening signal from
+    ``_deepen_close``) or is None, every leg reads the preferred grid and the
+    result is byte-identical to a pre-W2 evaluation.
     """
-    blank = {"insufficient": False, "state": None, "receipts": None, "none_reason": None}
+    blank = {"insufficient": False, "state": None, "receipts": None,
+             "none_reason": None, "deepened": False}
 
     wk = _completed_weekly(close)
     if len(wk) < MIN_WEEKLY_BARS:
@@ -338,9 +465,33 @@ def _evaluate(close: pd.Series) -> dict:
     n_bars = len(line)
     line_vals = line.to_numpy(dtype=float)
 
+    # ---- deep grid (W2): depth percentile + own-history base rates only ----
+    dline, dsig, dwk = line, sig, wk
+    if deep_close is not None and deep_close is not close:
+        dwk_c = _completed_weekly(deep_close)
+        dline_raw, dsig_raw = rsi_macd(dwk_c)
+        dok = dline_raw.notna() & dsig_raw.notna()
+        dline_c, dsig_c = dline_raw[dok], dsig_raw[dok]
+        # The deep grid must COVER every preferred line bar (prepending bars
+        # only moves the warm-up EARLIER, so it always does); anything else is
+        # a malformed splice and the depth gate must not run on it.
+        if len(dline_c) >= n_bars and line.index.isin(dline_c.index).all():
+            dline, dsig, dwk = dline_c, dsig_c, dwk_c
+
+    deepened = dline is not line
+    dn = len(dline)
+    dline_vals = dline.to_numpy(dtype=float) if deepened else line_vals
+    # Preferred-grid bar i → deep-grid position (identity when not deepened).
+    dpos = dline.index.get_indexer(line.index) if deepened else None
+
+    def _depth_deep(j: int) -> float:
+        """Percent of the FULL (deepened) weekly line history strictly BELOW
+        deep-grid bar j — the whole-sample framing the evidence doc uses."""
+        return 100.0 * float((dline_vals < dline_vals[j]).sum()) / dn
+
     def _depth(i: int) -> float:
-        """Percent of the FULL weekly line history strictly BELOW bar i."""
-        return 100.0 * float((line_vals < line_vals[i]).sum()) / n_bars
+        """Deep-grid depth percentile of PREFERRED-grid bar i."""
+        return _depth_deep(int(dpos[i]) if deepened else i)
 
     macd_bull = crossover(line, sig)
     qual_idx = [
@@ -381,7 +532,7 @@ def _evaluate(close: pd.Series) -> dict:
             none_reason = None
 
     if state is None:
-        return {**blank, "none_reason": none_reason or "expired"}
+        return {**blank, "none_reason": none_reason or "expired", "deepened": deepened}
 
     # --- receipts ----------------------------------------------------------
     k_raw, d_raw = stoch_rsi_kd(wk)
@@ -398,12 +549,24 @@ def _evaluate(close: pd.Series) -> dict:
         weeks_since = int(n_bars - 1 - cross_i)
         weekly_cb = _weekly_cb_on_bar(line, sig, k, d, r14, cross_i)
 
-    hist_events = _base_rates(wk_on_line.to_numpy(dtype=float), qual_idx)
+    # Own-history base rates read the DEEP grid: every qualifying cross in the
+    # full (deepened) line history, not just the preferred store's window.
+    if deepened:
+        dcross = crossover(dline, dsig)
+        deep_qual = [
+            j for j in range(dn)
+            if bool(dcross.iloc[j]) and _depth_deep(j) <= DEPTH_PCTILE_MAX
+        ]
+        hist_events = _base_rates(
+            dwk.reindex(dline.index).to_numpy(dtype=float), deep_qual)
+    else:
+        hist_events = _base_rates(wk_on_line.to_numpy(dtype=float), qual_idx)
 
     return {
         "insufficient": False,
         "state": state,
         "none_reason": None,
+        "deepened": deepened,
         "receipts": {
             "state": state,
             "since": since_iso,
@@ -421,10 +584,12 @@ def _evaluate(close: pd.Series) -> dict:
             # WHICH history the percentile and the base rates were measured over.
             # A depth percentile is only as deep as the store behind it: MCD off
             # data/stocks (1966→) reads 6.3 with n=36; off data/baskets/ohlcv
-            # (2014→) the SAME bar reads 8.6 with n=8.  Printing the span makes a
-            # truncated store visible instead of silently weakening the receipt.
-            "history_weeks": int(n_bars),
-            "history_start": str(line.index[0].date()),
+            # (2014→) the SAME bar reads 8.6 with n=8.  W2 deepens these two legs
+            # via the prepend-only splice, and the span printed here is the span
+            # they were ACTUALLY measured over — a name whose deep store is
+            # missing still discloses its truncation instead of hiding it.
+            "history_weeks": int(dn),
+            "history_start": str(dline.index[0].date()),
             "history": hist_events,
         },
     }
@@ -507,14 +672,21 @@ def _r(v: Any, nd: int) -> float | None:
     return round(f, nd)
 
 
-def compute_symbol_washout(close: pd.Series) -> dict | None:
+def compute_symbol_washout(
+    close: pd.Series, deep_close: pd.Series | None = None,
+) -> dict | None:
     """Pure per-symbol read → the receipts dict, or None when there is no state.
 
     ``None`` covers both "not enough weekly history" and "no washout turn / no
     deep-base watch right now" — a caller that needs to tell those apart uses
     ``_evaluate``.  Never raises on a well-formed close series.
+
+    ``deep_close`` (optional) is a ``_splice_prepend``-shaped backward
+    extension of ``close`` for the depth/base-rate legs.  Callers that already
+    hold a deep-store series — scripts/build_stock_library feeds data/stocks/
+    closes directly — pass nothing and are byte-identical to pre-W2.
     """
-    res = _evaluate(close)
+    res = _evaluate(close, deep_close)
     return res["receipts"] if res["state"] else None
 
 
@@ -533,6 +705,7 @@ def compute(data_root: Path | None = None, as_of: str | None = None) -> dict:
             "as_of": as_of or date.today().isoformat(),
             "universe_n": 0,
             "skipped_n": 0,
+            "deepened_n": 0,
             "elapsed_s": 0.0,
             "tickers": {},
             "cohort": {"turn": [], "watch": []},
@@ -552,6 +725,7 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
 
     universe_n = 0
     skipped_n = 0
+    deepened_n = 0
     tickers_out: dict[str, Any] = {}
     transition_rows: list[dict] = []
     turn_list: list[str] = []
@@ -565,7 +739,7 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
             continue
 
         try:
-            res = _evaluate(close)
+            res = _evaluate(close, _deepen_close(sym, close, data_root))
         except Exception as e:  # noqa: BLE001 — one bad name never kills the pass
             log.debug("washout_turn: %s evaluate failed: %s", sym, e)
             skipped_n += 1
@@ -578,6 +752,7 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
             continue
 
         universe_n += 1
+        deepened_n += 1 if res.get("deepened") else 0
         sym_asof = str(close.index[-1].date())
         if max_bar_date is None or sym_asof > max_bar_date:
             max_bar_date = sym_asof
@@ -623,8 +798,9 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
 
     elapsed = time.time() - t0
     log.info(
-        "washout_turn: universe=%d skipped=%d turn=%d watch=%d transitions=%d elapsed=%.1fs",
-        universe_n, skipped_n, len(turn_list), len(watch_list),
+        "washout_turn: universe=%d skipped=%d deepened=%d turn=%d watch=%d "
+        "transitions=%d elapsed=%.1fs",
+        universe_n, skipped_n, deepened_n, len(turn_list), len(watch_list),
         len(transition_rows), elapsed,
     )
 
@@ -633,6 +809,7 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
         "as_of": computed_asof,
         "universe_n": universe_n,
         "skipped_n": skipped_n,
+        "deepened_n": deepened_n,
         "elapsed_s": round(elapsed, 2),
         "tickers": tickers_out,
         "cohort": {"turn": sorted(turn_list), "watch": sorted(watch_list)},
