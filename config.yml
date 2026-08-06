@@ -3453,6 +3453,10 @@ quality:
                                    # every full run — a full-history run can be an artifact of a stale/mid-backfill state snapshot
                                    # or a remainder the capped incremental is already chipping, neither of which is tonight's feed.
                                    # Also the window collectors/massive_stock_day.py stamps as coverage.max_missing_run_weekdays_recent.
+  # --- per-name data/stocks freshness (audit_stocks_freshness) ---
+  # 2026-08-03 incident: names exiting every sector SPDR's top-20 froze their
+  # data/stocks parquets 10-46d with nothing watching per-name tips.
+  stocks_stale_calendar_days: 7  # per-name tip lag beyond this = stale FLAG only (mirrors #4441 ledger gate's _MAX_BAR_LAG_DAYS; strict >)
   # --- governance gate (collect.py) ---
   abort_fail_pct: 5              # > this % of a universe failing aborts the collect run
   warn_fail_pct: 1               # 1-5% only warns + logs
