@@ -1,0 +1,113 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "DTM-2026-06-30-buy",
+  "ticker": "DTM",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "DTM",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "DTM",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_break",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Energy",
+    "excess_spy": -0.041903284779783,
+    "excess_sector": -0.16782759741039321,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "DTM was stopped and underperformed SPY, with the audit assigning an idiosyncratic break and no process fault. The evidence does not identify whether the break was a failed cycle, company event, or Energy-sector effect.",
+    "root_cause": "DTM was stopped and underperformed SPY, with the audit assigning an idiosyncratic break and no process fault. The evidence does not identify whether the break was a failed cycle, company event, or Energy-sector effect.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The execution and stop organs are recorded as clean, while the company-alpha, cycle, and catalyst books missed or could not anticipate the idiosyncratic break.",
+    "engines_credit": "The process organs are not implicated; the company, cycle, and catalyst books are the laggard candidates subject to ex-ante visibility evidence.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "The company-specific thesis broke or failed to express.",
+        "evidence_status": "claimed",
+        "timing_status": "emerged_after",
+        "counterfactual": "If Energy peers experienced the same path, the event would be less idiosyncratic than labeled.",
+        "evidence_refs": [
+          "Pick 11 outcome_cause=idio_break",
+          "Pick 11 sector=Energy"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The adverse path reached the stop under a process classified as clean.",
+        "evidence_status": "claimed",
+        "timing_status": "emerged_after",
+        "counterfactual": "A wider stop would only be preferable if the original thesis remained intact, which is not established.",
+        "evidence_refs": [
+          "Pick 11 process_fault=clean",
+          "Pick 11 terminal_state=STOPPED"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "counterfactual",
+        "factor": "",
+        "mechanism": "Entry-date evidence of cycle deterioration or company weakness might have conditioned expectations without changing the clean stop process.",
+        "evidence_status": "unknown",
+        "timing_status": "known_at_entry",
+        "counterfactual": "Test whether contemporaneous peer-relative deterioration preceded similar idiosyncratic breaks.",
+        "evidence_refs": [
+          "Pick 11 lane=buy",
+          "Pick 11 excess_spy=-0.041903284779783"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "An Energy-wide reversal may have been mislabeled as an idiosyncratic break.",
+      "External news may have caused the stop, but its ex-ante visibility is unknown.",
+      "A fake breakout or failed cycle may explain the path."
+    ],
+    "missing_evidence": [
+      "Original company thesis and invalidation criteria",
+      "Energy and peer-relative returns",
+      "Breakout structure and volume history",
+      "News timestamps and ex-ante event visibility",
+      "Entry and stop prices"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "idio_break_precursors",
+        "feature": "Entry-date precursors of company-specific breaks",
+        "measurement": "Measure peer-relative momentum deterioration, failed-breakout behavior, and estimate changes before historical idiosyncratic breaks.",
+        "expected_direction": "More contemporaneous deterioration should precede a higher incidence of stopped idiosyncratic breaks.",
+        "falsifier": "Breaks occur without detectable differences in entry-date company or price features.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T13:34:17+00:00"
+}

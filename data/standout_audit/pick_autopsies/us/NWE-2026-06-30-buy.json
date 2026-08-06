@@ -1,0 +1,113 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "NWE-2026-06-30-buy",
+  "ticker": "NWE",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "NWE",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "NWE",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "mixed",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Utilities",
+    "excess_spy": -0.039631597125500795,
+    "excess_sector": -0.028547283899997167,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "DEAD_MONEY",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "NWE became dead money and underperformed SPY despite a clean process and mixed cause assignment. Its co-occurrence with other Utilities disappointments supports a shared conditioning hypothesis, not a proven sector cause.",
+    "root_cause": "NWE became dead money and underperformed SPY despite a clean process and mixed cause assignment. Its co-occurrence with other Utilities disappointments supports a shared conditioning hypothesis, not a proven sector cause.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The execution organ remained clean, while the Utilities-rotation and macro-regime books may have failed to distinguish a low-propulsion environment.",
+    "engines_credit": "The process book is not a laggard; the sector and regime books are the principal research targets pending contemporaneous evidence.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "market_rotation",
+        "factor": "",
+        "mechanism": "Weak capital rotation into Utilities may have constrained relative performance.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Strong Utilities breadth and inflows at entry would contradict the rotation hypothesis.",
+        "evidence_refs": [
+          "Pick 10 sector=Utilities",
+          "Pick 7 sector=Utilities",
+          "Pick 8 sector=Utilities"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "NWE did not exhibit enough idiosyncratic propulsion to overcome the possible sector headwind.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Outperformance versus Utilities peers would shift the explanation toward market-relative sector lag.",
+        "evidence_refs": [
+          "Pick 10 outcome_cause=mixed",
+          "Pick 10 terminal_state=DEAD_MONEY",
+          "Pick 10 excess_spy=-0.039631597125500795"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "counterfactual",
+        "factor": "",
+        "mechanism": "Entry-date Utilities regime conditioning may have identified a poor environment for the setup.",
+        "evidence_status": "unknown",
+        "timing_status": "known_at_entry",
+        "counterfactual": "Evaluate identical setup types across strong and weak Utilities regime cells without altering gates.",
+        "evidence_refs": [
+          "Pick 10 process_fault=clean",
+          "Pick 10 lane=buy"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "NWE-specific developments may have caused the dead-money path.",
+      "A broad risk-on rotation away from defensives may explain the relative lag."
+    ],
+    "missing_evidence": [
+      "Utilities peer and benchmark returns",
+      "Entry-date rate and risk regime",
+      "NWE-specific fundamentals and events",
+      "Price path and volume behavior"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "defensive_rotation_state",
+        "feature": "Entry-date defensive-sector rotation state",
+        "measurement": "Measure Utilities breadth and relative momentum against cyclical sectors using only contemporaneous data.",
+        "expected_direction": "Weak defensive rotation should be associated with more Utilities dead-money outcomes.",
+        "falsifier": "Utilities outcomes are independent of the defensive rotation state.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T13:34:17+00:00"
+}

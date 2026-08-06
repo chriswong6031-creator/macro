@@ -108,10 +108,28 @@
   .scc-section-h { margin: 0 0 8px; }
   .scc-section-h h2 { font-size: 17px; font-weight: 760; margin: 0; }
   .scc-section-h .scc-section-sub { font-size: 12.5px; color: var(--muted); }
-  /* the embedded overlay reuses cycle.css/.sc-* but lives outside a .cyc-wrap — give the stage a panel frame */
-  .scc-cycle .cyc-stage { background: var(--panel); border: 1px solid var(--line); border-radius: 13px; padding: 12px 14px; }
-  /* embedded live sector desk table */
-  .scc-desk-tblwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 13px; }
+  /* ══ SECTION ISLANDS — one container per section, never a container in a container ══
+     Operator 2026-08-04. Every section on this page now wears the SAME chrome as the
+     Overview verdict hero (.rvx-hero, ~L614): var(--panel) fill, a TRANSPARENT 1px
+     border (keeps the box model, drops the drawn frame) and a soft two-stop drop
+     shadow. That is the macro.html island idiom — borderless, lifted, flat.
+
+     The tokens live here so a section can opt in with one class-free selector, and
+     so the light/dark shadow stays in ONE place instead of per-section literals. */
+  .scc-tbl-details {
+    background: var(--panel);
+    border: 1px solid transparent;
+    border-radius: 18px;
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
+                0 12px 32px -14px color-mix(in srgb, var(--text) 12%, transparent);
+  }
+  /* The cycle stage's island + the flattening of .cyc-hero/.cyc-detail live in
+     macro-desk.css, NOT here: `body.macro-desk.page-sector-central .scc-cycle …`
+     (0,4,1) out-specificities anything this sheet can say about those elements,
+     so a copy here would be dead CSS that reads as the live rule. */
+  /* embedded live sector desk table — the wrapper is INSIDE .scc-tbl-details, which
+     is already the island, so it carries no frame of its own (container-in-container). */
+  .scc-desk-tblwrap { overflow-x: auto; border: 0; border-radius: 0; }
   table.scc-desk-tbl { border-collapse: collapse; width: 100%; min-width: 920px; font-size: 12.5px; }
   table.scc-desk-tbl th, table.scc-desk-tbl td { padding: 8px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
   table.scc-desk-tbl th { font-size: 10px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); font-weight: 700; position: sticky; top: 0; background: var(--panel); cursor: pointer; user-select: none; }

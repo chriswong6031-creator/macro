@@ -1,0 +1,99 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "GIII-2026-06-30-watch",
+  "ticker": "GIII",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "GIII",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "GIII",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_alpha",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Consumer Discretionary",
+    "excess_spy": 0.08289636306193371,
+    "excess_sector": 0.1015355855675536,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CLEAN_LIFTOFF",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "GIII produced a clean liftoff and positive excess return attributed to company-specific alpha. Consumer Discretionary rotation and catalyst effects remain untested.",
+    "root_cause": "GIII produced a clean liftoff and positive excess return attributed to company-specific alpha. Consumer Discretionary rotation and catalyst effects remain untested.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The watch and company-alpha books surfaced GIII, while the rotation, catalyst, and timing engines cannot be adjudicated.",
+    "engines_credit": "The company-alpha book is the provisional role model; no supplied evidence identifies a laggard book or organ.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "An unspecified company-specific advantage drove relative outperformance.",
+        "evidence_status": "claimed",
+        "timing_status": "known_at_entry",
+        "counterfactual": "Absent company alpha, sector rotation or event-driven re-rating would need to account for the result.",
+        "evidence_refs": [
+          "Pick 5 outcome_cause=idio_alpha",
+          "Pick 5 excess_spy=0.08289636306193371"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "entry_timing",
+        "factor": "",
+        "mechanism": "The clean watch process retained exposure to the favorable move.",
+        "evidence_status": "claimed",
+        "timing_status": "known_at_entry",
+        "counterfactual": "Delayed confirmation might have reduced capture, although the actual path is unavailable.",
+        "evidence_refs": [
+          "Pick 5 lane=watch",
+          "Pick 5 process_fault=clean",
+          "Pick 5 terminal_state=CLEAN_LIFTOFF"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Consumer Discretionary rotation may have contributed.",
+      "A company catalyst may have caused an external re-rating."
+    ],
+    "missing_evidence": [
+      "Ex-ante watch thesis",
+      "Sector and peer-relative returns",
+      "Price-volume accumulation data",
+      "Catalyst chronology"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "watch_alpha_confirmation",
+        "feature": "Company-alpha confirmation within the watch lane",
+        "measurement": "Compare entry-date sector-relative momentum and accumulation features across matured watch picks.",
+        "expected_direction": "Stronger company-relative confirmation should be associated with clean liftoffs.",
+        "falsifier": "The features fail to distinguish liftoffs from stopped or dead-money watch outcomes.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T13:34:17+00:00"
+}
