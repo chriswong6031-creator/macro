@@ -934,10 +934,24 @@ approval_desk:
   max_approvals_per_sweep: 40
 
   # The kinds the desk polices. `breaking` is absent (it has a working
-  # all-gates-passed immediate path and a TTL in minutes); `mover` and
-  # `theme_list` are absent (kind-scoped auto-approve already clears them
-  # seconds after generation); `wire`, `earnings`, `reply` and `news` lanes own
-  # their own admission.
+  # all-gates-passed immediate path and a TTL in minutes); `wire`, `earnings`,
+  # `reply` and `news` lanes own their own admission.
+  #
+  # `mover` and `theme_list` ADDED 2026-08-06. They were excluded on the stated
+  # grounds that "kind-scoped auto-approve already clears them seconds after
+  # generation". That is true of the PUBLISH-TIME lane and was assumed of the
+  # nightly one: `_auto_approve_pass` requires BOTH the kind AND
+  # `provenance == "publisher_live_movers"`, so a nightly mover/theme_list
+  # (provenance `content_studio`) was never cleared by it. It was not desked
+  # either, because of this list. And `expire_stale_planned` filters on
+  # `planned_kinds()`, which excludes both kinds, so nothing retired them.
+  # Three owners, each assuming one of the others had it.
+  #
+  # MEASURED over the whole ledger before the fix: theme_list 0 of 5 posted,
+  # mover 0 of 4 posted - 0%, against 19-26% for every desked kind. Two items
+  # sat `queued` 60 hours past their slot. These are the "what is moving today /
+  # which sectors" posts the operator asked for and correctly reported had never
+  # appeared.
   kinds:
     - signal
     - chart
@@ -948,6 +962,8 @@ approval_desk:
     - event
     - congress
     - insider
+    - mover
+    - theme_list
 
   # Liveness. Matches outbox._STALE_QUEUED_HOURS (36) on purpose, so the desk's
   # bar and the nightly reaper's bar are ONE number. The desk RUNS
