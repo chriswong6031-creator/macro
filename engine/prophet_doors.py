@@ -78,6 +78,7 @@ from engine import signal_gate
 # Reuse the VALIDATED tier math — never reimplement it here (masterplan P1: rewire before
 # invent). These are the same helpers `cascade()` and the §2 audit instruments run on.
 from engine.confluence_tiers import _rsi_macd, _stoch_rsi_kd, _tf_bars, _xup
+from engine.session_anchor import session_positions
 from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 
 log = logging.getLogger("prophet_doors")
@@ -432,26 +433,33 @@ def theme_membership(root: Path | None = None, *, asof: pd.Timestamp | None = No
 # --------------------------------------------------------------------------- #
 # completed-bucket helper (PIT: never fire off the in-progress resample tail)
 # --------------------------------------------------------------------------- #
-def completed_tf(c: pd.Series, n: int) -> tuple[pd.Series, pd.Series]:
+def completed_tf(c: pd.Series, n: int, market: str = "US") -> tuple[pd.Series, pd.Series]:
     """``confluence_tiers._tf_bars(c, n)`` with the IN-PROGRESS tail bucket dropped.
 
-    `_tf_bars` resamples on an ``{n}B`` grid whose bins are labelled by bin START, so the
-    right-label truncation `confluence_tiers._completed_resample` uses for W-FRI / 2W-FRI
-    (labelled by period END) does not transfer. A bin is provably CLOSED whenever a LATER bin
-    already holds data, so only the FINAL bin needs a test: it closed once the tape printed
-    through its last business day (label + n-1 business days). A holiday inside that bin makes
-    the test conservative — the bin is held open one extra session rather than fired early,
-    which is the correct direction for a point-in-time gate.
+    Every bucket but the last is provably CLOSED (a LATER bucket already holds data), so only
+    the FINAL one needs a test. Under the ABSOLUTE session anchor (era abs-session-2026-08-06)
+    that test is exact arithmetic rather than a calendar guess: a bucket spans reference
+    positions ``[b*n, b*n+n-1]``, so it has closed exactly when the tape's last session sits on
+    its LAST position — ``session_positions(last_obs) % n == n - 1``.
+
+    THIS FUNCTION READS ``_tf_bars``' INDEX. Before the anchor repair that index was pandas'
+    ``{n}B`` bin LABEL (the bin START), and the closing test was "label + n-1 business days
+    <= last_obs". It is now each bucket's LAST OBSERVED SESSION, which would make that same
+    expression drop a bucket that had in fact closed — silently delaying every Door R fire by
+    a session. Pinned by tests/test_prophet_doors.py::test_closed_tail_bucket_is_kept.
+
+    Still conservative in the same direction as before: a name that did not trade on its
+    bucket's final reference session keeps that bucket provisional one extra session rather
+    than firing early, which is the correct side for a point-in-time gate.
 
     This is the guard behind `cascade()`'s ``provisional`` flag (T3 repaints at a measured
     23.8% US because it IS read off the incomplete tail). Door R refuses to repaint.
     """
-    s, known = _tf_bars(c, n)
+    s, known = _tf_bars(c, n, market)
     if len(s) == 0:
         return s, known
-    last_obs = c.index.max()
-    tail_close = s.index[-1] + pd.tseries.offsets.BDay(n - 1)
-    if last_obs < tail_close:
+    last_pos = int(session_positions(c.index[-1:], market)[0])
+    if last_pos % n != n - 1:                 # the final bucket is still taking sessions
         return s.iloc[:-1], known.iloc[:-1]
     return s, known
 

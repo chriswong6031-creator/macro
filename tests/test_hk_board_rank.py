@@ -1456,16 +1456,23 @@ class TestG1Witnesses:
         """Without this, a witness could be 'visible' only for lack of competition.
 
         leaders and vetoed still fill to their caps under the production exclusion.
-        `ran` comes back one short of RAN_CAP (11 of 12) and that is a real reading,
-        not slack: the buy/watch exclusion removes a name the lane would otherwise
-        have taken, which is exactly the effect the empty-exclusion harness hid.  It
-        is pinned as an exact number so a future drift in either direction shows up.
+
+        RE-DERIVED under the absolute session anchor (era abs-session-2026-08-06). HK now
+        buckets on the HK session calendar rather than the market-blind business-day grid, so
+        22 of the fixture's 157 verdicts moved — a ticks histogram dominated by −1 (14 names),
+        which is the extra session per window the HK calendar carries. Exactly ONE name left
+        the eligible set (0763.HK, T2 → None), so the buy∪watch exclusion no longer claims it
+        and `ran` fills to RAN_CAP instead of coming back one short.
+
+        Still pinned as an exact number, and still for the original reason: without it a
+        witness could be "visible" only for lack of competition, and a drift in either
+        direction must show up rather than be absorbed as slack.
         """
         assert len(lanes["leaders"]) == hbr.LEADERS_CAP
         assert len(lanes["vetoed"]) == hbr.VETOED_CAP
-        assert len(lanes["ran"]) == 11, (
-            "measured 2026-07-31 under exclude=buy∪watch; RAN_CAP is %d"
-            % hbr.RAN_CAP)
+        assert len(lanes["ran"]) == hbr.RAN_CAP, (
+            "re-measured 2026-08-06 under exclude=buy∪watch on the HK session calendar; "
+            "RAN_CAP is %d" % hbr.RAN_CAP)
 
     def test_every_vetoed_row_names_its_block_reason(self, lanes):
         for row in lanes["vetoed"]:
