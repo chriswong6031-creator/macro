@@ -91,3 +91,46 @@ relying on any number here.
 * Nightly coverage per column is printed by `scripts/stamp_options_state.py`; a stamp
   column that is 0% while its display twin populates trips the `_twin_silent_null_guard`
   ::warning (W-OVC class defect tripwire).
+
+## Recovered history — the 2026-08-06 git backfill
+
+Fifteen board dates existed only in git history and were invisible to every nightly:
+`actions/checkout@v4` defaults to `fetch-depth: 1`, so the grader's archaeology leg read
+ONE revision of `site/factordata/us_standouts.json` and contributed nothing. Its own logs
+say so — `[boards] 13` (2026-07-27) and `[boards] 17` (2026-08-05), both exactly the
+snapshot count, against 524 revisions / 32 board dates on a full checkout.
+
+`scripts/backfill_us_board_snapshots.py` recovered those dates into `snapshots.jsonl`
+ONCE (17 → 32 entries), after which `grade_us_board.collect_boards` reads the LEDGER and
+does not shell out to git. The nightly checkout depth is unchanged — a recurring
+full-depth fetch on a job already near its 200-minute cap was rejected.
+
+* **Provenance.** Every recovered entry carries `recovery.source = "git_backfill_20260806"`
+  plus its source commit, so the record can always be split live-vs-recovered. Measured
+  after the recovery grade: 6,064 rows = 1,337 live + 4,727 recovered.
+* **Which revision.** The first commit of each `as_of` whose subject starts with
+  `engine: regime update` — the nightly ENGINE job, the job that runs the snapshotter.
+  Self-measured against the 17 native entries it can check: 16/17 reproduced exactly
+  (earliest-revision would have been 11/17, last-engine 10/17). Three dates (2026-07-01,
+  07-22, 07-23) have no engine commit and fall back to the earliest revision, recorded
+  per entry in `recovery.selection`.
+* **Era stamp.** `recovery.era_key` is what the artifact DECLARED at that revision —
+  `board_definition:*` when present, else `rank_by:*`, else `unknown` with a reason.
+  Never inferred. Four eras across the 32 dates: `unknown` (1), `rank_by:conviction` (4),
+  `rank_by:bottoming-alignment` (16), `rank_by:confluence` (11).
+* **The declaration is not sufficient on its own.** `rank_by:bottoming-alignment` spans
+  buy lanes from 10 to 120 names, because the 2026-06-25 narrowing did not change the
+  stamp. The observed widths ship beside the stamp in `recovery.lane_widths`, and the
+  episode ledger excludes a broad-screen board by WIDTH
+  (`grade_us_board.LEDGER_BROAD_SCREEN_BUY_MIN`), not by date alone — measured, the
+  2026-06-25 board AS PUBLISHED still carried 120 buy names.
+* **Additive only.** The recovery grade ran with `--additive-only`: 1,965 re-grades of
+  already-stored keys were dropped and 3,777 genuinely new rows accrued, so no published
+  row was restated. Without it, a local re-grade would have nulled `opt_root_class` on
+  1,965 rows and `opt_opex_days` on 1,930 (the options-state family is stamped on the
+  runner and a local run cannot reproduce it) and moved `position` on 516 rows.
+* **What the recovery does NOT fix.** Recovered rows carry nulls for every column whose
+  store did not cover their `as_of` — the PIT gates are unchanged, so this is unrecorded
+  history, not a defect. `retro_grades.parquet` `as_of` now spans 2026-06-15 → 2026-07-23
+  (was → 2026-07-21); the per-column percentages measured 2026-08-04 above are stale
+  against the larger frame and need re-measuring before being quoted.

@@ -2051,6 +2051,12 @@ on:
       - "tests/test_us_board_outcomes.py"
       - "tests/test_us_board_outcomes_strip.py"
       - "tests/test_us_board_zero_accrual_alarm.py"
+      # 2026-08-06 git recovery: the one-shot snapshot backfill and the PIT/era/
+      # idempotence contracts it must keep. Both halves ride the same pack — the tool
+      # writes the customer-visible track record's history, so a change to either
+      # without the other is exactly the drift the suite exists to catch.
+      - "tests/test_us_board_snapshot_backfill.py"
+      - "scripts/backfill_us_board_snapshots.py"
       - "scripts/audit_claim_accountability.py"
       - "scripts/grade_us_board.py"
       # unrun-intl-libraries — China / HK / Canada library writers behind the international surfaces

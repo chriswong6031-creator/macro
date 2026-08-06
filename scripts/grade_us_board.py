@@ -154,6 +154,26 @@ _TROUGH_TOL = 0.97  # BROKEN below trough × 0.97 — engine/hold.py TROUGH_TOL
 # The excluded count ships in meta.history so the cut is auditable, never silent.
 LEDGER_HISTORY_FROM = "2026-06-25"
 
+# The date cut above is a PROXY for a construction change, and the 2026-08-06 git
+# recovery (scripts/backfill_us_board_snapshots.py) measured it off by exactly one board.
+# The 2026-06-25 board AS THE NIGHTLY PUBLISHED IT — engine commit 289079044, 04:19Z —
+# still carried 120 names on `buy`; the narrowing to 33 landed in a LATER commit the same
+# night. So the first date on the modern side of the cut was, at publish time, still the
+# broad screen the cut exists to exclude.
+#
+# The artifact's own era declaration cannot separate them: `rank_by` reads
+# 'bottoming-alignment' on both sides of the change (measured over all 32 board dates,
+# that one stamp spans buy lanes from 10 to 120). WIDTH can, and with a wide margin —
+# every broad-screen board published exactly 120, every selection board published <= 80,
+# with nothing in between. So a board inside the date window that is still the broad
+# screen is excluded as the pre-definition instrument it is, and counted in meta.history
+# beside the date-excluded ones so both cuts stay auditable.
+#
+# This guard only ever fires on recovered history. It cannot reach a forward board: the
+# lane has not been near 100 since 2026-06-25, and a board that ever went back to a
+# 120-name screen would be a different instrument again by the same argument.
+LEDGER_BROAD_SCREEN_BUY_MIN = 100
+
 # SA-W5: v2 parallel lane (sibling files, ISOLATED from main lane)
 # These files NEVER touch retro_grades.parquet / us_board_track.json.
 # Decision: sibling files (not co-tenancy) because the v2 board schema diverges
@@ -643,22 +663,41 @@ def _num(x):
         return None
 
 
-def collect_boards(receipt: dict | None = None) -> list[dict]:
-    """Union git-history boards with snapshot JSONL, de-dup on (as_of).
+def collect_boards(receipt: dict | None = None,
+                   git_fallback: bool | None = None) -> list[dict]:
+    """Board history, LEDGER FIRST, with git archaeology as a disclosed fallback.
 
     Each element: {as_of: 'YYYY-MM-DD', dispersion_state, rank_by, rows: [ {lane, position, **features} ]}.
     Position = 0-based order within lane as published (this IS the ranking under test).
 
-    `receipt`, when supplied, is filled with the PROVENANCE SPLIT — how many board
-    dates each of the two legs actually contributed, and how many revisions of the
-    board artifact git could see.  _git_revisions() is LOUD when git *errors*, but a
-    truncated history is not an error: on a shallow checkout `git log -- <path>`
-    exits 0 and returns one revision, so the retro half degrades to nothing while
-    every other number in the run looks normal.  The split is what makes that
-    visible (see warn_if_history_truncated)."""
-    boards: dict[str, dict] = {}
+    THE LEDGER IS THE HISTORY (2026-08-06). This used to be a union in which git
+    archaeology supplied every board the forward snapshotter had not written — a source
+    the nightly cannot read, because `actions/checkout@v4` defaults to `fetch-depth: 1`
+    and `git log -- <board>` then exits 0 with ONE revision. Fifteen board dates lived
+    only in that leg and were therefore invisible to every nightly for a month. The
+    ratified repair was NOT a deeper checkout (rejected: a recurring full-depth fetch on
+    a job already near its 200-minute cap) but a one-shot recovery of those dates INTO
+    the ledger — scripts/backfill_us_board_snapshots.py — after which this function has
+    no reason to shell out to git at all.
 
-    # 1) snapshots (forward-accruing source) — take precedence (exact bytes at build time)
+    `git_fallback` decides whether the archaeology leg runs:
+      * None (default) — AUTO: it runs only while the ledger carries no recovered
+        entries. That makes the change self-disarming. Before the recovery lands, or if
+        the recovered lines were ever reverted, behaviour is exactly what it was; once
+        the ledger holds the history, the nightly stops depending on a source it cannot
+        read. The reason is recorded either way.
+      * True / False — force it on or off (audit runs, tests).
+
+    `receipt`, when supplied, is filled with the PROVENANCE SPLIT: how many board dates
+    each leg contributed, how many ledger entries are live vs recovered, whether the
+    fallback ran and why, and how many revisions git could see. _git_revisions() is LOUD
+    when git *errors*, but a truncated history is not an error — the split is what makes
+    that visible (see warn_if_history_truncated)."""
+    boards: dict[str, dict] = {}
+    n_recovered = 0
+
+    # 1) the ledger (snapshots.jsonl) — the history. Live entries and recovered entries
+    #    read through exactly the same path; only the marker distinguishes them.
     if SNAPSHOTS_JSONL.exists():
         for line in SNAPSHOTS_JSONL.read_text().splitlines():
             line = line.strip()
@@ -670,18 +709,32 @@ def collect_boards(receipt: dict | None = None) -> list[dict]:
                 continue
             b = _board_to_record(snap)
             if b:
+                if b["as_of"] not in boards and (snap.get("recovery") or {}).get("source"):
+                    n_recovered += 1
                 boards[b["as_of"]] = b
     n_from_snapshots = len(boards)
 
-    # 2) git history (retro source) — fills any as_of not already present
-    revisions = _git_revisions()
-    for sha in revisions:
-        d = _load_blob(sha)
-        if not d:
-            continue
-        b = _board_to_record(d)
-        if b and b["as_of"] not in boards:
-            boards[b["as_of"]] = b
+    # 2) git history — DISCLOSED FALLBACK, never the nightly's dependency.
+    if git_fallback is None:
+        run_git = n_recovered == 0
+        why = ("ledger carries no recovered entries — archaeology still seeds the retro "
+               "half" if run_git else
+               f"ledger carries {n_recovered} recovered board date(s); the history is on "
+               "file, so archaeology is not consulted")
+    else:
+        run_git = bool(git_fallback)
+        why = f"caller forced git_fallback={git_fallback}"
+
+    revisions: list[str] = []
+    if run_git:
+        revisions = _git_revisions()
+        for sha in revisions:
+            d = _load_blob(sha)
+            if not d:
+                continue
+            b = _board_to_record(d)
+            if b and b["as_of"] not in boards:
+                boards[b["as_of"]] = b
 
     if receipt is not None:
         receipt.update({
@@ -689,6 +742,10 @@ def collect_boards(receipt: dict | None = None) -> list[dict]:
             "n_from_snapshots": n_from_snapshots,
             "n_from_git": len(boards) - n_from_snapshots,
             "n_boards": len(boards),
+            "n_from_ledger_live": n_from_snapshots - n_recovered,
+            "n_from_ledger_recovered": n_recovered,
+            "git_fallback_used": run_git,
+            "git_fallback_reason": why,
         })
     return sorted(boards.values(), key=lambda x: x["as_of"])
 
@@ -714,18 +771,42 @@ def warn_if_history_truncated(receipt: dict) -> bool:
 
     The trigger is deliberately narrow — one revision or none, while the ledger already
     knows about more than one board date. A repo that genuinely holds a single revision
-    of a single board cannot trip it, and a healthy full checkout is nowhere near it."""
+    of a single board cannot trip it, and a healthy full checkout is nowhere near it.
+
+    TWO OUTCOMES, and the difference is the whole point (2026-08-06 recovery).  A
+    truncated checkout is only an OUTAGE while the ledger does not hold the history
+    itself.  Once the git-history dates have been recovered INTO the ledger
+    (scripts/backfill_us_board_snapshots.py), the same shallow checkout is the expected
+    steady state: archaeology contributes nothing because it has nothing left to
+    contribute.  Firing the outage warning every night for that state is how a real
+    alarm rots into noise, so the recovered state DISCLOSES instead — a ``::notice``
+    that still names the numbers, still starts the line, and is never silent.  The
+    function returns True in both cases: this checkout's history came from somewhere
+    other than git, and that is always on the record."""
     n_rev = int(receipt.get("n_git_revisions") or 0)
     n_boards = int(receipt.get("n_boards") or 0)
     if n_rev > 1 or n_boards <= 1:
         return False
+    n_recovered = int(receipt.get("n_from_ledger_recovered") or 0)
+    if n_recovered > 0:
+        print("::notice title=us-board-ledger-history-from-recovery::"
+              f"git log over {BOARD_PATH} returned {n_rev} revision(s) on this checkout, "
+              f"so the archaeology leg contributed {int(receipt.get('n_from_git') or 0)} "
+              f"board date(s) — by design. The ledger carries the history instead: "
+              f"{n_boards} board date(s), of which {n_recovered} were recovered from git "
+              f"once and {int(receipt.get('n_from_ledger_live') or 0)} were written live "
+              "by the nightly. A board date that exists only in git history and was "
+              "never recovered would still be invisible here",
+              flush=True)
+        return True
     print("::warning title=us-board-ledger-history-truncated::"
           f"git log over {BOARD_PATH} returned {n_rev} revision(s) but the ledger knows "
           f"{n_boards} board date(s) — this checkout is too shallow to reconstruct any "
           f"history, so the retro half of the ledger contributed "
           f"{int(receipt.get('n_from_git') or 0)} board date(s) and every board that "
           "exists only in git history is ungraded and unreachable from this run; "
-          "the fix is fetch-depth: 0 on this job's checkout, not a backfill",
+          "the fix is fetch-depth: 0 on this job's checkout, or a one-shot recovery "
+          "into the ledger (scripts/backfill_us_board_snapshots.py)",
           flush=True)
     return True
 
@@ -1350,6 +1431,13 @@ def snapshot_today() -> str | None:
     # store a trimmed record (lanes + the fields the grader reads) to keep the file lean
     trimmed = {"as_of": as_of, "rank_by": d.get("rank_by"),
                "dispersion_regime": {"state": _dig(d, ("dispersion_regime", "state"))}}
+    # ERA STAMP (2026-08-06): persist the board's OWN definition when it declares one.
+    # The ledger is the era partition's source of truth, and an entry that does not
+    # carry the stamp cannot be separated from a differently-constructed cohort later —
+    # which is exactly the state the git recovery had to reconstruct for 31 of 32 dates.
+    # Verbatim and only when declared: an invented stamp is worse than a missing one.
+    if d.get("board_definition"):
+        trimmed["board_definition"] = d["board_definition"]
     # G6a donor-sector: persist the page-level donor object into the snapshot so
     # forward grades can stratify by rotation state (constant per as_of).
     if d.get("donor"):
@@ -1502,6 +1590,44 @@ def _board_tenure(
         return count
     except Exception:  # noqa: BLE001 — fail-open
         return None
+
+
+def _drop_keys_already_stored(fresh: pd.DataFrame,
+                              stored: pd.DataFrame | None) -> tuple[pd.DataFrame, int]:
+    """Keep only the rows whose dedup key the store does NOT already hold.
+
+    THE ONE-SHOT RECOVERY GUARD (2026-08-06, `--additive-only`). The normal merge is
+    keep-FRESH, which is correct for a nightly: a grade is a deterministic recomputation
+    and the freshest price cache wins. It is NOT correct for the run that first grades
+    recovered history, for two measured reasons:
+
+      * A row is replaced WHOLESALE, and grade_boards does not emit the options-state
+        family. Measured on the 2026-08-06 recovery run: re-grading the 2,287 stored
+        rows set `opt_root_class` to null on 1,965 of them and `opt_opex_days` on 1,930
+        — columns written on the runner by scripts/stamp_options_state.py, which a local
+        re-grade cannot reproduce. Committing that frame would have been a silent data
+        loss dressed as an accrual.
+      * The recovery re-selects WHICH revision of a board date is the record (the
+        nightly engine commit rather than whichever blob the archaeology leg reached
+        first). For the seven dates that already had rows, that legitimately moves
+        payload columns — `position` on 516 rows, `score` on 310. Moving a published
+        point-in-time claim is exactly what a track record may not do.
+
+    So the recovery run is ADDITIVE ONLY: existing rows keep every value they were
+    published with, new (as_of, ticker, lane, horizon) keys accrue, and the number of
+    dropped re-grades is printed rather than inferred. Off by default — the nightly is
+    untouched."""
+    if fresh is None or fresh.empty or stored is None or getattr(stored, "empty", True):
+        return fresh, 0
+    key_cols = [c for c in _DEDUP_KEYS if c in fresh.columns and c in stored.columns]
+    if not key_cols:
+        return fresh, 0
+    stored_keys = set(map(tuple, stored[key_cols].astype(str).values.tolist()))
+    keep = [tuple(map(str, r)) not in stored_keys
+            for r in fresh[key_cols].values.tolist()]
+    kept = pd.DataFrame(fresh[keep]).reset_index(drop=True)
+    kept.attrs.update(fresh.attrs)
+    return kept, int(len(fresh) - len(kept))
 
 
 def _merge_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
@@ -1928,12 +2054,22 @@ def emit_ledger(boards: list[dict], names: pd.DataFrame,
     board_days: dict[str, set[str]] = {}
     meta_by_tk: dict[str, dict] = {}
     n_boards_predefinition = 0
+    broad_screen_in_window: list[str] = []
     for b in boards:
         as_of_str = b.get("as_of", "")
         if not as_of_str:
             continue
         if as_of_str < LEDGER_HISTORY_FROM:
             n_boards_predefinition += 1        # different instrument — see the constant
+            continue
+        # Inside the date window, but still the broad screen the window exists to
+        # exclude (LEDGER_BROAD_SCREEN_BUY_MIN). Counted with the date-excluded boards
+        # because it is the SAME exclusion for the same reason — a different instrument —
+        # and listed by date so the reader can see which board the width test caught.
+        if sum(1 for r in b.get("rows", []) if r.get("lane") == "buy") \
+                >= LEDGER_BROAD_SCREEN_BUY_MIN:
+            n_boards_predefinition += 1
+            broad_screen_in_window.append(as_of_str)
             continue
         day = board_days.setdefault(as_of_str, set())
         for r in b.get("rows", []):
@@ -2060,7 +2196,11 @@ def emit_ledger(boards: list[dict], names: pd.DataFrame,
                           "last_board": _days[-1] if _days else None,
                           "n_boards": len(_days),
                           "scored_from": LEDGER_HISTORY_FROM,
-                          "n_boards_before_current_definition": n_boards_predefinition}}
+                          "n_boards_before_current_definition": n_boards_predefinition,
+                          # Which of those were caught by WIDTH rather than by date —
+                          # the date cut is a proxy and this is where it was off (see
+                          # LEDGER_BROAD_SCREEN_BUY_MIN). Empty list is the normal state.
+                          "broad_screen_boards_in_window": broad_screen_in_window}}
     # Outage disclosure: sessions after the newest snapshot on which no board was
     # recorded. Present in the artifact so the dialog can say so in one quiet line
     # instead of the reader inferring a healthy record from a frozen one.
@@ -2277,6 +2417,11 @@ def main() -> None:
     ap.add_argument("--nightly", action="store_true",
                     help="snapshot today's board then re-grade everything matured (cron entry point)")
     ap.add_argument("--quiet", action="store_true")
+    ap.add_argument("--additive-only", action="store_true",
+                    help="never replace a row the store already holds — grade only "
+                         "(as_of, ticker, lane, horizon) keys that are new. For the "
+                         "one-shot recovery run (see _drop_keys_already_stored); the "
+                         "nightly does NOT use this.")
     args = ap.parse_args()
 
     if args.nightly:
@@ -2293,10 +2438,12 @@ def main() -> None:
     boards = collect_boards(_board_receipt)
     if not args.quiet:
         print(f"[boards] {len(boards)} distinct as_of dates "
-              f"({boards[0]['as_of']}..{boards[-1]['as_of']}; "
-              f"{_board_receipt.get('n_from_snapshots')} from snapshots, "
+              f"({boards[0]['as_of']}..{boards[-1]['as_of']}; ledger "
+              f"{_board_receipt.get('n_from_ledger_live')} live + "
+              f"{_board_receipt.get('n_from_ledger_recovered')} recovered, "
               f"{_board_receipt.get('n_from_git')} from "
-              f"{_board_receipt.get('n_git_revisions')} git revision(s))"
+              f"{_board_receipt.get('n_git_revisions')} git revision(s) — "
+              f"{_board_receipt.get('git_fallback_reason')})"
               if boards else "[boards] none")
     # A shallow checkout kills the retro half silently — git log exits 0 and returns one
     # revision, so the count above degrades with nothing else in the run to say so.
@@ -2328,6 +2475,12 @@ def main() -> None:
                       else set())
     _ungraded = [b["as_of"] for b in boards if b["as_of"] not in _graded_before]
     df = grade_boards(boards, names, etfs, _stored_df=_pre_existing)
+    if args.additive_only:
+        df, _n_kept = _drop_keys_already_stored(df, _pre_existing)
+        if not args.quiet:
+            print(f"[additive-only] {_n_kept} freshly-graded row(s) dropped because the "
+                  f"store already holds their (as_of, ticker, lane, horizon) — existing "
+                  f"rows kept exactly as they are; {len(df)} genuinely new row(s) remain")
     LEDGER_DIR.mkdir(parents=True, exist_ok=True)
     # Merge freshly-graded rows INTO the accumulated store, then always build the
     # track from the full store.  This prevents the empty:true regression that fires

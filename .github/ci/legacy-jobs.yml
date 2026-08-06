@@ -4325,6 +4325,14 @@ jobs:
         # quiet on a healthy night. An unrun guard is not a guard — this suite is named
         # here because ci.yml has no broad `pytest tests/`.
         run: python -m pytest tests/test_us_board_zero_accrual_alarm.py -q
+      - name: US board snapshot backfill — PIT fidelity, era split, idempotence
+        # The 2026-08-06 recovery rebuilt 15 board dates of the customer-visible track
+        # record from git history. These pin the four ways that could quietly lie: a
+        # recovered entry that is not the artifact at its own revision, an era stamp
+        # that pools two constructions, a re-run that appends again, and a recovered
+        # row that overwrites a published one. Named here for the same reason as the
+        # line above — ci.yml has no broad `pytest tests/`, so an unnamed suite is dark.
+        run: python -m pytest tests/test_us_board_snapshot_backfill.py -q
       - name: claim accountability + track-record dialog + onboarding compare matrix
         run: python -m pytest tests/test_claim_accountability.py tests/test_track_record_dlg.py tests/test_onboard_compare_matrix.py -q
 

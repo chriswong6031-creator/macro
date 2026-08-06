@@ -1,0 +1,715 @@
+{
+ "append_dates": [],
+ "board_path": "site/factordata/us_standouts.json",
+ "broad_screen_buy_min": 100,
+ "churn_dates": {},
+ "collisions": [
+  {
+   "agrees": true,
+   "as_of": "2026-06-15",
+   "n_engine_revisions_for_as_of": 7,
+   "native_is_recovered": true,
+   "native_lane_counts": {
+    "buy": 120,
+    "laggards": 12
+   },
+   "native_rank_by": null,
+   "recovered_era_key": "unknown",
+   "recovered_lane_counts": {
+    "buy": 120,
+    "laggards": 12
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-06-16",
+   "n_engine_revisions_for_as_of": 2,
+   "native_is_recovered": true,
+   "native_lane_counts": {
+    "buy": 120,
+    "laggards": 12
+   },
+   "native_rank_by": "conviction",
+   "recovered_era_key": "rank_by:conviction",
+   "recovered_lane_counts": {
+    "buy": 120,
+    "laggards": 12
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-06-17",
+   "n_engine_revisions_for_as_of": 6,
+   "native_is_recovered": true,
+   "native_lane_counts": {
+    "buy": 120,
+    "laggards": 12
+   },
+   "native_rank_by": "conviction",
+   "recovered_era_key": "rank_by:conviction",
+   "recovered_lane_counts": {
+    "buy": 120,
+    "laggards": 12
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-06-18",
+   "n_engine_revisions_for_as_of": 19,
+   "native_is_recovered": true,
+   "native_lane_counts": {
+    "buy": 120,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "conviction",
+   "recovered_era_key": "rank_by:conviction",
+   "recovered_lane_counts": {
+    "buy": 120,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-06-22",
+   "n_engine_revisions_for_as_of": 4,
+   "native_is_recovered": true,
+   "native_lane_counts": {
+    "buy": 120,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "conviction",
+   "recovered_era_key": "rank_by:conviction",
+   "recovered_lane_counts": {
+    "buy": 120,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-06-23",
+   "n_engine_revisions_for_as_of": 4,
+   "native_is_recovered": true,
+   "native_lane_counts": {
+    "buy": 120,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "bottoming-alignment",
+   "recovered_era_key": "rank_by:bottoming-alignment",
+   "recovered_lane_counts": {
+    "buy": 120,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-06-24",
+   "n_engine_revisions_for_as_of": 6,
+   "native_is_recovered": true,
+   "native_lane_counts": {
+    "buy": 120,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "bottoming-alignment",
+   "recovered_era_key": "rank_by:bottoming-alignment",
+   "recovered_lane_counts": {
+    "buy": 120,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-06-25",
+   "n_engine_revisions_for_as_of": 4,
+   "native_is_recovered": true,
+   "native_lane_counts": {
+    "buy": 120,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "bottoming-alignment",
+   "recovered_era_key": "rank_by:bottoming-alignment",
+   "recovered_lane_counts": {
+    "buy": 120,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-06-26",
+   "n_engine_revisions_for_as_of": 12,
+   "native_is_recovered": true,
+   "native_lane_counts": {
+    "buy": 39,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "bottoming-alignment",
+   "recovered_era_key": "rank_by:bottoming-alignment",
+   "recovered_lane_counts": {
+    "buy": 39,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-06-29",
+   "n_engine_revisions_for_as_of": 4,
+   "native_is_recovered": true,
+   "native_lane_counts": {
+    "buy": 25,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "bottoming-alignment",
+   "recovered_era_key": "rank_by:bottoming-alignment",
+   "recovered_lane_counts": {
+    "buy": 25,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": false,
+   "as_of": "2026-06-30",
+   "n_engine_revisions_for_as_of": 2,
+   "native_is_recovered": false,
+   "native_lane_counts": {
+    "buy": 34,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "bottoming-alignment",
+   "recovered_era_key": "rank_by:bottoming-alignment",
+   "recovered_lane_counts": {
+    "buy": 24,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-01",
+   "n_engine_revisions_for_as_of": 0,
+   "native_is_recovered": false,
+   "native_lane_counts": {
+    "buy": 39,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "bottoming-alignment",
+   "recovered_era_key": "rank_by:bottoming-alignment",
+   "recovered_lane_counts": {
+    "buy": 39,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "earliest_revision_no_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-02",
+   "n_engine_revisions_for_as_of": 3,
+   "native_is_recovered": false,
+   "native_lane_counts": {
+    "buy": 24,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "bottoming-alignment",
+   "recovered_era_key": "rank_by:bottoming-alignment",
+   "recovered_lane_counts": {
+    "buy": 24,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-06",
+   "n_engine_revisions_for_as_of": 2,
+   "native_is_recovered": false,
+   "native_lane_counts": {
+    "buy": 20,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "bottoming-alignment",
+   "recovered_era_key": "rank_by:bottoming-alignment",
+   "recovered_lane_counts": {
+    "buy": 20,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-07",
+   "n_engine_revisions_for_as_of": 1,
+   "native_is_recovered": true,
+   "native_lane_counts": {
+    "buy": 18,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "bottoming-alignment",
+   "recovered_era_key": "rank_by:bottoming-alignment",
+   "recovered_lane_counts": {
+    "buy": 18,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-08",
+   "n_engine_revisions_for_as_of": 1,
+   "native_is_recovered": true,
+   "native_lane_counts": {
+    "buy": 10,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "bottoming-alignment",
+   "recovered_era_key": "rank_by:bottoming-alignment",
+   "recovered_lane_counts": {
+    "buy": 10,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-09",
+   "n_engine_revisions_for_as_of": 2,
+   "native_is_recovered": false,
+   "native_lane_counts": {
+    "buy": 21,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "bottoming-alignment",
+   "recovered_era_key": "rank_by:bottoming-alignment",
+   "recovered_lane_counts": {
+    "buy": 21,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-10",
+   "n_engine_revisions_for_as_of": 1,
+   "native_is_recovered": false,
+   "native_lane_counts": {
+    "buy": 31,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "bottoming-alignment",
+   "recovered_era_key": "rank_by:bottoming-alignment",
+   "recovered_lane_counts": {
+    "buy": 31,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-13",
+   "n_engine_revisions_for_as_of": 1,
+   "native_is_recovered": true,
+   "native_lane_counts": {
+    "buy": 32,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "bottoming-alignment",
+   "recovered_era_key": "rank_by:bottoming-alignment",
+   "recovered_lane_counts": {
+    "buy": 32,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-14",
+   "n_engine_revisions_for_as_of": 1,
+   "native_is_recovered": false,
+   "native_lane_counts": {
+    "buy": 30,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "bottoming-alignment",
+   "recovered_era_key": "rank_by:bottoming-alignment",
+   "recovered_lane_counts": {
+    "buy": 30,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-15",
+   "n_engine_revisions_for_as_of": 2,
+   "native_is_recovered": false,
+   "native_lane_counts": {
+    "buy": 28,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "bottoming-alignment",
+   "recovered_era_key": "rank_by:bottoming-alignment",
+   "recovered_lane_counts": {
+    "buy": 28,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-17",
+   "n_engine_revisions_for_as_of": 3,
+   "native_is_recovered": false,
+   "native_lane_counts": {
+    "buy": 40,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "confluence",
+   "recovered_era_key": "rank_by:confluence",
+   "recovered_lane_counts": {
+    "buy": 40,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-20",
+   "n_engine_revisions_for_as_of": 1,
+   "native_is_recovered": false,
+   "native_lane_counts": {
+    "buy": 45,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "confluence",
+   "recovered_era_key": "rank_by:confluence",
+   "recovered_lane_counts": {
+    "buy": 45,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-21",
+   "n_engine_revisions_for_as_of": 1,
+   "native_is_recovered": false,
+   "native_lane_counts": {
+    "buy": 47,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "confluence",
+   "recovered_era_key": "rank_by:confluence",
+   "recovered_lane_counts": {
+    "buy": 47,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-22",
+   "n_engine_revisions_for_as_of": 0,
+   "native_is_recovered": true,
+   "native_lane_counts": {
+    "buy": 46,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "confluence",
+   "recovered_era_key": "rank_by:confluence",
+   "recovered_lane_counts": {
+    "buy": 46,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "earliest_revision_no_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-23",
+   "n_engine_revisions_for_as_of": 0,
+   "native_is_recovered": true,
+   "native_lane_counts": {
+    "buy": 41,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "confluence",
+   "recovered_era_key": "rank_by:confluence",
+   "recovered_lane_counts": {
+    "buy": 41,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "earliest_revision_no_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-24",
+   "n_engine_revisions_for_as_of": 3,
+   "native_is_recovered": false,
+   "native_lane_counts": {
+    "buy": 43,
+    "laggards": 12,
+    "watch": 24
+   },
+   "native_rank_by": "confluence",
+   "recovered_era_key": "rank_by:confluence",
+   "recovered_lane_counts": {
+    "buy": 43,
+    "laggards": 12,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-27",
+   "n_engine_revisions_for_as_of": 1,
+   "native_is_recovered": false,
+   "native_lane_counts": {
+    "buy": 44,
+    "laggards": 11,
+    "watch": 24
+   },
+   "native_rank_by": "confluence",
+   "recovered_era_key": "rank_by:confluence",
+   "recovered_lane_counts": {
+    "buy": 44,
+    "laggards": 11,
+    "watch": 24
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-28",
+   "n_engine_revisions_for_as_of": 1,
+   "native_is_recovered": false,
+   "native_lane_counts": {
+    "buy": 80,
+    "laggards": 11,
+    "leaders": 15,
+    "watch": 48
+   },
+   "native_rank_by": "confluence",
+   "recovered_era_key": "rank_by:confluence",
+   "recovered_lane_counts": {
+    "buy": 80,
+    "laggards": 11,
+    "leaders": 15,
+    "watch": 48
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-29",
+   "n_engine_revisions_for_as_of": 1,
+   "native_is_recovered": false,
+   "native_lane_counts": {
+    "buy": 76,
+    "laggards": 11,
+    "leaders": 15,
+    "watch": 48
+   },
+   "native_rank_by": "confluence",
+   "recovered_era_key": "rank_by:confluence",
+   "recovered_lane_counts": {
+    "buy": 76,
+    "laggards": 11,
+    "leaders": 15,
+    "watch": 48
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-30",
+   "n_engine_revisions_for_as_of": 1,
+   "native_is_recovered": false,
+   "native_lane_counts": {
+    "buy": 77,
+    "laggards": 11,
+    "leaders": 15,
+    "watch": 48
+   },
+   "native_rank_by": "confluence",
+   "recovered_era_key": "rank_by:confluence",
+   "recovered_lane_counts": {
+    "buy": 77,
+    "laggards": 11,
+    "leaders": 15,
+    "watch": 48
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  },
+  {
+   "agrees": true,
+   "as_of": "2026-07-31",
+   "n_engine_revisions_for_as_of": 7,
+   "native_is_recovered": false,
+   "native_lane_counts": {
+    "buy": 71,
+    "laggards": 11,
+    "leaders": 15,
+    "watch": 48
+   },
+   "native_rank_by": "confluence",
+   "recovered_era_key": "rank_by:confluence",
+   "recovered_lane_counts": {
+    "buy": 71,
+    "laggards": 11,
+    "leaders": 15,
+    "watch": 48
+   },
+   "resolution": "kept_native",
+   "selection": "nightly_engine_commit"
+  }
+ ],
+ "era_span_over_all_git_dates": {
+  "rank_by:bottoming-alignment": {
+   "broad_screen_dates": [
+    "2026-06-23",
+    "2026-06-24",
+    "2026-06-25"
+   ],
+   "buy_width_max": 120,
+   "buy_width_min": 10,
+   "n_board_dates": 16,
+   "spans_broad_screen_boundary": true
+  },
+  "rank_by:confluence": {
+   "broad_screen_dates": [],
+   "buy_width_max": 80,
+   "buy_width_min": 40,
+   "n_board_dates": 11,
+   "spans_broad_screen_boundary": false
+  },
+  "rank_by:conviction": {
+   "broad_screen_dates": [
+    "2026-06-16",
+    "2026-06-17",
+    "2026-06-18",
+    "2026-06-22"
+   ],
+   "buy_width_max": 120,
+   "buy_width_min": 120,
+   "n_board_dates": 4,
+   "spans_broad_screen_boundary": false
+  },
+  "unknown": {
+   "broad_screen_dates": [
+    "2026-06-15"
+   ],
+   "buy_width_max": 120,
+   "buy_width_min": 120,
+   "n_board_dates": 1,
+   "spans_broad_screen_boundary": false
+  }
+ },
+ "eras_the_declaration_cannot_separate": [
+  "rank_by:bottoming-alignment"
+ ],
+ "n_board_dates_in_git": 32,
+ "n_board_dates_in_ledger_before": 32,
+ "n_collisions": 32,
+ "n_collisions_disagreeing": 1,
+ "n_dates_without_engine_commit": 3,
+ "n_revisions_scanned": 524,
+ "n_revisions_skipped": 0,
+ "n_to_append": 0,
+ "per_era": {},
+ "per_era_dates": {},
+ "selection_fidelity": {
+  "n_checkable_against_native": 32,
+  "n_reproduced_exactly": 31,
+  "note": "lane membership per lane in published order, recovered vs native. A miss means the native entry came from a different revision of the same board date (same-night re-run); the native is kept either way, and the rate is the honest fidelity bound on the recovered dates, which have no native to check against.",
+  "rate": 0.9688
+ },
+ "selection_rule": "first commit whose subject starts with 'engine: regime update' (the nightly engine job \u2014 the job that runs the snapshotter); else the earliest revision",
+ "skip_reasons": {},
+ "skips": [],
+ "source": "git_backfill_20260806",
+ "unknown_era_dates": []
+}

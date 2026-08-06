@@ -319,7 +319,13 @@ class TestTruncatedHistoryIsLoud:
 
     def test_collect_boards_reports_the_provenance_split(self, monkeypatch, tmp_path):
         """The split is the evidence. Without it the [boards] count alone cannot say
-        whether the retro leg contributed or was dark."""
+        whether the retro leg contributed or was dark.
+
+        2026-08-06: the receipt gained the live-vs-RECOVERED split and the fallback
+        state when the git-history dates were recovered into the ledger
+        (scripts/backfill_us_board_snapshots.py). The four original counters keep their
+        exact meanings — asserted item-by-item rather than as a whole-dict equality, so
+        this test pins the evidence instead of the receipt's current key set."""
         snap = tmp_path / "snapshots.jsonl"
         snap.write_text(
             '{"as_of":"2026-07-30","buy":[{"ticker":"AAA"}]}\n'
@@ -330,8 +336,15 @@ class TestTruncatedHistoryIsLoud:
         receipt: dict = {}
         boards = g.collect_boards(receipt)
         assert len(boards) == 2
-        assert receipt == {"n_git_revisions": 0, "n_from_snapshots": 2,
-                           "n_from_git": 0, "n_boards": 2}
+        for k, v in {"n_git_revisions": 0, "n_from_snapshots": 2,
+                     "n_from_git": 0, "n_boards": 2}.items():
+            assert receipt[k] == v, f"{k} lost its meaning"
+        # a ledger with no recovered entries still runs the archaeology leg, and the
+        # receipt says which leg ran and why
+        assert receipt["n_from_ledger_recovered"] == 0
+        assert receipt["n_from_ledger_live"] == 2
+        assert receipt["git_fallback_used"] is True
+        assert receipt["git_fallback_reason"]
 
     def test_a_git_error_is_still_loud_the_old_way(self, monkeypatch):
         """The 2026-07-26 guard must survive: an ERRORING git still raises rather than
