@@ -1745,7 +1745,14 @@
     user: function () { return _curUser; },
     hasSession: function () { return _hasSessionCookie(); },
     client: getSupabaseClient,
-    open: function (mode) { openAuthModal(mode || 'signin'); },
+    // Opens the LANDING-NATIVE onboarding sheet (onboard.js), lazy-loaded on
+    // demand — NOT the legacy in-file auth modal. Every gate on the estate
+    // reaches auth through here (tier_preview.js's locked-container CTA, the
+    // Brain's 401 path, plans.html, committee/news/portfolio/watchlist), so the
+    // sheet is what an unregistered visitor meets everywhere. The old
+    // openAuthModal stays reachable as window.openAuthModal for a hand-driven
+    // fallback, but nothing routes to it by default any more.
+    open: function (mode) { _mmOpenOnboard(mode || 'signin'); },
     signOut: function () {
       if (!_authEnabled) return Promise.resolve();
       // sb.auth.signOut() fires SIGNED_OUT via onAuthStateChange -> _onAuth, which
