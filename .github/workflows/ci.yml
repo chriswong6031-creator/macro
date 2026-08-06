@@ -2517,6 +2517,13 @@ on:
       - "tests/test_us_context_vector.py"
       - "tests/test_prophet_miss_audit.py"
       - "scripts/grade_us_prophet_candidates.py"
+      # Archetype coverage pipeline (2026-08): the candidates-stamp heal script and
+      # the suite pinning fac-less classification + store freshness + fill-null-only
+      # heal semantics. The store subjects (engine/stock_fundamentals.py,
+      # data/archetypes/) ride the engine/** and data/us_prophet_rank/** entries.
+      - "scripts/heal_candidates_archetype.py"
+      - "tests/test_heal_candidates_archetype.py"
+      - "data/archetypes/**"
       # The US candidate + grade stores are the SUBJECT of that suite (PIT keep-first,
       # monthly-part isolation, the frozen grade key), so a nightly append or a hand
       # rewrite of either store must be able to start this workflow — the same reason

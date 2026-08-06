@@ -3233,6 +3233,15 @@ def build_factors_page(env: Environment, site: Path, generated: str) -> dict | N
     try:
         fetch_panel()                              # point-in-time panel (weekly-cached); also writes the back-compat latest-FY fundamentals.parquet slice
         try:
+            # PIT archetype store follows the panel (lifecycle law made
+            # mechanical): key-set check ~0.3s nightly, 2.6s rebuild only when
+            # the panel actually changed. Frozen-store rot left every
+            # panel-added name archetype-absent downstream for a month (MCD).
+            from engine.stock_fundamentals import archetypes_history_refresh_if_stale
+            archetypes_history_refresh_if_stale()
+        except Exception as e:  # noqa: BLE001 — display-tier store; never blocks the page
+            log.warning("archetype history refresh skipped: %s", e)
+        try:
             from collectors.finra import fetch_short_interest
             fetch_short_interest()                 # Phase 3: bi-monthly short interest (cached)
         except Exception as e:  # noqa: BLE001 — short interest is an optional factor leg
