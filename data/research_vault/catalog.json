@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T22:58:55.664778+00:00",
-  "count": 902,
+  "generated_at": "2026-08-06T23:29:01.735096+00:00",
+  "count": 903,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -815,6 +815,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 33,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qdagrcawfke-5f344d",
+      "title": "JPM Retail Radar",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T09:24:55Z",
+      "summary_points": [
+        "**Hyperscaler Earnings & Retail Flow Divergence**: S&P 500 hit new highs on hyperscaler earnings, but retail sold single stocks (MSFT, PLTR, AMZN) while favoring ETFs; record software outflows ($4.2B net selling) vs.",
+        "healthy ETF inflows signal AI trade re-engagement via Memory/Semis and Tech ETFs.",
+        "**Retail ETF Dominance & Sector Shift**: Retail flows ($3.5B, below 12-mo avg) heavily favor ETFs over single stocks; concentrated buying in AI datacenters (JPAMAIDE), electrification, and US firms with high China revenue exposure, driving Tech ETF (SOXX, SMH) inflows amid software outflows.",
+        "**Short Squeeze Risk Catalysts**: BBAI (32% short interest, $400M net retail buys), DFNS (22% short interest), and SES show retail-driven momentum amid elevated short interest; rising cumulative retail imbalance (e.g., DFNS, SES) signals heightened squeeze risk.",
+        "**AMZN AWS Growth & AI Investment Catalyst**: AWS growth +37% (fastest in 18 quarters), backlog up 2.5x to $496B on AI/core demand; management cites strong ROIC on AI investments, with capex raised to ~$220B."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 24,
       "language": "en",
       "needs_metadata": false
     },
