@@ -258,7 +258,12 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True) -> dict:
     # A forming 'pending' master counts as T1, but only while it is JUST-fired (<= FRESH_TICKS)
     # and not already topping -- otherwise it too is stale and drops off the board.
     if tier_c is None and v.get("sub") == "pending":
-        if not topped and fresh:
+        # `evaluated` gate (audit F2 2026-08-06): a CRASHED cascade returns a blank whose
+        # not_topped=True / ticks=None read here as clean-and-fresh — awarding T1 off a
+        # data failure. Missing key (older callers/fixtures) defaults True: only the
+        # explicit crash marker refuses. The legitimate forming-master path (ticks=None
+        # because no completed cross exists yet) is untouched — it carries evaluated=True.
+        if not topped and fresh and casc.get("evaluated", True):
             tier_c = "T1"
         else:
             why = "already topping" if topped else "risen for many days"
@@ -293,7 +298,12 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True) -> dict:
     # young_history is the GRADED-COHORT LABEL: True = the name tiered on fewer daily bars
     # than the pre-change 200-bar floor, so the ledger can forever separate the pre/post
     # populations. Carried on every verdict, eligible or not.
-    v["young_history"] = bool(casc.get("young_history"))
+    # None passes THROUGH (audit F5 2026-08-06): a cascade that never ran carries
+    # young_history=None ("never got that far"); bool(None) stamped it into the MATURE
+    # graded cohort — the exact above200-PLTR shape the era law forbids, two lines down
+    # from the code that gets it right for above200.
+    _yh = casc.get("young_history")
+    v["young_history"] = None if _yh is None else bool(_yh)
     v["history_bars"] = casc.get("bars")
     v["null_legs"] = casc.get("null_legs") or {}
     # above200 HEALING, not widening. signal_quality.analyze needs ~270 daily bars, so it
@@ -356,17 +366,27 @@ def blend_sorted(items: list, base_of, verdict_of, reverse: bool = True, bonus_o
     import bisect
     tf = TIER_FRAC if tier_frac is None else tier_frac
     wf = max(0.0, min(1.0, wn_floor))
-    vals = sorted((base_of(x) or 0.0) for x in items)
+
+    def _base(x):
+        # `or 0.0` passes NaN through (NaN is truthy) — one NaN base left `vals` unsorted,
+        # ranked the NaN row FIRST and corrupted EVERY row's bisect percentile (audit F7
+        # 2026-08-06). NaN and None both mean "no basis": rank as 0.0.
+        v = base_of(x)
+        return 0.0 if v is None or v != v else float(v)
+
+    vals = sorted(_base(x) for x in items)
     n = len(vals) or 1
 
     def _score(x):
         b = (bonus_of(x) if bonus_of else 0.0) or 0.0           # optional additive lift/penalty
+        if b != b:
+            b = 0.0                                              # NaN lift is no lift (F7 sibling)
         w = (verdict_of(x) or {}).get("weight") or 0.0
         if not w:
             return -1.0 + b
         wn = max(0.0, min(1.0, (w - 0.4) / 0.6))                 # T1->1.0 .. T4->0.0
         wn = wf + (1.0 - wf) * wn                                # compress toward parity (CN flatten)
-        pct = bisect.bisect_right(vals, base_of(x) or 0.0) / n   # conviction percentile in pool
+        pct = bisect.bisect_right(vals, _base(x)) / n            # conviction percentile in pool
         return tf * wn + (1.0 - tf) * pct + b                    # convex blend + optional lift
 
     return sorted(items, key=_score, reverse=reverse)
