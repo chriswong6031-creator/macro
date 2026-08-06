@@ -261,14 +261,36 @@ def test_donor_exclusion_coverage_floor():
 
 
 def test_donor_exclusion_event_contamination_at_the_boundary():
-    """A donor with its own event 21 sessions away is contaminated; 22 is clean. The
-    boundary is what makes a one-session loosening fail."""
+    """A donor with its own event 21 sessions away is contaminated; 22 is clean.
+
+    LITERAL 21/22, not sc.EVENT_EXCLUSION: a boundary test written against the symbol
+    moves WITH the constant and survives every change to it, which is the whole failure
+    mode a boundary test exists to prevent. The pre-registered value itself is pinned by
+    test_pre_registered_constants_are_frozen.
+    """
     pre, dvol, dist = _admission_inputs()
-    dist[1] = sc.EVENT_EXCLUSION          # 21 -> refused
-    dist[7] = sc.EVENT_EXCLUSION + 1      # 22 -> admitted
+    dist[1] = 21.0      # refused
+    dist[7] = 22.0      # admitted
     m = sc.eligible_donors(donor_pre=pre, donor_dvol=dvol, event_distance=dist)
     assert not m[1], "donor with an event at +/-21 admitted"
     assert m[7], "donor with an event at +/-22 refused"
+
+
+def test_pre_registered_constants_are_frozen():
+    """The constants ARE the pre-registration (scripts/synthetic_control_phase0.py's
+    frozen header quotes every one of them). Changing one silently re-specifies a study
+    whose gates were registered against the old value, so each is pinned to its literal.
+    """
+    assert sc.PRE_WINDOW == 120
+    assert sc.EMBARGO == 5
+    assert sc.EVENT_EXCLUSION == 21
+    assert sc.MIN_COVERAGE == 0.90
+    assert sc.DVOL_FLOOR == 2_000_000.0
+    assert sc.PRESCREEN_M == 50
+    assert sc.MATCHED_K == 20
+    assert sc.VOL_BAND == (0.5, 2.0)
+    assert sc.CAR_WINDOWS == ((0, 0), (0, 5), (0, 20))
+    assert sc.METHODS == ("matched_k", "sc_nnls")
 
 
 def test_donor_exclusion_drops_a_flat_donor():
@@ -341,6 +363,16 @@ def test_effect_refuses_a_partial_window():
     out = sc.effect(np.zeros(6), np.zeros(6))
     assert np.isfinite(out["car"]["0"]) and np.isfinite(out["car"]["0_5"])
     assert not np.isfinite(out["car"]["0_20"])
+
+
+def test_effect_refuses_a_window_containing_a_gap():
+    """An IN-RANGE window with a missing day must also be NaN. The out-of-range case
+    above short-circuits before the summation, so on its own it leaves the NaN handling
+    inside the window completely untested."""
+    treated = np.array([0.01, np.nan, 0.01, 0.0, 0.0, 0.0])
+    out = sc.effect(treated, np.zeros(6))
+    assert np.isfinite(out["car"]["0"]), "day 0 is present and must still score"
+    assert not np.isfinite(out["car"]["0_5"]), "a gap inside the window was summed over"
 
 
 # ------------------------------------------------------------------ (f) no manufactured edge
