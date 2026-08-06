@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T18:59:14.416304+00:00",
-  "count": 890,
+  "generated_at": "2026-08-06T19:12:58.235578+00:00",
+  "count": 891,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -73,6 +73,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-0ddofdx86pd-968139",
+      "title": "elf Beauty Aug 6",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T17:52:43Z",
+      "summary_points": [
+        "**Q2 Results & Margin Catalyst**: Q1 2027 beat with $479M net sales (+35.5% YoY) and $168M adjusted EBITDA (+93.2% YoY), driven by Rhode momentum and $500M IEEPA tariff refunds; adjusted EBITDA margin (35.1%) beat Street (31.4%) by 370 bps.",
+        "**Upgraded FY27 Guidance**: Sales growth guidance raised to +18-20% (vs.",
+        "+12-14%), with revenue growth +20.6% (vs.",
+        "+15.1%), EBITDA $412M (+$28M), and EPS $3.58 (+$0.39) due to stronger Rhode trends and pricing.",
+        "**Valuation Sensitivity Risk**: High implied 18.5x P/E and 12.5x EV/EBITDA; terminal value at 57% of valuation due to low terminal growth (2.3% vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
       "language": "en",
       "needs_metadata": false
     },
