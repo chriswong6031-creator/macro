@@ -3989,6 +3989,16 @@
   </div>
   {% endif %}
 
+  {#- CN THEME TAPE (W-C) — theme cycle state × member board states × why-not
+      attributions. Sits directly BELOW the board, mirroring the US panel's placement
+      after the operator's 2026-08-04 order ("it's obstructing this entire page"):
+      context that changes no decision reads AFTER the decision it contextualises,
+      and here that is also the honest reading order — you look at the picks, then
+      ask what happened to everything else, which is what this panel answers.
+      Own guard, so the placement survives any re-nesting of the board block above.
+      Renders nothing at all on a dead tape. -#}
+  {% if mode == 'stocks' %}{% include "_cn_theme_tape.html.j2" %}{% endif %}
+
   <!-- ===================== STOCK SCREENER (consolidated · toggle) ===================== -->
   {% if scoreboard and scoreboard.modes %}
   <div class="panel span12" id="stock-screener">

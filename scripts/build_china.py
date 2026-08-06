@@ -1169,6 +1169,54 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("china standouts enrich failed (%s); using raw setups", e)
 
+        # CN THEME TAPE (W-C) — theme cycle state × member board states × why-not
+        # attributions, for the panel below the stock board. The whole join lives in
+        # engine/cn_theme_tape.py; this only reads the finished nightly artifacts and
+        # hands it the frames. Display tier, zero authority: it ranks, gates and sizes
+        # nothing, and every source is read-only here.
+        #
+        # Each source is read in its own try, so one unreadable artifact costs its own
+        # chip and not the panel — a missing flow desk drops the flow chips, a missing
+        # continuation ledger drops the watch marks, and the tape still renders. If the
+        # two that matter (baskets + cycles) are gone, build_cn_theme_tape returns None
+        # and the partial emits nothing at all.
+        vm["cn_theme_tape"] = None
+        try:
+            import pandas as _pd
+
+            from engine.cn_theme_tape import build_cn_theme_tape
+
+            _data = config.data_dir()
+
+            def _opt_parquet(path):
+                """Read an optional frame; absence and corruption both degrade to None."""
+                try:
+                    return _pd.read_parquet(path) if path.exists() else None
+                except Exception as _e:  # noqa: BLE001 — additive, never fatal
+                    log.warning("cn theme tape: %s unreadable (%s)", path.name, _e)
+                    return None
+
+            def _opt_json(path):
+                try:
+                    return json.loads(path.read_text()) if path.exists() else None
+                except Exception as _e:  # noqa: BLE001 — additive, never fatal
+                    log.warning("cn theme tape: %s unreadable (%s)", path.name, _e)
+                    return None
+
+            _membership = _opt_json(_data / "baskets_china" / "membership.json")
+            if _membership:
+                vm["cn_theme_tape"] = build_cn_theme_tape(
+                    _membership,
+                    _opt_parquet(_data / "china_sector_cycles" / "forward_log.parquet"),
+                    _opt_parquet(_data / "china_prophet_rank" / "candidates.parquet"),
+                    flow=_opt_json(site / "flowdata" / "desk.json"),
+                    watch=_opt_parquet(_data / "china_standout_track" / "board.parquet"),
+                )
+                log.info("cn theme tape: %d themes shown",
+                         len((vm["cn_theme_tape"] or {}).get("rows") or []))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("cn theme tape unavailable (%s)", e)
+
         # consolidated SCOREBOARD — merge the 4 single-signal screener JSONs (reversal,
         # low-vol, alpha, setups, + confluence) into one toggle-ready board. Runs last,
         # after all screener JSONs + the stock library are written.
