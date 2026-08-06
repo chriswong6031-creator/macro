@@ -1297,7 +1297,10 @@ class TestTransientRefusalsRetry:
             result = _refusing_tick(monkeypatch, "media_unhosted",
                                     state=state, seen=seen)
             seen = set(result["_seen"])
-        assert state["transient_refusals"]["truth:strong"] == _TRANSIENT_ALARM_AT
+        # Keyed by (story, reason) since 2026-08-06 — see
+        # test_the_give_up_bound_counts_one_fault_not_the_story below.
+        assert state["transient_refusals"][
+            "truth:strong\x1fmedia_unhosted"] == _TRANSIENT_ALARM_AT
         lines = [ln for ln in capsys.readouterr().out.splitlines()
                  if "press-lane-transient-refusal-stuck" in ln]
         assert lines, "three consecutive environment refusals must alarm"
@@ -1327,11 +1330,50 @@ class TestTransientRefusalsRetry:
         seen: set = set()
         result = _refusing_tick(monkeypatch, "media_unhosted",
                                 state=state, seen=seen)
-        assert state["transient_refusals"]["truth:strong"] == 1
+        assert state["transient_refusals"]["truth:strong\x1fmedia_unhosted"] == 1
         result = _refusing_tick(monkeypatch, "banned_language",
                                 state=state, seen=set(result["_seen"]))
-        assert "truth:strong" not in state["transient_refusals"]
+        assert not [k for k in state["transient_refusals"]
+                    if k.startswith("truth:strong\x1f")]
         assert press_lane._TRANSIENT_RETRY_ALARM_AT >= 2
+
+    def test_the_give_up_bound_counts_one_fault_not_the_story(self, monkeypatch):
+        """A host outage must not spend the RENDERER's give-up budget.
+
+        THE DEFECT (fourth adversarial review, 2026-08-06). The streak was keyed
+        by the emission key ALONE, but the bound it feeds covers ONE fault.
+        `media_unhosted` retries without bound on purpose - during a real R2
+        outage a give-up would be a mass kill - so a story that had been
+        retrying through a host outage reached its FIRST `card_render_degraded`
+        with the counter already past `_TRANSIENT_GIVE_UP_AT`, and was marked
+        seen on attempt one. A renderer hiccup killed a story because the HOST
+        had been down earlier.
+
+        Mutation check: key the counter by `_ekey` again and this fails - the
+        story is marked seen on its first render failure.
+        """
+        from engine.marketing import press_lane
+
+        bound = press_lane._TRANSIENT_GIVE_UP_AT["card_render_degraded"]
+        state: dict = {}
+        seen: set = set()
+        # Ride out a host outage well past the RENDERER's bound.
+        for _ in range(bound + 2):
+            result = _refusing_tick(monkeypatch, "media_unhosted",
+                                    state=state, seen=seen)
+            seen = set(result["_seen"])
+        assert state["transient_refusals"][
+            "truth:strong\x1fmedia_unhosted"] >= bound + 1, \
+            "media_unhosted must retry unbounded - it is a host fault"
+
+        # Now the FIRST render failure. It must retry, not give up.
+        result = _refusing_tick(monkeypatch, "card_render_degraded",
+                                state=state, seen=seen)
+        assert state["transient_refusals"][
+            "truth:strong\x1fcard_render_degraded"] == 1
+        assert "truth:strong" not in set(result["_seen"]), \
+            "a first render failure must not be marked seen because the HOST " \
+            "was down earlier - the two faults have different streaks"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

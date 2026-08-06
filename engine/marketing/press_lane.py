@@ -482,6 +482,20 @@ def _corpus_row(scored: dict, *, outcome: str, now_iso: str) -> dict:
     }
 
 
+def _clear_transient_streak(transient_tries: dict, ekey: str) -> None:
+    """Drop EVERY per-fault streak this story is carrying.
+
+    The tally is keyed by (story, reason) so one fault's give-up bound cannot be
+    spent by another's retries. That makes clearing a prefix sweep rather than a
+    single pop: a story that settles - it shipped, or it refused on its copy -
+    is done, and leaving any of its per-reason counters behind would alarm, or
+    give up, on a later unrelated attempt.
+    """
+    for _k in [k for k in transient_tries
+               if k == ekey or k.startswith(f"{ekey}\x1f")]:
+        transient_tries.pop(_k, None)
+
+
 def _emission_key(item: dict) -> str:
     """Mirror-collapsed identity for EMISSION dedupe (M1).
 
@@ -2855,13 +2869,13 @@ def run_press_tick(
                 # for the same reason the copy refusals are: nothing between one
                 # tick and the next changes the input.
                 seen.add(_ekey)
-                transient_tries.pop(_ekey, None)   # settled: the streak is over
+                _clear_transient_streak(transient_tries, _ekey)  # settled
             _skip_row = {"id": iid, "reason": _reason, "account": account}
             if _refusal.get("violations"):
                 _skip_row["violations"] = list(_refusal["violations"])[:4]
             skipped.append(_skip_row)
             continue
-        transient_tries.pop(_emission_key(s), None)   # it shipped; streak over
+        _clear_transient_streak(transient_tries, _emission_key(s))  # shipped
         # D1 FIRST-WINS, CLAIMED AT THE EMISSION AND NOWHERE EARLIER. Everything
         # between the reservation in step 5a-ii and this line can still refuse
         # the item (story lock, copy properties, the outbox's own dedupe), and a
