@@ -249,7 +249,12 @@ def _synth_closes(tail_scale: float = 1.0, tail_len: int = 20):
     if tail_scale != 1.0:
         values[-tail_len:] *= tail_scale
     series = pd.Series(values, index=index)
-    frame = sq.signal_frame(series).dropna(
+    # market="HK" — the SAME calendar the HK board's own confirmation read uses
+    # (hk_board_rank.confirmation_move). The labels this returns are what the tests hand
+    # back as marker dates, so if they were cut on the US reference the board would look
+    # them up on a grid they never sat on and every lane would print a disclosed null:
+    # the fixture would be testing a mismatch of its own making. signal_quality R-SQ1.
+    frame = sq.signal_frame(series, market="HK").dropna(
         subset=["macd", "sig", "k", "d", "rsi14"])
     return ([str(stamp.date()) for stamp in index],
             [float(value) for value in values],
@@ -1071,7 +1076,7 @@ class TestVetoedLane:
         assert row["anchor"] == hbr.ANCHOR_CONFIRM
         assert row["signal_date"] == marker, "the block's own date is unchanged"
         assert row["measured_from"] == str(
-            sq.confirmation_date(_as_series(dates, closes), marker).date())
+            sq.confirmation_date(_as_series(dates, closes), marker, market="HK").date())
         assert row["pct_since"] == hbr.cross_read(
             dates, closes, cross_date=row["measured_from"])["pct_since"]
 
@@ -1455,24 +1460,38 @@ class TestG1Witnesses:
     def test_lane_caps_actually_bind_on_the_real_panel(self, lanes):
         """Without this, a witness could be 'visible' only for lack of competition.
 
-        leaders and vetoed still fill to their caps under the production exclusion.
+        RE-DERIVED a second time under the §7 marker anchor (era
+        ``sq-abs-session-2026-08-06``, research/SIGNAL_QUALITY_SESSION_ANCHOR_ADJUDICATION_
+        BY_FABLE.md). The first re-derivation, below, moved the CASCADE onto the HK session
+        calendar; this one moves the §7 MARKER STREAM there too, which is the layer that
+        decides which lane a name belongs in at all.
 
-        RE-DERIVED under the absolute session anchor (era abs-session-2026-08-06). HK now
-        buckets on the HK session calendar rather than the market-blind business-day grid, so
-        22 of the fixture's 157 verdicts moved — a ticks histogram dominated by −1 (14 names),
-        which is the extra session per window the HK calendar carries. Exactly ONE name left
-        the eligible set (0763.HK, T2 → None), so the buy∪watch exclusion no longer claims it
-        and `ran` fills to RAN_CAP instead of coming back one short.
+        MEASURED old-vs-new on this exact panel (157 names, verdicts recomputed from the
+        full column, `reclaim_veto=False`): 139/157 last-marker DATES moved, 52/157 last-
+        marker IDENTITIES moved, 83/157 ticks moved. The take population is stable and
+        slightly HIGHER (81 → 85 takes); blocks fall 63 → 52. So the lanes did not lose
+        names to a defect — the stream re-drew and the freshness arithmetic re-sorted them:
+        `leaders` comes back one short of its cap and `ran` fills 3 of 12, because names
+        whose take is now measured as fresher are claimed by the buy∪watch exclusion or by
+        `leaders` before `ran` ever sees them.
 
-        Still pinned as an exact number, and still for the original reason: without it a
+        PRIOR re-derivation (era abs-session-2026-08-06, the cascade): HK began bucketing on
+        the HK session calendar rather than the market-blind business-day grid, 22 of 157
+        verdicts moved — a ticks histogram dominated by −1 (14 names) — and exactly one name
+        left the eligible set (0763.HK, T2 → None).
+
+        Still pinned as exact numbers, and still for the original reason: without them a
         witness could be "visible" only for lack of competition, and a drift in either
         direction must show up rather than be absorbed as slack.
         """
-        assert len(lanes["leaders"]) == hbr.LEADERS_CAP
         assert len(lanes["vetoed"]) == hbr.VETOED_CAP
-        assert len(lanes["ran"]) == hbr.RAN_CAP, (
-            "re-measured 2026-08-06 under exclude=buy∪watch on the HK session calendar; "
-            "RAN_CAP is %d" % hbr.RAN_CAP)
+        assert len(lanes["leaders"]) == 14, (
+            "leaders fills 14 of LEADERS_CAP=%d under the §7 anchor — re-measured "
+            "2026-08-06; a change in either direction is a real population move, not slack"
+            % hbr.LEADERS_CAP)
+        assert len(lanes["ran"]) == 3, (
+            "ran fills 3 of RAN_CAP=%d under the §7 anchor — re-measured 2026-08-06 with "
+            "exclude=buy∪watch∪leaders on the HK session calendar" % hbr.RAN_CAP)
 
     def test_every_vetoed_row_names_its_block_reason(self, lanes):
         for row in lanes["vetoed"]:
@@ -1486,10 +1505,35 @@ class TestG1Witnesses:
                 assert row["measured_from"] > row["signal_date"]
 
     def test_the_vetoed_lane_prints_what_the_board_missed(self, lanes):
-        """Self-critical by construction: the moves are real and they are shown."""
-        moves = [r["pct_since"] for r in lanes["vetoed"] if r["pct_since"] is not None]
+        """Self-critical by construction: the moves are real and they are shown.
+
+        THE PIN IS COVERAGE, NOT MAGNITUDE (re-derived 2026-08-06, era
+        ``sq-abs-session-2026-08-06``). It used to be ``max(moves) > 20.0``, and that
+        number has to go — not because the lane got quieter, but because it stopped
+        overstating. A ``pct_since`` is measured from the CONFIRMATION close; under the
+        old start-phased grid the verdicts were computed on the full panel column while
+        the move was read off the frozen ~340-session window, two DIFFERENT bin phases, so
+        the marker date was frequently not a bucket label of the window at all. Measured
+        on this panel: the old geometry could anchor 2 of 12 vetoed rows and printed 10
+        disclosed nulls; the new one anchors 12 of 12 with zero nulls. The lane's largest
+        honest move is 11.5%; the >20% it used to show came from rows whose anchor slid
+        back toward the marker — the overstatement `confirmation_move` exists to remove.
+
+        So the assertion is now the property that actually protects the reader, and it is
+        STRICTER than the old one: the lane fills to its cap AND every single admitted row
+        carries a real measurement. A regression to the old defect — rows silently dropped
+        or nulled because they cannot be anchored — fails here immediately and by name,
+        which is exactly what the 2026-08-04 incident (33 measured names → 5, read as "the
+        panel no longer carries big missed moves") went a whole investigation without.
+        """
+        rows = lanes["vetoed"]
+        moves = [r["pct_since"] for r in rows if r["pct_since"] is not None]
         assert moves, "the lane exists to print these"
-        assert max(moves) > 20.0, "the 2026-07-31 panel carries >20% missed moves"
+        assert len(moves) == len(rows) == hbr.VETOED_CAP, (
+            f"{len(moves)} of {len(rows)} vetoed rows carry a measured move (cap "
+            f"{hbr.VETOED_CAP}) — an unanchorable row is the 2026-08-04 defect signature")
+        assert max(moves) >= 10.0, (
+            f"the 2026-07-31 panel carries double-digit missed moves; max is {max(moves)}")
 
     def test_no_vetoed_move_exceeds_its_confirmation_anchored_truth(self, frozen_lanes,
                                                                     board):
@@ -1511,7 +1555,7 @@ class TestG1Witnesses:
             # 2026-07-01), in which case the row displays the nearest session at or
             # before it — which is not a bucket label and cannot re-derive the anchor.
             marker = board["verdicts"][row["ticker"]]["last"]["date"]
-            confirmed = sq.confirmation_date(_as_series(dates, values), marker)
+            confirmed = sq.confirmation_date(_as_series(dates, values), marker, market="HK")
             assert confirmed is not None, row["ticker"]
             truth = hbr.cross_read(dates, values,
                                    cross_date=str(confirmed.date()))["pct_since"]
@@ -1977,26 +2021,35 @@ class TestG1FixtureIsNotStale:
     tripwire without making every new market session break an older measurement.
     """
 
-    def test_every_frozen_window_starts_on_a_3b_bucket_boundary(self, board):
-        """THE PHASE INVARIANT — asserted, not described.
+    def test_every_frozen_window_shares_the_full_columns_bucket_grid(self, board):
+        """THE ANCHOR INVARIANT — the property the retired phase rule was proxying for.
 
-        ``regenerate_g1_fixture`` has called the 3B alignment "load-bearing rather
-        than cosmetic" since 2026-08-03 and NOTHING checked it.  It broke exactly as
-        prose predicts: a regenerator re-cutting a flat ``tail(_tail_sessions)``
-        (correct only if every window were the same length — 123 of these 157 are
-        not) put 123 windows off-grid, and because ``signal_quality.signal_frame``
-        anchors its ``resample("3B")`` bins on the series' FIRST index date, every
-        frozen marker date stopped being a bucket label.  The move-anchored lanes
-        then dropped the rows they could no longer anchor: the vetoed lane fell from
-        33 measured names (max +24.3%) to 5 (max +4.7%), TOP-FIRST.
+        WHAT THIS REPLACED, and why.  Until ``sq-abs-session-2026-08-06`` this test
+        asserted ``np.busday_count(column_start, window_start) % 3 == 0`` for every
+        frozen window, because ``signal_quality`` bucketed with business-day bins
+        anchored on the SERIES' FIRST index date: cut a column anywhere off that
+        phase and every bucket label moved, so the frozen verdicts' marker dates
+        stopped being bucket labels at all.  That broke exactly as its prose
+        predicted — a regenerator re-cutting a flat ``tail(_tail_sessions)`` (correct
+        only if every window were the same length; 123 of these 157 are not) put 123
+        windows off-grid, the move-anchored lanes silently dropped the rows they
+        could no longer anchor, and the vetoed lane fell from 33 measured names
+        (max +24.3%) to 5 (max +4.7%).  The only thing that failed was
+        ``test_the_vetoed_lane_prints_what_the_board_missed``'s ``max(moves) > 20.0``,
+        which READS as "the panel no longer carries big missed moves" — a
+        data-falsification claim.  A whole investigation went that way.
 
-        The only thing that failed was ``test_the_vetoed_lane_prints_what_the_board
-        _missed``'s ``max(moves) > 20.0``, which reads as "the panel no longer
-        carries big missed moves" — a data-falsification claim.  A whole
-        investigation went that way.  A fixture-shape defect must fail as a
-        fixture-shape defect, so it is measured here, on the shape, by name.
+        Under the absolute session anchor (R-SQ1/R-SQ4) the start phase is MOOT:
+        ``bucket(d) = session_positions(d, "HK") // 3`` is a function of the HK
+        reference calendar and the date alone, so a window cut ANYWHERE shares the
+        full column's grid.  Asserting the old modulus now would pin a rule the
+        engine no longer has.  So the invariant is asserted DIRECTLY, on the thing
+        the modulus was only ever a proxy for: the frozen window's bucket labels are
+        the full column's bucket labels.  This still fails loudly on a fixture-shape
+        defect — a window sliced out of a different column, or a re-anchored engine
+        that stops agreeing with itself — and it now also fails if the anchor ever
+        regresses to a start-phased grid, which the modulus could not detect.
         """
-        np = pytest.importorskip("numpy")
         pd = pytest.importorskip("pandas")
         src = Path(board["_source"])
         if not src.exists():                    # pragma: no cover — committed in-tree
@@ -2005,16 +2058,24 @@ class TestG1FixtureIsNotStale:
 
         off_grid = {}
         for ticker, frozen in board["closes"].items():
-            column_start = str(panel[ticker].dropna().index[0].date())
-            phase = int(np.busday_count(column_start, frozen["dates"][0])) % 3
-            if phase:
-                off_grid[ticker] = phase
+            column = panel[ticker].dropna()
+            window = pd.Series(
+                [float(v) for v in frozen["closes"]],
+                index=pd.to_datetime(list(frozen["dates"])))
+            full_labels = sq._tf_grid(column, 3, "HK").close.index
+            win_labels = sq._tf_grid(window, 3, "HK").close.index
+            # Only the LEADING bucket may differ: the window can start mid-bucket, in
+            # which case its open-date label is the first session the window actually
+            # carries. Every bucket after that must match the full column exactly.
+            missing = [d for d in win_labels[1:] if d not in full_labels]
+            if missing:
+                off_grid[ticker] = [str(d.date()) for d in missing[:3]]
         assert not off_grid, (
-            f"{len(off_grid)} of {len(board['closes'])} frozen windows do not start "
-            f"on a 3B bucket boundary of their own column "
-            f"(first few: {dict(list(off_grid.items())[:5])}) — the frozen verdicts' "
-            f"marker dates are no longer bucket labels, so the move-anchored lanes "
-            f"will silently drop rows rather than fail. Regenerate the fixture: "
+            f"{len(off_grid)} of {len(board['closes'])} frozen windows carry bucket "
+            f"labels their own full column does not (first few: "
+            f"{dict(list(off_grid.items())[:5])}) — the frozen verdicts' marker dates "
+            f"are no longer bucket labels, so the move-anchored lanes will silently "
+            f"drop rows rather than fail. Regenerate the fixture: "
             f"{regenerate_g1_fixture()}")
 
     def test_the_window_stamp_describes_the_windows_it_stamps(self, board):
