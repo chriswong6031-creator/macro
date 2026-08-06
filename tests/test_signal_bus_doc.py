@@ -73,9 +73,11 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 594, (
-        f"Expected 594 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 595, (
+        f"Expected 595 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (pin drifted: registry carried 595 while pin said 594 — racing merges during the"
+        " 2026-08-05/06 Prophet-US + CN wave trains; repaired here);"
         " (CN Prophet W-C registered the loser/miss telemetry artifact + its forward"
         " log, the CN episode track ledger, and the two PIT basket-membership"
         " histories = 588->593; (pin drifted during the W-C rebase: a racing merge"
