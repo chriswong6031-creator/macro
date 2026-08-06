@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T00:22:12.235232+00:00",
-  "count": 837,
+  "generated_at": "2026-08-06T00:52:28.833105+00:00",
+  "count": 838,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -1271,6 +1271,27 @@
         "**Geopolitical & Data Shock**: US-Japan intervention triggered oil price plunge (Brent crude $82.50–$84.50), while strong US ISM manufacturing (55.6 vs 53.9 exp) and NZ/CH PMI data fueled equity gains and USD strength.",
         "**NZ Rate Dynamics**: Offshore forces drove NZ rates higher (2-yr 3.71%, 5-yr 4.07%, 10-yr 4.45%), with NZGBs rally adding downward pressure on yields.",
         "**Critical Upcoming Catalysts**: Australian household spending (Jun) and US JOLTS job openings (Jun) are pivotal for market direction, with NZ rates highly sensitive to these releases."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xyhkexpqy8a-06c8c9",
+      "title": "ING Think low water levels and the german economy",
+      "institution": "ING Direct",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T01:57:34Z",
+      "summary_points": [
+        "**GDP Growth Threat**: Rhine drought risks shaving 0.3 percentage points off German GDP growth, disrupting 285 million tonnes of annual freight and threatening the 0.8% annual growth trajectory.",
+        "**Unprecedented Water Levels**: Critical Rhine water levels at 24cm (Kaub) are lowest since 1880, breaching critical thresholds with no viable barge transport alternatives due to infrastructure constraints.",
+        "**Supply Chain Disruption Magnitude**: 80% of Germany’s inland waterways face unprecedented disruption, targeting key industrial clusters (Rhine-Ruhr, Rhine-Main, Ludwigshafen) with summer timing worsening impact beyond historical norms.",
+        "**Historical Precedent Validated**: 2018 drought reduced industrial production by 1% and GDP growth by 0.3pp; current conditions risk equivalent or greater impact amid worsening forecasts and no rainfall.",
+        "**Systemic Economic Risk**: Low water levels threaten production across Germany’s key industries, with potential impact exceeding the Rhine’s 0.6% output share due to timing and infrastructure vulnerability."
       ],
       "tags": [],
       "tickers": [],
