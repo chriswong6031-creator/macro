@@ -30,8 +30,33 @@ BANNED = [
     ("backfill (method=)", re.compile(r"method\s*=\s*[\"']backfill[\"']")),
 ]
 
-# explicit, reviewed exceptions if a legitimate need ever arises: "path::reason"
-ALLOWLIST: set[str] = set()
+# Explicit, reviewed exceptions: "path:line" -> (code fragment, reason).
+#
+# The FRAGMENT is load-bearing, not decoration. A bare line-number waiver slides
+# onto whatever code later occupies that line, so an unrelated leak introduced at
+# the same line number would silently inherit the exemption. An entry suppresses a
+# finding only while that exact fragment is still on that exact line; any edit that
+# moves or rewrites it makes the guard report normally again (fail-closed).
+ALLOWLIST: dict[str, tuple[str, str]] = {
+    "engine/pick_forward_dist.py:95": (
+        ".ffill().bfill().fillna(1.0)",
+        "Split-repair back-adjustment factor, not a feature. `factor = raw_close /"
+        " adj_close` is the cumulative split multiplier; split_adjust() dropna()s its"
+        " input, so factor is NaN exactly where close is NaN. ffill covers interior"
+        " and trailing gaps; bfill covers ONLY a LEADING gap, and no split can be"
+        " detected before the first valid price — so the first valid bar already"
+        " carries the full cumulative factor and bfill propagates that same constant"
+        " backwards. Measured (tests/test_pick_forward_dist.py::"
+        "test_leading_gap_bfill_is_the_same_constant_not_a_look_ahead): under"
+        " truncation a bfilled bar and an ordinary pre-split bar move by an IDENTICAL"
+        " ratio, so the bfill adds zero look-ahead beyond the retroactive"
+        " back-adjustment the sanctioned splitter applies to every pre-split bar by"
+        " design. It is also load-bearing: dropping it fabricates a split-sized gap"
+        " at the first valid bar (measured log-return -1.386 vs 0.00067 on a 4:1"
+        " fixture) — exactly the false crash split_adjust exists to prevent."
+        " Disclosed as REVIEW-10 in research/PICK_FORWARD_DIST_PHASE0.md.",
+    ),
+}
 
 
 def _py_files():
@@ -78,13 +103,60 @@ def test_no_future_leak_idioms_in_feature_code():
             if line.lstrip().startswith("#"):
                 continue                                  # skip comments
             for label, rx in BANNED:
-                if rx.search(line) and f"{rel}:{i}" not in ALLOWLIST:
-                    # report the ORIGINAL line so the violation is readable
-                    violations.append(f"{rel}:{i}  [{label}]  {raw[i - 1].strip()[:90]}")
+                if not rx.search(line):
+                    continue
+                exempt = ALLOWLIST.get(f"{rel}:{i}")
+                if exempt is not None and exempt[0] in raw[i - 1]:
+                    continue
+                # report the ORIGINAL line so the violation is readable
+                violations.append(f"{rel}:{i}  [{label}]  {raw[i - 1].strip()[:90]}")
     assert not violations, (
         "Look-ahead idiom in feature/engine code (pulls future into a past feature). "
         "Fix the leak, or if genuinely safe add 'path:line' to ALLOWLIST with a reason:\n"
         + "\n".join(violations))
+
+
+def test_allowlist_entries_are_live_reasoned_and_still_needed():
+    """Guard the waivers: a stale exemption is a hole nobody is looking at.
+
+    Every entry must still point at real code, that code must still contain the
+    pinned fragment, and it must still trip a banned idiom — otherwise the waiver
+    has outlived its cause and belongs deleted, not carried.
+    """
+    for key, value in ALLOWLIST.items():
+        path, _, lineno = key.rpartition(":")
+        assert path and lineno.isdigit(), f"malformed ALLOWLIST key {key!r}"
+        fragment, reason = value
+        assert len(reason) > 120, f"{key}: exemption needs a reviewed reason, got {reason!r}"
+        target = ROOT / path
+        assert target.exists(), f"{key}: allowlisted file no longer exists"
+        lines = target.read_text(encoding="utf-8").splitlines()
+        i = int(lineno)
+        assert 1 <= i <= len(lines), f"{key}: line {i} past EOF ({len(lines)} lines)"
+        assert fragment in lines[i - 1], (
+            f"{key}: pinned fragment {fragment!r} is no longer on line {i} "
+            f"(found {lines[i - 1].strip()!r}) — re-review the exemption, don't move it"
+        )
+        assert any(rx.search(lines[i - 1]) for _, rx in BANNED), (
+            f"{key}: line {i} no longer trips a banned idiom — drop the exemption"
+        )
+
+
+def test_allowlist_fragment_pin_is_load_bearing():
+    """A waiver must not survive the line being rewritten under it.
+
+    Without the fragment check a bare line-number waiver would silently cover
+    whatever code later lands on that line — including a genuine leak.
+    """
+    key = "engine/pick_forward_dist.py:95"
+    fragment, _ = ALLOWLIST[key]
+    planted = "    x = df.bfill()   # an unrelated leak that moved onto this line"
+    assert fragment not in planted, "fixture must not contain the pinned fragment"
+    assert any(rx.search(planted) for _, rx in BANNED), "fixture must trip the tripwire"
+    exempt = ALLOWLIST.get(key)
+    assert exempt is not None and exempt[0] not in planted, (
+        "the fragment pin must refuse to cover a rewritten line"
+    )
 
 
 def test_tripwire_actually_fires_on_a_planted_leak():

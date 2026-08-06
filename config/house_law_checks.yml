@@ -1462,6 +1462,61 @@ checks:
       (test_marketing_content, test_marketing_live_verify, test_publish_r2,
       test_research_vault), all repaired in the PR that added the guard.
 
+  - law_id: ops.ci_trigger_closure
+    summary: >
+      A PR-gated suite's trigger paths must reach every first-party module the
+      suite measures. This is the fourth darkness class and the reverse direction
+      of scripts/audit_unrun_tests.py: that census asks "can ANY edit start this
+      job" — an any() over the closure, satisfied by the test file itself — so a
+      suite stays nominally triggerable while the ONE module it exists to guard
+      is matched by no path entry, and an edit to exactly that module merges
+      without ever running its guard. The check is static: discover every
+      workflow with an `on.pull_request` trigger (a workflow with no `paths:` key
+      gates everything it runs unconditionally), resolve each governed
+      `tests/*.py` to the first-party files it reads (imports, import_module,
+      repo-relative path literals, ROOT / "a" / "b.py" segment joins), and fail
+      when a resolved module is reachable by no gate that runs the suite.
+      Workflows that hand a job manifest to a runner (--workflow
+      .github/ci/legacy-jobs.yml) are how the packed legacy jobs inherit ci.yml's
+      single path filter, so they are governed by it too.
+    source_ref:
+      - scripts/check_ci_trigger_closure.py
+      - "PR #4649 (added the guard)"
+      - "PR #3488 (a guard whose own edit cannot start the workflow is half wired)"
+      - "PR #4559 (fixture-only heal — same lesson, third occurrence)"
+    severity: hard
+    check_script: scripts/check_ci_trigger_closure.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: workflow-yaml
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        The gate is DIRECT reads only (depth 1). --depth N widens the report to
+        transitive reads and is deliberately NOT gated: past depth 1 the
+        path-literal heuristic starts resolving placeholder strings from
+        docstring examples, and a guard that cries wolf gets ignored — which is
+        the failure mode this file exists to end.
+      - >-
+        Module resolution is static text analysis. A suite that reaches a module
+        only through a dynamic dispatch this parser cannot see reports a closure
+        narrower than the real one, so a trigger gap behind such an indirection
+        stays invisible.
+      - >-
+        Suites that NO job names are UNRUN, not trigger-gapped —
+        scripts/audit_unrun_tests.py owns that class; skip-only suites are
+        ops.no_skip_only_suites.
+    owner_program: null
+    notes: >
+      Fourth member of the CI-darkness family, in the same workflow-yaml job as
+      ops.no_skip_only_suites and ops.workflow_yaml_parses. Registered 2026-08-06:
+      #4649 shipped the guard and its legacy-jobs wiring but no registry entry, so
+      the meta-guard's CENSUS pass went hard-red on every open PR at the base until
+      this entry landed.
+
   # ── Meta-guard ─────────────────────────────────────────────────────────────
 
   - law_id: meta.house_law_registry
