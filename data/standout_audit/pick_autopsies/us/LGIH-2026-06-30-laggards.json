@@ -1,0 +1,116 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "LGIH-2026-06-30-laggards",
+  "ticker": "LGIH",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "LGIH",
+    "as_of": "2026-06-30",
+    "lane": "laggards",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "LGIH",
+    "lane": "laggards",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_break",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Consumer Discretionary",
+    "excess_spy": -0.10446523668120522,
+    "excess_sector": -0.08582601417558533,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 1.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "LGIH stopped and underperformed SPY, with an idiosyncratic break recorded and no process fault. Housing macro, homebuilder rotation, and company-specific deterioration remain unresolved competing mechanisms.",
+    "root_cause": "LGIH stopped and underperformed SPY, with an idiosyncratic break recorded and no process fault. Housing macro, homebuilder rotation, and company-specific deterioration remain unresolved competing mechanisms.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The laggards book surfaced LGIH, while the housing-regime, homebuilder-rotation, and company-break books lacked the conditioning evidence needed to explain the stop.",
+    "engines_credit": "The clean-process organ is not implicated; the housing-cycle, sector-rotation, issuer-risk, and path-risk organs are the evidence laggards.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "The supplied cause labels LGIH's failure as an issuer-specific break.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Similar weakness across homebuilders would reduce confidence in an issuer-specific explanation.",
+        "evidence_refs": [
+          "outcome_cause=idio_break",
+          "excess_spy=-0.10446523668120522",
+          "terminal_state=STOPPED"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "macro_regime",
+        "factor": "",
+        "mechanism": "Housing affordability, rates, or credit conditions may have amplified company weakness.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "A favorable housing regime alongside LGIH-specific weakness would support the idiosyncratic attribution.",
+        "evidence_refs": [
+          "sector=Consumer Discretionary"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The adverse price path reached the stopping condition after brief board tenure.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "A path that avoided the stop would alter the terminal result but not resolve the causal attribution.",
+        "evidence_refs": [
+          "board_tenure_days=1.0",
+          "terminal_state=STOPPED",
+          "process_fault=clean"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "A missed homebuilder rotation rollover may explain the outcome.",
+      "Mortgage-rate or affordability deterioration may have affected the group.",
+      "LGIH-specific orders, community count, incentives, or margins may have weakened.",
+      "A failed-cycle setup may have preceded the stop."
+    ],
+    "missing_evidence": [
+      "Homebuilder breadth and peer-relative returns",
+      "Mortgage-rate and housing-data chronology",
+      "LGIH operating metrics and estimate revisions",
+      "Entry setup and breakout-quality evidence",
+      "Entry-to-stop path",
+      "Ex-ante regime-cell assignment"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "lgih_housing_peer_divergence",
+        "feature": "Housing peer divergence",
+        "measurement": "Measure LGIH's pre-entry relative trend and operating-estimate changes against homebuilder peers under the contemporaneous housing regime.",
+        "expected_direction": "Negative issuer divergence within a weakening housing regime should be associated with subsequent company-break outcomes.",
+        "falsifier": "LGIH showed no pre-entry divergence or macro and peer factors fully explain the result.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T05:48:19+00:00"
+}
