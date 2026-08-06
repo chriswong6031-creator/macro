@@ -123,6 +123,50 @@ same live store. Everything else continues to come from `/opt/macro/site.served`
   the served copy. `systemctl disable --now macro-live-prophet.timer` is the harder
   stop; note that a later commit which changes either unit file re-arms it.
 
+- `macro-sentinel.timer`: every 30 minutes at `:12/:42`, around the clock, seven
+  days a week (`Persistent=true` — a reboot-missed pass fires on boot, because a
+  box that was down is exactly when staleness is likely). This is masterplan W1's
+  **dead-man switch that lives OUTSIDE GitHub**
+  (`research/NIGHTLY_RESILIENCE_AND_LIVE_TRANSITION_MASTERPLAN_2026-08-06.md`
+  §0.1): the 2026-08-06 outage froze the boards for six days because every alarm
+  lived inside GitHub Actions — the thing that was failing. The pass
+  (`scripts/freshness_sentinel.py`, stdlib-only on purpose) fetches the LIVE
+  pages' bake stamps (`Last-Modified` of `us_stocks.html`, `china.html`,
+  `intelligence_hub.html`), reads the us_stocks board's own delayed-board
+  disclosure (`… prices as of YYYY-MM-DD`, rendered by
+  `templates/dashboard.html.j2` ONLY when the engine reports the board lags —
+  the check that catches a render that keeps re-baking while the boards freeze,
+  which is what Jul-31→Aug-6 actually did; a page-wide "as of" scrape cannot
+  see it because per-panel annotations stay fresh throughout), HEADs the R2
+  `massive_stock_day/_manifest.json` publish time, and compares all of it
+  against per-surface budgets (26h bakes; 4 calendar days on the board's
+  self-reported lag). china.html emits no board stamp yet — its only `as of`
+  is an FX widget — so china runs bake-only until the template grows one.
+  On breach it alerts the operator —
+  Telegram (`TELEGRAM_BOT_TOKEN`+`TELEGRAM_CHAT_ID`), Discord
+  (`DISCORD_WEBHOOK_URL`), and email via `app.mailer` (`MAIL_SENTINEL_TO` or
+  `MAIL_SUPPORT_TO`), any one delivering counts — immediately on first
+  detection, then every 6h while the condition persists, with one recovery
+  notice when it clears (sent only when every breached surface has read
+  definitively fresh — a breached surface that stops answering stays in the
+  breach set, so blindness can never masquerade as recovery). Network errors
+  are INDETERMINATE, never a breach; six consecutive blind passes (~3h)
+  escalate as their own alert. Every pass publishes machine-readable state to
+  `public/live/staleness.json` (atomic rename, written AFTER the alert
+  transports so a full disk cannot silence the alarm), served publicly at
+  `/live/staleness.json` with `no-store` — the input a later wave's on-site
+  staleness banner reads; its `ok` is the honest tri-state fold (false on
+  active breach OR threshold blindness — "can't tell" never renders as
+  "fresh"). Alert transports come from
+  `/etc/macro-api.env` (mail) plus the operator slot `/etc/macro-sentinel.env`
+  (read last, may override). With no transport configured the pass still
+  publishes the state and fails the unit visibly. Budgets follow the masterplan
+  B5 falsifier law: >2 false-positive pages a month means the budgets are wrong
+  — fix the budgets, never mute the sentinel. Acceptance drill (no killing
+  anything): `python3 -m scripts.freshness_sentinel --now <now+30h ISO>
+  --public-dir /tmp/drill/public --state-dir /tmp/drill/state` — every bake
+  surface breaches and the alert path fires end-to-end.
+
 Systemd will not start a second instance of an active oneshot service. The Python
 lane locks also coalesce manual/timer overlap. Every browser artifact is JSON
 validated and copied through a same-directory temporary file before `replace()`.
