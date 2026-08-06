@@ -253,6 +253,22 @@ reads that artifact and computes one live cross-section only.
 1. **W2-A · Widen the fundamentals universe toward the Russell 2000.** The §5 finding makes
    this the highest-value item by a distance; every other improvement is second-order until
    the model can be tested on the names it was built for.
+   **SHIPPED 2026-08-05** — `collectors/edgar.py:_universe_tickers()` now unions each
+   group's committed `constituents.parquet` with its closes cache across all four groups
+   (`russell_breadth` included; its closes cache is a gitignored CI artifact, so the
+   committed constituents table is what carries the R2000 on a fresh checkout). Universe
+   1,577 → 2,895; the frames-API request count scales with years×concepts, never tickers,
+   so the fetch cost is unchanged. Measured against the July candidates store: 1,268 of the
+   1,461 fundamentals-absent candidates become coverable; the 193 that remain are foreign
+   20-F/IFRS filers the us-gaap frames endpoint cannot serve (BABA/ASML/AZN class), funds/
+   crypto tickers with no filings, and a small tail of non-index US filers outside the four
+   tracked groups — each a separate lane, none reachable by widening this filter. The panel
+   itself advances on the nightly's weekly `fetch_panel` cache expiry; archetype labels
+   follow mechanically via `archetypes_history_refresh_if_stale()` (#4677). `edgar_eps`
+   shares the universe and widens for free (also frames-based). The §5/§6 "1,552" figures
+   and the committed study stamps describe the narrow-universe study and stay until the
+   study re-runs on the widened panel (that re-run is the remaining W2-A follow-through,
+   after which W2-F should re-stratify on the true small-cap band).
 2. **W2-B · Point-in-time debt and cash on the annual spine.** Backfill `debt_cur` / `cash`
    into `fundamentals_panel` from the quarterly filed-date store so EV and invested capital
    stop depending on a ~49% debt column.

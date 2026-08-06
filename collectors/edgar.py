@@ -112,10 +112,16 @@ def _frame_names(base: str, concept: str, period: str, unit: str) -> dict[int, s
     return {int(r["cik"]): r.get("entityName", "") for r in data["data"]}
 
 
+# Price-universe source groups (W2-A: S&P 1500 + Russell 2000). The frames API
+# request count scales with years×concepts — never tickers — so widening the
+# ticker filter to the full tracked price universe adds no fetch cost.
+_UNIVERSE_SRC_GROUPS = ("breadth", "smallcap_breadth", "midcap_breadth", "russell_breadth")
+
+
 def _universe_names() -> dict[str, str]:
     """{ticker: company name} from the breadth constituents tables."""
     out: dict[str, str] = {}
-    for grp in ("breadth", "smallcap_breadth", "midcap_breadth"):
+    for grp in _UNIVERSE_SRC_GROUPS:
         p = config.data_dir() / grp / "constituents.parquet"
         if p.exists():
             meta = pd.read_parquet(p)
@@ -183,15 +189,23 @@ def _latest_balance_shares(concept: str, year: int, base: str) -> dict[int, floa
 
 
 def _universe_tickers() -> list[str]:
-    """Current S&P 1500 tickers (breadth close caches) UNION names that have dropped
-    out of the index (the membership ledger marks them inactive) — so the panel
-    retains delisted names' fundamentals going forward (the fundamentals half of the
-    survivorship fix; pairs with engine/universe_history.py)."""
+    """Tracked price-universe tickers (S&P 1500 + Russell 2000: close-cache
+    columns ∪ committed constituents) UNION names that have dropped out of the
+    indexes (the membership ledger marks them inactive) — so the panel retains
+    delisted names' fundamentals going forward (the fundamentals half of the
+    survivorship fix; pairs with engine/universe_history.py). Constituents are
+    read alongside the close caches because russell_breadth's closes cache is a
+    gitignored CI artifact — only its committed constituents.parquet makes the
+    R2000 names visible on every checkout. Foreign/unmapped tickers (20-F/IFRS
+    filers, funds) simply drop at the CIK join and cost nothing."""
     tickers: set[str] = set()
-    for grp in ("breadth", "smallcap_breadth", "midcap_breadth"):
+    for grp in _UNIVERSE_SRC_GROUPS:
         p = config.data_dir() / grp / "_closes_cache.parquet"
         if p.exists():
             tickers.update(pd.read_parquet(p, columns=None).columns)
+        c = config.data_dir() / grp / "constituents.parquet"
+        if c.exists():
+            tickers.update(str(t) for t in pd.read_parquet(c).index if str(t) not in ("", "nan", "None"))
     try:                                   # additive — never fatal if the ledger is absent
         from engine.universe_history import dropped_members
         tickers.update(dropped_members())
