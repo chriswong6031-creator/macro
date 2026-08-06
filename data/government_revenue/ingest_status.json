@@ -1,28 +1,312 @@
 {
   "action_awards_attempted": 160,
   "action_awards_succeeded": 160,
-  "actions_seen": 34181,
+  "action_page_size": 5000,
+  "actions_seen": 34208,
   "actions_total": 34181,
+  "award_event_spine": {
+    "action_versions_seen": 34208,
+    "action_versions_total": 0,
+    "activation_state": "baseline",
+    "award_action_versions_row_count": null,
+    "award_action_versions_semantic_sha256": null,
+    "award_event_snapshots_row_count": null,
+    "award_event_snapshots_semantic_sha256": null,
+    "baseline_completed_at": null,
+    "baseline_started_at": null,
+    "bounded_sample_complete": false,
+    "coverage_manifest": null,
+    "coverage_manifest_changed_this_run": false,
+    "coverage_manifest_id": null,
+    "coverage_scope": "USAspending award-detail and transaction observations collected from bounded recipient-query discovery; not a complete federal procurement corpus or issuer attribution.",
+    "event_eligible_action_versions_seen": 0,
+    "event_eligible_snapshots_seen": 0,
+    "full_receipt_bound_baseline_this_run": false,
+    "last_observed_at": null,
+    "projection_generation_id": null,
+    "projection_semantic_sha256": null,
+    "schema_version": "government_revenue.award_event_projection_state.v1",
+    "snapshots_seen": 160,
+    "snapshots_total": 0,
+    "source_exhausted": false,
+    "truncated_by_safety_cap": false
+  },
   "award_search_limit_per_entity": 100,
   "awards_seen": 1936,
   "awards_total": 1936,
   "bounded": true,
+  "collection_receipts": {
+    "new_receipts_this_run": 360,
+    "path": "collection_receipts.jsonl",
+    "raw_response_bodies_persisted": false,
+    "receipt_payloads_sha256": "afa03b42a0071888aa3b807ece2d98701cc44427df327481b590739f855e09d0",
+    "receipts_total": 360,
+    "response_receipts_this_run": 360,
+    "run_id": "usaspending-3fa7716d31ba467d6d50c3a5",
+    "schema_version": "government_revenue.collection_receipt.v1"
+  },
+  "coverage_scope": "bounded recipient-query award data plus bounded award-detail/action sample; not full USAspending coverage",
   "detail_awards_attempted": 160,
   "detail_awards_limit_per_entity": 8,
   "detail_awards_succeeded": 160,
-  "effective_at": "2026-08-01",
+  "effective_at": "2026-08-06",
+  "entities_configured_total": 21,
+  "entities_mapped": 21,
   "entities_requested": 21,
   "entities_with_awards": 20,
-  "errors": [],
+  "errors": [
+    {
+      "error": "award pagination did not reach explicit hasNext=false",
+      "reason": "max_pages_reached_with_has_next",
+      "stage": "awards",
+      "ticker": "LMT"
+    },
+    {
+      "error": "award pagination did not reach explicit hasNext=false",
+      "reason": "max_pages_reached_with_has_next",
+      "stage": "awards",
+      "ticker": "RTX"
+    },
+    {
+      "error": "award pagination did not reach explicit hasNext=false",
+      "reason": "max_pages_reached_with_has_next",
+      "stage": "awards",
+      "ticker": "NOC"
+    },
+    {
+      "error": "award pagination did not reach explicit hasNext=false",
+      "reason": "max_pages_reached_with_has_next",
+      "stage": "awards",
+      "ticker": "GD"
+    },
+    {
+      "error": "award pagination did not reach explicit hasNext=false",
+      "reason": "max_pages_reached_with_has_next",
+      "stage": "awards",
+      "ticker": "LHX"
+    },
+    {
+      "error": "award pagination did not reach explicit hasNext=false",
+      "reason": "max_pages_reached_with_has_next",
+      "stage": "awards",
+      "ticker": "HII"
+    },
+    {
+      "error": "award pagination did not reach explicit hasNext=false",
+      "reason": "max_pages_reached_with_has_next",
+      "stage": "awards",
+      "ticker": "BA"
+    },
+    {
+      "error": "award pagination did not reach explicit hasNext=false",
+      "reason": "max_pages_reached_with_has_next",
+      "stage": "awards",
+      "ticker": "TDG"
+    },
+    {
+      "error": "award pagination did not reach explicit hasNext=false",
+      "reason": "max_pages_reached_with_has_next",
+      "stage": "awards",
+      "ticker": "HWM"
+    },
+    {
+      "error": "award pagination did not reach explicit hasNext=false",
+      "reason": "max_pages_reached_with_has_next",
+      "stage": "awards",
+      "ticker": "AVAV"
+    },
+    {
+      "error": "award pagination did not reach explicit hasNext=false",
+      "reason": "max_pages_reached_with_has_next",
+      "stage": "awards",
+      "ticker": "KTOS"
+    },
+    {
+      "error": "award pagination did not reach explicit hasNext=false",
+      "reason": "max_pages_reached_with_has_next",
+      "stage": "awards",
+      "ticker": "GE"
+    },
+    {
+      "error": "award pagination did not reach explicit hasNext=false",
+      "reason": "max_pages_reached_with_has_next",
+      "stage": "awards",
+      "ticker": "LDOS"
+    },
+    {
+      "error": "award pagination did not reach explicit hasNext=false",
+      "reason": "max_pages_reached_with_has_next",
+      "stage": "awards",
+      "ticker": "TXT"
+    },
+    {
+      "error": "award pagination did not reach explicit hasNext=false",
+      "reason": "max_pages_reached_with_has_next",
+      "stage": "awards",
+      "ticker": "CW"
+    },
+    {
+      "error": "award pagination did not reach explicit hasNext=false",
+      "reason": "max_pages_reached_with_has_next",
+      "stage": "awards",
+      "ticker": "TDY"
+    },
+    {
+      "error": "award pagination did not reach explicit hasNext=false",
+      "reason": "max_pages_reached_with_has_next",
+      "stage": "awards",
+      "ticker": "HEI"
+    },
+    {
+      "error": "award pagination did not reach explicit hasNext=false",
+      "reason": "max_pages_reached_with_has_next",
+      "stage": "awards",
+      "ticker": "VSAT"
+    },
+    {
+      "error": "award pagination did not reach explicit hasNext=false",
+      "reason": "max_pages_reached_with_has_next",
+      "stage": "awards",
+      "ticker": "PLTR"
+    },
+    {
+      "error": "Invalid value '['814c439cdeb3deed0588d96e30cfc7ab51f3acdb113fbb8863e9db3e35bd6af1', 'c0e8da0f3f923f20d350f65e331e9a9a00987c1dce5164ec2516f2fa3da4de49', '3098e204c613133c190da88f2d6e54141d1cc3e95dc2c09c9d6a52514200c262', 'c6f47e1dcd63fbd26cf216929938d76f36c870e3871cf4a73b2167540694ecb8', '039174009b489e9269ed16dd539c0a53d889546bc5e4223ee02244d5189dfb49', '04c369510284d1c415513adad8279ce8d2f66b2f527828b8af0027047fab8009', '06c07f6c3d7453c2c7398dae86b8bfb349e8a6acf9049d474753dca39c9b0f7c', 'a6cb87580c830b028684519ad69e42dfc298315419345ebe2b068aa073e9cf49', '0d96394afb7a2740e3a373b4386040e075295e36382e26e2776e102ef70d781f', 'deea3f4cf14401b2eaac710ddafc60fdbadc9f2f454db63f5a59c92ad61a726f', '43887961ed290a467ba1a5c8e79c5b8256ac209cc07becaf6700d79a22ce16d5', '1d03ebec1ed975e6e0684810d35f7d53b7d",
+      "reason": "ledger_write_failed",
+      "stage": "persist"
+    }
+  ],
+  "freshness": {
+    "last_good_at": null,
+    "state": "failed"
+  },
+  "full_configured_universe": true,
+  "last_successful_observed_at": null,
   "lookback_days": 1826,
+  "max_action_pages_per_award": 100,
   "max_pages_per_entity": 2,
-  "observed_at": "2026-08-01T23:54:08.659841+00:00",
+  "observed_at": "2026-08-06T07:29:00.411636+00:00",
   "page_size": 50,
-  "schema_version": "government_revenue.ingest_status.v1",
+  "partial": true,
+  "rails": {
+    "actions": {
+      "completeness": {
+        "bounded_sample_complete": false,
+        "claim": "actions reach source exhaustion only at explicit hasNext=false; an otherwise complete declared page cap is a bounded sample, not complete source history",
+        "full_usaspending_corpus": false,
+        "scope": "complete transaction history only for the bounded award-detail sample",
+        "source_exhausted": false,
+        "state": "failed",
+        "truncated_by_safety_cap": false
+      },
+      "denominators": {
+        "identity_failures": 0,
+        "normalization_failures": 0,
+        "queries_attempted": 160,
+        "queries_bounded_sample_complete": 160,
+        "queries_complete": 160,
+        "queries_failed": 0,
+        "queries_not_requested": 0,
+        "queries_partial": 0,
+        "queries_source_exhausted": 160,
+        "queries_truncated_by_safety_cap": 0,
+        "sampled_awards": 160
+      },
+      "last_successful_observed_at": null,
+      "pages": {
+        "missing_has_next_awards": 0,
+        "requested": 160,
+        "safety_cap_per_award": 100,
+        "succeeded": 160,
+        "unresolved_has_next_awards": 0
+      },
+      "records": {
+        "accepted": 34208,
+        "ledger_total": 34181,
+        "normalized": 34208,
+        "raw": 34208
+      },
+      "response_receipts": 160,
+      "state": "failed"
+    },
+    "award_detail": {
+      "completeness": {
+        "bounded_sample_complete": false,
+        "claim": "bounded award-detail sample; never a full award-detail corpus",
+        "full_usaspending_corpus": false,
+        "sample_is_globally_ranked": false,
+        "scope": "top reported-obligation awards among source rows returned for each entity",
+        "source_exhausted": false,
+        "state": "failed",
+        "truncated_by_safety_cap": false
+      },
+      "denominators": {
+        "attempted": 160,
+        "candidate_awards": 160,
+        "skipped_missing_generated_award_id": 0,
+        "succeeded": 160
+      },
+      "last_successful_observed_at": null,
+      "pages": {
+        "requested": 160,
+        "safety_cap_per_entity": 8,
+        "succeeded": 160
+      },
+      "records": {
+        "candidate_awards": 160,
+        "details_fetched": 160,
+        "ledger_total": 1936
+      },
+      "response_receipts": 160,
+      "state": "failed"
+    },
+    "awards": {
+      "completeness": {
+        "bounded_sample_complete": false,
+        "claim": "source exhausted only when every mapped recipient query returned explicit hasNext=false; a fully retrieved declared page cap is a complete bounded sample, not corpus completion",
+        "full_usaspending_corpus": false,
+        "scope": "recipient-query contract awards in the configured time window only",
+        "source_exhausted": false,
+        "state": "failed",
+        "truncated_by_safety_cap": true
+      },
+      "denominators": {
+        "entities_configured_total": 21,
+        "entities_mapped": 21,
+        "entities_requested": 21,
+        "full_configured_universe": true,
+        "normalization_failures": 0,
+        "queries_bounded_sample_complete": 21,
+        "queries_complete": 2,
+        "queries_failed": 0,
+        "queries_partial": 19,
+        "queries_source_exhausted": 2,
+        "queries_truncated_by_safety_cap": 19,
+        "records_rejected_without_identity": 0
+      },
+      "last_successful_observed_at": null,
+      "pages": {
+        "missing_has_next_entities": 0,
+        "requested": 40,
+        "safety_cap_per_entity": 2,
+        "succeeded": 40,
+        "unresolved_has_next_entities": 19
+      },
+      "records": {
+        "accepted": 1936,
+        "ledger_total": 1936,
+        "normalized": 1936,
+        "raw": 1936
+      },
+      "response_receipts": 40,
+      "state": "failed"
+    }
+  },
+  "schema_version": "government_revenue.ingest_status.v2",
   "snapshots_total": 1936,
   "source_urls": [
     "https://api.usaspending.gov/api/v2/search/spending_by_award/",
     "https://api.usaspending.gov/api/v2/awards/{award_id}/",
     "https://api.usaspending.gov/api/v2/transactions/"
-  ]
+  ],
+  "status": "failed"
 }
