@@ -1,7 +1,7 @@
 # Pick-class forward distributions — wave-1.5 HAR-standardizer discriminator
 
 **Family** `pick_forward_dist_phase1_har` · **Program** `advanced-quant-methods-w1.5` · **Tier** diagnostic — wave-1.5 discriminator; promotes nothing
-**Generated** 2026-08-06T04:26:09.065523+00:00 · **Runtime** 211s
+**Generated** 2026-08-06T04:58:07.917076+00:00 · **Runtime** 216s
 
 Wave-1 measured that vol-state cells (`S3_vol`) beat the pooled marginal at H=21 — with outcomes standardized by TRAILING 20d vol, a biased forward-vol forecast. This study re-runs wave-1 changing **exactly one thing**: the vol_scale series becomes the shipped house HAR-style equal-weight blend. Both possible answers are wins; the question is which one obtained.
 
@@ -9,15 +9,17 @@ Wave-1 measured that vol-state cells (`S3_vol`) beat the pooled marginal at H=21
 
 **Wave-1's S3 edge was the standardizer, not the state.** Only 38% of the relative edge survives the change of scale (+0.421% of baseline pinball against +1.094%), and D-1's interval no longer excludes zero.
 
-X-5 shows the mechanism, and the correspondence is close to one-for-one: the HAR scale carries **38% less vol-state-correlated bias**, and **62% of the edge disappears**. The trailing-20d scale under-predicts forward vol in a vol trough and over-predicts after a spike — exactly the mean reversion wave-1's caveat named — and an `S3_vol` cell earns its pinball back by re-pricing those bands. Take the state-dependent bias away and the cell has little left to sell.
+X-5 confirms the mechanism DIRECTIONALLY, not quantitatively: removing **38.1% of the state-correlated scale bias** removed **61.5% of the edge** — the two move the same way, but **23.4 percentage points of the collapse are NOT accounted for** by the bias-spread reduction alone, and this study does not explain the remainder. The trailing-20d scale under-predicts forward vol in a vol trough and over-predicts after a spike — exactly the mean reversion wave-1's caveat named — and an `S3_vol` cell earns its pinball back by re-pricing those bands. Take the state-dependent bias away and the cell has little left to sell. Read the size of the correspondence as suggestive: X-5's bands are FULL-SPAN equal-frequency cuts of `rvol_z`, not the walk-forward's point-in-time per-refit edges, so they carry a hindsight whisker (stated, not hidden — nothing downstream reads them).
 
-**For the emitter:** ship MARGINAL cones — no cells. Simpler, no cell-honesty floor to police, one fewer thing to explain, and one fewer conditional claim to defend. The conditional read was never carrying forward-return information; it was carrying a scale correction.
+**Two things keep this a re-read rather than a proven negative.** First, against the OTHER pre-registered null — the own-name marginal B1 — S3 under the HAR scale **still excludes zero** (+0.00248 [+0.00074, +0.00439], +0.829% of baseline, ratio 0.519 — above the 0.5 band). Second, D-1's margin is thin (one-sided p 0.054) — a marginal non-rejection, not a decisive one. Read B1 with wave-1's own disclosure attached: B1 degrades to B0 for ~40% of name-days (REVIEW-2), so it is a ~60/40 blend of the own-name test and the B0 test, not a fully independent second opinion. The honest statement is that the **B0-referenced** vol-state edge does not survive a state-flat scale at the pre-registered bar; a residual own-name-referenced read remains, and it is not promotable either.
+
+**For the emitter:** ship MARGINAL cones — no cells. Simpler, no cell-honesty floor to police, one fewer thing to explain, and one fewer conditional claim to defend. The B0-referenced conditional read was not carrying forward-return information; it was carrying a scale correction.
 
 **But read the scale half of that carefully, because X-4 is a null.** The HAR-style equal-weight blend is **not** the better forward-vol forecast in aggregate — it loses to the plain 20d realized vol on all three of X-4's measures. It wins this discriminator by being FLATTER ACROSS VOL STATES, not by being more accurate. So the shippable instruction is NOT "ship the HAR blend". It is: **the width scale must be one whose bias does not move with vol state** — that is the property that absorbed wave-1's edge, and it is the property to select on. Which scale actually has it, at good aggregate accuracy, is the open rung: a FITTED forward-vol forecast is the obvious untested candidate and nothing here measures it.
 
 | Readout | Result |
 |---|---|
-| **D-1** S3 vs B0 under HAR | +0.00125 [-0.00024, +0.00288] (+0.421% of baseline) — **FAIL** |
+| **D-1** S3 vs B0 under HAR | +0.00125 [-0.00024, +0.00288] (+0.421% of baseline, one-sided p 0.054) — **FAIL** |
 | **D-2** shrinkage ratio (scale-free, primary) | 0.385 (band 0.5) |
 | D-2 raw-unit ratio (secondary) | 0.447 |
 | D-2 paired bootstrap interval (descriptive) | [-0.161, 0.573], median 0.378 |
@@ -65,7 +67,7 @@ Nominal is 0.800. Coverage is a hit rate, so it is unit-free and this is the one
 
 ## 3b. X-5 — vol-state-CONDITIONAL bias of each scale (post-run addendum)
 
-*X-5 IS NOT PART OF THE FROZEN PRE-REGISTRATION. It was written after a 1,500-file SMOKE run (not the study) returned a NULL on the pre-registered X-4 — the HAR blend was not the better forward-vol forecast on any of X-4's three measures — which left the pre-registered readouts hard to read: an edge shrinking under a scale that is not better overall proves nothing on its own. X-5 measures the SPECIFIC confound wave-1's caveat named, which X-4's aggregate measures cannot see. It is DESCRIPTIVE, it gates nothing, and neither D-1 nor D-2 reads it — both are computed by code frozen before any data was touched. It is recorded here, OUTSIDE the frozen header, rather than backdated into it.*
+*X-5 IS NOT PART OF THE FROZEN PRE-REGISTRATION. It was written after a 1,500-file SMOKE run (not the study) returned a NULL on the pre-registered X-4 — the HAR blend was not the better forward-vol forecast on any of X-4's three measures — which left the pre-registered readouts hard to read: an edge shrinking under a scale that is not better overall proves nothing on its own. X-5 measures the SPECIFIC confound wave-1's caveat named, which X-4's aggregate measures cannot see. It is DESCRIPTIVE, it gates nothing, and neither D-1 nor D-2 reads it — both are computed by code frozen before any data was touched. It is recorded here, OUTSIDE the frozen header, rather than backdated into it. BAND CONSTRUCTION IS FULL-SPAN, NOT POINT-IN-TIME: the four rvol_z bands are equal-frequency cuts of the WHOLE evaluated span, not the walk-forward's per-refit embargoed edges, so they carry a hindsight whisker. That is acceptable only because nothing downstream reads X-5 and no gate depends on it — but X-5 does feed the headline MECHANISM claim, so the size of the bias-spread reduction it reports is suggestive rather than a point-in-time measurement.*
 
 | Arm | band 0 | band 1 | band 2 | band 3 | spread (max−min) | overall |
 |---|---|---|---|---|---|---|
@@ -74,15 +76,26 @@ Nominal is 0.800. Coverage is a hit rate, so it is unit-free and this is the one
 
 Cells are mean log(realized forward 21d vol / predicted) inside each `rvol_z` band (band 0 = lowest rvol_z (vol trough), band 3 = highest (vol spike)). A POSITIVE number means the scale UNDER-predicts; negative means it OVER-predicts. The **spread** is the quantity wave-1's caveat is about: it is how much of the scale's error a vol-state cell can mechanically earn back by re-pricing the band.
 
+**Band construction is FULL-SPAN, not point-in-time.** The four `rvol_z` bands are equal-frequency cuts of the whole evaluated span, not the walk-forward's per-refit embargoed edges, so they carry a hindsight whisker. Nothing downstream reads X-5 and no gate depends on it — but X-5 does feed the headline mechanism claim, so treat the SIZE of the bias-spread reduction as suggestive rather than as a point-in-time measurement.
+
 The HAR scale's state-conditional bias spread is **38% smaller** than the trailing-20d scale's. That is the mechanism, measured: there is less state-correlated error left for an `S3_vol` cell to correct, which is what the shrinkage in D-2 is made of.
 
 ## 4. AM-H6 reproduction control — did the trailing20 arm reproduce wave-1?
 
-- Wave-1 published: +0.00280 [+0.00126, +0.00444] (+1.09% of baseline)
-- This run, trailing20 arm: +0.00280 [+0.00126, +0.00444] (+1.094% of baseline)
-- Absolute difference in mean delta: 3e-06; inside wave-1's published CI: True
+Source: committed phase-0 artifact (exact field equality).
 
-The two runs are not expected to be bit-identical: this panel drops rows where the HAR scale is not finite (AM-H4) so both arms share identical rows. A LARGE divergence would mean the machinery is not wave-1's and the shrinkage ratio would be meaningless — so it is checked, not assumed.
+| Field | phase-0 artifact | this run (trailing20) | equal |
+|---|---|---|---|
+| `mean_delta` | `0.002803` | `0.002803` | YES |
+| `ci` | `[0.001257, 0.002768, 0.004441]` | `[0.001257, 0.002768, 0.004441]` | YES |
+| `pct_of_baseline` | `1.094` | `1.094` | YES |
+| `excludes_zero` | `True` | `True` | YES |
+| `n_dates` | `856` | `856` | YES |
+| `gt0_prob` | `1.0` | `1.0` | YES |
+| `frac_dates_positive` | `0.7336` | `0.7336` | YES |
+| `block` | `21` | `21` | YES |
+
+**All 8 fields match EXACTLY.** Both runs are deterministic (fixed seeds, sorted store glob) over the same panel, and the AM-H4 both-scales-finite intersection removed no rows, so exact equality is the right bar — anything less would mean the machinery is not wave-1's and the D-2 shrinkage ratio would be meaningless. Checked against the committed artifact rather than the writeup's rounded literals, which would cap the check at 3 significant figures.
 
 ## 5. Honest caveats
 
@@ -103,7 +116,7 @@ The two runs are not expected to be bit-identical: this panel drops rows where t
 - Splits repaired on 2,015 names; 7,554 split-print bars stamped ineligible
 - unadjusted; splits repaired via replay_standout_pipeline.split_adjust; dividends NOT adjusted (price return)
 
-- Import surface pinned before the run: 27 phase-0/engine signatures and frozen constants (the runner refuses to produce a number if any drifted)
+- Import surface pinned before the run: 35 phase-0/engine signatures and frozen constants (the runner refuses to produce a number if any drifted)
 
 ## 7. Frozen pre-registration (verbatim)
 
@@ -298,6 +311,16 @@ AMENDMENTS (gaps closed BEFORE any pinball was computed; none after)
         this correction makes the HAR arm's ratio SMALLER, i.e. it pushes toward the
         VOL_FORECAST_CORRECTION verdict, so it is the conservative choice against the
         more interesting (A) reading.
+        NOTED POST-RUN (a disclosure; no gate, band, statistic or number moves): the
+        SAME convention asymmetry exists on the LABEL side of X-4. The forward-vol
+        label is engine.vol_forecast.forward_vol_ann — pct_change returns, ddof=0, a
+        21-bar window — while the trailing predictor it is scored against is built
+        from log returns with ddof=1 over 20 bars. The ddof=0/21-bar label is biased
+        low by sqrt(20/21), i.e. about -0.025 in log terms, which is roughly a
+        quarter of the trailing arm's reported overall log-ratio level. The label is
+        IDENTICAL for both arms, so every X-4 and X-5 COMPARISON between them is
+        unaffected; only the absolute log-ratio LEVELS carry the offset. Stated here
+        so no reader mistakes that level for a pure forecast bias.
   AM-H3 FORECAST-QUALITY READ ADDED (X-4). Wave-1's own module docstring says the
         "HAR-style" claim should be measured rather than assumed. Because the entire
         discriminator rests on the new scale being BETTER, its forecast quality is

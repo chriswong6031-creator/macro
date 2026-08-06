@@ -3,8 +3,8 @@
  "program": "advanced-quant-methods-w1.5",
  "tier": "diagnostic \u2014 wave-1.5 discriminator; promotes nothing",
  "prereg": "frozen in the module docstring of scripts/pick_forward_dist_phase1_har.py",
- "generated_utc": "2026-08-06T04:26:09.065523+00:00",
- "runtime_sec": 210.8,
+ "generated_utc": "2026-08-06T04:58:07.917076+00:00",
+ "runtime_sec": 216.1,
  "verdict": "VOL_FORECAST_CORRECTION",
  "verdict_reason": "the edge collapses under the HAR scale (38% retained) and D-1 fails \u2014 the wave-1 gain was the scale, not the state",
  "D1_survival": {
@@ -55,25 +55,48 @@
   }
  },
  "reproduction_control_AM_H6": {
-  "wave1_published": {
-   "mean_delta": 0.0028,
-   "ci": [
-    0.00126,
-    0.00444
-   ],
-   "pct_of_baseline": 1.09
-  },
-  "this_run_trail20": {
+  "source": "committed phase-0 artifact (exact field equality)",
+  "source_path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a3c56593fccaeb052/research/pick_forward_dist_phase0_results.json",
+  "phase0_S3_vs_B0": {
    "mean_delta": 0.002803,
    "ci": [
     0.001257,
     0.002768,
     0.004441
    ],
-   "pct_of_baseline": 1.094
+   "pct_of_baseline": 1.094,
+   "excludes_zero": true,
+   "n_dates": 856,
+   "gt0_prob": 1.0,
+   "frac_dates_positive": 0.7336,
+   "block": 21
   },
-  "abs_diff_mean_delta": 3e-06,
-  "within_wave1_ci": true
+  "this_run_trail20_S3_vs_B0": {
+   "mean_delta": 0.002803,
+   "ci": [
+    0.001257,
+    0.002768,
+    0.004441
+   ],
+   "pct_of_baseline": 1.094,
+   "excludes_zero": true,
+   "n_dates": 856,
+   "gt0_prob": 1.0,
+   "frac_dates_positive": 0.7336,
+   "block": 21
+  },
+  "fields_compared": [
+   "mean_delta",
+   "ci",
+   "pct_of_baseline",
+   "excludes_zero",
+   "n_dates",
+   "gt0_prob",
+   "frac_dates_positive",
+   "block"
+  ],
+  "exact_match": true,
+  "mismatches": null
  },
  "forecast_quality_X4": {
   "trail20": {
@@ -96,7 +119,7 @@
   "har_is_better_on_all_three": false
  },
  "state_conditional_bias_X5": {
-  "provenance": "X-5 IS NOT PART OF THE FROZEN PRE-REGISTRATION. It was written after a 1,500-file SMOKE run (not the study) returned a NULL on the pre-registered X-4 \u2014 the HAR blend was not the better forward-vol forecast on any of X-4's three measures \u2014 which left the pre-registered readouts hard to read: an edge shrinking under a scale that is not better overall proves nothing on its own. X-5 measures the SPECIFIC confound wave-1's caveat named, which X-4's aggregate measures cannot see. It is DESCRIPTIVE, it gates nothing, and neither D-1 nor D-2 reads it \u2014 both are computed by code frozen before any data was touched. It is recorded here, OUTSIDE the frozen header, rather than backdated into it.",
+  "provenance": "X-5 IS NOT PART OF THE FROZEN PRE-REGISTRATION. It was written after a 1,500-file SMOKE run (not the study) returned a NULL on the pre-registered X-4 \u2014 the HAR blend was not the better forward-vol forecast on any of X-4's three measures \u2014 which left the pre-registered readouts hard to read: an edge shrinking under a scale that is not better overall proves nothing on its own. X-5 measures the SPECIFIC confound wave-1's caveat named, which X-4's aggregate measures cannot see. It is DESCRIPTIVE, it gates nothing, and neither D-1 nor D-2 reads it \u2014 both are computed by code frozen before any data was touched. It is recorded here, OUTSIDE the frozen header, rather than backdated into it. BAND CONSTRUCTION IS FULL-SPAN, NOT POINT-IN-TIME: the four rvol_z bands are equal-frequency cuts of the WHOLE evaluated span, not the walk-forward's per-refit embargoed edges, so they carry a hindsight whisker. That is acceptable only because nothing downstream reads X-5 and no gate depends on it \u2014 but X-5 does feed the headline MECHANISM claim, so the size of the bias-spread reduction it reports is suggestive rather than a point-in-time measurement.",
   "n": 3307737,
   "k_bands": 4,
   "band_edges_rvol_z": [
@@ -870,7 +893,15 @@
    "pfd.DVOL_MIN=2000000.0",
    "pfd.MIN_BARS=300",
    "pfd.TAUS=(0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95)",
+   "pfd.MAE_TAUS=(0.05, 0.25, 0.5)",
+   "pfd.VOL_WIN=20",
+   "pfd.VOL_MINP=15",
+   "pfd.REF_WIN=252",
+   "pfd.REF_MINP=126",
+   "pfd.SCHEMES[S1_trend]=(('above_200dma', 'bool', 2), ('slope50_up', 'bool', 2))",
+   "pfd.SCHEMES[S2_extension]=(('ext_pct', 'q', 4),)",
    "pfd.SCHEMES[S3_vol]=(('rvol_z', 'q', 4),)",
+   "pfd.SCHEMES[S4_coil]=(('coil', 'q', 4),)",
    "pfd.SCHEMES[S5_trend_vol]=(('above_200dma', 'bool', 2), ('rvol_z', 'q', 3))",
    "vf.HAR_LAGS=(2, 5, 22, 66)"
   ]

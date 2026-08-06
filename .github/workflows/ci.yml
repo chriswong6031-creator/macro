@@ -2175,10 +2175,14 @@ on:
       # truncate-and-recompute equality, its embargo boundary and its
       # noise-partition negative control have never executed in CI. The w1.5 suite
       # would have inherited exactly that — and its whole job is an IMPORT-SURFACE
-      # PIN that refuses the study when phase-0's signatures or frozen constants
-      # drift, which is worth nothing if it never runs. Both halves listed: the
-      # suites AND their subjects (engine/pick_forward_dist.py, engine/vol_forecast.py,
-      # the two study scripts), so no possible edit leaves the guard untriggerable.
+      # PIN that refuses the study when phase-0's function SIGNATURES (parameter
+      # names/kinds/defaults) or the frozen CONSTANTS defining both arms drift:
+      # phase-0's cohort window/floors/taus/OOS-start/bootstrap seed, and the engine's
+      # VOL_FLOOR, universe floors, feature windows (VOL_WIN/VOL_MINP/REF_WIN/REF_MINP)
+      # and all five scheme axis tuples. Function BODIES are not pinned. That guard is
+      # worth nothing if it never runs. Both halves listed: the suites AND their
+      # subjects (engine/pick_forward_dist.py, engine/vol_forecast.py, the two study
+      # scripts), so no possible edit leaves the guard untriggerable.
       - "tests/test_pick_forward_dist.py"
       - "tests/test_pick_forward_dist_phase1.py"
       - "engine/pick_forward_dist.py"

@@ -188,6 +188,16 @@ AMENDMENTS (gaps closed BEFORE any pinball was computed; none after)
         this correction makes the HAR arm's ratio SMALLER, i.e. it pushes toward the
         VOL_FORECAST_CORRECTION verdict, so it is the conservative choice against the
         more interesting (A) reading.
+        NOTED POST-RUN (a disclosure; no gate, band, statistic or number moves): the
+        SAME convention asymmetry exists on the LABEL side of X-4. The forward-vol
+        label is engine.vol_forecast.forward_vol_ann — pct_change returns, ddof=0, a
+        21-bar window — while the trailing predictor it is scored against is built
+        from log returns with ddof=1 over 20 bars. The ddof=0/21-bar label is biased
+        low by sqrt(20/21), i.e. about -0.025 in log terms, which is roughly a
+        quarter of the trailing arm's reported overall log-ratio level. The label is
+        IDENTICAL for both arms, so every X-4 and X-5 COMPARISON between them is
+        unaffected; only the absolute log-ratio LEVELS carry the offset. Stated here
+        so no reader mistakes that level for a pure forecast bias.
   AM-H3 FORECAST-QUALITY READ ADDED (X-4). Wave-1's own module docstring says the
         "HAR-style" claim should be measured rather than assumed. Because the entire
         discriminator rests on the new scale being BETTER, its forecast quality is
@@ -254,10 +264,6 @@ FOCUS_BASELINE = "B0_pooled"
 SHRINK_BAND = 0.5                     # D-2 interpretation band, frozen pre-result
 TRADING_YEAR = 252
 
-# Wave-1's published primary cell (research/PICK_FORWARD_DIST_PHASE0.md), used ONLY as
-# the AM-H6 reproduction control — never as a denominator.
-WAVE1_S3_VS_B0 = {"mean_delta": 0.00280, "ci": [0.00126, 0.00444], "pct_of_baseline": 1.09}
-
 RESULTS_JSON = WT_ROOT / "research" / "pick_forward_dist_phase1_har_results.json"
 RESULTS_MD = WT_ROOT / "research" / "PICK_FORWARD_DIST_PHASE1_HAR.md"
 LEDGER_PATH = WT_ROOT / "data" / "trial_ledger.jsonl"
@@ -310,7 +316,24 @@ ENGINE_CONST_SURFACE: dict[str, object] = {
     "pfd.DVOL_MIN": 2.0e6,
     "pfd.MIN_BARS": 300,
     "pfd.TAUS": (0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95),
+    "pfd.MAE_TAUS": (0.05, 0.25, 0.50),
+    # The FEATURE windows. These define the trailing-20d comparison scale itself and the
+    # 252d reference every state axis is z-scored/normalised against, so a change to any
+    # of them silently redefines BOTH arms — the wave-1 baseline this study is measured
+    # against AND the rvol_z cells it conditions on — while every signature above still
+    # matches. VOL_WIN 20 -> 30 was the named defeating mutation the review found: it
+    # moves the trailing standardizer, and therefore the D-2 denominator, invisibly.
+    "pfd.VOL_WIN": 20,
+    "pfd.VOL_MINP": 15,
+    "pfd.REF_WIN": 252,
+    "pfd.REF_MINP": 126,
+    # All five scheme tuples, not just the two the readouts focus on: S1/S2/S4 are the
+    # contrast that makes the X-3 "ordering flattens" reading mean anything, so a
+    # redefined non-vol scheme would corrupt the conclusion without touching S3 or S5.
+    "pfd.SCHEMES[S1_trend]": (("above_200dma", "bool", 2), ("slope50_up", "bool", 2)),
+    "pfd.SCHEMES[S2_extension]": (("ext_pct", "q", 4),),
     "pfd.SCHEMES[S3_vol]": (("rvol_z", "q", 4),),
+    "pfd.SCHEMES[S4_coil]": (("coil", "q", 4),),
     "pfd.SCHEMES[S5_trend_vol]": (("above_200dma", "bool", 2), ("rvol_z", "q", 3)),
     "vf.HAR_LAGS": (2, 5, 22, 66),
 }
@@ -351,11 +374,12 @@ def verify_phase0_surface() -> list[str]:
     live = {
         "pfd.VOL_FLOOR": pfd.VOL_FLOOR, "pfd.PRICE_MIN": pfd.PRICE_MIN,
         "pfd.DVOL_MIN": pfd.DVOL_MIN, "pfd.MIN_BARS": pfd.MIN_BARS,
-        "pfd.TAUS": tuple(pfd.TAUS),
-        "pfd.SCHEMES[S3_vol]": tuple(pfd.SCHEMES.get("S3_vol", ())),
-        "pfd.SCHEMES[S5_trend_vol]": tuple(pfd.SCHEMES.get("S5_trend_vol", ())),
+        "pfd.TAUS": tuple(pfd.TAUS), "pfd.MAE_TAUS": tuple(pfd.MAE_TAUS),
+        "pfd.VOL_WIN": pfd.VOL_WIN, "pfd.VOL_MINP": pfd.VOL_MINP,
+        "pfd.REF_WIN": pfd.REF_WIN, "pfd.REF_MINP": pfd.REF_MINP,
         "vf.HAR_LAGS": tuple(vf.HAR_LAGS),
     }
+    live.update({f"pfd.SCHEMES[{s}]": tuple(pfd.SCHEMES.get(s, ())) for s in p0.SCHEMES})
     for name, want in ENGINE_CONST_SURFACE.items():
         got = live.get(name)
         want_cmp = tuple(want) if isinstance(want, (tuple, list)) else want
@@ -499,11 +523,16 @@ def discriminate(d1_pass: bool, r_rel, r_raw, trail_replicated: bool) -> tuple[s
     if r_rel is None or not np.isfinite(r_rel):
         return ("INCONCLUSIVE_BASE", "the shrinkage ratio is undefined on this run")
     hi_rel = bool(r_rel >= SHRINK_BAND)
-    hi_raw = bool(r_raw is not None and np.isfinite(r_raw) and r_raw >= SHRINK_BAND)
+    raw_ok = bool(r_raw is not None and np.isfinite(r_raw))
+    hi_raw = bool(raw_ok and r_raw >= SHRINK_BAND)
     if hi_rel != hi_raw:
+        # `r_raw` may be None/NaN here (hi_raw falls to False), so it is formatted
+        # defensively — an unprintable secondary must never crash the verdict that
+        # the PRIMARY statistic already decided.
+        raw_txt = f"{r_raw:.3f}" if raw_ok else "undefined"
         return ("MIXED",
                 f"the scale-free ratio ({r_rel:.3f}) and the raw-unit ratio "
-                f"({r_raw:.3f}) fall on opposite sides of the {SHRINK_BAND} band")
+                f"({raw_txt}) fall on opposite sides of the {SHRINK_BAND} band")
     if hi_rel and d1_pass:
         return ("STATE_INFORMATION",
                 f"the edge survives the better scale ({r_rel:.0%} of it retained) and "
@@ -573,7 +602,13 @@ X5_PROVENANCE = (
     "wave-1's caveat named, which X-4's aggregate measures cannot see. It is DESCRIPTIVE, "
     "it gates nothing, and neither D-1 nor D-2 reads it — both are computed by code "
     "frozen before any data was touched. It is recorded here, OUTSIDE the frozen header, "
-    "rather than backdated into it.")
+    "rather than backdated into it. "
+    "BAND CONSTRUCTION IS FULL-SPAN, NOT POINT-IN-TIME: the four rvol_z bands are "
+    "equal-frequency cuts of the WHOLE evaluated span, not the walk-forward's "
+    "per-refit embargoed edges, so they carry a hindsight whisker. That is acceptable "
+    "only because nothing downstream reads X-5 and no gate depends on it — but X-5 "
+    "does feed the headline MECHANISM claim, so the size of the bias-spread reduction "
+    "it reports is suggestive rather than a point-in-time measurement.")
 
 
 def state_conditional_bias(panel: pd.DataFrame, cal: pd.DatetimeIndex, h: int,
@@ -633,6 +668,64 @@ def state_conditional_bias(panel: pd.DataFrame, cal: pd.DatetimeIndex, h: int,
         out["har_state_bias_spread_lower"] = bool(sb < sa)
         out["spread_reduction_frac"] = round(float(1.0 - sb / sa), 4) if sa else None
     return out
+
+
+# ============================================================== AM-H6 reproduction
+PHASE0_RESULTS = WT_ROOT / "research" / "pick_forward_dist_phase0_results.json"
+
+# Rounded fallback ONLY — the values as PUBLISHED in the wave-1 writeup, kept for the
+# case where the phase-0 artifact is absent. Comparing against these caps the check at
+# 3 significant figures, which is coarser than this study's own resolution, so the
+# artifact is always preferred.
+WAVE1_S3_VS_B0 = {"mean_delta": 0.00280, "ci": [0.00126, 0.00444], "pct_of_baseline": 1.09}
+
+
+def reproduction_control(d_trl: dict, path: Path = PHASE0_RESULTS) -> dict:
+    """AM-H6: did the trailing20 arm reproduce wave-1's primary cell?
+
+    Reads the COMMITTED phase-0 artifact and asserts field-by-field EXACT equality on
+    the numbers wave-1 published for `S3_vol` vs `B0_pooled` at H=21. Exact, not
+    approximate: both runs are deterministic (fixed seeds, sorted store glob) over the
+    same panel, so any difference at all is a real divergence in the machinery and the
+    D-2 ratio would be meaningless. Comparing against the writeup's ROUNDED literals
+    instead would cap the check at the rounding, hiding a divergence smaller than 5e-6.
+
+    Falls back to the rounded published literals, clearly labelled, only when the
+    artifact is missing (a fresh checkout that never ran wave-1)."""
+    fields = ("mean_delta", "ci", "pct_of_baseline", "excludes_zero", "n_dates",
+              "gt0_prob", "frac_dates_positive", "block")
+    mine = {k: d_trl.get(k) for k in fields}
+    try:
+        p0res = json.loads(path.read_text(encoding="utf-8"))
+        ref = p0res["gates"]["S3_vol"]["G2_skill_vs_B0"]
+        theirs = {k: ref.get(k) for k in fields}
+        mismatches = {k: {"phase0": theirs[k], "this_run": mine[k]}
+                      for k in fields if theirs[k] != mine[k]}
+        return {
+            "source": "committed phase-0 artifact (exact field equality)",
+            "source_path": str(path),
+            "phase0_S3_vs_B0": theirs,
+            "this_run_trail20_S3_vs_B0": mine,
+            "fields_compared": list(fields),
+            "exact_match": not mismatches,
+            "mismatches": mismatches or None,
+        }
+    except (OSError, KeyError, ValueError) as exc:
+        raw_t = mine.get("mean_delta")
+        return {
+            "source": "FALLBACK — rounded literals from the wave-1 writeup; the phase-0 "
+                      "artifact could not be read, so this check is capped at the "
+                      "published rounding (3 s.f.) and is weaker than the exact one",
+            "source_path": str(path),
+            "fallback_reason": f"{type(exc).__name__}: {exc}",
+            "wave1_published_rounded": WAVE1_S3_VS_B0,
+            "this_run_trail20_S3_vs_B0": mine,
+            "exact_match": None,
+            "abs_diff_mean_delta": None if raw_t is None
+            else round(abs(float(raw_t) - WAVE1_S3_VS_B0["mean_delta"]), 6),
+            "within_wave1_published_ci": None if raw_t is None else bool(
+                WAVE1_S3_VS_B0["ci"][0] <= float(raw_t) <= WAVE1_S3_VS_B0["ci"][1]),
+        }
 
 
 # ============================================================== study
@@ -766,15 +859,7 @@ def run_study(store: Path, max_names: int | None = None) -> dict:
         block=PRIMARY_H, B=p0.BOOT_B, seed=p0.BOOT_SEED)
 
     # ---------------- AM-H6 reproduction control
-    repro = {
-        "wave1_published": WAVE1_S3_VS_B0,
-        "this_run_trail20": {"mean_delta": raw_t, "ci": d_trl.get("ci"),
-                             "pct_of_baseline": pct_t},
-        "abs_diff_mean_delta": None if raw_t is None
-        else round(abs(float(raw_t) - WAVE1_S3_VS_B0["mean_delta"]), 6),
-        "within_wave1_ci": None if raw_t is None else bool(
-            WAVE1_S3_VS_B0["ci"][0] <= float(raw_t) <= WAVE1_S3_VS_B0["ci"][1]),
-    }
+    repro = reproduction_control(d_trl)
 
     runtime = time.time() - t_start
     out = {
@@ -929,21 +1014,57 @@ def emitter_reading(out: dict) -> list[str]:
             + ", and D-1's interval no longer excludes zero.")
         L.append("")
         if spread_cut is not None:
+            lost = 1.0 - (r or 0.0)
+            gap = lost - spread_cut
             L.append(
-                f"X-5 shows the mechanism, and the correspondence is close to "
-                f"one-for-one: the HAR scale carries **{spread_cut:.0%} less "
-                f"vol-state-correlated bias**, and **{1.0 - (r or 0.0):.0%} of the edge "
-                f"disappears**. The trailing-20d scale under-predicts forward vol in a "
-                f"vol trough and over-predicts after a spike — exactly the mean "
-                f"reversion wave-1's caveat named — and an `S3_vol` cell earns its "
-                f"pinball back by re-pricing those bands. Take the state-dependent bias "
-                f"away and the cell has little left to sell.")
+                f"X-5 confirms the mechanism DIRECTIONALLY, not quantitatively: removing "
+                f"**{spread_cut:.1%} of the state-correlated scale bias** removed "
+                f"**{lost:.1%} of the edge** — the two move the same way, but "
+                f"**{gap * 100.0:.1f} percentage points of the collapse are NOT "
+                f"accounted for** by the bias-spread reduction alone, and this study "
+                f"does not explain the remainder. "
+                f"The trailing-20d scale under-predicts forward vol in a vol "
+                f"trough and over-predicts after a spike — exactly the mean reversion "
+                f"wave-1's caveat named — and an `S3_vol` cell earns its pinball back by "
+                f"re-pricing those bands. Take the state-dependent bias away and the cell "
+                f"has little left to sell. Read the size of the correspondence as "
+                f"suggestive: X-5's bands are FULL-SPAN equal-frequency cuts of `rvol_z`, "
+                f"not the walk-forward's point-in-time per-refit edges, so they carry a "
+                f"hindsight whisker (stated, not hidden — nothing downstream reads them).")
+            L.append("")
+        # The verdict is B0-referenced by pre-registration. If the OTHER pre-registered
+        # null still rejects, that is a material qualification and must not be left to a
+        # reader to spot in a table further down.
+        b1h = ((out.get("arms", {}).get("har", {}).get("schemes", {})
+                .get(FOCUS_SCHEME, {})).get("delta_vs_B1") or {})
+        b1t = ((out.get("arms", {}).get("trail20", {}).get("schemes", {})
+                .get(FOCUS_SCHEME, {})).get("delta_vs_B1") or {})
+        p_one = (None if d1.get("gt0_prob") is None
+                 else round(1.0 - float(d1["gt0_prob"]), 4))
+        b1_ratio = (b1h.get("pct_of_baseline") / b1t["pct_of_baseline"]
+                    if b1t.get("pct_of_baseline") else None)
+        if b1h.get("excludes_zero") and (b1h.get("mean_delta") or 0.0) > 0:
+            L.append(
+                f"**Two things keep this a re-read rather than a proven negative.** "
+                f"First, against the OTHER pre-registered null — the own-name marginal "
+                f"B1 — S3 under the HAR scale **still excludes zero** "
+                f"({_fmt_ci(b1h)}, {b1h.get('pct_of_baseline'):+.3f}% of baseline"
+                + (f", ratio {b1_ratio:.3f} — above the {SHRINK_BAND} band"
+                   if b1_ratio is not None else "") + "). Second, D-1's margin is thin"
+                + (f" (one-sided p {p_one:.3f})" if p_one is not None else "")
+                + " — a marginal non-rejection, not a decisive one. Read B1 with wave-1's "
+                "own disclosure attached: B1 degrades to B0 for ~40% of name-days "
+                "(REVIEW-2), so it is a ~60/40 blend of the own-name test and the B0 "
+                "test, not a fully independent second opinion. The honest statement is "
+                "that the **B0-referenced** vol-state edge does not survive a state-flat "
+                "scale at the pre-registered bar; a residual own-name-referenced read "
+                "remains, and it is not promotable either.")
             L.append("")
         L.append(
             "**For the emitter:** ship MARGINAL cones — no cells. Simpler, no "
             "cell-honesty floor to police, one fewer thing to explain, and one fewer "
-            "conditional claim to defend. The conditional read was never carrying "
-            "forward-return information; it was carrying a scale correction.")
+            "conditional claim to defend. The B0-referenced conditional read was not "
+            "carrying forward-return information; it was carrying a scale correction.")
         L.append("")
         if har_better == []:
             L.append(
@@ -1045,8 +1166,11 @@ def write_markdown(out: dict, path: Path) -> None:
     L.append("")
     L.append("| Readout | Result |")
     L.append("|---|---|")
+    _p1 = (None if d1.get("gt0_prob") is None else 1.0 - float(d1["gt0_prob"]))
     L.append(f"| **D-1** S3 vs B0 under HAR | {_fmt_ci(d1)} "
-             f"({_fmt_pct(d1)} of baseline) — **{'PASS' if d1['pass'] else 'FAIL'}** |")
+             f"({_fmt_pct(d1)} of baseline"
+             + (f", one-sided p {_p1:.3f}" if _p1 is not None else "")
+             + f") — **{'PASS' if d1['pass'] else 'FAIL'}** |")
     r_rel_s = "n/a" if d2["ratio_relative_primary"] is None else f"{d2['ratio_relative_primary']:.3f}"
     r_raw_s = "n/a" if d2["ratio_raw_units_secondary"] is None else f"{d2['ratio_raw_units_secondary']:.3f}"
     L.append(f"| **D-2** shrinkage ratio (scale-free, primary) | {r_rel_s} "
@@ -1179,6 +1303,14 @@ def write_markdown(out: dict, path: Path) -> None:
                  f"UNDER-predicts; negative means it OVER-predicts. The **spread** is the "
                  f"quantity wave-1's caveat is about: it is how much of the scale's error "
                  f"a vol-state cell can mechanically earn back by re-pricing the band.")
+        L.append("")
+        L.append("**Band construction is FULL-SPAN, not point-in-time.** The four `rvol_z` "
+                 "bands are equal-frequency cuts of the whole evaluated span, not the "
+                 "walk-forward's per-refit embargoed edges, so they carry a hindsight "
+                 "whisker. Nothing downstream reads X-5 and no gate depends on it — but "
+                 "X-5 does feed the headline mechanism claim, so treat the SIZE of the "
+                 "bias-spread reduction as suggestive rather than as a point-in-time "
+                 "measurement.")
         if scb.get("har_state_bias_spread_lower") is not None:
             if scb["har_state_bias_spread_lower"]:
                 L.append("")
@@ -1198,19 +1330,39 @@ def write_markdown(out: dict, path: Path) -> None:
     L.append("## 4. AM-H6 reproduction control — did the trailing20 arm reproduce wave-1?")
     L.append("")
     r = out["reproduction_control_AM_H6"]
-    w, t = r["wave1_published"], r["this_run_trail20"]
-    L.append(f"- Wave-1 published: {w['mean_delta']:+.5f} "
-             f"[{w['ci'][0]:+.5f}, {w['ci'][1]:+.5f}] ({w['pct_of_baseline']:+.2f}% of baseline)")
-    L.append(f"- This run, trailing20 arm: {_fmt_ci({'mean_delta': t['mean_delta'], 'ci': t['ci']})}"
-             + (f" ({t['pct_of_baseline']:+.3f}% of baseline)"
-                if t["pct_of_baseline"] is not None else ""))
-    L.append(f"- Absolute difference in mean delta: {r['abs_diff_mean_delta']}; inside "
-             f"wave-1's published CI: {r['within_wave1_ci']}")
+    L.append(f"Source: {r['source']}.")
     L.append("")
-    L.append("The two runs are not expected to be bit-identical: this panel drops rows "
-             "where the HAR scale is not finite (AM-H4) so both arms share identical rows. "
-             "A LARGE divergence would mean the machinery is not wave-1's and the "
-             "shrinkage ratio would be meaningless — so it is checked, not assumed.")
+    if r.get("exact_match") is not None:
+        ref, mine = r["phase0_S3_vs_B0"], r["this_run_trail20_S3_vs_B0"]
+        L.append("| Field | phase-0 artifact | this run (trailing20) | equal |")
+        L.append("|---|---|---|---|")
+        for k in r["fields_compared"]:
+            L.append(f"| `{k}` | `{ref.get(k)}` | `{mine.get(k)}` | "
+                     f"{'YES' if ref.get(k) == mine.get(k) else '**NO**'} |")
+        L.append("")
+        if r["exact_match"]:
+            L.append(f"**All {len(r['fields_compared'])} fields match EXACTLY.** Both runs "
+                     "are deterministic (fixed seeds, sorted store glob) over the same "
+                     "panel, and the AM-H4 both-scales-finite intersection removed no "
+                     "rows, so exact equality is the right bar — anything less would mean "
+                     "the machinery is not wave-1's and the D-2 shrinkage ratio would be "
+                     "meaningless. Checked against the committed artifact rather than the "
+                     "writeup's rounded literals, which would cap the check at 3 "
+                     "significant figures.")
+        else:
+            L.append(f"**MISMATCH on {len(r['mismatches'])} field(s)** — the comparison arm "
+                     "is NOT wave-1's number, so the D-2 shrinkage ratio below rests on a "
+                     "denominator this study cannot vouch for. Printed, not hidden.")
+    else:
+        w = r["wave1_published_rounded"]
+        mine = r["this_run_trail20_S3_vs_B0"]
+        L.append(f"- Wave-1 published (rounded): {w['mean_delta']:+.5f} "
+                 f"[{w['ci'][0]:+.5f}, {w['ci'][1]:+.5f}]")
+        L.append(f"- This run, trailing20 arm: {_fmt_ci(mine)}")
+        L.append(f"- Absolute difference: {r['abs_diff_mean_delta']}; inside the published "
+                 f"CI: {r['within_wave1_published_ci']}")
+        L.append("")
+        L.append(f"**Weaker check than intended** — {r['fallback_reason']}.")
     L.append("")
 
     L.append("## 5. Honest caveats")

@@ -4426,10 +4426,19 @@ jobs:
       # Both suites are fixture-only (CI carries no massive_stock_day parquets).
       # Wave-1's suite was named by NO run: step anywhere when it merged, so its PIT
       # truncate-and-recompute equality, its embargo boundary and its noise-partition
-      # negative control ran dark. The w1.5 suite pins the phase-0 IMPORT SURFACE —
-      # signatures plus the frozen constants (window, cohort floors, tau grid, OOS
-      # start, bootstrap seed) — and makes the runner refuse to produce a number when
-      # they drift; a pin that no workflow executes cannot do that job.
+      # negative control ran dark. The w1.5 suite pins the phase-0 IMPORT SURFACE and
+      # makes the runner refuse to produce a number when it drifts; a pin that no
+      # workflow executes cannot do that job. Pinned, precisely: the five phase-0
+      # function signatures (parameter names/kinds/defaults, NOT type annotations);
+      # phase-0's frozen constants (cohort WINDOW 504, MIN_CELL_N, MIN_OWN_N, tau grid,
+      # OOS start, MIN_XSEC, era split, bootstrap B/seed, coverage band, the scheme and
+      # baseline name tuples); and the engine constants that define the arms themselves
+      # (VOL_FLOOR, universe floors, TAUS/MAE_TAUS, the FEATURE windows VOL_WIN /
+      # VOL_MINP / REF_WIN / REF_MINP, all five SCHEMES axis tuples, vf.HAR_LAGS).
+      # The feature windows are load-bearing and were added after review: VOL_WIN
+      # 20 -> 30 moves the trailing-20d standardizer — the wave-1 comparison arm and
+      # the D-2 denominator — while every signature still matches. NOT pinned: function
+      # BODIES. A rewritten walk_forward with an unchanged signature still passes.
       - name: pick-conditional forward distributions — PIT/embargo (w1) + HAR standardizer pin (w1.5)
         run: python -m pytest tests/test_pick_forward_dist.py tests/test_pick_forward_dist_phase1.py -q
 

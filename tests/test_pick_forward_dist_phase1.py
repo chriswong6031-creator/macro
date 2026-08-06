@@ -228,6 +228,34 @@ def test_runner_refuses_to_run_on_phase0_import_drift(monkeypatch):
     assert len(passed) >= 20, f"suspiciously few surface checks: {len(passed)}"
     assert any("walk_forward" in c for c in passed)
     assert any("vf.HAR_LAGS" in c for c in passed)
+    # every scheme is pinned, not just the two the readouts focus on: S1/S2/S4 are the
+    # contrast that makes the "ordering flattens" reading mean anything
+    for s in p0.SCHEMES:
+        assert any(f"pfd.SCHEMES[{s}]" in c for c in passed), f"{s} not pinned"
+
+    # THE REVIEWER'S NAMED DEFEATING MUTATION. VOL_WIN 20 -> 30 moves the trailing-20d
+    # standardizer itself — the wave-1 baseline arm AND the D-2 denominator — while every
+    # function signature still matches. Before the feature windows were pinned, this
+    # silently redefined what the study measured and the guard stayed green.
+    monkeypatch.setattr(pfd, "VOL_WIN", 30)
+    with pytest.raises(RuntimeError, match="pfd.VOL_WIN"):
+        p1.verify_phase0_surface()
+    monkeypatch.undo()
+
+    for const, bad in (("VOL_MINP", 10), ("REF_WIN", 126), ("REF_MINP", 60),
+                       ("MAE_TAUS", (0.1, 0.5))):
+        monkeypatch.setattr(pfd, const, bad)
+        with pytest.raises(RuntimeError, match=f"pfd.{const}"):
+            p1.verify_phase0_surface()
+        monkeypatch.undo()
+
+    # a redefined NON-vol scheme corrupts the X-3 contrast without touching S3 or S5
+    bent = dict(pfd.SCHEMES)
+    bent["S2_extension"] = (("ext_pct", "q", 6),)
+    monkeypatch.setattr(pfd, "SCHEMES", bent)
+    with pytest.raises(RuntimeError, match=r"pfd\.SCHEMES\[S2_extension\]"):
+        p1.verify_phase0_surface()
+    monkeypatch.undo()
 
     # 1. a frozen constant moves (this is how a refactor silently changes the study)
     for const, bad in (("WINDOW", 252), ("BOOT_SEED", 11), ("OOS_START", "2024-01-01"),
@@ -281,7 +309,7 @@ def test_runner_refuses_to_run_on_phase0_import_drift(monkeypatch):
         p1.run_study(Path("/nonexistent-store-this-must-not-be-reached"))
     monkeypatch.undo()
     print("ok test_runner_refuses_to_run_on_phase0_import_drift "
-          f"({len(passed)} pinned checks, 10 mutations)")
+          f"({len(passed)} pinned checks, 17 mutations)")
 
 
 # ------------------------------------------------------------------ (e) D-2 decision table
@@ -300,6 +328,18 @@ def test_frozen_discriminator_bands_are_the_registered_ones():
     assert p1.discriminate(True, 0.60, 0.40, True)[0] == "MIXED"     # ratios straddle
     assert p1.discriminate(True, 0.90, 0.95, False)[0] == "INCONCLUSIVE_BASE"
     assert p1.discriminate(True, None, None, True)[0] == "INCONCLUSIVE_BASE"
+
+    # An UNPRINTABLE secondary must not crash the verdict the PRIMARY already decided.
+    # r_rel above the band + r_raw None/NaN takes the straddle branch (hi_raw is False),
+    # which formatted r_raw unguarded and raised TypeError on None.
+    for bad_raw in (None, float("nan")):
+        v, why = p1.discriminate(True, 0.80, bad_raw, True)
+        assert v == "MIXED", (v, bad_raw)
+        assert "undefined" in why, why
+        v2, why2 = p1.discriminate(False, 0.80, bad_raw, True)
+        assert v2 == "MIXED" and "undefined" in why2
+    # and the same pair BELOW the band agrees with hi_raw=False, so no straddle fires
+    assert p1.discriminate(False, 0.20, None, True)[0] == "VOL_FORECAST_CORRECTION"
     for args in ((True, 0.8, 0.9, True), (False, 0.1, 0.1, True), (True, 0.9, 0.9, False)):
         assert len(p1.discriminate(*args)[1]) > 30, "a verdict must carry a stated reason"
     print("ok test_frozen_discriminator_bands_are_the_registered_ones")
