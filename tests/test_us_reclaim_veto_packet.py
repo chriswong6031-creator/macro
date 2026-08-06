@@ -116,18 +116,29 @@ def test_a_name_that_reclaims_within_two_bars_is_NOT_counted():
             f"an admitted name (reclaim at i+{reclaim_at}) leaked into the refusal set")
 
 
-def test_a_failed_hold_shares_the_block_reason_so_the_reason_alone_is_not_the_isolation():
-    """THE TRAP. `ok = held and reclaim` collapses BOTH failures into one string, so a name
-    that failed the next-bar HOLD is refused with the identical reason. It must NOT enter a
-    packet claiming the reclaim leg was the sole cause — the veto-OFF `take` half is what
-    excludes it, and this test is what makes that half load-bearing."""
+def test_a_failed_hold_is_excluded_twice_over_by_reason_and_by_the_veto_off_half():
+    """THE TRAP, re-pointed (#4583). It used to be that `ok = held and reclaim` collapsed
+    BOTH failures into one string, so a name that failed the next-bar HOLD was refused with
+    the reason identical to a reclaim failure, and ONLY the veto-OFF `take` half excluded
+    it. #4583 split that string: the failed hold now returns CT_BOTH_FAIL and the
+    held-but-no-reclaim case returns CT_RECLAIM_FAIL (= `PKT.BLOCK_REASON`).
+
+    Re-pointed, not deleted, exactly as the old assertion's message asked. The invariant
+    under test never was "the strings are equal" — it is that a failed HOLD must NOT enter
+    a packet claiming the reclaim leg was the sole cause. Now TWO independent things
+    exclude it, so both are pinned here: were the split ever reverted, the reason half goes
+    quiet and the veto-OFF half must still carry the exclusion on its own.
+    """
     sig = _frame([100.0, 99.0, 99.5, 100.5], [False, False, False, False])
     (on_ok, on_reason), (off_ok, off_reason) = _both(sig)
 
     assert on_ok is False
-    assert on_reason == PKT.BLOCK_REASON, (
-        "the failed-hold branch no longer shares the reclaim-failure string; if the engine "
-        "now distinguishes them this test should be re-pointed, not deleted")
+    assert on_reason == sq.CT_BOTH_FAIL, (
+        "the failed-hold branch must return the both-legs-failed string")
+    assert on_reason != PKT.BLOCK_REASON, (
+        "the engine distinguishes a failed hold from a failed reclaim; if that split is "
+        "reverted, re-point this test again — do not delete it, the veto-OFF half below "
+        "becomes the only isolation")
     assert off_ok is False and off_reason == "failed next-bar hold", (
         "dropping the reclaim leg is not 'admit everything' — the hold still gates")
 
