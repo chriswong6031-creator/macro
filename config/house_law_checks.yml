@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-08-02"
+updated: "2026-08-06"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -1461,6 +1461,67 @@ checks:
       same job. Its first run surfaced four pre-existing skip-only suites
       (test_marketing_content, test_marketing_live_verify, test_publish_r2,
       test_research_vault), all repaired in the PR that added the guard.
+
+  - law_id: ops.ci_trigger_closure
+    summary: >
+      A guarded suite's TRIGGER PATHS must cover the modules that suite measures.
+      This is the fourth darkness class, and the reverse direction of every census
+      already here: the suite is named by a job, IS triggerable, and so is dark by
+      no existing measure — because SOME of what it reads sits in ci.yml's
+      on.pull_request.paths — while ONE module in its closure does not, so an edit
+      to exactly that module ships without ever running the guard that measures it.
+      audit_unrun_tests.py asks "can ANY edit start this job", an any() over the
+      closure that a single matched file (usually the test itself) satisfies; the
+      question that matters at merge time is whether the guard runs for the module
+      a PR actually touches. The check is static: for every tests/*.py named by a
+      run: step under a path-filtered PR gate, resolve the first-party files it
+      reads directly (imports, import_module literals, repo-relative path literals,
+      and ROOT / "a" / "b.py" segment joins), then fail when a resolved module is
+      reachable by no PR-triggered workflow that runs the suite, under GitHub's
+      paths glob semantics.
+    source_ref:
+      - scripts/check_ci_trigger_closure.py
+      - "PR #4649 (guard origin)"
+      - "PR #4559 (fixture-only heal), PR #3488 (the lesson, written as a comment
+        four times before it was enforced)"
+    severity: hard
+    check_script: scripts/check_ci_trigger_closure.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: workflow-yaml
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        The gate is DIRECT reads only (depth 1). --depth N widens the report to
+        transitive reads and is deliberately NOT gated: past depth 1 the
+        path-literal heuristic starts resolving placeholder strings out of
+        docstring examples, and a guard that cries wolf gets ignored — which is
+        the failure mode this guard exists to end.
+      - >-
+        data/ is excluded from path-literal resolution on purpose. A suite reading
+        a nightly artifact is a different class: those files are rewritten by the
+        pipeline, not edited by a PR, so demanding a trigger entry for each would
+        add 150+ findings no author can act on. Subject = something a human edits.
+      - >-
+        The "test half unreachable" class — a test-only edit (a re-pin, a fixture
+        heal, the #4559 shape) cannot start the job that runs it — is counted and
+        surfaced as ONE ::notice, never gated. Naming all of them would widen
+        ci.yml by hundreds of entries, which is a CI-cost call for the operator.
+      - >-
+        Static only: nothing is executed, so a module reached by a construction the
+        resolver cannot see (an import from a computed name, a path assembled at
+        call time) is invisible to the closure. A workflow with no paths: key
+        counts as covering everything it runs unconditionally.
+    owner_program: null
+    notes: >
+      Shares the workflow-yaml job with ops.no_skip_only_suites and
+      ops.workflow_yaml_parses — the three static CI-darkness gates run in one
+      lane. Selftest runs first (same reason as its siblings), then the gate, then
+      tests/test_ci_trigger_closure.py. scripts/gh_path_filter.py carries the
+      _glob_regex/matched pair extracted from this guard.
 
   # ── Meta-guard ─────────────────────────────────────────────────────────────
 
