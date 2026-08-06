@@ -215,7 +215,6 @@ def main() -> int:
     panel = sp.load_si_panel()
     if panel is None or panel.empty:
         print("::error title=sp1::no short-interest panel — run the backfill first", flush=True)
-        log.error("no short-interest panel — run the backfill first")
         return 1
     px = load_prices()
     log.info("price panel %s  %s -> %s", px.shape, px.index.min().date(), px.index.max().date())
@@ -223,7 +222,6 @@ def main() -> int:
     ev = build_events(panel, px)
     if ev.empty:
         print("::error title=sp1::no events built", flush=True)
-        log.error("no events built")
         return 1
     log.info("events: %d rows, %d entry dates, %d tickers, %s -> %s",
              len(ev), ev["entry"].nunique(), ev["ticker"].nunique(),
