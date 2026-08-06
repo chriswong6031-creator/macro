@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T19:58:40.810598+00:00",
-  "count": 893,
+  "generated_at": "2026-08-06T20:13:47.287262+00:00",
+  "count": 894,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -255,6 +255,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6qya60vtza7-4a26de",
+      "title": "Somnigroup International Inc. (SGI) 2Q26 First Take",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:52:01Z",
+      "summary_points": [
+        "**EPS Guidance Cut**: 2Q EPS in line but full-year guidance lowered to $3.00 vs.",
+        "$3.05; North America weakness offset by Mattress Firm synergies.",
+        "**Acquisition & FCF**: $182m FCF and $2.5bn LEG acquisition pending; net debt/EBITDA 3.0x supports capital allocation flexibility.",
+        "**Growth & Valuation**: Revenue/EBITDA projected +17.5%/+26.8% by 12/28E; EPS growth 53.5% (to $4.20) with P/E compression to 16.6x.",
+        "**Debt & Valuation Risk**: Net debt/EBITDA 2.2x (current); enterprise value $17.4bn vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
