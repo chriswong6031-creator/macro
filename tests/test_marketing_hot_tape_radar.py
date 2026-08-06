@@ -2065,6 +2065,25 @@ _HOT_TAPE_SUITES = (
 )
 
 
+def _staged_paths(text: str) -> set[str]:
+    """Every pathspec the workflow's `git add` lines stage — flags skipped.
+
+    The naive `git add (\\S+)` captures the FIRST token, so a flagged add
+    (`git add --ignore-removal <path>`) reads as the path `--ignore-removal`
+    and the REAL pathspec goes unseen by the ownership assertions below —
+    a guard that reviews as an alarm and cannot see the thing it guards.
+    This is not hypothetical: #4549 added `git add --ignore-removal
+    site/assets/{css,js}` to press-publish.yml and the sibling guard in
+    tests/test_press_properties.py went red with "extra item
+    '--ignore-removal'" while the two new paths were never checked at all.
+    The skip-the-flags form is the house form (tests/test_press_workflow.py).
+
+    Both radar guards read through this one helper so the next flagged add
+    cannot fix one and leave the other blind — the partial sweep IS the bug.
+    """
+    return set(re.findall(r"^\s*git add\s+(?:--\S+\s+)*([^\s]+)", text, re.M))
+
+
 class TestCIWiring:
     def test_every_suite_is_named_in_a_pytest_run_line(self):
         text = (REPO_ROOT / ".github/ci/legacy-jobs.yml").read_text(encoding="utf-8")
@@ -2196,10 +2215,9 @@ class TestCIWiring:
         }, cone
         # Every path the commit step stages must be inside the cone, or the
         # radar would write outside its own checkout.
-        staged = set(re.findall(
-            r"^\s*git add (\S+)",
+        staged = _staged_paths(
             (REPO_ROOT / ".github/workflows/marketing-hot-tape.yml").read_text(
-                encoding="utf-8"), re.M))
+                encoding="utf-8"))
         assert all(any(p == c or p.startswith(c + "/") for c in cone) for p in staged), staged
 
     def test_the_wide_price_order_is_the_radar_alone(self):
@@ -2219,7 +2237,7 @@ class TestCIWiring:
         """Ledger law: outbox + the two hot-tape ledgers, nothing else."""
         text = (REPO_ROOT / ".github/workflows/marketing-hot-tape.yml").read_text(
             encoding="utf-8")
-        staged = set(re.findall(r"^\s*git add (\S+)", text, re.M))
+        staged = _staged_paths(text)
         assert staged == {"data/marketing/outbox",
                           "data/marketing/hot_tape_ring.jsonl",
                           "data/marketing/hot_tape_fired.jsonl"}, staged
