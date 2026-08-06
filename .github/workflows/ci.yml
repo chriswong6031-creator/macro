@@ -2638,6 +2638,16 @@ on:
       # unrun-brain-gateway
       - "tests/test_brain_gateway.py"
       # unrun-macro-panels
+      # engine/equity_factors.py was STRICTLY DARK (2026-08-06): named by no `run:` step
+      # and by no path here, so an edit to the module carrying `composite_rank` — the
+      # board TIEBREAK read by build_stock_library.py / build_site.py — could not even
+      # START ci.yml. Both halves listed on purpose (a guard the guarded change cannot
+      # trigger is not a guard): the tripwire suite AND the two files it reads.
+      - "tests/test_factor_universe_hold.py"
+      - "engine/equity_factors.py"
+      - "research/DO_NOT_REBUILD.md"
+      - "research/FACTOR_UNIVERSE_WIDENING_CHARTER.md"
+      - ".gitignore"
       - "tests/test_build_dispersion_regime.py"
       - "tests/test_build_factor_panel.py"
       - "tests/test_commodity_mtf_verdict_honesty.py"
