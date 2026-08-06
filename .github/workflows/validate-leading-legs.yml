@@ -44,6 +44,12 @@ jobs:
         # Cremers-Weinbaum call−put IV spread; reads the accruing ivspread ledger/chains ->
         # data/options_ivspread/validation_gate.json (POSITIVE-sign cross-sectional predictor).
         run: python scripts/validate_options_ivspread.py || true
+      - name: options dislocation primitives (validate_options_dislocation)
+        # Pre-registered signs (engine.options_dislocation.PREREG_SIGNS) tested as
+        # cross-sectional predictors on the NEUTRALISED values, BH-FDR across the whole
+        # primitive x horizon family -> data/options_dislocation/validation_gate.json.
+        # Stays scored=false until the panel clears 120 dates x 15 names.
+        run: python scripts/validate_options_dislocation.py || true
       - name: BTC impulse-radar leg falsifier (btc_impulse_radar_backtest)
         # re-derive each act-tier impulse leg's leak-free edge vs its pre-registered
         # floor -> data/vector/impulse_legs_gate.json. The radar reads this gate and
@@ -59,6 +65,7 @@ jobs:
                      data/index_reconstitution/validation_gate.json \
                      data/options_skew/validation_gate.json \
                      data/options_ivspread/validation_gate.json \
+                     data/options_dislocation/validation_gate.json \
                      data/vector/impulse_legs_gate.json \
                      reports/activist-ownership-validation.md \
                      reports/index-reconstitution-validation.md 2>/dev/null || true
