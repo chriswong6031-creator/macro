@@ -186,6 +186,40 @@ on:
       # flip-isolation construction still isolates exactly one leg.
       - "research/prophet_us_audit/reclaim_veto_packet.py"
       - "tests/test_us_reclaim_veto_packet.py"
+      # The two evidence files the SAME suite reads by path literal. #4652 taught
+      # tests/test_merge_on_green.py to read the reclaim-veto packet's write-up and its
+      # frozen results as a worked example, and scripts/check_ci_trigger_closure.py has
+      # failed RED on main ever since (4768a3c1574, 2026-08-05 19:58 PT) — the closure
+      # gate in the workflow-yaml job, which is the same pack as signal-contract, so
+      # every PR since inherits it. Adding the two paths is the fix the guard's own
+      # error message prescribes verbatim: the suite reads them, so an edit to either
+      # must be able to start the job that runs the suite.
+      - "research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md"
+      - "research/prophet_us_audit/reclaim_veto_packet_results_2026-08-05.json"
+      # research/-RESIDENT suites (2026-08-06). Same job, same lesson, one directory over.
+      # The packets that introduced these were fenced to files-only, so each suite was
+      # written NEXT TO its instrument under research/ instead of in tests/. Nothing in
+      # this repo runs pytest over research/ — no workflow collects that tree and no
+      # `run:` step named either file — so both were UNRUN from birth: green locally,
+      # and unable to fail a PR that broke the very instrument they pin.
+      # They were NOT untriggerable: `research/**/*.py` (added far below for the
+      # import-hygiene ratchet, an unrelated concern) already starts this workflow on
+      # any research/ .py edit. These four entries are the #3488 "both halves BY NAME"
+      # idiom anyway — exactly as reclaim_veto_packet.py directly above is named
+      # explicitly despite that same catch-all covering it — so the trigger survives if
+      # the ratchet's glob is ever narrowed to its own subject. The engine/lib modules
+      # these suites import reach this workflow through the engine/** and lib/**
+      # subtrees below. Wired into signal-contract, which already owns this family
+      # (the reclaim-veto packet directly above).
+      #   * label-grading battery (#4547): the veto-day label classifier + the ran-lane
+      #     numpy-bool trap the entry gauge is written against.
+      #   * buy_filters: the canonical reclaim-and-hold / bearish-divergence / 200-MA
+      #     bar-raiser math — the same buy-side §7 machinery
+      #     tests/test_signal_quality_no_leak.py pins one layer up.
+      - "research/prophet_us_audit/label_grading_battery.py"
+      - "research/prophet_us_audit/test_label_grading_battery.py"
+      - "research/signal_engine/buy_filters.py"
+      - "research/signal_engine/test_buy_filters.py"
       # W1d trial-budget gate: any new multiple-testing harness must register its budget.
       - "scripts/*_phase0.py"
       - "scripts/*_phase1.py"
