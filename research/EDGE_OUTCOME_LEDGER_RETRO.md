@@ -20,20 +20,29 @@ never originates a fire and never grades an outcome. Every fire is read off
 already graded. It is a *join*, and its unit of record — the edge — is the
 object CHF-R15's Phase-3 clock (2027-01-15) will be asked to judge.
 
-**The headline is a coverage result, not a finding.** One edge of 58 cleared
-the n=10 floor; its agreement rate (0.278) sits within 0.002 of its own matched
-base rate (0.280), and its effective evidence is two independent windows.
-Nothing here supports or refutes any linkage. The deliverable is that the
-record now exists and its gaps are named.
+**The headline is a coverage result, not a finding.** **No edge is measured.**
+Zero of 58 clear the floor, because no fire in this store is old enough for its
+outcome window to have closed. Nothing here supports or refutes any linkage.
+The deliverable is that the record now exists, its gaps are named, and the
+accrual clock has a defined stopping condition.
 
-**This document was corrected after adversarial review.** Its first cut
-reported that same edge at base 0.200 and lift **+0.078** — a small positive
-edge — because the control used the wrong estimator over the wrong span. Under
-a base matched to the numerator it is **−0.002**: no detectable signal either
-way. §4 carries the full restatement. Three structural defects were fixed in
-the same pass: the prospective lane could never reach a graded row at all, the
-unsigned-outcome guard covered one of four affected ledgers, and the base rate
-was latched to a stale value. Details in §3, §4 and §8.
+**This document has been corrected twice under adversarial review**, and the
+headline moved each time — worth stating plainly, because both corrections ran
+against the result:
+
+1. First cut: base 0.200, lift **+0.078** — a small positive edge. The control
+   used the wrong estimator over the wrong span.
+2. After the matched control: base 0.280, lift **−0.002** — no detectable
+   signal either way.
+3. After the settled-window gate: **no rate at all.** Every verdict feeding
+   that −0.002 sat on a link window still gaining rows; prematurely-graded
+   verdicts flipped 49% of the time against the settled answer in simulation.
+
+Five structural defects were fixed across the two rounds: the prospective lane
+could never reach a graded row; it then froze each verdict on a partial window;
+the unsigned-outcome guard covered one of four affected ledgers; the base rate
+was unmatched and latched; and the prospective fire count inflated 13× by
+re-counting its own summaries. Details in §3, §4 and §8.
 
 ## §1 Inventory
 
@@ -105,42 +114,82 @@ naming the ledger to add. `tests/test_edge_outcomes.py::TestUnsignedLedgerPinned
 
 ## §4 Per-edge scoreboard
 
-**Above the MIN_N=10 floor: 1 edge.**
+**Above the MIN_N=10 floor: 0 edges. Every edge is accruing.** No agreement
+rate prints anywhere in this retro, and that is the correct result.
 
-| Edge | n_graded | indep. blocks | agreement (H=21) | matched base | lift | Wilson CI95 | median lag |
-|---|---|---|---|---|---|---|---|
-| `confirms  engine:altdata → engine:radar` | 18 | **2** | 0.278 | 0.280 (25 sessions) | **−0.002** | [0.125, 0.509] | null |
+The reason is §4a. What the store *does* contain, as a provisional diagnostic:
 
-**Two naive reads are both wrong, in opposite directions.**
+| Edge | fires | settled verdicts | unsettled | H=21-settled | matched base | overlap w/ fires |
+|---|---|---|---|---|---|---|
+| `confirms  engine:altdata → engine:radar` | 35 | **0** | 18 | 16 | 0.280 (25 sessions) | 18 of 25 |
+
+### §4a Why nothing is measured: the link window has not closed
+
+A fire at session `t` draws its outcome from dst rows in `[t, t+5]`, and each
+of those rows is itself graded forward. So the verdict cannot be final until
+`t + 5 + max(horizon) = t + 68` sessions have elapsed. **Zero of the 18 fires
+are that old**; the newest sessions in the store are 2026-08-05 and the fires
+run 2026-06-19 → 2026-07-13.
+
+This was not a cosmetic gap. Grading a fire the moment its first dst row
+settled meant taking a median over **one** row where the settled answer takes a
+median over **six**. Measured over a 90-night simulation: 69 fires graded
+prospectively, and **34 of them (49%) carried the opposite verdict** from a
+retro over the identical settled store — agreement 0.507 against 1.000. The
+ledger now has a four-rung state ladder (`stub → partial → graded_partial →
+graded_settled`), only `graded_settled` reaches a rate, and a settled row
+supersedes the premature one it replaces.
+
+For the adjudicator: **16 of the 18** fires *are* settled at the primary
+horizon (`t + 5 + 21 = t + 26`, the point at which the H=21 verdict itself
+stops moving). The gate implemented here is the stricter all-horizon one
+(`t + 68`), as directed; `n_primary_horizon_settled` is stamped on every edge so
+relaxing the gate to the primary horizon is a one-line change with the evidence
+already on the record.
+
+### §4b The base rate, and the two wrong readings it replaced
+
+The control is retained as a diagnostic even where no rate prints, because it
+is descriptive rather than a claim. For this edge the matched base is **0.280**
+over 25 sessions, against a provisional agreement of 0.278 across the 18
+unsettled verdicts.
+
+Two naive readings of that pairing are both wrong, in opposite directions.
 
 The first: 5 agreements in 18 fires looks like a 72% disagreement — evidence
 *against* the confirms edge. It is not. Radar's own rate of moving the claimed
-way over the same stretch is essentially identical, so the apparent
-disagreement is the market window, not the linkage.
+way over the same stretch is essentially identical.
 
 The second was in this document's first cut, and it was ours: it reported the
 base as 0.200 and the lift as **+0.078**, i.e. a small positive edge. That base
-was computed with the *wrong estimator over the wrong span* — a per-session
-median (no link window) across the dst's entire history (no span match), while
-the numerator is a pooled median over `[t, t+5]` at fire dates. Recomputed with
-the numerator's own estimator over the fires' own span, the base is **0.280**
-and the lift is **−0.002**.
+used the *wrong estimator over the wrong span* — a per-session median (no link
+window) across the dst's entire history (no span match), while the numerator is
+a pooled median over `[t, t+5]` at fire dates. Recomputed with the numerator's
+own estimator over the fires' own span the base is **0.280**, putting the
+provisional lift at **−0.002**. A base rate that does not match its numerator is
+not a control; it is a second uncontrolled statistic.
 
-The corrected reading: **this edge is indistinguishable from its base rate.**
-Not confirmation, not refutation — no detectable signal either way. A base rate
-that does not match its numerator is not a control, it is a second uncontrolled
-statistic, so the ledger now recomputes it at aggregation time with the
-matching estimator and stamps `dst_base_rate_basis` to say which path produced
-it.
+And the honest third reading, which supersedes both: **even −0.002 is not a
+result yet**, because every verdict feeding it sits on an open window. It is
+recorded as a diagnostic, not a finding.
 
-Three further honesty notes on that single row, all stamped in the artifact:
+**The control overlaps the fires by construction** — 18 of its 25 evaluation
+sessions *are* fire sessions (72%). That is deliberate: a control drawn from a
+different stretch of calendar would import a different market regime and stop
+being a control. But it means the base and the numerator are not independent
+samples, so the comparison measures "did these fires beat their own window",
+not "did this edge beat an unrelated baseline".
+`dst_base_rate_sessions_overlapping_fires` carries the intersection.
+
+Three further honesty notes, all stamped in the artifact:
 
 - **Effective n is 2, not 18.** The 18 H=21-graded fires span 2026-06-19 →
   2026-07-13 (2026-07-29 is the last fire overall, but it carries no H=21
   verdict) and share a 21-session forward window; `n_independent_blocks = 2`.
-  The Wilson CI assumes independent trials, so `[0.125, 0.509]` is a nominal
-  floor on width, not a calibrated interval. Every row carries
-  `ci_basis: nominal_wilson_assumes_independent_fires` and `overlap_warning: true`.
+  The Wilson CI assumes independent trials, so any interval printed here would
+  be a nominal floor on width, not a calibrated one. Every row carries
+  `ci_basis: nominal_wilson_assumes_independent_fires`, and `overlap_warning`
+  is set whenever a rate does clear the floor on fewer blocks than the floor.
 - **The src direction is structurally constant.** `altdata` emits `direction=1`
   only (18 up-claims, 0 down-claims), so "confirms" collapses to "did radar's
   median 21d excess go up". `src_direction_degenerate: true` is stamped on each
@@ -150,10 +199,10 @@ Three further honesty notes on that single row, all stamped in the artifact:
 - **The numerator rests on 20 distinct dst sessions**, which is the one thin-ness
   check this edge passes. Others do not — see below.
 
-**Accruing (below floor — count shown, rate suppressed):** 57 edges. The eight
-with any graded data:
+**All 58 edges are accruing.** The eight with any verdict at all (all
+unsettled; `n_graded` settled is 0 for every one):
 
-| Edge | fires | n_graded | distinct dst sessions |
+| Edge | fires | unsettled verdicts | distinct dst sessions |
 |---|---|---|---|
 | `headwind  macro:rates_transmission → sector:xlb` | 24 | 7 | 12 |
 | `headwind  macro:rates_transmission → sector:xlk` | 24 | 7 | 20 |
@@ -223,11 +272,13 @@ outright rather than left available.
 
 Named plainly, in the order they bind:
 
-1. **Time.** Eight edges sit at n_graded 4–7 against a floor of 10. They clear
-   it by accruing sessions, which is what the prospective nightly ledger is for.
-2. **Independent windows, not just fires.** Even the one above-floor edge has 2
-   independent blocks. A rate worth reading needs ~10 non-overlapping 21-session
-   windows — roughly a year of accrual at current fire density.
+1. **68 sessions past the fires, then time.** Nothing can be measured until a
+   fire's window closes at `t + 68`; the leading edge has 18 verdicts waiting on
+   that clock and needs 10 *settled* ones to print a rate. Roughly a quarter
+   before the first rate is even eligible.
+2. **Independent windows, not just fires.** The leading edge's 18 verdicts sit
+   in 2 independent blocks. A rate worth reading needs ~10 non-overlapping
+   21-session windows — roughly a year of accrual at current fire density.
 3. **H=21 grading breadth on the targets.** `us_board` and `intel_hub` have 1
    and 4 sessions graded at H=21. Until targets are graded at the primary
    horizon across more sessions, both the numerators and the base rates rest on
@@ -271,8 +322,18 @@ Named plainly, in the order they bind:
   `[t, t+5]` and its longest horizon settles 63 sessions later. A latest-only
   lane wrote an ungraded stub every night and keep-first dedup then blocked the
   only run that could ever grade it: 0 graded rows over a 60-night simulation,
-  against 39 for a retro over the same store. That failure is now pinned by
-  `tests/test_edge_outcomes.py::TestNightlyAccrual`.
+  against 39 for a retro over the same store.
+- **A verdict is only final once its window closes**, and the ladder has a rung
+  for that: `stub → partial → graded_partial → graded_settled`, upward only.
+  Only `graded_settled` reaches a rate. Both failures are pinned by
+  `TestNightlyAccrual`, whose equality test compares the nightly ledger to the
+  retro fire-for-fire on a fixture where partial and full windows give
+  *opposite* verdicts — the test is red on the old two-rung shape (3/3 fires
+  disagreeing) and green on the current one.
+- **Summary rows carry a stable per-edge key.** Span-keying them let the
+  nightly lookback re-mint one every night, and the aggregator summed them all:
+  the prospective fire count read 351 against a truth of 27 in simulation. One
+  summary per edge now survives resolution, latest wins.
 - Re-running is idempotent in both lanes: a repeated retro produces a
   byte-equivalent replay, and a repeated nightly appends nothing new.
 

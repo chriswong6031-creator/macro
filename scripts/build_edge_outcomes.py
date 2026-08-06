@@ -177,8 +177,11 @@ def _print_report(mode: str, meta: dict, cov: dict, board: dict, write: dict, ga
         else:
             thin = ("  [THIN: %d distinct dst session(s)]" % e["n_distinct_dst_sessions"]
                     if e.get("thin_numerator_warning") else "")
+            uns = e.get("n_graded_unsettled") or 0
+            uns_s = (f" +{uns} unsettled (H21 settled: {e.get('n_primary_horizon_settled')})"
+                     if uns else "")
             print(f"    {e['edge_type']:<12} {e['src']} -> {e['dst']}  "
-                  f"n_fires={e['n_fires']} n_graded={e['n_graded']} "
+                  f"n_fires={e['n_fires']} n_settled={e['n_graded']}{uns_s} "
                   f"ACCRUING (rate suppressed: {e['rate_suppressed_reason']}){thin}")
     if gaps:
         print("  gaps:")

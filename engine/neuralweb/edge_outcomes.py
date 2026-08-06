@@ -1076,21 +1076,24 @@ def matched_base_up_rate(
     -0.667.  A base rate that does not match its numerator is not a control, it
     is a second uncontrolled statistic.
 
-    Returns ``(up_rate, n_sessions)`` where ``n_sessions`` counts only grid
-    sessions that yielded a median at all.
+    Returns ``(up_rate, n_sessions, evaluated_ixs)`` where ``n_sessions``
+    counts only grid sessions that yielded a median at all, and
+    ``evaluated_ixs`` are those sessions — kept so callers can report how much
+    the control overlaps the fires it is controlling for.
     """
     if dst_graded is None or len(dst_graded) == 0 or not span_ixs:
-        return None, 0
+        return None, 0, set()
     try:
         at_h = dst_graded[dst_graded["horizon"] == float(horizon)]
     except Exception:  # noqa: BLE001 - defensive
-        return None, 0
+        return None, 0, set()
     if len(at_h) == 0:
-        return None, 0
+        return None, 0, set()
 
     lo, hi = min(span_ixs), max(span_ixs)
     n_up = 0
     n_sessions = 0
+    evaluated: set[int] = set()
     for ix in range(lo, hi + 1):
         if ix < 0 or ix >= len(spine.sessions):
             continue
@@ -1108,11 +1111,12 @@ def matched_base_up_rate(
         if med is None:
             continue
         n_sessions += 1
+        evaluated.add(ix)
         if med > 0:
             n_up += 1
     if n_sessions == 0:
-        return None, 0
-    return n_up / n_sessions, n_sessions
+        return None, 0, set()
+    return n_up / n_sessions, n_sessions, evaluated
 
 
 def make_base_provider(spine: "SpineView"):
@@ -1127,7 +1131,7 @@ def make_base_provider(spine: "SpineView"):
 
     def provider(dst_subject: dict | None, span_ixs: Sequence[int]):
         if not dst_subject or not span_ixs:
-            return None, 0
+            return None, 0, set()
         key = json.dumps(dst_subject, sort_keys=True, default=str)
         if key not in cache:
             subj = Subject(
@@ -1220,6 +1224,7 @@ def _make_row(
     claimed: int | None,
     base_rate: float | None = None,
     base_rate_n: int = 0,
+    latest_session_ix: int | None = None,
 ) -> dict:
     row: dict[str, Any] = {
         "schema": SCHEMA,
@@ -1238,6 +1243,17 @@ def _make_row(
         "src_symbols": fire.get("src_symbols"),
         "src_direction_degenerate": fire.get("src_direction_degenerate"),
         "fire_session_ix": fire.get("fire_session_ix"),
+        # Can this verdict still change?  window_settled is the gate the
+        # scoreboard uses; primary_window_settled is disclosed alongside it
+        # because the H=21 verdict stops moving 42 sessions earlier than the
+        # H=63 column does.
+        "window_settled": is_window_settled(
+            fire.get("fire_session_ix"), latest_session_ix),
+        "primary_window_settled": is_window_settled(
+            fire.get("fire_session_ix"), latest_session_ix,
+            PRIMARY_SETTLE_OFFSET_SESSIONS),
+        "settle_offset_sessions": SETTLE_OFFSET_SESSIONS,
+        "latest_session_ix_at_build": latest_session_ix,
         "claimed_sign": claimed,
         # Unconditional base rate for the dst — the control the agreement rate
         # must be read against.  See dst_up_rate().
@@ -1299,6 +1315,10 @@ def build_rows(
         "reason_counts": {},
     }
 
+    # The newest session the spine knows about — the reference point for
+    # deciding whether a fire's outcome window can still change.
+    latest_ix = (len(spine.sessions) - 1) if spine is not None else None
+
     rows: list[dict] = []
     reason_counts: dict[str, int] = {}
 
@@ -1331,6 +1351,7 @@ def build_rows(
                 realized_lag=None,
                 lag_reason=None,
                 claimed=None,
+                latest_session_ix=latest_ix,
             )
             # SF-7: key stub rows by their REASON, not just "stub".  A single
             # degraded night (spine unreadable) would otherwise write a
@@ -1374,6 +1395,7 @@ def build_rows(
                 realized_lag=None,
                 lag_reason=None,
                 claimed=None,
+                latest_session_ix=latest_ix,
             )
             r["unsigned_basis"] = basis
             r["ledger_key"] = f"{edge['edge_id']}|stub|{REASON_DST_UNSIGNED}"
@@ -1397,7 +1419,7 @@ def build_rows(
         # this whenever a spine is available — the stamped value is only the
         # fallback for a spine-less read, and is span-limited by construction.
         span_ixs = [f["fire_session_ix"] for f in fires if f.get("fire_session_ix") is not None]
-        base_rate, base_rate_n = matched_base_up_rate(spine, dst_graded, span_ixs)
+        base_rate, base_rate_n, _ = matched_base_up_rate(spine, dst_graded, span_ixs)
 
         # BOUNDING (retro is "bounded" by charter): a fire whose link window
         # contains no graded dst row at any horizon carries no information
@@ -1478,6 +1500,7 @@ def build_rows(
                 claimed=claimed,
                 base_rate=base_rate,
                 base_rate_n=base_rate_n,
+                latest_session_ix=latest_ix,
             ))
 
         # Per-edge summary row for the bounded-away fires.  Emitted whenever
@@ -1496,6 +1519,7 @@ def build_rows(
                 claimed=None,
                 base_rate=base_rate,
                 base_rate_n=base_rate_n,
+                latest_session_ix=latest_ix,
             )
             fire_dates = sorted(f["fire_date"] for f in fires if f.get("fire_date"))
             span = f"{fire_dates[0]}..{fire_dates[-1]}" if fire_dates else "none"
@@ -1503,7 +1527,15 @@ def build_rows(
             summary["n_fires_no_overlap"] = n_no_overlap
             summary["n_fires_total"] = len(fires)
             summary["fire_span"] = span
-            summary["ledger_key"] = f"{edge['edge_id']}|summary|{span}"
+            # STABLE identity per edge — deliberately NOT span-keyed.
+            #
+            # Span-keying inflated the prospective fire count 17x (1,518 vs a
+            # true 90): the nightly lookback re-mints a summary every night,
+            # each night's sweep covers a slightly different span, so every one
+            # minted a fresh key and the aggregator summed all of them.  With a
+            # stable key the ledger keeps one summary per edge and
+            # resolve_ledger takes the newest — latest wins, nothing sums.
+            summary["ledger_key"] = f"{edge['edge_id']}|summary"
             summary["row_id"] = _canonical_hash(summary)
             edge_rows.append(summary)
 
@@ -1547,20 +1579,58 @@ def _ledger_key(row: dict) -> str:
 
 
 #: Monotonic observation states.  A row may only ever move UP this ladder.
-STATE_STUB = 0        # no outcome data at all (bounded away, unresolved, absent)
-STATE_PARTIAL = 1     # some horizon has an outcome, but no primary-horizon verdict
-STATE_GRADED = 2      # primary-horizon agreement resolved
+STATE_STUB = 0             # no outcome data at all (bounded away, unresolved, absent)
+STATE_PARTIAL = 1          # some horizon has an outcome, no primary-horizon verdict
+STATE_GRADED_PARTIAL = 2   # primary verdict, but the link window is still filling
+STATE_GRADED_SETTLED = 3   # primary verdict on a fully closed link window
+
+#: Back-compat alias.  Prefer the explicit rungs.
+STATE_GRADED = STATE_GRADED_PARTIAL
+
+#: Sessions after a fire before its link window can no longer gain a row that
+#: changes any graded horizon: the window itself (LINK_WINDOW_SESSIONS) plus the
+#: longest horizon those rows are graded at.
+SETTLE_OFFSET_SESSIONS: int = LINK_WINDOW_SESSIONS + max(OUTCOME_HORIZONS)
+
+#: The same offset for the PRIMARY horizon only — when the H=21 verdict (the one
+#: the agreement rate is computed on) stops moving.  Disclosed, not used as the
+#: gate; SETTLE_OFFSET_SESSIONS is the gate.
+PRIMARY_SETTLE_OFFSET_SESSIONS: int = LINK_WINDOW_SESSIONS + PRIMARY_HORIZON
+
+
+def is_window_settled(fire_session_ix: int | None, latest_session_ix: int | None,
+                      offset: int = SETTLE_OFFSET_SESSIONS) -> bool:
+    """Can this fire's outcome window still change?
+
+    A fire at t draws its outcomes from dst rows in ``[t, t+LINK_WINDOW]``, and
+    each of those rows is itself graded forward.  So the verdict is only final
+    once ``t + LINK_WINDOW + max(horizon)`` is in the past.
+    """
+    if fire_session_ix is None or latest_session_ix is None:
+        return False
+    return (int(fire_session_ix) + offset) <= int(latest_session_ix)
 
 
 def observation_state(row: dict) -> int:
-    """Where this row sits on the accruing -> graded ladder.
+    """Where this row sits on the accruing -> settled ladder.
 
-    The prospective lane necessarily writes a fire before its outcomes exist,
-    so the ledger must be able to record the SAME fire again once it settles.
-    Ranking the states makes that upgrade expressible and one-directional.
+    THE PARTIAL-WINDOW TRAP (do not collapse these two rungs):
+
+    A fire's H=21 verdict becomes computable as soon as the dst row at session
+    t settles — 21 sessions later.  But the link window ``[t, t+5]`` keeps
+    ACQUIRING rows until t+26, and each new row moves the pooled median.  So an
+    early verdict is a median over one dst row where the final verdict is a
+    median over six.  Measured on a 90-night simulation: 69 fires graded
+    prospectively, and 34 of them (49%) carried the OPPOSITE verdict from the
+    retro over the identical settled store — agreement 0.507 against 1.000.
+
+    A two-rung ladder (stub -> graded) froze that early wrong answer forever,
+    because the dedup skips any row whose state is not strictly higher.  The
+    fix is a rung for "graded, but the window is still filling", so the fuller
+    re-grade can still supersede it.
     """
     if row.get("graded"):
-        return STATE_GRADED
+        return STATE_GRADED_SETTLED if row.get("window_settled") else STATE_GRADED_PARTIAL
     outcomes = row.get("outcomes") or {}
     for obs in outcomes.values():
         if isinstance(obs, dict) and obs.get("dst_outcome") is not None:
@@ -1588,7 +1658,16 @@ def resolve_ledger(rows: Sequence[dict]) -> list[dict]:
         new_rank, cur_rank = observation_state(r), observation_state(cur)
         if new_rank > cur_rank:
             best[key] = r
-        elif new_rank == cur_rank and str(r.get("produced_at") or "") > str(cur.get("produced_at") or ""):
+        elif new_rank == cur_rank and (
+            str(r.get("produced_at") or "") >= str(cur.get("produced_at") or "")
+        ):
+            # NOTE the >=.  produced_at has second resolution, so several runs
+            # inside the same second carry identical timestamps; a strict > then
+            # keeps the FIRST row and "latest wins" silently becomes "first
+            # wins".  This is invisible in production (nightly runs are a day
+            # apart) and immediate in a simulation loop — it made a 25-night
+            # fire tally read 9 instead of 27.  Rows arrive in file order, so on
+            # a tie the later-encountered row is the later write.
             best[key] = r
     return list(best.values())
 
@@ -1636,7 +1715,13 @@ def append_rows(path: Path, rows: Iterable[dict]) -> dict:
             continue
         state = observation_state(r)
         prior = best_state.get(key)
-        if prior is not None and state <= prior:
+        # A summary row is a running TALLY, not an observation on the state
+        # ladder: its content legitimately changes every night while its state
+        # stays STUB.  Gate it on content instead, and let resolve_ledger take
+        # the newest.  Without this the tally could never be corrected; with
+        # span-keying instead, every night's tally was counted again.
+        is_tally = r.get("row_kind") == "edge_summary"
+        if prior is not None and not is_tally and state <= prior:
             n_dupe_key += 1
             continue
         if prior is not None:
@@ -1727,9 +1812,12 @@ def aggregate(rows: Sequence[dict], *, min_n: int = MIN_N, base_provider=None) -
             "edge_source": r.get("edge_source"),
             "n_fires": 0,
             "n_graded": 0,
+            "n_graded_unsettled": 0,
+            "n_primary_settled": 0,
             "n_agree": 0,
             "lags": [],
             "graded_session_ix": [],
+            "verdict_session_ix": [],
             "claimed_signs": [],
             "dst_sessions": set(),
             "base_rate": None,
@@ -1761,14 +1849,40 @@ def aggregate(rows: Sequence[dict], *, min_n: int = MIN_N, base_provider=None) -
         agree = prim.get("agree")
         if agree is None:
             continue
+
+        # Every primary-horizon verdict, settled or not, defines the calendar
+        # the CONTROL is drawn from — the base rate is descriptive, so scoping
+        # it to settled verdicts only would leave an edge with no control at
+        # all rather than a control that is merely provisional.
+        six_any = r.get("fire_session_ix")
+        if six_any is not None:
+            slot["verdict_session_ix"].append(int(six_any))
+        # The claimed sign is what orients the control (an edge claiming DOWN
+        # is scored against 1-up_rate), so it belongs to the descriptive layer
+        # too — otherwise an all-unsettled edge gets a control it cannot point.
+        if r.get("claimed_sign") is not None:
+            slot["claimed_signs"].append(int(r["claimed_sign"]))
+
+        # SETTLED verdicts are final and are the only ones a RATE may be built
+        # from.  A verdict whose link window is still filling can still flip —
+        # measured at 49% disagreement against the settled retro — so it counts
+        # as accruing, is disclosed, and never reaches agreement_rate.
+        if not r.get("window_settled"):
+            slot["n_graded_unsettled"] += 1
+            if r.get("primary_window_settled"):
+                slot["n_primary_settled"] += 1
+            for s in (prim.get("dst_sessions") or []):
+                slot["dst_sessions"].add(str(s))
+            continue
+
         slot["n_graded"] += 1
+        slot["n_primary_settled"] += 1
         if agree:
             slot["n_agree"] += 1
         six = r.get("fire_session_ix")
         if six is not None:
             slot["graded_session_ix"].append(int(six))
-        if r.get("claimed_sign") is not None:
-            slot["claimed_signs"].append(int(r["claimed_sign"]))
+        # claimed_sign is collected above, for settled and unsettled alike.
         for s in (prim.get("dst_sessions") or []):
             slot["dst_sessions"].add(str(s))
         lag = r.get("realized_lag_sessions")
@@ -1788,13 +1902,19 @@ def aggregate(rows: Sequence[dict], *, min_n: int = MIN_N, base_provider=None) -
         # under the numerator's estimator.  Never latched to a stamped value
         # when a provider is available: the span grows as the ledger accrues.
         base_basis = "row_stamped_span_limited"
+        base_overlap = None
         up = slot["base_rate"]
         base_n = slot["base_rate_n"]
         if base_provider is not None:
-            span = slot["graded_session_ix"]
-            up_r, n_r = base_provider(slot["dst_subject"], span)
+            span = slot["verdict_session_ix"] or slot["graded_session_ix"]
+            up_r, n_r, evaluated = base_provider(slot["dst_subject"], span)
             if up_r is not None:
                 up, base_n, base_basis = up_r, n_r, "matched_estimator_recomputed"
+                # NIT: control points and fire sessions come from the same
+                # stretch of calendar by construction, so they overlap heavily.
+                # Print the intersection instead of letting a reader assume
+                # the control is drawn from independent sessions.
+                base_overlap = len(evaluated & {int(i) for i in span})
 
         # Fire-weighted null, NOT the modal sign.  An edge whose fires carry
         # mixed claimed signs is not testing one hypothesis n times; the null a
@@ -1819,6 +1939,15 @@ def aggregate(rows: Sequence[dict], *, min_n: int = MIN_N, base_provider=None) -
             "dst_base_rate_matched": base_matched,
             "dst_base_rate_n_sessions": base_n,
             "dst_base_rate_basis": base_basis,
+            # How many of the control's evaluation points ARE fire sessions.
+            # High overlap is honest by construction — the control is
+            # deliberately drawn from the same calendar stretch — but it must
+            # be visible, not inferred.
+            "dst_base_rate_sessions_overlapping_fires": base_overlap,
+            # Settledness split: only settled verdicts reach agreement_rate.
+            "n_graded_unsettled": slot["n_graded_unsettled"],
+            "n_primary_horizon_settled": slot["n_primary_settled"],
+            "settle_offset_sessions": SETTLE_OFFSET_SESSIONS,
             "n_fires_claiming_up": n_pos,
             "n_fires_claiming_down": n_neg,
             "agreement_lift_vs_base": lift,
@@ -1857,7 +1986,9 @@ def aggregate(rows: Sequence[dict], *, min_n: int = MIN_N, base_provider=None) -
             "display_only": True,
         })
 
-    out.sort(key=lambda r: (-r["n_graded"], str(r["edge_id"])))
+    # Settled verdicts first, then edges carrying the most unsettled evidence —
+    # otherwise a store whose fires are all young sorts by nothing at all.
+    out.sort(key=lambda r: (-r["n_graded"], -r["n_graded_unsettled"], str(r["edge_id"])))
     n_measured = sum(1 for r in out if r["state"] == "measured")
     return {
         "schema": "neuralweb.edge_outcomes_scoreboard.v1",

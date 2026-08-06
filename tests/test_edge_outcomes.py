@@ -77,7 +77,20 @@ from scripts import build_edge_outcomes as runner  # noqa: E402
 # Fixture builders
 # ---------------------------------------------------------------------------
 
-_SESSIONS = [f"2026-06-{d:02d}" for d in range(1, 31)]
+def _weekdays(n: int, start=(2026, 1, 5)) -> list[str]:
+    import datetime as _dt
+    d = _dt.date(*start)
+    out: list[str] = []
+    while len(out) < n:
+        if d.weekday() < 5:
+            out.append(d.isoformat())
+        d += _dt.timedelta(days=1)
+    return out
+
+
+#: Long enough that a fire early in the list can fully settle
+#: (SETTLE_OFFSET_SESSIONS = 68) with room to spare.
+_SESSIONS = _weekdays(260)
 
 _SPINE_COLS = [
     "signal_id", "engine", "family", "ledger", "as_of", "symbol", "scope_type",
@@ -118,8 +131,25 @@ def _spine_row(
     }
 
 
-def _write_spine(nw: Path, rows: list[dict]) -> None:
+def _filler_rows(upto_ix: int) -> list[dict]:
+    """One inert row per session so the spine's session grid is DENSE.
+
+    Two things depend on this. ``spine.sessions`` is the sorted unique as_of,
+    so a sparse fixture silently renumbers every index — ``spine.sessions[10]``
+    stops being ``_SESSIONS[10]`` and window/settle arithmetic quietly measures
+    the wrong sessions. And settledness needs real sessions to elapse after a
+    fire, not just a far-away date.  The filler engine is never a src or dst.
+    """
+    return [
+        _spine_row(engine="filler_eng", as_of=d, symbol="ZZZ")
+        for d in _SESSIONS[:upto_ix + 1]
+    ]
+
+
+def _write_spine(nw: Path, rows: list[dict], *, dense_upto: int | None = None) -> None:
     nw.mkdir(parents=True, exist_ok=True)
+    if dense_upto is not None:
+        rows = rows + _filler_rows(dense_upto)
     df = pd.DataFrame(rows, columns=_SPINE_COLS)
     df.to_parquet(nw / "spine_index.parquet", index=False)
 
@@ -161,8 +191,11 @@ def _simple_world(
     probe exists to catch.
     """
     rows: list[dict] = []
+    last = 0
     for i in range(n_fires):
-        day = _SESSIONS[i * fire_stride]
+        ix = i * fire_stride
+        last = ix
+        day = _SESSIONS[ix]
         rows.append(_spine_row(engine="src_eng", as_of=day, direction=src_direction))
         rows.append(_spine_row(
             engine="dst_eng", as_of=day, horizon=21.0,
@@ -172,7 +205,9 @@ def _simple_world(
             engine="dst_eng", as_of=day, horizon=5.0,
             outcome_excess=-dst_outcome, ledger=dst_ledger,
         ))
-    _write_spine(nw, rows)
+    # Carry the grid far enough past the last fire that every verdict settles;
+    # otherwise the scoreboard correctly reports them all as still accruing.
+    _write_spine(nw, rows, dense_upto=last + eo.SETTLE_OFFSET_SESSIONS)
     _write_graph(nw, [_edge("engine:src_eng", "engine:dst_eng", edge_type)])
 
 
@@ -676,20 +711,20 @@ class TestBaseRateControl:
         for i in range(15, 30):
             rows_spine.append(_spine_row(engine="dst_eng", as_of=_SESSIONS[i],
                                          horizon=21.0, outcome_excess=-0.05))
-        _write_spine(nw, rows_spine)
+        _write_spine(nw, rows_spine, dense_upto=5 + eo.SETTLE_OFFSET_SESSIONS)
         _write_graph(nw, [_edge("engine:src_eng", "engine:dst_eng")])
         spine, _ = eo.load_spine(nw, [])
         dst = eo._graded_rows(spine.rows_for(eo.resolve_subject("engine:dst_eng")))
 
         span = [spine.session_index(_SESSIONS[i]) for i in range(6)]
-        up_matched, n_matched = eo.matched_base_up_rate(spine, dst, span)
+        up_matched, n_matched, _ = eo.matched_base_up_rate(spine, dst, span)
         assert up_matched == pytest.approx(1.0), \
             "inside the fire span the dst is up on every session"
         assert n_matched == 6
 
         # The whole-history span is the unmatched comparison the fix removes.
         whole = list(range(len(spine.sessions)))
-        up_whole, _ = eo.matched_base_up_rate(spine, dst, whole)
+        up_whole, _, _ = eo.matched_base_up_rate(spine, dst, whole)
         assert up_whole < up_matched, \
             "an unspanned base imports sessions the numerator never saw"
 
@@ -748,7 +783,7 @@ class TestFireWeightedNull:
                                          horizon=21.0, outcome_excess=0.05))
             rows_spine.append(_spine_row(engine="dst_eng", as_of=_SESSIONS[i],
                                          horizon=5.0, outcome_excess=-0.05))
-        _write_spine(nw, rows_spine)
+        _write_spine(nw, rows_spine, dense_upto=11 + eo.SETTLE_OFFSET_SESSIONS)
         _write_graph(nw, [_edge("engine:src_eng", "engine:dst_eng")])
         rows, _, _ = _build(nw)
         spine, _ = eo.load_spine(nw, [])
@@ -817,8 +852,11 @@ class TestLaneSeparation:
         # could never record a graded row at all (B1).
         written = eo.read_ledger(nw / runner.PROSPECTIVE_LEDGER)
         fire_dates = {r["fire_date"] for r in written if r.get("fire_date")}
-        assert fire_dates == set(_SESSIONS[:4]), \
-            f"expected the whole lookback window, got {sorted(fire_dates)}"
+        since, until = runner._nightly_window(nw)
+        in_window = {d for d in _SESSIONS[:4] if since <= d <= until}
+        assert fire_dates == in_window, \
+            f"expected exactly the fires inside [{since}, {until}], got {sorted(fire_dates)}"
+        assert since < until, "the sweep must span a lookback, not a single session"
 
     def test_nightly_lane_ok_helper(self):
         assert runner.nightly_lane_ok({"COLLECT_LANE": "nightly"}) is True
@@ -908,27 +946,181 @@ class TestNightlyAccrual:
         _write_spine(nw, rows)
         _write_graph(nw, [_edge("engine:src_eng", "engine:dst_eng")])
 
-    def test_multi_night_run_reaches_a_graded_row(self, tmp_path, monkeypatch):
-        """Simulate consecutive nights on a growing spine; grading must happen.
+    # ---- fixture whose link window CHANGES the verdict -------------------
+    #
+    # The whole point of the settled rung is that a median over 1 dst row can
+    # differ from the median over the full 6-row window.  A fixture that writes
+    # the same outcome everywhere cannot show that — 1-row and 6-row medians are
+    # identical by construction, so the test would pass on broken code.  Here
+    # the FIRST row in each window is positive and the later ones are strongly
+    # negative, so a premature verdict says "up" and the settled verdict says
+    # "down".
+    _N_SESSIONS = 130
+    _FIRE_SESSIONS = (10, 30, 50)
 
-        This is the regression the lookback exists for: with since==until==latest
-        every night wrote an ungraded stub and keep-first dedup then blocked the
-        only run that could ever grade it — 0 graded rows, forever.
+    def _varying_spine(self, nw: Path, n_visible: int) -> list[str]:
+        """Spine truncated to the first n_visible sessions (simulates a night).
+
+        The grid is DENSE (filler rows on every visible session) so session
+        indices line up with ``_SESSIONS`` and settledness measures real
+        elapsed sessions.
+        """
+        rows = []
+        for i, day in enumerate(_SESSIONS[:n_visible]):
+            if i in self._FIRE_SESSIONS:
+                rows.append(_spine_row(engine="src_eng", as_of=day, direction=1))
+            # dst rows: at each fire session +0 strongly positive, +1..+5 negative
+            for f in self._FIRE_SESSIONS:
+                if i == f:
+                    val = 0.09
+                elif f < i <= f + eo.LINK_WINDOW_SESSIONS:
+                    val = -0.06
+                else:
+                    continue
+                rows.append(_spine_row(engine="dst_eng", as_of=day,
+                                       horizon=21.0, outcome_excess=val))
+                rows.append(_spine_row(engine="dst_eng", as_of=day,
+                                       horizon=5.0, outcome_excess=-val))
+        _write_spine(nw, rows, dense_upto=n_visible - 1)
+        _write_graph(nw, [_edge("engine:src_eng", "engine:dst_eng")])
+        return _SESSIONS[:n_visible]
+
+    def test_fixture_can_see_the_failure(self, tmp_path):
+        """Guard the guard: partial and full windows must disagree here.
+
+        If this assertion ever fails the equality test below is vacuous.
+        """
+        nw = tmp_path / "data" / "neuralweb"
+        self._varying_spine(nw, self._N_SESSIONS)
+        spine, _ = eo.load_spine(nw, [])
+        dst = eo._graded_rows(spine.rows_for(eo.resolve_subject("engine:dst_eng")))
+        at21 = dst[dst["horizon"] == 21.0]
+        f = self._FIRE_SESSIONS[0]
+        first_only = [float(v) for v in
+                      at21[at21["as_of"] == spine.sessions[f]]["outcome_excess"]]
+        full = [float(v) for v in
+                at21[at21["as_of"].isin(spine.sessions[f:f + eo.LINK_WINDOW_SESSIONS + 1])]
+                ["outcome_excess"]]
+        assert eo._median(first_only) > 0 > eo._median(full), (
+            "fixture must make a 1-row window and a full window give OPPOSITE "
+            "verdicts, or the equality test cannot detect a premature freeze"
+        )
+
+    def test_prospective_converges_to_retro_verdict_per_fire(self, tmp_path, monkeypatch):
+        """Fire-for-fire equality between the nightly ledger and the retro.
+
+        The regression: a verdict was frozen at STATE_GRADED the moment the dst
+        row at t settled, while the link window kept filling to t+26. Measured
+        over 90 nights: 69 fires graded prospectively, 34 (49%) carrying the
+        OPPOSITE verdict from the retro over the identical settled store.
         """
         nw = tmp_path / "data" / "neuralweb"
         monkeypatch.setenv(runner.NIGHTLY_LANE_ENV, "nightly")
         path = nw / runner.PROSPECTIVE_LEDGER
 
-        for night in range(4, 16):
-            # the store advances one session per night; outcomes lag by 2
-            self._grow_spine(nw, n_sessions=night, grade_through=night - 3)
-            rc = runner.main(["--nightly", "--data-root", str(nw)])
-            assert rc == 0
+        # Run the lane every night as the store grows one session at a time.
+        for n_visible in range(self._FIRE_SESSIONS[0] + 1, self._N_SESSIONS + 1):
+            self._varying_spine(nw, n_visible)
+            assert runner.main(["--nightly", "--data-root", str(nw)]) == 0
 
-        settled = eo.resolve_ledger(eo.read_ledger(path))
-        n_graded = sum(1 for r in settled if r.get("graded"))
-        assert n_graded > 0, \
-            "after H+ nights the prospective ledger must hold graded fires, not only stubs"
+        prospective = eo.resolve_ledger(eo.read_ledger(path))
+
+        # The retro over the same fully-settled store is ground truth.
+        self._varying_spine(nw, self._N_SESSIONS)
+        retro_rows, _, _ = _build(nw)
+
+        def verdicts(rows):
+            return {
+                r["fire_date"]: r["outcomes"][str(eo.PRIMARY_HORIZON)]["agree"]
+                for r in rows
+                if r.get("fire_date") and r.get("graded")
+                and (r["outcomes"].get(str(eo.PRIMARY_HORIZON)) or {}).get("agree") is not None
+            }
+
+        p_v, r_v = verdicts(prospective), verdicts(retro_rows)
+        assert r_v, "retro must produce verdicts, or the comparison is empty"
+        shared = set(p_v) & set(r_v)
+        assert shared, "the prospective lane must reach at least one graded fire"
+        mismatched = {d: (p_v[d], r_v[d]) for d in shared if p_v[d] != r_v[d]}
+        assert not mismatched, (
+            f"prospective verdicts disagree with the settled retro on "
+            f"{len(mismatched)}/{len(shared)} fires: {mismatched}"
+        )
+
+    def test_settled_rows_carry_the_settled_flag(self, tmp_path):
+        nw = tmp_path / "data" / "neuralweb"
+        self._varying_spine(nw, self._N_SESSIONS)
+        rows, _, _ = _build(nw)
+        graded = [r for r in rows if r.get("graded")]
+        assert graded and all(r["window_settled"] for r in graded), \
+            "on a store this far past the fires every verdict must be settled"
+        assert eo.observation_state(graded[0]) == eo.STATE_GRADED_SETTLED
+
+    def test_unsettled_verdict_never_reaches_the_rate(self, tmp_path):
+        """A graded-but-unsettled fire counts as accruing, never as a rate."""
+        nw = tmp_path / "data" / "neuralweb"
+        self._varying_spine(nw, self._FIRE_SESSIONS[0] + eo.PRIMARY_HORIZON + 3)
+        rows, _, _ = _build(nw)
+        board = eo.aggregate(rows)
+        e = board["edges"][0]
+        assert e["n_graded"] == 0, "an unsettled verdict must not count toward the rate"
+        assert e["agreement_rate"] is None
+        assert e["n_graded_unsettled"] >= 1, "and it must still be disclosed"
+
+    def test_settled_supersedes_a_premature_verdict(self, tmp_path):
+        nw = tmp_path / "data" / "neuralweb"
+        self._varying_spine(nw, self._N_SESSIONS)
+        rows, _, _ = _build(nw)
+        fire = next(r for r in rows if r.get("graded"))
+        premature = json.loads(json.dumps(fire))
+        premature["window_settled"] = False
+        premature["row_id"] = "premature"
+        path = nw / runner.PROSPECTIVE_LEDGER
+        eo.append_rows(path, [premature])
+        stats = eo.append_rows(path, [fire])
+        assert stats["n_appended"] == 1 and stats["n_superseded"] == 1, \
+            "a settled verdict must supersede the premature one"
+        # ...and never the reverse
+        back = eo.append_rows(path, [premature])
+        assert back["n_appended"] == 0
+
+    def test_prospective_n_fires_equals_truth(self, tmp_path, monkeypatch):
+        """NEW-2: the nightly lookback must not re-count its own summaries.
+
+        Span-keyed summaries were re-minted every night and then SUMMED by the
+        aggregator, inflating the prospective fire count 17x (1,518 against a
+        true 90). A stable per-edge key plus latest-wins resolution fixes it.
+        """
+        nw = tmp_path / "data" / "neuralweb"
+        monkeypatch.setenv(runner.NIGHTLY_LANE_ENV, "nightly")
+        path = nw / runner.PROSPECTIVE_LEDGER
+
+        n_nights = 25
+        # src fires every session; dst is graded on none, so EVERY fire lands
+        # in the summary tally — the exact shape that inflated.
+        for n_visible in range(3, 3 + n_nights):
+            rows = [_spine_row(engine="src_eng", as_of=d)
+                    for d in _SESSIONS[:n_visible]]
+            rows.append(_spine_row(engine="dst_eng", as_of=_SESSIONS[0],
+                                   horizon=21.0, outcome_excess=0.01))
+            rows.append(_spine_row(engine="dst_eng", as_of=_SESSIONS[0],
+                                   horizon=5.0, outcome_excess=-0.01))
+            _write_spine(nw, rows, dense_upto=n_visible - 1)
+            _write_graph(nw, [_edge("engine:src_eng", "engine:dst_eng")])
+            assert runner.main(["--nightly", "--data-root", str(nw)]) == 0
+
+        truth = 3 + n_nights - 1          # src fired once per visible session
+        board = eo.aggregate(eo.read_ledger(path))
+        e = board["edges"][0]
+        assert e["n_fires"] == truth, (
+            f"prospective n_fires={e['n_fires']} against a truth of {truth} — "
+            "summaries are being counted more than once"
+        )
+
+        summaries = [r for r in eo.resolve_ledger(eo.read_ledger(path))
+                     if r.get("row_kind") == "edge_summary"]
+        assert len(summaries) <= 1, \
+            f"exactly one summary may survive resolution, found {len(summaries)}"
 
     def test_nightly_window_spans_the_lookback(self, tmp_path):
         nw = tmp_path / "data" / "neuralweb"
@@ -1006,13 +1198,74 @@ class TestUnsignedLedgerPinnedToQuery:
 
     _QUERY = Path(__file__).resolve().parent.parent / "engine" / "neuralweb" / "query.py"
 
-    def _assignment_lines(self) -> list[int]:
+    #: Every function in query.py allowed to assign an unsigned MFE to
+    #: outcome_excess, with the ledger label(s) it can produce.  A site in any
+    #: other function fails the scan — no silent skip, no vacuous pass.
+    _EXPECTED_MFE_FUNCS: dict[str, set[str]] = {
+        "adapt_track_record": {"track_record"},
+        "adapt_board": {"board_hk", "board_ca"},
+        "adapt_china_board": {"board_cn"},
+    }
+
+    @staticmethod
+    def _mfe_assignment_lines(source: str) -> list[int]:
+        """Lines assigning an MFE-derived value to ``row["outcome_excess"]``.
+
+        Matching only ``mfe_col`` by name was defeated by three shapes: an
+        inline f-string, a renamed variable, and a hardcoded column.  So the
+        scan first collects every variable bound to something mentioning
+        ``fwd_mfe``, then flags an outcome_excess assignment whose right-hand
+        side names ``fwd_mfe`` directly OR references any of those variables.
+        """
         import re
-        pat = re.compile(r'row\["outcome_excess"\]\s*=.*mfe_col')
-        return [
-            i for i, line in enumerate(self._QUERY.read_text(encoding="utf-8").splitlines(), 1)
-            if pat.search(line)
-        ]
+        lines = source.splitlines()
+        mfe_vars: set[str] = set()
+        bind = re.compile(r'^\s*(\w+)\s*=\s*.*fwd_mfe')
+        for line in lines:
+            m = bind.match(line)
+            if m:
+                mfe_vars.add(m.group(1))
+        assign = re.compile(r'row\["outcome_excess"\]\s*=\s*(.*)$')
+        hits: list[int] = []
+        for i, line in enumerate(lines, 1):
+            m = assign.search(line)
+            if not m:
+                continue
+            rhs = m.group(1)
+            if "fwd_mfe" in rhs or any(re.search(rf'\b{re.escape(v)}\b', rhs) for v in mfe_vars):
+                hits.append(i)
+        return hits
+
+    def _assignment_lines(self) -> list[int]:
+        return self._mfe_assignment_lines(self._QUERY.read_text(encoding="utf-8"))
+
+    def test_scan_catches_the_shapes_that_defeated_the_old_regex(self):
+        """The detector must see all five shapes, not just the named variable."""
+        src = '\n'.join([
+            'def adapt_a(r, h):',
+            '    mfe_col = f"fwd_mfe_{h}"',
+            '    row["outcome_excess"] = _safe_float(r.get(mfe_col))',   # named var
+            'def adapt_b(r, h):',
+            '    row["outcome_excess"] = _safe_float(r.get(f"fwd_mfe_{h}"))',  # inline
+            'def adapt_c(r, h):',
+            '    excursion = f"fwd_mfe_{h}"',
+            '    row["outcome_excess"] = _safe_float(r.get(excursion))',  # renamed
+            'def adapt_d(r):',
+            '    row["outcome_excess"] = _safe_float(r.get("fwd_mfe_21"))',  # hardcoded
+            'def adapt_e(r):',
+            '    row["outcome_excess"] = _safe_float(r.get("excess"))',   # NOT an MFE
+        ])
+        found = self._mfe_assignment_lines(src)
+        assert len(found) == 4, f"expected 4 MFE shapes detected, got {len(found)} at {found}"
+
+    def _enclosing_def(self, line_no: int) -> str | None:
+        import re
+        lines = self._QUERY.read_text(encoding="utf-8").splitlines()
+        for j in range(line_no - 1, 0, -1):
+            m = re.match(r'def (\w+)', lines[j - 1])
+            if m:
+                return m.group(1)
+        return None
 
     def test_all_known_mfe_ledgers_are_listed(self):
         for ledger in ("track_record", "board_hk", "board_ca", "board_cn"):
@@ -1031,23 +1284,35 @@ class TestUnsignedLedgerPinnedToQuery:
             "ledger label to UNSIGNED_OUTCOME_LEDGERS and re-pin this count."
         )
 
-    def test_ledger_labels_near_each_site_are_covered(self):
-        """Every literal ledger label in an MFE-assigning block must be listed."""
-        import re
-        lines = self._QUERY.read_text(encoding="utf-8").splitlines()
-        lit = re.compile(r'row\["ledger"\]\s*=\s*"([a-z_]+)"')
+    def test_every_mfe_site_maps_to_a_covered_ledger(self):
+        """No site may be skipped — an unresolvable one fails loudly.
+
+        The previous version resolved the ledger by scanning backwards for a
+        string literal and silently passed when it found none. query.py:657
+        assigns its ledger through a variable, so that site was never actually
+        checked: the test passed while covering 2 of 3 sites.
+        """
         for site in self._assignment_lines():
-            found = None
-            for j in range(site - 1, max(0, site - 60), -1):
-                m = lit.search(lines[j - 1])
-                if m:
-                    found = m.group(1)
-                    break
-            if found is not None:
-                assert found in eo.UNSIGNED_OUTCOME_LEDGERS, (
-                    f"query.py:{site} assigns an unsigned MFE for ledger {found!r}, "
-                    "which is not in UNSIGNED_OUTCOME_LEDGERS"
+            fn = self._enclosing_def(site)
+            assert fn in self._EXPECTED_MFE_FUNCS, (
+                f"query.py:{site} assigns an unsigned MFE inside {fn!r}, which is not "
+                "a known MFE-producing function. Either it is a new unsigned ledger "
+                "(add its label to UNSIGNED_OUTCOME_LEDGERS and declare it in "
+                "_EXPECTED_MFE_FUNCS) or the assignment is a mistake."
+            )
+            for ledger in self._EXPECTED_MFE_FUNCS[fn]:
+                assert ledger in eo.UNSIGNED_OUTCOME_LEDGERS, (
+                    f"query.py:{site} ({fn}) produces ledger {ledger!r}, which is "
+                    "not in UNSIGNED_OUTCOME_LEDGERS"
                 )
+
+    def test_all_expected_functions_are_still_present(self):
+        """Guards the reverse drift: a function renamed away from the map."""
+        found = {self._enclosing_def(s) for s in self._assignment_lines()}
+        assert found == set(self._EXPECTED_MFE_FUNCS), (
+            f"MFE-assigning functions in query.py are {sorted(found)}, expected "
+            f"{sorted(self._EXPECTED_MFE_FUNCS)}"
+        )
 
     def test_board_ledgers_are_refused_as_dst(self, tmp_path):
         nw = tmp_path / "data" / "neuralweb"
@@ -1209,7 +1474,7 @@ class TestThinNumerator:
                                      horizon=21.0, outcome_excess=0.05))
         rows_spine.append(_spine_row(engine="dst_eng", as_of=_SESSIONS[2],
                                      horizon=5.0, outcome_excess=-0.05))
-        _write_spine(nw, rows_spine)
+        _write_spine(nw, rows_spine, dense_upto=4 + eo.SETTLE_OFFSET_SESSIONS)
         _write_graph(nw, [_edge("engine:src_eng", "engine:dst_eng")])
         rows, _, _ = _build(nw)
         board = eo.aggregate(rows)
