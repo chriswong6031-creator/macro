@@ -2495,6 +2495,7 @@ on:
       - "tests/test_board_contradictions.py"
       - "tests/test_bottom_ledger.py"
       - "tests/test_china_board_rank.py"
+      - "tests/test_china_continuation_watch.py"
       - "tests/test_china_prophet_shadow.py"
       - "tests/test_cn_board_unified_grid.py"
       - "tests/test_cn_prophet_candidates_schema.py"

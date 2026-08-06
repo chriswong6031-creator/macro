@@ -48,27 +48,92 @@ def _row(ticker: str, reason: str, *, eligible: bool = False, **extra) -> dict:
             "signal": {"eligible": eligible, "reason": reason}, **extra}
 
 
-#: The verdict text the production gate actually emits for the §2.7 block —
-#: engine/signal_gate.py:144 wraps engine/signal_quality.py:220.
-BLOCKED = "buy blocked by filter: counter-trend, no 200-reclaim/hold"
+#: The verdict text the production gate actually emits for the §2.7 block.
+#: Composed from the two production constants rather than hand-copied: the
+#: hand-copy is what rotted the pin below, and a fixture that quietly stops
+#: matching production would leave every candidate-rule test here green on rows
+#: no gate can emit.  The literal itself is pinned once, in
+#: :data:`_CT_BLOCK_CONSTANTS`.
+BLOCKED = signal_gate._BLOCKED_PREFIX + signal_quality.CT_BOTH_FAIL  # noqa: SLF001
 
 
 # ---------------------------------------------------------------------------
 # 0. the reason strings are the ENGINE's, not this module's invention
 # ---------------------------------------------------------------------------
 
+#: The §2.7 block family, read off the constants that OWN each string today.
+#: Named attributes — not ``co_consts`` — because the literals were hoisted out of
+#: ``_buy_filter`` into module scope by the 2026-08-04 reason-string correction
+#: (CN_RECLAIM_HOLD_AUDIT.md §10/§11), which also split the single legacy string
+#: into three.  A ``co_consts`` scan silently stopped seeing any of them:
+#: ``_buy_filter`` now delegates to ``_confirm_legs`` and its own consts tuple holds
+#: nothing but a docstring, so the old pin passed judgement on an empty list.
+#: A missing attribute here is an AttributeError at collection — which is the point.
+_CT_BLOCK_CONSTANTS = {
+    "CT_BOTH_FAIL": "counter-trend, no 200-reclaim/hold",
+    "CT_RECLAIM_FAIL": "counter-trend, held but no 200-reclaim",
+    "CT_HOLD_FAIL": "counter-trend, reclaimed 200 but no next-bar hold",
+}
+
+
 def test_block_markers_match_the_live_buy_filter_strings():
     """If signal_quality re-words its reasons, this cohort silently empties.
 
     Pinning the real source strings makes that a red test rather than a lane
     that quietly logs nothing for months.
+
+    Two failure shapes, both red here: the constant DISAPPEARS (renamed, deleted,
+    folded away) or it is RE-WORDED.  A re-word that keeps a marker substring would
+    still fill the cohort, but it changes the ``blocked_reason`` this lane stamps
+    into the shadow ledger and the copy maps keyed on it, so it earns a look too.
     """
-    src = signal_quality._buy_filter.__code__.co_consts  # noqa: SLF001
-    literals = [c for c in src if isinstance(c, str)]
-    assert "counter-trend, no 200-reclaim/hold" in literals
-    assert "failed reclaim-and-hold" in literals
-    for text in ("counter-trend, no 200-reclaim/hold", "failed reclaim-and-hold"):
-        assert ccw.is_trend_blocked({"eligible": False, "reason": text}), text
+    for attr, text in _CT_BLOCK_CONSTANTS.items():
+        live = getattr(signal_quality, attr)
+        assert live == text, (
+            f"signal_quality.{attr} was re-worded to {live!r}. This is the §2.7 block "
+            "family engine/china_continuation_watch.BLOCK_REASON_MARKERS matches on — "
+            "re-check the markers, then update this pin."
+        )
+        assert ccw.is_trend_blocked({"eligible": False, "reason": live}), (
+            f"{attr} = {live!r} no longer matches BLOCK_REASON_MARKERS — the "
+            "continuation-watch cohort silently empties for this branch."
+        )
+
+
+def test_the_hold_only_block_stays_out_of_the_cohort():
+    """The deliberate EXCLUSION, pinned from the same side as the inclusions.
+
+    ``HOLD_FAIL`` is the reclaim_veto=False / main-branch outcome: one leg tested,
+    no reclaim anywhere in it, so it is not the §2.7 never-eligible block.  It is
+    also the string the 2026-08-04 correction moved 1,094 mislabelled blocks ONTO —
+    if a re-word ever gave it a family marker this lane would start hoovering up
+    ordinary follow-through failures under a definition that claims otherwise.
+    """
+    assert signal_quality.HOLD_FAIL == "failed next-bar hold"
+    assert not ccw.is_trend_blocked(
+        {"eligible": False, "reason": signal_quality.HOLD_FAIL}
+    ), "the hold-only block is now admitted — see engine/china_continuation_watch.py:69"
+
+
+def test_every_counter_trend_constant_is_classified_by_this_pin():
+    """Completeness, so a FOURTH branch cannot appear unnoticed.
+
+    The 2026-08-04 correction turned one block string into three.  A pin that
+    enumerates by hand goes stale the same way the last one did unless something
+    fails when the engine grows a reason it has never seen, so scan the module and
+    require every counter-trend block constant to be classified above.
+    """
+    live = {
+        name: value
+        for name, value in vars(signal_quality).items()
+        if name.isupper() and isinstance(value, str) and "counter-trend" in value
+    }
+    assert set(live) == set(_CT_BLOCK_CONSTANTS), (
+        f"signal_quality's counter-trend block constants are now {sorted(live)}; this "
+        f"pin knows {sorted(_CT_BLOCK_CONSTANTS)}. Decide whether the new/removed branch "
+        "belongs in the §2.7 never-eligible cohort, then update "
+        "engine/china_continuation_watch.BLOCK_REASON_MARKERS and this map together."
+    )
 
 
 def test_gate_verdict_for_a_blocked_buy_carries_the_family_reason():

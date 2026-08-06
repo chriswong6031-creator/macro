@@ -4769,6 +4769,14 @@ jobs:
     # 2026-08-04: the #4331-deferred prophet-board family (UNRUN_TEST_CENSUS
     # staging lane) — CN board rank engine, CN candidate producer, and the US
     # context-vector store whose TestSchemaContract is the contract §4 pin.
+    # test_china_continuation_watch.py joined 2026-08-06: the CN shadow-accrual
+    # cohort that appends to the SAME china_standout_track board store as the
+    # cn_board/cn_track suites already here, so it shares their venv. It was
+    # enumerated in NO workflow — and its buy-filter reason pin had been failing
+    # invisibly since the 2026-08-04 reason-string correction hoisted those
+    # literals out of `_buy_filter` into module constants, leaving the
+    # `co_consts` scan reading an empty tuple. A guard nothing runs is a guard
+    # that is already open: the repair and the enrolment ship together.
     if: ${{ false }}
     timeout-minutes: 5
     runs-on: ubuntu-latest
@@ -4780,7 +4788,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: pick lab runners + US/CN board surfaces — shipped picks, outcome ledgers, priority board
-        run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_china_board_rank.py tests/test_china_prophet_shadow.py tests/test_cn_board_unified_grid.py tests/test_cn_prophet_candidates_schema.py tests/test_cn_track_ledger_eras.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_shared.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_board_w3_evidence.py tests/test_us_context_vector.py -q
+        run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_china_board_rank.py tests/test_china_continuation_watch.py tests/test_china_prophet_shadow.py tests/test_cn_board_unified_grid.py tests/test_cn_prophet_candidates_schema.py tests/test_cn_track_ledger_eras.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_shared.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_board_w3_evidence.py tests/test_us_context_vector.py -q
       # Stage-analysis board + its forward ledger and session-stamp heal
       # (forward-ledger audit 2026-08-05).  test_stage_analysis.py and
       # test_weinstein_stage.py were both enumerated in NO workflow
