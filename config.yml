@@ -1350,7 +1350,15 @@ themes:
     tickers: [CF, MOS, CTVA, FMC, SMG, DE, AGCO]
   space_satellite:
     name: "Space & Satellites"
-    tickers: [IRDM, GD, LHX, RTX, HWM, BWXT]
+    # The six defense primes were the whole theme until 2026-08-05, which made the
+    # Foresight Desk structurally blind to new-space: a desk keyed on GD/LHX/RTX
+    # reads the prime contractors' supply chain, not the launch-and-constellation
+    # build-out, so the RKLB/ASTS cohort could load and re-rate without the desk
+    # holding an opinion at all. The five names below are that cohort. Legs with no
+    # coverage for a name (EDGAR language, FRED bands, revision breadth) return null
+    # for it and the theme reads on the names that do have data — no leg errors on a
+    # name it cannot see. Charter: PROPHET_US_MISSED_IGNITIONS_MASTERPLAN §W-D.2.
+    tickers: [IRDM, GD, LHX, RTX, HWM, BWXT, RKLB, ASTS, LUNR, PL, RDW]
   grid_electrification:
     name: "Grid & Electrification"
     tickers: [NEE, AEP, D, PWR, PNR, GEV, XYL, ITRI]
