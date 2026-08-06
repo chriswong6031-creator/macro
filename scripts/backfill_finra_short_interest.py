@@ -234,8 +234,7 @@ def main() -> int:
 
     cal = settlement_calendar()
     if not cal:
-        print("::error title=finra-backfill::could not read the settlement calendar",
-              flush=True)
+        print("::error title=finra-backfill::could not read the settlement calendar", flush=True)
         return 1
     wanted = [d for d in cal if date.fromisoformat(d) >= since]
     log.info("settlement calendar: %d dates (%s -> %s); %d at/after %s",
@@ -281,8 +280,7 @@ def main() -> int:
         for i, d in enumerate(todo, 1):
             df = fetch_settlement(d)
             if df.empty:
-                print(f"::warning title=finra-backfill::settlement {d} returned no rows",
-                      flush=True)
+                print(f"::warning title=finra-backfill::settlement {d} returned no rows", flush=True)
                 continue
             frames.append(df)
             got += 1

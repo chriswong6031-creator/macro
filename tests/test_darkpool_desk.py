@@ -313,12 +313,35 @@ def test_thin_ticker_excluded():
 # 4. Builder smoke test
 # ---------------------------------------------------------------------------
 def test_builder_returns_0_when_panel_missing(tmp_path, monkeypatch):
-    """Builder should return 0 (not raise) when the panel file is absent."""
-    # Monkeypatch PANEL_PATH to a non-existent file
+    """Builder should return 0 (not raise) when the panel file is absent.
+
+    BOTH panel paths must be nulled: _load_panel() reads PANEL_DEEP_PATH *and*
+    PANEL_PATH and returns their union, so nulling only the collector panel left
+    the real 322k-row deep store in play — main() ran a FULL live build and
+    overwrote the tracked site/darkpool.html, site/darkpool_eod.json and
+    data/darkpool/context/latest.json, while `result == 0` passed anyway because
+    main() also returns 0 on success (found via MM_DATA_GUARD, PR #4699).
+    Assert on the early return itself, not just the code.
+    """
     import scripts.build_darkpool_desk as bdd
+
     monkeypatch.setattr(bdd, "PANEL_PATH", tmp_path / "nonexistent.parquet")
+    monkeypatch.setattr(bdd, "PANEL_DEEP_PATH", tmp_path / "nonexistent_deep.parquet")
+    # Nothing may be rendered or emitted on the panel-missing path — every writer
+    # main() can reach is patched, so a regression records into `wrote` (asserted
+    # below) instead of escaping to the real tree.  build_context_feed runs BEFORE
+    # write_page, so leaving it live still leaked data/darkpool/context/latest.json.
+    import engine.darkpool_context as _dpc
+
+    wrote: dict = {}
+    monkeypatch.setattr(bdd, "write_page", lambda path, html, **kw: wrote.update(page=path) or path)
+    monkeypatch.setattr(bdd, "_emit_pane_json", lambda *a, **kw: wrote.update(pane=True))
+    monkeypatch.setattr(_dpc, "build_context_feed", lambda *a, **kw: wrote.update(context=True))
+
     result = bdd.main()
+
     assert result == 0
+    assert not wrote, f"panel-missing path must write nothing, wrote: {sorted(wrote)}"
 
 
 def test_builder_disabled_by_config(tmp_path, monkeypatch):
@@ -381,6 +404,7 @@ def test_nav_checks_pass_on_rendered_page(tmp_path):
 
     orig_load = lib_config.load
     orig_panel = bdd.PANEL_PATH
+    orig_deep = bdd.PANEL_DEEP_PATH
     orig_ats = bdd.ATS_DIR
     orig_yahoo = bdd.YAHOO_DIR
     orig_root = lib_config.ROOT
@@ -388,6 +412,10 @@ def test_nav_checks_pass_on_rendered_page(tmp_path):
     try:
         lib_config.load = _fake_load
         bdd.PANEL_PATH = panel_dir / "panel.parquet"
+        # _load_panel() UNIONS the deep backfill with the collector panel, so the
+        # deep store must be nulled too or this "minimal synthetic panel" silently
+        # renders the real 1,632-ticker history instead of the fixture above.
+        bdd.PANEL_DEEP_PATH = tmp_path / "nonexistent_deep.parquet"
         bdd.ATS_DIR = tmp_path / "finra_ats"   # no ATS data — should degrade gracefully
         bdd.YAHOO_DIR = tmp_path / "yahoo"      # no yahoo data — oe_share=None
         lib_config.ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -450,6 +478,7 @@ def test_nav_checks_pass_on_rendered_page(tmp_path):
     finally:
         lib_config.load = orig_load
         bdd.PANEL_PATH = orig_panel
+        bdd.PANEL_DEEP_PATH = orig_deep
         bdd.ATS_DIR = orig_ats
         bdd.YAHOO_DIR = orig_yahoo
         lib_config.ROOT = orig_root
