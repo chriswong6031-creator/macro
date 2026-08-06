@@ -90,3 +90,65 @@ def test_universe_names_reads_russell_constituents(tmp_path, monkeypatch):
     names = edgar._universe_names()
     assert names.get("BTSG") == "BrightSpring Health Services Inc"
     assert names.get("AAPL") == "Apple Inc"
+
+
+# ---------------------------------------------------------------------------
+# Accreting CIK ledger — SEC's company_tickers.json is a snapshot, not a registry.
+# A 30-day cache refresh on 2026-08-05 dropped 8 names the panel already carried
+# (AEP among them). The entityName fallback cannot catch that: it is gated on the
+# map covering <50% of the universe, and per-name dropouts never move a 98.8%
+# rate below the floor.
+# ---------------------------------------------------------------------------
+
+def _write_ledger(tmp_path: Path, pairs: dict[str, int]) -> None:
+    (tmp_path / "edgar").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "edgar" / edgar._CIK_LEDGER_NAME).write_text(
+        __import__("json").dumps({"tickers": pairs}))
+
+
+def test_ledger_recovers_a_ticker_the_sec_snapshot_dropped(tmp_path, monkeypatch):
+    monkeypatch.setattr(lib_config, "data_dir", lambda: tmp_path)
+    _write_ledger(tmp_path, {"AEP": 4904})
+    out = edgar._apply_cik_ledger({"AAPL": 320193}, ["AAPL", "AEP"])
+    assert out == {"AAPL": 320193, "AEP": 4904}
+
+
+def test_sec_mapping_wins_over_a_stale_ledger_entry(tmp_path, monkeypatch):
+    # A recycled ticker must MIGRATE to its new filer, never inherit the old CIK.
+    monkeypatch.setattr(lib_config, "data_dir", lambda: tmp_path)
+    _write_ledger(tmp_path, {"XYZ": 111})
+    out = edgar._apply_cik_ledger({"XYZ": 999}, ["XYZ"])
+    assert out["XYZ"] == 999
+
+
+def test_ledger_result_stays_universe_scoped(tmp_path, monkeypatch):
+    # The ledger remembers every ticker it has seen, but leaking a non-universe
+    # name into the map would add panel rows for names we do not track.
+    monkeypatch.setattr(lib_config, "data_dir", lambda: tmp_path)
+    _write_ledger(tmp_path, {"AEP": 4904, "DELISTED": 5})
+    out = edgar._apply_cik_ledger({"AAPL": 320193}, ["AAPL", "AEP"])
+    assert "DELISTED" not in out
+
+
+def test_ledger_accretes_new_sec_mappings(tmp_path, monkeypatch):
+    monkeypatch.setattr(lib_config, "data_dir", lambda: tmp_path)
+    _write_ledger(tmp_path, {"AEP": 4904})
+    edgar._apply_cik_ledger({"NVDA": 1045810}, ["NVDA"])
+    assert edgar._load_cik_ledger() == {"AEP": 4904, "NVDA": 1045810}
+
+
+def test_corrupt_ledger_never_blocks_the_panel(tmp_path, monkeypatch):
+    monkeypatch.setattr(lib_config, "data_dir", lambda: tmp_path)
+    (tmp_path / "edgar").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "edgar" / edgar._CIK_LEDGER_NAME).write_text("{not json")
+    assert edgar._load_cik_ledger() == {}
+    assert edgar._apply_cik_ledger({"AAPL": 320193}, ["AAPL"]) == {"AAPL": 320193}
+
+
+def test_recovery_annotation_starts_the_line(tmp_path, monkeypatch, capsys):
+    # GitHub drops an annotation that does not START the line (CI-guarded law).
+    monkeypatch.setattr(lib_config, "data_dir", lambda: tmp_path)
+    _write_ledger(tmp_path, {"AEP": 4904})
+    edgar._apply_cik_ledger({"AAPL": 320193}, ["AAPL", "AEP"])
+    hits = [ln for ln in capsys.readouterr().out.splitlines() if "cik-ledger-recovery" in ln]
+    assert hits and all(ln.startswith("::warning") for ln in hits)

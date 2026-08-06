@@ -237,28 +237,96 @@ def _load_company_tickers() -> dict | None:
     return None
 
 
+_CIK_LEDGER_NAME = "ticker_cik_ledger.json"
+
+
+def _cik_ledger_path():
+    p = config.data_dir() / "edgar" / _CIK_LEDGER_NAME
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def _load_cik_ledger() -> dict[str, int]:
+    """Accreting ticker -> CIK map (committed, unlike the gitignored SEC cache)."""
+    p = _cik_ledger_path()
+    if not p.exists():
+        return {}
+    try:
+        data = json.loads(p.read_text())
+        return {str(k): int(v) for k, v in (data.get("tickers") or {}).items()}
+    except Exception as e:  # noqa: BLE001 — a corrupt ledger must never block the panel
+        log.warning("cik ledger unreadable (%s) — ignoring", e)
+        return {}
+
+
+def _apply_cik_ledger(sec_map: dict[str, int], universe: list[str]) -> dict[str, int]:
+    """Union this run's SEC mapping with the accreting ledger, persist the union,
+    and return the UNIVERSE-SCOPED result.
+
+    WHY: SEC's company_tickers.json is a SNAPSHOT, not a registry — it silently
+    drops live filers between fetches. On 2026-08-05 a routine 30-day cache
+    refresh dropped 8 names the panel already carried, AEP (an S&P 500 utility)
+    among them, which would have deleted their entire fundamentals history on the
+    next rebuild. The existing entityName fallback cannot catch this: it is gated
+    on the map covering <50% of the universe, and a handful of per-name dropouts
+    never moves a 98.8% rate below that floor — a fallback whose trigger can never
+    reach the failure it exists for.
+
+    SEC WINS on conflict: a ticker reassigned to a different filer must MIGRATE,
+    not inherit the stale CIK, so the ledger only fills tickers the current
+    snapshot omits. Only SEC-derived mappings accrete (the name-match fallback
+    runs after this and is deliberately NOT persisted — a normalized-name guess
+    must never become permanent). Scoping the return to `universe` keeps the
+    panel's row population unchanged; the ledger itself keeps every ticker it has
+    ever seen, so a name that leaves the index still resolves later.
+    """
+    ledger = _load_cik_ledger()
+    merged = {**ledger, **sec_map}                 # SEC wins
+    if merged != ledger:
+        try:
+            _cik_ledger_path().write_text(json.dumps(
+                {"note": ("accreting ticker->CIK map; SEC company_tickers.json is a "
+                          "snapshot that drops live filers — see _apply_cik_ledger"),
+                 "tickers": {k: int(v) for k, v in sorted(merged.items())}},
+                indent=0))
+        except Exception as e:  # noqa: BLE001 — persistence is best-effort
+            log.warning("cik ledger write failed (%s)", e)
+    uni = set(universe)
+    out = {t: c for t, c in merged.items() if t in uni}
+    recovered = sorted(set(out) - set(sec_map))
+    if recovered:
+        print(f"::warning title=cik-ledger-recovery::company_tickers.json omitted "
+              f"{len(recovered)} previously-mapped tickers; recovered from the ledger: "
+              f"{', '.join(recovered[:12])}", flush=True)
+        log.warning("cik ledger recovered %d tickers absent from company_tickers.json: %s",
+                    len(recovered), recovered[:12])
+    return out
+
+
 def _ticker_cik_map(universe: list[str], fy: int) -> dict[str, int]:
-    """ticker -> CIK. Primary: SEC company_tickers.json (exact, cached). Fallback
-    when that endpoint is blocked: match the frame entityName against our universe
-    company names (normalized)."""
+    """ticker -> CIK. Primary: SEC company_tickers.json (exact, cached), unioned
+    with the accreting CIK ledger so a snapshot dropout does not delete a name's
+    history. Fallback when that endpoint is blocked: match the frame entityName
+    against our universe company names (normalized)."""
     data = _load_company_tickers()
     if data:
         sec = {row["ticker"].upper(): int(row["cik_str"]) for row in data.values()}
-        out: dict[str, int] = {}
+        sec_map: dict[str, int] = {}
         for t in universe:
             u = t.upper()
             for cand in (u, u.replace("-", "."), u.replace(".", "-"),
                          u.split("-")[0], u.split(".")[0]):
                 if cand in sec:
-                    out[t] = sec[cand]
+                    sec_map[t] = sec[cand]
                     break
+        out = _apply_cik_ledger(sec_map, universe)
         if len(out) >= 0.5 * len(universe):
             return out
         log.warning("company_tickers mapped only %d/%d — augmenting with name match",
                     len(out), len(universe))
     else:
-        out = {}
-        log.warning("company_tickers.json unavailable — using entityName fallback map")
+        out = _apply_cik_ledger({}, universe)
+        log.warning("company_tickers.json unavailable — using ledger + entityName fallback map")
 
     # name-matching fallback (or augmentation)
     base = _cfg()["base_url"]
