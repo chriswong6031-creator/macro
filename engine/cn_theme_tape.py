@@ -219,6 +219,13 @@ def _classify(row: Any) -> tuple[str, str | None, str | None]:
     lane = _s(row.get("lane"))
     status = _s(row.get("entry_status"))
     reason = _s(row.get("gate_reason"))
+    # Prefer the EXHAUSTIVE account when the store carries it (#4583 persists
+    # pipe-joined `gate_reasons` from 2026-08-05 nightlies). The singular field
+    # is first-match and re-ships the exact deception the veto audits ended:
+    # 002155.SZ read "momentum diverging" while its BINDING leg was the hold.
+    reasons_all = [
+        _s(part) for part in _s(row.get("gate_reasons")).split("|") if _s(part)
+    ] or ([reason] if reason else [])
 
     if lane == "featured":
         return "live", None, None
@@ -229,13 +236,24 @@ def _classify(row: Any) -> tuple[str, str | None, str | None]:
             return "ran", "Already ran", "已经拉升"
         return "almost", "Turn not confirmed", "转向未确认"
 
-    hit = WHY_NOT.get(reason)
-    if hit is not None:
-        return hit
-    if reason.startswith("tier T"):
+    # Map every failing leg through the bucket table, keep the first two DISTINCT
+    # plain-word readings (glance budget), joined with the house middot.
+    mapped = [WHY_NOT[r] for r in reasons_all if r in WHY_NOT]
+    if mapped:
+        seen: list[tuple[str, str | None, str | None]] = []
+        for m in mapped:
+            if m not in seen:
+                seen.append(m)
+        if len(seen) == 1:
+            return seen[0]
+        bucket = seen[0][0]
+        en = " · ".join(m[1] for m in seen[:2] if m[1])
+        zh = " · ".join(m[2] for m in seen[:2] if m[2])
+        return bucket, (en or None), (zh or None)
+    if any(r.startswith("tier T") for r in reasons_all):
         # A bare tier stamp is a scoring note, not a rejection.
         return "quiet", None, None
-    if reason:
+    if reasons_all:
         # Unknown code: generic chip, raw text demoted to the hover by the template.
         return "blocked", None, None
     return "quiet", None, None

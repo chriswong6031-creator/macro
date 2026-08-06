@@ -483,3 +483,33 @@ def test_the_glance_tier_copy_stays_inside_its_word_budgets():
         r'class="ctt-foot">(.*?)</p>', out, re.DOTALL).group(1))
     foot_en = re.sub(r"<[^>]+>", " ", foot.split('class="l-zh"')[0])
     assert foot_en.count(".") <= 1, foot_en.strip()
+
+
+def test_the_roster_reads_every_failing_leg_not_just_the_first():
+    """#4583 persists the EXHAUSTIVE pipe-joined `gate_reasons`; the singular
+    `gate_reason` is first-match and re-ships the exact deception two veto audits
+    ended (002155.SZ read 'momentum diverging' while its BINDING leg was the hold).
+    When the plural field is present the roster must narrate both legs."""
+    from engine import cn_theme_tape as ctt
+
+    row = {"lane": "not_raw_eligible", "entry_status": "bounce_wait",
+           "gate_reason": "veto: bearish divergence",
+           "gate_reasons": "veto: bearish divergence|failed next-bar hold"}
+    bucket, en, zh = ctt._classify(row)
+    assert bucket == "blocked"
+    single = ctt.WHY_NOT.get("veto: bearish divergence")
+    hold = ctt.WHY_NOT.get("failed next-bar hold")
+    if single and hold and single[1] and hold[1] and single != hold:
+        assert single[1] in en and hold[1] in en, en
+        assert " · " in en, en
+        assert single[2] in zh and hold[2] in zh, zh
+
+
+def test_the_roster_falls_back_to_the_singular_reason_when_the_store_is_old():
+    """Rows written before the #4583 nightly carry only `gate_reason`; the panel
+    must still narrate them rather than dropping to a bare generic chip."""
+    from engine import cn_theme_tape as ctt
+
+    known = next(iter(ctt.WHY_NOT))
+    bucket, en, zh = ctt._classify({"lane": "not_raw_eligible", "gate_reason": known})
+    assert (bucket, en, zh) == ctt.WHY_NOT[known]
