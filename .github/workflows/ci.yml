@@ -2056,6 +2056,14 @@ on:
       - "tests/test_claim_accountability.py"
       - "tests/test_onboard_compare_matrix.py"
       - "tests/test_track_record_dlg.py"
+      # Board continuity, both shipped 2026-08-05 and named by NO workflow until
+      # now (#4554 row-persistence/outage continuity, #4557 same-as_of Jaccard).
+      # Subject halves are already triggerable, so only the test halves were
+      # missing: scripts/grade_us_board.py is listed below, and
+      # scripts/build_stock_library.py (which owns _board_continuity_warning) is
+      # listed with the setup-tier block above — do not re-add either here.
+      - "tests/test_us_board_continuity_guard.py"
+      - "tests/test_us_board_ledger_continuity.py"
       - "tests/test_us_board_outcomes.py"
       - "tests/test_us_board_outcomes_strip.py"
       - "scripts/audit_claim_accountability.py"

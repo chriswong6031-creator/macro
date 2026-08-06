@@ -4321,6 +4321,13 @@ jobs:
         run: python -m pytest tests/test_board_tenure_stamp.py tests/test_us_board_outcomes.py tests/test_us_board_outcomes_strip.py -q
       - name: claim accountability + track-record dialog + onboarding compare matrix
         run: python -m pytest tests/test_claim_accountability.py tests/test_track_record_dlg.py tests/test_onboard_compare_matrix.py -q
+      # Board continuity — both suites shipped 2026-08-05 (#4554, #4557) named by
+      # NO workflow, so the VALE class they were written for was never guarded in
+      # CI. Separate step from the outcome ledgers above so a red names the law
+      # that broke: row-persistence/outage continuity (grade_us_board::emit_ledger)
+      # vs the same-as_of Jaccard guard (build_stock_library::_board_continuity_warning).
+      - name: board ledger row-persistence + same-as_of continuity guard
+        run: python -m pytest tests/test_us_board_ledger_continuity.py tests/test_us_board_continuity_guard.py -q
 
   unrun-intl-libraries:
     # China / HK / Canada library writers behind the international surfaces.
