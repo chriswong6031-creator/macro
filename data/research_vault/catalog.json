@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T15:11:35.073146+00:00",
-  "count": 879,
+  "generated_at": "2026-08-06T17:50:33.306331+00:00",
+  "count": 887,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -58,6 +58,88 @@
   ],
   "items": [
     {
+      "id": "marketdesk-4wlydi5axa0-599345",
+      "title": "DoorDash Aug 6",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T17:20:31Z",
+      "summary_points": [
+        "**DashPass Unit Economics**: Q2 results beat consensus (Total Orders 967mn vs.",
+        "967mn), with DashPass driving growth—paid subscribers grew faster than prior 24 months, now 75% of grocery/retail orders, signaling strong unit economics and lifetime value expansion.",
+        "**Growth Catalysts & Revisions**: FY26/27 estimates revised upward (Revenue +35.6% YoY, Adj.",
+        "EBITDA +39.5% YoY), driven by scaling in local commerce, DashPass, and margin expansion (Adj.",
+        "EBITDA Margin to 20.5% in FY26E)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-thjfkqlzfcz-765054",
+      "title": "What We Are Monitoring in US Credit",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T17:07:12Z",
+      "summary_points": [
+        "**HY Credit Stress**: CDX HY Spread at 302.3 (+4.0 bps 1m) and NAV Basis at -9.5 (+7.2 bps 1d) indicate deteriorating high-yield credit conditions and widening liquidity gaps.",
+        "**IG/HY Divergence**: CDX IG Spread (51.1, +1.4 bps 1m) at 43rd percentile vs.",
+        "CDX HY Spread (302.3, +4.0 bps 1m) at 11th percentile, signaling severe high-yield underperformance relative to investment-grade.",
+        "**Sector Risk Concentration**: HY 1y percentile (11%) confirms acute stress in high-yield sector, while IG’s 43% percentile reflects relatively better positioning, highlighting asymmetric risk exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kca48htim2n-45af9e",
+      "title": "GS Ioannis Blekos Marketcolour",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T16:54:36Z",
+      "summary_points": [
+        "**Market & EPS Season**: US equities near worst levels (SPX -17bps), Q2 S&P 500 EPS growth tracking 26% y/y (excl.",
+        "mega-cap tech), infrastructure driving ~1/3 growth; Rheinmetall cuts FY guide due to lost F126 sales (geopolitical risk).",
+        "**Sector Divergence**: S&P 500 earnings beats at 64% (8% misses), Energy sector leads post-beat returns (+589 bp) while Tech/TMT underperforms (-131 bp/-192 bp).",
+        "**EPS Acceleration Misleading**: Q2 2026 S&P 500 EPS growth accelerated to 45% (vs prior) solely due to AMZN/GOOGL/MSFT inclusion, not organic strength.",
+        "**Geopolitical Risk Impact**: Rheinmetall’s FY sales guide cut from lost F126 sales (geopolitical risk), contrasting with Siemens Q3 beat (+13% sales, upgraded guide)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-q92nyxeekul-d736ed",
+      "title": "Global daily change of plans",
+      "institution": "Rabobank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T15:09:38Z",
+      "summary_points": [
+        "**Iran-Oman Hormuz Agreement**: Geopolitical risk for oil markets; deal requires US lifting blockade on Iranian ships (Trump’s airstrikes threat complicates timeline).",
+        "**Japan’s Unfunded Food Tax Cut**: Fiscal policy to ease inflation faces criticism; yen depreciation post-US-Japan intervention signals FX market watch and policy divergence on Japan’s assets.",
+        "**Critical Data Releases**: German factory orders (3.1% m/m, 6.5% y/y) offset by May revisions; Eurozone retail sales, US jobless claims, and ECB bulletin critical for near-term market moves.",
+        "**Geopolitical Policy Tensions**: Japanese semiconductor/AI strategy conflicts with US/EU/China policies; Fed Chair Warsh’s Trump ties imply FOMC alignment on Iran war and AI policy."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-a2ecqhil1wj-2a12d9",
       "title": "GS Earnings Recap Aug 6",
       "institution": "S&T",
@@ -94,6 +176,48 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xvqatknhsop-8a90ff",
+      "title": "Fiserv Inc. (FISV) First Take Another big guidance reset",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:51:57Z",
+      "summary_points": [
+        "**Guidance Reset**: Full-year EPS guide reduced 10% (to $1.84 vs.",
+        "$1.91 consensus) with revenue growth at -2% (vs.",
+        "Street’s 6%), driven by top-line/margins weakness and senior management turnover.",
+        "**FCF Conversion Risk**: Adjusted FCF conversion at ~-90% implies $3.5bn FCF, signaling severe cash flow deterioration amid negative organic growth outlook.",
+        "**Target Price Disconnect**: Goldman Sachs’ $60.00 12m target (10.9% upside) contradicts weak guidance, as $260 target (Apr 2025) far exceeds current price despite FY2026 revenue/eps misses."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-js4i5yipp0h-500224",
+      "title": "Constellation Energy Corp. (CEG) First Take EPS beat GS and consensus, 2026 EPS guidance raised",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:51:52Z",
+      "summary_points": [
+        "**EPS Beat & Guidance Raise**: CEG beat $2.55 2026 EPS vs.",
+        "$2.34 consensus, raised 2026 guidance to $11.50–$12.50 on 744 MW Walmart PPAs, 30% clean generation contracted by 2032, and $2.2bn buyback.",
+        "**Regulatory Execution Focus**: Critical path for Texas operations amid ERCOT Batch Zero, Governor Abbott’s directive impacts, and operational execution risks affecting commercial progress.",
+        "**Valuation Shift**: P/E declining from 32.6 to 15.3 (2026E) and EV/EBITDA narrowing from 13.8 to 9.8, signaling re-rating potential as revenue grows from $26.3bn to $41.1bn.",
+        "**Critical Risks & Catalysts**: Key risks include ERCOT delays, data center demand slowdown, and power price pressures; growth hinges on CyrusOne progress and Phase 2 options."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
@@ -259,6 +383,47 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-nhy6bi5od7z-3d4ce7",
+      "title": "Japan Economic Flash Food Consumption Tax Cut Limited Impact on Real Economy, Albeit Short Term Swings",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T11:17:41Z",
+      "summary_points": [
+        "**Permanent Tax Cut Risk**: 2028 election contest over 8%→8% tax cut (2029) threatens primary balance, potentially widening deficit by ¥5tn (0.8% GDP) amid political hurdles from narrow Upper House majority.",
+        "**Weak Consumption Impact**: Tax cut’s marginal propensity to consume (0.1) vs.",
+        "cash handouts (0.4) limits consumption boost; projected 0.8 pp qoq increase (2027Q2), constrained by narrow scope (food only, excluding alcohol/dining).",
+        "**Fiscal Funding Gap**: ¥1tn FX surplus insufficient vs.",
+        "¥5tn required for tax cut; unrealized gains (e.g., ¥0.4tn) cannot fund policy, and FX intervention capital gains are non-viable for budget transfers."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-i72gth6qll2-572c97",
+      "title": "Germany Strong Factory Orders and Weak Manufacturing Turnover in June, with Negative Backward Revisions",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T11:17:30Z",
+      "summary_points": [
+        "**Germany Orders-Turnover Divergence**: Manufacturing orders +3.1% mom (vs +0.5% consensus) but turnover -1.3% mom (revised from -3.8%), indicating strong demand but weak revenue due to price deflator revisions.",
+        "**Defense Orders Acceleration**: Sharp rise in German defense orders since 2022 (geopolitical driver), with 6-month MA confirming sustained growth, critical for sector allocation.",
+        "**Capital vs Intermediate Goods Split**: Capital goods growth positive (+1-2%) vs intermediate goods negative (-2-3%), signaling sector-specific demand shifts for portfolio allocation.",
+        "**Sector Divergence in Turnover**: Transport & Equipment showing strong positive turnover growth, while Pharma negative, highlighting targeted sector risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
