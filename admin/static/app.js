@@ -1718,6 +1718,20 @@ RENDER.users = async () => {
     </div>
     <div class="section">Signups (30d)</div>
     <div class="card"><div class="spark">${series.map(x => `<i style="height:${Math.round(x.n / maxN * 100)}%" title="${esc(x.day)}: ${x.n}"></i>`).join("") || "<span class='muted'>no signups in 30d</span>"}</div></div>
+    <div class="section">Reset a password</div>
+    <div class="card">
+      <div class="sub" style="margin-bottom:10px">Sets the password directly. The customer is
+        <b>not</b> emailed &mdash; hand the new one over yourself, on a channel you trust.
+        Their existing sessions stay signed in.</div>
+      <div class="pw-row">
+        <input id="pwEmail" class="ent-search" type="email" placeholder="customer email, or user id…"
+               autocomplete="off" spellcheck="false">
+        <input id="pwValue" class="ent-search" type="text" placeholder="leave blank to generate one"
+               autocomplete="off" spellcheck="false">
+        <button class="btn" onclick="usrResetPassword()">Set password</button>
+      </div>
+      <div id="pwOut"></div>
+    </div>
     <div class="section">Recent users <span class="cnt" id="uCnt"></span></div>
     <div id="uTbl"><div class="spin">loading…</div></div>
     <div class="section" style="margin-top:22px">Subscribers &amp; entitlements <span class="cnt" id="entCnt"></span>
@@ -1733,9 +1747,10 @@ RENDER.users = async () => {
   const rec = await api("/api/users/recent?limit=50");
   if (rec.ok) {
     $("#uCnt").textContent = rec.users.length;
-    $("#uTbl").innerHTML = `<table><thead><tr><th>User</th><th>Provider</th><th>Joined</th><th>Last sign-in</th><th>Confirmed</th></tr></thead><tbody>
+    $("#uTbl").innerHTML = `<table><thead><tr><th>User</th><th>Provider</th><th>Joined</th><th>Last sign-in</th><th>Confirmed</th><th></th></tr></thead><tbody>
       ${rec.users.map(u => `<tr><td><b>${esc(u.name || u.email || "—")}</b>${u.name && u.email ? `<div class="mono sub">${esc(u.email)}</div>` : ""}</td><td>${esc(u.provider)}</td><td class="mono sub">${esc(u.created_at || "—")}</td>
-        <td class="mono sub">${esc(u.last_sign_in_at || "—")}</td><td>${u.confirmed ? "<span class='statpill s-ok'>yes</span>" : "<span class='statpill s-mut'>no</span>"}</td></tr>`).join("")}
+        <td class="mono sub">${esc(u.last_sign_in_at || "—")}</td><td>${u.confirmed ? "<span class='statpill s-ok'>yes</span>" : "<span class='statpill s-mut'>no</span>"}</td>
+        <td>${u.email ? `<button class="btn ghost sm" data-email="${esc(u.email)}" onclick="usrPickForReset(this.dataset.email)">Reset password</button>` : ""}</td></tr>`).join("")}
     </tbody></table>`;
   } else { $("#uTbl").innerHTML = `<div class="card sub">${esc(rec.error || "could not load")}</div>`; }
 
@@ -1748,6 +1763,59 @@ RENDER.users = async () => {
   });
   entLoad();
 };
+
+/* ---- operator password reset -------------------------------------------- */
+/* Sets the password DIRECTLY (POST /api/users/reset_password). Deliberately not a
+   "send them a reset link" button: the site's browser SDK is pinned to PKCE, so a
+   link minted server-side — here, by /auth/v1/recover, or by the Supabase dashboard's
+   own Reset-password button — comes back as an implicit #access_token fragment that
+   the client refuses by design, and lands the customer on a page that does nothing.
+   See admin/users.py. The customer's self-serve "Forgot your password?" on the site
+   IS browser-initiated, so that path works and remains the one to prefer. */
+function usrPickForReset(email) {
+  const f = $("#pwEmail"); if (!f) return;
+  f.value = email;
+  f.scrollIntoView({ behavior: "smooth", block: "center" });
+  f.focus();
+}
+
+async function usrResetPassword() {
+  const who = ($("#pwEmail").value || "").trim();
+  const chosen = ($("#pwValue").value || "").trim();
+  const out = $("#pwOut");
+  if (!who) { toast("Enter the customer's email or user id", true); $("#pwEmail").focus(); return; }
+  if (!confirm(`Set a new password for ${who}?\n\nThey are NOT emailed — you hand it over yourself.`)) return;
+  out.innerHTML = `<div class="spin">working…</div>`;
+  const body = { email: who };
+  if (chosen) body.password = chosen;
+  const r = await post("/api/users/reset_password", body);
+  if (!r.ok) {
+    out.innerHTML = `<div class="pw-out err"><b>Could not reset.</b> <span class="sub">${esc(r.error || "unknown error")}</span>
+      ${(r.setup_steps || []).length ? `<ol class="steps" style="margin-top:8px">${r.setup_steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol>` : ""}</div>`;
+    toast("Password reset failed", true);
+    return;
+  }
+  const u = r.user || {};
+  // The generated password is shown ONCE, here, and is not stored on either side.
+  // A reload loses it — that is the intent, not a gap.
+  out.innerHTML = `<div class="pw-out ok">
+      <b>Password set for ${esc(u.email || who)}</b>
+      ${r.password ? `<div class="pw-secret"><code class="mono">${esc(r.password)}</code>
+        <button class="btn ghost sm" onclick="usrCopyPw(this)">Copy</button></div>
+        <div class="sub">Shown once — it is not stored anywhere. Reload and it is gone.</div>` : ``}
+      <div class="sub" style="margin-top:8px">${esc(r.note || "")}</div>
+    </div>`;
+  $("#pwValue").value = "";
+  toast("Password updated");
+}
+
+function usrCopyPw(btn) {
+  const code = btn.parentNode.querySelector("code");
+  if (!code) return;
+  navigator.clipboard.writeText(code.textContent).then(
+    () => { btn.textContent = "Copied"; setTimeout(() => btn.textContent = "Copy", 1600); },
+    () => toast("Clipboard blocked — select and copy manually", true));
+}
 
 /* ---- entitlements management (subscribers panel) ------------------------ */
 const ENT = { filter: { tier: null, status: null, search: "" }, page: 1, rows: [] };
