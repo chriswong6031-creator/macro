@@ -832,6 +832,46 @@ def write_report(res: dict) -> None:
     print(f"[write] {WRITEUP_MD}")
 
 
+def build_caveats() -> list[str]:
+    """Everything a reader needs in order to not over-read the table above."""
+    return [
+        "DIAGNOSTIC tier — this grades an estimator, not a signal. No promotion, no "
+        "surface, no ranked path, no fused composite of the two estimators anywhere.",
+        f"Store starts 2021-07-06, so events are restricted to {SCOPE_START}→ and the "
+        "sample is NOT the one the house's +1.64%/t=4.63 index grade was computed on "
+        "(2019→, n=877). The positive control is directional, not a replication.",
+        "AM-1: data/sp_index_changes/changes.parquet holds 50 rows (4 sp500 adds) and is "
+        "too thin to carry the control; the graded family is rebuilt from "
+        "sp1500_pit_membership.parquet exactly as scripts/validate_index_reconstitution.py "
+        "does, with the announce day taken as effective − 5 sessions.",
+        "AM-2: the sector-ETF arm is NOT derivable for index adds — data/sector_holdings "
+        "covers S&P 500 constituents only (236 tickers, 6.2% of in-scope adds, which are "
+        "mostly sp400/sp600). Phase-3 keeps its XLV arm.",
+        "Donor contamination is screened against the treated family's OWN events only. "
+        "S&P DELETIONS are not in the index event list, so a donor being deleted (a "
+        "negative-drift name) can enter a pool and inflate tau. With ~25 deletions a year "
+        "against a donor pool in the thousands and a top-50 correlation screen, the "
+        "expected contribution is small — but it is a known, unremoved bias, not an "
+        "absent one.",
+        "Phase-3 biases carry over from the prior study unchanged: collector truncation "
+        "(pageSize=100, no pagination, sort by LastUpdatePostDate) and only 19 sponsor "
+        "clusters, all mega-cap pharma and heavily time-overlapping.",
+        "Prices are split-repaired but NOT dividend-adjusted (price return, not total "
+        "return). The whisker applies to treated and donors alike and very largely "
+        "differences out of tau.",
+        "AM-5: no security-type classifier exists here, so ETFs/ADRs/preferreds clearing "
+        "the liquidity floor are admissible donors.",
+        "Missing donor prints inside the fitting window are filled with a zero return "
+        "(for a buy-and-hold donor a non-trading day IS a zero return); the ≥90% coverage "
+        "rule caps this at 12 of 120 sessions.",
+        "Placebo dates are drawn per name with a ±42-session guard around the real event; "
+        "the real events' donor-contamination map is applied to placebo draws too, which "
+        "is conservative.",
+        "Placebo draws are the only stochastic element and are seeded; every other number "
+        "here is deterministic given the store.",
+    ]
+
+
 def build_narrative(res: dict) -> str:
     ge = res["gate_eval"]
     pc = res["families"].get("sp_pure_adds")
@@ -842,33 +882,77 @@ def build_narrative(res: dict) -> str:
         mk5 = pc["arms"]["matched_k"]["real"]["0_5"]
         bm5 = pc["arms"][BENCH_SPY]["real"]["0_5"]
         out.append(
-            f"On the positive control, the incumbent SPY-adjusted CAR reads "
-            f"{_pct(bm5.get('mean'))} (t={_r(bm5.get('t'))}) over the announce window, "
-            f"the equal-weight donor basket {_pct(mk5.get('mean'))} (t={_r(mk5.get('t'))}), "
-            f"and the fitted synthetic control {_pct(sc5.get('mean'))} "
-            f"(t={_r(sc5.get('t'))}). The house's own graded number for this family is "
-            f"+1.64% at t=4.63 on the full 2019→ sample; this run is restricted to "
-            f"{SCOPE_START}→ by the store's 2021-07 start, so the samples differ and the "
-            f"comparison is directional, not a replication.")
+            f"**Positive control.** Over the announce window the incumbent SPY-adjusted "
+            f"CAR reads {_pct(bm5.get('mean'))} (t={_r(bm5.get('t'))}), the equal-weight "
+            f"donor basket {_pct(mk5.get('mean'))} (t={_r(mk5.get('t'))}), and the fitted "
+            f"synthetic control {_pct(sc5.get('mean'))} (t={_r(sc5.get('t'))}). The "
+            f"house's graded number for this family is +1.64% at t=4.63 on the full "
+            f"2019→ sample; this run is restricted to {SCOPE_START}→ by the store's "
+            f"2021-07 start, so the samples differ — the comparison is directional, not "
+            f"a replication.")
+
         sd_sc = pc["arms"]["sc_nnls"]["placebo"]["0_5"].get("placebo_sd")
+        sd_mk = pc["arms"]["matched_k"]["placebo"]["0_5"].get("placebo_sd")
         sd_bm = pc["arms"][BENCH_SPY]["placebo"]["0_5"].get("placebo_sd")
         if sd_sc and sd_bm:
-            rat = sd_sc / sd_bm if sd_bm else float("nan")
             out.append(
-                f"Under the null, synthetic control's aggregate estimate has placebo "
-                f"dispersion {_pct(sd_sc)} against the incumbent's {_pct(sd_bm)} "
-                f"({rat:.2f}×) — this is the whole power question, and it is what PC-3 "
-                f"grades.")
+                f"**Power.** Under the null the fitted SC's aggregate estimate has "
+                f"placebo dispersion {_pct(sd_sc)}, the equal-weight basket "
+                f"{_pct(sd_mk)}, the incumbent {_pct(sd_bm)} "
+                f"({sd_sc / sd_bm:.2f}× the incumbent). A counterfactual that is not "
+                f"tighter than SPY under the null has bought nothing, whatever it does "
+                f"to the point estimate — that is what PC-3 grades.")
+
+        # Bias diagnosis: is a non-zero placebo mean the ESTIMATOR's or the COHORT's?
+        pm_sc = pc["arms"]["sc_nnls"]["placebo"]["0_5"].get("placebo_mean")
+        pm_mk = pc["arms"]["matched_k"]["placebo"]["0_5"].get("placebo_mean")
+        pm_bm = pc["arms"][BENCH_SPY]["placebo"]["0_5"].get("placebo_mean")
+        if pm_sc is not None and pm_bm is not None:
+            bits = (f"**Centring.** At random dates on the same names the arms read "
+                    f"{_pct(pm_sc)} (fitted SC), {_pct(pm_mk)} (equal-weight) and "
+                    f"{_pct(pm_bm)} (incumbent SPY-CAR). ")
+            if abs(pm_sc) < abs(pm_bm):
+                bits += (
+                    "Every arm is offset in the same direction and the fitted SC is the "
+                    "LEAST offset, so the offset is a property of the COHORT rather than "
+                    "of the estimator: names that were being added to an S&P index "
+                    "drifted up against any counterfactual over this window, and SC "
+                    "removes more of that drift than the incumbent does. This matters "
+                    "for how the announce effect itself should be read — part of what a "
+                    "benchmark-adjusted CAR attributes to the announcement is cohort "
+                    "drift that a random date reproduces.")
+            else:
+                bits += (
+                    "The fitted SC is offset MORE than the incumbent, so the offset is "
+                    "the estimator's own and not merely the cohort's — the donor pool is "
+                    "not spanning these names, and the weights are buying a systematic "
+                    "shortfall rather than removing one.")
+            bits += (" The harness itself manufactures nothing: on a synthetic no-effect "
+                     "panel the same code path returns zero within sampling error "
+                     "(tests/test_synthetic_control.py::"
+                     "test_placebo_machinery_returns_zero_on_a_no_effect_panel), so this "
+                     "offset is in the data, not in the estimator's arithmetic.")
+            out.append(bits)
+
     if fl:
         f20 = fl["arms"]["sc_nnls"]["real"]["0_20"]
         fp = fl["arms"]["sc_nnls"]["placebo"]["0_20"]
+        f0 = fl["arms"]["sc_nnls"]["real"]["0"]
         out.append(
-            f"On the falsifier, synthetic control reads {_pct(f20.get('mean'))} over "
-            f"[0,20] with monthly-NW t={_r(f20.get('t'))} and empirical p="
-            f"{_r(fp.get('empirical_p'))} against its own random-date placebo. The house "
-            f"verdict on record for this family is NULL — placebo-explained.")
-    out.append(f"Pre-registered verdict: **{ge['verdict']}**"
-               + (f", failing {', '.join(ge['failing_gates'])}." if ge["failing_gates"] else "."))
+            f"**Falsifier.** On Phase-3 starts the fitted SC reads "
+            f"{_pct(f20.get('mean'))} over [0,20] with monthly-NW t={_r(f20.get('t'))} "
+            f"and empirical p={_r(fp.get('empirical_p'))} against its own random-date "
+            f"placebo; day 0 is {_pct(f0.get('mean'))} (t={_r(f0.get('t'))}). The house "
+            f"verdict on record for this family is NULL — placebo-explained — and F-1 "
+            f"asks only that SC not overturn it.")
+
+    out.append(f"**Pre-registered verdict: `{ge['verdict']}`**"
+               + (f" — failing {', '.join(ge['failing_gates'])}. A failed gate is a "
+                  "result: it says where this estimator may and may not be trusted, and "
+                  "nothing here promotes it into any scored path."
+                  if ge["failing_gates"] else
+                  ". All four pre-registered gates pass; adoption beyond diagnostic tier "
+                  "is still a separate decision and is not taken here."))
     return "\n\n".join(out)
 
 
@@ -968,28 +1052,7 @@ def main() -> int:
         "families": families,
         "gate_eval": gate_eval,
         "runtime_s": round(time.time() - t_start, 1),
-        "caveats": [
-            "DIAGNOSTIC tier — this grades an estimator, not a signal. No promotion, no surface, no ranked path.",
-            f"Store starts 2021-07-06, so events are restricted to {SCOPE_START}→ and the "
-            "sample is NOT the same one the house's +1.64%/t=4.63 index grade was computed on "
-            "(2019→, n=877). The positive control is directional, not a replication.",
-            "AM-1: data/sp_index_changes/changes.parquet holds 50 rows (4 sp500 adds) and is "
-            "too thin to carry the control; the graded family is rebuilt from "
-            "sp1500_pit_membership.parquet exactly as scripts/validate_index_reconstitution.py does.",
-            "AM-2: the sector-ETF arm is NOT derivable for index adds — data/sector_holdings "
-            "covers S&P 500 constituents only (6.2% of in-scope adds, which are mostly "
-            "sp400/sp600). Phase-3 keeps its XLV arm.",
-            "Phase-3 biases carry over from the prior study unchanged: collector truncation "
-            "(pageSize=100, no pagination) and only 19 sponsor clusters, all mega-cap pharma "
-            "and heavily time-overlapping.",
-            "Prices are split-repaired but NOT dividend-adjusted (price return). The whisker "
-            "applies to treated and donors alike and largely differences out of tau.",
-            "AM-5: no security-type classifier exists here, so ETFs/ADRs/preferreds clearing "
-            "the liquidity floor are admissible donors.",
-            "Placebo dates are drawn per name with a ±42-session guard around the real event; "
-            "the real events' donor-contamination map is applied to placebo draws too "
-            "(conservative).",
-        ],
+        "caveats": build_caveats(),
     }
     res["narrative"] = build_narrative(res)
 

@@ -411,6 +411,27 @@ def test_placebo_dates_respect_the_guard_band():
     assert cand.max() <= 600 - 21
 
 
+def test_benchmark_arm_is_treated_minus_benchmark():
+    """PC-3 compares SC's placebo dispersion against the INCUMBENT arm, so the incumbent
+    arm has to be right. Two pins: a name benchmarked against its own return must score
+    exactly zero, and a planted shock must come back whole."""
+    panel = _factor_panel(n_names=60, n_sess=400)
+    ev = _events([4], [300])
+    own = panel.ret[:, 4]
+    est = estimate_events(panel, ev["col"].to_numpy(), ev["sess"].to_numpy(),
+                          contamination_map(panel, ev, sc.EVENT_EXCLUSION),
+                          benchmarks={"SELF": own})
+    for key in ("0", "0_5", "0_20"):
+        v = est["SELF"][0, est["_keys"].index(key)]
+        assert abs(v) < 1e-12, f"{key}: self-benchmarked CAR was {v}, not 0"
+
+    shocked = _factor_panel(n_names=60, n_sess=400, treat=(4, 300, 0.05))
+    est2 = estimate_events(shocked, ev["col"].to_numpy(), ev["sess"].to_numpy(),
+                           contamination_map(shocked, ev, sc.EVENT_EXCLUSION),
+                           benchmarks={"SELF": own})
+    assert abs(est2["SELF"][0, est2["_keys"].index("0")] - 0.05) < 1e-12
+
+
 def test_estimate_events_refuses_a_thin_donor_pool():
     """Fewer eligible donors than the pre-screen width must yield NO estimate rather
     than a quietly-narrower one."""
