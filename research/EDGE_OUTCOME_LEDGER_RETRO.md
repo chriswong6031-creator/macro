@@ -124,9 +124,21 @@ Per-horizon for that edge — the settle clock runs separately for each:
 
 | Horizon | settles at | verdicts | settled | rate | state |
 |---|---|---|---|---|---|
-| H=5 | `t + 10` | 30 | 27 | 0.481 | measured |
+| H=5 | `t + 10` | 30 | 27 | — | accruing |
 | **H=21** | `t + 26` | 18 | **16** | **0.312** | **measured** |
 | H=63 | `t + 68` | 0 | 0 | — | accruing |
+
+**Only H=21 prints a rate, and the dashes are not missing data.** The matched
+base rate is computed at the primary horizon alone, so a rate at H=5 or H=63
+would be an *uncontrolled* one — the exact shape §4b exists to refuse. H=5 has
+27 settled verdicts and no control to read them against, so the ledger reports
+the counts and stamps
+`rate_suppressed_reason: "no_matched_control_at_this_horizon"`. For the same
+reason `n_distinct_dst_sessions` is **null** off-primary rather than 0: those
+sessions are not collected there, and a 0 would read as "rests on no sessions"
+when the truth is "not measured here". `n_independent_blocks` is reported at
+every horizon but always strides by 21 sessions, which
+`n_independent_blocks_stride_sessions` states inline.
 
 ### §4a Settlement is per-horizon
 

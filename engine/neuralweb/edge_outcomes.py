@@ -1968,26 +1968,52 @@ def aggregate(rows: Sequence[dict], *, min_n: int = MIN_N, base_provider=None) -
         blocks = count_independent_blocks(slot["graded_session_ix"])
 
         # Per-horizon scoreboard.  Each horizon floors on its OWN settled count.
+        #
+        # ONLY the primary horizon prints a rate.  The matched base rate is
+        # computed at PRIMARY_HORIZON alone, so a rate at any other horizon
+        # would be an UNCONTROLLED one — the exact shape this ledger refuses
+        # everywhere else.  Off-primary horizons carry counts only.
         by_h: dict[str, dict] = {}
         for h in OUTCOME_HORIZONS:
             hs = slot["by_horizon"][str(h)]
             hn, hk = hs["n_settled"], hs["n_agree"]
+            is_primary = (h == PRIMARY_HORIZON)
             h_above = hn >= min_n
-            h_ci = wilson_interval(hk, hn) if h_above and hn > 0 else None
-            by_h[str(h)] = {
+            h_ci = wilson_interval(hk, hn) if (is_primary and h_above and hn > 0) else None
+
+            # dst-session counts are only collected at the primary horizon, so
+            # reporting 0 elsewhere would be a fake zero — "rests on no
+            # sessions" when the truth is "not measured here".  Emit null.
+            n_dst = len(hs["dst_sessions"]) if is_primary else None
+            thin = (bool(hn > 0 and n_dst is not None and n_dst <= 2)
+                    if n_dst is not None else None)
+
+            block = {
                 "horizon": h,
                 "settle_offset_sessions": settle_offset_for(h),
                 "n_verdicts": hs["n_verdicts"],
                 "n_settled": hn,
                 "n_unsettled": hs["n_unsettled"],
                 "n_agree": hk,
-                "state": "measured" if h_above else "accruing",
-                "agreement_rate": (hk / hn) if h_above and hn > 0 else None,
+                "state": "measured" if (is_primary and h_above) else "accruing",
+                "agreement_rate": (hk / hn) if (is_primary and h_above and hn > 0) else None,
                 "agreement_ci95": list(h_ci) if h_ci else None,
-                "rate_suppressed_reason": None if h_above else f"n_settled<{min_n}",
                 "n_independent_blocks": count_independent_blocks(hs["settled_session_ix"]),
-                "n_distinct_dst_sessions": len(hs["dst_sessions"]),
+                # count_independent_blocks strides by PRIMARY_HORIZON, so at any
+                # other horizon this counts 21-session separation, not H's.
+                "n_independent_blocks_stride_sessions": PRIMARY_HORIZON,
+                "n_distinct_dst_sessions": n_dst,
+                "thin_numerator_warning": thin,
             }
+            if is_primary:
+                block["rate_suppressed_reason"] = None if h_above else f"n_settled<{min_n}"
+            else:
+                block["rate_suppressed_reason"] = "no_matched_control_at_this_horizon"
+                block["dst_sessions_basis"] = (
+                    "not collected off the primary horizon; null rather than 0 "
+                    "so an uncounted numerator is not read as an empty one"
+                )
+            by_h[str(h)] = block
 
         # Base rate, recomputed from the spine over this edge's OWN fire span
         # under the numerator's estimator.  Never latched to a stamped value

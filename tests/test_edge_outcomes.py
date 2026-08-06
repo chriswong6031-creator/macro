@@ -1127,6 +1127,47 @@ class TestNightlyAccrual:
         bad = {d: (p_v[d], r_v[d]) for d in shared if p_v[d] != r_v[d]}
         assert not bad, f"H=21 disagrees with the settled retro on {len(bad)}: {bad}"
 
+    def test_no_uncontrolled_rate_prints_off_the_primary_horizon(self, tmp_path, monkeypatch):
+        """Only H=21 may print a rate — it is the only horizon with a control.
+
+        The matched base is computed at PRIMARY_HORIZON alone, so a rate at H=5
+        or H=63 would be an uncontrolled one. H=5 reaches 27 settled verdicts on
+        the real store; without this rule it printed 0.481 against nothing.
+        """
+        nw = tmp_path / "data" / "neuralweb"
+        monkeypatch.setenv(runner.NIGHTLY_LANE_ENV, "nightly")
+        stop = max(self._FIRE_SESSIONS) + eo.settle_offset_for(21) + 2
+        for n_visible in range(self._FIRE_SESSIONS[0] + 1, stop + 1):
+            self._varying_spine(nw, n_visible)
+            assert runner.main(["--nightly", "--data-root", str(nw)]) == 0
+
+        spine, _ = eo.load_spine(nw, [])
+        board = eo.aggregate(eo.read_ledger(nw / runner.PROSPECTIVE_LEDGER),
+                             min_n=len(self._FIRE_SESSIONS),
+                             base_provider=eo.make_base_provider(spine))
+        e = board["edges"][0]
+
+        for h, b in e["by_horizon"].items():
+            if int(h) == eo.PRIMARY_HORIZON:
+                continue
+            assert b["agreement_rate"] is None, \
+                f"H={h} printed an uncontrolled rate {b['agreement_rate']}"
+            assert b["agreement_ci95"] is None
+            assert b["rate_suppressed_reason"] == "no_matched_control_at_this_horizon"
+            assert b["state"] == "accruing"
+            # null, never 0 — those sessions are not collected off-primary, and
+            # a 0 reads as "rests on no sessions" rather than "not measured".
+            assert b["n_distinct_dst_sessions"] is None
+            assert b["thin_numerator_warning"] is None
+            assert b["n_independent_blocks_stride_sessions"] == eo.PRIMARY_HORIZON
+
+        # H=5 genuinely has settled verdicts — the suppression is not vacuous.
+        assert e["by_horizon"]["5"]["n_settled"] > 0, \
+            "fixture must give H=5 settled verdicts, or this test proves nothing"
+        prim = e["by_horizon"][str(eo.PRIMARY_HORIZON)]
+        assert prim["agreement_rate"] is not None, \
+            "the controlled horizon must still print"
+
     def test_settled_rows_carry_the_settled_flag(self, tmp_path):
         nw = tmp_path / "data" / "neuralweb"
         self._varying_spine(nw, self._N_SESSIONS)
