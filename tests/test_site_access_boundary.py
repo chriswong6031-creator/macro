@@ -75,13 +75,44 @@ def test_caddy_public_boundary_matches_policy_exactly():
     assert _caddy_public_exclusions() == expected
 
 
+def test_html_documents_are_never_registration_gated():
+    """The registration wall must not be reachable from any HTML serving path.
+
+    Operator 2026-08-04 opened every page shell to anonymous visitors. The wall
+    lived in two matchers -- @reg_html (success path) and @reg_html_err (the
+    fail-closed path that actually emitted `302 -> /?signin=1`). Both are
+    retired. This test is the tripwire: re-introducing either name, or wiring a
+    regwall/paywall sub-request into an HTML handler, silently restores the
+    redirect this change exists to delete.
+
+    It deliberately asserts on ABSENCE plus the positive replacement, because an
+    absence-only test would also pass if someone deleted the whole serving
+    block.
+    """
+    # Match the SYNTAX (a matcher definition or a handler binding), not the bare
+    # name -- the Caddyfile's own block comment explains why @reg_html was
+    # retired, and a substring test would flag that prose as the defect.
+    for pattern in (r"@reg_html(?:_err)?\s*\{", r"handle\s+@reg_html(?:_err)?\b"):
+        assert not re.search(pattern, CADDY), (
+            f"a live `{pattern}` construct is back in the Caddyfile. HTML "
+            "documents are open (config/site_access.yml header); a page shell "
+            "must never be routed through /api/regwall/check again."
+        )
+    # ...and the replacement must actually be serving them.
+    assert re.search(r"@open_html\s*\{", CADDY), "@open_html matcher missing"
+    open_body = re.search(r"handle @open_html\s*\{(.*?)^\t\}", CADDY, flags=re.S | re.M)
+    assert open_body, "handle @open_html block missing"
+    for wall in ("regwall/check", "paywall/check"):
+        assert wall not in open_body.group(1), (
+            f"handle @open_html routes through {wall}; open pages would be gated"
+        )
+
+
 def test_product_family_is_public_in_every_caddy_html_path():
     """Success and fail-open/error matchers must agree on the public product tree."""
     for matcher in (
-        "reg_html",
         "reg_asset",
         "gate_html",
-        "reg_html_err",
         "reg_asset_err",
         "gate_html_err",
     ):
@@ -108,10 +139,8 @@ def test_confluence_lead_magnet_is_public_in_every_caddy_html_path():
     page = "/confluence_screener.html"
     assert page in POLICY["public"]["exact"]
     for matcher in (
-        "reg_html",
         "reg_asset",
         "gate_html",
-        "reg_html_err",
         "reg_asset_err",
         "gate_html_err",
     ):

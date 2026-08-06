@@ -107,6 +107,38 @@ def main(argv: list[str] | None = None) -> int:
              counts.get("stage2"), counts.get("stage2_fresh"),
              (contract.get("changes") or {}).get("n"))
 
+    # Session-stamp heal (forward-ledger calendar-asof audit 2026-08-05) — runs
+    # BEFORE the append so the append's (date, ticker) dedupe sees the healed
+    # keys. It lives here rather than in the PR that wrote it because
+    # .gitignore:574 gives this ledger a file-scoped law of its own — "nightly is
+    # the SOLE advancer (house law) — never commit from a worktree" — so the
+    # nightly lane is the only lane allowed to perform and commit the repair.
+    # Idempotent: a healed ledger no-ops, so this stays in place permanently.
+    # Fail-open, including the heal's own fail-closed SystemExit abort: one
+    # unreadable ticker frame must not take the stage build down with it.
+    try:
+        from scripts.heal_stage_forward_ledger import heal as _heal_stage_ledger
+        # heal() takes the REPO root (it resolves root/"data"/...), while this
+        # script's `root` is the DATA root and defaults to None. Reuse the
+        # engine's own resolver rather than hand-rolling the parent walk — it
+        # honours MACRO_DATA_ROOT and the None default identically. Passing
+        # `root` straight through would have made the heal permanently dark:
+        # None raises TypeError, and an explicit data root resolves to
+        # <data>/data/stage_analysis, which never exists.
+        _hs = _heal_stage_ledger(stage_analysis._repo_root(root))
+        if _hs.get("error"):
+            # Never silent: a heal that cannot find its ledger is a defect, not
+            # a no-op, and this is the only place it would ever be visible.
+            print(f"::warning title=stage-ledger-heal-unreachable::"
+                  f"forward-ledger heal did not run ({_hs['error']})", flush=True)
+        elif _hs.get("n_restamped") or _hs.get("n_quarantined_now"):
+            log.info("forward ledger heal: restamped %s, quarantined %s",
+                     _hs.get("n_restamped"), _hs.get("n_quarantined_now"))
+    except SystemExit as e:  # fail-closed abort inside the heal — never fatal here
+        print(f"::warning:: forward-ledger heal aborted fail-closed ({e})", flush=True)
+    except Exception as e:  # noqa: BLE001
+        print(f"::warning:: forward-ledger heal failed ({e})", flush=True)
+
     # Forward ledger (SGA-R7) — fail-open, never fatal.
     try:
         n_led = stage_analysis.append_forward_ledger(contract, root=root)

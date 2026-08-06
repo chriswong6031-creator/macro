@@ -2088,6 +2088,13 @@ on:
       - "tests/fixtures/hk_board_2026_07_31.json"
       - "tests/fixtures/hk_standouts_2026_07_31.json"
       - "data/hk_search/**"
+      # The regenerator's own suite (job: regen-hk-g1-fixture-guard).  Its subject
+      # scripts/regen_hk_g1_fixture.py rides the "scripts/*.py" catch-all below,
+      # but tests/** is deliberately NOT broad, so without this line a test-only
+      # edit could not start the packs that run it — the #3488 shape ("a guard the
+      # guarded change cannot trigger is not a guard"), and the same darkness the
+      # two entries above were added to close.
+      - "tests/test_regen_hk_g1_fixture.py"
       # The HK reclaim-veto admission policy (operator ruling 2026-08-03),
       # joined to unrun-hk-board 2026-08-05 — dark since it landed. Its two
       # subjects reach this list already (engine/** for signal_quality /
@@ -2448,6 +2455,25 @@ on:
       - "tests/test_trial_log_refresh.py"
       - "tests/test_validation_effective_t.py"
       - "tests/test_vector_conviction.py"
+      # Forward-ledger calendar-asof audit 2026-08-05 (#4568 pattern): three
+      # clock-stamped ledger writers converted to data-plane session stamps.
+      # test_contagion_links.py and test_stage_analysis.py were enumerated in NO
+      # workflow before this (audit_unrun_tests.py P4 — unrun, writes a data/
+      # ledger), so an edit to either engine produced no check that could see a
+      # failure; test_weinstein_stage.py is the classifier the stage ledger reads
+      # and was dark for the same reason.  The engines themselves are already
+      # reached by the broad "engine/**" trigger.
+      - "tests/test_contagion_links.py"
+      - "tests/test_heal_contagion_links_ledger.py"
+      - "tests/test_stage_analysis.py"
+      - "tests/test_heal_stage_forward_ledger.py"
+      - "tests/test_weinstein_stage.py"
+      - "scripts/heal_contagion_links_ledger.py"
+      - "scripts/heal_stage_forward_ledger.py"
+      # The nightly stage builder invokes the heal above; it is the only lane
+      # permitted to write this ledger (.gitignore:574), so an edit to it must
+      # start the pack that executes the stage suites.
+      - "scripts/build_stage_analysis.py"
       # basket-turn session-stamp hygiene (forward-ledger audit 2026-08-05): the
       # W9 grading pack's engines + heal were enumerated in NO workflow before
       # this — a PR touching them fired no run that could see a failure.
