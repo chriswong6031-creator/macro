@@ -1,0 +1,525 @@
+{
+  "study": "synthetic_control_phase0",
+  "tier": "DIAGNOSTIC",
+  "run_date": "2026-08-06",
+  "charter": "research/ADVANCED_QUANT_METHODS_ADJUDICATION_BY_FABLE.md \u00a73#5",
+  "store": "/Users/chriswong/Documents/Cluade/Macro Dashboard/data/massive_stock_day",
+  "panel": {
+    "files": 3002,
+    "read_ok": 3002,
+    "kept": 2217,
+    "split_repaired": 337,
+    "sessions": 1254,
+    "names": 2217,
+    "calendar": [
+      "2021-07-06",
+      "2026-07-02"
+    ]
+  },
+  "scope_start": "2022-01-01",
+  "placebo_draws": 4,
+  "seed": 20260806,
+  "constants": {
+    "pre_window": 120,
+    "embargo": 5,
+    "event_exclusion": 21,
+    "min_coverage": 0.9,
+    "dvol_floor": 2000000.0,
+    "prescreen_m": 50,
+    "matched_k": 20,
+    "price_min": 5.0,
+    "placebo_guard": 42
+  },
+  "family_diag": {
+    "sp_pure_adds": {
+      "raw_adds_all_time": 3286,
+      "cohort_counts": {
+        "pure": 2727,
+        "migration": 503,
+        "readd": 56
+      },
+      "pure_all_time": 2727,
+      "pure_in_scope_date": 366,
+      "events_usable": 66,
+      "event_day_rule": "effective_date - 5 sessions (announce proxy)"
+    },
+    "phase3_start": {
+      "raw_rows": 1656,
+      "uniq_nct": 1593,
+      "phase3_rows": 1656,
+      "ticker_date_cells_all_time": 1461,
+      "cells_in_scope_date": 831,
+      "sponsors": 19,
+      "events_usable": 264,
+      "event_day_rule": "StudyFirstPostDate (first public availability)"
+    }
+  },
+  "families": {
+    "sp_pure_adds": {
+      "n_events": 66,
+      "n_fitted": 61,
+      "mean_donor_pool": 556.4,
+      "windows": [
+        "0",
+        "0_5",
+        "0_20"
+      ],
+      "arms": {
+        "matched_k": {
+          "real": {
+            "0": {
+              "n": 61,
+              "n_months": 32,
+              "mean": 0.0025569848001742667,
+              "t": 1.344,
+              "p": 0.179,
+              "hit_rate": 0.5901639344262295,
+              "ticker_cluster_t": 0.9911225910509264
+            },
+            "0_5": {
+              "n": 61,
+              "n_months": 32,
+              "mean": 0.029646874691943447,
+              "t": 3.026,
+              "p": 0.0025,
+              "hit_rate": 0.7540983606557377,
+              "ticker_cluster_t": 3.655307355924341
+            },
+            "0_20": {
+              "n": 61,
+              "n_months": 32,
+              "mean": 0.007801065085133633,
+              "t": 0.86,
+              "p": 0.3897,
+              "hit_rate": 0.5573770491803278,
+              "ticker_cluster_t": 0.5489666682809498
+            }
+          },
+          "placebo": {
+            "0": {
+              "n_draws": 4,
+              "placebo_mean": -0.0007885267992433084,
+              "placebo_sd": 0.0019445856064802035,
+              "real_caar": 0.0025569848001742667,
+              "placebo_bias_t": -0.8109972598949563,
+              "empirical_p": 0.0
+            },
+            "0_5": {
+              "n_draws": 4,
+              "placebo_mean": 0.006711769816459944,
+              "placebo_sd": 0.007173164558009126,
+              "real_caar": 0.029646874691943447,
+              "placebo_bias_t": 1.871355316661733,
+              "empirical_p": 0.0
+            },
+            "0_20": {
+              "n_draws": 4,
+              "placebo_mean": 0.018683714667000355,
+              "placebo_sd": 0.008437147789685061,
+              "real_caar": 0.007801065085133634,
+              "placebo_bias_t": 4.42891724377339,
+              "empirical_p": 0.25
+            }
+          }
+        },
+        "sc_nnls": {
+          "real": {
+            "0": {
+              "n": 61,
+              "n_months": 32,
+              "mean": 0.0035670268935357186,
+              "t": 1.906,
+              "p": 0.0567,
+              "hit_rate": 0.5409836065573771,
+              "ticker_cluster_t": 1.5086446504168962
+            },
+            "0_5": {
+              "n": 61,
+              "n_months": 32,
+              "mean": 0.02970516028036101,
+              "t": 2.726,
+              "p": 0.0064,
+              "hit_rate": 0.7049180327868853,
+              "ticker_cluster_t": 3.9690229763216465
+            },
+            "0_20": {
+              "n": 61,
+              "n_months": 32,
+              "mean": 0.015364033056567427,
+              "t": 1.114,
+              "p": 0.2651,
+              "hit_rate": 0.6229508196721312,
+              "ticker_cluster_t": 1.128984916037083
+            }
+          },
+          "placebo": {
+            "0": {
+              "n_draws": 4,
+              "placebo_mean": -0.0015213453396181115,
+              "placebo_sd": 0.0017170850627031948,
+              "real_caar": 0.003567026893535719,
+              "placebo_bias_t": -1.7720092879068767,
+              "empirical_p": 0.0
+            },
+            "0_5": {
+              "n_draws": 4,
+              "placebo_mean": 0.005251668914827236,
+              "placebo_sd": 0.007416240493092104,
+              "real_caar": 0.02970516028036101,
+              "placebo_bias_t": 1.4162617622011935,
+              "empirical_p": 0.0
+            },
+            "0_20": {
+              "n_draws": 4,
+              "placebo_mean": 0.016273863881225537,
+              "placebo_sd": 0.009533936294306218,
+              "real_caar": 0.015364033056567427,
+              "placebo_bias_t": 3.41388139774848,
+              "empirical_p": 0.75
+            }
+          }
+        },
+        "SPY": {
+          "real": {
+            "0": {
+              "n": 61,
+              "n_months": 32,
+              "mean": 0.0013141896628995288,
+              "t": 1.147,
+              "p": 0.2512,
+              "hit_rate": 0.5901639344262295,
+              "ticker_cluster_t": 0.46250983218583575
+            },
+            "0_5": {
+              "n": 61,
+              "n_months": 32,
+              "mean": 0.02498488471994665,
+              "t": 2.741,
+              "p": 0.0061,
+              "hit_rate": 0.6885245901639344,
+              "ticker_cluster_t": 2.6315322397620573
+            },
+            "0_20": {
+              "n": 61,
+              "n_months": 32,
+              "mean": 0.01088721731038237,
+              "t": 1.186,
+              "p": 0.2357,
+              "hit_rate": 0.5245901639344263,
+              "ticker_cluster_t": 0.7116494756078586
+            }
+          },
+          "placebo": {
+            "0": {
+              "n_draws": 4,
+              "placebo_mean": -0.000995362615025992,
+              "placebo_sd": 0.003665771232166214,
+              "real_caar": 0.0013141896628995288,
+              "placebo_bias_t": -0.5430576825372719,
+              "empirical_p": 0.5
+            },
+            "0_5": {
+              "n_draws": 4,
+              "placebo_mean": 0.005807357520669045,
+              "placebo_sd": 0.007105029549813756,
+              "real_caar": 0.02498488471994665,
+              "placebo_bias_t": 1.6347173449324426,
+              "empirical_p": 0.0
+            },
+            "0_20": {
+              "n_draws": 4,
+              "placebo_mean": 0.011231639796161638,
+              "placebo_sd": 0.009487868490923217,
+              "real_caar": 0.010887217310382372,
+              "placebo_bias_t": 2.367579147393672,
+              "empirical_p": 1.0
+            }
+          }
+        }
+      },
+      "runtime_s": 1.5
+    },
+    "phase3_start": {
+      "n_events": 264,
+      "n_fitted": 263,
+      "mean_donor_pool": 550.7,
+      "windows": [
+        "0",
+        "0_5",
+        "0_20"
+      ],
+      "arms": {
+        "matched_k": {
+          "real": {
+            "0": {
+              "n": 263,
+              "n_months": 54,
+              "mean": 0.0001620552343648091,
+              "t": 0.397,
+              "p": 0.6912,
+              "hit_rate": 0.5095057034220533,
+              "ticker_cluster_t": 0.25151422435597715
+            },
+            "0_5": {
+              "n": 263,
+              "n_months": 54,
+              "mean": 0.004159820633294813,
+              "t": 2.357,
+              "p": 0.0184,
+              "hit_rate": 0.5399239543726235,
+              "ticker_cluster_t": 1.9078784903353114
+            },
+            "0_20": {
+              "n": 263,
+              "n_months": 54,
+              "mean": 0.006859133545955877,
+              "t": 2.812,
+              "p": 0.0049,
+              "hit_rate": 0.5247148288973384,
+              "ticker_cluster_t": 1.8502384274938917
+            }
+          },
+          "placebo": {
+            "0": {
+              "n_draws": 4,
+              "placebo_mean": 0.00024718029237524126,
+              "placebo_sd": 0.0005070210020017912,
+              "real_caar": 0.00016205523436480922,
+              "placebo_bias_t": 0.9750297971852773,
+              "empirical_p": 1.0
+            },
+            "0_5": {
+              "n_draws": 4,
+              "placebo_mean": 0.0017051888626380953,
+              "placebo_sd": 0.00229293482602485,
+              "real_caar": 0.004159820633294812,
+              "placebo_bias_t": 1.4873417624296794,
+              "empirical_p": 0.25
+            },
+            "0_20": {
+              "n_draws": 4,
+              "placebo_mean": 0.0020702264282605855,
+              "placebo_sd": 0.0035125550284549195,
+              "real_caar": 0.006859133545955877,
+              "placebo_bias_t": 1.1787581469840906,
+              "empirical_p": 0.25
+            }
+          }
+        },
+        "sc_nnls": {
+          "real": {
+            "0": {
+              "n": 263,
+              "n_months": 54,
+              "mean": -0.0002501052903931193,
+              "t": -0.257,
+              "p": 0.7974,
+              "hit_rate": 0.49429657794676807,
+              "ticker_cluster_t": -0.46685333294546455
+            },
+            "0_5": {
+              "n": 263,
+              "n_months": 54,
+              "mean": 0.003410166248327682,
+              "t": 1.694,
+              "p": 0.0902,
+              "hit_rate": 0.532319391634981,
+              "ticker_cluster_t": 1.4923684795517256
+            },
+            "0_20": {
+              "n": 263,
+              "n_months": 54,
+              "mean": 0.004237254543317792,
+              "t": 1.996,
+              "p": 0.046,
+              "hit_rate": 0.49049429657794674,
+              "ticker_cluster_t": 0.9922660574947926
+            }
+          },
+          "placebo": {
+            "0": {
+              "n_draws": 4,
+              "placebo_mean": 0.00023928107869524966,
+              "placebo_sd": 0.0005760758013051226,
+              "real_caar": -0.0002501052903931194,
+              "placebo_bias_t": 0.830727755455615,
+              "empirical_p": 0.5
+            },
+            "0_5": {
+              "n_draws": 4,
+              "placebo_mean": 0.0014770645967038124,
+              "placebo_sd": 0.0013543305899513032,
+              "real_caar": 0.003410166248327682,
+              "placebo_bias_t": 2.1812467467886436,
+              "empirical_p": 0.25
+            },
+            "0_20": {
+              "n_draws": 4,
+              "placebo_mean": -0.0005383192291596406,
+              "placebo_sd": 0.003714209589607081,
+              "real_caar": 0.004237254543317793,
+              "placebo_bias_t": -0.28987014123593835,
+              "empirical_p": 0.0
+            }
+          }
+        },
+        "SPY": {
+          "real": {
+            "0": {
+              "n": 263,
+              "n_months": 54,
+              "mean": -0.0010495774012889993,
+              "t": -0.961,
+              "p": 0.3364,
+              "hit_rate": 0.4866920152091255,
+              "ticker_cluster_t": -1.5298975359482516
+            },
+            "0_5": {
+              "n": 263,
+              "n_months": 54,
+              "mean": 0.0008545470301339121,
+              "t": 1.311,
+              "p": 0.1898,
+              "hit_rate": 0.4866920152091255,
+              "ticker_cluster_t": 0.38949431799730294
+            },
+            "0_20": {
+              "n": 263,
+              "n_months": 54,
+              "mean": -0.0025863563236607537,
+              "t": 0.558,
+              "p": 0.5765,
+              "hit_rate": 0.4714828897338403,
+              "ticker_cluster_t": -0.5402530979819266
+            }
+          },
+          "placebo": {
+            "0": {
+              "n_draws": 4,
+              "placebo_mean": -0.0004613266383474683,
+              "placebo_sd": 0.0007883079994753327,
+              "real_caar": -0.0010495774012889993,
+              "placebo_bias_t": -1.1704223188259144,
+              "empirical_p": 0.25
+            },
+            "0_5": {
+              "n_draws": 4,
+              "placebo_mean": -0.0010269265463588718,
+              "placebo_sd": 0.0026382509209695796,
+              "real_caar": 0.0008545470301339121,
+              "placebo_bias_t": -0.7784904295467602,
+              "empirical_p": 0.5
+            },
+            "0_20": {
+              "n_draws": 4,
+              "placebo_mean": -0.006144296866293587,
+              "placebo_sd": 0.0044926595348493414,
+              "real_caar": -0.0025863563236607537,
+              "placebo_bias_t": -2.73526040361286,
+              "empirical_p": 0.5
+            }
+          }
+        },
+        "XLV": {
+          "real": {
+            "0": {
+              "n": 263,
+              "n_months": 54,
+              "mean": 0.0001649095505480682,
+              "t": 0.453,
+              "p": 0.6506,
+              "hit_rate": 0.5513307984790875,
+              "ticker_cluster_t": 0.23857603313778653
+            },
+            "0_5": {
+              "n": 263,
+              "n_months": 54,
+              "mean": 0.004008063932551833,
+              "t": 1.811,
+              "p": 0.0702,
+              "hit_rate": 0.5399239543726235,
+              "ticker_cluster_t": 2.0215908967483225
+            },
+            "0_20": {
+              "n": 263,
+              "n_months": 54,
+              "mean": 0.006223414675682555,
+              "t": 1.87,
+              "p": 0.0614,
+              "hit_rate": 0.5247148288973384,
+              "ticker_cluster_t": 1.3813127184486311
+            }
+          },
+          "placebo": {
+            "0": {
+              "n_draws": 4,
+              "placebo_mean": 0.0002509238742782613,
+              "placebo_sd": 0.00043056427563376785,
+              "real_caar": 0.0001649095505480682,
+              "placebo_bias_t": 1.165558261464747,
+              "empirical_p": 0.75
+            },
+            "0_5": {
+              "n_draws": 4,
+              "placebo_mean": 0.0017449790474821504,
+              "placebo_sd": 0.0013822060515542185,
+              "real_caar": 0.004008063932551833,
+              "placebo_bias_t": 2.524918836117108,
+              "empirical_p": 0.0
+            },
+            "0_20": {
+              "n_draws": 4,
+              "placebo_mean": 0.0029108353578055903,
+              "placebo_sd": 0.004087717949293619,
+              "real_caar": 0.006223414675682555,
+              "placebo_bias_t": 1.4241860098535417,
+              "empirical_p": 0.25
+            }
+          }
+        }
+      },
+      "runtime_s": 5.8
+    }
+  },
+  "gate_eval": {
+    "gates": {
+      "PC1_positive_control_survives": true,
+      "PC2_estimators_unbiased": false,
+      "PC3_sc_not_noisier": false,
+      "F1_falsifier_holds": false
+    },
+    "reasons": {
+      "PC1": "sc_nnls S&P pure-add CAAR[0,5]=2.971% monthly-NW t=2.726 (need >0 and t>2)",
+      "PC2": "sp_pure_adds/matched_k mean=0.671% t=1.871 FAIL; sp_pure_adds/sc_nnls mean=0.525% t=1.416 FAIL; phase3_start/matched_k mean=0.171% t=1.487; phase3_start/sc_nnls mean=0.148% t=2.181 FAIL (need |mean|<0.3% and |t|<2)",
+      "PC3": "sc_nnls placebo SD=0.742% vs SPY-CAR placebo SD=0.711% (need SC <= incumbent)",
+      "F1": "phase3 sc_nnls CAAR[0,20]=0.424% monthly-NW t=1.996 empirical p=0.0 (need |t|<2 and p>0.05)"
+    },
+    "verdict": "MIXED",
+    "failing_gates": [
+      "PC2_estimators_unbiased",
+      "PC3_sc_not_noisier",
+      "F1_falsifier_holds"
+    ]
+  },
+  "runtime_s": 21.8,
+  "caveats": [
+    "DIAGNOSTIC tier \u2014 this grades an estimator, not a signal. No promotion, no surface, no ranked path, no fused composite of the two estimators anywhere.",
+    "Store starts 2021-07-06, so events are restricted to 2022-01-01\u2192 and the sample is NOT the one the house's +1.64%/t=4.63 index grade was computed on (2019\u2192, n=877). The positive control is directional, not a replication.",
+    "AM-1: data/sp_index_changes/changes.parquet holds 50 rows (4 sp500 adds) and is too thin to carry the control; the graded family is rebuilt from sp1500_pit_membership.parquet exactly as scripts/validate_index_reconstitution.py does, with the announce day taken as effective \u2212 5 sessions.",
+    "AM-2: the sector-ETF arm is NOT derivable for index adds \u2014 data/sector_holdings covers S&P 500 constituents only (236 tickers, 6.2% of in-scope adds, which are mostly sp400/sp600). Phase-3 keeps its XLV arm.",
+    "Donor contamination is screened against the treated family's OWN events only. S&P DELETIONS are not in the index event list, so a donor being deleted (a negative-drift name) can enter a pool and inflate tau. With ~25 deletions a year against a donor pool in the thousands and a top-50 correlation screen, the expected contribution is small \u2014 but it is a known, unremoved bias, not an absent one.",
+    "Phase-3 biases carry over from the prior study unchanged: collector truncation (pageSize=100, no pagination, sort by LastUpdatePostDate) and only 19 sponsor clusters, all mega-cap pharma and heavily time-overlapping.",
+    "Prices are split-repaired but NOT dividend-adjusted (price return, not total return). The whisker applies to treated and donors alike and very largely differences out of tau.",
+    "AM-5: no security-type classifier exists here, so ETFs/ADRs/preferreds clearing the liquidity floor are admissible donors.",
+    "Missing donor prints inside the fitting window are filled with a zero return (for a buy-and-hold donor a non-trading day IS a zero return); the \u226590% coverage rule caps this at 12 of 120 sessions.",
+    "Placebo dates are drawn per name with a \u00b142-session guard around the real event; the real events' donor-contamination map is applied to placebo draws too, which is conservative.",
+    "Placebo draws are the only stochastic element and are seeded; every other number here is deterministic given the store."
+  ],
+  "narrative": "**Positive control.** Over the announce window the incumbent SPY-adjusted CAR reads 2.498% (t=2.741), the equal-weight donor basket 2.965% (t=3.026), and the fitted synthetic control 2.971% (t=2.726). The house's graded number for this family is +1.64% at t=4.63 on the full 2019\u2192 sample; this run is restricted to 2022-01-01\u2192 by the store's 2021-07 start, so the samples differ \u2014 the comparison is directional, not a replication.\n\n**Power.** Under the null the fitted SC's aggregate estimate has placebo dispersion 0.742%, the equal-weight basket 0.717%, the incumbent 0.711% (1.04\u00d7 the incumbent). A counterfactual that is not tighter than SPY under the null has bought nothing, whatever it does to the point estimate \u2014 that is what PC-3 grades.\n\n**Centring.** At random dates on the same names the arms read 0.525% (fitted SC), 0.671% (equal-weight) and 0.581% (incumbent SPY-CAR). Every arm is offset in the same direction and the fitted SC is the LEAST offset, so the offset is a property of the COHORT rather than of the estimator: names that were being added to an S&P index drifted up against any counterfactual over this window, and SC removes more of that drift than the incumbent does. This matters for how the announce effect itself should be read \u2014 part of what a benchmark-adjusted CAR attributes to the announcement is cohort drift that a random date reproduces. The harness itself manufactures nothing: on a synthetic no-effect panel the same code path returns zero within sampling error (tests/test_synthetic_control.py::test_placebo_machinery_returns_zero_on_a_no_effect_panel), so this offset is in the data, not in the estimator's arithmetic.\n\n**Falsifier.** On Phase-3 starts the fitted SC reads 0.424% over [0,20] with monthly-NW t=1.996 and empirical p=0.0 against its own random-date placebo; day 0 is -0.025% (t=-0.257). The house verdict on record for this family is NULL \u2014 placebo-explained \u2014 and F-1 asks only that SC not overturn it.\n\n**Pre-registered verdict: `MIXED`** \u2014 failing PC2_estimators_unbiased, PC3_sc_not_noisier, F1_falsifier_holds. A failed gate is a result: it says where this estimator may and may not be trusted, and nothing here promotes it into any scored path.",
+  "gate_honesty": [
+    "**PC-2 cannot separate an estimator bias from a cohort drift.** It asks whether the SC arms are centred at random dates on these names \u2014 but a cohort that genuinely drifts fails it however good the estimator is. The incumbent SPY-CAR arm, which is NOT under test, reads 0.581% on the same draws against the fitted SC's 0.525% and the equal-weight basket's 0.671%, i.e. all three arms are offset the same way. The comparison ACROSS arms is the discriminating statistic and it lives in the table above, not in the gate. Read a PC-2 failure as 'this cohort drifts', not as 'synthetic control invents effects'.",
+    "**The [0,20] window carries no event signal at all for the index family.** The random-date placebo mean (1.627%) EXCEEDS the realized CAAR (1.536%), so whatever the 21-day post-announcement window measures, a date drawn at random on the same names reproduces more of it. Any 'post-announcement drift' read off that window would be cohort drift. This is a statement about the window and the cohort, not about the estimator \u2014 every arm shows it.",
+    "**PC-1 and PC-3 are the gates that can actually separate the arms**, because both are comparisons: PC-1 against a number the house already graded, PC-3 against the incumbent's own placebo dispersion on identical draws. PC-2 and F-1 are absolute thresholds and inherit whatever the cohort does.",
+    "The placebo null is drawn uniformly over the store's sessions while the real events cluster (S&P reconstitutions batch quarterly). Market drift differences out of every arm \u2014 each is a treated-minus-counterfactual difference \u2014 but the calendar composition of the null is not matched to the real events, and a calendar-matched placebo is the sharper design the next rung should use."
+  ]
+}

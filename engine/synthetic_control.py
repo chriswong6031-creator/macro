@@ -44,7 +44,7 @@ Weights are fitted ONLY on pre-event data. `pre_window_slice` is the single plac
 window is defined, and every fitting path goes through it:
 
     pre-window = PRE_WINDOW sessions ending at t-EMBARGO-1 inclusive
-               = sessions [t-126, t-6] for the defaults (120 sessions, embargo 5)
+               = sessions [t-125, t-6] for the defaults (120 sessions, embargo 5)
 
 Nothing at or after t-5 can enter a fit. The embargo is not decoration: for the S&P
 index-add family the announcement run-up is the effect being measured, and a pre-window
@@ -83,6 +83,7 @@ import numpy as np
 __all__ = [
     "PRE_WINDOW", "EMBARGO", "EVENT_EXCLUSION", "MIN_COVERAGE", "DVOL_FLOOR",
     "PRESCREEN_M", "MATCHED_K", "VOL_BAND", "CAR_WINDOWS", "METHODS",
+    "VOL_BAND_FALLBACKS",
     "pre_window_slice", "eligible_donors", "project_to_simplex",
     "solve_simplex_ls", "solve_simplex_ls_batch", "prescreen_donors",
     "donor_weights", "donor_weights_batch", "counterfactual_path", "effect",
@@ -107,12 +108,13 @@ def pre_window_slice(event_sess: int, *, pre_window: int = PRE_WINDOW,
     """The ONLY definition of the fitting window.
 
     Returns the slice covering `pre_window` sessions ending `embargo`+1 sessions before
-    the event: for the defaults, sessions [t-126, t-6] inclusive. The slice's stop is
+    the event: for the defaults, sessions [t-125, t-6] inclusive. The slice's stop is
     t-embargo, so session t-embargo itself and everything after it is excluded.
 
     A negative start is the caller's signal that the store does not reach far enough
-    back; `eligible_donors` and the study both refuse such events rather than silently
-    fitting a short window.
+    back. This function does NOT police that (nor does `eligible_donors`, which never
+    sees the slice) — the study's `_attach_sessions` is the single place events without a
+    full pre-window are refused.
     """
     stop = int(event_sess) - int(embargo)
     return slice(stop - int(pre_window), stop)
@@ -267,6 +269,12 @@ def _standardize(x: np.ndarray, axis: int = 0) -> np.ndarray:
     return (x - mu) / sd
 
 
+#: Incremented whenever the pre-registered vol band admits nothing and `prescreen_donors`
+#: falls back to the unbanded pool. A pre-registered screen that silently disengages is a
+#: screen the study cannot say it applied — the harness reads and reports this counter.
+VOL_BAND_FALLBACKS = np.zeros(1, dtype=np.int64)
+
+
 def prescreen_donors(
     pre_treated: np.ndarray,
     pre_donors: np.ndarray,
@@ -301,6 +309,7 @@ def prescreen_donors(
             keep &= (vol_d >= lo) & (vol_d <= hi)
     if not keep.any():                     # band emptied the pool -> fall back to all
         keep = np.ones(n, dtype=bool)
+        VOL_BAND_FALLBACKS[0] += 1         # counted, not silent
 
     zy = _standardize(y[:, None])[:, 0]
     zd = _standardize(D)
@@ -335,6 +344,12 @@ def donor_weights(
     Returns (N,) weights, non-negative and summing to 1, zero outside the selected set.
     Both branches return a full-width vector so the two estimators are directly
     comparable and `counterfactual_path` never needs to know which produced them.
+
+    EXCEPTION to "summing to 1": when no donor survives the screen — an empty pool, or a
+    treated series carrying a NaN, which makes every correlation undefined — the return
+    is the ALL-ZERO vector. That is deliberate and fails safe: it propagates a NaN
+    counterfactual rather than a confident equal-weight guess over donors that were never
+    shown to resemble anything. Callers must treat sum(w)==0 as "no estimate".
     """
     if method not in METHODS:
         raise ValueError(f"unknown method {method!r}; expected one of {METHODS}")
@@ -370,13 +385,19 @@ def donor_weights_batch(
     vol_band: tuple[float, float] | None = VOL_BAND,
     **solver_kw,
 ) -> np.ndarray:
-    """Batched `donor_weights` over E events that share a donor-pool WIDTH.
+    """Batched `donor_weights` over E events. Returns (E, N).
 
-    pre_treated (E, T_pre); pre_donors (E, T_pre, N). Returns (E, N).
+    pre_treated (E, T_pre); pre_donors (E, T_pre, N).
 
-    Equivalent to looping `donor_weights` (pinned by
-    test_batch_matches_single_problem_solver), but fits every event in one FISTA run —
-    the study's placebo arms need ~10^5 fits and the loop form does not finish.
+    Equivalent to looping `donor_weights` — pinned by
+    tests/test_synthetic_control.py::test_donor_weights_batch_matches_the_loop, which
+    covers SHORT pools specifically. An earlier version padded short pools with zero
+    columns to make the batch rectangular; that silently relaxed sum(w)=1 to sum(w)<=1
+    over the real donors (the solver parks mass on the zero column to shrink the
+    counterfactual), and renormalizing afterwards rescaled the wrong solution rather than
+    solving the constrained one — up to 0.41 absolute weight error and +22% pre-window
+    objective on a 3-donor pool. Events are now GROUPED BY ACTUAL POOL WIDTH and each
+    width solved at its true dimension.
     """
     Y = np.atleast_2d(np.asarray(pre_treated, dtype=float))
     D = np.asarray(pre_donors, dtype=float)
@@ -403,20 +424,19 @@ def donor_weights_batch(
                 out[e, sel[e, ok[e]]] = 1.0 / cnt[e]
         return out
 
-    # Pad short pools with a zero donor column so the batch is rectangular. A zero column
-    # contributes nothing to the fit; its weight is dropped when scattering back.
-    Dsel = np.zeros((n_e, n_t, width))
-    for e in range(n_e):
-        cols = sel[e, ok[e]]
-        Dsel[e, :, : cols.size] = D[e][:, cols]
-    w_sel = solve_simplex_ls_batch(Y, Dsel, **solver_kw)
-    for e in range(n_e):
-        cols = sel[e, ok[e]]
-        if cols.size == 0:
+    # Group by ACTUAL pool width and solve each group at its true dimension. Padding to a
+    # common width would relax the simplex constraint (see docstring).
+    widths = ok.sum(axis=1)
+    for w_actual in np.unique(widths):
+        if w_actual == 0:
             continue
-        wv = w_sel[e, : cols.size]
-        s = float(wv.sum())
-        out[e, cols] = wv / s if s > 0 else 1.0 / cols.size
+        grp = np.flatnonzero(widths == w_actual)
+        Dsel = np.empty((grp.size, n_t, int(w_actual)))
+        for gi, e in enumerate(grp):
+            Dsel[gi] = D[e][:, sel[e, ok[e]]]
+        w_sel = solve_simplex_ls_batch(Y[grp], Dsel, **solver_kw)
+        for gi, e in enumerate(grp):
+            out[e, sel[e, ok[e]]] = w_sel[gi]
     return out
 
 

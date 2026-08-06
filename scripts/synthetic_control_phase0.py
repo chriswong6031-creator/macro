@@ -82,8 +82,9 @@ PIT LAW
 
 EVENT DAY
   Index adds: t = 5 sessions BEFORE the first session on/after the effective date, so
-    CAR[0,5] spans exactly the incumbent's [-5, 0] announce window and the two
-    estimators are compared on the SAME days. S&P announces ~5 trading days ahead.
+    CAR[0,5] covers the incumbent's [-5, 0] announce window (see AM-7 — it carries ONE
+    EXTRA session, and the incumbent's exact statistic is reconciled separately). S&P
+    announces ~5 trading days ahead.
   Phase-3: t = first session on/after StudyFirstPostDate (first public availability;
     verified collectors/clinicaltrials.py studyFirstPostDateStruct), matching the prior
     study's date semantics exactly.
@@ -185,6 +186,41 @@ AMENDMENTS (gaps found while wiring; all recorded before the first result was re
         collector truncation at pageSize=100 and only 19 sponsor clusters — carry over
         unchanged and are restated in the results.
 
+AMENDMENTS FOUND IN ADVERSARIAL REVIEW (recorded before the numbers below were read;
+the run that produced them was discarded and re-run under these corrections)
+  AM-7  CAR[0,5] is NOT byte-identical to the incumbent's announce window. The incumbent
+        scores a PRICE RATIO close[e]/close[e-5]-1 = five daily returns; with the event
+        day at e-5, CAR[0,5] sums SIX daily returns (closes e-6 -> e). The "spans
+        exactly" claim above is withdrawn. The registered windows are kept as-is (all
+        arms use identical windows, so the SC-vs-incumbent comparison this study exists
+        to make is unaffected), and `incumbent_reconciliation` now computes the
+        incumbent's exact statistic on this same sample and prints it beside the
+        house's 2019→ grade.
+  AM-8  The charter (§3#5) specifies matching on "pre-event path/vol/beta/sector/size/
+        liquidity". This implementation matches on pre-window return CORRELATION (which
+        subsumes path and, for a returns fit, beta), a vol-similarity band, liquidity and
+        price. SECTOR and SIZE are NOT matched on: the repo holds no whole-market sector
+        or share-count classifier for the 19k-name store (data/sector_holdings covers 236
+        S&P 500 names — AM-2). A fitted replicating portfolio recovers sector exposure
+        implicitly through correlation; that is a weaker claim than an explicit screen
+        and is stated rather than skipped.
+  AM-9  PC-1's "CAAR > 0" is evaluated on BOTH the event-weighted and month-weighted
+        means. `monthly_nw` returns an event-weighted mean beside a month-weighted t;
+        with quarterly-batched reconstitutions the two can disagree in sign. Requiring
+        both to be positive is strictly stronger than the registered single-mean form.
+  AM-10 The placebo exclusion band is ASYMMETRIC, [s-20, s+125], not the symmetric ±42
+        first written. A placebo at s' fits its donors on [s'-125, s'-6], so s' in
+        [s+42, s+125] passed the symmetric guard while FITTING on a window containing the
+        real event — 9.6% of otherwise-eligible dates. That contaminates only the two SC
+        arms (the benchmark arm fits nothing) and PC-3 is exactly an SC-vs-benchmark
+        dispersion test, so the original guard biased the gate it was meant to support.
+  AM-11 The $5 floor is applied to the close AS PRINTED, not the back-adjusted close.
+        split_adjust back-multiplies prior bars by a factor detected later in the series,
+        which is not PIT and inverts the selection: a raw $0.60 name that later
+        reverse-splits 1:10 reads as $6.00 (admitted), a raw $8.00 name that later splits
+        10:1 reads as $0.80 (excluded). Sub-$1 names are the dominant reverse-split case,
+        i.e. exactly what AM-3 exists to remove.
+
 Run:    python -m scripts.synthetic_control_phase0
 Writes: research/SYNTHETIC_CONTROL_PHASE0.md
         data/experiments/synthetic_control_phase0_results.json
@@ -208,8 +244,11 @@ import numpy as np
 import pandas as pd
 
 if __name__ == "__main__":
-    warnings.filterwarnings("ignore")
-    logging.disable(logging.CRITICAL)
+    # Narrow on purpose: a numerics study wants numpy's invalid/divide RuntimeWarnings
+    # VISIBLE. Only the noisy third-party import chatter is suppressed.
+    warnings.filterwarnings("ignore", category=FutureWarning)
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    logging.disable(logging.INFO)
 
 WT_ROOT = Path(__file__).resolve().parents[1]
 if str(WT_ROOT) not in sys.path:
@@ -272,7 +311,8 @@ class Panel:
     tickers: list[str]
     ret: np.ndarray            # (T, N) simple daily returns, NaN where absent
     dvol20: np.ndarray         # (T, N) 20d median dollar volume
-    close: np.ndarray          # (T, N) split-adjusted close
+    close: np.ndarray          # (T, N) split-ADJUSTED close (returns, presence checks)
+    raw_close: np.ndarray | None = None   # (T, N) close AS PRINTED (the $5 floor)
     col: dict[str, int] = field(default_factory=dict)
 
     def __post_init__(self):
@@ -324,7 +364,7 @@ def build_panel(store: Path, *, max_names: int | None = None,
         if float(np.nanmax(factor) / max(float(np.nanmin(factor)), 1e-12)) > 1.0001:
             stats["split_repaired"] += 1
         vol = df["volume"] * factor          # shares scale inversely to price
-        frames[stem] = pd.DataFrame({"close": adj, "dvol": adj * vol})
+        frames[stem] = pd.DataFrame({"close": adj, "dvol": adj * vol, "raw": close})
     stats["kept"] = len(frames)
     if not frames:
         return Panel(pd.DatetimeIndex([]), [], np.zeros((0, 0)), np.zeros((0, 0)),
@@ -334,10 +374,12 @@ def build_panel(store: Path, *, max_names: int | None = None,
     tickers = sorted(frames)
     n_t, n_n = len(dates), len(tickers)
     close = np.full((n_t, n_n), np.nan)
+    raw_close = np.full((n_t, n_n), np.nan)
     dvol = np.full((n_t, n_n), np.nan)
     for j, t in enumerate(tickers):
         f = frames[t].reindex(dates)
         close[:, j] = f["close"].to_numpy(dtype=float)
+        raw_close[:, j] = f["raw"].to_numpy(dtype=float)
         dvol[:, j] = f["dvol"].to_numpy(dtype=float)
 
     ret = np.full((n_t, n_n), np.nan)
@@ -347,7 +389,7 @@ def build_panel(store: Path, *, max_names: int | None = None,
     stats["sessions"] = n_t
     stats["names"] = n_n
     stats["calendar"] = (str(dates[0].date()), str(dates[-1].date()))
-    return Panel(dates, tickers, ret, dv20, close), stats
+    return Panel(dates, tickers, ret, dv20, close, raw_close), stats
 
 
 # ================================================================== event construction
@@ -492,7 +534,14 @@ def estimate_events(
             event_distance=np.where(contaminated[s, :], 0.0, np.inf),
             treated_col=c,
         )
-        mask &= np.isfinite(panel.close[end, :]) & (panel.close[end, :] > PRICE_MIN)
+        # $5 floor on the close AS PRINTED, not the back-adjusted one. split_adjust
+        # back-multiplies every prior bar by a factor detected LATER in the series, so an
+        # adjusted-price floor is not PIT and inverts the exact selection AM-3 wants: a
+        # raw $0.60 name that later reverse-splits 1:10 reads as $6.00 and would be
+        # ADMITTED, while a raw $8.00 name that later splits 10:1 reads as $0.80 and
+        # would be EXCLUDED. The sub-$1 case is the dominant one for reverse splits.
+        px = panel.raw_close if panel.raw_close is not None else panel.close
+        mask &= np.isfinite(panel.close[end, :]) & (px[end, :] > PRICE_MIN)
         idx = np.flatnonzero(mask)
         pool_sizes[i] = idx.size
         if idx.size < m:
@@ -560,8 +609,13 @@ def monthly_nw(car: np.ndarray, dates: pd.DatetimeIndex) -> dict:
     df = pd.DataFrame({"car": car[good], "mo": pd.DatetimeIndex(dates[good]).to_period("M")})
     monthly = df.groupby("mo")["car"].mean()
     nw = V.newey_west_tstat(monthly.to_numpy(), lags=min(4, max(1, len(monthly) // 4)))
+    # `mean` is EVENT-weighted (what the incumbent prints) but `t` is MONTH-weighted (the
+    # clustering that makes it valid). S&P reconstitutions batch quarterly, so month
+    # counts are very unequal and the two can disagree in SIGN. Both are printed, and
+    # PC-1's ">0" reads mean_monthly — the estimand the t actually tests.
     return {"n": int(good.sum()), "n_months": int(len(monthly)),
-            "mean": float(np.mean(car[good])), "t": nw.get("t"), "p": nw.get("p"),
+            "mean": float(np.mean(car[good])), "mean_monthly": float(monthly.mean()),
+            "t": nw.get("t"), "p": nw.get("p"),
             "hit_rate": float((car[good] > 0).mean())}
 
 
@@ -585,15 +639,32 @@ def ticker_cluster_t(car: np.ndarray, tickers: np.ndarray) -> float | None:
 
 
 def eligible_placebo_sessions(panel: Panel, col: int, real_sess: int) -> np.ndarray:
-    """Sessions where this name could host a placebo event: full pre-window + embargo +
-    post-window inside the store, price data present, and >= PLACEBO_GUARD away from the
-    name's real event so the placebo cannot contain the real effect."""
+    """Sessions where this name could host a placebo event.
+
+    Requires a full pre-window + embargo + post-window inside the store, price data
+    present, and — the part that matters — a placebo date whose OWN windows are clear of
+    the real event s.
+
+    The exclusion is ASYMMETRIC because the two windows sit on opposite sides of the
+    event day. For a placebo at s':
+        outcome window [s', s'+POST_WINDOW]      contains s  <=>  s-POST_WINDOW <= s' <= s
+        FIT window     [s'-125, s'-EMBARGO-1]    contains s  <=>  s+EMBARGO+1 <= s' <= s+125
+    so the excluded band is [s-POST_WINDOW, s+PRE_WINDOW+EMBARGO].
+
+    A symmetric +/-42 guard (the earlier form) covers the outcome window but leaves
+    s' in [s+42, s+125] admissible — 9.6% of otherwise-eligible placebo dates FIT THE
+    DONORS on a window containing the real treatment. That contaminates only the two SC
+    arms (the benchmark arm has no fit), and PC-3 is precisely an SC-vs-benchmark
+    dispersion comparison, so the earlier guard biased the gate it was meant to support.
+    """
     lo = sc.PRE_WINDOW + sc.EMBARGO
     hi = panel.n_sessions - POST_WINDOW - 1
     if hi <= lo:
         return np.zeros(0, dtype=int)
     cand = np.arange(lo, hi + 1)
-    cand = cand[np.abs(cand - real_sess) >= PLACEBO_GUARD]
+    contaminated = ((cand >= real_sess - POST_WINDOW)
+                    & (cand <= real_sess + sc.PRE_WINDOW + sc.EMBARGO))
+    cand = cand[~contaminated]
     if cand.size == 0:
         return cand
     ok = np.isfinite(panel.close[cand, col])
@@ -633,17 +704,25 @@ def run_family(panel: Panel, ev: pd.DataFrame, label: str, *,
     # ---- placebo: re-date every event, `draws` times
     cand = [eligible_placebo_sessions(panel, int(c), int(s)) for c, s in zip(cols, sess)]
     usable = np.array([c.size > 0 for c in cand])
+    # An event with NO eligible placebo date must be DROPPED from the null, not left at
+    # its real session — keeping it injects the real effect into every one of the `draws`
+    # replications and drags the placebo mean toward the real answer.
+    keep = np.flatnonzero(usable)
+    p_cols, p_sess_real = cols[keep], sess[keep]
+    p_cand = [cand[i] for i in keep]
+    stats["placebo_events"] = int(keep.size)
+    stats["placebo_events_dropped"] = int(len(ev) - keep.size)
     if verbose:
         print(f"  [{label}] placebo: {draws} replications over "
-              f"{int(usable.sum())}/{len(ev)} re-datable events", flush=True)
+              f"{int(usable.sum())}/{len(ev)} re-datable events "
+              f"({len(ev) - keep.size} dropped as un-re-datable)", flush=True)
     null = {a: np.full((draws, len(keys)), np.nan) for a in arms}
     tp = time.time()
     for d in range(draws):
-        psess = sess.copy()
-        for i, c in enumerate(cand):
-            if c.size:
-                psess[i] = c[rng.integers(c.size)]
-        est = estimate_events(panel, cols, psess, contaminated, benchmarks=benchmarks)
+        psess = p_sess_real.copy()
+        for i, c in enumerate(p_cand):
+            psess[i] = c[rng.integers(c.size)]
+        est = estimate_events(panel, p_cols, psess, contaminated, benchmarks=benchmarks)
         for arm in arms:
             for j in range(len(keys)):
                 v = est[arm][:, j]
@@ -665,9 +744,16 @@ def run_family(panel: Panel, ev: pd.DataFrame, label: str, *,
             if dn.size > 1 and np.isfinite(real_mean):
                 se = dn.std(ddof=1) / np.sqrt(dn.size)
                 blk["placebo_bias_t"] = float(dn.mean() / se) if se > 0 else None
-                # two-sided empirical p of the real CAAR against the placebo null
+                # Two-sided empirical p of the real CAAR against the placebo null, with
+                # the (1 + #)/(B + 1) permutation correction: without it the minimum
+                # attainable value is 0.0, which reads as "impossible under the null"
+                # when the honest statement is p < 1/(B+1). NOTE the null being tested is
+                # "effect == placebo mean", not "effect == 0" — the distribution is
+                # centred on its own mean before the comparison.
                 centred = np.abs(dn - dn.mean())
-                blk["empirical_p"] = float((centred >= abs(real_mean - dn.mean())).mean())
+                hits = int((centred >= abs(real_mean - dn.mean())).sum())
+                blk["empirical_p"] = float((1 + hits) / (dn.size + 1))
+                blk["empirical_p_floor"] = float(1.0 / (dn.size + 1))
             stats["arms"][arm].setdefault("placebo", {})[k] = blk
 
     stats["runtime_s"] = round(time.time() - t0, 1)
@@ -686,17 +772,29 @@ def evaluate_gates(pc: dict, fl: dict | None) -> dict:
         except (KeyError, TypeError):
             return None
 
-    # PC-1 — positive control survives under sc_nnls at [0,5]
+    # PC-1 — positive control survives under sc_nnls at [0,5].
+    # AM-9: the registered text says "CAAR > 0". Two CAARs exist — event-weighted (what
+    # the incumbent prints) and month-weighted (the estimand the monthly-NW t tests) —
+    # and with quarterly-batched reconstitutions they can disagree in sign. Both must be
+    # positive. That is strictly STRONGER than the registered single-mean form, so it
+    # cannot be a loosening after the fact.
     m = _get(pc, "sc_nnls", "real", "0_5", "mean")
+    mm = _get(pc, "sc_nnls", "real", "0_5", "mean_monthly")
     t = _get(pc, "sc_nnls", "real", "0_5", "t")
     g["PC1_positive_control_survives"] = bool(
-        m is not None and t is not None and m > 0 and t > 2.0)
-    reasons["PC1"] = f"sc_nnls S&P pure-add CAAR[0,5]={_pct(m)} monthly-NW t={_r(t)} (need >0 and t>2)"
+        None not in (m, mm, t) and m > 0 and mm > 0 and t > 2.0)
+    reasons["PC1"] = (f"sc_nnls S&P pure-add CAAR[0,5]={_pct(m)} event-weighted / "
+                      f"{_pct(mm)} month-weighted, monthly-NW t={_r(t)} "
+                      "(need both >0 and t>2)")
 
     # PC-2 — neither SC estimator is biased under the null, on BOTH families
-    pc2, bits = True, []
+    pc2, bits, pc2_skipped = True, [], []
     for fam, name in ((pc, "sp_pure_adds"), (fl, "phase3_start")):
-        if fam is None:
+        if not fam:
+            # registered as "on BOTH families" — a skipped family must be SAID, not
+            # quietly dropped from a conjunction that then reads as fully evaluated
+            pc2_skipped.append(name)
+            bits.append(f"{name} NOT EVALUATED")
             continue
         for arm in ("matched_k", "sc_nnls"):
             pm = _get(fam, arm, "placebo", "0_5", "placebo_mean")
@@ -705,15 +803,26 @@ def evaluate_gates(pc: dict, fl: dict | None) -> dict:
                   and abs(pm) < GATE_PLACEBO_BIAS and abs(bt) < 2.0)
             pc2 &= ok
             bits.append(f"{name}/{arm} mean={_pct(pm)} t={_r(bt)}{'' if ok else ' FAIL'}")
-    g["PC2_estimators_unbiased"] = bool(pc2)
-    reasons["PC2"] = "; ".join(bits) + f" (need |mean|<{GATE_PLACEBO_BIAS:.1%} and |t|<2)"
+    g["PC2_estimators_unbiased"] = None if pc2_skipped else bool(pc2)
+    reasons["PC2"] = "; ".join(bits) + f" (need |mean|<{GATE_PLACEBO_BIAS:.1%} and |t|<2 "
+    reasons["PC2"] += f"on BOTH families; {len(pc2_skipped)} family not evaluated)" \
+        if pc2_skipped else "on BOTH families)"
 
     # PC-3 — sc_nnls placebo dispersion <= benchmark-CAR(SPY) placebo dispersion at [0,5]
     sd_sc = _get(pc, "sc_nnls", "placebo", "0_5", "placebo_sd")
     sd_bm = _get(pc, BENCH_SPY, "placebo", "0_5", "placebo_sd")
-    g["PC3_sc_not_noisier"] = bool(sd_sc is not None and sd_bm is not None and sd_sc <= sd_bm)
-    reasons["PC3"] = (f"sc_nnls placebo SD={_pct(sd_sc)} vs {BENCH_SPY}-CAR placebo "
-                      f"SD={_pct(sd_bm)} (need SC <= incumbent)")
+    if sd_sc is None or sd_bm is None:
+        # A missing comparator arm is a DATA-REACH failure, not a property of the
+        # estimator. Publishing it as FAIL would print "ESTIMATOR_POWERLESS" because SPY
+        # was absent from the store.
+        g["PC3_sc_not_noisier"] = None
+        reasons["PC3"] = (f"NOT EVALUABLE — sc_nnls placebo SD={_pct(sd_sc)}, "
+                          f"{BENCH_SPY}-CAR placebo SD={_pct(sd_bm)}; the comparator arm "
+                          "is missing, so there is nothing to compare against")
+    else:
+        g["PC3_sc_not_noisier"] = bool(sd_sc <= sd_bm)
+        reasons["PC3"] = (f"sc_nnls placebo SD={_pct(sd_sc)} vs {BENCH_SPY}-CAR placebo "
+                          f"SD={_pct(sd_bm)} (need SC <= incumbent)")
 
     # F-1 — falsifier: SC must not manufacture the Phase-3 effect
     if fl is None:
@@ -729,18 +838,23 @@ def evaluate_gates(pc: dict, fl: dict | None) -> dict:
 
     biased = (g["PC2_estimators_unbiased"] is False) or (g["F1_falsifier_holds"] is False)
     powerless = (g["PC1_positive_control_survives"] is False) or (g["PC3_sc_not_noisier"] is False)
+    unevaluated = [k for k, v in g.items() if v is None]
     if biased and powerless:
         verdict = "MIXED"
     elif biased:
         verdict = "ESTIMATOR_BIASED"
     elif powerless:
         verdict = "ESTIMATOR_POWERLESS"
-    elif all(v is True for v in g.values() if v is not None):
-        verdict = "ESTIMATOR_GO"
+    elif unevaluated:
+        # A gate that never ran is not a gate that passed. Without this branch a data
+        # outage on the falsifier family promotes the headline to ESTIMATOR_GO with an
+        # empty failing-gate list — the loudest possible way to publish an absence.
+        verdict = "INCOMPLETE"
     else:
-        verdict = "MIXED"
+        verdict = "ESTIMATOR_GO"
     failing = [k for k, v in g.items() if v is False]
-    return {"gates": g, "reasons": reasons, "verdict": verdict, "failing_gates": failing}
+    return {"gates": g, "reasons": reasons, "verdict": verdict,
+            "failing_gates": failing, "unevaluated_gates": unevaluated}
 
 
 def _r(x, nd: int = 3):
@@ -838,6 +952,44 @@ def write_report(res: dict) -> None:
     print(f"[write] {WRITEUP_MD}")
 
 
+def incumbent_reconciliation(panel: Panel, ev: pd.DataFrame) -> dict:
+    """Recompute the INCUMBENT's own construction on this study's in-scope sample.
+
+    scripts/validate_index_reconstitution.py scores an add as a SPY-relative PRICE RATIO
+    close[e]/close[e-5] - 1 over its [-5, 0] window — five daily returns. This study's
+    CAR[0,5] sums SIX daily returns (ret[e-5..e], i.e. closes e-6 -> e), because the
+    event day is set to e-5 and window [0,5] is inclusive at both ends. The two are
+    therefore NOT the same window, and the prereg's "spans exactly" was an overstatement
+    (AM-7). This function prints the incumbent's exact statistic on the same events so
+    the gap is measured rather than argued about.
+    """
+    if ev.empty or BENCH_SPY not in panel.col:
+        return {"error": "no events or no SPY"}
+    spy = panel.close[:, panel.col[BENCH_SPY]]
+    recs = []
+    for r in ev.itertuples(index=False):
+        e = int(r.sess) + ANNOUNCE_LEAD          # back to the effective-date session
+        i0, i1 = e - 5, e
+        if i0 < 0 or i1 >= panel.n_sessions:
+            continue
+        c = panel.close[:, int(r.col)]
+        if not (np.isfinite(c[i0]) and np.isfinite(c[i1])
+                and np.isfinite(spy[i0]) and np.isfinite(spy[i1])):
+            continue
+        recs.append((panel.dates[i1], (c[i1] / c[i0] - 1.0) - (spy[i1] / spy[i0] - 1.0)))
+    if len(recs) < 10:
+        return {"n": len(recs)}
+    d = pd.DataFrame(recs, columns=["d", "abn"])
+    s = monthly_nw(d["abn"].to_numpy(), pd.DatetimeIndex(d["d"]))
+    return {"window": "[-5,0] price ratio vs SPY (incumbent construction)",
+            "n": s["n"], "n_months": s["n_months"], "mean_abn": s["mean"],
+            "mean_abn_monthly": s.get("mean_monthly"), "hac_t": s["t"],
+            "house_full_sample_2019_on": {"mean_abn": 0.0164, "hac_t": 4.63, "n": 877},
+            "note": "Same construction as scripts/validate_index_reconstitution.py on "
+                    "THIS study's 2022-01→ sample. Any gap vs the house's 2019→ number "
+                    "is the sample, not the estimator."}
+
+
 def build_gate_honesty(res: dict) -> list[str]:
     """What each gate can and cannot discriminate AT THIS DESIGN.
 
@@ -889,6 +1041,28 @@ def build_gate_honesty(res: dict) -> list[str]:
         "both are comparisons: PC-1 against a number the house already graded, PC-3 "
         "against the incumbent's own placebo dispersion on identical draws. PC-2 and F-1 "
         "are absolute thresholds and inherit whatever the cohort does.")
+    nd = res.get("placebo_draws")
+    notes.append(
+        f"**PC-2's |t|<2 arm is controlled by the DRAW COUNT, not by the estimator.** "
+        f"That t is the Monte-Carlo standard error of the placebo mean "
+        f"(mean / (sd/sqrt(B))), so for any non-zero cohort drift it grows without bound "
+        f"as B rises — the same estimator passes at B=50 and fails at B=1000. B is frozen "
+        f"at {nd} here and the reading is only interpretable at that B. The economic "
+        f"content of PC-2 is carried by its |mean| < 0.3% arm, which is B-invariant.")
+    notes.append(
+        "**Donor attrition is not symmetric between the real and placebo arms.** Real "
+        "index events batch on quarterly reconstitution dates, so many donors are "
+        "simultaneously inside the ±21-session exclusion and are dropped together; "
+        "placebo dates are uniform and lose far fewer. The real arm therefore fits a "
+        "systematically smaller — and differently composed — donor pool than the null "
+        "does. A calendar-matched placebo would remove this and is the sharper design "
+        "for the next rung.")
+    if res.get("vol_band_fallbacks"):
+        notes.append(
+            f"**The pre-registered 0.5×–2.0× vol band disengaged "
+            f"{res['vol_band_fallbacks']:,} times** (the band admitted no donor and the "
+            f"screen fell back to the unbanded pool). Counted rather than silent, because "
+            f"a screen that turns itself off is a screen the study cannot claim it applied.")
     notes.append(
         "The placebo null is drawn uniformly over the store's sessions while the real "
         "events cluster (S&P reconstitutions batch quarterly). Market drift differences "
@@ -913,12 +1087,16 @@ def build_caveats() -> list[str]:
         "AM-2: the sector-ETF arm is NOT derivable for index adds — data/sector_holdings "
         "covers S&P 500 constituents only (236 tickers, 6.2% of in-scope adds, which are "
         "mostly sp400/sp600). Phase-3 keeps its XLV arm.",
-        "Donor contamination is screened against the treated family's OWN events only. "
-        "S&P DELETIONS are not in the index event list, so a donor being deleted (a "
-        "negative-drift name) can enter a pool and inflate tau. With ~25 deletions a year "
-        "against a donor pool in the thousands and a top-50 correlation screen, the "
-        "expected contribution is small — but it is a known, unremoved bias, not an "
-        "absent one.",
+        "Donor contamination is screened against the IN-SCOPE events of the treated "
+        "family only. Three classes of index event are therefore invisible to it and can "
+        "sit inside a donor pool: S&P DELETIONS (negative drift, inflates tau), MIGRATION "
+        "and RE-ADD cohorts (excluded from the treated set by classify_cohort but still "
+        "index events), and PURE ADDS BEFORE 2022-01 (outside the study scope but inside "
+        "some pre-windows). Each is a known, unremoved bias rather than an absent one; "
+        "the top-50 correlation screen keeps the expected per-event contribution small.",
+        "The contamination map is NOT point-in-time — it uses donors' future event dates "
+        "to exclude them. That is correct for a retrospective diagnostic (it is donor "
+        "hygiene, not a tradable rule) but it would not be available live.",
         "Phase-3 biases carry over from the prior study unchanged: collector truncation "
         "(pageSize=100, no pagination, sort by LastUpdatePostDate) and only 19 sponsor "
         "clusters, all mega-cap pharma and heavily time-overlapping.",
@@ -935,6 +1113,13 @@ def build_caveats() -> list[str]:
         "is conservative.",
         "Placebo draws are the only stochastic element and are seeded; every other number "
         "here is deterministic given the store.",
+        "Monthly clustering keys on the EVENT day (effective − 5 sessions) while the "
+        "incumbent keys on the effective date, so a handful of events fall in a different "
+        "month than they would there; the estimator is the same, the month partition is "
+        "not identical.",
+        "Empirical p carries the (1+k)/(B+1) permutation correction, so its floor is "
+        "1/(B+1) and it can never print 0. The null it tests is 'effect equals the "
+        "placebo mean', not 'effect equals zero'.",
     ]
 
 
@@ -1082,9 +1267,12 @@ def main() -> int:
     if len(ev_pc) < MIN_EVENTS:
         print(f"[scope] only {len(ev_pc)} pure adds in scope (<{MIN_EVENTS}) — the "
               "pre-registered fallback is a DISCLOSED widened variant, not a silent one.")
+    recon = None
     if len(ev_pc):
         families["sp_pure_adds"] = run_family(
             panel, ev_pc, "sp_pure_adds", benchmarks=benchmarks, draws=args.draws, rng=rng)
+        recon = incumbent_reconciliation(panel, ev_pc)
+        print(f"[recon] incumbent construction on this sample: {recon}", flush=True)
 
     # ---- falsifier (sector arm: XLV, exactly the prior study's benchmark)
     ev_f, d_f = phase3_events(panel, data_dir)
@@ -1116,6 +1304,8 @@ def main() -> int:
                       "price_min": PRICE_MIN, "placebo_guard": PLACEBO_GUARD},
         "family_diag": diag,
         "families": families,
+        "incumbent_reconciliation": recon,
+        "vol_band_fallbacks": int(sc.VOL_BAND_FALLBACKS[0]),
         "gate_eval": gate_eval,
         "runtime_s": round(time.time() - t_start, 1),
         "caveats": build_caveats(),
