@@ -2,17 +2,17 @@
 
 Era `abs-session-2026-08-06` · ruling `research/SESSION_ANCHOR_ABSOLUTE_CALENDAR_ADJUDICATION_BY_FABLE.md`
 
-Generated 2026-08-06T09:58Z · store as-of dates are per-universe (read from the stores, never the wall clock).
+Generated 2026-08-06T10:21Z · store as-of dates are per-universe (read from the stores, never the wall clock).
 
 
 ## 1. Old → new, per production loader
 
 | universe | graded | tier flips | veto flips | eligible | store as-of |
 |---|---:|---:|---:|---|---|
-| data/stocks | 235 | 12 (5.11%) | 17 (7.23%) | 14 → 6 (-8) | 2026-07-31 |
-| data/baskets/ohlcv | 2737 | 89 (3.25%) | 255 (9.32%) | 107 → 79 (-28) | 2026-08-04 |
-| data/stocks @345 bars | 235 | 2 (0.85%) | 20 (8.51%) | 6 → 4 (-2) | 2026-07-31 |
-| data/stocks @777 bars | 235 | 8 (3.4%) | 21 (8.94%) | 10 → 6 (-4) | 2026-07-31 |
+| data/stocks | 238 | 13 (5.46%) | 19 (7.98%) | 13 → 14 (+1) | 2026-08-05 |
+| data/baskets/ohlcv | 2743 | 152 (5.54%) | 271 (9.88%) | 163 → 168 (+5) | 2026-08-05 |
+| data/stocks @345 bars | 238 | 9 (3.78%) | 16 (6.72%) | 10 → 9 (-1) | 2026-08-05 |
+| data/stocks @777 bars | 238 | 13 (5.46%) | 16 (6.72%) | 15 → 14 (-1) | 2026-08-05 |
 | massive_stock_day (scan tier) | — | — | — | — | **not measured** |
 | CN china_search panel | 1765 | 59 (3.34%) | 87 (4.93%) | 111 → 146 (+35) | 2026-08-05 |
 | HK stores | 2 | 0 (0.0%) | 0 (0.0%) | 0 → 0 (+0) | 2026-08-05 |
@@ -36,13 +36,13 @@ Generated 2026-08-06T09:58Z · store as-of dates are per-universe (read from the
 ## 2. Tier transition matrices (changed cells only)
 
 
-**data/stocks** — {'None->T2': 2, 'T2->None': 8, 'T3->None': 2}
+**data/stocks** — {'None->T2': 4, 'None->T4': 2, 'T2->None': 5, 'T2->T4': 1, 'T4->T2': 1}
 
-**data/baskets/ohlcv** — {'None->T2': 22, 'None->T3': 3, 'None->T4': 3, 'T2->None': 50, 'T2->T3': 1, 'T2->T4': 1, 'T3->None': 4, 'T3->T2': 1, 'T4->None': 2, 'T4->T2': 2}
+**data/baskets/ohlcv** — {'None->T2': 57, 'None->T3': 6, 'None->T4': 11, 'T2->None': 59, 'T2->T3': 1, 'T2->T4': 5, 'T3->None': 8, 'T3->T2': 1, 'T3->T4': 1, 'T4->None': 2, 'T4->T3': 1}
 
-**data/stocks @345 bars** — {'T2->None': 2}
+**data/stocks @345 bars** — {'None->T2': 1, 'None->T4': 3, 'T2->None': 5}
 
-**data/stocks @777 bars** — {'None->T2': 2, 'T2->None': 5, 'T3->None': 1}
+**data/stocks @777 bars** — {'None->T2': 3, 'None->T4': 2, 'T2->None': 6, 'T2->T4': 1, 'T4->T2': 1}
 
 **CN china_search panel** — {'None->T2': 45, 'None->T3': 1, 'None->T4': 1, 'T2->None': 11, 'T3->None': 1}
 
@@ -50,31 +50,31 @@ Generated 2026-08-06T09:58Z · store as-of dates are per-universe (read from the
 
 ## 3. stocks/ vs baskets/ohlcv/ — the defect's live symptom
 
-234 shared names, aligned to each pair's shared last date (store as-of 2026-07-31).
+237 shared names, aligned to each pair's shared last date (store as-of 2026-08-05).
 
 | field | disagreements BEFORE | disagreements AFTER |
 |---|---:|---:|
-| tier | 5 | 0 |
-| not_topped | 19 | 0 |
-| eligible | 5 | 0 |
+| tier | 4 | 0 |
+| not_topped | 18 | 0 |
+| eligible | 4 | 0 |
 
 ### The audit quintet
 
 | name | bars stocks / ohlcv | BEFORE stocks | BEFORE ohlcv | AFTER stocks | AFTER ohlcv |
 |---|---|---|---|---|---|
-| NUE | 11688 / 3163 | T2/nt=True/e=True | None/nt=False/e=False | None/nt=False/e=False | None/nt=False/e=False |
-| PEP | 13654 / 3163 | T2/nt=True/e=True | None/nt=True/e=False | None/nt=False/e=False | None/nt=False/e=False |
-| ECL | 13474 / 3163 | None/nt=True/e=False | T3/nt=True/e=True | T2/nt=True/e=True | T2/nt=True/e=True |
-| SW | 4559 / 3163 | None/nt=False/e=False | T2/nt=True/e=True | None/nt=False/e=False | None/nt=False/e=False |
-| WMT | 13594 / 3163 | T2/nt=True/e=True | None/nt=True/e=False | None/nt=False/e=False | None/nt=False/e=False |
+| NUE | 11691 / 3166 | None/nt=True/e=False | None/nt=True/e=False | None/nt=True/e=False | None/nt=True/e=False |
+| PEP | 13657 / 3166 | None/nt=False/e=False | None/nt=True/e=False | None/nt=False/e=False | None/nt=False/e=False |
+| ECL | 13477 / 3166 | T2/nt=True/e=True | T2/nt=True/e=True | None/nt=False/e=False | None/nt=False/e=False |
+| SW | 4562 / 3166 | None/nt=False/e=False | None/nt=True/e=False | None/nt=False/e=False | None/nt=False/e=False |
+| WMT | 13597 / 3166 | None/nt=True/e=False | None/nt=True/e=False | None/nt=True/e=False | None/nt=True/e=False |
 
 ## 4. Start-invariance re-run on real data (NEW anchor)
 
-`cascade(c)` vs `cascade(c.iloc[3:])` over 235 data/stocks names: **0 tier flips, 0 veto flips, 0 eligibility flips**.
+`cascade(c)` vs `cascade(c.iloc[3:])` over 238 data/stocks names: **0 tier flips, 0 veto flips, 0 eligibility flips**.
 
 ## 5. Depth residual (honest, NOT an anchor effect)
 
 
-- **345-bar view**: 5 of 235 names differ from full depth under the NEW anchor — by reason {'wbull-arm (weekly confirm not yet knowable)': 5}. A shallower window genuinely cannot compute the deeper legs; every one is disclosed in `null_legs` (R8 keeps this a depth effect, not something the anchor fixes).
+- **345-bar view**: 5 of 238 names differ from full depth under the NEW anchor — by reason {'wbull-arm (weekly confirm not yet knowable)': 5}. A shallower window genuinely cannot compute the deeper legs; every one is disclosed in `null_legs` (R8 keeps this a depth effect, not something the anchor fixes).
 
-- **777-bar view**: 0 of 235 names differ from full depth under the NEW anchor — by reason {}. A shallower window genuinely cannot compute the deeper legs; every one is disclosed in `null_legs` (R8 keeps this a depth effect, not something the anchor fixes).
+- **777-bar view**: 0 of 238 names differ from full depth under the NEW anchor — by reason {}. A shallower window genuinely cannot compute the deeper legs; every one is disclosed in `null_legs` (R8 keeps this a depth effect, not something the anchor fixes).
