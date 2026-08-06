@@ -60,6 +60,18 @@ SPINE COLUMNS (W0.1 B-b — §3.4, §5.1 sub-task 2):
   species_id               — null (multiple species bind this ledger; ambiguous)
   archetype                — from board row payload at grade time; null if absent
 All nullable; existing rows keep nulls (schema-union only; keep-FIRST on dedup key).
+
+ENTRY_STATUS DISCLOSURE LAW (2026-08-04 — battery §1: 177/403 matured buy rows,
+the worst-performing cell, graded entry_status=None with no cause on record):
+  entry_status_reason — non-null exactly when entry_status is null on a freshly
+  graded row. Values: no_cycle_ladder / short_history / gauge_error:* (the gauge
+  self-gated or raised at publish, stamped by build_stock_library as
+  entry_signal_null_reason on the board row), lane_not_stamped (the ran lane
+  ships no gauge BY DESIGN, us_prophet_v1 §3.5), not_assessed (writer catch-all),
+  unstamped_at_publish (grader fallback: the frozen snapshot/blob carries neither
+  gauge nor reason — the pre-instrumentation boards 2026-06-15..17).
+  PIT: the reason describes the frozen artifact being graded, never a recomputed
+  label; entry_status itself is NEVER backfilled — the 06-15..17 rows stay None.
 """
 from __future__ import annotations
 
@@ -447,6 +459,16 @@ def _row_features(r: dict) -> dict:
     conv = r.get("conviction") or {}
     sig = r.get("signal") or {}
     es = r.get("entry_signal") or {}
+    # entry_status disclosure law (2026-08-04): a graded row never carries a SILENT
+    # entry_status null. When the board row has no entry_signal.status, the reason
+    # resolves in priority order: the writer's own stamp (entry_signal_null_reason —
+    # no_cycle_ladder / short_history / gauge_error:* / lane_not_stamped /
+    # not_assessed), else "unstamped_at_publish" (the published row that night
+    # carried neither the gauge nor a reason — the pre-instrumentation boards,
+    # 2026-06-15..17, whose 442 silent-null rows were the battery §1 finding).
+    # PIT: the reason is a property of the frozen snapshot/blob being graded, never
+    # a recomputed label; entry_status itself is NEVER backfilled.
+    _estat = _dig(r, ("entry_signal", "status"), default=es.get("status"))
     return {
         "ticker": r.get("ticker"),
         "sector": r.get("sector"),
@@ -462,7 +484,10 @@ def _row_features(r: dict) -> dict:
         "validation_status": _dig(r, ("conviction", "validation_status"), ("validation_status",)),
         "trust_tier": _dig(r, ("conviction", "trust_tier", "tier"), ("trust_tier", "tier")),
         # entry_signal.status = the confluence-gated "buyable now" flag
-        "entry_status": _dig(r, ("entry_signal", "status"), default=es.get("status")),
+        "entry_status": _estat,
+        "entry_status_reason": (None if _estat is not None
+                                else (r.get("entry_signal_null_reason")
+                                      or "unstamped_at_publish")),
         "act_level": _num(_dig(r, ("entry_signal", "act_level"),
                                ("conviction", "act_level"), default=es.get("act_level"))),
         # signal.last.quality = block/ok — the master-veto state (latest schema only)
@@ -763,6 +788,10 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame,
                     "verdict": feat.get("verdict"), "align_tier": feat.get("align_tier"),
                     "urgency": feat.get("urgency"), "state": feat.get("state"),
                     "entry_status": feat.get("entry_status"),
+                    # disclosure twin: non-null exactly when entry_status is null on a
+                    # freshly-graded row (see _row_features); existing stored rows keep
+                    # nulls until their board is re-graded (schema-union).
+                    "entry_status_reason": feat.get("entry_status_reason"),
                     "act_level": feat.get("act_level"),
                     "signal_quality": feat.get("signal_quality"),
                     "validation_status": feat.get("validation_status"),
