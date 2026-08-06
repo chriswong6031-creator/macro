@@ -1364,3 +1364,181 @@ def test_zh_desk_precomputed_paths_are_untouched_by_the_substitution(tmp_path):
     assert "美联储重定价" in zh and "置信度: 中" in zh and "归因: 明确" in zh
     assert "curve: 熊市变陡" in zh
     assert "美联储维持利率" in zh
+
+
+# ---------------------------------------------------------------------------
+# CN BOARD block — the China Prophet desk's own state (aggregation only)
+# ---------------------------------------------------------------------------
+#
+# CXI-R23: chat context reads PRODUCT artifacts, never repo internals. So the
+# block reads the published board (site/factordata/china_standouts.json) and the
+# nightly ops-telemetry artifact (data/cn_prophet_audit/latest.json) and nothing
+# else. These pin (a) that it counts what the artifacts already carry rather than
+# deriving anything, (b) that the two artifacts keep their OWN stamps, and
+# (c) that no raw slug reaches the prompt.
+
+
+def china_standouts_payload(**overrides: object) -> dict:
+    row = {"ticker": "600519.SS", "lane_reasons": ["buyable_signal", "liquid"]}
+    chased = {"ticker": "300750.SZ", "lane_reasons": ["chase_veto", "extended"]}
+    doc: dict = {
+        "as_of": "2026-08-03",
+        "board_definition": "cn_prophet_v2",
+        "lane_counts": {"featured": 24, "more_actionable": 110,
+                        "late_or_unfillable": 16, "forming": 49},
+        "buy": [row, dict(row, ticker="000001.SZ")],
+        "more_actionable": [chased, dict(chased, ticker="002594.SZ")],
+        "late_or_unfillable": [dict(chased, ticker="600036.SS")],
+        "forming": [],
+    }
+    doc.update(overrides)
+    return doc
+
+
+def cn_audit_payload(**overrides: object) -> dict:
+    doc: dict = {
+        "schema": "cn_prophet_audit/v1",
+        "tier": "ops-telemetry",
+        "as_of": "2026-08-03",
+        "loser_telemetry": {"definitions": [
+            {"board_definition": "cn_prophet_v1", "n_matured": 407,
+             "win_rate": 0.61, "median_excess": 0.021,
+             "chase": {"n_flagged": 90, "share_of_matured": 0.221}},
+            {"board_definition": "cn_prophet_v2", "n_matured": 41,
+             "win_rate": 0.463, "median_excess": -0.008,
+             "chase": {"n_flagged": 7, "share_of_matured": 0.171}},
+        ]},
+        "miss_funnel": {"available": True, "top_n": 150, "pooled": {
+            "n_runner_sessions": 150,
+            "shares": {"featured": 0.59, "more_actionable": 0.30, "absent": 0.11},
+        }},
+    }
+    doc.update(overrides)
+    return doc
+
+
+def cn_root(tmp_path: Path, *, board: object = "__default__",
+            audit: object = "__default__") -> Path:
+    """make_root + the two CN artifacts.
+
+    Pass None to omit either; pass a str to write RAW TEXT (the corrupt-file
+    case) — the same convention make_root uses, and the reason a "{not json"
+    payload here is not silently json.dumps'd into a valid JSON string.
+    """
+    root = make_root(tmp_path)
+    for payload, default, path in (
+        (board, china_standouts_payload,
+         root / "site" / "factordata" / "china_standouts.json"),
+        (audit, cn_audit_payload,
+         root / "data" / "cn_prophet_audit" / "latest.json"),
+    ):
+        if payload is None:
+            continue
+        if payload == "__default__":
+            payload = default()
+        if isinstance(payload, str):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(payload, encoding="utf-8")
+        else:
+            _write(path, payload)
+    return root
+
+
+def test_cn_board_block_reports_lanes_definition_and_flag_counts(tmp_path):
+    packet = mp.build_packet(cn_root(tmp_path))
+    cb = packet["cnboard"]
+    assert cb["asof"] == "2026-08-03"
+    assert cb["definition"] == "cn_prophet_v2"
+    assert cb["featured"] == 24
+    assert cb["lanes"] == [("featured", 24), ("more actionable", 110),
+                           ("late or unfillable", 16), ("forming", 49)]
+    # Counted off the rows' OWN lane_reasons — 3 chase_veto rows across the lanes.
+    assert cb["flags"] == [("chase-vetoed", 3)]
+
+
+def test_cn_board_counts_only_flags_the_rows_actually_carry(tmp_path):
+    """relay_late arrives with a later board definition. Until rows carry it the
+    block must omit it, not print 'relay-late 0' as if it had been measured."""
+    packet = mp.build_packet(cn_root(tmp_path))
+    assert "relay-late" not in dict(packet["cnboard"]["flags"])
+
+    doc = china_standouts_payload()
+    doc["buy"][0]["lane_reasons"] = ["relay_late", "chase_veto"]
+    packet = mp.build_packet(cn_root(tmp_path, board=doc))
+    assert dict(packet["cnboard"]["flags"]) == {"chase-vetoed": 4, "relay-late": 1}
+
+
+def test_cn_board_telemetry_is_the_newest_definition_never_pooled(tmp_path):
+    """Definitions are different instruments. The block reports the live one's
+    record; pooling it with the v1 era would manufacture sample size."""
+    tel = mp.build_packet(cn_root(tmp_path))["cnboard"]["telemetry"]
+    assert tel["definition"] == "cn_prophet_v2"
+    assert tel["n_matured"] == 41
+    assert tel["win_rate"] == pytest.approx(0.463)
+    assert tel["median_excess"] == pytest.approx(-0.008)
+    assert tel["chase_share"] == pytest.approx(0.171)
+
+
+def test_cn_board_renders_both_stamps_and_no_raw_slug(tmp_path):
+    text = mp.render_digest(mp.build_packet(cn_root(tmp_path)))
+    lines = [ln for ln in text.splitlines() if ln.startswith("CN BOARD")]
+    assert lines, text
+    assert "cn prophet v2" in lines[0]          # humanized, per the LEADERS rule
+    assert "featured 24" in lines[0] and "more actionable 110" in lines[0]
+    assert "chase-vetoed 3" in "\n".join(lines)
+    record = next(ln for ln in lines if ln.startswith("CN BOARD record"))
+    assert "41 matured" in record and "win 46%" in record
+    assert "median excess " + mp._MINUS + "0.8pp" in record
+    assert "chase-flagged 17% of matured" in record
+    funnel = next(ln for ln in lines if "runner funnel" in ln)
+    assert "featured 59%" in funnel and "absent 11%" in funnel
+    for line in lines:
+        assert "_" not in line, line
+
+
+def test_cn_board_survives_without_the_telemetry_artifact(tmp_path):
+    """Two artifacts, two stamps, two independent failure modes: a missing audit
+    file removes the record line and leaves the board line standing."""
+    packet = mp.build_packet(cn_root(tmp_path, audit=None))
+    assert packet["cnboard"]["featured"] == 24
+    assert "telemetry" not in packet["cnboard"]
+    text = mp.render_digest(packet)
+    assert "CN BOARD (" in text
+    assert "CN BOARD record" not in text
+
+
+def test_a_missing_board_removes_the_section_and_notes_the_gap(tmp_path):
+    packet = mp.build_packet(cn_root(tmp_path, board=None, audit=None))
+    assert "cnboard" not in packet
+    assert any(g.startswith("china_standouts:") for g in packet["gaps"]), packet["gaps"]
+    assert "CN BOARD" not in mp.render_digest(packet)
+
+
+def test_a_corrupt_board_never_raises_and_never_borrows_a_stamp(tmp_path):
+    packet = mp.build_packet(cn_root(tmp_path, board="{not json"))
+    assert "cnboard" not in packet
+    assert any("china_standouts" in g for g in packet["gaps"]), packet["gaps"]
+    # neighbours are untouched
+    assert packet["tape"] and packet["desk"]
+
+
+def test_featured_falls_back_to_the_buy_row_count(tmp_path):
+    doc = china_standouts_payload(lane_counts={})
+    packet = mp.build_packet(cn_root(tmp_path, board=doc))
+    assert packet["cnboard"]["featured"] == 2
+    assert "featured 2" in mp.render_digest(packet)
+
+
+def test_a_board_with_no_counts_at_all_is_omitted(tmp_path):
+    doc = china_standouts_payload(lane_counts={}, buy=None, more_actionable=None,
+                                  late_or_unfillable=None, forming=None)
+    packet = mp.build_packet(cn_root(tmp_path, board=doc))
+    assert "cnboard" not in packet
+
+
+def test_cn_board_is_droppable_under_budget_but_the_tape_is_not(tmp_path):
+    root = cn_root(tmp_path)
+    assert "CN BOARD" in mp.render_digest(mp.build_packet(root))
+    tight = mp.render_digest(mp.build_packet(root), char_budget=200)
+    assert "CN BOARD" not in tight
+    assert "TAPE" in tight

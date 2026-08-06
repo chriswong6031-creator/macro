@@ -648,6 +648,18 @@ def compose_hero(tx: dict, dx: dict | None) -> dict:
         r_state_en, r_state_zh = _RATES_STATE.get(rk, (f"{r_reg}, {r_dir}", f"{r_reg}, {r_dir}"))
         r_stance_en, r_stance_zh = _RATES_STANCE.get(rk, _DEFAULT_STANCE)
 
+        # TURN-WATCH overrides (state.rates.turn_watch, engine-computed): the (regime,
+        # direction) grid alone certifies a turn last — the 63d direction key stays
+        # "rising" for weeks while a peak forms at an extreme. extreme_watch keeps the
+        # honest state words (it IS high & rising) and moves the stance to anticipation;
+        # rolldown_forming overrides both. Watch vocabulary only — never a call.
+        tw = rates_block.get("turn_watch")
+        if tw == "rolldown_forming":
+            r_state_en, r_state_zh = "High but rolling down", "高位回落中"
+            r_stance_en, r_stance_zh = "Turn forming — watch, don't chase", "拐点形成中 — 观察勿追"
+        elif tw == "extreme_watch":
+            r_stance_en, r_stance_zh = "At a 5-yr extreme — watching for a turn", "处于5年极值 — 关注拐点"
+
         i_state_en, i_state_zh = _INFL_STATE.get(ik, (f"{i_reg}, {i_dir}", f"{i_reg}, {i_dir}"))
         i_stance_en, i_stance_zh = _INFL_STANCE.get(ik, _DEFAULT_STANCE)
 

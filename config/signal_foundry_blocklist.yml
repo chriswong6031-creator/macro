@@ -1187,23 +1187,12 @@ entries:
   - id: BL-G094
     match:
       any_of:
-        - 'reclaim.{0,30}veto.{0,30}flat'
-    reason: >
-      REJECTED-ON-MEASUREMENT (operator-delegated ruling 2026-08-05) —
-      pooled packet read favours the veto (refused fires −4.54pp @21,
-      173 losers saved vs 91 winners cost, no drawdown band positive at
-      any h
-    source: '`research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md` §9 + frozen JSON (#4607)'
-
-  - id: BL-G095
-    match:
-      any_of:
         - 'ontology.{0,30}acceptance'
     reason: >
       HOLD — peak gate IQR 48.8 > 25
     source: 'Open PR #1639 (do not accidentally revive)'
 
-  - id: BL-G096
+  - id: BL-G095
     match:
       any_of:
         - 'theta.{0,30}tape'
@@ -1211,7 +1200,7 @@ entries:
       SUSPENDED
     source: 'Final3-lobes program (2026-07-06)'
 
-  - id: BL-G097
+  - id: BL-G096
     match:
       any_of:
         - 'disp.{0,30}gate'
@@ -1219,7 +1208,7 @@ entries:
       DEFER ×2-replicated
     source: 'Final3-lobes program (#1696)'
 
-  - id: BL-G098
+  - id: BL-G097
     match:
       any_of:
         - 'price.{0,30}memory.{0,30}trials'
@@ -1228,7 +1217,7 @@ entries:
       60% floor at execution)
     source: 'PM0 prereg (#1761) + EI-PM0 run (2026-07-10)'
 
-  - id: BL-G099
+  - id: BL-G098
     match:
       any_of:
         - 'g1'
@@ -1236,7 +1225,7 @@ entries:
       DEFERRED
     source: 'Long-hold thesis program (#1507/#1588)'
 
-  - id: BL-G100
+  - id: BL-G099
     match:
       any_of:
         - 'options'
@@ -1244,7 +1233,7 @@ entries:
       PARKED until preconditions (1)+(2)
     source: 'Options→NW masterplan'
 
-  - id: BL-G101
+  - id: BL-G100
     match:
       any_of:
         - 'codeowners.{0,30}branch.{0,30}protection'
@@ -1252,7 +1241,7 @@ entries:
       DEFERRED to RF codegen lane scope
     source: 'ABM-R3; `RF_CODEGEN_LANE_FOR_FABLE.md`'
 
-  - id: BL-G102
+  - id: BL-G101
     match:
       any_of:
         - 'ticker.{0,30}multi.{0,30}label'
@@ -1261,7 +1250,7 @@ entries:
       revenue-geography ingestion + own adjudication
     source: 'TI-R2, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md`'
 
-  - id: BL-G103
+  - id: BL-G102
     match:
       any_of:
         - 'public.{0,30}breakaway.{0,30}desk'
@@ -1270,7 +1259,7 @@ entries:
       its own wave
     source: '`WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md` §8'
 
-  - id: BL-G104
+  - id: BL-G103
     match:
       any_of:
         - 'winner.{0,30}autopsy.{0,30}short'
@@ -1279,7 +1268,7 @@ entries:
       settlement date)
     source: 'WA-R (docket adjudication), aligns NEXTL-U19'
 
-  - id: BL-G105
+  - id: BL-G104
     match:
       any_of:
         - 'full.{0,30}graph.{0,30}causal'
@@ -1289,7 +1278,7 @@ entries:
       clock
     source: 'CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
 
-  - id: BL-G106
+  - id: BL-G105
     match:
       any_of:
         - 'dedicated.{0,30}machine.{0,30}registration'
@@ -1299,7 +1288,7 @@ entries:
       stands (QS-U2)
     source: 'CHF-R2, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
 
-  - id: BL-G107
+  - id: BL-G106
     match:
       any_of:
         - 'ignition.{0,30}radar.{0,30}user'
@@ -1309,5 +1298,16 @@ entries:
       operator ruling", never met); the 07-23 tape showed the
       narrow-theme
     source: 'Operator ruling 2026-07-23 + `POSTMORTEM_20260723_MAG7_FORCED_CALL_BY_FABLE.md` §2'
+
+  - id: BL-G107
+    match:
+      any_of:
+        - 'reclaim.{0,30}veto.{0,30}flat'
+    reason: >
+      REJECTED-ON-MEASUREMENT (operator-delegated ruling 2026-08-05) —
+      pooled packet read favours the veto (refused fires −4.54pp @21,
+      173 losers saved vs 91 winners cost, no drawdown band positive at
+      any h
+    source: '`research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md` §9 + frozen JSON (#4607)'
 
 # --- END GENERATED FROM DO_NOT_REBUILD.md ---

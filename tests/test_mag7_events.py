@@ -15,7 +15,9 @@ Covers (synthetic parquet fixtures via tmp_path, no network):
   4. ledger row carries events and stays idempotent by date
   5. the historic-tier GitHub annotation STARTS its line (house law) — asserted
      via capsys, never caplog
-  6. notify source (g): historic entry fires once, dedups, ignores stale as_of
+  6. notify source (g): historic entry fires once, dedups, ignores stale as_of —
+     and reads ONLY fixtures the test wrote: every `_..._PATH` run() consults is
+     redirected into tmp_path, so no committed nightly artifact can add a message
   7. fail-soft: a corrupt deep parquet degrades that member to the ohlcv span,
      and snapshot() still returns
 
@@ -565,7 +567,43 @@ _HISTORIC_ARTIFACT = {
 
 
 @pytest.fixture()
-def _artifact(tmp_path, monkeypatch):
+def _notify_paths(tmp_path, monkeypatch):
+    """Redirect EVERY notify_turn_events input path into tmp_path.
+
+    `run()` reads eight module-level paths; this suite used to patch two, so the
+    other six fell through to whatever the nightly pipeline last committed.  The
+    committed `site/basketdata/turn_watch.json` currently holds a live IGNITION
+    for the mag7 basket, which source (a) dispatched on top of the one message
+    the fixture asked for — the end-to-end test was measuring that artifact's
+    contents rather than the code under test.
+
+    The set is DERIVED from the module, not listed: a future source (h) with a
+    new `_..._PATH` is isolated the day it lands, instead of silently re-opening
+    this hole the way source (g) inherited it.
+    """
+    import scripts.notify_turn_events as NTE
+
+    sandbox = tmp_path / "notify_inputs"
+    sandbox.mkdir()
+    patched = []
+    for attr in sorted(vars(NTE)):
+        original = getattr(NTE, attr)
+        if attr.endswith("_PATH") and isinstance(original, Path):
+            monkeypatch.setattr(NTE, attr, sandbox / f"{attr.lower()}{original.suffix}")
+            patched.append(attr)
+    # The display-name map is a module-global cache: without this preset, the
+    # first test to reach a dispatch loads the real 1.1 MB baskets.json and
+    # leaks it into every later test in the session.
+    monkeypatch.setattr(NTE, "_BASKET_NAMES", {})
+
+    # Fail loud if a rename silently empties the sweep above.
+    for required in ("_TURN_WATCH_PATH", "_MAG7_REGIME_PATH", "_NOTIFY_STATE_PATH"):
+        assert required in patched, f"{required} not isolated; patched={patched}"
+    return sandbox
+
+
+@pytest.fixture()
+def _artifact(_notify_paths, tmp_path, monkeypatch):
     """Point notify_turn_events at a synthetic mag7_regime artifact."""
     import scripts.notify_turn_events as NTE
 
@@ -580,6 +618,12 @@ def _artifact(tmp_path, monkeypatch):
 
 
 class TestNotifySourceG:
+
+    @pytest.fixture(autouse=True)
+    def _isolate(self, _notify_paths):
+        """Every test here reads only fixtures it wrote — never a committed
+        artifact.  Class-wide (not just on the end-to-end test) so a sibling
+        that later grows a `run()` call inherits the isolation for free."""
 
     def test_historic_entry_fires_once(self, _artifact):
         import scripts.notify_turn_events as NTE
@@ -670,13 +714,18 @@ class TestNotifySourceG:
         assert "no 21-session stretch this size" in msg
 
     def test_run_dispatches_and_dedups_end_to_end(self, tmp_path, monkeypatch):
-        """The source is wired into run(), not merely defined."""
+        """The source is wired into run(), not merely defined.
+
+        The mag7_regime artifact is the ONLY input this test supplies; every
+        other source path is redirected at a nonexistent file by `_notify_paths`
+        (including `_NOTIFY_STATE_PATH`), so the count below is a property of
+        source (g) alone and not of whatever the nightly last committed.
+        """
         import scripts.notify_turn_events as NTE
 
         artifact = tmp_path / "latest.json"
         artifact.write_text(json.dumps(_HISTORIC_ARTIFACT))
         monkeypatch.setattr(NTE, "_MAG7_REGIME_PATH", artifact)
-        monkeypatch.setattr(NTE, "_NOTIFY_STATE_PATH", tmp_path / "notify_state.json")
         monkeypatch.setattr(NTE.config, "secret", lambda k: "https://example.invalid/webhook")
 
         sent: list[str] = []
@@ -686,3 +735,55 @@ class TestNotifySourceG:
         assert len(sent) == 1 and "MSFT" in sent[0]
         assert NTE.run(today_str="2026-08-01") == 0, "same day → deduped"
         assert len(sent) == 1
+
+    def test_run_is_deaf_to_the_committed_turn_watch_artifact(self, tmp_path, monkeypatch):
+        """Pins the isolation itself: a live IGNITION on disk changes no count.
+
+        This is the defect the end-to-end test above shipped with — it read the
+        real site/basketdata/turn_watch.json, dispatched source (a) as well, and
+        asserted 1 while getting 2.  Writing a *louder* turn_watch than the
+        committed one must still leave source (g)'s count untouched.
+        """
+        import scripts.notify_turn_events as NTE
+
+        # A turn_watch that WOULD fire source (a) if run() could reach it.
+        loud = tmp_path / "turn_watch.json"
+        loud.write_text(json.dumps({
+            "schema": "basket_turn_watch.v1",
+            "as_of": "2026-08-01",
+            "baskets": [
+                {"basket_id": "mag7", "state": "IGNITION", "k": 4, "legs": {}},
+                {"basket_id": "semicap_equipment", "state": "IGNITION", "k": 5, "legs": {}},
+            ],
+        }))
+        assert NTE._TURN_WATCH_PATH != loud, "fixture must have redirected the real path"
+
+        artifact = tmp_path / "latest.json"
+        artifact.write_text(json.dumps(_HISTORIC_ARTIFACT))
+        monkeypatch.setattr(NTE, "_MAG7_REGIME_PATH", artifact)
+        monkeypatch.setattr(NTE.config, "secret", lambda k: "https://example.invalid/webhook")
+
+        sent: list[str] = []
+        monkeypatch.setattr(NTE, "_send_discord", lambda msg, dry_run=False: sent.append(msg) or True)
+
+        assert NTE.run(today_str="2026-08-01") == 1, (
+            "source (g) alone may dispatch; a turn_watch on disk is not an input here"
+        )
+        assert "MSFT" in sent[0]
+
+    def test_no_notify_path_escapes_the_sandbox(self, _notify_paths):
+        """Every `_..._PATH` run() consults resolves under tmp_path.
+
+        Guards the derivation in `_notify_paths`: if a new source lands with a
+        path attribute the sweep misses, this fails instead of the suite quietly
+        going back to reading committed artifacts.
+        """
+        import scripts.notify_turn_events as NTE
+
+        escaped = [
+            attr for attr in sorted(vars(NTE))
+            if attr.endswith("_PATH")
+            and isinstance(getattr(NTE, attr), Path)
+            and _notify_paths not in getattr(NTE, attr).parents
+        ]
+        assert escaped == [], f"unisolated notify path(s): {escaped}"

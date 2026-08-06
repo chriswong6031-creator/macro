@@ -1,17 +1,34 @@
-# US Context Vector — point-in-time candidate store
+# US Context Vector — point-in-time candidate store (+ its forward grades)
 
-`candidates/YYYY-MM.parquet` — one row per analyzed US universe name per night,
-**including names that never passed the raw signal gate**. Producer:
-`engine/us_context_vector.py`, stamped from `scripts/build_stock_library.py` at the
-end of its nightly run. Roadmap: `research/PROPHET_US_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md` §2.
+Two sibling stores, one record:
 
-## Read it with `load_candidates()`, never by globbing
+- `candidates/YYYY-MM.parquet` — one row per analyzed US universe name per night,
+  **including names that never passed the raw signal gate**, WITH that night's itemized
+  `us_prophet_v1` priority-score legs. This is what **REMEMBERS the score**. Producer:
+  `engine/us_context_vector.py`, stamped from `scripts/build_stock_library.py` at the end
+  of its nightly run. Roadmap:
+  `research/PROPHET_US_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md` §2.
+- `grades/YYYY-MM.parquet` — what those names then **did**: every stamped row graded at
+  H=10 and H=21 sessions, excess vs SPY. Producer: `engine/us_prophet_grades.py`, run by
+  `scripts/grade_us_prophet_candidates.py --nightly`. Masterplan:
+  `research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md` §W7 (operator order
+  2026-08-05).
+
+Only the join of the two can say whether a score was right — that join is the miss-audit's
+`priority_score_scorecard` block (`data/prophet_miss_audit/latest.json`).
+
+## Read them with the store readers, never by globbing
 
 ```python
 from engine import us_context_vector as ucv
+from engine import us_prophet_grades as upg
 
 frame = ucv.load_candidates()                      # whole store, one frame
 q3    = ucv.load_candidates(months=["2026-07", "2026-08"])
+ids   = ucv.load_candidates(columns=["stamp_date", "ticker"])   # parquet-level projection
+
+grades = upg.load_grades()                         # every graded (row, horizon)
+joined = upg.load_graded_frame(score_columns=["lane", "sector"])  # grades + the score
 ```
 
 The monthly parts are a **storage** detail. `load_candidates` concatenates them in
@@ -21,11 +38,17 @@ parts exist.
 
 ## Zero authority
 
-Nothing reads this store for scoring. It changes no lane, no rank, no score and no
-gate, and it **originates nothing** — every column is read off a producer that
-already ran that night (glass-box law; A7). Any column here reaches decision
-authority only through the roadmap §3 bounded-authority ladder, one axis at a time,
-each with its own preregistration.
+Nothing reads either store for **scoring**. They change no lane, no rank, no score and no
+gate, and the candidates store **originates nothing** — every column is read off a producer
+that already ran that night (glass-box law; A7). Any column reaches decision authority only
+through the roadmap §3 bounded-authority ladder, one axis at a time, each with its own
+preregistration.
+
+The candidates store now has readers: the forward grader (`engine/us_prophet_grades.py`,
+identity columns only) and, through it, the miss-audit's scorecard. Both are read-only ops
+telemetry with no threshold and no alarm; `tests/test_us_prophet_grades.py` greps every
+`engine`/`scripts`/`app`/`admin`/`lib`/`collectors` module to pin that nothing else touches
+the grade store at all.
 
 ## Integrity rules
 
@@ -37,6 +60,80 @@ each with its own preregistration.
 | Schema union on append | a new column never discards old columns; a retired column is preserved for the nights that had it — across parts as well as within one |
 | Monthly parts | a stamp opens and rewrites **only** its own `YYYY-MM` part; every earlier part is byte-identical forever after its month closes (pinned by `TestMonthlyPartitionedLayout`) |
 | Fail-soft | every failure path logs and returns 0; research telemetry never breaks the nightly build |
+
+## `grades/` — the forward record (§W7)
+
+`grades/YYYY-MM/YYYY-MM-DD.parquet`. One row per **(candidate row, horizon)** across the
+**H=10 / 21 / 42 / 63** session ladder: `stamp_date`, `ticker`, `board_definition`,
+`horizon`, `graded_asof`, `entry_price`, `fill_date`, `mark_date`, `fwd_ret`, `bench`,
+`bench_ret`, `excess_spy`, `fwd_mfe`, `fwd_mdd`, plus two conditioning columns:
+
+| Column | Values | Why |
+|---|---|---|
+| `universe_tier` | `curated` · `scan` · null | curated names are board-admissible; scan names are seen and stamped over the widened universe and **never admitted** (roadmap §4.5). Two populations, **never pooled** — including the median a "hit" is measured against |
+| `signal_class` (+ `signal_label`) | `basing` · `momentum` · `other` | a basing pick and a momentum pick are different bets. Operator ruling 2026-08-05: *"they take time to base… but our board only measures for 10 day results??"* Mapped from the board's **existing** cycle vocabulary (`engine/cycles.py::STATE_DISPLAY`) — nothing new is stamped. An unmapped label classes `other` with the label **preserved** |
+
+Both columns are **resolved from the candidates store by name and then VALIDATED by value**;
+a name match alone is never trusted. Neither has landed in that store yet (a sibling lane
+owns writing them), so today every row carries a null cohort and `signal_class='other'` with
+a null label — and the run prints a `::warning` naming exactly what is missing. The scorecard
+reports that state as `unsplit` / unavailable rather than calling it `curated`.
+
+### The chartered-horizon prereg (fixed BEFORE any long-horizon data matured)
+
+| class | headline horizon | supporting |
+|---|---|---|
+| `basing` | **H=63** | H=21 |
+| `momentum` | **H=10** | H=21 |
+| `other` | H=10 | H=21 |
+
+Every class is graded and reported at **every** horizon in the ladder, so nothing is hidden.
+This map only fixes which horizon is each class's *headline* read — because "grade each class
+at the horizon that flatters it, chosen after seeing the results" is precisely the sin it
+exists to make impossible. It ships in the nightly artifact
+(`priority_score_scorecard.chartered_horizon`) so it can be audited later. **PROPOSED pending
+commissioner adjudication.**
+
+The existing **H=10 headline record is untouched** (era law). The class-conditional view
+accrues beside it as measurement; any future redefinition of the headline is its own dated
+operator adjudication, once the long-horizon data exists.
+
+| Rule | Mechanism |
+|---|---|
+| Nightly is the sole advancer | `ledger_lane.nightly_advance_enabled()` is the **first statement** of `append_grades`; mutation-checked in `TestNightlyLaneGate` (both halves — off-lane writes nothing AND on-lane does write, so deleting the gate cannot leave the test green) |
+| One-grader law | a graded `(stamp_date, ticker, board_definition, horizon)` is **frozen**; a re-run on the same night appends nothing |
+| Ruler reused, not forked | every number comes from `engine.grading.forward_metrics` — the same next-bar fill and positional session horizons `grade_us_board` and `grade_prophet_doors` use, pinned mark-for-mark against the latter |
+| Policy-free | fixed-horizon marks only: no stops, exits, hold rules or sizing. The row is measured as an origination+ranking observation, not as a trade |
+| Maturity, never short marks | an unmatured horizon is **absent** from the run and graded on a later night; it is never scored 0 |
+| Null is not zero | a missing SPY cache nulls `excess_spy` and prints a `::warning`; absolute marks still grade |
+| Month-grouped **daily** parts, keyed by the run | see below |
+
+### Why the parts are keyed by `graded_asof`, and why day grain
+
+Two separate decisions:
+
+**Keyed by the run, not the stamp.** Grading is a monotone forward process, so the run's own
+as-of date means a nightly touches exactly one part and every earlier part is frozen. Stamp
+keying would reopen the previous month's part nightly for ~3 weeks while its rows matured.
+
+**Day grain inside a month directory, not one monthly file.** A parquet cannot be appended in
+place, so a single monthly file is *rewritten* nightly and git stores a whole new blob each
+time. That was tolerable at 1,579 names × 2 horizons. It is not once the H=42/63 ladder
+doubles the rows and the scan tier multiplies the names by ~6.5. Measured on real-shaped
+months (random-noise floats, so these are upper bounds):
+
+| Scale | rows/month | month-end | **day parts (shipped)** | one monthly file |
+|---|---|---|---|---|
+| curated only (~1,579) | 132,636 | 8.65 MB | **0.10 GB/yr** | 1.14 GB/yr (11x) |
+| with scan tier (~10.3k) | 865,200 | 47.7 MB | **0.57 GB/yr** | 6.30 GB/yr (11x) |
+
+On disk after one year: ~104 MB (curated) / ~573 MB (with scan). A new file per run costs
+exactly the store's own size — there is no rewrite churn at all — and it makes "every earlier
+part is byte-identical forever" absolute rather than merely usual. `load_grades()` and the
+`months=` filter are unchanged; parts remain a storage detail.
+
+Each row still carries `stamp_date` and `mark_date`, so a study joins by stamp month
+regardless of which part the row physically lives in.
 
 ## Measured facts (2026-08-04, this Mac Studio, 1,540-name universe)
 

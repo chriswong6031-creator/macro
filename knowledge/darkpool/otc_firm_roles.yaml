@@ -1,0 +1,127 @@
+# Non-ATS OTC firm roles — who is on the other side of internalized off-exchange volume.
+#
+# WHAT THIS IS
+# ------------
+# FINRA's OTC Transparency non-ATS feed (OTC_W_SMBL_FIRM) names the FIRM that
+# internalized each week's off-exchange share volume. This file maps those firm names
+# to their PRIMARY BUSINESS so the desk can separate "retail order flow being
+# internalized by a wholesaler" from "an institutional block crossed at a bank desk".
+# Both print off-exchange and the old desk called both "dark pool".
+#
+# WHAT THIS IS NOT
+# ----------------
+# A LABELLED HEURISTIC on each firm's primary business — NOT a measurement of who was
+# actually trading, and NOT a directional signal. Display tier only, no rank/size/gate
+# authority. Large firms run several businesses at once (Goldman and Morgan Stanley have
+# both institutional desks and market-making arms; Jane Street and HRT do ETF and
+# institutional business alongside retail wholesaling), so a firm's row here describes
+# where the BULK of its internalized share volume comes from, not every trade it prints.
+#
+# GROUNDING (measured over data/finra_otc_nonats/ weeks 2026-06-22 and 2026-06-29)
+# --------------------------------------------------------------------------------
+# The split is visible in the data, not just asserted. Average print PRICE separates the
+# two roles cleanly, because retail wholesalers handle high-volume lower-priced names
+# while bank desks handle institutional business in higher-priced ones:
+#
+#   retail_wholesaler   Citadel $29.07 · Virtu $31.11 · HRT $22.38 · Jane St $34.81
+#                       · G1 $44.92 · Two Sigma $41.20 · GTS $27.22
+#   institutional_desk  Goldman $137.72 · UBS $84.49 · Citi $167.63 · JPM $192.57
+#                       · Morgan Stanley $243.03 (avg print 4,646 shares, 11 symbols)
+#                       · TD $238.02 · SG Americas $539.86
+#   retail_broker       DriveWealth avg print 7 shares (fractional retail)
+#                       · Interactive Brokers 76 shares
+#
+# UNATTRIBUTABLE
+# --------------
+# "De Minimis Firms" is FINRA's own aggregation bucket for small reporters and is
+# 36.4% of non-ATS share volume — the single largest entry. It is genuinely unknowable
+# and is NEVER folded into either side; it reports as `unclassified` and the page prints
+# it. Any firm absent from this file is also `unclassified` — never defaulted.
+#
+# MAINTENANCE
+# -----------
+# Firm names come from FINRA's `marketParticipantName` verbatim (non-ATS rows carry NO
+# MPID). Match is exact on the upper-cased name. When FINRA renames a reporter the old
+# name simply stops appearing and the new one lands in `unclassified` until added here —
+# a visible gap, not a silent misattribution.
+
+schema: darkpool_otc_firm_roles.v1
+tier: display
+is_context_only: true
+
+roles:
+  retail_wholesaler:
+    label:
+      en: "Retail wholesaler"
+      zh: "散户批发商"
+    note:
+      en: "Fills retail marketable order flow against its own book."
+      zh: "以自有账簿承接散户市价订单流。"
+    firms:
+      - CITADEL SECURITIES LLC
+      - VIRTU AMERICAS LLC
+      - HRT FINANCIAL LP
+      - JANE STREET CAPITAL, LLC
+      - G1 EXECUTION SERVICES, LLC
+      - TWO SIGMA SECURITIES, LLC
+      - GTS SECURITIES LLC
+      - JUMP EXECUTION, LLC
+      - XTX EXECUTION SERVICES LLC
+      - WOLVERINE EXECUTION SERVICES, LLC
+      - ACS EXECUTION SERVICES, LLC
+      - COMHAR CAPITAL MARKETS, LLC
+      - SRT SECURITIES LLC
+      - MCAP LLC
+      - SAGETRADER, LLC
+
+  retail_broker:
+    label:
+      en: "Retail broker"
+      zh: "零售券商"
+    note:
+      en: "Retail brokerage internalizing or self-clearing its own customers' orders."
+      zh: "零售券商内部化或自行结算其客户订单。"
+    firms:
+      - DRIVEWEALTH, LLC
+      - ROBINHOOD SECURITIES, LLC
+      - ALPACA SECURITIES LLC
+      - INTERACTIVE BROKERS CORP.
+      - NATIONAL FINANCIAL SERVICES LLC
+      - FUTU CLEARING INC
+      - TRADEUP SECURITIES, INC.
+      - TRADEPRO SECURITIES, LLC.
+      - MIRAE ASSET SECURITIES (USA) INC.
+      - VANGUARD MARKETING CORPORATION
+      - STONEX FINANCIAL INC.
+
+  institutional_desk:
+    label:
+      en: "Bank / institutional desk"
+      zh: "银行／机构交易台"
+    note:
+      en: "Broker-dealer working institutional orders and risk trades."
+      zh: "券商执行机构订单与风险交易。"
+    firms:
+      - GOLDMAN SACHS & CO. LLC
+      - MORGAN STANLEY
+      - MORGAN STANLEY & CO. LLC
+      - J.P. MORGAN SECURITIES LLC
+      - CITIGROUP GLOBAL MARKETS INC.
+      - UBS SECURITIES LLC
+      - TD SECURITIES (USA) LLC
+      - SG AMERICAS SECURITIES, LLC
+      - CANTOR FITZGERALD & CO.
+      - BOFA SECURITIES, INC.
+      - BARCLAYS CAPITAL INC.
+      - RBC CAPITAL MARKETS, LLC
+      - JEFFERIES LLC
+      - NOMURA SECURITIES INTERNATIONAL, INC.
+      - MIZUHO SECURITIES USA LLC
+      - BNP PARIBAS SECURITIES CORP.
+      - WELLS FARGO SECURITIES, LLC
+      - NASDAQ EXECUTION SERVICES, LLC
+
+# Never classified — FINRA's own aggregate bucket. Listed so it is treated explicitly
+# rather than falling through as an unknown firm.
+unattributable:
+  - De Minimis Firms

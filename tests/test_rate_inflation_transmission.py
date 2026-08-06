@@ -223,3 +223,66 @@ def test_disabled_returns_none(monkeypatch):
     cfg["transmission"] = dict(base.get("transmission") or {}, enabled=False)
     monkeypatch.setattr(config, "load", lambda: cfg)
     assert rit.snapshot(_synthetic_frame()) is None
+
+
+# ---------------------------------------------------------------------------
+# TURN WATCH — the display-tier peak read (extreme_watch / rolldown_forming)
+# ---------------------------------------------------------------------------
+
+def _real_series_frame(values: np.ndarray) -> pd.DataFrame:
+    idx = pd.bdate_range("2019-01-01", periods=len(values))
+    f = pd.DataFrame(index=idx)
+    f["us10y_real"] = values
+    f["us10y"] = values + 2.0
+    return f
+
+
+def test_turn_watch_extreme_while_still_rising():
+    """At a top-decile percentile with a rising short window -> extreme_watch, and the
+    (regime, direction) pair stays honest: restrictive + rising."""
+    vals = np.linspace(0.0, 2.5, 1500)          # monotone rise -> last value is the max
+    st = rit.current_state(_real_series_frame(vals))
+    r = st["rates"]
+    assert r["regime"] == "restrictive" and r["direction"] == "rising"
+    assert r["turn_watch"] == "extreme_watch"
+    assert r["real_10y_chg_22d_bp"] is not None and r["real_10y_chg_22d_bp"] > 0
+    assert "extreme" in r["label"]["en"]
+    assert "极值" in r["label"]["zh"]
+
+
+def test_turn_watch_rolldown_forming_on_22d_fall_from_extreme():
+    """A >=12bp 22-day fall from a top-percentile level -> rolldown_forming, even while
+    the 63d direction key still reads 'rising' (the exact lag this key exists to beat)."""
+    vals = np.concatenate([np.linspace(0.0, 2.0, 1400), np.linspace(2.0, 2.5, 78),
+                           np.linspace(2.5, 2.37, 22)])
+    st = rit.current_state(_real_series_frame(vals))
+    r = st["rates"]
+    assert r["direction"] == "rising"           # 63d window still net-up: the lag is real
+    assert r["turn_watch"] == "rolldown_forming"
+    assert r["real_10y_chg_22d_bp"] <= -12
+    assert "rolling down" in r["label"]["en"]
+    assert "回落" in r["label"]["zh"]
+
+
+def test_turn_watch_none_away_from_extreme():
+    """A mid-range level never carries a turn-watch state, whatever the short window does."""
+    vals = np.concatenate([np.linspace(0.0, 2.5, 700), np.linspace(2.5, 1.2, 778),
+                           np.linspace(1.2, 1.1, 22)])
+    st = rit.current_state(_real_series_frame(vals))
+    r = st["rates"]
+    assert r["turn_watch"] is None
+    assert "extreme" not in r["label"]["en"] and "rolling down" not in r["label"]["en"]
+
+
+def test_turn_watch_thresholds_mirror_peak_chains():
+    """Drift guard: the engine's stateless read and the staged peak chains must keep the
+    same thresholds (p90 extreme / 22td / -12bp). Skips until the chain YAML lands."""
+    import re
+    import pytest
+    from pathlib import Path
+    p = Path(__file__).resolve().parent.parent / "knowledge" / "transmission" / "real_rate_peak_gold_rerate.yaml"
+    if not p.exists():
+        pytest.skip("peak chain YAML not on this branch yet")
+    y = p.read_text()
+    assert re.search(r"real_10y_pctile.*0\.90", y), "chain extreme percentile moved — re-pin engine turn_watch"
+    assert re.search(r"DFII10.*window:\s*22.*value:\s*-12", y), "chain rolldown window/threshold moved — re-pin engine turn_watch"

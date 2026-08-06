@@ -269,3 +269,97 @@ def test_lockout_expires_when_close_date_predates_window():
     _, active, created, _ = re_.step_pairs(_sectors(a, b), state)
     assert "xlk:memory->mag7" in created
     assert any(e["id"] == "xlk:memory->mag7" for e in active)
+
+
+# ---------------------------------------------------------------- closure display names ----
+# The "Closed recently" strip renders ledger rows long after the pair left active[],
+# so a closure row that stores only bare leg keys forces the view to print machine
+# slugs ("memory → software") — banned on the glance tier by DESIGN_DOCTRINE Law 2,
+# and with no zh translation available at all.
+
+
+def test_step_pairs_closure_row_carries_display_names():
+    """A closed row must carry EN+ZH display names for both legs, not just the keys."""
+    a, b = _aligned_pair()
+    state, _, created, _ = re_.step_pairs(_sectors(a, b), {})
+    assert created
+    idx = pd.bdate_range(a.index[-1] + pd.Timedelta(days=1), periods=40)
+    flat_a = pd.concat([a, pd.Series(float(a.iloc[-1]), index=idx)])
+    flat_b = pd.concat([b, pd.Series(float(b.iloc[-1]), index=idx)])
+    p = dict(re_.PARAMS)
+    closed_seen = []
+    for k in range(p["lapse_run"] + p["ttl_sessions"] + 2):
+        state, _, _, closed = re_.step_pairs(
+            _sectors(flat_a.iloc[:len(a) + k + 1], flat_b.iloc[:len(b) + k + 1]), state, p)
+        closed_seen += closed
+        if closed:
+            break
+    assert closed_seen, "event never closed on lapse/TTL"
+    row = closed_seen[0]
+    # the bare keys stay put (row identity is unchanged — this is additive)
+    assert row["from_leg"] == "memory" and row["to_leg"] == "mag7"
+    # ...and the display names ride along, from the leg registry
+    assert row["from_name_en"] == "Memory" and row["from_name_zh"] == "存储"
+    assert row["to_name_en"] == "Mag 7" and row["to_name_zh"] == "七巨头"
+    # a regression that echoed the slug back as the "name" must fail here
+    assert row["from_name_zh"] != row["from_leg"]
+    assert row["to_name_zh"] != row["to_leg"]
+
+
+def test_leg_names_reads_both_registry_dialects_and_reports_a_miss():
+    """v1 legs use name_en/zh, v2 universe series use label_en/zh; an unnamed or
+    missing spec must return (None, None) so the row stores nothing rather than a slug."""
+    assert re_._leg_names({"name_en": "Memory", "name_zh": "存储"}) == ("Memory", "存储")
+    assert re_._leg_names({"label_en": "Utilities", "label_zh": "公用事业"}) == (
+        "Utilities", "公用事业")
+    assert re_._leg_names({"key": "memory"}) == (None, None)
+    assert re_._leg_names(None) == (None, None)
+
+
+def test_backfill_leg_names_heals_legacy_rows_without_overwriting_stored_ones():
+    """Rows already on the ledger predate the writer fix: heal them from the registry,
+    but never restate a name the row closed with, and leave retired keys unnamed."""
+    labels = {"memory": ("Memory & storage", "存储芯片"),
+              "software": ("Software (non-AI)", "软件（非AI）"),
+              "xlk_etf": ("Technology", "科技"),
+              "xlu_etf": ("Utilities", "公用事业")}
+    rows = [
+        # legacy v1 row — bare keys only
+        {"pair_id": "xlk:memory->software", "from_leg": "memory", "to_leg": "software",
+         "reason": "conditions_lapsed", "day_n": 8},
+        # legacy v2 row — donor/receiver keys
+        {"pair_id": "xlk_etf->xlu_etf", "donor": "xlk_etf", "receiver": "xlu_etf",
+         "reason": "ttl", "day_n": 21},
+        # already-named row — must be left exactly as-is
+        {"from_leg": "memory", "to_leg": "software",
+         "from_name_en": "Memory (as named at close)", "from_name_zh": "收盘时名称",
+         "to_name_en": "Software", "to_name_zh": "软件"},
+        # retired key — no label to find; stays unnamed so the view falls back
+        {"from_leg": "delisted_leg", "to_leg": "software"},
+    ]
+    out = re_.backfill_leg_names(rows, labels)
+
+    assert out[0]["from_name_zh"] == "存储芯片" and out[0]["to_name_zh"] == "软件（非AI）"
+    assert out[0]["from_name_en"] == "Memory & storage"
+    assert out[1]["from_name_zh"] == "科技" and out[1]["to_name_zh"] == "公用事业"
+    assert out[2]["from_name_en"] == "Memory (as named at close)", "stored name overwritten"
+    assert out[2]["from_name_zh"] == "收盘时名称", "stored name overwritten"
+    assert out[3].get("from_name_en") is None, "retired key must not be invented"
+    assert out[3]["to_name_zh"] == "软件（非AI）", "the resolvable half still heals"
+    # inputs untouched
+    assert "from_name_en" not in rows[0]
+
+
+def test_label_index_spans_v1_legs_and_v2_series():
+    sectors = {"xlk": {"cfg": {"legs": [
+        {"key": "memory", "name_en": "Memory", "name_zh": "存储"},
+        {"key": "unnamed"},
+    ]}}}
+    universe = {"series": [
+        {"key": "xlu_etf", "label_en": "Utilities", "label_zh": "公用事业"},
+    ]}
+    idx = re_._label_index(sectors, universe)
+    assert idx["memory"] == ("Memory", "存储")
+    assert idx["xlu_etf"] == ("Utilities", "公用事业")
+    assert "unnamed" not in idx, "an unnamed leg must not enter the index"
+    assert re_._label_index(None, None) == {}

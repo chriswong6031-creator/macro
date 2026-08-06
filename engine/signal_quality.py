@@ -303,6 +303,95 @@ def _buy_filter(i, sig, bear, n, *, reclaim_veto: bool = True):
     return _confirm_legs(i, sig, n, reclaim_veto=reclaim_veto)
 
 
+# ---- the legal anchor for anything measured FORWARD from a marker ------------ #
+# Bars of forward 3D data every ``_buy_filter`` label depends on.  2, not 1, and the
+# bound is exact rather than a safety margin:
+#
+#   * the counter-trend branch reads ``a.iloc[i + 2]`` outright;
+#   * the plain branch reads only ``c.iloc[i + 1]`` — but it is REACHED only when the
+#     ``bear`` test above it is False, and ``bear`` is ``_bear_div(i, ...)`` over
+#     ``_swing_highs(..., w=2)``, whose candidate list includes a swing high AT bar
+#     ``i``.  A swing high at ``i`` is confirmed against ``v[i-2 : i+3]``, so the bear
+#     leg itself is not settled until bar ``i + 2``;
+#   * the bear-veto branch is the same test, so it inherits the same bound.
+#
+# So no ``_buy_filter`` label is knowable before bar ``i + 2``, and the counter-trend
+# reason — 44 of the 54 HK vetoed-lane admits on the 2026-08-03 panel — is knowable
+# exactly there.  A per-branch offset would be shorter for some rows only by reading
+# the data that decided them, which is the look-ahead this constant exists to close.
+CONFIRM_BARS = 2
+
+
+def _bucket_last_session(daily_close: pd.Series) -> pd.Series:
+    """3B bucket label -> the last DAILY session in it that carried a close.
+
+    Resampled on ``daily_close``'s OWN index, exactly as :func:`signal_frame` does.
+    ``3B`` bins are anchored on the first index date, so re-deriving them from a
+    differently-trimmed copy of the series silently shifts EVERY boundary (measured:
+    dropping one leading row moves every label by a day).  Both halves of a
+    confirmation read therefore have to come from one series object.
+    """
+    stamps = pd.Series(daily_close.index, index=daily_close.index)
+    return stamps.where(daily_close.notna()).resample("3B").last().dropna()
+
+
+def confirmation_date(daily_close: pd.Series, marker_date) -> pd.Timestamp | None:
+    """First daily close at which a marker's ``_buy_filter`` label was KNOWABLE.
+
+    THE ONLY LEGAL ANCHOR for a forward return off a §7 marker — see the warning on
+    :func:`_buy_filter`, which forbids grading from ``marker['date']``.  Two separate
+    look-aheads sit between the two dates and this function closes both:
+
+    1. ``marker['date']`` is the 3B bucket's LEFT EDGE (``resample("3B")`` labels left,
+       aggregates ``.last()``), so it precedes even its OWN close by up to two sessions;
+    2. the label at bar ``i`` reads forward to bar ``i + 2`` (:data:`CONFIRM_BARS`).
+
+    Together that is ~8 daily sessions, and the marker date sits at the trough that
+    CREATED the signal.  Measured on the HK vetoed lane, anchoring the displayed move
+    on the marker overstated it by +7.16pp on average across the lane's own 48-54 name
+    population (2026-07-31 and 2026-08-03 as-of dates).
+
+    The geometry is not re-implemented: :func:`signal_frame` is called and its index
+    walked, so the bucket set is the one ``analyze`` iterated — including its mid-panel
+    gaps.  A flat-price stretch NaNs the StochRSI band and drops buckets out of the
+    middle of the frame, which no arithmetic on the daily index reproduces (measured:
+    a busday-offset derivation matched 8977 of 8978 HK markers and missed exactly that
+    case — 2607.HK, a 2008 penny stock frozen at 0.0133 for 14 buckets).
+
+    Returns ``None`` — never a guess — when the anchor cannot be derived: series too
+    short for :func:`signal_frame`, ``marker_date`` not a bucket label of THIS series,
+    or bar ``i + 2`` not printed yet.  That last one is the live-edge case: a marker
+    inside its own confirmation window has no knowable-yet close, and the caller owes
+    the reader a disclosed null rather than a number measured from the wrong bar.
+    """
+    if daily_close is None or marker_date is None or len(daily_close) == 0:
+        return None
+    try:
+        stamp = pd.Timestamp(marker_date).normalize()
+    except (TypeError, ValueError):
+        return None
+    if pd.isna(stamp):
+        return None
+    sig = signal_frame(daily_close)
+    if sig.empty:
+        return None
+    # analyze()'s own prefix, verbatim — the frame this walks must be the frame the
+    # marker was labelled on, or i+2 counts buckets analyze() never saw.
+    sig = sig.dropna(subset=["macd", "sig", "k", "d", "rsi14"])
+    if len(sig) < 5:
+        return None
+    index = sig.index
+    position = int(index.get_indexer([stamp])[0])
+    if position < 0:
+        return None                      # not a bucket label of this series
+    if position + CONFIRM_BARS >= len(index):
+        return None                      # _buy_filter's own "pending confirmation"
+    session = _bucket_last_session(daily_close).get(index[position + CONFIRM_BARS])
+    if session is None or pd.isna(session):
+        return None
+    return pd.Timestamp(session)
+
+
 def analyze(ticker: str, daily_close: pd.Series, daily_high: pd.Series | None = None,
             daily_low: pd.Series | None = None, *, reclaim_veto: bool = True) -> dict | None:
     """Per-ticker chart-marker + state object (the site/signals/<T>.json contract, §7).

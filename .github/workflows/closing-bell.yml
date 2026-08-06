@@ -354,6 +354,8 @@ jobs:
             brun flow_desk        "group flow heatmap & market tide (build_flow_desk)"           scripts.build_flow_desk
             brun options_skew     "single-name IV skew (build_options_skew)"                     scripts.build_options_skew
             brun options_ivspread "single-name IV spread (build_options_ivspread)"               scripts.build_options_ivspread
+            # AFTER skew+ivspread: it joins both ledgers into the neutralised feature panel.
+            brun options_dislocation "options information-dislocation panel (build_options_dislocation)" scripts.build_options_dislocation
             brun options_screener "US options screener page (build_options_screener)"            scripts.build_options_screener
             brun options_entry    "options entry state fusion table (build_options_entry_state)" scripts.build_options_entry_state
             brun intraday_flow    "intraday flow tracker nightly base (build_intraday_flow)"     scripts.build_intraday_flow --mode nightly
@@ -364,7 +366,7 @@ jobs:
           wait
 
           # Replay each builder's output GROUPED in a stable order (post-barrier)
-          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow flow_desk options_skew options_ivspread options_screener options_entry intraday_flow"
+          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow flow_desk options_skew options_ivspread options_dislocation options_screener options_entry intraday_flow"
           echo "### ⏱ closing-bell parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue

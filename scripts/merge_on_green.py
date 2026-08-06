@@ -54,6 +54,52 @@ one. The sweeper now asks GitHub to merge main into the head itself
 applied exactly as before. The merge gate is unchanged: an updated head is
 UNPROVEN until its fresh checks conclude, and a later sweep judges it on those.
 
+CONCURRENT SWEEPS ARE ALLOWED (2026-08-06). The workflow no longer serialises
+this lane. The old `concurrency: {group: merge-on-green, cancel-in-progress:
+false}` did not serialise WORK — it serialised the wait for a GitHub-hosted
+runner, which is 25-107 minutes here because `ci` and `fences` saturate the same
+pool, while the sweep itself takes 46 seconds. GitHub keeps one pending run per
+group and cancels it on each new arrival, so with triggers every 50 s the lane
+managed 0 successful sweeps in 100 consecutive runs. The full measurement is in
+.github/workflows/merge-on-green.yml.
+
+Overlap is safe because this is a LEVEL-TRIGGERED RECONCILER: every run re-lists
+the labeled pull requests and re-derives every verdict from GitHub's live state,
+and no state is carried between runs. Losing a wake-up therefore costs nothing so
+long as some sweep runs; running two at once costs a few duplicate reads. The one
+genuine race — a losing sweep reading "another sweep already merged this" as a
+conflict and labelling a merged PR `merge-blocked` — is guarded by
+`already_settled`, which is called before any 405/409 is allowed to mean conflict.
+
+A GREEN CAN GO STALE WITHOUT GOING RED (operator ruling 2026-08-06). Everything
+above judges a head's checks. Nothing above asked WHEN they were computed, and a
+check proves the head against the base it was handed, not against the base that
+exists at merge time. PR #4583 is the worked example:
+
+    07:42Z  #4583's head is pushed; its `ci` run starts and concludes success
+    10:26Z  #4607 merges tests/test_us_reclaim_veto_packet.py onto main — a guard
+            that pins a copy of the CT_BOTH_FAIL / CT_RECLAIM_FAIL constants
+    22:51Z  #4583 merges on the 07:42 green, ~15 hours old and never re-run
+
+The green was HONEST. That guard did not exist in the tree the 07:42 run tested.
+#4583 changed those constants, main went red, and 18 open pull requests inherited
+a `ci-pack-1` failure until #4645 repaired it.
+
+CORRECTION, because the record is wrong where someone will look for it: #4645's
+commit message attributes this to a ci.yml path-filter gap. It was not one. At
+#4583's OWN merge commit (9aca28d248c) `engine/signal_quality.py` was covered
+TWICE in `on.pull_request.paths` — explicitly at line 169 and again by `engine/**`
+at line 312. Every path filter was correct; the proof was simply old. Widening
+`paths` would have changed nothing, which is precisely why the fix has to be about
+TIME, not coverage.
+
+So before an otherwise-clean pull request is merged, `ProofFreshness` asks whether
+main has taken a commit, since that proof was computed, inside the PR's TESTED
+SURFACE. If it has, nothing merges: the head is handed to `update-branch` and its
+fresh checks decide on a later sweep. If it has not, the existing green still
+means what it said. That is the operator's chosen option — NOT strict
+up-to-date-with-main, which would serialise a 60-PR queue into days.
+
 Individual pull-request outcomes are ANNOTATIONS, never job failures: one PR with
 a red check must not fail a sweep that also had clean PRs to merge. The process
 exits non-zero only when the sweep itself could not run.
@@ -61,18 +107,26 @@ exits non-zero only when the sweep itself could not run.
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import os
 import urllib.error
 import urllib.parse
 import urllib.request
+from pathlib import Path
 from typing import Any
+
+try:  # imported as `scripts.merge_on_green` (the test pack, and any other caller)
+    from scripts.gh_path_filter import NEGATION_PREFIX, matching_patterns
+except ImportError:  # run as `python3 scripts/merge_on_green.py` (the workflow step)
+    from gh_path_filter import NEGATION_PREFIX, matching_patterns  # type: ignore[no-redef]
 
 GITHUB_API = "https://api.github.com"
 MERGE_ON_GREEN_LABEL = "merge-on-green"
 MERGE_BLOCKED_LABEL = "merge-blocked"
 MAIN_RED_REPAIR_LABEL = "main-red-repair"
 BASELINE_WORKFLOW = "integration-baseline.yml"
+WORKFLOWS_DIR = Path(__file__).resolve().parents[1] / ".github" / "workflows"
 # The conclusions that count as "this check did not fail". `neutral` and
 # `skipped` are the shapes a path-filtered or deliberately-inert job publishes.
 CLEAN_CONCLUSIONS = {"success", "neutral", "skipped"}
@@ -81,6 +135,57 @@ CLEAN_CONCLUSIONS = {"success", "neutral", "skipped"}
 # `per_page=100` call hid the tail and a red past page one went unseen.
 CHECK_RUN_PAGE_CAP = 5
 REQUEST_TIMEOUT_SECONDS = 30
+
+# --- the tested-surface gate --------------------------------------------------
+#
+# Trees that DEFINE what "proven" means. A main commit touching one of them has
+# changed the jobs, the packs, or the path filters themselves, so no pull request's
+# existing green still describes the checks that would run now. Always re-prove,
+# whatever the PR's own footprint is.
+CI_DEFINITION_TREES = (".github/workflows/", ".github/ci/")
+# Trees this repository's OWN lanes rewrite on main, continuously, without a human
+# editing anything: render.yml bakes `site/` out of `templates/`, and the nightly is
+# the sole advancer of the `data/` ledgers (house law). A main commit whose ENTIRE
+# file set lies inside them is a bake, not an edit, and cannot invalidate a proof —
+# the render lane re-derives `site/` from source after the merge regardless, and a
+# nightly artifact that genuinely breaks main is caught by `integration-baseline`,
+# the circuit breaker this same sweep already reads before any merge. So the risk is
+# handed to an existing independent gate, not dropped.
+#
+# This exclusion is LOAD-BEARING, and here is the measurement that makes it so
+# (400 main commits, 32.8 h, 2026-08-06). 330 of the 400 — 82% — are pure bakes.
+# Counting them puts a surface-touching commit inside 96% of 35-minute windows,
+# which is strict up-to-date-with-main wearing a filter, and it livelocks outright
+# any pull request that touches `site/` itself: 18-26 expected re-prove cycles,
+# i.e. it would never merge. Excluding them, the WORST pull request in that window
+# needs ~2.9 cycles and the median ~1.5.
+#
+# It is deliberately CONJUNCTIVE and commit-level: one source file anywhere in the
+# commit and the whole commit is judged normally. This is a classifier for "was
+# this a pipeline bake", never a hole punched in the surface itself.
+PIPELINE_TREES = ("data/", "site/")
+# One listing call per sweep buys this many of main's newest commits (~8 h at the
+# measured 12 commits/h). A proof older than the window cannot be judged, so it is
+# re-proven — which is the right answer for a 15-hour-old green anyway (#4583).
+MAIN_TIMELINE_PAGE = 100
+# Per-commit file listings are fetched once per SHA and shared by every pull request
+# in the sweep, so this caps the sweep, not the PR count. A pull request needing more
+# than this many commits classified is re-proven without spending any of them.
+MAIN_COMMIT_FILE_CAP = 50
+# GitHub truncates a commit's `files` array at 300. A truncated list could hide the
+# one source file that makes a commit not-a-bake, so a truncated commit is treated as
+# touching everything.
+COMMIT_FILES_TRUNCATED_AT = 300
+# `/pulls/{n}/files` pages, 100 each. A pull request bigger than this has a footprint
+# we cannot fully see, and an UNDER-read footprint under-detects, so it is re-proven.
+PR_FILE_PAGE_CAP = 3
+# A check run's `started_at` is when its JOB started, not when the run was created —
+# and the base a run tests is fixed at CREATION. On this repository's saturated pool
+# that gap has been measured at 25m38s (see .github/workflows/merge-on-green.yml), so
+# the window is widened by this much before asking what main did. It is a partial
+# cover, not a complete one: a job that queued longer than this can still leave a
+# commit outside the window. Widening it further trades directly against churn.
+PROOF_BASE_SKEW_SECONDS = 1800
 
 
 def _annotate(level: str, title: str, message: str) -> None:
@@ -213,6 +318,306 @@ def head_check_runs(repo: str, head_sha: str, token: str) -> list[dict[str, Any]
     return runs
 
 
+# ── the tested-surface gate ──────────────────────────────────────────────────
+
+
+def _parse_iso(value: Any) -> float | None:
+    """GitHub's `2026-08-05T07:42:13Z` as an epoch float. None when unusable."""
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        return dt.datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
+
+
+def load_pr_gates(workflows_dir: Path = WORKFLOWS_DIR) -> list[dict[str, Any]]:
+    """Every `on.pull_request` workflow and the `paths:` filter it declares.
+
+    ``patterns is None`` means the workflow declares no filter and starts on every
+    pull request — it therefore says NOTHING about which files affect its verdict,
+    and contributes no entries to any surface. Reading that silence as "everything"
+    is the strict option the operator rejected; reading it as "nothing" is what the
+    ruling asks for ("the `paths` entries that select the PR's jobs").
+
+    RAISES, and the caller aborts the sweep, when:
+
+      * the directory is missing or holds no `on.pull_request` workflow — the most
+        likely cause is a sparse-checkout that stopped fetching it, and a surface
+        derived from nothing is the no-op-that-reviews-as-protection this gate
+        exists to avoid;
+      * no PR-triggered workflow declares a `paths:` filter at all — same reason;
+      * a filter contains a `!` negation, which `gh_path_filter` does not model.
+        Refusing loudly beats mis-evaluating a surface nobody re-derived.
+    """
+    try:
+        import yaml  # local: the sweeper is the only caller and it installs it
+    except ImportError as exc:  # pragma: no cover - environment, not logic
+        raise RuntimeError(f"PyYAML is unavailable, so no path filter can be read: {exc}")
+
+    if not workflows_dir.is_dir():
+        raise RuntimeError(f"{workflows_dir} is not a directory (sparse-checkout?)")
+
+    gates: list[dict[str, Any]] = []
+    for path in sorted(workflows_dir.glob("*.yml")):
+        try:
+            payload = yaml.safe_load(path.read_text(errors="ignore"))
+        except yaml.YAMLError:
+            continue
+        if not isinstance(payload, dict):
+            continue
+        # PyYAML resolves the bare key `on:` to the boolean True (YAML 1.1).
+        block = payload[True] if True in payload else payload.get("on")
+        if not isinstance(block, dict) or "pull_request" not in block:
+            continue
+        trigger = block.get("pull_request")
+        patterns = None
+        if isinstance(trigger, dict) and isinstance(trigger.get("paths"), list):
+            patterns = [str(entry) for entry in trigger["paths"]]
+            negated = [entry for entry in patterns if entry.startswith(NEGATION_PREFIX)]
+            if negated:
+                raise RuntimeError(
+                    f"{path.name} uses `!` negation in on.pull_request.paths "
+                    f"({negated[0]}), which the shared matcher does not model"
+                )
+        gates.append({"workflow": path.name, "patterns": patterns})
+
+    if not gates:
+        raise RuntimeError(f"no on.pull_request workflow found under {workflows_dir}")
+    if not any(gate["patterns"] is not None for gate in gates):
+        raise RuntimeError(
+            f"no PR-triggered workflow under {workflows_dir} declares a paths filter"
+        )
+    return gates
+
+
+class ProofFreshness:
+    """Per-sweep answer to: has main moved under this pull request's proof?
+
+    Built ONCE per sweep and shared by every pull request, which is the whole cost
+    story. The main timeline is one listing call; each commit's file list is fetched
+    at most once per sweep no matter how many pull requests consult it; and a pull
+    request's own file list is read only when the window actually contains a
+    candidate, which the 82%-are-bakes measurement makes the common case.
+
+    EVERY answer this class cannot compute is ``True`` — re-prove. A surface that
+    silently resolves to "nothing changed" would turn the gate into a no-op that
+    reviews as protection, which is the single worst outcome available here.
+    """
+
+    def __init__(
+        self,
+        repo: str,
+        token: str,
+        gates: list[dict[str, Any]],
+        commits: list[dict[str, Any]],
+    ) -> None:
+        self.repo = repo
+        self.token = token
+        self.gates = gates
+        # Newest first, as GitHub returns them.
+        self.commits = commits
+        self._commit_files: dict[str, tuple[list[str], bool]] = {}
+        self._pr_files: dict[Any, list[str] | None] = {}
+        self.commit_file_reads = 0
+
+    # -- construction ---------------------------------------------------------
+
+    @classmethod
+    def build(
+        cls,
+        repo: str,
+        token: str,
+        workflows_dir: Path = WORKFLOWS_DIR,
+    ) -> "ProofFreshness":
+        """Load the gates and main's recent history. Raises; the caller aborts."""
+        gates = load_pr_gates(workflows_dir)
+        query = urllib.parse.urlencode(
+            {"sha": "main", "per_page": str(MAIN_TIMELINE_PAGE)}
+        )
+        status, payload = _request(
+            "GET", f"{GITHUB_API}/repos/{repo}/commits?{query}", token
+        )
+        if status >= 400 or not isinstance(payload, list):
+            raise RuntimeError(f"main commit listing failed: HTTP {status}")
+        commits: list[dict[str, Any]] = []
+        for entry in payload:
+            sha = str((entry or {}).get("sha") or "")
+            committer = ((entry or {}).get("commit") or {}).get("committer") or {}
+            when = _parse_iso(committer.get("date"))
+            if not sha or when is None:
+                raise RuntimeError(f"main commit {sha[:12] or '?'} has no usable date")
+            commits.append({"sha": sha, "when": when})
+        if not commits:
+            # Unreachable against a real repository, and permitting it would hand
+            # the gate a free "main never moved" for every pull request.
+            raise RuntimeError("main commit listing came back empty")
+        return cls(repo, token, gates, commits)
+
+    # -- reads ----------------------------------------------------------------
+
+    def files_of(self, sha: str) -> tuple[list[str], bool]:
+        """``(files, truncated)`` for one main commit. Cached for the whole sweep."""
+        cached = self._commit_files.get(sha)
+        if cached is not None:
+            return cached
+        status, payload = _request(
+            "GET", f"{GITHUB_API}/repos/{self.repo}/commits/{sha}", self.token
+        )
+        self.commit_file_reads += 1
+        if status >= 400 or not isinstance(payload, dict):
+            raise RuntimeError(f"commit {sha[:12]} unreadable: HTTP {status}")
+        files = [
+            str((entry or {}).get("filename") or "") for entry in (payload.get("files") or [])
+        ]
+        answer = ([name for name in files if name], len(files) >= COMMIT_FILES_TRUNCATED_AT)
+        self._commit_files[sha] = answer
+        return answer
+
+    def pull_files(self, number: Any) -> list[str] | None:
+        """The pull request's own changed files, or None when they cannot be seen."""
+        if number in self._pr_files:
+            return self._pr_files[number]
+        names: list[str] = []
+        answer: list[str] | None = names
+        for page in range(1, PR_FILE_PAGE_CAP + 1):
+            query = urllib.parse.urlencode({"per_page": "100", "page": str(page)})
+            status, payload = _request(
+                "GET",
+                f"{GITHUB_API}/repos/{self.repo}/pulls/{number}/files?{query}",
+                self.token,
+            )
+            if status >= 400 or not isinstance(payload, list):
+                answer = None
+                break
+            names.extend(str((entry or {}).get("filename") or "") for entry in payload)
+            if len(payload) < 100:
+                break
+        else:
+            # Every page was full: the footprint is truncated, and an UNDER-read
+            # footprint under-detects. Not knowing is re-prove, never merge.
+            answer = None
+        self._pr_files[number] = answer
+        return answer
+
+    # -- the decision ---------------------------------------------------------
+
+    def surface_of(self, number: Any) -> set[str] | None:
+        """The `paths` entries this pull request's OWN files satisfy.
+
+        A gate's entry is in the surface when some file the pull request changed
+        matches it. That is what makes this the CHOSEN option rather than the
+        rejected strict one: `site/**` is in the surface of a pull request that
+        edits `site/`, and is not in the surface of one that does not.
+
+        None means undeterminable — which includes the empty result. A pull request
+        whose files satisfy no entry of any path-filtered gate has a surface that
+        "silently resolves to the empty set", and merging on that would be the
+        no-op this gate exists to prevent.
+        """
+        files = self.pull_files(number)
+        if files is None:
+            return None
+        surface: set[str] = set()
+        for gate in self.gates:
+            for name in files:
+                surface.update(matching_patterns(name, gate["patterns"]))
+        return surface or None
+
+    def proof_instant(self, runs: list[dict[str, Any]]) -> float | None:
+        """When this head's proof was computed, as an epoch float.
+
+        The OLDEST `started_at` across the non-spurious runs, not the newest. A
+        proof is exactly as fresh as its stalest member: a single check re-run at
+        T+5h does not re-date the hundred checks from T, and reading the newest
+        would let one rerun launder an entire stale proof — the #4583 shape in
+        miniature. `PROOF_BASE_SKEW_SECONDS` then covers the queue wait between the
+        run's creation (which fixes the base it tests) and its first job starting.
+
+        None when any considered run carries no usable timestamp: an unstamped
+        proof cannot be dated, and an undatable proof is re-proven.
+        """
+        considered = [
+            run for run in runs if not is_spurious_check(str(run.get("name") or ""))
+        ]
+        if not considered:
+            return None
+        stamps = [_parse_iso(run.get("started_at")) for run in considered]
+        if any(stamp is None for stamp in stamps):
+            return None
+        return min(stamp for stamp in stamps if stamp is not None) - PROOF_BASE_SKEW_SECONDS
+
+    def stale_for(
+        self, pull: dict[str, Any], runs: list[dict[str, Any]]
+    ) -> tuple[bool, str]:
+        """``(must_reprove, reason)`` for one pull request whose checks are clean."""
+        number = pull.get("number")
+        when = self.proof_instant(runs)
+        if when is None:
+            return True, (
+                "its checks carry no usable start time, so the proof cannot be dated"
+            )
+
+        window = [commit for commit in self.commits if commit["when"] > when]
+        if not window:
+            return False, "main has taken no commits since the proof was computed"
+        if len(window) == len(self.commits) and len(self.commits) >= MAIN_TIMELINE_PAGE:
+            return True, (
+                f"the proof predates all {len(self.commits)} main commits this sweep "
+                "can see, so what main did in between cannot be established"
+            )
+        if len(window) > MAIN_COMMIT_FILE_CAP:
+            return True, (
+                f"main has taken {len(window)} commits since the proof, more than the "
+                f"{MAIN_COMMIT_FILE_CAP} this sweep will classify"
+            )
+
+        candidates: set[str] = set()
+        for commit in window:
+            try:
+                files, truncated = self.files_of(commit["sha"])
+            except RuntimeError as exc:
+                return True, f"a main commit since the proof could not be read ({exc})"
+            if truncated:
+                return True, (
+                    f"main commit {commit['sha'][:12]} changed too many files to list, "
+                    "so it cannot be shown to be outside the surface"
+                )
+            if any(name.startswith(CI_DEFINITION_TREES) for name in files):
+                return True, (
+                    f"main commit {commit['sha'][:12]} changed the check definitions "
+                    "themselves, so no existing green describes the checks that run now"
+                )
+            if files and all(name.startswith(PIPELINE_TREES) for name in files):
+                continue  # a render/nightly bake, not an edit
+            for name in files:
+                for gate in self.gates:
+                    candidates.update(matching_patterns(name, gate["patterns"]))
+
+        if not candidates:
+            return False, (
+                f"main took {len(window)} commit(s) since the proof, none of them "
+                "inside any gate's path filter"
+            )
+
+        surface = self.surface_of(number)
+        if surface is None:
+            return True, (
+                "the pull request's own changed files could not be established, so "
+                "its tested surface is unknown"
+            )
+        hit = sorted(candidates & surface)
+        if hit:
+            return True, (
+                f"main touched {', '.join(hit[:4])} since the proof was computed — "
+                "inside this pull request's tested surface"
+            )
+        return False, (
+            f"main took {len(window)} commit(s) since the proof, none inside this "
+            "pull request's tested surface"
+        )
+
+
 def labeled_pulls(repo: str, token: str) -> list[dict[str, Any]]:
     """Open pull requests carrying `merge-on-green`.
 
@@ -236,9 +641,20 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
     Data/site-only commits intentionally do not trigger the baseline workflow.
     Their current-main descendants therefore accept the latest source proof when
     GitHub's compare endpoint confirms ancestry.
+
+    A ``cancelled`` newest run is SKIPPED, not read as red. `integration-baseline.yml`
+    runs under `concurrency: integration-baseline-main` with `cancel-in-progress: true`,
+    so any push to main that lands while a baseline is in flight cancels it — a routine
+    event on a branch this repo pushes to every few minutes, and NOT evidence that main
+    is broken. Reading `per_page=1` and treating `cancelled` as a non-clean conclusion
+    latched this breaker red for 8.5h on 2026-08-05 (run 31014967682, cancelled 14:23Z)
+    and held 49 armed PRs behind it until a baseline was dispatched by hand. The walk
+    below falls through superseded runs to the newest one that actually CONCLUDED, and
+    still fails closed: a genuine `failure`/`timed_out` stops the walk and returns red,
+    and an all-cancelled window returns ``unproven`` rather than green.
     """
     workflow = urllib.parse.quote(BASELINE_WORKFLOW, safe="")
-    query = urllib.parse.urlencode({"branch": "main", "per_page": "1"})
+    query = urllib.parse.urlencode({"branch": "main", "per_page": "20"})
     status, payload = _request(
         "GET",
         f"{GITHUB_API}/repos/{repo}/actions/workflows/{workflow}/runs?{query}",
@@ -250,7 +666,28 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
     if not runs:
         return "unproven", "integration-baseline has not published a run"
 
-    run = runs[0]
+    # An in-flight newest run is genuinely pending; older ones cannot overrule it.
+    if str(runs[0].get("status") or "").lower() != "completed":
+        head = runs[0]
+        return "pending", (
+            f"{str(head.get('head_sha') or '')[:12] or 'unknown-sha'} "
+            f"{str(head.get('html_url') or '')}"
+        ).strip()
+
+    run = next(
+        (
+            candidate
+            for candidate in runs
+            if str(candidate.get("status") or "").lower() == "completed"
+            and str(candidate.get("conclusion") or "").lower() != "cancelled"
+        ),
+        None,
+    )
+    if run is None:
+        return "unproven", (
+            f"the last {len(runs)} integration-baseline runs were all cancelled "
+            "(superseded by concurrency); none concluded"
+        )
     run_status = str(run.get("status") or "").lower()
     conclusion = str(run.get("conclusion") or "").lower()
     run_sha = str(run.get("head_sha") or "")
@@ -336,6 +773,49 @@ def delete_head_ref(repo: str, pull: dict[str, Any], token: str) -> None:
     )
 
 
+def already_settled(repo: str, number: Any, token: str) -> tuple[bool, str]:
+    """Did this pull request already merge (or close) out from under this sweep?
+
+    WHY (2026-08-06). Sweeps may now overlap. The workflow-level `concurrency`
+    group that used to serialise them was removed because it did not serialise
+    work — it serialised a multi-hour wait for a GitHub-hosted runner, and killed
+    98 of 100 consecutive sweeps in the pending slot while doing it (see the
+    postmortem in .github/workflows/merge-on-green.yml).
+
+    Overlapping sweeps are safe by construction almost everywhere: this script is
+    a level-triggered reconciler that re-reads every labeled pull request and
+    re-derives every verdict from GitHub's live state, carrying nothing across
+    runs. Re-reading a check twice costs a call and changes nothing; two sweeps
+    racing the same squash merge cannot double-merge, because GitHub answers the
+    loser 405/409.
+
+    There is exactly ONE unsafe spot, and it is this one. `sweep_pull` reads a
+    405/409 as "the base moved or the branch conflicts", tries `update-branch`,
+    and on refusal applies `merge-blocked` plus a one-shot comment saying *not
+    merging*. Against a pull request another sweep merged one second earlier,
+    every one of those steps is wrong: update-branch answers 422 on a merged PR,
+    so the loser would label a SUCCESSFULLY MERGED pull request `merge-blocked`
+    and comment a falsehood on it — and because `mark_blocked` fires its comment
+    only on the label transition, that lie is the one that sticks.
+
+    So before a refused merge is allowed to mean "conflict", ask GitHub what the
+    pull request actually is now.
+
+    FAILS CLOSED. An unreadable answer returns ``(False, "")``, which falls
+    through to the pre-existing update-branch/label path. That is noisier but it
+    is exactly the behaviour that shipped before this guard existed, so a broken
+    read can never cause a merge or suppress a genuine conflict report.
+    """
+    status, payload = _request("GET", f"{GITHUB_API}/repos/{repo}/pulls/{number}", token)
+    if status >= 400 or not isinstance(payload, dict):
+        return False, ""
+    if payload.get("merged") is True:
+        return True, "merged"
+    if str(payload.get("state") or "").lower() == "closed":
+        return True, "closed"
+    return False, ""
+
+
 def update_branch(repo: str, pull: dict[str, Any], token: str) -> bool:
     """Merge `main` into a clean-but-stale head. True when GitHub accepted it.
 
@@ -380,10 +860,84 @@ def update_branch(repo: str, pull: dict[str, Any], token: str) -> bool:
     return False
 
 
-def sweep_pull(
-    repo: str, pull: dict[str, Any], read_token: str, merge_token: str
+def reprove(
+    repo: str, pull: dict[str, Any], reason: str, read_token: str, merge_token: str
 ) -> str:
-    """Judge and, when clean, merge one labeled pull request. Returns the verdict."""
+    """Refuse to merge a clean-but-stale proof; hand the head back to CI.
+
+    `update-branch` is the sanctioned path and already exists: it merges main into
+    the head, which makes the head UNPROVEN until its fresh checks conclude, and a
+    later sweep judges it on those. Nothing about the merge gate is weakened here —
+    this only stops a green from outliving the base it was computed against.
+
+    When GitHub declines the update the head genuinely conflicts with main, which no
+    number of sweeps will fix, so it is labeled and explained exactly once.
+
+    …UNLESS another sweep merged it a second ago. Sweeps overlap by design, so two
+    of them can both judge this pull request clean and stale; the loser's
+    update-branch answers 422 because the pull request is MERGED, and labelling that
+    `merge-blocked` with a one-shot "not merging" comment is #4647's hazard arriving
+    through a new door. `already_settled` is asked before any accusation here for
+    exactly the same reason it is asked on a refused merge.
+    """
+    number = pull.get("number")
+    _annotate(
+        "notice",
+        "merge-on-green",
+        f"PR #{number}: checks are clean but the proof is stale — {reason}. Merging "
+        "main into the head; its fresh checks decide on a later sweep.",
+    )
+    if update_branch(repo, pull, merge_token):
+        # The branch is moving again, so any `merge-blocked` from an earlier pass
+        # has stopped being true.
+        clear_blocked(repo, pull, merge_token)
+        return "re-proving"
+    settled, how = already_settled(repo, number, read_token)
+    if settled:
+        _annotate(
+            "notice",
+            "merge-on-green",
+            f"PR #{number}: already {how} by the time this sweep tried to re-prove it "
+            "— a concurrent sweep won the race. Nothing to do, nothing labeled.",
+        )
+        return f"already-{how}"
+    mark_blocked(
+        repo,
+        pull,
+        (
+            "`merge-on-green` sweeper: **not merging.** Every check concluded clean, "
+            f"but the proof is no longer trustworthy: {reason}.\n\n"
+            "A check proves the head against the base it was handed, not against the "
+            "base that exists at merge time — that is how PR #4583's honest 15-hour-old "
+            "green turned main red. The sweeper tried to merge `main` into this branch "
+            "so fresh checks could re-prove it, and GitHub declined, which means a REAL "
+            "content conflict. Resolve it by hand and the next sweep will pick it up "
+            "(the label stays armed)."
+        ),
+        merge_token,
+    )
+    _annotate(
+        "warning",
+        "merge-on-green",
+        f"PR #{number}: stale proof and update-branch declined — labeled merge-blocked.",
+    )
+    return "conflict"
+
+
+def sweep_pull(
+    repo: str,
+    pull: dict[str, Any],
+    read_token: str,
+    merge_token: str,
+    freshness: "ProofFreshness",
+) -> str:
+    """Judge and, when clean, merge one labeled pull request. Returns the verdict.
+
+    ``freshness`` is REQUIRED and has no default on purpose. A default would let a
+    caller that forgot to build it merge on an undated green forever, which is the
+    exact failure this parameter exists to close; making it required turns that
+    mistake into a TypeError at the call site instead of a silent no-op.
+    """
     number = pull.get("number")
     head_sha = str((pull.get("head") or {}).get("sha") or "")
     if not head_sha:
@@ -434,6 +988,18 @@ def sweep_pull(
         )
         return verdict
 
+    # Every check concluded clean. The remaining question is not WHETHER the head is
+    # proven but WHEN — a green computed against a base main has since moved past may
+    # no longer describe the merge (#4583). Fails closed: any answer this cannot
+    # compute is "re-prove".
+    try:
+        stale, reason = freshness.stale_for(pull, runs)
+    except Exception as exc:  # a broken read must never become permission to merge
+        stale, reason = True, f"the tested-surface check itself failed ({exc})"
+    if stale:
+        return reprove(repo, pull, reason, read_token, merge_token)
+    print(f"PR #{number}: proof still current — {reason}.", flush=True)
+
     status, body = _request(
         "PUT",
         f"{GITHUB_API}/repos/{repo}/pulls/{number}/merge",
@@ -456,6 +1022,19 @@ def sweep_pull(
         # base that moved under us. Only the second is genuinely a human's
         # problem-free case, so try to clear it before reaching for a label.
         detail = str((body or {}).get("message") or f"HTTP {status}")
+        # ...but a THIRD shape produces the same 405/409 now that sweeps overlap:
+        # another sweep merged this pull request between our check read and our
+        # merge call. Treating that as a conflict would label a merged PR
+        # `merge-blocked` and comment a falsehood on it. Ask before accusing.
+        settled, how = already_settled(repo, number, read_token)
+        if settled:
+            _annotate(
+                "notice",
+                "merge-on-green",
+                f"PR #{number}: already {how} by the time this sweep called merge — "
+                "a concurrent sweep won the race. Nothing to do, nothing labeled.",
+            )
+            return f"already-{how}"
         if update_branch(repo, pull, merge_token):
             # The head now carries main. It is UNPROVEN until its fresh checks
             # conclude, so nothing merges on this pass and the label stays armed
@@ -528,6 +1107,21 @@ def main() -> int:
             f"merges are paused; one `{MAIN_RED_REPAIR_LABEL}` PR may be considered.",
         )
 
+    try:
+        freshness = ProofFreshness.build(repo, read_token)
+    except Exception as exc:
+        # Sweep-level, so it aborts rather than re-proving 60 pull requests one by
+        # one: a missing path filter or an unreadable main history is a broken
+        # sweeper, not 60 stale proofs, and mass `update-branch` would burn a CI run
+        # per pull request to answer a question the sweep never actually asked.
+        # Fails closed in the only direction that matters — nothing merges.
+        _annotate(
+            "error",
+            "merge-on-green",
+            f"Could not establish the tested-surface gate: {exc}; no PRs swept.",
+        )
+        return 1
+
     tally: dict[str, int] = {}
     repair_slot_used = False
     for pull in pulls:
@@ -547,7 +1141,7 @@ def main() -> int:
             # repairs have not been jointly proven against the broken baseline.
             repair_slot_used = True
         try:
-            verdict = sweep_pull(repo, pull, read_token, merge_token)
+            verdict = sweep_pull(repo, pull, read_token, merge_token, freshness)
         except Exception as exc:
             # One bad pull request must never fail a sweep that had clean work to
             # do. The next run retries it; the label is still armed.
@@ -561,7 +1155,8 @@ def main() -> int:
 
     print(
         "merge-on-green sweep complete: "
-        + ", ".join(f"{count} {verdict}" for verdict, count in sorted(tally.items())),
+        + ", ".join(f"{count} {verdict}" for verdict, count in sorted(tally.items()))
+        + f" ({freshness.commit_file_reads} main commit(s) classified)",
         flush=True,
     )
     return 0
