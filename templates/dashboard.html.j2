@@ -15996,20 +15996,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     })();
     </script>
     {% endif %}
-    {#- THEME TAPE (W2) — relocated BELOW the board (operator order 2026-08-04,
-        "it's obstructing this entire page"). It shipped above the board to build a
-        reading order — here is what the market is heating, here is what these picks
-        do with it, here are the picks — but at 692px it put the product two full
-        screens down to set up a panel that ranks, gates and sizes nothing. Context
-        that changes no decision reads AFTER the decision it contextualises; the
-        two-speed tape band below made the same move for the same reason
-        (operator order 2026-07-11).
-        It is still deliberately NOT a second "themes in favour" strip: that one
-        lives inside the board above, is driven by board names, and by design drops
-        a theme with no names on it — the exact silence this panel prints. Own
-        guard, so the placement survives any re-nesting of the block above. Renders
-        nothing on a dead tape. -#}
-    {% if mode == 'stocks' %}{% include "_theme_tape.html.j2" %}{% endif %}
+    {#- THEME TAPE (W2) moved OUT of this block on 2026-08-06 — it is now the last
+        panel on the page. See the include at the bottom of the stocks page. -#}
     {# TS-U3: Two-speed tape band (mode=stocks only; client-side from live/basket_pulse.json).
        Self-labeling .dtp idiom; relocated BELOW the standout stocks panel
        (operator order 2026-07-11). Carries its own panel chrome; stays hidden
@@ -16481,6 +16469,23 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   </div>
 
   {% endif %}{# /mode != macro — accumulation + holdings/flows #}
+
+  {#- THEME TAPE (W2) — THE LAST PANEL ON THE STOCKS PAGE (operator, 2026-08-06:
+      "make it way smaller in height then move it down to bottom of the page").
+      Third complaint about this panel's footprint. It shipped above the board;
+      #4553 moved it below the board and cut it 692px → 498px; #4605 merged one
+      minute later, added the washout-turn group and a second shelf group, and it
+      measured 680px desktop / 1004px phone against the real artifacts. Trimming
+      it in place is what failed twice, so it is out of the reading order entirely
+      — after #holdings, the last panel this page renders (the data-health strip
+      below is `mode != 'stocks'` and never appears here). It also ships CLOSED,
+      one gist line; templates/_theme_tape.html.j2 carries why that is not the
+      silence the panel exists to fix.
+      Placed OUTSIDE the `mode != 'macro'` block above rather than at the end of
+      it, so it cannot drift back up the page when that block is next re-nested —
+      the failure mode that put it above the board for the first three months.
+      Its own `mode == 'stocks'` guard; renders nothing at all on a dead tape. -#}
+  {% if mode == 'stocks' %}{% include "_theme_tape.html.j2" %}{% endif %}
 
   {% if mode != 'stocks' %}
   {# Link-out strip deleted per audit INT-07dt — the sx-deep-context tray carries these links. #}
