@@ -1,0 +1,100 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "ETSY-2026-06-30-watch",
+  "ticker": "ETSY",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "ETSY",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "ETSY",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_alpha",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Consumer Discretionary",
+    "excess_spy": 0.11981284793758018,
+    "excess_sector": 0.13845207044320007,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CLEAN_LIFTOFF",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "ETSY achieved clean liftoff and outperformed SPY, with the supplied taxonomy assigning company-specific alpha. The data do not show whether the move arose from improving fundamentals, positioning, a catalyst, or Discretionary rotation.",
+    "root_cause": "ETSY achieved clean liftoff and outperformed SPY, with the supplied taxonomy assigning company-specific alpha. The data do not show whether the move arose from improving fundamentals, positioning, a catalyst, or Discretionary rotation.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The watch book surfaced ETSY, but the company-alpha and catalyst books need contemporaneous evidence before receiving causal credit.",
+    "engines_credit": "The watch book was the role model for discovery; the Discretionary-rotation, company-alpha, catalyst, and timing organs remain underdetermined.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "An issuer-specific force was recorded as the driver of ETSY's excess return.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "If comparable internet-retail equities moved similarly, rotation or factor exposure would be a better explanation.",
+        "evidence_refs": [
+          "outcome_cause=idio_alpha",
+          "excess_spy=0.11981284793758018",
+          "terminal_state=CLEAN_LIFTOFF"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "sector",
+        "factor": "",
+        "mechanism": "Consumer Discretionary or internet-retail rotation could have amplified the issuer-specific move.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Strong peer-adjusted ETSY performance would reduce the explanatory weight of group rotation.",
+        "evidence_refs": [
+          "sector=Consumer Discretionary"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Consumer Discretionary or internet-retail rotation may have contributed.",
+      "Short-covering or positioning changes may have amplified the move.",
+      "A post-entry catalyst may explain the re-rating."
+    ],
+    "missing_evidence": [
+      "Industry peer set and relative returns",
+      "Short-interest and positioning data",
+      "Estimate-revision history",
+      "Catalyst chronology",
+      "Entry-date technical and volume evidence"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "etsy_peer_relative_reversal",
+        "feature": "Peer-relative reversal with accumulation",
+        "measurement": "Measure whether ETSY's pre-entry relative trend and volume participation improved against internet-retail peers.",
+        "expected_direction": "Improving peer-relative behavior with accumulation should precede persistent issuer-specific recovery.",
+        "falsifier": "Similar outcomes occur without relative improvement or are explained by industry returns.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T05:48:19+00:00"
+}
