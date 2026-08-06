@@ -387,3 +387,84 @@ door can pass a gate with, and a relay result cannot rescue a G3/G4 failure.
 `PROPHET_STAGE_QUALITY_PREREG.md` (the prereg form this follows),
 `US_BOARD_MEASUREMENT.md` (the measurement canon the comparator comes from),
 `DO_NOT_REBUILD.md` (DNR:KILL-PROPHET-POP-MERGE / DNR:KILL-OUTCOME-AUDITION / DNR:KILL-FORCED-CALLS fenced in §7).*
+
+---
+
+## §10 Door W — washout-turn entries, fully aligned (registered 2026-08-06, FROZEN before first accrual)
+
+Chartered by `SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md` §4 (W5) from the 2026-08-05 census:
+of 117 names live in the washout-turn watch cohort, 109 were invisible to Prophet; the 65
+fully-aligned members held 61 invisible — among them ABT, BKNG, BSX, CME, CRM, GILD, HCA, ICE,
+INTU. Door W makes that class a RECORDED, forward-graded candidate population. It is a shadow
+lane in this document's exact sense: §0's honest framing, §7's fences, and §8's amendment law
+all bind unchanged.
+
+### §10.1 Fire definition — EXACTLY as coded, constants included
+
+A name FIRES Door W on a session when ALL THREE legs hold (`engine/prophet_doors.py
+door_w_candidates` / `door_w_aligned`):
+
+- **W1 — the organ says WASHOUT_TURN.** `engine.washout_turn.compute_symbol_washout(close,
+  _deepen_close(sym, close))` returns state `WASHOUT_TURN` on the organ's own closes ladder
+  (`mtf_upturn._load_close` preferred store; #4663 prepend-splice for the depth legs). The
+  state machine — depth ≤ 15th own-history percentile at a completed-weekly canon RSI-MACD
+  bull cross, graduation/failure exits, 1-bar hysteresis — is the ORGAN's; this door
+  reimplements none of it.
+- **W2 — the entry is FRESH:** `weeks_since_cross <= 2` (`WASHOUT_FRESH_WEEKS = 2`). Door W
+  records ENTRIES into the class, not standing membership; a long-basing name fires once per
+  qualifying cross, not nightly.
+- **W3 — full faster-grid alignment:** on the 2B AND 3B session-grouped canon grids
+  (`WASHOUT_ALIGN_GRIDS = ("2B","3B")`), RSI-MACD line > signal on the LAST COMPLETED bar,
+  recomputed from price at fire time (definite-True only; an unreadable grid never counts as
+  aligned). No `site/` or `data/stock_events/` artifact is read — the fire set cannot move
+  with nightly step ordering.
+
+Cap and hygiene inherit §1's machinery verbatim: dedupe on (ticker, session) against the
+shared `flags.jsonl`, `MAX_FLAGS_PER_DOOR = 25` per night with counted, announced overflow —
+under the cap the DEEPEST `depth_pctile_at_cross` wins (the depth receipt is the door's own
+sort key; conviction-style scores are not consulted).
+
+### §10.2 Ruler — declared at registration
+
+Grading unit = flag-day cohort, mirror of §2. **H=63 sessions excess-vs-SPY is PRIMARY** for
+this door — the basing class pays at the swing horizon if it pays at all (W8 S-COIL:
+compression NULL at entry horizons, +0.98 [+0.42,+1.55] at H=63) — with H=21 recorded as the
+supporting read. Declaring a different primary horizon than Doors T/R at REGISTRATION (not
+after results) is the lawful form of the choice; §8's no-peeking discipline applies from the
+first row.
+
+### §10.3 Promotion gate — one formal read
+
+Mirrors §4's shape: earliest formal read when ≥40 matured H=63 flags exist spanning ≥8
+distinct admission weeks. Pre-stated bar: median H=63 excess > 0 AND loser-rate (H=63 excess
+< −10%) below the matched-universe base rate, both surviving a date-blocked bootstrap 90% CI.
+A PASS buys a REVIEW (§6) — an operator-ratified adjudication of whether washout-turn context
+may enter any scored surface — never automatic authority. A FAIL closes THIS construction
+(fresh + aligned + depth≤P15 at weekly grain) and appends the DNR row itself.
+
+### §10.4 Fences — what Door W is NOT (verified against primary sources 2026-08-06)
+
+- NOT an entry-stack leg, gate covariate, or veto change: the killed `esx_washout_x_turn`
+  interaction (#1747 Amendment-3) stays killed; Door W is a candidate RECORD.
+- NOT a revival of sector-grain scored washout→turn (Oracle P8 P-W1/S-W3, NULL): the SEA
+  atlas first-read REPRODUCES the pooled thinness (+0.23pp median 13w excess on 7,328
+  aligned washout crosses) — the door exists because the CONDITIONED class, not the pooled
+  trigger, is the open question, and only forward accrual can answer it lawfully.
+- NOT per-name outcome audition (DNR row 69): the fire definition is uniform across names;
+  per-name atlas receipts ride as recorded features, never as fire conditions.
+- NOT a Prophet consumer: nothing in the pick chain imports Door W output
+  (`test_no_authority_*` pins extended).
+
+### §10.5 Recorded features (never fire conditions)
+
+Attached only to rows that already survived fire/sort/cap/dedupe (structural invariance, same
+placement as §9): depth_pctile, depth_pctile_at_cross, weeks_since_cross, weekly_cb,
+drawdown_pct, stoch_k/d, era, regime_bucket, and the SEA atlas receipt components
+(name/arch/global n + 13w/26w posteriors) where cheaply available. Feature failure degrades
+to nulls and cannot change a flag (`feature_source_w` disclosure in status.json).
+
+### §10.6 Prospective only
+
+No historical backfill. The ledger's first Door W row is the first nightly after this
+section merges. The 2026-08-05 census cohort is CONTEXT for why the door exists; those
+sightings are not rows.

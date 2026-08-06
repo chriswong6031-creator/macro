@@ -1039,3 +1039,169 @@ def test_prereg_carries_the_recorded_features_addendum():
     assert "Recorded features (2026-08-04 addendum)" in doc
     for key in pdz.FEATURE_KEYS:
         assert f"`{key}`" in doc, f"{key} is recorded but not pre-registered"
+
+
+# =========================================================================== #
+# Door W — washout-turn entries, fully aligned (prereg §10)
+# =========================================================================== #
+
+class TestDoorWAlignment:
+    """door_w_aligned is a PURE recompute from price — no artifact read, definite-True only.
+
+    The pin is CONSISTENCY: on any series, each leg must equal an independent canon
+    computation (grid_series + _line_sig, line>sig on the LAST completed bar). Hardcoding a
+    True fixture is a trap — clean synthetic ramps annihilate Wilder RSI (zero-loss windows
+    go NaN), so expected values are DERIVED, never assumed. aligned=True reachability is
+    exercised through the candidates tests and was verified on live data (MCD 2/2) at build.
+    """
+
+    @staticmethod
+    def _expected_leg(px, grid):
+        from engine import stock_events as se
+        bars = se.grid_series(px, grid)
+        if bars is None or len(bars) < se.MIN_DEPTH_OBS:
+            return None
+        line, sig = se._line_sig(bars)
+        if len(line) == 0:
+            return None
+        lv, sv = float(line.iloc[-1]), float(sig.iloc[-1])
+        if lv != lv or sv != sv:
+            return None
+        return bool(lv > sv)
+
+    @pytest.mark.parametrize("shape", ["riser", "faller", "zigzag_turn", "choppy"])
+    def test_each_leg_matches_the_independent_canon_computation(self, shape):
+        idx = pd.bdate_range("2020-01-01", periods=430)
+        n = np.arange(len(idx), dtype=float)
+        series = {
+            "riser":       100.0 + 0.25 * n + 3.0 * np.sin(n / 9.0),
+            "faller":      250.0 - 0.25 * n + 3.0 * np.sin(n / 9.0),
+            "zigzag_turn": 150.0 - 0.10 * n + 2.0 * np.sin(n / 7.0)
+                           + np.cumsum(np.where(n < 360, 0.0,
+                                                np.where((n % 5) == 4, -1.5, 2.0))),
+            "choppy":      120.0 + 8.0 * np.sin(n / 23.0) + 2.0 * np.sin(n / 5.0),
+        }[shape]
+        px = pd.Series(series, index=idx)
+        out = pdz.door_w_aligned(px)
+        exp_2b = self._expected_leg(px, "2B")
+        exp_3b = self._expected_leg(px, "3B")
+        assert out["align_2b"] is exp_2b and out["align_3b"] is exp_3b
+        expected_class = sum(1 for v in (exp_2b, exp_3b) if v is True)
+        assert out["align_class"] == expected_class
+        assert out["aligned"] is (exp_2b is True and exp_3b is True)
+
+    def test_a_definite_faller_is_not_aligned(self):
+        idx = pd.bdate_range("2020-01-01", periods=430)
+        n = np.arange(len(idx), dtype=float)
+        px = pd.Series(250.0 - 0.25 * n + 3.0 * np.sin(n / 9.0), index=idx)
+        out = pdz.door_w_aligned(px)
+        assert out["aligned"] is False and out["align_class"] == 0
+
+    def test_unreadable_series_never_counts_as_aligned(self):
+        idx = pd.bdate_range("2024-01-01", periods=12)
+        px = pd.Series(np.linspace(10, 11, len(idx)), index=idx)
+        out = pdz.door_w_aligned(px)
+        assert out["align_2b"] is None and out["align_3b"] is None
+        assert out["aligned"] is False
+
+
+class TestDoorWCandidates:
+    """The three frozen legs (prereg §10.1) filter exactly as registered."""
+
+    @staticmethod
+    def _arm(monkeypatch, receipts_by_sym, aligned_by_sym=None, universe=None):
+        import engine.mtf_upturn as _mtu
+        import engine.washout_turn as _wt
+        uni = universe or {s: ["b1"] for s in receipts_by_sym}
+        idx = pd.bdate_range("2020-01-01", periods=300)
+        dummy = pd.Series(np.linspace(90, 110, len(idx)), index=idx)
+        monkeypatch.setattr(pdz, "washout_universe",
+                            lambda droot: (uni, {"ok": True, "universe_n": len(uni)}))
+        monkeypatch.setattr(_mtu, "_load_close", lambda sym, root=None: dummy.copy())
+        monkeypatch.setattr(_wt, "_deepen_close", lambda sym, close, root=None: close)
+        monkeypatch.setattr(_wt, "compute_symbol_washout",
+                            lambda close, deep=None, _m=receipts_by_sym, _c=[0]:
+                            _pop_receipt(_m, _c))
+        al = aligned_by_sym or {}
+        monkeypatch.setattr(
+            pdz, "door_w_aligned",
+            lambda close, _a=al, _c=[0]: _pop_aligned(_a, _c))
+
+    def test_fires_fresh_aligned_turn_and_sorts_deepest_first(self, tmp_path, monkeypatch):
+        rec = {"AAA": _w_receipt(depth=9.0), "BBB": _w_receipt(depth=3.0)}
+        self._arm(monkeypatch, rec)
+        got = pdz.door_w_candidates(tmp_path)
+        ticks = [t for _, t, _ in sorted(got["candidates"])]
+        assert ticks == ["BBB", "AAA"], "deepest depth_pctile must sort FIRST"
+        assert got["disclosure"]["state_turn"] == 2
+        assert got["disclosure"]["fresh"] == 2 and got["disclosure"]["aligned"] == 2
+
+    def test_stale_cross_is_filtered_by_the_freshness_leg(self, tmp_path, monkeypatch):
+        rec = {"AAA": _w_receipt(weeks=pdz.WASHOUT_FRESH_WEEKS + 1)}
+        self._arm(monkeypatch, rec)
+        got = pdz.door_w_candidates(tmp_path)
+        assert got["candidates"] == []
+        assert got["disclosure"]["state_turn"] == 1 and got["disclosure"]["fresh"] == 0
+
+    def test_non_turn_state_is_filtered(self, tmp_path, monkeypatch):
+        rec = {"AAA": None}
+        self._arm(monkeypatch, rec)
+        got = pdz.door_w_candidates(tmp_path)
+        assert got["candidates"] == [] and got["disclosure"]["state_turn"] == 0
+
+    def test_misaligned_turn_is_filtered(self, tmp_path, monkeypatch):
+        rec = {"AAA": _w_receipt()}
+        self._arm(monkeypatch, rec,
+                  aligned_by_sym={"AAA": {"align_2b": True, "align_3b": False,
+                                          "align_class": 1, "aligned": False}})
+        got = pdz.door_w_candidates(tmp_path)
+        assert got["candidates"] == []
+        assert got["disclosure"]["fresh"] == 1 and got["disclosure"]["aligned"] == 0
+
+    def test_unreadable_depth_sorts_last_never_first(self, tmp_path, monkeypatch):
+        rec = {"AAA": _w_receipt(depth=None), "BBB": _w_receipt(depth=8.0)}
+        self._arm(monkeypatch, rec)
+        got = pdz.door_w_candidates(tmp_path)
+        ticks = [t for _, t, _ in sorted(got["candidates"])]
+        assert ticks == ["BBB", "AAA"]
+
+
+def _w_receipt(depth=9.4, weeks=0):
+    return {"state": pdz.DOOR_W and "WASHOUT_TURN", "since": "2026-07-31",
+            "weeks_since_cross": weeks, "depth_pctile": depth,
+            "depth_pctile_at_cross": depth, "weekly_cb": True, "drawdown_pct": -19.7,
+            "stoch_k": 44.1, "stoch_d": 40.2, "history_weeks": 3000,
+            "history_start": "1968-01-05", "data_through": "2026-07-31"}
+
+
+def _pop_receipt(mapping, counter):
+    syms = sorted(mapping)
+    sym = syms[counter[0] % len(syms)]
+    counter[0] += 1
+    return mapping[sym]
+
+
+def _pop_aligned(mapping, counter):
+    default = {"align_2b": True, "align_3b": True, "align_class": 2, "aligned": True}
+    if not mapping:
+        return dict(default)
+    syms = sorted(mapping)
+    sym = syms[counter[0] % len(syms)]
+    counter[0] += 1
+    return mapping.get(sym, dict(default))
+
+
+class TestDoorWPrereg:
+    """The prereg and the code cannot drift apart silently."""
+
+    def test_prereg_section_10_exists_with_the_frozen_legs(self):
+        doc = (REPO / "research" / "PROPHET_DOORS_PREREG.md").read_text(encoding="utf-8")
+        assert "§10 Door W" in doc
+        assert "§10.1" in doc and "§10.6 Prospective only" in doc
+        assert "WASHOUT_FRESH_WEEKS = 2" in doc
+
+    def test_constants_match_the_registration_literals(self):
+        # Literals on purpose (a constant read back from the module is a vacuous guard).
+        assert pdz.WASHOUT_FRESH_WEEKS == 2
+        assert tuple(pdz.WASHOUT_ALIGN_GRIDS) == ("2B", "3B")
+        assert pdz.DOOR_W == "W" and pdz.DOOR_W in pdz.DOORS
