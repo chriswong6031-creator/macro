@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from engine import macro_thesis as mt  # noqa: E402
+from lib import store as lib_store  # noqa: E402  (patched directly: mt defers this import)
 
 # ---------------------------------------------------------------------------
 # synthetic price store
@@ -51,7 +52,12 @@ def fake_store(monkeypatch):
         # long as unknown names return None.
         return shelf.get(name)
 
-    monkeypatch.setattr(mt.store, "read", fake_read)
+    # Patch lib.store itself, not `mt.store`. engine/macro_thesis.py imports
+    # lib.config/lib.store INSIDE its three consumer functions so the admin panel
+    # does not import-cache them (see the note at that module's import block), so
+    # `mt.store` no longer exists as an attribute. This is the same module object
+    # the deferred import resolves to, so the fake is just as faithful.
+    monkeypatch.setattr(lib_store, "read", fake_read)
     return shelf
 
 

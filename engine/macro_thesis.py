@@ -112,7 +112,15 @@ from typing import Any
 
 import pandas as pd
 
-from lib import config, store
+# `lib.config` / `lib.store` are imported INSIDE the three functions that use them
+# (_ledger_path, _close_series, _basket_members), never at module level. The admin
+# panel import-caches this module, so a module-level import would pull lib/config.py
+# and lib/store.py into the admin LOAD-TIME closure — and
+# tests/test_deploy_update_self_heal.py then demands both be added to the admin
+# restart regex in app/deploy/update.sh, which directly contradicts
+# test_non_admin_path_does_not_trigger_admin_restart[lib/config.py]. Deferring keeps
+# the admin restart surface to this file alone and satisfies both guards. Neither name
+# is referenced at module level, so nothing else changes.
 
 # ── contract ──────────────────────────────────────────────────────────────────
 
@@ -163,6 +171,7 @@ class MacroThesisFirewallError(ValueError):
 # ── ledger I/O ────────────────────────────────────────────────────────────────
 
 def _ledger_path(data_root: Path | None = None) -> Path:
+    from lib import config, store  # deferred: see the note at the import block
     root = data_root if data_root is not None else config.data_dir()
     p = root / LEDGER_DIR
     p.mkdir(parents=True, exist_ok=True)
@@ -425,6 +434,7 @@ def _groups_for(series: str) -> tuple[str, ...]:
 
 
 def _close_series(ticker: str) -> pd.Series | None:
+    from lib import config, store  # deferred: see the note at the import block
     for group in _groups_for(ticker):
         df = store.read(group, ticker)
         if df is not None and "close" in df.columns:
@@ -441,6 +451,7 @@ def _basket_members(basket_id: str, data_root: Path | None = None) -> list[str]:
     Basket ids carry a ``b-`` prefix in cross-namespace id-spaces (cycle rows,
     URLs) but are stored BARE in membership.json — accept either spelling.
     """
+    from lib import config, store  # deferred: see the note at the import block
     root = data_root if data_root is not None else config.data_dir()
     path = root / _BASKET_MEMBERSHIP[0] / _BASKET_MEMBERSHIP[1]
     if not path.exists():
