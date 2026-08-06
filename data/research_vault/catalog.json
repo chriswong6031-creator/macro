@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T13:41:15.155572+00:00",
-  "count": 875,
+  "generated_at": "2026-08-06T14:11:14.445172+00:00",
+  "count": 876,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -116,6 +116,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-logawkys4cm-82cdd6",
+      "title": "GS Robert Quinn Silver Futures Recharging",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:35:41Z",
+      "summary_points": [
+        "**Managed Money Catalysts**: Low positioning (3% 2-yr rank) + dovish FOMC, JPY intervention, oil reversal → Dollar weakening triggered 8.3% weekly silver surge; managed money gross longs drove price rebound and short covering risk.",
+        "**Net Length Decline**: Silver managed money net length fell from $7b (June 2026) to $3b (July 2026), signaling reduced speculative longs and potential bearish price correction.",
+        "**Price-Open Interest Alignment**: Sustained upward trend in both silver price and open interest (June–Aug 2026) confirms bullish market sentiment and increasing participation post-May 2026 decline.",
+        "**Negative Skew Deepening**: Rising 3m implied volatility and increasingly negative 25 delta put-call skew (2025–2026) indicate elevated downside risk pricing and heightened market stress."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
