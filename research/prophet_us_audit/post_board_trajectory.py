@@ -459,6 +459,12 @@ def detect_era_breaks(rows: pd.DataFrame, presence: pd.DataFrame) -> dict:
         # change is a STEP; a board quietly emptying over a week is DRIFT, and drift is
         # not a construction change — misfiling it as one would move real signal
         # departures into the roster bucket and hide them.
+        # KNOWN LIMITATION (pinned by test_two_cap_steps_inside_one_window_collapse_to_
+        # the_first_KNOWN_LIMITATION): two genuine cap steps within ERA_WINDOW of each
+        # other land in ONE candidate run, and only the first is emitted. On this frame
+        # the two cap changes are 20 board dates apart and the third seam fires through
+        # rank_by (exact, never collapsed), so it is inert here. A board that re-caps
+        # twice in a week would need a per-step changepoint pass, not a threshold tweak.
         for key, lbl, use_rel in (("n", "lane size", True),
                                   ("gate_readable", "gate-state block appeared/vanished", False),
                                   ("gate_true", "eligible-share step", False)):
@@ -1121,6 +1127,23 @@ def main() -> dict:
         },
         "era_breaks": {f"{f}:{ln}": {d: t for d, t in sorted(v.items())}
                        for (f, ln), v in sorted(breaks.items())},
+        "era_break_method": {
+            "rank_by": "exact dated event, never windowed or collapsed",
+            "level_metrics": (f"level shift over {ERA_WINDOW} boards either side; "
+                              f"size needs >={ERA_SIZE_MIN} names AND "
+                              f">={ERA_SIZE_JUMP:.0%}, share needs >={ERA_SHARE_JUMP:.2f}; "
+                              f"each contiguous candidate run collapses to the day the "
+                              f"step landed, which must carry >={ERA_STEP_SHARE:.0%} of "
+                              f"the shift (a cap change is a STEP, a board emptying over "
+                              f"a week is DRIFT)"),
+            "KNOWN_LIMITATION": (
+                "two genuine cap steps within "
+                f"{ERA_WINDOW} boards of each other collapse to the FIRST one; the second "
+                "is folded in silently. Inert on this frame (the two cap changes are 20 "
+                "board dates apart and the third seam fires through rank_by), pinned by "
+                "test_two_cap_steps_inside_one_window_collapse_to_the_first_KNOWN_"
+                "LIMITATION, and it would need a per-step changepoint pass to fix."),
+        },
     }
 
     # ---- census ---------------------------------------------------------------
@@ -1252,9 +1275,13 @@ def main() -> dict:
         g2 = grade(dep[dep.lane == "buy"], panel2, sector_of)
         res["price_pin_sensitivity"] = {
             "note": "SENSITIVITY ONLY, not a headline. Extending the price pin to "
-                    f"{PRICE_EXT_ASOF} buys 2 extra sessions but only "
-                    f"{cov}/{len(tickers)} board tickers print past {REPRO_ASOF}, so "
-                    "every cell it adds is restricted to that quarter of the roster.",
+                    f"{PRICE_EXT_ASOF} buys 2 extra sessions, but only "
+                    f"{cov}/{len(tickers)} board tickers ({100.0 * cov / max(len(tickers), 1):.1f}%) "
+                    f"print past {REPRO_ASOF}. Every observation it adds is therefore "
+                    "either restricted to that sliver or booked as TRUNCATED against a "
+                    "name that simply stops printing on the pin date — the extension "
+                    "manufactures truncation rather than maturity, which is why the pin "
+                    "stays at the common ceiling.",
             "tickers_with_print_at_ext_pin": cov,
             "tickers_total": len(tickers),
             "prices": pxprov2,

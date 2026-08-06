@@ -310,6 +310,11 @@
    ]
   }
  },
+ "era_break_method": {
+  "rank_by": "exact dated event, never windowed or collapsed",
+  "level_metrics": "level shift over 3 boards either side; size needs >=15 names AND >=40%, share needs >=0.50; each contiguous candidate run collapses to the day the step landed, which must carry >=60% of the shift (a cap change is a STEP, a board emptying over a week is DRIFT)",
+  "KNOWN_LIMITATION": "two genuine cap steps within 3 boards of each other collapse to the FIRST one; the second is folded in silently. Inert on this frame (the two cap changes are 20 board dates apart and the third seam fires through rank_by), pinned by test_two_cap_steps_inside_one_window_collapse_to_the_first_KNOWN_LIMITATION, and it would need a per-step changepoint pass to fix."
+ },
  "census": {
   "board_rows": 3272,
   "board_dates": 32,
@@ -5574,7 +5579,7 @@
  },
  "counterfactual_note": "Dropping at departure earns, by construction, ZERO excess from the drop date onward. So the drop-anchored distribution IS the hold-minus-drop delta \u2014 it is not a second measurement, and reading it as one would double-count. `on_board_excess_spy_pp_median` beside it is what the name earned WHILE on the board (admission -> last appearance), which is what separates 'dropped a winner mid-run' from 'dropped a name that never worked'.",
  "price_pin_sensitivity": {
-  "note": "SENSITIVITY ONLY, not a headline. Extending the price pin to 2026-08-04 buys 2 extra sessions but only 20/872 board tickers print past 2026-07-31, so every cell it adds is restricted to that quarter of the roster.",
+  "note": "SENSITIVITY ONLY, not a headline. Extending the price pin to 2026-08-04 buys 2 extra sessions, but only 20/872 board tickers (2.3%) print past 2026-07-31. Every observation it adds is therefore either restricted to that sliver or booked as TRUNCATED against a name that simply stops printing on the pin date \u2014 the extension manufactures truncation rather than maturity, which is why the pin stays at the common ceiling.",
   "tickers_with_print_at_ext_pin": 20,
   "tickers_total": 872,
   "prices": {

@@ -306,11 +306,32 @@ def test_a_cap_change_fires_exactly_one_break_not_a_smear():
 
 def test_gradual_drift_is_not_a_construction_break():
     """A board quietly emptying over a week is DRIFT. Misfiling it as a roster break
-    would move real signal departures into the construction bucket and hide them."""
-    days = [f"2026-07-{d:02d}" for d in (1, 2, 3, 6, 7, 8, 9, 10)]
-    sizes = dict(zip(days, [40, 36, 32, 28, 24, 20, 18, 16]))
+    would move real signal departures into the construction bucket and hide them.
+
+    The level shift here CLEARS both size gates (100 -> 20 is 80 names and 80%), so only
+    the step-share test can reject it: no single day carries 60% of the move. A weaker
+    fixture (40 -> 16 in fours) never reaches either gate and would pass against a
+    detector with the step test deleted — measured, not assumed.
+    """
+    days = [f"2026-07-{d:02d}" for d in (1, 2, 3, 6, 7, 8, 9, 10, 13)]
+    sizes = dict(zip(days, [100, 100, 100, 80, 60, 40, 20, 20, 20]))
+    breaks = PBT.detect_era_breaks(_rows_for(sizes), _presence(sizes))
+    assert breaks.get(("v1", "buy"), {}) == {}, "a week-long slide is not a cap change"
+
+
+def test_small_lane_churn_is_not_a_cap_change():
+    """The real 2026-07-08 case: an 18-name lane drops to 10. That is 44% — over the
+    relative gate — but 8 names, so only the ABSOLUTE floor rejects it. Without the
+    floor, ordinary churn in a 10-20 name lane manufactures construction seams and eats
+    the signal departures on those dates."""
+    days = [f"2026-07-{d:02d}" for d in (1, 2, 3, 6, 7, 8)]
+    sizes = dict(zip(days, [18, 18, 18, 10, 10, 10]))
     breaks = PBT.detect_era_breaks(_rows_for(sizes), _presence(sizes))
     assert breaks.get(("v1", "buy"), {}) == {}
+    # ...and the SAME shape at scale IS a cap change, so the floor is not just an off switch
+    big = dict(zip(days, [180, 180, 180, 100, 100, 100]))
+    hit = PBT.detect_era_breaks(_rows_for(big), _presence(big)).get(("v1", "buy"), {})
+    assert list(hit) == ["2026-07-06"]
 
 
 def test_null_rank_by_does_not_fire_a_break_on_every_date():
@@ -321,6 +342,26 @@ def test_null_rank_by_does_not_fire_a_break_on_every_date():
     pres = _presence(sizes)
     pres["rank_by"] = np.nan
     assert PBT.detect_era_breaks(_rows_for(sizes), pres).get(("v1", "buy"), {}) == {}
+
+
+def test_two_cap_steps_inside_one_window_collapse_to_the_first_KNOWN_LIMITATION():
+    """Pins a known limitation rather than a desired behaviour.
+
+    The run-collapse keeps one date per contiguous candidate run. When TWO genuine cap
+    steps fall within ERA_WINDOW of each other (100 -> 60 -> 20 here), both are inside
+    one run and only the first is emitted — the second construction change is silently
+    folded into the first. On the real frame the two cap changes are 20 board dates apart
+    (2026-06-25 and 2026-07-28) and the third seam fires through rank_by, which is exact
+    and never collapsed, so this cannot bite there. It would bite on a future board that
+    re-caps twice in a week, and the fix would be a per-step changepoint pass, not a
+    threshold tweak. If this test ever starts failing with BOTH dates present, that is
+    the improvement landing — update the assertion, do not delete it.
+    """
+    days = [f"2026-07-{d:02d}" for d in (1, 2, 3, 6, 7, 8, 9, 10)]
+    sizes = dict(zip(days, [100, 100, 100, 60, 60, 20, 20, 20]))
+    hit = PBT.detect_era_breaks(_rows_for(sizes), _presence(sizes)).get(("v1", "buy"), {})
+    assert list(hit) == ["2026-07-06"], (
+        "documented limitation: the second step (2026-07-08) is folded into the first")
 
 
 def test_rank_by_change_is_an_exact_dated_break():
