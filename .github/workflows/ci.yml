@@ -2702,6 +2702,15 @@ on:
       # pack that executes it. test_prophet_bridge_order_invariance.py was strictly
       # dark before this: no `run:` step and no path pattern named it.
       - "tests/test_prophet_bridge_order_invariance.py"
+      # R0-C earnings split-brain fence (2026-08-06). Both suites guard
+      # engine/prophet_bridge.py, engine/prophet_stage_shadow.py and the new
+      # engine/prophet_stage_inputs.py, all of which the broad "engine/**" entry above
+      # already reaches — these lines are the OTHER half, so a suite-only edit can start
+      # the pack that executes them. test_prophet_stage_shadow.py was strictly dark
+      # before this (no `run:` step, no path pattern) while guarding the forward shadow
+      # that arms the hold-leash's auto-demote clause.
+      - "tests/test_prophet_earnings_split_brain.py"
+      - "tests/test_prophet_stage_shadow.py"
       - "tests/test_prophet_stage_tilt.py"
       - "tests/test_prophet_w1_intake_repair.py"
       - "tests/test_tape_flow.py"
