@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T09:39:48.138639+00:00",
-  "count": 863,
+  "generated_at": "2026-08-06T09:54:50.930995+00:00",
+  "count": 864,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -57,6 +57,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-7l6zqifah1l-f2af3c",
+      "title": "Mizuho EMEA Multi Asset Strategy Daily",
+      "institution": "Mizuho",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T09:21:24Z",
+      "summary_points": [
+        "**USD Data & Geopolitics**: Mixed US data (ADP/ISM below expectations) amid Iran-Oman Hormuz deal focus; oil near $80 and jobless claims ahead drive volatility.",
+        "**Geopolitical Escalation**: Iran rejects foreign interference in Hormuz, Israel-Lebanon strikes heighten Middle East risk, pressuring oil/rates narratives.",
+        "**Euro Bonds Risk**: Geopolitical delay (Iran/Oman joint statement) and EU fiscal noise (France/Italy underperformance, energy/defense spending) limit gains despite Spain/France data.",
+        "**British Gilts Exposure**: Middle East/oil headlines dominate; oil/USTs correlation key ahead of US payrolls, with fiscal risk premium as primary concern."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-ooz7py7uvxm-31287a",
       "title": "JPM Interntational Market Intell | Morning Briefing 2026 08 06",
