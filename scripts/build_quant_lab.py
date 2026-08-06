@@ -72,6 +72,30 @@ def main() -> int:
                  key, c.get("n_dates"), c.get("mean_ic"),
                  c.get("t_hac") or c.get("nw_t"), c.get("q"), r.get("verdict"))
 
+    # The options-dislocation family is DAILY, has no composite, and is scored against its
+    # own imported pre-registration — so it takes its own entry point rather than
+    # study_model(), whose grid is quarter-end off the close panel and whose composite would
+    # be the fused pre-gate score RO-2 forbids.
+    if "options_dislocation" in specs.MODELS:
+        try:
+            r = study.study_options_dislocation()
+            out["models"]["options_dislocation"] = r
+            # Same mechanism, same key: the family's limits join the artifact's standing
+            # limits so the page's existing "what these cannot tell you" panel carries them.
+            out["limits"] = {**out["limits"], **study.OPTIONS_LIMITS}
+            log.info("%-22s sessions=%s/%s stamps  scored_dates=%s  -> %s",
+                     "options_dislocation", r.get("n_sessions"), r.get("n_stamps"),
+                     r.get("n_scored_dates"), r.get("verdict"))
+            for lk, lv in (r.get("legs") or {}).items():
+                log.info("    %-16s ic=%-9s n=%-3s indep=%-3s -> %s (uncorrected: %s)",
+                         lk, lv.get("mean_ic"), lv.get("n_dates"),
+                         lv.get("n_independent_windows"), lv.get("verdict"),
+                         lv.get("verdict_uncorrected"))
+        except Exception as e:                     # noqa: BLE001 — must not kill the artifact
+            log.error("options dislocation study failed: %s", e)
+            out["models"]["options_dislocation"] = {
+                "model": "options_dislocation", "verdict": "no_data", "error": str(e)}
+
     d = config.data_dir() / "quant_lab"
     d.mkdir(parents=True, exist_ok=True)
     p = d / "study.json"
@@ -82,13 +106,23 @@ def main() -> int:
         for key, r in out["models"].items():
             c = r.get("composite") or {}
             print(f"\n{r.get('name', key)}  [{r.get('verdict')}]")
-            print(f"  composite  ic={c.get('mean_ic')}  t={c.get('t_hac') or c.get('nw_t')}"
-                  f"  q={c.get('q')}  n={c.get('n_dates')}")
+            if c:
+                print(f"  composite  ic={c.get('mean_ic')}  t={c.get('t_hac') or c.get('nw_t')}"
+                      f"  q={c.get('q')}  n={c.get('n_dates')}")
+            else:
+                # No composite is the design here, not a gap — say so rather than printing
+                # a row of Nones that reads like a failed study.
+                print(f"  no composite by design ({r.get('rule', 'n/a')}); "
+                      f"{r.get('n_sessions')} sessions from {r.get('n_stamps')} stamps")
             for lk, lv in sorted((r.get("legs") or {}).items(),
                                  key=lambda kv: -(kv[1].get("mean_ic") or -9)):
+                extra = ""
+                if lv.get("verdict_uncorrected") and \
+                        lv["verdict_uncorrected"] != lv.get("verdict"):
+                    extra = f"  [uncorrected: {lv['verdict_uncorrected']}]"
                 print(f"    {lk:22} ic={str(lv.get('mean_ic')):>9}"
                       f"  q={str(lv.get('q')):>8}  cov={lv.get('mean_coverage')}"
-                      f"  -> {lv.get('verdict')}")
+                      f"  -> {lv.get('verdict')}{extra}")
     return 0
 
 

@@ -275,3 +275,118 @@ def test_universe_gap_records_the_finding_that_decides_integration():
 def test_decile_spread_refuses_a_thin_cross_section():
     sig = pd.Series(np.arange(12.0), index=[f"T{i}" for i in range(12)])
     assert study.decile_spread(sig, sig) is None
+
+
+# =======================================================================================
+# Options dislocation registration
+#
+# Every test below pins a defect that actually occurred while wiring this family in, not a
+# hypothetical. The panel is six weeks of one regime, so the standing risk here is not a
+# wrong number — it is a number that LOOKS decided.
+# =======================================================================================
+def test_options_legs_are_generated_from_the_imported_prereg_not_a_second_copy():
+    """There must be exactly ONE pre-registration. A restated sign map here would be free to
+    drift away from the one engine/options_dislocation.py's dormant gate actually tests."""
+    from engine.options_dislocation import MEASURED_NULLS, PREREG_SIGNS
+    legs = {x["key"]: x for x in specs.MODELS["options_dislocation"]["legs"]}
+    for k in PREREG_SIGNS:
+        assert k in legs, f"pre-registered primitive {k!r} has no leg"
+        assert legs[k]["fidelity"] != "absent"
+    for k in MEASURED_NULLS:
+        assert k in legs, f"measured null {k!r} is not disclosed as a leg"
+        assert legs[k]["fidelity"] == "absent"
+    assert len(legs) == len(PREREG_SIGNS) + len(MEASURED_NULLS)
+
+
+def test_a_new_prereg_primitive_fails_loudly_instead_of_shipping_a_missing_leg():
+    """The drift guard has to FIRE. A leg table that silently ignored an added primitive
+    would ship a page that omits it while claiming to enumerate the family."""
+    import engine.quant_lab.specs as specs_mod
+    orig = dict(specs_mod.PREREG_SIGNS)
+    try:
+        specs_mod.PREREG_SIGNS["a_brand_new_primitive"] = +1
+        with pytest.raises(ValueError, match="out of step with PREREG_SIGNS"):
+            specs_mod._options_dislocation_legs()
+    finally:
+        specs_mod.PREREG_SIGNS.clear()
+        specs_mod.PREREG_SIGNS.update(orig)
+
+
+def test_all_five_measured_nulls_are_printed_not_just_the_entitlement_blocked_three():
+    """Three nulls are blocked by entitlements; two were MEASURED dead. Shipping only the
+    first three is the easy half of 'nulls printed, not hidden' to lose."""
+    legs = {x["key"]: x for x in specs.MODELS["options_dislocation"]["legs"]}
+    for k in ("delta_weighted_directional_volume", "synthetic_stock_price_deviation"):
+        assert legs[k]["fidelity"] == "absent"
+        assert legs[k]["distortion"], f"{k} is absent with no evidence attached"
+    assert "0.41" in legs["buyer_initiated_call_volume"]["distortion"]
+    assert "RO-10" in legs["opening_vs_closing_trades"]["distortion"]
+
+
+def test_options_family_ships_no_fused_composite_anywhere():
+    """RO-2 / Signal Commons R3: a fused escalating score is a FORBIDDEN shape pre-gate.
+    The failure mode is a reader lifting one number off the page, so the guard is that no
+    such number exists — not that it is merely labelled carefully."""
+    spec = specs.MODELS["options_dislocation"]
+    assert spec["combination"]["rule"] == "none_categorical"
+    assert "weights" not in spec["combination"]
+    r = study.study_options_dislocation()
+    assert "composite" not in r, "a composite IS the forbidden fused score"
+    assert r["verdict"] == "per_primitive"
+    for k, v in r["legs"].items():
+        assert "score" not in v and "rank" not in v, f"{k} carries a liftable score"
+
+
+def test_options_ledger_is_pit_but_names_its_run_date_stamping():
+    """It passes the statements.parquet test (real per-date stamps, not five fetch times) —
+    but the stamp is the COLLECTOR RUN date, and a green 'Yes' pill next to an unqualified
+    key would hide that. Measured: 9 of 41 stamps repeat the prior session."""
+    s = specs.SUBSTRATE["options_dislocation_snapshots"]
+    assert s["point_in_time"] is True
+    assert "RUN date" in s["pit_key"]
+    assert "32 distinct market sessions" in s["pit_key"]
+
+
+def test_duplicate_run_date_stamps_are_collapsed_to_real_sessions():
+    """A weekend run re-reads Friday's chain under a new stamp. Counting those as separate
+    dates enters one cross-section up to three times and shrinks every standard error."""
+    hist = pd.DataFrame({
+        "date": ["2026-06-19"] * 6 + ["2026-06-20"] * 6 + ["2026-06-22"] * 6,
+        "underlying": list("ABCDEF") * 3,
+        "spot": [10.0, 11, 12, 13, 14, 15] * 2 + [20.0, 21, 22, 23, 24, 25],
+    })
+    keep = study.options_sessions(hist)
+    assert keep == ["2026-06-19", "2026-06-22"], \
+        "the re-stamped Saturday copy of Friday's chain was scored as its own session"
+
+
+def test_overlapping_daily_windows_are_counted_as_independent_ones():
+    """THE load-bearing one. `_verdict`'s n<8 floor assumes independent observations, true of
+    the quarterly grid it was written for. On a daily h=5 panel consecutive cross-sections
+    share 4 of their 5 forward days, and scored naively EVERY primitive on the first ledger
+    came back `survives_fdr` — seven significant-looking factors out of six weeks of one
+    regime."""
+    r = study.study_options_dislocation()
+    assert r["legs"], "no primitives scored at all"
+    for k, v in r["legs"].items():
+        if not v.get("n_dates"):
+            continue
+        assert v["n_independent_windows"] <= v["n_dates"] // r["horizon_d"] + 1
+        assert v["verdict"] == "insufficient", (
+            f"{k} reported {v['verdict']!r} on a single-regime six-week panel — the "
+            f"overlap correction is not being applied")
+        assert v.get("verdict_uncorrected"), \
+            f"{k} does not publish what the uncorrected reading would have been"
+
+
+def test_every_model_verdict_has_a_display_label():
+    """`per_primitive` had no entry in the template's VERD map, so the page rendered a grey
+    'No data' pill on a model with 27 scored dates."""
+    import re
+    from pathlib import Path
+    from lib import config
+    tpl = (Path(config.ROOT) / "templates" / "quant_lab.html.j2").read_text()
+    block = tpl.split("{% set VERD =", 1)[1].split("} %}", 1)[0]
+    labelled = set(re.findall(r"'([a-z_]+)':\s*\(", block))
+    produced = set(study.VERDICTS) | {"degenerate", "per_primitive"}
+    assert produced <= labelled, f"verdicts with no display label: {sorted(produced - labelled)}"

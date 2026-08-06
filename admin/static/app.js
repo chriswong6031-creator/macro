@@ -4,6 +4,15 @@
 const $ = (sel, el = document) => el.querySelector(sel);
 const h = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstChild; };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+/* Render `{tier: "pro"}` as ` data-tier="pro"`, so an inline handler can read a
+   value off `this.dataset` instead of having it interpolated into its own JS
+   source. Keys must be lowercase/hyphenated — HTML lowercases attribute names,
+   so `data-deptId` would arrive as `dataset.deptid`. Null/undefined values are
+   dropped: an absent attribute reads back as `undefined`, which is what a
+   handler expecting "no value" wants. */
+const dataAttrs = (data) => Object.entries(data || {})
+  .filter(([, v]) => v != null)
+  .map(([k, v]) => ` data-${k}="${esc(v)}"`).join("");
 const fmtAge = (hrs) => hrs == null ? "—" : hrs < 1 ? `${Math.round(hrs * 60)}m` : hrs < 48 ? `${hrs.toFixed(0)}h` : `${(hrs / 24).toFixed(0)}d`;
 const fmtUSD = (n) => n == null ? "—" : "$" + Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
 const fmtTokens = (n) => n == null ? "—" : Number(n) >= 1e6 ? `${(Number(n)/1e6).toFixed(2)}M` : Number(n) >= 1000 ? `${(Number(n)/1000).toFixed(1)}k` : String(Math.round(Number(n)));
@@ -1876,8 +1885,15 @@ const ENT_STATUSES = ["active", "trialing", "past_due", "canceled", "none"];
 
 function entIdentity(u) { return u.name || u.email || u.user_id; }
 
-function entChip(label, active, on) {
-  return `<button class="ent-chip${active ? " on" : ""}" onclick="${on}">${esc(label)}</button>`;
+/* `on` is JS SOURCE pasted into an HTML attribute, so it must never carry an
+   interpolated string literal: JSON.stringify emits double quotes, those close
+   the onclick attribute, and the parser drops everything after them — the chip
+   renders looking normal and the click does nothing. Pass the value through
+   `data` (attribute-escaped) and read it back as `this.dataset.<key>`, which
+   keeps `on` a fixed, code-only string. esc(on) is the belt: it keeps a future
+   caller's quoted literal from truncating the attribute the same way. */
+function entChip(label, active, on, data) {
+  return `<button class="ent-chip${active ? " on" : ""}"${dataAttrs(data)} onclick="${esc(on)}">${esc(label)}</button>`;
 }
 
 async function entLoad() {
@@ -1900,9 +1916,9 @@ async function entLoad() {
   const byTier = {}, byStatus = {};
   (d.summary || []).forEach(r => { const ct = entCanonTier(r.tier); byTier[ct] = (byTier[ct] || 0) + r.n; byStatus[r.status] = (byStatus[r.status] || 0) + r.n; });
   const chips = [entChip("All", !f.tier && !f.status, "entSetFilter('tier',null)")]
-    .concat(ENT_TIERS.map(t => entChip(`${t} (${byTier[t] || 0})`, f.tier === t, `entSetFilter('tier',${JSON.stringify(t)})`)))
+    .concat(ENT_TIERS.map(t => entChip(`${t} (${byTier[t] || 0})`, f.tier === t, "entSetFilter('tier',this.dataset.tier)", { tier: t })))
     .concat(['<span class="ent-chip-sep"></span>'])
-    .concat(ENT_STATUSES.filter(s => byStatus[s]).map(s => entChip(`${s} (${byStatus[s]})`, f.status === s, `entSetFilter('status',${JSON.stringify(s)})`)));
+    .concat(ENT_STATUSES.filter(s => byStatus[s]).map(s => entChip(`${s} (${byStatus[s]})`, f.status === s, "entSetFilter('status',this.dataset.status)", { status: s })));
   $("#entChips").innerHTML = chips.join("");
   $("#entSummary").innerHTML = `<div class="card">${(d.summary || []).map(r => `<span class="statpill ${["active", "trialing"].includes(r.status) ? "s-ok" : "s-mut"}">${esc(r.tier)} · ${esc(r.status)}: ${r.n}</span>`).join(" ") || "<span class='muted'>no entitlement rows yet</span>"}</div>`;
   $("#entCnt").textContent = d.total != null ? d.total : ENT.rows.length;
@@ -5489,7 +5505,7 @@ RENDER.marketing_departments = async () => {
       const shortName = dept.name || dept.id;
       const formalName = dept.formal_name || dept.name || dept.id;
       const engCount = engines.length;
-      return `<a class="mkt-dept-card" href="#/mkt-dept/${encodeURIComponent(dept.id)}" title="${esc(formalName)}" onclick="event.preventDefault();gotoMktDept(${JSON.stringify(dept.id)})">
+      return `<a class="mkt-dept-card" href="#/mkt-dept/${encodeURIComponent(dept.id)}" title="${esc(formalName)}" data-dept-id="${esc(dept.id)}" onclick="event.preventDefault();gotoMktDept(this.dataset.deptId)">
         <h3><span class="mkt-dept-icon">${icon}</span>${esc(shortName)}
           ${mktLifecyclePill(dept.lifecycle_state)}
           ${mktAuthPill(dept.authority_level)}
@@ -6203,7 +6219,7 @@ function csFunnel(d) {
       loss = `<div class="fn-lost">−${flrN(st.lost)}</div>
         <div class="fn-lost-word">${esc(st.lossWord || "lost here")}</div>`;
     }
-    return `<button class="${cls}" onclick="${st.go}">
+    return `<button class="${cls}" onclick="${esc(st.go)}">
       <span class="fn-ord">${i + 1}</span>
       <div class="fn-name">${esc(st.name)}</div>
       <div class="fn-n${st.out === 0 ? " is-zero" : ""}">${isNull ? "—" : flrN(st.out)}</div>
@@ -12945,8 +12961,9 @@ const SUP_ACTION_LABEL = { reply: "Reply", resolve: "Resolve", close: "Close", r
    "reopen" into "reopend". */
 const SUP_ACTION_DONE = { reply: "replied to", resolve: "resolved", close: "closed", reopen: "reopened" };
 
-function supChip(label, active, on) {
-  return `<button class="ent-chip${active ? " on" : ""}" onclick="${on}">${esc(label)}</button>`;
+/* Values ride in `data`, never interpolated into `on` — see entChip. */
+function supChip(label, active, on, data) {
+  return `<button class="ent-chip${active ? " on" : ""}"${dataAttrs(data)} onclick="${esc(on)}">${esc(label)}</button>`;
 }
 /* Colour carries WHOSE move it is, not the raw state name: warn = waiting on you,
    ok = resolved, muted = idle (pending on the user, or closed). */
@@ -12999,7 +13016,7 @@ async function supLoad() {
   const counts = d.counts || {};
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   $("#supChips").innerHTML = [supChip(`All (${total})`, !SUP.status, "supSetStatus(null)")]
-    .concat(SUP_STATUSES.map(s => supChip(`${s} (${counts[s] || 0})`, SUP.status === s, `supSetStatus(${JSON.stringify(s)})`)))
+    .concat(SUP_STATUSES.map(s => supChip(`${s} (${counts[s] || 0})`, SUP.status === s, "supSetStatus(this.dataset.status)", { status: s })))
     .join("");
   $("#supCnt").textContent = d.total != null ? d.total : SUP.rows.length;
   setNavDot("support_tickets", d.open_count || 0, "ticket");
@@ -13055,7 +13072,7 @@ async function supRenderThread(id) {
   const legal = d.legal_actions || [];
   const canReply = legal.includes("reply");
   const stateButtons = legal.filter(a => a !== "reply")
-    .map(a => `<button class="ent-act" onclick="supAct(${JSON.stringify(id)},${JSON.stringify(a)})">${esc(SUP_ACTION_LABEL[a] || a)}</button>`)
+    .map(a => `<button class="ent-act" data-id="${esc(id)}" data-action="${esc(a)}" onclick="supAct(this.dataset.id,this.dataset.action)">${esc(SUP_ACTION_LABEL[a] || a)}</button>`)
     .join("");
 
   det.innerHTML = `
@@ -13085,7 +13102,7 @@ async function supRenderThread(id) {
           placeholder="Write your reply — it is recorded on this ticket and emailed to ${esc(t.email || "the sender")}."></textarea>` : `
         <div class="sub muted" style="margin-bottom:10px">This ticket is ${esc(t.status || "closed")} — reopen it to reply.</div>`}
       <div class="ent-form-actions" style="justify-content:flex-start">
-        ${canReply ? `<button class="ent-act ent-primary" onclick="supReply(${JSON.stringify(id)})">Send reply</button>` : ""}
+        ${canReply ? `<button class="ent-act ent-primary" data-id="${esc(id)}" onclick="supReply(this.dataset.id)">Send reply</button>` : ""}
         ${stateButtons}
       </div>
     </div>`;
@@ -13145,8 +13162,9 @@ async function supReply(id) {
 const EC = { tab: "people", segment: "all", q: "", page: 1, supQ: "", supPage: 1,
              zhDelim: "===zh===", editing: null };
 
-function ecChip(label, active, on) {
-  return `<button class="ent-chip${active ? " on" : ""}" onclick="${on}">${esc(label)}</button>`;
+/* Values ride in `data`, never interpolated into `on` — see entChip. */
+function ecChip(label, active, on, data) {
+  return `<button class="ent-chip${active ? " on" : ""}"${dataAttrs(data)} onclick="${esc(on)}">${esc(label)}</button>`;
 }
 /* Colour says whether we may mail this person, which is the only question this
    table exists to answer: ok = yes, bad = on the kill list, warn = opted out. */
@@ -13271,7 +13289,7 @@ async function ecLoadPeople() {
 
   const segs = $("#ecSegs");
   if (segs) segs.innerHTML = (d.segments || []).map(s =>
-    ecChip(`${s.label_en} ${(d.counts || {})[s.key] || 0}`, s.key === d.segment, `ecSetSegment('${s.key}')`)).join("");
+    ecChip(`${s.label_en} ${(d.counts || {})[s.key] || 0}`, s.key === d.segment, "ecSetSegment(this.dataset.segment)", { segment: s.key })).join("");
 
   const link = $("#ecExport");
   if (link) {
