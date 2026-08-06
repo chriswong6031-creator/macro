@@ -115,6 +115,47 @@ def test_the_hold_only_block_stays_out_of_the_cohort():
     ), "the hold-only block is now admitted — see engine/china_continuation_watch.py:69"
 
 
+def _sig(*, held: bool, reclaim: bool):
+    """A 4-bar synthetic frame parked on the counter-trend branch at ``i=0``.
+
+    ``_confirm_legs`` reads exactly three columns.  Bar 0 is below its 200-day
+    average AND weekly-down, which is the ONLY door into the counter-trend legs;
+    ``held`` is bar1 > bar0 and ``reclaim`` is above200 on bar1 or bar2.
+    """
+    close = pd.Series([10.0, 11.0 if held else 9.0, 10.0, 10.0])
+    above = pd.Series([False, reclaim, False, False])
+    return {"close": close, "above200": above,
+            "w_bull": pd.Series([False, False, False, False])}
+
+
+def test_the_counter_trend_branch_still_EMITS_each_pinned_string():
+    """Behaviour, not spelling: run the filter down all three legs.
+
+    A constant can survive a refactor while nothing returns it any more — the
+    dead-marker shape that left ``"reclaim-and-hold"`` in BLOCK_REASON_MARKERS
+    matching nothing.  Reading ``signal_quality.CT_*`` by attribute cannot see
+    that; only driving ``_buy_filter`` can.  This is the same lesson the
+    ``co_consts`` pin failed, one level up: assert what the function EMITS.
+    """
+    emitted = {
+        "CT_BOTH_FAIL": signal_quality._buy_filter(  # noqa: SLF001
+            0, _sig(held=False, reclaim=False), False, 4)[1],
+        "CT_RECLAIM_FAIL": signal_quality._buy_filter(  # noqa: SLF001
+            0, _sig(held=True, reclaim=False), False, 4)[1],
+        "CT_HOLD_FAIL": signal_quality._buy_filter(  # noqa: SLF001
+            0, _sig(held=False, reclaim=True), False, 4)[1],
+    }
+    # Non-vacuity: three DISTINCT strings, so a collapse to one spelling reds
+    # here rather than pinning the same literal three times.
+    assert len(set(emitted.values())) == 3, emitted
+    for attr, reason in emitted.items():
+        assert reason == _CT_BLOCK_CONSTANTS[attr], (
+            f"the branch that used to emit {attr} now returns {reason!r} — the "
+            "constant may still exist while nothing reaches it."
+        )
+        assert ccw.is_trend_blocked({"eligible": False, "reason": reason})
+
+
 def test_every_counter_trend_constant_is_classified_by_this_pin():
     """Completeness, so a FOURTH branch cannot appear unnoticed.
 
