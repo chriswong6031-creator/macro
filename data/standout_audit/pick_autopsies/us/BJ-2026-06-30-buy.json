@@ -1,0 +1,100 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "BJ-2026-06-30-buy",
+  "ticker": "BJ",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "BJ",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "BJ",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_alpha",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Consumer Staples",
+    "excess_spy": 0.1279181029415879,
+    "excess_sector": 0.10861268725536655,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CLEAN_LIFTOFF",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "BJ achieved clean liftoff and outperformed SPY, with company-specific alpha supplied as the outcome cause. No process fault is recorded, but the evidence needed to distinguish operating alpha from Staples rotation is absent.",
+    "root_cause": "BJ achieved clean liftoff and outperformed SPY, with company-specific alpha supplied as the outcome cause. No process fault is recorded, but the evidence needed to distinguish operating alpha from Staples rotation is absent.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The buy book surfaced BJ successfully, while the company-alpha and sector-rotation engines still need evidence separating stock selection from group effects.",
+    "engines_credit": "The buy book was the role model for selection; the company-alpha, Staples-rotation, catalyst, and timing organs cannot be credited or faulted from the supplied fields.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "The supplied taxonomy attributes BJ's relative gain to company-specific alpha.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "If BJ did not outperform its closest peers, the company-alpha attribution would weaken in favor of sector or factor exposure.",
+        "evidence_refs": [
+          "outcome_cause=idio_alpha",
+          "excess_spy=0.1279181029415879",
+          "terminal_state=CLEAN_LIFTOFF"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "sector",
+        "factor": "",
+        "mechanism": "Consumer Staples conditions could have amplified or substituted for the claimed company-specific effect.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Peer-relative outperformance after sector adjustment would support company alpha over a Staples-wide explanation.",
+        "evidence_refs": [
+          "sector=Consumer Staples"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Consumer Staples rotation may explain part of the outcome.",
+      "An unrecorded earnings, guidance, or corporate event may have driven re-rating.",
+      "Defensive factor exposure may have outperformed independently of company fundamentals."
+    ],
+    "missing_evidence": [
+      "BJ peer-relative return",
+      "Entry-date fundamental and estimate-revision state",
+      "Price-volume accumulation history",
+      "Catalyst calendar and news chronology",
+      "Holding-period path-risk measures"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "bj_peer_adjusted_strength",
+        "feature": "Peer-adjusted relative strength",
+        "measurement": "Measure BJ performance and accumulation relative to comparable Consumer Staples issuers before entry.",
+        "expected_direction": "Positive peer-adjusted strength should precede company-specific excess return.",
+        "falsifier": "BJ's outcome is fully explained by peer and factor returns.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T05:48:19+00:00"
+}

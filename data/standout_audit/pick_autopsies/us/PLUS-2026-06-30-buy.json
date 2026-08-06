@@ -1,0 +1,102 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "PLUS-2026-06-30-buy",
+  "ticker": "PLUS",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "PLUS",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "PLUS",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_alpha",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Information Technology",
+    "excess_spy": 0.12045858412540422,
+    "excess_sector": 0.17748960294460803,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CLEAN_LIFTOFF",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "PLUS achieved clean liftoff and outperformed SPY, with company-specific alpha recorded as the cause. The clean process is a deterministic record, but neither the alpha source nor its ex-ante visibility is supplied.",
+    "root_cause": "PLUS achieved clean liftoff and outperformed SPY, with company-specific alpha recorded as the cause. The clean process is a deterministic record, but neither the alpha source nor its ex-ante visibility is supplied.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The buy book surfaced PLUS, while the company-alpha, catalyst, and Technology-rotation books need evidence to allocate credit.",
+    "engines_credit": "The buy book was the selection role model; the alpha and catalyst organs remain unscored, and the sector organ lacks a peer-relative control.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "The supplied attribution assigns PLUS's relative gain to an issuer-specific driver.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Failure to outperform Technology peers would favor sector rotation over company alpha.",
+        "evidence_refs": [
+          "outcome_cause=idio_alpha",
+          "excess_spy=0.12045858412540422",
+          "terminal_state=CLEAN_LIFTOFF"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "entry_timing",
+        "factor": "",
+        "mechanism": "The record reports no process fault at initial board inclusion.",
+        "evidence_status": "corroborated",
+        "timing_status": "known_at_entry",
+        "counterfactual": "Intraday and pre-entry extension evidence could still reveal timing weakness not represented by the supplied process label.",
+        "evidence_refs": [
+          "process_fault=clean",
+          "board_tenure_days=0.0",
+          "lane=buy"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Information Technology rotation may have lifted PLUS.",
+      "A visible or post-entry corporate catalyst may have caused re-rating.",
+      "Common size, value, or momentum exposure may explain part of the excess return."
+    ],
+    "missing_evidence": [
+      "Technology peer-relative performance",
+      "Entry extension and breakout-quality measures",
+      "Estimate revisions and fundamental changes",
+      "News and filing timestamps",
+      "Factor-adjusted return attribution"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "plus_ex_ante_alpha_breadth",
+        "feature": "Breadth of ex-ante company-alpha evidence",
+        "measurement": "Track whether price-volume strength, estimate revisions, and peer-relative performance agreed before entry.",
+        "expected_direction": "Broader agreement should be associated with persistent issuer-specific excess return.",
+        "falsifier": "The association vanishes after sector and factor controls.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T05:48:19+00:00"
+}
