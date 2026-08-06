@@ -58,6 +58,7 @@ from engine import earnings_blackout as _eb  # noqa: E402  — W1.5 earnings-bla
 from engine import earnings_catalyst as _ecat  # noqa: E402  — W4 display-tier catalyst fields
 from engine import us_board_rank  # noqa: E402  — us_prophet_v1 priority score / stages / ran lane
 from engine import washout_turn  # noqa: E402  — WTN-W1 weekly washout-turn watch (display-tier)
+from engine import event_atlas  # noqa: E402  — SEA-W3 matching-episode receipts (display-tier)
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -3149,6 +3150,19 @@ def main() -> int:
                 rec["washout_turn"] = wt
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("washout-turn for %s failed (%s)", ticker, e)
+        # ---- Matching past episodes (engine/event_atlas) — the SO-WHAT --------
+        # The chip above says the name IS in a washout turn. This says what the
+        # matching historical episodes of the SAME CLASS did — on this name, and
+        # on its archetype cohort, blended by event count so a name with n=3 shows
+        # its 3 episodes AND inherits the cohort curve with the weight printed.
+        # No per-name indicator selection (DNR §2 row 69) — one frozen construction.
+        # `close` is already in scope: passing it avoids re-loading the series.
+        try:
+            ea = event_atlas.live_state(ticker, close=close)
+            if ea:
+                rec["event_atlas"] = ea
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("event-atlas for %s failed (%s)", ticker, e)
         # ---- Confluence cascade verdict (T1->T4) on the per-stock JSON ---------
         # The owner's MACD-2D x StochRSI-3D gate (already computed above as sig_verdict),
         # persisted per name so the theme/basket-detail Holdings table can surface a fresh

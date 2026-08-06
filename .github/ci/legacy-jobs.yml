@@ -4696,8 +4696,10 @@ jobs:
     # Enumerated here at birth: the unrun-suite census (2026-07-26) proved an unnamed
     # suite is genuinely never executed, and the reference organ's own suite
     # (test_mtf_upturn.py) is an existing instance of that hole.
+    # The Signal Episode Atlas suites (stock_events / event_atlas) ride the same
+    # lane: same organ family, same canon math, same ledger-lane gate.
     if: ${{ false }}
-    timeout-minutes: 3
+    timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -4707,7 +4709,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: washout-turn organ (depth-gated weekly cross, PIT completed-bars pin, ledger gate)
-        run: python -m pytest tests/test_washout_turn.py tests/test_mtf_upturn.py -q
+        run: python -m pytest tests/test_washout_turn.py tests/test_mtf_upturn.py tests/test_oracle_memory_analogues_step.py tests/test_stock_events.py tests/test_event_atlas.py -q
 
   unrun-page-guards:
     # Shipped-page regression guards over the rendered estate: the US
