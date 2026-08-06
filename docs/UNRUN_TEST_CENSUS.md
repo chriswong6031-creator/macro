@@ -781,3 +781,65 @@ must start the workflow; the nightly asia collection pushes straight to main, so
 costs nothing on the daily bake). The regeneration remedy —
 `scripts/regen_hk_g1_fixture.py` + `tests/test_regen_hk_g1_fixture.py` — is #4565, in
 flight separately with its own `regen-hk-g1-fixture-guard` job.
+
+## 2026-08-05, second pass: the reclaim-veto leg's own guards were dark
+
+The `unrun-hk-board` wiring above closed the HK board *pair*. A same-day audit of the
+`engine.signal_quality` importers found the leak had a second specimen in that estate, and
+a more pointed one: the two suites guarding `_buy_filter`'s 200-day reclaim-veto leg — the
+exact leg the reclaim-veto decision packet
+(`research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md`, #4607) measures — were
+named by no `run:` step in any workflow either.
+
+- **`tests/test_hk_reclaim_veto_policy.py`** (10 tests) — the operator's 2026-08-03
+  admission ruling. Pins the one leg HK drops (`reclaim_veto=False`) and, more
+  load-bearing, the *blast radius*: US/CN keep the validated default at every layer
+  (`_buy_filter`, `analyze`, `signal_gate.gate`), keyword-only so argument order cannot
+  flip it, and `build_hk_library` is the only caller opting out. Joined `unrun-hk-board`,
+  not a new job: it imports `scripts.build_hk_library` (which pulls the
+  `engine.i18n`/`stock_score`/`cycles` chain) and `engine.hk_board_rank`, so it needs that
+  job's wide install exactly — the same dep-list trap recorded for the pair above.
+- **`tests/test_signal_quality_no_leak.py`** (3 tests) — the §7 marker-date look-ahead
+  guard on the *default* (validated) filter. A take/block label reads bars i+1 (and i+2 on
+  the counter-trend branch), so a forward-return grade anchored on the marker date embeds
+  the confirmation bars it consumed (+5.7pp/10d measured). Joined `signal-contract`, the
+  job that already owns the §7 contract; `pandas` + `numpy` were already in its install
+  line, so it added no wheel, no venv and no job.
+
+**Why this pair rated a same-day PR.** A decision packet was arguing the merits of a policy
+whose guards CI had never once executed. Both suites were green in hand runs the entire
+time — which is the unrun-suite rot shape exactly: a green suite no CI job runs is dark,
+and its greenness is a claim, not evidence.
+
+Runtimes, measured in the exact CI-minimal venvs (not a local environment):
+
+| Suite | Tests | Cost where it now runs |
+|---|---|---|
+| `test_signal_quality_no_leak.py` | 3 | step goes 31 → 34 tests for ~0.2s (0.76s → 0.92s steady state) |
+| `test_hk_reclaim_veto_policy.py` | 10 | 1.5s as `unrun-hk-board` step 3; job total ~83s (68.5 + 13.5 + 1.5) vs `timeout-minutes: 8` |
+
+Pack balance moved 789/789/789/788 → 790/790/790/790; no job was added, so the partition
+structure is unchanged (`run_ci_pack.py --validate-only`, 159 jobs).
+
+**A note on the first-run number.** Each suite's *first* invocation in a freshly built
+venv reports ~13s and ~17s. That is `pandas`/`numpy` cold-start, paid by whichever pytest
+step runs first in a job and already on the job's bill — not an increment either suite
+adds. Quoting it as the wiring cost would have overstated both by an order of magnitude;
+the steady-state and full-job-sequence numbers above are the honest ones.
+
+Trigger halves shipped in the same PR: both test files added to `ci.yml` paths. The code
+halves already reached the list (`engine/**` for `signal_quality`/`signal_gate`/
+`hk_board_rank`, `scripts/**/*.py` for `build_hk_library`), but neither test file matched
+anything — so an edit *narrowing one of these pins* could not start the workflow that runs
+it. That is the #3488/#4559 shape, and it is the half most often forgotten.
+
+**Deliberately not wired by this pass.** The same importer census turns up eight more
+suites reaching `engine.signal_quality` that no `run:` step names, in any workflow:
+`test_bar_derive.py`, `test_basket_breadth_divergence.py`,
+`test_china_sector_cycles_grader.py`, `test_confluence_warmup_floor.py`,
+`test_hk_v2_reason_copy_and_ran_lane.py`, `test_ohlc_reconstruct.py`,
+`test_pick_lab_snapshot_producer.py`, `test_rule_replay_core.py`. They span several
+different blast radii (bar derivation, breadth divergence, CN cycle grading, the pick-lab
+snapshot producer) and each needs its own dep measurement, so they belong in their own
+staged batch per this census's wire-in-blast-radius-order rule rather than riding along
+with a reclaim-veto PR. Recorded here so the next pass starts from a list, not a re-audit.

@@ -168,6 +168,12 @@ on:
       - "scripts/build_signal_quality.py"
       - "engine/signal_quality.py"
       - "tests/test_validate_signals.py"
+      # The §7 marker-date look-ahead guard on _buy_filter (wired into the
+      # signal-contract job 2026-08-05, dark before that). engine/** above
+      # already triggers on the subject module; this is the test half, which
+      # nothing matched — the #3488/#4559 lesson that a guard whose own edit
+      # cannot start the workflow is only half wired.
+      - "tests/test_signal_quality_no_leak.py"
       # W-F reclaim-veto decision packet (2026-08-05). Both halves per #3488: the suite AND
       # the module it measures, so an edit to either can trigger the job that proves the
       # flip-isolation construction still isolates exactly one leg.
@@ -2029,6 +2035,13 @@ on:
       - "tests/fixtures/hk_board_2026_07_31.json"
       - "tests/fixtures/hk_standouts_2026_07_31.json"
       - "data/hk_search/**"
+      # The HK reclaim-veto admission policy (operator ruling 2026-08-03),
+      # joined to unrun-hk-board 2026-08-05 — dark since it landed. Its two
+      # subjects reach this list already (engine/** for signal_quality /
+      # signal_gate / hk_board_rank, scripts/**/*.py for build_hk_library's
+      # HK_RECLAIM_VETO); the test half matched nothing, so an edit narrowing
+      # the pin itself could not start the workflow that runs it.
+      - "tests/test_hk_reclaim_veto_policy.py"
       # nyse-calendar-freshness — the exchange-calendar reference under every
       # freshness SLA. lib/** above already triggers on lib/nyse_calendar.py, but
       # a test-only edit must reach its own guard too (#3488: "a guard the guarded
