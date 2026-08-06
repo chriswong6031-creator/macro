@@ -549,6 +549,30 @@ on:
       - "tests/test_usaspending_awards.py"
       - "tests/test_usaspending_subawards.py"
       - "tests/test_census_trade.py"
+      # Darkness backfill 2026-08-06: these nineteen suites were named by NO
+      # pack, NO workflow, and no catch-all sweep, so editing one could not even
+      # fire ci.yml.  They include the forward award-event spine's own state
+      # machine — the surface whose persistence break shipped to production on
+      # 2026-08-06 precisely because nothing ran its guards.
+      - "tests/test_government_revenue.py"
+      - "tests/test_government_revenue_award_events.py"
+      - "tests/test_government_revenue_award_spine.py"
+      - "tests/test_government_revenue_api.py"
+      - "tests/test_government_revenue_budget_graph.py"
+      - "tests/test_government_revenue_candidate_api.py"
+      - "tests/test_government_revenue_candidate_projection.py"
+      - "tests/test_government_revenue_candidates.py"
+      - "tests/test_government_revenue_contracts.py"
+      - "tests/test_government_revenue_entity_resolution.py"
+      - "tests/test_government_revenue_freshness.py"
+      - "tests/test_government_revenue_idv_dossiers.py"
+      - "tests/test_government_revenue_neuralweb.py"
+      - "tests/test_government_revenue_opportunities.py"
+      - "tests/test_government_revenue_recipient_graph.py"
+      - "tests/test_government_revenue_subaward_dossiers.py"
+      - "tests/test_government_revenue_wave8_api.py"
+      - "tests/test_government_revenue_workspace.py"
+      - "tests/test_usaspending_idv_graph.py"
       # W3 CNH part B: the five native flash wires + the forward calendar organ.
       # engine/** is NOT a blanket trigger here, so each of these must be named or a
       # parser/aggregator edit merges with the suite unrun. test_cn_newswires.py was
