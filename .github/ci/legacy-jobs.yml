@@ -1901,7 +1901,9 @@ jobs:
         run: python3 scripts/check_validated_claims.py
 
   template-site-sync:
-    if: ${{ false }}  # executed inside ci-pack (pack 0) — NOT a disabled gate; see the ci-pack job
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    # (Which pack runs it is weight-balanced and shifts as jobs are added, so it is
+    # deliberately not named here; resolve it with run_ci_pack.py --validate-only.)
     # ui.template_site_sync PR gate: every plain-copy page asset (templates/<name>
     # that also ships as site/<name>) must byte-match at every commit — a one-sided
     # reword creates the divergence window the render lanes then propagate at an
@@ -1933,6 +1935,18 @@ jobs:
         run: python3 scripts/sync_chat_nav.py --selftest
       - name: chat.html's header must match _site_nav.html.j2
         run: python3 scripts/sync_chat_nav.py
+      # ...and the suite itself, which was NAMED in ci.yml's paths trigger but
+      # EXECUTED by no job — a trigger fires the pack, it does not run the file, and
+      # every pytest invocation in this repo names its files explicitly (there is no
+      # tests/ dir-wide sweep to pick it up). The two script steps above only compare
+      # the <nav> element, so the four assertions that live OUTSIDE it were dark:
+      # the navigation-refresh.css / chat_nav.css stylesheet law, the whole-chrome
+      # check, the data-base shim count (in <head> — and chat.html is exempt from the
+      # write_page guard precisely because sync_chat_nav writes it raw), and the
+      # bilingual render. Deps are already installed above: pyyaml/pytest/jinja2/
+      # markupsafe is the whole closure, verified green against exactly that set.
+      - name: chat-nav suite (the assertions outside the <nav> element)
+        run: python -m pytest tests/test_chat_nav_sync.py -q
       # ui.asset_stamp — the OTHER half of this law, and the reason it bit users. The
       # `--fix` above rewrites the site copy of every plain-copy pair FROM templates/,
       # and it runs AFTER the stamping sweep in every lane, so a ?v= stamp written only
