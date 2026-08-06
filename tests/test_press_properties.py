@@ -60,6 +60,7 @@ from engine.press import desk_planner as P  # noqa: E402
 from engine.press import properties as PR  # noqa: E402
 from scripts import run_press as R  # noqa: E402
 from tests import press_fixtures as F  # noqa: E402
+from tests.workflow_staging import staged_paths  # noqa: E402
 
 _CADDYFILE = _REPO / "app" / "deploy" / "Caddyfile"
 _UPDATE_SH = _REPO / "app" / "deploy" / "update.sh"
@@ -1076,11 +1077,28 @@ def test_the_workflow_rebuilds_the_properties_after_emitting():
 
 
 def test_the_commit_step_stages_the_property_paths():
+    """The staged set is EXACT — the lane cannot silently widen what it commits.
+
+    #4549 (aa143e42c80) grew the owned set to seven: `externalize_css` now runs
+    before the staging and lifts each article's inline CSS into a content-hashed
+    site/assets/css/<hash>.css the page then <link>s, so the asset has to ride
+    along in the same commit or the published article points at a stylesheet
+    that was never committed.  Those two adds carry `--ignore-removal`, which is
+    what broke this guard: the old pattern captured the first token after
+    `git add`, read the FLAG as a path, and the comparison failed on
+    '--ignore-removal' rather than on any real widening.
+
+    Parsing now goes through tests/workflow_staging.py, shared with the sibling
+    guards in test_press_workflow.py and test_marketing_hot_tape_radar.py, so
+    the next flagged add cannot fix one copy and leave the others blind — the
+    partial sweep IS the bug this file has been on both ends of.
+    """
     step = next(str(s.get("run") or "") for s in _emit_steps()
                 if "git add" in str(s.get("run") or ""))
-    added = set(re.findall(r"^\s*git add ([^\s]+)", step, re.MULTILINE))
+    added = staged_paths(step)
     assert added == {"content/seo/blog", "site/blog", "data/press/published.jsonl",
-                     "content/press", "properties"}
+                     "content/press", "properties",
+                     "site/assets/css", "site/assets/js"}
     # The nightly still owns site/sitemap.xml; the properties carry their own.
     assert "git add site/sitemap.xml" not in step
     assert "press_sitemap_guard" in step
