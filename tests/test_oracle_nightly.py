@@ -290,3 +290,30 @@ def test_banner_dry_run_writes_nothing(tmp_path):
     }
     _step_banner(state, site_dir, dry_run=True)
     assert not (site_dir / "wh_banner.json").exists()
+
+
+# ---------------------------------------------------------------------------
+# daily.yml plumbing: the R2 panel fetch must precede its consumers
+# ---------------------------------------------------------------------------
+
+def test_daily_fetch_oracle_panels_precedes_oracle_nightly():
+    """fetch_oracle_panels must run BEFORE oracle_nightly in the engine job.
+
+    oracle_nightly's personality (3b) and turn-desk lane (Steps 15-19) read
+    data/oracle/panel_s.parquet, which is gitignored and reaches the runner
+    only via the R2 fetch.  With the fetch AFTER oracle_nightly, turn_desk
+    skipped on its missing-panel sentinel and Steps 16-19 lost the night while
+    the panel landed ~3 seconds later (run 30960328285, 2026-08-05).
+    """
+    repo = Path(__file__).resolve().parent.parent
+    daily = (repo / ".github" / "workflows" / "daily.yml").read_text(encoding="utf-8")
+    fetch = daily.index("python -m scripts.fetch_oracle_panels")
+    assert fetch < daily.index("python -m scripts.oracle_nightly"), (
+        "fetch_oracle_panels must precede oracle_nightly — turn_desk (Steps 15-19) "
+        "reads data/oracle/panel_s.parquet and skips for the night when it is absent"
+    )
+    # The original consumer stays downstream: sponsorship_state via build_bottom_sensors.
+    assert fetch < daily.index("python -m scripts.build_bottom_sensors")
+    # The declared DAG must agree with the workflow, or dag-conformance goes red.
+    dag = (repo / "config" / "dag.yml").read_text(encoding="utf-8")
+    assert dag.index("id: fetch_oracle_panels") < dag.index("id: oracle_nightly")

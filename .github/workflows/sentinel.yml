@@ -47,7 +47,31 @@ jobs:
           python -m scripts.build_vector
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
+          # normalize the pages this step stages (P0 2026-08-04, 9a997e9da3f): a lane
+          # that commits site/ HTML without the shim/externalize/stamp chain publishes
+          # a RAW page — inline <style>, no assets/css/<hash>.css ref, stale ?v= — and
+          # holds it until the next full-tree render re-bakes vector.html. All three
+          # passes are idempotent (~20s over the tree) and non-blocking: a flash-crash
+          # alert must still publish even if a sweep fails.
+          python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+          python -m scripts.externalize_css || echo "::warning title=externalize::pre-commit css externalize FAILED — pages may ship un-externalized (9a997e9da3f)"
+          python -m scripts.optimize_assets || echo "::warning title=stamp::asset optimize FAILED — ?v= stamps may be stale"
           git add data/vector data/coinbase/btc_hourly.parquet site/vector.html site/index.html
+          # index.html is a plain-copy PAIR (templates/index.html ships byte-identically
+          # as site/index.html) and this is the only lane here that stages a pair's site
+          # copy. Both sweeps above write the TEMPLATE side too — deliberately, so
+          # `check_template_site_sync --fix` cannot revert a site-only stamp (#3617/#3624)
+          # — so staging site/index.html alone would land the pair DIVERGED and red the
+          # pages.yml publish gate. Stage the template side with it. Tolerant form: a bare
+          # add exits 128 on a pathspec that matches nothing and would kill the alert.
+          git add templates/index.html 2>/dev/null || true
+          # ...and the content-hashed assets vector.html now links: externalize_css
+          # rewrites it to <link> site/assets/css/<hash>.css, so staging the page without
+          # the asset ships a 404 stylesheet. --ignore-removal never stages a DELETION —
+          # the orphan prune reasons only from pages it can see, and this lane has no
+          # post-rebase normalize to re-mint an asset a sibling still links.
+          git add --ignore-removal site/assets/css 2>/dev/null || true
+          git add --ignore-removal site/assets/js 2>/dev/null || true
           git diff --cached --quiet || git commit -m "vector: flash-crash alert $(date -u +%FT%H:%MZ)"
           # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
           # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then

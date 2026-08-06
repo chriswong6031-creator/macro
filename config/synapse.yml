@@ -2141,6 +2141,19 @@ artifacts:
       not available); species_id=null by design (CN-WASHOUT/CN-REVERSAL both
       bind 'china_standout_track'; no unambiguous one-to-one species_id mapping).
       Producer write call: engine/china_standout_track.py:637 combined.to_parquet.
+      MULTI-DEFINITION STORE: keep-first keys on (date, ticker, board_definition), so one
+      parquet holds several cohorts side by side and a name on two shelves keeps one row
+      per definition. Exactly ONE definition owns the headline grade at a time; every
+      other cohort is listed in china_standout_track.WATCH_DEFINITIONS, which
+      _latest_definition_frame excludes so an append ORDER can never flip grade() onto a
+      watch cohort. Watch cohorts: cn_reversal_watch_v1 (washout-reversal measurement,
+      charting-app docs/PREREG_WASHOUT_REVERSAL.md §5.4), cn_prophet_v2_shadow (the
+      displaced v2 admission rule grading in parallel per CN Prophet masterplan G0.8) and
+      cn_continuation_watch_v1 (the §2.7 never-eligible continuation cohort — 11% of the
+      top-150 era runners, median era return +18.7%, blocked by the counter-trend /
+      no-200-reclaim leg; SHADOW ACCRUAL with zero display surface, producer
+      engine/china_continuation_watch.py). A cohort is added to WATCH_DEFINITIONS in the
+      SAME change that starts appending it.
 
   # --- W2 sweep 2a: HK Board Ledger ---
   board-ledger-hk:
@@ -3730,6 +3743,7 @@ artifacts:
       - scripts/export_signal_contracts.py
       - scripts/backfill_stock_open.py
       - engine/neuralweb/mastermind_context.py
+      - engine/neuralweb/market_packet.py
     external_consumers:
       - mastermind:vendored
       - mastermind:context
@@ -11208,7 +11222,7 @@ artifacts:
     path: data/us_prophet_rank/candidates/YYYY-MM.parquet
     format: parquet
     producer: engine/us_context_vector.py
-    known_extra_writers: []
+    known_extra_writers: [scripts/run_us_scan_tier.py]
     owner_program: momoedge
     cadence: daily-engine
     storage: git
@@ -11219,7 +11233,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers: [engine/us_prophet_grades.py, scripts/grade_us_prophet_candidates.py,
+                engine/prophet_miss_audit.py]
     external_consumers: []
     notes: >
       US Context Vector point-in-time candidate store (PROPHET US roadmap §2 keystone).
@@ -11233,11 +11248,27 @@ artifacts:
       scripts/build_stock_library.py, which calls engine/us_context_vector.py at the end
       of its nightly run (no separate dag module; the write is declared on
       scripts.build_stock_library in config/dag.yml).
-      ZERO AUTHORITY AT BIRTH: consumers is deliberately EMPTY. Nothing reads this store
-      for scoring; it changes no lane, rank, score or gate, and originates nothing —
+      ZERO AUTHORITY: the consumers are the §W7 full-population forward grader
+      (engine/us_prophet_grades.py, which READS identity columns to find rows it has not
+      graded and writes only its own sibling store, plus its CLI) and
+      engine/prophet_miss_audit.py, whose priority_score_scorecard block joins the stamped
+      score to that grader's outcomes. Both are read-only ops telemetry with no threshold
+      and no alarm. Nothing reads this store for SCORING;
+      it changes no lane, rank, score or gate, and originates nothing —
       every column is READ off a producer that already ran that night (glass-box, A7).
       Columns reach decision authority only through the roadmap §3 bounded-authority
       ladder, one axis at a time, each with its own prereg.
+      COVERAGE TIER (roadmap §4.5, operator-ratified 2026-08-05): every row carries
+      tier ∈ {curated, scan}. curated = the graded population, written by the engine job
+      exactly as before — board ADMISSION, gates, scores, ranks and plan intake read this
+      set and ONLY this set, unchanged. scan = liquidity-floored coverage over
+      data/massive_stock_day, appended by the post-engine us_scan_tier job
+      (scripts/run_us_scan_tier.py, the known_extra_writer above) so an off-index runner
+      is at minimum SEEN and counted missed. The two writers are ordered (needs: engine)
+      and their ticker sets are disjoint by construction; keep-first on
+      (stamp_date, ticker, board_definition) is the second fence — tier is deliberately
+      NOT in the dedupe key, so an overlapping name survives once, as its curated row.
+      The scan tier inherits the SAME zero authority: consumers stays empty.
       NIGHTLY IS THE SOLE ADVANCER: ledger_lane.nightly_advance_enabled()
       (COLLECT_LANE=nightly) is the FIRST statement of append_candidates, so intraday and
       render lanes return 0 without opening a file. Keep-first on
@@ -11246,6 +11277,61 @@ artifacts:
       measured for this name tonight", never "false" (#4485). Named debts
       (turnover_pctile_60d data-blocked; stoch_ob/stoch_bear/macd_bear not exposed by
       confluence_tiers) are documented in data/us_prophet_rank/README.md.
+
+  # --- us-prophet-grades: full-population forward grades (§W7, operator 2026-08-05) ---
+  us-prophet-grades:
+    path: data/us_prophet_rank/grades/YYYY-MM/YYYY-MM-DD.parquet
+    format: parquet
+    producer: engine/us_prophet_grades.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: daily-engine
+    storage: git
+    asof_field: graded_asof
+    freshness_sla_hours: 9999
+    schema: us.prophet_grades/v1
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/prophet_miss_audit.py, scripts/grade_us_prophet_candidates.py]
+    external_consumers: []
+    notes: >
+      Forward outcome record for the FULL analyzed US universe (PROPHET US
+      trend-intelligence masterplan §W7; operator order 2026-08-05 — "we should be
+      remembering the score that we give picks … so that we can later assess how robust and
+      correct our scoring system is"). Grades EVERY row of the us-context-vector store —
+      ~1,579 names a night today and ~10.3k once the scan tier lands, not the ~12 that
+      become plans — across the H=10/21/42/63 SESSION ladder, excess vs SPY, one row per
+      (candidate, horizon). H=42/63 were added by operator ruling 2026-08-05: basing-class
+      picks are structurally punished by a 10-session headline. Every row carries two
+      conditioning columns, universe_tier (curated vs scan, roadmap §4.5) and signal_class
+      (basing/momentum/other, mapped from engine/cycles.py's EXISTING vocabulary — nothing
+      new is stamped), so the scorecard reports those populations SEPARATELY and never
+      pools them. Both columns are resolved from the candidates store by name and then
+      VALIDATED by value; neither has landed there yet, so today they read null with a
+      printed warning rather than a silent default.
+      RULER REUSED, NOT FORKED: engine.grading.forward_metrics, the same next-bar-fill,
+      positional-horizon function grade_us_board and grade_prophet_doors use; pinned
+      mark-for-mark against scripts/grade_prophet_doors.py by tests/test_us_prophet_grades.py.
+      POLICY-FREE: fixed-horizon marks only — no stops, exits, hold rules or sizing.
+      ONE-GRADER LAW: a graded (stamp_date, ticker, board_definition, horizon) is FROZEN;
+      a re-run appends nothing, so the store is idempotent per night.
+      MONTH-GROUPED DAILY PARTS keyed by the GRADING RUN (graded_asof), not the stamp
+      month: grading is a monotone forward process, so a nightly writes a NEW file and
+      rewrites nothing, and every earlier part is byte-identical forever. Day grain rather
+      than one monthly file because a parquet cannot be appended in place — measured, a
+      monthly file costs 11x the git history at both scales (1.14 GB/yr curated-only,
+      6.30 GB/yr with the scan tier, vs 0.10 / 0.57 GB/yr for day parts).
+      Each row still carries stamp_date and mark_date, so a study joins by stamp month
+      regardless of which part the row physically lives in.
+      NIGHTLY IS THE SOLE ADVANCER: ledger_lane.nightly_advance_enabled() (COLLECT_LANE=nightly)
+      is the FIRST statement of append_grades; intraday and render lanes write nothing.
+      ZERO AUTHORITY: outcomes here confer no rank, gate, size, board or plan rights on
+      anything. The single consumer is engine/prophet_miss_audit.py's priority_score_scorecard
+      block — read-only ops telemetry with no threshold and no alarm. The suite greps every
+      engine/scripts/app/admin/lib/collectors module to pin that fence.
+      A null excess_spy means the SPY cache was missing that night; it is never a zero.
 
   # --- nasdaq-internals (TI-R2/R3/R5, program: nasdaq-internals) ---
   nasdaq-internals:
@@ -11715,7 +11801,7 @@ artifacts:
     storage: git
     asof_field: asof
     freshness_sla_hours: 36
-    schema: darkpool_context.v1
+    schema: darkpool_context.v2
     tier: display
     horizon_role: context
     weights: none
@@ -11726,14 +11812,28 @@ artifacts:
       - mastermind:context
     notes: >
       Nightly context feed for off-exchange (dark-pool) positioning, built by
-      engine/darkpool_context.py alongside the Dark Pool desk page. Turns the raw desk
-      into plain-word leans — quiet-accumulation / distribution / unusual — from a
-      deterministic threshold on each name's off-exchange share vs its own norm (oe_z)
-      paired with the CHANGE in short-marked selling (never the raw level, since ~half
-      of off-exchange volume is short-marked by default). Carries a hero verdict, a
-      laid-out standout board, weekly per-ATS venue shifts, and a same-day idempotent
-      change-feed (names entering/leaving each lean + venue movers vs prev_state).
-      Off-exchange volume hides direction, so every lean is a heads-up to watch —
+      engine/darkpool_context.py alongside the Dark Pool desk page. Groups standout
+      names by the CONJUNCTION observed — off-exchange participation unusually high vs
+      the name's OWN trailing norm (median/MAD, current observation excluded, baseline
+      restarted after a share split) together with what price did over the same stretch:
+      heavy_into_weakness / heavy_into_strength / heavy_price_flat. Carries a hero state
+      line, a dollar-weighted market participation gauge, a laid-out standout board with
+      the ATS-vs-wholesaler-internalisation split per name, weekly per-ATS venue shifts
+      with a MEASURED publication lag, a coverage block naming what could not be seen,
+      and a same-day idempotent change-feed vs prev_state.
+
+      v2 (2026-08-05) REPLACED v1's accumulation/distribution/unusual "leans" and its
+      leaning-up/leaning-down copy. That derived a direction from raw off-exchange share
+      + raw short ratio, which DO_NOT_REBUILD (PSS-AF1 row) forbids as a standalone
+      directional signal; walk-forward testing also gave it no support (acc-minus-dist
+      +0.22%/-0.87%/-0.10% at 1/5/10d, p 0.74/0.53/0.96, sign flipping). v2 emits NO
+      direction at all — the tag requires price precisely so it is not standalone, and
+      data/darkpool/ledger/forward.jsonl now accrues the observed state at tag time so
+      the question becomes gradeable rather than assumed. Consumers reading v1 keys
+      (`leans`, `oe_share`, `oe_z`) off a v2 artifact get silent nulls — migrate to
+      `patterns`, `participation`, `participation_z`.
+
+      Off-exchange volume hides who is trading, so nothing here calls a direction —
       display/context tier only, NEVER a signal, rank, size, or escalation.
       is_context_only=true, display_only=true. Absent until scripts/build_darkpool_desk.py
       first runs; all consumers fail-open (block=None or honest-null).
@@ -11771,7 +11871,7 @@ artifacts:
       world_state transmission_chains lobe + synapse + mastermind _summarize + portfolio_ctx
       per-ticker merge + baked display subset. A chain state is a WATCH item with (eventually)
       printed conditional base rates — display/context tier ONLY, NEVER a signal, rank, size,
-      or escalation (masterplan §4; DNR row 45 / TXI Article 1/2). Per-hop base rates are
+      or escalation (masterplan §4; DNR:KILL-CAUSAL-DAG-ALPHA / TXI Article 1/2). Per-hop base rates are
       UNTESTED in W1 (base_rates=null). is_context_only=true, display_only=true. Absent until
       the first chains run; all consumers fail-open (block=None / honest-null / no emit).
 
@@ -12196,14 +12296,17 @@ artifacts:
 
   # ── nw-context-intelligence program (W3 — personality risk lens) ──────────
 
-  # NOTE: engine/neuralweb/context_api.py is a RESEARCH-SIDE QUERY LIBRARY with no
-  # nightly caller — analogous to alpha_grammar.py / alpha_overlap.py (FR-12 pattern).
-  # It produces NO artifact and is NOT wired into daily.yml.  Its consumer-of-artifacts
-  # relationship (it reads regime/personality/spine at query time) is noted in the
-  # individual artifact consumer lists above as a QUERY-TIME consumer, not a nightly one.
+  # NOTE: engine/neuralweb/context_api.py is a RESEARCH-SIDE QUERY LIBRARY —
+  # analogous to alpha_grammar.py / alpha_overlap.py (FR-12 pattern).
+  # It produces NO artifact.  Its consumer-of-artifacts relationship (it reads
+  # regime/personality/spine at query time) is noted in the individual artifact
+  # consumer lists above as a QUERY-TIME consumer.  ONE nightly caller exists as of
+  # 2026-08-04: scripts/grade_us_board.py lazy-imports archetype_asof to stamp the
+  # US board ledger's archetype context column (read-only PIT label lookup; still
+  # no artifact produced by this module, no signal/score/rank/gate computed).
   # It does NOT have a standalone synapse entry because it neither produces nor surfaces
   # any committed artifact; its entry here would be dishonest.
-  # Consumers: future pre-registered context studies only.
+  # Consumers: pre-registered context studies + the grade_us_board archetype stamp.
 
   context-risk:
     path: data/neuralweb/context_risk.json
@@ -17133,3 +17236,159 @@ artifacts:
       per-ledger row counts and sha256 hashes for chronicle-events,
       chronicle-earnings-call-events, and chronicle-state-log + compile elapsed_s (binding
       budget: printed every run; target well under the 200-minute nightly cap).
+
+  # --- CN Prophet W-C: PIT membership store + loser/miss telemetry + episode ledger ---
+  # Program of record: research/CHINA_PROPHET_LOSER_INTELLIGENCE_MASTERPLAN_BY_FABLE.md.
+  # Registration tier per config/adjudication_rubrics.yml: t0 ROUTINE (display /
+  # infrastructure / shadow rows on existing lanes). No new lobe is chartered here and
+  # nothing is promoted onto a scored path, so no t2 packet or adversarial panel applies
+  # (FABLE_SUCCESSION_OPERATING_SYSTEM.md §RUL-SUCC — new_lobe_charter and
+  # scored_path_behavior_change are the t2 classes; neither is in scope).
+  cn-prophet-audit-latest:
+    path: data/cn_prophet_audit/latest.json
+    format: json
+    producer: engine/cn_prophet_audit.py
+    known_extra_writers: []
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/market_packet.py
+    external_consumers: []
+    notes: >
+      W0 of the CN Prophet program: per-night matured-episode loser forensics
+      (chase-fingerprint fields, sector/theme cells, entry-status cohorts), the era-runner
+      coverage funnel (caught / eligible_missed / never_eligible), and the featured-vs-rest
+      running score — one block per board_definition, NEVER pooled across definitions.
+      Ops-telemetry with ZERO authority: the artifact's own "authority" field reads
+      "none — ops telemetry; never scores, ranks, gates or sizes", and
+      tests/test_cn_prophet_audit.py pins that the buy rows come out of the producing call
+      byte-identical. Gated on CN_LANE=asia + partial-session refusal, the same two gates
+      china_standout_track.append_board uses. Producer write call:
+      engine/cn_prophet_audit.py:_write_latest. Consumed by the Live Market State Packet
+      as a telemetry HEADLINE only (n_matured / win rate / median excess / chase share) —
+      aggregation, never a per-name read.
+  cn-prophet-audit-forward-log:
+    path: data/cn_prophet_audit/forward_log.parquet
+    format: parquet
+    producer: engine/cn_prophet_audit.py
+    known_extra_writers: []
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Append-only headline row per (run date × board_definition) for the W0 telemetry —
+      the gradeable forward record behind data/cn_prophet_audit/latest.json. Also the
+      declared host for the R-slate auto-tripwires (masterplan G0.8: each ratified wiring
+      ships with a named tripwire, its threshold and its revert action). Nightly/asia is
+      the sole advancer (house law); keep-first on re-run.
+  site-cn-track-ledger:
+    path: site/factordata/cn_track_ledger.json
+    format: json
+    producer: scripts/build_china_library.py
+    known_extra_writers: []
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: track_ledger/v1
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/china.html.j2
+      - scripts/backfill_cn_board_definition_legacy.py
+    external_consumers: []
+    notes: >
+      EPISODE-grain (contiguous board run) CN track record from
+      data/china_standout_track/board.parquet, scored on CSI300-relative excess at a
+      forced 10-session verdict via engine/track_scoring.py — the same core the US desk
+      uses. Carries BOTH records and they are never pooled: prior_record is the CLOSED
+      pre-v2 era book (never edited, never re-graded) and the live record accrues under
+      the current board_definition only. Producer:
+      scripts/build_china_library.py:emit_cn_track_ledger (out_name default). The watch
+      cohorts write their own files through the same emitter (cn_reversal_ledger.json)
+      and never enter this one.
+  china-ths-membership-pit:
+    path: data/baskets_china_ths/membership_history.parquet
+    format: parquet
+    producer: engine/basket_membership_pit.py
+    known_extra_writers:
+      - "scripts/build_baskets_china_ths.py — calls basket_membership_pit.append_all() on --snapshot"
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: snapshot_date
+    freshness_sla_hours: 720
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Point-in-time THS concept-board membership: one row per
+      (snapshot_date, basket_id, ticker), keep-FIRST on that key, append-only.
+      Masterplan §2.12 names back-applied membership the WEAKEST JOINT of the relay
+      program — the 12-month ignition study ran on a single 2026-07-08 snapshot applied
+      backward, and the two real PIT snapshots differ by 7.7% of member-slots in 8 days —
+      so §5 W-C charters this store as the prerequisite for ANY future relay-construction
+      promotion. Content-deduped on a sha over the normalized member tuples (a calendar
+      day with unchanged membership is not stamped); PIT read = newest snapshot <= date,
+      via basket_membership_pit.members_asof, which ALWAYS returns a pit True/False basis
+      flag and falls back to current membership only for dates predating coverage.
+      TWO SOURCE SHAPES, recorded per row in source_shape: the 2026-06-30 side-car is the
+      RAW vendor concept dump (~9,069 member-slots, keyed by the Chinese board name) while
+      2026-07-08 onward are membership.json copies (~3,532 slots, the seeded/capped subset).
+      Both are true about their own population and neither is dropped, but differencing
+      naively across that boundary reports ~61% "drift" that is mostly the seeding cap —
+      members_asof attaches an explicit note whenever the resolved snapshot's shape is not
+      the store's newest. A dated side-car matching no known shape is reported as unparsed,
+      never silently skipped.
+      freshness_sla is deliberately loose: membership moves on the vendor's schedule, not
+      the trading calendar, so a long unchanged stretch is a correct reading, not a stall.
+      CN_LANE=asia gated (house law: nightly is sole advancer of data/).
+  china-curated-membership-pit:
+    path: data/baskets_china/membership_history.parquet
+    format: parquet
+    producer: engine/basket_membership_pit.py
+    known_extra_writers:
+      - "scripts/build_baskets_china_ths.py — calls basket_membership_pit.append_all() on --snapshot"
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: snapshot_date
+    freshness_sla_hours: 720
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      The curated CN basket suite's PIT membership history — same columns, same
+      keep-first key and same reader as china-ths-membership-pit, so a consumer needs one
+      contract rather than two. The curated membership already carries per-member
+      added/removed dates (the basis the masterplan §2.10 ex-ante receipt used), and
+      members_asof applies them WITHIN the resolved snapshot so a read between two
+      snapshots is correct rather than merely nearest-neighbour.

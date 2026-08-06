@@ -34,12 +34,20 @@
     Zero animation, zero transition — so no reduced-motion block is required here.
     Add one and you must gate it, naming the pseudos.
 
+    WHERE IT SITS. Below the board since 2026-08-04, above it before that. It was
+    built as a lead-in — heat, then what the picks do with it, then the picks — and
+    at 692px that reading order cost the product two full screens of scroll to set
+    up a panel that ranks, gates and sizes nothing. Context that changes no decision
+    reads after the decision. The panel got shorter in the same pass; see the stance
+    note at the row markup for what moved down a tier and why.
+
     TIERS (docs/DESIGN_DOCTRINE.md):
-      1 GLANCE  eyebrow · one grid line + one stance line per theme · one footer
+      1 GLANCE  eyebrow · one grid line per theme · a stance line ONLY on a row
+                with live names · one footer sentence
       2 HOVER   the panel `?` carries the method AND the Law-5 null receipt;
                 per-theme receipts (relative strength, score) ride data-tip-*
-      3 STUDY   the expanded member list, and subsector_rotation.html for the
-                full 41-theme table
+      3 STUDY   rank, heat and the stance for every other row; the expanded member
+                list; and subsector_rotation.html for the full 41-theme table
     Every stance sentence is chosen MECHANICALLY from the counts by
     engine/theme_tape.py `_stance_for` — no free-form text reaches this file, and the
     verbs come from the doctrine's sanctioned stance vocabulary.
@@ -71,7 +79,7 @@
 {%- set _tt = theme_tape if (theme_tape is defined and theme_tape is mapping) else none -%}
 {%- set _tt_rows = (_tt.get('rows') or []) if _tt else [] -%}
 
-{#- Honest-null gate (DO_NOT_REBUILD row 151 — no forced ranking in a dead tape).
+{#- Honest-null gate (DNR:HOLD-IGNITION-SURFACES — no forced ranking in a dead tape).
     engine/theme_tape.py returns None when nothing clears the constructive floor, so
     reaching this guard with no rows means the tape is dead and the panel emits
     NOTHING AT ALL — no shell, no <style>, no empty box. -#}
@@ -88,7 +96,13 @@
      Every value resolves from an existing theme.css token. No new hex, theme.css
      untouched, so light / dark / zh all repaint at color-mix time with nothing to
      keep in sync. */
-  body.page-stocks #theme-tape{padding:15px 18px 14px}
+  /* THE THREE TRACK WIDTHS, DECLARED ONCE. The header row, every theme row and
+     every member group are separate grid containers that must agree on their
+     column edges, and the only thing making them agree is that these numbers are
+     identical. Written inline at each site (as they were until 2026-08-04) they
+     are three pairs of magic numbers that drift the moment one is touched. */
+  body.page-stocks #theme-tape{padding:15px 18px 14px;
+    --tt-col:72px;--tt-quiet:76px;--tt-gk:74px}
   body.page-stocks .tt-hd{display:flex;align-items:baseline;gap:6px 12px;flex-wrap:wrap;margin:0 0 4px}
   body.page-stocks .tt-eyebrow{margin:0;font-size:11px;font-weight:800;letter-spacing:.18em;
     text-transform:uppercase;color:var(--muted);line-height:1.2}
@@ -101,15 +115,39 @@
 
   /* THE LADDER GRID. One template shared by the header and every row, so the
      columns cannot drift apart. Fixed numeric widths (not max-content) are what
-     make the columns a COLUMN: max-content would size per row and the figures
-     would never line up. 58px clears "setting up" at 10px in both languages;
-     66px clears "54/60" at 12.5px mono. */
+     make the columns a COLUMN: the header holds WORDS and the rows hold single
+     digits, so max-content would size the two grids from different content and
+     the figures would never line up under their labels.
+
+     THE TRACK IS SIZED FOR THE CLAMPED LABEL, NOT THE AUTHORED ONE (2026-08-04).
+     These labels are 10px, and 10px is below the browser's minimum-font-size
+     setting — a user preference, commonly 12–16px, that raises the rendered size
+     while the track stays exactly where the CSS put it. The width of this text is
+     therefore NOT a function of this stylesheet. Sized to clear "setting up" at
+     10px the tracks were 58px with 4.1px of slack, and the panel shipped looking
+     correct in every default render and every measured getBoundingClientRect:
+     at a 12px clamp "watching" overran its track, and the shelf chip overran the
+     label column and printed across the theme names beside it. Same defect class
+     as the score-ring caption in #4357, and the ruling there applies here — the
+     fix is structural, not a bigger magic number:
+       · the track clears the longest label at a 13px clamp with room to spare,
+         instead of the 4px it had at the authored size, AND
+       · `overflow-wrap` makes containment a GUARANTEE rather than a margin: past
+         any clamp width the label wraps inside its OWN column. It never paints
+         over its neighbour, which is the property that actually has to hold.
+     Do not "tighten" these back up by measuring a default render — that render
+     cannot reach the state that breaks them. Reproduce with
+     `.tt-k,.tt-fs{font-size:13px!important}` before changing anything here. */
   body.page-stocks .tt-cols,
-  body.page-stocks .tt-row{display:grid;grid-template-columns:minmax(0,1fr) repeat(5,58px) 66px;
+  body.page-stocks .tt-row{display:grid;
+    grid-template-columns:minmax(0,1fr) repeat(5,var(--tt-col)) var(--tt-quiet);
     gap:0 6px;align-items:baseline}
-  body.page-stocks .tt-cols{padding:0 0 5px;border-bottom:1px solid var(--line);margin:0 0 2px}
+  /* end-aligned, not baseline: a label that wraps under a clamp hangs its second
+     line BELOW a first baseline, straight through the rule this row sits on. */
+  body.page-stocks .tt-cols{padding:0 0 5px;border-bottom:1px solid var(--line);margin:0 0 2px;
+    align-items:end}
   body.page-stocks .tt-k{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--muted);
-    text-align:right;line-height:1.25}
+    text-align:right;line-height:1.25;min-width:0;overflow-wrap:break-word}
   html[data-lang="zh"] body.page-stocks .tt-k{letter-spacing:0}
   body.page-stocks .tt-k-quiet{text-align:right}
 
@@ -150,8 +188,10 @@
     border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.05em;
     color:var(--muted);white-space:nowrap}
   html[data-lang="zh"] body.page-stocks .tt-fs{letter-spacing:0}
+  /* Rank + heat + (where the row did not earn one above) the stance — the opening
+     line of an EXPANDED row, so it takes .tt-det's indent and adds none of its own. */
   body.page-stocks .tt-heat{display:block;font-size:11px;font-weight:400;color:var(--muted);
-    margin-top:2px;padding-left:16px}
+    margin:0 0 7px;line-height:1.5}
   /* THE FIGURES. Mono + tabular so the digits stack; the body face would ripple
      the column. Words never take the mono face — the header above is body-face.
      The right edge is set on the CELL, which is the grid item; setting it on the
@@ -177,7 +217,16 @@
   /* Tier 3 — the member list. Indented under the row it belongs to, and quiet: it
      is a reference list, not a second board. */
   body.page-stocks .tt-det{padding:2px 0 12px 16px}
-  body.page-stocks .tt-g{display:grid;grid-template-columns:74px minmax(0,1fr);gap:0 10px;
+  /* The label column GROWS rather than overflows. It was a flat 74px, which is the
+     track the shelf's "loading up" chip printed straight across the theme names out
+     of: the chip is 68px at the authored 10px and 85px once the browser clamps it,
+     and a fixed track has no way to say so — the box just paints over the column
+     beside it. `minmax(--tt-gk, max-content)` keeps the 74px alignment with the
+     groups above in every normal render and lets the track widen in the one state
+     that used to break it. Bounding the chip instead (max-width + overflow:hidden)
+     is worse: it clips a two-word label to "loading u…". */
+  body.page-stocks .tt-g{display:grid;
+    grid-template-columns:minmax(var(--tt-gk),max-content) minmax(0,1fr);gap:0 10px;
     align-items:baseline;padding:3px 0}
   body.page-stocks .tt-gk{font-size:10.5px;font-weight:700;color:var(--muted);text-align:right;
     line-height:1.5}
@@ -275,6 +324,48 @@
      one line each. */
   body.page-stocks .tt-shelf-why .tt-nb{white-space:nowrap}
 
+  /* ── THE WASHOUT-TURN GROUP (W-D) ─────────────────────────────────────────
+     The states the ladder above rejects BY CONSTRUCTION. The floor that decides
+     which themes get a heat row is a momentum floor, and a theme down hard on
+     the month but up on the week is exactly the shape a momentum lens certifies
+     last — so it ranks near the BOTTOM of the acceleration table and never
+     appears, however sharply it is turning. Space Tech sat 28th of 41 while its
+     Satellites sleeve ran +2.0% against the market on the week.
+     Structurally this is the shelf's twin — a hairline, an eyebrow, one shared
+     reason line — and it reuses `.tt-i` / `.tt-s` / `.tt-row` / `.tt-det`
+     VERBATIM so a turn row is the same object as a heat row: same seven-column
+     grid under the same header, same member groups, same phone collapse. Only
+     the label and the figures line are new, which is the whole difference
+     between the two groups.
+     It takes NO colour and no chip of its own. This construction has no measured
+     edge behind it (the reason line says so in plain words), so it must not be
+     the loudest thing on the panel — the same argument that keeps the foresight
+     word grey. `.tt-i:last-of-type` resolves per parent, so the last turn row
+     drops its rule here without touching the heat rows' own last-child. */
+  body.page-stocks .tt-turn{border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent);
+    padding:9px 0 0;margin-top:2px}
+  body.page-stocks .tt-turn-hd{margin:0 0 2px;font-size:10px;font-weight:800;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--muted);line-height:1.2}
+  html[data-lang="zh"] body.page-stocks .tt-turn-hd{letter-spacing:.06em}
+  /* The figures line, and it earns the glance tier: these two numbers ARE the
+     row's reason for being on the panel, so unlike a heat row's receipts they do
+     not belong behind a hover. Sits under the name at the weight of the heat
+     line it replaces. */
+  body.page-stocks .tt-turn-line{display:block;font-size:11px;font-weight:400;
+    color:var(--muted);margin-top:2px;line-height:1.5}
+  /* Figures inside a words line take the mono face for the digits only — the
+     house rule is mono for figures, never for words. */
+  body.page-stocks .tt-turn-line .tt-f{font-family:var(--font-mono,monospace);
+    font-variant-numeric:tabular-nums}
+  /* The group's ONE shared reason (Law 4), carrying both halves the doctrine
+     asks for: the plain-word null and the stance. Stated once, under all rows,
+     never per row — every row here is early and unconfirmed for the same reason.
+     `.tt-nb` holds the stance whole for the same reason the shelf does: broken
+     across a line "— don't chase." reads as a fragment. */
+  body.page-stocks .tt-turn-why{margin:6px 0 0;font-size:11px;line-height:1.55;
+    color:var(--muted);max-width:74ch}
+  body.page-stocks .tt-turn-why .tt-nb{white-space:nowrap}
+
   body.page-stocks .tt-rule{border:0;border-top:1px solid var(--line);margin:8px 0 10px}
   body.page-stocks .tt-foot{margin:0;font-size:12px;line-height:1.55;color:var(--muted);max-width:74ch}
   body.page-stocks .tt-foot a{color:inherit;text-decoration:underline;text-underline-offset:2px}
@@ -336,21 +427,38 @@
         <div class="tt-row"
              data-tip-en="{{ _r.name }} — {{ tt_ord(_r.rank) }} of {{ _tt.get('rank_of') or 0 }} themes by acceleration{% if _r.get('rs_1m') is not none %}, {{ '%+.1f'|format(_r.rs_1m|float)|replace('-', '−') }}% against the market over the past month{% endif %}{% if _r.get('rs_1w') is not none %} and {{ '%+.1f'|format(_r.rs_1w|float)|replace('-', '−') }}% over the past week{% endif %}. {{ _r.n_on_board }} of its {{ _r.n_members }} members are on this board.{% if _r.get('foresight') %} Supply-chain read on {{ _r.foresight.sources_en }}: {{ _r.foresight.tip_en }}{% if not _r.foresight.confirmed %}, read from company filings and news language rather than a confirmed measurement{% endif %}.{% endif %} Display context only — this changes no ranking below."
              data-tip-zh="{{ _r.name }} — 按加速度在 {{ _tt.get('rank_of') or 0 }} 个主题中排名第 {{ _r.rank }}{% if _r.get('rs_1m') is not none %}，过去一个月相对大盘 {{ '%+.1f'|format(_r.rs_1m|float)|replace('-', '−') }}%{% endif %}{% if _r.get('rs_1w') is not none %}，过去一周 {{ '%+.1f'|format(_r.rs_1w|float)|replace('-', '−') }}%{% endif %}。其 {{ _r.n_members }} 只成分股中有 {{ _r.n_on_board }} 只在本榜上。{% if _r.get('foresight') %}供应链研判 — {{ _r.foresight.sources_zh }}：{{ _r.foresight.tip_zh }}{% if not _r.foresight.confirmed %}，依据公司文件与新闻措辞，尚无确证测量{% endif %}。{% endif %}仅为展示参考，不改变下方任何排序。">
-          <span class="tt-nm">{{ tt_t(_r.name, _r.name_zh) }}{% if _r.get('foresight') %}<span class="tt-fs">{{ tt_t(_r.foresight.label_en, _r.foresight.label_zh) }}</span>{% endif %}
-            <span class="tt-heat">{{ tt_t(tt_ord(_r.rank) ~ ' of ' ~ (_tt.get('rank_of') or 0),
-                                          '第 ' ~ _r.rank ~ ' 名，共 ' ~ (_tt.get('rank_of') or 0)) }}{% if _r.get('heat_en') %} · {{ tt_t(_r.heat_en, _r.heat_zh) }}{% endif %}</span>
-          </span>
+          <span class="tt-nm">{{ tt_t(_r.name, _r.name_zh) }}{% if _r.get('foresight') %}<span class="tt-fs">{{ tt_t(_r.foresight.label_en, _r.foresight.label_zh) }}</span>{% endif %}</span>
           {%- for _k, _en, _zh in _tt_cols %}
           {%- set _n = _c.get(_k) or 0 %}
           <span class="tt-c{% if not _n %} is-zero-cell{% endif %}"><b class="tt-v{% if _n and _k == 'live' %} is-live{% endif %}{% if not _n %} is-zero{% endif %}">{% if _n %}{{ _n }}{% else %}–{% endif %}</b><i class="tt-ik">{{ tt_t(_en, _zh) }}</i></span>
           {%- endfor %}
           <span class="tt-c"><b class="tt-quiet">{{ _c.get('quiet') or 0 }}/{{ _r.n_members }}</b><i class="tt-ik">{{ tt_t('quiet', '未触发') }}</i></span>
         </div>
-        {#- Law 1 — the stance. Selected mechanically from the counts above by
-            engine/theme_tape.py; this file only prints the pair it was handed. -#}
+        {#- Law 1 — the stance, but only where there IS one. Selected mechanically
+            from the counts above by engine/theme_tape.py; this file only prints the
+            pair it was handed.
+            It used to print on EVERY row, and that is what made this panel 692px of
+            wall above the board (operator, 2026-08-04). The stance is a pure
+            function of the counts printed on the same row — `_stance_for` is a
+            lookup on exactly those five figures — so on a normal night four of five
+            rows carry the identical sentence, and Law 4 is explicit that a per-row
+            constant belongs in one place, once.
+            `live` is the whole test: it is the only count that yields "act", and it
+            is the only stance that asks the reader to do something today. So the
+            actionable row keeps its instruction on the glance tier and stands
+            visibly taller than the rest — the exception reads as an exception —
+            while the rows whose stance the ladder already told you carry it one
+            layer down, next to the names it applies to. -#}
+        {%- if _c.get('live') %}
         <div class="tt-say"><span class="tt-stance">{{ tt_t(_r.say_en, _r.say_zh) }}</span></div>
+        {%- endif %}
       </summary>
       <div class="tt-det">
+        {#- Rank, heat, and — for every row that did not earn the glance-tier stance
+            above — the stance, on one line. Opening the row is what asks for this
+            detail, so this is where it costs nothing. -#}
+        <p class="tt-heat">{{ tt_t(tt_ord(_r.rank) ~ ' of ' ~ (_tt.get('rank_of') or 0),
+                                   '第 ' ~ _r.rank ~ ' 名，共 ' ~ (_tt.get('rank_of') or 0)) }}{% if _r.get('heat_en') %} · {{ tt_t(_r.heat_en, _r.heat_zh) }}{% endif %}{% if not _c.get('live') %} · <span class="tt-stance">{{ tt_t(_r.say_en, _r.say_zh) }}</span>{% endif %}</p>
         {%- for _k, _en, _zh in _tt_cols %}
         {%- set _mem = (_r.get('members') or {}).get(_k) or [] %}
         {%- set _shared = (_r.get('shared_why') or {}).get(_k) %}
@@ -373,6 +481,68 @@
       </div>
     </details>
     {%- endfor %}
+
+    {#- THE WASHOUT-TURN GROUP (W-D) — the shape the ladder above cannot show.
+        engine/theme_tape.py returns [] when nothing qualifies and this block then
+        emits NOTHING: no header, no empty box. That is the honest null, and it is
+        the same rule the panel itself answers to — a group that printed a "best
+        available" row on a night with no turn would be the forced ranking the
+        Ignition Radar suspension forbids.
+        Every row is a `.tt-i` details exactly like a heat row above, so it lands
+        under the same column header with the same member groups inside. What it
+        does NOT carry is a stance sentence: the heat rows' stances come from a
+        table whose strongest verb is "act per row", and no row in this group has
+        earned a verb — the whole group is early and unconfirmed, and it says so
+        once, at the bottom, in the group's own reason line. -#}
+    {%- set _tt_turns = _tt.get('washout_turns') or [] %}
+    {%- if _tt_turns %}
+    <div class="tt-turn">
+      <p class="tt-turn-hd">{{ tt_t('Turning from washout — early, unconfirmed', '洗盘转折——早期，未确认') }}</p>
+      {%- for _r in _tt_turns %}
+      {%- set _c = _r.get('counts') or {} %}
+      {%- set _w = '%+.1f'|format(_r.turn_1w|float)|replace('-', '−') %}
+      {%- set _m = '%+.1f'|format(_r.turn_1m|float)|replace('-', '−') %}
+      <details class="tt-i">
+        <summary class="tt-s">
+          <div class="tt-row"
+               data-tip-en="{{ _r.name }} — {{ tt_ord(_r.rank) }} of {{ _tt.get('rank_of') or 0 }} themes by acceleration, so the heat list above does not carry it{% if _r.get('lead_en') %}. Its {{ _r.lead_en }} group is the part that turned: {% else %}: {% endif %}{{ _m }}% against the market over the past month and {{ _w }}% over the past week. On this board: {{ _r.n_on_board }} of its {{ _r.n_members }} members. A turn this early is not confirmed by trend or by this board, and this pattern carries no measured edge. Display context only — this changes no ranking below."
+               data-tip-zh="{{ _r.name }} — 按加速度在 {{ _tt.get('rank_of') or 0 }} 个主题中排名第 {{ _r.rank }}，因此不在上方热度榜内{% if _r.get('lead_zh') %}。其中转折的是{{ _r.lead_zh }}板块：{% else %}：{% endif %}过去一个月相对大盘 {{ _m }}%，过去一周 {{ _w }}%。其 {{ _r.n_members }} 只成分股中有 {{ _r.n_on_board }} 只在本榜上。如此早期的转折未获趋势或本榜确认，该形态也没有经检验的优势证据。仅为展示参考，不改变下方任何排序。">
+            <span class="tt-nm">{{ tt_t(_r.name, _r.name_zh) }}
+              <span class="tt-turn-line">{% if _r.get('lead_en') %}{{ tt_t(_r.lead_en, _r.lead_zh) }} · {% endif %}{{ tt_t('past week', '近一周') }} <span class="tt-f">{{ _w }}%</span>{{ tt_t(', past month', '，近一月') }} <span class="tt-f">{{ _m }}%</span>{{ tt_t(', against the market', '，相对大盘') }}</span>
+            </span>
+            {%- for _k, _en, _zh in _tt_cols %}
+            {%- set _n = _c.get(_k) or 0 %}
+            <span class="tt-c{% if not _n %} is-zero-cell{% endif %}"><b class="tt-v{% if _n and _k == 'live' %} is-live{% endif %}{% if not _n %} is-zero{% endif %}">{% if _n %}{{ _n }}{% else %}–{% endif %}</b><i class="tt-ik">{{ tt_t(_en, _zh) }}</i></span>
+            {%- endfor %}
+            <span class="tt-c"><b class="tt-quiet">{{ _c.get('quiet') or 0 }}/{{ _r.n_members }}</b><i class="tt-ik">{{ tt_t('quiet', '未触发') }}</i></span>
+          </div>
+        </summary>
+        <div class="tt-det">
+          {%- for _k, _en, _zh in _tt_cols %}
+          {%- set _mem = (_r.get('members') or {}).get(_k) or [] %}
+          {%- set _shared = (_r.get('shared_why') or {}).get(_k) %}
+          {%- if _mem %}
+          <div class="tt-g">
+            <span class="tt-gk">{{ tt_t(_en, _zh) }}</span>
+            <span class="tt-names">{% for _m2 in _mem %}<span class="tt-n"><span class="tt-sym">{{ _m2.t }}</span>{% if _m2.get('why_en') %}<span class="tt-why">{{ tt_t(_m2.why_en, _m2.why_zh) }}</span>{% endif %}</span>{% endfor %}{% if _shared %}<span class="tt-why">{{ tt_t(_shared[0], _shared[1]) }}</span>{% endif %}</span>
+          </div>
+          {%- endif %}
+          {%- endfor %}
+          {%- if _r.get('quiet_sample') %}
+          <div class="tt-g">
+            <span class="tt-gk">{{ tt_t('quiet', '未触发') }}</span>
+            <span class="tt-names">{% for _q in _r.quiet_sample %}<span class="tt-n"><span class="tt-sym">{{ _q }}</span></span>{% endfor %}{% if _r.get('quiet_more') %}<span class="tt-n tt-more">+{{ _r.quiet_more }}</span>{% endif %}<span class="tt-why">{{ tt_t('no fresh entry trigger today', '今日无新入场触发') }}</span></span>
+          </div>
+          {%- endif %}
+        </div>
+      </details>
+      {%- endfor %}
+      <p class="tt-turn-why">
+        <span class="l-en">A month of heavy losses, then a week of gains. Neither the trend nor this board confirms it, and this pattern carries no measured edge on its own. <span class="tt-nb">Watch — don’t chase.</span></span>
+        <span class="l-zh">过去一个月大幅下跌，过去一周回升。趋势与本榜均未确认，该形态本身也没有经检验的优势证据。<span class="tt-nb">观望，勿追高。</span></span>
+      </p>
+    </div>
+    {%- endif %}
 
     {#- THE SHELF (W5a) — what the desk sees that the heat list does not.
         The heading names the join condition and nothing else ("off the heat
@@ -401,15 +571,23 @@
     </div>
     {%- endif %}
 
-    {#- ONE footnote, merged (Law 4). It carries the plain-word null first, because
-        that is the thing a reader most needs to know before acting on an ordering,
-        then the overlap fact — which exists because a mega-cap really does sit in
-        five of today's themes, and a reader who sees the same ticker on five lines
-        deserves to know why rather than to suspect a bug. -#}
+    {#- ONE footnote (Law 4), and it is now ONE sentence plus the link.
+        It carries the panel's own stance — where to look, not what to buy — which
+        has to survive here unconditionally: the per-row stance above is now the
+        exception's line, so on a night with no live names this is the only place
+        the panel answers "so what do I do" (Law 1). The `measuring` clause only
+        adds WHY the read is soft; it can go dark, and the stance cannot.
+        "the picks ABOVE": the panel moved below the board on 2026-08-04, and this
+        word is the one piece of copy that had a direction baked into it.
+        The overlap fact ("a large company can sit in several themes") used to ride
+        here too and no longer does. It explains something a reader can only see
+        with the rows OPEN — the same ticker on more than one member list — and the
+        `?` tip three lines up already states it. A second copy on the always-
+        visible tier is the stacked footnote Law 4 forbids. -#}
     <hr class="tt-rule">
     <p class="tt-foot">
-      <span class="l-en">{% if _tt.get('measuring') %}Theme heat is a read still being measured — it points you at where to look, not at what to buy; the picks below are unchanged by it. {% endif %}A large company can sit in several themes, so the same ticker may appear on more than one line. <a href="subsector_rotation.html">All {{ _tt.get('rank_of') or 0 }} themes →</a></span>
-      <span class="l-zh">{% if _tt.get('measuring') %}主题热度仍在检验中 — 它指出值得关注的方向，而非买入对象；下方选股不受其影响。{% endif %}大型公司可能同时属于多个主题，因此同一代码可能出现在多行中。<a href="subsector_rotation.html">查看全部 {{ _tt.get('rank_of') or 0 }} 个主题 →</a></span>
+      <span class="l-en">Theme heat{% if _tt.get('measuring') %} is a read still being measured — it{% endif %} points you at where to look, not at what to buy. The picks above are unchanged by it. <a href="subsector_rotation.html">All {{ _tt.get('rank_of') or 0 }} themes →</a></span>
+      <span class="l-zh">主题热度{% if _tt.get('measuring') %}仍在检验中 — 它{% endif %}指出值得关注的方向，而非买入对象。上方选股不受其影响。<a href="subsector_rotation.html">查看全部 {{ _tt.get('rank_of') or 0 }} 个主题 →</a></span>
     </p>
   </div>
 {%- endif -%}

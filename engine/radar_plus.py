@@ -36,6 +36,29 @@ log = logging.getLogger(__name__)
 _POS_STATES = {"POSITIVE_DIVERGENCE", "CONFIRMED_UP"}
 _NEG_STATES = {"NEGATIVE_DIVERGENCE", "CONFIRMED_DOWN"}
 
+# ── Diagonal dock (2026-08-05 forensic audit) ────────────────────────────────
+# engine/radar.py doctrine: "the radar is SILENT on the diagonal — CONFIRMED
+# means corroborated and ALREADY PRICED, no edge." Yet v1 edge_score rewarded
+# CONFIRMED flags whenever activity z ran far above the (already-leading) price
+# z, so the edge_ranked TOP was momentum names at their hottest — live outcome:
+# CONFIRMED_UP topped the board through the July-2026 AI-infra blowoff (INTC,
+# ai_infra, MRVL edge 70-100) and mean-reverted −8.5% median vs SPY at 21d.
+# v2: confirmed flags keep only _DIAGONAL_DOCK of their edge, docked further by
+# how extended the consensus already is (|price z| beyond 1σ) — the more the
+# tape has already moved, the less "edge" a corroboration carries. Divergence
+# states (the radar's actual claims) are untouched. Display-tier ranking only.
+_DIAGONAL_DOCK = 0.40      # CONFIRMED_* keep at most this fraction of raw edge
+_EXTENSION_SLOPE = 0.10    # extra dock per z of consensus extension beyond |z|=1
+_DOCK_FLOOR = 0.20         # never below this fraction (context stays visible)
+
+
+def _diagonal_mult(state: str, con_z) -> float:
+    """Edge multiplier for the no-claim diagonal; 1.0 for divergence states."""
+    if state not in ("CONFIRMED_UP", "CONFIRMED_DOWN"):
+        return 1.0
+    cz = abs(_num(con_z) or 0.0)
+    return max(_DOCK_FLOOR, _DIAGONAL_DOCK - _EXTENSION_SLOPE * max(0.0, cz - 1.0))
+
 
 def _load(rel: str):
     p = config.ROOT / rel
@@ -265,6 +288,10 @@ def enrich(radar: dict, today: date | None = None) -> dict:
             base = min(100.0, 30.0 * sal)               # salience → 0-100
             base *= (0.55 + 0.45 * breadth)             # confirmation scales 0.55x–1.0x
             base *= regime["mult"]
+            # Diagonal dock: CONFIRMED_* is "already priced" (no claim) — it may
+            # not out-rank the radar's actual divergence calls, and the more
+            # extended the tape, the harder the dock.
+            base *= _diagonal_mult(state, (f.get("consensus") or {}).get("z"))
             base -= crowd["penalty"]
             edge = int(max(0, min(100, round(base))))
 

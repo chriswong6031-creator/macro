@@ -1,0 +1,17 @@
+{
+  "generated_utc": "2026-08-05T11:50:20+00:00",
+  "rows": 3866270,
+  "settlements": 205,
+  "first_settlement": "2018-01-12",
+  "last_settlement": "2026-07-15",
+  "tickers": 48539,
+  "knowable_lag_days": 10,
+  "as_restated": true,
+  "revised_rows": 28118,
+  "dtc_capped_rows": 642192,
+  "dtc_capped_pct": 16.61,
+  "listed_rows": 2115639,
+  "listed_dtc_capped_pct": 0.502,
+  "listed_dtc_uncapped_median": 1.64,
+  "listed_dtc_uncapped_p90": 8.57
+}

@@ -53,6 +53,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.ticker_aliases import YAHOO_FETCH_ALIASES as ALIASES  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("fetch_basket_ohlcv")
@@ -65,9 +66,11 @@ BACKOFF_S = 3.0
 BATCH = 40                  # tickers per yfinance download call (5 OHLCV fields each)
 COLS = ["open", "high", "low", "close", "volume"]
 
-# membership ticker -> the symbol yfinance actually resolves it under (renames where
-# Yahoo only keeps the OLD symbol's series). Fetched under the value, stored under the key.
-ALIASES = {"FI": "FISV"}    # Fiserv renamed FISV->FI in 2023; Yahoo still serves the FISV series
+# Ticker renames where the vendor symbol differs from the membership ticker live in
+# lib/ticker_aliases (imported above as ALIASES) — ONE map shared with the close-only
+# sibling scripts/fetch_basket_extras. It used to be a second local copy here, which is
+# why MMC (Marsh McLennan, renamed MMC->MRSH on 2026-01-14) was fetched by extras but
+# never by this deep store: no data/baskets/ohlcv/MMC.parquet ever existed.
 
 
 def _membership_tickers() -> list[str]:
@@ -113,6 +116,33 @@ def _resolve_universe(explicit: list[str], fv: list[str], with_members: bool) ->
 
 # ------------------------------------------------------------------ staleness tripwire
 STALE_SESSIONS = 3          # warn when a member's last row lags the store max by more
+
+# Every store engine/basket_index falls through for a member's tape, in its preference
+# order (engine/basket_index._member_ohlcv). A member absent from the DEEP store alone
+# still renders — the fallbacks cover it, which is the graceful degradation this store
+# was designed for. A member absent from ALL of these has no price series anywhere: its
+# basket silently renders on N-1 members and every coverage receipt quietly rounds down.
+# The two failures are reported separately below because only the second is data loss.
+FALLBACK_RUNGS: tuple[tuple[str, ...], ...] = (
+    ("baskets", "ohlcv"),   # this store — deep OHLCV, preferred
+    ("stocks",),            # US stock library — already OHLCV
+    ("china_stocks",),      # A-shares (.SS/.SZ tickers; never collides with the US stores)
+    ("yahoo",),             # close+volume; high/low/open synthesised from the close
+)
+
+
+def _absent_from_all_rungs(tickers: list[str], data_dir: Path | None = None) -> list[str]:
+    """Of `tickers`, those with no per-ticker parquet on ANY rung basket_index reads.
+
+    Existence-only (no parse): a present-but-empty file is the deep store's own problem
+    and is caught by the staleness census, whereas a name with no file anywhere can
+    never resolve a tape no matter which fallback runs."""
+    root = data_dir or config.data_dir()
+    dark: list[str] = []
+    for t in tickers:
+        if not any((root.joinpath(*rung) / f"{t}.parquet").exists() for rung in FALLBACK_RUNGS):
+            dark.append(t)
+    return dark
 
 
 def _last_row_date(p: Path) -> date | None:
@@ -181,19 +211,44 @@ def check_membership_staleness(odir: Path | None = None, members: list[str] | No
                 stale[t] = {"last": d.isoformat(), "sessions_behind": lag}
             elif lag > 0:
                 behind_ok += 1
+        # Of the members this store lacks, which have no tape on ANY rung — the
+        # fallbacks cover the rest, so only these are actual coverage loss.
+        dark = _absent_from_all_rungs(missing, odir.parent.parent)
         payload.update({
             "status": "stale" if (stale or missing) else "ok",
             "store_max": store_max.isoformat(), "n_members": len(members),
             "n_stale": len(stale), "n_behind_within_threshold": behind_ok,
             "stale": dict(sorted(stale.items(), key=lambda kv: -kv[1]["sessions_behind"])),
             "missing": missing,
+            "absent_all_rungs": dark,
+            "n_absent_all_rungs": len(dark),
         })
+        if dark:
+            dmsg = (f"{len(dark)} basket member(s) have NO price series on any store rung "
+                    f"({', '.join('/'.join(r) for r in FALLBACK_RUNGS)}): {', '.join(dark)} "
+                    "— every basket holding one silently renders and grades on N-1 members, "
+                    "and its coverage receipt rounds down with no other tell. Usual cause: a "
+                    "ticker RENAME the vendor already followed (fetch 404s under the old "
+                    "symbol) — add membership-ticker -> vendor-symbol to lib/ticker_aliases; "
+                    "otherwise the name is off every feed and the basket membership is wrong. "
+                    "See data/quality/basket_ohlcv_freshness.json")
+            print(f"::warning title=basket-member-no-price-series::{dmsg}", flush=True)
+            log.warning(dmsg)
+            if ops_alert:
+                try:
+                    from engine.alert_triage import push_ops_alert  # noqa: PLC0415
+                    push_ops_alert(source="fetch_basket_ohlcv", type_="basket_member_no_price_series",
+                                   message=dmsg, severity="critical", lane="collect", window_hours=20)
+                except Exception as e:  # noqa: BLE001 — fail-open, the ::warning stands
+                    log.debug("all-rungs census: push_ops_alert unavailable (%s)", e)
         if stale or missing:
             worst = max(stale.items(), key=lambda kv: kv[1]["sessions_behind"]) if stale else None
             msg = (f"basket OHLCV store: {len(stale)} active members stale >{threshold} sessions "
                    f"vs store max {store_max}"
                    + (f" (worst {worst[0]} @ {worst[1]['last']}, {worst[1]['sessions_behind']} behind)" if worst else "")
-                   + (f"; {len(missing)} members with no file: {', '.join(missing[:8])}" if missing else "")
+                   + (f"; {len(missing)} members with no file in THIS store "
+                      f"({len(missing) - len(dark)} covered by a fallback rung, {len(dark)} on no "
+                      f"rung at all): {', '.join(missing[:8])}" if missing else "")
                    + " — the per-member pull is failing or the nightly call lost membership "
                      "coverage; see data/quality/basket_ohlcv_freshness.json")
             print(f"::warning ::{msg}", flush=True)

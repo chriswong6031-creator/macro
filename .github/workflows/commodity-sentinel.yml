@@ -46,10 +46,28 @@ jobs:
           python -m scripts.build_commodities
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
+          # normalize the page this step stages (P0 2026-08-04, 9a997e9da3f): a lane
+          # that commits site/ HTML without the shim/externalize/stamp chain publishes
+          # a RAW page — inline <style>, no assets/css/<hash>.css ref, stale ?v= — and
+          # holds it until the next full-tree render re-bakes commodities.html. Cheaper
+          # to be correct at the source than to wait for someone else's heal. All three
+          # passes are idempotent (~20s over the tree) and non-blocking: a shock alert
+          # must still publish even if a sweep fails.
+          python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+          python -m scripts.externalize_css || echo "::warning title=externalize::pre-commit css externalize FAILED — pages may ship un-externalized (9a997e9da3f)"
+          python -m scripts.optimize_assets || echo "::warning title=stamp::asset optimize FAILED — ?v= stamps may be stale"
           # W6a SENTINEL STAGING LAW: commodity_shock reflex writes to data/reflexes/
           # when it fires. Stage alongside data/commodity so the firing record is
           # never left as unstaged tracked changes.
           git add data/commodity data/reflexes/ site/commodities.html
+          # ...and the content-hashed assets the page now links: externalize_css rewrites
+          # commodities.html to <link> site/assets/css/<hash>.css, so staging the page
+          # without the asset ships a 404 stylesheet. --ignore-removal never stages a
+          # DELETION — the orphan prune reasons only from pages it can see, and this lane
+          # has no post-rebase normalize to re-mint an asset a sibling still links.
+          # Separate lines: `git add a b` exits 128 when either pathspec matches nothing.
+          git add --ignore-removal site/assets/css 2>/dev/null || true
+          git add --ignore-removal site/assets/js 2>/dev/null || true
           git diff --cached --quiet && exit 0
           git commit -m "commodity: shock alert $(date -u +%FT%H:%MZ)"
           for i in 1 2 3 4 5; do

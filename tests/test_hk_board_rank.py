@@ -13,10 +13,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import statistics
 
 import pytest
 
 from engine import hk_board_rank as hbr
+from engine import signal_quality as sq
 from engine import us_board_rank as ubr
 from engine.setups import norm_company
 
@@ -41,14 +43,27 @@ def regenerate_g1_fixture() -> str:
     mysterious.  ``TestG1FixtureIsNotStale`` re-derives the seven witnesses live and
     fails if the committed fixture no longer matches the panel, so a silently rotted
     fixture cannot keep the G1 gate green.
+
+    THE TAIL IS 3B-PHASE-ALIGNED (2026-08-03), and that is load-bearing rather than
+    cosmetic.  Both move-anchored lanes derive their anchor through
+    ``signal_quality.signal_frame``, whose ``resample("3B")`` bins are anchored on the
+    series' FIRST index date — so an arbitrary tail re-phases every bucket label and
+    the frozen verdicts' marker dates stop being bucket labels at all.  The tail start
+    is therefore walked back to a business-day multiple of 3 from the full column's
+    start, and it was lengthened from 90 sessions to ~340 because a 90-session window
+    cannot build the frame at all (it needs 90 buckets ≈ 270 sessions, plus the
+    indicator warm-up).  The previously shipped 90-session window survives byte-for-
+    byte as the suffix of each longer one.
     """
     return (
         "python3 - <<'PY'\n"
-        "import json, pandas as pd\n"
+        "import json, numpy as np, pandas as pd\n"
         "from engine import signal_gate\n"
         "df = pd.read_parquet('data/hk_search/closes_deep.parquet')\n"
         "# for each column with >=250 closes: signal_gate.compact(signal_gate.gate(t, s))\n"
-        "# plus the trailing 90 sessions of dates/closes and price/off_high/dir meta\n"
+        "# plus ~340 trailing sessions of dates/closes (closes rounded to 3dp) whose\n"
+        "# START is walked back until np.busday_count(col_start, tail_start) % 3 == 0,\n"
+        "# plus price/off_high/dir meta\n"
         "PY"
     )
 
@@ -162,6 +177,31 @@ def lanes(board, prod_board):
             "_excluded": exclude}
 
 
+@pytest.fixture(scope="module")
+def frozen_lanes(board):
+    """The move-anchored lanes built from the FROZEN PANEL ALONE — no artifact.
+
+    ``lanes`` reproduces the exact production board, so it needs the shipped artifact
+    and skips itself whenever that artifact has advanced past the fixture's ``as_of``
+    — which is most nights, since the nightly rewrites it and the fixture is frozen.
+    The anchor gates must not inherit that skip: a regression gate that is dark on any
+    night the board renders is not a gate.  These lanes need only the verdicts and
+    closes the fixture already carries, so they run every time.
+    """
+    closes = board["closes"]
+
+    def close_of(ticker):
+        series = closes.get(ticker)
+        return (series["dates"], series["closes"]) if series else None
+
+    ran = hbr.build_ran_rows(board["verdicts"], meta_by=board["meta"],
+                             close_of=close_of, board_asof=BOARD_ASOF)
+    vetoed = hbr.build_vetoed_rows(board["verdicts"], meta_by=board["meta"],
+                                   close_of=close_of, board_asof=BOARD_ASOF)
+    assert ran and vetoed, "the frozen panel must fill both move-anchored lanes"
+    return {"ran": ran, "vetoed": vetoed}
+
+
 def _verdict(*, eligible=False, tier="T2", ticks=1, fresh_bars=5, above200=True,
              weekly_bull=True, provisional=False, asof=BOARD_ASOF, last=None):
     return {"eligible": eligible, "tier_cascade": tier, "ticks": ticks,
@@ -173,6 +213,54 @@ def _verdict(*, eligible=False, tier="T2", ticks=1, fresh_bars=5, above200=True,
 def _marker(date="2026-07-06", kind="buy", quality="block",
             reason="counter-trend, no 200-reclaim/hold"):
     return {"date": date, "type": kind, "quality": quality, "reason": reason}
+
+
+# --------------------------------------------------------------------------- #
+# a close series real enough to carry a confirmation anchor
+# --------------------------------------------------------------------------- #
+# Both move-anchored lanes now derive their anchor through signal_quality.signal_frame
+# (bucket i+2's last daily session), so an eight-point list cannot produce a move at
+# ALL — every test built on one would go on passing while printing nothing but nulls,
+# which is exactly the failure these tests exist to catch.  A test that passes for the
+# wrong reason is worse here than one that fails, so the synthetic series is now long
+# enough for the real geometry and the markers sit on real 3B bucket labels.
+_SYNTH_SESSIONS = 420
+
+
+def _synth_closes(tail_scale: float = 1.0, tail_len: int = 20):
+    """(dates, closes, bucket_labels) — a series signal_frame will accept.
+
+    ``tail_scale`` lifts only the last ``tail_len`` sessions, so two names can share
+    one index (hence one bucket grid, hence one confirmation date per marker) and
+    still differ in the move that grid measures.  ``tail_len`` must stay SHORT enough
+    that a test marker's confirmation close falls outside the lifted stretch — lift
+    both ends of the ratio and the move is identical again, which silently disarms
+    any ordering test built on it.
+    """
+    import numpy as np
+    import pandas as pd
+
+    from engine import signal_quality as sq
+
+    step = np.arange(_SYNTH_SESSIONS)
+    index = pd.bdate_range("2025-01-01", periods=_SYNTH_SESSIONS)
+    values = (100 + 10 * np.sin(step / 25) + 0.10 * step
+              + 3 * np.sin(step / 6)).astype(float)
+    if tail_scale != 1.0:
+        values[-tail_len:] *= tail_scale
+    series = pd.Series(values, index=index)
+    frame = sq.signal_frame(series).dropna(
+        subset=["macd", "sig", "k", "d", "rsi14"])
+    return ([str(stamp.date()) for stamp in index],
+            [float(value) for value in values],
+            [str(stamp.date()) for stamp in frame.index])
+
+
+def _as_series(dates, closes):
+    """The (dates, closes) pair as the pandas Series signal_quality reads."""
+    import pandas as pd
+
+    return pd.Series(list(closes), index=pd.to_datetime(list(dates)))
 
 
 # --------------------------------------------------------------------------- #
@@ -660,7 +748,13 @@ class TestRanLane:
     def _close_of(self, ticker):
         return (self.DATES, self.CLOSES)
 
-    def test_marker_anchor_is_preferred(self):
+    def test_marker_anchor_is_preferred_for_the_date_and_the_age(self):
+        """The DATE and the AGE are still the marker's — that half is unchanged.
+
+        The MOVE is not: this eight-session series is far too short for the 3B frame
+        the confirmation anchor is derived from, so the row keeps its exact age and
+        prints a disclosed null rather than the marker-anchored figure it used to.
+        """
         rows = hbr.build_ran_rows(
             {"A": _verdict(ticks=5, fresh_bars=4, last=_marker("2026-07-03", quality="take"))},
             meta_by={"A": {"name": "A"}}, close_of=self._close_of,
@@ -668,7 +762,31 @@ class TestRanLane:
         assert rows[0]["anchor"] == hbr.ANCHOR_MARKER
         assert rows[0]["cross_date"] == "2026-07-03"
         assert rows[0]["sessions_since"] == 5
-        assert rows[0]["pct_since"] == pytest.approx(7.8, abs=0.1)
+        assert rows[0]["pct_since"] is None
+        assert rows[0]["measured_from"] is None
+
+    def test_the_move_is_measured_from_the_confirmation_close(self):
+        """MEASURED 2026-07-31: all 12 displayed HK ran rows overstated, mean +8.09pp.
+
+        Same defect as the vetoed lane and the same fix — the marker date is a 3B
+        bucket's left edge whose label reads two buckets forward, so it precedes the
+        verdict by ~8 sessions and sits at the low that created the signal.
+        """
+        dates, closes, labels = _synth_closes()
+        marker = labels[-12]
+        rows = hbr.build_ran_rows(
+            {"A": _verdict(ticks=5, fresh_bars=4, last=_marker(marker, quality="take"))},
+            meta_by={"A": {"name": "A"}}, close_of=lambda t: (dates, closes),
+            board_asof=BOARD_ASOF)
+        row = rows[0]
+        assert row["anchor"] == hbr.ANCHOR_CONFIRM
+        assert row["cross_date"] == marker, "the DATE is still the marker's"
+        assert row["measured_from"] > marker, "the MOVE starts later than the marker"
+        # and it is the exact figure measured from that close, not from the marker
+        assert row["pct_since"] == hbr.cross_read(
+            dates, closes, cross_date=row["measured_from"])["pct_since"]
+        assert row["pct_since"] != hbr.cross_read(
+            dates, closes, cross_date=marker)["pct_since"]
 
     def test_no_marker_falls_back_to_fresh_bars_sessions(self):
         rows = hbr.build_ran_rows(
@@ -816,7 +934,9 @@ class TestVetoedLane:
         assert row["stage"] == hbr.STAGE_BLOCKED
         assert row["signal_date"] == "2026-07-03"
         assert row["sessions_since"] == 5
-        assert row["pct_since"] == pytest.approx(17.6, abs=0.1)
+        # eight sessions cannot build the 3B frame the move's anchor comes from, so
+        # the age survives exactly and the move is a disclosed null
+        assert row["pct_since"] is None
         assert row["anchor"] == hbr.ANCHOR_MARKER
         assert row["blocked_reason_en"] == (
             "Price never held above its 200-day average after the signal")
@@ -879,31 +999,176 @@ class TestVetoedLane:
         assert len(rows) == 15, "a cohort member is never truncated"
 
     def test_non_cohort_tail_is_ordered_by_move(self):
-        verdicts = {"SMALL": _verdict(fresh_bars=4, last=_marker()),
-                    "BIG": _verdict(fresh_bars=4, last=_marker())}
-        closes = {"SMALL": (self.DATES, [100.0] * 7 + [101.0]),
-                  "BIG": (self.DATES, [100.0] * 7 + [150.0])}
+        """Ordered by the CONFIRMATION-anchored move — the number the lane prints.
+
+        Both names share one index, so they share one bucket grid and one confirmation
+        date; only the path between differs.  With the eight-point series this test
+        used to use, every move is now null and the order collapses to the ticker
+        tiebreak — it would have gone on passing while testing nothing.
+        """
+        dates, closes, labels = _synth_closes()
+        _, big_closes, _ = _synth_closes(tail_scale=1.35)
+        marker = labels[-12]
+        verdicts = {"SMALL": _verdict(fresh_bars=4, last=_marker(marker)),
+                    "BIG": _verdict(fresh_bars=4, last=_marker(marker))}
+        series = {"SMALL": (dates, closes), "BIG": (dates, big_closes)}
         rows = hbr.build_vetoed_rows(
             verdicts, meta_by={t: {"name": t} for t in verdicts},
-            close_of=closes.get, board_asof=BOARD_ASOF)
+            close_of=series.get, board_asof=BOARD_ASOF)
         assert [r["ticker"] for r in rows] == ["BIG", "SMALL"]
+        assert rows[0]["pct_since"] > rows[1]["pct_since"]
+        assert rows[0]["measured_from"] == rows[1]["measured_from"] > marker
 
     def test_null_move_sorts_last_but_is_not_dropped(self):
-        verdicts = {"NULL": _verdict(fresh_bars=4, last=_marker()),
-                    "MOVED": _verdict(fresh_bars=4, last=_marker())}
-        closes = {"MOVED": (self.DATES, self.CLOSES)}
+        dates, closes, labels = _synth_closes()
+        marker = labels[-12]
+        verdicts = {"NULL": _verdict(fresh_bars=4, last=_marker(marker)),
+                    "MOVED": _verdict(fresh_bars=4, last=_marker(marker))}
+        series = {"MOVED": (dates, closes)}
         rows = hbr.build_vetoed_rows(
             verdicts, meta_by={t: {"name": t} for t in verdicts},
-            close_of=closes.get, board_asof=BOARD_ASOF)
+            close_of=series.get, board_asof=BOARD_ASOF)
         assert [r["ticker"] for r in rows] == ["MOVED", "NULL"]
+        assert rows[0]["pct_since"] is not None, "the fixture must produce a real move"
         assert rows[1]["pct_since"] is None
+        assert rows[1]["anchor"] == hbr.ANCHOR_MARKER, "no series, so no confirmation"
 
     def test_zero_move_is_ranked_not_treated_as_null(self):
+        """0.0 is a measurement; None is the absence of one.  They must not merge.
+
+        The marker three buckets from the end confirms on the LAST session the series
+        holds, so spot and anchor are the same bar and the honest answer is exactly
+        zero — the falsy value that a truthiness test would swallow into the null path.
+        (A literally constant price series cannot stand in here: a flat stretch NaNs
+        the StochRSI band, drops the bucket out of the frame entirely, and yields a
+        null for a quite different reason.)
+        """
+        dates, closes, labels = _synth_closes()
         rows = hbr.build_vetoed_rows(
-            {"FLAT": _verdict(fresh_bars=4, last=_marker())},
+            {"FLAT": _verdict(fresh_bars=4, last=_marker(labels[-3]))},
             meta_by={"FLAT": {"name": "FLAT"}},
-            close_of=lambda t: (self.DATES, [100.0] * 8), board_asof=BOARD_ASOF)
+            close_of=lambda t: (dates, closes), board_asof=BOARD_ASOF)
         assert rows[0]["pct_since"] == 0.0
+        assert rows[0]["measured_from"] == dates[-1]
+        assert rows[0]["anchor"] == hbr.ANCHOR_CONFIRM
+
+    # ---- the anchor itself ------------------------------------------------- #
+    def test_the_move_is_measured_from_the_confirmation_close(self):
+        """The defect this lane shipped: +7.16pp of mean overstatement, measured.
+
+        `marker['date']` is the 3B bucket's LEFT edge and the label there reads two
+        buckets forward, so it precedes the first close at which the block was knowable
+        by ~8 sessions — and it sits at the trough that CREATED the signal.
+        signal_quality._buy_filter forbids grading from it in as many words.
+        """
+        dates, closes, labels = _synth_closes()
+        marker = labels[-12]
+        rows = hbr.build_vetoed_rows(
+            {"A": _verdict(fresh_bars=4, last=_marker(marker))},
+            meta_by={"A": {"name": "A"}}, close_of=lambda t: (dates, closes),
+            board_asof=BOARD_ASOF)
+        row = rows[0]
+        assert row["anchor"] == hbr.ANCHOR_CONFIRM
+        assert row["signal_date"] == marker, "the block's own date is unchanged"
+        assert row["measured_from"] == str(
+            sq.confirmation_date(_as_series(dates, closes), marker).date())
+        assert row["pct_since"] == hbr.cross_read(
+            dates, closes, cross_date=row["measured_from"])["pct_since"]
+
+    def test_a_marker_anchored_move_is_unreachable_not_merely_discouraged(self):
+        """Every path that cannot confirm prints null — none falls back to the marker.
+
+        The structural half of the fix: `pct_since` is non-null ONLY under `confirm`,
+        so no future edit can quietly restore the forbidden number by widening a
+        fallback.  Checked across all three non-confirming shapes.
+        """
+        dates, closes, labels = _synth_closes()
+        marker_pct = hbr.cross_read(dates, closes,
+                                    cross_date=labels[-12])["pct_since"]
+        # one session INTO a bucket rather than on its label — recent enough to clear
+        # the staleness gate, so the row is kept and its move is the thing under test
+        off_grid = dates[dates.index(labels[-12]) + 1]
+        cases = {
+            # a block still inside its own confirmation window (bar i+2 unprinted)
+            "PENDING": (_verdict(fresh_bars=4, last=_marker(labels[-1])),
+                        lambda t: (dates, closes)),
+            # a marker date that is not a bucket label of THIS series
+            "OFFGRID": (_verdict(fresh_bars=4, last=_marker(off_grid)),
+                        lambda t: (dates, closes)),
+            # no price series at all
+            "NOPRICE": (_verdict(fresh_bars=4, last=_marker(labels[-12])),
+                        lambda t: None),
+        }
+        for name, (verdict, close_of) in cases.items():
+            rows = hbr.build_vetoed_rows(
+                {name: verdict}, meta_by={name: {"name": name}},
+                close_of=close_of, board_asof=BOARD_ASOF)
+            assert len(rows) == 1, f"{name} must survive as a disclosed null"
+            assert rows[0]["pct_since"] is None, name
+            assert rows[0]["measured_from"] is None, name
+            assert rows[0]["anchor"] != hbr.ANCHOR_CONFIRM, name
+            assert rows[0]["sessions_since"] is not None, f"{name} keeps its age"
+            assert rows[0]["pct_since"] != marker_pct, (
+                f"{name} fell back to the forbidden marker anchor")
+
+    # ---- the population behind the truncated rows --------------------------- #
+    def test_rows_carry_the_population_they_were_selected_from(self):
+        """The lane ranks by the move and truncates, so the rows ARE the winners.
+
+        Without the population and its middle move beside them, twelve big figures
+        read as a P&L claim the lane never made.
+        """
+        dates, closes, labels = _synth_closes()
+        _, big, _ = _synth_closes(tail_scale=1.35)
+        marker = labels[-12]
+        verdicts = {f"T{i:02d}": _verdict(fresh_bars=4, last=_marker(marker))
+                    for i in range(20)}
+        series = {t: (dates, big if int(t[1:]) % 2 else closes) for t in verdicts}
+        kwargs = dict(meta_by={t: {"name": t} for t in verdicts},
+                      close_of=series.get, board_asof=BOARD_ASOF)
+        rows = hbr.build_vetoed_rows(verdicts, **kwargs)
+        whole = hbr.build_vetoed_rows(verdicts, cap=100, **kwargs)
+        assert len(rows) == hbr.VETOED_CAP < len(whole) == 20
+        for row in rows:
+            assert row["population"] == 20
+            assert row["population_measured"] == 20
+        # the rows ARE the winners: exactly the move-ordered prefix of the population
+        assert [r["ticker"] for r in rows] == [r["ticker"] for r in whole][:len(rows)]
+        # ...and the median is the WHOLE set's, not the displayed set's — which is the
+        # entire point, since selecting on the move moves the displayed middle
+        median = rows[0]["population_median_pct"]
+        assert median == round(statistics.median(
+            [r["pct_since"] for r in whole]), 1)
+        assert statistics.median([r["pct_since"] for r in rows]) > median, (
+            "the fixture must exercise a visible selection effect, or this test "
+            "would pass on a lane that printed the displayed median instead")
+
+    def test_the_median_denominator_excludes_the_disclosed_nulls(self):
+        """`population_measured` is the median's base, and it is printed separately.
+
+        Medianing the measurable rows while advertising the full count would delete
+        the nulls from the denominator — the resolution-conditioned base this house
+        keeps re-learning.
+        """
+        dates, closes, labels = _synth_closes()
+        marker = labels[-12]
+        verdicts = {"HAS": _verdict(fresh_bars=4, last=_marker(marker)),
+                    "NULL": _verdict(fresh_bars=4, last=_marker(marker))}
+        rows = hbr.build_vetoed_rows(
+            verdicts, meta_by={t: {"name": t} for t in verdicts},
+            close_of={"HAS": (dates, closes)}.get, board_asof=BOARD_ASOF)
+        assert rows[0]["population"] == 2
+        assert rows[0]["population_measured"] == 1
+        assert rows[0]["population_median_pct"] == rows[0]["pct_since"]
+
+    def test_population_median_is_null_when_nothing_is_measurable(self):
+        rows = hbr.build_vetoed_rows(
+            {"A": _verdict(fresh_bars=4, last=_marker())},
+            meta_by={"A": {"name": "A"}}, close_of=lambda t: None,
+            board_asof=BOARD_ASOF)
+        assert rows[0]["population"] == 1
+        assert rows[0]["population_measured"] == 0
+        assert rows[0]["population_median_pct"] is None
 
     def test_exclusion_wins(self):
         rows = hbr.build_vetoed_rows(
@@ -1205,14 +1470,103 @@ class TestG1Witnesses:
     def test_every_vetoed_row_names_its_block_reason(self, lanes):
         for row in lanes["vetoed"]:
             assert row["blocked_reason_en"] and row["blocked_reason_zh"]
-            assert row["anchor"] in (hbr.ANCHOR_MARKER, hbr.ANCHOR_APPROX)
+            assert row["anchor"] in (hbr.ANCHOR_CONFIRM, hbr.ANCHOR_MARKER,
+                                     hbr.ANCHOR_APPROX)
             assert row["sessions_since"] is not None, "an unanchored row must be dropped"
+            # a move may only ride on a confirmation anchor
+            if row["pct_since"] is not None:
+                assert row["anchor"] == hbr.ANCHOR_CONFIRM
+                assert row["measured_from"] > row["signal_date"]
 
     def test_the_vetoed_lane_prints_what_the_board_missed(self, lanes):
         """Self-critical by construction: the moves are real and they are shown."""
         moves = [r["pct_since"] for r in lanes["vetoed"] if r["pct_since"] is not None]
         assert moves, "the lane exists to print these"
         assert max(moves) > 20.0, "the 2026-07-31 panel carries >20% missed moves"
+
+    def test_no_vetoed_move_exceeds_its_confirmation_anchored_truth(self, frozen_lanes,
+                                                                    board):
+        """THE REGRESSION GATE, on the frozen panel: not one row may overstate.
+
+        Re-derives each row's honest figure straight from the closes the fixture
+        carries and demands an exact match.  Against the OLD marker anchor these same
+        rows overstated by +8.40pp on average (measured 2026-07-31, 12/12 rows), so a
+        revert to it fails here loudly rather than shipping twelve flattering numbers.
+        """
+        closes = board["closes"]
+        checked, excess = 0, []
+        for row in frozen_lanes["vetoed"]:
+            if row["pct_since"] is None:
+                continue
+            dates, values = closes[row["ticker"]]["dates"], closes[row["ticker"]]["closes"]
+            # the RAW marker date, not row["signal_date"]: the marker is a 3B bucket
+            # LABEL and a label can fall on an exchange holiday (0656.HK's sits on
+            # 2026-07-01), in which case the row displays the nearest session at or
+            # before it — which is not a bucket label and cannot re-derive the anchor.
+            marker = board["verdicts"][row["ticker"]]["last"]["date"]
+            confirmed = sq.confirmation_date(_as_series(dates, values), marker)
+            assert confirmed is not None, row["ticker"]
+            truth = hbr.cross_read(dates, values,
+                                   cross_date=str(confirmed.date()))["pct_since"]
+            assert row["pct_since"] == truth, (
+                f"{row['ticker']} prints {row['pct_since']}% but the confirmation "
+                f"close ({confirmed.date()}) says {truth}%")
+            excess.append(hbr.cross_read(dates, values,
+                                         cross_date=marker)["pct_since"]
+                          - row["pct_since"])
+            checked += 1
+        assert checked >= 10, "the frozen panel must exercise a full lane"
+        # The effect is a POPULATION claim, not a per-row one: the marker sits at the
+        # trough that created the signal, so on average it flatters the move — but a
+        # name that fell between the marker and its confirmation close reads HIGHER
+        # from the honest anchor, not lower (0656.HK: 21.7% confirmed vs 19.6% from
+        # the marker).  Asserting "never higher" row-by-row would be a false claim
+        # that happens to hold on most rows, which is how a wrong gate survives.
+        assert statistics.mean(excess) > 5.0, (
+            f"the frozen panel must exercise the overstatement this gate exists to "
+            f"catch (mean marker-minus-confirmation excess {statistics.mean(excess):+.2f}pp)")
+
+    def test_the_population_line_has_something_to_disclose(self, frozen_lanes):
+        """The lane truncates on the real panel, and the middle move is far below it.
+
+        MEASURED 2026-07-31: 46 refusals, median +3.1%, against a displayed set whose
+        smallest member is several times that.  If these ever converge the disclosure
+        is cheap; it is when they diverge — as here — that omitting it misleads.
+
+        THE SPREAD RATIO ALONE IS NOT A GATE (added 2026-08-05).  ``max > median*3``
+        survived the off-grid fixture at ``4.7 > 4.2`` — on a lane where 28 of 33
+        names had gone unmeasurable and the five survivors were the five SMALLEST
+        moves in it.  A ratio between two numbers drawn from the same 15% of a
+        population says nothing about the population, so the coverage is floored
+        directly: a disclosure line computed over a lane that is 85% null is not a
+        disclosure, it is a different measurement wearing the same label.
+        """
+        rows = frozen_lanes["vetoed"]
+        assert rows[0]["population"] > len(rows), "the cap must actually bind"
+
+        population = rows[0]["population"]
+        measured = rows[0]["population_measured"]
+        assert measured / population >= 0.75, (
+            f"only {measured} of {population} names in the vetoed population carry a "
+            f"measurable move ({measured / population:.0%}) — the median and the "
+            f"maximum below are drawn from a censored slice, and on this panel the "
+            f"censoring is TOP-first (an off-grid fixture deleted ranks 1-11 of 33 "
+            f"and left a 4.7% 'maximum'). Check the frozen windows' 3B phase before "
+            f"reading anything on this lane")
+
+        median = rows[0]["population_median_pct"]
+        assert median is not None
+        assert max(r["pct_since"] for r in rows if r["pct_since"] is not None) > median * 3
+
+    def test_every_ran_row_is_confirmation_anchored_too(self, frozen_lanes):
+        """The audit half: `ran` shared the defect and shares the fix.
+
+        MEASURED 2026-07-31: all 12 displayed ran rows overstated, mean +8.09pp.
+        """
+        for row in frozen_lanes["ran"]:
+            if row["pct_since"] is not None:
+                assert row["anchor"] == hbr.ANCHOR_CONFIRM
+                assert row["measured_from"] > row["cross_date"]
 
     def test_leaders_lane_is_momentum_ordered(self, lanes):
         keys = [r["rank_key"] for r in lanes["leaders"]]
@@ -1601,15 +1955,79 @@ class TestG1FixtureIsNotStale:
     tripwire without making every new market session break an older measurement.
     """
 
+    def test_every_frozen_window_starts_on_a_3b_bucket_boundary(self, board):
+        """THE PHASE INVARIANT — asserted, not described.
+
+        ``regenerate_g1_fixture`` has called the 3B alignment "load-bearing rather
+        than cosmetic" since 2026-08-03 and NOTHING checked it.  It broke exactly as
+        prose predicts: a regenerator re-cutting a flat ``tail(_tail_sessions)``
+        (correct only if every window were the same length — 123 of these 157 are
+        not) put 123 windows off-grid, and because ``signal_quality.signal_frame``
+        anchors its ``resample("3B")`` bins on the series' FIRST index date, every
+        frozen marker date stopped being a bucket label.  The move-anchored lanes
+        then dropped the rows they could no longer anchor: the vetoed lane fell from
+        33 measured names (max +24.3%) to 5 (max +4.7%), TOP-FIRST.
+
+        The only thing that failed was ``test_the_vetoed_lane_prints_what_the_board
+        _missed``'s ``max(moves) > 20.0``, which reads as "the panel no longer
+        carries big missed moves" — a data-falsification claim.  A whole
+        investigation went that way.  A fixture-shape defect must fail as a
+        fixture-shape defect, so it is measured here, on the shape, by name.
+        """
+        np = pytest.importorskip("numpy")
+        pd = pytest.importorskip("pandas")
+        src = Path(board["_source"])
+        if not src.exists():                    # pragma: no cover — committed in-tree
+            pytest.skip(f"{src} not present")
+        panel = pd.read_parquet(src).loc[:board["_as_of"]]
+
+        off_grid = {}
+        for ticker, frozen in board["closes"].items():
+            column_start = str(panel[ticker].dropna().index[0].date())
+            phase = int(np.busday_count(column_start, frozen["dates"][0])) % 3
+            if phase:
+                off_grid[ticker] = phase
+        assert not off_grid, (
+            f"{len(off_grid)} of {len(board['closes'])} frozen windows do not start "
+            f"on a 3B bucket boundary of their own column "
+            f"(first few: {dict(list(off_grid.items())[:5])}) — the frozen verdicts' "
+            f"marker dates are no longer bucket labels, so the move-anchored lanes "
+            f"will silently drop rows rather than fail. Regenerate the fixture: "
+            f"{regenerate_g1_fixture()}")
+
+    def test_the_window_stamp_describes_the_windows_it_stamps(self, board):
+        """``_tail_sessions: 340`` was false for 123 of 157 tickers, and it was READ.
+
+        It was the era parameter the regenerator sliced by, so the file's own
+        metadata is what told the regenerator to flatten it.  The stamp is now
+        ``_tail_anchor`` — a RULE, not a count — and a count cannot come back
+        without this failing, because a count is not a thing these windows have.
+        """
+        assert "_tail_sessions" not in board, (
+            "a single session count cannot describe windows of three different "
+            "lengths; it is the field that caused the flattening")
+        anchor = board["_tail_anchor"]
+        assert anchor["rule"] == "3b_phase_aligned"
+        assert anchor["phase_mod"] == 3
+        lengths = {len(v["dates"]) for v in board["closes"].values()}
+        assert min(lengths) >= anchor["min_sessions"], (
+            f"windows {sorted(lengths)} vs declared minimum {anchor['min_sessions']}")
+        assert len(lengths) > 1, (
+            "if every window really were the same length this stamp would be "
+            "over-engineering — it is not: " + str(sorted(lengths)))
+
     def test_source_panel_history_is_unchanged(self, board):
         pd = pytest.importorskip("pandas")
         src = Path(board["_source"])
         if not src.exists():                    # pragma: no cover — committed in-tree
             pytest.skip(f"{src} not present")
         panel = pd.read_parquet(src).loc[:board["_as_of"]]
-        tail_sessions = int(board["_tail_sessions"])
         for ticker, frozen in board["closes"].items():
-            series = panel[ticker].dropna().tail(tail_sessions)
+            # Anchored on the frozen window's OWN first date, not on a tail count:
+            # the tail is cut to a 3B bucket boundary of the full column (see
+            # regenerate_g1_fixture), so its length varies by a session or two per
+            # ticker and `tail(N)` would compare misaligned windows.
+            series = panel[ticker].dropna().loc[frozen["dates"][0]:]
             dates = [str(index.date()) for index in series.index]
             closes = [round(float(value), 3) for value in series.tolist()]
             assert dates == frozen["dates"], (

@@ -672,50 +672,6 @@
         '</div>' : "");
   }
 
-  // ── Accountability tab HTML ────────────────────────────────────────────────
-  function acctHTML(ic, track) {
-    var nSnap = (ic || {}).n_snapshots || 0;
-    var nMat = (ic || {}).n_matured || 0;
-    var open = (track || {}).open || 0;
-    var icAll = (ic || {}).ic_all;
-    var hitRate = ((track || {}).overall || {}).hit_rate;
-    var dirAcc = ((track || {}).overall || {}).dir_accuracy;
-    var bh = (ic || {}).by_horizon || {};
-    var h21 = bh["21"] || {};
-    var h63 = bh["63"] || {};
-
-    var h = '<div class="rp-acct-note"><b>🔍 ' + bi("Honest null", "诚实空值") + ":</b> " +
-      bi("This radar has " + nSnap + " recorded snapshots and " + nMat + " matured predictions. Grading requires horizons to elapse (21d / 63d). " + open + " theses are open. No performance claim is possible yet — this section auto-populates as horizons mature.",
-        "雷达已记录" + nSnap + "个快照，" + nMat + "个已成熟预测。评级需等待时间窗口到期（21天/63天）。" + open + "个论点仍在跟踪。目前无法做出任何表现声明——本节将在到期时自动填充。") + "</div>";
-
-    h += '<div class="rp-acct-grid">';
-    function stat(val, lblEn, lblZh) {
-      return '<div class="rp-acct-stat"><div class="rp-acct-val">' + esc(val) + "</div><div class=\"rp-acct-lbl\">" + bi(lblEn, lblZh) + "</div></div>";
-    }
-    h += stat(nSnap, "Snapshots recorded", "已记录快照");
-    h += stat(nMat, "Matured predictions", "已成熟预测");
-    h += stat(open, "Open theses", "开放论点");
-    h += stat(icAll != null ? icAll.toFixed(3) : "—", "IC (all)", "IC (全部)");
-    h += stat(hitRate != null ? (hitRate * 100).toFixed(0) + "%" : "—", "Hit rate", "命中率");
-    h += stat(dirAcc != null ? (dirAcc * 100).toFixed(0) + "%" : "—", "Dir accuracy", "方向准确率");
-    h += "</div>";
-
-    h += '<div class="rp-horizon-row">';
-    function horizonBlock(hd, hdata) {
-      var ic = hdata.ic_all != null ? hdata.ic_all.toFixed(3) : "—";
-      var hr = ((hdata.by_bucket || {})["40-70"] || {}).hit_rate;
-      var hrStr = hr != null ? (hr * 100).toFixed(0) + "%" : "—";
-      var n = hdata.n_matured || 0;
-      return '<div class="rp-horizon"><div class="rp-horizon-h">' + hd + "d " + bi("horizon", "期限") + "</div>" +
-        '<span class="rp-mut">IC: ' + ic + " · " + bi("Hit rate", "命中率") + ": " + hrStr + " · n=" + n + " " + bi("matured", "成熟") + "</span></div>";
-    }
-    h += horizonBlock(21, h21);
-    h += horizonBlock(63, h63);
-    h += "</div>";
-
-    return h;
-  }
-
   // ══════════════════════════════════════════════════════════════════════════
   //   renderDivergenceRadar — COMPACT shared panel (baskets.html embed)
   // ══════════════════════════════════════════════════════════════════════════
@@ -1091,6 +1047,23 @@
       "</div></details>";
   }
 
+  // ── Hero honesty strip (one line; keys off the grader's verdict, never a
+  //    hardcoded outcome — the full story lives in #rx-honesty below) ─────────
+  function honestyStripEn(ic) {
+    var s = ((ic || {}).verdict || {}).status;
+    if (s === "leading") return "Modest evidence the calls have led. Watch-only. See the check ↓";
+    if (s === "lagging") return "Evidence so far says the calls have lagged. Watch-only. See the check ↓";
+    if (s === "null") return "Measured honestly: no proof either way yet. Watch-only. See the check ↓";
+    return "Still measuring — the 3-month reads mature from mid-September. See the check ↓";
+  }
+  function honestyStripZh(ic) {
+    var s = ((ic || {}).verdict || {}).status;
+    if (s === "leading") return "初步证据显示解读有所领先。仅供观察。见下方核对 ↓";
+    if (s === "lagging") return "目前证据显示解读偏滞后。仅供观察。见下方核对 ↓";
+    if (s === "null") return "诚实测量：暂无任何方向的证据。仅供观察。见下方核对 ↓";
+    return "仍在测量 —— 3 个月期解读自 9 月中旬起到期。见下方核对 ↓";
+  }
+
   // ── Hero ──────────────────────────────────────────────────────────────────
   // The market backdrop, in words rather than the quad label. The internal name
   // ("Reflation · Q2") is a tier-2 receipt on the hover.
@@ -1113,7 +1086,8 @@
       'data-tip-zh="解读所处的市场背景：' + esc(tip) + '">' + bi("Backdrop: " + en, "背景：" + zh) + "</span>";
   }
 
-  function heroHTML(radar, enriched) {
+  function heroHTML(radar, enriched, ic) {
+    var cov = radar.coverage || {};
     var regime = (enriched || {}).regime || {};
     var changes = (enriched || {}).changes || {};
     var flags = radar.flags || [];
@@ -1202,8 +1176,7 @@
           '<div class="rx-ctx-row">' + backdropChip(regime) + asof + "</div>" +
           '<div class="rx-ctx-delta"><span class="rx-ctx-k">' + bi("Since yesterday", "较昨日") + "</span> " + deltaLine + "</div>" +
           '<a class="rx-ctx-honesty" href="#rx-honesty"><span class="rx-ctx-k">' + bi("Has this worked?", "这套解读有效吗？") + "</span> " +
-            '<span class="rx-mut">' + bi("Not so far — these reads have trailed the market. Watch-only. See the check ↓",
-              "目前还没有 —— 这些解读跑输大盘。仅供观察。见下方核对 ↓") + "</span></a>" +
+            '<span class="rx-mut">' + bi(honestyStripEn(ic), honestyStripZh(ic)) + "</span></a>" +
         "</div>" +
       "</div>" +
     "</section>";
@@ -1309,45 +1282,108 @@
       (note ? '<p class="rx-nnote">' + esc(note) + "</p>" : "");
   }
 
-  // ── Honesty / track-record section (plain words; receipt on tier 2) ───────
+  // ── Honesty / track-record section (plain words; receipt on tier 2) ─────────
+  // The worked/hasn't claim keys ONLY off ic.verdict — the grader's
+  // pre-registered evidence gate (enough independent calls + an overlap-robust
+  // test on the radar's actual claims). Everything else here is context.
   function honestyHTML(ic, track) {
     ic = ic || {}; track = track || {};
-    var nSnap = ic.n_snapshots || 0, nMat = ic.n_matured || 0;
-    var icAll = ic.ic_all;
+    var nSnap = ic.n_snapshots || 0;
     var open = track.open || 0;
-    var worked = icAll == null ? null : icAll > 0.03;
+    var verdict = ic.verdict || {};
+    var status = verdict.status || "insufficient";
+    var bh = ic.by_horizon || {};
+    var h21 = bh["21"] || {};
+    var ep21 = h21.episodes || {};
+    var nEp = ep21.n_matured || 0;
+    var epClaims = ep21.claims || {};
+    var epBase = ep21.base_rate || {};
+    var diag = h21.diagonal || {};
+    var baseRate = (ic.base_rate || {}).p_up;
+
     var headEn, headZh, paraEn, paraZh, tone;
-    if (icAll == null || nMat < 30) {
-      tone = "wait";
-      headEn = "Has this page's read paid off? Too early to say.";
-      headZh = "本页的解读有效吗？现在下结论还太早。";
-      paraEn = "We are still marking past reads as their time windows run out. Until then, treat everything here as something to watch — never a buy list.";
-      paraZh = "过去的解读仍在随时间窗口到期而评分。在此之前，请把这里的一切都当作观察对象 —— 绝非买入清单。";
-    } else if (worked) {
+    if (status === "leading") {
       tone = "ok";
-      headEn = "Has this page's read paid off? Modestly, so far.";
-      headZh = "本页的解读有效吗？目前来看略有帮助。";
-      paraEn = "Across the reads we can now mark, the themes flagged here have leaned the right way more often than not. Still context, not a signal — do not size anything to it.";
-      paraZh = "在已可评分的解读中，本页标记的主题多数时候方向正确。但仍属参考而非信号 —— 不应据此下注。";
-    } else {
+      headEn = "Has the radar's read paid off? The evidence says yes — modestly.";
+      headZh = "雷达的解读有效吗？证据显示：有 —— 幅度温和。";
+      paraEn = "Across the independent calls we can grade, the radar's divergence reads have leaned the right way more often than a coin weighted to this tape. Still context, not a signal — size nothing to it.";
+      paraZh = "在可评分的独立解读中，雷达的背离读数方向正确的频率高于随行情加权的基准。但仍属参考而非信号 —— 不应据此下注。";
+    } else if (status === "lagging") {
       tone = "warn";
-      headEn = "Has this page's read paid off? Not so far.";
-      headZh = "本页的解读有效吗？目前还没有。";
-      paraEn = "Across " + nMat.toLocaleString() + " past reads we can now mark, the themes flagged here have tended to trail the market rather than lead it — and the ones the page rated highest did the worst. That is exactly why nothing here is a buy list.";
-      paraZh = "在已可评分的 " + nMat.toLocaleString() + " 条解读中，本页标记的主题往往跑输而非领先大盘 —— 其评分最高者表现最差。正因如此，这里的一切都不是买入清单。";
+      headEn = "Has the radar's read paid off? The evidence says no, so far.";
+      headZh = "雷达的解读有效吗？目前证据显示：没有。";
+      paraEn = "Across the independent calls we can grade, the radar's divergence reads have pointed the wrong way more often than this tape's own base rate. That is exactly why every read here is watch-only context, never a buy list.";
+      paraZh = "在可评分的独立解读中，雷达的背离读数指错方向的频率高于行情自身的基准。正因如此，这里的每条解读都仅供观察，绝非买入清单。";
+    } else if (status === "null") {
+      tone = "wait";
+      headEn = "Has the radar's read paid off? Measured honestly: no proof either way yet.";
+      headZh = "雷达的解读有效吗？诚实测量的答案：暂无任何方向的证据。";
+      paraEn = "We grade every call against how this specific tape treated everything we track — and so far the radar's divergence reads are statistically indistinguishable from that base rate. Watch-only context, never a buy list.";
+      paraZh = "每条解读都对照同期行情对全部跟踪对象的基准来评分 —— 目前雷达的背离读数与该基准在统计上无法区分。仅供观察，绝非买入清单。";
+    } else {
+      tone = "wait";
+      headEn = "Has the radar's read paid off? Too early to say.";
+      headZh = "雷达的解读有效吗？现在下结论还太早。";
+      paraEn = "Daily snapshots pile up fast, but they repeat the same open calls — what counts is independent calls, and those need their full windows to elapse. The radar's real test, its ~3-month watch theses, starts maturing from mid-September. Until then: watch-only context, never a buy list.";
+      paraZh = "每日快照累积很快，但多为同一判断的重复记录 —— 真正算数的是独立解读，需等完整窗口到期。雷达真正的考验（约 3 个月期的观察论点）自 9 月中旬起陆续到期。在此之前：仅供观察，绝非买入清单。";
+    }
+
+    // Base-rate context line — the era's bar, printed so no cohort read can
+    // masquerade as skill (or be indicted) against an imaginary 50/50 tape.
+    var baseLine = "";
+    if (baseRate != null) {
+      var pct = Math.round(baseRate * 100);
+      baseLine = '<p class="rx-h-base">' + bi(
+        "The bar grades are read against: in this stretch only " + pct + "% of everything we track beat the market over the next month. A cohort only shows skill by beating that bar, not 50/50.",
+        "评分对照的基准：本时段内，我们跟踪的对象中仅 " + pct + "% 在随后一个月跑赢大盘。只有超过这条线才算有效，而非超过五五开。") + "</p>";
+    }
+
+    // Claims vs already-priced split — the cohorts are different products.
+    var splitLine = "";
+    if (nEp >= 30 && epClaims.dir_accuracy != null) {
+      var ca = Math.round(epClaims.dir_accuracy * 100);
+      var cb = epClaims.base_dart != null ? Math.round(epClaims.base_dart * 100) : null;
+      var da = diag.dir_accuracy != null ? Math.round(diag.dir_accuracy * 100) : null;
+      splitLine = '<p class="rx-h-split">' + bi(
+        "Split honestly: the radar's actual calls — the divergence reads — were right " + ca + "% of the time" + (cb != null ? " against a " + cb + "% bar" : "") + ". Panels marked “already priced” are context, not calls" + (da != null ? " — and that cohort kept only " + da + "% direction, which is why it now ranks near the bottom of the board, not the top" : "") + ".",
+        "如实拆分：雷达真正的判断 —— 背离读数 —— 方向正确率 " + ca + "%" + (cb != null ? "（基准 " + cb + "%）" : "") + "。标注“已反映在价格中”的面板是背景参考而非判断" + (da != null ? " —— 该组仅 " + da + "% 方向正确，因此现已排在榜单底部而非顶部" : "") + "。") + "</p>";
     }
 
     function tile(v, en, zh) {
       return '<div class="rx-tile"><div class="rx-tile-v">' + esc(v) + '</div><div class="rx-tile-l">' + bi(en, zh) + "</div></div>";
     }
-    var receipt = "Rank correlation between this page's edge score and the 21-day forward return that followed it: " +
-      (icAll == null ? "—" : icAll.toFixed(2)) + " over " + nMat.toLocaleString() + " marked reads" +
-      (icAll != null && icAll < 0 ? " — negative, meaning higher scores mapped to weaker returns" : "") +
-      ". Rolling 90-day: " + (ic.ic_rolling_90 == null ? "—" : ic.ic_rolling_90.toFixed(2)) + ". Schema radar_ic.v1.";
-    var receiptZh = "本页优势分与其后21日收益的秩相关：" + (icAll == null ? "—" : icAll.toFixed(2)) +
-      "，样本 " + nMat.toLocaleString() + " 条已评分解读" +
-      (icAll != null && icAll < 0 ? " —— 为负，即评分越高、收益越弱" : "") +
-      "。90日滚动：" + (ic.ic_rolling_90 == null ? "—" : ic.ic_rolling_90.toFixed(2)) + "。架构 radar_ic.v1。";
+
+    // Tier-2 receipt: the technical numbers, signed AND legacy, with validity.
+    var icAll = ic.ic_all, icSigned = ic.ic_all_signed;
+    var hacC = (h21.ic_daily_hac_claims || {});
+    var eras = (ic.era_breaks || []);
+    var receipt = "Independent calls = contiguous flag episodes, graded at entry (n=" + nEp.toLocaleString() +
+      " matured at 21d; " + (ic.n_matured || 0).toLocaleString() + " raw daily rows). " +
+      "Signed rank-correlation (score × call direction vs forward return net of SPY): " +
+      (icSigned == null ? "—" : icSigned.toFixed(2)) +
+      "; unsigned legacy figure: " + (icAll == null ? "—" : icAll.toFixed(2)) +
+      " (unsigned mixes bullish and bearish calls — kept for continuity only). " +
+      "Overlap-robust test on the divergence calls: " +
+      (hacC.t_hac != null ? "t=" + hacC.t_hac.toFixed(2) + " over " + (hacC.n || 0) + " daily cross-sections"
+                          : "not yet valid (needs ≥ horizon-length run of daily cross-sections)") +
+      ". Verdict gate: ≥" + (((verdict.gates || {}).min_claim_episodes) || 60) + " matured claim episodes AND |t| ≥ " +
+      (((verdict.gates || {}).t_sig) || 2) + " on a non-degenerate window — status: " + status + ". " +
+      "The seeded ~3-month theses (" + open + " open) grade separately at their own deadlines. " +
+      (eras.length ? "Scoring construction changed " + eras[eras.length - 1].date + " (era " + eras[eras.length - 1].era + ") — cross-era pooling carries both constructions. " : "") +
+      "Schema radar_ic.v2.";
+    var receiptZh = "独立解读＝连续的标记片段，按入场日评分（21 日窗口已到期 n=" + nEp.toLocaleString() +
+      "；每日原始行 " + (ic.n_matured || 0).toLocaleString() + "）。" +
+      "带方向的秩相关（分数×判断方向 对 相对 SPY 的前瞻收益）：" + (icSigned == null ? "—" : icSigned.toFixed(2)) +
+      "；旧口径（不带方向）：" + (icAll == null ? "—" : icAll.toFixed(2)) +
+      "（不带方向会混淆多空判断 —— 仅为连续性保留）。" +
+      "对背离判断的抗重叠检验：" +
+      (hacC.t_hac != null ? "t=" + hacC.t_hac.toFixed(2) + "，基于 " + (hacC.n || 0) + " 个每日横截面"
+                          : "尚未有效（需累积不少于窗口长度的每日横截面）") +
+      "。判定门槛：已到期判断片段 ≥" + (((verdict.gates || {}).min_claim_episodes) || 60) + " 且非退化窗口上 |t| ≥ " +
+      (((verdict.gates || {}).t_sig) || 2) + " —— 当前状态：" + status + "。" +
+      "约 3 个月期的观察论点（" + open + " 条进行中）按各自截止日另行评分。" +
+      (eras.length ? "评分构造已于 " + eras[eras.length - 1].date + " 调整（第 " + eras[eras.length - 1].era + " 代）—— 跨代合并统计含两种构造。" : "") +
+      "架构 radar_ic.v2。";
 
     return '<section class="rx-honesty rx-honesty-' + tone + '" id="rx-honesty">' +
       '<div class="rx-h-head">' +
@@ -1355,10 +1391,12 @@
         '<h2 class="rx-h-title">' + bi(headEn, headZh) + "</h2>" +
       "</div>" +
       '<p class="rx-h-para">' + bi(paraEn, paraZh) + "</p>" +
+      baseLine +
+      splitLine +
       '<div class="rx-tiles">' +
-        tile(nSnap.toLocaleString(), "Reads recorded", "已记录解读") +
-        tile(nMat.toLocaleString(), "Marked so far", "已评分") +
-        tile(open.toLocaleString(), "Still running", "仍在跟踪") +
+        tile(nSnap.toLocaleString(), "Daily readings recorded", "已记录每日读数") +
+        tile(nEp.toLocaleString(), "Independent calls graded", "已评分独立解读") +
+        tile(open.toLocaleString(), "3-month theses open", "3个月论点进行中") +
       "</div>" +
       '<details class="rx-receipt"><summary>' + bi("Show the technical receipt", "查看技术明细") + "</summary>" +
         "<p>" + bi(receipt, receiptZh) + "</p></details>" +
@@ -1753,6 +1791,8 @@
       ".rx-nnote{font-size:11.5px;color:var(--muted);line-height:1.5;margin:0 0 8px;padding:0 9px 0 61px}",
       /* honesty */
       ".rx-honesty{margin-top:28px;padding:20px 20px 16px;border-radius:14px;border:1px solid var(--line);background:var(--panel)}",
+      ".rx-h-base,.rx-h-split{font-size:12.5px;line-height:1.55;color:var(--muted);margin:8px 0 0}",
+      ".rx-h-split b{color:var(--text)}",
       ".rx-honesty-warn{border-color:color-mix(in srgb,var(--warn) 30%,var(--line));background:linear-gradient(160deg,var(--panel),color-mix(in srgb,var(--warn) 5%,var(--panel)))}",
       ".rx-honesty-ok{border-color:color-mix(in srgb,var(--up) 26%,var(--line))}",
       ".rx-h-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.14em;color:var(--warn)}",
@@ -1851,7 +1891,7 @@
       _nameFiltered = _allTickers.slice().sort(function (a, b) { return Math.abs(b.rs_vs_spy_60d || 0) - Math.abs(a.rs_vs_spy_60d || 0); });
 
       var h = '<div class="rx-wrap">';
-      h += heroHTML(radar, enriched);
+      h += heroHTML(radar, enriched, ic);
 
       // The meter legend is a page-level constant: said once, above the first meter.
       if (posDivs.length || negDivs.length) h += meterKey();

@@ -1,18 +1,18 @@
 {
   "status": "stale",
-  "checked_at": "2026-08-02T00:44:06.022573+00:00",
+  "checked_at": "2026-08-05T10:24:45.141302+00:00",
   "threshold_sessions": 3,
-  "store_max": "2026-07-31",
+  "store_max": "2026-08-04",
   "n_members": 694,
   "n_stale": 1,
-  "n_behind_within_threshold": 0,
+  "n_behind_within_threshold": 692,
   "stale": {
     "BLD": {
       "last": "2026-07-02",
-      "sessions_behind": 20
+      "sessions_behind": 22
     }
   },
-  "missing": [
-    "MMC"
-  ]
+  "missing": [],
+  "absent_all_rungs": [],
+  "n_absent_all_rungs": 0
 }

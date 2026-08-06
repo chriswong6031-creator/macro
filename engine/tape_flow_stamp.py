@@ -32,8 +32,20 @@ with FOUR new nullable columns sourced from the daily tape-flow store
 
 ## PIT discipline
 All four columns use ONLY tape_flow rows with date <= fire.as_of (no lookahead).
-The store starts accruing nightly from 2026-07-05 forward; stamps will be null-heavy
-initially. This is correct and expected (W1.3 precedent: nullable, retry-as-coverage-grows).
+
+Accrual reality (measured 2026-08-04, corrects the earlier "nightly from 2026-07-05"):
+the store's first rows are **2026-07-10**, and per-root accrual is **~weekly, not
+nightly** — the T2a forward pass budget-rotates a ~360-root universe with
+resume-from-last, and the step self-skips on runner hosts without the ThetaData Terminal
+(~2/5 nights). Median depth was 5 rows/root over 15 sessions. The two columns gated at
+_MIN_HISTORY therefore stay null until a root holds 20 store rows STRICTLY BEFORE a
+fire's as_of: ~Oct 2026 as_of dates at the measured cadence (~4 weeks after inception had
+the cadence been nightly). Null-heavy is correct and expected here — the W1.3 precedent:
+nullable, retry-as-coverage-grows — and is not evidence that this writer is broken.
+
+The runner (scripts/stamp_options_state.py) commits this family PER COLUMN, fill-null-only
+(2026-08-04): a computable column no longer freezes its still-null siblings, so a row keeps
+retrying until all four are filled. Full coverage map: data/us_board_ledger/README.md.
 
 ## opt_iv_rank_252 — EXPLICITLY DEFERRED
 That column reads data/thetadata_eod greeks. The thetadata_eod store is mid-backfill and
@@ -41,10 +53,13 @@ has a known dedup defect (#1363). Wiring is deferred until the dedup repair land
 manifest marks the universe pass complete. It remains always-null in this writer per ruling A9.
 
 ## Schema-union / no-overwrite / backfill-pass convention
-Follows the exact W1.3 pattern in scripts/stamp_options_state.py:
+Follows the W1.3 pattern in scripts/stamp_options_state.py, with a per-column commit for
+this family (2026-08-04):
   - Schema-union: missing columns added as None before the pass.
-  - Only fully-null rows (across ALL stamp columns including these four) are stamped.
-  - A row already carrying any non-null stamp value is never overwritten.
+  - A row is re-stamped while ANY of these four columns is null (its own retry gate —
+    the options-state family's coverage never opens or closes it).
+  - Each column commits independently and only into a null cell; a non-null cell is never
+    overwritten, so the pass stays idempotent.
   - Injectable readers for all disk I/O (tests pass synthetic frames).
 """
 from __future__ import annotations
