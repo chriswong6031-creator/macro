@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T13:25:56.767304+00:00",
-  "count": 874,
+  "generated_at": "2026-08-06T13:41:15.155572+00:00",
+  "count": 875,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -75,6 +75,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7w2aoalvllc-c354d0",
+      "title": "Jefferies SNDK Price Target cut from 3000 to",
+      "institution": "Jefferies",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:51:16Z",
+      "summary_points": [
+        "**NAND Revenue Guidance & NBM Momentum**: Lowered NAND revenue growth guidance due to inventory-driven GM decline; NBM agreements show $93.9B floor pricing with 8 customers signed, >50% F27 bits committed.",
+        "**Datacenter Growth Catalyst**: Datacenter revenue surged 103% Q/Q to $2.98B (Q2), targeting 300B bits in C26 and 500B in C27, signaling AI/cloud infrastructure tailwinds.",
+        "**eSSD Revenue Potential**: eSSD business could reach 7%+ revenue share by 2027 ($2.5B revenue, $2B+ EPS benefit), a key growth lever beyond NAND.",
+        "**Upside/Downside Range**: Upside scenario ($2,500, +85%) hinges on mid-teens bit growth; downside ($750, -44%) from HSD bit growth risks, with Analyst Day (Aug 13) as near-term catalyst.",
+        "**Revenue Concentration Risk**: 72% of sales in Americas (declining US share from 39%→28% FY22-FY25) creates vulnerability to regional disruptions despite Asia growth (China 14%→17%)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
       "language": "en",
       "needs_metadata": false
     },
