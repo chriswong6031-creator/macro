@@ -598,7 +598,16 @@ def score_text(
         negative_highlights, tags, summary, source_sha256, scored_at,
         source_record_id, source_updated_at, source_url,
         source_revision_sha256, prompt_version,
-        analysis_schema_version, is_context_only, degraded_reason }
+        analysis_schema_version, is_context_only, degraded_reason,
+        provider_fallback_reason }
+
+    ``provider_fallback_reason`` is observability metadata, never a signal: it
+    carries ``"<provider>:<reason>"`` for the FIRST rung that failed to deliver
+    a usable score, whether or not a later rung recovered.  Without it a local
+    Qwen 404 followed by a DeepSeek success produced a row byte-identical to a
+    clean local run, so a mis-set model id could bill the cloud fallback for
+    hundreds of rows while the estate reported itself local-first.  It is
+    ``None`` when the first configured rung answered.
     """
     cfg = cfg if cfg is not None else load_config()
     provider_cfg = provider_cfg or {}
@@ -631,6 +640,9 @@ def score_text(
         "summary": None,           # SGA W5: call_summary from the model (optional)
         "is_context_only": True,   # SGA-R5 — ALWAYS context-only
         "degraded_reason": None,
+        # Observability only.  A scored row is NOT degraded merely because an
+        # earlier rung failed; degraded_reason keeps its exact prior meaning.
+        "provider_fallback_reason": None,
     }
 
     if not text or not str(text).strip():
@@ -661,6 +673,10 @@ def score_text(
     provider_used: str | None = None
     last_reason: str | None = None
     last_shape_reason: str | None = None
+    # First rung that failed to deliver a usable score, as "<provider>:<reason>".
+    # Recorded on EVERY exit path, so a successful fallback is no longer
+    # indistinguishable from a clean run on the primary provider.
+    first_failed_rung: str | None = None
     for provider_name in [str(name) for name in order if str(name).strip()]:
         rung_cfg = dict(provider_cfg)
         rung_cfg["provider_order"] = [provider_name]
@@ -669,6 +685,8 @@ def score_text(
         )
         last_reason = reason or last_reason
         if reply is None:
+            if first_failed_rung is None:
+                first_failed_rung = f"{provider_name}:{reason or 'no_reply'}"
             continue
         provider_used = used or provider_name
         candidate = _extract_json(reply)
@@ -702,6 +720,13 @@ def score_text(
             obj = candidate
             break
         last_shape_reason = shape_reason
+        # A rung that answered with unusable JSON even after its bounded retry
+        # is a failed rung too — the next provider is about to be charged for
+        # the same call.
+        if first_failed_rung is None:
+            first_failed_rung = f"{provider_name}:{shape_reason}"
+
+    base_row["provider_fallback_reason"] = first_failed_rung
 
     if obj is None:
         base_row["degraded_reason"] = (
@@ -805,6 +830,11 @@ _STORE_COLUMNS = [
     "analysis_schema_version",
     "summary",   # SGA W5: model call_summary (str, nullable); live scorer fills if present
     "is_context_only", "degraded_reason",
+    # R0-A: which rung failed first, as "<provider>:<reason>" (str, nullable).
+    # APPENDED, never inserted — _load_scores_unvalidated() and
+    # merge_score_store_frame() backfill a missing column with None, so a
+    # parquet written before this field still loads and still merges.
+    "provider_fallback_reason",
 ]
 # JSON-encoded columns (stored as strings in parquet for portability).
 _JSON_COLUMNS = ("positive_highlights", "negative_highlights", "tags")
