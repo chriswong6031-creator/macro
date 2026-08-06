@@ -20,9 +20,17 @@ clear a red, and `chart-render` (`pip install pytest pyyaml`) was the ONLY job i
 any workflow that named `tests/test_chart_render_inline.py`.  Six tests executed in
 zero jobs.  Every census in the repo said the file was covered.
 
+SCOPE IS THE WHOLE TREE.  This guard was hard-scoped to `tests/`, like both censuses
+it brackets, and so could not see the suites most likely to be dark: a research
+packet fenced to files-only writes its guard suite next to the instrument under
+`research/`, not in `tests/`.  Discovery now comes from
+``audit_unrun_tests.discover_suites`` — the whole repo, classified by what pytest
+would actually collect, so a `test_`-shaped CLI instrument is not mistaken for a
+suite (#4693, 2026-08-06).
+
 WHAT THIS CHECKS (static — no test execution)
 
-  1. For each `tests/test_*.py`, collect its skip gates:
+  1. For each pytest suite in the tree, collect its skip gates:
        * `pytest.importorskip("X")`, anywhere in the file;
        * `pytest.mark.skipif(<cond>)` / `pytestmark = ...` whose condition reads a
          module-level flag bound by a `try: import X / except ImportError: flag =
@@ -70,8 +78,9 @@ from scripts.audit_unrun_tests import (  # noqa: E402
     CI_MANIFEST,
     FIRST_PARTY,
     ROOT,
-    TESTS,
     WORKFLOWS,
+    defines_tests,
+    discover_suites,
 )
 from scripts.run_ci_pack import (  # noqa: E402
     ManifestError,
@@ -126,13 +135,26 @@ PACKAGE_REQUIRES: dict[str, tuple[str, ...]] = {
 STDLIB_ALWAYS = frozenset(sys.stdlib_module_names) | {"__future__"}
 
 _PIP_INSTALL = re.compile(r"^\s*(?:(?:python|python3)\s+-m\s+)?pip\s+install\s+(.+)$", re.M)
-_TEST_TOKEN = re.compile(r"(?<![\w/.-])(?:tests/)?(test_[\w]+\.py)(?![\w])")
+# A suite named in a `run:` step, AS WRITTEN — any directory, both pytest filename
+# shapes.  This used to hard-code `(?:tests/)?` and capture the BASENAME only, which
+# had two costs: a suite outside tests/ was unnameable, and a job naming
+# `tests/test_x.py` was credited with running a different `research/a/test_x.py`.
+# Tokens are resolved against the real suite inventory in `census`, so the full path
+# wins and the bare basename stays a fallback (several run: steps spell it that way).
+_TEST_TOKEN = re.compile(
+    r"(?<![\w/.-])((?:[\w.-]+/)*(?:test_[\w-]+|[\w-]+_test)\.py)(?![\w])"
+)
 _PIP_FLAG = re.compile(r"^-")
 _REQ_NAME = re.compile(r"^([A-Za-z0-9._-]+)")
 
 
 def _normalize(package: str) -> str:
     return package.strip().strip("\"'").lower().replace("_", "-")
+
+
+def _token(raw: str) -> str:
+    """A run-step path as written, minus a leading `./`."""
+    return raw[2:] if raw.startswith("./") else raw
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -418,7 +440,7 @@ def _job_view(job_id: str, source: str, run_text: str, install: str | None) -> d
         # curated subset of the legacy jobs — so the label carries the file too.
         "job": f"{source}::{job_id}",
         "source": source,
-        "tests": {m.group(1) for m in _TEST_TOKEN.finditer(run_text)},
+        "tests": {_token(m.group(1)) for m in _TEST_TOKEN.finditer(run_text)},
         "install": install,
         "packages": packages,
         "modules": provided_modules(packages),
@@ -477,11 +499,16 @@ def workflow_jobs() -> list[dict]:
 def census(jobs: list[dict] | None = None) -> list[dict]:
     jobs = workflow_jobs() if jobs is None else jobs
     rows: list[dict] = []
-    for path in sorted(TESTS.glob("test_*.py")):
+    for rel_test in discover_suites():
+        path = ROOT / rel_test
         gates = skip_gates(path)
         if not gates:
             continue
-        naming = [j for j in jobs if path.name in j["tests"]]
+        # Exact repo-relative path first, bare basename as the compatibility
+        # fallback — a job that spells `tests/test_x.py` must not be credited with
+        # running `research/a/test_x.py`, which basename-only matching did.
+        spellings = {rel_test, path.name}
+        naming = [j for j in jobs if j["tests"] & spellings]
         for gate, why in sorted(gates.items()):
             needs = sorted(required_modules(gate))
             if not needs:
@@ -491,7 +518,7 @@ def census(jobs: list[dict] | None = None) -> list[dict]:
             )
             rows.append(
                 dict(
-                    test=path.name,
+                    test=rel_test,
                     gate=gate,
                     needs=needs,
                     why=why,
@@ -629,7 +656,7 @@ def _selftest() -> int:
         failures.append("pandas must close over numpy")
     if "numpy" in thin["modules"]:
         failures.append("thin lane must NOT provide numpy")
-    if thin["tests"] != {"test_demo.py"}:
+    if thin["tests"] != {"tests/test_demo.py"}:
         failures.append(f"run-step test parse got {thin['tests']}")
 
     paths_only = _job_view("paths", "fixture", "echo nothing", None)
@@ -647,6 +674,33 @@ def _selftest() -> int:
         failures.append("thin lane must not satisfy a pandas gate")
     if "pandas" not in fat["modules"]:
         failures.append("fat lane must satisfy a pandas gate")
+
+    # Scope: a suite outside tests/ must be nameable, and a `test_`-shaped CLI
+    # instrument must not be mistaken for one.  Both halves of the #4693 widening.
+    outside = _job_view(
+        "outside", "fixture",
+        "python -m pytest research/pkt/test_beside_the_instrument.py "
+        "scripts/research/test_nested.py ./tests/test_dotted.py -q",
+        "pip install pytest",
+    )
+    for want in ("research/pkt/test_beside_the_instrument.py",
+                 "scripts/research/test_nested.py",
+                 "tests/test_dotted.py"):
+        if want not in outside["tests"]:
+            failures.append(f"run-step parse missed {want} (scope is the whole tree)")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        instrument = Path(tmp) / "test_instrument.py"
+        instrument.write_text(
+            "import sys\n\n\ndef main():\n    return 0\n\n\n"
+            'if __name__ == "__main__":\n    sys.exit(main())\n'
+        )
+        if defines_tests(instrument):
+            failures.append("a CLI instrument must not classify as a pytest suite")
+        real = Path(tmp) / "test_real.py"
+        real.write_text("def test_x():\n    assert True\n")
+        if not defines_tests(real):
+            failures.append("a real suite must classify as one")
 
     if failures:
         for failure in failures:

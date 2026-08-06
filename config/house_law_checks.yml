@@ -1413,6 +1413,73 @@ checks:
       Complements nw.dag_conformance (lane-sequence drift on declared lanes)
       by asserting bare loadability of ALL workflow files, lane or not.
 
+  - law_id: ops.ci_trigger_closure
+    summary: >
+      A guarded suite's TRIGGER PATHS must cover the modules the suite measures.
+      The fourth darkness class, and the reverse direction of every census here:
+      audit_unrun_tests.py asks "can ANY edit start this job", an any() over the
+      closure that a single matched file — usually the test itself — satisfies.
+      The question that matters at merge time is the other one: for the module a
+      PR actually touches, does the guard run? A suite that pins engine/foo.py and
+      is reachable only through tests/test_foo.py is a guard with a hole exactly
+      the shape of its subject: the suite is green, every census calls it
+      triggerable, and the ONE edit it exists to catch ships without running it.
+      The lesson was written in comments four times (#3488, #4559, the "both
+      halves listed on purpose" notes in ci.yml) and never enforced — prose in a
+      1,700-entry path list is not a guard. Static: resolve each governed suite's
+      direct reads (imports, import_module, whole-string path literals,
+      __file__-rooted path joins), then fail when a read is matched by no
+      on.pull_request.paths entry of any workflow that runs the suite, under
+      GitHub's glob semantics rather than fnmatch's.
+    source_ref:
+      - scripts/check_ci_trigger_closure.py
+      - "PR #4649 (shipped the guard)"
+      - "PR #3488 (a guard whose own edit cannot start the workflow is half wired)"
+      - "PR #4559 (fixture-only heal that could not trigger its own job)"
+    severity: hard
+    check_script: scripts/check_ci_trigger_closure.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: workflow-yaml
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        DIRECT reads only (depth 1). --depth N widens the report to transitive
+        reads and is deliberately NOT gated: past depth 1 the path-literal
+        heuristic starts resolving placeholder strings out of docstring examples,
+        and a guard that cries wolf gets ignored.
+      - >-
+        The "test half unreachable" class (#4559 — a test-only edit cannot start
+        the job that runs it) is REPORTED as a single notice, never gated: naming
+        all of them would widen ci.yml by hundreds of entries, which is a CI-cost
+        call for the operator, not a guard's to make.
+      - >-
+        data/ is excluded from the subject dirs. A suite reading a nightly artifact
+        is a different class — those files are rewritten by the pipeline, not
+        edited by a PR — so demanding a trigger entry for each would add 150+
+        findings no author can act on.
+      - >-
+        Only a base provably derived from __file__ counts for a path join:
+        tmp_path / "config" / "brain.yml" has identical segments to the real thing
+        and is a file the suite WRITES. Under-reporting on an exotic spelling is
+        the right way to be wrong for something that gates a merge.
+      - >-
+        Scope was tests/ only until 2026-08-06 (#4693) — a suite wired from
+        research/ was invisible to this gate even once wired. Suites now come from
+        audit_unrun_tests.discover_suites() and run-step tokens resolve against
+        that inventory, so a test_-shaped CLI instrument named by a run: step is
+        not gated as a suite.
+    owner_program: null
+    notes: >
+      Registered 2026-08-06. The guard shipped in #4649 without a registry entry,
+      so check_house_law_registry.py's CENSUS pass has failed on main ever since —
+      a house-law guard that the house-law registry itself did not know about.
+      Runs in the same workflow-yaml job as ops.no_skip_only_suites and the unrun
+      census whose discovery all three share.
+
   - law_id: ops.no_skip_only_suites
     summary: >
       No test may skip in every CI job that names it. A suite can be named by a
@@ -1450,6 +1517,18 @@ checks:
         Suites that NO job names are reported as UNRUN and never fail this gate —
         scripts/audit_unrun_tests.py owns that class, and wiring every unrun suite
         would blow the ci-pack budget.
+      - >-
+        Scope was `tests/` only until 2026-08-06 (#4693), which made this gate and
+        both censuses blind to research/-resident guard suites — the ones most
+        likely to be dark, because a packet fenced to files-only writes its suite
+        next to the instrument. Discovery is now the whole tree via
+        scripts/audit_unrun_tests.discover_suites().
+      - >-
+        A test_-shaped FILENAME is not a suite: three files under research/ are CLI
+        measurement instruments that collect zero tests. Classification reads the
+        AST for what pytest would collect rather than trusting the name, so those
+        are excluded — reporting them would make the census noise, which is the
+        failure mode these guards exist to end.
       - >-
         Transitive dependency closure (PACKAGE_REQUIRES) is a hand-maintained
         table of hard runtime deps. Under-declaring costs a false red;

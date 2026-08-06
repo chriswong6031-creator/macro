@@ -2017,6 +2017,9 @@ on:
       # the derived one would be checked.
       - "data/press/published.jsonl"
       # ── UNRUN-SUITE CENSUS (2026-07-26) ──────────────────────────────────────
+      # Measured when the census was scoped to tests/; it now covers the whole tree
+      # (#4693, 2026-08-06), so re-run scripts/audit_unrun_tests.py for live counts
+      # rather than reading the historical figures below as current.
       # 1135 of 1491 tests/test_*.py suites were named by NO `run:` step in ANY of
       # the 51 workflows, and there is no broad `pytest tests/` anywhere — every
       # invocation carries an explicit file list, so an unnamed suite is genuinely

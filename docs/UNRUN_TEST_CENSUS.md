@@ -1,9 +1,72 @@
 # Unrun-test census — CI coverage triage
 
-**Regenerate:** `python3 scripts/audit_unrun_tests.py` (add `--tier P1`, `--json out.json`).
+**Regenerate:** `python3 scripts/audit_unrun_tests.py` (add `--tier P1`, `--json out.json`,
+`--selftest`).
 
 This document records the systemic version of the hole PR #3595 fixed for six suites: test
 suites that exist, pass locally, and are executed by **no CI job at all**.
+
+## Scope: the whole tree, since 2026-08-06 (#4693)
+
+Every number below dated before 2026-08-06 was measured with the census — and both guards
+that import from it — **hard-scoped to `tests/`**. That scope was exactly backwards: research
+packets here are routinely fenced to files-only, so a packet's guard suite gets written
+**next to its instrument** under `research/` rather than in `tests/`, and those are the
+suites most likely to be dark. Measured on 2026-08-06:
+
+| suite | tests | status when found |
+|---|---|---|
+| `research/prophet_us_audit/test_label_grading_battery.py` | 16 | named by no `run:` step since #4547 landed |
+| `research/signal_engine/test_buy_filters.py` | 6 | named by no `run:` step since it landed |
+| `scripts/research/test_run_w4_controls_fingerprints.py` | 17 | named by no `run:` step since it landed |
+
+All three were **triggerable** — `research/**/*.py` and `scripts/**/*.py` are both in
+`ci.yml`'s filter — which is the worse half of the trap: the workflow starts, the pack goes
+green, and the suite that would have caught the break never runs. None of the three censuses
+could see any of it, so all three reported the repo covered.
+
+**A `test_`-shaped filename is not a suite.** Widening by name would have swapped a blind
+census for a noisy one, and a census that cries wolf stops being read — the exact failure
+mode `check_ci_trigger_closure.py` exists to end. Three files under `research/` are CLI
+measurement instruments (`def main()` behind `if __name__ == "__main__"`, no test functions);
+`pytest` exits 5 on each. Classification therefore asks pytest's own question — does the file
+define a `test*` function, or a `Test*` class holding one — and agrees with
+`pytest --collect-only` on all 2,020 filename-shaped candidates in the tree. The three
+non-suites are **printed under their own heading**, never silently dropped:
+
+```
+research/cn_prophet_audit/sector_intel_exante_test.py
+research/signal_engine/test_breadth_consume.py
+research/signal_engine/test_buyfilter.py
+```
+
+**Discovery is `git ls-files`, with a pruned walk as fallback.** That is load-bearing, not
+defensive: the primary checkout carries **357,599** test-shaped files under
+`.claude/worktrees/` alone, so an unpruned walk turns a 2,017-row census into a 368,938-row
+one. Tracked-only is also the correct semantics — CI runs committed code.
+
+The widening moved no existing number: census **+3 rows** (exactly the three suites above),
+0 removed, 0 tier changes; skip-only 91 rows with 0 drift; trigger-closure 1,046 rows with
+0 drift.
+
+### Newly-visible backlog — reported, deliberately not bulk-wired
+
+All three were run locally on 2026-08-06 and **all three pass** (39 tests). They are still
+listed as backlog rather than wired in the same PR, for the standing reason `P4`/`P5` are:
+bulk-adding blows the ci-pack budget, and a never-run suite lands red often enough
+(~5–14%) that wiring unverified ones costs more than it buys.
+
+| suite | tests | local runtime | disposition |
+|---|---|---|---|
+| `research/prophet_us_audit/test_label_grading_battery.py` | 16 | 1.4 s | being wired into `signal-contract` by in-flight #4693 — **do not duplicate** |
+| `research/signal_engine/test_buy_filters.py` | 6 | 0.3 s | same PR, same job |
+| `scripts/research/test_run_w4_controls_fingerprints.py` | 17 | **54.6 s** | **open — nobody is wiring this one.** Not named in #4693. Needs an owner decision: 55 s is a real ci-pack cost for a research fingerprint-parity suite, so it wants either a cheaper subset or a lane that already carries a long tail |
+
+The first two are the reason the widening exists, and #4693 wired them by hand *because* no
+census could verify that wiring. With the widening in, the closure gate now checks them
+automatically the moment that PR lands: `test_label_grading_battery.py` reads
+`engine/us_board_rank.py`, which `engine/**` reaches, so it will read OK rather than as a
+gap.
 
 ## The two independent holes
 
@@ -12,7 +75,7 @@ assertion. Those are separate failures, and the census measures them separately.
 
 | | meaning | why it is invisible |
 |---|---|---|
-| **UNRUN** | the filename appears in no `run:` step in any of the 51 workflows | there is no broad `pytest tests/` anywhere — every invocation carries an explicit file list, so an unnamed suite is never executed |
+| **UNRUN** | the suite appears in no `run:` step in any of the 51 workflows | there is no broad `pytest tests/` anywhere — every invocation carries an explicit file list, so an unnamed suite is never executed. Nor is there a broad `pytest research/`, which is why a suite written outside `tests/` is unrun **by default** |
 | **UNTRIGGERABLE** | nothing that changes the verdict is matched by `ci.yml`'s `on.pull_request.paths` | the workflow never fires, so even a wired job never runs |
 
 A suite that is both is **strictly dark**: no possible edit produces a signal. Wiring a suite
