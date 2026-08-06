@@ -73,9 +73,54 @@ def test_the_workflow_can_actually_merge_and_label():
     assert permissions["actions"] == "read", "needed for the main-baseline circuit breaker"
     assert permissions["contents"] == "write", "needed to squash-merge and delete the head ref"
     assert permissions["pull-requests"] == "write", "needed for merge-blocked + the comment"
-    concurrency = parsed["concurrency"]
-    assert concurrency["group"] == "merge-on-green"
-    assert concurrency["cancel-in-progress"] is False, "a mid-merge sweep must finish"
+
+
+def test_no_concurrency_group_may_serialise_this_lane():
+    """The 2026-08-06 livelock. Do not reintroduce `concurrency:` here.
+
+    `group: merge-on-green` + `cancel-in-progress: false` was chosen so a
+    mid-merge sweep could finish. It achieved the opposite: `cancel-in-progress:
+    false` protects only an IN-PROGRESS run, GitHub keeps exactly ONE pending run
+    per group and cancels it on every new arrival, and the pending state includes
+    the wait for a runner. `ci` and `fences` share `ubuntu-latest` with this job
+    (48 and 34 queued against 8 and 1 running when this was measured), so the
+    group was held for 25-107 minutes by a sweep that had not started, while
+    triggers arriving every 50 s destroyed each other in the single pending slot.
+
+    Result over the 100 runs before the fix: 98 cancelled, 0 successful, and 94 of
+    those 98 died within 3 seconds of the next run's creation. ~58 PRs sat armed
+    and unmerged with nothing to merge them.
+    """
+    parsed = _workflow()
+    assert "concurrency" not in parsed, (
+        "a concurrency group here serialises the RUNNER QUEUE, not the sweep — "
+        "it livelocked the lane to 0 successes in 100 runs. Runner-minute control "
+        "belongs in the job-level `if:` gate, which costs nothing when it skips."
+    )
+    source = WORKFLOW.read_text(encoding="utf-8")
+    assert "livelock" in source.lower(), "the postmortem must stay in the file"
+    assert "46 SECONDS" in source or "46 seconds" in source, (
+        "the sweep-duration-vs-queue-wait contrast is the whole finding"
+    )
+
+
+def test_the_sweep_only_wakes_for_a_trigger_that_could_unblock_a_merge():
+    """Removing the concurrency group means every trigger now produces a run, so
+    the runner budget is defended by SKIPPING instead of by cancelling — a skipped
+    job costs no runner, no queue slot and no minutes, where a cancelled one cost
+    us the sweep. Only a green triggering run can make a PR mergeable (ci's last
+    100 completed runs: 51 failure, 25 cancelled, 18 skipped, 6 success), so this
+    gate drops ~94% of wake-ups and keeps every actionable one.
+
+    `schedule` and `workflow_dispatch` must never be gated away — the cron is the
+    recovery net for third-party checks, and an operator must always be able to
+    force a sweep.
+    """
+    gate = " ".join(str(_workflow()["jobs"]["sweep"]["if"]).split())
+    assert "github.event_name != 'workflow_run'" in gate, (
+        "the cron and workflow_dispatch must bypass the conclusion filter entirely"
+    )
+    assert "github.event.workflow_run.conclusion == 'success'" in gate
 
 
 def test_the_sweep_step_invokes_the_tracked_script_with_the_token_fallback():
@@ -180,12 +225,18 @@ def test_a_head_carrying_only_the_spurious_check_is_also_unproven():
 # --- the sweep itself, with HTTP mocked ---------------------------------------
 
 
-def _fake_api(monkeypatch, *, check_pages, merge_status=200, update_status=422):
+def _fake_api(
+    monkeypatch, *, check_pages, merge_status=200, update_status=422, pull_payload=None
+):
     """Route every `_request` call by method+URL and record what was sent.
 
     `update_status` defaults to 422 — GitHub's "I cannot fast-forward this"
     answer — so a test that does not opt in keeps the old behaviour: a refused
     merge falls through to `merge-blocked`.
+
+    `pull_payload` is what a re-read of the pull request itself returns. It
+    defaults to `{}` — an open, unmerged pull request — so the `already_settled`
+    guard stays inert for every test that is not about the concurrent-sweep race.
     """
     calls: list[tuple[str, str, dict | None]] = []
 
@@ -202,6 +253,8 @@ def _fake_api(monkeypatch, *, check_pages, merge_status=200, update_status=422):
             if merge_status == 200:
                 return 200, {"sha": "c" * 40, "merged": True}
             return merge_status, {"message": "Pull Request is not mergeable"}
+        if method == "GET" and "/pulls/" in url:
+            return 200, dict(pull_payload or {})
         return 200, {}
 
     monkeypatch.setattr(MOG, "_request", fake_request)
@@ -283,6 +336,73 @@ def test_a_real_conflict_is_reported_as_merge_blocked(monkeypatch, capsys):
     assert "REAL content conflict" in comments[0][2]["body"], (
         "the comment must say the stale-base case was already ruled out"
     )
+
+
+def test_a_pull_request_another_sweep_already_merged_is_never_labeled_blocked(
+    monkeypatch, capsys
+):
+    """The race the removed concurrency group was supposed to prevent — and the
+    only place overlapping sweeps are actually unsafe.
+
+    Sweeps may now overlap (the group serialised a 25-107 minute runner queue, not
+    the 46-second sweep, and livelocked the lane to 0 successes in 100 runs). Two
+    sweeps can therefore both judge PR #4242 clean; one wins the squash merge and
+    the other is answered 405/409 by GitHub — the SAME status a stale base or a
+    real conflict produces.
+
+    Without `already_settled`, the loser reads that as a conflict: it calls
+    update-branch (422 on a merged PR), then labels a SUCCESSFULLY MERGED pull
+    request `merge-blocked` and comments "not merging" on it. Because
+    `mark_blocked` posts its comment only on the label transition, that false
+    comment is the one that sticks. This is the labeled-but-unmerged hazard the
+    old comment warned about, wearing the opposite face.
+    """
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}},
+        merge_status=405,
+        update_status=422,
+        pull_payload={"merged": True, "state": "closed"},
+    )
+    assert MOG.sweep_pull("acme/widgets", _pull(), "read", "write") == "already-merged"
+
+    assert not any(call[1].endswith("/update-branch") for call in calls), (
+        "a merged pull request must never be handed to update-branch"
+    )
+    posts = [call for call in calls if call[0] == "POST"]
+    assert not any(call[1].endswith("/labels") for call in posts), (
+        "labelling a merged pull request `merge-blocked` is the exact hazard"
+    )
+    assert not any(call[1].endswith("/comments") for call in posts), (
+        "and the one-shot comment would make the falsehood permanent"
+    )
+    out = capsys.readouterr().out
+    assert out.startswith("::notice") and "concurrent sweep" in out
+
+
+def test_the_concurrent_sweep_guard_fails_closed_on_an_unreadable_pull_request(
+    monkeypatch, capsys
+):
+    """A guard that cannot read must not invent an answer. When the re-read fails,
+    the sweeper falls back to exactly the behaviour that shipped before the guard
+    existed — noisier, but it can never merge anything or bury a real conflict."""
+
+    def fake_request(method, url, token, payload=None):
+        if "/check-runs" in url:
+            return 200, {
+                "total_count": 1,
+                "check_runs": [_run("ci-pack-1", conclusion="success")],
+            }
+        if url.endswith("/merge"):
+            return 409, {"message": "Pull Request is not mergeable"}
+        if url.endswith("/update-branch"):
+            return 422, {"message": "merge conflict between base and head"}
+        if method == "GET" and "/pulls/" in url:
+            return 502, None  # GitHub blipped
+        return 200, {}
+
+    monkeypatch.setattr(MOG, "_request", fake_request)
+    assert MOG.sweep_pull("acme/widgets", _pull(), "read", "write") == "conflict"
 
 
 def test_a_stale_base_is_updated_instead_of_blocked(monkeypatch, capsys):
