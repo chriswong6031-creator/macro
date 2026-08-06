@@ -129,6 +129,12 @@ BASELINE_WORKFLOW = "integration-baseline.yml"
 WORKFLOWS_DIR = Path(__file__).resolve().parents[1] / ".github" / "workflows"
 # The conclusions that count as "this check did not fail". `neutral` and
 # `skipped` are the shapes a path-filtered or deliberately-inert job publishes.
+#
+# Membership here means "did not fail" and NEVER "passed" — do not read it as the
+# latter, and do not evict `skipped` to try to make it mean the latter. A ci.yml
+# pack that legitimately skips on a `paths:` filter is a real clean result, so
+# `skipped` has to stay; what stops an ALL-skipped head from reading clean is
+# `decide_verdict`'s separate affirmative-pass requirement, not this set.
 CLEAN_CONCLUSIONS = {"success", "neutral", "skipped"}
 # `_head_check_runs`' cap in .claude/hooks/ship_loop_guard.py, for the same
 # fail-closed reason: PR #3629's head carried 101 check runs, so a single
@@ -257,11 +263,13 @@ def decide_verdict(runs: list[dict[str, Any]]) -> tuple[str, list[str]]:
 
     Returns ``(verdict, names)``:
 
-      ``unproven`` — the head carries NO non-spurious check runs. Never merged.
-        A docs-only PR that matched no `paths:` filter is genuinely unproven, and
-        a head whose only run is the spurious Cloudflare X is the same thing
-        wearing a check. (The literal "zero check runs" rule would merge that
-        second shape, which is why the count is taken AFTER the spurious filter.)
+      ``unproven`` — nothing on the head affirmatively PASSED. Never merged. Three
+        shapes arrive here. A docs-only PR that matched no `paths:` filter carries
+        no check runs at all. A head whose only run is the spurious Cloudflare X is
+        the same nothing wearing a check — which is why the count is taken AFTER
+        the spurious filter, since a literal "zero check runs" rule would merge it.
+        And a head whose every surviving check concluded `skipped`/`neutral` is that
+        same nothing wearing a name the spurious filter does not know (#4779, below).
       ``pending`` — something has not concluded. Wait for the next sweep; a
         pending check is not a pass, and labeling `merge-blocked` now would be
         premature and would burn the one-shot comment on a race.
@@ -292,6 +300,34 @@ def decide_verdict(runs: list[dict[str, Any]]) -> tuple[str, list[str]]:
     ]
     if bad:
         return "blocked", bad
+    # AN ABSENCE OF FAILURE IS NOT A PASS (#4779, measured 2026-08-06 during the
+    # Actions major outage #4743 documents). #4779's `pull_request` webhook was
+    # dropped, so ci.yml scheduled NO run, and the head carried exactly two checks:
+    #
+    #     Supabase Preview        completed  skipped
+    #     Workers Builds: macro   completed  failure
+    #
+    # `is_spurious_check` knows the Cloudflare X and filters it, but nothing knew
+    # `Supabase Preview`, so it survived into `considered`, made it non-empty, and
+    # the `unproven` branch above never fired. Nothing was pending; `skipped` is in
+    # CLEAN_CONCLUSIONS; `bad` was empty. Verdict: `clean` — squash-merge a head with
+    # ZERO CI evidence, which is the exact outcome the `unproven` rule exists to
+    # prevent, defeated by a third-party integration the filter cannot enumerate.
+    #
+    # So the gate is an AFFIRMATIVE pass, not the absence of a red: enumerating every
+    # third-party app that might publish an inert check is a blocklist that loses to
+    # the next integration someone installs, while "at least one check actually
+    # succeeded" holds for all of them without naming any. Widening
+    # `is_spurious_check` would have fixed #4779 and not the next one.
+    #
+    # This cannot block an ordinary path-filtered PR. ci.yml is `paths:`-filtered at
+    # the WORKFLOW level, so a non-matching PR gets no run at all and was already
+    # `unproven` before this line existed; `ci-pack`'s only job-level `if:` is
+    # `action != 'closed'`, which is true for every event that opens or updates a
+    # pull request. A head with real packs therefore carries real successes, and a
+    # mixed head (one success + one path-skipped pack) still reads `clean`.
+    if not any(run.get("conclusion") == "success" for run in considered):
+        return "unproven", []
     return "clean", []
 
 

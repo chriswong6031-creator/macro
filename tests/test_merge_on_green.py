@@ -289,6 +289,74 @@ def test_a_head_carrying_only_the_spurious_check_is_also_unproven():
     )
 
 
+def test_the_4779_shape_is_unproven_not_clean():
+    """PR #4779's exact head, measured 2026-08-06 during the Actions major outage.
+
+    The `pull_request` webhook was dropped, so ci.yml scheduled NO run and the head
+    carried only these two checks. The spurious filter knows the Cloudflare X but
+    not `Supabase Preview`, so `considered` was non-empty and the `unproven` branch
+    above never fired; nothing was pending, and `skipped` is in CLEAN_CONCLUSIONS,
+    so `bad` was empty. This returned `clean` and the sweeper would have
+    squash-merged a head with ZERO CI evidence.
+    """
+    assert MOG.decide_verdict(
+        [
+            {"name": "Supabase Preview", "status": "completed", "conclusion": "skipped"},
+            {"name": "Workers Builds: macro", "status": "completed", "conclusion": "failure"},
+        ]
+    ) == ("unproven", [])
+
+
+def test_an_all_skipped_head_is_unproven_whatever_the_integration_is_called():
+    """The rule is an affirmative pass, NOT a longer list of names to ignore.
+
+    Widening `is_spurious_check` would have fixed #4779 and lost to the next
+    integration someone installs, so no third-party name appears here.
+    """
+    assert MOG.decide_verdict(
+        [_run("Some Future Preview", conclusion="skipped"), _run("inert", conclusion="neutral")]
+    ) == ("unproven", [])
+
+
+def test_one_success_beside_a_skipped_pack_still_merges():
+    """The boundary the affirmative-pass rule must not cross.
+
+    An ordinary path-filtered PR — one pack ran and passed, another skipped on its
+    `paths:` filter — is genuinely proven and must stay mergeable. `skipped` keeps
+    its place in CLEAN_CONCLUSIONS; it just no longer PROVES anything by itself.
+    """
+    assert MOG.decide_verdict(
+        [_run("ci-pack-1", conclusion="success"), _run("ci-pack-2", conclusion="skipped")]
+    ) == ("clean", [])
+
+
+def test_a_pending_pack_beside_a_skip_waits_rather_than_reading_unproven():
+    """Ordering: the affirmative-pass rule sits BELOW the pending branch.
+
+    Above it, a head whose real packs are merely still running would be annotated
+    "nothing proves it — the sweeper will never merge it", which is both wrong and
+    a noisy notice on every sweep of a perfectly healthy PR.
+    """
+    verdict, names = MOG.decide_verdict(
+        [_run("Supabase Preview", conclusion="skipped"), _run("ci-pack-1", "in_progress")]
+    )
+    assert verdict == "pending"
+    assert names == ["ci-pack-1"]
+
+
+def test_a_red_beside_a_skip_is_still_named_as_blocked():
+    """Ordering: the affirmative-pass rule sits BELOW the blocked branch too.
+
+    This head has no success either, but reporting it as `unproven` would swallow
+    the red — `blocked` names the offender and posts the explanatory comment.
+    """
+    verdict, names = MOG.decide_verdict(
+        [_run("Supabase Preview", conclusion="skipped"), _run("ci-pack-1", conclusion="failure")]
+    )
+    assert verdict == "blocked"
+    assert names == ["ci-pack-1 (failure)"]
+
+
 # --- the sweep itself, with HTTP mocked ---------------------------------------
 
 
