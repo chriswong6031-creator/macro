@@ -683,6 +683,28 @@ jobs:
       # ci.yml on the test files; templates are covered by "templates/**" (#3488).
       - name: theme deep-link contract + sector-intelligence consolidation invariants
         run: python -m pytest tests/test_theme_hash_deeplink.py tests/test_sector_intelligence_page.py -q
+      # Wired 2026-08-05: tests/test_flow_velocity.py was named by NO job in ANY
+      # workflow (`grep -rn test_flow_velocity .github/` returned nothing), so the
+      # suite written specifically to catch a pinned-by-construction flow readout
+      # (#3561) has been dark ever since. It stayed green by luck, but its subject
+      # went stale invisibly: site/flowdata/desk.json's A-share legs froze at
+      # 2026-07-24 and ran 12 days behind a southbound leg dated 08-05, still
+      # declaring cadence "daily", with nothing red anywhere.
+      # test_flow_desk_staleness.py is the alarm for that class — the relative +
+      # wall-clock gates in lib/desk_guard.stale_legs, the column-zero annotation
+      # the builder emits, and the ChinaTushareAdapter heartbeat that reported
+      # 'ok' for ten nights while every data/tushare store sat frozen.
+      # It belongs in this job: both are engine/builder contract guards and the
+      # minimal deps above already carry pandas/numpy/pyarrow/jinja2. Ordered
+      # BEFORE the ~100-file sweep below for the same reason as the group-flow
+      # step — run_ci_pack.py abandons a job's remaining steps once one exits
+      # non-zero, so a guard reachable only when every other guard already passes
+      # is not a guard. Path-gated in ci.yml on BOTH the tests and their subjects
+      # (lib/desk_guard.py, engine/flow_velocity.py, scripts/build_flow_velocity.py,
+      # collectors/china_tushare.py) — a guard the guarded change cannot trigger
+      # is not a guard (#3488).
+      - name: flow-velocity measure guards + flow-desk staleness alarm (frozen-leg detection, heartbeat liveness)
+        run: python -m pytest tests/test_flow_velocity.py tests/test_flow_desk_staleness.py -q
       # Wired 2026-08-02: Wave 3B-B4D-A adds the three offline seams that turn
       # pinned SEC source objects into filing packages, Company Facts ledgers,
       # and deterministic B4 binding plans. Keep these security/provenance
