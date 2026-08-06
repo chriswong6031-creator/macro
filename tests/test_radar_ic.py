@@ -152,7 +152,7 @@ def test_compute_ic_accruing_when_too_fresh(tmp_path):
     assert result["n_matured"] == 0
     assert result["ic_all"] is None
     assert "accruing" in result["note"].lower() or "Accruing" in result["note"]
-    assert result["schema"] == "radar_ic.v1"
+    assert result["schema"] == "radar_ic.v2"
 
 
 # ---------------------------------------------------------------------------
@@ -314,7 +314,7 @@ def test_spearman_ic_tied_ranks():
 def test_compute_ic_degrades_when_no_snapshots(tmp_path):
     """No snapshot file → n_matured:0, no exception."""
     result = ric.compute_ic(today=date(2026, 6, 20), horizon_d=21, root=tmp_path)
-    assert result["schema"] == "radar_ic.v1"
+    assert result["schema"] == "radar_ic.v2"
     assert result["n_matured"] == 0
     assert result["ic_all"] is None
 
@@ -376,38 +376,48 @@ def test_snapshot_stamps_horizon_d_from_hypotheses(tmp_path):
     )
 
 
-def test_63d_snapshot_not_matured_by_21d_pass_before_21_days(tmp_path):
-    """A snapshot stamped with horizon_d=63 must NOT be counted matured by the 21d
-    IC pass when fewer than 21 calendar days of price data have elapsed.
+def test_stamped_snapshot_grades_at_every_horizon(tmp_path):
+    """v2 semantics: the `horizon_d` stamp is provenance METADATA, not an
+    eligibility filter.
 
-    Concretely: snapshot dated today; we run compute_ic with horizon_d=21 today.
-    The row has horizon_d=63, so it is excluded from the 21d eligible set entirely.
-    """
-    # Write a snapshot with horizon_d=63, dated today (0 days old)
+    v1 restricted stamped rows to their stamped horizon, which starved the
+    panels: every POSITIVE_DIVERGENCE basket row left the 21d block while the
+    63-CALENDAR-day block (mismatching the 63-TRADING-day promise the stamp
+    encodes) had nothing matured — live 2026-08: 64 stamped rows, 63d block
+    n_matured=0 forever. The descriptive IC now grades every row at every
+    horizon; the seeded PROMISE is graded by engine/radar_scorer.py at each
+    hypothesis's check_by, not here."""
+    # A 63-stamped row, 30 days old — matured at 21d, not yet at 63d.
     _write_snapshots(tmp_path, [
-        {"date": "2026-06-20", "kind": "basket", "subject": "ai_infra",
+        {"date": "2026-05-21", "kind": "basket", "subject": "ai_infra",
          "ticker": "SMH", "edge_score": 80, "state": "POSITIVE_DIVERGENCE",
          "horizon_d": 63},
+    ] + [
+        # companions so the n>=3 IC floor is met at 21d
+        {"date": "2026-05-21", "kind": "basket", "subject": f"b{i}",
+         "ticker": f"T{i}", "edge_score": 40 + i, "state": "POSITIVE_DIVERGENCE"}
+        for i in range(3)
     ])
 
-    # Even if covers returns True, the row is excluded from the 21d horizon pass
-    # because its horizon_d=63 != 21.
-    with patch.object(ric, "_covers", return_value=True), \
-         patch.object(ric, "_fwd_rel_return", return_value=0.05):
+    fwd_map = {"SMH": 0.05, "T0": 0.01, "T1": 0.02, "T2": 0.03}
+
+    def _mock_matured(row, root, horizon_d, today):
+        # Real maturity logic minus price coverage: age only.
+        return (pd.Timestamp(today) - pd.Timestamp(row["date"])).days >= horizon_d
+
+    with patch.object(ric, "_is_matured", side_effect=_mock_matured), \
+         patch.object(ric, "_fwd_rel_return",
+                      side_effect=lambda t, *a, **k: fwd_map.get(t)):
         result = ric.compute_ic(today=date(2026, 6, 20), horizon_d=21, root=tmp_path)
 
-    # The 21d primary block must show n_matured=0 (row excluded by horizon mismatch)
-    assert result["n_matured"] == 0, (
-        "horizon_d=63 snapshot must not appear in the 21d maturity count"
+    # The stamped row now COUNTS at 21d (metadata, not a filter)
+    assert result["n_matured"] == 4, (
+        "v2: a horizon_d-stamped snapshot must grade at every horizon "
+        f"(got n_matured={result['n_matured']}, expected 4)"
     )
-    # But it should appear in the 63d horizon block (once enough time has passed —
-    # here today==snap_date so still too fresh, but eligible set is non-empty)
-    block_63 = result.get("by_horizon", {}).get("63", {})
-    # Still not matured (0 days old < 63), but the eligible set is non-zero
-    # We can check that the snapshot is not excluded by horizon filter:
-    assert block_63 is not None, "by_horizon['63'] block must be present"
-    # n_matured=0 because 0 days < 63 days required, but no error/exclusion
-    assert block_63["n_matured"] == 0
+    # 63d block is empty only because the rows are too YOUNG (30d < 63d),
+    # not because of any stamp filter.
+    assert result["by_horizon"]["63"]["n_matured"] == 0
 
 
 def test_legacy_snapshot_without_horizon_d_gradeable_at_all_horizons(tmp_path):
@@ -505,3 +515,254 @@ def test_hypotheses_stamped_horizon_d(tmp_path):
     assert h["check_by"] == expected_check_by, (
         f"check_by {h['check_by']} != expected {expected_check_by}"
     )
+
+
+# ---------------------------------------------------------------------------
+# v2 — 2026-08-05 forensic-audit fixes (signed grading, base rate, episodes,
+# claims-vs-diagonal, session keys, verdict gates)
+# ---------------------------------------------------------------------------
+
+def _matured_by_age(row, root, horizon_d, today):
+    """Maturity = age only (skip price coverage) — for hermetic v2 tests."""
+    return (pd.Timestamp(today) - pd.Timestamp(row["date"])).days >= horizon_d
+
+
+def test_signed_ic_rewards_correct_bearish_calls(tmp_path):
+    """The v1 headline correlated the UNSIGNED salience score with signed returns,
+    so a high-edge bearish flag that correctly preceded a fall graded as a MISS.
+    Setup: high-edge NEGATIVE_DIVERGENCE flags fall (correct), low-edge
+    POSITIVE_DIVERGENCE flags rise a little (correct). Unsigned IC is deeply
+    negative (edge↑ return↓); SIGNED IC must be positive (the radar was right)."""
+    snap_date = "2026-05-21"
+    rows = (
+        [{"date": snap_date, "kind": "ticker", "subject": f"BEAR{i}",
+          "ticker": f"BEAR{i}", "edge_score": 80 + i, "state": "NEGATIVE_DIVERGENCE"}
+         for i in range(5)]
+        + [{"date": snap_date, "kind": "ticker", "subject": f"BULL{i}",
+            "ticker": f"BULL{i}", "edge_score": 10 + i, "state": "POSITIVE_DIVERGENCE"}
+           for i in range(5)]
+    )
+    _write_snapshots(tmp_path, rows)
+    fwd = {f"BEAR{i}": -0.10 - 0.01 * i for i in range(5)}
+    fwd.update({f"BULL{i}": 0.01 + 0.002 * i for i in range(5)})
+
+    with patch.object(ric, "_is_matured", side_effect=_matured_by_age), \
+         patch.object(ric, "_fwd_rel_return", side_effect=lambda t, *a, **k: fwd.get(t)):
+        result = ric.compute_ic(today=date(2026, 6, 20), horizon_d=21, root=tmp_path)
+
+    assert result["ic_all"] < -0.5, "unsigned legacy IC should read inverted here"
+    assert result["ic_all_signed"] > 0.5, (
+        "signed IC must credit correct bearish calls "
+        f"(got {result['ic_all_signed']})"
+    )
+    # And every state cohort was directionally right
+    bs = result["by_state"]
+    assert bs["NEGATIVE_DIVERGENCE"]["dir_accuracy"] == 1.0
+    assert bs["POSITIVE_DIVERGENCE"]["dir_accuracy"] == 1.0
+
+
+def test_base_rate_and_excess_vs_base(tmp_path):
+    """The era's unconditional cross-section is printed and cohort accuracy is
+    read against it. 4 of 10 subjects beat SPY → p_up=0.4; a bullish cohort at
+    0.5 accuracy shows +0.1 excess, a bearish cohort at 0.6 shows 0.0."""
+    snap_date = "2026-05-21"
+    # 10 subjects: 5 bullish flags (2 up, 3 down), 5 bearish flags (3 down, 2 up)
+    rows = (
+        [{"date": snap_date, "kind": "ticker", "subject": f"PD{i}",
+          "ticker": f"PD{i}", "edge_score": 50, "state": "POSITIVE_DIVERGENCE"}
+         for i in range(5)]
+        + [{"date": snap_date, "kind": "ticker", "subject": f"ND{i}",
+            "ticker": f"ND{i}", "edge_score": 50, "state": "NEGATIVE_DIVERGENCE"}
+           for i in range(5)]
+    )
+    _write_snapshots(tmp_path, rows)
+    fwd = {"PD0": 0.05, "PD1": 0.04, "PD2": -0.02, "PD3": -0.03, "PD4": -0.04,
+           "ND0": -0.05, "ND1": -0.06, "ND2": -0.07, "ND3": 0.02, "ND4": 0.03}
+
+    with patch.object(ric, "_is_matured", side_effect=_matured_by_age), \
+         patch.object(ric, "_fwd_rel_return", side_effect=lambda t, *a, **k: fwd.get(t)):
+        result = ric.compute_ic(today=date(2026, 6, 20), horizon_d=21, root=tmp_path)
+
+    base = result["base_rate"]
+    assert base["n"] == 10
+    assert base["p_up"] == pytest.approx(0.4)
+    bs = result["by_state"]
+    # bullish cohort: 2/5 = 0.4 accuracy vs p_up 0.4 → excess 0.0
+    assert bs["POSITIVE_DIVERGENCE"]["dir_accuracy"] == pytest.approx(0.4)
+    assert bs["POSITIVE_DIVERGENCE"]["excess_vs_base"] == pytest.approx(0.0)
+    # bearish cohort: 3/5 = 0.6 accuracy vs (1-p_up) 0.6 → excess 0.0 (era, not skill)
+    assert bs["NEGATIVE_DIVERGENCE"]["dir_accuracy"] == pytest.approx(0.6)
+    assert bs["NEGATIVE_DIVERGENCE"]["excess_vs_base"] == pytest.approx(0.0)
+
+
+def test_claims_exclude_the_diagonal(tmp_path):
+    """CONFIRMED_* is the radar's own 'already priced, no edge' diagonal
+    (engine/radar.py doctrine) — it must be graded as context, never inside the
+    claims cohort the verdict reads."""
+    snap_date = "2026-05-21"
+    rows = [
+        {"date": snap_date, "kind": "ticker", "subject": "PD", "ticker": "PD",
+         "edge_score": 60, "state": "POSITIVE_DIVERGENCE"},
+        {"date": snap_date, "kind": "ticker", "subject": "ND", "ticker": "ND",
+         "edge_score": 60, "state": "NEGATIVE_DIVERGENCE"},
+        {"date": snap_date, "kind": "ticker", "subject": "CU", "ticker": "CU",
+         "edge_score": 90, "state": "CONFIRMED_UP"},
+        {"date": snap_date, "kind": "ticker", "subject": "CD", "ticker": "CD",
+         "edge_score": 90, "state": "CONFIRMED_DOWN"},
+    ]
+    _write_snapshots(tmp_path, rows)
+    fwd = {"PD": 0.05, "ND": -0.05, "CU": -0.20, "CD": 0.20}
+
+    with patch.object(ric, "_is_matured", side_effect=_matured_by_age), \
+         patch.object(ric, "_fwd_rel_return", side_effect=lambda t, *a, **k: fwd.get(t)):
+        result = ric.compute_ic(today=date(2026, 6, 20), horizon_d=21, root=tmp_path)
+
+    blk = result["by_horizon"]["21"]
+    assert blk["claims"]["n"] == 2, "claims = divergence states only"
+    assert blk["claims"]["dir_accuracy"] == 1.0, "both divergence calls were right"
+    assert blk["diagonal"]["n"] == 2, "CONFIRMED_* graded separately as context"
+    assert blk["diagonal"]["dir_accuracy"] == 0.0, "both confirmed rows mean-reverted"
+
+
+def test_broken_laggard_out_of_hit_denominators(tmp_path):
+    """BROKEN_LAGGARD makes no directional claim. v1 kept it in the bucket
+    denominator where it could never score a hit — a guaranteed-miss row
+    (resolution-conditioned-denominator class). v2: counted in n, excluded
+    from n_directional/hit_rate."""
+    snap_date = "2026-05-21"
+    rows = [
+        {"date": snap_date, "kind": "ticker", "subject": "OK1", "ticker": "OK1",
+         "edge_score": 50, "state": "POSITIVE_DIVERGENCE"},
+        {"date": snap_date, "kind": "ticker", "subject": "OK2", "ticker": "OK2",
+         "edge_score": 55, "state": "POSITIVE_DIVERGENCE"},
+        {"date": snap_date, "kind": "ticker", "subject": "BL", "ticker": "BL",
+         "edge_score": 52, "state": "BROKEN_LAGGARD"},
+    ]
+    _write_snapshots(tmp_path, rows)
+    fwd = {"OK1": 0.05, "OK2": 0.04, "BL": -0.30}
+
+    with patch.object(ric, "_is_matured", side_effect=_matured_by_age), \
+         patch.object(ric, "_fwd_rel_return", side_effect=lambda t, *a, **k: fwd.get(t)):
+        result = ric.compute_ic(today=date(2026, 6, 20), horizon_d=21, root=tmp_path)
+
+    b = result["by_bucket"]["40-70"]
+    assert b["n"] == 3
+    assert b["n_directional"] == 2, "BROKEN_LAGGARD must not sit in the hit denominator"
+    assert b["hit_rate"] == 1.0, (
+        "both directional rows hit; the non-claim row must not drag the rate "
+        f"(got {b['hit_rate']})"
+    )
+
+
+def test_episode_entries_collapse_runs_and_split_on_gap():
+    """Contiguous same-(subject,state) rows are ONE episode; a state flip or a
+    >7-calendar-day absence starts a new one."""
+    rows = [
+        # subject A: 3-day PD run, then flips to CONFIRMED_UP, then a gapped PD
+        {"date": "2026-06-01", "subject": "A", "state": "POSITIVE_DIVERGENCE", "edge_score": 50, "ticker": "A"},
+        {"date": "2026-06-02", "subject": "A", "state": "POSITIVE_DIVERGENCE", "edge_score": 55, "ticker": "A"},
+        {"date": "2026-06-03", "subject": "A", "state": "POSITIVE_DIVERGENCE", "edge_score": 60, "ticker": "A"},
+        {"date": "2026-06-04", "subject": "A", "state": "CONFIRMED_UP", "edge_score": 70, "ticker": "A"},
+        {"date": "2026-06-20", "subject": "A", "state": "CONFIRMED_UP", "edge_score": 71, "ticker": "A"},
+        # subject B: single row
+        {"date": "2026-06-02", "subject": "B", "state": "NEGATIVE_DIVERGENCE", "edge_score": 40, "ticker": "B"},
+    ]
+    entries = ric._episode_entries(rows)
+    keyed = {(e["subject"], e["date"]): e for e in entries}
+    assert len(entries) == 4, f"expected 4 episodes, got {len(entries)}"
+    assert ("A", "2026-06-01") in keyed and keyed[("A", "2026-06-01")]["episode_len"] == 3
+    assert ("A", "2026-06-04") in keyed and keyed[("A", "2026-06-04")]["episode_len"] == 1
+    assert ("A", "2026-06-20") in keyed, "a >7d absence must start a NEW episode"
+    assert ("B", "2026-06-02") in keyed
+    # entry rows carry the ENTRY-day edge score, not a later one
+    assert keyed[("A", "2026-06-01")]["edge_score"] == 50
+
+
+def test_snapshot_is_session_keyed_not_wall_clock(tmp_path):
+    """Snapshots stamp radar.json's as_of (the market session), not the wall
+    clock. A weekend re-run (same as_of, later wall date) must dedupe instead of
+    re-recording Friday's readings — and Friday's entry close — as fresh rows
+    (calendar-vs-session ledger trap, #4568 family)."""
+    _write_membership(tmp_path, {"ai_infra": "SMH"})
+    p = tmp_path / "site" / "basketdata"
+    p.mkdir(parents=True, exist_ok=True)
+    (p / "radar.json").write_text(json.dumps({
+        "as_of": "2026-06-19",   # Friday session
+        "flags": [{"basket": "ai_infra", "state": "POSITIVE_DIVERGENCE", "edge_score": 80}],
+    }))
+    _write_radar_ticker_json(tmp_path, [])
+
+    n_fri = ric.snapshot(today=date(2026, 6, 19), root=tmp_path)   # Friday night run
+    n_sat = ric.snapshot(today=date(2026, 6, 20), root=tmp_path)   # Saturday re-run
+    n_sun = ric.snapshot(today=date(2026, 6, 21), root=tmp_path)   # Sunday re-run
+    assert n_fri == 1
+    assert n_sat == 0, "same session re-run must dedupe (was 3x weekend duplication)"
+    assert n_sun == 0
+
+    rows = [json.loads(l) for l in
+            (tmp_path / "data" / "radar" / "edge_snapshots.jsonl").read_text().splitlines()]
+    assert len(rows) == 1
+    assert rows[0]["date"] == "2026-06-19", "row must carry the SESSION date"
+    assert rows[0].get("era") == 2, "v2 rows carry the era stamp"
+
+
+def test_snapshot_stamps_ticker_source(tmp_path):
+    """Ticker rows carry their provenance (signal vs basket_attributed) so the
+    buy-the-laggard construction is separable at grading time."""
+    _write_membership(tmp_path, {})
+    _write_radar_json(tmp_path, [])
+    _write_radar_ticker_json(tmp_path, [
+        {"ticker": "AAA", "state": "POSITIVE_DIVERGENCE", "edge_score": 40,
+         "source": "basket_attributed"},
+        {"ticker": "BBB", "state": "NEGATIVE_DIVERGENCE", "edge_score": 30,
+         "source": "signal"},
+    ])
+    n = ric.snapshot(today=date(2026, 6, 20), root=tmp_path)
+    assert n == 2
+    rows = {r["subject"]: r for r in
+            (json.loads(l) for l in
+             (tmp_path / "data" / "radar" / "edge_snapshots.jsonl").read_text().splitlines())}
+    assert rows["AAA"]["source"] == "basket_attributed"
+    assert rows["BBB"]["source"] == "signal"
+
+
+def test_verdict_gates_pre_registered():
+    """The verdict may claim lead/lag ONLY on a valid, non-degenerate claims HAC
+    with |t| >= 2 and enough matured claim episodes. Anything else is
+    insufficient/null — the front-end copy keys off this field."""
+    def blk(n_ep, t, n_days, h=21):
+        return {str(h): {
+            "episodes": {"claims": {"n_directional": n_ep}},
+            "ic_daily_hac_claims": {"t_hac": t, "mean_ic": (t or 0) * 0.01,
+                                    "n": n_days},
+        }}
+
+    # too few episodes → insufficient even with a huge t
+    v = ric._verdict(blk(10, -8.0, 30))
+    assert v["status"] == "insufficient"
+
+    # degenerate HAC (n_days < horizon) → insufficient even with many episodes
+    v = ric._verdict(blk(500, -8.0, 11))
+    assert v["status"] == "insufficient"
+
+    # valid HAC, small t → null (measured, no evidence either way)
+    v = ric._verdict(blk(500, -0.9, 30))
+    assert v["status"] == "null"
+
+    # valid HAC, significantly wrong-signed → lagging
+    v = ric._verdict(blk(500, -2.5, 30))
+    assert v["status"] == "lagging"
+
+    # valid HAC, significantly right-signed → leading
+    v = ric._verdict(blk(500, 2.5, 30))
+    assert v["status"] == "leading"
+
+
+def test_dart_baseline_direction_weighted():
+    """A mixed cohort's dart baseline weights by its own direction mix."""
+    rows = ([{"state": "POSITIVE_DIVERGENCE"}] * 3
+            + [{"state": "NEGATIVE_DIVERGENCE"}] * 1)
+    # p_up=0.4: dart = (3*0.4 + 1*0.6)/4 = 0.45
+    assert ric._dart_baseline(rows, 0.4) == pytest.approx(0.45)
+    assert ric._dart_baseline([], 0.4) is None
+    assert ric._dart_baseline(rows, None) is None

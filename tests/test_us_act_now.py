@@ -8,6 +8,16 @@ The live receipt (gate G0.2) is `test_gold_miners_case_from_committed_log`:
 the real committed `data/sector_cycles/forward_log.parquet` row
 `b-gold_miners: Trough, pos=2.0, osc_slope=+1.3, signal=BUY, above200d=False`
 must land on the lane with its gate-shut conflict flagged.
+
+Both committed-log receipts pin an EXPLICIT DATE, never `date.max()`. The first
+cut of this file pinned the latest row and asserted gold_miners was on the lane;
+when the cycle engine graduated it Trough→Recovery on 2026-08-05 the assertion
+became false and the suite went red on unchanged code. A receipt for a transient
+state must name the session it is a receipt for.
+
+`test_gold_miners_graduation_case_from_committed_log` is that graduation, pinned
+as the receipt for the opposite half: off the lane, and carrying the recovering
+chip instead.
 """
 from __future__ import annotations
 
@@ -26,6 +36,13 @@ from engine.us_act_now import (
     DISPLAY_FORBIDDEN_FIELDS,
     NULL_DISCLOSURE_EN,
     NULL_DISCLOSURE_ZH,
+    RECOVERING_CHIP_EN,
+    RECOVERING_CHIP_ZH,
+    RECOVERING_DISCLOSURE_EN,
+    RECOVERING_DISCLOSURE_ZH,
+    RECOVERING_POS_MAX,
+    RECOVERING_TIP_EN,
+    RECOVERING_TIP_ZH,
     assemble_bottoming_watch,
     canonical_id,
     contains_buy_word,
@@ -374,19 +391,30 @@ def test_wiring_leaves_buy_wait_reduce_membership_byte_identical():
 
 
 # ───────────────────── G0.2 — the live gold_miners receipt ────────────────────
-def test_gold_miners_case_from_committed_log():
-    """The §2 D9 case, reproduced from the real committed forward log.
+def _committed_rows(date_str: str) -> list[dict]:
+    """Rows of the committed forward log for ONE named session.
 
-    `b-gold_miners` on 2026-08-04: Trough, pos=2.0, osc_slope=+1.3, signal=BUY,
-    above200d=False — the row the Act board buried on reduce/avoid.
+    Deliberately not `date.max()`: these receipts pin transient states, so they
+    must name their session or they expire the next time the engine moves.
     """
     pd = pytest.importorskip("pandas")
     p = ROOT / "data" / "sector_cycles" / "forward_log.parquet"
     if not p.exists():
         pytest.skip("forward_log.parquet not present in this checkout")
     df = pd.read_parquet(p)
-    latest = df[df["date"] == df["date"].max()]
-    rows = latest.to_dict(orient="records")
+    sel = df[df["date"].astype(str).str.startswith(date_str)]
+    if sel.empty:
+        pytest.skip(f"forward log has no {date_str} session in this checkout")
+    return sel.to_dict(orient="records")
+
+
+def test_gold_miners_case_from_committed_log():
+    """The §2 D9 case, reproduced from the real committed forward log.
+
+    `b-gold_miners` on 2026-08-04: Trough, pos=2.0, osc_slope=+1.3, signal=BUY,
+    above200d=False — the row the Act board buried on reduce/avoid.
+    """
+    rows = _committed_rows("2026-08-04")
 
     out = assemble_bottoming_watch(rows, reduce_ids=["gold_miners", "crypto_rails"])
     by_id = {r["id"]: r for r in out["bottoming_watch"]}
@@ -431,3 +459,311 @@ def test_committed_log_rows_are_json_serializable():
         assert isinstance(r["pos"], (float, type(None)))
         assert isinstance(r["above200d"], (bool, type(None)))
         assert isinstance(r["gate_conflict"], bool)
+    assert all(isinstance(i, str) for i in out["recovering_ids"])
+
+
+# ═════════════ the graduation gap — reduce/avoid rows on NO lane ══════════════
+# The cycle engine graduates a basket Trough→Recovery the session its phase
+# turns, so it leaves the lane at once. The Act board's momentum label keeps it
+# on reduce/avoid until its 20d relative flips positive. Between those two events
+# the basket sits on no lane at all. These pin the bridge.
+
+def test_recovering_row_on_the_reduce_lane_is_chipped():
+    out = assemble_bottoming_watch(
+        [_row(id_="b-gold_miners", phase="Recovery", pos=2.3, slope=1.5)],
+        reduce_ids=["gold_miners"],
+    )
+    assert out["bottoming_watch"] == [], "a graduated row must NOT be on the lane"
+    assert set(out["recovering_ids"]) == {"b-gold_miners", "gold_miners"}
+
+
+def test_recovering_requires_the_row_to_be_on_the_reduce_lane():
+    """The chip exists to un-bury a reduce/avoid row. No reduce row, no chip."""
+    out = assemble_bottoming_watch(
+        [_row(id_="b-gold_miners", phase="Recovery", pos=2.3, slope=1.5)],
+        reduce_ids=["housing"],
+    )
+    assert out["recovering_ids"] == []
+
+
+def test_recovering_requires_a_rising_oscillator():
+    for slope in (-1.5, 0.0):
+        out = assemble_bottoming_watch(
+            [_row(id_="b-gold_miners", phase="Recovery", pos=2.3, slope=slope)],
+            reduce_ids=["gold_miners"],
+        )
+        assert out["recovering_ids"] == [], f"slope={slope} must not chip"
+
+
+def test_recovering_unknown_slope_is_not_rising():
+    out = assemble_bottoming_watch(
+        [_row(id_="b-gold_miners", phase="Recovery", pos=2.3, slope=None)],
+        reduce_ids=["gold_miners"],
+    )
+    assert out["recovering_ids"] == []
+
+
+def test_recovering_respects_the_position_fence():
+    """`Recovery` spans pos 2.3→31.9 on one night. The chip says "recovering from
+    cycle low", so it may only fire while the row is still AT the low."""
+    inside = assemble_bottoming_watch(
+        [_row(id_="b-a", phase="Recovery", pos=RECOVERING_POS_MAX, slope=1.0)],
+        reduce_ids=["a"],
+    )
+    outside = assemble_bottoming_watch(
+        [_row(id_="b-a", phase="Recovery", pos=RECOVERING_POS_MAX + 0.1, slope=1.0)],
+        reduce_ids=["a"],
+    )
+    assert set(inside["recovering_ids"]) == {"b-a", "a"}, "the fence is inclusive"
+    assert outside["recovering_ids"] == []
+
+
+def test_recovering_unknown_pos_cannot_claim_the_low():
+    """A missing position must never manufacture the claim the chip's copy makes."""
+    out = assemble_bottoming_watch(
+        [_row(id_="b-a", phase="Recovery", pos=None, slope=1.0)], reduce_ids=["a"]
+    )
+    assert out["recovering_ids"] == []
+
+
+def test_recovering_phase_match_is_exact():
+    for phase in ("recovery", "RECOVERY", "Recovering", "Trough"):
+        out = assemble_bottoming_watch(
+            [_row(id_="b-a", phase=phase, pos=2.0, slope=1.0)], reduce_ids=["a"]
+        )
+        assert out["recovering_ids"] == [], f"phase={phase!r} must not chip"
+
+
+def test_recovering_matches_a_sector_etf_without_the_b_prefix():
+    out = assemble_bottoming_watch(
+        [_row(id_="xlc", phase="Recovery", pos=6.7, slope=5.0, kind="sector")],
+        reduce_ids=["xlc"],
+    )
+    assert out["recovering_ids"] == ["xlc"]
+
+
+def test_recovering_ids_are_sorted_and_json_safe():
+    out = assemble_bottoming_watch(
+        [_row(id_="b-z", phase="Recovery", pos=1.0, slope=1.0),
+         _row(id_="b-a", phase="Recovery", pos=2.0, slope=1.0)],
+        reduce_ids=["z", "a"],
+    )
+    assert out["recovering_ids"] == sorted(out["recovering_ids"])
+    json.dumps(out, ensure_ascii=False)
+
+
+def test_recovering_note_counts_names_not_id_spellings():
+    """A basket contributes two spellings ('b-x','x'), a sector ETF one."""
+    out = assemble_bottoming_watch(
+        [_row(id_="b-gold_miners", phase="Recovery", pos=2.3, slope=1.5),
+         _row(id_="xlc", phase="Recovery", pos=6.7, slope=5.0, kind="sector")],
+        reduce_ids=["gold_miners", "xlc"],
+    )
+    assert any("recovering-from-low chips: 2" in n for n in out["notes"]), out["notes"]
+
+
+# ── the two id sets must never be confused for one another ───────────────────
+def test_dual_read_and_recovering_sets_are_disjoint():
+    """FT-R1's chip says "also on Bottoming watch". The recovering chip fires for
+    rows that are on NO lane. A row in both sets would render a false sentence."""
+    out = assemble_bottoming_watch(
+        [_row(id_="b-uranium_miners", phase="Trough", pos=0.8, slope=0.4),
+         _row(id_="b-gold_miners", phase="Recovery", pos=2.3, slope=1.5)],
+        reduce_ids=["uranium_miners", "gold_miners"],
+    )
+    assert set(out["dual_read_ids"]) == {"b-uranium_miners", "uranium_miners"}
+    assert set(out["recovering_ids"]) == {"b-gold_miners", "gold_miners"}
+    assert not set(out["dual_read_ids"]) & set(out["recovering_ids"])
+
+
+def test_dual_read_ids_stay_a_subset_of_the_lane_and_recovering_never_joins_it():
+    """The invariant every consumer of `dual_read_ids` relies on."""
+    out = assemble_bottoming_watch(
+        [_row(id_="b-uranium_miners", phase="Trough", pos=0.8, slope=0.4),
+         _row(id_="b-gold_miners", phase="Recovery", pos=2.3, slope=1.5)],
+        reduce_ids=["uranium_miners", "gold_miners"],
+    )
+    lane = {r["id"] for r in out["bottoming_watch"]} | {
+        r["cid"] for r in out["bottoming_watch"]
+    }
+    assert set(out["dual_read_ids"]) <= lane
+    assert not set(out["recovering_ids"]) & lane
+
+
+def test_recovering_ids_present_even_when_the_lane_is_empty():
+    """The whole point: the lane can be empty while a graduated row still needs
+    its chip. An absent key here would be the re-blindness this closes."""
+    out = assemble_bottoming_watch(
+        [_row(id_="b-gold_miners", phase="Recovery", pos=2.3, slope=1.5)],
+        reduce_ids=["gold_miners"],
+    )
+    assert out["bottoming_watch"] == []
+    assert out["recovering_ids"]
+
+
+@pytest.mark.parametrize("rows", [None, []])
+def test_recovering_ids_is_always_a_list(rows):
+    assert assemble_bottoming_watch(rows)["recovering_ids"] == []
+
+
+def test_recovering_assembler_never_mutates_the_reduce_lane_input():
+    reduce_ids = ["gold_miners", "housing"]
+    snapshot = list(reduce_ids)
+    assemble_bottoming_watch(
+        [_row(id_="b-gold_miners", phase="Recovery", pos=2.3, slope=1.5)],
+        reduce_ids=reduce_ids,
+    )
+    assert reduce_ids == snapshot
+
+
+# ── the graduation receipt (the case this bridge was built for) ───────────────
+def test_gold_miners_graduation_case_from_committed_log():
+    """`b-gold_miners` on 2026-08-05: Trough→Recovery, pos=2.3, osc_slope=+1.5,
+    signal=BUY, above200d=False.
+
+    The session it left the lane. Its board row still read `deteriorating/avoid`
+    (20d relative −8.14%), so without the chip it sat on no lane at all.
+    """
+    rows = _committed_rows("2026-08-05")
+    src = next(r for r in rows if str(r["id"]) == "b-gold_miners")
+    assert src["phase"] == "Recovery", "fixture drift — this pins the graduation"
+    assert float(src["pos"]) == pytest.approx(2.3)
+    assert float(src["osc_slope"]) == pytest.approx(1.5)
+    assert str(src["signal"]).upper() == "BUY"
+    assert bool(src["above200d"]) is False
+
+    out = assemble_bottoming_watch(rows, reduce_ids=["gold_miners", "crypto_rails"])
+
+    # it has LEFT the lane — the CN-faithful gate is untouched by this bridge
+    assert "b-gold_miners" not in {r["id"] for r in out["bottoming_watch"]}
+    # ...and the chip is what now carries it
+    assert "gold_miners" in out["recovering_ids"]
+    assert "b-gold_miners" in out["recovering_ids"]
+    # the lane itself still works on the same night
+    assert "b-uranium_miners" in {r["id"] for r in out["bottoming_watch"]}
+
+
+def test_committed_graduation_keeps_the_two_chip_sets_disjoint():
+    """Belt-and-braces on the real night both chips were live."""
+    out = assemble_bottoming_watch(
+        _committed_rows("2026-08-05"),
+        reduce_ids=["gold_miners", "uranium_miners", "crypto_rails"],
+    )
+    assert set(out["dual_read_ids"]) & set(out["recovering_ids"]) == set()
+    # uranium_miners is Trough+rising and on reduce → the FT-R1 chip
+    assert "uranium_miners" in out["dual_read_ids"]
+    # gold_miners graduated → the recovering chip
+    assert "gold_miners" in out["recovering_ids"]
+
+
+# ── never-buy words + bilingual law for the new copy ──────────────────────────
+def test_recovering_copy_carries_no_buy_verb():
+    for s in (RECOVERING_CHIP_EN, RECOVERING_TIP_EN, RECOVERING_DISCLOSURE_EN):
+        assert not contains_buy_word(s), f"buy verb in rendered copy: {s!r}"
+
+
+def test_recovering_copy_is_bilingual_and_non_empty():
+    for en, zh in ((RECOVERING_CHIP_EN, RECOVERING_CHIP_ZH),
+                   (RECOVERING_TIP_EN, RECOVERING_TIP_ZH),
+                   (RECOVERING_DISCLOSURE_EN, RECOVERING_DISCLOSURE_ZH)):
+        assert en.strip() and zh.strip()
+        assert zh != en, "zh copy must actually be translated"
+
+
+def test_recovering_copy_uses_no_house_jargon_or_raw_slugs():
+    """Glance-tier vocabulary law: no internal state names, no raw slugs."""
+    banned = ("Trough", "Recovery", "osc_slope", "forward_log", "phase==",
+              "FT-R1", "W-A", "pos<=", "b-")
+    for s in (RECOVERING_CHIP_EN, RECOVERING_TIP_EN, RECOVERING_DISCLOSURE_EN):
+        for b in banned:
+            assert b not in s, f"house jargon {b!r} in user copy: {s!r}"
+
+
+def test_recovering_copy_ships_from_the_engine_authority_block():
+    """The page must not carry its own wording — one source, no drift."""
+    auth = assemble_bottoming_watch([])["authority"]
+    assert auth["recovering_chip_en"] == RECOVERING_CHIP_EN
+    assert auth["recovering_chip_zh"] == RECOVERING_CHIP_ZH
+    assert auth["recovering_tip_en"] == RECOVERING_TIP_EN
+    assert auth["recovering_tip_zh"] == RECOVERING_TIP_ZH
+    assert auth["recovering_disclosure_en"] == RECOVERING_DISCLOSURE_EN
+    assert auth["recovering_disclosure_zh"] == RECOVERING_DISCLOSURE_ZH
+
+
+def test_recovering_tip_does_not_claim_bottoming_lane_membership():
+    """The defect this design avoids: FT-R1's tip says "also on Bottoming watch".
+    These rows are on no lane, so that sentence would send the reader to a lane
+    the name has left."""
+    assert "Bottoming watch" not in RECOVERING_TIP_EN
+    assert "筑底观察" not in RECOVERING_TIP_ZH
+
+
+# ── template pinning ─────────────────────────────────────────────────────────
+def _act_row_body() -> str:
+    src = TEMPLATE.read_text(encoding="utf-8")
+    m = re.search(r"\nfunction actRow\(x\)\{(.*?)\n\}\n", src, re.S)
+    assert m, "actRow() not found in sector_central.html.j2 — did it get renamed?"
+    return m.group(1)
+
+
+def test_template_renders_the_recovering_chip_from_the_engine_copy():
+    body = _act_row_body()
+    assert "BOT_REC.has" in body, "actRow() must consult the recovering id set"
+    for token in ("BOT_REC_EN", "BOT_REC_ZH", "BOT_REC_TIP_EN", "BOT_REC_TIP_ZH"):
+        assert token in body, f"actRow() must render engine copy {token}"
+
+
+def test_template_gives_a_row_one_chip_not_two():
+    """A row already carrying the conflicted or FT-R1 chip must not gain a third."""
+    body = _act_row_body()
+    m = re.search(r"const recov=\((.*?)\)\?", body, re.S)
+    assert m, "the recovering chip's gate was not found in actRow()"
+    gate = m.group(1)
+    assert "!x._conflicted" in gate
+    assert "!BOT_DUAL.has" in gate
+
+
+def test_template_populates_the_recovering_set_and_footnote():
+    src = TEMPLATE.read_text(encoding="utf-8")
+    assert "a.recovering_ids" in src, "renderActBoard must read act_now.recovering_ids"
+    assert "recovering_disclosure_en" in src, "the footnote must carry the disclosure"
+    # the disclosure prints only when a chip is actually on the page
+    assert "BOT_REC.size&&ba&&ba.recovering_disclosure_en" in src
+
+
+def test_template_recovering_chip_has_no_translated_title_attribute():
+    """House law: no translated text in title= attributes."""
+    m = re.search(r"const recov=.*?:'';", _act_row_body(), re.S)
+    assert m
+    assert "title=" not in m.group(0)
+
+
+def test_wiring_adds_recovering_ids_without_touching_the_other_lanes():
+    """G0.3 — the bridge may only ADD a key."""
+    act_now = {
+        "buy": [{"id": "robotics_automation", "name": "Robotics", "score": 71}],
+        "add_on_pullback": [{"id": "mag7", "name": "Mag 7", "score": 63}],
+        "reduce": [{"id": "gold_miners", "name": "Gold Miners", "score": 34},
+                   {"id": "uranium_miners", "name": "Uranium", "score": 36}],
+        "conflicted": [],
+    }
+    before = json.dumps(act_now, sort_keys=True)
+    bw = assemble_bottoming_watch(
+        [_row(id_="b-gold_miners", phase="Recovery", pos=2.3, slope=1.5),
+         _row(id_="b-uranium_miners", phase="Trough", pos=0.8, slope=0.4)],
+        reduce_ids=[x["id"] for x in act_now["reduce"]],
+    )
+    act_now["bottoming_watch"] = bw["bottoming_watch"]
+    act_now["dual_read_ids"] = bw["dual_read_ids"]
+    act_now["recovering_ids"] = bw["recovering_ids"]
+    act_now["bottoming_authority"] = bw["authority"]
+
+    after = {k: act_now[k] for k in ("buy", "add_on_pullback", "reduce", "conflicted")}
+    assert json.dumps(after, sort_keys=True) == before
+    assert act_now["recovering_ids"] and act_now["dual_read_ids"]
+
+
+def test_build_wiring_ships_the_recovering_key():
+    """The engine key is inert unless the builder actually writes it."""
+    src = (ROOT / "scripts" / "build_baskets.py").read_text(encoding="utf-8")
+    assert '_an_ba["recovering_ids"] = _bw["recovering_ids"]' in src

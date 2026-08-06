@@ -23,14 +23,20 @@
    program exists to avoid. So the live chip carries its own --plvc (provisional blue) or
    --pv-wait (caution), and the two chips stay distinguishable by glyph as well: ⚡ = nightly
    (keeps --pvh, untouched), ◐ = live. Do not "repair" this into the one-hue law.
-     · every prior disclosure survives, demoted: verdict sentence + entry headline → verb-chip
-       data-tip; cautions / sector stance / chase / extension / earnings-window → the ⚠N
-       popover (pure CSS hover/focus-within, no JS dependency); score meaning → Edge data-tip.
+     · prior disclosures survive, demoted: cautions / sector stance / chase / extension /
+       earnings-window → the ⚠N popover (pure CSS hover/focus-within, no JS dependency);
+       score meaning → Edge data-tip. The verdict sentence + entry headline USED to ride a
+       verb-chip data-tip; the operator removed it 2026-08-03 (see the chip in the markup)
+       because it only re-worded the chip, tracker and zone footer the reader can already
+       see. The five builders no longer compute or pass a top-level `tip_en`/`tip_zh`, and
+       the chip takes no tip. Do not reintroduce one. (The similarly-named keys that DO
+       still render are unrelated: `trigger.tip_en`/`tip_zh` on the ⚡ chip, `edge_tip_en`/
+       `edge_tip_zh` on the score, and `marks[].tip_en`/`tip_zh` on the sub-line chips.)
 
    The macro is deliberately dumb: every market-specific derivation (verb mapping, stage
    mapping, flag folding, zone kind) happens in the calling board template where the row
    fields live. Callers pass a single `cx` dict:
-     href tk sym mkt price_txt name name_zh sec sec_zh flag verb tip_en tip_zh edge
+     href tk sym mkt price_txt name name_zh sec sec_zh flag verb edge
      edge_tip_en edge_tip_zh stage spark zone_kind zone_lo zone_hi date flags triage
      trigger — OPTIONAL {kind: 'fired'|'imminent', tip_en, tip_zh}: the fresh
        entry-trigger chip (presentation merge of the Top-setups board, 2026-07-24
@@ -127,8 +133,21 @@ html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srg
    sparkline and the zone row now round their OWN corners instead of borrowing the
    card's clip, so releasing it costs no square-corner artifact. NOTE: never give
    .pv-chart overflow:hidden to do this — that is the popover's own ancestor and would
-   re-create the bug one level down. #}
-.pvcard:has(.pv-cau:hover),.pvcard:has(.pv-cau:focus-within){overflow:visible}
+   re-create the bug one level down.
+
+   z-index is the SECOND half of the same fix and is not optional (2026-08-03): releasing
+   the clip let the popover escape the card, but it still painted UNDER the next card in
+   the grid. .pvcard:hover sets transform:translateY(-2px), and a non-none transform
+   creates a stacking context — so .pv-cau-pop{z-index:30} is resolved INSIDE the hovered
+   card, not against its siblings. Every later sibling .pvcard (position:relative,
+   z-index:auto) therefore paints on top, and the popover was covered by the card to its
+   right on every board (reported on us_stocks + hk_stocks; the partial is shared, so it
+   was global). Lifting the CARD — the element that owns the stacking context — is what
+   raises the popover with it; raising .pv-cau-pop further cannot work, because it is
+   already at the top of a context that is itself too low. 40 clears sibling cards and the
+   page's sticky chrome (max z-index 4 here) and stays far below the modal/LENS layers
+   (1200+), so an open popover never outranks a dialog. #}
+.pvcard:has(.pv-cau:hover),.pvcard:has(.pv-cau:focus-within){overflow:visible;z-index:40}
 .pv-chart{position:relative;min-width:0;border-radius:11px 11px 0 0;background:color-mix(in srgb,var(--pvh) 3%,transparent)}
 .pv-chart svg{display:block;width:100%;height:74px;border-radius:11px 11px 0 0}
 {# spark recolor law (band contract): everything strokes the verb hue; filled shapes flip
@@ -202,6 +221,18 @@ html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srg
   border-color:color-mix(in srgb,var(--warn) 38%,transparent)}
 .pv-mk-theme{color:color-mix(in srgb,var(--muted) 55%,var(--text));
   border-color:color-mix(in srgb,var(--muted) 34%,transparent)}
+{# Blow-off risk — the one marks chip that is a RISK read, so it borrows the caution
+   button's ink family (.pv-cau-btn) rather than the soft --warn wash .pv-mk-warm uses
+   for "Theme just turned".  Deliberately NOT a directional token: the zh board flips
+   up/down inks (红涨绿跌) and a risk chip must read identically in both languages. #}
+{# The 8% wash is measured, not taste: at the 17% this started on, the light theme
+   computed 3.95:1 ink-on-fill — under AA, and under the sibling .pv-mk-feat's 4.84:1
+   (9.5px/800 is NOT "large text", so 3:1 does not apply). Lightening the fill and
+   keeping --ink-warn at full strength reads 6.89:1 dark / 4.77:1 light. #}
+.pv-mk-blow{font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--ink-warn,var(--warn));
+  background:color-mix(in srgb,var(--warn) 8%,var(--panel));
+  border-color:color-mix(in srgb,var(--ink-warn,var(--warn)) 50%,transparent)}
 {# a marks chip carrying a data-tip is a hover target, not a link — say so #}
 .pv-mk-i[data-tip-en]{cursor:help}
 .pv-stp{display:flex;align-items:center;margin:7px 1px 0}
@@ -291,7 +322,14 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
   <div class="pv-chart">
     {% if cx.get('spark') %}{{ cx.spark|safe }}{% else %}<div class="pv-nochart"></div>{% endif %}
     <span class="pv-ov pv-ovl">
-      <span class="pv-chip"{% if cx.get('tip_en') %} data-tip-en="{{ cx.tip_en|e }}" data-tip-zh="{{ (cx.get('tip_zh') or cx.tip_en)|e }}"{% endif %}>{{ t(_VEN[_verb], _VZH[_verb]) }}</span>
+      {#- NO data-tip here (operator, 2026-08-03): the verb chip's hover tip was removed.
+          It restated in prose what the card already SAYS — the chip reads "Buy", the
+          tracker shows the stage, the footer prints the zone — so "Constructive —
+          building a base · Buy zone — entry open now" bought nothing and put a popover
+          over the neighbouring card on the way. `cx.tip_en`/`tip_zh` are now ignored;
+          callers may still pass them. The ⚡ trigger tip and the ⚠N popover STAY: those
+          carry facts that appear nowhere else on the card. #}
+      <span class="pv-chip">{{ t(_VEN[_verb], _VZH[_verb]) }}</span>
       {%- if cx.get('trigger') %}{% set _tg = cx.trigger %}
       <span class="pv-trg{% if _tg.kind == 'imminent' %} pv-trg-soon{% endif %}"{% if _tg.get('tip_en') %} data-tip-en="{{ _tg.tip_en|e }}" data-tip-zh="{{ (_tg.get('tip_zh') or _tg.tip_en)|e }}"{% endif %}>⚡ {% if _tg.kind == 'imminent' %}{{ t('Imminent','即将触发') }}{% else %}{{ t('Triggered','已触发') }}{% endif %}</span>
       {%- endif %}

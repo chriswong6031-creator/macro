@@ -347,8 +347,11 @@
       // D-6: plainify column headers; move jargon behind ? receipt on table caption
       +'<div class="sr-tr-body"><table class="sr-tr-tbl"><caption style="text-align:left;padding:4px 8px;font-size:10px;color:var(--muted);">'
         +'<span class="rcf-help" tabindex="0" role="button" style="cursor:help;"'
-        +' data-tip-en="Rank fit = information coefficient (how well the ranking lines up with what happened next). Reliability = HAC t-stat (higher = less likely to be noise; &#10003; = clears the bar for that horizon)."'
-        +' data-tip-zh="排序吻合 = 信息系数（排序与后续实际走势的吻合程度）。可靠度 = HAC t 统计量（越高越不像噪声；&#10003; = 该周期已达标）。"'
+        +' data-tip-t-en="Reading the scorecard" data-tip-t-zh="如何看这张记分卡"'
+        +' data-tip-en="Rank fit is how closely the ranking matched what happened next. Reliability is how unlikely that match is to be luck — a &#10003; means it clears the bar for that horizon."'
+        +' data-tip-zh="排序吻合是指排序与后续实际走势的接近程度。可靠度是指这种吻合有多不可能出于偶然——&#10003; 表示该周期已达标。"'
+        +' data-tip-rc-en="rank fit = information coefficient · reliability = HAC t-stat"'
+        +' data-tip-rc-zh="排序吻合 = 信息系数 · 可靠度 = HAC t 统计量"'
         +'>?</span></caption><thead><tr>'
         +'<th>'+L('Horizon','周期')+'</th><th class="num">'+L('Matured','已到期')+'</th>'
         +'<th class="num">'+L('Emerging hit','升温命中')+'</th><th class="num">'+L('Fading hit','退潮命中')+'</th>'
@@ -360,6 +363,7 @@
         +L('A scorecard of this page\'s own calls, checked against what happened next. Until a time-window has enough history, it\'s still measuring — read it as "measuring", not proof.',
            '本页自身判断的记分卡，对照后续实际走势检验。在某一周期积累足够历史前仍为「测量中」——请视为「测量」，而非定论。')
         +' <span class="rcf-help" tabindex="0" role="button" style="cursor:help;"'
+        +' data-tip-t-en="What this scorecard is not" data-tip-t-zh="这张记分卡不是什么"'
         +' data-tip-en="'+esc(tr.disclaimer||'')+'"'
         +' data-tip-zh="'+esc(tr.disclaimer_zh||tr.disclaimer||'')+'"'
         +'>?</span>'
@@ -823,36 +827,36 @@
       : '';
     var sess=tn.n_sessions?('<span class="sr-tw-meta">'+L(tn.n_sessions+' sessions read',
                                                           '已读取 '+tn.n_sessions+' 个交易日')+'</span>'):'';
-    // Tier-2 receipt: the mechanics, in one tip. Never a title= attribute (house law).
+    /* Tier-2 explainer. Never a title= attribute (house law). Rewritten with the
+       popup overhaul 2026-08-04: this was a 130-word wall of weights, thresholds
+       and caveats, which is the same defect the hover card had — the numbers now
+       ride the receipt line and the body says what a turn actually means. */
     var lw=tn.leg_weights||{},pr=tn.params||{};
-    var howEn=('Measured on non-overlapping return windows, against the median group, and '
-      +'scaled by each group’s own week-to-week variability. A turn scores on four '
-      +'separate legs — size of the change ('+((lw.flip||0)*100).toFixed(0)+'%), what it '
-      +'turned from ('+((lw.regime||0)*100).toFixed(0)+'%), how unusual it is across the '
-      +'market ('+((lw.rs||0)*100).toFixed(0)+'%), and member participation ('
-      +((lw.part||0)*100).toFixed(0)+'%) — and needs '+(pr.confirm_days||2)+' sessions to '
-      +'confirm, or one very large reading. A group must have fallen at least '
-      +(pr.fell_dd_min||6)+'% (or run '+(pr.rose_run_min||8)+'%) from an extreme at least a '
-      +'month old to qualify. Cycle range is rebuilt from six return windows, so peaks and '
-      +'troughs inside a window are invisible and the dates are approximate. Context tier: '
-      +'this ranks nothing and sizes nothing.');
-    var howZh=('以不重叠的区间收益计算，对比全市场中位数，'
-      +'并按各标的自身的周度波动幅归一。转向由四个独立分项评分：'
-      +'变化幅度（'+((lw.flip||0)*100).toFixed(0)+'%）、从何种趋势转向（'
-      +((lw.regime||0)*100).toFixed(0)+'%）、在全市场中的罕见程度（'
-      +((lw.rs||0)*100).toFixed(0)+'%）、以及成分股参与度（'
-      +((lw.part||0)*100).toFixed(0)+'%）；需连续 '+(pr.confirm_days||2)
-      +' 个交易日确认，或单日读数极大。标的需自一个月以上的极值'
-      +'回落至少 '+(pr.fell_dd_min||6)+'%（或上涨 '+(pr.rose_run_min||8)
-      +'%）才具备资格。周期区间由六个区间收益重建，'
-      +'区间内部的高低点不可见，日期为近似值。仅供参考：'
-      +'不用于排名，也不用于确定仓位。');
+    var howEn=('Four things have to agree before a group counts as turning: how big the '
+      +'change is, what it turned from, how unusual it is across the market, and how many '
+      +'of its members moved with it. '+(pr.confirm_days||2)+' sessions confirm the turn — '
+      +'or one unusually large reading.');
+    var howZh=('一个板块要算作转向，需四项同时成立：变化幅度、原本处于何种趋势、'
+      +'在全市场中的罕见程度，以及有多少成分股同向移动。'
+      +'连续 '+(pr.confirm_days||2)+' 个交易日确认——或单日读数异常之大。');
+    var howRcEn=('weights — change '+((lw.flip||0)*100).toFixed(0)+'% · turned from '
+      +((lw.regime||0)*100).toFixed(0)+'% · vs market '+((lw.rs||0)*100).toFixed(0)
+      +'% · members '+((lw.part||0)*100).toFixed(0)+'% · qualifies after a −'
+      +(pr.fell_dd_min||6)+'% fall or +'+(pr.rose_run_min||8)+'% run from an extreme a month old'
+      +' · dates approximate, rebuilt from six return windows · context tier: ranks and sizes nothing');
+    var howRcZh=('权重 — 变化幅度 '+((lw.flip||0)*100).toFixed(0)+'% · 原趋势 '
+      +((lw.regime||0)*100).toFixed(0)+'% · 对比市场 '+((lw.rs||0)*100).toFixed(0)
+      +'% · 成分股 '+((lw.part||0)*100).toFixed(0)+'% · 需自一个月以上极值回落 −'
+      +(pr.fell_dd_min||6)+'% 或上涨 +'+(pr.rose_run_min||8)+'% 方具资格'
+      +' · 日期为近似值，由六个区间收益重建 · 仅供参考：不排名、不定仓位');
 
     el.innerHTML='<div class="sr-turns">'
       +'<div class="sr-tw-hd">'
         +'<h3>🔄 '+L('Turns this week','本周转向')+'</h3>'
         +'<span class="rcf-help sr-tw-q" tabindex="0" role="button"'
-          +' data-tip-en="'+esc(howEn)+'" data-tip-zh="'+esc(howZh)+'">?</span>'
+          +' data-tip-t-en="How a turn is scored" data-tip-t-zh="转向如何评分"'
+          +' data-tip-en="'+esc(howEn)+'" data-tip-zh="'+esc(howZh)+'"'
+          +' data-tip-rc-en="'+esc(howRcEn)+'" data-tip-rc-zh="'+esc(howRcZh)+'">?</span>'
         +sess
       +'</div>'
       +'<p class="sr-tw-lede">'+L('Groups that fell then turned, or ran then rolled over. Watch — don’t chase.',
@@ -998,82 +1002,69 @@
       +'</details>';
   }
 
-  /* ---------- tooltip ---------- */
+  /* ---------- hover card ------------------------------------------------------
+     Rebuilt 2026-08-04 (operator: "way too complex — reduce details significantly,
+     reformat so it's beautiful"). The old card stacked nine blocks and ~24 figures:
+     rank, theme, turn state, four cycle facts, weekly pace vs market, four turn
+     legs, six price horizons, five relative-strength horizons, accel / RS / mom,
+     and eight member chips. A hover is a breath, not a report.
+
+     The card now carries ONE read, THREE figures and ONE door. Nothing was lost —
+     every figure it dropped is a sortable column in the table directly below it
+     (quadrant, turn state, each price horizon, accel, RS, momentum, range
+     position) or a block on the detail page the card links to (members, chart,
+     theme). The quadrant is the card's identity: it colours the header wash, the
+     rail and the chip, so the read starts before you finish the first word.
+     ------------------------------------------------------------------------- */
   var _tip=null;
   function tipEl(){if(_tip)return _tip;_tip=document.createElement('div');_tip.className='sr-tip';document.body.appendChild(_tip);return _tip;}
+
+  /* The read — one plain sentence, from the quadrant (where it stands) crossed
+     with accel (whether the move is speeding up). accel is 1-week pace minus
+     3-month pace, so it is genuinely independent of the quadrant's own axes and
+     the pair says something neither says alone. Describes only; claims no stance,
+     because a rotation map ranks, gates and sizes nothing. */
+  var READ={
+    leading:  [['In front, and still pulling away.','领先，且仍在扩大优势。'],
+               ['Still in front, but the lead is narrowing.','仍然领先，但优势正在收窄。']],
+    weakening:[['Off its best, but steadying.','已过最佳，但趋于企稳。'],
+               ['Slipping from a strong position.','正从强势位置滑落。']],
+    improving:[['Coming up from behind, and gaining.','自落后区回升，且仍在增强。'],
+               ['Was coming up from behind; the push has stalled.','此前自落后区回升，但推力已停滞。']],
+    lagging:  [['Behind the pack, with the first signs of a base.','落后于大盘，出现初步筑底迹象。'],
+               ['Behind the pack, and still falling back.','落后于大盘，且仍在走弱。']]
+  };
+  function readLine(d){
+    var r=READ[d.quadrant]; if(!r) return '';
+    return L(r[(d.accel!=null&&d.accel>0)?0:1][0],r[(d.accel!=null&&d.accel>0)?0:1][1]);
+  }
+  // Three horizons: near, medium, long. Enough to place the move in time; not a table.
+  var TIP_TFS=['1M','3M','1Y'];
+
   function showTip(k,cx,cy){
     var d=items().filter(function(x){return keyOf(x)===k;})[0]; if(!d){hideTip();return;}
     var q=QUAD[d.quadrant];
-    var sp=(_data.timeframes||['1W','1M','3M','6M','1Y']).filter(function(h){return ['1W','1M','3M','6M','1Y','YTD'].indexOf(h)>=0;})
-      .map(function(h){var v=d.perf?d.perf[h]:null;return '<div class="sr-tsp"><span>'+h+'</span><b class="'+pcCls(v)+'">'+fmtPc(v)+'</b></div>';}).join('');
-    var mem=(d.members||[]).slice(0,8).map(function(m){return '<span class="sr-chip '+pcCls(m['1M'])+'">'+esc(m.t)+' '+fmtPc(m['1M'])+'</span>';}).join('');
     var el=tipEl();
-    // Build secondary info line depending on unit
-    var secLine;
-    if(_unit==='subsectors') secLine='<div class="sr-tip-th">'+esc(themeOf(d))+' · '+d.n_members+' '+L('names','只')+'</div>';
-    else if(_unit==='sectors') secLine='<div class="sr-tip-th">'+L('Sector ETF','行业ETF')+'</div>';
-    else secLine='<div class="sr-tip-th">'+d.n_subs+' '+L('subsectors','子行业')+'</div>';
-    // Dead-end #2: rank shown in tip
-    var rankLine=d.rank!=null
-      ?'<div class="sr-tip-th" style="font-variant-numeric:tabular-nums;">#'+d.rank+' '+L('of','of')+' '+(d.rank_total||'?')+' · '+L('vs peers','对比同类')+'</div>'
-      :'';
-    // Dead-end #3: multi-horizon RS row
-    var rs=d.rs||{};
-    var rsTf=['1W','1M','3M','6M','1Y'];
-    var rsRow=rsTf.map(function(h){var v=rs[h];return '<div class="sr-tsp"><span>'+h+'</span><b class="'+pcCls(v)+'">'+(v==null?'—':(v>0?'+':'')+v.toFixed(2))+'</b></div>';}).join('');
-    var rsLine=rsRow?'<div style="font-size:9.5px;color:var(--muted);margin:4px 0 1px;">'+L('relative strength','相对强度')+'</div><div class="sr-tsp-row">'+rsRow+'</div>':'';
-    // Dead-end #1: z_accel
-    var zAccelLine=d.z_accel!=null
-      ?'<span style="margin-left:8px;">'+L('accel vs peers','对比同类加速度')+' <b class="'+pcCls(d.z_accel)+'">'+(d.z_accel>0?'+':'')+d.z_accel.toFixed(1)+'σ</b></span>'
-      :'';
-    // Tier-2 turn receipt: the cycle facts, the four legs, and the noise scale the legs
-    // are measured in — the mechanics the rail deliberately keeps off the glance tier.
-    var turnLine='';
-    if(d.turn_state){
-      var ts=TSTATE[d.turn_state],isUp=(d.turn_state==='turn_up'||d.turn_state==='bottoming');
-      var legs=isUp?(d.legs_up||{}):(d.legs_dn||{});
-      var LEGN={flip:['change','变化幅度'],regime:['turned from','原趋势'],rs:['vs market','对比市场'],part:['members','成分股']};
-      var legRow=Object.keys(LEGN).map(function(lk){
-        var lv=legs[lk];
-        return '<div class="sr-tsp"><span>'+L(LEGN[lk][0],LEGN[lk][1])+'</span><b>'+(lv==null?'—':(lv*100).toFixed(0)+'%')+'</b></div>';
-      }).join('');
-      var cyc=[];
-      if(d.pos_in_range!=null) cyc.push(L('at '+(+d.pos_in_range).toFixed(0)+'% of its 1-year range',
-                                          '处于一年区间的 '+(+d.pos_in_range).toFixed(0)+'%'));
-      if(d.dd_from_peak!=null) cyc.push(L((+d.dd_from_peak).toFixed(1)+'% from the 1-year high',
-                                          '距一年高点 '+(+d.dd_from_peak).toFixed(1)+'%'));
-      if(d.up_from_trough!=null) cyc.push(L('+'+(+d.up_from_trough).toFixed(1)+'% off the low',
-                                            '自低点 +'+(+d.up_from_trough).toFixed(1)+'%'));
-      if(d.rs_dd_from_peak!=null) cyc.push(L('leadership '+(+d.rs_dd_from_peak).toFixed(1)+'% off its best',
-                                             '领先度距最佳 '+(+d.rs_dd_from_peak).toFixed(1)+'%'));
-      var wk=(d.pace_rel||{}).w1,mk=(d.pace_mkt||{}).w1;
-      var paceLine=(wk!=null)?('<div class="sr-tip-mt">'+L('this week vs market','本周对比市场')
-        +' <b class="'+pcCls(wk)+'">'+(wk>0?'+':'')+(+wk).toFixed(1)+'%</b>'
-        +(mk!=null?' <span style="color:var(--muted);">'+L('market '+((mk>0?'+':'')+(+mk).toFixed(1))+'%/wk',
-                                                           '市场 '+((mk>0?'+':'')+(+mk).toFixed(1))+'%/周')+'</span>':'')
-        +(d.noise_w!=null?' · '+L('typical week ±'+(+d.noise_w).toFixed(1)+'%','常态周波动 ±'+(+d.noise_w).toFixed(1)+'%'):'')
-        +'</div>'):'';
-      turnLine='<div class="sr-tip-turn">'
-        +'<div class="sr-tip-tst"><span class="sr-ts '+(ts?ts.cls:'')+'">'+(ts?(isZh()?ts.zh:ts.en):esc(d.turn_state))+'</span>'
-          +(d.turn_since?'<i>'+L('since '+esc(d.turn_since),'自 '+esc(d.turn_since))+'</i>':'')+'</div>'
-        +(cyc.length?'<div class="sr-tip-cyc">'+cyc.join(' · ')+'</div>':'')
-        +paceLine
-        +(legRow?'<div style="font-size:9.5px;color:var(--muted);margin:4px 0 1px;">'
-            +L('turn legs (share of full credit)','转向分项（占满分比例）')+'</div>'
-          +'<div class="sr-tsp-row">'+legRow+'</div>':'')
-      +'</div>';
-    }
-    el.innerHTML='<div class="sr-tip-hd"><b>'+esc(nameOf(d))+'</b><span class="sr-q '+q.cls+'">'+(isZh()?q.zh:q.en)+'</span></div>'
-      +rankLine
-      +secLine
-      +turnLine
-      +'<div class="sr-tsp-row">'+sp+'</div>'
-      +rsLine
-      +'<div class="sr-tip-mt">'+L('accel','加速')+' <b class="'+pcCls(d.accel)+'">'+(d.accel==null?'—':(d.accel>0?'+':'')+d.accel.toFixed(1))+'</b>'
-        +zAccelLine
-        +' · '+L('RS','相对强度')+' <b>'+(d.rs_ratio>0?'+':'')+d.rs_ratio.toFixed(2)+'</b> · '+L('mom','动量')+' <b class="'+pcCls(d.rs_mom)+'">'+(d.rs_mom>0?'+':'')+d.rs_mom.toFixed(2)+'</b></div>'
-      +(mem?'<div class="sr-tip-mem">'+mem+'</div>':'')
-      +(hasDetail()?'<div class="sr-tip-open">'+L('click to open →','点击查看详情 →')+'</div>':'');
+    // One context line: what it is, then where it ranks. Never two lines.
+    var ctx=[];
+    if(_unit==='subsectors') ctx.push(esc(themeOf(d))+' · '+d.n_members+' '+L('names','只'));
+    else if(_unit==='sectors') ctx.push(L('Sector ETF','行业ETF'));
+    else ctx.push(d.n_subs+' '+L('subsectors','子行业'));
+    // "#32 of ?" is worse than "#32" — only claim a total when the payload carries one.
+    if(d.rank!=null) ctx.push('<b>#'+d.rank+'</b>'+(d.rank_total?(' '+L('of '+d.rank_total,'/ '+d.rank_total)):''));
+    // Three price horizons. Missing ones render as an em dash, never vanish.
+    var figs=TIP_TFS.map(function(h){
+      var v=d.perf?d.perf[h]:null;
+      return '<div class="sr-fig"><span>'+h+'</span><b class="'+pcCls(v)+'">'+fmtPc(v)+'</b></div>';
+    }).join('');
+    var read=readLine(d);
+    el.setAttribute('data-q',q.cls);
+    el.innerHTML='<div class="sr-tip-hd"><b class="sr-tip-nm">'+esc(nameOf(d))+'</b>'
+        +'<span class="sr-q '+q.cls+'">'+(isZh()?q.zh:q.en)+'</span></div>'
+      +'<div class="sr-tip-ctx">'+ctx.join(' · ')+'</div>'
+      +(read?'<p class="sr-tip-read">'+read+'</p>':'')
+      +'<div class="sr-tip-figs">'+figs+'</div>'
+      +(hasDetail()?'<div class="sr-tip-open">'+L('Open the full read','查看完整解读')+' <i>&#8594;</i></div>':'');
     el.classList.add('on');
     var w=el.offsetWidth,h=el.offsetHeight,x=cx+14,y=cy+14;
     if(x+w>window.innerWidth-8)x=cx-w-14; if(y+h>window.innerHeight-8)y=cy-h-14;
@@ -1158,13 +1149,11 @@
     +'@media (max-width:640px){.sr-tw-body{grid-template-columns:1fr;gap:14px;}'
       +'.sr-tw-row{grid-template-columns:minmax(0,1fr) 58px;}'
       +'.sr-tw-fact{grid-column:1/-1;}}'
-    // turn-state token, shared by the rail, the table cell and the hover receipt
+    // turn-state token, shared by the rail and the table cell (the hover card dropped
+    // its turn block in the 2026-08-04 overhaul — the state is a sortable column)
     +'.sr-ts{display:inline-block;font:700 10px Inter,sans-serif;padding:1px 6px;border-radius:6px;border:1px solid currentColor;white-space:nowrap;}'
     +'.sr-ts.up{color:var(--up);} .sr-ts.dn{color:var(--down);}'
     +'.sr-ts.soft{opacity:.72;border-style:dashed;} .sr-ts-na{color:var(--muted);}'
-    +'.sr-tip-turn{margin-top:6px;padding-top:6px;border-top:1px solid var(--line);}'
-    +'.sr-tip-tst{display:flex;align-items:center;gap:7px;} .sr-tip-tst i{font-style:normal;font-size:9.5px;color:var(--muted);}'
-    +'.sr-tip-cyc{margin-top:3px;font-size:10px;color:var(--muted);line-height:1.45;}'
     // ---- head-to-head scorecard ----
     +'.sr-versus{margin-top:14px;padding:12px 15px 14px;}'
     +'.sr-vs-key{font-size:10px;color:var(--muted);text-align:center;margin:0 0 10px;line-height:1.4;}'
@@ -1189,12 +1178,46 @@
     +'.sr-table-wrap{margin-top:14px;overflow:auto;max-height:640px;}'
     +'.sr-table{width:100%;border-collapse:collapse;font-size:12px;} .sr-table th{position:sticky;top:0;background:var(--panel);text-align:left;padding:9px 10px;font-weight:700;color:var(--muted);border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;z-index:1;user-select:none;} .sr-table th.num{text-align:right;} .sr-table th.on{color:var(--text);} .sr-table th.on::after{content:" ▾";} .sr-table th.on.asc::after{content:" ▴";}'
     +'.sr-table td{padding:7px 10px;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent);} .sr-table td.num{text-align:right;font-variant-numeric:tabular-nums;} .sr-table tbody tr:hover{background:color-mix(in srgb,var(--text) 4%,transparent);} .sr-table tr.flash{background:color-mix(in srgb,var(--link) 18%,transparent);}'
-    +'.sr-tip{position:fixed;z-index:1200;left:0;top:0;width:260px;max-width:calc(100vw - 16px);background:color-mix(in srgb,var(--panel) 97%,transparent);border:1px solid color-mix(in srgb,var(--text) 16%,var(--line));border-radius:12px;padding:11px 12px;box-shadow:0 16px 44px rgba(0,0,0,.5);backdrop-filter:blur(7px);pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s;}'
-    +'.sr-tip.on{opacity:1;transform:none;} .sr-tip-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;} .sr-tip-hd b{font-size:13.5px;color:var(--text);} .sr-tip-th{font-size:10.5px;color:var(--muted);margin-top:2px;}'
-    +'.sr-tsp-row{display:flex;gap:8px;margin:8px 0 2px;flex-wrap:wrap;} .sr-tsp{display:flex;flex-direction:column;line-height:1.15;} .sr-tsp span{font-size:8.5px;color:var(--muted);} .sr-tsp b{font-size:11px;font-variant-numeric:tabular-nums;}'
-    +'.sr-tip-mt{font-size:10.5px;color:var(--muted);margin-top:6px;border-top:1px solid var(--line);padding-top:6px;} .sr-tip-mt b{color:var(--text);font-variant-numeric:tabular-nums;}'
-    +'.sr-tip-mem{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px;} .sr-chip{font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:5px;background:var(--panel2);border:1px solid var(--line);font-variant-numeric:tabular-nums;}'
-    +'.sr-tip-open{margin-top:7px;font-size:10.5px;font-weight:700;color:var(--link);}'
+    // ---- hover card ------------------------------------------------------------
+    // One glass shell, shared with the Lens explainer and the heatmap card so every
+    // popup on the page reads as one component. --glass-* are theme-aware (theme.css
+    // rebinds them for light), with the dark values inlined as fallbacks for pages
+    // that load their own token set. The quadrant is the card's identity: --sq tints
+    // the hairline ring, the header wash and the chip, so the read starts before the
+    // first word is finished.
+    +'.sr-tip{--sq:var(--muted);position:fixed;z-index:1200;left:0;top:0;width:268px;max-width:calc(100vw - 16px);'
+      +'border-radius:15px;overflow:hidden;background:var(--glass-bg,color-mix(in srgb,var(--panel) 90%,transparent));'
+      +'-webkit-backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));'
+      +'box-shadow:var(--glass-shadow,0 24px 64px -22px rgba(3,7,18,.74),0 10px 26px -12px rgba(3,7,18,.55));'
+      +'pointer-events:none;opacity:0;transform:translateY(6px) scale(.97);transition:opacity .13s ease,transform .13s ease;}'
+    +'.sr-tip[data-q=q-lead]{--sq:var(--up);} .sr-tip[data-q=q-weak]{--sq:var(--warn);} .sr-tip[data-q=q-impr]{--sq:var(--link);} .sr-tip[data-q=q-lag]{--sq:var(--down);}'
+    +'.sr-tip.on{opacity:1;transform:none;transition:opacity .18s ease,transform .26s cubic-bezier(.34,1.26,.4,1);}'
+    // hairline ring, blooming in the quadrant colour at the top-left corner
+    +'.sr-tip::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;'
+      +'background:radial-gradient(150px 74px at 20% -6%,color-mix(in srgb,var(--sq) 72%,transparent),transparent 70%),'
+      +'var(--glass-brd,color-mix(in srgb,var(--text) 14%,transparent));'
+      +'-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;'
+      +'mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude;pointer-events:none;}'
+    +'.sr-tip::after{content:"";position:absolute;left:0;right:0;top:0;height:76px;pointer-events:none;'
+      +'background:radial-gradient(125% 100% at 0% 0%,color-mix(in srgb,var(--sq) 14%,transparent),transparent 66%);}'
+    +'.sr-tip>*{position:relative;z-index:1;}'
+    +'.sr-tip-hd{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:13px 14px 0;}'
+    +'.sr-tip-nm{min-width:0;font:700 14.5px/1.25 Inter,sans-serif;letter-spacing:-.012em;color:var(--text);}'
+    +'.sr-tip-ctx{padding:4px 14px 0;font:500 10.5px/1.45 Inter,sans-serif;color:var(--muted);font-variant-numeric:tabular-nums;}'
+    +'.sr-tip-ctx b{font-weight:700;color:color-mix(in srgb,var(--text) 74%,var(--muted));}'
+    +'.sr-tip-read{margin:9px 0 0;padding:0 14px;font:450 12.5px/1.55 Inter,sans-serif;color:color-mix(in srgb,var(--text) 90%,var(--muted));}'
+    +'.sr-tip-figs{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin:12px 14px 0;padding:10px 0 0;'
+      +'border-top:1px solid color-mix(in srgb,var(--text) 11%,transparent);}'
+    +'.sr-fig{display:flex;flex-direction:column;gap:3px;min-width:0;}'
+    +'.sr-fig span{font:700 8.5px/1 Inter,sans-serif;letter-spacing:.13em;text-transform:uppercase;color:color-mix(in srgb,var(--muted) 80%,transparent);}'
+    +'.sr-fig b{font:700 13px/1 Inter,sans-serif;letter-spacing:-.012em;font-variant-numeric:tabular-nums;color:var(--text);}'
+    // The card is appended to <body>, so the `.sr-scope .up/.dn` rules never reached
+    // it — every figure in the old card rendered in the default ink. Bind them here.
+    +'.sr-tip .up{color:var(--up);} .sr-tip .dn{color:var(--down);}'
+    +'.sr-tip-open{display:flex;align-items:center;gap:5px;margin-top:11px;padding:9px 14px 12px;'
+      +'border-top:1px solid color-mix(in srgb,var(--text) 8%,transparent);'
+      +'font:700 10.5px/1 Inter,sans-serif;letter-spacing:.01em;color:var(--link);}'
+    +'.sr-tip-open i{font-style:normal;font-size:11px;}'
     +'.sr-tr-wrap{margin-top:14px;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;}'
     +'.sr-tr-hd{display:flex;align-items:center;gap:10px;font-weight:800;font-size:13px;color:var(--text);flex-wrap:wrap;} .sr-tr-q{font-size:10px;font-weight:800;padding:1px 8px;border-radius:6px;border:1px solid;text-transform:uppercase;letter-spacing:.04em;} .sr-tr-meta{margin-left:auto;font-size:11px;color:var(--muted);font-weight:600;}'
     +'.sr-tr-note{font-size:11.5px;color:var(--muted);margin:6px 0 10px;line-height:1.5;}'
@@ -1208,7 +1231,7 @@
     +'.srx-col{display:flex;flex-wrap:wrap;align-items:center;gap:6px;} .srx-lab{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-right:2px;} .srx-lab.up{color:var(--up);} .srx-lab.dn{color:var(--down);}'
     +'.srx-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);} .srx-chip:hover{border-color:color-mix(in srgb,var(--link) 50%,var(--line));} .srx-chip b{font-size:12px;color:var(--text);} .srx-th{font-size:9.5px;color:var(--muted);} .srx-pc{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;}'
     +'.srx-q{width:7px;height:7px;border-radius:50%;flex:none;} .srx-q.q-lead{background:var(--up);} .srx-q.q-weak{background:var(--warn);} .srx-q.q-impr{background:var(--link);} .srx-q.q-lag{background:var(--down);}'
-    +'@media (prefers-reduced-motion:reduce){.sr-tip,.sr-dot{transition:none;} .sr-map,.sr-map.sr-zoomed{animation:none;}}'
+    +'@media (prefers-reduced-motion:reduce){.sr-tip,.sr-tip.on,.sr-dot{transition:none;transform:none;} .sr-map,.sr-map.sr-zoomed{animation:none;}}'
     // Velocity board
     +'.sr-vb-container{margin-top:14px;}'
     +'.sr-vb-wrap{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;}'

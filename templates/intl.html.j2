@@ -1992,13 +1992,11 @@
     {% set _fl = namespace(rows=[]) %}
     {% if _vs and _vs.state in ('FIRED_UP','EXPANSION') %}{% set _fl.rows = _fl.rows + [('Already moving — quiet entry may be gone', '已在异动 — 安静入场点可能已过')] %}{% endif %}
     {% if b.notes %}{% for nt in b.notes %}{% set _fl.rows = _fl.rows + [(nt.en, nt.zh or nt.en)] %}{% endfor %}{% endif %}
-    {% set _tip_en = ((b.label or b.state or '') ~ ' — stronger momentum than market peers; a screen, not a forecast') ~ (' · volatility coiled' if (_vs and _vs.state == 'COILED') else '') %}
-    {% set _tip_zh = ((b.label or b.state or '') ~ ' — 相对本市场动量更强；筛选，非预测') ~ (' · 波动压缩' if (_vs and _vs.state == 'COILED') else '') %}
     {{ pv.pv_card({
       'href': 'intl_stock.html#' ~ b.ticker, 'tk': b.ticker, 'mkt': 'intl', 'flag': b.flag,
       'name': b.name, 'sec': b.sector,
       'price_txt': (b.price ~ '') if b.price is not none else none,
-      'verb': _verb, 'tip_en': _tip_en, 'tip_zh': _tip_zh,
+      'verb': _verb,
       'edge': none,
       'edge_txt': ('%+.2f'|format(b.alpha)) if (b.alpha is defined and b.alpha is not none) else none,
       'edge_label_en': 'Mom', 'edge_label_zh': '动量',

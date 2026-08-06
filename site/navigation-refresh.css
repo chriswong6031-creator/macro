@@ -2666,7 +2666,11 @@ html:not([data-theme="light"]) .result-row { background: var(--mock-surface-soft
      against the themed .mega-menu surface rules without !important. */
   .site-nav .nav-dd-menu.mega-menu.nav-panel-in.nav-panel-in,
   .topbar .nav-dd-menu.mega-menu.nav-panel-in.nav-panel-in {
-    z-index: 91;
+    /* one above the nav layer (theme.css HEADER LAYER LAW, 150) so the incoming
+       panel rides over the outgoing one. Tracks the base rule — it was 91 when
+       the base was 90; leaving it at 91 would have sunk every cross-fading
+       panel back under page content for the length of the swap. */
+    z-index: 151;
     background: transparent;
     border-color: transparent;
     box-shadow: none;

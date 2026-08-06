@@ -47,7 +47,7 @@ surfaces it, the compiler skips it. Never fake a detector to make a chain green.
 - **`calibrated`** — survived its pre-registered gauntlet at promotion (authority only via
   the gauntlet — never in W1; display-tier regardless of tier).
 
-A chain never emits an alpha score, gate, or size at ANY tier (DNR row 45 / TXI Article 1/2).
+A chain never emits an alpha score, gate, or size at ANY tier (DNR:KILL-CAUSAL-DAG-ALPHA / TXI Article 1/2).
 
 ## Nodes
 

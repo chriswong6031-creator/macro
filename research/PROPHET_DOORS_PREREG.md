@@ -64,7 +64,7 @@ Fires iff **all three** hold:
 T2/T3 are the incumbent VALIDATED construction, byte-unmodified. **The only new thing is
 candidacy routing**: theme heat conditions WHICH validated fires are recorded, never WHETHER a
 fire is a fire. Theme state is a cross-sectional context, so nothing per-name is claimed
-(DNR rows 114-115).
+(DNR:KILL-ONSET-FINGERPRINTS / DNR:KILL-VOLUME-FINGERPRINTS).
 
 Recorded at fire: `theme`, `theme_rank` (1-5), `theme_score` (`emerging_score`), `subsector`
 (+ all `subsectors`/`themes_hit` when a name is in several), `tier` (`tier_cascade`),
@@ -231,8 +231,7 @@ A door that satisfies §4 and passes G3+G4 earns **the right to be adjudicated**
 - A PASS grants **no rank authority, no sizing authority, no veto authority, and no board
   membership** under any circumstances — those are separate questions requiring their own
   registrations.
-- The graded population of `us_board_ledger` is untouched either way (masterplan G0.4 / DNR
-  §1 row 49). Doors grade in their OWN ledger; the live board's buy membership stays
+- The graded population of `us_board_ledger` is untouched either way (masterplan G0.4 / DNR:KILL-PROPHET-POP-MERGE). Doors grade in their OWN ledger; the live board's buy membership stays
   byte-identical unless and until a flip is separately ratified.
 - Adjudication inputs are the formal read PLUS the disclosed comparator weakness (§4) PLUS the
   door's fire-rate and concentration profile. A statistically-clean door that fires 90% inside
@@ -244,19 +243,19 @@ A door that satisfies §4 and passes G3+G4 earns **the right to be adjudicated**
 
 Each line cites the standing kill it stays clear of.
 
-- **NOT a leadership/momentum board (DNR row 117, Mag-7 forced-call class).** Neither door
+- **NOT a leadership/momentum board (DNR:KILL-FORCED-CALLS, Mag-7 forced-call class).** Neither door
   pins an un-gauntleted directional call to any surface: W3 ships no user-facing surface at
   all, and promotion (§6) requires an operator-ratified adjudication, which is exactly the
   process that row demands.
-- **NOT per-name outcome audition (DNR row 69).** Both doors are single GLOBAL constructions
+- **NOT per-name outcome audition (DNR:KILL-OUTCOME-AUDITION).** Both doors are single GLOBAL constructions
   with identical constants for every ticker; nothing is selected per-name, and no per-name
   best-of-grid timing choice exists anywhere in this lane.
-- **NOT a conviction×timing blend or a graded-population merge (DNR row 49).** No conviction
+- **NOT a conviction×timing blend or a graded-population merge (DNR:KILL-PROPHET-POP-MERGE).** No conviction
   score is read, blended, or ranked by; the doors write only their own ledger and change no
   population on `us_standouts.json`.
 - Also clear of: **#1513** (no 2D-freshness re-ranking — Door R records ticks, it does not
   rank by them), **#1747 Amendment-3** (Door R keys on trend-intactness, not washout depth),
-  **DNR rows 114-115** (Door T conditions on THEME state, a cross-sectional context, and
+  **DNR:KILL-ONSET-FINGERPRINTS / DNR:KILL-VOLUME-FINGERPRINTS** (Door T conditions on THEME state, a cross-sectional context, and
   claims nothing per-name until its ledger matures), **A7 / CXI-R23** (no LLM originates any
   flag, score, or escalation here), and **P5** (no CN code, artifact, or ledger era touched).
 
@@ -387,4 +386,4 @@ door can pass a gate with, and a relay result cannot rescue a G3/G4 failure.
 `PROPHET_US_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md` (§4.1, the addendum's origin),
 `PROPHET_STAGE_QUALITY_PREREG.md` (the prereg form this follows),
 `US_BOARD_MEASUREMENT.md` (the measurement canon the comparator comes from),
-`DO_NOT_REBUILD.md` (rows 49 / 69 / 117 fenced in §7).*
+`DO_NOT_REBUILD.md` (DNR:KILL-PROPHET-POP-MERGE / DNR:KILL-OUTCOME-AUDITION / DNR:KILL-FORCED-CALLS fenced in §7).*
