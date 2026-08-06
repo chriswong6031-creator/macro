@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T12:49:03.019528+00:00",
-  "count": 872,
+  "generated_at": "2026-08-06T13:10:56.208145+00:00",
+  "count": 873,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -57,6 +57,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-yrehuywybhi-b6ddb2",
+      "title": "What Matters Today DeepSeek Plans Significant Price Increase",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:35:42Z",
+      "summary_points": [
+        "**DeepSeek Pricing Hike**: Strategic shift from low-cost China model disrupts AI cost structure, altering competitive dynamics and LLM capital intensity.",
+        "**TMT Earnings Miss**: Semis (SNDK, WDC) and Software (HUBS, DDOG) misses drag Nasdaq; SPCCX IPO lockup expiry amplifies volatility.",
+        "**Yen Intervention Scale**: $85bn 2-day Yen purchase (largest since 2011) stabilizes currency via coordinated FX actions, minimizing US Treasury impact.",
+        "**Treasury Policy Intent**: Intervention is low-cost market-stabilization tool (not policy shift), prioritizing coordination over strong Yen positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-qe54u5uvpk1-edf802",
       "title": "Angi Inc",
