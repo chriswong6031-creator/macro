@@ -79,7 +79,23 @@ def test_english_wire_headline_gets_market_tags() -> None:
     assert "yuan" in h["channels"]
     assert "510300.SS" in h["tickers"]
     assert "CNY" in h["tickers"]
-    assert "sourcelang:eng" in cn._gdelt_query({})
+    assert all("sourcelang:eng" in q for q in cn._gdelt_queries({}))
+
+
+def test_wire_gdelt_queries_stay_under_server_length_limit() -> None:
+    """GDELT rejects long queries server-side ('too short or too long'; probed
+    2026-07-10: 246 chars accepted, 288 rejected). The old single joined wire
+    query was ~410 chars and was structurally rejected EVERY night — the wire
+    lane sat dark from ~2026-06-20 until the sub-query split. Pin the defect:
+    every sub-query must stay under the probed limit, every term must survive
+    the split, and terms must stay whole (no mid-term truncation)."""
+    queries = cn._gdelt_queries({})
+    assert len(queries) >= 2, "410 chars of terms cannot fit one <=230-char query"
+    for q in queries:
+        assert len(q) <= cn._WIRE_MAX_QUERY_LEN, f"sub-query {len(q)} chars: {q!r}"
+    joined = " ".join(queries)
+    for term in cn.GDELT_QUERY_TERMS:
+        assert term in joined, f"term dropped by the split: {term!r}"
 
 
 def test_china_synthesis_summarizes_channels_and_tickers() -> None:
