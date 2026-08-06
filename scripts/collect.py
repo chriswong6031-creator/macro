@@ -933,6 +933,19 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — a tripwire's crash must not abort the run
             log.warning("yahoo freshness tripwire crashed (non-fatal): %s", e)
 
+    # Side-store freshness audit (R4, research/ADJUDICATION_20260803_UNIVERSE_SIDE_STORE_FRESHNESS.md):
+    # check_yahoo_freshness above only covers the 3-name ENGINE_CRITICAL_SERIES tuple;
+    # this audits every ticker the yahoo group is asked to maintain (~740 names) — the
+    # class that let CTRA/TPH/TCNNF/CWEN-A freeze silently for weeks as ordinary side-
+    # store extras. Own try/except with a bare ::warning (not log.warning) so an audit
+    # crash surfaces as a loud annotation instead of dying silently or aborting the run.
+    if "yahoo" in registry:
+        try:
+            from collectors.yahoo import YahooAdapter, audit_store_freshness
+            audit_store_freshness(YahooAdapter().all_tickers(), group="yahoo")
+        except Exception as e:  # noqa: BLE001 — a tripwire's crash must not abort the run
+            print(f"::warning title=yahoo store audit crashed::{e}", flush=True)
+
     ok = sum(1 for r in results if r.status in ("ok", "stale"))
     log.info("collection done: %d/%d sources usable", ok, len(results))
 
