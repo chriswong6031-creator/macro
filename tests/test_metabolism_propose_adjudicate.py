@@ -1584,7 +1584,7 @@ class TestCHFStructureLearnerTokens:
     """TASK 5 m2: _CHF_DENY_TOKENS extended with NOTEARS/DAG-GNN/LoRAM/CMIN etc."""
 
     def test_notears_discovery_lobe_denies(self, tmp_path):
-        """DO_NOT_REBUILD §4 ~line 110: NOTEARS/DAG-GNN class lobes are killed."""
+        """DNR:HOLD-STRUCTURE-LEARNERS: NOTEARS/DAG-GNN class lobes are killed."""
         _make_minimal_budget_yml(tmp_path, max_active=66, max_probation=5)
         _make_lobe_charters(tmp_path, n_active=0)
         from engine.metabolism.adjudicate import _genesis_screen
@@ -1594,7 +1594,7 @@ class TestCHFStructureLearnerTokens:
         )
         r = _genesis_screen(prop, cycle_id="c1", docket=_empty_docket(), root=tmp_path)
         assert r["allow"] is False, (
-            "TASK 5 m2: NOTEARS discovery lobe must be denied (DO_NOT_REBUILD §4 ~110)"
+            "TASK 5 m2: NOTEARS discovery lobe must be denied (DNR:HOLD-STRUCTURE-LEARNERS)"
         )
         assert "R-V6-3c" in r["reason"]
 

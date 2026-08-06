@@ -167,7 +167,7 @@ def _to_yaml(chain: dict) -> str:
         "# TXI-W5 auto-proposed chain (Loop C, source: chf_proposal). HYPOTHESIS-tier,\n"
         "# display-only: W1 compiles its state + W3 backtests it, but it never arms on a\n"
         "# signal surface / gains authority until a human PR promotes it out of proposed/.\n"
-        "# Do NOT hand-edit here — re-propose or promote via PR (TXI-R5 / DNR row 45).\n"
+        "# Do NOT hand-edit here — re-propose or promote via PR (TXI-R5 / DNR:KILL-CAUSAL-DAG-ALPHA).\n"
     )
     body = yaml.safe_dump(chain, sort_keys=False, allow_unicode=True, width=100)
     return header + body

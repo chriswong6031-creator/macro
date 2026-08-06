@@ -600,8 +600,11 @@ CADDY = (ROOT / "app" / "deploy" / "Caddyfile").read_text(encoding="utf-8")
 #: served or bounced to sign-in. The three `_err` twins are the handle_errors mirrors: if
 #: the gate upstream blips, THOSE decide, and a page missing from them 302s exactly when
 #: the estate is already having a bad day.
-MATCHERS = ("@reg_html", "@reg_asset", "@gate_html",
-            "@reg_html_err", "@reg_asset_err", "@gate_html_err")
+# @reg_html / @reg_html_err are retired (operator 2026-08-04: every HTML shell
+# is served to anonymous visitors, so no document matcher carries a public
+# exemption list any more). The asset + funnel matchers still do.
+MATCHERS = ("@reg_asset", "@gate_html",
+            "@reg_asset_err", "@gate_html_err")
 
 
 def _matcher_block(name: str) -> str:

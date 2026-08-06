@@ -1147,7 +1147,19 @@ class TestBenchmarkStoreLadder:
         assert BTW._spy_prices(tmp_path) is None
 
     def test_member_does_not_fall_back_to_yahoo(self, tmp_path):
-        """The ladder is benchmark-scoped: members keep their stocks/ discipline."""
+        """Members never read the BENCHMARK store.
+
+        SUPERSEDED IN SCOPE by the W-B member ladder.  #4579 shipped this as
+        "the ladder is benchmark-scoped: members keep their stocks/ discipline"
+        — a guard against ACCIDENTALLY widening member resolution while fixing
+        SPY.  Members now DO have a second rung (data/baskets/ohlcv/, pinned in
+        TestMemberStoreLadder below); that widening is the deliberate, disclosed
+        change W-B ships, with coverage counts on every row.
+
+        What survives here is the narrower and still-live half: data/yahoo/ is
+        an index/ETF store on its own collection cadence, and a member must not
+        read it.  The fence stayed; only the thing it fences moved.
+        """
         _write_frame(tmp_path / "yahoo" / "TB_TARGET_0.parquet", _BENCH_SESSION, _BENCH_N)
         assert BTW._load_prices("TB_TARGET_0", tmp_path) is None
 
@@ -1240,3 +1252,335 @@ class TestBenchmarkStoreLadder:
         assert set(rates) == set(BTW._BACKSCAN_EVALUATED_LEGS)
         assert set(bs["legs_not_evaluated"]) == set(BTW._BACKSCAN_UNEVALUATED_LEGS)
         assert bs["k_is_partial"] is True
+
+
+# ── (17) MEMBER store ladder + coverage disclosure (W-B) ──────────────────────
+#
+# #4579 healed the BENCHMARK.  Its sibling defect stayed: members loaded only
+# from data/stocks/ (~235 names) while the 47 baskets' membership union is
+# ~1,009 slots / ~683 distinct names, and a member the store did not have was
+# silently dropped from closes_map.  Measured on the real store 2026-08-05,
+# during the exact week both baskets ignited:
+#
+#     gold_miners    1/12 members read (NEM alone)
+#     space_economy  0/15 members read (ew_1d_ret literally uncomputable)
+#     37 of 47 baskets below 60% coverage; 399 of 1,009 member slots read
+#
+# and NOTHING on the artifact said so — a basket scored on one member printed
+# exactly like a fully-read one (the dead-shared-input trap class).
+#
+# Two things ship here and both need their own pin: the ladder ORDER (stocks
+# keeps first refusal; baskets/ohlcv is the fallback) and the DISCLOSURE
+# (members_read / members_total on every row + a sub-threshold annotation).
+
+_LADDER_SESSION = "2026-07-15"
+_LADDER_N = 60
+
+
+class TestMemberStoreLadder:
+    """Members walk ('stocks', 'baskets/ohlcv') — in that order, and no other."""
+
+    def test_default_stores_are_stocks_then_baskets_ohlcv(self):
+        """The declared ladder itself, so a reorder fails loudly at the constant."""
+        assert BTW._DEFAULT_STORES == ("stocks", "baskets/ohlcv")
+
+    def test_stocks_wins_when_both_rungs_have_the_ticker(self, tmp_path):
+        """ORDER pin: data/stocks/ is the deep adjusted store and keeps priority.
+
+        Both rungs carry MEM — with different closes, so the assertion can tell
+        which one answered.  Reverse the ladder and this goes red.
+        """
+        _write_frame(tmp_path / "stocks" / "MEM.parquet",
+                     _LADDER_SESSION, _LADDER_N, bump_pct=0.05)
+        _write_frame(tmp_path / "baskets" / "ohlcv" / "MEM.parquet",
+                     _LADDER_SESSION, _LADDER_N, bump_pct=0.99)
+
+        df = BTW._load_prices("MEM", tmp_path)
+        assert df is not None
+        assert float(df["close"].iloc[-1]) == pytest.approx(105.0), \
+            "data/stocks/ must answer first when it has the ticker"
+
+    def test_baskets_ohlcv_is_the_fallback_rung(self, tmp_path):
+        """A member absent from data/stocks/ now resolves instead of vanishing.
+
+        This is the gold_miners/space_economy case in miniature: before W-B this
+        returned None and the member was silently dropped from closes_map.
+        """
+        _write_frame(tmp_path / "baskets" / "ohlcv" / "MEM.parquet",
+                     _LADDER_SESSION, _LADDER_N, bump_pct=0.07)
+
+        df = BTW._load_prices("MEM", tmp_path)
+        assert df is not None, "data/baskets/ohlcv/ must answer when stocks/ has nothing"
+        assert float(df["close"].iloc[-1]) == pytest.approx(107.0)
+
+    def test_member_in_neither_store_is_still_none(self, tmp_path):
+        """The ladder widens resolution; it does not invent frames (MMC's case)."""
+        assert BTW._load_prices("MEM", tmp_path) is None
+
+    def test_unusable_stocks_rung_falls_through_to_baskets_ohlcv(self, tmp_path):
+        """A stocks/ frame with no `close` must not win the member ladder either.
+
+        Same fall-through law the benchmark rung already had — pinned for the
+        member ladder so the two halves cannot drift apart.
+        """
+        _write_frame(tmp_path / "stocks" / "MEM.parquet", _LADDER_SESSION, _LADDER_N,
+                     cols=("close_price", "volume"))
+        _write_frame(tmp_path / "baskets" / "ohlcv" / "MEM.parquet",
+                     _LADDER_SESSION, _LADDER_N, bump_pct=0.07)
+
+        df = BTW._load_prices("MEM", tmp_path)
+        assert df is not None
+        assert float(df["close"].iloc[-1]) == pytest.approx(107.0)
+
+    # --- the benchmark half must NOT move -----------------------------------
+
+    def test_benchmark_ladder_is_unchanged_by_the_member_ladder(self):
+        """#4579's ladder stays byte-identical and benchmark-scoped."""
+        assert BTW._STORE_LADDER == {"SPY": ("stocks", "yahoo")}
+
+    def test_benchmark_never_reads_baskets_ohlcv(self, tmp_path):
+        """SPY resolves from stocks/ or yahoo/ — never from the member store.
+
+        data/baskets/ohlcv/ is written by the member collector; the benchmark
+        living there would be a different tape on a different cadence, and
+        pulling it in would reinstate exactly the cross-store mixing the rs_z
+        leg cannot tolerate.  (Structurally true on the real store today: SPY
+        exists in data/yahoo/ only.)
+        """
+        _write_frame(tmp_path / "baskets" / "ohlcv" / "SPY.parquet",
+                     _LADDER_SESSION, _LADDER_N, bump_pct=0.42)
+
+        assert BTW._load_prices("SPY", tmp_path) is None, \
+            "the benchmark must not fall through to the member store"
+        assert BTW._spy_prices(tmp_path) is None
+
+
+class TestMemberCoverageDisclosure:
+    """members_read / members_total on every row, and a loud sub-60% warning."""
+
+    _BID = "cov_basket"
+
+    def _meta(self, n_members: int = 10) -> dict:
+        return {self._BID: {"members": [
+            {"ticker": f"COV_{j}", "removed": None} for j in range(n_members)
+        ]}}
+
+    def _write_members(self, tmp_path: Path, tickers: list[str], store: str) -> None:
+        for tk in tickers:
+            _write_frame(tmp_path / store / f"{tk}.parquet",
+                         _LADDER_SESSION, _LADDER_N)
+
+    def _rows(self, tmp_path: Path, meta: dict) -> list[dict]:
+        return BTW.compute(baskets_meta=meta, data_root=tmp_path,
+                           as_of=_LADDER_SESSION, run_backscan=False)["baskets"]
+
+    # --- the fields ---------------------------------------------------------
+
+    def test_every_row_carries_coverage_fields(self, tmp_path):
+        meta = self._meta(10)
+        self._write_members(tmp_path, [f"COV_{j}" for j in range(10)], "stocks")
+
+        rows = self._rows(tmp_path, meta)
+        assert rows
+        for r in rows:
+            assert r["members_read"] == 10
+            assert r["members_total"] == 10
+
+    def test_coverage_counts_the_fallback_rung(self, tmp_path):
+        """THE mutation pin: revert the ladder and members_read collapses to 2.
+
+        Two members in data/stocks/, eight only in data/baskets/ohlcv/ — the
+        gold_miners shape (1 of 12 in the deep store).  With the ladder the row
+        reads 10/10; with _DEFAULT_STORES back at ('stocks',) it reads 2/10 and
+        this assertion goes red, which is what makes the disclosure a measurement
+        rather than a decoration.
+        """
+        meta = self._meta(10)
+        self._write_members(tmp_path, [f"COV_{j}" for j in range(2)], "stocks")
+        self._write_members(tmp_path, [f"COV_{j}" for j in range(2, 10)],
+                            "baskets/ohlcv")
+
+        row = self._rows(tmp_path, meta)[0]
+        assert row["members_read"] == 10, \
+            "eight members resolvable only from data/baskets/ohlcv/ must be READ"
+        assert row["members_total"] == 10
+
+    def test_partial_coverage_is_reported_honestly(self, tmp_path):
+        """A basket read at 4/10 must SAY 4/10 — not print like a full read."""
+        meta = self._meta(10)
+        self._write_members(tmp_path, [f"COV_{j}" for j in range(4)], "stocks")
+
+        row = self._rows(tmp_path, meta)[0]
+        assert (row["members_read"], row["members_total"]) == (4, 10)
+
+    # --- the annotation -----------------------------------------------------
+
+    def test_sub_threshold_coverage_raises_a_github_annotation(self, tmp_path, capsys):
+        """capsys, never caplog: the annotation must START its line on STDOUT.
+
+        A logger would emit 'WARNING ::warning …' and GitHub would silently drop
+        it (tests/test_gh_annotation_line_start.py). Asserting on startswith is
+        what pins the defect rather than the wording.
+        """
+        meta = self._meta(10)
+        self._write_members(tmp_path, [f"COV_{j}" for j in range(4)], "stocks")
+
+        self._rows(tmp_path, meta)
+        lines = [ln for ln in capsys.readouterr().out.splitlines()
+                 if "basket-turn-coverage" in ln]
+        assert lines, "a 4/10 basket must raise the coverage annotation"
+        assert len(lines) == 1
+        assert lines[0].startswith("::warning title=basket-turn-coverage::"), \
+            f"annotation must start its line, got: {lines[0]!r}"
+        assert lines[0].endswith(f"{self._BID} reads 4/10 members")
+
+    def test_full_coverage_raises_no_annotation(self, tmp_path, capsys):
+        """The alarm has to be able to stay silent, or it measures nothing."""
+        meta = self._meta(10)
+        self._write_members(tmp_path, [f"COV_{j}" for j in range(10)], "stocks")
+
+        self._rows(tmp_path, meta)
+        assert not [ln for ln in capsys.readouterr().out.splitlines()
+                    if "basket-turn-coverage" in ln]
+
+    def test_threshold_boundary_is_not_warned(self, tmp_path, capsys):
+        """Exactly at COVERAGE_WARN_FRACTION is fine; strictly below is not."""
+        assert BTW.COVERAGE_WARN_FRACTION == 0.6
+        meta = self._meta(10)
+        self._write_members(tmp_path, [f"COV_{j}" for j in range(6)], "stocks")
+
+        row = self._rows(tmp_path, meta)[0]
+        assert row["members_read"] == 6
+        assert not [ln for ln in capsys.readouterr().out.splitlines()
+                    if "basket-turn-coverage" in ln]
+
+    # --- the degenerate case ------------------------------------------------
+
+    def test_zero_resolvable_members_degrades_instead_of_crashing(self, tmp_path, capsys):
+        """space_economy's exact shape: 0 of N readable.
+
+        The organ must still return a row, still print the coverage, still
+        raise the annotation, and never raise — a coverage hole is a disclosure
+        event, not an outage.
+        """
+        meta = self._meta(15)          # nothing written to either store
+
+        result = BTW.compute(baskets_meta=meta, data_root=tmp_path,
+                             as_of=_LADDER_SESSION, run_backscan=False)
+        assert "error" not in result, "a zero-coverage basket must not crash compute()"
+        row = next(r for r in result["baskets"] if r["basket_id"] == self._BID)
+
+        assert (row["members_read"], row["members_total"]) == (0, 15)
+        assert row["k"] == 0
+        assert row["ew_1d_ret"] is None
+        assert all(v is False for v in row["legs"].values())
+
+        lines = [ln for ln in capsys.readouterr().out.splitlines()
+                 if "basket-turn-coverage" in ln]
+        assert lines and lines[0].startswith("::warning")
+        assert lines[0].endswith(f"{self._BID} reads 0/15 members")
+
+    def test_coverage_is_not_a_leg_and_not_a_gate(self, tmp_path, capsys):
+        """A thin basket is still scored and still stamped — only not silently.
+
+        Coverage disclosure must not become a hidden filter: the 4-of-10 basket
+        below is WARNED about and still fires impulse_day + volume_confirm on
+        the members it DOES have, still reaches WATCH, and is still a ledger
+        candidate — exactly as it was before W-B.
+        """
+        meta = self._meta(10)
+        for tk in (f"COV_{j}" for j in range(4)):
+            _write_frame(tmp_path / "stocks" / f"{tk}.parquet",
+                         _LADDER_SESSION, _LADDER_N, bump_pct=0.10, vol_spike=5.0)
+
+        row = self._rows(tmp_path, meta)[0]
+        assert (row["members_read"], row["members_total"]) == (4, 10)
+        assert [ln for ln in capsys.readouterr().out.splitlines()
+                if "basket-turn-coverage" in ln], "fixture must be a warned basket"
+
+        assert row["legs"]["impulse_day"] is True
+        assert row["legs"]["volume_confirm"] is True
+        assert row["k"] >= BTW.STATE_WATCH_K
+        assert row["state"] == "WATCH"
+
+    def test_impulse_day_denominates_on_active_members_not_read_ones(self, tmp_path):
+        """WHY coverage is worth disclosing — the mechanism, pinned.
+
+        `_leg_impulse_day` takes its threshold from `len(tickers)`, the ACTIVE
+        membership, while the members it can count are only the readable ones.
+        So an unreadable member is not neutral: it raises the bar and lowers the
+        count at the same time.  Two of ten members up +10% cannot clear
+        max(1/3 x 10, 2) = 3.33 — the identical tape at 2 of 2 coverage fires.
+
+        This is PRE-EXISTING behaviour and W-B does not change it (the leg
+        formula is frozen, FT-R9).  It is pinned here because it is the reason
+        a silent coverage hole was a scoring defect and not just missing
+        telemetry: gold_miners at 1/12 had impulse_day arithmetically out of
+        reach on any tape whatsoever.
+        """
+        thin = {"thin": {"members": [
+            {"ticker": f"COV_{j}", "removed": None} for j in range(10)
+        ]}}
+        full = {"full": {"members": [
+            {"ticker": f"COV_{j}", "removed": None} for j in range(2)
+        ]}}
+        for tk in ("COV_0", "COV_1"):
+            _write_frame(tmp_path / "stocks" / f"{tk}.parquet",
+                         _LADDER_SESSION, _LADDER_N, bump_pct=0.10)
+
+        thin_row = self._rows(tmp_path, thin)[0]
+        full_row = self._rows(tmp_path, full)[0]
+
+        assert (thin_row["members_read"], thin_row["members_total"]) == (2, 10)
+        assert (full_row["members_read"], full_row["members_total"]) == (2, 2)
+        assert thin_row["legs"]["impulse_day"] is False
+        assert full_row["legs"]["impulse_day"] is True, \
+            "the same two members firing clear the bar when they ARE the basket"
+
+
+class TestFireConditionUnchangedByTheLadder:
+    """Gate (d): where coverage does not move, NOTHING moves.
+
+    Every member of the TestBenchmarkStoreLadder fixture resolves from
+    data/stocks/, so the second rung is never consulted.  On that fixture the
+    shipped ladder and the pre-fix ('stocks',) ladder must produce byte-identical
+    leg dicts, K, state and rs_z — which is the assertion that W-B changed how
+    much tape the legs read and NOT what they do with it.
+    """
+
+    def test_states_are_byte_identical_when_every_member_is_in_stocks(
+        self, tmp_path, monkeypatch
+    ):
+        fixture = TestBenchmarkStoreLadder()
+        meta = fixture._write_store(tmp_path)
+
+        after = fixture._compute(tmp_path, meta)["baskets"]
+
+        monkeypatch.setattr(BTW, "_DEFAULT_STORES", ("stocks",))
+        before = fixture._compute(tmp_path, meta)["baskets"]
+
+        assert [r["basket_id"] for r in before] == [r["basket_id"] for r in after]
+        for b, a in zip(before, after):
+            compared = ("legs", "k", "state", "rs_z_value", "ew_1d_ret")
+            assert {k: b[k] for k in compared} == {k: a[k] for k in compared}, \
+                f"{a['basket_id']}: the ladder moved a fire condition"
+
+        # …and the fixture must really be exercising the no-op case.
+        assert all(r["members_read"] == r["members_total"] for r in after)
+        assert not (tmp_path / "baskets" / "ohlcv").exists()
+
+    def test_thresholds_and_state_rules_are_untouched(self):
+        """The frozen v1 constants (FT-R9 / PS-R9) — W-B moves none of them."""
+        assert BTW.IMPULSE_FRACTION == 1 / 3
+        assert BTW.IMPULSE_MIN_MEMBERS == 2
+        assert BTW.IMPULSE_THRESHOLD == 0.03
+        assert BTW.RS_Z_THRESHOLD == 2.0
+        assert BTW.BREADTH_Z_THRESHOLD == 2.0
+        assert BTW.BREADTH_MIN_CROSSINGS == 2
+        assert BTW.BREADTH_LOOKBACK == 60
+        assert BTW.VOLUME_MULTIPLIER == 1.5
+        assert BTW.VOLUME_MEDIAN_DAYS == 20
+        assert BTW.COMPLEX_SIBLING_MINIMUM == 2
+        assert BTW.STATE_WATCH_K == 2
+        assert BTW.STATE_IGNITION_K == 3
+        assert BTW.HYSTERESIS_SESSIONS == 2

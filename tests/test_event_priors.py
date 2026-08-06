@@ -427,30 +427,194 @@ class TestDSRLedger:
 # 10. M4 / M5 gate tests
 # ---------------------------------------------------------------------------
 
-class TestM4M5Gates:
-    """Earnings (M4) and halt (M5) must null-print until real PIT dates are wired."""
+def _synthetic_8k_panel(tmp_path, rows):
+    """Write an earnings_8k_dates.parquet with `rows` = list of dicts."""
+    import pandas as pd
+    (tmp_path / "edgar").mkdir(exist_ok=True, parents=True)
+    pd.DataFrame(rows).to_parquet(tmp_path / "edgar" / "earnings_8k_dates.parquet")
 
-    def test_load_earnings_events_returns_empty(self, tmp_path, monkeypatch):
-        """M4 fix: load_earnings_events() must return [] regardless of file contents.
 
-        asof_date is period_end+60d (synthetic placeholder), not a real announcement
-        date. Computing priors against it is methodologically unsound.
+def _flat_closes(dates, tickers, start=100.0):
+    """Close panel with a deterministic 0.1%/day ramp so vol60 is finite and > 0."""
+    import numpy as np
+    import pandas as pd
+    n = len(dates)
+    data = {}
+    for k, t in enumerate(tickers):
+        # small alternating wiggle keeps rolling std strictly positive
+        wig = np.where(np.arange(n) % 2 == 0, 1.0, 0.995)
+        data[t] = start * np.cumprod(np.full(n, 1.001)) * wig
+    return pd.DataFrame(data, index=pd.DatetimeIndex(dates))
+
+
+class TestM4EarningsAnchor:
+    """M4 RE-ENABLED: earnings priors are anchored on real Item-2.02 acceptance times.
+
+    These tests pin the NEW contract. The old test asserted `load_earnings_events()`
+    returns [] unconditionally; that gate named its own unblock ("EDGAR 8-K filing
+    timestamps"), which data/edgar/earnings_8k_dates.parquet now supplies. The gate on
+    eps_quarterly.asof_date is NOT relaxed — see test_asof_date_is_never_read.
+    """
+
+    def test_absent_store_still_null_prints(self, tmp_path):
+        """No 8-K store -> [] -> the caller emits an honest null-print (unchanged law)."""
+        closes = _flat_closes(pd.bdate_range("2020-01-01", periods=200), ["AAPL"])
+        with patch.object(bep.config, "data_dir", return_value=tmp_path):
+            assert bep.load_earnings_events(closes, None) == []
+
+    def test_asof_date_is_never_read(self, tmp_path):
+        """The synthetic eps_quarterly.asof_date must remain unused as an anchor.
+
+        A period_end+60d placeholder present on disk must not produce a single event.
         """
         import pandas as pd
-        eps = pd.DataFrame([{
-            "ticker": "AAPL",
-            "asof_date": "2024-03-31",
-            "eps": 1.5,
-            "period": "2024Q1",
+        (tmp_path / "edgar").mkdir(exist_ok=True, parents=True)
+        pd.DataFrame([{"ticker": "AAPL", "asof_date": "2020-03-31",
+                       "period_end": "2020-01-31", "eps_q": 1.5}]).to_parquet(
+            tmp_path / "edgar" / "eps_quarterly.parquet")
+        closes = _flat_closes(pd.bdate_range("2020-01-01", periods=200), ["AAPL"])
+        with patch.object(bep.config, "data_dir", return_value=tmp_path):
+            # only eps_quarterly on disk, no 8-K store
+            assert bep.load_earnings_events(closes, None) == []
+
+    def test_afterhours_filing_prices_on_the_next_session(self):
+        """A 20:15 UTC (16:15 ET) acceptance is after the close -> day0 = NEXT session."""
+        cal = pd.DatetimeIndex(["2024-05-01", "2024-05-02", "2024-05-03"])
+        d0 = bep.earnings_day0(pd.Timestamp("2024-05-01"),
+                               "2024-05-01T20:15:00.000Z", cal)
+        assert d0 == pd.Timestamp("2024-05-02"), (
+            "after-the-close 8-K must be priced by the next session, not the filing day")
+        assert bep.earnings_session_rule("2024-05-01T20:15:00.000Z") == "afterhours"
+
+    def test_premarket_filing_prices_same_session(self):
+        """An 11:00 UTC (07:00 ET) acceptance is pre-open -> day0 = the filing session."""
+        cal = pd.DatetimeIndex(["2024-05-01", "2024-05-02", "2024-05-03"])
+        d0 = bep.earnings_day0(pd.Timestamp("2024-05-01"),
+                               "2024-05-01T11:00:00.000Z", cal)
+        assert d0 == pd.Timestamp("2024-05-01")
+        assert bep.earnings_session_rule("2024-05-01T11:00:00.000Z") == "premarket"
+
+    def test_intraday_filing_is_tagged_not_silently_pooled(self):
+        """A 14:00 ET filing is only partially priced that day and must be separable."""
+        assert bep.earnings_session_rule("2024-05-01T18:00:00.000Z") == "intraday"
+
+    def test_unusable_acceptance_timestamp_drops_the_event(self):
+        cal = pd.DatetimeIndex(["2024-05-01", "2024-05-02"])
+        assert bep.earnings_day0(pd.Timestamp("2024-05-01"), "", cal) is None
+        assert bep.earnings_day0(pd.Timestamp("2024-05-01"), "not-a-date", cal) is None
+        assert bep.earnings_session_rule("") is None
+
+    def test_reaction_bands_are_half_open_and_ordered(self):
+        """Bands are left-closed/right-open [lo, hi) so a boundary value is unambiguous."""
+        assert bep.reaction_band(3.0) == "reaction_strong_up"
+        assert bep.reaction_band(2.0) == "reaction_strong_up"     # lower edge included
+        assert bep.reaction_band(1.9) == "reaction_up"
+        assert bep.reaction_band(0.5) == "reaction_up"            # lower edge included
+        assert bep.reaction_band(0.49) == "reaction_flat"
+        assert bep.reaction_band(0.0) == "reaction_flat"
+        assert bep.reaction_band(-0.5) == "reaction_flat"         # [-0.5, 0.5) -> flat
+        assert bep.reaction_band(-0.51) == "reaction_down"
+        assert bep.reaction_band(-2.0) == "reaction_down"         # [-2.0, -0.5) -> down
+        assert bep.reaction_band(-2.01) == "reaction_strong_down"
+        assert bep.reaction_band(-9.0) == "reaction_strong_down"
+        assert bep.reaction_band(float("nan")) is None
+        assert bep.reaction_band(None) is None
+
+    def test_reaction_bands_partition_the_line(self):
+        """No gaps, no overlaps: every finite value gets exactly one band."""
+        import numpy as np
+        for z in np.linspace(-25, 25, 2001):
+            assert bep.reaction_band(float(z)) is not None, f"{z} fell through every band"
+        names = [n for n, _, _ in bep._REACTION_BANDS]
+        assert len(names) == len(set(names)), "duplicate band name"
+
+    def test_subtype_conditioning_is_known_at_day0_close(self, tmp_path):
+        """NO LOOK-AHEAD: r0z uses only day0 and earlier, and CAR starts at day0 close.
+
+        Mutating prices strictly AFTER day0 must not change the assigned subtype. If it
+        did, the band would be leaking the very return the prior measures.
+        """
+        import numpy as np
+        dates = pd.bdate_range("2020-01-01", periods=200)
+        closes = _flat_closes(dates, ["AAPL", "SPY"])
+        day0 = dates[120]
+        _synthetic_8k_panel(tmp_path, [{
+            "ticker": "AAPL", "cik": 1,
+            "filing_date": str(day0.date()),
+            "acceptance_datetime": f"{day0.date()}T11:00:00.000Z",
+            "items": "2.02",
         }])
         with patch.object(bep.config, "data_dir", return_value=tmp_path):
-            (tmp_path / "edgar").mkdir(exist_ok=True)
-            eps.to_parquet(tmp_path / "edgar" / "eps_quarterly.parquet")
-            events = bep.load_earnings_events()
-        assert events == [], (
-            f"M4: load_earnings_events() must return [] (asof_date is placeholder); "
-            f"got {len(events)} events"
-        )
+            base = bep.load_earnings_events(closes, closes["SPY"])
+            future = closes.copy()
+            future.iloc[121:, future.columns.get_loc("AAPL")] *= 3.0
+            after = bep.load_earnings_events(future, future["SPY"])
+        assert base and after, "fixture must produce an event on both runs"
+        assert base[0] == after[0], (
+            f"subtype/date changed when only POST-day0 prices moved — look-ahead leak: "
+            f"{base[0]} -> {after[0]}")
+
+    def test_events_carry_day0_not_raw_filing_date(self, tmp_path):
+        """An after-hours event must be emitted at day0, never at the filing date."""
+        dates = pd.bdate_range("2020-01-01", periods=200)
+        closes = _flat_closes(dates, ["AAPL", "SPY"])
+        fd = dates[120]
+        _synthetic_8k_panel(tmp_path, [{
+            "ticker": "AAPL", "cik": 1,
+            "filing_date": str(fd.date()),
+            "acceptance_datetime": f"{fd.date()}T21:05:00.000Z",   # 17:05 ET
+            "items": "2.02",
+        }])
+        with patch.object(bep.config, "data_dir", return_value=tmp_path):
+            ev = bep.load_earnings_events(closes, closes["SPY"])
+        assert ev, "after-hours event should still be emitted"
+        assert ev[0][1] == str(dates[121].date()), (
+            f"after-hours filing must be anchored on the NEXT session; got {ev[0][1]}")
+
+    def test_unpriced_ticker_is_skipped_not_crashed(self, tmp_path):
+        dates = pd.bdate_range("2020-01-01", periods=200)
+        closes = _flat_closes(dates, ["AAPL", "SPY"])
+        _synthetic_8k_panel(tmp_path, [{
+            "ticker": "ZZZZ", "cik": 9,
+            "filing_date": str(dates[120].date()),
+            "acceptance_datetime": f"{dates[120].date()}T11:00:00.000Z",
+            "items": "2.02",
+        }])
+        with patch.object(bep.config, "data_dir", return_value=tmp_path):
+            assert bep.load_earnings_events(closes, closes["SPY"]) == []
+
+
+class TestDeepClosesSplice:
+    """_deep_closes must EXTEND history without altering any existing breadth value."""
+
+    def test_breadth_values_win_on_the_overlap(self, tmp_path):
+        """A splice that changed an overlapping cell would manufacture a fake return."""
+        import numpy as np
+        dates = pd.bdate_range("2024-01-01", periods=30)
+        breadth = _flat_closes(dates, ["AAPL"])
+        (tmp_path / "stocks").mkdir(parents=True, exist_ok=True)
+        deep_dates = pd.bdate_range("2020-01-01", periods=1100)
+        deep = _flat_closes(deep_dates, ["AAPL"], start=7.0)   # deliberately different level
+        deep[["close"]] = deep[["AAPL"]]
+        deep[["close"]].to_parquet(tmp_path / "stocks" / "AAPL.parquet")
+        with patch.object(bep.config, "data_dir", return_value=tmp_path):
+            out = bep._deep_closes(breadth)
+        assert out.index.min() < dates.min(), "history must extend backwards"
+        overlap = breadth.index.intersection(out.index)
+        assert np.allclose(out.loc[overlap, "AAPL"].values,
+                           breadth.loc[overlap, "AAPL"].values), (
+            "breadth values must be preserved byte-for-byte on the overlap")
+
+    def test_absent_deep_store_returns_input_unchanged(self, tmp_path):
+        dates = pd.bdate_range("2024-01-01", periods=10)
+        breadth = _flat_closes(dates, ["AAPL"])
+        with patch.object(bep.config, "data_dir", return_value=tmp_path):
+            out = bep._deep_closes(breadth)
+        assert out.equals(breadth)
+
+
+class TestM4M5Gates:
+    """Halt (M5) must null-print until a real disclosure date is wired."""
 
     def test_compute_prior_earnings_null_reason_insufficient(self):
         """M4 fix: earnings prior must carry insufficient=True when no events."""

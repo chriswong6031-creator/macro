@@ -28,6 +28,20 @@
   .dp-asof { display:inline-flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); margin-top:8px; }
   .dp-dot { width:7px; height:7px; border-radius:50%; background:var(--up); animation:dpBreathe 2.8s ease-in-out infinite; flex:none; }
 
+  /* ---------- market gauge ---------- */
+  .dp-gauge { margin:16px 0 2px; }
+  .gg { display:inline-flex; align-items:baseline; gap:11px; flex-wrap:wrap; padding:11px 16px; border-radius:13px; border:1px solid var(--line); background:var(--panel); }
+  .gg-k { font-size:11.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+  .gg-v { font-size:22px; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+  .gg-n { font-size:12px; color:var(--muted); }
+
+  /* ---------- coverage / limits ---------- */
+  .dp-limits { margin:30px 0 0; padding:15px 17px; border:1px solid var(--line); border-radius:13px; background:var(--panel); }
+  .dp-limits .lh { font-size:10.5px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .dp-limits ul { margin:0; padding-left:17px; }
+  .dp-limits li { font-size:12.5px; color:var(--muted); line-height:1.6; }
+  .dp-limits b { color:var(--ink); font-weight:700; font-variant-numeric:tabular-nums; }
+
   /* ---------- what changed ---------- */
   .dp-changes { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:22px 0 2px; }
   .dp-changes .eb { font-size:10.5px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); margin-right:2px; }

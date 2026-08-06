@@ -1,0 +1,115 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "LEN-2026-06-30-laggards",
+  "ticker": "LEN",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "LEN",
+    "as_of": "2026-06-30",
+    "lane": "laggards",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "LEN",
+    "lane": "laggards",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "mixed",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Consumer Discretionary",
+    "excess_spy": -0.05016313398899774,
+    "excess_sector": -0.03152391148337785,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "LEN stopped and underperformed SPY, with a mixed outcome cause and a clean process record. The evidence does not resolve whether housing macro conditions, Discretionary rotation, or company-specific weakness dominated.",
+    "root_cause": "LEN stopped and underperformed SPY, with a mixed outcome cause and a clean process record. The evidence does not resolve whether housing macro conditions, Discretionary rotation, or company-specific weakness dominated.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The laggards book surfaced LEN, but the housing-regime and sector-rotation engines missed or did not document the conditioning needed to explain the failure.",
+    "engines_credit": "The process organ is not faulted by the supplied clean label; the macro-regime, housing-cycle, and Discretionary-rotation organs are the principal attribution laggards pending evidence.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "macro_regime",
+        "factor": "",
+        "mechanism": "Housing-sensitive macro conditions are a plausible component of the supplied mixed failure attribution.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "If homebuilders and housing-sensitive assets were stable while LEN weakened, macro conditioning would be insufficient.",
+        "evidence_refs": [
+          "outcome_cause=mixed",
+          "sector=Consumer Discretionary"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "Issuer-specific weakness may have compounded or independently caused the stop.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "If LEN tracked homebuilder peers, company-specific weakness would lose explanatory weight.",
+        "evidence_refs": [
+          "excess_spy=-0.05016313398899774",
+          "terminal_state=STOPPED"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The adverse holding path reached the recorded stopping condition.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "A path that avoided the stopping condition would have changed the terminal classification, without proving the original thesis correct.",
+        "evidence_refs": [
+          "terminal_state=STOPPED",
+          "process_fault=clean"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "A missed or late homebuilder rotation read may explain the outcome.",
+      "Company-specific orders, margins, incentives, or guidance may have weakened.",
+      "Interest-rate or credit conditions may have impaired housing-sensitive equities.",
+      "The stop may reflect path volatility rather than durable thesis failure."
+    ],
+    "missing_evidence": [
+      "Mortgage-rate, yield, and housing-data chronology",
+      "Homebuilder peer-relative returns",
+      "LEN orders, backlog, margins, incentives, and estimate revisions",
+      "Entry and stop timestamps",
+      "Maximum adverse and favorable excursion",
+      "Ex-ante regime-cell classification"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "len_housing_regime_condition",
+        "feature": "Housing-regime conditioning",
+        "measurement": "Condition laggard-book outcomes on contemporaneous mortgage-rate direction, homebuilder breadth, and housing-data trend.",
+        "expected_direction": "Deteriorating housing conditions should be associated with weaker subsequent outcomes for housing-sensitive laggards.",
+        "falsifier": "The relationship is absent after controlling for issuer fundamentals and broad market factors.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T05:48:19+00:00"
+}

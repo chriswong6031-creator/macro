@@ -1943,6 +1943,154 @@
   body.page-stocks #dash-mtf-section,
   body.page-stocks #accumulation,
   body.page-stocks #holdings{display:none!important}
+/* ══════════════════════════════════════════════════════════════════════════
+     LIGHT MODE — designed, not inherited (2026-08-03)
+     This board was drawn dark-first and light arrived as a token swap: panel and
+     canvas landed within one step of each other (#f5f5f7 on #eceef1), so the
+     five action lanes stopped being lanes, the gated teasers turned into beige
+     smudges, and the sign-up bands bleached into pastel. Light gets its own
+     three-level depth recipe here:
+
+         canvas #e8ebf1  →  panel #ffffff  →  card / lane wash
+
+     Rules of the port: (1) every selector is guarded on html[data-theme="light"]
+     AND scoped to body.page-stocks, so the dark render stays byte-identical and
+     the macro page is untouched; (2) theme.js injects
+     html.soft-contrast[data-theme="light"] LATE in <head> at specificity (0,2,1)
+     — every rule below clears it on SPECIFICITY, never on source order;
+     (3) directional colour goes through the estate's --ink-* twins so 红涨绿跌
+     still flips; only non-directional state hues (amber) are pinned as hex.
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  /* 1 · canvas — a step deeper than the estate default so white reads as material */
+  html[data-theme="light"] body.page-stocks{ background:#e8ebf1; }
+
+  /* 2 · panels — white material, hairline edge, one soft lift */
+  html[data-theme="light"] body.page-stocks .panel{
+    background:#fff; border-color:#dde2ea;
+    box-shadow:0 1px 2px rgba(23,32,55,.05), 0 8px 24px -12px rgba(23,32,55,.10);
+  }
+  html[data-theme="light"] body.page-stocks #stocks-header{
+    background:
+      radial-gradient(900px 180px at 12% -40%,color-mix(in srgb,var(--link) 9%,transparent),transparent 60%),
+      #fff;
+  }
+  html[data-theme="light"] body.page-stocks .stk-status{ background:#f4f6fa; border-color:#dde2ea; }
+
+  /* 3 · the action board — in light the five lane containers vanished into the
+     panel, so the board read as one undifferentiated list instead of five
+     stances side by side. Each lane gets a wash and an edge in its OWN accent,
+     so the column IS the stance before a single word is read. */
+  html[data-theme="light"] body.page-stocks .actcol{
+    background:color-mix(in srgb, var(--act-accent) 4%, #fff);
+    border-color:color-mix(in srgb, var(--act-accent) 14%, #dde2ea);
+    box-shadow:0 1px 2px rgba(23,32,55,.05), 0 8px 22px -15px rgba(23,32,55,.20);
+  }
+  html[data-theme="light"] body.page-stocks .acth{
+    border-bottom-color:color-mix(in srgb, var(--act-accent) 16%, #dde2ea);
+  }
+  html[data-theme="light"] body.page-stocks .actitem{
+    border-bottom-color:color-mix(in srgb, var(--act-accent) 10%, #e3e8f0);
+  }
+  html[data-theme="light"] body.page-stocks .actitem:hover,
+  html[data-theme="light"] body.page-stocks .actitem:focus{ background:rgba(255,255,255,.72); }
+  html[data-theme="light"] body.page-stocks .actitem.hovered{ background:rgba(255,255,255,.9); }
+
+  /* 4 · gated teasers — a blurred colour chip on white smears into a dirty beige
+     stain. Desaturating first makes the same rows read as what they are: a
+     deliberate skeleton of content that is there, just not yours yet. */
+  html[data-theme="light"] body.page-stocks .mx-tier-blurred{
+    filter:blur(5px) saturate(.35); opacity:.46;
+  }
+
+  /* 5 · RECENTLY FIRED — the "theme just confirmed" row. On ink a warm gradient
+     reads as a whisper; on white the same gradient shouts a cream band across
+     the panel. Light gets the quiet-notice form instead: near-white wash, one
+     amber rail, amber headline. */
+  html[data-theme="light"] body.page-stocks .pbr-r{
+    background:#f7f9fc; border-color:#e3e8f0;
+  }
+  html[data-theme="light"] body.page-stocks .pbr-r.pbr-warm{
+    background:color-mix(in srgb,#b98a2b 7%,#fff);
+    border-color:color-mix(in srgb,#b98a2b 26%,#dde2ea);
+    border-left:3px solid #b98a2b;
+  }
+  html[data-theme="light"] body.page-stocks .pbr-wl{ color:#7a5a14; }
+
+  /* 6 · entry chips — "pullback zone …" + "extended" sat as two abutting heavy
+     tints, reading as one double-highlighted blob. Thinner washes and a hairline
+     ring make them two chips again. The green keeps --ink-up (not a hex) so the
+     红涨绿跌 flip still swaps it to red; amber is a non-directional state hue and
+     is pinned. */
+  html[data-theme="light"] body.page-stocks .ent-good{
+    color:var(--ink-up, var(--up));
+    background:color-mix(in srgb, var(--ink-up, var(--up)) 9%, #fff);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--ink-up, var(--up)) 24%, transparent);
+  }
+  html[data-theme="light"] body.page-stocks .ent-warn{
+    color:#8a6410;
+    background:color-mix(in srgb,#b98a2b 10%,#fff);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,#b98a2b 26%,transparent);
+  }
+
+  /* 7 · the "?" affordance — a filled pill tuned for ink reads as a dark blob on
+     white. It is a hint, not a control: hollow ring, muted glyph. */
+  html[data-theme="light"] body.page-stocks span.help,
+  html[data-theme="light"] body.page-stocks span.help.help-upgraded{
+    background:transparent; color:var(--muted);
+    border:1px solid color-mix(in srgb, var(--muted) 55%, transparent);
+  }
+  html[data-theme="light"] body.page-stocks span.help:hover,
+  html[data-theme="light"] body.page-stocks span.help.help-upgraded:hover{
+    border-color:var(--muted); color:var(--text);
+  }
+
+  /* 8 · the sign-up bands stay DARK ISLANDS. Everything else on this page went
+     white, which is exactly why these two must not: they are the one place the
+     page asks for something, and a pastel band on a white page is furniture.
+     Buttons keep their vivid accent — unchanged from dark. */
+  html[data-theme="light"] body.page-stocks .mx-tier-gate{
+    background:linear-gradient(118deg,#233254 0%,#182034 62%,#151b2c 100%);
+    border-color:#2f3f63;
+    box-shadow:0 18px 44px -26px rgba(20,30,58,.55);
+  }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate--prophet{
+    background:linear-gradient(118deg,#2b2550 0%,#1d1c37 62%,#17172b 100%);
+    border-color:#3b3268;
+  }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate::before{ background:color-mix(in srgb,#8fb4f2 15%,transparent); }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate--prophet::before{ background:color-mix(in srgb,#a996ff 15%,transparent); }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate::after{
+    background:linear-gradient(90deg,transparent,color-mix(in srgb,#8fb4f2 85%,transparent),transparent);
+  }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate--prophet::after{
+    background:linear-gradient(90deg,transparent,color-mix(in srgb,#a996ff 85%,transparent),transparent);
+  }
+  html[data-theme="light"] body.page-stocks .mx-tier-eyebrow{ color:#8fb4f2; }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate--prophet .mx-tier-eyebrow{ color:#a996ff; }
+  html[data-theme="light"] body.page-stocks .mx-tier-mark{
+    background:color-mix(in srgb,#8fb4f2 16%,transparent);
+    border-color:color-mix(in srgb,#8fb4f2 34%,transparent);
+  }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate--prophet .mx-tier-mark{
+    background:color-mix(in srgb,#a996ff 16%,transparent);
+    border-color:color-mix(in srgb,#a996ff 34%,transparent);
+  }
+  html[data-theme="light"] body.page-stocks .mx-tier-copy b{ color:#f2f5fa; }
+  html[data-theme="light"] body.page-stocks .mx-tier-copy small{ color:rgba(224,232,245,.74); }
+  html[data-theme="light"] body.page-stocks .mx-tier-signin{ color:rgba(224,232,245,.66); }
+  html[data-theme="light"] body.page-stocks .mx-tier-signin:hover{ color:#fff; }
+
+  /* 9 · level 3 — the containers that live INSIDE a white panel. They must sit
+     just off white, or the hierarchy collapses back to one flat sheet. */
+  html[data-theme="light"] body.page-stocks .pbt,
+  html[data-theme="light"] body.page-stocks .pbf-bar{
+    background:#f4f6fa; border-color:#e3e8f0;
+  }
+  html[data-theme="light"] body.page-stocks .pbf-bar button[aria-pressed="true"]{
+    background:#fff; border-color:#dde2ea; box-shadow:0 1px 2px rgba(23,32,55,.10);
+  }
+  html[data-theme="light"] body.page-stocks .chip{ border-color:#dde2ea; }
   </style>
   <div class="panel span12" id="stocks-header">
     {% set _stk_hdr_su = us_standouts if (us_standouts is defined and us_standouts) else none %}
@@ -2677,24 +2825,6 @@ body.page-macro .mxqm-eyebrow-chip{margin-left:auto;font-size:9.5px;font-weight:
 body.page-macro #mx5FlipCtxPop .mxfs-badge{display:none}
 body.page-macro .mxqm-glance{font-size:12.5px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.78));margin:2px 0 10px}
 body.page-macro .mxqm-glance b{color:var(--warn,#f59e0b);font-weight:700}
-/* Historical base rate — deliberately quieter than the glance line above it, because it
-   answers a different (and slower) question than today's drift and must never be read as
-   a competing forecast. */
-body.page-macro .mxqm-hist{margin:-4px 0 6px;font-size:11px;line-height:1.45;
-  color:var(--ink-3,rgba(255,255,255,.42))}
-body.page-macro .mxqm-hist b{color:var(--ink-2,rgba(255,255,255,.72));font-weight:650;
-  font-variant-numeric:tabular-nums}
-[data-theme="light"] body.page-macro .mxqm-hist{color:rgba(0,0,0,.6)}
-/* Goldilocks trim (2026-07-20): ONE quiet compressed line (grip + weakest support)
-   replacing the deleted flip-strip section; + one-line footer. */
-body.page-macro .mxqm-hold{display:flex;align-items:baseline;gap:6px;margin:2px 0 4px;
-  font-size:12px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.68))}
-body.page-macro .mxqm-hold-txt b{color:var(--ink-1,rgba(255,255,255,.92));font-weight:650}
-body.page-macro .mxqm-hold .help{flex:0 0 auto}
-[data-theme="light"] body.page-macro .mxqm-hold{color:rgba(0,0,0,.62)}
-body.page-macro .mxqm-foot{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);
-  font-size:10.5px;line-height:1.45;color:var(--ink-3,rgba(255,255,255,.42))}
-[data-theme="light"] body.page-macro .mxqm-foot{color:rgba(0,0,0,.6)}
 body.page-macro .mxqm-wrap{margin:0 0 8px}
 body.page-macro .mxqm-svg-box{width:100%;max-width:300px;margin:0 auto}
 body.page-macro .mxqm-svg-box svg{width:100%;height:auto;display:block;overflow:visible}
@@ -2719,7 +2849,26 @@ body.page-macro .mxqm-axis-label{fill:rgba(255,255,255,.34);font-size:7.5px;lett
    more than Latin at small sizes. #}
 body.page-macro .mxqm-quad-label{fill:rgba(255,255,255,.62);font-size:6.6px;letter-spacing:.04em;font-family:Inter,-apple-system,sans-serif;font-weight:700}
 body.page-macro .mxqm-quad-label.l-zh{font-size:8px;letter-spacing:.06em}
-body.page-macro .mxqm-odds{fill:rgba(255,255,255,.72);font-size:17px;font-weight:800;font-family:Inter,-apple-system,sans-serif;font-variant-numeric:tabular-nums}
+/* The odds numeral carries a HALO so the position dot (drawn beneath it — see the
+   marker-layer note in the SVG) can pass behind the glyphs without eating them.
+   paint-order:stroke fill lays the stroke down first, so the stroke reads as an
+   outline OUTSIDE the letterform instead of thinning it.
+   The halo has to be the colour of the tile it sits on, or it shows up as a glow:
+   each tile is `fill:var(--qN); opacity:.14` (or .42 when active) composited over
+   the popup plate, which color-mix() reproduces exactly. Referencing --qN keeps
+   this correct through both themes AND the zh 红涨绿跌 q1/q3 swap for free. */
+body.page-macro .mxqm-odds{fill:rgba(255,255,255,.72);font-size:17px;font-weight:800;font-family:Inter,-apple-system,sans-serif;font-variant-numeric:tabular-nums;
+  paint-order:stroke fill;stroke-width:3.4;stroke-linejoin:round;
+  stroke:color-mix(in srgb,var(--q1,#2e9e4f) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-odds-q1{stroke:color-mix(in srgb,var(--q1,#2e9e4f) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-odds-q2{stroke:color-mix(in srgb,var(--q2,#d4a017) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-odds-q3{stroke:color-mix(in srgb,var(--q3,#d04545) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-odds-q4{stroke:color-mix(in srgb,var(--q4,#3f78d8) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+/* active tile = the .42 fill, and the ONLY tile the dot can ever land in */
+body.page-macro .mxqm-odds-q1.active{stroke:color-mix(in srgb,var(--q1,#2e9e4f) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-odds-q2.active{stroke:color-mix(in srgb,var(--q2,#d4a017) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-odds-q3.active{stroke:color-mix(in srgb,var(--q3,#d04545) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-odds-q4.active{stroke:color-mix(in srgb,var(--q4,#3f78d8) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
 body.page-macro .mxqm-odds.active{fill:#fff}
 body.page-macro .mxqm-dot{fill:var(--warn,#f59e0b);stroke:rgba(255,255,255,.92);stroke-width:1.5}
 body.page-macro .mxqm-pulse{fill:var(--warn,#f59e0b);opacity:.4;transform-box:fill-box;transform-origin:center;animation:mxqmPulse 2.4s ease-out infinite}
@@ -2775,6 +2924,11 @@ body.page-macro.mx4-grid .mx5-flipctx-pop{
      deleted, weakest+grip compressed to one line), so the scroll cap + bottom fade are
      removed per Fable's "a hover popup must never scroll" ruling. */
   background:var(--mx5-pop-bg,rgba(16,21,30,.97));
+  /* the plate the quad tiles composite over — the quad-map numeral halo mixes its
+     tile hue into this to land on the tile's exact colour. Kept as its own token
+     because the light theme overrides `background` with a literal below rather
+     than re-pointing --mx5-pop-bg, so the halo cannot read the background. */
+  --mxqm-plate:var(--mx5-pop-bg,rgba(16,21,30,.97));
   border:1px solid var(--mx5-glass-border,rgba(255,255,255,.12));
   border-radius:14px;
   box-shadow:0 18px 48px rgba(0,0,0,.5);
@@ -2783,6 +2937,7 @@ body.page-macro.mx4-grid .mx5-flipctx-pop{
 }
 [data-theme="light"] body.page-macro.mx4-grid .mx5-flipctx-pop{
   background:#fff;
+  --mxqm-plate:#fff;
   border-color:rgba(0,0,0,.12);
   box-shadow:0 18px 48px rgba(20,30,50,.18);
 }
@@ -7080,29 +7235,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <rect class="mxqm-q4-fill{% if _qm_hard == 'Q4' %} active{% endif %}" x="5" y="80" width="65" height="65" rx="8"/>
               {# Q1 Goldilocks bottom-right #}
               <rect class="mxqm-q1-fill{% if _qm_hard == 'Q1' %} active{% endif %}" x="80" y="80" width="65" height="65" rx="8"/>
-              {# Quad labels (top of each tile) + odds numeral (centre) — bilingual via
-                 l-en/l-zh (the toggle works on SVG <text>; NO t() inside <text>). #}
-              {# Q3 Stagflation #}
-              <text class="mxqm-quad-label l-en" x="37.5" y="24" text-anchor="middle">STAGFLATION</text>
-              <text class="mxqm-quad-label l-zh" x="37.5" y="24" text-anchor="middle">滞胀</text>
-              {% if _p_q3 is not none %}<text class="mxqm-odds{% if _qm_hard == 'Q3' %} active{% endif %}" x="37.5" y="52" text-anchor="middle">{{ _p_q3 }}%</text>{% endif %}
-              {# Q2 Reflation #}
-              <text class="mxqm-quad-label l-en" x="112.5" y="24" text-anchor="middle">REFLATION</text>
-              <text class="mxqm-quad-label l-zh" x="112.5" y="24" text-anchor="middle">再通胀</text>
-              {% if _p_q2 is not none %}<text class="mxqm-odds{% if _qm_hard == 'Q2' %} active{% endif %}" x="112.5" y="52" text-anchor="middle">{{ _p_q2 }}%</text>{% endif %}
-              {# Q4 Growth-scare #}
-              <text class="mxqm-quad-label l-en" x="37.5" y="99" text-anchor="middle">GROWTH-SCARE</text>
-              <text class="mxqm-quad-label l-zh" x="37.5" y="99" text-anchor="middle">增长恐慌</text>
-              {% if _p_q4 is not none %}<text class="mxqm-odds{% if _qm_hard == 'Q4' %} active{% endif %}" x="37.5" y="127" text-anchor="middle">{{ _p_q4 }}%</text>{% endif %}
-              {# Q1 Goldilocks #}
-              <text class="mxqm-quad-label l-en" x="112.5" y="99" text-anchor="middle">GOLDILOCKS</text>
-              <text class="mxqm-quad-label l-zh" x="112.5" y="99" text-anchor="middle">理想增长</text>
-              {% if _p_q1 is not none %}<text class="mxqm-odds{% if _qm_hard == 'Q1' %} active{% endif %}" x="112.5" y="127" text-anchor="middle">{{ _p_q1 }}%</text>{% endif %}
-              {# Axis labels — bilingual; kept subtle at the edges #}
-              <text class="mxqm-axis-label l-en" x="75" y="160" text-anchor="middle">growth →</text>
-              <text class="mxqm-axis-label l-zh" x="75" y="160" text-anchor="middle">增长 →</text>
-              <text class="mxqm-axis-label l-en" x="-2" y="75" dominant-baseline="middle" text-anchor="middle" transform="rotate(-90 -2 75)">infl ↑</text>
-              <text class="mxqm-axis-label l-zh" x="-2" y="75" dominant-baseline="middle" text-anchor="middle" transform="rotate(-90 -2 75)">通胀 ↑</text>
+              {# ── MARKER LAYER FIRST, TEXT SECOND — order is load-bearing ──────────
+                 SVG has no z-index; paint order IS document order. The position dot
+                 always lands in the ACTIVE quad, i.e. the same tile that carries the
+                 largest odds numeral, so the two collide by construction rather than
+                 by accident — it shipped as an amber smudge sitting across the "96%".
+                 Drawing the marker before the numerals, and giving the numerals a
+                 halo in their own tile's colour (.mxqm-odds below), keeps the number
+                 readable wherever growth/inflation put the dot. Moving these three
+                 elements back below the <text> re-breaks it. #}
               {# Drift arrow toward gaining quad (animated dash-draw) #}
               {% if _show_arrow %}
               <line class="mxqm-arrow" x1="{{ _dot_x }}" y1="{{ _dot_y }}" x2="{{ _arr_ex }}" y2="{{ _arr_ey }}"/>
@@ -7110,76 +7251,35 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               {# Current position — soft pulse ring behind a bright dot #}
               <circle class="mxqm-pulse" cx="{{ _dot_x }}" cy="{{ _dot_y }}" r="5"/>
               <circle class="mxqm-dot" cx="{{ _dot_x }}" cy="{{ _dot_y }}" r="4.5"/>
+              {# Quad labels (top of each tile) + odds numeral (centre) — bilingual via
+                 l-en/l-zh (the toggle works on SVG <text>; NO t() inside <text>).
+                 The per-quad mxqm-odds-qN class carries the halo colour: the halo has
+                 to match the tile it sits on, and each tile is a different hue. #}
+              {# Q3 Stagflation #}
+              <text class="mxqm-quad-label l-en" x="37.5" y="24" text-anchor="middle">STAGFLATION</text>
+              <text class="mxqm-quad-label l-zh" x="37.5" y="24" text-anchor="middle">滞胀</text>
+              {% if _p_q3 is not none %}<text class="mxqm-odds mxqm-odds-q3{% if _qm_hard == 'Q3' %} active{% endif %}" x="37.5" y="52" text-anchor="middle">{{ _p_q3 }}%</text>{% endif %}
+              {# Q2 Reflation #}
+              <text class="mxqm-quad-label l-en" x="112.5" y="24" text-anchor="middle">REFLATION</text>
+              <text class="mxqm-quad-label l-zh" x="112.5" y="24" text-anchor="middle">再通胀</text>
+              {% if _p_q2 is not none %}<text class="mxqm-odds mxqm-odds-q2{% if _qm_hard == 'Q2' %} active{% endif %}" x="112.5" y="52" text-anchor="middle">{{ _p_q2 }}%</text>{% endif %}
+              {# Q4 Growth-scare #}
+              <text class="mxqm-quad-label l-en" x="37.5" y="99" text-anchor="middle">GROWTH-SCARE</text>
+              <text class="mxqm-quad-label l-zh" x="37.5" y="99" text-anchor="middle">增长恐慌</text>
+              {% if _p_q4 is not none %}<text class="mxqm-odds mxqm-odds-q4{% if _qm_hard == 'Q4' %} active{% endif %}" x="37.5" y="127" text-anchor="middle">{{ _p_q4 }}%</text>{% endif %}
+              {# Q1 Goldilocks #}
+              <text class="mxqm-quad-label l-en" x="112.5" y="99" text-anchor="middle">GOLDILOCKS</text>
+              <text class="mxqm-quad-label l-zh" x="112.5" y="99" text-anchor="middle">理想增长</text>
+              {% if _p_q1 is not none %}<text class="mxqm-odds mxqm-odds-q1{% if _qm_hard == 'Q1' %} active{% endif %}" x="112.5" y="127" text-anchor="middle">{{ _p_q1 }}%</text>{% endif %}
+              {# Axis labels — bilingual; kept subtle at the edges #}
+              <text class="mxqm-axis-label l-en" x="75" y="160" text-anchor="middle">growth →</text>
+              <text class="mxqm-axis-label l-zh" x="75" y="160" text-anchor="middle">增长 →</text>
+              <text class="mxqm-axis-label l-en" x="-2" y="75" dominant-baseline="middle" text-anchor="middle" transform="rotate(-90 -2 75)">infl ↑</text>
+              <text class="mxqm-axis-label l-zh" x="-2" y="75" dominant-baseline="middle" text-anchor="middle" transform="rotate(-90 -2 75)">通胀 ↑</text>
             </svg>
           </div>
         </div>
-        {# ── TWO DIFFERENT "next quad" READINGS, named apart ────────────────────────
-           quad_vector.transition_momentum (the glance line + the arrow above) is where
-           TODAY's model odds are moving. playbook.next_quad / next_list is a HISTORICAL
-           BASE RATE — which quad followed this one in the past — and it routinely points
-           the other way. Unlabelled, side by side, they read as one contradictory claim,
-           so each names the question it answers. Guarded: no playbook, no row. #}
-        {% set _qm_nx = (pb.next_list if (pb is defined and pb and pb.next_list) else []) %}
-        {% if _qm_nx %}
-        <div class="mxqm-hist">
-          <span class="l-en">After past {{ _qm_hard_en }}s: {% for _n in _qm_nx[:3] %}{{ _qm_quad.get(_n.code, [_n.name, _n.name])[0] }} <b>{{ _n.prob_pct }}</b>{% if not loop.last %}, {% endif %}{% endfor %}.</span>
-          <span class="l-zh">历史上{{ _qm_hard_zh }}之后：{% for _n in _qm_nx[:3] %}{{ _qm_quad.get(_n.code, [_n.name, _n.name])[1] }} <b>{{ _n.prob_pct }}</b>{% if not loop.last %}、{% endif %}{% endfor %}。</span>
-        </div>
-        {% endif %}
         {% endif %}{# /_qm_hard #}
-        {# ── Goldilocks trim (Fable ruling 2026-07-20): a hover popup must never scroll.
-           The old "WHAT COULD CHANGE THE REGIME CALL" section (regime_flip_strip) + its
-           Drift row are DELETED here (the lead line + animated quad-map arrow already
-           carry drift twice). Weakest-support + grip COMPRESS into ONE quiet line, built
-           from the same flip_condition / confidence fields, null-safe. The mechanics
-           receipt (grip fraction, drift sessions) lives in one plain ? tip on this line.
-           regime_flip_strip stays defined — still called by the ledger hero (~L6485). #}
-        {%- set _gk_fc = latest.get('flip_condition') or {} %}
-        {%- set _gk_qv = latest.get('quad_vector') or {} %}
-        {%- set _gk_tm = (_gk_qv.get('transition_momentum') or {}) if not _gk_qv.get('degraded') else {} %}
-        {%- set _gk_conf = latest.get('confidence') %}
-        {#- weakest-support leg → plain name (compact mirror of regime_flip_strip's _fs_short) -#}
-        {%- set _gk_short = {
-          'copper_gold':['copper vs gold','铜对黄金'],'xly_xlp':['the shopper-confidence read','消费信心读数'],
-          'us2y_direction':['the 2-year yield','2年期收益率'],'iwm_spy':['small caps','小盘股'],
-          'cyclical_defensive':['cyclical vs defensive sectors','周期性板块'],'breadth_direction':['market breadth','市场广度'],
-          'payrolls_trend':['payrolls','非农就业'],'indpro_trend':['industrial production','工业生产'],
-          'breakeven_10y_direction':['10-yr inflation expectations','10年期通胀预期'],
-          'breakeven_5y5y_direction':['long-run inflation expectations','长期通胀预期'],
-          'energy_rs':['the energy sector','能源板块'],'oil_trend':['oil','原油'],
-          'inflation_beta_basket':['the inflation-winners basket','通胀受益篮子'],
-          'tips_nominal_momentum':['the TIPS spread','TIPS 利差'] } %}
-        {#- the weakest-support clause is SUPPRESSED when the label's own axes no longer
-            support it: there is no supporting component to name, and the glance rows
-            popup above already says what the axes read (see raw_quad_of()).
-            The engine returns component=None in that state; an older payload does not,
-            so the same check runs here. -#}
-        {%- set _gk_raw = raw_quad_of(latest) | trim %}
-        {%- set _gk_unsup = (_gk_fc.get('label_unsupported') is sameas true)
-                            or (latest.get('quad') and _gk_raw and _gk_raw != latest.get('quad')) %}
-        {%- set _gk_comp = none if _gk_unsup else _gk_fc.get('component') %}
-        {%- set _gk_cname = _gk_short.get(_gk_comp, [(_gk_comp | replace('_',' ')), (_gk_comp | replace('_',' '))]) if _gk_comp else none %}
-        {#- grip word from confidence (matches regime_flip_strip mapping) -#}
-        {%- set _gk_has_conf = (_gk_conf is not none and _gk_conf is number) %}
-        {%- set _gk_grip_en = ('held loosely' if _gk_conf < 0.33 else ('held reasonably firm' if _gk_conf < 0.66 else 'held firmly')) if _gk_has_conf else none %}
-        {%- set _gk_grip_zh = ('把握较松' if _gk_conf < 0.33 else ('把握尚可' if _gk_conf < 0.66 else '把握较稳')) if _gk_has_conf else none %}
-        {#- build the ? receipt tip (plain, short) from grip fraction + drift session count -#}
-        {%- set _gk_rc_bits_en = [] %}
-        {%- set _gk_rc_bits_zh = [] %}
-        {%- if _gk_has_conf %}{%- set _ = _gk_rc_bits_en.append('conviction ' ~ (_gk_conf | round(2)) ~ ' / 1') %}{%- set _ = _gk_rc_bits_zh.append('把握 ' ~ (_gk_conf | round(2)) ~ ' / 1') %}{%- endif %}
-        {%- if _gk_fc.get('margin') is not none %}{%- set _ = _gk_rc_bits_en.append('cushion ' ~ (_gk_fc.margin | round(2))) %}{%- set _ = _gk_rc_bits_zh.append('缓冲 ' ~ (_gk_fc.margin | round(2))) %}{%- endif %}
-        {%- if _gk_tm.get('window_sessions') %}{%- set _ = _gk_rc_bits_en.append('drift measured over ' ~ _gk_tm.window_sessions ~ ' sessions') %}{%- set _ = _gk_rc_bits_zh.append('漂移基于近 ' ~ _gk_tm.window_sessions ~ ' 个交易日') %}{%- endif %}
-        {% if _gk_grip_en or _gk_cname %}
-        <div class="mxqm-hold">
-          <span class="mxqm-hold-txt">
-            <span class="l-en">{% if _gk_grip_en %}{{ _gk_grip_en|capitalize }}{% endif %}{% if _gk_grip_en and _gk_cname %}. {% endif %}{% if _gk_cname %}Weakest leg: <b>{{ _gk_cname[0] }}</b>{% endif %}.</span>
-            <span class="l-zh">{% if _gk_grip_zh %}{{ _gk_grip_zh }}{% endif %}{% if _gk_grip_zh and _gk_cname %}。{% endif %}{% if _gk_cname %}最弱一环：<b>{{ _gk_cname[1] }}</b>{% endif %}。</span>
-          </span>
-          {% if _gk_rc_bits_en %}{{ help(_gk_rc_bits_en|join(' · '), _gk_rc_bits_zh|join(' · ')) }}{% endif %}
-        </div>
-        {% endif %}
-        {# Footer — one line, kept (Fable ruling). #}
-        <div class="mxqm-foot"><span class="l-en">Describes the label, not the risk score.</span><span class="l-zh">描述的是周期标签，而非风险评分。</span></div>
       </div>
       </div>{# /mx5-flipctx-anchor #}
 
@@ -14764,9 +14864,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
 
   <!-- ======================= ACTION BOARD ======================= -->
   {% if mode != 'macro' %}
-  {# Page-local by design: changing the global theme asset invalidates the cache
-     fingerprint on every page for a component only the stock action board owns. #}
-  {{ dc.dc_css() }}
+  {# The action board's dc.dc_css() moved into templates/_us_act_now_board.html.j2 with the
+     board itself (SI-central transplant, 2026-08): the include now owns the card stylesheet so
+     the same board styles correctly on the Sector Intelligence Overview too. The include still
+     keeps it page-local (never in theme.css) for the same cache-fingerprint reason. #}
   {# B4: market-state context strip for stocks mode — one-line banner, never a veto #}
   {% if market_state is defined and market_state %}
   {# scx-css lives HERE (inside mode!='macro') so it actually ships to us_stocks — the old
@@ -14846,317 +14947,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   </div>
   {% endif %}{# /market_state B4 #}
   {% if action_board %}
-  <div class="panel span12" id="action-board">
-    <h2>{{ t('What to act on now', '当前可操作') }}
-      {{ help('Every sector and theme is sorted into five lanes by cycle position — the lane name is the action, and each lane explains itself below its title. Hover any row for full detail. Symbols: 🏛 sector fund · 🧩 theme group · ✓ tested sell-discipline gate (overrides the lane read when it fires) · ★ in the model book.', '所有板块与主题按周期位置分入五个泳道 — 泳道名称即操作建议，各泳道标题下有说明。悬停任意行查看完整详情。图例：🏛 板块基金 · 🧩 主题篮子 · ✓ 经回测的卖出纪律门槛（触发时覆盖泳道判读）· ★ 模型组合内。') }}
-      <a href="sector_central.html#actnow-section" style="font-size:11px;color:var(--muted);font-weight:400;text-decoration:none;margin-left:8px"><span class="l-en">Theme reasons → Sector Intelligence</span><span class="l-zh">主题详情 → 行业智慧页</span></a>
-    </h2>
-    {# Policy-shock de-escalation fresh-entry caution chip (PS-R3: display de-escalation only —
-       no reordering, no removal. Ranks computed on pre-shock data; this chip is the only change.) #}
-    {% if shock_state is defined and shock_state and shock_state.get('active') %}
-    <div style="margin:6px 0 10px;padding:8px 12px;border-radius:8px;border-left:4px solid var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--panel2));font-size:13px;font-weight:600">
-      ⚠ <span class="l-en">SHOCK active — fresh entries carry extra uncertainty; sector ranks computed on pre-shock data. Context only — no ranks have been changed. Active until {{ shock_state.get('expires', '') }}.</span><span class="l-zh">冲击期间 — 新进场具有额外不确定性；板块排名基于冲击前数据计算。仅供参考，排名未作调整，有效期至 {{ shock_state.get('expires', '') }}。</span>
-    </div>
-    {% endif %}
-    {# Unified board: 🧩 narrative baskets (the AI-buildout-vs-rest resolution) lead each
-       lane, 🏛 GICS sectors follow. Basket buys carry a leadership-LENS marker (≈, descriptive)
-       and basket reduces a backtested marker (✓, the absolute-trend drawdown gate); ★ = in the
-       narrative-rotation model book. #}
-    {# (legacy themeitem / themeitem_run row macros removed 2026-07-11 — dead since the
-       V2 board switched every lane to ab_theme_row / ab_sector_row.) #}
-    {# TS-R6 A2: two-reads chip for action-board sector rows (same ETF, two house reads disagree). #}
-    {% macro ab_two_reads(x) -%}{% if x.get('two_reads_chip') %}{% set _abtr = x.two_reads_chip %}<span class="two-reads-chip" data-tip-en="Two house reads on {{ x.ticker }}: cycle timing = {{ _abtr.cycle_label_en }} (slow, cap-weighted); setup engine = {{ _abtr.setup_label_en }} (3-day tactical). Different instruments / different horizons — both shown, neither overrides." data-tip-zh="{{ x.ticker }} 两个本系统读数：周期 = {{ _abtr.cycle_label_en }}（慢速市值加权）；形态 = {{ _abtr.setup_label_en }}（3日战术）。不同工具／维度，同时显示。"><span class="tr-sep">⇔</span><span class="l-en">two reads: cycle <b>{{ _abtr.cycle_label_en }}</b> vs setup <b>{{ _abtr.setup_label_en }}</b></span><span class="l-zh">两个读数：周期 <b>{{ _abtr.cycle_label_en }}</b> vs 形态 <b>{{ _abtr.setup_label_en }}</b></span></span>{% endif %}{%- endmacro %}
-    {# FIX 2: EW-vs-cycle disclosure chip for sector rows — fires when EW and cycle disagree (buy vs reduce) and gate_override did NOT fire. #}
-    {% macro ab_ew_two_reads(x) -%}{% if x.get('ew_two_reads') %}{% set _ewtr = x.ew_two_reads %}<span class="two-reads-chip" data-tip-en="Two reads on {{ x.ticker }}: cycle timing = {{ _ewtr.cycle_label_en }}; equal-weight basket = {{ _ewtr.ew_label_en }}. Different constructions — both shown for context." data-tip-zh="{{ x.ticker }} 两个读数：周期 = {{ _ewtr.cycle_label_zh }}；等权篮子 = {{ _ewtr.ew_label_zh }}。不同构建方式，同时显示供参考。"><span class="tr-sep">⇔</span><span class="l-en">two reads: cycle <b>{{ _ewtr.cycle_label_en }}</b> vs equal-weight <b>{{ _ewtr.ew_label_en }}</b></span><span class="l-zh">两个读数：周期 <b>{{ _ewtr.cycle_label_zh }}</b> vs 等权 <b>{{ _ewtr.ew_label_zh }}</b></span></span>{% endif %}{%- endmacro %}
-    {# ew_chip is inlined below each sector row for Jinja2 lexer compatibility. #}
-    {#- V2 ACTION BOARD — new lane design (adjudicated 2026-07-10)
-        Each lane: header (emoji + EN/ZH name + count + subtitle) + row list.
-        Sector rows: glyph + name + optional chip + optional gate-✓ + stat line.
-        Theme rows: name + star/check/lens glyphs (% moves to popover).
-        Popover data stored in hidden .rp-src span, cloned by theme.js row-pop engine on hover.
-        Folds: every lane shows its top three rows, then offers Show more.
-        TS-R5 dash-hold-fold id PRESERVED on the stand-aside column.
-    -#}
-    {#- ---- Jinja macros for V2 rows ---- -#}
-    {%- macro ab_chip(chip_en, chip_zh, chip_tone) -%}
-    {%- if chip_en %}<span class="ab-chip ab-chip--{{ chip_tone }}"><span class="l-en">{{ chip_en }}</span><span class="l-zh">{{ chip_zh }}</span></span>{% endif -%}
-    {%- endmacro -%}
-    {%- macro ab_gate(x) -%}
-    {%- if x.get('gate_override') %}<span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: {{ x.get('ew', {}).get('label', '') }}" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：{{ x.get('ew', {}).get('label_zh', '') or x.get('ew', {}).get('label', '') }}">&#10003;</span>{% endif -%}
-    {%- endmacro -%}
-    {#- Popover source for a SECTOR row (hidden inline, cloned by JS) -#}
-    {#- Compact decision card for a SECTOR row. Keep this payload intentionally
-        glanceable: one setup read, at most three decision metrics, one visual timing
-        cue, and one short takeaway. Full model prose belongs on the linked detail page.
-        DO NOT REBUILD LAW #1513: FRESH BUY is the worst state on the board (not a buy
-        edge); its state tag is warn, never green/up. -#}
-    {%- macro ab_sector_pop(x) -%}
-    {%- set _reduce_labels = ['TOP WATCH','ROLLING OVER','DECLINE','COUNTERTREND BOUNCE'] -%}
-    {%- set _warn_labels = ['FRESH BUY','BOTTOM WATCH','NEARING A LOW','BOTTOMING','BASING','ACCUMULATION'] -%}
-    {%- set _up_labels = ['RALLY ON','TURN SIGNALED','UPTREND','BUY ZONE'] -%}
-    {%- set _lbl = x.get('label', '') -%}
-    {%- set _stag_tone = 'dn' if _lbl in _reduce_labels else ('warn' if _lbl in _warn_labels else ('up' if _lbl in _up_labels else '')) -%}
-    {%- set _stats = [] -%}
-    {%- if x.get('rs_60d') is not none and x.get('rs_60d') is defined -%}
-      {%- set _ = _stats.append({'label': ('60d lead','60日领先'), 'val': '%+.1f%%'|format(x.rs_60d),
-                                 'tone': 'up' if x.rs_60d >= 0 else 'dn', 'sub': ('vs SPY','相对SPY')}) -%}
-    {%- endif -%}
-    {%- if x.get('eq_badge') -%}
-      {%- set _ = _stats.append({'label': ('Entry','入场'), 'val': x.eq_badge,
-                                 'tone': 'up' if x.eq_dir == 'up' else ('dn' if x.eq_dir == 'down' else ''),
-                                 'sub': ('timing quality','时机质量')}) -%}
-    {%- endif -%}
-    {%- if x.get('buy_zone') is not none and x.get('n_holdings') -%}
-      {%- set _ = _stats.append({'label': ('Breadth','广度'), 'val': '%d/%d'|format(x.buy_zone, x.n_holdings),
-                                 'sub': ('in buy zone','处于买入区')}) -%}
-    {%- endif -%}
-    {%- set _bars = [] -%}
-    {%- if x.get('rsi_3d') is not none and x.get('rsi_3d') is defined and x.get('stoch_3d') is not none and x.get('stoch_3d') is defined -%}
-      {%- set _ = _bars.append({'label': 'RSI', 'pct': x.rsi_3d, 'val': '%.0f'|format(x.rsi_3d)}) -%}
-      {%- set _ = _bars.append({'label': 'STO', 'pct': x.stoch_3d, 'val': '%.0f'|format(x.stoch_3d)}) -%}
-    {%- endif -%}
-    {%- set _sub_en -%}
-    {%- if x.get('age_short') %}Signal {{ x.age_short }}{% endif -%}
-    {%- if x.get('age_short') and x.get('dc_day') is not none and x.get('dc_day') is defined %} · {% endif -%}
-    {%- if x.get('dc_day') is not none and x.get('dc_day') is defined %}cycle day {{ x.dc_day }}{% endif -%}
-    {%- endset -%}
-    {%- set _sub_zh -%}
-    {%- if x.get('age_short') %}信号 {{ x.get('age_short_zh', x.age_short) }}{% endif -%}
-    {%- if x.get('age_short') and x.get('dc_day') is not none and x.get('dc_day') is defined %} · {% endif -%}
-    {%- if x.get('dc_day') is not none and x.get('dc_day') is defined %}周期第 {{ x.dc_day }} 日{% endif -%}
-    {%- endset -%}
-    {{ dc.dc_card({
-      'kind': 'sector', 'mark': '🏛', 'tone': _stag_tone,
-      'eyebrow': ('Sector pulse · ' ~ x.ticker, '板块脉搏 · ' ~ x.ticker),
-      'name': (x.name|e, tr(x.name)|e),
-      'tag': (td(x.label),),
-      'kicker': ('Current setup','当前形态'),
-      'read': ('Trend confirmed','趋势已确认') if _lbl in _up_labels
-              else (('Early turn','早期转向') if _lbl in _warn_labels
-              else (('Momentum fading','动能转弱') if _lbl in _reduce_labels
-              else ('Wait for clarity','等待明朗'))),
-      'sub': (_sub_en|trim, _sub_zh|trim),
-      'bars': _bars, 'stats': _stats,
-      'takeaway': ('Signals disagree. Keep size small until they align.','信号不一致，等待同步前保持小仓位。')
-              if (x.get('two_reads_chip') or x.get('ew_two_reads') or x.get('conflict_reason_en'))
-              else (('Trend confirmed — use pullbacks instead of chasing.','趋势已确认 — 等回调，不追高。') if _lbl in _up_labels
-              else (('Early turn — keep size measured while the weekly trend catches up.','早期转向 — 周线趋势确认前控制仓位。') if _lbl in _warn_labels
-              else (('Momentum is fading — protect gains and avoid fresh adds.','动能转弱 — 保护利润，避免加仓。') if _lbl in _reduce_labels
-              else ('No clean edge yet — wait for the signals to align.','暂无清晰优势 — 等待信号同步。')))),
-      'foot': ('Click row for the full sector view','点击查看完整板块详情'),
-      'foot_b': (x.ticker ~ ' ↗', x.ticker ~ ' ↗'),
-    }) }}
-    {%- endmacro -%}
-    {#- Compact decision card for a THEME (narrative basket) row. Opaque diagnostics
-        (flip distance, duplicate percentiles, full engine prose) stay on the detail page. -#}
-    {%- macro ab_theme_pop(x) -%}
-    {%- set _reco = x.get('reco', '') -%}
-    {%- set _rtone = 'dn' if _reco in ('trim','avoid') else ('up' if _reco in ('accumulate','enter') else 'warn') -%}
-    {%- set _stats = [] -%}
-    {%- if x.get('perf_20d_rel') is not none and x.get('perf_20d_rel') is defined -%}
-      {%- set _ = _stats.append({'label': ('20d lead','20日领先'), 'val': '%+.1f%%'|format(x.perf_20d_rel * 100),
-                                 'tone': 'up' if x.perf_20d_rel >= 0 else 'dn', 'sub': ('vs market','相对市场')}) -%}
-    {%- endif -%}
-    {%- if x.get('breadth_pct50') is not none and x.get('breadth_pct50') is defined -%}
-      {%- set _ = _stats.append({'label': ('Breadth','广度'), 'val': '%.0f%%'|format(x.breadth_pct50 * 100),
-                                 'sub': ('above 50d','高于50日线')}) -%}
-    {%- endif -%}
-    {%- if x.get('rollover_band') is not none and x.get('rollover_band') is defined -%}
-      {%- set _ = _stats.append({'label': ('Rollover','回落风险'),
-                                 'val': (x.rollover_band|title, x.get('rollover_band_zh', x.rollover_band)),
-                                 'tone': 'up' if x.rollover_band == 'low' else 'warn', 'sub': ('risk','风险')}) -%}
-    {%- endif -%}
-    {%- set _trust = [] -%}
-    {%- if x.get('book_wt') is not none and x.get('book_wt') is defined -%}
-      {%- set _ = _trust.append({'tone': 'up', 'en': '★ Model ' ~ '%.0f'|format(x.book_wt*100) ~ '%',
-                                 'zh': '★ 模型 ' ~ '%.0f'|format(x.book_wt*100) ~ '%'}) -%}
-    {%- endif -%}
-    {%- if x.validated -%}
-      {%- set _ = _trust.append({'tone': 'up', 'en': '✓ Risk gate', 'zh': '✓ 风险门槛'}) -%}
-    {%- endif -%}
-    {{ dc.dc_card({
-      'kind': 'theme', 'mark': '◆', 'tone': _rtone,
-      'eyebrow': ('Theme basket','主题篮子'),
-      'name': (x.name|e, (x.name_zh or x.name)|e),
-      'tag': (x.get('label') or _reco, x.get('label_zh') or x.get('label') or _reco),
-      'score': x.get('score') if (x.get('score') is not none and x.get('score') is defined) else none,
-      'kicker': ('Leadership read','领先度判断'),
-      'read': ('Broad and leading','广泛领先') if _reco in ('accumulate','enter')
-              else (('Late and extended','后期且延伸') if _reco == 'trim'
-              else (('Breadth weakening','广度转弱') if _reco == 'avoid'
-              else ('Trend intact','趋势完好'))),
-      'trust': _trust, 'stats': _stats,
-      'leaders': {'label': ('Leaders','龙头'), 'val': x.top_members[:3] | join(' · ')} if x.get('top_members') else none,
-      'takeaway': ('Signals disagree. Wait for breadth and price to align.','信号不一致，等待广度与价格同步。')
-              if x.get('conflict_reason_en')
-              else (('Leadership is broad. Add on pullbacks, not into strength.','领先面广。回调时加仓，不要追强势。') if _reco in ('accumulate','enter')
-              else (('Momentum is extended. Protect gains into strength.','动能已过度延伸。逢强保护利润。') if _reco == 'trim'
-              else (('Breadth is fading. Stand aside until it turns again.','广度转弱。在重新转强之前先观望。') if _reco == 'avoid'
-              else ('Trend is intact. Wait for a cleaner entry.','趋势完好。等待更干净的入场点。')))),
-      'foot': ('Click row for holdings and full history','点击查看持仓与完整历史'),
-      'foot_b': ('Open ↗','打开 ↗'),
-    }) }}
-    {%- endmacro -%}
-    {#- V2 sector row macro — anv2-row anatomy (name row / chips row / stat line) -#}
-    {%- macro ab_sector_row(x) -%}
-    <a class="actitem" data-rpop href="{{ x.href }}">
-      <span class="act-row-top">
-        <span class="ai-bdg">🏛</span>
-        <span class="act-row-name"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></span>
-      </span>
-      {%- if x.get('chip_en') or x.get('gate_override') or x.get('ew_two_reads') or x.get('conflict_chip_en') %}
-      <span class="act-row-chips">
-        {{- ab_chip(x.get('chip_en',''), x.get('chip_zh',''), x.get('chip_tone','muted')) -}}
-        {{- ab_gate(x) -}}
-        {{- ab_ew_two_reads(x) -}}
-        {#- W2b/W4 demotion receipt lifted from the EW overlay (MLC-R7) -#}
-        {{- ab_chip(x.get('conflict_chip_en',''), x.get('conflict_chip_zh', x.get('conflict_chip_en','')), 'warn') -}}
-      </span>
-      {%- endif %}
-      {%- if x.get('stat_en') %}<span class="act-row-stat"><span class="l-en">{{ x.stat_en }}</span><span class="l-zh">{{ x.get('stat_zh', x.stat_en) }}</span></span>{%- endif %}
-      {{ ab_sector_pop(x) }}
-    </a>
-    {%- endmacro -%}
-    {#- V2 theme (narrative basket) row macro — composite score rides the name row;
-        provenance glyphs (★ book / ✓ gate / ≈ lens / ⟳ run-reason) sit inline after
-        the name instead of an orphan chips line; china-style 20d-vs-market stat. -#}
-    {%- macro ab_theme_row(x) -%}
-    <a class="actitem ai-theme" data-rpop href="{{ x.href }}">
-      <span class="act-row-top">
-        <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ (x.name_zh or x.name)|e }}</span></span>
-        {%- if x.get('book_wt') %}<span class="ai-book" data-tip-en="In the narrative-rotation model book at {{ '%.0f'|format(x.book_wt*100) }}% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 {{ '%.0f'|format(x.book_wt*100) }}%，通过经回测的绝对趋势门槛">&#9733;{{ '%.0f'|format(x.book_wt*100) }}%</span>{%- endif %}
-        {%- if x.validated %}<span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>{%- else %}<span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>{%- endif %}
-        {%- if x.get('run_reason_en') %}<span class="ai-lens" data-tip-en="{{ x.run_reason_en }}" data-tip-zh="{{ x.get('run_reason_zh', x.run_reason_en) }}">&#8635;</span>{%- endif %}
-        {%- if x.get('score') is not none and x.get('score') is defined %}{%- set _sc = x.score -%}
-        <span class="act-row-score{% if _sc >= 60 %} act-score-hi{% elif _sc >= 40 %} act-score-mid{% else %} act-score-lo{% endif %}">{{ '%.0f'|format(_sc) }}</span>
-        {%- endif %}
-      </span>
-      {#- FIX 1: conflict chip (warn tone) when theme was demoted from buy lanes -#}
-      {%- if x.get('conflict_chip_en') %}
-      <span class="act-row-chips">
-        {{- ab_chip(x.conflict_chip_en, x.get('conflict_chip_zh', x.conflict_chip_en), 'warn') -}}
-      </span>
-      {%- endif %}
-      {%- if x.get('perf_20d_rel') is not none and x.get('perf_20d_rel') is defined %}
-      <span class="act-row-stat"><span class="{{ 'up' if x.perf_20d_rel >= 0 else 'dn' }}">{{ '%+.1f'|format(x.perf_20d_rel * 100) }}%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
-      {%- endif %}
-      {{ ab_theme_pop(x) }}
-    </a>
-    {%- endmacro -%}
-    {#- Lane count helpers -#}
-    {%- set _bn_cnt = action_board.buy_now | length -%}
-    {%- set _bs_cnt = action_board.buy_soon | length -%}
-    {%- set _run_cnt = action_board.get('on_the_run', []) | length -%}
-    {%- set _tp_cnt = action_board.take_profits | length -%}
-    {%- set _hold_cnt = (action_board.hold | length) + (action_board.avoid | length) -%}
-    {#- FIX 3: more-count helpers from basket_items; default 0 when absent -#}
-    {%- set _ab_more = action_board.get('more') or {} -%}
-    {%- set _more_bn = _ab_more.get('buy_now') or 0 -%}
-    {%- set _more_bs = _ab_more.get('buy_soon') or 0 -%}
-    {%- set _more_run = _ab_more.get('on_the_run') or 0 -%}
-    {%- set _more_tp = _ab_more.get('take_profits') or 0 -%}
-    {%- set _more_hold = (_ab_more.get('hold') or 0) + (_ab_more.get('avoid') or 0) -%}
-    <div class="actiongrid">
-      {#- ---- LANE 1: BUY NOW ---- -#}
-      <div class="actcol act-buy">
-        <div class="acth">
-          <div class="acth-title-row">
-            <span class="acth-emoji">🟢</span>
-            <span class="acth-name"><span class="l-en">Buy now</span><span class="l-zh">立即买入</span></span>
-            <span class="acth-count">{{ _bn_cnt }}</span>
-          </div>
-          <div class="acth-sub"><span class="l-en">Entry confirmed today</span><span class="l-zh">今日已确认入场</span></div>
-        </div>
-        <div class="actbody act-fold is-collapsed" id="ab-buy-fold">
-          {% for x in action_board.buy_now %}
-            {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
-          {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('None today — nothing has fully confirmed a fresh cycle low.', '今日无 — 尚无标的完全确认新的周期低点。') }}</p>{% endfor %}
-          {%- if _more_bn > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_bn }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_bn }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
-        </div>
-        {% if _bn_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _bn_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
-      </div>
-      {#- ---- LANE 2: ALMOST READY (buy_soon) ---- -#}
-      <div class="actcol act-soon">
-        <div class="acth">
-          <div class="acth-title-row">
-            <span class="acth-emoji">🔵</span>
-            <span class="acth-name"><span class="l-en">Almost ready</span><span class="l-zh">接近就绪</span></span>
-            <span class="acth-count">{{ _bs_cnt }}</span>
-          </div>
-          <div class="acth-sub"><span class="l-en">Setting up — wait for the trigger, not a buy yet</span><span class="l-zh">构筑中 — 等待触发，尚不可买</span></div>
-        </div>
-        <div class="actbody act-fold is-collapsed" id="ab-soon-fold">
-          {% for x in action_board.buy_soon %}
-            {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
-          {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('No imminent setups.', '暂无临近的构筑。') }}</p>{% endfor %}
-          {%- if _more_bs > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_bs }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_bs }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
-        </div>
-        {% if _bs_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _bs_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
-      </div>
-      {#- ---- LANE 3: IN FAVOUR — DON'T CHASE (on_the_run) ---- -#}
-      <div class="actcol act-run">
-        <div class="acth">
-          <div class="acth-title-row">
-            <span class="acth-emoji">🏃</span>
-            <span class="acth-name"><span class="l-en">In favour — don't chase</span><span class="l-zh">看好 — 勿追高</span></span>
-            <span class="acth-count">{{ _run_cnt }}</span>
-          </div>
-          <div class="acth-sub"><span class="l-en">Uptrend intact but extended · wait for a pullback</span><span class="l-zh">趋势完好但已延伸 · 等待回调</span></div>
-        </div>
-        <div class="actbody act-fold is-collapsed" id="ab-run-fold">
-          {% for x in action_board.get('on_the_run', []) %}
-            {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
-          {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('Nothing extended right now.', '当前无过度延伸的标的。') }}</p>{% endfor %}
-          {%- if _more_run > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_run }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_run }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
-        </div>
-        {% if _run_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _run_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
-      </div>
-      {#- ---- LANE 4: TAKE PROFITS ---- -#}
-      <div class="actcol act-trim">
-        <div class="acth">
-          <div class="acth-title-row">
-            <span class="acth-emoji">🟠</span>
-            <span class="acth-name"><span class="l-en">Take profits</span><span class="l-zh">止盈</span></span>
-            <span class="acth-count">{{ _tp_cnt }}</span>
-          </div>
-          <div class="acth-sub"><span class="l-en">Late in the cycle / topping — protect gains</span><span class="l-zh">周期晚期／做顶 — 保护利润</span></div>
-        </div>
-        <div class="actbody ab-trim-fold is-collapsed" id="ab-trim-fold">
-          {% for x in action_board.take_profits %}
-            {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
-          {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('Nothing topping.', '无标的做顶。') }}</p>{% endfor %}
-          {%- if _more_tp > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_tp }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_tp }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
-        </div>
-        {% if _tp_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _tp_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
-      </div>
-      {#- ---- LANE 5: STAND ASIDE (hold + avoid; top 3 visible) ---- -#}
-      {#- TS-R5: id="dash-hold-fold" PRESERVED — JS auto-expand on turn-watch match -#}
-      <div class="actcol act-hold lst-wrap">
-        <div class="acth">
-          <div class="acth-title-row">
-            <span class="acth-emoji">⚪</span>
-            <span class="acth-name"><span class="l-en">Stand aside</span><span class="l-zh">观望</span></span>
-            <span class="acth-count">{{ _hold_cnt }}</span>
-          </div>
-          <div class="acth-sub"><span class="l-en">Hold what you own · no new buying</span><span class="l-zh">持有勿动 · 不新开仓</span></div>
-        </div>
-        <div class="actbody lst-collapse lst-cap3 is-collapsed" id="dash-hold-fold">
-          {% for x in action_board.hold %}
-            {#- TS-R5: data-theme-id wrapper enables client-side auto-expand -#}
-            {% if x.kind == 'theme' %}<div data-theme-id="{{ x.slug or x.ticker }}">{{ ab_theme_row(x) }}</div>{% else %}{{ ab_sector_row(x) }}{% endif %}
-          {% endfor %}
-          {% for x in action_board.avoid %}
-            {% if x.kind == 'theme' %}<div data-theme-id="{{ x.slug or x.ticker }}">{{ ab_theme_row(x) }}</div>{% else %}{{ ab_sector_row(x) }}{% endif %}
-          {% endfor %}
-          {%- if _more_hold > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_hold }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_hold }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
-        </div>
-        {% if _hold_cnt > 3 %}
-        <button class="lst-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more', '显示更多') }} ({{ _hold_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>
-        {% endif %}
-      </div>
-    </div>
-  </div>{# /panel — What to act on now (standouts split into their own panel 2026-07-11) #}
+  {% include "_us_act_now_board.html.j2" %}
     {% set _su = us_standouts if (us_standouts and us_standouts.buy) else None %}
     {{ pv.pv_css() }}
 {#- ══════════════════════════════════════════════════════════════════════════════════
@@ -15394,14 +15185,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {%- endif %}
     <script type="application/json" id="plv-names">{{ _plv_nm | tojson }}</script>
     {% endif %}
-    {#- THEME TAPE (W2) — sits directly above the board because that is the reading
-        order the panel exists to create: here is what the market is heating, here is
-        what these picks do with it, here are the picks. It is deliberately NOT a
-        second "themes in favour" strip: that one lives inside the board below, is
-        driven by board names, and by design drops a theme with no names on it — the
-        exact silence this panel prints. Own guard, so the placement survives any
-        re-nesting of the block above. Renders nothing on a dead tape. -#}
-    {% if mode == 'stocks' %}{% include "_theme_tape.html.j2" %}{% endif %}
     {% if _su or action_board.notable %}
     <div class="panel span12 notable" id="us-standouts">
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
@@ -15755,6 +15538,17 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% if (_vs_fired or n.get('alpha_entry') == 'extended') and _entry_ok %}{% set _fl.rows = _fl.rows + [("Already moving. Don't chase above the buy zone.", '已在异动。不要在买区上方追高。')] %}{% endif %}
         {% if n.get('ext_z') is not none and n.ext_z > 2.0 %}{% set _fl.rows = _fl.rows + [('Stretched unusually far above its trend line, so chasing is risky.', '远高于趋势线，追高风险较大。')] %}{% endif %}
         {% if n.get('antichase_shadow_blocked') %}{% set _fl.rows = _fl.rows + [('Parabolic tail. Treat any entry here as a chase.', '处于抛物线尾部。此处入场应视同追高。')] %}{% endif %}
+        {# ── COPY FENCE: the two rows ABOVE are the ext_z anti-chase read (px/SMA200
+             z-scored).  The "Blow-off risk" chip built in the marks row BELOW is a
+             SEPARATE, separately-measured construction (12-session ROC at its own
+             trailing p99 inside a burst-mover uptrend, engine/roc_blowoff.py), and the
+             battery's PM4 redundancy read puts max |rho| between them at 0.43 — so both
+             can legitimately fire on one card.  Because they can co-render, the blow-off
+             chip must NEVER use the bare word "Extended": that word already belongs to
+             the ext_z family here and in engine/stock_score.py's conviction verdict, and
+             two different measurements wearing one word is how a card starts arguing with
+             itself.  "Blow-off risk" / 冲顶风险 is the label; the numbers in its hover are
+             ITS OWN measured rates, never the ext_z ones. #}
         {% set _es_chip = n.get('earnings_soon') %}
         {% if _es_chip and _es_chip.get('days_to') is not none %}{% set _fl.rows = _fl.rows + [(_es_chip.get('chip_en') or ('Earnings in ' ~ _es_chip.days_to ~ 'd'), _es_chip.get('chip_zh') or ('财报还有' ~ _es_chip.days_to ~ '天'))] %}{% endif %}
         {% if n.get('sector_stance') and n.sector_stance in ('Reduce','Cautious') %}{% set _fl.rows = _fl.rows + [('Sector stance is ' ~ n.sector_stance|lower ~ '. This is a single-stock trigger, not a sector call.', '板块态度为' ~ (n.sector_stance_zh or n.sector_stance) ~ '。个股信号，非板块判断。')] %}{% endif %}
@@ -15777,6 +15571,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
              ranking_block, featured_requirements). "Above the board's midpoint" described
              a cross-sectional test the engine never runs, and on a weak board it would
              have promised the opposite of what the gate actually does. #}
+          {# Blow-off risk FIRST: it is the only risk read in this row, and a marks row
+             wraps — buried behind a theme name it would be the one chip a reader misses.
+             Display-only (engine/us_board_rank.ZERO_SCORE_AUTHORITY carries blowoff_risk);
+             see the copy fence above for why it never says "Extended". #}
+          {% if (n.get('blowoff') or {}).get('blowoff_risk') %}{% set _mk.rows = _mk.rows + [{'k':'blow','en':'Blow-off risk','zh':'冲顶风险',
+            'tip_en':'12-day move at its own 1-in-100 extreme near highs. Historically within 5 sessions of a local top 24% of the time (vs 19% base); next-21-session drawdowns ran ~2.5pp deeper. 3 of 4 such extremes are still not the top — risk context, not a sell signal.',
+            'tip_zh':'12日涨幅处于自身历史百分之一的极值，且贴近高点。历史上此类情形有24%在5个交易日内就是局部顶部（基准19%）；其后21个交易日的回撤中位数深约2.5个百分点。四次中仍有三次并非顶部——这是风险背景，不是卖出信号。'}] %}{% endif %}
           {% if _feat %}{% set _mk.rows = _mk.rows + [{'k':'feat','en':'★ Featured','zh':'★ 精选',
             'tip_en':'One of today’s top picks: the signal is fresh, the entry window is open, edge above zero (an absolute floor) and price is not extended. Capped at 12 names and 4 per sector, so fewer can show. Priority order, not a return forecast.',
             'tip_zh':'今日重点之一：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、价格未过度拉伸。全板最多12只、每个板块最多4只，因此可能更少。这是排序，不是收益预测。'}] %}{% endif %}
@@ -15811,8 +15612,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% set _mk_slot = _mk.rows if _sg.any else none %}
         {% set _bz = es.buy_zone if es else none %}
         {% set _zk = ('readd' if _verb == 'hold' else ('active' if _verb in ('buy','near') else 'muted')) if (_bz and _bz.high is not none) else ('confirm' if _verb in ('wait','near') else 'none') %}
-        {% set _tip_en = ((c.verdict if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline if es else '')) %}
-        {% set _tip_zh = ((c.verdict_zh if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline_zh if es else '')) %}
         {# ⚡ fresh-trigger chip: kind from the setups row's own signal tier (T3 = imminent,
            else fired). Tips are plain strings (attribute-safe — no t() in attrs). The verb
            stays the ruling stance; the tip says so for the Wait+⚡ case. #}
@@ -15827,7 +15626,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           'href': 'stock.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'us',
           'name': n.name, 'sec': n.sector, 'sec_zh': tr(n.sector),
           'price_txt': ('$' ~ ('%.2f'|format(n.price))) if n.get('price') is not none else none,
-          'verb': _verb, 'tip_en': _tip_en, 'tip_zh': _tip_zh,
+          'verb': _verb,
           'edge': (('%.0f'|format(_prs)) if _prs is not none
                    else (c.score_edge if (c and c.score_edge is defined and c.score_edge is not none) else none)),
           'edge_label_en': ('Priority' if _prs is not none else 'Edge'),
@@ -16206,6 +16005,20 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     })();
     </script>
     {% endif %}
+    {#- THEME TAPE (W2) — relocated BELOW the board (operator order 2026-08-04,
+        "it's obstructing this entire page"). It shipped above the board to build a
+        reading order — here is what the market is heating, here is what these picks
+        do with it, here are the picks — but at 692px it put the product two full
+        screens down to set up a panel that ranks, gates and sizes nothing. Context
+        that changes no decision reads AFTER the decision it contextualises; the
+        two-speed tape band below made the same move for the same reason
+        (operator order 2026-07-11).
+        It is still deliberately NOT a second "themes in favour" strip: that one
+        lives inside the board above, is driven by board names, and by design drops
+        a theme with no names on it — the exact silence this panel prints. Own
+        guard, so the placement survives any re-nesting of the block above. Renders
+        nothing on a dead tape. -#}
+    {% if mode == 'stocks' %}{% include "_theme_tape.html.j2" %}{% endif %}
     {# TS-U3: Two-speed tape band (mode=stocks only; client-side from live/basket_pulse.json).
        Self-labeling .dtp idiom; relocated BELOW the standout stocks panel
        (operator order 2026-07-11). Carries its own panel chrome; stays hidden

@@ -9,7 +9,7 @@ and market state … master intelligence tracking on every ticker they own … w
 strongest strengths … holistic score with breakdown scores."
 **Round-2 operator directives (2026-08-03, recorded verbatim in effect):** (a) **PRD-R2
 OVERRIDDEN** for this surface — "this isn't a live money portfolio, it's just for viewing
-by the user" → the holistic score SHIPS (§3.1 rewritten; PRD Amendment 2; DNR row
+by the user" → the holistic score SHIPS (§3.1 rewritten; PRD Amendment 2; DNR:KILL-FUSED-COMPOSITE row
 amended); (b) the portfolio analyzer becomes the **public freebie lead-magnet** — anonymous
 instant analysis, free-account long-term tracking with **daily change emails**, a custom
 public landing/portal, onboarding integration (§19); (c) macro-side frontend must be
@@ -24,7 +24,7 @@ Parents (all still in force; this doc composes them, it does not re-litigate the
 - `OPTIONS_INTELLIGENCE` program (OIP masterplan + R0–R3 waves) — the options data plane.
 Registries consulted 2026-08-03: `docs/ACTIVE_BUILD_MAP.md` (no colliding open lane; #4331
 prophet-board and #4319/#4327 capital-structure/company-intel touch adjacent per-ticker data,
-not this surface), `research/DO_NOT_REBUILD.md` (rows honored throughout — esp. row 45
+not this surface), `research/DO_NOT_REBUILD.md` (rows honored throughout — esp. DNR:KILL-FUSED-COMPOSITE
 fused-score, Signal-Commons positioning-fusion, RIC-R3 event-window gating, PSS-CD1 frozen
 correlation-hazard charter), `config/ruling_graph.yml` (NWC-U4, NWP-U18, RUL-F3.2 intact).
 
@@ -157,7 +157,7 @@ unmodified after v2 lands; its sections simply grow (PSI-W3 extends the same com
 
 Inherited rulings, restated once (violating any of these is a rejected PR, not a debate):
 
-- **PRD-R2 — AMENDED by operator override 2026-08-03 (PRD Amendment 2; DNR row 45
+- **PRD-R2 — AMENDED by operator override 2026-08-03 (PRD Amendment 2; DNR:KILL-FUSED-COMPOSITE
   updated in this PR).** The user-facing display-tier composite portfolio score is now
   ALLOWED on watchlist/portfolio surfaces and in digest emails, under the §3.1
   construction law (transparent legs, printed weights, abstention, nightly grading).
@@ -424,8 +424,8 @@ such on Tier-2). PSI's source-of-truth mapping for the ctx-v2 blocks:
 
 | Block | Source artifact (nightly, this repo) | Notes |
 |---|---|---|
-| `tech` | per-ticker stockdata JSON blocks the WRI L1 lanes already read (ext / MA / RS / ATR / drawdown); `realized_vol_63d`, `updown_dollar_vol_ratio` from the fingerprint-survivor set | survivors are DISPLAY-TIER ONLY (DNR row 115: promotion of either needs fresh prereg; full-population effect sizes may not be cited) |
-| `tech.washout` | `engine/rsi_stack_signals.py` states (`rsi_stack_oversold` all-TF ≤30 / `rsi_stack_overbought` all-TF ≥80, curl events) + washout-watcher states where a desk prints one (`hk_washout_watch`; `mag7_washout` is background-only per its DNR row) | display state only — washout×turn as an ENTRY signal is KILLED (DNR row 78); we show the state word, never an entry implication |
+| `tech` | per-ticker stockdata JSON blocks the WRI L1 lanes already read (ext / MA / RS / ATR / drawdown); `realized_vol_63d`, `updown_dollar_vol_ratio` from the fingerprint-survivor set | survivors are DISPLAY-TIER ONLY (DNR:KILL-VOLUME-FINGERPRINTS: promotion of either needs fresh prereg; full-population effect sizes may not be cited) |
+| `tech.washout` | `engine/rsi_stack_signals.py` states (`rsi_stack_oversold` all-TF ≤30 / `rsi_stack_overbought` all-TF ≥80, curl events) + washout-watcher states where a desk prints one (`hk_washout_watch`; `mag7_washout` is background-only per its DNR row) | display state only — washout×turn as an ENTRY signal is KILLED (DNR:KILL-WASHOUT-TURN); we show the state word, never an entry implication |
 | `tech.ext` | `engine/extension.py` — `ext_z` (distance-from-200dma z vs own history), `grade` ∈ in-trend/steady/stretched/**parabolic**, `near_52wh` | already feeds us_standouts rows; verbatim grade words |
 | `vol` / `gex` / `flow.opt` | OIP artifacts: options_hub IV-rank + bands (#4130 vocabulary), `gex_state` (gamma_regime/flip/walls + `_index.json` aggregate #4292), options_skew snapshots, oi_change / flow-leaders touch states | **Coverage reality: the ThetaData EOD store spans ~380 roots (2012–2026), not the full ~1,500-name universe** — most books will have partial options coverage and the block prints its coverage count honestly; W2 field census decides exact fields; uncovered names OMIT the blocks |
 | `msens` | `stock_macro_sensitivity` chip + `factor_betas.json` rate/dollar/credit betas | verbatim tier words |
@@ -493,7 +493,7 @@ Per-name (ctx `vol`/`gex`/`flow.opt`, §5.1) → three surfaces:
 - **Brief v2 options section** (prose): 2–3 deterministic sentences from the same facts.
 
 Explicitly NOT in scope: any options-derived signal (DOI is DEAD, skew-deceleration
-UNSUPPORTED — W-E1 gauntlet; DNR rows 80–81), dealer-positioning fusion into any state
+UNSUPPORTED — W-E1 gauntlet; DNR:KILL-DOI-FAMILY / DNR:KILL-SKEW-DECELERATION), dealer-positioning fusion into any state
 (Signal Commons), options-based sizing. W-F (options) stays PARKED per its own row.
 
 ## 9. Tape context — "the market you hold this book in" (regime & market-state conditioning)

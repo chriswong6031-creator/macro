@@ -46,6 +46,24 @@ motion. Change the appropriate shared family and its parity tests instead.
 - Macro branches start from fresh `origin/main`; Terminal branches start from fresh
   `origin/master`. Never reuse a squash-merged branch.
 - Do not use the repo-global stash stack.
+- Session worktrees are garbage-collected by `scripts/worktree_gc.py` per
+  `research/WORKTREE_GC_POLICY.md` (report-first; deletion only while
+  `config/worktree_gc.json` is `armed:true` — an operator ratification act). The
+  sweeper honors `git worktree lock`, live process cwds, uncommitted/unpushed
+  work, open PRs, and <7-day activity. To park a checkout long-term, lock it:
+  `git worktree lock --reason "<why>" <path>`.
+
+## Kill-registry citations (DO_NOT_REBUILD.md)
+
+Rows in `research/DO_NOT_REBUILD.md` carry a stable `Key` column (`KILL-…` §1–2,
+`LAW-…` §3, `HOLD-…` §4). Cite rows as `DNR:<KEY>` — for example
+`DNR:KILL-PROPHET-POP-MERGE` — never by row or line number: numbers shift on
+every append/reflow, and row-number citations have already mis-resolved in the
+wild (2026-08-05). An adjudication that kills, forbids, or defers a topic
+appends its row inside sections 1–4 only, mints a new unique Key, and commits
+the regenerated `config/compiled_kill_registry.yml` and
+`config/signal_foundry_blocklist.yml` in the same PR (manual heal:
+`python3 scripts/check_blocklist_drift.py --fix`).
 
 ## Definition of done
 

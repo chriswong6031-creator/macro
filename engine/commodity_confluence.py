@@ -256,6 +256,7 @@ def assess_member(
     df: pd.DataFrame,
     cfg: dict,
     cycle_phase: str | None = None,
+    cycle_pos: float | None = None,
 ) -> dict:
     """Compute bottom + top confluence for one commodity member frame.
 
@@ -267,11 +268,15 @@ def assess_member(
                   momentum_state, shock_z [opt], pos_pctile [opt], …).
     cfg         : full commodities config section.
     cycle_phase : optional phase string from cycle_positions.json for this member.
+    cycle_pos   : optional numeric 0-100 cycle position from cycle_positions.json.
+                  Gates the top-side divergence condition out of the bottoming
+                  zone (<= 32) — see the W-C(1) note at the divergence block.
 
     Returns
     -------
     JSON-safe dict with state, scores, and fired-condition receipts.  Never raises —
-    returns a null-state dict on any failure.
+    returns a null-state dict on any failure.  `turn_developing` is display-tier
+    only: it carries no score weight on either side.
     """
     _null = {
         "name": name,
@@ -289,9 +294,12 @@ def assess_member(
         "top_fired": [],
         "n_bottom_applicable": 0,
         "n_top_applicable": 0,
+        "turn_developing": False,
+        "basing": False,
+        "armed_recent": False,
     }
     try:
-        return _assess_member_inner(name, klass, df, cfg, cycle_phase)
+        return _assess_member_inner(name, klass, df, cfg, cycle_phase, cycle_pos)
     except Exception:  # noqa: BLE001 — display organ must never break the build
         log.warning("commodity_confluence.assess_member failed for %s", name, exc_info=True)
         return _null
@@ -303,6 +311,7 @@ def _assess_member_inner(
     df: pd.DataFrame,
     cfg: dict,
     cycle_phase: str | None,
+    cycle_pos: float | None = None,
 ) -> dict:
     from engine.commodity_mtf import mtf_ladder
     from engine.commodity_signals import technical_arming
@@ -585,18 +594,38 @@ def _assess_member_inner(
         (d_stoch is not None and d_stoch >= 50)
         or (sma200_val is not None and stretch_val is not None and stretch_val >= 0.0)
     )
-    divergence_fired = (
+    divergence_raw = (
         div_applicable
         and last_ts_trend == "up"
         and last_mom_state == "bear"
         and div_elevated
     )
 
+    # W-C(1) divergence de-perversion (display-tier, pre-gauntlet amendment — see
+    # research/COMMODITY_BOTTOM_TOP_PREREG.md §Amendments).  The raw construction
+    # reads "trend up but the momentum hysteresis has flipped bear while price is
+    # still elevated" as a ROLLOVER.  At the BOTTOM of the long cycle that exact
+    # shape is the RECOVERY signature, not a top: the slow trend anchors
+    # (ema_trend/ema_cross/sma200) still carry the old downtrend, so momentum_state
+    # lags bear while price turns up off the low.  Gold (pos 1.7, Recovery) and
+    # silver (pos 1.0, Trough) both fired it on 2026-08-03 — a top signal at the
+    # buy zone.  Below the bottoming threshold the condition is therefore NOT a
+    # valid top-side observation: it is dropped from the top side entirely
+    # (applicable=False, so it neither numerator- nor denominator-feeds the top
+    # score) and surfaces instead as the display-only `turn_developing` flag.
+    # Threshold mirrors engine/sector_cycles.py's `pos <= 32` bottoming zone.
+    div_bottom_pos_max = float(ccfg.get("divergence_bottoming_pos_max", 32.0))
+    cycle_pos_val = _safe_float(cycle_pos)
+    in_bottoming_zone = (cycle_pos_val is not None and cycle_pos_val <= div_bottom_pos_max)
+    turn_developing = bool(divergence_raw and in_bottoming_zone)
+    divergence_fired = bool(divergence_raw and not in_bottoming_zone)
+    div_applicable_eff = bool(div_applicable and not turn_developing)
+
     # rollover group: curl_dn, divergence, cycle_top
     rollover_conditions: list[tuple[str, bool, bool, float]] = [
-        ("curl_dn",    curl_top_fired,    d_present,       w_curl),
-        ("divergence", divergence_fired,  div_applicable,  w_div),
-        ("cycle_top",  cycle_top_fired,   cycle_applicable, w_cycle),
+        ("curl_dn",    curl_top_fired,    d_present,           w_curl),
+        ("divergence", divergence_fired,  div_applicable_eff,  w_div),
+        ("cycle_top",  cycle_top_fired,   cycle_applicable,    w_cycle),
     ]
 
     # combined top (all conditions, for magnitude readout)
@@ -646,6 +675,14 @@ def _assess_member_inner(
         "top_fired": top_fired,
         "n_bottom_applicable": n_bot_app,
         "n_top_applicable": n_top_app,
+        # --- display-tier only (never scored, never ranked) -------------------
+        # W-C(1): the divergence shape suppressed because the cycle sits in the
+        # bottoming zone — rendered as "turn developing — momentum read lags".
+        "turn_developing": turn_developing,
+        # W-C(2)/(4): arming states re-exposed so the page can render the
+        # basing/ignition copy without recomputing technical_arming per member.
+        "basing": bool(arm_result.get("basing", False)),
+        "armed_recent": bool(arm_result.get("armed_recent", False)),
     }
 
 
@@ -976,8 +1013,12 @@ def _build_confluence_inner(
         klass = _member_classes.get(name, "")
         cp_entry = cycle_pos.get(name, {})
         phase = cp_entry.get("phase") if isinstance(cp_entry, dict) else None
+        # W-C(1): the numeric 0-100 position gates the top-side divergence out of
+        # the bottoming zone.  Absent/unparseable -> None -> gate stays open
+        # (fail-open on the GATE means the pre-W-C behaviour, not a false top).
+        pos = cp_entry.get("pos") if isinstance(cp_entry, dict) else None
         _t0 = _time.time()
-        result = assess_member(name, klass, df, cfg, cycle_phase=phase)
+        result = assess_member(name, klass, df, cfg, cycle_phase=phase, cycle_pos=pos)
         _elapsed = _time.time() - _t0
         if _elapsed > 1.0:
             log.info("[timing] confluence.assess_member %s in %.2fs", name, _elapsed)

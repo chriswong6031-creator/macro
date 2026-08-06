@@ -2,7 +2,7 @@
 
 > AI-drafted (opus) + adversarially reviewed (opus). PENDING operator ratification. Not authority. Any promotion follows the gauntlet.
 
-All claims verified. The "validated" word in `commodity_carry_context.py:1,7,19,32` is a live CI-law concern (`scripts/check_validated_claims.py`), and section 2 (line 58) of DO_NOT_REBUILD is the correct home for the xsec-mom kill row. I have everything needed.
+All claims verified. The "validated" word in `commodity_carry_context.py:1,7,19,32` is a live CI-law concern (`scripts/check_validated_claims.py`), and section 2 of DO_NOT_REBUILD is the correct home for the xsec-mom kill row (landed as DNR:KILL-COMMODITY-XSEC-MOM). I have everything needed.
 
 ---
 

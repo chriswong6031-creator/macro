@@ -3325,6 +3325,29 @@ def build_signal_lab_page(env: Environment, site: Path, generated: str) -> None:
              payload["summary"]["factor_total"])
 
 
+def build_quant_lab_page(env: Environment, site: Path, generated: str) -> None:
+    """🧪 Quant Lab — external quant models, rebuilt on our panel and measured.
+
+    Pure assembler over engine.quant_lab.page. The EXPENSIVE half (the point-in-time
+    study across the rebalance grid) runs off the render path in
+    `scripts.build_quant_lab` and lands in data/quant_lab/study.json; this only reads
+    that artifact plus one live cross-section. Additive + graceful: never fatal.
+    """
+    from engine.quant_lab import page as ql_page
+    payload = ql_page.build_payload()
+    payload["generated_utc"] = generated
+    html = env.get_template("quant_lab.html.j2").render(**payload)
+    write_page(site / "quant_lab.html", html)
+    fdir = site / "labdata"
+    fdir.mkdir(parents=True, exist_ok=True)
+    (fdir / "quant_lab.json").write_text(
+        json.dumps(payload, separators=(",", ":"), default=str))
+    log.info("wrote quant_lab.html (%d models, study=%s, live n=%s)",
+             len(payload.get("models") or []),
+             "yes" if payload.get("has_study") else "no",
+             (payload.get("live") or {}).get("n_universe"))
+
+
 def build_alerts_page(env: Environment, site: Path, generated: str) -> None:
     """🚨 Alert Command Center — the honest triage board over every alert engine.
 
@@ -4444,6 +4467,10 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("signal lab page failed: %s", e)
     try:
+        build_quant_lab_page(env, site, generated)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("quant lab page failed: %s", e)
+    try:
         build_alerts_page(env, site, generated)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("alerts page failed: %s", e)
@@ -4863,6 +4890,19 @@ def main() -> int:
             for _item in (_ab.get(_lane) or []):
                 if _item.get("kind") == "sector" and _item.get("ticker") in _two_reads_lookup:
                     _item["two_reads_chip"] = _two_reads_lookup[_item["ticker"]]
+
+    # Persist the fully-assembled board so build_sector_central can render the SAME
+    # server-side 5-lane board on the US Sector Intelligence Overview (reader pattern —
+    # build_site runs earlier than build_sector_central in the engine job). The US board
+    # pre-merges every per-item field (sector_setup, EW overlay, two-reads) onto each row,
+    # so the shared include is self-sufficient from action_board alone — no lookup dict.
+    try:
+        _ab_json = site / "basketdata" / "action_board.json"
+        _ab_json.parent.mkdir(parents=True, exist_ok=True)
+        _ab_json.write_text(json.dumps({"action_board": _ab}, ensure_ascii=False),
+                            encoding="utf-8")
+    except Exception as _abe:  # noqa: BLE001 — additive persistence, never fatal
+        log.warning("action_board.json persist failed (%s)", _abe)
 
     # Mag 7 regime panel (data/mag7_regime/latest.json — DISPLAY-ONLY context read).
     # Injected into latest so the template accesses it as latest.mag7_regime.

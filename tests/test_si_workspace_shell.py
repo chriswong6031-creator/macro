@@ -31,6 +31,12 @@ PAGE = TPL / "sector_central.html.j2"
 ROUTER = TPL / "si_workspace.js"
 
 VIEWS = ["overview", "map", "moving", "money", "explore"]
+# The rail and the section order carry a sixth: the subsector-confluence board brought in
+# from the standalone subsectors page (US parity with the China desk's #confluence, #4637).
+# It is deliberately NOT in VIEWS: it ships no si-view-read slot, because it renders its own
+# hero and its own payload — its hero IS its read. Keeping the two lists apart is what makes
+# "every view has a read slot" still mean something rather than quietly counting to six.
+NAV_VIEWS = VIEWS + ["confluence"]
 
 
 def _page() -> str:
@@ -63,22 +69,22 @@ def _view_body(src: str, view: str) -> str:
 
 # ────────────────────────────────────────────────────────────── sidebar + views
 
-def test_sidebar_present_with_five_view_buttons() -> None:
+def test_sidebar_present_with_six_view_buttons() -> None:
     s = _page()
     assert '<nav class="si-side"' in s, "the persistent rail is gone"
     assert '<nav class="si-side" aria-label="Sector Intelligence views">' in s, \
         "rail lost its aria-label"
     btns = re.findall(r'class="si-view-btn[^"]*" data-view="([a-z]+)" href="#([a-z]+)"', s)
-    assert [b[0] for b in btns] == VIEWS, f"sidebar buttons/order wrong: {btns}"
+    assert [b[0] for b in btns] == NAV_VIEWS, f"sidebar buttons/order wrong: {btns}"
     assert all(v == h for v, h in btns), "each button's href must be its own view hash"
     # the active button announces itself to assistive tech (§1b)
     assert 'aria-current="page"' in s
 
 
-def test_five_views_in_partition_order() -> None:
+def test_six_views_in_partition_order() -> None:
     s = _page()
-    assert re.findall(r'<section class="si-view[^"]*" data-view="([a-z]+)"', s) == VIEWS
-    assert s.count("{# /si-view") == 5, "a view wrapper is unclosed"
+    assert re.findall(r'<section class="si-view[^"]*" data-view="([a-z]+)"', s) == NAV_VIEWS
+    assert s.count("{# /si-view") == 6, "a view wrapper is unclosed"
     # exactly one view ships pre-activated, so the correct panel is visible before
     # the router runs (no flash, and no blank page if the script fails to load)
     assert s.count('<section class="si-view on"') == 1
@@ -89,8 +95,12 @@ def test_v1_anchor_rail_is_retired() -> None:
     s = _page()
     assert 'id="si-rail"' not in s, "the V1 sticky anchor rail came back"
     assert 'class="scc-rail"' not in s
-    # …but the funnel exit it carried must survive somewhere in the rail
-    assert 'href="subsectors.html"' in s.split("</nav>", 1)[0]
+    # …and the funnel it carried is a routed view now, not an exit link: the rail owns a
+    # #confluence button and no longer points off-page at the standalone subsectors page.
+    rail = s.split("</nav>", 1)[0]
+    assert 'data-view="confluence" href="#confluence"' in rail
+    assert 'href="subsectors.html"' not in rail, \
+        "the old funnel exit LINK survived — it should be the routed #confluence view now"
 
 
 def test_shell_grid_and_stage() -> None:
@@ -343,6 +353,8 @@ def test_map_read_uses_the_hoisted_quadrant_source() -> None:
 def test_every_view_has_a_read_slot() -> None:
     s = _page()
     assert s.count('class="si-view-read"') == 5
+    assert 'id="si-read-confluence"' not in s, \
+        "confluence must not have a read slot — its hero is its read"
     for v in VIEWS:
         assert 'id="si-read-%s"' % v in s, f"{v} has no view-read slot"
         assert 'id="si-read-%s" hidden' % v in s, \
@@ -495,7 +507,7 @@ def test_page_renders_with_an_intact_head() -> None:
     assert title and title.group(1).strip(), "empty <title>"
     # and the shell survived the render, not just the source
     assert 'class="si-shell"' in html and html.count('class="si-view-read"') == 5
-    assert re.findall(r'<section class="si-view[^"]*" data-view="([a-z]+)"', html) == VIEWS
+    assert re.findall(r'<section class="si-view[^"]*" data-view="([a-z]+)"', html) == NAV_VIEWS
 
 
 def test_no_i18n_macro_inside_an_html_attribute() -> None:

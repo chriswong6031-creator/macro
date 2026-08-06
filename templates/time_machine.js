@@ -152,15 +152,27 @@
       +'.tm-preset-btn:hover { background:var(--panel2); color:var(--text); border-color:color-mix(in srgb,var(--link) 45%,var(--line)); }'
       +'.tm-watermark { font-size:11px; color:var(--muted); margin-top:8px; margin-bottom:4px; }'
       +'.tm-loading { color:var(--muted); font-size:13px; padding:40px 0; text-align:center; }'
-      /* Strength gauge (shown in the hover tooltip) */
-      +'.sr-tip-score { margin-top:8px; padding-top:8px; border-top:1px solid var(--line); }'
-      +'.sr-tip-score-hd { display:flex; align-items:baseline; gap:5px; font-size:10.5px; color:var(--muted);'
-      +'  text-transform:uppercase; letter-spacing:.05em; font-weight:700; }'
-      +'.sr-tip-score-hd b { margin-left:auto; font-size:15px; color:var(--text); font-variant-numeric:tabular-nums; }'
-      +'.sr-tip-score-hd i { font-style:normal; font-size:10px; color:var(--muted); }'
-      +'.sr-tip-gauge { margin-top:4px; height:6px; border-radius:4px; background:var(--panel2); border:1px solid var(--line); overflow:hidden; }'
-      +'.sr-tip-gauge span { display:block; height:100%; border-radius:4px; transition:width .2s; }'
-      +'.sr-tip-cap { margin-top:5px; font-size:9.5px; color:var(--muted); font-style:italic; }'
+      /* Hover-card blocks unique to the replay. The shell, header, context line and
+         quadrant tint all come from subsector_rotation.js's .sr-tip so both maps hand
+         you the same card; only the episode chip and the strength gauge are ours.
+         --sq is the quadrant colour the shell already set from data-q. */
+      +'.sr-tip-ep { display:flex; align-items:center; gap:7px; margin:9px 14px 0; }'
+      +'.sr-ep-dir { font:700 10.5px/1 Inter,sans-serif; padding:4px 9px; border-radius:7px;'
+      +'  background:color-mix(in srgb,currentColor 13%,transparent); }'
+      +'.sr-ep-dir.up { color:var(--up); } .sr-ep-dir.dn { color:var(--down); }'
+      +'.sr-ep-st { font:500 10.5px/1 Inter,sans-serif; color:var(--muted); }'
+      +'.sr-tip-score { margin:12px 14px 0; padding:10px 0 13px;'
+      +'  border-top:1px solid color-mix(in srgb,var(--text) 11%,transparent); }'
+      +'.sr-tip-score-hd { display:flex; align-items:baseline; gap:5px; font:700 8.5px/1 Inter,sans-serif;'
+      +'  color:color-mix(in srgb,var(--muted) 80%,transparent); text-transform:uppercase; letter-spacing:.13em; }'
+      +'.sr-tip-score-hd b { margin-left:auto; font:700 16px/1 Inter,sans-serif; letter-spacing:-.02em;'
+      +'  color:var(--text); font-variant-numeric:tabular-nums; }'
+      +'.sr-tip-score-hd i { font-style:normal; font-size:10px; font-weight:600; color:var(--muted); }'
+      +'.sr-tip-gauge { margin-top:7px; height:5px; border-radius:3px; overflow:hidden;'
+      +'  background:color-mix(in srgb,var(--text) 10%,transparent); }'
+      +'.sr-tip-gauge span { display:block; height:100%; border-radius:3px;'
+      +'  background:var(--sq,var(--muted)); transition:width .2s; }'
+      +'.sr-tip-cap { margin-top:7px; font:450 9.5px/1.45 Inter,sans-serif; color:var(--muted); }'
       +'@media (max-width:520px) {'
       +'  .tm-scatter-wrap { flex-direction:column; }'
       +'  .tm-episodes-panel { max-height:220px; flex:none; width:100%; }'
@@ -780,35 +792,38 @@
       });
     }
     var el = _getTmTipEl();
-    var rsStr = (pt.rs>0?'+':'')+pt.rs.toFixed(2);
-    var azStr = (pt.az>0?'+':'')+pt.az.toFixed(2);
     var TIP_STAGE = {
-      onset:      '<span class="l-en">onset</span><span class="l-zh">初现</span>',
-      confirmed:  '<span class="l-en">confirmed</span><span class="l-zh">确认</span>',
-      undeniable: '<span class="l-en">undeniable</span><span class="l-zh">确立</span>'
+      onset:      ['just starting','初现'],
+      confirmed:  ['confirmed','已确认'],
+      undeniable: ['well established','已确立']
     };
-    var epLine = ep ? '<div class="sr-tip-mt">'
-      +(ep.dir==='in'?'<span class="l-en">Rotating in</span><span class="l-zh">轮入</span>':'<span class="l-en">Rotating out</span><span class="l-zh">轮出</span>')
-      +' <b class="'+(ep.stage==='undeniable'?'up':ep.stage==='confirmed'?'up':'')+'">'+( TIP_STAGE[ep.stage]||esc(ep.stage) )+'</b></div>' : '';
-    // Strength = combined X+Y position on the grid (display-only readout, not a signal)
+    // The episode, when the replay is standing inside one — the single fact this
+    // card exists to surface. Rendered as a chip, not a stats row.
+    var st = TIP_STAGE[ep && ep.stage];
+    var epLine = ep ? '<div class="sr-tip-ep"><span class="sr-ep-dir '+(ep.dir==='in'?'up':'dn')+'">'
+      +(ep.dir==='in'?'<span class="l-en">Rotating in</span><span class="l-zh">轮入</span>'
+                     :'<span class="l-en">Rotating out</span><span class="l-zh">轮出</span>')
+      +'</span><span class="sr-ep-st">'+(st?L(st[0],st[1]):esc(ep.stage))+'</span></div>' : '';
+    // Strength = combined X+Y position on the grid (display-only readout, not a signal).
+    // It replaces the raw RS / momentum pair the card used to print — those two numbers
+    // are the dot's own coordinates, which the cursor is already resting on.
     var scoreV = _posScore(pt.rs, pt.az);
-    var qCol = {leading:'--up',weakening:'--warn',improving:'--link',lagging:'--down'}[q] || '--muted';
     var scoreRow = scoreV==null ? '' : '<div class="sr-tip-score">'
       +'<div class="sr-tip-score-hd"><span class="l-en">Strength</span><span class="l-zh">强度</span>'
       +'<b>'+scoreV+'</b><i>/100</i></div>'
-      +'<div class="sr-tip-gauge"><span style="width:'+scoreV+'%;background:var('+qCol+')"></span></div>'
-      +'<div class="sr-tip-cap"><span class="l-en">position on the grid (X+Y) · not a trade signal</span><span class="l-zh">图上位置（X+Y）· 非交易信号</span></div>'
+      +'<div class="sr-tip-gauge"><span style="width:'+scoreV+'%"></span></div>'
+      +'<div class="sr-tip-cap"><span class="l-en">where it sits on the grid — not a trade signal</span><span class="l-zh">图上所处位置 —— 非交易信号</span></div>'
       +'</div>';
     var thLine = _unit==='sectors'
       ? '<span class="l-en">Sector ETF · </span><span class="l-zh">行业ETF · </span>'+esc(pt.name)
       : _unit==='factors'
         ? '<span class="l-en">Factor · context</span><span class="l-zh">因子 · 参考</span>'
         : esc(pt.theme||'');
-    el.innerHTML = '<div class="sr-tip-hd"><b>'+esc(name)+'</b><span class="sr-q '+qd.cls+'">'+(isZh()?qd.zh:qd.en)+'</span></div>'
-      +'<div class="sr-tip-th">'+thLine+'</div>'
-      +'<div class="sr-tip-mt"><span class="l-en">RS</span><span class="l-zh">相对强度</span> <b>'+rsStr+'</b> · <span class="l-en">Mom</span><span class="l-zh">动量</span> <b class="'+(pt.az>=0?'up':'dn')+'">'+azStr+'</b></div>'
-      +scoreRow
-      +epLine;
+    el.setAttribute('data-q', qd.cls);
+    el.innerHTML = '<div class="sr-tip-hd"><b class="sr-tip-nm">'+esc(name)+'</b><span class="sr-q '+qd.cls+'">'+(isZh()?qd.zh:qd.en)+'</span></div>'
+      +'<div class="sr-tip-ctx">'+thLine+'</div>'
+      +epLine
+      +scoreRow;
     el.classList.add('on');
     var w=el.offsetWidth, h=el.offsetHeight, x=cx+14, y=cy+14;
     if(x+w>window.innerWidth-8) x=cx-w-14;

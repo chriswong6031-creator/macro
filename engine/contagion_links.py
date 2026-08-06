@@ -608,6 +608,68 @@ def _shadow_state(pressure_pct: float, incumbent: str | None) -> str | None:
 
 
 # ---------------------------------------------------------------------------
+# Data-plane session resolution (forward-ledger calendar-asof audit 2026-08-05)
+# ---------------------------------------------------------------------------
+
+def _is_weekend_stamp(session: str) -> bool:
+    """True iff `session` parses to a Saturday/Sunday.
+
+    Fail-OPEN on a parse error: an unparseable stamp is not evidence of a
+    weekend, and refusing it would darken the ledger for the wrong reason.
+    """
+    try:
+        return bool(pd.Timestamp(session).dayofweek >= 5)
+    except Exception:  # noqa: BLE001 — see docstring; never fatal, never a refusal
+        return False
+
+
+def _resolve_data_session(
+    mkt: str, severity: dict, pressure: dict
+) -> tuple[str | None, str | None, str | None]:
+    """Resolve one market's DATA-PLANE session → (session, source, gap_or_None).
+
+    The ledger stamp must key off the tape, not the calendar.  Ladder — the
+    wall clock is NEVER a rung:
+
+      1. ``severity[mkt]["as_of"]`` — the newest bar of this market's own bench
+         close (``_BENCH[mkt]`` via ``_load_close``).  That is the very bar
+         sigma / dd21 / ret10 were computed from, and the bar a forward grader
+         resolves from.  source = "bench".
+      2. ``pressure[mkt]["incumbent_as_of"]`` — the incumbent risk-radar forward
+         log's asof, itself already tape-stamped (crossasset_shadow idiom).
+         source = "incumbent".
+      3. Neither available → (None, None, gap).  The market's row is SKIPPED in
+         both ledgers; the gap says so in plain words rather than inventing a
+         session out of the calendar.
+
+    A resolved session that parses to a WEEKEND is refused with a gap (no
+    fall-through to the next rung): a bench index date is always a real trading
+    session, so a Saturday/Sunday there can only mean an upstream stamp is
+    corrupt — papering over it with the next rung would hide the corruption.
+    """
+    sev = (severity or {}).get(mkt) or {}
+    pres = (pressure or {}).get(mkt) or {}
+
+    for candidate, source in ((sev.get("as_of"), "bench"),
+                              (pres.get("incumbent_as_of"), "incumbent")):
+        if not candidate:
+            continue
+        session = str(candidate)
+        if _is_weekend_stamp(session):
+            return None, None, (
+                f"{mkt}: {source} session {session} falls on a weekend — refused "
+                "(a bench index date is always a real session, so this is a "
+                "corrupt upstream stamp); ledger row skipped"
+            )
+        return session, source, None
+
+    return None, None, (
+        f"{mkt}: no data-plane session (bench + incumbent both unavailable) "
+        "— ledger row skipped"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Plain-word glance lines (CGL-R8)
 # ---------------------------------------------------------------------------
 
@@ -869,6 +931,19 @@ def compute(root=None) -> dict:
 
     blended_dict = _mat_to_dict(L_matrix)
 
+    # --- Per-market data-plane session (forward-ledger audit 2026-08-05) ---
+    # Additive provenance (CGL-R10): the tape date each market's numbers were
+    # read off, resolved by the ladder in _resolve_data_session().  snapshot()
+    # stamps its ledger rows from this, never from the calendar.  Gaps are
+    # recorded HERE so an unstampable market is disclosed on the display
+    # artifact too, not only in the (lane-gated) ledger path.
+    data_sessions: dict[str, str | None] = {}
+    for mkt in MARKETS:
+        session, _source, gap = _resolve_data_session(mkt, severity_out, pressure_out)
+        data_sessions[mkt] = session
+        if gap:
+            gaps.append(gap)
+
     elapsed = time.time() - t0
     log.info("[timing] contagion_links compute: %.2fs", elapsed)
 
@@ -894,6 +969,10 @@ def compute(root=None) -> dict:
         },
         "severity": severity_out,
         "pressure": pressure_out,
+        # The tape each market was read off (mirrors basket_turn_watch's
+        # data_session provenance field).  ADDITIVE — `built` above keeps its
+        # build-timestamp meaning and is NOT derived here.
+        "data_sessions": data_sessions,
         "gaps":     gaps,
         "timing_sec": _round(elapsed, 2),
     }
@@ -915,6 +994,30 @@ def snapshot(root=None) -> dict:
       site/riskdata/contagion_links.json
       data/contagion_links/history.jsonl
       data/risk_radar[_intl]/<mkt>_forward_log_contagion.jsonl
+
+    LEDGER STAMPS COME FROM THE DATA PLANE, NOT THE CLOCK (forward-ledger
+    calendar-asof audit 2026-08-05, #4568 pattern).  Both ledgers used to stamp
+    a single wall-clock calendar date across all 11 markets.  That is wrong
+    three ways:
+
+      * it re-describes old tape under a fresh calendar date — a weekend or
+        drifted nightly re-run appended a brand-new row for Friday's numbers.
+        Measured on committed data before this fix: every one of the 11 forward
+        logs carried 6 weekend rows out of 15, and history.jsonl 66 of 165.
+      * it defeats the ledgers' OWN idempotency.  The dedupe keys are
+        (market, asof) for history and asof for the shadow logs; keyed on the
+        session instead, a run against a frozen store re-derives the session it
+        already recorded and the dedupe refuses it.
+      * a future forward grader resolves the base close FORWARD from the row's
+        asof, so a row stamped one calendar day past its tape grades from the
+        wrong entry bar.
+
+    Each market therefore resolves its OWN session via _resolve_data_session()
+    — markets close on different calendars, so one stamp for all 11 was never
+    honest.  A market with no resolvable session is SKIPPED in both ledgers with
+    a gap; the wall clock is not a fallback.  `asof` keeps its name and meaning
+    as the dedupe key; `data_session` + `session_source` are additive
+    provenance (CGL-R10).
     """
     from engine.risk_radar_intl_audit import ledger_lane_armed
 
@@ -961,8 +1064,17 @@ def snapshot(root=None) -> dict:
         except Exception as exc:  # noqa: BLE001
             log.warning("CGL: test site copy write failed: %s", exc)
 
-    asof_str = date.today().isoformat()
     pressure = artifact.get("pressure") or {}
+    severity = artifact.get("severity") or {}
+
+    # Per-market data-plane session — see the stamping law in the docstring.
+    # compute() already recorded the gap for every market that resolves to
+    # nothing, so we only have to honour the skip here.
+    sessions: dict[str, tuple[str, str]] = {}
+    for mkt in MARKETS:
+        session, source, _gap = _resolve_data_session(mkt, severity, pressure)
+        if session is not None and source is not None:
+            sessions[mkt] = (session, source)
 
     # --- history.jsonl append (first-writer-wins by (market, asof)) ---
     hist_path = _cgl_history_path(root)
@@ -972,18 +1084,24 @@ def snapshot(root=None) -> dict:
 
     hist_rows: list[dict] = []
     for mkt in MARKETS:
+        sess = sessions.get(mkt)
+        if sess is None:
+            continue  # no data-plane session — gap already recorded in compute()
+        asof_str, session_source = sess
         key = (mkt, asof_str)
         if key in existing_asofs:
             continue
         p = pressure.get(mkt) or {}
         top_ex = (p.get("top_exporters") or [{}])[0]
         hist_rows.append({
-            "asof":         asof_str,
-            "market":       mkt,
-            "p_raw":        p.get("raw"),
-            "pct":          p.get("pct"),
-            "level":        p.get("level"),
-            "top_exporter": top_ex.get("market"),
+            "asof":           asof_str,
+            "data_session":   asof_str,
+            "session_source": session_source,
+            "market":         mkt,
+            "p_raw":          p.get("raw"),
+            "pct":            p.get("pct"),
+            "level":          p.get("level"),
+            "top_exporter":   top_ex.get("market"),
         })
 
     if hist_rows:
@@ -993,6 +1111,11 @@ def snapshot(root=None) -> dict:
 
     # --- Shadow forward log appends per market (RRI shadow-log idiom) ---
     for mkt in MARKETS:
+        sess = sessions.get(mkt)
+        if sess is None:
+            continue  # no data-plane session — gap already recorded in compute()
+        asof_str, session_source = sess
+
         p_mkt = pressure.get(mkt) or {}
         incumbent = p_mkt.get("incumbent_state")
         if incumbent is None:
@@ -1014,6 +1137,8 @@ def snapshot(root=None) -> dict:
 
         shadow_row = {
             "asof":            asof_str,
+            "data_session":    asof_str,
+            "session_source":  session_source,
             "market":          mkt,
             "state":           shadow,
             "incumbent_state": incumbent,

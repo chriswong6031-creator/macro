@@ -53,6 +53,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.ticker_aliases import YAHOO_FETCH_ALIASES as ALIASES  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("fetch_basket_ohlcv")
@@ -65,25 +66,58 @@ BACKOFF_S = 3.0
 BATCH = 40                  # tickers per yfinance download call (5 OHLCV fields each)
 COLS = ["open", "high", "low", "close", "volume"]
 
-# membership ticker -> the symbol yfinance actually resolves it under (renames where
-# Yahoo only keeps the OLD symbol's series). Fetched under the value, stored under the key.
-ALIASES = {"FI": "FISV"}    # Fiserv renamed FISV->FI in 2023; Yahoo still serves the FISV series
+# Ticker renames where the vendor symbol differs from the membership ticker live in
+# lib/ticker_aliases (imported above as ALIASES) — ONE map shared with the close-only
+# sibling scripts/fetch_basket_extras. It used to be a second local copy here, which is
+# why MMC (Marsh McLennan, renamed MMC->MRSH on 2026-01-14) was fetched by extras but
+# never by this deep store: no data/baskets/ohlcv/MMC.parquet ever existed.
 
 
-def _membership_tickers() -> list[str]:
+def _membership_rows() -> list[dict]:
     p = config.data_dir() / "baskets" / "membership.json"
     if not p.exists():
         return []
     mem = json.loads(p.read_text())
     bdict = mem.get("baskets") or {}
     items = bdict.values() if isinstance(bdict, dict) else bdict
+    return [m for b in items for m in b.get("members", []) if m.get("ticker")]
+
+
+def _membership_tickers(active_only: bool = False) -> list[str]:
+    """Membership tickers. Default = every name that has ever been a member (the FETCH
+    universe: a removed member's history still refreshes/repairs on disk).
+
+    active_only=True drops names whose EVERY membership row carries a `removed` stamp —
+    the curator's exit ledger. A ticker still live in ANY other basket stays active (12 of
+    the 15 removed rows are cross-listed exits, e.g. HOOD crypto→fintech), so the filter is
+    per-TICKER, never per-row. This is the set the staleness census judges: a name the
+    curator has exited — or that the market has (a delisting) — must not read as a broken
+    per-member pull forever."""
     out: set[str] = set()
-    for b in items:
-        for m in b.get("members", []):
-            t = m.get("ticker")
-            if t:
-                out.add(t)
-    return sorted(out)
+    active: set[str] = set()
+    for m in _membership_rows():
+        t = m["ticker"]
+        out.add(t)
+        if not m.get("removed"):
+            active.add(t)
+    return sorted(active if active_only else out)
+
+
+def _removed_members() -> dict[str, dict]:
+    """ticker -> {removed, rationale} for names removed from EVERY basket they sat in.
+    Feeds the census's `inactive` disclosure so an exited/delisted member is explained in
+    the freshness marker rather than silently dropped from the count."""
+    active = {m["ticker"] for m in _membership_rows() if not m.get("removed")}
+    out: dict[str, dict] = {}
+    for m in _membership_rows():
+        t = m["ticker"]
+        if t in active:
+            continue
+        prev = out.get(t)
+        rmv = str(m.get("removed") or "")
+        if prev is None or rmv > prev["removed"]:      # last exit wins
+            out[t] = {"removed": rmv, "rationale": str(m.get("rationale") or "")[:240]}
+    return out
 
 
 def _finviz_tickers(filters: list[str]) -> list[str]:
@@ -113,6 +147,33 @@ def _resolve_universe(explicit: list[str], fv: list[str], with_members: bool) ->
 
 # ------------------------------------------------------------------ staleness tripwire
 STALE_SESSIONS = 3          # warn when a member's last row lags the store max by more
+
+# Every store engine/basket_index falls through for a member's tape, in its preference
+# order (engine/basket_index._member_ohlcv). A member absent from the DEEP store alone
+# still renders — the fallbacks cover it, which is the graceful degradation this store
+# was designed for. A member absent from ALL of these has no price series anywhere: its
+# basket silently renders on N-1 members and every coverage receipt quietly rounds down.
+# The two failures are reported separately below because only the second is data loss.
+FALLBACK_RUNGS: tuple[tuple[str, ...], ...] = (
+    ("baskets", "ohlcv"),   # this store — deep OHLCV, preferred
+    ("stocks",),            # US stock library — already OHLCV
+    ("china_stocks",),      # A-shares (.SS/.SZ tickers; never collides with the US stores)
+    ("yahoo",),             # close+volume; high/low/open synthesised from the close
+)
+
+
+def _absent_from_all_rungs(tickers: list[str], data_dir: Path | None = None) -> list[str]:
+    """Of `tickers`, those with no per-ticker parquet on ANY rung basket_index reads.
+
+    Existence-only (no parse): a present-but-empty file is the deep store's own problem
+    and is caught by the staleness census, whereas a name with no file anywhere can
+    never resolve a tape no matter which fallback runs."""
+    root = data_dir or config.data_dir()
+    dark: list[str] = []
+    for t in tickers:
+        if not any((root.joinpath(*rung) / f"{t}.parquet").exists() for rung in FALLBACK_RUNGS):
+            dark.append(t)
+    return dark
 
 
 def _last_row_date(p: Path) -> date | None:
@@ -150,12 +211,20 @@ def check_membership_staleness(odir: Path | None = None, members: list[str] | No
     M7C-R8) is blind to a frozen SUBSET: 2026-07-16, #776 dropped the membership universe
     from the nightly pull and 528 member files froze for 11 sessions while the aggregate
     as_of stayed fresh — basket candles silently rendered from partial membership.
+
+    ACTIVE means `removed` is unset on at least one membership row (see
+    _membership_tickers): a name the curator has exited, or that the market has, is not a
+    broken pull. Such a name is not counted stale — but if its tape has ALSO stopped it is
+    named in `inactive` with its last bar and exit stamp, so the marker EXPLAINS it instead
+    of going quietly green (BLD/TopBuild: acquired by QXO, NYSE-suspended 2026-07-01, no
+    successor symbol — it read as a 22-session red line for a month).
     Writes data/quality/basket_ohlcv_freshness.json and returns the payload."""
     payload: dict = {"status": "error", "checked_at": datetime.now(timezone.utc).isoformat(),
                      "threshold_sessions": threshold}
     try:
         odir = odir or (config.data_dir() / "baskets" / "ohlcv")
-        members = _membership_tickers() if members is None else members
+        explicit_members = members is not None
+        members = _membership_tickers(active_only=True) if members is None else members
         last: dict[str, date] = {}
         for p in odir.glob("*.parquet"):
             try:
@@ -181,19 +250,61 @@ def check_membership_staleness(odir: Path | None = None, members: list[str] | No
                 stale[t] = {"last": d.isoformat(), "sessions_behind": lag}
             elif lag > 0:
                 behind_ok += 1
+        # Disclosure, not silence: an inactive member whose tape has ALSO stopped is named
+        # here with its last real bar and exit stamp. Excluded from n_stale (it is not a
+        # broken pull) but never invisible — a delisting must be readable in the marker.
+        inactive: dict[str, dict] = {}
+        for t, rec in ({} if explicit_members else _removed_members()).items():
+            d = last.get(t)
+            if d is None or d >= store_max:
+                continue
+            lag = _sessions_behind(d, store_max)
+            if lag > threshold:
+                inactive[t] = {"last": d.isoformat(), "sessions_behind": lag, **rec}
+        # Of the members this store lacks, which have no tape on ANY rung — the
+        # fallbacks cover the rest, so only these are actual coverage loss.
+        dark = _absent_from_all_rungs(missing, odir.parent.parent)
         payload.update({
             "status": "stale" if (stale or missing) else "ok",
             "store_max": store_max.isoformat(), "n_members": len(members),
             "n_stale": len(stale), "n_behind_within_threshold": behind_ok,
             "stale": dict(sorted(stale.items(), key=lambda kv: -kv[1]["sessions_behind"])),
             "missing": missing,
+            "inactive": dict(sorted(inactive.items(), key=lambda kv: -kv[1]["sessions_behind"])),
+            "absent_all_rungs": dark,
+            "n_absent_all_rungs": len(dark),
         })
+        if inactive:
+            log.info("staleness census: %d inactive member tape(s) stopped, disclosed not "
+                     "flagged: %s", len(inactive),
+                     ", ".join(f"{t} (last {v['last']}, removed {v['removed']})"
+                               for t, v in inactive.items()))
+        if dark:
+            dmsg = (f"{len(dark)} basket member(s) have NO price series on any store rung "
+                    f"({', '.join('/'.join(r) for r in FALLBACK_RUNGS)}): {', '.join(dark)} "
+                    "— every basket holding one silently renders and grades on N-1 members, "
+                    "and its coverage receipt rounds down with no other tell. Usual cause: a "
+                    "ticker RENAME the vendor already followed (fetch 404s under the old "
+                    "symbol) — add membership-ticker -> vendor-symbol to lib/ticker_aliases; "
+                    "otherwise the name is off every feed and the basket membership is wrong. "
+                    "See data/quality/basket_ohlcv_freshness.json")
+            print(f"::warning title=basket-member-no-price-series::{dmsg}", flush=True)
+            log.warning(dmsg)
+            if ops_alert:
+                try:
+                    from engine.alert_triage import push_ops_alert  # noqa: PLC0415
+                    push_ops_alert(source="fetch_basket_ohlcv", type_="basket_member_no_price_series",
+                                   message=dmsg, severity="critical", lane="collect", window_hours=20)
+                except Exception as e:  # noqa: BLE001 — fail-open, the ::warning stands
+                    log.debug("all-rungs census: push_ops_alert unavailable (%s)", e)
         if stale or missing:
             worst = max(stale.items(), key=lambda kv: kv[1]["sessions_behind"]) if stale else None
             msg = (f"basket OHLCV store: {len(stale)} active members stale >{threshold} sessions "
                    f"vs store max {store_max}"
                    + (f" (worst {worst[0]} @ {worst[1]['last']}, {worst[1]['sessions_behind']} behind)" if worst else "")
-                   + (f"; {len(missing)} members with no file: {', '.join(missing[:8])}" if missing else "")
+                   + (f"; {len(missing)} members with no file in THIS store "
+                      f"({len(missing) - len(dark)} covered by a fallback rung, {len(dark)} on no "
+                      f"rung at all): {', '.join(missing[:8])}" if missing else "")
                    + " — the per-member pull is failing or the nightly call lost membership "
                      "coverage; see data/quality/basket_ohlcv_freshness.json")
             print(f"::warning ::{msg}", flush=True)

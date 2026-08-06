@@ -175,6 +175,15 @@ jobs:
         run: python3 scripts/check_admin_js.py
       - name: guard tests (real tree + planted #3693 offender, fail-closed in CI)
         run: python -m pytest tests/test_admin_js_no_undef.py -q
+      # Companion guard, same file, different failure: an inline on*= handler
+      # built with JSON.stringify emits double quotes that CLOSE the attribute,
+      # so the browser stores a truncated expression and the control is dead on
+      # click. check_inline_js.py already parses on*= attributes, but only in
+      # site/ and templates/ where they exist on disk — app.js materialises them
+      # in the browser, so the defect is visible only in the source that builds
+      # them. Pure Python: no node, so a minimal pip lane cannot disarm it.
+      - name: inline handler attributes must not interpolate JS string literals
+        run: python -m pytest tests/test_admin_inline_handler_attrs.py -q
 
   path-prune-lint:
     if: ${{ false }}
@@ -278,9 +287,24 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install jsonschema pytest pandas numpy pyyaml requests
-      - name: signal §7 contract tests
-        run: python -m pytest tests/test_validate_signals.py -q
-      # W-F reclaim-veto decision packet (2026-08-05). This job, not a new one: the suite
+      # test_signal_quality_no_leak.py joined 2026-08-05 — dark from birth, named
+      # by no run: step in any workflow.  It belongs HERE and not in a new job:
+      # it pins the §7 contract this job already owns, one layer down.  The
+      # marker `date` engine.signal_quality._buy_filter emits is NOT the earliest
+      # date its take/block label was knowable — the label reads bars i+1 (and
+      # i+2 on the counter-trend branch) — so a forward-return grade anchored on
+      # the marker date embeds the confirmation bars it consumed (measured
+      # +5.7pp/10d aggregate look-ahead).  The guard is structural, not a fixture
+      # direction: flip only bar i+1 and a 'take' must overturn.  Deps are
+      # satisfied by the install line above (pandas + numpy); the suite imports
+      # engine.signal_quality and nothing else, so it adds no wheel, no venv and
+      # no job.  Cost measured in this job's exact install string: the step goes
+      # 31 -> 34 tests for ~0.2s (0.76s alone, 0.92s combined, steady state).  A
+      # first run in a freshly built venv reports ~13s, but that is pandas/numpy
+      # cold-start — paid by whichever pytest step runs first, already on this
+      # job's bill, and NOT an increment this suite adds.
+      - name: signal §7 contract tests + the marker-date look-ahead guard
+        run: python -m pytest tests/test_validate_signals.py tests/test_signal_quality_no_leak.py -q
       # drives the REAL engine.signal_quality._buy_filter and analyze() over synthetic
       # series, so it needs pandas + numpy + pyyaml (lib.config, via engine.technicals) —
       # all present in the install line above, so no importorskip is needed and none is
@@ -776,6 +800,7 @@ jobs:
           tests/test_china_alpha_w2a.py
           tests/test_china_alpha_w2b.py
           tests/test_china_act_now.py
+          tests/test_us_act_now.py
           tests/test_hk_library_limited.py
           tests/test_canada_library_limited.py
           tests/test_intl_library_limited.py
@@ -1144,7 +1169,7 @@ jobs:
         #    exercises that degraded branch instead of the shipped one.
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 requests
       - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context + ADB-W2 forward calendar + Analyst OS P0 + W2)
-        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_company_intelligence_neural_reader.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py tests/test_brain_seed_router.py tests/test_brain_analogues.py tests/test_brain_curve.py tests/test_response_eval.py tests/test_brain_user_memory.py tests/test_user_prefs.py -q
+        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_company_intelligence_neural_reader.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_macro_thesis.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py tests/test_brain_seed_router.py tests/test_brain_analogues.py tests/test_brain_curve.py tests/test_response_eval.py tests/test_brain_user_memory.py tests/test_user_prefs.py -q
 
   cn-standout-audit:
     if: ${{ false }}
@@ -1213,6 +1238,19 @@ jobs:
         run: python scripts/check_skip_only_suites.py
       - name: skip-only detector unit tests
         run: python -m pytest tests/test_check_skip_only_suites.py -q
+      # TRIGGER GAPS: the reverse direction of audit_unrun_tests.py. That census
+      # asks "can ANY edit start this job" — an any() over the closure, satisfied
+      # by the test file itself — so a suite stays "triggerable" while the ONE
+      # module it exists to guard is matched by no path entry. The lesson has been
+      # written in comments here four times (#3488, #4559, and the "both halves
+      # listed on purpose" notes through ci.yml) and never enforced; prose in a
+      # 1,700-entry path list is not a guard. Selftest first, same reason as above.
+      - name: check_ci_trigger_closure selftest
+        run: python scripts/check_ci_trigger_closure.py --selftest
+      - name: every guarded suite's subjects must reach its own trigger paths
+        run: python scripts/check_ci_trigger_closure.py
+      - name: trigger-closure guard unit tests
+        run: python -m pytest tests/test_ci_trigger_closure.py -q
       # render.yml's per-scope publish wiring. #3718 fixed the international
       # dashboard never publishing because `intl` was missing from the render
       # lane's scope list, and shipped this suite as the guard — but no `run:`
@@ -2359,6 +2397,27 @@ jobs:
       - name: hkrv w3 banner tests
         run: python -m pytest tests/test_hkrv_w3_banner.py -q
 
+  regen-hk-g1-fixture-guard:
+    if: ${{ false }}
+    # Guards scripts/regen_hk_g1_fixture.py — the regeneration remedy for the G1
+    # staleness tripwire: byte-idempotency on an unchanged panel, the
+    # ADJUSTMENT-SIGNATURE receipts on a constant-ratio re-pricing, the refusals
+    # (non-constant drift, calendar surgery, derived-only drift) that leave the
+    # fixture untouched, and the window law — each ticker is re-cut from its OWN
+    # committed first date, never a flat tail(N), because the 2026-07-31 freeze is
+    # 3B-phase-aligned and a flat re-pin took 123 of its 157 windows off-grid.
+    # Synthetic panels only — no repo data.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow
+      - name: hk g1 fixture regenerator tests
+        run: python -m pytest tests/test_regen_hk_g1_fixture.py -q
+
   basket-staleness-warn:
     if: ${{ false }}
     # M7C-R8: basket store staleness warning in scripts/build_baskets.py —
@@ -2438,6 +2497,13 @@ jobs:
         run: pip install pytest pandas numpy pyyaml pyarrow requests jinja2 plotly
       - name: IRD substrate + engines test suite
         run: python -m pytest tests/test_imf_weo.py tests/test_fred_alias_collision.py tests/test_cb_calendar.py tests/test_liquidity_plumbing.py tests/test_intl_risk.py tests/test_contagion.py tests/test_cb_desk.py tests/test_ird_velocity.py tests/test_ird_wiring.py -q
+      # Contagion-links propagation layer + its session-stamp heal (forward-ledger
+      # audit 2026-08-05).  test_contagion_links.py was enumerated in NO workflow
+      # (audit_unrun_tests.py P4: unrun, writes a data/ ledger) even though the
+      # engine appends twelve committed forward logs — a break there went red
+      # nowhere.  Same family as test_contagion.py above, so it shares this venv.
+      - name: contagion-links session stamps + heal (forward-ledger audit 2026-08-05)
+        run: python -m pytest tests/test_contagion_links.py tests/test_heal_contagion_links_ledger.py -q
 
   itr-turn-rotation:
     if: ${{ false }}
@@ -4336,7 +4402,7 @@ jobs:
       - name: workspace / dossier / briefcase UI contracts
         run: python -m pytest tests/test_government_revenue_ui.py tests/test_government_revenue_dossier_ui.py tests/test_government_revenue_briefcase_ui.py -q
       - name: federal-award collectors — SAM.gov, USAspending awards + subawards, Census trade
-        run: python -m pytest tests/test_sam_gov_opportunities.py tests/test_usaspending_awards.py tests/test_usaspending_subawards.py tests/test_census_trade.py -q
+        run: python -m pytest tests/test_sam_gov_opportunities.py tests/test_sam_gov_radar_leg.py tests/test_usaspending_awards.py tests/test_usaspending_subawards.py tests/test_census_trade.py -q
 
   unrun-factor-research:
     # factor registry + measurement disclosure + the study lanes behind them.
@@ -4448,7 +4514,7 @@ jobs:
       - name: landing IA + nav front-door regroup + start-page voice and publish integrity
         run: python -m pytest tests/test_landing_navigation.py tests/test_oip_w1_nav_regroup.py tests/test_hub_welcome_persona.py tests/test_start_publish_integrity.py -q
       - name: terminal entitlement copy + full-screen portal contract
-        run: python -m pytest tests/test_terminal_indicator_pricing.py tests/test_terminal_overlay_contract.py -q
+        run: python -m pytest tests/test_terminal_indicator_pricing.py tests/test_terminal_overlay_contract.py tests/test_terminal_overlay_closed_state.py -q
 
   unrun-builders-stores:
     # store/ops builders behind the nightly data lanes.
@@ -4624,6 +4690,25 @@ jobs:
       - name: W4 staged re-entry spine + P5 deferred-context BTC chips (dat/netliq/cascade)
         run: python -m pytest tests/test_btc_reentry.py tests/test_btc_deferred_legs.py -q
 
+  washout-turn-organ:
+    # Per-name weekly washout-turn watch lane (engine/washout_turn.py) — born from the
+    # 2026-08-05 MCD miss (weekly canon CB fired 07-31 at 6th-pctile depth, no consumer).
+    # Enumerated here at birth: the unrun-suite census (2026-07-26) proved an unnamed
+    # suite is genuinely never executed, and the reference organ's own suite
+    # (test_mtf_upturn.py) is an existing instance of that hole.
+    if: ${{ false }}
+    timeout-minutes: 3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: washout-turn organ (depth-gated weekly cross, PIT completed-bars pin, ledger gate)
+        run: python -m pytest tests/test_washout_turn.py tests/test_mtf_upturn.py -q
+
   unrun-page-guards:
     # Shipped-page regression guards over the rendered estate: the US
     # action-board hover cards, the macro desk surface + its proportional
@@ -4667,6 +4752,10 @@ jobs:
     # test_cn_prophet_candidates_schema.py joined 2026-08-04: the CN board's PIT
     # candidate ledger and its stamp_date column (schema contract §3.1), same
     # CN/US board-store family as the cn_board/cn_track suites already here.
+    # china_board_rank / china_prophet_shadow / us_context_vector joined
+    # 2026-08-04: the #4331-deferred prophet-board family (UNRUN_TEST_CENSUS
+    # staging lane) — CN board rank engine, CN candidate producer, and the US
+    # context-vector store whose TestSchemaContract is the contract §4 pin.
     if: ${{ false }}
     timeout-minutes: 5
     runs-on: ubuntu-latest
@@ -4678,12 +4767,46 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: pick lab runners + US/CN board surfaces — shipped picks, outcome ledgers, priority board
-        run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_cn_board_unified_grid.py tests/test_cn_prophet_candidates_schema.py tests/test_cn_track_ledger_eras.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_shared.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_board_w3_evidence.py -q
+        run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_china_board_rank.py tests/test_china_prophet_shadow.py tests/test_cn_board_unified_grid.py tests/test_cn_prophet_candidates_schema.py tests/test_cn_track_ledger_eras.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_shared.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_board_w3_evidence.py tests/test_us_context_vector.py -q
+      # Stage-analysis board + its forward ledger and session-stamp heal
+      # (forward-ledger audit 2026-08-05).  test_stage_analysis.py and
+      # test_weinstein_stage.py were both enumerated in NO workflow
+      # (audit_unrun_tests.py P4: unrun, writes a data/ ledger) while the ledger
+      # they cover feeds the live stage-ran shelf read and oracle/tape_outcomes'
+      # point-in-time reconstruction.  Same US board-store family as the suites
+      # above, so it shares their venv.
+      - name: stage-analysis ledger session stamps + heal (forward-ledger audit 2026-08-05)
+        run: python -m pytest tests/test_stage_analysis.py tests/test_weinstein_stage.py tests/test_heal_stage_forward_ledger.py -q
+  prophet-us-context-and-grades:
+    # PROPHET US §W7 — the full-population candidate record: the PIT context store that
+    # REMEMBERS each night's score, the forward grader that says what those names then did,
+    # and the miss-audit that scores the score. All three ship together and all three were
+    # dark before this job: test_us_context_vector.py and test_prophet_miss_audit.py were
+    # tier-P1 unwired (scripts/audit_unrun_tests.py census), so the stores' PIT discipline,
+    # nightly-lane gates and scorecard null-disclosure had no CI eye on them at all.
+    # A gate hung on a suite nothing runs is a gate that is already open.
+    if: ${{ false }}
+    timeout-minutes: 6
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: US context vector + full-population grades + miss-audit scorecards
+        run: python -m pytest tests/test_us_prophet_grades.py tests/test_us_context_vector.py tests/test_prophet_miss_audit.py -q
 
   unrun-prophet-learning-loop:
     # Prophet learning loop (#4331) — postmortem forensics over the loser cohort
     # + the exit-policy horse race on the US buy-lane cohort. Same install
     # string as the other unrun-* jobs, so execute_pack shares their venv.
+    # cn_prophet_audit / htf_super_tiers / prophet_stage_fusion joined
+    # 2026-08-04: the #4331-deferred study half (UNRUN_TEST_CENSUS staging
+    # lane) — CN loser/miss telemetry with its frozen reproduction over the
+    # COMMITTED board + china_stocks stores, the S1/S2 HTF super-tier engine
+    # fields, and the Prophet × Stage-Analysis fusion harness.
     if: ${{ false }}
     timeout-minutes: 5
     runs-on: ubuntu-latest
@@ -4694,8 +4817,8 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
-      - name: prophet learning loop — postmortem forensics + exit-policy horse race
-        run: python -m pytest tests/test_prophet_postmortem.py tests/test_exit_policy_study.py -q
+      - name: prophet learning loop — postmortem forensics, exit-policy horse race, CN loser audit, HTF tiers, stage fusion
+        run: python -m pytest tests/test_prophet_postmortem.py tests/test_exit_policy_study.py tests/test_cn_prophet_audit.py tests/test_htf_super_tiers.py tests/test_prophet_stage_fusion.py -q
 
   unrun-intl-collectors:
     # China/HK collectors and the collect.py sweeps + store-freshness tripwires.
@@ -5095,6 +5218,26 @@ jobs:
         run: python -m pytest tests/test_hk_board_rank.py -q
       - name: hk board ui — the unified board template contract
         run: python -m pytest tests/test_hk_board_ui.py -q
+      # test_hk_reclaim_veto_policy.py joined 2026-08-05, dark since it landed
+      # with the operator's 2026-08-03 admission ruling.  It pins the ONE leg HK
+      # drops — `reclaim_veto=False`, the requirement that a name both below its
+      # 200-day line AND weekly-down close back above that line within 2 bars,
+      # unsatisfiable by construction for a deep drawdown — and, more load-
+      # bearing, pins the blast radius: that US/CN keep the validated default at
+      # every layer (_buy_filter, analyze, signal_gate.gate), keyword-only so
+      # argument order cannot flip it, and that build_hk_library is the only
+      # caller opting out.  This is the exact leg the reclaim-veto decision
+      # packet measures (research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md,
+      # #4607) — a packet arguing over a policy whose guard no CI job ran.
+      # Belongs in THIS job: it imports scripts.build_hk_library (which pulls the
+      # engine.i18n/stock_score/cycles chain) and engine.hk_board_rank, so it
+      # needs this job's wide install exactly — the same dep-list trap the
+      # census recorded for the pair above.  Cost measured as this job's third
+      # step over the full sequence: 68.5s (rank, 163 tests) + 13.5s (ui, 83) +
+      # 1.5s (this, 10) = ~83s against timeout-minutes: 8, so the budget is
+      # untouched and the witness replay keeps its headroom.
+      - name: hk reclaim-veto admission policy — the dropped leg and its blast radius
+        run: python -m pytest tests/test_hk_reclaim_veto_policy.py -q
 
   unrun-subsector-themes:
     # The subsector rotation/turn engine family + the Theme Tracker page suite —
