@@ -555,9 +555,17 @@ class TestLiveConformance:
         )
         assert collect["continue-on-error"] is True
         assert collect["env"]["COLLECT_LANE"] == "government-revenue-live"
-        assert collect["run"] == (
+        # The step now WRAPS the collector in a SAM quota gate (the free key is ~10
+        # requests/day, so a scheduled run only polls in the 00xx/01xx UTC window and
+        # quiet-skips otherwise). That makes the lane MORE bounded, which is what this
+        # test is for — so pin the command and the gate, not the step's whole body.
+        assert (
             "python -m scripts.collect --only sam_gov_opportunities "
             "--skip-quality --skip-shadow-importance"
+        ) in collect["run"], "the bounded SAM fast-path command must still be the collector"
+        assert "GITHUB_EVENT_NAME" in collect["run"] and "schedule" in collect["run"], (
+            "the SAM quota gate must survive — an ungated schedule burns the shared "
+            "~10/day key on the first few runs of the day"
         )
         assert "default historical sweep is 1,826 days" in text
         assert "--only usaspending_awards" not in collect["run"], (

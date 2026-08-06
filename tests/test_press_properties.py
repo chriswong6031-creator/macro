@@ -1078,9 +1078,22 @@ def test_the_workflow_rebuilds_the_properties_after_emitting():
 def test_the_commit_step_stages_the_property_paths():
     step = next(str(s.get("run") or "") for s in _emit_steps()
                 if "git add" in str(s.get("run") or ""))
-    added = set(re.findall(r"^\s*git add ([^\s]+)", step, re.MULTILINE))
+    # Skip flags: the step also stages the hashed CSS/JS with `git add --ignore-removal`
+    # (a page whose stylesheet was re-hashed but not committed ships a 404), and the
+    # old pattern captured "--ignore-removal" itself as if it were a path. The PATH
+    # assertion below is unchanged — only the parse learned that a flag is not a path.
+    added = set(re.findall(r"^\s*git add (?:--\S+\s+)*([^\s-]\S*)", step, re.MULTILINE))
     assert added == {"content/seo/blog", "site/blog", "data/press/published.jsonl",
-                     "content/press", "properties"}
+                     "content/press", "properties", "site/assets/css", "site/assets/js"}
+    # The asset paths are the ONLY ones allowed to skip deletions: staging a removal
+    # there would drop a stylesheet a still-committed page references.
+    for asset in ("site/assets/css", "site/assets/js"):
+        assert re.search(rf"^\s*git add --ignore-removal {re.escape(asset)}", step, re.MULTILINE), (
+            f"{asset} must be staged with --ignore-removal")
+    for owned in ("content/seo/blog", "site/blog", "data/press/published.jsonl",
+                  "content/press", "properties"):
+        assert re.search(rf"^\s*git add {re.escape(owned)}", step, re.MULTILINE), (
+            f"{owned} must be staged plainly — a deletion here is real and must commit")
     # The nightly still owns site/sitemap.xml; the properties carry their own.
     assert "git add site/sitemap.xml" not in step
     assert "press_sitemap_guard" in step
