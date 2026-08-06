@@ -463,6 +463,19 @@ jobs:
         run: |
           python -m scripts.audit_stocks_freshness \
             || echo "::warning::audit_stocks_freshness crashed (non-fatal — per-name freshness disclosure absent this run)"
+      - name: audit reused tickers (zombie-print / identity-swap tripwire — loud, never blocks the night)
+        # Own step for the same partial-run reason as the freshness audit above.
+        # 2026-08-06 ECHO identity swap: Echo Global Logistics (taken private 2021)
+        # had its ticker recycled by EchoStar (SATS->ECHO rename, eff. 2026-06-24) and
+        # the store's bare-string fetch minted a fresh, continuous, internally
+        # consistent EchoStar history under the dead name's key — invisible to every
+        # gap/freshness/basis check. Dead-registry cross-reference + NASDAQ symbol-
+        # directory presence; per-name ::warning for un-acked zombies, flags-only.
+        # Writes data/quality/reused_tickers_audit.json, picked up by "commit data".
+        continue-on-error: true
+        run: |
+          python -m scripts.audit_reused_tickers \
+            || echo "::warning::audit_reused_tickers crashed (non-fatal — reused-ticker disclosure absent this run)"
       - name: commit data (local checkpoint — no network ops in this step)
         # NAMED-STEPS GATE (2026-08-05). This step used to carry no `if:` at all, so it
         # inherited an implicit success() and ANY earlier red discarded the night's
