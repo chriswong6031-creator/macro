@@ -51,13 +51,23 @@ refused = dates where on == "block" with reason "counter-trend, no 200-reclaim/h
                   AND off == "take"
 ```
 
-Both halves are load-bearing. **A name that fails the next-bar HOLD returns the identical
-block string** (the branch is `ok = held and reclaim`, so either failure collapses to one
-reason). Filtering on the reason alone would sweep failed-hold bars into a packet claiming
-the reclaim leg refused them; the `off == "take"` half is what excludes them.
-`tests/test_us_reclaim_veto_packet.py::test_a_failed_hold_shares_the_block_reason_so_the_reason_alone_is_not_the_isolation`
+Both halves are load-bearing. **When these figures were measured, a name that failed the
+next-bar HOLD returned the identical block string** (the branch was `ok = held and reclaim`,
+so either failure collapsed to one reason). Filtering on the reason alone would sweep
+failed-hold bars into a packet claiming the reclaim leg refused them; the `off == "take"`
+half is what excluded them.
+`tests/test_us_reclaim_veto_packet.py::test_a_failed_hold_is_excluded_twice_over_by_reason_and_by_the_veto_off_half`
 is the test that makes that half load-bearing, and both halves were mutation-checked
 (dropping either turns the suite red).
+
+> **Amended 2026-08-05 (#4583).** That PR split the collapsed reason into
+> `CT_BOTH_FAIL` (both legs failed) and `CT_RECLAIM_FAIL` (held, but no reclaim), so the
+> two cases no longer share a string and the reason now excludes a failed hold on its own —
+> the `off == "take"` half is a second, independent guard rather than the only one. The
+> packet's `BLOCK_REASON` is now BOUND to `sq.CT_RECLAIM_FAIL` instead of copying the
+> literal; the pre-split copy silently became the OTHER case's label and emptied the
+> refusal set. **The figures below are unaffected** — they were measured before the split,
+> while the copied literal still named the intended branch.
 
 **No look-ahead.** The refusal needs `reclaim` to have failed at BOTH i+1 and i+2, so it is
 first knowable at the close of 3D bar i+2. Marker-date grading is forbidden here — a marker
