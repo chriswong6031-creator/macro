@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T06:38:52.327024+00:00",
-  "count": 854,
+  "generated_at": "2026-08-06T07:09:03.273380+00:00",
+  "count": 856,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -266,6 +266,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-w7q517jxwhk-197033",
+      "title": "SanDisk Corp. (SNDK) First Take Very strong quarter, but guidance falls short of most bullish expectations",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:41Z",
+      "summary_points": [
+        "**Strong Q3 but Guidance Miss**: Revenue $8.97bn (beat Street), gross margin 84.6% (beat), but 3Q revenue guidance $10.55bn vs.",
+        "Street $11.15bn and gross margin guidance 84.0% vs.",
+        "Street 86.7%.",
+        "**Key Downside Risks**: Structural NAND pricing shifts, YMTC roadmap changes, and SanDisk eSSD traction failure.",
+        "**Aggressive Price Target Upside**: $2,200 target (54.1% upside from $1,427.62) with GS Buy rating, reflecting 40x target surge from $55.00 in one year."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-gz0ejqpeavf-bf9471",
       "title": "Cushman & Wakefield Ltd. (CWK) 2Q26 First Take Top line beat and guidance raised, but Cap Markets softer",
       "institution": "Goldman Sachs",
@@ -281,6 +302,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9i52qkqjtoq-b14f58",
+      "title": "Western Digital Corp. (WDC) Solid guidance falls short of high expectations given technology transition",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:24Z",
+      "summary_points": [
+        "**WDC Guidance Shortfall & Tech Transition**: 22% exabyte growth (vs 25% target) and non-GAAP EPS $3.56 (below Street $3.35) signal near-term weakness; HAMR qualification delays and ePMR ramp lumpsiness threaten execution despite long-term potential.",
+        "**Pricing Momentum vs.",
+        "Execution Risk**: Blended high-teens price growth driven by non-nearline segments, but HAMR transition volatility creates near-term uncertainty; Seagate favored for stronger pricing momentum through transition.",
+        "**Revenue/Margin Beat**: 3Q revenue $4.10B (vs Street $4.04B), gross margin 55–56% (vs 54.0% Street), and 8% y/y cost/terabyte decline confirm operational strength despite tech transition headwinds.",
+        "**Key Risk-Adjusted Price Target**: Target trimmed to $615 (from $650) due to HAMR roadmap risks, technical challenges, and new storage applications; neutral rating reflects Seagate’s incremental margin share advantage."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
