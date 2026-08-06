@@ -622,6 +622,36 @@ def test_vanna_hedge_5d_null_when_insufficient_summary_history(tmp_path):
     )
 
 
+def test_vanna_hedge_5d_resolves_by_calendar_and_nulls_on_a_missing_target(tmp_path):
+    """"5d" means 5 SESSIONS: the 2026-08-03..05 collection outage left the summary
+    stores session-gapped, and the old positional -6 silently widened the basis to 9
+    sessions. Calendar resolution reads the true 5-back session across the gap, and
+    yields null when that session's row is absent."""
+    gex_dir = tmp_path / "data" / "polygon_gex"
+    gex_dir.mkdir(parents=True, exist_ok=True)
+
+    def _frame(dates: list[str], iv_by_date: dict[str, float]) -> pd.DataFrame:
+        rows = [{"net_vex": 1e8, "iv30": iv_by_date.get(d, 0.30)} for d in dates]
+        return pd.DataFrame(rows, index=pd.DatetimeIndex(dates))
+
+    # Outage geometry: 07-27..07-31 + 08-06 (08-03..08-05 missing); the 5-back
+    # session from 08-06 is 07-30 and its row is PRESENT → exact across the gap.
+    _frame(["2026-07-27", "2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31",
+            "2026-08-06"],
+           {"2026-07-27": 0.50, "2026-07-30": 0.20, "2026-08-06": 0.35},
+           ).to_parquet(gex_dir / "summary_GAPOK.parquet")
+    got = OES._compute_vanna_hedge_5d(tmp_path, "GAPOK")
+    assert got == pytest.approx(-1e8 * (0.35 - 0.20)), (
+        f"got {got}: −1.5e7 means calendar-resolved (07-30 basis); +1.5e7 means the "
+        "positional -6 read 07-27"
+    )
+
+    # Same shape but the 5-back session (07-30) has NO row → unmeasurable → null.
+    _frame(["2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28", "2026-07-31",
+            "2026-08-06"], {}).to_parquet(gex_dir / "summary_GAPNULL.parquet")
+    assert OES._compute_vanna_hedge_5d(tmp_path, "GAPNULL") is None
+
+
 def test_ovc_columns_null_safe_no_crash(tmp_path):
     """build_state must not raise when chains/ exists but is corrupt/empty."""
     _write_gex_summary(tmp_path, "SAFENULL")

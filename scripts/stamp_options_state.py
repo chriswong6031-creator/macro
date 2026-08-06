@@ -135,7 +135,7 @@ _POSITIONAL_WINDOW_COLS: list[str] = [
     "opt_doi_slope_5d",        # OLS over the trailing 6 chain files
     "opt_voi_flag",            # chains usable[-1] volume vs usable[-2] OI
     "opt_front7_charm_share",  # chains usable[-1] greeks vs usable[-2] OI
-    "opt_vanna_relief",        # summary iloc[-6] iv30 + cross-sectional tercile
+    "opt_vanna_relief",        # summary 5-sessions-back iv30 (calendar-resolved) + tercile
 ]
 
 
@@ -530,13 +530,20 @@ def _get_iv30_5d_chg_from_summary(
 ) -> float | None:
     """Extract iv30_5d_chg for (as_of, ticker) from the summary parquet.
 
-    PIT: reads only rows with index date ≤ as_of. Needs ≥ 6 such rows.
-    Returns None when insufficient history or columns absent.
+    PIT: reads only rows with index date ≤ as_of. Needs ≥ 6 such rows, and a row AT
+    the session exactly 5 sessions before the latest usable row — resolved by
+    CALENDAR via ``engine.options_stamp._row_n_sessions_back``, never by position,
+    so a collection outage (e.g. 2026-08-03..08-05) yields None instead of a
+    silently widened basis.
+    Returns None when insufficient history, the 5-back session's row is absent, or
+    columns absent.
 
     We re-read the summary parquet rather than storing it in the stamp to keep
     STAMP_COLS clean (iv30_5d_chg is a transient quantity for the ranking pass).
     """
-    from engine.options_stamp import _default_read_summary, _as_date
+    from engine.options_stamp import (
+        _default_read_summary, _as_date, _row_n_sessions_back,
+    )
     import datetime as _dt_local
 
     as_of_d = _as_date(as_of)
@@ -550,9 +557,12 @@ def _get_iv30_5d_chg_from_summary(
     usable = sdf[mask]
     if len(usable) < 6:
         return None
+    prior = _row_n_sessions_back(usable, 5)
+    if prior is None:
+        return None
     try:
         iv30_latest = float(usable.iloc[-1]["iv30"])
-        iv30_prior = float(usable.iloc[-6]["iv30"])
+        iv30_prior = float(prior["iv30"])
     except (TypeError, ValueError, KeyError):
         return None
     if not (math.isfinite(iv30_latest) and math.isfinite(iv30_prior)):

@@ -192,14 +192,19 @@ def _default_read_summary(ticker: str) -> pd.DataFrame | None:
 
       * ``_summary_stamp`` / ``_spot_from_summary`` — ``iloc[-1]``; the "latest" reading
         becomes a Saturday whenever the store has no row for the fire's own session.
-      * ``_vanna_hedge_5d_from_summary`` — ``iloc[-6]``, which stops meaning "5 sessions
-        ago". Measured on the store at as_of 2026-07-21, the raw ``iloc[-6]`` resolved to
-        2026-07-14 where the true 5-sessions-back row is 2026-07-10, and the resulting
-        vanna_hedge_5d changed for 10 of 10 sampled names WITH SIGN FLIPS (META
+      * ``_vanna_hedge_5d_from_summary`` — historically ``iloc[-6]``, which stops meaning
+        "5 sessions ago". Measured on the store at as_of 2026-07-21, the raw ``iloc[-6]``
+        resolved to 2026-07-14 where the true 5-sessions-back row is 2026-07-10, and the
+        resulting vanna_hedge_5d changed for 10 of 10 sampled names WITH SIGN FLIPS (META
         +5.51e6 → −2.54e7, IWM +3.28e6 → −1.68e6). ``opt_vanna_relief`` gates on a
         cross-sectional tercile of that value, so a sign flip moves names across the gate.
-      * ``scripts/stamp_options_state._get_iv30_5d_chg_from_summary`` — the same
-        ``iloc[-6]``; it reads through THIS function, so it inherits the fix.
+        Since 2026-08-06 its 5-back endpoint is resolved by CALENDAR
+        (``_row_n_sessions_back``), so an interior store gap (the 08-03..08-05 collection
+        outage) degrades the stat to None instead of widening its basis; this filter
+        remains the first line of defence against weekend rows reaching that resolver.
+      * ``scripts/stamp_options_state._get_iv30_5d_chg_from_summary`` — the same 5-back
+        read; it reads through THIS function and ``_row_n_sessions_back``, so it
+        inherits both fixes.
 
     ``session_rows`` is fail-open by contract: if filtering would empty the frame it
     returns the input unchanged, so a calendar surprise degrades to the old behaviour
@@ -727,14 +732,44 @@ def _ovc_from_chain(
     return out
 
 
+def _row_n_sessions_back(usable: pd.DataFrame, n: int) -> pd.Series | None:
+    """The row exactly ``n`` NYSE sessions before ``usable``'s last row, resolved by DATE.
+
+    A two-endpoint "n-session change" needs endpoints ``n`` SESSIONS apart, not ``n``
+    ROWS apart — the two differ whenever the store took a collection outage. The
+    2026-08-03..08-05 outage left every summary store's 6 trailing rows spanning 9
+    sessions, so the positional ``iloc[-(n+1)]`` silently widened each "5d" basis.
+    Calendar resolution stays exact across an interior gap (only the endpoints matter
+    for a difference) and returns None when the target session has no row —
+    unmeasurable, never mislabeled."""
+    last_d = _as_date(usable.index[-1])
+    if last_d is None:
+        return None
+    sess = nyse_calendar.sessions_between(last_d - _dt.timedelta(days=3 * n + 10), last_d)
+    if len(sess) < n + 1:
+        return None
+    target = sess[-(n + 1)]
+    for pos in range(len(usable) - 1, -1, -1):
+        d = _as_date(usable.index[pos])
+        if d == target:
+            return usable.iloc[pos]
+        if d is not None and d < target:
+            break
+    return None
+
+
 def _vanna_hedge_5d_from_summary(
     as_of: _dt.date,
     sdf: pd.DataFrame | None,
 ) -> float | None:
     """Compute vanna_hedge_5d = −net_vex × iv30_5d_chg from summary frame.
 
-    PIT: uses only rows with index date ≤ as_of. Needs ≥ 6 such rows.
-    Returns None when insufficient history, columns absent, or any value non-finite.
+    PIT: uses only rows with index date ≤ as_of. Needs ≥ 6 such rows, and a row AT the
+    session exactly 5 sessions before the latest usable row — resolved by CALENDAR via
+    ``_row_n_sessions_back``, not by position, so a collection outage degrades this
+    stat to None instead of silently widening its basis.
+    Returns None when insufficient history, the 5-back session's row is absent,
+    columns absent, or any value non-finite.
     """
     if sdf is None or sdf.empty:
         return None
@@ -746,7 +781,9 @@ def _vanna_hedge_5d_from_summary(
     if len(usable) < 6:
         return None
     latest = usable.iloc[-1]
-    prior = usable.iloc[-6]
+    prior = _row_n_sessions_back(usable, 5)
+    if prior is None:
+        return None
 
     def _f(v) -> float | None:
         try:
@@ -845,8 +882,9 @@ def stamp_options_state(
     # polygon_gex/summary_* ~11 of 39 dates, options_skew 8 of 28, options_ivspread
     # 6 of 21, polygon_gex/chains 11 of 39 snapshot files.  Unfiltered they corrupt this
     # module three ways: the PIT `date <= as_of` + `.iloc[-1]` pick can land on a
-    # Saturday recompute; `_vanna_hedge_5d_from_summary`'s positional `.iloc[-6]` and
-    # `_DOI_WINDOW`'s "today + 5 prior TRADING snapshots" stop meaning sessions; and a
+    # Saturday recompute; `_DOI_WINDOW`'s "today + 5 prior TRADING snapshots" stops
+    # meaning sessions (`_vanna_hedge_5d_from_summary` resolves its 5-back endpoint by
+    # calendar since 2026-08-06, but weekend rows would still pad its ≥6-row floor); and a
     # weekend chain snapshot enters the ΔOI slope as a duplicate day.
     # The DISK readers filter at their own source (_default_read_summary and the two
     # snapshot loaders) because two ledger-writing call paths in

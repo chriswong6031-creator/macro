@@ -354,36 +354,50 @@ class TestStampFunnelDropsWeekendRows:
             "the only legitimate value for a Sunday as_of"
         )
 
-    def test_the_positional_five_session_lookback_spans_five_sessions(self):
-        """_vanna_hedge_5d_from_summary / _DOI_WINDOW take POSITIONAL lookbacks that are
-        USED as trading-day changes. With weekend rows in, iloc[-6] is ~3 sessions back.
+    def test_the_five_session_lookback_resolves_by_calendar_not_position(self):
+        """"5d" means 5 NYSE SESSIONS. A collection outage gaps the store (2026-08-03..
+        08-05 left 6 trailing rows spanning 9 sessions), and the old positional
+        ``iloc[-6]`` silently widened every "5d" basis. The lookback must resolve its
+        prior endpoint BY DATE — exact across an interior gap, because only the
+        endpoints enter the difference."""
+        from engine.options_stamp import _vanna_hedge_5d_from_summary
+        dates = ["2026-07-27", "2026-07-28", "2026-07-29", "2026-07-30",
+                 "2026-07-31", "2026-08-06"]  # the outage geometry, all sessions
+        span = nyse_calendar.sessions_between(date(2026, 7, 27), date(2026, 8, 6))
+        assert len(span) == 9, "fixture must reproduce the outage geometry"
+        # 07-27 is what iloc[-6] would read; 07-30 is the true 5-back session.
+        frame = _summary_frame(dates, {"2026-07-27": 0.50, "2026-07-30": 0.20,
+                                       "2026-08-06": 0.35})
+        got = _vanna_hedge_5d_from_summary(date(2026, 8, 6), frame)
+        assert got == pytest.approx(-1_000_000.0 * (0.35 - 0.20)), (
+            f"got {got}: the 5d basis must be iv(08-06) − iv(07-30); "
+            "−150000 means calendar-resolved, +150000 means iloc[-6] read 07-27"
+        )
 
-        TWO THINGS MOVE THE SPAN OFF SIX, IN OPPOSITE DIRECTIONS (2026-08-06).
+    def test_a_missing_target_session_yields_null_not_a_mislabeled_basis(self):
+        """When the session exactly 5 back has no row, the stat is unmeasurable:
+        None, never a change computed off whatever row happens to sit 5 positions
+        back (nulls printed, never fabricated)."""
+        from engine.options_stamp import _vanna_hedge_5d_from_summary
+        # ≥6 rows (passes the history floor), but 07-30 — 5 sessions back from
+        # 08-06 — has no row.
+        dates = ["2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28",
+                 "2026-07-31", "2026-08-06"]
+        frame = _summary_frame(dates)
+        assert _vanna_hedge_5d_from_summary(date(2026, 8, 6), frame) is None
 
-          * FEWER sessions than rows — the reader let a non-session (or a duplicated
-            date) into the window, so ``iloc[-6]`` is nearer than five sessions back.
-            That is this file's defect class; it stays a hard failure.
+    def test_the_live_summary_store_serves_only_sessions(self):
+        """The reader's floor on the REAL store, asserted NON-VACUOUSLY: the raw
+        store still carries fabricated rows (premise), and the reader returns
+        exactly its session rows (contract).
 
-          * MORE sessions than rows — the STORE never holds those sessions, because
-            the collector did not run.  ``polygon_gex`` is chronically gappy and
-            always has been: measured on ``summary_AAPL`` at 2026-08-06, SIX sessions
-            are absent from its 37-session span, and three of them (07-06, 07-15,
-            07-17) predate the 08-03..08-05 nightly outage that finally pushed a hole
-            into the six-row tail window.  No repo change heals a collector outage,
-            and while this was asserted as a flat ``== 6`` the whole merge queue was
-            hostage to the options collector's uptime — it took ci-pack-2 red on main
-            and blocked 56 armed PRs.  The gap is reported, not asserted.
-
-        So the flat equality is replaced by the reader contract it was standing in
-        for, asserted DIRECTLY against the real store (and non-vacuously: the raw
-        store still carries fabricated rows, which is asserted first).  The residual
-        risk the equality used to cover — a gap making the shipped
-        ``opt_vanna_hedge_5d`` a nine-session change rather than a five-session one —
-        is a property of ``_vanna_hedge_5d_from_summary``'s positional slice, and
-        making that slice date-anchored is a ledger-affecting change that belongs to
-        its own PR, not to a CI heal.
-        """
-        import warnings
+        Store DENSITY is deliberately NOT asserted. A collection outage gaps the
+        store with no code defect, and while that was a flat ``== 6`` equality the
+        merge queue was hostage to the options collector's uptime — it took
+        ci-pack-2 red on main and blocked 56 armed PRs. The residual risk the
+        equality stood in for — a gap widening the shipped "5d" basis — is now
+        closed at the SOURCE by the calendar-resolved lookback, pinned by the two
+        fixture tests above, so neither an assertion nor a warning belongs here."""
         from engine.options_stamp import _default_read_summary
         import scripts.build_options_screener  # noqa: F401 - keeps import order stable
         from lib import config
@@ -407,26 +421,6 @@ class TestStampFunnelDropsWeekendRows:
         # in order, nothing else dropped. A neutralised filter fails here.
         assert idx == [d for d in raw if nyse_calendar.is_session(d)], (
             "the source reader did not return exactly the store's session rows")
-
-        # (3) The positional window may never span FEWER sessions than it holds rows
-        # — that is precisely what a weekend row or a duplicated date does to
-        # iloc[-6], and it is the failure this guard exists to catch.
-        window = idx[-6:]
-        span = nyse_calendar.sessions_between(window[0], window[-1])
-        assert len(span) >= len(window), (
-            f"iloc[-6]..iloc[-1] holds {len(window)} rows but spans only {len(span)} "
-            "sessions — the positional lookback is not session-true")
-
-        # (4) The other direction is a collection gap. Surfaced, never silent: this
-        # lands in pytest's warnings summary in the job log.
-        missing = [d for d in span if d not in set(window)]
-        if missing:
-            warnings.warn(
-                f"polygon_gex/{p.name}: iloc[-6]..iloc[-1] spans {len(span)} sessions "
-                f"for {len(window)} rows — the store is missing "
-                f"{', '.join(str(d) for d in missing)}, so the '5-session' positional "
-                f"lookback in _vanna_hedge_5d_from_summary is reading "
-                f"{len(span) - 1} sessions back", stacklevel=2)
 
     def test_neutralising_the_filter_changes_the_stamp(self, monkeypatch):
         """Premise check — proves this test can actually fail. With session_rows made a
@@ -491,6 +485,27 @@ class TestLedgerPathReadersDropWeekendRows:
             bad = sorted({pd.Timestamp(d).date() for d in df["date"]
                           if not nyse_calendar.is_session(pd.Timestamp(d).date())})
             assert not bad, f"{name} loader returned non-session dates {bad}"
+
+    def test_iv30_5d_chg_resolves_by_calendar_and_nulls_on_a_missing_target(
+            self, monkeypatch):
+        """The :313 ledger path (opt_vanna_relief's sign input) shares the calendar
+        resolver — across the outage gap it reads the true 5-back session, and a
+        missing target session yields None, never a 9-session change labelled 5d."""
+        import scripts.stamp_options_state as sos
+        import engine.options_stamp as os_mod
+        gap_endpoints_present = _summary_frame(
+            ["2026-07-27", "2026-07-28", "2026-07-29", "2026-07-30",
+             "2026-07-31", "2026-08-06"],
+            {"2026-07-27": 0.50, "2026-07-30": 0.20, "2026-08-06": 0.35})
+        monkeypatch.setattr(os_mod, "_default_read_summary",
+                            lambda t: gap_endpoints_present)
+        got = sos._get_iv30_5d_chg_from_summary("2026-08-06", "FOO", {})
+        assert got == pytest.approx(0.35 - 0.20)
+        target_missing = _summary_frame(
+            ["2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28",
+             "2026-07-31", "2026-08-06"])
+        monkeypatch.setattr(os_mod, "_default_read_summary", lambda t: target_missing)
+        assert sos._get_iv30_5d_chg_from_summary("2026-08-06", "FOO", {}) is None
 
 
 class TestScreenerGexSummaryDropsWeekendRows:
