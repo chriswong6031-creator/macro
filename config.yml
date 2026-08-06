@@ -1292,6 +1292,19 @@ engine_residual_alpha:
   min_sector: 6                   # min names for a sector to get its own leader list
   min_names: 20                   # min universe to compute at all
 
+engine_residual_momentum:
+  # RESEARCH/DIAGNOSTIC generalization of engine_residual_alpha above
+  # (engine/residual_momentum.py, research/RESIDUAL_MOMENTUM_TREND_QUALITY.md): the
+  # same beta-stripped residual, but with the size/value/quality/low-vol factor legs
+  # added to the market+sector regression and computed over a TABLE of formation
+  # windows instead of one. Ranks, sizes and gates NOTHING live — the shipped leg
+  # remains engine_residual_alpha. Measured by scripts/residual_momentum_phase0.py.
+  beta_win: 252                   # rolling beta window (d)
+  shrink: 0.66                    # Vasicek-lite beta shrink toward the cross-section
+  top_n: 15                       # leaders listed per window
+  min_names: 20                   # min universe to score a window at all
+  winsor_z: 3.0                   # z-score clip on the sector-neutral score
+
 # Theme Trac-lite: curated narrow thematic baskets for the discovery "Themes" tab.
 # Each basket is ranked by the mean sector-neutral alpha-z of its members + the
 # share sitting in the universe-wide top quintile (build_discovery.py). A CURRENT-
