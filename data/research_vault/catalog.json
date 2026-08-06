@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T06:08:49.229253+00:00",
-  "count": 853,
+  "generated_at": "2026-08-06T06:38:52.327024+00:00",
+  "count": 854,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -179,6 +179,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mqyfdysqb5z-41192d",
+      "title": "Global Payments Inc. (GPN) First Take Relatively in line print with reduced guidance to reflect Middle East travel disruption",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:49Z",
+      "summary_points": [
+        "**Middle East Disruption Impact**: Reduced 2026 guidance due to Middle East travel disruptions, with updated outlook implying 2H revenues/EPS below expectations.",
+        "**Price Target vs Current Price**: $88.25 current price trades above $82.00 12-mo target (7.1% downside), signaling short-term overvaluation despite robust revenue/EBITDA growth.",
+        "**Target Price Downgrade**: Target reduced to $82.00 (from $122.00) with current price $68.14 below target, reflecting deteriorating analyst sentiment and downward trend in outlook.",
+        "**Q2 Results & Guidance**: Q2 adjusted revenue $3.16bn (slightly below consensus) and EPS $3.46 (in-line), but guidance revised downward due to travel disruptions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
