@@ -39,6 +39,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config, store  # noqa: E402
+from lib.closes_panel import choose_column  # noqa: E402
 from engine.ohlc_reconstruct import reconstruct_ohlc, has_real_ohlc  # noqa: E402
 
 log = logging.getLogger("build_chart_data")
@@ -153,12 +154,21 @@ def _build_ticker(t: str, deep_dir: Path, caches: dict[str, pd.DataFrame]) -> di
 
     # 2/3/4. close-only constituent caches (large-cap first, then small/mid/russell).
     # Reconstruct a conservative high/low so these names render candles too.
-    for grp in ("breadth", "smallcap_breadth", "midcap_breadth", "russell_breadth"):
-        cache = caches.get(grp)
-        if cache is not None and t in cache.columns:
-            bars = _bars_recon(cache[t])
-            if bars:
-                return {"t": t, "o": 1, "src": grp, "recon": 1, "bars": bars}
+    #
+    # FRESHEST column, not first-tier: the caches are union-forever archives, so an
+    # index migrant keeps a column in the tier it LEFT, frozen on its exit date. Taking
+    # the first tier that carried the ticker drew the chart from the DEAD column and the
+    # line simply stopped — measured 2026-07-31, POOL and CPB rendered through 2026-06-18
+    # (43 days short) with live columns sitting in the smallcap cache. The same helper
+    # also restores pre-migration history from a tier proven bit-identical on the overlap,
+    # which is what keeps BLKB/CNXC/COTY/GT/FLEX from rendering as ~36-bar stubs.
+    # Tier order still decides every tie, so non-migrants are unaffected.
+    series, grp = choose_column(
+        caches, t, ("breadth", "smallcap_breadth", "midcap_breadth", "russell_breadth"))
+    if series is not None:
+        bars = _bars_recon(series)
+        if bars:
+            return {"t": t, "o": 1, "src": grp, "recon": 1, "bars": bars}
 
     # 4. yahoo store — ETFs / macro proxies / searchable extras. Most are close-only,
     # but a few names DO carry true OHLC (e.g. futures like BTC=F): prefer the real
