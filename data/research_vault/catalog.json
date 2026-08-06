@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T05:08:31.204618+00:00",
-  "count": 850,
+  "generated_at": "2026-08-06T05:38:42.991510+00:00",
+  "count": 851,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -199,6 +199,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zavxcmxechy-5e5812",
+      "title": "Eli Lilly & Co. (LLY) 2Q26 Earnings First Take Another Impressive Beat and Raise",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:45Z",
+      "summary_points": [
+        "**Earnings Beat & Guidance Surge**: $23.0bn revenue (+$2.3bn vs.",
+        "consensus), $2.5bn top-line guidance increase (range $82bn-$85bn → $85bn-$87bn), driven by Mounjaro (+10%/+10%), Zepbound (+8%/+6%), and US rebate adjustment (6% vs.",
+        "expected -9%).",
+        "**Product-Specific Risk/Opportunity Divergence**: Founday (US) delivers 145.0% upside vs.",
+        "GS, but OUS Founday is a drag (-226.3%); Humalog underperforms (-7.4% vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
