@@ -31,14 +31,20 @@
         },
         "reason": {
           "type": "string",
-          "description": "Human-readable rationale for the buy/rebuy quality verdict."
+          "description": "Human-readable rationale for the buy/rebuy quality verdict. FIRST-MATCH label: the buy filter returns on the first leg that refuses the name, so a block explained here may not be the only one — see `reasons`."
+        },
+        "reasons": {
+          "type": "array",
+          "minItems": 2,
+          "items": {"type": "string"},
+          "description": "EXHAUSTIVE ordered account of the buy-filter legs, in evaluation order, with element 0 ALWAYS byte-identical to `reason`. Emitted ONLY when it says something `reason` does not — i.e. when the verdict is over-determined (more than one leg refuses the buy, or a later leg could not be decided yet). Its ABSENCE therefore means [`reason`] exactly, never 'unknown', so a reader that only wants the headline keeps reading `reason` alone. Buy/rebuy ONLY. Added 2026-08-04 after research/cn_prophet_audit/CN_DIVERGENCE_VETO_AUDIT.md found 002155.SZ stamped 'veto: bearish divergence' while ALSO failing reclaim-and-hold, and 77% of divergence-vetoed fires blocked by another leg anyway — a single reason misdirects diagnosis. Display-only, never a gate input."
         }
       },
       "allOf": [
         {
-          "$comment": "`quality` and `reason` are buy-filter verdict fields — they may appear ONLY on buy/rebuy markers. Forbid both on sell/cut. (validate_signals.py re-asserts this with a clearer message.)",
+          "$comment": "`quality`, `reason` and `reasons` are buy-filter verdict fields — they may appear ONLY on buy/rebuy markers. Forbid all three on sell/cut. (validate_signals.py re-asserts this with a clearer message.)",
           "if": {"required": ["type"], "properties": {"type": {"enum": ["sell", "cut"]}}},
-          "then": {"allOf": [{"not": {"required": ["quality"]}}, {"not": {"required": ["reason"]}}]}
+          "then": {"allOf": [{"not": {"required": ["quality"]}}, {"not": {"required": ["reason"]}}, {"not": {"required": ["reasons"]}}]}
         },
         {
           "$comment": "Every buy/rebuy carries the buy-filter verdict — `quality` is REQUIRED on them (the chart reads it to render solid/hollow/provisional). A bare buy with no quality is a drift the chart can't render.",
