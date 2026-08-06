@@ -856,3 +856,39 @@ def test_build_wiring_ships_the_recovering_key():
     """The engine key is inert unless the builder actually writes it."""
     src = (ROOT / "scripts" / "build_baskets.py").read_text(encoding="utf-8")
     assert '_an_ba["recovering_ids"] = _bw["recovering_ids"]' in src
+
+
+# ───────────────────── help "?" tooltip framework twin (2026-08-06) ─────────────────────
+
+def test_help_tip_framework_is_byte_identical_in_both_copies():
+    """The legacy help() "?" hover framework (.help/.tip hide + :hover open) lives
+    INLINE in dashboard.html.j2 — deliberately not in theme.css (cache-stamp blast
+    radius; theme.css only carries span.help glyph metrics + .help-upgraded popover
+    overrides). The shared board include renders on hosts that have no page-level
+    copy: on sector_central the board h2's entire Tier-2 explainer sentence rendered
+    permanently inline next to the heading (doctrine violation, found 2026-08-06
+    while working #4735). The include therefore carries its own copy of the
+    framework, fenced by help-tip-framework:BEGIN/END markers in both files.
+
+    Byte-equality is the whole contract: identical selectors + identical
+    declarations mean the duplicate emission on us_stocks can never conflict, only
+    repeat — and any future edit to one copy must be mirrored or this pins red.
+    """
+    begin, end = "/* help-tip-framework:BEGIN", "/* help-tip-framework:END */"
+    slices = {}
+    for path in (TEMPLATES / "dashboard.html.j2", ACT_BOARD):
+        text = path.read_text(encoding="utf-8")
+        assert text.count(begin) == 1, f"{path.name}: expected exactly one BEGIN marker"
+        assert text.count(end) == 1, f"{path.name}: expected exactly one END marker"
+        slices[path.name] = text.split(begin, 1)[1].split(end, 1)[0]
+    dash, board = slices["dashboard.html.j2"], slices["_us_act_now_board.html.j2"]
+    assert dash == board, (
+        "help/tip framework drifted between dashboard.html.j2 and the board include —"
+        " copy the edited block verbatim into the other file (markers inclusive)"
+    )
+    # Non-vacuous: the fenced slice must actually be the hide/open framework, not an
+    # empty or displaced pair of markers.
+    assert ".help .tip { display: none;" in dash, "framework slice lost the hide rule"
+    assert ".help:hover .tip" in dash and "display: block" in dash, (
+        "framework slice lost the hover-open rule"
+    )

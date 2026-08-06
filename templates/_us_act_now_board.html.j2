@@ -9,8 +9,11 @@
 
    Self-sufficient by design: it carries its own help/t/dispshort DISPLAY macros and
    the board CSS. tr()/td() come from the host Jinja env globals (i18n); the shared
-   row-pop hover engine (theme.js) and the .rp-src/.row-pop/.lst-*/.help/.tip framework
-   come from theme.css (both hosts link it). Every per-row field (sector_setup, EW
+   row-pop hover engine (theme.js) and the .rp-src/.row-pop/.lst-* framework come from
+   theme.css (both hosts link it). The legacy .help/.tip hover framework does NOT —
+   it lives inline in dashboard.html.j2, so this include carries a byte-identical
+   copy at the end of its <style> (hosts without the page-level copy — sector_central —
+   rendered the h2 help() tip permanently inline before it). Every per-row field (sector_setup, EW
    overlay, two-reads) is pre-merged onto each item by action_board(), so the board
    needs nothing from the view-model but action_board (shock_state is optional/guarded). -#}
 {% macro help(en, zh='') -%}
@@ -150,6 +153,54 @@
   /* ── TS-R6: two-reads reconciliation chip ───────────────────────────────── */
   .two-reads-chip { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:600; white-space:nowrap; background:color-mix(in srgb,var(--info) 9%,var(--panel2)); border:1px solid color-mix(in srgb,var(--info) 28%,var(--line)); color:var(--info,var(--link)); cursor:help; }
   .two-reads-chip .tr-sep { opacity:.45; margin:0 2px; }
+  /* ── Legacy help() "?" hover framework — HOST-PORTABILITY COPY ─────────────
+     us_stocks gets these rules from dashboard.html.j2's inline page <style>;
+     they are NOT in theme.css (theme.css carries only the span.help glyph
+     metrics + .help-upgraded popover overrides — see its help-icon comment).
+     The SI Overview host has no page-level copy, so without this block the
+     board h2's help() tip renders permanently inline next to the heading
+     (Tier-2 sentence at the glance tier — doctrine violation, 2026-08-06).
+     On us_stocks this is a harmless same-rules duplicate of the page block
+     (same precedent as dc.dc_css() above). theme.js upgradeHelpIcons still
+     swaps the CSS hover for the LENS popover where it runs; these rules are
+     the no-JS floor. */
+  /* help-tip-framework:BEGIN — legacy help() "?" hover framework. Byte-identical
+     twin in templates/dashboard.html.j2 AND templates/_us_act_now_board.html.j2
+     (the shared board include ships it to hosts that have no page-level copy —
+     sector_central leaked the whole tip sentence inline without it, 2026-08-06).
+     Deliberately NOT in theme.css: editing theme.css re-stamps ~176 pages, and
+     its span.help glyph metrics must keep outranking these bare-.help rules.
+     Keep both copies in step — pinned by
+     tests/test_us_act_now.py::test_help_tip_framework_is_byte_identical_in_both_copies. */
+  .help { display: inline-flex; align-items: center; justify-content: center;
+          width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
+          color: var(--muted); font-size: 10px; font-weight: 600; cursor: help;
+          position: relative; vertical-align: middle; margin-left: 5px; flex: none; }
+  .help .tip { display: none; position: absolute; bottom: 140%; left: 50%;
+               transform: translateX(-50%); width: 330px;
+               background: var(--panel); border: 1px solid var(--line);
+               padding: 10px 13px; border-radius: 8px;
+               z-index: 60; font-size: 12px; line-height: 1.5; color: var(--text);
+               text-align: left; font-weight: 400; text-transform: none;
+               letter-spacing: normal; box-shadow: var(--popover-shadow);
+               pointer-events: auto; cursor: auto; white-space: normal;
+               max-height: min(60vh, 420px); overflow-y: auto; overscroll-behavior: contain; }
+  /* invisible hover pad across the gap between the ? icon and the tip box —
+     without it the :hover chain breaks mid-travel and the tip vanishes before
+     the cursor can reach (and scroll) it. Lives on .help, not .tip: the tip
+     is a scroll container (overflow-y:auto), which clips its own pseudos. */
+  .help:hover::before { content: ''; position: absolute; bottom: 100%; left: -30px; right: -30px; height: 10px; }
+  .help:hover .tip, .help.tip-open .tip { display: block; }
+  th .help .tip, .help.below .tip { bottom: auto; top: 140%; }
+  th .help:hover::before, .help.below:hover::before { bottom: auto; top: 100%; }
+  /* keep tooltips on-screen near the right/left viewport edges */
+  .help.edge-right .tip { left: auto; right: 0; transform: none; }
+  .help.edge-left .tip { left: 0; right: auto; transform: none; }
+  .help .tip.tip-wide { width: min(430px, calc(100vw - 32px)); }
+  @media (max-width: 640px) {
+    .help .tip.tip-wide { width: calc(100vw - 28px); font-size: 11.5px; line-height: 1.45; }
+  }
+  /* help-tip-framework:END */
   </style>
   <div class="panel span12" id="action-board">
     <h2>{{ t('What to act on now', '当前可操作') }}
