@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T22:43:53.698613+00:00",
-  "count": 901,
+  "generated_at": "2026-08-06T22:58:55.664778+00:00",
+  "count": 902,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -731,6 +731,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-urynpcnmq3i-4cd9a7",
+      "title": "DoorDash Inc. (DASH) Q2'26 Review Strong Operating Performance as Company Remains Focused on Building & Investing Toward A ...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T11:17:07Z",
+      "summary_points": [
+        "**Q2'26 Fundamentals**: Strong EBITDA outperformance vs.",
+        "Street, improving unit economics (grocery/retail on track for gross profit positive H2), DashPass driving ~75% of US grocery/retail orders.",
+        "**Valuation Efficiency**: P/E and EV/EBITDA decline sharply (103.4→30.2, 33.1→13.3), DASH outperforms S&P 500 by 17.3% over 3m signaling market confidence.",
+        "**Growth Catalysts**: Rising DashPass payer conversion, grocery/retail order growth, AI/autonomy investments driving compounded GOV/Adj.",
+        "EBITDA growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
