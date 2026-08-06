@@ -5,6 +5,12 @@ Intelligence program. Everything durable is in the repo; account-local memory is
 NOT assumed. Read this top to bottom before acting — the baton in §3 is
 time-sensitive.
 
+> **SUPERSEDED FOR CURRENT STATUS AND SEQUENCING (2026-08-06).** Calendar Clock
+> §3 and the Lane 6 shadow lobe have shipped. Do not execute this historical
+> baton. Continue from
+> `research/BIOPHARMA_SEASONALITY_INTELLIGENCE_CLAUDE_CONTINUATION_HANDOFF_2026-08-06.md`.
+> This file remains evidence for the original rollout and its operational traps.
+
 ## §0 STATUS ADDENDUM — 2026-08-03 ~04:45Z (§3 COMPLETE; program handed to Codex)
 
 **Do not re-execute §3 — it is done and verified live.** Evidence lives in the

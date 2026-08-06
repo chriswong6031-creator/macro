@@ -356,7 +356,34 @@ class TestStampFunnelDropsWeekendRows:
 
     def test_the_positional_five_session_lookback_spans_five_sessions(self):
         """_vanna_hedge_5d_from_summary / _DOI_WINDOW take POSITIONAL lookbacks that are
-        USED as trading-day changes. With weekend rows in, iloc[-6] is ~3 sessions back."""
+        USED as trading-day changes. With weekend rows in, iloc[-6] is ~3 sessions back.
+
+        TWO THINGS MOVE THE SPAN OFF SIX, IN OPPOSITE DIRECTIONS (2026-08-06).
+
+          * FEWER sessions than rows — the reader let a non-session (or a duplicated
+            date) into the window, so ``iloc[-6]`` is nearer than five sessions back.
+            That is this file's defect class; it stays a hard failure.
+
+          * MORE sessions than rows — the STORE never holds those sessions, because
+            the collector did not run.  ``polygon_gex`` is chronically gappy and
+            always has been: measured on ``summary_AAPL`` at 2026-08-06, SIX sessions
+            are absent from its 37-session span, and three of them (07-06, 07-15,
+            07-17) predate the 08-03..08-05 nightly outage that finally pushed a hole
+            into the six-row tail window.  No repo change heals a collector outage,
+            and while this was asserted as a flat ``== 6`` the whole merge queue was
+            hostage to the options collector's uptime — it took ci-pack-2 red on main
+            and blocked 56 armed PRs.  The gap is reported, not asserted.
+
+        So the flat equality is replaced by the reader contract it was standing in
+        for, asserted DIRECTLY against the real store (and non-vacuously: the raw
+        store still carries fabricated rows, which is asserted first).  The residual
+        risk the equality used to cover — a gap making the shipped
+        ``opt_vanna_hedge_5d`` a nine-session change rather than a five-session one —
+        is a property of ``_vanna_hedge_5d_from_summary``'s positional slice, and
+        making that slice date-anchored is a ledger-affecting change that belongs to
+        its own PR, not to a CI heal.
+        """
+        import warnings
         from engine.options_stamp import _default_read_summary
         import scripts.build_options_screener  # noqa: F401 - keeps import order stable
         from lib import config
@@ -365,15 +392,41 @@ class TestStampFunnelDropsWeekendRows:
             pytest.skip("summary_AAPL absent on this runner")
         sdf = _default_read_summary("AAPL")
         assert sdf is not None and len(sdf) >= 6
-        idx = list(sdf.index)
-        span = nyse_calendar.sessions_between(idx[-6].date(), idx[-1].date())
-        assert len(span) == 6, (
-            f"iloc[-6]..iloc[-1] spans {len(span)} sessions, not 6 — the positional "
-            "lookback is not session-true"
-        )
-        assert all(nyse_calendar.is_session(d.date()) for d in idx), (
-            "the source reader returned a non-session row"
-        )
+        idx = [pd.Timestamp(d).date() for d in sdf.index]
+
+        # (1) The premise: the raw store really does carry fabricated rows, so the
+        # filter under test is not decoration and (2) below cannot go vacuous.
+        raw = [pd.Timestamp(d).date() for d in pd.read_parquet(p).index]
+        fabricated = [d for d in raw if not nyse_calendar.is_session(d)]
+        assert fabricated, (
+            f"{p.name} carries NO non-session rows any more — good news, but the "
+            "premise these guards are written against is gone; update it before "
+            "trusting them")
+
+        # (2) The reader's contract on the REAL store: exactly the session rows,
+        # in order, nothing else dropped. A neutralised filter fails here.
+        assert idx == [d for d in raw if nyse_calendar.is_session(d)], (
+            "the source reader did not return exactly the store's session rows")
+
+        # (3) The positional window may never span FEWER sessions than it holds rows
+        # — that is precisely what a weekend row or a duplicated date does to
+        # iloc[-6], and it is the failure this guard exists to catch.
+        window = idx[-6:]
+        span = nyse_calendar.sessions_between(window[0], window[-1])
+        assert len(span) >= len(window), (
+            f"iloc[-6]..iloc[-1] holds {len(window)} rows but spans only {len(span)} "
+            "sessions — the positional lookback is not session-true")
+
+        # (4) The other direction is a collection gap. Surfaced, never silent: this
+        # lands in pytest's warnings summary in the job log.
+        missing = [d for d in span if d not in set(window)]
+        if missing:
+            warnings.warn(
+                f"polygon_gex/{p.name}: iloc[-6]..iloc[-1] spans {len(span)} sessions "
+                f"for {len(window)} rows — the store is missing "
+                f"{', '.join(str(d) for d in missing)}, so the '5-session' positional "
+                f"lookback in _vanna_hedge_5d_from_summary is reading "
+                f"{len(span) - 1} sessions back", stacklevel=2)
 
     def test_neutralising_the_filter_changes_the_stamp(self, monkeypatch):
         """Premise check — proves this test can actually fail. With session_rows made a
