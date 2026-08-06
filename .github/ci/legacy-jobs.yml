@@ -4624,6 +4624,25 @@ jobs:
       - name: W4 staged re-entry spine + P5 deferred-context BTC chips (dat/netliq/cascade)
         run: python -m pytest tests/test_btc_reentry.py tests/test_btc_deferred_legs.py -q
 
+  washout-turn-organ:
+    # Per-name weekly washout-turn watch lane (engine/washout_turn.py) — born from the
+    # 2026-08-05 MCD miss (weekly canon CB fired 07-31 at 6th-pctile depth, no consumer).
+    # Enumerated here at birth: the unrun-suite census (2026-07-26) proved an unnamed
+    # suite is genuinely never executed, and the reference organ's own suite
+    # (test_mtf_upturn.py) is an existing instance of that hole.
+    if: ${{ false }}
+    timeout-minutes: 3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: washout-turn organ (depth-gated weekly cross, PIT completed-bars pin, ledger gate)
+        run: python -m pytest tests/test_washout_turn.py tests/test_mtf_upturn.py -q
+
   unrun-page-guards:
     # Shipped-page regression guards over the rendered estate: the US
     # action-board hover cards, the macro desk surface + its proportional

@@ -56,6 +56,7 @@ from engine import hold as hold_engine  # noqa: E402  — W6-C HOLD tracker (bas
 from engine import earnings_blackout as _eb  # noqa: E402  — W1.5 earnings-blackout hygiene veto
 from engine import earnings_catalyst as _ecat  # noqa: E402  — W4 display-tier catalyst fields
 from engine import us_board_rank  # noqa: E402  — us_prophet_v1 priority score / stages / ran lane
+from engine import washout_turn  # noqa: E402  — WTN-W1 weekly washout-turn watch (display-tier)
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -2828,6 +2829,19 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("entry-signal for %s failed (%s)", ticker, e)
             entry_sig_null[ticker] = f"gauge_error:{type(e).__name__}"
+        # ---- Weekly washout-turn watch (engine/washout_turn) — the DUAL-READ ---
+        # The entry gauge above reads the DAILY cycle; this reads the house canon
+        # RSI-MACD on COMPLETED WEEKLY bars and says whether momentum just crossed
+        # up from a washout-depth base. It is the counter-read that was missing when
+        # MCD's weekly cross printed at the 6th percentile of its own history and
+        # every surface still read "wait" (MCD_MISS_EVIDENCE_2026-08-05).
+        # Display-tier, zero authority: it never ranks, gates, sizes, or escalates.
+        try:
+            wt = washout_turn.compute_symbol_washout(close)
+            if wt:
+                rec["washout_turn"] = wt
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("washout-turn for %s failed (%s)", ticker, e)
         # ---- Confluence cascade verdict (T1->T4) on the per-stock JSON ---------
         # The owner's MACD-2D x StochRSI-3D gate (already computed above as sig_verdict),
         # persisted per name so the theme/basket-detail Holdings table can surface a fresh
