@@ -1341,4 +1341,15 @@ entries:
       any h
     source: '`research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md` §9 + frozen JSON (#4607)'
 
+  - id: BL-G111
+    match:
+      any_of:
+        - 'provisional.{0,30}quality.{0,30}hold'
+    reason: >
+      **PROMOTION CLOCK FROZEN — de-escalation only, 2026-08-06.** The
+      provisional grant (PSQ-H1 PASS, 2026-07-20) was conditioned on a
+      ~2026-12 forward-shadow read that **structurally cannot occur**.
+      Its s
+    source: 'PR #4781 (severance + `ec_source_state`/`ec_coverage` disclosure); `research/PROPHET_STAGE_QUALITY_PREREG.md` §6 auto-demote clause; `research/reports/PROPHET_STAGE_QUALITY_RESULTS.md` §Adjudication; '
+
 # --- END GENERATED FROM DO_NOT_REBUILD.md ---
