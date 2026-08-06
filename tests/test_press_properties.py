@@ -1078,9 +1078,15 @@ def test_the_workflow_rebuilds_the_properties_after_emitting():
 def test_the_commit_step_stages_the_property_paths():
     step = next(str(s.get("run") or "") for s in _emit_steps()
                 if "git add" in str(s.get("run") or ""))
-    added = set(re.findall(r"^\s*git add ([^\s]+)", step, re.MULTILINE))
-    assert added == {"content/seo/blog", "site/blog", "data/press/published.jsonl",
-                     "content/press", "properties"}
+    # Flag-aware: #4549 added `git add --ignore-removal site/assets/{css,js}` to the six
+    # publishing lanes, and a bare `([^\s]+)` captured the FLAG as a path. Skip leading
+    # flags so this reads paths, not argv.
+    added = set(re.findall(r"^\s*git add (?:--\S+\s+)*(\S+)", step, re.MULTILINE))
+    props = {"content/seo/blog", "site/blog", "data/press/published.jsonl",
+             "content/press", "properties"}
+    assert props <= added, "all five property paths must still be staged"
+    # Pin what ELSE may be staged, so a third category cannot appear silently.
+    assert added - props == {"site/assets/css", "site/assets/js"}
     # The nightly still owns site/sitemap.xml; the properties carry their own.
     assert "git add site/sitemap.xml" not in step
     assert "press_sitemap_guard" in step
