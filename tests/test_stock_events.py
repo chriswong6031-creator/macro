@@ -643,9 +643,18 @@ def test_the_module_docstring_carries_its_legal_fence():
 
 
 def test_nothing_in_the_pick_chain_imports_the_event_library():
-    """The organ is display-tier; a pick-chain import would be authority creep."""
+    """The organ is display-tier; a pick-chain import would be authority creep.
+
+    Fence scope (adjudicated 2026-08-06): the fenced set is the SCORED pick chain —
+    ranker, cascade, gate, bridge. `engine/prophet_doors.py` was removed from it when
+    Door W landed: the doors are themselves zero-authority SHADOW lanes (nothing in the
+    pick chain imports THEM — pinned in tests/test_prophet_doors.py::test_no_authority_*),
+    and a shadow recorder reading the measurement library's pure grid helpers creates no
+    authority path. Fencing the doors here would forbid exactly the lawful use the
+    library exists for.
+    """
     for rel in ("engine/us_board_rank.py", "engine/confluence_tiers.py",
-                "engine/prophet_doors.py"):
+                "engine/signal_gate.py", "engine/prophet_bridge.py"):
         src = (_SRC_ROOT / rel).read_text(encoding="utf-8")
         assert "stock_events" not in src, rel
         assert "event_atlas" not in src, rel
