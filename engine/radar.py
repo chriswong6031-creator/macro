@@ -44,9 +44,12 @@ SCHEMA = "radar.v2"
 
 CON_Z = 0.5              # |robust-z of 60d rel| >= this -> price clearly leading/lagging
 
-# Radar clock constants — keep these in sync with radar_ic._HORIZON_D (the grader).
+# Radar clock constants.
 # SEED_HORIZON_D: the forward window we promise when seeding a watch-hypothesis (~3 trading
-#   months = 63 business days).  radar_ic grades at this same horizon to close the loop.
+#   months = 63 business days).  The PROMISE is graded by engine/radar_scorer.py at each
+#   hypothesis's check_by; engine/radar_ic.py measures lead/lag descriptively at
+#   [21, 63, 91] CALENDAR days — its 91d block is the one matching this promise
+#   (63 trading ≈ 91 calendar days).
 # CHECK_BY_PAD_D: calendar days to deadline stamped on each hypothesis.  91 ≈ SEED_HORIZON_D
 #   + ~28d slippage for weekends, holidays, and price-data latency.
 SEED_HORIZON_D = 63      # ~3 trading months — the seeded falsifiable horizon
