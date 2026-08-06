@@ -1,0 +1,116 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "TT-2026-06-30-buy",
+  "ticker": "TT",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "TT",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "TT",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_break",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Industrials",
+    "excess_spy": -0.0628486701492682,
+    "excess_sector": -0.04194845232787936,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 1.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "TT stopped and underperformed SPY, with an issuer-specific break recorded as the outcome cause and a clean process label. The supplied data cannot distinguish company deterioration from Industrials rotation, an event, or a failed breakout.",
+    "root_cause": "TT stopped and underperformed SPY, with an issuer-specific break recorded as the outcome cause and a clean process label. The supplied data cannot distinguish company deterioration from Industrials rotation, an event, or a failed breakout.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The buy book surfaced TT, while the company-break, Industrials-rotation, catalyst, and breakout-quality books missed or did not document the relevant conditioning.",
+    "engines_credit": "The process organ is not faulted by the supplied record; the issuer-risk and Industrials-conditioning organs are the principal attribution laggards.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "The supplied taxonomy identifies an issuer-specific break as the main source of TT's underperformance.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Broad weakness among close Industrials peers would contradict a primarily issuer-specific account.",
+        "evidence_refs": [
+          "outcome_cause=idio_break",
+          "excess_spy=-0.0628486701492682",
+          "terminal_state=STOPPED"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "sector",
+        "factor": "",
+        "mechanism": "Industrials rotation or cyclical repricing may have amplified the break.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Stable sector and peer behavior would favor company-specific causation.",
+        "evidence_refs": [
+          "sector=Industrials"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The subsequent adverse move reached the stopping condition.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "A path that held support would avoid the stop but would not prove the original causal thesis.",
+        "evidence_refs": [
+          "terminal_state=STOPPED",
+          "process_fault=clean",
+          "board_tenure_days=1.0"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Industrials or building-products rotation may have deteriorated.",
+      "A company event may have emerged after entry.",
+      "The setup may have been a fake breakout or failed cycle.",
+      "Common cyclical or rate-sensitive factors may explain the decline."
+    ],
+    "missing_evidence": [
+      "Industrials and industry peer-relative returns",
+      "Breakout and support structure",
+      "Price-volume behavior before the stop",
+      "Company-news and estimate-revision chronology",
+      "Macro and factor attribution",
+      "Entry and stop timestamps"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "tt_breakout_peer_confirmation",
+        "feature": "Peer-confirmed breakout quality",
+        "measurement": "Measure whether TT's pre-entry trend, volume, and breakout behavior were confirmed by industry breadth and peer strength.",
+        "expected_direction": "Weak peer confirmation should be associated with a greater incidence of failed cycles.",
+        "falsifier": "Peer-confirmed setups fail at the same pattern or company events explain the failures independently.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T05:48:19+00:00"
+}

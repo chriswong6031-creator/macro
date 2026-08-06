@@ -1,0 +1,113 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "TALO-2026-06-30-watch",
+  "ticker": "TALO",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "TALO",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "TALO",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "beta_tailwind",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Energy",
+    "excess_spy": 0.12524578846558176,
+    "excess_sector": -0.000678524165028449,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 4.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CLEAN_LIFTOFF",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "TALO achieved clean liftoff and outperformed SPY, with the supplied cause assigning the result to a beta tailwind rather than company-specific alpha. The record supports the outcome and clean process but does not identify which Energy or macro exposure supplied the tailwind.",
+    "root_cause": "TALO achieved clean liftoff and outperformed SPY, with the supplied cause assigning the result to a beta tailwind rather than company-specific alpha. The record supports the outcome and clean process but does not identify which Energy or macro exposure supplied the tailwind.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The watch book captured a favorable beta outcome, while the macro-regime, Energy-rotation, and factor books need decomposition evidence.",
+    "engines_credit": "The watch book was the discovery role model; the macro-regime and Energy-rotation organs are plausible contributors but remain unconfirmed.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "market_rotation",
+        "factor": "",
+        "mechanism": "The supplied beta-tailwind attribution indicates favorable systematic exposure drove the outcome.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "If TALO retained substantial excess return after Energy, commodity, and style adjustment, company alpha would become a stronger explanation.",
+        "evidence_refs": [
+          "outcome_cause=beta_tailwind",
+          "excess_spy=0.12524578846558176",
+          "terminal_state=CLEAN_LIFTOFF"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "sector",
+        "factor": "",
+        "mechanism": "Energy exposure may have transmitted the systematic tailwind into TALO's return.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Weak Energy-relative performance would contradict a sector-transmission explanation.",
+        "evidence_refs": [
+          "sector=Energy"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "entry_timing",
+        "factor": "",
+        "mechanism": "Existing board tenure may have provided exposure before the favorable move, although the entry path is not supplied.",
+        "evidence_status": "claimed",
+        "timing_status": "known_at_entry",
+        "counterfactual": "A later observation start would test whether board tenure captured meaningful early exposure.",
+        "evidence_refs": [
+          "board_tenure_days=4.0",
+          "process_fault=clean"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Commodity-price sensitivity may have driven the move.",
+      "Company-specific operational or transaction news may have contributed.",
+      "Small-cap or high-beta factor strength may explain the assigned beta tailwind."
+    ],
+    "missing_evidence": [
+      "Energy benchmark and peer-relative returns",
+      "Commodity-price path",
+      "Market and style-factor exposures",
+      "Company-event chronology",
+      "Entry and holding-period price path"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "talo_energy_beta_alignment",
+        "feature": "Energy-beta alignment",
+        "measurement": "Estimate pre-entry sensitivity to Energy, commodity, and market factors and compare it with the subsequent factor path.",
+        "expected_direction": "Greater alignment with strengthening systematic factors should accompany beta-driven excess return.",
+        "falsifier": "Factor adjustment leaves the outcome substantially unexplained or reverses the inferred relationship.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T05:48:19+00:00"
+}
