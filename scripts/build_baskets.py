@@ -518,6 +518,27 @@ def main() -> int:
     except Exception as _mtu_exc:  # noqa: BLE001 — additive, never fatal
         print(f"::warning::mtf_upturn hook failed: {_mtu_exc}", flush=True)
 
+    # WTN-W1 — per-name WEEKLY washout-turn watch organ (washout_turn.v1).
+    # The MCD miss (research/washout_turn_name_lane/MCD_MISS_EVIDENCE_2026-08-05.md):
+    # nothing consumed the house canon RSI-MACD at WEEKLY grain per name, so a
+    # 6th-percentile-depth weekly cross reached no surface. Sits beside mtf_upturn
+    # (that organ watches standard PRICE MACD-vs-zero — a different indicator family).
+    # Display-tier, zero authority; own try/except — exit-0 always.
+    try:
+        from engine.washout_turn import compute as _wtn_compute, write_site_artifact as _wtn_write
+        _wtn_result = _wtn_compute()
+        _wtn_path = _wtn_write(_wtn_result)
+        _wtn_n_turn = len(_wtn_result.get("cohort", {}).get("turn", []))
+        _wtn_n_watch = len(_wtn_result.get("cohort", {}).get("watch", []))
+        log.info(
+            "washout_turn: wrote %s (%d washout-turn, %d turn-watch, elapsed=%.1fs)",
+            _wtn_path, _wtn_n_turn, _wtn_n_watch,
+            _wtn_result.get("elapsed_s", 0),
+        )
+    except Exception as _wtn_exc:  # noqa: BLE001 — additive, never fatal
+        # Bare print, NOT a logger call — GitHub only parses "::" at LINE START.
+        print(f"::warning::washout_turn hook failed: {_wtn_exc}", flush=True)
+
     # NAR-W1 — Flare Persistence organ (flare_persistence.v1). Reads raw tape witnesses
     # (T1 altdata convergence, T2 call premium z, T3 GEX flip, T4 news bull ratio z).
     # Placed beside mtf_upturn (TS-U2 pattern). Display-tier; own try/except — never fatal.
