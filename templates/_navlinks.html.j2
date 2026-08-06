@@ -83,7 +83,7 @@
            old URLs, same pattern as the retired vector-allocation page); Confluence
            stays — it is the stock-entry funnel the merged page links to. #}
         <a href="{{ NP }}sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span>{{ t('Sector Intelligence', '行业智慧') }}<span class="d">{{ t('Sectors, themes & rotation in one read · lanes · cycle map · graded', '板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分') }}</span></a>
-        <a href="{{ NP }}subsectors.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span>{{ t('Subsector Confluence', '子行业汇聚') }}<span class="d">{{ t('Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts', 'S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图') }}</span></a>
+        <a href="{{ NP }}sector_central.html#confluence"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span>{{ t('Subsector Confluence', '子行业汇聚') }}<span class="d">{{ t('Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts', 'S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图') }}</span></a>
         <a href="{{ NP }}strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span>{{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
         <a href="{{ NP }}news.html"><span class="submenu-icon submenu-icon-news" aria-hidden="true"></span>{{ t('News Feed', '新闻流') }}<span class="d">{{ t('Macro headlines · catalysts · sentiment', '宏观头条 · 日程 · 情绪') }}</span></a>
         <a href="{{ NP }}alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span>{{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>
@@ -116,9 +116,17 @@
         {# 2026-08 China Sector Intelligence consolidation: the 5-entry Sector Central flyout
            (Sector Central / Thematic Baskets & Rotation / Subsector Rotation / Subsector
            Confluence / Market Heatmap) collapsed to three flat rows — Baskets + Subsector
-           Rotation merged INTO sector_central_china.html, mirroring the US collapse above. #}
+           Rotation merged INTO sector_central_china.html, mirroring the US collapse above.
+           Subsector Confluence is now the merged page's #confluence rail VIEW too (2026-08
+           rail-view addition — "lives on the one consolidated page"): this row deep-links there.
+           The standalone subsectors_china.html survives as its SEO twin (own SEO head, still
+           linked from china_intel/chat) but is no longer the nav target. (US parity shipped later: "Subsector Confluence" now
+           deep-links sector_central.html#confluence the same way, and the standalone
+           subsectors.html is a redirect stub. The "SEO twin" rationale above does NOT hold on
+           this estate — both pages 302 Googlebot to sign-in and neither is in sitemap.xml, so
+           there is no crawlable content to keep, only internal links, which a stub serves.) #}
         <a href="{{ NP }}sector_central_china.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span>{{ t('Sector Intelligence', '行业智慧') }}<span class="d">{{ t('Gated board · cycle map · whole-market rotation · theme baskets — one page', '门控研判 · 周期图谱 · 全市场轮动 · 主题篮子 — 一页尽览') }}</span></a>
-        <a href="{{ NP }}subsectors_china.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span>{{ t('Subsector Confluence', '子行业汇聚') }}<span class="d">{{ t('Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts', '同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图') }}</span></a>
+        <a href="{{ NP }}sector_central_china.html#confluence"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span>{{ t('Subsector Confluence', '子行业汇聚') }}<span class="d">{{ t('Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts', '同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图') }}</span></a>
         <a href="{{ NP }}china_heatmap.html"><span class="submenu-icon submenu-icon-heatmap" aria-hidden="true"></span>{{ t('Market Heatmap', '市场热力图') }}<span class="d">{{ t('Every A-share · sector treemap · market-cap', '全部A股 · 板块树图 · 按市值') }}</span></a>
         <a href="{{ NP }}china_strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span>{{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
         <a href="{{ NP }}china_news.html"><span class="submenu-icon submenu-icon-news" aria-hidden="true"></span>{{ t('China News Feed', '中国新闻流') }}<span class="d">{{ t('Policy tone · official sources · market tags', '政策基调 · 官方来源 · 市场标签') }}</span></a>

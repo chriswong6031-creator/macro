@@ -121,5 +121,30 @@ def test_public_pages_fetch_nothing_under_paid_prefixes():
     assert offenders == []
 
 
-def test_html_registration_matcher_remains_present():
-    assert "path *.html" in _extract_block(_read_caddyfile(), "@reg_html")
+def test_html_documents_are_served_open_not_registration_gated():
+    """HTML is open; the JSON/asset wall this module guards is what still gates.
+
+    Was `test_html_registration_matcher_remains_present`, which asserted
+    @reg_html carried `path *.html`. Operator 2026-08-04 opened every page shell
+    to anonymous visitors, so that matcher is gone and asserting its presence
+    would now pin the defect instead of the contract.
+
+    The property that still matters here — and the one this module exists for —
+    is the SPLIT: pages open, payloads gated. So assert both halves, because an
+    @open_html check alone would still pass if someone widened it to serve the
+    paid JSON too.
+    """
+    text = _read_caddyfile()
+    # Pages: served by @open_html, with no account check in the path.
+    assert re.search(r"(?m)^[ \t]*@open_html[ \t]*\{", text), "@open_html matcher missing"
+    open_block = _extract_block(text, "@open_html")
+    assert "path *.html" in open_block, "@open_html no longer claims *.html"
+    assert re.search(r"(?m)^[ \t]*@reg_html[ \t]*\{", text) is None, (
+        "@reg_html is back — HTML would be registration-gated again"
+    )
+    # ...and no account check inside the handler that serves them.
+    open_handler = _extract_block(text, "handle @open_html")
+    for wall in ("regwall/check", "paywall/check"):
+        assert wall not in open_handler, f"@open_html routes pages through {wall}"
+    # Payloads: the asset wall is untouched and still fail-closed.
+    assert "rewrite /api/regwall/check" in _extract_block(text, "handle @reg_asset")

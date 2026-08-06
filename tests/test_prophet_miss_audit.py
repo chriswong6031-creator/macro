@@ -438,6 +438,7 @@ _ARTIFACT_KEYS = {
     "top63_excluder_hist", "top63_excluder_family_hist", "top21_excluder_hist",
     "veto_leg_hist", "runner_sector_hist", "eligible_today_sector_hist",
     "conversion", "themes", "basket_misses", "name_score_scorecard",
+    "scan_tier",
     "priority_score_scorecard",
     "top63_runners", "top21_runners", "eligible_today", "degraded",
 }
@@ -1200,8 +1201,14 @@ def test_scorecard_measurement_never_raises_an_alarm(capsys, tmp_path, monkeypat
 def test_no_module_outside_the_runner_imports_the_audit():
     """ZERO AUTHORITY (masterplan W0): no rank/gate/size path may read this instrument."""
     root = Path(__file__).resolve().parent.parent
+    # The §4.5 scan lane is the SAME instrument over a wider seeing set, at the
+    # same tier (ops telemetry, zero authority) — so its runner and test join the
+    # allowlist rather than forking the excluder attribution into a second module.
+    # The guard keeps its teeth: no engine scoring path, app, admin or collector
+    # may still name this module.
     allowed = {"engine/prophet_miss_audit.py", "scripts/run_prophet_miss_audit.py",
                "tests/test_prophet_miss_audit.py",
+               "scripts/run_us_scan_tier.py", "tests/test_us_scan_tier.py",
                # W7: the priority_score_scorecard block reads the full-population grade
                # store, and its tests live beside that store's suite (which is wired into a
                # CI pack) rather than here. A TEST importing the audit is not an authority

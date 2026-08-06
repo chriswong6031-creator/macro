@@ -1259,8 +1259,8 @@
         {
           "ticker": "BLD",
           "added": "2023-05-09",
-          "removed": null,
-          "rationale": "TopBuild — insulation distribution/installation scale"
+          "removed": "2026-07-01",
+          "rationale": "TopBuild — insulation distribution/installation scale. DELISTED: acquired by QXO, merger completed 2026-07-01, NYSE trading suspended before the open that day; renamed QXO Insulation, LLC (SEC CIK 1633931 formerNames; Form 15-12G deregistration filed 2026-07-13). Last real session 2026-06-30. Holders received cash + QXO stock — there is NO successor ticker carrying BLD's price series, so the tape cannot resume."
         },
         {
           "ticker": "OC",

@@ -36,6 +36,10 @@
 <link rel="prefetch" href="desk_watch.js" as="script">
 <link rel="prefetch" href="time_machine.js" as="script">
 <link rel="prefetch" href="heatmap.js" as="script">
+{# Confluence view (6th rail view): subsectors.js is injected by the router when
+   #confluence first opens (LAZY map) — a stamped head link so vUrl() reads the ?v=
+   URL back and the injected tag reuses that immutable response. #}
+<link rel="prefetch" href="subsectors.js" as="script">
 <style>
   * { box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
@@ -583,6 +587,260 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
   .rvx-internals{grid-template-columns:1fr 1fr}
 }
 @media (max-width:560px){ .rvx-lanes{grid-template-columns:1fr} }
+</style>
+<style>
+  /* ══════════════════════════════════════════════════════════════════════════
+     CONFLUENCE VIEW (6th rail view) — the US subsector-confluence board, brought
+     from the standalone subsectors page and mounted here by the router
+     (subsectors.js writes group cards + tables into #sc-app).
+
+     The donor page's page-local <style> was authored for a page it owned outright:
+     it carries global resets (*, body, a) and scopes its own rules with
+     `body.page-subsectors`, neither of which survives the move. This page defines
+     .card / .pos / .neg differently and hosts five other rail views that must not
+     inherit any of it. So every rule below is re-anchored to #si-confluence — the
+     id lifts specificity above this page's bare-class rules INSIDE the view and
+     constrains it to nothing outside. The donor's resets are dropped (this page
+     owns them); its light-mode and zh overrides are carried through re-anchored,
+     not lost. Nothing is changed beyond the scope prefix. All five sc-* keyframes
+     pass through unrenamed — none collides here.
+     ══════════════════════════════════════════════════════════════════════════ */
+  #si-confluence { --sc-num:var(--font-mono); }
+  #si-confluence .sc-num, #si-confluence .num { font-family:var(--sc-num,var(--font-mono)); font-variant-numeric:tabular-nums; }
+  #si-confluence .wrap { padding:14px; }
+@media (min-width:1100px) {
+  #si-confluence .wrap { padding:16px max(28px,calc((100vw - 1580px)/2)); }
+}
+  #si-confluence .sc-top { margin:6px 2px 4px; }
+  #si-confluence .sc-kicker { display:flex; align-items:center; gap:9px; }
+  #si-confluence .sc-kicker h2 { font-size:23px; margin:0; font-weight:800; letter-spacing:-.02em; display:flex; align-items:center; gap:9px; }
+  #si-confluence .ic-svg { width:1em; height:1em; display:inline-block; flex:none; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; vertical-align:-.135em; }
+  #si-confluence .sc-kicker .sc-h1-ic { width:22px; height:22px; color:var(--info); stroke-width:1.7; filter:drop-shadow(0 0 12px color-mix(in srgb,var(--info) 55%,transparent)); }
+  #si-confluence .sc-h2-ic { width:17px; height:17px; color:var(--muted); stroke-width:1.7; }
+  #si-confluence .sc-s1 .sc-h2-ic, #si-confluence .sc-s2 .sc-h2-ic { color:var(--info); }
+  #si-confluence .sc-h3-ic { width:15px; height:15px; stroke-width:1.7; }
+  #si-confluence .sc-h3-ic.ic-run { color:var(--ink-up, var(--up)); }
+  #si-confluence .sc-h3-ic.ic-coil { color:var(--ink-info, var(--info)); }
+  #si-confluence .sc-search .sc-find-ic { width:14px; height:14px; color:var(--muted); }
+  #si-confluence .lc-filtered .lc-veto-ic { width:12px; height:12px; margin-right:2px; }
+  #si-confluence .nav-context-link .ic-svg { width:15px; height:15px; margin-right:1px; }
+  #si-confluence .sc-asof { color:var(--muted); font-size:12px; margin-left:auto; font-family:var(--sc-num); }
+  #si-confluence .sc-lede { color:var(--muted); font-size:12.5px; margin:5px 2px 0; max-width:82ch; line-height:1.5; }
+  #si-confluence .sc-lede b { color:var(--text); font-weight:650; }
+  #si-confluence .sc-tabs { display:flex; flex-wrap:wrap; gap:5px; margin:15px 2px 0; }
+  #si-confluence .sc-tab { display:flex; align-items:center; gap:7px; padding:8px 15px; cursor:pointer; font-weight:650; font-size:13px; color:var(--muted); background:var(--gbtn-bg); border:1px solid var(--gbtn-brd); border-radius:11px; transition:color .16s, border-color .16s, background .16s, transform .12s; }
+  #si-confluence .sc-tab:hover { color:var(--text); border-color:var(--gbtn-brd-hover); transform:translateY(-1px); }
+  #si-confluence .sc-tab.on { color:var(--text); background:color-mix(in srgb,var(--info) 15%,var(--panel)); border-color:color-mix(in srgb,var(--info) 50%,transparent); box-shadow:0 0 0 1px color-mix(in srgb,var(--info) 24%,transparent), 0 6px 18px -10px color-mix(in srgb,var(--info) 60%,transparent); }
+  #si-confluence .sc-tab .n { font-size:11px; font-weight:700; color:var(--muted); font-family:var(--sc-num); background:color-mix(in srgb,var(--text) 8%,transparent); padding:1px 6px; border-radius:6px; min-width:20px; text-align:center; }
+  #si-confluence .sc-tab.on .n { color:var(--info); background:color-mix(in srgb,var(--info) 16%,transparent); }
+  #si-confluence .star-badge { display:inline-flex; align-items:center; line-height:0; }
+  #si-confluence .star-badge .ic-svg { width:13px; height:13px; stroke-width:1.55; stroke:#e8b93c; fill:color-mix(in srgb,#e8b93c 20%,transparent); filter:drop-shadow(0 0 6px color-mix(in srgb,#e8b93c 45%,transparent)); }
+  #si-confluence .isle { position:relative; background:var(--glass-bg); border:1px solid var(--glass-brd); border-radius:18px; box-shadow:var(--glass-shadow); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); padding:18px 20px; }
+  #si-confluence .isle::before { content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; background:radial-gradient(120% 90% at 8% -10%, color-mix(in srgb,var(--isle-color,var(--info)) 12%,transparent), transparent 60%); }
+  #si-confluence .isle > * { position:relative; }
+  #si-confluence .sc-hero { --isle-color:var(--info); margin:16px 0 8px; padding:20px 22px 18px; overflow:hidden; }
+  #si-confluence .sc-hero::after { content:""; position:absolute; left:-30%; top:-60%; width:60%; height:180%; z-index:0; pointer-events:none; background:radial-gradient(closest-side, color-mix(in srgb,var(--isle-color) 22%,transparent), transparent 70%); opacity:.5; filter:blur(30px); animation:sc-underglow 6s ease-in-out infinite; }
+@keyframes sc-underglow { 0%,100%{opacity:.34;transform:translateX(0)} 50%{opacity:.6;transform:translateX(12px)} }
+  #si-confluence .sc-eyebrow { display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+  #si-confluence .sc-eyebrow .dot { width:8px; height:8px; border-radius:50%; background:var(--isle-color); flex-shrink:0; box-shadow:0 0 10px 2px color-mix(in srgb,var(--isle-color) 55%,transparent); animation:sc-beacon 3s ease-in-out infinite; }
+@keyframes sc-beacon { 0%,100%{opacity:.55} 50%{opacity:1} }
+  #si-confluence .sc-eyebrow .lbl { font-size:11px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--isle-color); }
+  #si-confluence .sc-eyebrow .backdrop { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  #si-confluence .bd-chip { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:650; padding:3px 9px; border-radius:999px; border:1px solid var(--line); background:color-mix(in srgb,var(--panel2) 60%,transparent); color:var(--muted); white-space:nowrap; }
+  #si-confluence .bd-chip b { color:var(--text); font-weight:750; }
+  #si-confluence .bd-chip .bd-ic { font-size:11px; }
+  #si-confluence .bd-chip.bd-riskon { color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  #si-confluence .bd-chip.bd-riskoff { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  #si-confluence .bd-chip.bd-mixed { color:var(--orange); border-color:color-mix(in srgb,var(--orange) 40%,transparent); }
+  #si-confluence .bd-chip .num { color:inherit; }
+  #si-confluence .sc-hero-grid { display:grid; grid-template-columns:auto 1fr; gap:22px; align-items:center; }
+@media (max-width:720px) {
+  #si-confluence .sc-hero-grid { grid-template-columns:1fr; gap:16px; }
+}
+  #si-confluence .sc-headline { text-align:center; padding:2px 10px 2px 2px; border-right:1px solid var(--line); }
+@media (max-width:720px) {
+  #si-confluence .sc-headline { border-right:none; border-bottom:1px solid var(--line); padding:0 0 12px; }
+}
+  #si-confluence .sc-headline .big { font-family:var(--sc-num); font-size:64px; line-height:.92; font-weight:800; letter-spacing:-.03em; color:var(--up); filter:drop-shadow(0 0 16px color-mix(in srgb,var(--up) 42%,transparent)); }
+  #si-confluence .sc-headline .big.zero { color:var(--muted); filter:none; }
+  #si-confluence .sc-headline .cap { font-size:10.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-top:3px; }
+  #si-confluence .sc-ribbon-wrap { min-width:0; }
+  #si-confluence .sc-ribbon-label { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px; }
+  #si-confluence .sc-ribbon-label .t { font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  #si-confluence .sc-ribbon-label .h { font-size:11px; color:var(--muted); font-family:var(--sc-num); }
+  #si-confluence .sc-ribbon { display:flex; width:100%; height:44px; border-radius:11px; overflow:hidden; border:1px solid var(--line); background:color-mix(in srgb,var(--panel2) 50%,transparent); }
+  #si-confluence .sc-seg { position:relative; min-width:2px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; color:#fff; overflow:hidden; transform-origin:left; animation:sc-seg-grow .7s cubic-bezier(.22,1,.36,1) backwards; }
+@keyframes sc-seg-grow { from{ transform:scaleX(0); opacity:.3 } to{ transform:scaleX(1); opacity:1 } }
+  #si-confluence .sc-seg .sc-seg-n { font-family:var(--sc-num); font-size:15px; font-weight:800; line-height:1; text-shadow:0 1px 3px rgba(0,0,0,.4); }
+  #si-confluence .sc-seg .sc-seg-t { font-size:8.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; opacity:.92; white-space:nowrap; text-shadow:0 1px 2px rgba(0,0,0,.4); }
+  #si-confluence .sc-seg.narrow .sc-seg-t { display:none; }
+  #si-confluence .sc-seg.tiny .sc-seg-n { font-size:12px; }
+  #si-confluence .sc-seg.entry { background:linear-gradient(180deg,var(--up),color-mix(in srgb,var(--up) 78%,#000)); box-shadow:inset 0 0 20px color-mix(in srgb,#fff 22%,transparent); }
+  #si-confluence .sc-seg.tailwind { background:linear-gradient(180deg,color-mix(in srgb,var(--up) 62%,var(--info)),color-mix(in srgb,var(--up) 44%,var(--info))); }
+  #si-confluence .sc-seg.neutral { background:color-mix(in srgb,var(--g-mid) 82%,var(--panel)); color:var(--muted); }
+  #si-confluence .sc-seg.late { background:linear-gradient(180deg,var(--orange),color-mix(in srgb,var(--orange) 78%,#000)); }
+  #si-confluence .sc-seg.headwind { background:linear-gradient(180deg,var(--down),color-mix(in srgb,var(--down) 76%,#000)); }
+  #si-confluence .sc-seg.entry, #si-confluence .sc-seg.headwind { position:relative; }
+  #si-confluence .sc-seg.entry::after, #si-confluence .sc-seg.headwind::after { content:""; position:absolute; inset:0; opacity:.0; background:linear-gradient(90deg,transparent,color-mix(in srgb,#fff 40%,transparent),transparent); animation:sc-sheen 4.5s ease-in-out infinite; }
+@keyframes sc-sheen { 0%,72%{ transform:translateX(-120%); opacity:0 } 82%{ opacity:.7 } 92%,100%{ transform:translateX(120%); opacity:0 } }
+  #si-confluence .sc-ribbon-legend { display:flex; gap:12px; flex-wrap:wrap; margin-top:8px; }
+  #si-confluence .sc-ribbon-legend span { font-size:10px; color:var(--muted); display:inline-flex; align-items:center; gap:5px; }
+  #si-confluence .sc-ribbon-legend i { width:9px; height:9px; border-radius:3px; display:inline-block; }
+  #si-confluence .sc-hero-verdict { margin-top:16px; font-size:13.5px; line-height:1.55; max-width:96ch; }
+  #si-confluence .sc-hero-verdict b { color:var(--text); font-weight:700; }
+  #si-confluence .sc-hero-verdict .accent-up { color:var(--up); font-weight:700; }
+  #si-confluence .sc-hero-verdict .accent-down { color:var(--down); font-weight:700; }
+  #si-confluence .sc-best { display:flex; align-items:flex-start; gap:9px; margin-top:13px; padding:11px 13px; border-radius:12px; background:color-mix(in srgb,var(--up) 9%,transparent); border:1px solid color-mix(in srgb,var(--up) 30%,transparent); }
+  #si-confluence .sc-best.none { background:color-mix(in srgb,var(--muted) 8%,transparent); border-color:var(--line); }
+  #si-confluence .sc-best .ar { color:var(--up); font-weight:800; flex-shrink:0; }
+  #si-confluence .sc-best.none .ar { color:var(--muted); }
+  #si-confluence .sc-best .bd { font-size:12.5px; line-height:1.5; }
+  #si-confluence .sc-best .bd .nm { font-weight:750; color:var(--text); }
+  #si-confluence .sc-best .bd .why { color:var(--muted); }
+  #si-confluence .sc-best a.nm:hover { color:var(--link); }
+  #si-confluence .sc-honesty { margin-top:14px; padding-top:11px; border-top:1px solid var(--line); color:var(--muted); font-size:11px; line-height:1.55; display:flex; gap:7px; align-items:baseline; }
+  #si-confluence .sc-honesty .num { color:var(--text); }
+  #si-confluence .sec { margin:26px 0 6px; }
+  #si-confluence .sec-head { display:flex; align-items:baseline; gap:9px; margin:0 2px 4px; }
+  #si-confluence .sec-head h2 { font-size:15.5px; font-weight:750; margin:0; display:flex; align-items:center; gap:8px; letter-spacing:-.01em; }
+  #si-confluence .sec-head .n { font-size:12px; font-weight:700; color:var(--muted); font-family:var(--sc-num); }
+  #si-confluence .sec .desc { color:var(--muted); font-size:11.5px; margin:0 2px 12px; max-width:94ch; line-height:1.5; }
+  #si-confluence .sc-board { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media (max-width:860px) {
+  #si-confluence .sc-board { grid-template-columns:1fr; }
+}
+  #si-confluence .sc-colhead { display:flex; align-items:center; gap:8px; margin:0 2px 9px; font-size:13px; font-weight:750; }
+  #si-confluence .sc-colhead .pip { width:9px; height:9px; border-radius:3px; }
+  #si-confluence .sc-colhead .pip.buy { background:var(--up); box-shadow:0 0 8px color-mix(in srgb,var(--up) 60%,transparent); }
+  #si-confluence .sc-colhead .pip.avoid { background:var(--down); box-shadow:0 0 8px color-mix(in srgb,var(--down) 60%,transparent); }
+  #si-confluence .sc-colhead .n { font-size:11.5px; color:var(--muted); font-family:var(--sc-num); font-weight:700; }
+  #si-confluence .gcards { display:flex; flex-direction:column; gap:9px; }
+  #si-confluence .gcard { display:block; position:relative; background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--line); border-radius:13px; padding:12px 14px; transition:border-color .15s, transform .12s, box-shadow .15s; animation:sc-rise .4s cubic-bezier(.22,1,.36,1) backwards; }
+  #si-confluence .gcard:hover { transform:translateY(-2px); border-color:color-mix(in srgb,var(--isle-color,var(--info)) 55%,transparent); box-shadow:0 10px 26px -14px color-mix(in srgb,var(--isle-color,var(--info)) 70%,transparent); }
+@keyframes sc-rise { from{ opacity:0; transform:translateY(8px) } to{ opacity:1; transform:none } }
+  #si-confluence .gcard .g-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  #si-confluence .gcard .g-nm { font-weight:750; font-size:14px; line-height:1.2; }
+  #si-confluence .gcard .g-sct { color:var(--muted); font-size:10px; margin-top:2px; text-transform:uppercase; letter-spacing:.04em; }
+  #si-confluence .gcard .g-row { display:flex; align-items:center; gap:6px; margin-top:9px; flex-wrap:wrap; }
+  #si-confluence .gcard .g-act { font-size:12px; line-height:1.45; margin-top:9px; color:var(--text); }
+  #si-confluence .gcard .g-act .lead { font-weight:700; }
+  #si-confluence .gcard .g-sig { color:var(--muted); font-size:11px; margin-top:5px; font-family:var(--sc-num); }
+  #si-confluence .gcard .g-fresh { color:var(--muted); font-size:11px; }
+  #si-confluence .tier { font-family:var(--sc-num); font-weight:800; font-size:11px; padding:2px 7px; border-radius:6px; letter-spacing:.02em; color:#fff; }
+  #si-confluence .tier.T1 { background:var(--up); }
+  #si-confluence .tier.T2 { background:#3da564; }
+  #si-confluence .tier.T3 { background:var(--info); }
+  #si-confluence .tier.T4 { background:#6b7cc4; }
+  #si-confluence .tier.none { background:var(--g-mid); color:var(--muted); }
+  html[data-lang="zh"] #si-confluence .tier.T2 { background:#d04545; }
+  #si-confluence .pill { font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:999px; border:1px solid var(--line); white-space:nowrap; }
+  #si-confluence .pill.buy { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,transparent); background:color-mix(in srgb,var(--up) 8%,transparent); }
+  #si-confluence .pill.avoid { color:var(--down); border-color:color-mix(in srgb,var(--down) 45%,transparent); background:color-mix(in srgb,var(--down) 7%,transparent); }
+  #si-confluence .pill.neutral { color:var(--muted); }
+  #si-confluence .pill.tactical, #si-confluence .pill.late { color:var(--orange); border-color:color-mix(in srgb,var(--orange) 45%,transparent); }
+  #si-confluence .pill.behavesas { color:var(--info); border-color:color-mix(in srgb,var(--info) 45%,transparent); background:color-mix(in srgb,var(--info) 8%,transparent); }
+  #si-confluence .pill.entry { color:var(--up); border-color:color-mix(in srgb,var(--up) 55%,transparent); background:color-mix(in srgb,var(--up) 12%,transparent); font-weight:800; }
+  #si-confluence .rel { display:inline-flex; align-items:center; gap:4px; font-size:10px; color:var(--muted); }
+  #si-confluence .rel i { width:7px; height:7px; border-radius:50%; display:inline-block; }
+  #si-confluence .rel.high i { background:var(--up); }
+  #si-confluence .rel.med i { background:var(--orange); }
+  #si-confluence .rel.low i { background:var(--muted); opacity:.6; }
+  #si-confluence table.sc-tbl { width:100%; border-collapse:collapse; font-size:12.5px; }
+  #si-confluence table.sc-tbl th { text-align:left; color:var(--muted); font-weight:650; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; padding:8px 10px; border-bottom:1px solid var(--line); cursor:pointer; white-space:nowrap; user-select:none; }
+  #si-confluence table.sc-tbl th.sortable:hover { color:var(--text); }
+  #si-confluence table.sc-tbl th .arr { opacity:.4; font-size:9px; }
+  #si-confluence table.sc-tbl th.sorted .arr { opacity:1; color:var(--info); }
+  #si-confluence table.sc-tbl td { padding:8px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  #si-confluence table.sc-tbl tbody tr { transition:background .12s; }
+  #si-confluence table.sc-tbl tbody tr:hover td { background:color-mix(in srgb,var(--text) 4%,transparent); }
+  #si-confluence .sc-tbl .tk { font-weight:750; font-family:var(--sc-num); }
+  #si-confluence .pos { color:var(--up); }
+  #si-confluence .neg { color:var(--down); }
+  #si-confluence .scbar { display:inline-block; height:6px; border-radius:3px; background:var(--up); vertical-align:middle; margin-left:6px; box-shadow:0 0 6px color-mix(in srgb,var(--up) 45%,transparent); }
+  #si-confluence .sc-tablecard { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:6px 4px 4px; overflow:hidden; }
+  #si-confluence .sc-search { display:flex; align-items:center; gap:8px; margin:6px 8px 8px; }
+  #si-confluence .sc-search input { flex:0 1 320px; background:var(--panel2); border:1px solid var(--line); border-radius:9px; color:var(--text); font:13px var(--font-ui); padding:7px 11px; outline:none; transition:border-color .15s; }
+  #si-confluence .sc-search input:focus { border-color:color-mix(in srgb,var(--info) 55%,transparent); }
+  #si-confluence .sc-search .cnt { color:var(--muted); font-size:11px; font-family:var(--sc-num); margin-left:auto; }
+  #si-confluence .tbl-scroll { overflow-x:auto; }
+  #si-confluence .lead-cols { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+@media (max-width:820px) {
+  #si-confluence .lead-cols { grid-template-columns:1fr; }
+}
+  #si-confluence .lcards { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:9px; }
+  #si-confluence .lcard { border:1px solid var(--line); border-left:3px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--panel); transition:transform .12s, border-color .15s; animation:sc-rise .4s cubic-bezier(.22,1,.36,1) backwards; }
+  #si-confluence .lcard:hover { transform:translateY(-1px); }
+  #si-confluence .lcard .lc-top { display:flex; justify-content:space-between; align-items:center; gap:6px; }
+  #si-confluence .lcard .lc-nm { font-weight:700; font-size:12.5px; line-height:1.2; }
+  #si-confluence .lcard .lc-sub { color:var(--muted); font-size:9.5px; text-transform:uppercase; letter-spacing:.04em; margin-top:2px; }
+  #si-confluence .lcard .lc-row { display:flex; gap:5px; align-items:center; margin-top:8px; flex-wrap:wrap; }
+  #si-confluence .lcard .lc-meta { color:var(--muted); font-size:10.5px; margin-top:6px; font-family:var(--sc-num); }
+  #si-confluence .lcard .lc-tf { font-size:10.5px; margin-top:6px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-family:var(--sc-num); }
+  #si-confluence .lcard .lc-tf .tfc { font-weight:700; }
+  #si-confluence .lc-filtered { color:var(--muted); font-size:10.5px; margin-top:10px; line-height:1.45; padding-top:9px; border-top:1px dashed var(--line); }
+  #si-confluence .lcard .lc-macro { color:var(--down); font-size:10px; margin-top:6px; font-weight:600; }
+  #si-confluence .qp { font-family:var(--sc-num); font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; border:1px solid; }
+  #si-confluence .secstrip { display:grid; grid-template-columns:repeat(auto-fill,minmax(158px,1fr)); gap:8px; }
+  #si-confluence .secstrip .s { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:9px 11px; transition:transform .12s, border-color .15s; }
+  #si-confluence .secstrip a.s:hover { transform:translateY(-1px); border-color:color-mix(in srgb,var(--info) 45%,transparent); }
+  #si-confluence .secstrip .s .snm { font-weight:700; font-size:12px; }
+  #si-confluence .ni-ew-chip { display:inline-flex; flex-wrap:wrap; align-items:center; gap:4px 10px; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:7px 13px; font-size:12.5px; margin:4px 0 10px; font-family:var(--sc-num); }
+  #si-confluence .empty { color:var(--muted); padding:16px; background:color-mix(in srgb,var(--panel) 60%,transparent); border:1px dashed var(--line); border-radius:12px; font-size:12.5px; }
+  #si-confluence .sc-more { margin:10px 2px 0; font:650 12px var(--font-ui); color:var(--link); background:var(--gbtn-bg); border:1px solid var(--gbtn-brd); border-radius:9px; padding:6px 14px; cursor:pointer; transition:border-color .15s, background .15s; }
+  #si-confluence .sc-more:hover { border-color:var(--gbtn-brd-hover); background:var(--gbtn-bg-hover); }
+  #si-confluence .sc-collapsed .sc-xtra { display:none; }
+  #si-confluence .sc-foot { color:var(--muted); font-size:11px; margin:30px 2px 0; line-height:1.6; max-width:108ch; border-top:1px solid var(--line); padding-top:14px; }
+  #si-confluence .sc-foot a { color:var(--link); }
+  #si-confluence .sc-stagger { opacity:0; transform:translateY(10px); animation:sc-rise .5s cubic-bezier(.22,1,.36,1) forwards; }
+  #si-confluence .sc-s1 { animation-delay:.04s }
+  #si-confluence .sc-s2 { animation-delay:.10s }
+  #si-confluence .sc-s3 { animation-delay:.16s }
+  #si-confluence .sc-s4 { animation-delay:.22s }
+  #si-confluence .sc-s5 { animation-delay:.28s }
+  #si-confluence .sc-s6 { animation-delay:.34s }
+@media (prefers-reduced-motion:reduce) {
+  #si-confluence .sc-hero::after, #si-confluence .sc-eyebrow .dot { animation:none !important; }
+  #si-confluence .sc-seg, #si-confluence .gcard, #si-confluence .lcard, #si-confluence .sc-stagger { animation:none !important; opacity:1 !important; transform:none !important; }
+  #si-confluence .sc-seg.entry::after, #si-confluence .sc-seg.headwind::after { animation:none !important; }
+}
+  html[data-theme="light"] #si-confluence { background:#e8ebf1; --sc-l-buy:#1f9d55; --sc-l-sell:#c0453e; }
+  html[data-theme="light"][data-lang="zh"] #si-confluence { --sc-l-buy:#c0453e; --sc-l-sell:#1f9d55; }
+  html[data-theme="light"] #si-confluence .isle, html[data-theme="light"] #si-confluence .sc-tablecard { background-color:#fff; border-color:#dde2ea; box-shadow:0 1px 2px rgba(23,32,55,.05), 0 8px 24px -12px rgba(23,32,55,.10); }
+  html[data-theme="light"] #si-confluence .sc-hero { background-image:linear-gradient(90deg, color-mix(in srgb,var(--info) 88%,#fff) 0%, color-mix(in srgb,var(--info) 42%,#fff) 46%, transparent 92%); background-repeat:no-repeat; background-size:100% 2px; background-position:0 0; background-origin:border-box; }
+  html[data-theme="light"] #si-confluence .isle::before { background:radial-gradient(120% 90% at 8% -10%, color-mix(in srgb,var(--info) 5%,transparent), transparent 62%); }
+  html[data-theme="light"] #si-confluence .sc-hero::after { background:radial-gradient(closest-side, color-mix(in srgb,var(--info) 6%,transparent), transparent 70%); opacity:1; filter:blur(24px); }
+  html[data-theme="light"] #si-confluence .sc-headline { border-right-color:#e3e8f0; }
+@media (max-width:720px) {
+  html[data-theme="light"] #si-confluence .sc-headline { border-bottom-color:#e3e8f0; }
+}
+  html[data-theme="light"] #si-confluence .sc-honesty { border-top-color:#e3e8f0; }
+  html[data-theme="light"] #si-confluence .bd-chip { background:#f6f7fa; border-color:#dde2ea; }
+  html[data-theme="light"] #si-confluence .sc-ribbon { background:#edf0f5; border-color:#dde2ea; }
+  html[data-theme="light"] #si-confluence .sc-seg { color:#fff; }
+  html[data-theme="light"] #si-confluence .sc-seg + .sc-seg { box-shadow:-1px 0 0 0 #fff; }
+  html[data-theme="light"] #si-confluence .sc-seg.entry { background:var(--sc-l-buy); box-shadow:none; }
+  html[data-theme="light"] #si-confluence .sc-seg.tailwind { background:color-mix(in srgb,var(--up) 55%,var(--info)); }
+  html[data-theme="light"] #si-confluence .sc-seg.late { background:#b07a10; }
+  html[data-theme="light"] #si-confluence .sc-seg.headwind { background:var(--sc-l-sell); }
+  html[data-theme="light"] #si-confluence .sc-seg.neutral { background:#aeb6c4; color:#3c4457; }
+  html[data-theme="light"] #si-confluence .sc-seg.neutral .sc-seg-n, html[data-theme="light"] #si-confluence .sc-seg.neutral .sc-seg-t { text-shadow:none; }
+  html[data-theme="light"] #si-confluence .sc-ribbon-legend i { box-shadow:inset 0 0 0 1px rgba(23,32,55,.16); }
+  html[data-theme="light"] #si-confluence .sc-best { background:color-mix(in srgb,var(--sc-l-buy) 6%,#fff); border-color:color-mix(in srgb,var(--sc-l-buy) 25%,#dde2ea); border-left:3px solid var(--sc-l-buy); }
+  html[data-theme="light"] #si-confluence .sc-best.none { background:#f6f7fa; border-color:#dde2ea; border-left-color:#c4cbd7; }
+  html[data-theme="light"] #si-confluence .sc-board > .sc-col { padding:12px 12px 14px; border-radius:15px; border:1px solid #dde2ea; }
+  html[data-theme="light"] #si-confluence .sc-board > .sc-col:first-child { background:color-mix(in srgb,var(--sc-l-buy) 3%,#fff); border-color:color-mix(in srgb,var(--sc-l-buy) 15%,#dde2ea); }
+  html[data-theme="light"] #si-confluence .sc-board > .sc-col:last-child { background:color-mix(in srgb,var(--sc-l-sell) 3%,#fff); border-color:color-mix(in srgb,var(--sc-l-sell) 15%,#dde2ea); }
+  html[data-theme="light"] #si-confluence .gcard, html[data-theme="light"] #si-confluence .lcard, html[data-theme="light"] #si-confluence .secstrip .s, html[data-theme="light"] #si-confluence .ni-ew-chip { background:#fff; border-color:#e3e8f0; box-shadow:0 1px 2px rgba(23,32,55,.05); }
+  html[data-theme="light"] #si-confluence .gcard:hover, html[data-theme="light"] #si-confluence .lcard:hover { box-shadow:0 6px 18px -10px rgba(23,32,55,.28); }
+  html[data-theme="light"] #si-confluence .empty { background:#f6f7fa; border-color:#dde2ea; color:var(--muted); }
+  html[data-theme="light"] #si-confluence .sc-search input { background:#f6f7fa; border-color:#dde2ea; }
+  html[data-theme="light"] #si-confluence table.sc-tbl tbody tr:hover td { background:#f4f6fa; }
+  html[data-theme="light"] #si-confluence :is(.qp, #si-confluence .tfc, #si-confluence .g-act, #si-confluence .g-sig, #si-confluence .lc-meta, #si-confluence .lc-macro, #si-confluence .pos, #si-confluence .neg, #si-confluence .pill, #si-confluence .rel, #si-confluence .sc-hero-verdict, #si-confluence .sc-best .bd, #si-confluence .bd-chip) { --up:var(--ink-up); --down:var(--ink-down); --info:var(--ink-info); --orange:var(--ink-orange); --warn:var(--ink-warn); }
+  html[data-theme="light"] #si-confluence .lc-macro { color:var(--ink-down, var(--down)); }
+  html[data-theme="light"] #si-confluence .pill.neutral { color:var(--muted); border-color:#dde2ea; }
+  html[data-theme="light"] #si-confluence .tier.none { background:#c4cbd7; color:#2e3950; }
+  html[data-theme="light"] #si-confluence .sc-kicker .sc-h1-ic { filter:none; }
+  html[data-theme="light"] #si-confluence .star-badge .ic-svg { stroke:#a8790f; fill:color-mix(in srgb,#e8b93c 25%,#fff); filter:none; }
 </style>
 <link rel="stylesheet" href="macro-desk.css?v=e46e15d5">
 <style>/* ── transplanted sector_central styles ── */
@@ -1399,8 +1657,18 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
     <a class="si-view-btn" data-view="moving" href="#moving"><span class="si-vb-g dash-icon submenu-icon-rotation" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">What&#39;s Moving</span><span class="l-zh">正在轮动</span></span></a>
     <a class="si-view-btn" data-view="money" href="#money"><span class="si-vb-g dash-icon submenu-icon-flow" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Money &amp; Breadth</span><span class="l-zh">资金与广度</span></span></a>
     <a class="si-view-btn" data-view="explore" href="#explore"><span class="si-vb-g dash-icon dash-icon-search" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Explore</span><span class="l-zh">深入探索</span></span></a>
-    {# the funnel exit the retired rail carried — a link, never a sixth view #}
-    <a class="si-side-out" href="subsectors.html"><span class="si-vb-g dash-icon submenu-icon-confluence" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Stock entry funnel →</span><span class="l-zh">选股漏斗 →</span></span></a>
+    {# 6th rail view — US parity with the China desk's #confluence (#4637), which
+       deferred this deliberately ("the US page has no equivalent rail view yet").
+       Same .si-view-btn idiom as the five above; glyph is the estate's masked
+       confluence icon, and ZH reuses the estate's established 子行业汇聚 so the rail,
+       the view's own hero and both global-nav rows read identically. #}
+    <a class="si-view-btn" data-view="confluence" href="#confluence"><span class="si-vb-g dash-icon submenu-icon-confluence" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Confluence</span><span class="l-zh">子行业汇聚</span></span></a>
+    {# The .si-side-out "Stock entry funnel →" exit link stood here, and its own comment
+       read "a link, never a sixth view". It is a sixth view now, so the link became a
+       second rail entry to the SAME content — wearing the SAME confluence glyph, one row
+       below it, pointing off-page. Removed rather than retargeted: #confluence is already
+       the button directly above. This is the move #4637 made on the China desk, whose
+       test still pins it ("the old funnel exit LINK survived"). #}
     <div class="si-side-foot">
       <span id="si-side-asof"></span>
       <span id="si-side-grade"></span>
@@ -1894,18 +2162,16 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
 {%- if _vr_l.strength and _vr_l.strength[0] and _vr_l.strength[0].name %} data-to-en="{{ _vr_l.strength[0].name | e }}" data-to-zh="{{ (_vr_l.strength[0].name_zh or _vr_l.strength[0].name) | e }}"{% endif %}
 {%- endif %}></p>
 
-  {# ══ ACT BOARD (revamp) — the shortlist, by action. Filled by renderActBoard(). ══ #}
+  {# ══ ACT BOARD — server-rendered 5-lane sectors+themes board, transplanted from
+     us_stocks.html #action-board (assembled by build_site.action_board(), persisted to
+     basketdata/action_board.json, read fail-soft by build_sector_central). Replaces the old
+     client-rendered 4-lane themes-only board (renderActBoard, removed). #grader is retained:
+     its self-grader scorecard JS reads D.grader independently of the board. ══ #}
   <section class="rvx-sec rvx-reveal" id="actnow-section" style="animation-delay:.05s">
-    <div class="rvx-sec-h">
-      <h2>{{ t('Do this now', '现在该做什么') }}</h2>
-      <span class="q">{{ t('— the shortlist, by action', '— 按操作分类的清单') }}</span>
-      <a class="r" href="us_stocks.html#action-board">{{ t('Full board incl. sectors →', '含板块的完整操作板 →') }}</a>
-    </div>
-    <p class="rvx-sec-sub">{{ t('Every theme sorts into one action. When the honest answer is “wait,” it says so. Click a theme to see its stocks.', '每个主题归入一个操作。若答案是「等待」，也会如实标注。点击主题查看成分股。') }}</p>
-    <div id="actnow" class="rvx-lanes"></div>
-    <div id="actnow-footnote" class="rvx-actfoot"></div>
+    {% if action_board %}{% include "_us_act_now_board.html.j2" %}{% else %}<p class="rvx-sec-sub muted">{{ t('Refreshing the action board — check back after tonight’s close.', '正在刷新操作板 — 今晚收盘后再查看。') }}</p>{% endif %}
     <div class="rvx-sec-sub si-lane-foot">{{ t('Lanes are the only gated, graded calls on this page — everything below is context, measured nightly.', '操作清单是本页唯一的门控与自评分判断 — 下方内容均为背景信息，每晚计算。') }}
-      <a href="subsectors.html" style="color:var(--link)">{{ t('Drill to stocks →', '下钻到个股 →') }}</a></div>
+      {# the funnel it drills into is the #confluence view on this page now, not a page away #}
+      <a href="#confluence" style="color:var(--link)">{{ t('Drill to stocks →', '下钻到个股 →') }}</a></div>
     <div id="grader" class="grader grader-inboard" hidden></div>
   </section>
 
@@ -2174,6 +2440,45 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
   {% endif %}
 
   </section>{# /si-view explore #}
+
+  <section class="si-view" data-view="confluence" id="si-confluence">
+  {# Subsector Confluence — 6th rail view, the US half of #4637's China parity note.
+     Hero, index tabs and #sc-app mount brought from the standalone subsectors page,
+     which becomes a redirect stub here: the "SEO twin" rationale #4637 kept for China
+     does not hold on this estate — the page 302s Googlebot to sign-in and is absent
+     from sitemap.xml, so there is no crawlable content to preserve, only internal
+     links, and a stub serves those. The board is rendered by subsectors.js, injected
+     on first #confluence open (LAZY map); it writes innerHTML only and measures no
+     width, so unlike the cycle/rotation organs it is safe to mount without a
+     laid-out box. Its page-local CSS is rescoped under #si-confluence in the head.
+     The lede uses direct l-en/l-zh spans because this page's t() escapes, so the <b>
+     emphasis has to be literal template HTML — matching the page footer's idiom. #}
+    <div class="sc-top">
+      <div class="sc-kicker">
+        <h2><span class="sc-h1-ic dash-icon submenu-icon-confluence" aria-hidden="true"></span> {{ t('Subsector Confluence', '子行业汇聚') }}</h2>
+        <div class="sc-asof" id="sc-asof"></div>
+      </div>
+      <p class="sc-lede"><span class="l-en">Every sub-industry as its own basket, scored for entry <b>timing</b>. The read below is answer-first: the rotation backdrop, which groups just turned <b>buyable</b>, which are <b>late or fading</b>, and the stocks firing inside a group with the wind at its back. A timing map — <b>confirm before acting</b>.</span><span class="l-zh">将每个子行业视作独立篮子，按入场<b>时机</b>评分。下方读数以结论优先：轮动背景、哪些子行业刚转为<b>可买</b>、哪些已<b>偏晚或转弱</b>，以及在顺风子行业中触发的个股。择时图——<b>行动前请确认</b>。</span></p>
+    </div>
+
+    <div class="sc-tabs" role="tablist">
+      <div class="sc-tab on" data-tab="subsectors" role="tab">{{ t('S&amp;P 500', '标普500') }} <span class="n" id="tabn-sub"></span></div>
+      <div class="sc-tab" data-tab="nasdaq" role="tab">{{ t('Nasdaq-100', '纳斯达克100') }} <span class="n" id="tabn-ndx"></span></div>
+      <div class="sc-tab" data-tab="russell" role="tab">{{ t('Russell-2000', '罗素2000') }} <span class="n" id="tabn-rut"></span></div>
+      <div class="sc-tab" data-tab="baskets" role="tab">{{ t('Thematic Baskets', '主题篮子') }} <span class="n" id="tabn-bas"></span></div>
+    </div>
+
+    <div id="sc-app"><div class="empty">{{ t('Loading…', '加载中…') }}</div></div>
+
+    <div class="sc-foot">
+      {{ t('Every subsector is an equal-weight basket of its members, scored on a 3-day cadence for entry timing — not a buy list. Tiers rank freshness of the confluence cross (T1 freshest).', '每个子行业为其成分的等权篮子，按 3 日周期为入场时机评分——并非买入清单。层级衡量汇聚交叉的新鲜度（T1 最新）。') }}
+      {# the donor pointed at sector_central.html#si-movement from a different page; in-page
+         that is the same rail, so it is a view switch rather than a navigation. #}
+      <a href="#moving">{{ t('See the rotation map', '查看轮动图') }}</a>
+      {{ t('for where each group sits in the leading / lagging cycle.', '了解各组在领先/落后周期中的位置。') }}
+      · {{ t('Built', '生成于') }} <span class="num">{{ generated_utc }}</span>
+    </div>
+  </section>{# /si-view confluence #}
 
   <footer>
     {{ t(
@@ -2545,135 +2850,6 @@ function renderVerdictHero(){
     im.innerHTML=(r20!=null?'<span class="rvx-num rvx-up">'+fmtPct(r20)+'</span> 20d':'')+(v!=null&&v>0?' · '+(zh?'快速上行':'climbing fast'):''); } }
 }
 
-// ── Act board: buy / wait / take-profits / avoid, from THEME.act_now ──
-const RVX_MOMO={'accelerating':['accelerating','加速'],'decelerating':['decelerating','减速'],'downtrend across timeframes':['downtrend','多周期下行'],'all timeframes aligned up':['aligned up','多周期同向'],'unconfirmed turn vs the bigger trend':['unconfirmed turn','趋势未确认']};
-function actRow(x){
-  const th=themeById(x.id); const r20=th?relPct(th,'20d'):null;
-  let sub;
-  if(x.reason_en){ sub=L(esc(x.reason_en),esc(x.reason_zh||x.reason_en)); }
-  else { const mo=(x.reasons&&x.reasons[1])||''; const m=RVX_MOMO[mo];
-    sub=(r20!=null?'<span class="rvx-num">'+fmtPct(r20)+'</span> '+L('20d vs S&P','20日相对标普'):'')+(m?' · '+L(m[0],m[1]):(mo?' · '+esc(mo):'')); }
-  const ern=x.near_earnings_count?' <span class="ern">· '+L(x.near_earnings_count+' report soon',x.near_earnings_count+'家将公布')+'</span>':'';
-  const tick=x.clean_entry?'<span class="tick">✓</span>':'';
-  const ret=r20!=null?'<span class="tret '+(r20>=0?'rvx-up':'rvx-dn')+'">'+fmtPct(r20)+'</span>':'';
-  const kchip=String(x.id||'').indexOf('us_sector_')===0?'<span class="si-kind">'+L('SECTOR EW','等权板块')+'</span>':'';
-  const conf=x._conflicted?'<span class="mlcchip">'+L('conflicted','观点冲突')+'</span>':'';
-  // W-A FT-R1 dual read: this row is on reduce/avoid AND on the bottoming lane.
-  // Both rows are kept as-is — never merged, never re-ranked — the chip just tells
-  // the reader the two lenses disagree. (CN precedent: china_act_now.py dual_chip.)
-  const dual=(!x._conflicted&&BOT_DUAL.has(String(x.id)))?'<span class="mlcchip" data-tip-en="The longer trend still says reduce, but the cycle read shows a low forming. This name is also on Bottoming watch — both reads are shown so you can see the disagreement." data-tip-zh="长期趋势仍建议减仓，但周期读数显示底部正在形成。该名称同时出现在筑底观察栏——两种判读并列显示，便于看清分歧。">'+L('may be bottoming','或正筑底')+'</span>':'';
-  // W-A graduation gap: the cycle engine has moved this name PAST Trough (so it has
-  // left Bottoming watch) while the momentum label still holds it on reduce/avoid
-  // until its 20d relative flips positive — between those two events it sits on no
-  // lane. Deliberately NOT the FT-R1 chip: that chip's copy says "also on Bottoming
-  // watch", which is false here. Separate id set, separate sentence; the two are
-  // disjoint by construction (phase is exclusive) and gated so a row gets one chip.
-  const recov=(!x._conflicted&&!BOT_DUAL.has(String(x.id))&&BOT_REC.has(String(x.id)))?'<span class="mlcchip" data-tip-en="'+esc(BOT_REC_TIP_EN)+'" data-tip-zh="'+esc(BOT_REC_TIP_ZH)+'">'+L(esc(BOT_REC_EN),esc(BOT_REC_ZH))+'</span>':'';
-  return '<a class="rvx-trow" data-mlc-bid="'+esc(x.id)+'" href="basket/'+encodeURIComponent(x.id)+'.html"><span class="tnm">'+L(esc(x.name),esc(x.name_zh))+kchip+conf+dual+recov+'<span class="rsn">'+sub+ern+'</span></span>'+tick+ret+'</a>';
-}
-// W-A bottoming-watch row. Deliberately NOT actRow: these come from the cycle
-// forward log, not from a theme score. Two source fields are payload-only and are
-// never rendered here — `signal` ("BUY") and `timing_state` (whose vocabulary
-// includes the literal "FRESH BUY") — because this lane is a WATCH surface and
-// must carry no buy verb. The cycle organ's registered output is instead quoted
-// as the fixed phrase below, with its trend-gate conflict printed beside it.
-function botRow(x){
-  const pos=(x.pos==null)?'':L('pos ','位置 ')+'<span class="rvx-num">'+Math.round(x.pos)+'</span>/100';
-  const turn=(x.cycle_signal==='BUY')?L('cycle turn signal — watch only','周期转折信号——仅观察'):'';
-  const l1=[pos,turn].filter(Boolean).join(' · ');
-  // Second line only when the cycle turned but the trend gate is shut (D10).
-  const l2=x.gate_conflict?'<span class="rsn">'+L('below 200-day trend — gate shut','低于200日趋势——闸门关闭')+'</span>':'';
-  const slope=(x.osc_slope==null)?'':'<span class="tret rvx-up">↗ '+Number(x.osc_slope).toFixed(1)+'</span>';
-  const href=x.href?esc(x.href):'';
-  const open=href?'<a class="rvx-trow" href="'+href+'">':'<div class="rvx-trow">';
-  const close=href?'</a>':'</div>';
-  return open+'<span class="tnm">'+L(esc(x.name),esc(x.name_zh||x.name))+'<span class="rsn">'+l1+'</span>'+l2+'</span>'+slope+close;
-}
-function actLane(cls,ic,head,desc,arr,opts){
-  const o=opts||{}, CAP=o.cap||5, shown=arr.slice(0,CAP);
-  const empty=o.empty||L('Nothing here right now.','暂无。');
-  const rowFn=o.row||actRow;
-  const rows=shown.length?shown.map(rowFn).join(''):'<div class="rvx-lane-desc" style="min-height:0;padding-top:8px">'+empty+'</div>';
-  const more=(!o.noMore&&arr.length>CAP)?'<a class="more" href="us_stocks.html#action-board">+ '+(arr.length-CAP)+' '+L('more →','更多 →')+'</a>':'';
-  return '<div class="rvx-lane '+cls+'"><div class="rvx-lane-h"><span class="ic">'+ic+'</span>'+head+'<span class="ct">'+arr.length+'</span></div><div class="rvx-lane-desc">'+desc+'</div>'+rows+more+'</div>';
-}
-// W-A: ids carried on BOTH the reduce/avoid lane and the bottoming lane (FT-R1).
-// Populated per render from act_now.dual_read_ids; actRow reads it for the chip.
-let BOT_DUAL=new Set();
-// W-A graduation gap: reduce/avoid ids the cycle organ reads as recovering off a
-// low, which have already left the bottoming lane. Disjoint from BOT_DUAL. The
-// chip's words ship from the engine (bottoming_authority) so the page cannot
-// drift from the measured basis; an older artifact without them renders no chip.
-let BOT_REC=new Set(), BOT_REC_EN='', BOT_REC_ZH='', BOT_REC_TIP_EN='', BOT_REC_TIP_ZH='';
-function renderActBoard(){
-  const el=document.getElementById('actnow'); if(!el) return;
-  const a=(THEME&&THEME.act_now)||{};
-  // MLC-W2b (#4241, ported): engine-demoted conflicted items ride the wait lane, tagged so
-  // actRow can mark them — their .rsn subline already carries the engine's reason text.
-  const conflicted=(a.conflicted||[]).map(x=>Object.assign({},x,{_conflicted:true}));
-  const buy=a.buy||[], wait=(a.add_on_pullback||[]).concat(conflicted);
-  const reduce=a.reduce||[];
-  const isTrim=x=>(x.action==='trim'||x.action_en==='TRIM');
-  const trim=reduce.filter(isTrim), avoid=reduce.filter(x=>!isTrim(x));
-  // W-A bottoming watch — display tier, read straight off the cycle forward log.
-  // Absent key (older artifact) → empty lane + honest null, never a crash.
-  const bot=a.bottoming_watch||[];
-  BOT_DUAL=new Set((a.dual_read_ids||[]).map(String));
-  const _ba=a.bottoming_authority||{};
-  BOT_REC_EN=_ba.recovering_chip_en||''; BOT_REC_ZH=_ba.recovering_chip_zh||BOT_REC_EN;
-  BOT_REC_TIP_EN=_ba.recovering_tip_en||''; BOT_REC_TIP_ZH=_ba.recovering_tip_zh||BOT_REC_TIP_EN;
-  // No engine-shipped copy → no chip, rather than a blank one.
-  BOT_REC=BOT_REC_EN?new Set((a.recovering_ids||[]).map(String)):new Set();
-  el.innerHTML=actLane('buy','🟢',L('Buy now','立即买入'),L('In favour and a clean entry is set up right now.','看好且当前有干净入场点。'),buy)
-    +actLane('wait','🔵',L('Wait for a pullback','等待回调'),L('In favour, but stretched — no clean entry yet.','看好但已拉伸 — 暂无干净入场点。'),wait)
-    +actLane('trim','🟠',L('Take profits','止盈'),L('Was leading — momentum now rolling over.','曾领涨 — 动能正在回落。'),trim)
-    +actLane('avoid','⚪',L('Reduce / avoid','减仓 / 回避'),L('Weak and getting weaker — stand aside.','弱且转弱 — 观望。'),avoid)
-    +actLane('bottom','🔵',L('Bottoming watch','筑底观察'),L('cycle lows forming — watch, don\'t chase','周期底部形成中——观察，勿追'),bot,
-      {row:botRow,cap:8,noMore:true,empty:L('no basing candidates tonight','今晚无筑底候选')});
-  const fn=document.getElementById('actnow-footnote');
-  if(fn){ const parts=[];
-    if(conflicted.some(x=>x.sector_stance)) parts.push(L('Conflicted = in favour on its own read, but its sector view says Reduce.','观点冲突 = 自身信号看好，但所属板块评级为减配。'));
-    // Honest-null disclosure for the bottoming lane (G0.4) — the engine ships the
-    // wording so the page cannot drift from the measured basis.
-    const ba=a.bottoming_authority;
-    if(bot.length&&ba&&ba.null_disclosure_en) parts.push(L(esc(ba.null_disclosure_en),esc(ba.null_disclosure_zh||ba.null_disclosure_en)));
-    // Graduation-gap disclosure — only when a row actually carries the chip, so
-    // the footnote never explains a chip that is not on the page.
-    if(BOT_REC.size&&ba&&ba.recovering_disclosure_en) parts.push(L(esc(ba.recovering_disclosure_en),esc(ba.recovering_disclosure_zh||ba.recovering_disclosure_en)));
-    fn.innerHTML=parts.join(' '); }
-  try{ renderStanceChips(); }catch(e){}
-}
-// MLC-W2b (#4241, ported): cross-surface stance chips on act-board rows. Fetches
-// mlcdata/stance_matrix.json once (cached so langchange re-renders re-chip without
-// refetching); rows whose four reads disagree get a "mixed reads" / "split view" chip
-// with the matrix tip as the hover receipt. Rows already carrying the conflicted marker
-// keep it (one chip per row). Fail-silent. (Port fix vs #4241: chip/footnote use
-// innerHTML — L() returns an HTML dual-span string; textContent would print raw markup.)
-let MLC_MX=null, MLC_MX_REQ=null;
-function renderStanceChips(){
-  const apply=()=>{ if(!MLC_MX||!MLC_MX.rows) return;
-    const byId={}; MLC_MX.rows.forEach(r=>{ if(r&&r.id) byId[r.id]=r; });
-    document.querySelectorAll('#actnow .rvx-trow[data-mlc-bid]').forEach(row=>{
-      if(row.querySelector('.mlcchip')) return;
-      const m=byId[row.getAttribute('data-mlc-bid')];
-      if(!m||!m.agreement||(m.agreement!=='mixed'&&m.agreement!=='split')) return;
-      const chip=document.createElement('span');
-      chip.className='mlcchip';
-      chip.setAttribute('data-tip-en',m.tip_en||'');
-      chip.setAttribute('data-tip-zh',m.tip_zh||'');
-      chip.innerHTML=m.agreement==='split'?L('split view','严重分歧'):L('mixed reads','观点分歧');
-      const nm=row.querySelector('.tnm');
-      if(nm){ nm.insertBefore(chip,nm.querySelector('.rsn')); } else row.appendChild(chip);
-    });
-  };
-  if(MLC_MX){ apply(); return; }
-  if(!MLC_MX_REQ){
-    MLC_MX_REQ=fetch('mlcdata/stance_matrix.json').then(r=>r.ok?r.json():null)
-      .then(d=>{ MLC_MX=d; }).catch(function(){/* absent file or fetch error — no chip */});
-  }
-  MLC_MX_REQ.then(apply).catch(function(){});
-}
-
 // ── Rotation map (signature) + linked board — one source, many views ──
 const RVX_Q={lead:{c:'var(--rvx-lead)',en:'Leading',zh:'领先',se:'Hold / add',sz:'持有/加仓'},
   weak:{c:'var(--rvx-weak)',en:'Weakening',zh:'走弱',se:'Take profits',sz:'止盈'},
@@ -2795,7 +2971,6 @@ function renderInternals(){
 function boot(){
   const ao=document.getElementById('asof'); if(ao) ao.textContent=BASKETS.as_of||'—';
   try{ renderVerdictHero(); }catch(e){ console.warn('rvx hero',e); }
-  try{ renderActBoard(); }catch(e){ console.warn('rvx act',e); }
   try{ renderRotationMap(); renderRotBoard(); wireRotFilters(); }catch(e){ console.warn('rvx map',e); }
   try{ renderInternals(); }catch(e){ console.warn('rvx internals',e); }
   renderTabs(document.getElementById('btbl-mode'), TBL_MODES, btblMode, v=>{ btblMode=v; localStorage.setItem('fw-btbl-mode',v); renderBTableCats(); renderBTable(); });
@@ -2808,7 +2983,7 @@ function boot(){
   initChartDefaults();
   renderBTable(); renderChart();
   if(location.hash.startsWith('#theme-')) resolveThemeHash();
-  const rvxRerender=()=>{ try{ renderVerdictHero(); renderActBoard(); renderRotationMap(); renderRotBoard(); renderInternals(); }catch(e){} };
+  const rvxRerender=()=>{ try{ renderVerdictHero(); renderRotationMap(); renderRotBoard(); renderInternals(); }catch(e){} };
   document.addEventListener('langchange',()=>{ rvxRerender(); if(chart){chart.applyOptions(chartOpts());} renderChart(); });
   document.addEventListener('themechange',()=>{ renderRotationMap(); renderRotBoard(); if(chart){chart.applyOptions(chartOpts());} renderChart(); });
   /* The overlay chart could not be built while Explore was hidden (see renderChart);

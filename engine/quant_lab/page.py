@@ -110,7 +110,12 @@ def build_payload() -> dict:
             "provenance": [specs_mod.SOURCES[s] | {"key": s} for s in spec["provenance"]
                            if s in specs_mod.SOURCES],
             "fidelity": fid,
-            "buildable": fid["faithful"] + fid["proxy"] >= max(2, fid["n_legs"] - 1),
+            # The default heuristic reads "most legs are absent" as "we cannot rebuild this",
+            # which is right for a vendor model we are reconstructing and wrong for one of
+            # ours that ships every night with a documented list of things it deliberately
+            # does not compute. A spec may therefore declare its own answer.
+            "buildable": spec.get(
+                "buildable", fid["faithful"] + fid["proxy"] >= max(2, fid["n_legs"] - 1)),
             "study": st,
             "board": boards.get(key),
         })

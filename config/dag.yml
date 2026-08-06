@@ -1055,13 +1055,18 @@ lanes:
         module: scripts.externalize_css
       - id: optimize_assets
         module: scripts.optimize_assets
+      - id: fetch_oracle_panels
+        module: scripts.fetch_oracle_panels
+        note: >
+          non-fatal; PR-C1 RUL-7 — downloads oracle panel_s.parquet + panel_m.parquet
+          from R2. MUST precede oracle_nightly: personality (3b) + turn-desk Steps 15-19
+          read panel_s and sentinel-skip when absent (run 30960328285, 2026-08-05 measured
+          the old after-ordering starving them); also feeds build_bottom_sensors
+          sponsorship_state. Degrades gracefully when R2 creds absent.
       - id: oracle_nightly
         module: scripts.oracle_nightly
       - id: build_world_state
         module: scripts.build_world_state
-      - id: fetch_oracle_panels
-        module: scripts.fetch_oracle_panels
-        note: non-fatal; PR-C1 RUL-7 — downloads oracle panel_s.parquet + panel_m.parquet from R2 so build_bottom_sensors can populate sponsorship_state; degrades gracefully when R2 creds absent
       - id: build_bottom_sensors
         module: scripts.build_bottom_sensors
         note: non-fatal; display-only bottom-sensor envelope (Amendment 1 Lane B0) — wired 2026-07-06 after build_world_state; benchmark 2.29s
@@ -3050,6 +3055,15 @@ modules:
       git history; consumers read via us_context_vector.load_candidates(). Nightly-only —
       ledger_lane.nightly_advance_enabled() gates the write, so the render lanes that
       discard data/ writes never produce it.
+      SECOND WRITER (roadmap §4.5, operator-ratified 2026-08-05): the post-engine
+      `us_scan_tier` job in daily.yml appends tier="scan" rows to the SAME monthly part
+      via scripts/run_us_scan_tier.py — the liquidity-floored coverage set over
+      data/massive_stock_day, which this job's lane does not restore. The two writers
+      are ordered (engine first, scan after `needs: engine`) and their ticker sets are
+      disjoint by construction (the scan resolver removes curated names); keep-first on
+      (stamp_date, ticker, board_definition) is the second fence, so the curated row —
+      the one carrying board legs, lane and near-miss — always wins on any overlap.
+      Board ADMISSION is unchanged: the curated universe remains the graded population.
 
   # CCW-W5: FINRA corp bond breadth/sentiment/capped-volume (runs inside collect_us via adapter registry)
   - module: collectors.finra_corp_bonds

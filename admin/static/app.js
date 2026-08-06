@@ -4,6 +4,15 @@
 const $ = (sel, el = document) => el.querySelector(sel);
 const h = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstChild; };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+/* Render `{tier: "pro"}` as ` data-tier="pro"`, so an inline handler can read a
+   value off `this.dataset` instead of having it interpolated into its own JS
+   source. Keys must be lowercase/hyphenated — HTML lowercases attribute names,
+   so `data-deptId` would arrive as `dataset.deptid`. Null/undefined values are
+   dropped: an absent attribute reads back as `undefined`, which is what a
+   handler expecting "no value" wants. */
+const dataAttrs = (data) => Object.entries(data || {})
+  .filter(([, v]) => v != null)
+  .map(([k, v]) => ` data-${k}="${esc(v)}"`).join("");
 const fmtAge = (hrs) => hrs == null ? "—" : hrs < 1 ? `${Math.round(hrs * 60)}m` : hrs < 48 ? `${hrs.toFixed(0)}h` : `${(hrs / 24).toFixed(0)}d`;
 const fmtUSD = (n) => n == null ? "—" : "$" + Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
 const fmtTokens = (n) => n == null ? "—" : Number(n) >= 1e6 ? `${(Number(n)/1e6).toFixed(2)}M` : Number(n) >= 1000 ? `${(Number(n)/1000).toFixed(1)}k` : String(Math.round(Number(n)));
@@ -1765,6 +1774,20 @@ RENDER.users = async () => {
     </div>
     <div class="section">Signups (30d)</div>
     <div class="card"><div class="spark">${series.map(x => `<i style="height:${Math.round(x.n / maxN * 100)}%" title="${esc(x.day)}: ${x.n}"></i>`).join("") || "<span class='muted'>no signups in 30d</span>"}</div></div>
+    <div class="section">Reset a password</div>
+    <div class="card">
+      <div class="sub" style="margin-bottom:10px">Sets the password directly. The customer is
+        <b>not</b> emailed &mdash; hand the new one over yourself, on a channel you trust.
+        Their existing sessions stay signed in.</div>
+      <div class="pw-row">
+        <input id="pwEmail" class="ent-search" type="email" placeholder="customer email, or user id…"
+               autocomplete="off" spellcheck="false">
+        <input id="pwValue" class="ent-search" type="text" placeholder="leave blank to generate one"
+               autocomplete="off" spellcheck="false">
+        <button class="btn" onclick="usrResetPassword()">Set password</button>
+      </div>
+      <div id="pwOut"></div>
+    </div>
     <div class="section">Recent users <span class="cnt" id="uCnt"></span></div>
     <div id="uTbl"><div class="spin">loading…</div></div>
     <div class="section" style="margin-top:22px">Subscribers &amp; entitlements <span class="cnt" id="entCnt"></span>
@@ -1780,9 +1803,10 @@ RENDER.users = async () => {
   const rec = await api("/api/users/recent?limit=50");
   if (rec.ok) {
     $("#uCnt").textContent = rec.users.length;
-    $("#uTbl").innerHTML = `<table><thead><tr><th>User</th><th>Provider</th><th>Joined</th><th>Last sign-in</th><th>Confirmed</th></tr></thead><tbody>
+    $("#uTbl").innerHTML = `<table><thead><tr><th>User</th><th>Provider</th><th>Joined</th><th>Last sign-in</th><th>Confirmed</th><th></th></tr></thead><tbody>
       ${rec.users.map(u => `<tr><td><b>${esc(u.name || u.email || "—")}</b>${u.name && u.email ? `<div class="mono sub">${esc(u.email)}</div>` : ""}</td><td>${esc(u.provider)}</td><td class="mono sub">${esc(u.created_at || "—")}</td>
-        <td class="mono sub">${esc(u.last_sign_in_at || "—")}</td><td>${u.confirmed ? "<span class='statpill s-ok'>yes</span>" : "<span class='statpill s-mut'>no</span>"}</td></tr>`).join("")}
+        <td class="mono sub">${esc(u.last_sign_in_at || "—")}</td><td>${u.confirmed ? "<span class='statpill s-ok'>yes</span>" : "<span class='statpill s-mut'>no</span>"}</td>
+        <td>${u.email ? `<button class="btn ghost sm" data-email="${esc(u.email)}" onclick="usrPickForReset(this.dataset.email)">Reset password</button>` : ""}</td></tr>`).join("")}
     </tbody></table>`;
   } else { $("#uTbl").innerHTML = `<div class="card sub">${esc(rec.error || "could not load")}</div>`; }
 
@@ -1796,6 +1820,59 @@ RENDER.users = async () => {
   entLoad();
 };
 
+/* ---- operator password reset -------------------------------------------- */
+/* Sets the password DIRECTLY (POST /api/users/reset_password). Deliberately not a
+   "send them a reset link" button: the site's browser SDK is pinned to PKCE, so a
+   link minted server-side — here, by /auth/v1/recover, or by the Supabase dashboard's
+   own Reset-password button — comes back as an implicit #access_token fragment that
+   the client refuses by design, and lands the customer on a page that does nothing.
+   See admin/users.py. The customer's self-serve "Forgot your password?" on the site
+   IS browser-initiated, so that path works and remains the one to prefer. */
+function usrPickForReset(email) {
+  const f = $("#pwEmail"); if (!f) return;
+  f.value = email;
+  f.scrollIntoView({ behavior: "smooth", block: "center" });
+  f.focus();
+}
+
+async function usrResetPassword() {
+  const who = ($("#pwEmail").value || "").trim();
+  const chosen = ($("#pwValue").value || "").trim();
+  const out = $("#pwOut");
+  if (!who) { toast("Enter the customer's email or user id", true); $("#pwEmail").focus(); return; }
+  if (!confirm(`Set a new password for ${who}?\n\nThey are NOT emailed — you hand it over yourself.`)) return;
+  out.innerHTML = `<div class="spin">working…</div>`;
+  const body = { email: who };
+  if (chosen) body.password = chosen;
+  const r = await post("/api/users/reset_password", body);
+  if (!r.ok) {
+    out.innerHTML = `<div class="pw-out err"><b>Could not reset.</b> <span class="sub">${esc(r.error || "unknown error")}</span>
+      ${(r.setup_steps || []).length ? `<ol class="steps" style="margin-top:8px">${r.setup_steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol>` : ""}</div>`;
+    toast("Password reset failed", true);
+    return;
+  }
+  const u = r.user || {};
+  // The generated password is shown ONCE, here, and is not stored on either side.
+  // A reload loses it — that is the intent, not a gap.
+  out.innerHTML = `<div class="pw-out ok">
+      <b>Password set for ${esc(u.email || who)}</b>
+      ${r.password ? `<div class="pw-secret"><code class="mono">${esc(r.password)}</code>
+        <button class="btn ghost sm" onclick="usrCopyPw(this)">Copy</button></div>
+        <div class="sub">Shown once — it is not stored anywhere. Reload and it is gone.</div>` : ``}
+      <div class="sub" style="margin-top:8px">${esc(r.note || "")}</div>
+    </div>`;
+  $("#pwValue").value = "";
+  toast("Password updated");
+}
+
+function usrCopyPw(btn) {
+  const code = btn.parentNode.querySelector("code");
+  if (!code) return;
+  navigator.clipboard.writeText(code.textContent).then(
+    () => { btn.textContent = "Copied"; setTimeout(() => btn.textContent = "Copy", 1600); },
+    () => toast("Clipboard blocked — select and copy manually", true));
+}
+
 /* ---- entitlements management (subscribers panel) ------------------------ */
 const ENT = { filter: { tier: null, status: null, search: "" }, page: 1, rows: [] };
 const ENT_TIERS = ["free", "essential", "pro"];
@@ -1808,8 +1885,15 @@ const ENT_STATUSES = ["active", "trialing", "past_due", "canceled", "none"];
 
 function entIdentity(u) { return u.name || u.email || u.user_id; }
 
-function entChip(label, active, on) {
-  return `<button class="ent-chip${active ? " on" : ""}" onclick="${on}">${esc(label)}</button>`;
+/* `on` is JS SOURCE pasted into an HTML attribute, so it must never carry an
+   interpolated string literal: JSON.stringify emits double quotes, those close
+   the onclick attribute, and the parser drops everything after them — the chip
+   renders looking normal and the click does nothing. Pass the value through
+   `data` (attribute-escaped) and read it back as `this.dataset.<key>`, which
+   keeps `on` a fixed, code-only string. esc(on) is the belt: it keeps a future
+   caller's quoted literal from truncating the attribute the same way. */
+function entChip(label, active, on, data) {
+  return `<button class="ent-chip${active ? " on" : ""}"${dataAttrs(data)} onclick="${esc(on)}">${esc(label)}</button>`;
 }
 
 async function entLoad() {
@@ -1832,9 +1916,9 @@ async function entLoad() {
   const byTier = {}, byStatus = {};
   (d.summary || []).forEach(r => { const ct = entCanonTier(r.tier); byTier[ct] = (byTier[ct] || 0) + r.n; byStatus[r.status] = (byStatus[r.status] || 0) + r.n; });
   const chips = [entChip("All", !f.tier && !f.status, "entSetFilter('tier',null)")]
-    .concat(ENT_TIERS.map(t => entChip(`${t} (${byTier[t] || 0})`, f.tier === t, `entSetFilter('tier',${JSON.stringify(t)})`)))
+    .concat(ENT_TIERS.map(t => entChip(`${t} (${byTier[t] || 0})`, f.tier === t, "entSetFilter('tier',this.dataset.tier)", { tier: t })))
     .concat(['<span class="ent-chip-sep"></span>'])
-    .concat(ENT_STATUSES.filter(s => byStatus[s]).map(s => entChip(`${s} (${byStatus[s]})`, f.status === s, `entSetFilter('status',${JSON.stringify(s)})`)));
+    .concat(ENT_STATUSES.filter(s => byStatus[s]).map(s => entChip(`${s} (${byStatus[s]})`, f.status === s, "entSetFilter('status',this.dataset.status)", { status: s })));
   $("#entChips").innerHTML = chips.join("");
   $("#entSummary").innerHTML = `<div class="card">${(d.summary || []).map(r => `<span class="statpill ${["active", "trialing"].includes(r.status) ? "s-ok" : "s-mut"}">${esc(r.tier)} · ${esc(r.status)}: ${r.n}</span>`).join(" ") || "<span class='muted'>no entitlement rows yet</span>"}</div>`;
   $("#entCnt").textContent = d.total != null ? d.total : ENT.rows.length;
@@ -5421,7 +5505,7 @@ RENDER.marketing_departments = async () => {
       const shortName = dept.name || dept.id;
       const formalName = dept.formal_name || dept.name || dept.id;
       const engCount = engines.length;
-      return `<a class="mkt-dept-card" href="#/mkt-dept/${encodeURIComponent(dept.id)}" title="${esc(formalName)}" onclick="event.preventDefault();gotoMktDept(${JSON.stringify(dept.id)})">
+      return `<a class="mkt-dept-card" href="#/mkt-dept/${encodeURIComponent(dept.id)}" title="${esc(formalName)}" data-dept-id="${esc(dept.id)}" onclick="event.preventDefault();gotoMktDept(this.dataset.deptId)">
         <h3><span class="mkt-dept-icon">${icon}</span>${esc(shortName)}
           ${mktLifecyclePill(dept.lifecycle_state)}
           ${mktAuthPill(dept.authority_level)}
@@ -6135,7 +6219,7 @@ function csFunnel(d) {
       loss = `<div class="fn-lost">−${flrN(st.lost)}</div>
         <div class="fn-lost-word">${esc(st.lossWord || "lost here")}</div>`;
     }
-    return `<button class="${cls}" onclick="${st.go}">
+    return `<button class="${cls}" onclick="${esc(st.go)}">
       <span class="fn-ord">${i + 1}</span>
       <div class="fn-name">${esc(st.name)}</div>
       <div class="fn-n${st.out === 0 ? " is-zero" : ""}">${isNull ? "—" : flrN(st.out)}</div>
@@ -12877,8 +12961,9 @@ const SUP_ACTION_LABEL = { reply: "Reply", resolve: "Resolve", close: "Close", r
    "reopen" into "reopend". */
 const SUP_ACTION_DONE = { reply: "replied to", resolve: "resolved", close: "closed", reopen: "reopened" };
 
-function supChip(label, active, on) {
-  return `<button class="ent-chip${active ? " on" : ""}" onclick="${on}">${esc(label)}</button>`;
+/* Values ride in `data`, never interpolated into `on` — see entChip. */
+function supChip(label, active, on, data) {
+  return `<button class="ent-chip${active ? " on" : ""}"${dataAttrs(data)} onclick="${esc(on)}">${esc(label)}</button>`;
 }
 /* Colour carries WHOSE move it is, not the raw state name: warn = waiting on you,
    ok = resolved, muted = idle (pending on the user, or closed). */
@@ -12931,7 +13016,7 @@ async function supLoad() {
   const counts = d.counts || {};
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   $("#supChips").innerHTML = [supChip(`All (${total})`, !SUP.status, "supSetStatus(null)")]
-    .concat(SUP_STATUSES.map(s => supChip(`${s} (${counts[s] || 0})`, SUP.status === s, `supSetStatus(${JSON.stringify(s)})`)))
+    .concat(SUP_STATUSES.map(s => supChip(`${s} (${counts[s] || 0})`, SUP.status === s, "supSetStatus(this.dataset.status)", { status: s })))
     .join("");
   $("#supCnt").textContent = d.total != null ? d.total : SUP.rows.length;
   setNavDot("support_tickets", d.open_count || 0, "ticket");
@@ -12987,7 +13072,7 @@ async function supRenderThread(id) {
   const legal = d.legal_actions || [];
   const canReply = legal.includes("reply");
   const stateButtons = legal.filter(a => a !== "reply")
-    .map(a => `<button class="ent-act" onclick="supAct(${JSON.stringify(id)},${JSON.stringify(a)})">${esc(SUP_ACTION_LABEL[a] || a)}</button>`)
+    .map(a => `<button class="ent-act" data-id="${esc(id)}" data-action="${esc(a)}" onclick="supAct(this.dataset.id,this.dataset.action)">${esc(SUP_ACTION_LABEL[a] || a)}</button>`)
     .join("");
 
   det.innerHTML = `
@@ -13017,7 +13102,7 @@ async function supRenderThread(id) {
           placeholder="Write your reply — it is recorded on this ticket and emailed to ${esc(t.email || "the sender")}."></textarea>` : `
         <div class="sub muted" style="margin-bottom:10px">This ticket is ${esc(t.status || "closed")} — reopen it to reply.</div>`}
       <div class="ent-form-actions" style="justify-content:flex-start">
-        ${canReply ? `<button class="ent-act ent-primary" onclick="supReply(${JSON.stringify(id)})">Send reply</button>` : ""}
+        ${canReply ? `<button class="ent-act ent-primary" data-id="${esc(id)}" onclick="supReply(this.dataset.id)">Send reply</button>` : ""}
         ${stateButtons}
       </div>
     </div>`;
@@ -13077,8 +13162,9 @@ async function supReply(id) {
 const EC = { tab: "people", segment: "all", q: "", page: 1, supQ: "", supPage: 1,
              zhDelim: "===zh===", editing: null };
 
-function ecChip(label, active, on) {
-  return `<button class="ent-chip${active ? " on" : ""}" onclick="${on}">${esc(label)}</button>`;
+/* Values ride in `data`, never interpolated into `on` — see entChip. */
+function ecChip(label, active, on, data) {
+  return `<button class="ent-chip${active ? " on" : ""}"${dataAttrs(data)} onclick="${esc(on)}">${esc(label)}</button>`;
 }
 /* Colour says whether we may mail this person, which is the only question this
    table exists to answer: ok = yes, bad = on the kill list, warn = opted out. */
@@ -13203,7 +13289,7 @@ async function ecLoadPeople() {
 
   const segs = $("#ecSegs");
   if (segs) segs.innerHTML = (d.segments || []).map(s =>
-    ecChip(`${s.label_en} ${(d.counts || {})[s.key] || 0}`, s.key === d.segment, `ecSetSegment('${s.key}')`)).join("");
+    ecChip(`${s.label_en} ${(d.counts || {})[s.key] || 0}`, s.key === d.segment, "ecSetSegment(this.dataset.segment)", { segment: s.key })).join("");
 
   const link = $("#ecExport");
   if (link) {

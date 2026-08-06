@@ -1404,6 +1404,18 @@ class Handler(BaseHTTPRequestHandler):
                 payload, code = entitlements.act(b, operator="operator")
                 return self._json(payload, code)
 
+            # Operator password reset (Users panel). Sets the password DIRECTLY through
+            # the GoTrue admin API — a server-issued recovery LINK cannot work against
+            # this site's PKCE-pinned browser client (see admin/users.py module docstring),
+            # so a link-based action here would be a button that silently does nothing.
+            # Omit `password` to have a strong one generated and returned once.
+            if path == "/api/users/reset_password":
+                payload, code = users.set_password(
+                    b.get("email") or b.get("user_id") or "",
+                    b.get("password") or None,
+                    operator="operator")
+                return self._json(payload, code)
+
             # Support ticket transitions (SEE W1): reply / resolve / close / reopen.
             # Legality is decided inside the module against the ticket's CURRENT status
             # read from the database — a client-sent status is never trusted. A reply

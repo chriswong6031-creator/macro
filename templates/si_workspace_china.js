@@ -14,11 +14,16 @@
    ══════════════════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-/* Four views, not the US five: this desk carries no Money & Breadth organ. An empty
-   fifth tab would be a promise the payload cannot keep. */
-var VIEWS=['overview','map','moving','explore'];
+/* Five views. The first four are the merged desk (this desk still carries no US-style Money &
+   Breadth organ — that fifth US tab would be a promise this payload cannot keep). The fifth
+   here, 'confluence', is a DIFFERENT organ: the 同花顺 subsector-confluence board, added 2026-08
+   as an in-workspace home for the standalone subsectors_china page. It ships its own hero and
+   its own payload (subsectors_china.js, lazy-mounted below), so it is a promise the data CAN
+   keep. It has no si-read slot — its hero is its read. */
+var VIEWS=['overview','map','moving','explore','confluence'];
 var TITLES={overview:['Overview','总览'],map:['The Map','全景图谱'],
-  moving:["What's Moving",'正在轮动'],explore:['Explore','深入探索']};
+  moving:["What's Moving",'正在轮动'],explore:['Explore','深入探索'],
+  confluence:['Confluence','子行业汇聚']};
 /* View glyphs = the estate's hand-drawn masked-icon family (product-nav-icons /
    dashboard-icons — the same set the nav mega-menus draw), tinted via currentColor.
    Never raw emoji beside the wordmark. */
@@ -75,7 +80,13 @@ var LEGACY_ANCHORS={
 var LAZY={
   overview:['@cycles'],
   map:['@cycles'],
-  moving:['subsector_rotation.js']
+  moving:['subsector_rotation.js'],
+  /* the confluence board: subsectors_china.js self-boots on injection (readyState is already
+     past 'loading' by the time we append), finds #sc-app inside the now-visible view, and
+     fetches its ~343KB board JSON. Unlike the cycle/rotation organs it writes innerHTML only —
+     no clientWidth read — so it needs no laid-out box; it is lazy purely so that heavy fetch
+     never fires on an Overview-only visit. */
+  confluence:['subsectors_china.js']
 };
 var loaded={}, mounted={};
 

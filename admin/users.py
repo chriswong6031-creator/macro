@@ -7,17 +7,53 @@ Management API's database-query endpoint. No service_role JWT to store, and
 nothing is exposed to the browser. All SQL is static text authored here (the
 only interpolated value is an int-clamped LIMIT), so there is no injection
 surface. Degrades gracefully: with no PAT it returns setup steps.
+
+PASSWORD RESET (the one WRITE here) uses a second, separate plane: the GoTrue
+admin API with ``SUPABASE_SERVICE_ROLE_KEY`` (the same key app/billing.py already
+holds — this is not a new secret). The Management-API PAT cannot set a password:
+it runs SQL, and ``auth.users.encrypted_password`` is GoTrue's private storage,
+not a column an operator may safely hand-hash.
+
+Why a DIRECT set and not "email them a recovery link" — the honest constraint:
+
+  templates/theme.js pins the browser SDK to ``flowType:'pkce'``, and the vendored
+  gotrue-js throws "Not a valid PKCE flow url." on any return URL that is not a
+  ``?code=`` the SAME browser initiated (it needs the code_verifier it stored).
+  A recovery link minted server-side — by this console, by ``POST /auth/v1/recover``,
+  or by the **Supabase dashboard's own "Reset password" button** — carries no
+  code_challenge, so GoTrue returns it as an implicit ``#access_token=…&type=recovery``
+  fragment, which that client refuses BY DESIGN (anti session-fixation). Such a link
+  lands on the site and silently does nothing.
+
+  So a server-issued link is not a reset mechanism here, and offering one from this
+  console would be shipping a button that cannot work. The two paths that DO work:
+  the customer clicking "Forgot your password?" on the site (browser-initiated, so
+  PKCE holds end to end), and this direct set, which involves no link at all.
 """
 from __future__ import annotations
 
-from . import settings
+import logging
+import re
+import secrets
+import string
+
+from . import actions, settings
 
 try:
     import requests
 except Exception:  # noqa: BLE001
     requests = None  # type: ignore
 
+log = logging.getLogger("macro.admin.users")
+
 _API = "https://api.supabase.com/v1"
+_UUID_RE = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
+                      r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
+# GoTrue's own floor is 6; the site's sign-up forms ask for 8, so an operator-set
+# password may never be weaker than what a customer would have been made to choose.
+MIN_PASSWORD_LEN = 8
+MAX_PASSWORD_LEN = 72          # bcrypt truncates past 72 bytes — refuse rather than silently cut
 
 # Exclude soft-deleted, banned, and anonymous rows from every roster count so the
 # primary totals reflect real, active accounts. deleted_at (soft-delete),
@@ -139,6 +175,141 @@ def recent(limit: int = 30) -> dict:
         return {"ok": True, "users": rows or []}
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": str(e)}
+
+
+# --------------------------------------------------------------------------- #
+# WRITE — operator password reset (GoTrue admin API, service-role)
+# --------------------------------------------------------------------------- #
+def _lit(value, *, maxlen: int) -> str:
+    """A safe single-quoted SQL literal: length-capped, NUL-stripped, quotes doubled."""
+    s = str(value if value is not None else "")[:maxlen].replace("\x00", "")
+    return "'" + s.replace("'", "''") + "'"
+
+
+def _billing():
+    from app import billing  # noqa: PLC0415
+    return billing
+
+
+def password_reset_status() -> dict:
+    """Whether the WRITE plane is usable (separate from the PAT read plane)."""
+    try:
+        key = bool(_billing().SUPABASE_SERVICE_ROLE_KEY)
+    except Exception:  # noqa: BLE001 — app.billing may be unimportable without deps
+        key = False
+    return {
+        "configured": bool(key and requests),
+        "reason": None if (key and requests) else (
+            "requests not installed" if not requests
+            else "SUPABASE_SERVICE_ROLE_KEY not set in the admin service env"),
+    }
+
+
+def generate_password(length: int = 20) -> str:
+    """A strong random password the operator hands over out-of-band.
+
+    Ambiguous glyphs (O/0, l/1/I) are excluded because this string gets read aloud,
+    pasted into chat, or typed from a screenshot — a password the customer cannot
+    retype is a support ticket, not a reset.
+    """
+    alphabet = ((string.ascii_lowercase + string.ascii_uppercase + string.digits)
+                .translate(str.maketrans("", "", "O0lI1"))) + "!@#$%^&*-_=+"
+    n = max(MIN_PASSWORD_LEN, min(MAX_PASSWORD_LEN, int(length)))
+    return "".join(secrets.choice(alphabet) for _ in range(n))
+
+
+def lookup(identifier: str) -> dict:
+    """Resolve an email or a uuid to one auth.users row. Read plane (PAT)."""
+    ident = str(identifier or "").strip()
+    if not ident:
+        return {"ok": False, "error": "email or user id required"}
+    if not status()["configured"]:
+        return {"ok": False, **status()}
+    try:
+        if _UUID_RE.match(ident):
+            where = f"u.id = {_lit(ident, maxlen=64)}::uuid"
+        else:
+            where = f"lower(u.email) = lower({_lit(ident, maxlen=320)})"
+        rows = _query(
+            "select u.id::text as user_id, u.email, "
+            f"{display_name_sql('u')} as name, "
+            "coalesce(u.raw_app_meta_data->>'provider','email') as provider, "
+            "(u.email_confirmed_at is not null) as confirmed, "
+            "to_char(u.last_sign_in_at,'YYYY-MM-DD HH24:MI') as last_sign_in_at "
+            f"from auth.users u where {where} and {_ACTIVE} limit 2")
+        if not rows:
+            return {"ok": False, "error": f"no active account for {ident!r}", "code": "not_found"}
+        if len(rows) > 1:                      # only reachable for a duplicated email
+            return {"ok": False, "error": f"{ident!r} matches more than one account — "
+                                          "use the user id", "code": "ambiguous"}
+        return {"ok": True, "user": rows[0]}
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)}
+
+
+def set_password(identifier: str, password: str | None = None, *,
+                 operator: str = "operator") -> tuple[dict, int]:
+    """Set a user's password directly via the GoTrue admin API.
+
+    `password=None` mints a strong random one and returns it ONCE — it is never
+    stored, never logged, and never written to the operator ledger (the ledger
+    records that a reset happened and for whom, which is the auditable fact).
+
+    Returns (payload, http_status).
+    """
+    st = password_reset_status()
+    if not st["configured"]:
+        return {"ok": False, "error": st["reason"], "code": "no_writer",
+                "setup_steps": [
+                    "Supabase dashboard → Project Settings → API → copy the service_role key.",
+                    "Set SUPABASE_SERVICE_ROLE_KEY in the admin service env.",
+                    "Restart the admin service.",
+                ]}, 503
+
+    found = lookup(identifier)
+    if not found.get("ok"):
+        return found, (404 if found.get("code") == "not_found" else 400)
+    user = found["user"]
+
+    generated = password is None
+    pw = generate_password() if generated else str(password)
+    if len(pw) < MIN_PASSWORD_LEN:
+        return {"ok": False, "error": f"password must be at least {MIN_PASSWORD_LEN} characters"}, 400
+    if len(pw.encode("utf-8")) > MAX_PASSWORD_LEN:
+        return {"ok": False, "error": f"password must be at most {MAX_PASSWORD_LEN} bytes "
+                                      "(bcrypt truncates past that)"}, 400
+
+    b = _billing()
+    try:
+        r = requests.put(
+            f"{b.SUPABASE_URL}/auth/v1/admin/users/{user['user_id']}",
+            headers={"apikey": b.SUPABASE_SERVICE_ROLE_KEY,
+                     "Authorization": f"Bearer {b.SUPABASE_SERVICE_ROLE_KEY}",
+                     "Content-Type": "application/json"},
+            json={"password": pw}, timeout=15)
+    except Exception as e:  # noqa: BLE001
+        log.warning("users: password reset transport failure for %s (%s)", user["email"], e)
+        return {"ok": False, "error": f"could not reach GoTrue: {e}"}, 502
+    if not (200 <= r.status_code < 300):
+        # Surface GoTrue's own words — a weak-password policy rejection and an
+        # expired service-role key fail here identically otherwise.
+        return {"ok": False, "error": f"HTTP {r.status_code}: {r.text[:300]}"}, 502
+
+    actions.append_action(
+        surface=f"password_reset:{user['email']}",
+        action="overrode",
+        direction_note=(f"operator {operator} set a new password for {user['email']} "
+                        f"({'generated' if generated else 'operator-supplied'}); "
+                        "existing sessions are NOT revoked by this write"))
+    log.info("users: password reset for %s by %s (generated=%s)",
+             user["email"], operator, generated)
+    return {"ok": True, "user": {k: user[k] for k in ("user_id", "email", "name", "provider")},
+            # Returned once, to the operator's own browser, over the admin console's
+            # authenticated channel. Not persisted anywhere on this side.
+            "password": pw if generated else None,
+            "generated": generated,
+            "note": "Hand this to the customer over a channel you trust, and tell them to "
+                    "change it after signing in. Their existing sessions stay valid."}, 200
 
 
 def subscribers(limit: int = 200) -> dict:

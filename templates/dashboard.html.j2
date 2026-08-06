@@ -14864,9 +14864,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
 
   <!-- ======================= ACTION BOARD ======================= -->
   {% if mode != 'macro' %}
-  {# Page-local by design: changing the global theme asset invalidates the cache
-     fingerprint on every page for a component only the stock action board owns. #}
-  {{ dc.dc_css() }}
+  {# The action board's dc.dc_css() moved into templates/_us_act_now_board.html.j2 with the
+     board itself (SI-central transplant, 2026-08): the include now owns the card stylesheet so
+     the same board styles correctly on the Sector Intelligence Overview too. The include still
+     keeps it page-local (never in theme.css) for the same cache-fingerprint reason. #}
   {# B4: market-state context strip for stocks mode — one-line banner, never a veto #}
   {% if market_state is defined and market_state %}
   {# scx-css lives HERE (inside mode!='macro') so it actually ships to us_stocks — the old
@@ -14946,317 +14947,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   </div>
   {% endif %}{# /market_state B4 #}
   {% if action_board %}
-  <div class="panel span12" id="action-board">
-    <h2>{{ t('What to act on now', '当前可操作') }}
-      {{ help('Every sector and theme is sorted into five lanes by cycle position — the lane name is the action, and each lane explains itself below its title. Hover any row for full detail. Symbols: 🏛 sector fund · 🧩 theme group · ✓ tested sell-discipline gate (overrides the lane read when it fires) · ★ in the model book.', '所有板块与主题按周期位置分入五个泳道 — 泳道名称即操作建议，各泳道标题下有说明。悬停任意行查看完整详情。图例：🏛 板块基金 · 🧩 主题篮子 · ✓ 经回测的卖出纪律门槛（触发时覆盖泳道判读）· ★ 模型组合内。') }}
-      <a href="sector_central.html#actnow-section" style="font-size:11px;color:var(--muted);font-weight:400;text-decoration:none;margin-left:8px"><span class="l-en">Theme reasons → Sector Intelligence</span><span class="l-zh">主题详情 → 行业智慧页</span></a>
-    </h2>
-    {# Policy-shock de-escalation fresh-entry caution chip (PS-R3: display de-escalation only —
-       no reordering, no removal. Ranks computed on pre-shock data; this chip is the only change.) #}
-    {% if shock_state is defined and shock_state and shock_state.get('active') %}
-    <div style="margin:6px 0 10px;padding:8px 12px;border-radius:8px;border-left:4px solid var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--panel2));font-size:13px;font-weight:600">
-      ⚠ <span class="l-en">SHOCK active — fresh entries carry extra uncertainty; sector ranks computed on pre-shock data. Context only — no ranks have been changed. Active until {{ shock_state.get('expires', '') }}.</span><span class="l-zh">冲击期间 — 新进场具有额外不确定性；板块排名基于冲击前数据计算。仅供参考，排名未作调整，有效期至 {{ shock_state.get('expires', '') }}。</span>
-    </div>
-    {% endif %}
-    {# Unified board: 🧩 narrative baskets (the AI-buildout-vs-rest resolution) lead each
-       lane, 🏛 GICS sectors follow. Basket buys carry a leadership-LENS marker (≈, descriptive)
-       and basket reduces a backtested marker (✓, the absolute-trend drawdown gate); ★ = in the
-       narrative-rotation model book. #}
-    {# (legacy themeitem / themeitem_run row macros removed 2026-07-11 — dead since the
-       V2 board switched every lane to ab_theme_row / ab_sector_row.) #}
-    {# TS-R6 A2: two-reads chip for action-board sector rows (same ETF, two house reads disagree). #}
-    {% macro ab_two_reads(x) -%}{% if x.get('two_reads_chip') %}{% set _abtr = x.two_reads_chip %}<span class="two-reads-chip" data-tip-en="Two house reads on {{ x.ticker }}: cycle timing = {{ _abtr.cycle_label_en }} (slow, cap-weighted); setup engine = {{ _abtr.setup_label_en }} (3-day tactical). Different instruments / different horizons — both shown, neither overrides." data-tip-zh="{{ x.ticker }} 两个本系统读数：周期 = {{ _abtr.cycle_label_en }}（慢速市值加权）；形态 = {{ _abtr.setup_label_en }}（3日战术）。不同工具／维度，同时显示。"><span class="tr-sep">⇔</span><span class="l-en">two reads: cycle <b>{{ _abtr.cycle_label_en }}</b> vs setup <b>{{ _abtr.setup_label_en }}</b></span><span class="l-zh">两个读数：周期 <b>{{ _abtr.cycle_label_en }}</b> vs 形态 <b>{{ _abtr.setup_label_en }}</b></span></span>{% endif %}{%- endmacro %}
-    {# FIX 2: EW-vs-cycle disclosure chip for sector rows — fires when EW and cycle disagree (buy vs reduce) and gate_override did NOT fire. #}
-    {% macro ab_ew_two_reads(x) -%}{% if x.get('ew_two_reads') %}{% set _ewtr = x.ew_two_reads %}<span class="two-reads-chip" data-tip-en="Two reads on {{ x.ticker }}: cycle timing = {{ _ewtr.cycle_label_en }}; equal-weight basket = {{ _ewtr.ew_label_en }}. Different constructions — both shown for context." data-tip-zh="{{ x.ticker }} 两个读数：周期 = {{ _ewtr.cycle_label_zh }}；等权篮子 = {{ _ewtr.ew_label_zh }}。不同构建方式，同时显示供参考。"><span class="tr-sep">⇔</span><span class="l-en">two reads: cycle <b>{{ _ewtr.cycle_label_en }}</b> vs equal-weight <b>{{ _ewtr.ew_label_en }}</b></span><span class="l-zh">两个读数：周期 <b>{{ _ewtr.cycle_label_zh }}</b> vs 等权 <b>{{ _ewtr.ew_label_zh }}</b></span></span>{% endif %}{%- endmacro %}
-    {# ew_chip is inlined below each sector row for Jinja2 lexer compatibility. #}
-    {#- V2 ACTION BOARD — new lane design (adjudicated 2026-07-10)
-        Each lane: header (emoji + EN/ZH name + count + subtitle) + row list.
-        Sector rows: glyph + name + optional chip + optional gate-✓ + stat line.
-        Theme rows: name + star/check/lens glyphs (% moves to popover).
-        Popover data stored in hidden .rp-src span, cloned by theme.js row-pop engine on hover.
-        Folds: every lane shows its top three rows, then offers Show more.
-        TS-R5 dash-hold-fold id PRESERVED on the stand-aside column.
-    -#}
-    {#- ---- Jinja macros for V2 rows ---- -#}
-    {%- macro ab_chip(chip_en, chip_zh, chip_tone) -%}
-    {%- if chip_en %}<span class="ab-chip ab-chip--{{ chip_tone }}"><span class="l-en">{{ chip_en }}</span><span class="l-zh">{{ chip_zh }}</span></span>{% endif -%}
-    {%- endmacro -%}
-    {%- macro ab_gate(x) -%}
-    {%- if x.get('gate_override') %}<span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: {{ x.get('ew', {}).get('label', '') }}" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：{{ x.get('ew', {}).get('label_zh', '') or x.get('ew', {}).get('label', '') }}">&#10003;</span>{% endif -%}
-    {%- endmacro -%}
-    {#- Popover source for a SECTOR row (hidden inline, cloned by JS) -#}
-    {#- Compact decision card for a SECTOR row. Keep this payload intentionally
-        glanceable: one setup read, at most three decision metrics, one visual timing
-        cue, and one short takeaway. Full model prose belongs on the linked detail page.
-        DO NOT REBUILD LAW #1513: FRESH BUY is the worst state on the board (not a buy
-        edge); its state tag is warn, never green/up. -#}
-    {%- macro ab_sector_pop(x) -%}
-    {%- set _reduce_labels = ['TOP WATCH','ROLLING OVER','DECLINE','COUNTERTREND BOUNCE'] -%}
-    {%- set _warn_labels = ['FRESH BUY','BOTTOM WATCH','NEARING A LOW','BOTTOMING','BASING','ACCUMULATION'] -%}
-    {%- set _up_labels = ['RALLY ON','TURN SIGNALED','UPTREND','BUY ZONE'] -%}
-    {%- set _lbl = x.get('label', '') -%}
-    {%- set _stag_tone = 'dn' if _lbl in _reduce_labels else ('warn' if _lbl in _warn_labels else ('up' if _lbl in _up_labels else '')) -%}
-    {%- set _stats = [] -%}
-    {%- if x.get('rs_60d') is not none and x.get('rs_60d') is defined -%}
-      {%- set _ = _stats.append({'label': ('60d lead','60日领先'), 'val': '%+.1f%%'|format(x.rs_60d),
-                                 'tone': 'up' if x.rs_60d >= 0 else 'dn', 'sub': ('vs SPY','相对SPY')}) -%}
-    {%- endif -%}
-    {%- if x.get('eq_badge') -%}
-      {%- set _ = _stats.append({'label': ('Entry','入场'), 'val': x.eq_badge,
-                                 'tone': 'up' if x.eq_dir == 'up' else ('dn' if x.eq_dir == 'down' else ''),
-                                 'sub': ('timing quality','时机质量')}) -%}
-    {%- endif -%}
-    {%- if x.get('buy_zone') is not none and x.get('n_holdings') -%}
-      {%- set _ = _stats.append({'label': ('Breadth','广度'), 'val': '%d/%d'|format(x.buy_zone, x.n_holdings),
-                                 'sub': ('in buy zone','处于买入区')}) -%}
-    {%- endif -%}
-    {%- set _bars = [] -%}
-    {%- if x.get('rsi_3d') is not none and x.get('rsi_3d') is defined and x.get('stoch_3d') is not none and x.get('stoch_3d') is defined -%}
-      {%- set _ = _bars.append({'label': 'RSI', 'pct': x.rsi_3d, 'val': '%.0f'|format(x.rsi_3d)}) -%}
-      {%- set _ = _bars.append({'label': 'STO', 'pct': x.stoch_3d, 'val': '%.0f'|format(x.stoch_3d)}) -%}
-    {%- endif -%}
-    {%- set _sub_en -%}
-    {%- if x.get('age_short') %}Signal {{ x.age_short }}{% endif -%}
-    {%- if x.get('age_short') and x.get('dc_day') is not none and x.get('dc_day') is defined %} · {% endif -%}
-    {%- if x.get('dc_day') is not none and x.get('dc_day') is defined %}cycle day {{ x.dc_day }}{% endif -%}
-    {%- endset -%}
-    {%- set _sub_zh -%}
-    {%- if x.get('age_short') %}信号 {{ x.get('age_short_zh', x.age_short) }}{% endif -%}
-    {%- if x.get('age_short') and x.get('dc_day') is not none and x.get('dc_day') is defined %} · {% endif -%}
-    {%- if x.get('dc_day') is not none and x.get('dc_day') is defined %}周期第 {{ x.dc_day }} 日{% endif -%}
-    {%- endset -%}
-    {{ dc.dc_card({
-      'kind': 'sector', 'mark': '🏛', 'tone': _stag_tone,
-      'eyebrow': ('Sector pulse · ' ~ x.ticker, '板块脉搏 · ' ~ x.ticker),
-      'name': (x.name|e, tr(x.name)|e),
-      'tag': (td(x.label),),
-      'kicker': ('Current setup','当前形态'),
-      'read': ('Trend confirmed','趋势已确认') if _lbl in _up_labels
-              else (('Early turn','早期转向') if _lbl in _warn_labels
-              else (('Momentum fading','动能转弱') if _lbl in _reduce_labels
-              else ('Wait for clarity','等待明朗'))),
-      'sub': (_sub_en|trim, _sub_zh|trim),
-      'bars': _bars, 'stats': _stats,
-      'takeaway': ('Signals disagree. Keep size small until they align.','信号不一致，等待同步前保持小仓位。')
-              if (x.get('two_reads_chip') or x.get('ew_two_reads') or x.get('conflict_reason_en'))
-              else (('Trend confirmed — use pullbacks instead of chasing.','趋势已确认 — 等回调，不追高。') if _lbl in _up_labels
-              else (('Early turn — keep size measured while the weekly trend catches up.','早期转向 — 周线趋势确认前控制仓位。') if _lbl in _warn_labels
-              else (('Momentum is fading — protect gains and avoid fresh adds.','动能转弱 — 保护利润，避免加仓。') if _lbl in _reduce_labels
-              else ('No clean edge yet — wait for the signals to align.','暂无清晰优势 — 等待信号同步。')))),
-      'foot': ('Click row for the full sector view','点击查看完整板块详情'),
-      'foot_b': (x.ticker ~ ' ↗', x.ticker ~ ' ↗'),
-    }) }}
-    {%- endmacro -%}
-    {#- Compact decision card for a THEME (narrative basket) row. Opaque diagnostics
-        (flip distance, duplicate percentiles, full engine prose) stay on the detail page. -#}
-    {%- macro ab_theme_pop(x) -%}
-    {%- set _reco = x.get('reco', '') -%}
-    {%- set _rtone = 'dn' if _reco in ('trim','avoid') else ('up' if _reco in ('accumulate','enter') else 'warn') -%}
-    {%- set _stats = [] -%}
-    {%- if x.get('perf_20d_rel') is not none and x.get('perf_20d_rel') is defined -%}
-      {%- set _ = _stats.append({'label': ('20d lead','20日领先'), 'val': '%+.1f%%'|format(x.perf_20d_rel * 100),
-                                 'tone': 'up' if x.perf_20d_rel >= 0 else 'dn', 'sub': ('vs market','相对市场')}) -%}
-    {%- endif -%}
-    {%- if x.get('breadth_pct50') is not none and x.get('breadth_pct50') is defined -%}
-      {%- set _ = _stats.append({'label': ('Breadth','广度'), 'val': '%.0f%%'|format(x.breadth_pct50 * 100),
-                                 'sub': ('above 50d','高于50日线')}) -%}
-    {%- endif -%}
-    {%- if x.get('rollover_band') is not none and x.get('rollover_band') is defined -%}
-      {%- set _ = _stats.append({'label': ('Rollover','回落风险'),
-                                 'val': (x.rollover_band|title, x.get('rollover_band_zh', x.rollover_band)),
-                                 'tone': 'up' if x.rollover_band == 'low' else 'warn', 'sub': ('risk','风险')}) -%}
-    {%- endif -%}
-    {%- set _trust = [] -%}
-    {%- if x.get('book_wt') is not none and x.get('book_wt') is defined -%}
-      {%- set _ = _trust.append({'tone': 'up', 'en': '★ Model ' ~ '%.0f'|format(x.book_wt*100) ~ '%',
-                                 'zh': '★ 模型 ' ~ '%.0f'|format(x.book_wt*100) ~ '%'}) -%}
-    {%- endif -%}
-    {%- if x.validated -%}
-      {%- set _ = _trust.append({'tone': 'up', 'en': '✓ Risk gate', 'zh': '✓ 风险门槛'}) -%}
-    {%- endif -%}
-    {{ dc.dc_card({
-      'kind': 'theme', 'mark': '◆', 'tone': _rtone,
-      'eyebrow': ('Theme basket','主题篮子'),
-      'name': (x.name|e, (x.name_zh or x.name)|e),
-      'tag': (x.get('label') or _reco, x.get('label_zh') or x.get('label') or _reco),
-      'score': x.get('score') if (x.get('score') is not none and x.get('score') is defined) else none,
-      'kicker': ('Leadership read','领先度判断'),
-      'read': ('Broad and leading','广泛领先') if _reco in ('accumulate','enter')
-              else (('Late and extended','后期且延伸') if _reco == 'trim'
-              else (('Breadth weakening','广度转弱') if _reco == 'avoid'
-              else ('Trend intact','趋势完好'))),
-      'trust': _trust, 'stats': _stats,
-      'leaders': {'label': ('Leaders','龙头'), 'val': x.top_members[:3] | join(' · ')} if x.get('top_members') else none,
-      'takeaway': ('Signals disagree. Wait for breadth and price to align.','信号不一致，等待广度与价格同步。')
-              if x.get('conflict_reason_en')
-              else (('Leadership is broad. Add on pullbacks, not into strength.','领先面广。回调时加仓，不要追强势。') if _reco in ('accumulate','enter')
-              else (('Momentum is extended. Protect gains into strength.','动能已过度延伸。逢强保护利润。') if _reco == 'trim'
-              else (('Breadth is fading. Stand aside until it turns again.','广度转弱。在重新转强之前先观望。') if _reco == 'avoid'
-              else ('Trend is intact. Wait for a cleaner entry.','趋势完好。等待更干净的入场点。')))),
-      'foot': ('Click row for holdings and full history','点击查看持仓与完整历史'),
-      'foot_b': ('Open ↗','打开 ↗'),
-    }) }}
-    {%- endmacro -%}
-    {#- V2 sector row macro — anv2-row anatomy (name row / chips row / stat line) -#}
-    {%- macro ab_sector_row(x) -%}
-    <a class="actitem" data-rpop href="{{ x.href }}">
-      <span class="act-row-top">
-        <span class="ai-bdg">🏛</span>
-        <span class="act-row-name"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></span>
-      </span>
-      {%- if x.get('chip_en') or x.get('gate_override') or x.get('ew_two_reads') or x.get('conflict_chip_en') %}
-      <span class="act-row-chips">
-        {{- ab_chip(x.get('chip_en',''), x.get('chip_zh',''), x.get('chip_tone','muted')) -}}
-        {{- ab_gate(x) -}}
-        {{- ab_ew_two_reads(x) -}}
-        {#- W2b/W4 demotion receipt lifted from the EW overlay (MLC-R7) -#}
-        {{- ab_chip(x.get('conflict_chip_en',''), x.get('conflict_chip_zh', x.get('conflict_chip_en','')), 'warn') -}}
-      </span>
-      {%- endif %}
-      {%- if x.get('stat_en') %}<span class="act-row-stat"><span class="l-en">{{ x.stat_en }}</span><span class="l-zh">{{ x.get('stat_zh', x.stat_en) }}</span></span>{%- endif %}
-      {{ ab_sector_pop(x) }}
-    </a>
-    {%- endmacro -%}
-    {#- V2 theme (narrative basket) row macro — composite score rides the name row;
-        provenance glyphs (★ book / ✓ gate / ≈ lens / ⟳ run-reason) sit inline after
-        the name instead of an orphan chips line; china-style 20d-vs-market stat. -#}
-    {%- macro ab_theme_row(x) -%}
-    <a class="actitem ai-theme" data-rpop href="{{ x.href }}">
-      <span class="act-row-top">
-        <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ (x.name_zh or x.name)|e }}</span></span>
-        {%- if x.get('book_wt') %}<span class="ai-book" data-tip-en="In the narrative-rotation model book at {{ '%.0f'|format(x.book_wt*100) }}% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 {{ '%.0f'|format(x.book_wt*100) }}%，通过经回测的绝对趋势门槛">&#9733;{{ '%.0f'|format(x.book_wt*100) }}%</span>{%- endif %}
-        {%- if x.validated %}<span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>{%- else %}<span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>{%- endif %}
-        {%- if x.get('run_reason_en') %}<span class="ai-lens" data-tip-en="{{ x.run_reason_en }}" data-tip-zh="{{ x.get('run_reason_zh', x.run_reason_en) }}">&#8635;</span>{%- endif %}
-        {%- if x.get('score') is not none and x.get('score') is defined %}{%- set _sc = x.score -%}
-        <span class="act-row-score{% if _sc >= 60 %} act-score-hi{% elif _sc >= 40 %} act-score-mid{% else %} act-score-lo{% endif %}">{{ '%.0f'|format(_sc) }}</span>
-        {%- endif %}
-      </span>
-      {#- FIX 1: conflict chip (warn tone) when theme was demoted from buy lanes -#}
-      {%- if x.get('conflict_chip_en') %}
-      <span class="act-row-chips">
-        {{- ab_chip(x.conflict_chip_en, x.get('conflict_chip_zh', x.conflict_chip_en), 'warn') -}}
-      </span>
-      {%- endif %}
-      {%- if x.get('perf_20d_rel') is not none and x.get('perf_20d_rel') is defined %}
-      <span class="act-row-stat"><span class="{{ 'up' if x.perf_20d_rel >= 0 else 'dn' }}">{{ '%+.1f'|format(x.perf_20d_rel * 100) }}%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
-      {%- endif %}
-      {{ ab_theme_pop(x) }}
-    </a>
-    {%- endmacro -%}
-    {#- Lane count helpers -#}
-    {%- set _bn_cnt = action_board.buy_now | length -%}
-    {%- set _bs_cnt = action_board.buy_soon | length -%}
-    {%- set _run_cnt = action_board.get('on_the_run', []) | length -%}
-    {%- set _tp_cnt = action_board.take_profits | length -%}
-    {%- set _hold_cnt = (action_board.hold | length) + (action_board.avoid | length) -%}
-    {#- FIX 3: more-count helpers from basket_items; default 0 when absent -#}
-    {%- set _ab_more = action_board.get('more') or {} -%}
-    {%- set _more_bn = _ab_more.get('buy_now') or 0 -%}
-    {%- set _more_bs = _ab_more.get('buy_soon') or 0 -%}
-    {%- set _more_run = _ab_more.get('on_the_run') or 0 -%}
-    {%- set _more_tp = _ab_more.get('take_profits') or 0 -%}
-    {%- set _more_hold = (_ab_more.get('hold') or 0) + (_ab_more.get('avoid') or 0) -%}
-    <div class="actiongrid">
-      {#- ---- LANE 1: BUY NOW ---- -#}
-      <div class="actcol act-buy">
-        <div class="acth">
-          <div class="acth-title-row">
-            <span class="acth-emoji">🟢</span>
-            <span class="acth-name"><span class="l-en">Buy now</span><span class="l-zh">立即买入</span></span>
-            <span class="acth-count">{{ _bn_cnt }}</span>
-          </div>
-          <div class="acth-sub"><span class="l-en">Entry confirmed today</span><span class="l-zh">今日已确认入场</span></div>
-        </div>
-        <div class="actbody act-fold is-collapsed" id="ab-buy-fold">
-          {% for x in action_board.buy_now %}
-            {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
-          {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('None today — nothing has fully confirmed a fresh cycle low.', '今日无 — 尚无标的完全确认新的周期低点。') }}</p>{% endfor %}
-          {%- if _more_bn > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_bn }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_bn }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
-        </div>
-        {% if _bn_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _bn_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
-      </div>
-      {#- ---- LANE 2: ALMOST READY (buy_soon) ---- -#}
-      <div class="actcol act-soon">
-        <div class="acth">
-          <div class="acth-title-row">
-            <span class="acth-emoji">🔵</span>
-            <span class="acth-name"><span class="l-en">Almost ready</span><span class="l-zh">接近就绪</span></span>
-            <span class="acth-count">{{ _bs_cnt }}</span>
-          </div>
-          <div class="acth-sub"><span class="l-en">Setting up — wait for the trigger, not a buy yet</span><span class="l-zh">构筑中 — 等待触发，尚不可买</span></div>
-        </div>
-        <div class="actbody act-fold is-collapsed" id="ab-soon-fold">
-          {% for x in action_board.buy_soon %}
-            {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
-          {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('No imminent setups.', '暂无临近的构筑。') }}</p>{% endfor %}
-          {%- if _more_bs > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_bs }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_bs }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
-        </div>
-        {% if _bs_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _bs_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
-      </div>
-      {#- ---- LANE 3: IN FAVOUR — DON'T CHASE (on_the_run) ---- -#}
-      <div class="actcol act-run">
-        <div class="acth">
-          <div class="acth-title-row">
-            <span class="acth-emoji">🏃</span>
-            <span class="acth-name"><span class="l-en">In favour — don't chase</span><span class="l-zh">看好 — 勿追高</span></span>
-            <span class="acth-count">{{ _run_cnt }}</span>
-          </div>
-          <div class="acth-sub"><span class="l-en">Uptrend intact but extended · wait for a pullback</span><span class="l-zh">趋势完好但已延伸 · 等待回调</span></div>
-        </div>
-        <div class="actbody act-fold is-collapsed" id="ab-run-fold">
-          {% for x in action_board.get('on_the_run', []) %}
-            {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
-          {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('Nothing extended right now.', '当前无过度延伸的标的。') }}</p>{% endfor %}
-          {%- if _more_run > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_run }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_run }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
-        </div>
-        {% if _run_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _run_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
-      </div>
-      {#- ---- LANE 4: TAKE PROFITS ---- -#}
-      <div class="actcol act-trim">
-        <div class="acth">
-          <div class="acth-title-row">
-            <span class="acth-emoji">🟠</span>
-            <span class="acth-name"><span class="l-en">Take profits</span><span class="l-zh">止盈</span></span>
-            <span class="acth-count">{{ _tp_cnt }}</span>
-          </div>
-          <div class="acth-sub"><span class="l-en">Late in the cycle / topping — protect gains</span><span class="l-zh">周期晚期／做顶 — 保护利润</span></div>
-        </div>
-        <div class="actbody ab-trim-fold is-collapsed" id="ab-trim-fold">
-          {% for x in action_board.take_profits %}
-            {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
-          {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('Nothing topping.', '无标的做顶。') }}</p>{% endfor %}
-          {%- if _more_tp > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_tp }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_tp }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
-        </div>
-        {% if _tp_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _tp_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
-      </div>
-      {#- ---- LANE 5: STAND ASIDE (hold + avoid; top 3 visible) ---- -#}
-      {#- TS-R5: id="dash-hold-fold" PRESERVED — JS auto-expand on turn-watch match -#}
-      <div class="actcol act-hold lst-wrap">
-        <div class="acth">
-          <div class="acth-title-row">
-            <span class="acth-emoji">⚪</span>
-            <span class="acth-name"><span class="l-en">Stand aside</span><span class="l-zh">观望</span></span>
-            <span class="acth-count">{{ _hold_cnt }}</span>
-          </div>
-          <div class="acth-sub"><span class="l-en">Hold what you own · no new buying</span><span class="l-zh">持有勿动 · 不新开仓</span></div>
-        </div>
-        <div class="actbody lst-collapse lst-cap3 is-collapsed" id="dash-hold-fold">
-          {% for x in action_board.hold %}
-            {#- TS-R5: data-theme-id wrapper enables client-side auto-expand -#}
-            {% if x.kind == 'theme' %}<div data-theme-id="{{ x.slug or x.ticker }}">{{ ab_theme_row(x) }}</div>{% else %}{{ ab_sector_row(x) }}{% endif %}
-          {% endfor %}
-          {% for x in action_board.avoid %}
-            {% if x.kind == 'theme' %}<div data-theme-id="{{ x.slug or x.ticker }}">{{ ab_theme_row(x) }}</div>{% else %}{{ ab_sector_row(x) }}{% endif %}
-          {% endfor %}
-          {%- if _more_hold > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_hold }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_hold }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
-        </div>
-        {% if _hold_cnt > 3 %}
-        <button class="lst-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more', '显示更多') }} ({{ _hold_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>
-        {% endif %}
-      </div>
-    </div>
-  </div>{# /panel — What to act on now (standouts split into their own panel 2026-07-11) #}
+  {% include "_us_act_now_board.html.j2" %}
     {% set _su = us_standouts if (us_standouts and us_standouts.buy) else None %}
     {{ pv.pv_css() }}
 {#- ══════════════════════════════════════════════════════════════════════════════════
@@ -15847,6 +15538,17 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% if (_vs_fired or n.get('alpha_entry') == 'extended') and _entry_ok %}{% set _fl.rows = _fl.rows + [("Already moving. Don't chase above the buy zone.", '已在异动。不要在买区上方追高。')] %}{% endif %}
         {% if n.get('ext_z') is not none and n.ext_z > 2.0 %}{% set _fl.rows = _fl.rows + [('Stretched unusually far above its trend line, so chasing is risky.', '远高于趋势线，追高风险较大。')] %}{% endif %}
         {% if n.get('antichase_shadow_blocked') %}{% set _fl.rows = _fl.rows + [('Parabolic tail. Treat any entry here as a chase.', '处于抛物线尾部。此处入场应视同追高。')] %}{% endif %}
+        {# ── COPY FENCE: the two rows ABOVE are the ext_z anti-chase read (px/SMA200
+             z-scored).  The "Blow-off risk" chip built in the marks row BELOW is a
+             SEPARATE, separately-measured construction (12-session ROC at its own
+             trailing p99 inside a burst-mover uptrend, engine/roc_blowoff.py), and the
+             battery's PM4 redundancy read puts max |rho| between them at 0.43 — so both
+             can legitimately fire on one card.  Because they can co-render, the blow-off
+             chip must NEVER use the bare word "Extended": that word already belongs to
+             the ext_z family here and in engine/stock_score.py's conviction verdict, and
+             two different measurements wearing one word is how a card starts arguing with
+             itself.  "Blow-off risk" / 冲顶风险 is the label; the numbers in its hover are
+             ITS OWN measured rates, never the ext_z ones. #}
         {% set _es_chip = n.get('earnings_soon') %}
         {% if _es_chip and _es_chip.get('days_to') is not none %}{% set _fl.rows = _fl.rows + [(_es_chip.get('chip_en') or ('Earnings in ' ~ _es_chip.days_to ~ 'd'), _es_chip.get('chip_zh') or ('财报还有' ~ _es_chip.days_to ~ '天'))] %}{% endif %}
         {% if n.get('sector_stance') and n.sector_stance in ('Reduce','Cautious') %}{% set _fl.rows = _fl.rows + [('Sector stance is ' ~ n.sector_stance|lower ~ '. This is a single-stock trigger, not a sector call.', '板块态度为' ~ (n.sector_stance_zh or n.sector_stance) ~ '。个股信号，非板块判断。')] %}{% endif %}
@@ -15869,6 +15571,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
              ranking_block, featured_requirements). "Above the board's midpoint" described
              a cross-sectional test the engine never runs, and on a weak board it would
              have promised the opposite of what the gate actually does. #}
+          {# Blow-off risk FIRST: it is the only risk read in this row, and a marks row
+             wraps — buried behind a theme name it would be the one chip a reader misses.
+             Display-only (engine/us_board_rank.ZERO_SCORE_AUTHORITY carries blowoff_risk);
+             see the copy fence above for why it never says "Extended". #}
+          {% if (n.get('blowoff') or {}).get('blowoff_risk') %}{% set _mk.rows = _mk.rows + [{'k':'blow','en':'Blow-off risk','zh':'冲顶风险',
+            'tip_en':'12-day move at its own 1-in-100 extreme near highs. Historically within 5 sessions of a local top 24% of the time (vs 19% base); next-21-session drawdowns ran ~2.5pp deeper. 3 of 4 such extremes are still not the top — risk context, not a sell signal.',
+            'tip_zh':'12日涨幅处于自身历史百分之一的极值，且贴近高点。历史上此类情形有24%在5个交易日内就是局部顶部（基准19%）；其后21个交易日的回撤中位数深约2.5个百分点。四次中仍有三次并非顶部——这是风险背景，不是卖出信号。'}] %}{% endif %}
           {% if _feat %}{% set _mk.rows = _mk.rows + [{'k':'feat','en':'★ Featured','zh':'★ 精选',
             'tip_en':'One of today’s top picks: the signal is fresh, the entry window is open, edge above zero (an absolute floor) and price is not extended. Capped at 12 names and 4 per sector, so fewer can show. Priority order, not a return forecast.',
             'tip_zh':'今日重点之一：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、价格未过度拉伸。全板最多12只、每个板块最多4只，因此可能更少。这是排序，不是收益预测。'}] %}{% endif %}

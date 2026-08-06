@@ -2815,6 +2815,34 @@ jobs:
           # swallowed into a green run pins returning browsers to the old bytes for a year
           # (#3617/#3624). See render.yml for the full rationale.
           python -m scripts.optimize_assets || echo "::warning::asset optimize FAILED — ?v= stamps may be stale"
+      - name: fetch oracle panels from R2 (PR-C1 sponsorship shim)
+        if: always()
+        # PR-C1 (RUL-7): oracle panel_s.parquet + panel_m.parquet are built off-render
+        # on the Mac (scripts/oracle_nightly.py + publish_oracle_panels.py) and published
+        # to R2 under the oracle/ prefix.  Downloaded here for TWO consumers below —
+        # this fetch MUST precede oracle_nightly (order pinned by
+        # tests/test_oracle_nightly.py::test_daily_fetch_oracle_panels_precedes_oracle_nightly):
+        #   1. oracle_nightly (next step): personality (3b) and the turn-desk lane
+        #      (Steps 15-19) read data/oracle/panel_s.parquet and skip on their
+        #      missing-file sentinels when it is absent.  When this fetch ran AFTER
+        #      oracle_nightly, turn_desk skipped and Steps 16-19 lost the night while
+        #      the panel landed ~3s later (run 30960328285, 2026-08-05).  Note
+        #      episodes_s.parquet is NOT fetched (not published to R2) — turn_desk
+        #      still needs it from the runner workspace (oracle_offrender builds it).
+        #   2. build_bottom_sensors (further below): populates sponsorship_state for
+        #      the ~1,489+ sector-mapped tickers.
+        # Safe at this position: the fetch has no local inputs (R2 creds only), and
+        # neither oracle_nightly nor build_world_state writes any of the three
+        # fetched files (panel_s/panel_m/manifest).
+        # Absent-object-safe: if R2 objects are missing the consumers degrade to
+        # 'unavailable'/sentinel-skip — this step NEVER crashes the build (always exits 0).
+        # No-op when R2 creds are absent (non-prod builds, forks).
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.fetch_oracle_panels || echo "::warning::fetch_oracle_panels failed (non-fatal — sponsorship_state will be unavailable)"
       - name: oracle nightly (state + alerts + directive + ledger + banner)
         if: always()
         # Oracle O4 live-wiring: reads committed panel/episode/graph artifacts (heavy
@@ -2827,6 +2855,7 @@ jobs:
         #   site/basketdata/oracle_state.json    the bus payload (git add site/ covers)
         # Sentinel-gap check: all outputs land under data/ or site/ which are in the
         # "git add data/ site/ reports/" below — NO new explicit git add needed.
+        # panel_s/panel_m availability: fetched from R2 by the step directly above.
         # --skip-panel --skip-graph --skip-episodes: heavy rebuilds run separately off-render.
         # --skip-timemachine: the TM feed export needs the panel+episode parquets, which are
         #   built off-render (build_oracle_panel forbids render-path use); the dedicated
@@ -2846,21 +2875,6 @@ jobs:
         # engine-render.yml (express lane) also runs this step — its regime/market_state
         # recompute would otherwise drift ahead of the committed world_state copies.
         run: python -m scripts.build_world_state || echo "::warning::build_world_state failed (non-fatal) — keeping last committed world_state"
-      - name: fetch oracle panels from R2 (PR-C1 sponsorship shim)
-        if: always()
-        # PR-C1 (RUL-7): oracle panel_s.parquet + panel_m.parquet are built off-render
-        # on the Mac (scripts/oracle_nightly.py + publish_oracle_panels.py) and published
-        # to R2 under the oracle/ prefix.  Download them here so build_bottom_sensors can
-        # populate sponsorship_state for the ~1,489+ sector-mapped tickers.
-        # Absent-object-safe: if R2 objects are missing the connector degrades to
-        # 'unavailable' — this step NEVER crashes the build (always exits 0).
-        # No-op when R2 creds are absent (non-prod builds, forks).
-        env:
-          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          R2_BUCKET: ${{ secrets.R2_BUCKET }}
-        run: python -m scripts.fetch_oracle_panels || echo "::warning::fetch_oracle_panels failed (non-fatal — sponsorship_state will be unavailable)"
       - name: build bottom-sensor envelope (NW Rails B0)
         if: always()
         # Display-only (no ranking/gating/money-path) — assembles the bottom-sensor
@@ -4178,6 +4192,109 @@ jobs:
           done
           push_lost
           echo "::warning::could not push standout audit US artifacts after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+
+  # PROPHET US §4.5 SCAN TIER — "see everything, admit selectively".
+  # Operator-ratified 2026-08-05 after the receipts that FNV/FSM/EXK/AG/SBSW were
+  # structurally INVISIBLE: not merely un-admitted, but absent from every frame
+  # the engine looks at (the curated universe is the S&P 1500 + Russell + curated
+  # extras; those five are in none of them).
+  #
+  # WHY ITS OWN JOB rather than a step in `engine`. The pass needs
+  # data/massive_stock_day (617 MB, ~20k parquets, R2-canonical) which the engine
+  # job does NOT restore — daily.yml's three restores live in `collect`,
+  # `oracle_offrender` and `standout_audit_us`. The engine job already runs
+  # 135-190 min against a 200-min cap, so adding a 617 MB restore plus ~13 min of
+  # gating there is precisely the budget-buster the charter forbids. `needs:
+  # engine` puts this after the engine's regime/basket artifacts are committed
+  # (the context stamp reads them) and after collect's R2 publish, so the restore
+  # picks up tonight's tip.
+  #
+  # MEASURED (this Mac Studio, 2026-08-04, 3,980-name floored set): store census
+  # over all 20,476 files 30 s; close panel ~10 s; signal_gate ~120 ms/name;
+  # context_frame 74 ms/name => ~13 min. Timeout 60 covers the restore too.
+  #
+  # ZERO AUTHORITY. Board admission, gates, scores, ranks, sizing and plan intake
+  # are UNCHANGED — the curated universe remains the graded population. Nothing
+  # written here is read for any decision.
+  us_scan_tier:
+    needs: engine
+    if: always()
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: git pull origin main
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+      - name: heal shallow curated caches from deeper LOCAL history
+        # §4.5 deliverable 2, re-measured: the collector already fetches from
+        # 2014-01-01 unconditionally (scripts/fetch_basket_ohlcv.py), so there is
+        # no API backfill to run. The real defect is that build_stock_library's
+        # universe() serves some names from data/yahoo and never falls back to
+        # data/baskets/ohlcv — so GOLD carried 23 bars while 3,113 sat one
+        # directory over. This splices the deeper LOCAL history in: prepend-only,
+        # idempotent, no network. Runs BEFORE the scan pass so tonight's gate
+        # verdicts already see the healed depth. Resilient.
+        continue-on-error: true
+        run: python -m scripts.heal_shallow_caches --nightly || true
+      - name: restore massive_stock_day store from R2 (the scan tier's price plane)
+        # Read-only here: no publish-back. fetch_r2's content-hash skip means a
+        # warm runner tree costs one LIST and zero GETs. A failed restore is NOT
+        # fatal — the scan runner emits a line-start ::warning and writes a
+        # disclosed null, which is the honest artifact for a night with no store.
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.fetch_r2 --dirs massive_stock_day --workers 24
+      - name: US scan tier — stamp the widened seeing set + runner audit
+        # Writes data/prophet_scan_tier/{latest.json,forward_log.jsonl} and appends
+        # tier="scan" rows to the SAME data/us_prophet_rank/candidates monthly part
+        # the engine job wrote earlier tonight. Keep-first on
+        # (stamp_date, ticker, board_definition) makes the curated row win on any
+        # overlap, so a name can never be double-counted across tiers.
+        # COLLECT_LANE=nightly arms the context-vector stamp's lane gate.
+        env:
+          COLLECT_LANE: nightly
+        run: python -m scripts.run_us_scan_tier --nightly || true
+      - name: commit scan-tier artifacts
+        run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/prophet_scan_tier 2>/dev/null || true
+          git add data/us_prophet_rank/candidates 2>/dev/null || true
+          # Healed caches (prepend-only splices from local donors).
+          git add data/yahoo 2>/dev/null || true
+          git add data/stocks 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no scan-tier changes"; exit 0; fi
+          push_staged_heal data/ || exit 1
+          if git diff --cached --quiet; then echo "no scan-tier changes after conflict heal"; exit 0; fi
+          git commit -m "us-scan-tier: widened seeing set + shallow-cache heal $(date -u +%F)"
+          PUSH_ALARM=420
+          push_retry_init "US scan tier artifacts"
+          while push_attempt; do
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
+              if push_do; then echo "pushed US scan tier artifacts on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
+            fi
+            push_abort_rebase
+            push_backoff
+          done
+          push_lost
+          echo "::warning::could not push US scan tier artifacts after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
 
   # AI stock-research briefs = ~30 DeepSeek calls (~20 min) — the heaviest single
   # step in the build, and what pushed the engine job past its timeout. build_site
