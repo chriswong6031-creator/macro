@@ -154,6 +154,17 @@ _TROUGH_TOL = 0.97  # BROKEN below trough × 0.97 — engine/hold.py TROUGH_TOL
 # The excluded count ships in meta.history so the cut is auditable, never silent.
 LEDGER_HISTORY_FROM = "2026-06-25"
 
+# The era cut, in one sentence, so every artifact that applies it says the same thing.
+# ONE RULE, ONE FILE (G3 2026-08-06): emit_ledger and build_track both read it — the
+# grader used to exclude the broad-screen era from the ledger and pool it into the
+# track record, publishing two records over two different products from one file.
+_ERA_BASIS = (
+    f"boards before {LEDGER_HISTORY_FROM} published ~120 names on the buy key against "
+    "~780 eligible — a broad screen, not a selection, whose own labels included "
+    "DOWNTREND and TOPPING names. Grading them would grade recommendations the board "
+    "never made, so they are excluded here and in the episode ledger by the same rule."
+)
+
 # SA-W5: v2 parallel lane (sibling files, ISOLATED from main lane)
 # These files NEVER touch retro_grades.parquet / us_board_track.json.
 # Decision: sibling files (not co-tenancy) because the v2 board schema diverges
@@ -424,10 +435,35 @@ def _git_revisions() -> list[tuple[str, str]]:
 
 
 def _load_blob(sha: str) -> dict | None:
-    blob = subprocess.run(
+    """One board revision, or None when that revision genuinely has no board.
+
+    LOUD on a git FAILURE, for the same reason :func:`_git_revisions` is (G2).  This
+    used to read `.stdout` without ever looking at the return code, so `git show`
+    failing — a corrupt object, a missing pack, an interrupted checkout — produced an
+    empty string, which read as "this commit had no board" and dropped the revision
+    silently.  Enough dropped revisions and the track record ships a Wilson CI computed
+    over a SINGLE date while still calling itself the history.  A truncated history is
+    the one thing a track record may never be quiet about: an empty stdout WITH rc=0 is
+    a real absence, an empty stdout with rc!=0 is a broken read, and only the first is
+    a None.
+    """
+    proc = subprocess.run(
         ["git", "show", f"{sha}:{BOARD_PATH}"],
         cwd=ROOT, capture_output=True, text=True,
-    ).stdout
+    )
+    if proc.returncode != 0:
+        stderr = (proc.stderr or "").strip()
+        # A path that does not exist in this revision is a legitimate absence, not a
+        # failure: the board was added at some commit, and every earlier revision
+        # answers "does not exist" with rc=128.  Everything else is a broken read.
+        if "does not exist" in stderr or "exists on disk, but not in" in stderr:
+            return None
+        raise RuntimeError(
+            f"git show {sha}:{BOARD_PATH} failed (rc={proc.returncode}): "
+            f"{stderr[:300]} — refusing to grade on a silently truncated history; "
+            "re-run once the object store is readable."
+        )
+    blob = proc.stdout
     if not blob.strip():
         return None
     try:
@@ -945,28 +981,60 @@ def _hit_stats(sub: pd.DataFrame, col: str = "excess_spy") -> dict:
 
 
 def _precision_at_k(sub: pd.DataFrame, col: str = "excess_spy",
-                    rank_col: str = "position", ascending: bool = True) -> dict:
-    """P(excess>0) among the top-k by `rank_col` (published board position by default;
-    position ascending = higher rank). Set rank_col='alpha', ascending=False to score the
-    counterfactual alpha-ordered board. Averaged across boards so each day contributes
-    equally (mitigates n-heavy days)."""
+                    rank_col: str = "position", ascending: bool = True,
+                    published: bool = True) -> dict:
+    """P(excess>0) among the top-k by `rank_col`.
+
+    PUBLISHED TOP-K, NOT TOP-K-OF-THE-SURVIVORS (G1, 2026-08-06)
+    ------------------------------------------------------------
+    `precision@k` is a claim about the k names a reader actually saw at the top of the
+    board.  `head(k)` of the GRADED subset is a different question: every published row
+    that failed to grade (no price, not yet matured, delisted) is skipped and the row
+    BELOW it is promoted into the top-k.  On a board where position 1 is the one that
+    delisted, `head(3)` scores published #2, #4 and #5 and calls the answer P@3.
+    Promotion by absence is not a ranking result.
+
+    So for the as-published order (`rank_col="position"`, the ranking under test) the
+    top-k is defined by the PUBLISHED RANK — `position` is 0-based within the lane, so
+    the published top-k is `position < k` — and rows missing from the graded frame are
+    simply absent, never backfilled from below.  Each cell then discloses
+    `published_topk_rows` / `graded_topk_rows` / `coverage`, so a thin cell is visible
+    as thin rather than reported at full confidence.
+
+    `published=False` is the honest fallback and the ONLY mode available to a
+    COUNTERFACTUAL ordering (`rank_col='alpha'` / `'composite_z'`): those orders exist
+    only over the rows that graded, so head-of-the-graded-subset IS their definition.
+    Such cells are stamped `basis="graded_subset"` with the same coverage counts, so
+    the reader can never mistake one basis for the other.
+    """
     out = {}
+    use_published = bool(published) and rank_col == "position"
     for k in K_LIST:
         per_board_hit = []
         per_board_mean = []
-        for as_of, g in sub.groupby("as_of"):
-            g = g.sort_values(rank_col, ascending=ascending)
-            topk = g.head(k)[col].dropna()
+        pooled_frames = []
+        published_rows = 0
+        graded_rows = 0
+        for _as_of, g in sub.groupby("as_of"):
+            if use_published:
+                # `position` is the published 0-based rank inside the lane, so the
+                # published top-k is a LEVEL test, not a head() of what survived.
+                pos = pd.to_numeric(g[rank_col], errors="coerce")
+                topk_rows = g[pos < k]
+                published_rows += k          # what the board actually showed at this k
+            else:
+                topk_rows = g.sort_values(rank_col, ascending=ascending).head(k)
+                published_rows += min(k, len(g))
+            topk = topk_rows[col].dropna()
+            graded_rows += len(topk)
             if len(topk) == 0:
                 continue
+            pooled_frames.append(topk)
             per_board_hit.append(float((topk > 0).mean()))
             per_board_mean.append(float(topk.mean()))
+        basis = "published_rank" if use_published else "graded_subset"
         if per_board_hit:
-            # pooled across (board, name) too, for the Wilson CI
-            pooled = pd.concat([
-                sub[sub["as_of"] == a].sort_values(rank_col, ascending=ascending).head(k)[col].dropna()
-                for a in sub["as_of"].unique()
-            ])
+            pooled = pd.concat(pooled_frames)
             kk = int((pooled > 0).sum())
             nn = len(pooled)
             lo, hi = wilson_ci(kk, nn)
@@ -976,9 +1044,21 @@ def _precision_at_k(sub: pd.DataFrame, col: str = "excess_spy",
                 "pooled_precision": round(kk / nn, 4) if nn else None,
                 "wilson_lo": round(lo, 4), "wilson_hi": round(hi, 4),
                 "mean_excess_topk": round(float(np.mean(per_board_mean)), 5),
+                # G1 disclosure — how much of the top-k this cell could actually see.
+                "basis": basis,
+                "published_topk_rows": published_rows,
+                "graded_topk_rows": graded_rows,
+                "coverage": (round(graded_rows / published_rows, 4)
+                             if published_rows else None),
             }
         else:
-            out[f"k{k}"] = {"n_boards": 0, "n_rows": 0}
+            out[f"k{k}"] = {
+                "n_boards": 0, "n_rows": 0, "basis": basis,
+                "published_topk_rows": published_rows,
+                "graded_topk_rows": graded_rows,
+                "coverage": (round(graded_rows / published_rows, 4)
+                             if published_rows else None),
+            }
     return out
 
 
@@ -1056,7 +1136,31 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
     survivorship = _survivorship_block(boards, names)
     if df.empty:
         return {"generated": dt.datetime.now(dt.timezone.utc).isoformat(), "empty": True,
-                "note": "no matured graded rows", "survivorship": survivorship}
+                "note": "no matured graded rows", "survivorship": survivorship,
+                "history": {"era_from": LEDGER_HISTORY_FROM, "n_rows_excluded": 0,
+                            "basis": _ERA_BASIS}}
+    # ── ONE ERA RULE (G3, 2026-08-06) ────────────────────────────────────────
+    # `emit_ledger` already refuses to score anything before LEDGER_HISTORY_FROM: the
+    # 2026-06-15..06-24 boards published 120 names on the `buy` key against ~780
+    # eligible — a broad screen, not a selection, whose own labels included DOWNTREND
+    # and TOPPING names.  `build_track` pooled them anyway, so the SAME FILE published
+    # two different track records over two different products and the headline one
+    # described a board nobody can follow.  A track record is a claim about a specific
+    # instrument; two era rules in one file means at least one of them is wrong.
+    #
+    # The excluded count ships in `history` so the cut is auditable, never silent —
+    # and note that INCLUDING the old era is the choice that flatters the desk, which
+    # is the reason to leave it out rather than a reason to keep it.
+    _n_before = int(len(df))
+    df = df[df["as_of"].astype(str) >= LEDGER_HISTORY_FROM]
+    _n_excluded = _n_before - int(len(df))
+    if df.empty:
+        return {"generated": dt.datetime.now(dt.timezone.utc).isoformat(), "empty": True,
+                "note": (f"no matured graded rows on or after {LEDGER_HISTORY_FROM} "
+                         f"({_n_excluded} pre-era row(s) excluded)"),
+                "survivorship": survivorship,
+                "history": {"era_from": LEDGER_HISTORY_FROM,
+                            "n_rows_excluded": _n_excluded, "basis": _ERA_BASIS}}
     board_dates = sorted({b["as_of"] for b in boards})
     graded_dates = sorted(df["as_of"].unique().tolist())
     per_horizon = {}
@@ -1121,14 +1225,19 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
                 },
             },
         }
-        # P(fwd>0 | top-5) vs base rate for the buy lane
+        # P(fwd>0 | top-5) vs base rate for the buy lane.  G1: the top-5 is the
+        # PUBLISHED top-5 (`position < 5`, 0-based), not head(5) of whatever graded —
+        # `head()` promotes row 6 into the top-5 whenever a published top name has no
+        # price, which reports a ranking result produced by absence.
         base = buy["excess_spy"].dropna()
-        top5_frames = [buy[buy["as_of"] == a].sort_values("position").head(5)["excess_spy"].dropna()
+        _pos = pd.to_numeric(buy["position"], errors="coerce")
+        top5_frames = [buy[(buy["as_of"] == a) & (_pos < 5)]["excess_spy"].dropna()
                        for a in buy["as_of"].unique()]
         top5 = pd.concat(top5_frames) if top5_frames else pd.Series(dtype=float)
         block["buy_lane"]["p_fwd_pos_top5_vs_base"] = {
             "top5_p": round(float((top5 > 0).mean()), 4) if len(top5) else None,
             "top5_n": int(len(top5)),
+            "top5_basis": "published_rank (position < 5)",
             "base_p": round(float((base > 0).mean()), 4) if len(base) else None,
             "base_n": int(len(base)),
             "lift": round(float((top5 > 0).mean() - (base > 0).mean()), 4)
@@ -1143,6 +1252,13 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
         "board_dates_range": [board_dates[0], board_dates[-1]] if board_dates else None,
         "graded_dates": graded_dates,
         "graded_rows_total": int(len(df)),
+        # G3 — the ONE era rule this file applies, and what it cost, stated where the
+        # numbers are (not only in emit_ledger's own meta block).
+        "history": {
+            "era_from": LEDGER_HISTORY_FROM,
+            "n_rows_excluded": _n_excluded,
+            "basis": _ERA_BASIS,
+        },
         "price_source": ("engine.equity_factors._closes('broad') + engine.grading.resolve_series "
                          "(extends with edgar dead-name terminals) + data/yahoo/{SPY,XL*}"),
         "price_coverage_note": (
@@ -1499,8 +1615,8 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
     - Collect every ticker that appeared on the BUY lane within the last
       OUTCOMES_LOOKBACK_BOARDS board dates.
     - Find tickers that are ABSENT from the CURRENT (most-recent) buy board.
-    - For each such exited ticker, compute pct change from the close on their
-      first_surfaced date to the most-recent available close.
+    - For each such exited ticker, compute pct change from the NEXT session's close
+      after first_surfaced to the close on the date it left the board.
     - Skip rows with missing prices (never fabricate) — but COUNT them: the broad
       cache is current-membership only, so a name that left the board BECAUSE it
       collapsed and got delisted is exactly the name with no price here. Silently
@@ -1511,6 +1627,24 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
 
     Returns the dict to be serialised as us_board_outcomes.json.
     Degrades to {"empty": True, ...} only when genuinely no exited names exist.
+
+    THREE CONVENTION FIXES (G4, 2026-08-06) — all of them lowered the headline
+    ---------------------------------------------------------------------------
+    1. NEXT-BAR FILL.  The buy price was the close ON first_surfaced — the bar the
+       board is computed from and published that evening.  It is unbuyable.  Worth
+       +3.4pp of win rate and 66% of the reported average return, measured on the
+       shipped artifact.  Entry is now the next session's close, the same convention
+       `build_track`, `engine.grading.fill_index` and `track_scoring` already use;
+       a name whose next bar has not printed is skipped and counted, never filled.
+    2. MARK AT THE EXIT BAR.  Every row is an EXITED name, and each was marked at
+       TODAY's close — so a name that left the board in June kept accruing July's
+       move under the board's name.  The strip claims "surfaced → outcome", and the
+       outcome ends when the board stopped saying it.
+    3. FLATS STAY IN THE DENOMINATOR.  `win_rate` divided by running+stopped only,
+       deleting every |move| <= 2% row (96 of 321 on the shipped artifact).  A flat
+       is a real outcome of a buy call — it is simply not a win — and a denominator
+       conditioned on the size of the result is the resolution-conditioned
+       denominator that deletes exactly the rows a reader wants counted.
     """
     if not boards:
         return {"empty": True, "as_of": str(dt.date.today()), "reason": "no boards"}
@@ -1581,19 +1715,23 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
         except Exception:
             continue
 
-        # Close on or after first_surfaced (next available bar at or after that date)
-        idx_first = ser.index.searchsorted(first_dt, side="left")
+        # G4.1 NEXT-BAR FILL: side="right" lands on the first bar STRICTLY AFTER
+        # first_surfaced.  side="left" returned the surfaced bar itself whenever that
+        # date was a session — the close the board was computed from, published after
+        # the bell.  Where first_surfaced is not a session both sides agree, so this
+        # only ever moves the fill off an unbuyable bar.
+        idx_first = ser.index.searchsorted(first_dt, side="right")
         if idx_first >= len(ser):
+            # The next bar has not printed yet — in flight, not fillable. Counted as a
+            # skip rather than filled at the signal bar (which is the defect above).
             skipped_no_price.append(tk)
             continue
         surfaced_price = float(ser.iloc[idx_first])
         if surfaced_price <= 0:
             continue
 
-        last_price = float(ser.iloc[-1])
-        pct_since = (last_price / surfaced_price - 1.0) * 100.0
-
-        # Determine exit_date: first board date in window where this ticker is absent
+        # Determine exit_date: first board date in window where this ticker is absent.
+        # Computed BEFORE the mark, because it IS the mark date (G4.2).
         exit_date_str = current_as_of  # fallback: use current as_of as exit date
         appeared_before = False
         for b in window:
@@ -1605,6 +1743,22 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
             elif appeared_before:
                 exit_date_str = b.get("as_of", current_as_of)
                 break
+
+        # G4.2 MARK AT THE EXIT BAR: the last close at or before the date the name
+        # left the board, never today's.  Falls back to the last available close only
+        # when the exit date is unreadable or precedes the fill (never silently
+        # extends the window past the exit).
+        exit_idx = len(ser) - 1
+        try:
+            _exit_dt = pd.Timestamp(exit_date_str)
+            _pos = ser.index.searchsorted(_exit_dt, side="right") - 1
+            if _pos >= idx_first:
+                exit_idx = min(_pos, len(ser) - 1)
+        except Exception:
+            pass
+        last_price = float(ser.iloc[exit_idx])
+        mark_date_str = ser.index[exit_idx].date().isoformat()
+        pct_since = (last_price / surfaced_price - 1.0) * 100.0
 
         # days_on_board: count of board dates the ticker appeared on the buy lane
         days_on_board = sum(
@@ -1629,6 +1783,10 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
             "pct_since": round(pct_since, 1),
             "days_on_board": days_on_board,
             "exit_date": exit_date_str,
+            # The bar `last_price` was actually read from (G4.2). Equal to the last
+            # session at or before exit_date; present so a reader can check the mark
+            # is not today's close on a name that left the board weeks ago.
+            "mark_date": mark_date_str,
             "status": status,
             "lane": meta.get("lane") or "buy",
         })
@@ -1650,7 +1808,11 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
     n_running = sum(1 for r in rows_out if r["status"] == "running")
     n_stopped = sum(1 for r in rows_out if r["status"] == "stopped")
     n_flat = sum(1 for r in rows_out if r["status"] == "flat")
-    _denom = n_running + n_stopped
+    # G4.3: EVERY priced exited name is in the denominator. `n_running + n_stopped`
+    # deleted the flats — 96 of 321 rows on the shipped artifact — and a flat is not a
+    # missing outcome, it is a buy call that went nowhere. Conditioning the denominator
+    # on the SIZE of the result is the same shape as conditioning it on the direction.
+    _denom = n_running + n_stopped + n_flat
     win_rate = round(n_running / _denom, 3) if _denom > 0 else None
     _all_pcts = [r["pct_since"] for r in rows_out]
     avg_pct = round(sum(_all_pcts) / len(_all_pcts), 1) if _all_pcts else None
@@ -1681,6 +1843,13 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
             # full-set metrics (over all exited rows, before the display cut)
             "win_rate": win_rate,
             "avg_pct": avg_pct,
+            # G4 conventions, stated where the numbers are.
+            "conventions": {
+                "entry": "next session's close after first_surfaced (the surfaced "
+                         "bar is the bar the board is computed from — unbuyable)",
+                "mark": "close on the date the name left the buy board, not today's",
+                "win_rate_denominator": "every priced exited name, flats included",
+            },
         },
     }
 

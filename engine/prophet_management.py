@@ -187,7 +187,13 @@ def compute_management_state(
     targets_raw    = plan.get("targets") or []
     targets        = [float(t) for t in targets_raw if t is not None]
     horizon_days   = int(plan.get("horizon_days") or 0)
-    signal_date    = _parse_date(str(plan.get("signal_date") or plan.get("asof") or asof))
+    # The horizon clock is the plan's ENTRY date, not its formation anchor.  Reading
+    # `signal_date` FIRST used to start τ months before the plan existed (up to 152
+    # days on the shipped book), so 10 live plans read as overtime/expired at birth
+    # and their phase, confidence and recommended action were all computed off it.
+    # `plan_clock_date` is the ONE resolution order, shared with the outcome scan.
+    from engine.prophet_bridge import plan_clock_date  # noqa: PLC0415 — avoids a cycle
+    signal_date    = _parse_date(str(plan_clock_date(plan) or asof))
     trigger_price  = plan.get("trigger")
     if trigger_price is not None:
         trigger_price = float(trigger_price)

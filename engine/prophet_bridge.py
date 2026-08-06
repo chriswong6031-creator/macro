@@ -57,6 +57,24 @@ ID STABILITY
   Plans persist across runs until invalidated/expired/T2-hit.
   Re-origination is suppressed when the ID already exists in existing_ids.
 
+THE GRADING CLOCK IS ``entry_date``, NOT ``signal_date`` (2026-08-06)
+---------------------------------------------------------------------
+  ``signal_date`` is the BASE-FORMATION anchor (``hold.anchor``) and can precede
+  origination by months — 94 of 103 live plans carried a gap, PINS by 152 days.
+  ``entry`` is the ORIGINATION-day close, so anchoring the horizon clock and the
+  outcome scan to ``signal_date`` graded every plan on bars that PREDATED it: all
+  9 EXPIRED ledger rows and both winners closed before their own plan existed, and
+  14 plans were born already past horizon.
+
+  The id keeps carrying ``signal_date`` (no key migration — the ledger, the state
+  files and every downstream consumer are keyed on it).  Every plan now ALSO
+  carries ``entry_date`` — the date whose close IS ``entry`` — and the clock, the
+  outcome scan, the management τ and the option min-expiry all resolve through
+  :func:`plan_clock_date`.  The 9 rows graded on the old clock are quarantined
+  (``data/prophet/ledger_quarantine.json``), never rewritten: the forward ledger
+  is append-only, so a poisoned row is DISCLOSED and excluded from summaries
+  rather than edited away.
+
 RE-ORIGINATION BLOCK WHILE ACTIVE (W1 2026-08-03, operator-signed)
 -------------------------------------------------------------------
   The ID carries signal_date, so a NEW signal_date on a name that was already
@@ -85,7 +103,7 @@ import os
 import re
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 import pandas as pd
 
@@ -299,13 +317,90 @@ def plan_key(ticker: str, direction: str) -> str:
     return f"{str(ticker or '').strip().upper()}-{str(direction or '').strip().upper()}"
 
 
+# ---------------------------------------------------------------------------
+# The grading clock (2026-08-06) — see the module docstring
+# ---------------------------------------------------------------------------
+
+def plan_clock_date(plan: Mapping[str, Any]) -> str | None:
+    """The date whose close IS ``plan["entry"]`` — the ONE anchor every clock reads.
+
+    Precedence, and why each rung is where it is:
+
+      1. ``entry_date`` — written by :func:`originate_plans` from the run's ``asof``.
+         Authoritative for every plan originated from 2026-08-06 on.
+      2. ``asof``       — the run that originated the plan.  Same day as ``entry_date``
+         by construction, so a pre-fix plan resolves to the right day without a
+         backfill migration.
+      3. ``signal_date`` — LAST, and only because a hand-written or fixture plan may
+         carry nothing else.  It is the base-FORMATION anchor, up to 152 days before
+         the plan existed; reading it FIRST is the defect this function exists to fix.
+
+    ``None`` only when the plan carries none of the three — the callers treat that as
+    "cannot grade", never as "grade from bar zero".
+    """
+    for key in ("entry_date", "asof", "signal_date"):
+        value = plan.get(key)
+        if value:
+            text = str(value).strip()
+            if text:
+                return text
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Forward-ledger quarantine (2026-08-06)
+# ---------------------------------------------------------------------------
+# The ledger is append-only: a row graded on the pre-origination clock cannot be
+# rewritten or deleted.  It is listed here instead, and every reader that
+# SUMMARISES the record drops the listed ids.  Per-plan closure facts (is this plan
+# finished?) must NOT read this list — the plan really did close, it is only the
+# NUMBER attached to that close that is unusable.
+
+QUARANTINE_FILENAME = "ledger_quarantine.json"
+QUARANTINE_SCHEMA = "prophet.ledger_quarantine/v1"
+QUARANTINE_REASON = "graded_on_pre_origination_clock"
+
+
+def load_quarantined_ids(path: "str | Path | None" = None) -> set[str]:
+    """Plan ids whose ledger row is excluded from every RECORD SUMMARY.
+
+    Absent file → empty set (no quarantine is the normal state, not an error).  An
+    unreadable/garbled file also returns empty rather than raising: the quarantine
+    subtracts rows from a display-tier summary, and a summary that crashes tells the
+    reader less than a summary that over-reports by nine rows and says so upstream.
+    """
+    if path is None:
+        try:
+            from lib import config  # noqa: PLC0415
+            root = Path(config.data_dir())
+        except Exception:  # noqa: BLE001
+            root = Path(__file__).resolve().parent.parent / "data"
+        path = root / "prophet" / QUARANTINE_FILENAME
+    p = Path(path)
+    if not p.exists():
+        return set()
+    try:
+        with p.open(encoding="utf-8") as f:
+            payload = json.load(f)
+    except Exception as e:  # noqa: BLE001
+        log.warning("prophet_bridge: quarantine file unreadable (%s) — treating as empty", e)
+        return set()
+    rows = payload.get("quarantined") if isinstance(payload, dict) else payload
+    out: set[str] = set()
+    for row in rows or []:
+        plan_id = row.get("id") if isinstance(row, dict) else row
+        if plan_id:
+            out.add(str(plan_id))
+    return out
+
+
 def select_candidates(
     standouts: dict,
-    n: int = N_CANDIDATES,
+    n: int | None = N_CANDIDATES,
 ) -> list[dict]:
     """
     Apply the pre-registered pick rule to us_standouts.json and return
-    a filtered, sorted list of at most n buy entries.
+    a filtered, sorted list of at most n buy entries (``n=None`` → uncapped).
 
     OURS (pre-registered pick rule — ADMISSION, unchanged by W1):
       gate_go=True  → act_level >= 2 AND band != 'low'
@@ -367,8 +462,14 @@ def select_candidates(
     # Legacy self-heal: a row with no numeric prophet.score sorts BELOW every scored row
     # and, among its own kind, by the OLD key — so a pre-v1 artifact selects exactly what
     # it selects today.  Key legs and the load-bearing ticker leg: _selection_sort_key.
+    #
+    # ``n=None`` returns the FULL admitted ordering.  P4 2026-08-06: the live caller now
+    # applies the duplicate-id / open-plan skips FIRST and caps the SURVIVORS, because
+    # capping here meant a night where the first 12 admitted names were all already-live
+    # plans originated ZERO new plans while eligible names waited behind them.  Admission
+    # and order are untouched — only WHO gets to be counted against the cap moved.
     selected.sort(key=_selection_sort_key)
-    return selected[:n]
+    return selected if n is None else selected[:n]
 
 
 # ---------------------------------------------------------------------------
@@ -1310,6 +1411,7 @@ def resolve_option(
     signal_date: str,
     thetadata_store: str | None,
     asof: str,
+    clock_date: str | None = None,
 ) -> dict | None:
     """
     Resolve an option contract for the plan.
@@ -1318,19 +1420,28 @@ def resolve_option(
 
     OURS (display-only):
       right    = C (BULL) / P (BEAR)
-      expiry   = nearest monthly >= signal_date + horizon_days + 15d
+      expiry   = nearest monthly >= clock_date + horizon_days + 15d
       strike   = nearest strike to 0.60-delta; else first OTM strike from EOD
       premium  = EOD mid (bid+ask)/2 at the chosen contract on asof date
+
+    ``clock_date`` is the plan's ENTRY date (the day whose close is ``entry``) and is
+    the same anchor the horizon clock and the outcome scan read — see
+    :func:`plan_clock_date`.  It defaults to ``signal_date`` only so a legacy caller
+    that predates the split keeps its old behaviour; the live path always passes it.
+    Anchoring the min-expiry on the base-formation ``signal_date`` bought contracts
+    that could expire BEFORE the intended hold even began (PINS: anchor 152 days
+    before origination, so a 45-day hold asked for an expiry already in the past).
     """
     if not thetadata_store:
         log.info("prophet_bridge: THETADATA_STORE not set; option rec skipped for %s", ticker)
         return None
 
     right = "C" if direction == "BULL" else "P"
+    anchor = clock_date or signal_date
     try:
-        sig = date.fromisoformat(signal_date)
+        sig = date.fromisoformat(str(anchor)[:10])
     except ValueError:
-        log.warning("prophet_bridge: bad signal_date %r for %s", signal_date, ticker)
+        log.warning("prophet_bridge: bad option clock date %r for %s", anchor, ticker)
         return None
 
     min_expiry = sig + timedelta(days=horizon_days + 15)
@@ -1443,10 +1554,57 @@ def resolve_option(
 # Plan origination
 # ---------------------------------------------------------------------------
 
+# ── Plan-lane price sourcing (P3 2026-08-06) ────────────────────────────────
+# Per-ticker parquet rungs, in priority order.  These carry full OHLCV.
+_PLAN_PRICE_DIRS = ("data/baskets/ohlcv", "data/stocks")
+
+# Third rung: the wide index-constituent close panels the stock library already
+# builds its universe from (scripts/build_stock_library.universe()).  Same groups,
+# SAME PRIORITY ORDER, so a name resolves to the identical source in both places.
+#
+# WHY IT EXISTS: 27 of 103 live plans (23 distinct tickers) were priced by NOTHING —
+# no ohlcv parquet, no stocks parquet — so they could not be managed, could not be
+# closed, and permanently blocked their ticker+direction slot.  19 of the 23 are
+# columns in these panels.  The remaining 4 (BIDU, GRAB, SE, WB) are foreign issuers
+# in no US index cache; they stay unpriced, and that is a real null, not a lookup bug.
+#
+# The panels carry CLOSE ONLY.  That is sufficient — the management engine and the
+# outcome scan both read `close` and nothing else — and the frame is emitted with a
+# single `close` column so a consumer cannot silently read a missing `high` as data.
+# Ordering matters more than agreement here: the per-ticker parquets ALWAYS win, so a
+# name present in both is never served from a panel and the two can never disagree
+# on a shipped plan.
+_PLAN_PRICE_PANELS = (
+    "breadth", "midcap_breadth", "smallcap_breadth", "russell_breadth",
+)
+
+
+def _panel_close_history(ticker: str, repo: Path) -> pd.DataFrame | None:
+    """One-column ``close`` frame for ``ticker`` from the first panel carrying it."""
+    for group in _PLAN_PRICE_PANELS:
+        cache = repo / "data" / group / "_closes_cache.parquet"
+        if not cache.exists():
+            continue
+        try:
+            panel = pd.read_parquet(cache, columns=[ticker])
+        except Exception:  # noqa: BLE001 — absent column is the common case, not an error
+            continue
+        try:
+            series = panel[ticker].dropna()
+            if series.empty:
+                continue
+            df = pd.DataFrame({"close": series.astype(float)})
+            df.index = pd.to_datetime(df.index)
+            return df.sort_index()
+        except Exception as e:  # noqa: BLE001
+            log.warning("prophet_bridge: panel %s unusable for %s: %s", group, ticker, e)
+    return None
+
+
 def _load_price_history(ticker: str) -> pd.DataFrame | None:
-    """Load price history from baskets/ohlcv → stocks fallback."""
+    """Load price history: baskets/ohlcv → stocks → index-constituent close panels."""
     repo = Path(__file__).resolve().parent.parent
-    for sub in ["data/baskets/ohlcv", "data/stocks"]:
+    for sub in _PLAN_PRICE_DIRS:
         p = repo / sub / f"{ticker}.parquet"
         if p.exists():
             try:
@@ -1460,7 +1618,7 @@ def _load_price_history(ticker: str) -> pd.DataFrame | None:
                 return df
             except Exception as e:
                 log.warning("prophet_bridge: price history load failed %s: %s", ticker, e)
-    return None
+    return _panel_close_history(ticker, repo)
 
 
 # ---------------------------------------------------------------------------
@@ -1665,13 +1823,25 @@ def originate_plans(
                      a plan that has CLOSED is absent from this set, so the name
                      becomes originatable again.  ``None`` disables the block.
     intake_stats   : optional out-dict.  When supplied it is populated with
-                     ``reorigination_blocked`` (int) and
-                     ``reorigination_blocked_keys`` (sorted list) so the caller can
-                     disclose the skips in its artifact.  Never read, only written.
+                     ``reorigination_blocked`` (int),
+                     ``reorigination_blocked_keys`` (sorted list),
+                     ``admitted`` / ``duplicate_id_blocked`` / ``eligible_after_skips``
+                     and ``cap`` so the caller can disclose the skips in its artifact.
+                     Never read, only written.
 
     Returns
     -------
     list of prophet.trade_plan/v1 dicts (validated before return)
+
+    THE CAP RUNS AFTER THE SKIPS (P4 2026-08-06)
+    --------------------------------------------
+    ``select_candidates`` used to be called with ``n=N_CANDIDATES``, so the 12-slot cap
+    was spent on the top 12 ADMITTED names — including names whose plan already exists
+    or whose ticker+direction is still live.  On 2026-08-05 all 12 capped candidates
+    were re-admissions: the run originated ZERO plans while 6 eligible names sat one row
+    below the cap line.  The cap now counts SURVIVORS of the two skips.  Admission and
+    order are untouched: the survivors are still taken in champion order, so this can
+    only ever ADD names from further down the same list, never re-rank the ones above.
     """
     from engine.options_structure import validate_trade_plan  # noqa: PLC0415
 
@@ -1681,7 +1851,43 @@ def originate_plans(
 
     standouts_asof = standouts.get("as_of", asof)
 
-    candidates = select_candidates(standouts, n=N_CANDIDATES)
+    # ── Pass 1: full admitted ordering → apply the two skips → take the first N ──
+    admitted = select_candidates(standouts, n=None)
+    candidates: list[dict] = []
+    blocked_keys: list[str] = []
+    duplicate_id_blocked = 0
+    _seen_ids: set[str] = set()
+    for b in admitted:
+        ticker = str(b.get("ticker") or "")
+        if not ticker:
+            continue
+        hold = b.get("hold") or {}
+        anchor = hold.get("anchor")
+        plan_id = _make_id(ticker, "BULL", anchor if anchor else standouts_asof)
+
+        if plan_id in existing_ids or plan_id in _seen_ids:
+            duplicate_id_blocked += 1
+            log.info("prophet_bridge: suppressing duplicate %s", plan_id)
+            continue
+
+        # W1 re-origination block — checked AFTER the id check so the count below is the
+        # NEW failure mode (a fresh signal_date on a name that is already live) and not
+        # the same-id duplicate suppression that has always been in force.
+        key = plan_key(ticker, "BULL")
+        if active_keys and key in active_keys:
+            blocked_keys.append(key)
+            log.info(
+                "prophet_bridge: re-origination blocked for %s (would have been %s) — "
+                "an open plan on the same ticker+direction is still active",
+                key, plan_id,
+            )
+            continue
+
+        _seen_ids.add(plan_id)
+        candidates.append(b)
+
+    eligible_after_skips = len(candidates)
+    candidates = candidates[:N_CANDIDATES]
     # Exact earnings evidence is loaded only for the already-selected names.
     # It cannot broaden the candidate set or influence ordering.
     try:
@@ -1733,36 +1939,19 @@ def originate_plans(
         _government_revenue_map = {}
 
     plans: list[dict] = []
-    blocked_keys: list[str] = []
     for b in candidates:
         ticker: str = b["ticker"]
         direction = "BULL"  # all dir="up" entries
         government_revenue_ctx = _government_revenue_map.get(ticker.upper())
 
-        # Signal date: use hold.anchor if present, else standouts as_of
+        # Signal date: use hold.anchor if present, else standouts as_of.  This is the
+        # BASE-FORMATION anchor and the plan id's date component — NOT the clock.
         hold = b.get("hold") or {}
         anchor = hold.get("anchor")
         signal_date = anchor if anchor else standouts_asof
 
         plan_id = _make_id(ticker, direction, signal_date)
-
-        if plan_id in existing_ids:
-            log.info("prophet_bridge: suppressing duplicate %s", plan_id)
-            continue
-
-        # ── W1 re-origination block ───────────────────────────────────────────
-        # Checked AFTER the id check so the count below is the NEW failure mode —
-        # a fresh signal_date on a name that is already live — and not the
-        # same-id duplicate suppression that has always been in force.
-        key = plan_key(ticker, direction)
-        if active_keys and key in active_keys:
-            blocked_keys.append(key)
-            log.info(
-                "prophet_bridge: re-origination blocked for %s (would have been %s) — "
-                "an open plan on the same ticker+direction is still active",
-                key, plan_id,
-            )
-            continue
+        # The duplicate-id and open-plan skips ran in pass 1 (see the cap note above).
 
         es = b.get("entry_signal") or {}
         conv = b.get("conviction") or {}
@@ -1816,7 +2005,8 @@ def originate_plans(
             asof=standouts_asof,
         )
 
-        # Option contract
+        # Option contract.  The min-expiry clock is the ENTRY date (asof), the same
+        # anchor the horizon and the outcome scan read — never the formation anchor.
         opt = resolve_option(
             ticker=ticker,
             direction=direction,
@@ -1825,6 +2015,7 @@ def originate_plans(
             signal_date=signal_date,
             thetadata_store=thetadata_store,
             asof=standouts_asof,
+            clock_date=asof,
         )
 
         # ── Content blocks (deterministic, NO LLM) ─────────────────────────
@@ -1908,9 +2099,15 @@ def originate_plans(
                 if opt
                 else "null — symbol not in ThetaData store",
             },
-            # signal_date is the issuance anchor read by compute_management_state
-            # (plan.get('signal_date')).  The underscore alias is kept for display.
+            # signal_date is the BASE-FORMATION anchor and the id's date component.
+            # It is NOT the clock — see entry_date below and plan_clock_date().
             "signal_date": signal_date,
+            # entry_date: the date whose close IS `entry`.  The horizon clock, the
+            # outcome scan, the management τ and the option min-expiry all read this
+            # (via plan_clock_date), because `entry` was taken from THIS day's tape.
+            # signal_date can precede it by months, and grading a plan from bars it
+            # was never live for is what quarantined 9 forward-ledger rows.
+            "entry_date": asof,
             # ── Content blocks (optional; graceful fallback on absence) ───────
             # These are regenerated by the management engine on each nightly run
             # with the current phase.  display-only artifact.
@@ -1920,6 +2117,12 @@ def originate_plans(
             "profit_plan_zh": profit_plan_zh,        # list[{level, label, action, status}] (ZH)
             # Extra metadata (display)
             "_signal_date": signal_date,
+            # The us_prophet_v1 priority score this pick was ORDERED by, frozen onto
+            # the plan at origination.  The index sorts `plans[]` by it (P6) so the
+            # shipped order is the order the artifact says it is; None on a legacy
+            # board row with no numeric prophet.score, which sorts below every scored
+            # plan by the old conviction key — the same self-heal select_candidates uses.
+            "_priority_score": _priority_score(b),
             "_conviction_score": conv.get("score"),
             "_act_level": es.get("act_level"),
             "_r_unit": geo["r_unit"],
@@ -1962,8 +2165,20 @@ def originate_plans(
         len(blocked_keys),
         f" ({', '.join(sorted(set(blocked_keys)))})" if blocked_keys else "",
     )
+    log.info(
+        "prophet_bridge: intake — %d admitted, %d duplicate-id, %d open-plan blocked, "
+        "%d eligible after skips, cap %d",
+        len(admitted), duplicate_id_blocked, len(blocked_keys),
+        eligible_after_skips, N_CANDIDATES,
+    )
     if intake_stats is not None:
         intake_stats["reorigination_blocked"] = len(blocked_keys)
         intake_stats["reorigination_blocked_keys"] = sorted(set(blocked_keys))
+        # P4 disclosure: the cap now bites the SURVIVORS, so the reader needs both
+        # numbers — how many cleared the skips, and how many the cap admitted.
+        intake_stats["admitted"] = len(admitted)
+        intake_stats["duplicate_id_blocked"] = duplicate_id_blocked
+        intake_stats["eligible_after_skips"] = eligible_after_skips
+        intake_stats["cap"] = N_CANDIDATES
 
     return plans
