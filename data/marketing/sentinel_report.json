@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-06T06:11:07Z",
+  "produced_at": "2026-08-06T13:55:48Z",
   "as_of": "2026-08-06",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 11,
-    "passed": 11,
+    "items": 10,
+    "passed": 10,
     "quarantined": 0,
     "quarantined_policy": 0,
     "quarantined_overflow": 0,
@@ -24,15 +24,15 @@
       "slot": "D1-S11",
       "type": "event",
       "cashtag": "",
-      "headline": "AI and chips are carrying a narrow tape"
+      "headline": "AI and chips are carrying a very narrow tape"
     },
     {
-      "id": "post-flagship-012",
+      "id": "post-flagship-015",
       "account": "flagship",
-      "slot": "D1-S12",
-      "type": "chart",
+      "slot": "D1-S15",
+      "type": "signal",
       "cashtag": "$MDB",
-      "headline": ""
+      "headline": "The $MDB move left me behind"
     },
     {
       "id": "post-conf-flagship-001",
@@ -43,43 +43,43 @@
       "headline": "$AMZN just lined up a pattern we track."
     },
     {
-      "id": "post-theme-003",
+      "id": "post-insider-001",
       "account": "flagship",
-      "slot": "D1-S3",
-      "type": "theme_list",
-      "cashtag": "$AMBA",
-      "headline": "Autonomous Systems ripping, +1.9% avg on Wednesday"
-    },
-    {
-      "id": "post-founder-008",
-      "account": "founder",
-      "slot": "D1-S8",
-      "type": "watchlist",
-      "cashtag": "$AVNT",
-      "headline": "$AVNT has closed red 3 sessions in a row"
-    },
-    {
-      "id": "post-founder-015",
-      "account": "founder",
-      "slot": "D1-S15",
-      "type": "signal",
-      "cashtag": "$KWR",
+      "slot": "D1-S10",
+      "type": "insider",
+      "cashtag": "$EWAV",
       "headline": ""
     },
     {
-      "id": "post-founder-021",
+      "id": "post-founder-001",
       "account": "founder",
-      "slot": "D1-S21",
-      "type": "watchlist",
-      "cashtag": "$CWK",
-      "headline": "$CWK held. I’m still waiting."
+      "slot": "D1-S1",
+      "type": "event",
+      "cashtag": "",
+      "headline": "AI and chip stocks are doing almost all the lifting today"
     },
     {
-      "id": "post-sophia-007",
-      "account": "sophia",
+      "id": "post-insider-002",
+      "account": "founder",
       "slot": "D1-S7",
-      "type": "watchlist",
-      "cashtag": "$AMBA",
+      "type": "insider",
+      "cashtag": "$XIIIU",
+      "headline": ""
+    },
+    {
+      "id": "post-meagan-005",
+      "account": "meagan",
+      "slot": "D1-S5",
+      "type": "macro",
+      "cashtag": "",
+      "headline": ""
+    },
+    {
+      "id": "post-sophia-001",
+      "account": "sophia",
+      "slot": "D1-S1",
+      "type": "macro",
+      "cashtag": "",
       "headline": ""
     },
     {
@@ -87,29 +87,21 @@
       "account": "sophia",
       "slot": "D1-S6",
       "type": "mover",
-      "cashtag": "$ALHC",
-      "headline": "$ALHC -20.2% on Wednesday"
+      "cashtag": "$DVA",
+      "headline": "$DVA -18.4% on Wednesday"
     },
     {
-      "id": "post-kelly-009",
-      "account": "kelly",
-      "slot": "D1-S9",
-      "type": "macro",
-      "cashtag": "",
-      "headline": ""
-    },
-    {
-      "id": "post-cici-001",
+      "id": "post-cici-021",
       "account": "cici",
-      "slot": "D1-S1",
-      "type": "macro",
-      "cashtag": "",
+      "slot": "D1-S21",
+      "type": "watchlist",
+      "cashtag": "$NUE",
       "headline": ""
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 45,
+      "pairs_checked": 37,
       "hits": 0,
       "shared_media_hits": 0
     },
