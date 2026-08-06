@@ -1213,6 +1213,19 @@ jobs:
         run: python scripts/check_skip_only_suites.py
       - name: skip-only detector unit tests
         run: python -m pytest tests/test_check_skip_only_suites.py -q
+      # TRIGGER GAPS: the reverse direction of audit_unrun_tests.py. That census
+      # asks "can ANY edit start this job" — an any() over the closure, satisfied
+      # by the test file itself — so a suite stays "triggerable" while the ONE
+      # module it exists to guard is matched by no path entry. The lesson has been
+      # written in comments here four times (#3488, #4559, and the "both halves
+      # listed on purpose" notes through ci.yml) and never enforced; prose in a
+      # 1,700-entry path list is not a guard. Selftest first, same reason as above.
+      - name: check_ci_trigger_closure selftest
+        run: python scripts/check_ci_trigger_closure.py --selftest
+      - name: every guarded suite's subjects must reach its own trigger paths
+        run: python scripts/check_ci_trigger_closure.py
+      - name: trigger-closure guard unit tests
+        run: python -m pytest tests/test_ci_trigger_closure.py -q
       # render.yml's per-scope publish wiring. #3718 fixed the international
       # dashboard never publishing because `intl` was missing from the render
       # lane's scope list, and shipped this suite as the guard — but no `run:`
