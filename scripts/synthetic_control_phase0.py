@@ -821,6 +821,12 @@ def write_report(res: dict) -> None:
 
     L.append("## What the numbers mean\n")
     L.append(res["narrative"])
+    if res.get("gate_honesty"):
+        L.append("\n## Gate honesty — what these gates can and cannot discriminate\n")
+        L.append("*Written after running them, deliberately kept out of the frozen "
+                 "pre-registration so the gates were not retro-fitted to the answer.*\n")
+        for n in res["gate_honesty"]:
+            L.append(f"- {n}")
     L.append("\n## Caveats carried forward\n")
     for c in res["caveats"]:
         L.append(f"- {c}")
@@ -830,6 +836,66 @@ def write_report(res: dict) -> None:
              f"seed {SEED} (placebo draws are the only stochastic element).*")
     WRITEUP_MD.write_text("\n".join(L) + "\n")
     print(f"[write] {WRITEUP_MD}")
+
+
+def build_gate_honesty(res: dict) -> list[str]:
+    """What each gate can and cannot discriminate AT THIS DESIGN.
+
+    Written after running them, and kept separate from the frozen pre-registration so
+    the gates themselves are not retro-fitted to the answer. A gate that a good
+    estimator fails for reasons outside its control is still a failed gate — but a
+    reader is owed the reason, and the wave-1 sibling set the precedent of printing it.
+    """
+    notes: list[str] = []
+    pc = res.get("families", {}).get("sp_pure_adds")
+    if not pc or BENCH_SPY not in pc.get("arms", {}):
+        return notes
+
+    def pm(arm, win="0_5"):
+        return pc["arms"][arm]["placebo"][win].get("placebo_mean")
+
+    sc_m, mk_m, bm_m = pm("sc_nnls"), pm("matched_k"), pm(BENCH_SPY)
+    if None not in (sc_m, mk_m, bm_m):
+        same_sign = (np.sign(sc_m) == np.sign(bm_m))
+        notes.append(
+            "**PC-2 cannot separate an estimator bias from a cohort drift.** It asks "
+            "whether the SC arms are centred at random dates on these names — but a "
+            "cohort that genuinely drifts fails it however good the estimator is. The "
+            f"incumbent SPY-CAR arm, which is NOT under test, reads {_pct(bm_m)} on the "
+            f"same draws against the fitted SC's {_pct(sc_m)} and the equal-weight "
+            f"basket's {_pct(mk_m)}"
+            + (", i.e. all three arms are offset the same way. The comparison ACROSS "
+               "arms is the discriminating statistic and it lives in the table above, "
+               "not in the gate. Read a PC-2 failure as 'this cohort drifts', not as "
+               "'synthetic control invents effects'."
+               if same_sign else
+               ", i.e. the arms disagree in direction — here the gate IS reading the "
+               "estimator rather than the cohort."))
+
+    d20 = pc["arms"]["sc_nnls"]["placebo"].get("0_20", {}).get("placebo_mean")
+    r20 = pc["arms"]["sc_nnls"]["real"].get("0_20", {}).get("mean")
+    if d20 is not None and r20 is not None and abs(d20) > abs(r20):
+        notes.append(
+            f"**The [0,20] window carries no event signal at all for the index family.** "
+            f"The random-date placebo mean ({_pct(d20)}) EXCEEDS the realized CAAR "
+            f"({_pct(r20)}), so whatever the 21-day post-announcement window measures, a "
+            f"date drawn at random on the same names reproduces more of it. Any "
+            f"'post-announcement drift' read off that window would be cohort drift. This "
+            f"is a statement about the window and the cohort, not about the estimator — "
+            f"every arm shows it.")
+
+    notes.append(
+        "**PC-1 and PC-3 are the gates that can actually separate the arms**, because "
+        "both are comparisons: PC-1 against a number the house already graded, PC-3 "
+        "against the incumbent's own placebo dispersion on identical draws. PC-2 and F-1 "
+        "are absolute thresholds and inherit whatever the cohort does.")
+    notes.append(
+        "The placebo null is drawn uniformly over the store's sessions while the real "
+        "events cluster (S&P reconstitutions batch quarterly). Market drift differences "
+        "out of every arm — each is a treated-minus-counterfactual difference — but the "
+        "calendar composition of the null is not matched to the real events, and a "
+        "calendar-matched placebo is the sharper design the next rung should use.")
+    return notes
 
 
 def build_caveats() -> list[str]:
@@ -1055,6 +1121,7 @@ def main() -> int:
         "caveats": build_caveats(),
     }
     res["narrative"] = build_narrative(res)
+    res["gate_honesty"] = build_gate_honesty(res)
 
     print("\n" + "=" * 72)
     print("GATES")
