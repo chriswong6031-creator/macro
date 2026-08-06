@@ -541,6 +541,181 @@ def test_bounded_transcript_keeps_head_and_qa_tail():
 
 
 # --------------------------------------------------------------------------- #
+# 5b. Per-rung prompt bounds (R0-A2)
+#
+# The rungs do not share a context window.  The local openai_compat endpoint
+# serves 4,096 tokens; over that it returns HTTP 200 with prose instead of JSON
+# (measured 2026-08-06: 9,000 user-prompt chars scored, 10,000 did not).  A
+# prompt built ONCE before the waterfall therefore falls through to a metered
+# cloud provider on every real transcript.  The cloud rungs read the full
+# 24,000 characters and must NOT be degraded to the smallest window on the
+# ladder.
+# --------------------------------------------------------------------------- #
+_PROMPT_ENVELOPE = len(eq._build_user_prompt("NVDA", "Q3", 2026, "transcript", ""))
+
+
+def _prompt_body_chars(prompt: str) -> int:
+    """Recover the transcript-body length from a built user prompt."""
+    return len(prompt.removesuffix(eq._RETRY_SUFFIX)) - _PROMPT_ENVELOPE
+
+
+def _long_transcript() -> str:
+    text = (
+        "HEAD-FACT: revenue of $12.4B.\n"
+        + ("Prepared remarks filler about the quarter. " * 2000)
+        + "\nOperator: We will now begin the question-and-answer session.\n"
+        "ANALYST-TAIL-FACT: what is the FY27 margin bridge?"
+    )
+    assert len(text) > 24000
+    return text
+
+
+def _capture_rung_prompts(monkeypatch) -> list[tuple[str, str]]:
+    """Record (provider, user prompt) for every rung dispatch of a scoring call.
+
+    The local rung answers the way the 4k-window server actually does over its
+    limit: HTTP 200, finish_reason "stop", a markdown summary and no JSON.
+    """
+    seen: list[tuple[str, str]] = []
+
+    def fake_dispatch(system, user, cfg, provider_cfg, *, max_tokens):
+        provider = provider_cfg["provider_order"][0]
+        seen.append((provider, user))
+        if provider == "openai_compat":
+            return (
+                "### Q3 Financial Highlights\n\n- Revenue grew year over year.",
+                None,
+                provider,
+            )
+        return json.dumps(_GOOD_JSON), None, provider
+
+    monkeypatch.setattr(eq, "_dispatch", fake_dispatch)
+    return seen
+
+
+def test_local_rung_prompt_is_bounded_while_cloud_rung_keeps_full_text(monkeypatch):
+    """THE contract: one scoring call, two prompt sizes, chosen per rung."""
+    seen = _capture_rung_prompts(monkeypatch)
+    cfg = eq.load_config()
+    local_max = int(cfg["openai_compat"]["max_chars"])
+    global_max = int(cfg["max_chars"])
+
+    # The shipped local bound must stay clear of the measured failure point;
+    # 10,000 chars returned prose, so anything at or above that is not safe.
+    assert local_max < global_max
+    assert local_max <= 9000
+
+    row = eq.score_text(
+        _long_transcript(),
+        "NVDA",
+        "Q3",
+        2026,
+        cfg=cfg,
+        provider_cfg={"provider_order": ["openai_compat", "deepseek"]},
+    )
+
+    local_prompts = [u for name, u in seen if name == "openai_compat"]
+    cloud_prompts = [u for name, u in seen if name == "deepseek"]
+    assert local_prompts and cloud_prompts
+
+    # The local rung is bounded to ITS window...
+    for prompt in local_prompts:
+        assert _prompt_body_chars(prompt) == local_max
+    # ...and the cloud rung in the SAME call still gets the full budget.
+    for prompt in cloud_prompts:
+        assert _prompt_body_chars(prompt) == global_max
+
+    # Waterfall behavior is unchanged: local prose -> retry -> cloud JSON.
+    assert [name for name, _ in seen] == [
+        "openai_compat",
+        "openai_compat",
+        "deepseek",
+    ]
+    assert row["model"] == "deepseek"
+    assert row["degraded_reason"] is None
+
+
+def test_local_bound_preserves_the_qa_tail(monkeypatch):
+    """An 8,000-char bound must still carry the Q&A tail — that is its point."""
+    seen = _capture_rung_prompts(monkeypatch)
+    cfg = eq.load_config()
+    local_max = int(cfg["openai_compat"]["max_chars"])
+    local_tail = int(cfg["openai_compat"]["tail_chars"])
+    # tail_chars must not be silently clamped by _bounded_transcript_text's
+    # max_chars//2 ceiling, or the config would state a bound it does not use.
+    assert 0 < local_tail <= local_max // 2
+
+    eq.score_text(
+        _long_transcript(),
+        "NVDA",
+        "Q3",
+        2026,
+        cfg=cfg,
+        provider_cfg={"provider_order": ["openai_compat"]},
+    )
+
+    local_prompt = next(u for name, u in seen if name == "openai_compat")
+    assert _prompt_body_chars(local_prompt) == local_max
+    assert "HEAD-FACT: revenue of $12.4B." in local_prompt
+    assert "middle of transcript omitted" in local_prompt
+    assert "question-and-answer session" in local_prompt
+    assert "ANALYST-TAIL-FACT: what is the FY27 margin bridge?" in local_prompt
+
+
+def test_rung_text_bounds_are_config_driven_with_global_fallback():
+    cfg = {
+        "max_chars": 24000,
+        "tail_chars": 8000,
+        "openai_compat": {"max_chars": 8000, "tail_chars": 3000},
+        "kimi": {"model": "kimi-k2.6"},
+    }
+    # a provider block with its own bound uses it
+    assert eq._rung_text_bounds(cfg, {}, "openai_compat") == (8000, 3000)
+    # a provider block without one, and a provider with no block at all, both
+    # inherit the global bound — cloud rungs are untouched by this mechanism
+    assert eq._rung_text_bounds(cfg, {}, "kimi") == (24000, 8000)
+    assert eq._rung_text_bounds(cfg, {}, "deepseek") == (24000, 8000)
+    assert eq._rung_text_bounds(cfg, {}, "anthropic") == (24000, 8000)
+    # the worker's per-run override beats the config file, as in _dispatch
+    assert eq._rung_text_bounds(
+        cfg, {"openai_compat": {"max_chars": 6000}}, "openai_compat"
+    ) == (6000, 3000)
+    # partial/garbage config falls back instead of raising
+    assert eq._rung_text_bounds({}, {}, "openai_compat") == (24000, 8000)
+    assert eq._rung_text_bounds(
+        {"max_chars": 24000, "tail_chars": 8000, "openai_compat": {"max_chars": "x"}},
+        {},
+        "openai_compat",
+    ) == (24000, 8000)
+
+
+def test_shipped_config_bounds_the_local_rung_only():
+    """The repo config must carry the local bound and leave the global alone."""
+    cfg = eq.load_config()
+    assert int(cfg["max_chars"]) == 24000
+    assert int(cfg["tail_chars"]) == 8000
+    assert eq._rung_text_bounds(cfg, {}, "openai_compat")[0] <= 9000
+    for cloud in ("deepseek", "kimi", "anthropic", "codex"):
+        assert eq._rung_text_bounds(cfg, {}, cloud) == (24000, 8000)
+
+
+def test_server_side_prompt_truncation_is_logged(caplog):
+    """A prompt_tokens count the sent prompt cannot explain must be surfaced."""
+    caplog.set_level("WARNING", logger=eq.log.name)
+    # 25,600 chars reported as 2,050 prompt_tokens — the measured signature.
+    eq._log_prompt_truncation(25600, {"usage": {"prompt_tokens": 2050}}, "qwen3.5:9b")
+    assert "TRUNCATED" in caplog.text
+    assert "2050" in caplog.text
+    caplog.clear()
+    # A prompt that fit (10,000 chars -> 3,932 tokens) must NOT warn, nor must
+    # a response that reports no usage at all.
+    eq._log_prompt_truncation(10000, {"usage": {"prompt_tokens": 3932}}, "qwen3.5:9b")
+    eq._log_prompt_truncation(10000, {}, "qwen3.5:9b")
+    eq._log_prompt_truncation(10000, {"usage": {"prompt_tokens": None}}, "qwen3.5:9b")
+    assert caplog.text == ""
+
+
+# --------------------------------------------------------------------------- #
 # 6. Fail-open when no sources
 # --------------------------------------------------------------------------- #
 def test_score_new_no_sources(tmp_path):

@@ -2,9 +2,14 @@
 
 **Canonical deliverable:** this file is the source of truth for the investigation, clean-room product specification, system contracts, and build sequence.
 
-**Status:** investigation complete; honesty foundation implemented; data graph, statistical engines, user surface, and production forecasts remain staged work.
+**Execution status:** current build state and remaining-wave sequencing moved to
+`research/BIOPHARMA_SEASONALITY_INTELLIGENCE_CLAUDE_CONTINUATION_HANDOFF_2026-08-06.md`.
+This file remains the canonical competitor teardown, product/statistical
+specification, and clean-room design record. Since this dossier's initial
+foundation snapshot, the Calendar Clock backend and public workstation plus the
+Neural Web shadow emitter/forward ledger have shipped; do not rebuild them.
 
-**As of:** 2026-08-01
+**Investigation as of:** 2026-08-01. **Execution status refreshed:** 2026-08-06.
 
 ---
 
