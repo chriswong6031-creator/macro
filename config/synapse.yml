@@ -11222,7 +11222,7 @@ artifacts:
     path: data/us_prophet_rank/candidates/YYYY-MM.parquet
     format: parquet
     producer: engine/us_context_vector.py
-    known_extra_writers: []
+    known_extra_writers: [scripts/run_us_scan_tier.py]
     owner_program: momoedge
     cadence: daily-engine
     storage: git
@@ -11258,6 +11258,17 @@ artifacts:
       every column is READ off a producer that already ran that night (glass-box, A7).
       Columns reach decision authority only through the roadmap §3 bounded-authority
       ladder, one axis at a time, each with its own prereg.
+      COVERAGE TIER (roadmap §4.5, operator-ratified 2026-08-05): every row carries
+      tier ∈ {curated, scan}. curated = the graded population, written by the engine job
+      exactly as before — board ADMISSION, gates, scores, ranks and plan intake read this
+      set and ONLY this set, unchanged. scan = liquidity-floored coverage over
+      data/massive_stock_day, appended by the post-engine us_scan_tier job
+      (scripts/run_us_scan_tier.py, the known_extra_writer above) so an off-index runner
+      is at minimum SEEN and counted missed. The two writers are ordered (needs: engine)
+      and their ticker sets are disjoint by construction; keep-first on
+      (stamp_date, ticker, board_definition) is the second fence — tier is deliberately
+      NOT in the dedupe key, so an overlapping name survives once, as its curated row.
+      The scan tier inherits the SAME zero authority: consumers stays empty.
       NIGHTLY IS THE SOLE ADVANCER: ledger_lane.nightly_advance_enabled()
       (COLLECT_LANE=nightly) is the FIRST statement of append_candidates, so intraday and
       render lanes return 0 without opening a file. Keep-first on

@@ -3055,6 +3055,15 @@ modules:
       git history; consumers read via us_context_vector.load_candidates(). Nightly-only —
       ledger_lane.nightly_advance_enabled() gates the write, so the render lanes that
       discard data/ writes never produce it.
+      SECOND WRITER (roadmap §4.5, operator-ratified 2026-08-05): the post-engine
+      `us_scan_tier` job in daily.yml appends tier="scan" rows to the SAME monthly part
+      via scripts/run_us_scan_tier.py — the liquidity-floored coverage set over
+      data/massive_stock_day, which this job's lane does not restore. The two writers
+      are ordered (engine first, scan after `needs: engine`) and their ticker sets are
+      disjoint by construction (the scan resolver removes curated names); keep-first on
+      (stamp_date, ticker, board_definition) is the second fence, so the curated row —
+      the one carrying board legs, lane and near-miss — always wins on any overlap.
+      Board ADMISSION is unchanged: the curated universe remains the graded population.
 
   # CCW-W5: FINRA corp bond breadth/sentiment/capped-volume (runs inside collect_us via adapter registry)
   - module: collectors.finra_corp_bonds
