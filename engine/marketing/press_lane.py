@@ -1150,6 +1150,7 @@ def _emit_outbox_item(
     spool: bool = False,
     refusal: dict | None = None,
     text_override: str | None = None,
+    card_withheld: bool = False,
 ) -> dict[str, Any] | None:
     """Build a CANONICAL outbox item (kind='breaking') and enqueue it.
 
@@ -1172,6 +1173,17 @@ def _emit_outbox_item(
     carries the full headline/body fields for the rail and the admin preview, but
     ``text`` — the string the publisher validates and posts — is the clamped one.
     Absent, the text is composed from the pair exactly as before.
+
+    ``card_withheld`` says the caller RENDERED a card and then dropped it because
+    it only restated the post. THAT IS NOT THE SAME AS HAVING NO CARD, and the
+    whole point of carrying it this far is that two downstream gates would
+    otherwise read the empty ``media`` list and conclude the post has no
+    evidence: the value gate's `hard` proof rung, and the publisher's
+    bare-cashtag quarantine. Both would then kill a post the card law only meant
+    to slim down — measured end to end on 2026-08-05 (no digit -> `proof:
+    below_hard`, ABSTAINED; digit -> quarantined as a bare cashtag post). The
+    flag is stamped onto ``source`` so the publisher, which never sees this
+    function, can make the same distinction.
     """
     from engine.marketing import outbox as _ob  # noqa: PLC0415
 
@@ -1229,6 +1241,12 @@ def _emit_outbox_item(
         "story_key": story_key,
         **provenance,
     }
+    # THE THIRD STATE OF THE MEDIA QUESTION. `media == []` alone cannot tell a
+    # downstream gate whether a picture was never built or was built and
+    # withheld; this key is that difference, and scripts/marketing_publisher
+    # reads it off the persisted item.
+    if card_withheld:
+        _source["card_withheld_for_value"] = True
     # GIFT-GRIP-PROOF VERDICT (XG-W3, charter §0) — every emission carries it.
     # `source_headline` is the UPSTREAM wire headline, so the informational-
     # surplus test (§7.2: "We rewrote the headline is not an answer") actually
@@ -1240,8 +1258,18 @@ def _emit_outbox_item(
         body=body,
         kind="breaking",
         has_media=bool(media),
+        media_withheld=bool(card_withheld),
         source_headline=str(provenance.get("source_headline") or ""),
-        citation=str(provenance.get("url") or ""),
+        # THE KEY IS `source_url` (fixed 2026-08-06). build_breaking_payload
+        # writes provenance["source_url"]; this read asked for "url" and got ""
+        # on every single press emission, so value_gate's citation rung — the
+        # one rung that speaks for a wire item's actual evidence, the link back
+        # to the source — has never fired on this lane. It was invisible while
+        # every press post carried a card (has_media short-circuits to `hard`
+        # first) and became load-bearing the moment cards could be withheld.
+        # `url` is kept as a fallback so a caller that assembles provenance the
+        # other way round is not silently un-cited again.
+        citation=str(provenance.get("source_url") or provenance.get("url") or ""),
         cfg=cfg,
     )
     if _would_block:
@@ -2535,7 +2563,14 @@ def run_press_tick(
         # sentence-bounded hero), and `card_summary` — the full producer text —
         # while the box draws at most three lines of it. Both gates were
         # therefore judging strings that never appeared on the card.
+        #
+        # A DROPPED CARD IS A POST THAT SHIPS TEXT-ONLY, NEVER A POST THAT DIES.
+        # `_card_withheld` travels with the emission for exactly that reason —
+        # see _emit_outbox_item's contract. The operator's complaint was a
+        # doubled card; a fix that answers it with silence is worse than the
+        # defect.
         _card_svg = payload.get("card_svg", "")
+        _card_withheld = False
         if _card_svg:
             _attach, _card_why = card_earns_attachment(
                 _clamp["text"],
@@ -2545,6 +2580,7 @@ def run_press_tick(
             )
             if not _attach:
                 _card_svg = ""
+                _card_withheld = True
                 provenance["card_dropped"] = _card_why
                 print("::notice title=press-lane-card-dropped::"
                       f"{iid}: {_card_why}; posting text-only", flush=True)
@@ -2560,6 +2596,7 @@ def run_press_tick(
             spool=spool,
             refusal=_refusal,
             text_override=_clamp["text"],
+            card_withheld=_card_withheld,
         )
         if out_item is None:
             _reason = str(_refusal.get("reason") or "outbox_refused")

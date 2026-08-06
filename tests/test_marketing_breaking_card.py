@@ -138,11 +138,13 @@ def test_official_vs_aggregator_differ():
     # assertion that was always carrying the anti-laundering property anyway.
     assert "OFFICIAL SOURCE" in off
     assert "AGGREGATOR" not in agg.replace("bc-tier-aggregator", "")
-    # ...and the aggregator chip carries the UNNAMED credit rather than its
-    # source's name (operator law 2026-08-05, never brand the source). This
-    # assertion used to read `assert "SomeBlog" in agg`.
+    # ...and the aggregator chip carries NO name and NO invented caption
+    # (operator law 2026-08-05, never brand the source). This assertion used to
+    # read `assert "SomeBlog" in agg`, then briefly `"RELAYED REPORT" in agg` —
+    # a positive claim printed for a tier that is also where every UNKNOWN
+    # source routes, including primary artefacts.
     assert "SomeBlog" not in agg
-    assert "RELAYED REPORT" in agg
+    assert "RELAYED" not in agg.upper()
     # Different tier classes.
     assert "bc-tier-official" in off
     assert "bc-tier-aggregator" in agg
@@ -489,19 +491,26 @@ def test_no_card_prints_the_word_aggregator(tier):
 def test_the_badge_word_removal_did_not_cost_the_attribution(tier=None):
     """Dropping the badge must not leave the card's closing seal blank.
 
-    REWRITTEN 2026-08-05. It used to assert the source NAME survived, on the
+    REWRITTEN TWICE. It first asserted the source NAME survived, on the
     reasoning that the name is the provenance a reader needs and the tier word
-    was our own internal grade. Half of that still holds — the internal grade
-    stays off the card — but the name is now forbidden too (never brand the
-    source). What the reader needs is the ADMISSION that this is somebody
-    else's report, and that is what the chip carries: an unnamed credit, so a
-    label-less tier can neither print a masthead nor render an empty pill.
+    was our own internal grade. The name is now forbidden too (never brand the
+    source, operator 2026-08-05). The second pass filled the gap with an
+    invented "RELAYED REPORT" caption, which is a positive CLAIM about a tier
+    that also receives every unknown source — a company's own transcript, a
+    direct quote — and was therefore false on exactly the cards it printed on.
+
+    THE SEAL IS THE ATTRIBUTION NOW. The chip degrades to the tier-inked dot
+    with the `bc-tier-*` class still on it, so the closing mark is present and
+    the trust weight still reads, while nothing is claimed in words. That is
+    what this test pins: not blank, not branded, not asserting.
     """
     svg = render_breaking_card(
         _CPI, "Some Obscure Blog", "aggregator", "2026-07-19T14:32:00Z")
     assert "Some Obscure Blog" not in svg
-    assert "RELAYED REPORT" in svg
-    assert "bc-tier-aggregator" in svg
+    assert "RELAYED" not in svg.upper()
+    # The seal survives as a DRAWN MARK, not just a class on nothing.
+    assert re.search(r'<circle[^>]*class="bc-tier bc-tier-aggregator"', svg), \
+        "the label-less tier lost its seal entirely"
 
 
 def test_a_labelless_tier_leaves_no_dangling_separator():

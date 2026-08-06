@@ -990,42 +990,52 @@ def card_earns_attachment(
     a surface that restates the post; a card is not 2/3 lawful.
 
       1. no post text                      -> attach (nothing to compare)
-      2. VETO: the hero reproduces the post -> text-only, whatever the body says
+      2. VETO: the hero IS the post again   -> text-only, whatever the body says
       3. VETO: the body adds nothing to it  -> text-only, whatever the hero says
       4. the body adds detail               -> attach
       5. the tape strip carries a reading   -> attach
       6. the hero states something new      -> attach
       7. otherwise                          -> text-only (a card of pure chrome)
 
-    THE TWO VETOES ASK CONTAINMENT IN OPPOSITE DIRECTIONS, and that asymmetry is
-    load-bearing rather than an oversight:
+    THE TWO VETOES ASK DIFFERENT QUESTIONS, and that asymmetry is load-bearing
+    rather than an oversight:
 
-      * the HERO is judged by ``containment(post, hero)`` — is the whole post
-        inside the hero? A hero that reproduces the tweet is the tweet in poster
-        type (the India card). A hero that is a compact LABEL for the card, a
-        subset of the post, is lawful: on a macro-print card the hero names the
-        print and the body carries the news the tweet lacks. Judging the hero
-        the other way round would refuse every data card ever drawn.
-      * the BODY is judged by ``containment(body, post)`` — does the body add
-        anything the post lacks? Judging it the other way round would refuse a
-        body that quotes the post and then adds prior and consensus, which is
-        the single most valuable card this lane makes.
+      * the HERO is judged by NEAR-EQUALITY — ``containment(post, hero)`` AND
+        ``containment(hero, post)`` both at threshold. It must cover the post
+        AND add nothing to it. One direction alone is a strictly wider net than
+        the defect: covering-alone drops the additive hero (a terse tweet under
+        a hero carrying the figure), adding-nothing-alone is already asked at
+        step 6, where a body or a tape reading can lawfully outvote it.
+      * the BODY is judged by ``containment(body, post)`` alone — does the body
+        add anything the post lacks? Judging it as near-equality would let a
+        body that restates the post and pads it with filler through, and judging
+        it the other way round would refuse a body that quotes the post and then
+        adds prior and consensus, the single most valuable card this lane makes.
 
     Both texts must be WHAT THE READER SEES. `headline` is the card's rendered
     hero (payload["card_headline"]), not the raw wire field, and `summary` is
     the text the card actually DREW (payload["card_summary_drawn"]) — the box
-    holds ~140 characters and the producer writes to 320, so scoring the full
+    holds what chart_render.card_summary_budget_chars() measures (129 chars on
+    the 1080 card) against a producer budget of 320, so scoring the full
     body judged a paragraph the card never showed.
 
     THERE IS NO CASHTAG SHORT-CIRCUIT. A ``$TICKER`` in the copy used to return
     True before any content check, which exempted every ticker post from the
-    gate wholesale. A ticker is not evidence a card adds value. NOTE the live
-    consequence, which is real and intended: `breaking` is in
-    scripts/marketing_publisher._BARE_CASHTAG_KINDS, so a cashtag-bearing post
-    that now loses its card is QUARANTINED rather than shipped bare. That is a
-    post held for review, not a post deleted, and holding a restatement is the
-    correct outcome — but it is a louder failure than a card-less post, and it
-    is the reason the old short-circuit existed.
+    gate wholesale. A ticker is not evidence a card adds value.
+
+    A VETO SHIPS THE POST TEXT-ONLY. IT DOES NOT KILL THE POST. Removing the
+    cashtag short-circuit without saying so downstream did kill it, twice over,
+    and both paths were measured end to end on 2026-08-05: value_gate rested a
+    breaking post's `hard` proof on HAVING media, so a withheld card came back
+    `proof:below_hard` and press_lane refused the item; and with a digit present
+    to clear that, marketing_publisher._bare_cashtag_post read the empty media
+    list as "this ticker post owes a picture" and quarantined it — terminal,
+    re-creating the 2026-07-30 outage the operator's "I'd rather you destroy the
+    entire engine than ship text only" was about, from the opposite direction.
+    Both gates now read the WITHHELD state (press_lane stamps
+    ``source.card_withheld_for_value``), because "we chose not to print a
+    redundant picture" and "no picture was ever built" are opposite facts about
+    a post's evidence. Any new consumer of ``media == []`` inherits that duty.
     """
     post = str(post_text or "").strip()
     if not post:
@@ -1039,12 +1049,35 @@ def card_earns_attachment(
     # ── VETO 1 — the card HERO reproduces the post ───────────────────────────
     # Nothing used to ask this. It is exactly the India post: card headline ==
     # tweet, printed at poster scale beside the tweet that already said it.
+    #
+    # NEAR-EQUALITY, NOT ONE-WAY CONTAINMENT (fixed 2026-08-06). This asked
+    # `containment(post, head) >= 0.70` alone — "is the whole post inside the
+    # hero" — which is 1.0 whenever the hero is a strict SUPERSET of a terse
+    # post. That is the ADDITIVE hero, the best card this lane draws, and the
+    # veto was dropping it while logging "the hero is the tweet again" about a
+    # hero that said strictly more. Measured on the shipped code:
+    #
+    #   post "Nvidia beats. -- wire reports"
+    #   hero "Nvidia beats on revenue at $46.7B and guides Q3 above the street"
+    #     -> 1.00, DROPPED, on a hero carrying a figure the tweet never had.
+    #
+    # The defect the veto exists for (the India card) is hero == post, i.e.
+    # near-equality in BOTH directions. So both questions have to be asked: the
+    # hero must cover the post AND add nothing to it. A hero that covers the
+    # post while adding a figure is the card, not the defect.
     if head:
-        hero_score = containment(post, head)
-        if hero_score >= _RESTATE_THRESHOLD:
+        hero_covers = containment(post, head)   # is the whole post in the hero?
+        hero_adds = containment(head, post)     # does the hero add anything?
+        if hero_covers >= _RESTATE_THRESHOLD and hero_adds >= _RESTATE_THRESHOLD:
+            # BOTH numbers, because both are now the reason. The old line named
+            # only the covering share and asserted "the hero is the tweet again"
+            # on heroes that said strictly more — an operator-facing explanation
+            # that misdescribed the drop. It is only printed on near-equality
+            # now, so it is finally true.
             return False, (
-                f"card headline restates the post text ({hero_score:.2f} of the "
-                f"post's words are the hero) — the hero is the tweet again"
+                f"card headline restates the post text ({hero_covers:.2f} of "
+                f"the post is in the hero, {hero_adds:.2f} of the hero is "
+                f"already posted) — the hero is the tweet again"
             )
 
     # ── VETO 2 — the card BODY adds nothing the post does not already say ────
@@ -1131,16 +1164,21 @@ def build_breaking_payload(
                                 # sentences that fit the box; "" = no second
                                 # voice was drawn at all). THIS is the string
                                 # card_earns_attachment scores — the box holds
-                                # ~140 chars and the producer writes to 320, so
+                                # what card_summary_budget_chars() measures
+                                # (129) and the producer writes 320, so
                                 # scoring card_summary judged text no reader saw.
         card_tickers: list[dict]  # enriched rows the card's tape strip drew
         provenance: {source_url: str, source: str, ingested_at: str}
 
     `citation` is source_authority.citation()'s result when the caller already
-    has one (press_lane computes it for the POST BODY several steps earlier).
-    Forwarded to the card so a "no credit" ruling binds the picture too, instead
-    of the card quietly deriving its own answer — which is how the chip came to
-    print a masthead the post body had already refused to name.
+    has one (press_lane computes it for the POST BODY several steps earlier). It
+    is ACCEPTED AND NOT FORWARDED TO THE CARD. A first pass threaded it down to
+    the tier chip so a "no credit" ruling would bind the picture too; the chip
+    now prints the tier and NEVER a name (chart_render._break_chip_label), so
+    there is no credit left for a ruling to withhold. The kwarg stays because
+    press_lane passes it and a future card surface may earn one — it does not
+    stay wired into a decision it cannot change. (Mutation-verified before
+    removal: deleting the branch it fed changed no test's answer.)
     """
     summary_result = summarize_item(item, cfg, _llm_override=_llm_override, wire=wire)
 
@@ -1220,8 +1258,6 @@ def build_breaking_payload(
             cta=chart_cta_enabled(cfg),
             summary=card_summary,
             logo_root=root,
-            # A "no credit" ruling made for the POST BODY binds the picture too.
-            citation=citation,
         )
         # BACKSTOP — no source handle may reach a card surface (operator law
         # 2026-08-02). De-handling happens at ingestion, so this should never
@@ -1246,10 +1282,28 @@ def build_breaking_payload(
         except TypeError:
             # Older renderer without the event_class kwarg — degrade cleanly.
             card_svg = render_breaking_card(fit=card_fit_report, **card_kwargs)
-        # WHAT THE READER SEES, read back from the renderer. Absent keys mean
-        # the render degraded, and the default set above (the full text) stands.
-        if "summary_drawn" in card_fit_report:
+        # WHAT THE READER SEES, read back from the renderer.
+        #
+        # ABSENT KEYS MEAN THE RENDER DEGRADED, AND A DEGRADED CARD DOES NOT
+        # SHIP (2026-08-06). render_breaking_card's outer fail-soft returns
+        # _break_fallback_svg — a blank "MASTERMIND · Breaking" rectangle — and
+        # populates no `fit`. card_svg was then non-empty while
+        # card_summary_drawn kept its conservative default (the FULL summary),
+        # so the dispatch gate scored a 300-char body that is not on the card,
+        # could answer attach=True on it, and a blank placeholder shipped as
+        # media with provenance.card_fit reporting summary_source_chars = 0. The
+        # docstring claimed "a caller that reads a missing key knows the render
+        # degraded"; the caller now ACTS on it. A card nobody can read is not a
+        # card, and the post has its own text.
+        if "headline_drawn" in card_fit_report:
             card_summary_drawn = str(card_fit_report.get("summary_drawn") or "")
+        elif card_svg:
+            print("::warning title=breaking-card-render-degraded::"
+                  f"{item.get('id', '?')}: the renderer returned a card with no "
+                  "fit report (fail-soft fallback) — card dropped, posting "
+                  "text-only", flush=True)
+            card_svg = ""
+            card_summary_drawn = ""
         _sm_dropped = int(card_fit_report.get("summary_chars_dropped", 0) or 0)
         if _sm_dropped:
             # COUNTED, never silent — the sibling of the headline warning above.
@@ -1303,7 +1357,7 @@ def build_breaking_payload(
         # was dropped as a restatement of the headline.
         "card_summary": card_summary,
         # ...and what it DREW of it. The gate scores this one: the summary box
-        # holds ~140 characters (chart_render.card_summary_budget_chars) while
+        # holds what chart_render.card_summary_budget_chars() measures while
         # the producer writes to 320, so card_summary is routinely a paragraph
         # the reader never sees. "" means the card drew no second voice at all.
         "card_summary_drawn": card_summary_drawn,

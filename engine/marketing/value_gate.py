@@ -376,9 +376,32 @@ def _proof_tier(
     has_media: bool,
     numbers_whitelist: Iterable[str] = (),
     citation: str = "",
+    media_withheld: bool = False,
 ) -> str:
-    """The STRONGEST proof tier this copy reaches, or "" for none."""
-    if has_media:
+    """The STRONGEST proof tier this copy reaches, or "" for none.
+
+    ``media_withheld`` is the third state of the media question (2026-08-06). A
+    post can reach this gate with no picture for two completely different
+    reasons, and reading them as one is what turned a card-quality rule into a
+    press outage:
+
+      * NO CARD WAS EVER BUILT — the post genuinely has no visual evidence, and
+        `has_media=False` is the honest reading;
+      * A CARD WAS BUILT, MEASURED AND DELIBERATELY WITHHELD because it only
+        restated the post (breaking_summary.card_earns_attachment). The evidence
+        did not disappear; we declined to print a second, redundant copy of it.
+
+    Only the first weakens the post. Treating the second as "no proof" made the
+    card-value law delete the post it was supposed to slim down: on 2026-08-05
+    every cashtag-free wire flash whose card was withheld came back
+    `proof:below_hard` and was refused outright by press_lane.
+
+    NOTE THE SCOPE — this changes PROOF only. `evaluate` still records
+    ``surplus["media"] = has_media``, because a withheld card is not a GIFT: the
+    reader never sees it. Proof asks "does this rest on something checkable",
+    and the answer is unchanged by our decision not to reprint it.
+    """
+    if has_media or media_withheld:
         return "hard"
     if citation and _URL_RE.search(str(citation)):
         return "hard"
@@ -429,6 +452,7 @@ def evaluate(
     source_headline: str = "",
     citation: str = "",
     franchise_contract: Sequence[str] = (),
+    media_withheld: bool = False,
 ) -> Verdict:
     """Run the deterministic Gift-Grip-Proof gate over one emission.
 
@@ -470,7 +494,8 @@ def evaluate(
 
     # ── PROOF ───────────────────────────────────────────────────────────────
     reached = _proof_tier(
-        text, has_media=has_media, numbers_whitelist=numbers_whitelist, citation=citation
+        text, has_media=has_media, numbers_whitelist=numbers_whitelist,
+        citation=citation, media_withheld=media_withheld,
     )
     proof = _tier_ok(reached, required)
 
@@ -483,6 +508,10 @@ def evaluate(
         "mechanism": bool(_MECHANISM_RE.search(text)),
         "condition": bool(_RULE_RE.search(text)),
         "explanation": bool(_EXPLANATION_RE.search(text)),
+        # A WITHHELD CARD IS NOT A GIFT. The reader never sees it, so it cannot
+        # be the informational surplus this post offers — only `proof` counts it
+        # (see _proof_tier). Keeping the two apart is what stops the withheld
+        # state from becoming a blanket pass.
         "media": bool(has_media),
         "stance": bool(_PERSON_RE.search(text)),
     }
@@ -543,6 +572,14 @@ def evaluate(
             "kind_known": str(kind) in KIND_PROOF,
             "required_proof": required,
             "reached_proof": reached,
+            # THREE-STATE, not two (2026-08-06). "shown" | "withheld_for_value"
+            # | "none" — a card that was drawn and deliberately not printed must
+            # never read back the same as a post that never had one, or the
+            # card-value law silently becomes a post-deletion law.
+            "media_state": (
+                "shown" if has_media
+                else ("withheld_for_value" if media_withheld else "none")
+            ),
             "surplus": surplus,
             "grip_devices": devices,
             "body_words": body_words,

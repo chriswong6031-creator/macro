@@ -283,22 +283,34 @@ def build_outbox_item(
     media: list[dict[str, Any]],
     cfg: dict | None = None,
     article_url: str = "",
+    card_withheld: bool = False,
 ) -> dict[str, Any]:
-    """Build one canonical outbox row and apply the shared value gate."""
+    """Build one canonical outbox row and apply the shared value gate.
+
+    ``card_withheld`` says the card was drawn and deliberately not printed
+    because it restated the post. It is the ONLY way past the hosted-card
+    requirement below, and it is not a way past a failed upload — see
+    press_lane._emit_outbox_item for why the two must never read alike.
+    """
 
     from engine.marketing import outbox
 
     now = _utc(now)
-    if not media or not any(_http_url(entry.get("media_url")) for entry in media):
+    if not card_withheld and (
+        not media or not any(_http_url(entry.get("media_url")) for entry in media)
+    ):
         raise ValueError("earnings-call ticker posts require a hosted card")
     composed = compose_event(event, account=account, as_of=now.date().isoformat())
     source = _provenance(event, composed, article_url=article_url)
+    if card_withheld:
+        source["card_withheld_for_value"] = True
     would_abstain = outbox.stamp_value_gate(
         source,
         headline=str(composed["headline"]),
         body=str(composed["body"]),
         kind="earnings",
         has_media=bool(media),
+        media_withheld=bool(card_withheld),
         numbers_whitelist=composed["numbers_whitelist"],
         citation=source["citation_url"],
         cfg=cfg,
@@ -394,8 +406,15 @@ def _media_for_event(
     now: datetime,
     cfg: dict | None,
 ) -> tuple[list[dict[str, Any]], str]:
-    """Render through the existing card family and require a hosted image."""
+    """Render through the existing card family and require a hosted image.
 
+    Returns ``([], reason)`` on refusal. ``reason`` distinguishes the two:
+    ``media_unhosted`` (the upload failed — transient, the post cannot ship) from
+    ``card_withheld_for_value`` (the card was drawn and is a restatement — the
+    post ships text-only). The caller must not treat them alike.
+    """
+
+    from engine.marketing.breaking_summary import card_earns_attachment
     from engine.marketing.chart_render import chart_cta_enabled, render_breaking_card
     from engine.marketing.media_publish import publish_card
 
@@ -404,14 +423,36 @@ def _media_for_event(
         f"earnings-call-{ticker.lower()}-{str(event['quarter']).lower()}-"
         f"{int(event['year'])}-{str(event['source_sha256'])[:12]}"
     )
+    card_headline = str(composed["headline"])
+    card_summary = _short_clause(event.get("summary"), 190) or None
+    # THE CARD-VALUE LAW IS NOT PRESS-LANE-LOCAL (2026-08-06). This lane drew a
+    # `breaking`-family card whose hero is `composed["headline"]` — the post's
+    # own first line, verbatim — and never consulted the gate, so the exact
+    # defect the gate was built for (one fact, two surfaces, the tweet in poster
+    # type) kept shipping from here while press_lane was fixed. Every lane that
+    # draws this card asks the same question, with the same post text it is
+    # about to publish. Pinned structurally by
+    # tests/test_marketing_card_earns_pixels.py::test_every_card_drawing_lane_consults_the_gate.
+    attach, why = card_earns_attachment(
+        str(composed["text"]), card_headline, card_summary or "", [],
+    )
+    if not attach:
+        print("::notice title=earnings-call-card-dropped::"
+              f"{ticker} {event['quarter']} FY{event['year']}: {why}; "
+              "posting text-only", flush=True)
+        return [], "card_withheld_for_value"
     svg = render_breaking_card(
-        headline=str(composed["headline"]),
+        headline=card_headline,
         source_name="Earnings call transcript",
-        source_tier="aggregator",
+        # A COMPANY'S OWN TRANSCRIPT IS A PRIMARY SOURCE, not a relay. It sat on
+        # `aggregator` — the most cautious tier, which is the right default for
+        # an UNKNOWN provenance and the wrong grade for an artefact the issuer
+        # published itself.
+        source_tier="official",
         published_at=str(event.get("scored_at") or event["call_date"]),
         tickers=None,
         suppress_cta=False,
-        summary=_short_clause(event.get("summary"), 190) or None,
+        summary=card_summary,
         event_class=None,
         eyebrow="EARNINGS CALL",
         logo_root=root,
@@ -516,6 +557,7 @@ def enqueue_event(
     if preflight != "ok":
         return {"status": preflight, "reason": "outbox_preflight", "item": None}
 
+    card_withheld = False
     if dry_run:
         media = [{
             "kind": "chart_svg",
@@ -528,7 +570,12 @@ def enqueue_event(
         media, media_reason = _media_for_event(
             event, composed, root=repo, now=now_utc, cfg=cfg,
         )
-        if not media:
+        if not media and media_reason == "card_withheld_for_value":
+            # TEXT-ONLY, NOT NO POST. A card refused for restating the copy is
+            # the card law working; killing the post here would answer a
+            # doubled-card complaint with silence.
+            card_withheld = True
+        elif not media:
             return {"status": "media_unhosted", "reason": media_reason, "item": None}
 
     try:
@@ -539,6 +586,7 @@ def enqueue_event(
             media=media,
             cfg=cfg,
             article_url=article_url,
+            card_withheld=card_withheld,
         )
     except Exception as exc:
         return {"status": "refused", "reason": str(exc), "item": None}

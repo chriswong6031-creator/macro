@@ -39,6 +39,7 @@ import subprocess
 import tempfile
 import time
 import zlib
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -4539,7 +4540,11 @@ _BREAK_HEADLINE_MAX_CHARS = 180
 # chars over the box, so a summary written exactly to spec was ALWAYS ellipsised.
 # On a static PNG there is no "read more" (operator law 2026-08-05), so the three
 # live RADAR cards of 2026-08-04/05 each stopped mid-clause. The real capacity of
-# the 3-line box is ~140 characters of mixed-case prose. A number the renderer
+# the 3-line box is what card_summary_budget_chars() MEASURES (129 chars of
+# mixed-case prose on the 1080 card at the time of writing, and whatever the
+# geometry says thereafter — the function is the number, not this comment; a
+# figure stated here that its own measurement contradicts is the same class of
+# defect this note is about). A number the renderer
 # cannot honour is the defect, so the declared numbers are gone and the box
 # measures itself.
 
@@ -4780,44 +4785,14 @@ _BC_HL_LADDER = (132.0, 118.0, 106.0, 96.0, 88.0, 84.0, 78.0)
 #: flashes never reach these rungs.
 _BC_HL_EXTENDED = (68.0, 60.0, 52.0, 46.0)
 
-#: The unnamed credit for a relayed report — the chip's text when the tier
-#: carries no positive badge word (aggregator, and any unknown tier). It is the
-#: ADMISSION without the brand: the reader learns this is somebody else's report
-#: rather than our own desk's work, and learns nothing about whose. Plain words,
-#: no internal taxonomy ("AGGREGATOR" is our grade, not a fact about the world —
-#: operator order 2026-08-03 took that string off the card and it stays off).
-_BC_UNNAMED_CREDIT = "RELAYED REPORT"
-
-
-def _bc_own_desk_names() -> "frozenset[str]":
-    """Lower-cased display names of OUR OWN desks. Fail-soft: empty on any error.
-
-    Delegates to copywriter.own_account_handles, the single reader of "which
-    desks are ours", so the card's allowlist cannot drift from the publisher's.
-    Failing to an EMPTY set is the safe direction here: it makes the chip MORE
-    anonymous, never less, so a broken roster read can only cost us our own
-    branding — it can never leak a publication name.
-    """
-    try:
-        from engine.marketing.copywriter import (  # noqa: PLC0415
-            own_account_handles,
-        )
-        return frozenset(own_account_handles())
-    except Exception:  # noqa: BLE001
-        return frozenset()
-
-
-def _break_chip_label(
-    source_name: str, tier_label: str, *, citation: "dict | None" = None
-) -> str:
+def _break_chip_label(source_name: str, tier_label: str) -> str:
     """The slug-chip text: the source TIER, never the publication name.
 
     OPERATOR LAW 2026-08-05 — NEVER BRAND THE SOURCE. Three live RADAR cards
     (Aug 4-5) printed "ZeroHedge · WIRE SERVICE", "CNBC · WIRE SERVICE" and
     "ForexLive · WIRE SERVICE". We are a markets desk; putting another
     publication's masthead in our own card art advertises them, and it claims a
-    relationship with a newsroom we do not have. The admission that this is a
-    relayed report SURVIVES — it is the name that goes.
+    relationship with a newsroom we do not have.
 
     The previous rule was the inverse: print "<publication> · <TIER>" and fall
     back to the tier only when the name matched a six-entry denylist of generic
@@ -4829,41 +4804,36 @@ def _break_chip_label(
 
       * official tier            → "OFFICIAL SOURCE"
       * wire tier                → "WIRE SERVICE"
-      * aggregator/unknown tier  → "RELAYED REPORT" (the unnamed credit; the
-        aggregator tier carries no badge word of its own, and an empty pill
-        would leave the card's closing seal blank)
-      * OUR OWN desk             → that desk's own name, beside the tier. Naming
-        ourselves is branding, not a source tag — the same carve-out
-        copywriter.banned_language makes for our own @handles.
+      * aggregator/unknown tier  → NOTHING. The chip is drawn as the tier seal
+        alone (see the caller). The tier carries no badge word and this function
+        does not invent one.
 
-    A citation/authority DECISION, when the caller has one, outranks the desk
-    allowlist in the anonymous direction only: source_authority.citation returns
-    ``credit == ""`` for the unnamed tier, and an item the post body refuses to
-    credit must not be credited by the picture either. It can never add a name
-    the rule above would not print.
+    IT DOES NOT INVENT A CAPTION FOR THE UNLABELLED TIER (fixed 2026-08-06). A
+    first pass filled the empty pill with "RELAYED REPORT", which turns a
+    deliberately silent grade into a positive CLAIM — and the aggregator tier is
+    where every UNKNOWN tier routes, including a company's own earnings-call
+    transcript and a Truth Social direct quote. Both are primary artefacts, and
+    the card was telling the reader they were somebody else's relayed report.
+    An empty caption says nothing, which is the honest thing to say when the
+    grade is "we have not classified this". A lane that has a positive grade to
+    make passes ``source_tier`` for it (the transcript lane now says
+    ``official``); it does not get a caption by default.
+
+    ``source_name`` is ACCEPTED AND NEVER DRAWN. It stays in the signature so the
+    name-suppression law has one greppable home and a caller cannot route a
+    masthead onto the card by a different door — pinned by
+    tests/test_marketing_card_earns_pixels.py::test_a_chip_never_carries_a_publication_name.
+    There is deliberately no own-desk carve-out and no `citation` override: both
+    shipped in the first pass and neither could fire in production (the desk
+    allowlist matched @handles against a display-name field; after the name
+    suppression above, a citation ruling had nothing left to decide — verified by
+    mutation, deleting its whole branch changed no test's answer).
 
     The tier is ALSO carried by the chip's weight, fill, stroke, rail and its
     ``bc-tier-*`` class, so the anti-laundering signature (D05) is untouched: an
     aggregator still cannot look like an official print.
     """
-    name = str(source_name or "").strip()
-    label_word = str(tier_label or "").strip() or _BC_UNNAMED_CREDIT
-
-    def _fit(text: str) -> str:
-        return text if len(text) <= 44 else (text[:43] + "…")
-
-    if not name:
-        return label_word
-
-    # An existing "no credit" ruling is final — the card does not re-derive one.
-    if isinstance(citation, dict) and not str(citation.get("credit") or "").strip():
-        return label_word
-
-    if name.lower().lstrip("@") in _bc_own_desk_names():
-        return _fit(f"{name} · {label_word}")
-
-    # Every other publication: the tier alone. The name does not appear.
-    return label_word
+    return str(tier_label or "").strip()
 
 
 def _break_tier_style(tier: str) -> dict[str, str]:
@@ -4959,12 +4929,18 @@ _BC_W_WIDE = frozenset("mwMW@")
 _BC_W_SAFETY = 1.03
 
 
-def _bc_text_w(text: str, size: float, *, bold: bool = True) -> float:
-    """Estimate the rendered width of *text* at *size* px. Deterministic.
+@lru_cache(maxsize=8192)
+def _bc_em_w(text: str, *, bold: bool = True) -> float:
+    """Width of *text* in em units. MEMOISED — pure, deterministic, hot.
 
-    Overestimates on purpose: the failure this guards is text spilling past the
-    content column or out of a pill, so erring wide keeps copy inside the card
-    and costs only an occasional early line break.
+    The no-clip fitter turned this from a once-per-line call into an inner loop:
+    two layout passes x two ladder stages x every sentence-end candidate x an
+    O(words^2) greedy wrap. Measured on 50 renders of one hero plus a 592-char
+    summary, the card went 0.008s -> 4.005s (~500x) before this cache; the same
+    benchmark returns to ~0.02s with it. Render budget is law in this repo, so a
+    500x regression does not ship unacknowledged even at marketing volumes.
+    Keyed WITHOUT the size because width scales linearly in size — one entry
+    serves every rung of the ladder, which is where the reuse actually is.
     """
     em = 0.0
     for ch in str(text or ""):
@@ -4991,7 +4967,17 @@ def _bc_text_w(text: str, size: float, *, bold: bool = True) -> float:
             em += 0.575
     if not bold:
         em *= 0.97
-    return em * float(size) * _BC_W_SAFETY
+    return em
+
+
+def _bc_text_w(text: str, size: float, *, bold: bool = True) -> float:
+    """Estimate the rendered width of *text* at *size* px. Deterministic.
+
+    Overestimates on purpose: the failure this guards is text spilling past the
+    content column or out of a pill, so erring wide keeps copy inside the card
+    and costs only an occasional early line break.
+    """
+    return _bc_em_w(str(text or ""), bold=bold) * float(size) * _BC_W_SAFETY
 
 
 def _bc_wrap_w(
@@ -5057,6 +5043,19 @@ _BC_SM_MAX_LINES = 3
 #: — four at 26px occupy the same space as three at 41px, so the constraint is
 #: honoured while the copy survives.
 _BC_SM_MAX_BLOCK_H = _BC_SM_MAX_LINES * _BC_SM_SIZE * 1.42
+
+#: "The second voice must not dominate the hero", expressed the one way a
+#: step-down cannot trade away: in HERO LINES. The block-height rule above buys
+#: more lines at a smaller rung — which is the point — but with only a height to
+#: honour, the fallback stage that ignores height had no bound at all and drew
+#: seven summary lines under a two-line hero. These two are the floor under that:
+#: at most this many summary lines per hero line, and never more than the hard
+#: ceiling however tall the hero grows. Applied to the FALLBACK stage only, and
+#: never below _BC_SM_MAX_LINES — stage 1's tidy height already allows three
+#: lines at the top rung, and a bound tighter than that would push an in-budget
+#: summary down the ladder in the name of a rule it was already keeping.
+_BC_SM_LINES_PER_HERO_LINE = 2
+_BC_SM_LINES_HARD = 5
 
 #: Summary type ladder, largest first, floored at the AG-3 body minimum. The
 #: hero has had a size ladder since W4g; the summary was a single fixed 41px,
@@ -5162,12 +5161,71 @@ def _bc_fit_summary(
         if not cand:
             continue
         lines, overflowed = _bc_wrap_w(cand, size, max_w, max_lines, bold=bold)
-        if not overflowed:
+        if not overflowed and not _bc_any_line_over_wide(lines, size, max_w, bold=bold):
             return lines, cand, len(s) - len(cand)
 
     # Not even one sentence fits the box: draw no second voice at all rather
     # than a clipped one. The hero still carries the card.
     return [], "", len(s)
+
+
+def _bc_any_line_over_wide(
+    lines: "list[str]", size: float, max_w: float, *, bold: bool = False
+) -> bool:
+    """Does any placed line actually exceed the column? THE NO-CLIP BACKSTOP.
+
+    ``_bc_wrap_w``'s ``overflowed`` flag answers "were words left unplaced",
+    which is NOT the same question. Its own contract says a single word wider
+    than the column is never dropped — it takes its own line — so an over-wide
+    token is PLACED and the flag comes back False. Measured on the shipped code
+    in a 906px column:
+
+      * a 56-character CJK summary measured 1454.7px, overflow flag False
+      * a single 84-character Latin token at 41px measured 1781.5px, flag False
+
+    Both ran 60-95% past the text column, over the card's edge, while
+    ``provenance.card_fit`` reported ``summary_chars_dropped = 0``. The guarantee
+    the fitter's docstring states absolutely ("never clipped") was false for
+    exactly the inputs the brief named — a URL-length token, a CJK string — and
+    every gate above it read a clean fit. Re-measuring what was RETURNED is the
+    only way to answer the question the flag cannot.
+    """
+    return any(
+        _bc_text_w(ln, size, bold=bold) > max_w for ln in (lines or []) if ln
+    )
+
+
+def _bc_card_body_budgeted(text: str, width: int = _BREAK_W) -> str:
+    """Whole leading sentences of *text* within the CARD's own body budget.
+
+    The producer writes the POST body to breaking_summary._MAX_SUMMARY_CHARS
+    (320, or 700 on the wire_deep format). That is a budget about a tweet. The
+    card's second voice has a different, smaller box, and handing it the post's
+    budget is what drove the type ladder to its AG-3 legibility floor on the
+    ordinary case (see the note at the `sm` assignment in render_breaking_card).
+
+    ADVISORY, EXACTLY LIKE :func:`card_summary_budget_chars`: it stands a
+    character count in for a width measurement, so it is right for prose and
+    approximate for capitals or CJK. It never decides what is DRAWN —
+    :func:`_bc_fit_summary` re-measures and remains the only authority. What it
+    decides is which rung the fitter starts from with room to spare.
+
+    Falls back to the FIRST sentence when even that exceeds the budget: a long
+    opening sentence is the copy we have, and handing back "" here would drop a
+    second voice the box might still hold at a lower rung. The fitter judges it.
+    """
+    s = " ".join(str(text or "").split())
+    if not s:
+        return ""
+    budget = card_summary_budget_chars(width=width)
+    if len(s) <= budget:
+        return s
+    ends = _break_sentence_ends(s)
+    for end in reversed(ends):
+        cand = s[:end].strip()
+        if cand and len(cand) <= budget:
+            return cand
+    return s[:ends[0]].strip() if ends else s
 
 
 def _bc_fit_headline(
@@ -5222,7 +5280,6 @@ def render_breaking_card(
     width: int = _BREAK_W,
     height: int = _BREAK_H,
     cta: bool = True,
-    citation: "dict | None" = None,
     fit: "dict | None" = None,
 ) -> str:
     """Render a branded breaking-news card SVG in the Mastermind card family.
@@ -5273,10 +5330,6 @@ def render_breaking_card(
             backward compatibility; deterministic derivative lanes may supply
             a truthful sibling label such as ``EARNINGS CALL``.
         logo_root: Reserved for future logomark use; text cashtags are used now.
-        citation: Optional source_authority.citation() result for this item —
-            ``{credit, tier, reason}``. Consulted by the tier chip so the card
-            honours a "no credit" ruling the POST BODY already made instead of
-            re-deriving one of its own. It can only make the chip MORE anonymous.
         fit: Optional caller-owned dict, populated with what the card actually
             DREW (the out-param idiom press_lane already uses for `refusal`).
             Keys: ``summary_source_chars``, ``summary_card_chars``,
@@ -5424,17 +5477,23 @@ def render_breaking_card(
         # keeps three lines of chrome from pushing the headline off the top.
         ts_str = _break_fmt_ts(published_at)
         tier = _break_tier_style(source_tier)
-        chip_label = _break_chip_label(source_name, tier["label"], citation=citation)
+        chip_label = _break_chip_label(source_name, tier["label"])
         chip_text = _xesc(chip_label)
         chip_size = u(28)
         chip_h = u(62)
         chip_pad = u(30)
         dot_r = u(8)
         chip_track = u(0.4)
+        # NO CAPTION → NO PILL, JUST THE SEAL. An unlabelled tier draws its dot
+        # alone rather than an empty lozenge or an invented caption. The dot is
+        # inked in the tier colour, so the trust weight the pill was carrying is
+        # not lost — it is the same signal with nothing claimed in words.
         chip_w = (
-            chip_pad + dot_r * 2 + u(14)
-            + _bc_text_w(chip_label, chip_size) + chip_track * len(chip_label)
-            + chip_pad
+            (dot_r * 2 + u(14)) if not chip_label else (
+                chip_pad + dot_r * 2 + u(14)
+                + _bc_text_w(chip_label, chip_size) + chip_track * len(chip_label)
+                + chip_pad
+            )
         )
         ts_size = u(27)
 
@@ -5465,7 +5524,22 @@ def render_breaking_card(
         # hero is the exact operator complaint this closes. The derived form
         # is the source's own leading whole sentences, never rewritten.
         hl = derive_card_headline(str(headline or "").strip())
-        sm = (summary or "").strip() if summary is not None else ""
+        # THE CARD-BODY BUDGET IS THE BOX'S, NOT THE PRODUCER'S (2026-08-06).
+        # breaking_summary writes the POST body to 320 chars (700 on wire_deep)
+        # and handed the same string to the card. The renderer honoured it the
+        # only way it could — by stepping the second voice down to the AG-3
+        # legibility FLOOR — so the COMMON case became the smallest type the
+        # card is allowed to draw (measured: a 255-char summary rendered at
+        # 26.0px, ~8.8 CSS px in an X phone media well). One budget was
+        # reconciled with the other by making the type unreadable.
+        #
+        # The two budgets are DIFFERENT NUMBERS about different surfaces and are
+        # now split: the post keeps 320, the card takes whole leading sentences
+        # within what its own box measures. Bounding it HERE rather than in
+        # breaking_summary means every lane that draws this card inherits it,
+        # including earnings_call_lane, which calls the renderer directly.
+        sm_source = (summary or "").strip() if summary is not None else ""
+        sm = _bc_card_body_budgeted(sm_source, width)
         # The BOX decides how many lines the headline gets; this is only a sanity
         # ceiling. Capping at 5 made the fitter clip a wire flash ("...on the
         # Strait…") while leaving room below it — and a truncated sentence is a
@@ -5484,7 +5558,7 @@ def render_breaking_card(
         # whatever actually remains, and is dropped outright if nothing does.
         sm_reserve = (sm_gap + 2 * sm_lh) if sm else 0.0
 
-        def _fit_second_voice(room: float):
+        def _fit_second_voice(room: float, *, hero_lines: int = 1):
             """(lines, drawn, dropped, size) for the summary in *room* px.
 
             NO CLIPPED SECOND VOICE. The overflow signal used to be discarded at
@@ -5503,15 +5577,39 @@ def render_breaking_card(
                  the "too much whitespace" defect wearing a rule as a costume;
               3. whatever drops the least, largest size first.
 
+            STAGE 2 IS BOUNDED (fixed 2026-08-06). It used to take whatever fit
+            below the hero — up to ~15 lines at 26px on a 1080 square — which
+            abandoned the very rule stage 1 is named for. Measured then: hero
+            "Fed holds", a 306-char summary, TWO hero lines against SEVEN
+            summary lines. Seven lines of second voice under two of hero is not
+            a card with a note, it is a note with a headline, and nothing in the
+            suite could see it. The cap is now stated in HERO LINES —
+            _BC_SM_LINES_PER_HERO_LINE per hero line, never more than
+            _BC_SM_LINES_HARD — so "do not dominate the hero" survives a rung
+            step-down instead of being traded away by it.
+
             Never below the AG-3 body floor, and never a clipped line at any
             rung — the no-clip law outranks every preference above.
             """
             if not sm:
                 return [], "", 0, u(_BC_SM_SIZE)
             best: "tuple[list[str], str, int, float] | None" = None
+            # The bound for stage (2) ONLY. Stage (1) is already bounded — by
+            # _BC_SM_MAX_BLOCK_H, which is 3 lines at the top rung — and
+            # clamping it here as well would tighten the tidy rule rather than
+            # backstop the loop that abandons it: measured, a 126-char in-budget
+            # summary fell from 41px to the 26px floor under a one-line hero.
+            # So the floor is _BC_SM_MAX_LINES, the same allowance stage (1) and
+            # card_summary_budget_chars() are both written against.
+            stage2_cap = min(
+                _BC_SM_LINES_HARD,
+                max(_BC_SM_MAX_LINES,
+                    int(hero_lines) * _BC_SM_LINES_PER_HERO_LINE),
+            )
 
             def _try(size_: float, cap_: int):
                 nonlocal best
+                cap_ = int(cap_)
                 if cap_ < 1:
                     return False
                 lines_, drawn_, dropped_ = _bc_fit_summary(
@@ -5529,7 +5627,7 @@ def render_breaking_card(
                     return best
             for cand in _BC_SM_LADDER:                       # (2) all the room
                 size_ = u(cand)
-                if _try(size_, int(room // (size_ * 1.42))):
+                if _try(size_, min(int(room // (size_ * 1.42)), stage2_cap)):
                     return best
             if best is None:                                 # (3) least dropped
                 return [], "", len(" ".join(sm.split())), u(_BC_SM_SIZE)
@@ -5542,7 +5640,9 @@ def render_breaking_card(
                 _BC_HL_LADDER + _BC_HL_EXTENDED, hard_lines,
             )
             hl_block = len(hl_lines_) * (hl_size_ * _BC_HL_LEADING)
-            sm_fit = _fit_second_voice(copy_box_h - hl_block - sm_gap)
+            sm_fit = _fit_second_voice(
+                copy_box_h - hl_block - sm_gap, hero_lines=len(hl_lines_),
+            )
             return hl_size_, hl_lines_, hl_block, sm_fit
 
         # THE NEWS WINS THE BOX. The headline is fitted first, against the box
@@ -5604,18 +5704,31 @@ def render_breaking_card(
             )
 
         # A leading dot in the chip echoes the tier ink — a tiny "seal".
-        chip_svg = (
-            f'<rect x="{pad_l:.1f}" y="{slug_top:.1f}" width="{chip_w:.1f}" '
-            f'height="{chip_h:.1f}" rx="{u(12):.1f}" fill="{tier["fill"]}" '
-            f'fill-opacity="{tier["fill_opacity"]}" stroke="{tier["stroke"]}" '
-            f'stroke-width="{u(3):.1f}" class="bc-tier bc-tier-{tier["key"]}"/>'
-            f'<circle cx="{pad_l + chip_pad + dot_r:.1f}" '
-            f'cy="{slug_top + chip_h / 2:.1f}" r="{dot_r:.1f}" fill="{tier["ink"]}"/>'
-            f'<text x="{pad_l + chip_pad + dot_r * 2 + u(14):.1f}" '
-            f'y="{slug_top + chip_h / 2 + chip_size * 0.35:.1f}" fill="{tier["ink"]}" '
-            f'font-size="{chip_size:.1f}" font-weight="bold" '
-            f'font-family="sans-serif" letter-spacing="{u(0.4):.2f}">{chip_text}</text>'
-        )
+        if chip_label:
+            chip_svg = (
+                f'<rect x="{pad_l:.1f}" y="{slug_top:.1f}" width="{chip_w:.1f}" '
+                f'height="{chip_h:.1f}" rx="{u(12):.1f}" fill="{tier["fill"]}" '
+                f'fill-opacity="{tier["fill_opacity"]}" stroke="{tier["stroke"]}" '
+                f'stroke-width="{u(3):.1f}" class="bc-tier bc-tier-{tier["key"]}"/>'
+                f'<circle cx="{pad_l + chip_pad + dot_r:.1f}" '
+                f'cy="{slug_top + chip_h / 2:.1f}" r="{dot_r:.1f}" '
+                f'fill="{tier["ink"]}"/>'
+                f'<text x="{pad_l + chip_pad + dot_r * 2 + u(14):.1f}" '
+                f'y="{slug_top + chip_h / 2 + chip_size * 0.35:.1f}" '
+                f'fill="{tier["ink"]}" font-size="{chip_size:.1f}" '
+                f'font-weight="bold" font-family="sans-serif" '
+                f'letter-spacing="{u(0.4):.2f}">{chip_text}</text>'
+            )
+        else:
+            # The seal alone. `bc-tier-<key>` still rides on it, so the D05
+            # anti-laundering signature and every test that reads the tier class
+            # off the SVG are unchanged — what goes is the empty pill and the
+            # invented caption that filled it.
+            chip_svg = (
+                f'<circle cx="{pad_l + dot_r:.1f}" '
+                f'cy="{slug_top + chip_h / 2:.1f}" r="{dot_r:.1f}" '
+                f'fill="{tier["ink"]}" class="bc-tier bc-tier-{tier["key"]}"/>'
+            )
         # Timestamp dateline, riding the chip's baseline.
         ts_svg = (
             f'<text x="{pad_l + chip_w + u(26):.1f}" '
@@ -5718,9 +5831,14 @@ def render_breaking_card(
         # only on the success path: a caller finding these keys absent knows the
         # render degraded and must not treat a missing key as "nothing dropped".
         if isinstance(fit, dict):
-            fit["summary_source_chars"] = len(" ".join(sm.split())) if sm else 0
+            # COUNTED AGAINST THE SOURCE, not against the budgeted text. The
+            # card-body budget is itself a drop, and reporting the post-budget
+            # summary's tail as "0 dropped" is the same invisibility the fit
+            # report exists to remove.
+            _src = " ".join(sm_source.split())
+            fit["summary_source_chars"] = len(_src)
             fit["summary_card_chars"] = len(sm_drawn)
-            fit["summary_chars_dropped"] = int(sm_dropped)
+            fit["summary_chars_dropped"] = max(0, len(_src) - len(sm_drawn))
             fit["summary_drawn"] = sm_drawn
             fit["headline_drawn"] = " ".join(hl_lines).strip()
         return svg

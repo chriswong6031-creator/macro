@@ -779,6 +779,26 @@ def _deferral_covers(it: dict) -> bool:
     return kind in _CHART_BEARING_KINDS or kind in _TICKER_ROLLUP_KINDS
 
 
+def _card_withheld_for_value(it: dict) -> bool:
+    """Did a lane draw this post a card and then deliberately not print it?
+
+    THE THIRD STATE OF THE MEDIA QUESTION (2026-08-06). `media == []` reads the
+    same for a post no lane ever illustrated and for a post whose card was
+    rendered, measured against the copy and withheld because it only restated
+    it. Those are opposite facts about the post's evidence and this publisher
+    used to collapse them, which is how the card-value law came to quarantine
+    the posts it had just tidied.
+
+    Set by engine/marketing/press_lane._emit_outbox_item on the item's `source`,
+    which is the dict make_item persists into items.jsonl — so the flag survives
+    the queue and is readable here, in a process that never sees the card.
+    Absent/unparseable reads as False: the gate stays armed by default and only
+    an explicit, positively-stamped decision stands it down.
+    """
+    src = it.get("source")
+    return bool(isinstance(src, dict) and src.get("card_withheld_for_value"))
+
+
 def _bare_cashtag_post(it: dict, pub_cfg: dict, media_paths: list[str]) -> str:
     """A post that names tickers and ships no picture. Returns the tickers, or "".
 
@@ -837,6 +857,22 @@ def _bare_cashtag_post(it: dict, pub_cfg: dict, media_paths: list[str]) -> str:
         # would wedge every ticker post, same reasoning as the deferral gate.
         return ""
     _built_a_card = any(isinstance(m, dict) for m in (it.get("media") or []))
+    if not _built_a_card and _card_withheld_for_value(it):
+        # THE PICTURE WAS DRAWN AND DELIBERATELY NOT PRINTED. This gate asks
+        # "does this post owe a picture it never got?" — and here the lane got
+        # one, measured it against the copy, and found it said nothing the post
+        # did not already say (breaking_summary.card_earns_attachment). Holding
+        # the post for review on that basis quarantines it for being TOO tidy:
+        # the reviewer's only available action is to approve the very text that
+        # is already in the queue. Measured 2026-08-05: every cashtag-bearing
+        # press flash whose card was withheld landed here, terminal.
+        #
+        # THIS IS NOT A HOLE IN THE 2026-07-30 RULE. The 19 posts that outage
+        # quarantined carried no `media` and no lane-set withholding decision;
+        # they simply shipped bare. Nothing sets this flag except a card gate
+        # that has SEEN a rendered card, so a lane cannot buy an exemption by
+        # skipping the render.
+        return ""
     if not _built_a_card and str(it.get("kind") or "") not in _BARE_CASHTAG_KINDS:
         # Prose that mentions a ticker in passing and never claimed a picture.
         return ""
