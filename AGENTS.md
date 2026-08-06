@@ -65,6 +65,40 @@ the regenerated `config/compiled_kill_registry.yml` and
 `config/signal_foundry_blocklist.yml` in the same PR (manual heal:
 `python3 scripts/check_blocklist_drift.py --fix`).
 
+## Context economy (frontier burn is CONTEXT × TURNS)
+
+Measured 2026-08-06 across 3,043 local transcripts (week of 07-30→08-06): of all
+Fable burn, **62% was cache reads, 21% cache writes, only 17% output**. Cache
+reads are the discount (0.1× fresh input), not the waste — never try to avoid
+caching. The cost driver is `context size × turn count`, and the per-turn floor
+is `0.1 × context`: ~15k units/turn at 150k context, ~80k at 800k.
+
+The worst measured session ran 3,539 turns at a median 419k context (max 879k)
+over 43h and 16 branches, costing 11.6% of the week's frontier budget on its
+own. Its turns at ≥400k context were 52% of turns but 67% of its burn. Riding
+context up to auto-compaction is the most expensive possible pattern: compaction
+fires near the ceiling, so every turn on the approach bills at the ceiling rate.
+There is no configurable compaction threshold and a session cannot compact
+itself on demand.
+
+- **Delegate execution; the orchestrator adjudicates.** 76% of that session's
+  main-loop tool calls were `Bash`/`Edit`/`Read`/`Write`, and delegation was
+  2.6%. A subagent's context is discarded on return — only its report lands — so
+  delegating keeps tool output out of the orchestrator permanently.
+- **Budget what enters context.** A tool result of size S landing at turn N is
+  re-read on every remaining turn. Prefer targeted `grep`/line-ranged reads over
+  whole files, cap command output (`head`, `--limit`, `--jq`), and keep browser
+  screenshots and full page dumps inside a subagent.
+- **One session = one task boundary.** A long program needs durable state on
+  disk, not a long session. Run it as a chain of short sessions over a
+  `research/*_CONTINUATION_HANDOFF_<date>.md`, one wave per session. Keep an
+  orchestrator under ~200k; past ~250k, checkpoint to a handoff and let the
+  operator clear rather than grinding to the ceiling.
+
+Do NOT save tokens by reducing reasoning effort — output is only 17% of burn, so
+cutting thinking degrades quality for at most a sixth of the cost. The savings
+are in where work happens and how large the context is.
+
 ## Definition of done
 
 For every substantive, verified change, complete the full delivery chain without
