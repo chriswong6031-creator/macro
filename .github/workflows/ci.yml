@@ -2377,6 +2377,8 @@ on:
       - "tests/test_b3_forex_consumer.py"
       - "tests/test_board_contradictions.py"
       - "tests/test_bottom_ledger.py"
+      - "tests/test_china_board_rank.py"
+      - "tests/test_china_prophet_shadow.py"
       - "tests/test_cn_board_unified_grid.py"
       - "tests/test_cn_prophet_candidates_schema.py"
       - "tests/test_cn_track_ledger_eras.py"
@@ -2391,6 +2393,7 @@ on:
       - "tests/test_us_board_priority_ui.py"
       - "tests/test_us_board_rank.py"
       - "tests/test_us_board_w3_evidence.py"
+      - "tests/test_us_context_vector.py"
       - "scripts/build_china_pick_lab.py"
       - "scripts/build_pick_lab.py"
       - "scripts/build_stock_board_v2.py"
@@ -2404,9 +2407,20 @@ on:
       # unrun-prophet-learning-loop
       - "tests/test_prophet_postmortem.py"
       - "tests/test_exit_policy_study.py"
+      - "tests/test_cn_prophet_audit.py"
+      - "tests/test_htf_super_tiers.py"
+      - "tests/test_prophet_stage_fusion.py"
       - "engine/postmortem.py"
       - "scripts/prophet_postmortem.py"
       - "scripts/exit_policy_study.py"
+      # The COMMITTED CN board store + china_stocks price panel are the input grid
+      # of test_cn_prophet_audit.py's frozen reproduction (REPRO_ASOF-truncated),
+      # so a hand rewrite of either store — a re-adjustment sweep, an era edit —
+      # must be able to start this workflow and hit the re-freeze protocol.
+      # Engine subjects (cn_prophet_audit, confluence_tiers, signal_gate,
+      # prophet_stage_fusion) ride the broad engine/** entry above.
+      - "data/china_standout_track/**"
+      - "data/china_stocks/**"
       # unrun-intl-collectors
       - "tests/test_action_board_lane_split.py"
       - "tests/test_china_alpha_w3c_infra.py"

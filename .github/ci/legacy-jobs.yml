@@ -4667,6 +4667,10 @@ jobs:
     # test_cn_prophet_candidates_schema.py joined 2026-08-04: the CN board's PIT
     # candidate ledger and its stamp_date column (schema contract §3.1), same
     # CN/US board-store family as the cn_board/cn_track suites already here.
+    # china_board_rank / china_prophet_shadow / us_context_vector joined
+    # 2026-08-04: the #4331-deferred prophet-board family (UNRUN_TEST_CENSUS
+    # staging lane) — CN board rank engine, CN candidate producer, and the US
+    # context-vector store whose TestSchemaContract is the contract §4 pin.
     if: ${{ false }}
     timeout-minutes: 5
     runs-on: ubuntu-latest
@@ -4678,12 +4682,17 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: pick lab runners + US/CN board surfaces — shipped picks, outcome ledgers, priority board
-        run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_cn_board_unified_grid.py tests/test_cn_prophet_candidates_schema.py tests/test_cn_track_ledger_eras.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_shared.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_board_w3_evidence.py -q
+        run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_china_board_rank.py tests/test_china_prophet_shadow.py tests/test_cn_board_unified_grid.py tests/test_cn_prophet_candidates_schema.py tests/test_cn_track_ledger_eras.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_shared.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_board_w3_evidence.py tests/test_us_context_vector.py -q
 
   unrun-prophet-learning-loop:
     # Prophet learning loop (#4331) — postmortem forensics over the loser cohort
     # + the exit-policy horse race on the US buy-lane cohort. Same install
     # string as the other unrun-* jobs, so execute_pack shares their venv.
+    # cn_prophet_audit / htf_super_tiers / prophet_stage_fusion joined
+    # 2026-08-04: the #4331-deferred study half (UNRUN_TEST_CENSUS staging
+    # lane) — CN loser/miss telemetry with its frozen reproduction over the
+    # COMMITTED board + china_stocks stores, the S1/S2 HTF super-tier engine
+    # fields, and the Prophet × Stage-Analysis fusion harness.
     if: ${{ false }}
     timeout-minutes: 5
     runs-on: ubuntu-latest
@@ -4694,8 +4703,8 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
-      - name: prophet learning loop — postmortem forensics + exit-policy horse race
-        run: python -m pytest tests/test_prophet_postmortem.py tests/test_exit_policy_study.py -q
+      - name: prophet learning loop — postmortem forensics, exit-policy horse race, CN loser audit, HTF tiers, stage fusion
+        run: python -m pytest tests/test_prophet_postmortem.py tests/test_exit_policy_study.py tests/test_cn_prophet_audit.py tests/test_htf_super_tiers.py tests/test_prophet_stage_fusion.py -q
 
   unrun-intl-collectors:
     # China/HK collectors and the collect.py sweeps + store-freshness tripwires.
