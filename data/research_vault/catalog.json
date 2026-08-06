@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T13:10:56.208145+00:00",
-  "count": 873,
+  "generated_at": "2026-08-06T13:25:56.767304+00:00",
+  "count": 874,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -57,6 +57,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-a2ecqhil1wj-2a12d9",
+      "title": "GS Earnings Recap Aug 6",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T13:05:47Z",
+      "summary_points": [
+        "**SanDisk Revenue Miss**: Revenue $10.55bn vs Street $11.15bn (critical miss), gross margin 84.0% vs 86.7%, impacting portfolio positioning.",
+        "**OXY Production & Debt Discipline**: Q2 production 1,433 MBOE/d (exceeds guidance), debt reduced $1.9bn toward $10bn milestone, signaling financial strength.",
+        "**LNG/PH Sector Momentum**: LNG Q2 EBITDA beat ($1.8bn vs $1.71bn), PH organic growth 8%, expanded contracts; sector-wide beat with raised guidance.",
+        "**FLNC Guidance Deterioration**: FY26 revenue guide cut to $2.9-$3.1bn (vs $3.2-$3.6bn), HONA lowers organic growth guide (4-5% vs 7-9%), indicating sector risk.",
+        "**COP Strategic Execution**: $5B asset disposal ahead of schedule, LNG offtake to 12 MTPA, $7B FCF target by 2029; policy-driven growth catalyst."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-yrehuywybhi-b6ddb2",
       "title": "What Matters Today DeepSeek Plans Significant Price Increase",
