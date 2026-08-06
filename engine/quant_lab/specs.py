@@ -24,6 +24,13 @@ knowable at every historical rebalance. Using it in a backtest would leak the fu
 """
 from __future__ import annotations
 
+# The options family's pre-registration and its measured nulls are IMPORTED, never restated.
+# One pre-registration exists, in the module the dormant gate reads; a second copy here would
+# be free to drift away from the one that gets tested. `_options_dislocation_legs()` asserts
+# it covers both dictionaries exactly, so adding a primitive upstream fails loudly here
+# instead of silently shipping a leg the page never shows.
+from engine.options_dislocation import MEASURED_NULLS, PREREG_SIGNS
+
 # --------------------------------------------------------------------------------------
 # Provenance. Fintel's own pages sit behind a Cloudflare bot-verification interstitial we
 # do not bypass, so the primary sources here are Fintel's SYNDICATED articles (published
@@ -66,6 +73,21 @@ SOURCES = {
         "publisher": "Quant Investing", "date": "accessed 2026-08-05",
         "url": "https://www.quant-investing.com/blog/quality-value-momentum-the-best-strategy-you-have-never-heard-of",
         "why": "A FULLY specified QVM screen — the reproducible control against Fintel's opaque one.",
+    },
+    "options_dislocation_module": {
+        "title": "engine/options_dislocation.py — the feature layer, its pre-registration and its nulls",
+        "publisher": "Macro Dashboard (this repo)", "date": "2026-08-05",
+        "url": "https://github.com/chriswong6031-creator/macro/blob/main/engine/options_dislocation.py",
+        "why": "Unlike every other model here, this one is OURS — the construction is fully "
+               "readable, so 'what the vendor says' and 'what we built' are the same text.",
+    },
+    "options_dislocation_assessment": {
+        "title": "OPTIONS_INFORMATION_DISLOCATION_ASSESSMENT.md",
+        "publisher": "Macro Dashboard (this repo)", "date": "2026-08-05",
+        "url": "https://github.com/chriswong6031-creator/macro/blob/main/research/options_estate/"
+               "OPTIONS_INFORMATION_DISLOCATION_ASSESSMENT.md",
+        "why": "The raw-vs-neutralised IC table: why every primitive is residualised against "
+               "(iv30, log_spot) before it is allowed to mean anything.",
     },
 }
 
@@ -125,6 +147,92 @@ def _leg(key, label, vendor_definition, our_definition, substrate, fidelity,
         "distortion": distortion,                 # REQUIRED whenever fidelity != faithful
         "ref_model": ref_model,                   # this leg IS another model's composite
     }
+
+
+# ---------------------------------------------------------------------------------------
+# Options dislocation legs, generated from the imported pre-registration.
+# ---------------------------------------------------------------------------------------
+_OD_NEUTRALISED = ("cross-sectionally residualised in RANK space against (iv30, log spot) "
+                   "on its own date")
+
+# key -> (label, our_definition, fidelity, distortion)
+_OD_PRIMITIVES: dict[str, tuple] = {
+    "oi_tilt": (
+        "Standing positioning tilt",
+        "delta-weighted call OI minus put OI over their sum, " + _OD_NEUTRALISED,
+        "faithful", None),
+    "ivspread": (
+        "Call-put IV spread (Cremers-Weinbaum)",
+        "ATM call implied vol minus ATM put implied vol, " + _OD_NEUTRALISED,
+        "faithful", None),
+    "skew": (
+        "Downside skew (Xing-Zhang-Zhao)",
+        "out-of-the-money put implied vol relative to at-the-money, " + _OD_NEUTRALISED,
+        "faithful", None),
+    "term_slope": (
+        "Term-structure slope",
+        "30-day ATM implied vol minus the 60-120d ATM implied vol, " + _OD_NEUTRALISED,
+        "faithful", None),
+    "d5_ivspread": (
+        "Call-put IV spread, 5-observation change",
+        "the IV spread differenced over the name's previous 5 ledger rows, " + _OD_NEUTRALISED,
+        "proxy",
+        "The difference runs over PANEL ROW ORDER, and the ledger is stamped with the "
+        "collector's run date — so on the first ledger 24 of these windows spanned only 3-4 "
+        "real market sessions instead of 5. Thinnest primitive on the panel: 13 dates carry "
+        "enough names to neutralise, against 35 for the level measures."),
+    "d5_term_slope": (
+        "Term slope, 5-observation change",
+        "the term slope differenced over the name's previous 5 ledger rows, " + _OD_NEUTRALISED,
+        "proxy",
+        "Same row-order window as the IV-spread change: some 5-observation windows span "
+        "3-4 real sessions because duplicate run-date stamps sit inside them."),
+    "skew_accel": (
+        "Skew acceleration",
+        "the 5-observation change in skew, differenced again over 5 observations, "
+        + _OD_NEUTRALISED,
+        "proxy",
+        "A difference OF a difference, so the run-date stamping compounds: both the inner "
+        "and the outer window can span fewer real sessions than they claim. 13 usable dates."),
+}
+
+
+def _options_dislocation_legs() -> list[dict]:
+    """Build the leg list from PREREG_SIGNS + MEASURED_NULLS, refusing to drift from either."""
+    missing = set(PREREG_SIGNS) - set(_OD_PRIMITIVES)
+    extra = set(_OD_PRIMITIVES) - set(PREREG_SIGNS)
+    if missing or extra:
+        raise ValueError(
+            f"options_dislocation leg table is out of step with PREREG_SIGNS: "
+            f"missing {sorted(missing)}, unknown {sorted(extra)}. The pre-registration is "
+            f"the source of truth — add the primitive here, do not edit the signs.")
+
+    legs = []
+    for key in PREREG_SIGNS:                       # PREREG_SIGNS order is the display order
+        label, definition, fidelity, distortion = _OD_PRIMITIVES[key]
+        sign = "higher is bullish" if PREREG_SIGNS[key] > 0 else "higher is bearish"
+        legs.append(_leg(
+            key, label,
+            f"pre-registered sign: {sign}",
+            definition,
+            "data/options_dislocation/snapshots.parquet (pit)",
+            fidelity, distortion))
+
+    # Every measured null ships as an `absent` leg carrying its own evidence. Emitting only
+    # the three entitlement-blocked ones would drop the two that were MEASURED dead, which is
+    # the half of "nulls printed, not hidden" that is easiest to lose.
+    for key, n in MEASURED_NULLS.items():
+        legs.append(_leg(
+            key, key.replace("_", " ").capitalize(),
+            f"state: {n['state']}",
+            "not computable on our entitlements — emitted as an explicit null",
+            "none — see distortion",
+            "absent",
+            f"{n['why']} Substitute tested: {n['substitute_tested']}."))
+        # NB: disclosed stays True. `vendor_disclosed=False` means "our_definition is an
+        # INFERENCE"; these are the opposite — documented absences in a module we wrote, each
+        # carrying the measurement that killed it. Nothing in this model is inferred.
+    return legs
 
 
 # =======================================================================================
@@ -375,6 +483,66 @@ MODELS: dict[str, dict] = {
              )},
         ],
     },
+
+    # -----------------------------------------------------------------------------------
+    "options_dislocation": {
+        "name": "Options information dislocation",
+        "name_zh": "期权信息错位",
+        "vendor": "Macro Dashboard",
+        "family": "internal",
+        "one_line": "What the options surface says that the share price has not said yet.",
+        "vendor_says": (
+            "Ours, not a vendor's — so this row is the construction itself. Seven options-"
+            "surface primitives, each cross-sectionally residualised against implied-vol LEVEL "
+            "and size before it is allowed to mean anything, because run naively almost every "
+            "'options information' feature is a repackaged bet on implied vol. Measured on our "
+            "own panel: expected-move was ENTIRELY the vol level, and 86% of the IV-vs-realised "
+            "signal was."
+        ),
+        "disclosure": "full",
+        "disclosure_note": (
+            "The only fully-disclosed model on this page, because we wrote it. That inverts "
+            "the usual problem here: nothing is hidden, so the constraint is not disclosure "
+            "but EVIDENCE — six weeks of one regime. It also ships in a deliberately "
+            "un-rankable shape: RO-2 / Signal Commons R3 forbids a fused pre-gate composite, "
+            "so there is no score to lift, only named primitives read one at a time, and the "
+            "reads may only ever lower confidence in a candidate, never originate one."
+        ),
+        "provenance": ["options_dislocation_module", "options_dislocation_assessment"],
+        # Declared, not inferred from the leg mix. Five of the twelve legs are `absent`, which
+        # would trip the "cannot be rebuilt here" heuristic — but this layer is not a
+        # reconstruction of somebody else's model, it is ours, it runs nightly, and the five
+        # absences are a documented boundary of the data rather than a failure to rebuild.
+        "buildable": True,
+        "legs": _options_dislocation_legs(),
+        "combination": {
+            "rule": "none_categorical",
+            "note": (
+                "There is deliberately no composite, and its absence is the design. A fused "
+                "escalating score is a FORBIDDEN shape before the gate (RO-2 / Signal Commons "
+                "R3), so the multi-primitive families ship as categorical reads over named, "
+                "separately-visible primitives and only genuinely single-primitive measures "
+                "carry a number. Each primitive is scored on its own against its own "
+                "pre-registered sign; nothing is blended into something rankable."
+            ),
+        },
+        "vendor_claims": [
+            {"claim": "Options-surface context, cross-sectionally neutralised against "
+                      "implied-vol level and size so it reads as information rather than a "
+                      "repackaged volatility bet. DISPLAY-ONLY: the chain panel is one short "
+                      "regime, far below the history a return-predictor verdict needs.",
+             "source": "options_dislocation_module",
+             "appraisal": (
+                 "Our own disclaimer, reproduced here because it is the claim being tested. "
+                 "The lab's read agrees with it and sharpens it: on the panel as it stands, "
+                 "every primitive returns `insufficient` once the overlapping 5-day windows "
+                 "are counted as the ~6 independent observations they actually are. Scored "
+                 "without that correction all seven would have come back as FDR survivors — "
+                 "which is what a six-week single-regime panel looks like when a quarterly "
+                 "harness is pointed at it unchanged."
+             )},
+        ],
+    },
 }
 
 
@@ -409,6 +577,22 @@ SUBSTRATE = {
         "point_in_time": True, "pit_key": "filing_date",
         "span": "13F quarters", "tickers": "53 tracked funds",
         "note": "A curated manager set, NOT the 13F institutional register.",
+    },
+    "options_dislocation_snapshots": {
+        "path": "data/options_dislocation/snapshots.parquet",
+        "point_in_time": True,
+        "pit_key": ("date = the chain snapshot's own stamp (41 stamps, 2026-06-15..07-31). "
+                    "NOT a fetch timestamp — but it IS the collector's RUN date: 9 of the 41 "
+                    "stamps repeat the prior session byte-for-byte, because weekend and Monday "
+                    "runs re-read the same Friday chain. 32 distinct market sessions."),
+        "span": "2026-06-15 to 2026-07-31 — six weeks, ONE regime",
+        "tickers": 392,
+        "note": "Safe for history tests: every row is OLDER than its stamp, so nothing leaks "
+                "forward — the run-date stamping costs alignment, not hindsight. Duplicate "
+                "sessions are collapsed before scoring. The first 6 stamps carry 10 names "
+                "each, below the 20 the cross-sectional neutralisation needs, so their "
+                "neutralised columns are empty; usable coverage runs 35 dates for the level "
+                "primitives down to 13 for the changes.",
     },
     "closes": {
         "path": "data/yahoo/<ticker>.parquet + data/breadth/_closes_cache.parquet",

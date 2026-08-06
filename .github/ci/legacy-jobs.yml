@@ -175,6 +175,15 @@ jobs:
         run: python3 scripts/check_admin_js.py
       - name: guard tests (real tree + planted #3693 offender, fail-closed in CI)
         run: python -m pytest tests/test_admin_js_no_undef.py -q
+      # Companion guard, same file, different failure: an inline on*= handler
+      # built with JSON.stringify emits double quotes that CLOSE the attribute,
+      # so the browser stores a truncated expression and the control is dead on
+      # click. check_inline_js.py already parses on*= attributes, but only in
+      # site/ and templates/ where they exist on disk — app.js materialises them
+      # in the browser, so the defect is visible only in the source that builds
+      # them. Pure Python: no node, so a minimal pip lane cannot disarm it.
+      - name: inline handler attributes must not interpolate JS string literals
+        run: python -m pytest tests/test_admin_inline_handler_attrs.py -q
 
   path-prune-lint:
     if: ${{ false }}
@@ -4652,6 +4661,25 @@ jobs:
         run: python -m pytest tests/test_basket_turn_grading.py tests/test_heal_basket_turn_ledger.py -q
       - name: W4 staged re-entry spine + P5 deferred-context BTC chips (dat/netliq/cascade)
         run: python -m pytest tests/test_btc_reentry.py tests/test_btc_deferred_legs.py -q
+
+  washout-turn-organ:
+    # Per-name weekly washout-turn watch lane (engine/washout_turn.py) — born from the
+    # 2026-08-05 MCD miss (weekly canon CB fired 07-31 at 6th-pctile depth, no consumer).
+    # Enumerated here at birth: the unrun-suite census (2026-07-26) proved an unnamed
+    # suite is genuinely never executed, and the reference organ's own suite
+    # (test_mtf_upturn.py) is an existing instance of that hole.
+    if: ${{ false }}
+    timeout-minutes: 3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: washout-turn organ (depth-gated weekly cross, PIT completed-bars pin, ledger gate)
+        run: python -m pytest tests/test_washout_turn.py tests/test_mtf_upturn.py -q
 
   unrun-page-guards:
     # Shipped-page regression guards over the rendered estate: the US

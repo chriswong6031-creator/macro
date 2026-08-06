@@ -43,6 +43,18 @@ EVENT SOURCES
     Born from the week MSFT printed +21.8% in five sessions and no surface,
     including this one, said anything.
 
+(h) Weekly washout-turn entry (site/stockdata/washout_turn.json) — WTN-W1.
+    Fires once per symbol per session-day on transition INTO WASHOUT_TURN:
+    the house canon RSI-MACD crossed up on a COMPLETED weekly bar while the
+    line sat at washout depth in the name's own weekly history.  Transition
+    detected via last-seen state stored in notify_state.json (same mechanism
+    as (e)).  Dedup key: (kind="washout_turn", SYM, date).
+    Cohort cap: the 8 DEEPEST entries are sent individually plus one summary
+    line naming how many more entered — a disclosed cap, never a silent one.
+    Fail-open: missing/malformed artifact never affects sources (a)–(g).
+    Born from the MCD miss of 2026-08-05 (weekly cross at the 6th percentile
+    of its own history since 1968; no surface said so).
+
 NOTE ON DEDUP SEMANTICS: all three detectors use state-day dedup — they fire
 once per calendar day per subject while the state is active, NOT only on the
 first transition into the state.  Masterplan §5 specifies "dedup per state-day".
@@ -114,6 +126,7 @@ _NOTIFY_STATE_PATH = Path(
     os.environ.get("MACRO_NOTIFY_STATE_DIR", _SITE_LIVE)
 ) / "notify_state.json"
 _MTF_UPTURN_PATH = ROOT / "site" / "stockdata" / "mtf_upturn.json"
+_WASHOUT_TURN_PATH = ROOT / "site" / "stockdata" / "washout_turn.json"  # WTN-W1 source (h)
 _MWR_TRIGGERS_PATH = ROOT / "data" / "mag7_washout" / "triggers.jsonl"  # MWR §7 W1b (committed nightly)
 _MAG7_REGIME_PATH = ROOT / "data" / "mag7_regime" / "latest.json"  # F1 event lens (committed nightly)
 
@@ -159,6 +172,10 @@ _MTF_LEG_LABELS = {
 
 # Mag7 member set (mirrors engine/mtf_upturn.py MAG7 constant).
 MAG7 = frozenset(["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA"])
+
+# WTN-W1 source (h): the washout-turn state name and the per-run send cap.
+_WASHOUT_STATE = "WASHOUT_TURN"
+_WASHOUT_MAX_PER_RUN = 8
 
 # ---------------------------------------------------------------------------
 # Dedup state (site-only write, FT-R5)
@@ -421,6 +438,39 @@ def _mtf_upturn_mag7_message(sym: str, legs: dict, as_of: str) -> str:
         f" | {detail}"
         f" | as-of {as_of}"
         f" | {_HEADS_UP_COPY}; {_FADE_COPY}"
+    )
+    _assert_no_forbidden_words(msg)
+    return msg
+
+
+def _washout_turn_message(sym: str, receipts: dict, as_of: str) -> str:
+    """Build the FT-R13-compliant weekly washout-turn entry message (source h).
+
+    Plain words per doctrine Law 2 — no internal state names, no engine slugs,
+    no falsifier/refutation language.  The depth percentile IS the point of the
+    alert (it separates a washout turn from a mid-range wobble), so it is
+    spelled out.  Stance is a window, not a certainty; no direction words.
+    """
+    depth = receipts.get("depth_pctile")
+    depth_str = f"{float(depth):.1f}" if isinstance(depth, (int, float)) else "?"
+    msg = (
+        f"{sym} — weekly momentum crossed up from a deep base "
+        f"(bottom {depth_str}% of its own history)"
+        f" · washout-turn watch"
+        f" · windows, not certainties"
+        f" | as-of {as_of}"
+        f" | {_HEADS_UP_COPY}"
+    )
+    _assert_no_forbidden_words(msg)
+    return msg
+
+
+def _washout_turn_overflow_message(n_more: int, as_of: str) -> str:
+    """Disclose the per-run cap explicitly — a cap named is not a cap hidden."""
+    msg = (
+        f"+{n_more} more in the washout-turn cohort"
+        f" | as-of {as_of}"
+        f" | see the stock pages for the full list"
     )
     _assert_no_forbidden_words(msg)
     return msg
@@ -694,6 +744,78 @@ def _detect_mtf_upturn_mag7(
     return results
 
 
+def _detect_washout_turn(
+    washout_turn: dict,
+    notify_state: dict,
+    today_str: str,
+) -> list[tuple[str, str]]:
+    """Source (h): symbols entering WASHOUT_TURN (WTN-W1).
+
+    State transition = current state is WASHOUT_TURN AND the last-seen state
+    snapshot (notify_state key 'washout_turn_last|<SYM>') was NOT WASHOUT_TURN
+    (absent = first-ever run, treated as a transition — mirrors source (e)).
+
+    The candidate set is the union of the symbols in the artifact and every
+    symbol already tracked in notify_state, so a name that LEAVES the cohort has
+    its snapshot reset to NONE and can transition in again later.
+
+    Cap: the ``_WASHOUT_MAX_PER_RUN`` DEEPEST entries (lowest depth percentile)
+    are sent individually; any remainder is disclosed by one summary line.
+    Fail-open: any read/parse problem yields no events and no exception.
+    """
+    results: list[tuple[str, str]] = []
+    tickers = washout_turn.get("tickers") or {}
+    if not isinstance(tickers, dict):
+        return results
+    as_of = washout_turn.get("as_of") or today_str
+
+    tracked = {
+        k.split("|", 1)[1]
+        for k in notify_state
+        if isinstance(k, str) and k.startswith("washout_turn_last|") and "|" in k
+    }
+    entrants: list[tuple[float, str, dict]] = []
+
+    for sym in sorted(set(tickers) | tracked):
+        row = tickers.get(sym)
+        row = row if isinstance(row, dict) else {}
+        current_state = row.get("state") or "NONE"
+
+        last_key = f"washout_turn_last|{sym}"
+        prior_state = notify_state.get(last_key)
+        # Always refresh the snapshot so the NEXT run reads a truthful prior.
+        notify_state[last_key] = current_state
+
+        if current_state != _WASHOUT_STATE:
+            continue
+        if prior_state == _WASHOUT_STATE:
+            continue  # persisted, not a new entry
+        if _already_fired(notify_state, "washout_turn", sym, today_str):
+            log.debug("notify_turn_events: washout_turn %s already fired today", sym)
+            continue
+
+        depth = row.get("depth_pctile")
+        depth_f = float(depth) if isinstance(depth, (int, float)) else 999.0
+        entrants.append((depth_f, sym, row))
+
+    if not entrants:
+        return results
+
+    entrants.sort(key=lambda t: (t[0], t[1]))          # deepest first, then stable
+    for _depth, sym, row in entrants[:_WASHOUT_MAX_PER_RUN]:
+        results.append((sym, _washout_turn_message(sym, row, as_of)))
+
+    n_more = len(entrants) - _WASHOUT_MAX_PER_RUN
+    if n_more > 0 and not _already_fired(
+        notify_state, "washout_turn", "cohort_overflow", today_str
+    ):
+        results.append(
+            ("cohort_overflow", _washout_turn_overflow_message(n_more, as_of))
+        )
+
+    return results
+
+
 def _lookup_slow_reco(basket_id: str) -> str | None:
     """Attempt to read slow_reco from site/basketdata/baskets.json.
 
@@ -887,7 +1009,7 @@ def run(
     today_str: str | None = None,
     dry_run: bool = False,
 ) -> int:
-    """Evaluate every event source (a)–(g) and dispatch alerts.
+    """Evaluate every event source (a)–(h) and dispatch alerts.
 
     Returns the count of messages sent (0 = dark/no events/already fired).
     Never raises — own try/except, exit-0 contract.
@@ -911,8 +1033,9 @@ def run(
     shock_state = _load_json(_SHOCK_STATE_PATH) or {}
     basket_pulse = _load_json(_BASKET_PULSE_PATH) or {}
     mtf_upturn = _load_json(_MTF_UPTURN_PATH) or {}
+    washout_turn = _load_json(_WASHOUT_TURN_PATH) or {}
 
-    if (not turn_watch and not shock_state and not mtf_upturn
+    if (not turn_watch and not shock_state and not mtf_upturn and not washout_turn
             and not _MWR_TRIGGERS_PATH.exists()
             and not _MAG7_REGIME_PATH.exists()):
         log.info("notify_turn_events: no event source data — nothing to evaluate")
@@ -985,6 +1108,17 @@ def run(
             _mark_fired(notify_state, "m7_event", subject, date_key)
     except Exception as exc:  # noqa: BLE001
         log.warning("notify_turn_events: m7_event source error (skipped): %s", exc)
+
+    # (h) Weekly washout-turn entry (WTN-W1) — fail-open, isolated.
+    # Note: _detect_washout_turn mutates notify_state with last-seen states
+    # (for transition tracking) before firing per-symbol dedup checks.
+    try:
+        for subject, msg in _detect_washout_turn(washout_turn, notify_state, today_str):
+            if _send_discord(msg, dry_run=dry_run):
+                dispatched += 1
+            _mark_fired(notify_state, "washout_turn", subject, today_str)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("notify_turn_events: washout_turn source error (skipped): %s", exc)
 
     # Persist updated state (site-only write, FT-R5)
     if notify_state != original_state:
