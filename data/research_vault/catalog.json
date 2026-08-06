@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T17:57:57.423586+00:00",
-  "count": 887,
+  "generated_at": "2026-08-06T18:12:49.088020+00:00",
+  "count": 888,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -57,6 +57,24 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-cxhg6jrrsxt-f9dcc4",
+      "title": "JPM Europe Equity Research | Today’s Morning Meeting",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T17:32:34Z",
+      "summary_points": [
+        "**DHL Group**: 30% y/y EBIT growth, 15% PT upside via Express leverage; organic growth acceleration (TDI weight/day +9.4% y/y), 2027 P/E 14x, EPS >10% growth to 2029 - **Fresnillo Plc**: 70% upside PT €47.00 with 10% dividend yield; operational improvements, special dividend, and project cash returns (Herradura Valles, Noche Buena) - **Geopolitical Risk**: Middle East conflict volatility forces PPC to deem FY26 guidance upgrade premature despite strong YTD delivery; critical factor for portfolio positioning - **Smith & Nephew**: Rating downgrade (OW→N), PT cut GBP1,438→GBP1,290; structural headwinds signal valuation unattractiveness despite prior premium multiple - **Technip Energies**: Rating downgrade (OW→N), PT cut €44.00→€35.00; EPS decline (-29.4% current) indicates severe earnings deterioration and portfolio risk - **European Gas Storage**: Low European gas storage underpins positive earnings momentum for utilities/generators; critical data release for fundamentals - **EPS Growth vs.",
+        "Decline**: Strong growth in \"Increases\" (e.g., Siemens Energy +8.5% next) signals robust fundamentals; \"Decreases\" (e.g., Technip -29.4%) highlight severe deterioration risk"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-4wlydi5axa0-599345",
       "title": "DoorDash Aug 6",
