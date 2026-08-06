@@ -1253,11 +1253,15 @@ def build_gate_honesty(res: dict) -> list[str]:
         if abs(s) > abs(b):
             worse_on.append(fname)
     if rows:
+        where = (" and ".join(worse_on) if len(worse_on) < 3
+                 else ", ".join(worse_on[:-1]) + " and " + worse_on[-1])
+        plural = "families" if len(worse_on) > 1 else "family"
         verdict = (
-            f"On {', '.join(worse_on)} the fitted SC is offset MORE than the incumbent it "
-            "is supposed to improve on, so on that family the offset is NOT merely the "
-            "cohort's — the donor pool is not spanning these names and the weights are "
-            "buying a systematic shortfall rather than removing one. "
+            f"On {where} the fitted SC is offset MORE than the incumbent it is supposed "
+            f"to improve on, so on {'those' if len(worse_on) > 1 else 'that'} {plural} "
+            "the offset is NOT merely the cohort's — the donor pool is not spanning "
+            "these names and the weights are buying a systematic shortfall rather than "
+            "removing one. "
             if worse_on else
             "On every family the fitted SC is the LEAST offset arm, so the residual "
             "offset is a property of the COHORT rather than of the estimator. ")

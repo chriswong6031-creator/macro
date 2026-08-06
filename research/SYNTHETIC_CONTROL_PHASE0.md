@@ -4,6 +4,8 @@
 
 **DIAGNOSTIC TIER.** This grades an *estimator*, not a signal. No event family here is being scored for tradability; two families whose answers the house already established are used as instruments to measure whether donor-pool synthetic control tells the truth on this panel. Nothing here promotes anything or gates any surface.
 
+**Run MANUALLY, off the render path.** This study is not wired into `daily.yml`, `render.yml` or `config/dag.yml` and must not be: a full run is ~111 minutes against the whole 20k-file store, comfortably more than the entire nightly render budget (HOUSE-U6). It is re-run by hand when the estimator or the event families change.
+
 ## Verdict: `ESTIMATOR_BIASED`
 
 Failing gate(s): **PC2_estimators_unbiased**
@@ -26,28 +28,34 @@ Failing gate(s): **PC2_estimators_unbiased**
 
 - Event day rule: effective_date - 5 sessions (announce proxy)
 - 303 of 361 in-scope events fitted (mean eligible donor pool 3,975 names)
+- **58 of 361 events (16.1%) produced no estimate** and are absent from every number in this table: 58 because the treated name has a hole in its own 120-session fitting window, 0 for a donor pool below the pre-screen width, 0 for a short pre-screen. The dominant cause is SYMBOL DISCONTINUITY, not illiquidity: `massive_stock_day` keys by CURRENT symbol, so a renamed or merged company carries history only under the symbol it holds today (PARA, ELV, GEHC, WBD, BALL, RVTY, WTW in this window; even META shows a multi-month hole). The headline is therefore computed on SURVIVORS. PC-1's verdict is robust to this — it would take an implausible reversal among the dropped events to overturn a t of this size — but the point estimate is a survivor statistic and is not directly comparable to the incumbent's, which fetches prices per-ticker and keeps them.
+- **Cohort labelling inherits a house defect.** `engine.index_changes.classify_cohort` calls an add "pure" when it finds no prior PIT membership row, which also catches ticker RENAMES and SPIN-OFFS — entities that were already inside the S&P universe under another symbol and therefore DO have an offsetting forced seller (roughly seven such names in the 2022+ window). Reproducing the incumbent's construction faithfully was the point of this control, so the defect is disclosed here and deliberately NOT fixed in this PR; fixing it would change the family and break the comparison it exists to make.
+- Ticker-clustered t is **not reported** for this family: 361 tickers across 361 events means clusters are effectively singletons, and the estimator collapses to the plain iid t the pre-registration itself calls invalid here.
 - Scope 2022-01-01 → panel end; construction diagnostics: `{"raw_adds_all_time": 3286, "cohort_counts": {"pure": 2727, "migration": 503, "readd": 56}, "pure_all_time": 2727, "pure_in_scope_date": 366, "events_usable": 361}`
 
 - Placebo null runs on 357 events (4 had no eligible placebo date and were dropped rather than left at their real session)
 
 | Arm | Window | CAAR (event-wtd) | CAAR (month-wtd) | monthly-NW t | ticker-cluster t | hit rate | placebo mean | placebo SD | empirical p |
 |---|---|---|---|---|---|---|---|---|---|
-| `matched_k` | [0] | 0.236% | 0.063% | 0.449 | 1.919 | 0.568 | 0.006% | 0.129% | 0.085 |
-| `matched_k` | [0,5] | 2.890% | 5.047% | 8.392 | 7.621 | 0.7 | 0.190% | 0.624% | 0.01 |
-| `matched_k` | [0,20] | 2.179% | 4.560% | 4.67 | 3.366 | 0.614 | 0.789% | 1.345% | 0.08 |
-| `sc_nnls` | [0] | 0.259% | 0.093% | 0.624 | 2.069 | 0.584 | 0.015% | 0.118% | 0.07 |
-| `sc_nnls` | [0,5] | 3.015% | 4.907% | 8.291 | 8.354 | 0.696 | 0.197% | 0.614% | 0.01 |
-| `sc_nnls` | [0,20] | 2.205% | 4.240% | 4.175 | 3.514 | 0.627 | 0.818% | 1.332% | 0.045 |
-| `SPY` | [0] | -0.044% | -0.122% | -0.676 | -0.314 | 0.528 | -0.001% | 0.148% | 0.781 |
-| `SPY` | [0,5] | 2.852% | 5.184% | 7.877 | 6.739 | 0.693 | 0.142% | 0.650% | 0.01 |
-| `SPY` | [0,20] | 2.342% | 4.409% | 4.812 | 3.247 | 0.614 | 0.685% | 1.399% | 0.07 |
+| `matched_k` | [0] | 0.236% | 0.063% | 0.449 | None | 0.568 | 0.006% | 0.129% | 0.085 |
+| `matched_k` | [0,5] | 2.890% | 5.047% | 8.392 | None | 0.7 | 0.190% | 0.624% | 0.01 |
+| `matched_k` | [0,20] | 2.179% | 4.560% | 4.67 | None | 0.614 | 0.789% | 1.345% | 0.08 |
+| `sc_nnls` | [0] | 0.259% | 0.093% | 0.624 | None | 0.584 | 0.015% | 0.118% | 0.07 |
+| `sc_nnls` | [0,5] | 3.015% | 4.907% | 8.291 | None | 0.696 | 0.197% | 0.614% | 0.01 |
+| `sc_nnls` | [0,20] | 2.205% | 4.240% | 4.175 | None | 0.627 | 0.818% | 1.332% | 0.045 |
+| `SPY` | [0] | -0.044% | -0.122% | -0.676 | None | 0.528 | -0.001% | 0.148% | 0.781 |
+| `SPY` | [0,5] | 2.852% | 5.184% | 7.877 | None | 0.693 | 0.142% | 0.650% | 0.01 |
+| `SPY` | [0,20] | 2.342% | 4.409% | 4.812 | None | 0.614 | 0.685% | 1.399% | 0.07 |
 
-**Reconciliation against the incumbent's exact statistic.** `validate_index_reconstitution.py` scores a SPY-relative PRICE RATIO over [-5,0] — five daily returns, where this study's CAR[0,5] sums six (AM-7). Recomputing the incumbent's own construction on THIS sample gives 2.895% (t=7.183, n=309, 52 months) against the house's 2019→ grade of 1.640% (t=4.63, n=877). The gap is the sample, not the estimator.
+**Reconciliation against the incumbent's exact statistic.** `validate_index_reconstitution.py` scores a SPY-relative PRICE RATIO over [-5,0] — five daily returns, where this study's CAR[0,5] sums six (AM-7). Recomputing the incumbent's own construction on THIS study's event list gives 2.895% (t=7.183, n=309, 52 months). The house publishes 1.640% (t=4.63, n=877) on 2019→ and 1.990% (t=5.02, n=266) on its recent cut.
+
+The recent cut is the nearest published comparator to this window, and **0.905% of the difference is not explained by the sample period**. Index mix is ruled out (both are pure adds across the same three indices) and the constructions agree, so the residual is a coverage/construction gap — most plausibly the event-list attrition disclosed above, which drops symbol-discontinuous names the incumbent's own price fetch keeps. It is stated here rather than absorbed into the word "sample".
 
 ## Falsifier — ClinicalTrials Phase-3 starts
 
 - Event day rule: StudyFirstPostDate (first public availability)
 - 740 of 744 in-scope events fitted (mean eligible donor pool 4,014 names)
+- **4 of 744 events (0.5%) produced no estimate** and are absent from every number in this table: 4 because the treated name has a hole in its own 120-session fitting window, 0 for a donor pool below the pre-screen width, 0 for a short pre-screen. The dominant cause is SYMBOL DISCONTINUITY, not illiquidity: `massive_stock_day` keys by CURRENT symbol, so a renamed or merged company carries history only under the symbol it holds today (PARA, ELV, GEHC, WBD, BALL, RVTY, WTW in this window; even META shows a multi-month hole). The headline is therefore computed on SURVIVORS. PC-1's verdict is robust to this — it would take an implausible reversal among the dropped events to overturn a t of this size — but the point estimate is a survivor statistic and is not directly comparable to the incumbent's, which fetches prices per-ticker and keeps them.
 - Scope 2022-01-01 → panel end; construction diagnostics: `{"raw_rows": 1656, "uniq_nct": 1593, "phase3_rows": 1656, "ticker_date_cells_all_time": 1461, "cells_in_scope_date": 831, "sponsors": 19, "events_usable": 744}`
 
 | Arm | Window | CAAR (event-wtd) | CAAR (month-wtd) | monthly-NW t | ticker-cluster t | hit rate | placebo mean | placebo SD | empirical p |
@@ -81,11 +89,29 @@ Failing gate(s): **PC2_estimators_unbiased**
 
 *Written after running them, deliberately kept out of the frozen pre-registration so the gates were not retro-fitted to the answer.*
 
-- **PC-2 cannot separate an estimator bias from a cohort drift.** It asks whether the SC arms are centred at random dates on these names — but a cohort that genuinely drifts fails it however good the estimator is. The incumbent SPY-CAR arm, which is NOT under test, reads 0.142% on the same draws against the fitted SC's 0.197% and the equal-weight basket's 0.190%, i.e. all three arms are offset the same way. The comparison ACROSS arms is the discriminating statistic and it lives in the table above, not in the gate. Read a PC-2 failure as 'this cohort drifts', not as 'synthetic control invents effects'.
+- **PC-2 mixes an estimator question with a cohort question, and the two families answer differently.** Every arm drifts in the same direction at random dates, including the incumbent SPY-CAR arm that is NOT under test — so direction alone settles nothing. The discriminating comparison is MAGNITUDE against the incumbent, on identical draws: S&P pure adds: fitted SC 0.197% (t=4.535), equal-weight 0.190%, incumbent SPY-CAR 0.142% (t=3.084) — SC is 1.39x the incumbent's offset; Phase-3 starts: fitted SC 0.137% (t=15.431), equal-weight 0.143%, incumbent SPY-CAR -0.015% (t=-1.394) — SC is 9.06x the incumbent's offset. On S&P pure adds and Phase-3 starts the fitted SC is offset MORE than the incumbent it is supposed to improve on, so on those families the offset is NOT merely the cohort's — the donor pool is not spanning these names and the weights are buying a systematic shortfall rather than removing one. Note also that the incumbent arm is not uniformly worse: where it clears the t-arm that the SC arms fail, PC-2 is separating estimators rather than describing the cohort. Read the per-arm table, not the gate flag.
 - **PC-1 and PC-3 are the gates that can actually separate the arms**, because both are comparisons: PC-1 against a number the house already graded, PC-3 against the incumbent's own placebo dispersion on identical draws. PC-2 and F-1 are absolute thresholds and inherit whatever the cohort does.
-- **PC-2's |t|<2 arm is controlled by the DRAW COUNT, not by the estimator.** That t is the Monte-Carlo standard error of the placebo mean (mean / (sd/sqrt(B))), so for any non-zero cohort drift it grows without bound as B rises — the same estimator passes at B=50 and fails at B=1000. B is frozen at 200 here and the reading is only interpretable at that B. The economic content of PC-2 is carried by its |mean| < 0.3% arm, which is B-invariant.
-- **Donor attrition is not symmetric between the real and placebo arms.** Real index events batch on quarterly reconstitution dates, so many donors are simultaneously inside the ±21-session exclusion and are dropped together; placebo dates are uniform and lose far fewer. The real arm therefore fits a systematically smaller — and differently composed — donor pool than the null does. A calendar-matched placebo would remove this and is the sharper design for the next rung.
+- **PC-2's |t|<2 arm is controlled by the DRAW COUNT, not by the estimator.** That t is the Monte-Carlo standard error of the placebo mean (mean / (sd/sqrt(B))), so for any non-zero cohort drift it grows as sqrt(B) without bound. Across the four arm x family cells: B=50: |t| 2.16–7.72 (FAIL) · B=200: |t| 4.32–15.43 (FAIL) · B=1000: |t| 9.65–34.50 (FAIL). So the arm does NOT flip at a plausible B — it would take B <= 3 for every cell to clear |t|<2, which is far too few draws to estimate a null distribution at all. The honest statement is that this arm is guaranteed to fail at ANY usable draw count once the cohort drift is non-zero, which makes it a test of 'is the drift exactly zero', not a test of the estimator. The economic content of PC-2 is carried entirely by its |mean| < 0.3% arm, which IS B-invariant and which every cell passes.
+- **Neither the donor pool nor the TREATED set is matched between the real and placebo arms.** Real index events batch on quarterly reconstitution dates, so many donors sit inside the ±21-session exclusion simultaneously and are dropped together; placebo dates are uniform and lose far fewer. On the treated side the real statistic fits 303 events while each placebo draw fits about 348 (range 339–354) out of 357 re-datable names — a placebo date is free to land where the name's window is clean, whereas the real date is not. So the null is estimated on a slightly LARGER and easier treated set than the statistic it is judging, which if anything understates the null's dispersion. A calendar-matched placebo drawn only from dates where the real event would also have fitted removes both asymmetries and is the sharper design for the next rung.
+- **PC-3 is registered as a bare point comparison and passes by a margin inside its own uncertainty.** The dispersion ratio is 0.944 (SC 0.614% vs incumbent 0.650%) with a paired-bootstrap 95% CI of [0.804, 0.975] over 200 draws and a paired variance-difference t of -3.677. The gate's PASS is real but should be read as 'SC is not noisier', not as 'SC is materially tighter'.
+- **The unfitted estimator wins PC-1.** The equal-weight `matched_k` basket carries t=8.392 on the announce window against the fitted `sc_nnls`'s t=8.291. PC-1 is registered on sc_nnls alone, so this does not change the gate — but a zero-parameter basket matching or beating the fitted counterfactual is the relevant signal about how much the fitting is actually buying here.
 - The placebo null is drawn uniformly over the store's sessions while the real events cluster (S&P reconstitutions batch quarterly). Market drift differences out of every arm — each is a treated-minus-counterfactual difference — but the calendar composition of the null is not matched to the real events, and a calendar-matched placebo is the sharper design the next rung should use.
+
+## Amendments to the frozen pre-registration
+
+*AM-1..AM-6 were recorded while wiring, before any compute. AM-7..AM-11 came out of an adversarial review of the first full run; that run was DISCARDED and re-run under these corrections, so no number below was produced under the defective forms.*
+
+- **AM-1 announce source.** `data/sp_index_changes/changes.parquet` holds 50 rows (4 sp500 adds) and is not the store the house's +1.64% grade came from; the family is rebuilt from `sp1500_pit_membership.parquet` exactly as `scripts/validate_index_reconstitution.py` does.
+- **AM-2 sector arm.** Not derivable for index adds (`data/sector_holdings` covers 236 S&P 500 names = 6.2% of in-scope adds). Phase-3 keeps its XLV arm.
+- **AM-3 universe floor.** The house $5 price floor is applied to donors; the charter's donor rules named coverage, liquidity and event exclusion but no price floor.
+- **AM-4 donor pre-screen.** The fitted solver receives the top-50 by pre-window correlation, not all ~4,000 eligible names. M=50 and k=20 were frozen before any result and are not tuned.
+- **AM-5 instrument type.** No whole-market security-type classifier exists here, so ETFs/ADRs/preferreds clearing the liquidity floor are admissible donors.
+- **AM-6 Phase-3 cells.** Multiple NCTs posted by one sponsor on one day are ONE event, matching the prior study's `ticker_date_cells` construction.
+- **AM-7 window.** `CAR[0,5]` is NOT byte-identical to the incumbent's announce window: the incumbent scores a five-return price ratio, this sums six. The prereg's "spans exactly" is withdrawn; `incumbent_reconciliation` computes the incumbent's exact statistic on this sample instead.
+- **AM-8 charter matching.** The charter specifies matching on path/vol/beta/sector/size/liquidity. SECTOR and SIZE are NOT matched on — no whole-market classifier exists. Correlation matching subsumes path and, for a returns fit, beta; sector exposure is recovered only implicitly.
+- **AM-9 PC-1 estimand.** PC-1 requires BOTH the event-weighted and month-weighted CAAR to be positive. `monthly_nw` pairs an event-weighted mean with a month-weighted t, and with quarterly-batched reconstitutions the two can disagree in sign. Strictly stronger than the registered single-mean form.
+- **AM-10 placebo band.** ASYMMETRIC `[s−20, s+125]`, not the symmetric ±42 first written. A placebo at s' fits on `[s'−125, s'−6]`, so `s' ∈ [s+42, s+125]` passed the old guard while FITTING on a window containing the real treatment — 9.6% of eligible dates, contaminating only the SC arms and therefore biasing PC-3 specifically.
+- **AM-11 price floor is PIT.** The $5 floor reads the close AS PRINTED, not the back-adjusted close. `split_adjust` back-multiplies prior bars by a factor detected later in the series, which is not PIT and inverts the selection: a raw $0.60 name that later reverse-splits 1:10 reads as $6.00 and would be admitted.
 
 ## Caveats carried forward
 
@@ -99,10 +125,12 @@ Failing gate(s): **PC2_estimators_unbiased**
 - Prices are split-repaired but NOT dividend-adjusted (price return, not total return). The whisker applies to treated and donors alike and very largely differences out of tau.
 - AM-5: no security-type classifier exists here, so ETFs/ADRs/preferreds clearing the liquidity floor are admissible donors.
 - Missing donor prints inside the fitting window are filled with a zero return (for a buy-and-hold donor a non-trading day IS a zero return); the ≥90% coverage rule caps this at 12 of 120 sessions.
-- Placebo dates are drawn per name with a ±42-session guard around the real event; the real events' donor-contamination map is applied to placebo draws too, which is conservative.
+- Placebo dates are drawn per name outside the ASYMMETRIC exclusion band [s−20, s+125] sessions around the real event s — asymmetric because a placebo at s' scores forward over [s', s'+20] but FITS backward over [s'−125, s'−6], so the two windows sit on opposite sides of the event day (AM-10). An earlier symmetric ±42 guard let 9.6% of eligible dates fit on a window containing the real treatment. The real events' donor-contamination map is applied to placebo draws too, which is conservative.
 - Placebo draws are the only stochastic element and are seeded; every other number here is deterministic given the store.
+- Cohort labelling inherits an incumbent defect: `classify_cohort` calls an add "pure" whenever it finds no prior PIT membership row, which also catches ticker RENAMES and SPIN-OFFS — entities already inside the S&P universe under another symbol, which therefore DO have an offsetting forced seller. Reproducing the incumbent's construction faithfully was the point of the positive control, so this is disclosed and deliberately not fixed here.
+- Events whose treated name has a hole in its own fitting window produce no estimate and are absent from every reported number; the dominant cause is symbol discontinuity in a store keyed by CURRENT ticker, so the headline is a survivor statistic. Counts and reasons are in `drop_reasons`.
 - Monthly clustering keys on the EVENT day (effective − 5 sessions) while the incumbent keys on the effective date, so a handful of events fall in a different month than they would there; the estimator is the same, the month partition is not identical.
 - Empirical p carries the (1+k)/(B+1) permutation correction, so its floor is 1/(B+1) and it can never print 0. The null it tests is 'effect equals the placebo mean', not 'effect equals zero'.
 
 ---
-*Results JSON: `data/experiments/synthetic_control_phase0_results.json` · trial ledger family `synthetic_control_phase0` · runtime 5646s · seed 20260806 (placebo draws are the only stochastic element).*
+*Results JSON: `data/experiments/synthetic_control_phase0_results.json` · trial ledger family `synthetic_control_phase0` · runtime 6683s · seed 20260806 (placebo draws are the only stochastic element).*
