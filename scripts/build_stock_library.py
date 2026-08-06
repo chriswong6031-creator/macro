@@ -5309,7 +5309,7 @@ def main() -> int:
                 import pandas as _plab_pd
                 _plab_d12_df = _plab_pd.DataFrame()  # empty fallback
                 try:
-                    _plab_d12_df = _plab_s1d.compute_grids(_ext_closes)
+                    _plab_d12_df = _plab_s1d.compute_grids(_ext_closes, market="US")
                 except Exception as _plab_d12_e:
                     log.warning("pick_lab: 1D/2D grid skipped (%s)", _plab_d12_e)
 
