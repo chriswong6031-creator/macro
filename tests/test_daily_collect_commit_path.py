@@ -5,54 +5,54 @@
 collected bytes live only on the runner, where the next job's `actions/checkout`
 deletes them, so the ONLY thing that makes a night real is a commit that lands.
 
-**Updated 2026-08-06 — the job now has TWO checkpoints, split by SCOPE.**
+**Updated 2026-08-06 — first the checkpoint split, then the JOB split.**
 
     run collectors
       -> additive producers (Finviz, ZORI) + the two store tripwires
-      -> "commit market data" + "push market data"      <-- checkpoint 1
-      -> the five capital-structure steps
-      -> "commit capital-structure data" + "push capital-structure data"
+      -> "commit market data" + "push market data"      <-- the checkpoint
+      -> salvage push (cancel path)
+      -> the capital-structure handoff (stamp receipt, upload artifact)
+      -> the two R2 store publishes
 
-Before the split there was ONE commit and it sat AFTER the capital-structure
-chain.  Two earlier fixes had already narrowed the damage — the commit gates on
-NAMED producers (`steps.collectors.outcome == 'success'`) rather than job status,
-and the capital-structure paths were carved out of it when the chain failed — so
-a capital-structure failure no longer DISCARDED the collection outright.  What
-neither fix could remove is the WINDOW: ~3h of collected bytes stayed unpublished
-for the whole length of the capital-structure chain, one job-cap cancel, runner
-death, or host-disk fault away from being deleted by the next checkout.  Six
-consecutive nights from 2026-08-01 went that way, through four unrelated defects
-(#4534 duck-typing, runner ENOSPC, #4600 ledger identity, #4640 SEC grammar), and
-`data/stocks` froze at 2026-07-31.
+Before the checkpoint split there was ONE commit and it sat AFTER the
+capital-structure chain.  Two earlier fixes had already narrowed the damage —
+the commit gates on NAMED producers (`steps.collectors.outcome == 'success'`)
+rather than job status, and the capital-structure paths were carved out of it
+when the chain failed — so a capital-structure failure no longer DISCARDED the
+collection outright.  What neither fix could remove is the WINDOW: ~3h of
+collected bytes stayed unpublished for the whole length of the capital-structure
+chain, one job-cap cancel, runner death, or host-disk fault away from being
+deleted by the next checkout.  Six consecutive nights from 2026-08-01 went that
+way, through four unrelated defects (#4534 duck-typing, runner ENOSPC, #4600
+ledger identity, #4640 SEC grammar), and `data/stocks` froze at 2026-07-31.
 
-The split closes the window instead of narrowing it: the market plane is
-committed and PUSHED before a single capital-structure step starts, so no
-capital-structure outcome can reach it — not by failing, not by hanging, not by
-eating the job's remaining budget.
+**The chain then left this job entirely.**  Even below the checkpoint it was
+still a fatal-by-design lane inside the job the whole nightly hangs off, and it
+redded the nightly on three consecutive nights for three unrelated causes (#4600
+08-04, #4640 08-05, #4740 08-06).  It now runs in the `capital_structure` job
+(`needs: collect`), which nothing needs in turn.  That job's own law — the
+all-or-nothing checkpoint, the fatal compilers, the narrow staging, the receipt
+that proves it compiled TONIGHT's ledger — is pinned by
+`tests/test_daily_capital_structure_job.py`.  This file keeps the market side.
 
-**The capital-structure lane keeps its own law, undiluted.**  It is an
-all-or-nothing SEC publication protocol: `run collectors`
+**What this job still owes the capital-structure lane** is the carve-out and the
+handoff, and they are two halves of one contract.  `run collectors`
 (`sec_capital_structure`) rewrites the TRACKED `source_manifest.jsonl` long
-before the spine validates it, so between the two checkpoints the tree
-legitimately holds a source ledger no compiler has accepted yet.  Checkpoint 1
-UNSTAGES those paths — and must never `git checkout` them, because that freshly
-collected ledger is the compilers' INPUT.  Checkpoint 2 commits them only after
-the whole chain returned success; on a failure it simply never runs, the rejected
-ledger dies with the runner's workspace, and the next night's checkout restores a
-clean ledger from git (#4600's self-heal).  A partial generation is still never
-committed, and `scripts.compile_capital_structure_events` is still fatal — for
-its OWN checkpoint.  `continue-on-error` on it was tried in #4578 and correctly
-reverted; the sibling pin
-`test_capital_structure_compiler.py::test_nightly_order_and_render_network
-_firewall_are_pinned` asserts that from the other side.
+before any compiler validates it, so the market checkpoint UNSTAGES those paths
+— and must never `git checkout` them, because that freshly collected ledger is
+the compilers' INPUT.  Unstaged means uncommitted, which means the ledger cannot
+reach the next job through git at all: it goes as an artifact, with a
+sha256/row-count receipt published as a job output.  Both handoff steps are
+`continue-on-error`, because the entire point of the split is that no
+capital-structure concern may red THIS job; a failed handoff fails closed one job
+over instead.
 
 So `DELIBERATE_VETO_STEPS` below is now EMPTY, which is the whole point: every
-step that used to be on it moved BELOW the market checkpoint.  The allowlist
-stays because it is the thing that keeps a future re-coupling deliberate — a new
-unguarded step between the collectors and the market commit is almost always an
-oversight (the house idiom is `|| echo "::warning::..."` or
-`continue-on-error: true`), and adding one to the list is the act that writes the
-cost down for the next reader.
+step that used to be on it left the job.  The allowlist stays because it is the
+thing that keeps a future re-coupling deliberate — a new unguarded step between
+the collectors and the market commit is almost always an oversight (the house
+idiom is `|| echo "::warning::..."` or `continue-on-error: true`), and adding one
+to the list is the act that writes the cost down for the next reader.
 """
 from __future__ import annotations
 
@@ -70,9 +70,9 @@ DAILY = ROOT / ".github/workflows/daily.yml"
 
 MARKET_COMMIT_STEP = "commit market data"
 MARKET_PUSH_STEP = "push market data"
-CS_COMMIT_STEP = "commit capital-structure data"
-CS_PUSH_STEP = "push capital-structure data"
 COLLECTORS_STEP = "run collectors"
+HANDOFF_STAMP_STEP = "stamp the capital-structure handoff receipt"
+HANDOFF_UPLOAD_STEP = "hand the capital-structure workspace to its own job"
 
 # Steps that MAY fail the collect job before "commit market data", and why.  Every
 # entry costs the night's market collection when it fires — that would be an
@@ -86,8 +86,8 @@ COLLECTORS_STEP = "run collectors"
 # reviewed decision to put a night of collection behind one more step.
 DELIBERATE_VETO_STEPS: dict[str, str] = {}
 
-# The chain that must stay BELOW the market checkpoint. Keyed by the `python -m`
-# module each step runs, valued by what it would cost if it climbed back above it.
+# The chain that must stay OUT of this job entirely. Keyed by the `python -m`
+# module each step runs, valued by what it would cost if it came back.
 CAPITAL_STRUCTURE_STEPS = {
     "scripts.materialize_capital_structure_share_counts":
         "share-count publication (pre-production, var-gated off)",
@@ -153,54 +153,79 @@ def _veto_reason(step: dict) -> str | None:
 
 
 # --------------------------------------------------------------------------
-# THE SPLIT ITSELF: the market checkpoint precedes every capital-structure step.
+# THE SPLIT ITSELF: no capital-structure step runs in this job at all.
 # --------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize("module,cost", sorted(CAPITAL_STRUCTURE_STEPS.items()))
-def test_capital_structure_steps_run_after_the_market_checkpoint(
-    collect_steps, module, cost
-):
-    """The 2026-08-06 split, stated from the market side.
+def test_no_capital_structure_step_runs_in_the_collect_job(collect_steps, module, cost):
+    """The 2026-08-06 job split, stated from the market side.
 
-    Moving any of these back above "commit market data" re-opens the window that
-    cost six consecutive nights: ~3h of collected bytes sitting unpublished on a
-    runner for the length of the capital-structure chain. It is not enough that
-    the commit SURVIVES a capital-structure failure (it already did, via the
-    named-producer gate) — it must not WAIT for one.
+    The earlier checkpoint split already stopped these steps from DELAYING or
+    DISCARDING the night's market data. It could not stop them from redding the
+    job the whole nightly hangs off, which they did on three consecutive nights
+    (#4600 08-04, #4640 08-05, #4740 08-06). Moving one back here re-couples an
+    all-or-nothing SEC publication protocol — whose compilers are deliberately
+    fatal and may never be given continue-on-error — to every `needs: collect`
+    job in the workflow.
     """
-    commit = _index_of(collect_steps, MARKET_COMMIT_STEP)
-    push = _index_of(collect_steps, MARKET_PUSH_STEP)
-    at = _index_of_run(collect_steps, module)
-    assert at > push > commit, (
-        f"{module} ({cost}) runs at step {at}, before the market checkpoint "
-        f"(commit={commit}, push={push}). The night's market data would again be "
-        "held on the runner across the whole capital-structure chain."
+    present = [
+        i for i, s in enumerate(collect_steps) if module in str(s.get("run") or "")
+    ]
+    assert not present, (
+        f"{module} ({cost}) is back in the collect job at step(s) {present}. It "
+        "belongs to the `capital_structure` job (needs: collect), which nothing "
+        "needs in turn — see tests/test_daily_capital_structure_job.py."
     )
 
 
-def test_the_two_checkpoints_are_ordered_and_distinctly_named(collect_steps):
-    """Market commit -> market push -> CS steps -> CS commit -> CS push.
+def test_the_market_checkpoint_is_ordered_and_distinctly_named(collect_steps):
+    """commit market data -> push market data, and never the bare old name.
 
     The naming matters as much as the order. `test_capital_structure_compiler.py`
-    locates the capital-structure checkpoint by name; if the second commit were
-    called "commit data ..." it would satisfy that pin's old letter while the
-    market plane silently rode a capital-structure-vetoed checkpoint again.
+    locates both checkpoints by name; a step called "commit data ..." would
+    satisfy that pin's pre-split letter while the market plane silently rode a
+    capital-structure-vetoed checkpoint again.
     """
     market_commit = _index_of(collect_steps, MARKET_COMMIT_STEP)
     market_push = _index_of(collect_steps, MARKET_PUSH_STEP)
-    cs_commit = _index_of(collect_steps, CS_COMMIT_STEP)
-    cs_push = _index_of(collect_steps, CS_PUSH_STEP)
-    assert market_commit < market_push < cs_commit < cs_push
+    assert market_commit < market_push
 
     names = [str(s.get("name") or "") for s in collect_steps]
     bare = [n for n in names if n.startswith("commit data")]
     assert not bare, (
-        f"a collect step is still named {bare!r}. The two checkpoints must be "
-        "distinguishable by name — 'commit market data' and 'commit "
-        "capital-structure data'."
+        f"a collect step is named {bare!r} again. The market checkpoint is "
+        "'commit market data'; the capital-structure one is 'commit "
+        "capital-structure data' and lives in another job."
     )
-    assert names[cs_commit].startswith("commit capital-structure data"), names[cs_commit]
+
+
+def test_the_capital_structure_handoff_can_never_cost_the_night(collect_steps):
+    """The handoff pays for the split; it must not be able to charge this job.
+
+    The ledger the `capital_structure` job compiles is deliberately NOT committed
+    here (see the carve-out test below), so it crosses as an artifact. That is a
+    capital-structure concern living in the collect job — exactly the shape the
+    split removed — and it is only safe because neither step can fail the job.
+    A failed stamp or upload must fail CLOSED one job over, in that job's handoff
+    verification, never here.
+    """
+    for step_name in (HANDOFF_STAMP_STEP, HANDOFF_UPLOAD_STEP):
+        step = collect_steps[_index_of(collect_steps, step_name)]
+        assert step.get("continue-on-error") is True, (
+            f"{step_name!r} is not continue-on-error, so a capital-structure "
+            "handoff failure reds the collect job and every `needs: collect` job "
+            "pays for it — the defect the split exists to remove."
+        )
+
+    # And it must sit after the checkpoint, for the same reason everything else does.
+    push = _index_of(collect_steps, MARKET_PUSH_STEP)
+    assert _index_of(collect_steps, HANDOFF_STAMP_STEP) > push, (
+        "the handoff receipt is stamped before the market push. It must be stamped "
+        "AFTER: that push rebases with --autostash, and a conflicted re-apply "
+        "resets hard to origin/main's committed ledger (#4600's self-heal). The "
+        "receipt has to describe whatever actually survived."
+    )
 
 
 def test_only_allowlisted_steps_may_cost_the_nights_collection(collect_steps):
@@ -257,16 +282,15 @@ def test_collectors_step_contract_is_stated_in_its_own_name(collect_steps):
 
 
 @pytest.mark.parametrize(
-    "commit_step,push_step",
-    [(MARKET_COMMIT_STEP, MARKET_PUSH_STEP), (CS_COMMIT_STEP, CS_PUSH_STEP)],
+    "commit_step,push_step", [(MARKET_COMMIT_STEP, MARKET_PUSH_STEP)]
 )
 def test_each_checkpoint_keeps_the_commit_push_split(collect_steps, commit_step, push_step):
     """The local commit is its own step; the network publish is a separate one.
 
     2026-07-17 postmortem (run 29542087837): a hung `git push` ate 57m and the
     150m job cap killed the step mid-publish, so an already-collected night
-    existed only on the runner. Both checkpoints carry the same shape — commit
-    first, push in a separate always()-guarded step gated on the commit's output.
+    existed only on the runner. The capital-structure checkpoint carries the same
+    shape one job over, pinned by tests/test_daily_capital_structure_job.py.
     """
     commit_at = _index_of(collect_steps, commit_step)
     push_at = _index_of(collect_steps, push_step)
@@ -312,15 +336,14 @@ def test_salvage_push_covers_the_market_commit(collect_steps):
     """The cancel-path last-ditch publish belongs to the expensive checkpoint.
 
     It runs `if: cancelled()`, so it must sit where a cancel during the market
-    push can still reach it — immediately after that push, not at the end of the
-    job behind the capital-structure chain.
+    push can still reach it — immediately after that push, not behind slower work
+    later in the job.
     """
     market_push = _index_of(collect_steps, MARKET_PUSH_STEP)
     salvage = _index_of(collect_steps, "salvage push")
-    cs_commit = _index_of(collect_steps, CS_COMMIT_STEP)
-    assert market_push < salvage < cs_commit, (
-        "the salvage push must follow the market push directly (2026-07-17 / "
-        "2026-07-16 postmortems), before the capital-structure chain"
+    assert salvage == market_push + 1, (
+        "the salvage push must follow the market push DIRECTLY (2026-07-17 / "
+        f"2026-07-16 postmortems); it is at {salvage}, the push at {market_push}"
     )
     cond = str(collect_steps[salvage].get("if") or "")
     assert "cancelled()" in cond and "steps.commitdata.outputs.committed" in cond, (
@@ -353,20 +376,8 @@ MARKET_STAGED_PATH_PRODUCERS = {
     "site/qledger/": [("collectors", True)],
 }
 
-# Checkpoint 2 stages exactly the capital-structure generation and its
-# byte-identical public twin. `collectors` produces the source ledger; the three
-# compilers produce the events, terms, and projection. All four gate.
-CS_STAGED_PATH_PRODUCERS = {
-    "data/capital_structure": [
-        ("collectors", True), ("cs_spine", True), ("cs_terms", True),
-        ("cs_projection", True),
-    ],
-    "site/capital-structure-data": [
-        ("collectors", True), ("cs_spine", True), ("cs_terms", True),
-        ("cs_projection", True),
-    ],
-}
-
+# The capital-structure checkpoint's own staging + gate moved with the chain;
+# tests/test_daily_capital_structure_job.py owns them now.
 CAPITAL_STRUCTURE_CHAIN = ("cs_spine", "cs_terms", "cs_projection")
 
 
@@ -380,11 +391,9 @@ def _gating(producers: dict) -> list[str]:
 
 
 MARKET_GATING_PRODUCERS = _gating(MARKET_STAGED_PATH_PRODUCERS)
-CS_GATING_PRODUCERS = _gating(CS_STAGED_PATH_PRODUCERS)
 
 CHECKPOINTS = {
     MARKET_COMMIT_STEP: (MARKET_STAGED_PATH_PRODUCERS, MARKET_GATING_PRODUCERS),
-    CS_COMMIT_STEP: (CS_STAGED_PATH_PRODUCERS, CS_GATING_PRODUCERS),
 }
 
 
@@ -451,9 +460,7 @@ def test_commit_gate_names_exactly_the_producers_of_its_staged_paths(
     )
 
 
-@pytest.mark.parametrize(
-    "step_id", sorted(set(MARKET_GATING_PRODUCERS) | set(CS_GATING_PRODUCERS))
-)
+@pytest.mark.parametrize("step_id", sorted(MARKET_GATING_PRODUCERS))
 def test_gated_producer_ids_actually_exist(collect_steps, step_id):
     """A gate naming a step that does not exist can never be satisfied."""
     ids = {s.get("id") for s in collect_steps if s.get("id")}
@@ -571,67 +578,10 @@ def test_market_commit_unstages_capital_structure_unconditionally(collect_steps)
         )
 
 
-def test_capital_structure_commit_stages_only_its_own_generation(collect_steps):
-    """Checkpoint 2 must not re-couple the market plane to the capital-structure lane.
-
-    A broad `git add data/` here would put the night's market collection back
-    behind a gate the capital-structure chain can veto — the defect the split
-    removed, reintroduced from the other end.
-    """
-    run = str(collect_steps[_index_of(collect_steps, CS_COMMIT_STEP)]["run"])
-    add_lines = [ln.strip() for ln in run.splitlines() if ln.strip().startswith("git add ")]
-    staged = {p for line in add_lines for p in line.split()[2:] if not p.startswith("-")}
-    assert staged == set(CS_STAGED_PATH_PRODUCERS), (
-        f"'commit capital-structure data' stages {sorted(staged)}; it may stage "
-        f"exactly {sorted(CS_STAGED_PATH_PRODUCERS)} and nothing else."
-    )
-    assert not any(p in {"data/", "data", "site/", "site", "."} for p in staged), (
-        "a broad add here re-couples the market plane to the capital-structure chain"
-    )
-
-
-def test_capital_structure_compile_steps_stay_fatal_for_their_own_checkpoint(
-    collect_steps,
-):
-    """No continue-on-error on the compile chain (#4578 tried it; correctly reverted).
-
-    The split makes those steps harmless to the market plane. It must not make
-    them harmless to their OWN generation: a compile failure has to keep the
-    rejected ledger out of git, and `continue-on-error` would launder it into a
-    commit.
-    """
-    for module in (
-        "scripts.compile_capital_structure_events",
-        "scripts.compile_capital_structure_document_terms",
-        "scripts.build_capital_structure_projection",
-    ):
-        step = collect_steps[_index_of_run(collect_steps, module)]
-        assert "continue-on-error" not in step, (
-            f"{module} carries continue-on-error. Its failure would be laundered to "
-            "'success' nowhere — but the step would stop failing, and a torn "
-            "generation would ride the capital-structure checkpoint (#4578)."
-        )
-        assert _is_non_fatal(step) is False, (
-            f"{module} is shell-guarded (`|| echo`), so it can no longer fail. Its "
-            "checkpoint would then commit whatever half-generation it left behind."
-        )
-
-
-def test_rejected_ledger_capture_still_follows_the_whole_chain(collect_steps):
-    """`if: failure()` only sees failures that already happened.
-
-    Run 30997579632: the capture sat under the event spine, the document-terms
-    compiler two steps later failed, and the capture was SKIPPED. It must stay
-    below every capital-structure step — and above the capital-structure commit
-    is fine, since that commit is skipped on any failure anyway.
-    """
-    capture = _index_of(collect_steps, "capture the rejected capital-structure ledger")
-    assert str(collect_steps[capture].get("if") or "").strip() == "failure()"
-    last_cs = max(_index_of_run(collect_steps, m) for m in CAPITAL_STRUCTURE_STEPS)
-    assert capture > last_cs, (
-        "the diagnostics capture moved above a capital-structure step; it would "
-        "then fire only for the steps that precede it (run 30997579632)"
-    )
+# The capital-structure checkpoint's narrow staging, its fatal compilers, and the
+# placement of the rejected-ledger capture moved with the chain into
+# tests/test_daily_capital_structure_job.py. They are the same laws, asserted
+# against the job that now runs them.
 
 
 # --------------------------------------------------------------------------
@@ -686,15 +636,17 @@ def test_r2_publish_survives_a_veto_but_keeps_its_restore_gate(
 
 
 @pytest.mark.parametrize("step_name", sorted(R2_PUBLISH_STEPS))
-def test_r2_publish_runs_after_both_checkpoints(collect_steps, step_name):
-    """Publishing must never delay either local commit (2026-07-17 postmortem)."""
+def test_r2_publish_runs_after_the_market_checkpoint(collect_steps, step_name):
+    """Publishing must never delay the local commit (2026-07-17 postmortem)."""
     at = _index_of(collect_steps, step_name)
     assert _index_of(collect_steps, MARKET_COMMIT_STEP) < at, (
         f"{step_name!r} moved ahead of {MARKET_COMMIT_STEP!r}; a slow upload would "
         "then sit between the collection and the checkpoint that preserves it"
     )
-    assert _index_of(collect_steps, CS_COMMIT_STEP) < at, (
-        f"{step_name!r} moved ahead of {CS_COMMIT_STEP!r}"
+    assert _index_of(collect_steps, HANDOFF_UPLOAD_STEP) < at, (
+        f"{step_name!r} moved ahead of the capital-structure handoff. The handoff "
+        "is what lets the isolated job compile tonight's ledger at all; a slow or "
+        "hung R2 upload must not sit in front of it and burn the job's budget."
     )
 
 

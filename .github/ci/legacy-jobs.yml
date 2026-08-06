@@ -895,18 +895,26 @@ jobs:
       - name: install capital-structure test deps
         run: pip install pytest pandas numpy pyarrow jsonschema==4.26.0 requests pyyaml jinja2 fastapi httpx boto3
       - name: capital-structure contracts, compilers, projection, graph, source store, and legacy boundary
-        # test_daily_collect_commit_path.py rides HERE on purpose. It owns the
-        # market side of daily.yml's two-checkpoint split (2026-08-06): the five
-        # capital-structure steps must stay BELOW "commit market data"/"push market
-        # data" and answer only to their own "commit capital-structure data". Its
-        # sibling pin (test_capital_structure_compiler.py::test_nightly_order_and
-        # _render_network_firewall_are_pinned) states the same invariant from the
-        # compiler side — market checkpoint first, compile still fatal for its own
-        # checkpoint — so the two must move together. Co-locating means a change to
-        # either surfaces the other; splitting them lets one drift green.
+        # THREE nightly-wiring suites ride HERE on purpose, and they only mean
+        # anything together — each states one side of the same 2026-08-06 split:
+        #   test_daily_collect_commit_path.py    the MARKET side: no capital-structure
+        #     step may run in the collect job, the market checkpoint keeps its
+        #     named-producer gate, and the handoff that replaced the chain can never
+        #     cost the night.
+        #   test_daily_capital_structure_job.py  the LANE side: the chain lives in its
+        #     own `needs: collect` job, NOTHING needs that job, the compilers stay
+        #     fatal, staging stays narrow, and the artifact handoff is verified
+        #     against collect's receipt before a compiler reads the ledger.
+        #   test_capital_structure_compiler.py   the COMPILER side (::test_nightly_order
+        #     _and_render_network_firewall_are_pinned): market checkpoint first —
+        #     asserted through `needs:`, not file order — and the compile still fatal
+        #     for its own checkpoint.
+        # Co-locating means a change to any one surfaces the others; splitting them
+        # lets one drift green while the invariant it names is already broken.
         run: >
           python -m pytest
           tests/test_daily_collect_commit_path.py
+          tests/test_daily_capital_structure_job.py
           tests/test_capital_structure_compiler.py
           tests/test_capital_structure_contracts.py
           tests/test_capital_structure_document_terms.py

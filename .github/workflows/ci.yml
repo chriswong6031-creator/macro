@@ -486,12 +486,19 @@ on:
       - "contracts/capital_structure_*.schema.json"
       - "docs/CAPITAL_STRUCTURE_INTELLIGENCE_CONTRACT.md"
       - "templates/capital_structure.html.j2"
-      # The collect-job checkpoint guard rides in the capital-structure pack: it
-      # pins the 2026-08-06 split that keeps every capital-structure step BELOW the
-      # market checkpoint. Its SUBJECT — daily.yml — already reaches CI via
-      # ".github/workflows/**"; this line covers the other direction, so an edit
-      # that only widens the veto allowlist still runs the suite that checks it.
+      # The two nightly-wiring guards ride in the capital-structure pack. They pin
+      # the 2026-08-06 split from both sides: the chain left the collect job for its
+      # own `needs: collect` job that nothing needs in turn, and the source ledger
+      # crosses that job boundary as a receipt-verified artifact because the market
+      # checkpoint deliberately never commits it. Their SUBJECTS — daily.yml,
+      # config/dag.yml — already reach CI via ".github/workflows/**" and the
+      # config/dag.yml entry; these lines cover the test-only direction, so an edit
+      # that only re-pins a guard still runs the job that carries it.
+      # NOTE the second name does NOT match the "tests/test_capital_structure_*.py"
+      # glob further down — it is test_DAILY_capital_structure_job.py — so it has to
+      # be listed by name or it goes dark on a test-only edit.
       - "tests/test_daily_collect_commit_path.py"
+      - "tests/test_daily_capital_structure_job.py"
       - "templates/capital_structure_boot.js"
       - "templates/capital_structure.css"
       - "templates/capital_structure.js"
