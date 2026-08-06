@@ -2348,21 +2348,14 @@ jobs:
         # Context-only (never feeds a score); the ledger accrues forward from here. The commit
         # step below (git add data/ site/) lands both artifacts. Idempotent per as_of. Resilient.
         run: python -m scripts.grade_us_board --nightly || true
-      - name: Prophet doors — accrue Door T (theme-relay) + Door R (re-arm) flags (shadow, zero authority)
-        # Prophet W3 shadow doors (research/PROPHET_DOORS_PREREG.md, frozen before first accrual).
-        # Evaluates both doors on the committed caches and appends to data/prophet_doors/flags.jsonl.
-        # Sole forward advancer of this ledger (nightly-only: --nightly AND COLLECT_LANE=nightly).
-        # PROSPECTIVE ONLY — no backfill; the ledger starts the night this merges. ZERO AUTHORITY:
-        # no board membership, no plan origination, no rank/gate/size, no site/ artifact. The
-        # commit step below (git add data/) lands the store. ~2.5 min. Idempotent per as_of.
-        run: python -m scripts.emit_prophet_doors --nightly || true
-      - name: Prophet doors — grade matured flags at H=10/21 vs SPY (policy-free marks)
-        # Grades data/prophet_doors/flags.jsonl into grades.jsonl via engine.grading.forward_metrics
-        # (next-bar fill, positional session horizons, excess vs SPY) — the SAME ruler grade_us_board
-        # uses, reused not forked. Policy-free: fixed-horizon marks only, no stops/exits. Graded rows
-        # are frozen (one-grader law). Runs after the emitter so tonight's flags are present.
-        # OUTCOMES ARE NOT TO BE READ before the prereg §4 trigger. Idempotent. Resilient.
-        run: python -m scripts.grade_prophet_doors --nightly || true
+      # NOTE (2026-08-06): the Prophet US program's four post-board modules used to sit
+      # HERE — emit_prophet_doors, grade_prophet_doors, grade_us_prophet_candidates and
+      # run_prophet_miss_audit. They now run in the `us_prophet_ledgers` job (below,
+      # needs: [engine, us_scan_tier]) over the tree THIS job commits. Nothing in that
+      # program gates the dashboard deploy, and on a night this job hits its 200m cap
+      # they used to complete and then be DISCARDED with the skipped commit (run
+      # 31056495943: the doors + miss-audit succeeded at 04:48Z, "commit engine outputs"
+      # never ran, the whole night's Prophet accrual was lost). See that job's comment.
       - name: Bottom Ledger (accrue bottom-class flags + mature at H=60; policy-free instrument)
         # Bottom Ledger P1: the policy-free bottom-calling learning instrument (design PR #3182).
         # Sole forward advancer of this ledger (nightly-only). Accrues board buy-lane +
@@ -2374,37 +2367,6 @@ jobs:
         # sibling forward ledger, the committed store is what lets cohorts accrue night to
         # night. Idempotent per as_of. Resilient.
         run: python -m scripts.grade_bottom_calls --nightly || true
-      - name: Prophet US full-population grades (every stamped name, not just the picks)
-        # Prophet US trend-intelligence W7 (operator order 2026-08-05: "we should be
-        # remembering the score that we give picks … so that we can later assess how robust
-        # and correct our scoring system is"). The US Context Vector store already stamps
-        # every analyzed name nightly WITH its itemized us_prophet_v1 score legs; this grades
-        # every one of those rows at H=10/21 sessions excess-vs-SPY, so the graded record
-        # grows by ~1,579 rows a night instead of ~12. Runs AFTER build_stock_library (which
-        # stamps tonight's rows) and BEFORE the miss-audit (whose priority_score_scorecard
-        # block reads this store). Same ruler as grade_us_board / grade_prophet_doors
-        # (engine.grading.forward_metrics; next-bar fill, positional session horizons) —
-        # reused, not forked, and pinned mark-for-mark by tests/test_us_prophet_grades.py.
-        # Sole forward advancer of data/us_prophet_rank/grades/YYYY-MM.parquet (nightly-only),
-        # idempotent: a graded (stamp_date, ticker, board_definition, horizon) is frozen, so a
-        # re-run appends nothing. Monthly parts keyed by the RUN's month, so a closed part is
-        # never rewritten. Landed by the "commit engine outputs" step below (git add data/).
-        # ZERO authority: no rank/gate/size/board/plan consumer, ever. Resilient.
-        run: python -m scripts.grade_us_prophet_candidates --nightly || true
-      - name: Prophet miss-audit (why don't the winners surface? ops telemetry, ZERO authority)
-        # Prophet US trend-intelligence W0 (masterplan
-        # research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md): the nightly
-        # measurement the program grades itself against — per-runner dominant-excluder
-        # attribution, the trailing-63-session eligibility window, sighting->plan conversion,
-        # and theme-representation counts. Reads the committed close caches + the board/plan
-        # artifacts through the PRODUCTION tier paths (confluence_tiers.tier_stream/cascade,
-        # signal_gate); computes nothing the board reads back. Sole forward advancer of
-        # data/prophet_miss_audit/forward_log.jsonl (nightly-only, like the Bottom Ledger
-        # above), idempotent on price_through. Both it and data/prophet_miss_audit/latest.json
-        # are landed by the "commit engine outputs" step below (git add data/). ~2-3 min on
-        # ~1,500 names. ZERO authority: no rank/gate/size/membership consumer, ever
-        # (tests/test_prophet_miss_audit.py pins that nothing else imports it). Resilient.
-        run: python -m scripts.run_prophet_miss_audit --nightly || true
       - name: Options-state stamp on board ledger (Options Alpha W1.3; context-only)
         # Stamps the freshly-graded + accumulated retro_grades.parquet with the eight nullable
         # opt_* options-state columns (PIT: only positioning data with as-of ≤ each fire's as_of).
@@ -4295,6 +4257,169 @@ jobs:
           done
           push_lost
           echo "::warning::could not push US scan tier artifacts after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+
+  # Prophet US trend-intelligence — the program's four post-board nightly modules, moved
+  # OFF the engine job's critical path 2026-08-06 (sibling of us_scan_tier, same shape).
+  #
+  # WHY. The engine job is chronically at its 200m cap (205m CANCELLED 08-03 run
+  # 30862763261; 205m CANCELLED 08-06 run 31056495943) and a cancel skips "commit engine
+  # outputs", so the night's accrual is COMPUTED AND THEN THROWN AWAY: on 08-06 the doors
+  # emitter finished 04:45:27Z and the miss-audit 04:48:11Z, both green, and the job was
+  # cancelled at 05:37:19Z with the commit step never started — data/prophet_doors,
+  # data/prophet_miss_audit and data/us_prophet_rank all still show 2026-08-05 as their
+  # last advance. Nothing in this program gates the dashboard: `publish` needs ONLY
+  # engine, so this job's conclusion cannot delay or red go-live, and a Prophet module
+  # failure now reds THIS job instead of hiding behind `|| true` inside the deploy lane.
+  # This is not the whole timeout fix — measured, these four steps are ~5.4m of a ~186m
+  # engine step budget (emit_prophet_doors 2.62m/2.70m and run_prophet_miss_audit
+  # 2.62m/2.72m on runs 31056495943/30960328285; grade_prophet_doors 1-5s;
+  # grade_us_prophet_candidates 1.8s for a steady-state night / 8.8s for a 5-night
+  # catch-up, measured over the live 2,932-row candidates store). The workflow's own
+  # timeout comment still names build_news as the next lever, and it belongs to its owner.
+  #
+  # needs: [engine, us_scan_tier] — every input is read from the COMMITTED tree, and both
+  # of those jobs are what commit it:
+  #   emit_prophet_doors            <- data/{breadth,midcap_breadth,smallcap_breadth}/
+  #                                    _closes_cache.parquet + site/marketdata/
+  #                                    subsector_rotation.json (engine: "commit engine
+  #                                    outputs", git add data/ site/)
+  #   grade_prophet_doors           <- data/prophet_doors/flags.jsonl (written by the step
+  #                                    above, same job) + data/yahoo/SPY.parquet
+  #   grade_us_prophet_candidates   <- data/us_prophet_rank/candidates/YYYY-MM.parquet,
+  #                                    stamped by build_stock_library inside build_site
+  #                                    (engine) and appended to by run_us_scan_tier
+  #                                    (us_scan_tier); both commit it before this job runs
+  #   run_prophet_miss_audit        <- data/name_score/us_calls.parquet + site/prophet/
+  #                                    plans/*.json + site/factordata/us_standouts.json
+  #                                    (engine), the grade store above, and data/
+  #                                    prophet_scan_tier/latest.json (us_scan_tier)
+  # Sequencing after us_scan_tier is deliberate on two counts: it upgrades the miss-audit's
+  # scan-tier read from <=1-run-stale to same-night, and it keeps the only two jobs that
+  # write under data/us_prophet_rank/ from racing each other's push.
+  # if: always() — accrual must not stop because the engine hit its cap; that is the whole
+  # point of the move. Every module is nightly-only and idempotent, so a partial night is
+  # safe (doors dedupe 21 sessions/ticker, grades freeze on their key, the miss-audit is
+  # idempotent on price_through).
+  # env COLLECT_LANE=nightly is LOAD-BEARING, not decoration: emit_prophet_doors,
+  # grade_prophet_doors and grade_us_prophet_candidates all gate their forward advance on
+  # engine.ledger_lane.nightly_advance_enabled() (COLLECT_LANE/US_LANE == "nightly") on top
+  # of --nightly. Without it these three would run green and write NOTHING — pinned by
+  # tests/test_prophet_off_engine_lane.py.
+  us_prophet_ledgers:
+    needs: [engine, us_scan_tier]
+    if: always()
+    runs-on: [self-hosted, macstudio]
+    # Budget: ~5.5m of module time (measured above) + checkout/venv/pip. Checkout of the
+    # 14k-file tree has been observed at 3s..14.5m (see the engine job's timeout comment),
+    # so the cap is sized like the us_scan_tier sibling rather than to the module cost.
+    timeout-minutes: 60
+    env:
+      COLLECT_LANE: nightly   # job-level sentinel — see the note above; the forward-ledger
+                              # advance gate for three of the four steps below.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: git pull origin main
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+      - name: Prophet doors — accrue Door T (theme-relay) + Door R (re-arm) flags (shadow, zero authority)
+        # Prophet W3 shadow doors (research/PROPHET_DOORS_PREREG.md, frozen before first accrual).
+        # Evaluates both doors on the committed caches and appends to data/prophet_doors/flags.jsonl.
+        # Sole forward advancer of this ledger (nightly-only: --nightly AND COLLECT_LANE=nightly).
+        # PROSPECTIVE ONLY — no backfill. ZERO AUTHORITY: no board membership, no plan
+        # origination, no rank/gate/size, no site/ artifact. The commit step below (git add
+        # data/) lands the store. ~2.6 min. Idempotent per as_of. The old `|| true` is gone:
+        # the module already degrades internally to a disclosed null, so a non-zero exit is a
+        # real crash and must be visible — and it can no longer cost anything but this job.
+        run: python -m scripts.emit_prophet_doors --nightly
+      - name: Prophet doors — grade matured flags at H=10/21 vs SPY (policy-free marks)
+        # Grades data/prophet_doors/flags.jsonl into grades.jsonl via engine.grading.forward_metrics
+        # (next-bar fill, positional session horizons, excess vs SPY) — the SAME ruler grade_us_board
+        # uses, reused not forked. Policy-free: fixed-horizon marks only, no stops/exits. Graded rows
+        # are frozen (one-grader law). Runs after the emitter so tonight's flags are present.
+        # OUTCOMES ARE NOT TO BE READ before the prereg §4 trigger. Idempotent.
+        # if: always() — accrual is per-module; a crashed sibling must not silently stop this
+        # ledger. This is NOT continue-on-error: a failure here still reds the job.
+        if: always()
+        run: python -m scripts.grade_prophet_doors --nightly
+      - name: Prophet US full-population grades (every stamped name, not just the picks)
+        # Prophet US trend-intelligence W7 (operator order 2026-08-05: "we should be
+        # remembering the score that we give picks … so that we can later assess how robust
+        # and correct our scoring system is"). The US Context Vector store already stamps
+        # every analyzed name nightly WITH its itemized us_prophet_v1 score legs; this grades
+        # every one of those rows across H=10/21/42/63 sessions excess-vs-SPY, so the graded
+        # record grows by thousands of rows a night instead of ~12. Runs AFTER the engine job's
+        # build_stock_library (which stamps tonight's rows) and run_us_scan_tier (which appends
+        # the scan-tier rows) — both COMMIT the candidates store, which is what this reads —
+        # and BEFORE the miss-audit (whose priority_score_scorecard block reads this store).
+        # Same ruler as grade_us_board / grade_prophet_doors (engine.grading.forward_metrics;
+        # next-bar fill, positional session horizons) — reused, not forked, and pinned
+        # mark-for-mark by tests/test_us_prophet_grades.py. Sole forward advancer of
+        # data/us_prophet_rank/grades/ (nightly-only), idempotent: a graded
+        # (stamp_date, ticker, board_definition, horizon) is frozen, so a re-run appends
+        # nothing. Daily parts under the run's month, so a closed part is never rewritten.
+        # ZERO authority: no rank/gate/size/board/plan consumer, ever.
+        if: always()
+        run: python -m scripts.grade_us_prophet_candidates --nightly
+      - name: Prophet miss-audit (why don't the winners surface? ops telemetry, ZERO authority)
+        # Prophet US trend-intelligence W0 (masterplan
+        # research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md): the nightly
+        # measurement the program grades itself against — per-runner dominant-excluder
+        # attribution, the trailing-63-session eligibility window, sighting->plan conversion,
+        # and theme-representation counts. Reads the committed close caches + the board/plan
+        # artifacts through the PRODUCTION tier paths (confluence_tiers.tier_stream/cascade,
+        # signal_gate); computes nothing the board reads back. Its scan-tier coverage block
+        # reads data/prophet_scan_tier/latest.json — written by the us_scan_tier job this one
+        # now waits on, so the read is same-night instead of one run stale (an absent artifact
+        # is still a disclosed null, never an exception). Sole forward advancer of
+        # data/prophet_miss_audit/forward_log.jsonl (nightly-only), idempotent on
+        # price_through. ~2.6 min on ~1,500 names. ZERO authority: no rank/gate/size/
+        # membership consumer, ever (tests/test_prophet_miss_audit.py pins that).
+        if: always()
+        run: python -m scripts.run_prophet_miss_audit --nightly
+      - name: commit prophet ledger artifacts
+        # if: always() — the accrual above is per-module and idempotent, so whatever DID
+        # advance must land even when a sibling module crashed. This is the defect the move
+        # exists to fix: an uncommitted ledger row is a lost night (the next job's
+        # actions/checkout deletes the runner tree), and the engine job's cancel-skipped
+        # commit is exactly how 2026-08-06 was lost. Committing what advanced beats
+        # discarding the night; the job's own conclusion still carries the failure.
+        if: always()
+        run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Every path below is written ONLY by the four steps above (no other lane writes
+          # them), so the add list is exact rather than a broad `git add data/`: this job
+          # must never carry another lane's stray runner-tree bytes to main.
+          git add data/prophet_doors 2>/dev/null || true
+          git add data/us_prophet_rank/grades 2>/dev/null || true
+          git add data/prophet_miss_audit 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no prophet ledger changes"; exit 0; fi
+          push_staged_heal data/ || exit 1
+          if git diff --cached --quiet; then echo "no prophet ledger changes after conflict heal"; exit 0; fi
+          git commit -m "prophet-us: nightly ledger advance $(date -u +%F)"
+          PUSH_ALARM=420
+          push_retry_init "prophet ledger artifacts"
+          while push_attempt; do
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
+              if push_do; then echo "pushed prophet ledger artifacts on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
+            fi
+            push_abort_rebase
+            push_backoff
+          done
+          push_lost
+          echo "::warning::could not push prophet ledger artifacts after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
 
   # AI stock-research briefs = ~30 DeepSeek calls (~20 min) — the heaviest single
   # step in the build, and what pushed the engine job past its timeout. build_site

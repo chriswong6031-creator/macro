@@ -2517,6 +2517,15 @@ on:
       - "tests/test_us_context_vector.py"
       - "tests/test_prophet_miss_audit.py"
       - "scripts/grade_us_prophet_candidates.py"
+      # The nightly-wiring half of the same pack job (2026-08-06): the four modules moved
+      # off the engine job's critical path into daily.yml's us_prophet_ledgers lane. Its
+      # subjects (.github/workflows/daily.yml, config/dag.yml) already reach CI via
+      # ".github/workflows/**" and the config/dag.yml entry above; this line covers the
+      # test-only direction, so a re-pin still re-runs the job that carries it.
+      - "tests/test_prophet_off_engine_lane.py"
+      - "scripts/emit_prophet_doors.py"
+      - "scripts/grade_prophet_doors.py"
+      - "scripts/run_prophet_miss_audit.py"
       # The US candidate + grade stores are the SUBJECT of that suite (PIT keep-first,
       # monthly-part isolation, the frozen grade key), so a nightly append or a hand
       # rewrite of either store must be able to start this workflow — the same reason
