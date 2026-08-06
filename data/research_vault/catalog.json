@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T09:54:50.930995+00:00",
-  "count": 864,
+  "generated_at": "2026-08-06T10:25:42.058669+00:00",
+  "count": 865,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -57,6 +57,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-thyjpaspjda-967067",
+      "title": "JPM Flows Liquidity 2026 08 05",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T09:25:17Z",
+      "summary_points": [
+        "**TMT Hedge Fund Structural Losses**: TMT equity funds lost ~10% in July (excl.",
+        "Situational Awareness), multi-strat funds lost 2.3% (4th worst monthly loss ever), signaling structural capacity limits for tech exposure and severe concentration risk.",
+        "**Term Premia Rising Due to Policy Uncertainty**: Fed Chair Warsh’s hawkish comments and credibility concerns drive term premia to 0.8% (US 10y), above historical avg (1.2%), with surveys confirming sustained rise since late June.",
+        "**Global Equity-Bond Flow Imbalance**: Q2 2026 equity flows ($1,355bn) far exceed bond flows ($1,330bn), widening from 2023, reflecting persistent risk-on sentiment and potential equity rotation.",
+        "**EM Equity Liquidity Risk**: EM equity turnover surged 135% y/y vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 33,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-7l6zqifah1l-f2af3c",
       "title": "Mizuho EMEA Multi Asset Strategy Daily",
