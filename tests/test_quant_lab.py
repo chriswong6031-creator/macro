@@ -275,3 +275,133 @@ def test_universe_gap_records_the_finding_that_decides_integration():
 def test_decile_spread_refuses_a_thin_cross_section():
     sig = pd.Series(np.arange(12.0), index=[f"T{i}" for i in range(12)])
     assert study.decile_spread(sig, sig) is None
+
+
+# ---------------------------------------------------------------------------------------
+# METHOD cards — external proposals that are not per-name rankers
+# ---------------------------------------------------------------------------------------
+REQUIRED_METHOD_FIELDS = (
+    "name", "proposer", "source_kind", "one_line", "shape", "proposal_says",
+    "not_a_ranker_because", "our_test", "result_artifact", "harness",
+    "provenance", "house_rulings", "still_live", "reopen_when",
+)
+
+
+def test_every_method_declares_the_full_contract():
+    for key, spec in specs.METHODS.items():
+        for f in REQUIRED_METHOD_FIELDS:
+            assert spec.get(f), f"method {key} is missing {f!r}"
+
+
+def test_method_provenance_is_named_even_when_there_is_no_url():
+    """A relayed proposal has no public URL. It may still be cited — but only if the
+    publisher is named AND the claim is quoted verbatim, so the thing we tested is on the
+    record beside what we measured. A url=None source with no quote would be an unfalsifiable
+    attribution."""
+    for key, spec in specs.METHODS.items():
+        assert spec["provenance"], f"method {key} has no provenance"
+        for src in spec["provenance"]:
+            assert src in specs.SOURCES, f"method {key} cites unknown source {src!r}"
+            s = specs.SOURCES[src]
+            assert s.get("publisher"), f"source {src} names no publisher"
+            if not s.get("url"):
+                assert len(spec["proposal_says"]) > 120, (
+                    f"method {key} cites URL-less source {src} without quoting the claim")
+                assert s.get("why"), f"URL-less source {src} must explain why it has no URL"
+
+
+def test_method_specs_carry_no_numbers():
+    """THE anti-staleness rule for this shelf. Every measurement lives in the result
+    artifact, written by the harness; a statistic hand-typed into the registry outlives the
+    recompute that would have corrected it and nothing here can tell it went stale."""
+    def scan(node, path):
+        if isinstance(node, bool):
+            return
+        if isinstance(node, (int, float)):
+            raise AssertionError(f"numeric literal {node!r} in METHODS spec at {path} — "
+                                 f"measurements belong in the result artifact")
+        if isinstance(node, dict):
+            for k, v in node.items():
+                scan(v, f"{path}.{k}")
+        elif isinstance(node, (list, tuple)):
+            for i, v in enumerate(node):
+                scan(v, f"{path}[{i}]")
+    for key, spec in specs.METHODS.items():
+        scan(spec, key)
+
+
+def test_method_rulings_name_a_registry_row_and_a_verdict():
+    for key, spec in specs.METHODS.items():
+        for r in spec["house_rulings"]:
+            assert r.get("row") and r.get("verdict") and r.get("why"), (
+                f"method {key} has an unsourced ruling: {r}")
+
+
+def test_method_key_lookup_raises_on_typo():
+    with pytest.raises(KeyError):
+        specs.method("no_such_method")
+
+
+# ---------------------------------------------------------------------------------------
+# METHOD card rendering — each of these defects was caught by rendering the page
+# ---------------------------------------------------------------------------------------
+def _render(payload_overrides: dict | None = None) -> str:
+    from jinja2 import Environment, FileSystemLoader
+    from engine.quant_lab import page as ql_page
+    p = ql_page.build_payload()
+    p.update(payload_overrides or {})
+    env = Environment(loader=FileSystemLoader("templates"))
+    return env.get_template("quant_lab.html.j2").render(**p, generated_utc="2026-01-01T00:00Z")
+
+
+def _method_section(html: str) -> str:
+    i = html.find("Methods that do not pick names")
+    j = html.find("EVIDENCE: the combination rule")
+    assert i != -1, "the methods shelf did not render"
+    return html[i:j if j > i else len(html)]
+
+
+def test_a_small_nonzero_coverage_never_renders_as_zero_percent():
+    """INCIDENT: 0.4% coverage rendered as "0%", which reads as "never recorded" — the
+    opposite of the finding. The axis IS stamped; it is stamped far too thinly to use."""
+    seg = _method_section(_render())
+    assert "0.4%" in seg, "0.4% coverage was rounded away"
+    import re
+    rows = re.findall(r"quad_hard_label.*?</tr>", seg, re.S)
+    assert rows and ">0%<" not in rows[0], "a stamped axis was rendered as 0% coverage"
+
+
+def test_an_axis_seen_in_one_state_says_so_even_when_coverage_fails_first():
+    """The gate fails on coverage first, but "only ever one state" is the deeper
+    disqualifier: a conditional expectation over one observed state is undefined. The page
+    must name that rather than the milder "barely recorded"."""
+    seg = _method_section(_render())
+    import re
+    for axis in ("vol_regime", "rate_pressure"):
+        row = re.findall(rf"{axis}.*?</tr>", seg, re.S)
+        assert row, f"{axis} row missing"
+        assert "Only ever one state" in row[0], f"{axis} did not disclose its single state"
+
+
+def test_a_missing_result_artifact_claims_nothing():
+    """A card whose measurement file is absent must say so — never let the spec's prose
+    imply a measurement that was not made."""
+    from engine.quant_lab import page as ql_page
+    p = ql_page.build_payload()
+    for m in p["methods"]:
+        m["result"], m["has_result"] = {}, False
+    seg = _method_section(_render({"methods": p["methods"]}))
+    assert "nothing is claimed here" in seg
+    assert "What we found" not in seg, "a card with no artifact still showed a finding"
+
+
+def test_method_verdict_uses_the_shared_verdict_vocabulary():
+    """One vocabulary, defined once — a method card must not invent its own verdict words."""
+    seg = _method_section(_render())
+    assert "No signal" in seg and "无信号" in seg
+
+
+def test_the_shelf_states_why_these_methods_are_not_ranked_like_models():
+    seg = _method_section(_render())
+    assert "not scored like the models above" in seg
+    assert "no per-name score" in seg

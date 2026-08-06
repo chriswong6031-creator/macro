@@ -75,6 +75,54 @@ def _live_board(model_key: str, L: pd.DataFrame, mktcap: pd.Series | None) -> di
     }
 
 
+METHODS_DIR = ("quant_lab", "methods")
+
+
+def _read_method_result(filename: str) -> dict:
+    """One method's measured result. A missing/bad artifact yields {} — the card still
+    renders and says the measurement is unavailable, rather than the page dying or, worse,
+    the spec's prose implying a measurement that is not there."""
+    p = config.data_dir().joinpath(*METHODS_DIR, filename)
+    if not p.exists():
+        log.info("quant_lab: no method result at %s — card renders without measurements", p)
+        return {}
+    try:
+        return json.loads(p.read_text())
+    except Exception as e:                     # noqa: BLE001
+        log.warning("quant_lab: method result %s unreadable (%s)", filename, e)
+        return {}
+
+
+def _methods() -> list[dict]:
+    """External methods that are not per-name rankers (see specs.METHODS).
+
+    The spec supplies the CLAIM and the reasoning; the artifact supplies every NUMBER. They
+    are kept apart on purpose so a stale hand-typed statistic cannot outlive its recompute.
+    """
+    out = []
+    for key, spec in specs_mod.METHODS.items():
+        res = _read_method_result(spec["result_artifact"])
+        out.append({
+            "key": key,
+            "name": spec["name"], "name_zh": spec.get("name_zh"),
+            "proposer": spec["proposer"], "source_kind": spec["source_kind"],
+            "one_line": spec["one_line"], "shape": spec["shape"],
+            "proposal_says": spec["proposal_says"],
+            "proposal_says_zh": spec.get("proposal_says_zh"),
+            "not_a_ranker_because": spec["not_a_ranker_because"],
+            "our_test": spec["our_test"],
+            "house_rulings": spec["house_rulings"],
+            "still_live": spec["still_live"],
+            "reopen_when": spec["reopen_when"],
+            "harness": spec["harness"], "gate_module": spec["gate_module"],
+            "provenance": [specs_mod.SOURCES[s] | {"key": s} for s in spec["provenance"]
+                           if s in specs_mod.SOURCES],
+            "result": res,
+            "has_result": bool(res),
+        })
+    return out
+
+
 def build_payload() -> dict:
     """Everything the template needs. Never raises — a missing input degrades a section."""
     study = _read_study()
@@ -117,6 +165,7 @@ def build_payload() -> dict:
 
     return {
         "models": models,
+        "methods": _methods(),
         "live": live,
         "study_meta": {k: v for k, v in study.items() if k != "models"},
         "has_study": bool(study.get("models")),
