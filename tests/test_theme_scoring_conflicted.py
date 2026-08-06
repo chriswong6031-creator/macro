@@ -523,33 +523,90 @@ class TestBasketTemplateParses:
         stub = (TEMPLATE_DIR / "baskets.html.j2").read_text(encoding="utf-8")
         assert "stance_matrix.json" not in stub
 
-    # ── MLC-W2b pins (#4241 shape, retargeted at the act board's post-merge home) ──
+    # ── MLC-W2b pins (#4241 shape, retargeted at the act board's post-#4642 home) ─
+    #
+    # #4642 ("transplant the V2 five-lane action board onto US Sector Intelligence")
+    # replaced sector_central's client-rendered act board with the shared, SERVER-
+    # rendered templates/_us_act_now_board.html.j2, and deleted the client renderer
+    # by name. Quoting that commit: "sector_central.html.j2 drops the dead client
+    # renderer (renderActBoard/actRow/actLane/botRow/renderStanceChips) and its
+    # boot()/langchange calls". That deletion was deliberate and adjudicated, so the
+    # three pins that named the client renderer's internals — id="actnow-footnote",
+    # renderStanceChips(), and the sector_central-side stance_matrix.json fetch —
+    # became pins of a SUPERSEDED design rather than evidence of a regression. They
+    # are retargeted here, not relaxed: what they existed to guard still ships.
+    #
+    # The guarded behaviour is unchanged — a theme demoted out of the buy lanes
+    # still discloses the disagreement — but it is now assembled server-side
+    # (scripts/build_site.py writes conflict_chip_en/conflict_chip_zh/
+    # conflict_reason_en) and rendered by the shared board. The stance-matrix fetch
+    # itself is still live on allocation.html.j2, pinned by TestAllocationTemplate.
 
-    def test_merged_page_has_actnow_footnote_element(self):
-        """Pins the ELEMENT (id="..."), not a bare substring: the #3282 rvx revamp
-        deleted the element while JS kept referencing it and the old substring
-        assertion stayed green on the dead surface."""
-        src = (TEMPLATE_DIR / "sector_central.html.j2").read_text(encoding="utf-8")
-        assert 'id="actnow-footnote"' in src
+    ACT_BOARD = "_us_act_now_board.html.j2"
 
-    def test_merged_page_invokes_renderStanceChips(self):
-        """renderStanceChips must be INVOKED, not merely defined (#3282 regression)."""
-        src = (TEMPLATE_DIR / "sector_central.html.j2").read_text(encoding="utf-8")
-        assert "function renderStanceChips" in src
-        assert "renderStanceChips();" in src
+    def _board(self) -> str:
+        return (TEMPLATE_DIR / self.ACT_BOARD).read_text(encoding="utf-8")
 
-    def test_merged_page_has_mlcdata_stance_matrix_url(self):
+    def test_act_board_is_the_merged_pages_action_surface(self):
+        """The retarget is only honest while the merged page actually hosts it."""
         src = (TEMPLATE_DIR / "sector_central.html.j2").read_text(encoding="utf-8")
-        assert "stance_matrix.json" in src
+        assert self.ACT_BOARD in src, (
+            "sector_central no longer includes the shared act board — these pins "
+            "point at a surface the merged page has stopped rendering"
+        )
+
+    def test_act_board_discloses_the_conflicted_reason(self):
+        """Successor to the actnow-footnote element: the demotion reason ships per
+        row, so the reader sees WHY a name was folded out of the buy lanes."""
+        src = self._board()
+        assert "conflict_reason_en" in src, (
+            "conflicted disclosure lost from the act board"
+        )
+
+    def test_act_board_renders_the_conflict_chip_not_merely_defines_it(self):
+        """Successor to the renderStanceChips pin, keeping its #3282 lesson: the
+        chip must be INVOKED on a row, not merely defined. A macro nobody calls is
+        exactly the dead-surface shape the original assertion was written against."""
+        src = self._board()
+        assert "{%- macro ab_chip(chip_en, chip_zh, chip_tone) -%}" in src, (
+            "the chip macro was renamed or removed"
+        )
+        assert (
+            "ab_chip(x.conflict_chip_en, x.get('conflict_chip_zh', x.conflict_chip_en), 'warn')"
+            in src
+        ), "the conflict chip is defined but never rendered on a theme row"
+        assert (
+            "ab_chip(x.get('conflict_chip_en',''), x.get('conflict_chip_zh', x.get('conflict_chip_en','')), 'warn')"
+            in src
+        ), "the conflict chip is defined but never rendered on a sector row"
+
+    def test_act_board_conflict_chip_falls_back_to_english(self):
+        """Bilingual law: an absent zh chip renders the English copy, never blank."""
+        src = self._board()
+        assert "x.get('conflict_chip_zh', x.conflict_chip_en)" in src
+        assert "x.get('conflict_chip_zh', x.get('conflict_chip_en',''))" in src
+
+    def test_conflict_chip_is_written_by_the_builder(self):
+        """The chip is inert markup unless the builder actually writes the key."""
+        src = (ROOT / "scripts" / "build_site.py").read_text(encoding="utf-8")
+        assert 'sector_item["conflict_chip_en"]' in src
+        assert 'base_item["conflict_chip_en"]' in src
 
     def test_merged_page_v1_actnow_fork_stays_deleted(self):
-        """The dead V1 renderActNow fork must not return; the live rvx act board owns
-        the conflicted display (fold into the wait lane + _conflicted row tag). The
-        chip selector is data-mlc-bid — data-bid is banned by tests/test_ftr_w3_ui.py."""
+        """Neither dead act-board fork may return.
+
+        The `_conflicted` row tag and the data-mlc-bid chip selector were internals
+        of the client renderer #4642 deleted; the conflicted display is now the
+        server-rendered chip pinned above. What still matters is that neither the V1
+        renderActNow fork nor the superseded client board regrows beside the shared
+        include — two boards on one page is the collision this pin exists to catch.
+        """
         src = (TEMPLATE_DIR / "sector_central.html.j2").read_text(encoding="utf-8")
         assert "function renderActNow(" not in src
-        assert "_conflicted" in src
-        assert "data-mlc-bid" in src
+        assert "function renderActBoard(" not in src, (
+            "the client act board was superseded by the shared server-rendered "
+            "include in #4642 — it must not regrow alongside it"
+        )
 
 
 @pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")

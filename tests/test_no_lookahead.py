@@ -30,8 +30,36 @@ BANNED = [
     ("backfill (method=)", re.compile(r"method\s*=\s*[\"']backfill[\"']")),
 ]
 
-# explicit, reviewed exceptions if a legitimate need ever arises: "path::reason"
-ALLOWLIST: set[str] = set()
+# Explicit, reviewed exceptions. Keyed "path:line" because that is what the scan
+# reports — but a bare line number is a DANGEROUS key on its own: it exempts
+# whatever code occupies that line later, so an unrelated edit that shifts the
+# file by one line silently hands this exemption to a real leak. Every entry
+# therefore PINS THE SOURCE TEXT it was granted for, and
+# test_every_allowlist_entry_still_points_at_the_code_it_was_granted_for fails
+# the moment the pinned line moves or changes.
+#
+# The bar for an entry is NOT "this is inconvenient to fix". It is: the idiom is
+# inherent to the operation, and every alternative is worse for the reader of the
+# data. Anything else gets fixed, not listed.
+ALLOWLIST: dict[str, dict[str, str]] = {
+    "engine/pick_forward_dist.py:95": {
+        "source": "factor = factor.ffill().bfill().fillna(1.0)",
+        "reason": (
+            "carry_split_factor reconstructs the split back-multiplication factor as "
+            "raw_close/adj_close. Split back-adjustment is DEFINITIONALLY a whole-series "
+            "operation — a split re-scales every prior bar — so the factor for bars "
+            "before the first valid adj_close observation can only come from later data. "
+            "Every alternative is worse for the series: ffill+fillna(1.0) alone leaves "
+            "pre-adjustment bars un-back-adjusted and manufactures a FAKE DISCONTINUITY "
+            "at the split boundary, which is a lie-shaped price series rather than a leak. "
+            "The same function already carries a disclosed sibling look-ahead (REVIEW-9, "
+            "the split-print stamp) on the same reasoning: it is feature-side only and is "
+            "never read by outcome construction. Operator decision 2026-08-06. "
+            "SCOPE: this line only — it licenses nothing else, and .bfill() anywhere "
+            "outside a split-factor reconstruction is still a leak."
+        ),
+    },
+}
 
 
 def _py_files():
@@ -85,6 +113,44 @@ def test_no_future_leak_idioms_in_feature_code():
         "Look-ahead idiom in feature/engine code (pulls future into a past feature). "
         "Fix the leak, or if genuinely safe add 'path:line' to ALLOWLIST with a reason:\n"
         + "\n".join(violations))
+
+
+def test_every_allowlist_entry_still_points_at_the_code_it_was_granted_for():
+    """An allowlist keyed by line number rots into a licence for unrelated code.
+
+    The scan exempts a coordinate, `path:line`. Nothing about that coordinate is
+    stable: insert an import forty lines above and the exemption granted to a
+    reviewed split-factor reconstruction now covers whatever slid into line 95 —
+    a REAL leak, permanently green, with a reassuring reason attached to it.
+
+    So each entry pins its source text and this test re-reads it. A shifted or
+    edited line fails HERE, naming the entry, instead of going quiet in the scan
+    above. Deliberately a separate test: it must fail even when the scan is green,
+    which is exactly the state a rotted exemption produces.
+    """
+    stale = []
+    for key, entry in ALLOWLIST.items():
+        rel, _, lineno = key.rpartition(":")
+        path = ROOT / rel
+        if not path.exists():
+            stale.append(f"{key}  [file is gone]")
+            continue
+        lines = path.read_text(encoding="utf-8").splitlines()
+        i = int(lineno)
+        actual = lines[i - 1].strip() if 0 < i <= len(lines) else "<past end of file>"
+        if entry["source"] not in actual:
+            stale.append(f"{key}\n      granted for: {entry['source']}\n      now holds:   {actual[:100]}")
+    assert not stale, (
+        "ALLOWLIST entries no longer point at the code they were reviewed for. The "
+        "exemption is now covering a DIFFERENT line — re-point it to the new line "
+        "number, or drop it if the code it excused is gone:\n  " + "\n  ".join(stale))
+
+
+def test_allowlist_entries_carry_a_reason():
+    """A bare coordinate with no rationale is indistinguishable from a silenced red."""
+    for key, entry in ALLOWLIST.items():
+        assert entry.get("reason", "").strip(), f"{key} has no reason"
+        assert entry.get("source", "").strip(), f"{key} pins no source text"
 
 
 def test_tripwire_actually_fires_on_a_planted_leak():
