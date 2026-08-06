@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T04:53:55.129778+00:00",
-  "count": 849,
+  "generated_at": "2026-08-06T05:08:31.204618+00:00",
+  "count": 850,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -56,6 +56,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-c9uc5rgsvua-69dfee",
+      "title": "Brazil Softer July Manufacturing and Services PMI",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:03:03Z",
+      "summary_points": [
+        "**Brazil PMI Contraction**: Manufacturing (47.5) and Services (49.7) PMIs below 50, with Composite at 48.8, driven by declining new orders, employment, and persistent input/output price pressures signaling broad economic contraction.",
+        "**Input-Output Price Spread**: Input Prices consistently exceed Output Prices since Jul-20, indicating cost-push inflation that compresses service sector margins and elevates downside risk for Brazilian equities.",
+        "**Services Sector Weakness**: Services PMI (49.7) contracting due to falling New Business (48.9) and elevated Prices Charged (56.5), reflecting weakening demand and margin pressure amid slowing growth trend.",
+        "**Persistent Demand Deterioration**: PMI growth trend has slowed since Jul-21 peak, with Input Prices declining but remaining above 50, signaling ongoing supply chain disruptions or demand erosion for portfolio exposure to Brazilian services."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-r9gm9x1pdwl-b32532",
       "title": "Asia Pacific Portfolio Strategy Asian equity market daily update",
@@ -168,7 +188,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-06T04:02:47Z",
-      "summary_points": [],
+      "summary_points": [
+        "**US FY26 Guidance Downgrade**: Revenue down 5% ($7.125-7.675bn vs prior $7.395-8.195bn), EBITDA down 22% ($0.6-0.92bn vs prior $0.77-1.17bn) due to sportsbook investment, NFL timing, and market-making costs.",
+        "**EPS Miss & Structural Shifts**: Actual Adj.",
+        "EPS ($0.49) missed consensus ($0.58) by -15%, driven by higher central costs (-$87m vs GSE -$78m) and iGaming underperformance (-4% vs GSE), despite revenue/EBITDA beats.",
+        "**Valuation vs.",
+        "Execution Risk**: Buy rating ($190 target) contradicted by FY26 guidance contraction, negative corporate costs (-$310m), and US EBITDA cut (16% vs mid-point), highlighting material execution risk."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -183,7 +209,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-06T04:02:43Z",
-      "summary_points": [],
+      "summary_points": [
+        "**WDC Q3 Results & Guidance**: Revenue ($3.75B vs.",
+        "$3.71B Street) and gross margin (54.4% vs.",
+        "9% Street) beat estimates; guidance ($4.10B revenue, 55-56% margin) exceeds Street (54.0% margin), signaling strong fundamentals and margin expansion.",
+        "**Critical Risk Factors**: HAMR roadmap delays, new storage applications, and industry overshipping end-demand pose significant downside risks requiring close monitoring of order trends and demand visibility.",
+        "**Bullish Flow & Rating Bias**: Goldman Sachs' $650 price target (18.5% upside from $548.56) and 50% Buy rating (vs."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -198,7 +230,11 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-06T04:02:29Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Guidance Upgrade & Segment Divergence**: 2026 EPS guidance raised to 18%-23% growth (vs prior 15%-20%), but Cap Markets declined 1% YoY due to Americas multifamily slowdown; Services (8% growth) and Leasing (27.5% growth) beat consensus, while EMEA Cap Markets weakened from macro uncertainty.",
+        "**Earnings Beat with Segment Risks**: Adjusted EBITDA $183.6M beat consensus ($175.7M), but leasing outperformed (27.5% vs 10.8% consensus) while Cap Markets underperformed (-0.7% vs 9.4%); EMEA margin pressures offset growth.",
+        "**Key Valuation Risks**: $17 target (10.6x EPS) faces macro/geopolitical disruptions, reduced capital availability, and margin pressures from slower business growth; current price ($14.08) offers 20.7% upside but hinges on sustaining revenue growth (10.288bn → 12.456bn by 12/28E)."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
