@@ -444,6 +444,16 @@
   .pbv-why { flex: 1 1 100%; font-size: 10.5px; line-height: 1.5;
              color: color-mix(in srgb, var(--muted) 70%, var(--text)); }
   .pbv-mk { color: var(--muted); font-variant-numeric: tabular-nums; opacity: .85; flex: none; }
+  /* the population line. It reads BEFORE the rows on purpose: the twelve figures
+     below are the top of a ranked-then-truncated distribution, and a reader who
+     meets them first has already formed the wrong impression by the time any
+     footnote arrives. Muted and small — it frames the rows, it is not a headline. */
+     At --muted it sat 8px under the subtitle at the same weight and colour and read
+     as a fourth clause of it; the ink is the same 70/30 mix .pbv-why uses, which is
+     enough to make it a statement of its own without turning it into a headline. */
+  .pbv-pop { margin: 7px 0 1px; font-size: 10.5px; line-height: 1.55;
+             color: color-mix(in srgb, var(--muted) 70%, var(--text));
+             font-variant-numeric: tabular-nums; }
   /* a row whose stance differs from the section's says so; when every row agrees,
      the constant is printed ONCE in the section line and nowhere else */
   .pbv-st { font-size: 10.5px; font-weight: 700; color: var(--muted); flex: none; }
@@ -3939,12 +3949,21 @@
           {% if _rnm %}<span class="pbr-nm">{{ t(_rnm, r.get('name_zh') or _rnm) }}</span>{% endif %}
           {% if _rth and _rth.get('name') %}<span class="pv-mk-i pv-mk-theme"{% if _rth.get('state_en') %} data-tip-en="{{ _rth.state_en }} — a display-only read of the mega-cap leader group. Context for why this name moved; it earns no rank on the board above." data-tip-zh="{{ _rth.get('state_zh') or _rth.state_en }} —— 对大市值龙头组合的仅供展示读数。用于解释该股为何异动；不为上方榜单加分。"{% endif %}>{{ t(_rth.name, _rth.get('name_zh') or _rth.name) }}</span>{% endif %}
           <span class="pbr-m"{% if _rapx %} data-tip-en="≈ means the exact date this signal fired was not recorded for this name, so the age is counted back from its recent bars — read it as a session or two either way." data-tip-zh="≈ 表示该股信号触发的确切日期没有记录，此处的交易日数由近期K线倒推得出 —— 可能相差一两个交易日。"{% endif %}>
-            {%- if r.get('pct_since') is not none %}<span class="{{ 'az-up' if r.pct_since >= 0 else 'az-dn' }}">{{ '%+.1f'|format(r.pct_since) }}%</span> {% else %}<span class="pbr-na" data-tip-en="The move since this signal fired could not be measured for this name — the price history behind it is incomplete." data-tip-zh="该股自信号触发以来的涨跌幅无法计算 —— 其背后的价格历史不完整。">—</span> {% endif -%}
-            <span class="l-en">since signal{% if _rsn is not none %} · fired {% if _rapx %}≈{% endif %}{{ _rsn }} session{{ '' if _rsn == 1 else 's' }} ago{% endif %}</span>
+            {#- Same anchor law as the vetoed lane below, and it was the same measured
+                defect: this figure used to start at the signal date, which sits at the
+                low that created the signal and precedes the check's verdict by about
+                eight sessions. It now starts at the close the check finished on, and
+                the label says which. The AGE beside it is still the signal's own. -#}
+            {% set _rmf = r.get('measured_from') or '' %}
+            {#- fail closed on the ANCHOR, exactly as the vetoed lane below does: a
+                pre-2026-08-03 artifact's marker-anchored figure must not render under
+                a label that promises the confirmation close. -#}
+            {%- if r.get('pct_since') is not none and r.get('anchor') == 'confirm' %}<span class="{{ 'az-up' if r.pct_since >= 0 else 'az-dn' }}">{{ '%+.1f'|format(r.pct_since) }}%</span> {% else %}<span class="pbr-na" data-tip-en="The move could not be measured for this name — either its price history is incomplete, or the signal is still inside the few days the entry check needs before it can decide." data-tip-zh="该股的涨跌幅无法计算 —— 或是价格历史不完整，或是该信号仍处在入场检查作出判断所需的那几天之内。">—</span> {% endif -%}
+            <span class="l-en" data-tip-en="{% if _rmf %}The signal fired on {{ r.get('cross_date') or '' }}, but the entry check reads the next few days of price before it can decide. It finished on {{ _rmf }}, and the move above is measured from that day's close — so it leaves out the rise that only hindsight could have caught.{% else %}Measured from the close at which the entry check could first reach its verdict, not from the signal date — the signal date sits at the low that created the signal.{% endif %}">since the check finished{% if _rsn is not none %} · fired {% if _rapx %}≈{% endif %}{{ _rsn }} session{{ '' if _rsn == 1 else 's' }} ago{% endif %}</span>
             {# the figure span is language-agnostic and comes FIRST in the DOM, so the
-               Chinese qualifier trails it. Parenthesised, because a bare 信号后 after
-               a number reads as an unfinished clause. #}
-            <span class="l-zh">（信号后）{% if _rsn is not none %} · {% if _rapx %}≈{% endif %}{{ _rsn }}个交易日前触发{% endif %}</span>
+               Chinese qualifier trails it. Parenthesised, because a bare 检查完成后
+               after a number reads as an unfinished clause. #}
+            <span class="l-zh" data-tip-zh="{% if _rmf %}信号于 {{ r.get('cross_date') or '' }} 触发，但入场检查需要再读几天的价格才能作出判断，到 {{ _rmf }} 才完成。上面的涨跌幅从当天收盘价起算 —— 因此不包含只有事后回看才能抓到的那段涨幅。{% else %}从入场检查首次能作出判断的收盘价起算，而非从信号日起算 —— 信号日正处在造就该信号的低点上。{% endif %}">（检查完成后）{% if _rsn is not none %} · {% if _rapx %}≈{% endif %}{{ _rsn }}个交易日前触发{% endif %}</span>
           </span>
         </a>
       {% endfor %}
@@ -3981,6 +4000,24 @@
         <span class="pbr-n">{{ _hk_veto|length }}</span>
       </div>
       <div class="pbr-s">{{ t('A buy signal fired on each of these and the entry check refused it. This is what happened next — the section exists to keep the board honest, not to hand you a list to buy.', '这些个股都曾触发买入信号，但被入场检查拒绝。这里记录门控拒绝后的走势，用于自我审视 —— 不是一份可买清单。') }}{% if _vet_st %} <span class="l-en">Stance: {{ _vet_st[0] }}.</span><span class="l-zh">立场：{{ _vet_st[1] or _vet_st[0] }}。</span>{% endif %}</div>
+      {# ── THE POPULATION BEHIND THE ROWS ──────────────────────────────────────
+           This lane RANKS BY THE MOVE and then truncates, so what survives is the
+           winning tail of the very number it prints. Twelve big green figures with
+           nothing behind them read as a P&L claim the lane never made. The count and
+           the middle move of the WHOLE refused set are the cheapest possible cure,
+           and `population_measured` is the median's own denominator — medianing the
+           measurable rows while printing the full count would quietly drop the
+           disclosed nulls out of the base. Fail-soft: pre-population artifacts carry
+           none of these keys and the line simply does not render. #}
+      {%- set _vpop = _hk_veto[0].get('population') if _hk_veto else none -%}
+      {%- set _vmeas = _hk_veto[0].get('population_measured') if _hk_veto else none -%}
+      {%- set _vmed = _hk_veto[0].get('population_median_pct') if _hk_veto else none -%}
+      {% if _vpop and _vmed is not none %}
+      <div class="pbv-pop">
+        <span class="l-en">{% if _hk_veto|length < _vpop %}Showing the {{ _hk_veto|length }} biggest movers of {{ _vpop }} refused signals. {% else %}{{ _vpop }} refused signals in this window. {% endif %}Across {% if _vmeas and _vmeas < _vpop %}the {{ _vmeas }} we can measure{% else %}all {{ _vpop }}{% endif %}, the middle move is {{ '%+.1f'|format(_vmed) }}%.</span>
+        <span class="l-zh">{% if _hk_veto|length < _vpop %}显示 {{ _vpop }} 个被拒信号中涨幅最大的 {{ _hk_veto|length }} 个。{% else %}本窗口共 {{ _vpop }} 个被拒信号。{% endif %}{% if _vmeas and _vmeas < _vpop %}在可计算的 {{ _vmeas }} 个中{% else %}全部 {{ _vpop }} 个的{% endif %}中位涨跌幅为 {{ '%+.1f'|format(_vmed) }}%。</span>
+      </div>
+      {% endif %}
       <div class="pbr-l">
       {% for r in _hk_veto_o %}
         {% set _vth = r.get('leadership') or r.get('theme') %}
@@ -3988,6 +4025,10 @@
         {% set _vsn = r.get('sessions_since') %}
         {% set _vapx = r.get('anchor') == 'approx' %}
         {% set _vd = r.get('signal_date') or '' %}
+        {# the close the MOVE is measured from — the marker's confirmation day, which
+           is days after the marker itself. Absent on a null-move row, and on every
+           artifact written before the anchor was fixed. #}
+        {% set _vmf = r.get('measured_from') or '' %}
         {% set _vdt = (_VMN.get(_vd[5:7], _vd[5:7]) ~ ' ' ~ (_vd[8:10]|int)) if _vd|length >= 10 else '' %}
         <a class="pbr-r pbr-veto" href="hk_lookup.html#{{ r.get('ticker','') }}">
           <span class="pbr-tk">{{ r.get('ticker','') }}</span>
@@ -4001,8 +4042,21 @@
              all agree the sentence lives once, in the section line above. #}
           {% if not _vet_st and r.get('stance') %}<span class="pbv-st">{{ t(r.stance, r.get('stance_zh') or r.stance) }}</span>{% endif %}
           <span class="pbr-m"{% if _vapx %} data-tip-en="≈ means the exact date of the blocking marker was not recorded for this name, so the count is worked back from its recent bars — read it as a session or two either way." data-tip-zh="≈ 表示该股受阻标记的确切日期没有记录，此处的交易日数由近期K线倒推得出 —— 可能相差一两个交易日。"{% endif %}>
-            {%- if r.get('pct_since') is not none %}<span class="{{ 'az-up' if r.pct_since >= 0 else 'az-dn' }}">{{ '%+.1f'|format(r.pct_since) }}%</span> {% else %}<span class="pbr-na" data-tip-en="The move since the blocking marker could not be measured for this name — the price history behind it is incomplete." data-tip-zh="该股自受阻标记以来的涨跌幅无法计算 —— 其背后的价格历史不完整。">—</span> {% endif -%}
-            <span class="l-en">since the block</span><span class="l-zh">（受阻后）</span>
+            {#- The move is measured from the close at which the entry check could
+                first reach its verdict, NOT from the signal date: the signal date sits
+                at the low that created the signal and the check reads several more
+                days of price before it can decide, so measuring from it hands this
+                lane a rise nobody could have caught. The label has to say so, or the
+                figure silently answers a question the reader did not ask. -#}
+            {#- FAIL CLOSED ON THE ANCHOR, not just on the value. Every artifact
+                written before 2026-08-03 carries a marker-anchored `pct_since` and no
+                `anchor: confirm`, and the nightly that regenerates it can be a day
+                behind this template. Rendering those figures under the label below
+                would put the old overstatement inside a sentence promising the new
+                anchor — a worse lie than the one being fixed. A missing number beats
+                a wrong one, which is this lane's own standing rule. -#}
+            {%- if r.get('pct_since') is not none and r.get('anchor') == 'confirm' %}<span class="{{ 'az-up' if r.pct_since >= 0 else 'az-dn' }}">{{ '%+.1f'|format(r.pct_since) }}%</span> {% else %}<span class="pbr-na" data-tip-en="The move could not be measured for this name — either its price history is incomplete, or the block is still inside the few days the entry check needs before it can decide." data-tip-zh="该股的涨跌幅无法计算 —— 或是价格历史不完整，或是该受阻信号仍处在入场检查作出判断所需的那几天之内。">—</span> {% endif -%}
+            <span class="l-en" data-tip-en="{% if _vmf %}The signal fired on {{ _vd }}, but the entry check reads the next few days of price before it can decide. It finished on {{ _vmf }}, and the move above is measured from that day's close — so it leaves out the rise that only hindsight could have caught.{% else %}Measured from the close at which the entry check could first reach its verdict, not from the signal date — the signal date sits at the low that created the signal.{% endif %}" data-tip-zh="{% if _vmf %}信号于 {{ _vd }} 触发，但入场检查需要再读几天的价格才能作出判断，到 {{ _vmf }} 才完成。上面的涨跌幅从当天收盘价起算 —— 因此不包含只有事后回看才能抓到的那段涨幅。{% else %}从入场检查首次能作出判断的收盘价起算，而非从信号日起算 —— 信号日正处在造就该信号的低点上。{% endif %}">since the check finished</span><span class="l-zh">（检查完成后）</span>
           </span>
           <span class="pbv-why">
             <span class="l-en">{{ r.get('blocked_reason_en') or 'The entry gate refused this signal' }}{% if _vdt %} · blocked on a {{ _vdt }} marker{% if _vsn is not none %}, {% if _vapx %}≈{% endif %}{{ _vsn }} session{{ '' if _vsn == 1 else 's' }} ago{% endif %}{% elif _vsn is not none %} · blocked {% if _vapx %}≈{% endif %}{{ _vsn }} session{{ '' if _vsn == 1 else 's' }} ago{% endif %}</span>
