@@ -31,6 +31,17 @@ discipline; this one is genuinely first.
 `REPRO_ASOF = 2026-07-31`, universe = the three US closes caches as production reads them,
 1,493 names × 777 sessions (2023-06-27 → 2026-07-31), 939,611 in-range name-days.
 
+**PRICE-BASIS CLEARANCE (added 2026-08-06 — see §8).** #4698's price-adjustment audit
+fenced this instrument out of its sweep, leaving these the only uncleared numbers in the
+W5.1 evidence set and the tightest boundary in it. They have now been re-run on the
+adjusted ladder. **Verdict: HOLDS BUT WEAKENS — the instrument's own label, with the
+weakening confined to H=63; H=10 and H=21 move the other way. No figure in §3 or §4 needs
+a basis correction.** The basis moves `macd_bear`'s separation by at most **0.15pp**
+(at H=63), and the §3.3 day-demeaned caveat is completely unchanged. §8 also reports a
+larger, different exposure the basis audit surfaced: 266 of the 1,493 names cannot be
+priced on any adjusted source at all, and the store-drift-plus-coverage gap (up to 0.24pp)
+exceeds the basis gap it was opened to measure.
+
 ---
 
 ## §1 The pre-registered keep-rule and its failure, verbatim
@@ -486,6 +497,146 @@ cell-for-cell against `tier_stream` (1,493 names, 939,611 cells, 0 mismatches) a
 in any way other than that conjunction — a veto-conditional tier, say — the sole-blocker
 predicate stops being a counterfactual and every cohort above becomes a correlation. The
 equality gate would go FAIL and the guard suite would go red; that is the intended alarm.
+
+---
+
+## §8 Price-basis clearance — both columns (added 2026-08-06)
+
+### 8.1 Why this section exists
+
+`PRICE_ADJUSTMENT_AUDIT_2026-08-06.md` (#4698) found that the three breadth close caches
+are re-based only at a full rebuild (last ~2026-05-12) and accrue **raw** rows after it,
+while `data/baskets/ohlcv`, `data/yahoo` and `data/stocks` are back-adjusted — and SPY is
+available adjusted only. A cache-priced name measured against SPY therefore **books its
+own dividend as a loss**. That audit re-ran three sibling instruments and **fenced this
+one out**, recording it as *"the tightest boundary in the set … this audit does not clear
+it — P1, re-run before ratification"*. §8 is that re-run.
+
+Artifacts: `veto_leg_isolation_adjusted_rerun.py` /
+`veto_leg_isolation_adjusted_rerun.json` / `test_veto_leg_isolation_adjusted_rerun.py`
+(7 tests). The frozen original is **not overwritten**. The ladder is #4698's own
+`price_ladder.py`, vendored byte-identically rather than re-implemented — receipt in
+`section_0_ladder_receipt` (sha256 `a8e376e0…6175`, identical to
+`origin/claude/price-adjustment-audit-20260806`, pinned by a test that skips rather than
+passes when the source ref is absent).
+
+### 8.2 The basis control — three axes pinned, each proven with a count
+
+#4698's own first adjusted run grew its admitted population **+31%** (22,616 → 29,675)
+because `baskets/ohlcv` carries the large-cap sleeve ~2 years deeper than the breadth
+cache — a **coverage** change wearing a basis effect's clothes. All three axes are pinned
+here:
+
+| axis | control | proof |
+|---|---|---|
+| universe | adjusted panel restricted to the as-shipped name list | 1,493 → **1,227** kept; identical name list both columns |
+| calendar | reindexed onto the as-shipped session index | 777 sessions both columns; index equality True |
+| observed-cell mask | **intersection** of the two masks, applied to BOTH | cache 939,611 · adjusted-on-pinned-axes 950,151 · **intersection 734,994**; masks identical, **0 mismatches** |
+| resample phase | mask applied before any leg is computed | 22 names' first observation moved — **identically in both columns** |
+
+The intersection is symmetric on purpose: masking adjusted *down* to the cache would still
+leave the reverse asymmetry (a date the cache has and the adjusted source lacks) in place.
+Ladder resolution: `baskets_ohlcv` 1,189 · `yahoo` 38 · `data_stocks` 0 · **cache rung 0**
+(`allow_unadjusted=False` — a fallback would put the very basis mix back). Equality gate
+**PASS on both columns**, no dead legs.
+
+**The cost, stated plainly: 266 of 1,493 names (17.8%) have no adjusted source at all**,
+and they leave *both* columns. Every §8 number is therefore on a 1,227-name sub-universe
+of §3's. This is a real hole in the evidence base, and it is larger than the basis effect
+it was opened to measure.
+
+### 8.3 Both columns — per-leg separation vs the admitted control (pp, per-name-first)
+
+`A` = cache basis, re-read today on the pinned sub-universe. `B` = adjusted basis, same
+cells. **`A` is not the frozen column** — see §8.5.
+
+| leg | H10 A → B | H21 A → B | H63 A → B | B−A |
+|---|---|---|---|---|
+| `SOLE:stoch_ob` | −0.08 → **−0.10** | −0.60 → **−0.55** | −0.99 → **−0.94** | −0.02 / +0.05 / +0.05 |
+| `SOLE:stoch_bear` | +0.46 → **+0.51** | +0.75 → **+0.83** | −0.06 → **−0.20** | +0.05 / +0.08 / −0.14 |
+| `SOLE:macd_bear` | −0.34 → **−0.37** | −0.81 → **−0.79** | −0.49 → **−0.34** | **−0.03 / +0.02 / +0.15** |
+
+**Channel split** (the re-pricing has two channels, and blending them would hide which
+carried the move). For `macd_bear`: **outcome** channel (cohorts held fixed, returns
+re-priced) −0.01 / +0.03 / +0.15pp; **cohort** channel (legs re-derived on the corrected
+basis) −0.02 / −0.01 / 0.00pp. Cohort cell counts move by **≤0.5%** on every cohort
+(`macd_bear` 34,400 → 34,295, −0.3%). So essentially all of the small movement is the
+outcome channel, exactly where #4698's mechanism predicts it, and the legs themselves are
+indifferent to the basis.
+
+**The day-demeaned column is unchanged**: `macd_bear` −0.07 / −0.13 / +0.82pp adjusted
+versus −0.07 / −0.13 / +0.83pp on cache. **§3.3's caveat therefore stands untouched** —
+the separation still lives on the vs-SPY axis and still largely vanishes market-neutral.
+Correcting the basis does not rescue the leg from that reading; if anything it confirms
+the reading was never a dividend artifact.
+
+Recent window (H10): `macd_bear` −0.65 → **−0.76pp** — the separation gets *larger* on the
+adjusted basis in the window where the bias is concentrated, which is the opposite of what
+a dividend-driven artifact would do.
+
+### 8.4 Forfeiture pricing under the adjusted basis
+
+| | frozen (1,493 names) | adjusted (1,227 names) |
+|---|---|---|
+| board widening if `macd_bear` removed | **63.6%** | **62.9%** |
+| union-board Δ vs control, H10 | −0.07pp | **−0.09pp** |
+| union-board Δ vs control, H21 | −0.33pp | **−0.37pp** |
+| union-board Δ vs control, H63 | −0.02pp | **0.00pp** |
+
+§4's conclusion is unchanged: removal buys a ~63% wider board for a per-name median
+0.09–0.37pp worse at H10/H21 and indistinguishable at H63.
+
+### 8.5 The gap that is NOT a basis effect — and is bigger
+
+| | H10 | H21 | H63 |
+|---|---|---|---|
+| frozen (§3, 1,493 names, 2026-08-05 read) | −0.26 | −0.57 | −0.52 |
+| cache today (A, 1,227 names) | −0.34 | −0.81 | −0.49 |
+| adjusted (B, 1,227 names) | **−0.37** | **−0.79** | **−0.34** |
+
+Frozen→A moves the number by up to **0.24pp** (H21) while A→B moves it by at most
+**0.15pp**. Frozen→A is *not* a basis effect — A is still cache-priced. It conflates three
+causes this file does **not** decompose: **store drift** (the caches re-base between
+reads, so a past session's close is not stable — #4698's receipt: PNC's 2026-06-22 close
+read 234.71 on 07-01 and 232.85 today), the **universe reduction** (266 unpriceable
+names), and the **re-phasing** of 22 names.
+
+Two consequences follow, and they are the durable ones:
+
+1. **The as-shipped column is a frozen historical artifact, not a reproducible result.**
+   Its pin is the 2026-08-05 cache read. Only the adjusted column is re-derivable. Any
+   future re-run of §3 will differ from §3 for reasons that have nothing to do with the
+   leg.
+2. **The measurement-infrastructure exposure exceeds the basis exposure.** A 0.15pp
+   basis effect sits inside a boundary of 0.26pp; a 0.24pp drift-plus-coverage effect does
+   not comfortably. Anything ratified on §3's numbers should be ratified on the adjusted
+   sub-universe as well — which §8.3 now provides.
+
+### 8.6 Verdict, and what it does to §6
+
+**`SOLE:macd_bear`: HOLDS BUT WEAKENS** — the instrument's own classifier, and the
+weakening is confined to H=63 (−0.49 → −0.34pp); H=10 and H=21 move the other way. Sign
+stable across all three horizons, sign matches the cache column at every horizon, and the
+largest absolute adjusted separation (0.79pp) is comfortably above #4547's demonstrated
+0.28pp noise floor. `stoch_ob` HOLDS (still weak); `stoch_bear` HOLDS (still sign-flipping
+across horizons, still the smallest cohort).
+
+**No §6 option changes, and none of §3/§4's figures needs correcting for basis.** The
+directional pressure is small but real:
+
+- **(a) keep** and **(d) demote** are **modestly strengthened**: the leg's separation is
+  not a dividend artifact, and on the adjusted-priceable sub-universe it is *larger* at the
+  primary horizon (−0.37 vs −0.26pp) and in the recent window (−0.76 vs −0.61pp).
+- **(b) retire** is **not helped**: the leg still separates in the correct direction on
+  every horizon after correction, and the forfeiture price is unchanged.
+- **(c) repair-first** gains one item that has nothing to do with the fail-open: **266
+  names are unpriceable on any adjusted source**, so the evidence base for any W5 decision
+  carries a 17.8% coverage hole that no basis correction can close.
+
+**The §3.3 ceiling still binds and is not relieved by any of this.** The separation
+remains a vs-SPY / date-clustered effect that is ≈0 on the market-neutral column at H10 and
+H21 and *positive* at H63. Basis correction moved that column by 0.01pp. Whatever the
+operator ratifies, it should not be ratified on the belief that this leg selects stocks.
 
 ---
 
