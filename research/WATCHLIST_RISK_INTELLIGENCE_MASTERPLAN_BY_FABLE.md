@@ -7,7 +7,7 @@ uncorrelated-risk structure, grounded in how institutions actually do this.
 Parents: `PORTFOLIO_RISK_DESK_MASTERPLAN_BY_FABLE.md` (lanes + ladder + Amendment 1 carve-out),
 `UNIFIED_WATCHLIST_PORTFOLIO_MASTERPLAN_BY_FABLE.md` (UWP-R1..R7, store + dashboard).
 Registries consulted: `docs/ACTIVE_BUILD_MAP.md` (2026-07-24 — no colliding open lane),
-`research/DO_NOT_REBUILD.md` (rows 44 fused-score, 104 volume-fingerprint, 106 forced-call —
+`research/DO_NOT_REBUILD.md` (DNR:KILL-FUSED-COMPOSITE fused-score, DNR:KILL-VOLUME-FINGERPRINTS volume-fingerprint, DNR:KILL-FORCED-CALLS forced-call —
 all honored below), `config/ruling_graph.yml` (NWC-U4, NWP-U18, RUL-F3.2, PRD-R2/R6/R7).
 
 ## 0. ACCEPTANCE GATES (any UI wave is "not done unless")
@@ -109,8 +109,8 @@ have is a set of practices that survived those funerals. Each, and its verdict f
 - EXIT-GRID-1 ("drawdown control is an entry problem"), TOP3-E5 hazard kill, FALS-OSC kill:
   nothing here predicts tops or fits estimators — WRI composes shipped display-tier
   artifacts with printed arithmetic. PRD-R5 restated: v1 fits nothing.
-- DNR row 104 (volume fingerprints): untouched — no volume features anywhere in WRI.
-- DNR row 106 (Mag-7 forced call): WRI makes no directional calls; it discloses structure.
+- DNR:KILL-VOLUME-FINGERPRINTS (volume fingerprints): untouched — no volume features anywhere in WRI.
+- DNR:KILL-FORCED-CALLS (Mag-7 forced call): WRI makes no directional calls; it discloses structure.
   Book states are descriptive (what you hold), never market calls.
 - Amendment 1 carve-out: user-facing display-tier watchlist+portfolio risk surface in this
   repo is lawful; operator held-desk stays in Mastermind untouched.
@@ -126,7 +126,7 @@ have is a set of practices that survived those funerals. Each, and its verdict f
   variance share, ENB, a position's risk contribution, a pairwise correlation — is a
   measurement and MAY display. A *fused multi-construct composite* — any blending of
   heterogeneous lanes (trend + solvency + events…) into one number, rank, or dial — remains
-  FORBIDDEN (PRD-R2; DNR row 44). Lane aggregation is printed counts + named ladder only.
+  FORBIDDEN (PRD-R2; DNR:KILL-FUSED-COMPOSITE). Lane aggregation is printed counts + named ladder only.
   The FX panel's existing "share of risk" language is the compliant precedent.
 - **WRI-R3 (no construction, NWP-U18):** no optimizer, no suggested weights, no
   add/trim/hedge instructions. The W4 what-if (user picks a candidate; we print the same

@@ -771,3 +771,52 @@ if __name__ == "__main__":
         fn()
         print(f"ok  {fn.__name__}")
     print(f"\n{len(fns)} passed")
+
+
+# --------------------------------------------------------------------------- #
+# 2026-08-05 audit: the diagonal dock — CONFIRMED_* may not out-rank the
+# radar's actual claims
+# --------------------------------------------------------------------------- #
+def test_diagonal_dock_confirmed_below_equal_divergence(monkeypatch, tmp_path):
+    """Same salience, same confirmation legs: a CONFIRMED_UP flag must score
+    well below the POSITIVE_DIVERGENCE flag — the engine's own doctrine calls
+    the diagonal 'already priced, no edge', yet v1 ranked confirmed momentum
+    names on top straight into the July-2026 unwind."""
+    monkeypatch.setattr(rp, "_load", lambda _: {})
+    monkeypatch.setattr(rp, "_regime", lambda: {"mult": 1.0, "quad": None,
+                                                "quad_name": None, "liquidity": None})
+    fake_hist_path = tmp_path / "state_history.jsonl"
+    monkeypatch.setattr(rp, "_state_history",
+                        lambda today: {"_rows": [], "_path": fake_hist_path, "_today": today})
+
+    def flag(state, cz):
+        return {"basket": f"b_{state}_{cz}", "name": state, "state": state,
+                "salience": 2.5, "consensus": {"z": cz},
+                "observable": {"dir": 1, "covered": []}}
+
+    radar = {"flags": [flag("POSITIVE_DIVERGENCE", -0.6),
+                       flag("CONFIRMED_UP", 0.8),
+                       flag("CONFIRMED_UP", 2.8)]}
+    result = rp.enrich(radar, today=_TODAY)
+    by = {f["basket"]: f["edge_score"] for f in result["flags"]}
+
+    div = by["b_POSITIVE_DIVERGENCE_-0.6"]
+    conf = by["b_CONFIRMED_UP_0.8"]
+    conf_ext = by["b_CONFIRMED_UP_2.8"]
+    assert conf < div, f"confirmed ({conf}) must rank below equal-salience divergence ({div})"
+    assert conf <= round(div * rp._DIAGONAL_DOCK) + 1, "dock fraction must bind"
+    assert conf_ext < conf, (
+        "a MORE extended confirmed flag must dock harder "
+        f"(ext {conf_ext} vs {conf})"
+    )
+
+
+def test_diagonal_mult_bounds():
+    """Dock never exceeds _DIAGONAL_DOCK, never falls below _DOCK_FLOOR, and is
+    identity for divergence states."""
+    assert rp._diagonal_mult("POSITIVE_DIVERGENCE", 3.0) == 1.0
+    assert rp._diagonal_mult("NEGATIVE_DIVERGENCE", -3.0) == 1.0
+    assert rp._diagonal_mult("CONFIRMED_UP", 0.0) == rp._DIAGONAL_DOCK
+    assert rp._diagonal_mult("CONFIRMED_UP", 1.0) == rp._DIAGONAL_DOCK
+    assert rp._diagonal_mult("CONFIRMED_DOWN", -9.0) == rp._DOCK_FLOOR
+    assert rp._diagonal_mult("CONFIRMED_UP", None) == rp._DIAGONAL_DOCK

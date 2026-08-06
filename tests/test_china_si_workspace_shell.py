@@ -35,7 +35,15 @@ TPL = ROOT / "templates"
 PAGE = TPL / "sector_central_china.html.j2"
 ROUTER = TPL / "si_workspace_china.js"
 
+# The four READ-bearing views: each ships a hidden si-read-<view> slot the router paints
+# with one plain-word line + a ? receipt.
 VIEWS = ["overview", "map", "moving", "explore"]
+# The rail carries a FIFTH button — Confluence — added 2026-08 as the in-workspace home for
+# the 同花顺 subsector-confluence board (operator: "a new Confluence rail view"). It renders its
+# OWN hero (brought from the standalone subsectors_china page) and is fed by subsectors_china.js,
+# so it deliberately has NO si-read slot. NAV_VIEWS is the full rail/section order; VIEWS stays
+# the read-bearing subset.
+NAV_VIEWS = VIEWS + ["confluence"]
 
 
 def _page() -> str:
@@ -67,21 +75,21 @@ def _view_body(src: str, view: str) -> str:
 
 # ────────────────────────────────────────────────────────────── sidebar + views
 
-def test_sidebar_present_with_four_view_buttons() -> None:
+def test_sidebar_present_with_five_view_buttons() -> None:
     s = _page()
     assert '<nav class="si-side" aria-label="China Sector Intelligence views">' in s, \
         "the persistent rail is gone or lost its aria-label"
     btns = re.findall(r'class="si-view-btn[^"]*" data-view="([a-z]+)" href="#([a-z]+)"', s)
-    assert [b[0] for b in btns] == VIEWS, f"sidebar buttons/order wrong: {btns}"
+    assert [b[0] for b in btns] == NAV_VIEWS, f"sidebar buttons/order wrong: {btns}"
     assert all(v == h for v, h in btns), "each button's href must be its own view hash"
     # the active button announces itself to assistive tech
     assert 'aria-current="page"' in s
 
 
-def test_four_views_in_partition_order() -> None:
+def test_five_views_in_partition_order() -> None:
     s = _page()
-    assert re.findall(r'<section class="si-view[^"]*" data-view="([a-z]+)"', s) == VIEWS
-    assert s.count("{# /si-view") == 4, "a view wrapper is unclosed"
+    assert re.findall(r'<section class="si-view[^"]*" data-view="([a-z]+)"', s) == NAV_VIEWS
+    assert s.count("{# /si-view") == 5, "a view wrapper is unclosed"
     # exactly one view ships pre-activated, so the correct panel is visible before the
     # router runs (no flash, and no blank page if the script fails to load)
     assert s.count('<section class="si-view on"') == 1
@@ -92,9 +100,17 @@ def test_v1_anchor_rail_is_retired() -> None:
     s = _page()
     assert 'id="si-rail"' not in s, "the V1 sticky anchor rail came back"
     assert 'class="scc-rail"' not in s
-    # …but the funnel exit it carried must survive in the rail
-    assert 'href="subsectors_china.html"' in s.split("</nav>", 1)[0], \
-        "the stock entry funnel exit was dropped with the old rail"
+    # The stock-entry-funnel exit the retired rail carried is now a real FIFTH rail VIEW
+    # (operator 2026-08: "a new Confluence rail view"), not a link out to the standalone page.
+    # The rail button AND its routed section must both exist; the old .si-side-out exit LINK
+    # must be gone.
+    nav = s.split("</nav>", 1)[0]
+    assert 'data-view="confluence" href="#confluence"' in nav, \
+        "the Confluence rail button is missing from the sidebar"
+    assert 'class="si-side-out"' not in s, \
+        "the old funnel exit LINK survived — it should be a routed #confluence view now"
+    assert '<section class="si-view" data-view="confluence" id="si-confluence">' in s, \
+        "the Confluence view section is missing from the stage"
 
 
 def test_shell_grid_and_stage() -> None:
@@ -319,12 +335,17 @@ def test_mounting_does_not_wait_for_a_frame() -> None:
 
 # ───────────────────────────────────────────────────────────── view reads + rail
 
-def test_every_view_has_a_read_slot() -> None:
+def test_every_read_bearing_view_has_a_read_slot() -> None:
     s = _page()
     for v in VIEWS:
         assert 'id="si-read-%s" hidden' % v in s, \
             f"{v} has no read slot, or it does not ship hidden — an empty read is never " \
             "a rendered blank row"
+    # Confluence is the deliberate exception: it renders its own hero (brought from the
+    # standalone subsectors page) instead of a composed plain-word read, so it ships NO
+    # si-read slot. Pin that so a later editor does not bolt an empty one on.
+    assert 'id="si-read-confluence"' not in s, \
+        "confluence must not have a read slot — its hero is its read"
 
 
 def test_reads_recompose_when_the_payload_lands() -> None:

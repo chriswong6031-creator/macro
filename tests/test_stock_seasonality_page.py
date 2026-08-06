@@ -237,8 +237,10 @@ def test_page_and_assets_are_declared_public():
     for path in ("/stock_seasonality.html", "/stock_seasonality.css", "/stock_seasonality.js"):
         assert path in policy["public"]["exact"], path
         assert (ROOT / "site" / path.lstrip("/")).is_file(), path
-    for matcher in ("reg_asset", "reg_asset_err", "reg_html", "gate_html",
-                    "reg_html_err", "gate_html_err"):
+    # @reg_html / @reg_html_err are retired (operator 2026-08-04 opened every
+    # HTML shell to anonymous visitors), so only the asset + funnel matchers
+    # still carry a path list to check.
+    for matcher in ("reg_asset", "reg_asset_err", "gate_html", "gate_html_err"):
         body = re.search(rf"@{matcher}\s*\{{(.*?)^\s*\}}", caddy, flags=re.S | re.M).group(1)
         assert "/stock_seasonality.html" in body, matcher
 

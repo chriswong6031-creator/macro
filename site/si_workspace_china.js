@@ -14,11 +14,16 @@
    ══════════════════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-/* Four views, not the US five: this desk carries no Money & Breadth organ. An empty
-   fifth tab would be a promise the payload cannot keep. */
-var VIEWS=['overview','map','moving','explore'];
+/* Five views. The first four are the merged desk (this desk still carries no US-style Money &
+   Breadth organ — that fifth US tab would be a promise this payload cannot keep). The fifth
+   here, 'confluence', is a DIFFERENT organ: the 同花顺 subsector-confluence board, added 2026-08
+   as an in-workspace home for the standalone subsectors_china page. It ships its own hero and
+   its own payload (subsectors_china.js, lazy-mounted below), so it is a promise the data CAN
+   keep. It has no si-read slot — its hero is its read. */
+var VIEWS=['overview','map','moving','explore','confluence'];
 var TITLES={overview:['Overview','总览'],map:['The Map','全景图谱'],
-  moving:["What's Moving",'正在轮动'],explore:['Explore','深入探索']};
+  moving:["What's Moving",'正在轮动'],explore:['Explore','深入探索'],
+  confluence:['Confluence','子行业汇聚']};
 /* View glyphs = the estate's hand-drawn masked-icon family (product-nav-icons /
    dashboard-icons — the same set the nav mega-menus draw), tinted via currentColor.
    Never raw emoji beside the wordmark. */
@@ -75,7 +80,13 @@ var LEGACY_ANCHORS={
 var LAZY={
   overview:['@cycles'],
   map:['@cycles'],
-  moving:['subsector_rotation.js']
+  moving:['subsector_rotation.js'],
+  /* the confluence board: subsectors_china.js self-boots on injection (readyState is already
+     past 'loading' by the time we append), finds #sc-app inside the now-visible view, and
+     fetches its ~343KB board JSON. Unlike the cycle/rotation organs it writes innerHTML only —
+     no clientWidth read — so it needs no laid-out box; it is lazy purely so that heavy fetch
+     never fires on an Overview-only visit. */
+  confluence:['subsectors_china.js']
 };
 var loaded={}, mounted={};
 
@@ -188,28 +199,26 @@ function paint(view,pair){
   var r=RECEIPTS[view]||['',''];
   el.innerHTML='<span class="si-vr-g '+GLYPH[view]+'" aria-hidden="true"></span>'
     +'<span class="si-vr-t">'+L(pair[0],pair[1])+'</span>'
-    +'<span class="si-vr-q" data-tip-en="'+esc(r[0])+'" data-tip-zh="'+esc(r[1])+'">?</span>';
+    +'<span class="si-vr-q" data-tip-t-en="Where this line comes from" data-tip-t-zh="这句话的来源"'
+    +' data-tip-en="'+esc(r[0])+'" data-tip-zh="'+esc(r[1])+'">?</span>';
   el.hidden=false;
 }
 /* the rail footer: the workspace's provenance lives with its navigation */
 function paintFoot(){
   var d=SC(), p=P();
   var asof=(d&&d.as_of)||(p&&p.as_of)||null;
+  /* Operator 2026-08-04: the rail's "as of <date>" + "Self-grader: N% hit · n=M"
+     stamp is removed. Provenance is NOT lost — the desk header still prints
+     "… · as of {{ desk.as_of }}", and the measured-accuracy read keeps its own
+     card (the #grader panel), so the rail was showing the same two facts a third
+     time in the smallest type on the page.
+     The slots themselves stay in the markup: tests/test_china_si_workspace_shell.py
+     asserts id="si-side-asof" and id="si-side-grade" exist. Left empty, they
+     collapse — remove the ids and that test goes red for the wrong reason. */
   var a=document.getElementById('si-side-asof');
-  if(a&&asof) a.innerHTML=L('as of '+esc(asof),'截至 '+esc(asof));
+  if(a) a.innerHTML='';
   var g=document.getElementById('si-side-grade');
-  var GR=(d&&d.grader)||null;
-  if(!g||!GR) return;
-  if(!GR.available){
-    g.innerHTML=L('Self-grader: accruing · '+(GR.n_calls||0)+' calls logged',
-                  '自评分器：累积中 · 已记录 '+(GR.n_calls||0)+' 个判断');
-    return;
-  }
-  var bh=GR.by_horizon||{}, h=bh['21d']||bh['63d']||bh['126d']||null;
-  g.innerHTML=(h&&h.dir_hit_rate!=null)
-    ? L('Self-grader: '+Math.round(h.dir_hit_rate*100)+'% hit · n='+(h.n||0),
-        '自评分器：命中 '+Math.round(h.dir_hit_rate*100)+'% · n='+(h.n||0))
-    : L('Self-grader: accruing','自评分器：累积中');
+  if(g) g.innerHTML='';
 }
 function reads(){
   paint('map',readMap());

@@ -103,8 +103,10 @@ def _regwall_public_paths() -> set[str]:
     raise AssertionError("app/regwall.py must declare a literal PUBLIC_PATHS set")
 
 
-ALL_MATCHERS = ("reg_html", "reg_asset", "gate_html",
-                "reg_html_err", "reg_asset_err", "gate_html_err")
+# @reg_html / @reg_html_err retired 2026-08-04 (HTML shells are open to
+# anonymous visitors); only the asset + funnel matchers still carry path lists.
+ALL_MATCHERS = ("reg_asset", "gate_html",
+                "reg_asset_err", "gate_html_err")
 
 
 # ── the SSR content layer (spec §A2.3, masterplan gate §0.1) ────────────────

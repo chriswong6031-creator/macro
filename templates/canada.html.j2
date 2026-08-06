@@ -2346,17 +2346,64 @@
     {% if s.earnings and s.earnings.days_to is defined and s.earnings.days_to is not none and s.earnings.days_to <= 21 %}{% set _fl.rows = _fl.rows + [('Reports in ' ~ s.earnings.days_to ~ 'd — timing context', '财报还有' ~ s.earnings.days_to ~ '天 — 择时背景')] %}{% endif %}
     {% if _hd and _hd.state == 'broken' %}{% set _fl.rows = _fl.rows + [('Base broken', '筑底破位')] %}{% endif %}
     {% set _al = c.alignment if c else none %}
-    {% set _ctx_en = ((' — ' ~ s.lead_en) if s.lead_en else '') ~ ((' · ' ~ _sig.tier ~ ' fresh cross') if (_sig and _sig.tier) else '') ~ (' · insider buying' if (s.insider and s.insider.lean == 'buying' and (s.insider.n_buys or 0) > 0) else '') ~ (' · oil tailwind' if s.oil_tailwind else '') ~ ' · momentum screen · unproven' %}
-    {% set _ctx_zh = ((' — ' ~ (s.lead_zh or s.lead_en)) if s.lead_en else '') ~ ((' · ' ~ _sig.tier ~ ' 新鲜金叉') if (_sig and _sig.tier) else '') ~ (' · 内部人买入' if (s.insider and s.insider.lean == 'buying' and (s.insider.n_buys or 0) > 0) else '') ~ (' · 油价顺风' if s.oil_tailwind else '') ~ ' · 动量筛选 · 未验证' %}
-    {% set _tip_en = ((c.verdict if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline if es else '')) ~ _ctx_en %}
-    {% set _tip_zh = ((c.verdict_zh if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline_zh if es else '')) ~ _ctx_zh %}
+    {# ── WHERE THE OLD VERB-CHIP TOOLTIP'S PAYLOAD WENT (2026-08-05) ─────────────
+       The tooltip is gone for good (operator 2026-08-03) and is not reintroduced here. It
+       was carrying five different KINDS of fact glued into one prose string, which is why
+       deleting the string deleted four facts that had no other home. Each one is now filed
+       by what it IS, on a slot this card already owns:
+         · fresh confluence cross  → the ⚡ trigger chip (below). It is an EVENT that fired,
+           which is precisely what that chip was built for; the board already surfaced the
+           NEGATIVE ("No fresh entry cross today") as a ⚠ row, so the positive twin was the
+           asymmetry. The T1–T4 tier is an unexplained threshold (doctrine Law 2) and stays
+           on Tier 2, inside the chip's tip.
+         · insider buying / oil tailwind → marks chips. Both are FAVOURABLE evidence, so
+           neither may go in the ⚠ popover: that popover is headed "Before you act" and this
+           template already learned (china.html.j2, reversal_member) that a credential in a
+           warning badge reads as a warning.
+         · momentum screen · unproven → NOT rehomed, deliberately. It was appended to every
+           card unconditionally — a per-row constant, the exact defect Law 4 names ("the old
+           strip printed 'T+1 58% fade' on every row — a constant belongs in the footer,
+           once"). Its plain-word twin already ships ONCE in the desk header above: "The
+           momentum screen is still being tested, so scores are hidden and only order is
+           shown." Repeating it 14 times said nothing the header had not already said.
+         · lead_en / lead_zh → NOT rehomed either. _lead_sentence() (build_canada_library.py)
+           joins "Main driver: <sector> sector" + an entry cue — and the card already prints
+           the sector on its own line, the entry cue in the zone footer, and the stance in
+           the verb chip. It is the literal case the operator killed: prose restating the
+           card. The ONE half that is genuinely new is a factor driver (Gold / Oil / CAD)
+           when factor_beta.primary is set and differs from the sector; that is left for
+           adjudication rather than invented here. #}
     {% set _bz = es.buy_zone if es else none %}
     {% set _zk = ('readd' if _verb == 'hold' else ('active' if _verb in ('buy','near') else 'muted')) if (_bz and _bz.high is not none) else ('confirm' if _verb in ('wait','near') else 'none') %}
+    {# ⚡ fresh-entry-cross chip — same derivation the US board uses (dashboard.html.j2):
+       tier_cascade T3 = the cross is still forming, anything else = it fired. Tips are plain
+       strings (attribute-safe — no t() inside an attribute, CI-guarded). #}
+    {% set _trg_kind = ('imminent' if (_sig.tier_cascade if _sig else none) == 'T3' else 'fired') if (_sig and _sig.tier) else none %}
+    {% set _trg_tip_en = 'A fresh multi-timeframe buy cross fired on this name today — ' ~ (_sig.tier if _sig else '') ~ ' fresh cross on the entry gate. The verb chip still rules the stance: if it says Wait, price has already run past the zone, so do not chase.' if _trg_kind else '' %}
+    {% set _trg_tip_zh = '该股今日出现新鲜的多周期买入金叉 — 入场门槛为 ' ~ (_sig.tier if _sig else '') ~ ' 新鲜金叉。主标签仍是最终判断：若显示「等待」，说明价格已越过买区，请勿追高。' if _trg_kind else '' %}
+    {# Marks row — favourable per-name evidence, in descending specificity: a filing event
+       about THIS company first, the market backdrop it sits in second. Both are plain muted
+       'theme' chips: the macro reserves the weighted kinds ('feat' rank, 'new' recency,
+       'warm' just-turned) for facts this board does not have, and dressing evidence in
+       borrowed weight is how a chip row turns into chip spam. #}
+    {% set _mk = namespace(rows=[]) %}
+    {% if s.insider and s.insider.lean == 'buying' and (s.insider.n_buys or 0) > 0 %}
+    {% set _mk.rows = _mk.rows + [{'k':'theme','en':'Insider buying','zh':'内部人买入',
+      'tip_en':'Company insiders bought this name ' ~ s.insider.n_buys ~ (' time' if s.insider.n_buys == 1 else ' times') ~ ' in the last ' ~ (s.insider.window_days or 180) ~ ' days, with no sells on record. Treat insider buying as context for the setup, never a reason on its own.',
+      'tip_zh':'过去 ' ~ (s.insider.window_days or 180) ~ ' 天内，公司内部人买入该股 ' ~ s.insider.n_buys ~ ' 次，且无卖出记录。仅为背景参考，本身不构成理由。'}] %}
+    {% endif %}
+    {% if s.oil_tailwind %}
+    {% set _mk.rows = _mk.rows + [{'k':'theme','en':'Oil tailwind','zh':'油价顺风',
+      'tip_en':'The energy backdrop is currently supportive for this name. A tailwind, not a signal — it earns the card no points and changes nothing in the order on this board.',
+      'tip_zh':'当前能源背景对该股有利。这是顺风，不是信号 — 不为卡片加分，也不改变本榜排序。'}] %}
+    {% endif %}
     {{ pv.pv_card({
       'href': 'canada_stock.html#' ~ s.ticker, 'tk': s.ticker, 'mkt': 'ca',
       'name': s.name, 'sec': s.sector, 'sec_zh': s.sector,
       'price_txt': ('$' ~ ('%.2f'|format(s.price))) if (s.price is defined and s.price is not none) else none,
-      'verb': _verb, 'tip_en': _tip_en, 'tip_zh': _tip_zh,
+      'verb': _verb,
+      'trigger': ({'kind': _trg_kind, 'tip_en': _trg_tip_en, 'tip_zh': _trg_tip_zh} if _trg_kind else none),
+      'marks': _mk.rows[:2],
       'edge': none, 'edge_txt': ('#' ~ s.board_pos) if s.board_pos is defined and s.board_pos is not none else none,
       'edge_label_en': 'Rank', 'edge_label_zh': '排名',
       'edge_tip_en': 'Rank within this group, not a score.',

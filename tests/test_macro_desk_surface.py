@@ -59,15 +59,35 @@ def test_macro_desk_source_and_rendered_pages_opt_in() -> None:
     assert '<body class="macro-desk page-baskets">' in _read("site/baskets_china_ths.html")
 
 
-def test_sector_central_double_frame_is_removed() -> None:
+def test_sector_central_cycle_section_is_one_island() -> None:
+    """The cycle map + its rotation read-out are ONE container, not two cards.
+
+    This test used to assert the opposite — that .cyc-stage was stripped bare
+    (`padding: 0; border: 0; background: transparent; box-shadow: none`) so that
+    .cyc-hero and .cyc-detail could each carry their own frame. That shipped the
+    section as two stacked cards nested inside cycle.css's own framing, which the
+    operator called out on 2026-08-04. The direction is now inverted: the STAGE is
+    the single island and both children are flat.
+
+    Pinning BOTH halves matters — flattening the children while leaving the stage
+    bare would delete the section's container entirely, which reads as "fixed" in
+    a screenshot of the seam and broken everywhere else.
+    """
     css = _read("templates/macro-desk.css")
-    selector = "body.macro-desk.page-sector-central .scc-cycle .cyc-stage"
-    start = css.index(selector)
-    rule = css[start : css.index("}", start)]
-    assert "padding: 0" in rule
-    assert "border: 0" in rule
-    assert "background: transparent" in rule
-    assert "box-shadow: none" in rule
+
+    stage_sel = "body.macro-desk.page-sector-central .scc-cycle .cyc-stage"
+    start = css.index(stage_sel)
+    stage_rule = css[start : css.index("}", start)]
+    assert "border: 1px solid transparent" in stage_rule, "the island is borderless-but-boxed"
+    assert "box-shadow:" in stage_rule and "none" not in stage_rule.split("box-shadow:")[1][:40]
+    assert "background: var(--desk-tile" in stage_rule
+    assert "gap: 0" in stage_rule, "no gutter — the children are one surface"
+
+    kids_sel = "body.macro-desk.page-sector-central .scc-cycle :is(.cyc-hero, .cyc-detail)"
+    kstart = css.index(kids_sel)
+    kids_rule = css[kstart : css.index("}", kstart)]
+    for decl in ("border: 0", "border-radius: 0", "background: transparent", "box-shadow: none"):
+        assert decl in kids_rule, f"child card chrome not stripped: {decl}"
 
 
 def test_macro_desk_css_is_synced_scoped_and_cache_busted() -> None:

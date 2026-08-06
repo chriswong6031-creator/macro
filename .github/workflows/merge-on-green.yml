@@ -112,14 +112,31 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      # The sweeper needs one tracked Python file, not the repository's ~53k-file
+      # The sweeper needs a handful of tracked files, not the repository's ~53k-file
       # working tree. The old full checkout took ~100 seconds before the first
       # API call and made a two-minute control-plane action a four-minute one.
+      #
+      # `.github/workflows/` is here because the tested-surface gate reads every
+      # `on.pull_request` workflow's `paths:` filter to decide whether main has moved
+      # under a pull request's proof (#4583). The whole directory, never a hardcoded
+      # ci.yml/fences.yml pair: a new PR-triggered workflow must be seen the day it
+      # is added, not the day someone remembers to edit this list. If it stops being
+      # fetched the sweep aborts loudly (`Could not establish the tested-surface
+      # gate`) rather than merging on undated greens.
       - uses: actions/checkout@v4
         with:
           filter: blob:none
-          sparse-checkout: scripts/merge_on_green.py
+          sparse-checkout: |
+            scripts/merge_on_green.py
+            scripts/gh_path_filter.py
+            .github/workflows
           sparse-checkout-cone-mode: false
+
+      # PyYAML parses those path filters. Installed EXPLICITLY rather than assumed:
+      # whether the runner image ships it is not a contract, and the failure mode of
+      # guessing wrong is a sweep that aborts on every run.
+      - name: install the yaml parser
+        run: python3 -m pip install --quiet --disable-pip-version-check pyyaml
 
       - name: sweep merge-on-green pull requests
         env:

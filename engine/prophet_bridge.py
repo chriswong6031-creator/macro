@@ -360,7 +360,7 @@ def select_candidates(
     #
     # ORDERING ONLY.  The admission block above is untouched, so for any given artifact
     # the SELECTED SET is byte-identical to the pre-W1 rule — only its order (and hence,
-    # when the board overflows the cap, which tail rows survive [:n]) moves.  DNR row 49
+    # when the board overflows the cap, which tail rows survive [:n]) moves.  DNR:KILL-PROPHET-POP-MERGE
     # is not re-opened: no new blend is constructed here and the graded buy population is
     # unchanged.  Pinned by tests/test_prophet_w1_intake_repair.py.
     #

@@ -24,8 +24,15 @@ _SEC_DOCUMENT_LINE_RE = re.compile(
     br"(?:[ \t]*:[ \t]*[0-9]{8})?[ \t]*\r?$",
     _SEC_STRUCTURAL_LINE_FLAGS,
 )
+# EDGAR always writes the header opener with its own ``.hdr.sgml`` payload, e.g.
+# ``<SEC-HEADER>0001213900-26-080882.hdr.sgml : 20260723``. A bare ``<SEC-HEADER>``
+# is a grammar EDGAR does not emit, so this mirrors ``_SEC_DOCUMENT_LINE_RE``
+# above exactly: the accession is captured and pinned to the submission's own
+# accession, and only the trailing date is optional.
 _SEC_HEADER_OPEN_LINE_RE = re.compile(
-    br"^<SEC-HEADER>[ \t]*\r?$", _SEC_STRUCTURAL_LINE_FLAGS,
+    br"^<SEC-HEADER>([0-9]{10}-[0-9]{2}-[0-9]{6})\.hdr\.sgml"
+    br"(?:[ \t]*:[ \t]*[0-9]{8})?[ \t]*\r?$",
+    _SEC_STRUCTURAL_LINE_FLAGS,
 )
 _SEC_HEADER_CLOSE_LINE_RE = re.compile(
     br"^</SEC-HEADER>[ \t]*\r?$", _SEC_STRUCTURAL_LINE_FLAGS,
@@ -234,6 +241,30 @@ def _exact_protected_matches(
     return matches
 
 
+def _repeatable_protected_matches(
+    raw: bytes,
+    *,
+    token_pattern: re.Pattern[bytes],
+    line_pattern: re.Pattern[bytes],
+    label: str,
+) -> list[re.Match[bytes]]:
+    """Same lookalike defense as ``_exact_protected_matches`` for repeatable lines.
+
+    A submission may carry several ``FILER:`` blocks (co-registrants), so the
+    line legitimately repeats.  The protection that matters is unchanged: every
+    occurrence of the bare token must also parse as a canonical line, so no
+    substring or lookalike can be smuggled past the parser.  Only the fixed
+    arity is relaxed, never the one-for-one token/line parity.
+    """
+    tokens = list(token_pattern.finditer(raw))
+    matches = list(line_pattern.finditer(raw))
+    if not matches or len(tokens) != len(matches):
+        raise ManifestIdentityError(
+            f"SEC complete-submission must contain canonical {label} line(s)"
+        )
+    return matches
+
+
 def _complete_submission_header(
     raw: bytes, *, accession_match: re.Match[bytes], outer_close: re.Match[bytes],
 ) -> bytes:
@@ -244,6 +275,10 @@ def _complete_submission_header(
         line_pattern=_SEC_HEADER_OPEN_LINE_RE,
         label="SEC-HEADER opener",
     )[0]
+    if open_match.group(1) != accession_match.group(1):
+        raise ManifestIdentityError(
+            "SEC-HEADER opener accession conflicts with SEC-DOCUMENT accession"
+        )
     close_tokens = list(_SEC_HEADER_CLOSE_TOKEN_RE.finditer(raw))
     close_matches = list(_SEC_HEADER_CLOSE_LINE_RE.finditer(raw))
     if len(close_tokens) != len(close_matches) or len(close_matches) > 1:
@@ -407,20 +442,30 @@ def validate_manifest_retained_bytes_binding(
     if _canonical_sec_form(filing.get("form")) != header_form:
         raise ManifestIdentityError("manifest filing.form is detached from SEC submission header")
 
-    accession_cik = _canonical_cik(source_accession.split("-", 1)[0])
-    header_cik_match = _exact_protected_matches(
+    # The accession prefix is the CIK of the filing AGENT that transmitted the
+    # submission, not the registrant: 0001213900 is Edgar Agents LLC, while the
+    # authID Inc. filing it transmitted declares CENTRAL INDEX KEY 0001534154.
+    # The two coincide only for self-filers (13 of the 400 filings in the
+    # production ledger), so the registrant anchor is the header's own FILER
+    # block. A submission may declare several co-registrants, and the manifest
+    # issuer must be one of them -- that still pins issuer identity to bytes
+    # inside the retained header, closing the manifest -> direct observation ->
+    # candidate issuer rewrite path against anyone who cannot rewrite the
+    # retained submission itself.
+    header_cik_matches = _repeatable_protected_matches(
         header,
         token_pattern=_SEC_HEADER_CIK_TOKEN_RE,
         line_pattern=_SEC_HEADER_CIK_LINE_RE,
         label="CENTRAL INDEX KEY",
-    )[0]
-    header_cik = _canonical_cik(header_cik_match.group(1).decode("ascii"))
-    if header_cik != accession_cik:
-        raise ManifestIdentityError("SEC header CIK conflicts with SEC submission accession")
+    )
+    header_ciks = {
+        _canonical_cik(match.group(1).decode("ascii")) for match in header_cik_matches
+    }
     issuer = record.get("issuer") or {}
-    if _canonical_cik(issuer.get("cik")) != accession_cik:
+    issuer_cik = _canonical_cik(issuer.get("cik"))
+    if issuer_cik not in header_ciks:
         raise ManifestIdentityError("manifest issuer.cik is detached from SEC submission header")
-    if str(issuer.get("issuer_id") or "") != f"sec:cik:{accession_cik}":
+    if str(issuer.get("issuer_id") or "") != f"sec:cik:{issuer_cik}":
         raise ManifestIdentityError("manifest issuer_id is detached from SEC submission header")
 
 

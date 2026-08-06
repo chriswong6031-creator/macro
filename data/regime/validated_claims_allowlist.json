@@ -66,10 +66,11 @@
   },
   {
    "match": "validated regime state machine",
-   "backing": "the ladder/regime state machine base rates (SPDR-calibrated); rotation CONTEXT, not alpha.",
+   "backing": "the ladder/regime state machine base rates (SPDR-calibrated); rotation CONTEXT, not alpha. Also on sector_central_china: the Subsector Confluence view (merged from subsectors_china, PR #4637) renders the SAME 同花顺 T1-T4 confluence + SPDR-calibrated regime state machine — same engine, same backing, rotation CONTEXT only.",
    "surfaces": [
     "subsectors_china",
-    "subsectors"
+    "subsectors",
+    "sector_central_china"
    ]
   },
   {
@@ -781,10 +782,11 @@
   },
   {
    "match": "validated regime state machine",
-   "backing": "the SPDR-calibrated regime state machine (rotation context).",
+   "backing": "the SPDR-calibrated regime state machine (rotation context). Also on sector_central_china: the Subsector Confluence view (merged from subsectors_china, PR #4637) renders the SAME 同花顺 T1-T4 confluence + SPDR-calibrated regime state machine — same engine, same backing, rotation CONTEXT only.",
    "surfaces": [
     "subsectors_china",
-    "subsectors"
+    "subsectors",
+    "sector_central_china"
    ]
   },
   {
@@ -933,9 +935,10 @@
   },
   {
    "match": "已验证的状态机",
-   "backing": "zh — the validated regime state machine (rotation context).",
+   "backing": "zh — the validated regime state machine (rotation context). Also on sector_central_china: the Subsector Confluence view (merged from subsectors_china, PR #4637) renders the SAME 同花顺 T1-T4 confluence + SPDR-calibrated regime state machine — same engine, same backing, rotation CONTEXT only.",
    "surfaces": [
-    "subsectors_china"
+    "subsectors_china",
+    "sector_central_china"
    ]
   },
   {

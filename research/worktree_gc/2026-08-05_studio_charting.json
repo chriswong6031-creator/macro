@@ -1,0 +1,3425 @@
+{
+ "meta": {
+  "host": "Mac-Studio.ts.net lan",
+  "ts": "2026-08-05T04:11:24+00:00",
+  "mode": "report",
+  "fetch_ok": true,
+  "proc_scan": true,
+  "pr_states": "gh:318",
+  "primary": "/Users/chriswong/Documents/Cluade/charting-app",
+  "registered_total": 152,
+  "in_scope": 146,
+  "orphans": 1
+ },
+ "summary": {
+  "RECENT": {
+   "count": 93,
+   "kb": 80365820
+  },
+  "DIRTY": {
+   "count": 19,
+   "kb": 10168672
+  },
+  "SAFE_MERGED": {
+   "count": 14,
+   "kb": 9510764
+  },
+  "UNPUSHED": {
+   "count": 14,
+   "kb": 7398576
+  },
+  "LIVE_PROC": {
+   "count": 4,
+   "kb": 2940036
+  },
+  "SAFE_REMOTE": {
+   "count": 2,
+   "kb": 522824
+  },
+  "ORPHAN": {
+   "count": 1,
+   "kb": 4
+  }
+ },
+ "apply": null,
+ "worktrees": [
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/adaptive-time-axis-20260730",
+   "name": "adaptive-time-axis-20260730",
+   "branch": "claude/adaptive-time-axis-20260730",
+   "head": "d11eca25a19d7d9c67ba38040daceab6a4669e1d",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.0d < min_age 7d"
+   ],
+   "size_kb": 941364,
+   "age_days": 5.0,
+   "age_sources": {
+    "weak:worktree_dir": 5.0,
+    "weak:dot_git": 5.0,
+    "weak:gitdir_HEAD": 5.0,
+    "weak:gitdir_index": 5.0,
+    "reflog_entry": 5.0
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/admin-analytics-timezone-sessions-a1ca38",
+   "name": "admin-analytics-timezone-sessions-a1ca38",
+   "branch": null,
+   "head": "5b65397734833a118af6f936936cc1d4a53f6e58",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 52536,
+   "age_days": 1.68,
+   "age_sources": {
+    "weak:worktree_dir": 4.13,
+    "weak:dot_git": 4.15,
+    "weak:gitdir_HEAD": 1.68,
+    "weak:gitdir_index": 1.68,
+    "reflog_entry": 1.68,
+    "session_dir": 1.77
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/affectionate-curie-a93ede",
+   "name": "affectionate-curie-a93ede",
+   "branch": null,
+   "head": "13fc865df30b98d5abec486a396c5002658616a0",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 908072,
+   "age_days": 1.71,
+   "age_sources": {
+    "weak:worktree_dir": 4.15,
+    "weak:dot_git": 4.15,
+    "weak:gitdir_HEAD": 1.71,
+    "weak:gitdir_index": 1.71,
+    "reflog_entry": 1.71,
+    "session_dir": 1.77
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/analytics-system",
+   "name": "analytics-system",
+   "branch": "claude/analytics-system",
+   "head": "ce41332fcffff575dc472b1179693decc32ab8a8",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 519304,
+   "age_days": 21.91,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 21.91
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/angry-curie-4e519e",
+   "name": "angry-curie-4e519e",
+   "branch": "claude/mystifying-mendel-b82ba8",
+   "head": "05305d64a594ef05c8a590d23887dadf8ef4d5a9",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.2d < min_age 7d"
+   ],
+   "size_kb": 766636,
+   "age_days": 3.15,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.53,
+    "reflog_entry": 11.66,
+    "session_dir": 3.15
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/auth-cookie-ui",
+   "name": "auth-cookie-ui",
+   "branch": "claude/auth-cookie-ui-fix",
+   "head": "7ab08d66eca0ee83a5f3fca6f8d7c9923137fa1f",
+   "verdict": "SAFE_MERGED",
+   "proof": "PR #227 merged at this exact head",
+   "reasons": [],
+   "size_kb": 565592,
+   "age_days": 7.79,
+   "age_sources": {
+    "weak:worktree_dir": 7.81,
+    "weak:dot_git": 7.81,
+    "weak:gitdir_HEAD": 7.81,
+    "weak:gitdir_index": 7.79,
+    "reflog_entry": 7.79
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/awesome-benz-65e945",
+   "name": "awesome-benz-65e945",
+   "branch": "claude/strange-haibt-e7a7c5",
+   "head": "6595c77148a320b585df47fcf3278c53cd89fa7b",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 841068,
+   "age_days": 9.02,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.98,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 14.11,
+    "session_dir": 9.02
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/bold-chaum-17be4b",
+   "name": "bold-chaum-17be4b",
+   "branch": null,
+   "head": "b59dd618efdd4dfa9c328e93d36187769ec978b6",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.2d < min_age 7d"
+   ],
+   "size_kb": 944236,
+   "age_days": 1.22,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 16.66,
+    "session_dir": 1.22
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/bold-galileo-051f47",
+   "name": "bold-galileo-051f47",
+   "branch": null,
+   "head": "1a4b65f938d916c53eaab9920c79cbd6c7a67622",
+   "verdict": "UNPUSHED",
+   "proof": "",
+   "reasons": [
+    "HEAD not on origin/main, no merged-PR proof"
+   ],
+   "size_kb": 278844,
+   "age_days": 13.76,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.98,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 13.76,
+    "session_dir": 13.76
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/brain-runs-proxy",
+   "name": "brain-runs-proxy",
+   "branch": "verify-master",
+   "head": "72cb3daafbce4dbd2e43be42295e849178360727",
+   "verdict": "UNPUSHED",
+   "proof": "",
+   "reasons": [
+    "HEAD not on origin/main, no merged-PR proof"
+   ],
+   "size_kb": 529320,
+   "age_days": 9.88,
+   "age_sources": {
+    "weak:worktree_dir": 9.9,
+    "weak:dot_git": 9.9,
+    "weak:gitdir_HEAD": 9.88,
+    "weak:gitdir_index": 9.88,
+    "reflog_entry": 9.88
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/calendar-time-axis-20260730",
+   "name": "calendar-time-axis-20260730",
+   "branch": "claude/calendar-time-axis-20260730",
+   "head": "900cceb74e58c3fe44d0d79209faf12bd07ddf42",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.0d < min_age 7d"
+   ],
+   "size_kb": 952396,
+   "age_days": 4.98,
+   "age_sources": {
+    "weak:worktree_dir": 4.99,
+    "weak:dot_git": 4.99,
+    "weak:gitdir_HEAD": 4.99,
+    "weak:gitdir_index": 4.98,
+    "reflog_entry": 4.98
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/chart-right-buffer",
+   "name": "chart-right-buffer",
+   "branch": "claude/chart-right-buffer",
+   "head": "e3191a688aad8244ff20b22990754bb45edeb448",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.1d < min_age 7d"
+   ],
+   "size_kb": 1220008,
+   "age_days": 1.11,
+   "age_sources": {
+    "weak:worktree_dir": 1.12,
+    "weak:dot_git": 1.12,
+    "weak:gitdir_HEAD": 1.12,
+    "weak:gitdir_index": 1.11,
+    "reflog_entry": 1.11
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/chart-settings-recovery-20260730",
+   "name": "chart-settings-recovery-20260730",
+   "branch": "claude/chart-settings-recovery-20260730",
+   "head": "3494b628529ac0914811a0f4e194c3564cb15753",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.0d < min_age 7d"
+   ],
+   "size_kb": 918144,
+   "age_days": 5.03,
+   "age_sources": {
+    "weak:worktree_dir": 5.06,
+    "weak:dot_git": 5.06,
+    "weak:gitdir_HEAD": 5.03,
+    "weak:gitdir_index": 5.03,
+    "reflog_entry": 5.03
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/chatgpt-app-wont-open-4cfbf8",
+   "name": "chatgpt-app-wont-open-4cfbf8",
+   "branch": null,
+   "head": "8e8c638af81931bc0731df27b5c843269e8db868",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 49660,
+   "age_days": 1.71,
+   "age_sources": {
+    "weak:worktree_dir": 4.92,
+    "weak:dot_git": 4.92,
+    "weak:gitdir_HEAD": 1.71,
+    "weak:gitdir_index": 1.71,
+    "reflog_entry": 1.71,
+    "session_dir": 1.93
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/clever-perlman-0329b3",
+   "name": "clever-perlman-0329b3",
+   "branch": null,
+   "head": "55013b729bea282904989a2d1c622ebc61ab7e0e",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.8d < min_age 7d"
+   ],
+   "size_kb": 11764,
+   "age_days": 3.81,
+   "age_sources": {
+    "weak:worktree_dir": 5.08,
+    "weak:dot_git": 5.08,
+    "weak:gitdir_HEAD": 3.81,
+    "weak:gitdir_index": 3.81,
+    "reflog_entry": 3.81,
+    "session_dir": 3.81
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/company-event-terminal-20260801",
+   "name": "company-event-terminal-20260801",
+   "branch": "codex/company-event-terminal-20260801",
+   "head": "62bc1d67e3781f0ce3e6db9f9e0096c740bececb",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.8d < min_age 7d"
+   ],
+   "size_kb": 1016192,
+   "age_days": 3.75,
+   "age_sources": {
+    "weak:worktree_dir": 3.82,
+    "weak:dot_git": 3.83,
+    "weak:gitdir_HEAD": 3.75,
+    "weak:gitdir_index": 3.75,
+    "reflog_entry": 3.75
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/company-institutional-context-ui-20260802",
+   "name": "company-institutional-context-ui-20260802",
+   "branch": "claude/company-institutional-context-ui-20260802",
+   "head": "5ff2caa7f943547ced2eaa78447cdab4f763b1a6",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.9d < min_age 7d"
+   ],
+   "size_kb": 1018088,
+   "age_days": 2.85,
+   "age_sources": {
+    "weak:worktree_dir": 2.88,
+    "weak:dot_git": 2.88,
+    "weak:gitdir_HEAD": 2.88,
+    "weak:gitdir_index": 2.85,
+    "reflog_entry": 2.85
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/company-intelligence-deploy-20260801",
+   "name": "company-intelligence-deploy-20260801",
+   "branch": "claude/deploy-health-onboarding-20260801",
+   "head": "a80afc0bbf0baa53e77377e355eae29ad2f455ab",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.1d < min_age 7d"
+   ],
+   "size_kb": 608840,
+   "age_days": 3.1,
+   "age_sources": {
+    "weak:worktree_dir": 3.1,
+    "weak:dot_git": 3.1,
+    "weak:gitdir_HEAD": 3.1,
+    "weak:gitdir_index": 3.1,
+    "reflog_entry": 3.1
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/company-intelligence-deploy-final-20260801",
+   "name": "company-intelligence-deploy-final-20260801",
+   "branch": null,
+   "head": "017662751b3c9238d5a46fa017eb9a9199e4cceb",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.1d < min_age 7d"
+   ],
+   "size_kb": 608840,
+   "age_days": 3.09,
+   "age_sources": {
+    "weak:worktree_dir": 3.09,
+    "weak:dot_git": 3.09,
+    "weak:gitdir_HEAD": 3.09,
+    "weak:gitdir_index": 3.09,
+    "reflog_entry": 3.09
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/company-intelligence-parity-w1-20260801",
+   "name": "company-intelligence-parity-w1-20260801",
+   "branch": "claude/company-intelligence-parity-w1-20260801",
+   "head": "11c6252f1fde32ac38de3e28f357ec2c62cfe02b",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.2d < min_age 7d"
+   ],
+   "size_kb": 1113816,
+   "age_days": 3.15,
+   "age_sources": {
+    "weak:worktree_dir": 3.25,
+    "weak:dot_git": 3.25,
+    "weak:gitdir_HEAD": 3.25,
+    "weak:gitdir_index": 3.15,
+    "reflog_entry": 3.15
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/company-theme-context-release-20260801",
+   "name": "company-theme-context-release-20260801",
+   "branch": "codex/company-theme-context-release-20260801",
+   "head": "d5ecbb400c1a145d33619f0337cca1c932f87814",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.0d < min_age 7d"
+   ],
+   "size_kb": 1016168,
+   "age_days": 3.01,
+   "age_sources": {
+    "weak:worktree_dir": 3.04,
+    "weak:dot_git": 3.04,
+    "weak:gitdir_HEAD": 3.04,
+    "weak:gitdir_index": 3.01,
+    "reflog_entry": 3.01
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/company-theme-context-terminal-20260801",
+   "name": "company-theme-context-terminal-20260801",
+   "branch": "claude/company-theme-context-terminal-20260801",
+   "head": "24f11d89204ecc649453a3b99c1cfb2dac3ba1d8",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.0d < min_age 7d"
+   ],
+   "size_kb": 868288,
+   "age_days": 3.04,
+   "age_sources": {
+    "weak:worktree_dir": 3.05,
+    "weak:dot_git": 3.05,
+    "weak:gitdir_HEAD": 3.05,
+    "weak:gitdir_index": 3.04,
+    "reflog_entry": 3.04
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/competent-joliot-b5aa1f",
+   "name": "competent-joliot-b5aa1f",
+   "branch": "claude/competent-joliot-b5aa1f",
+   "head": "8f95b802350aaeb38a5bc98ccfd25ef509695e64",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "1 process(es) cwd inside"
+   ],
+   "size_kb": 60708,
+   "age_days": null,
+   "age_sources": {},
+   "procs": [
+    "21598:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/cross-agent-instruction-bridge",
+   "name": "cross-agent-instruction-bridge",
+   "branch": "claude/cross-agent-instruction-bridge",
+   "head": "52dace96f13a1fa4491c98ab1b4f98b39d05ae2e",
+   "verdict": "SAFE_MERGED",
+   "proof": "PR #196 merged at this exact head",
+   "reasons": [],
+   "size_kb": 12016,
+   "age_days": 11.2,
+   "age_sources": {
+    "weak:worktree_dir": 9.99,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 11.2
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/dazzling-roentgen-2723d5",
+   "name": "dazzling-roentgen-2723d5",
+   "branch": null,
+   "head": "8d283d4507814a407ed6e28190ff08fc1242f521",
+   "verdict": "UNPUSHED",
+   "proof": "",
+   "reasons": [
+    "HEAD not on origin/main, no merged-PR proof"
+   ],
+   "size_kb": 828364,
+   "age_days": 13.76,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 13.76,
+    "session_dir": 13.76
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/deploy-theme-context-20260801-0406",
+   "name": "deploy-theme-context-20260801-0406",
+   "branch": null,
+   "head": "c70df4a003bb35eb3185240a2243d544f9cf4f56",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.0d < min_age 7d"
+   ],
+   "size_kb": 610200,
+   "age_days": 3.0,
+   "age_sources": {
+    "weak:worktree_dir": 3.0,
+    "weak:dot_git": 3.0,
+    "weak:gitdir_HEAD": 3.0,
+    "weak:gitdir_index": 3.0,
+    "reflog_entry": 3.0
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/deployment-id-parity-fix-20260801",
+   "name": "deployment-id-parity-fix-20260801",
+   "branch": "claude/deployment-id-parity-fix-20260801",
+   "head": "53a7796966744f1cafafda87dc41083b3834da38",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.0d < min_age 7d"
+   ],
+   "size_kb": 568544,
+   "age_days": 3.0,
+   "age_sources": {
+    "weak:worktree_dir": 3.0,
+    "weak:dot_git": 3.0,
+    "weak:gitdir_HEAD": 3.0,
+    "weak:gitdir_index": 3.0,
+    "reflog_entry": 3.0
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/determined-pascal-40b3f9",
+   "name": "determined-pascal-40b3f9",
+   "branch": null,
+   "head": "55853feb249a20daedfebfbbfa059f2e888adca1",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.2d < min_age 7d"
+   ],
+   "size_kb": 1220760,
+   "age_days": 0.16,
+   "age_sources": {
+    "weak:worktree_dir": 1.84,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 0.16,
+    "weak:gitdir_index": 0.16,
+    "reflog_entry": 0.16,
+    "session_dir": 1.16
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/discover-icons-20260801",
+   "name": "discover-icons-20260801",
+   "branch": "claude/discover-icons-20260801",
+   "head": "15c4a79f1b088b190f07392be7ea7514fc477ede",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.9d < min_age 7d"
+   ],
+   "size_kb": 1111412,
+   "age_days": 3.85,
+   "age_sources": {
+    "weak:worktree_dir": 3.87,
+    "weak:dot_git": 3.87,
+    "weak:gitdir_HEAD": 3.87,
+    "weak:gitdir_index": 3.85,
+    "reflog_entry": 3.85
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/distracted-gates-83a4e4",
+   "name": "distracted-gates-83a4e4",
+   "branch": null,
+   "head": "6595c77148a320b585df47fcf3278c53cd89fa7b",
+   "verdict": "UNPUSHED",
+   "proof": "",
+   "reasons": [
+    "HEAD not on origin/main, no merged-PR proof"
+   ],
+   "size_kb": 11512,
+   "age_days": 13.01,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.98,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 13.01,
+    "session_dir": 13.76
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/dreamy-visvesvaraya-7e418d",
+   "name": "dreamy-visvesvaraya-7e418d",
+   "branch": null,
+   "head": "396899878b136c0ca2d7a33230794fae7adac7bf",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.0d < min_age 7d"
+   ],
+   "size_kb": 1217960,
+   "age_days": 0.03,
+   "age_sources": {
+    "weak:worktree_dir": 1.88,
+    "weak:dot_git": 9.98,
+    "weak:gitdir_HEAD": 0.03,
+    "weak:gitdir_index": 0.03,
+    "reflog_entry": 0.03,
+    "session_dir": 1.04
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/eager-zhukovsky-b5aebc",
+   "name": "eager-zhukovsky-b5aebc",
+   "branch": "claude/pensive-dirac-0d92c8",
+   "head": "d680f14e96fa91047b408c3ecdf6222828f759f3",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 764412,
+   "age_days": 18.93,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 18.95,
+    "session_dir": 18.93
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/elegant-ishizaka-3085b0",
+   "name": "elegant-ishizaka-3085b0",
+   "branch": null,
+   "head": "fd42aab07518b83359a933b8bea09f8e40010484",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.8d < min_age 7d"
+   ],
+   "size_kb": 6364,
+   "age_days": 1.77,
+   "age_sources": {
+    "weak:worktree_dir": 9.99,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 1.77,
+    "weak:gitdir_index": 1.77,
+    "reflog_entry": 1.77,
+    "session_dir": 22.83
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/eloquent-rosalind-ba97f1",
+   "name": "eloquent-rosalind-ba97f1",
+   "branch": "claude/eloquent-rosalind-ba97f1",
+   "head": "d067ded8826b7cdf46e702b530c488439c4989b4",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 6544,
+   "age_days": 25.89,
+   "age_sources": {
+    "weak:worktree_dir": 9.99,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 29.19,
+    "session_dir": 25.89
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/embed-chart",
+   "name": "embed-chart",
+   "branch": "feat/embed-chart",
+   "head": "36937b8d90697bef64b1a882c76c374ac957c2a1",
+   "verdict": "SAFE_MERGED",
+   "proof": "PR #159 merged at this exact head",
+   "reasons": [],
+   "size_kb": 769420,
+   "age_days": 15.64,
+   "age_sources": {
+    "weak:worktree_dir": 9.99,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 15.64
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/embedded-terminal-20260729",
+   "name": "embedded-terminal-20260729",
+   "branch": "claude/embedded-terminal-20260729",
+   "head": "b81ebdfdf7bf77b2437cd8bdd5d501357a0a8f18",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 6.8d < min_age 7d"
+   ],
+   "size_kb": 832908,
+   "age_days": 6.78,
+   "age_sources": {
+    "weak:worktree_dir": 6.81,
+    "weak:dot_git": 6.81,
+    "weak:gitdir_HEAD": 6.78,
+    "weak:gitdir_index": 6.78,
+    "reflog_entry": 6.78
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/epic-tesla-706294",
+   "name": "epic-tesla-706294",
+   "branch": null,
+   "head": "79e81f2ec133791b7d8dec51755caf425dd66950",
+   "verdict": "UNPUSHED",
+   "proof": "",
+   "reasons": [
+    "HEAD not on origin/main, no merged-PR proof"
+   ],
+   "size_kb": 6312,
+   "age_days": 26.39,
+   "age_sources": {
+    "weak:worktree_dir": 9.99,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 26.39,
+    "session_dir": 26.39
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/fable-native-app-charter-20260730",
+   "name": "fable-native-app-charter-20260730",
+   "branch": "claude/fable-native-app-charter-20260730",
+   "head": "f4f45cf410d02001d8ef70c21d3a66d5dac20b88",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.1d < min_age 7d"
+   ],
+   "size_kb": 49324,
+   "age_days": 5.14,
+   "age_sources": {
+    "weak:worktree_dir": 5.09,
+    "weak:dot_git": 5.14,
+    "weak:gitdir_HEAD": 5.14,
+    "weak:gitdir_index": 5.14,
+    "reflog_entry": 5.14
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/fix-atmiv",
+   "name": "fix-atmiv",
+   "branch": "claude/fix-atmiv-scale",
+   "head": "1251156a240f27c9a46d8786e87096c74dcae490",
+   "verdict": "SAFE_MERGED",
+   "proof": "PR #212 merged at this exact head",
+   "reasons": [],
+   "size_kb": 784908,
+   "age_days": 9.63,
+   "age_sources": {
+    "weak:worktree_dir": 9.64,
+    "weak:dot_git": 9.64,
+    "weak:gitdir_HEAD": 9.64,
+    "weak:gitdir_index": 9.63,
+    "reflog_entry": 9.63
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/fix-extended-hours-price-baselines",
+   "name": "fix-extended-hours-price-baselines",
+   "branch": "claude/fix-extended-hours-price-baselines",
+   "head": "a88c53356ff19604806797333c99b348fdd5774b",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.2d < min_age 7d"
+   ],
+   "size_kb": 737016,
+   "age_days": 1.21,
+   "age_sources": {
+    "weak:worktree_dir": 1.21,
+    "weak:dot_git": 1.21,
+    "weak:gitdir_HEAD": 1.21,
+    "weak:gitdir_index": 1.21,
+    "reflog_entry": 1.21
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/flow-surface-usability-20260731",
+   "name": "flow-surface-usability-20260731",
+   "branch": "claude/flow-surface-usability-20260731",
+   "head": "048cc724f2decb4aa675eb952ffc9fbe12d5805e",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 4.8d < min_age 7d"
+   ],
+   "size_kb": 987744,
+   "age_days": 4.84,
+   "age_sources": {
+    "weak:worktree_dir": 4.86,
+    "weak:dot_git": 4.86,
+    "weak:gitdir_HEAD": 4.84,
+    "weak:gitdir_index": 4.84,
+    "reflog_entry": 4.84
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/focused-allen-bcf589",
+   "name": "focused-allen-bcf589",
+   "branch": "claude/focused-allen-bcf589",
+   "head": "3f185b066ab9754902e55b4dcdeaeeda4b0a9cfe",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 4764,
+   "age_days": 36.1,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.98,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 36.1
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/friendly-bartik-cda3a1",
+   "name": "friendly-bartik-cda3a1",
+   "branch": "fix/login-loop",
+   "head": "1815e90b9a72ff1e7c6f18bd242377d23274a112",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 893760,
+   "age_days": 10.54,
+   "age_sources": {
+    "weak:worktree_dir": 9.99,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 12.04,
+    "session_dir": 10.54
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/frosty-chaplygin-9d9465",
+   "name": "frosty-chaplygin-9d9465",
+   "branch": "claude/mystifying-shaw-7f7655",
+   "head": "cc35cd01be582ea6497bd03d48edb0ecf374a0d3",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 10864,
+   "age_days": 21.23,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.98,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 21.28,
+    "session_dir": 21.23
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/funny-ishizaka-74be6d",
+   "name": "funny-ishizaka-74be6d",
+   "branch": "claude/funny-ishizaka-74be6d",
+   "head": "ce3c5e6be637b20de0172361f34704adc9e01cbd",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 693136,
+   "age_days": 34.26,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 34.26
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/gex-ladder-tooltip-layout-20260731",
+   "name": "gex-ladder-tooltip-layout-20260731",
+   "branch": "claude/gex-ladder-tooltip-layout-20260731",
+   "head": "937925b0e37e770ce7daca24c5fff4e63af5cdf4",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.9d < min_age 7d"
+   ],
+   "size_kb": 1042816,
+   "age_days": 3.91,
+   "age_sources": {
+    "weak:worktree_dir": 3.92,
+    "weak:dot_git": 3.92,
+    "weak:gitdir_HEAD": 3.92,
+    "weak:gitdir_index": 3.91,
+    "reflog_entry": 3.91
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/gex-mobile-ladder-20260803",
+   "name": "gex-mobile-ladder-20260803",
+   "branch": "claude/gex-mobile-ladder-20260803",
+   "head": "534ba66f26c9186a908842b1083d6fc030eef294",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.9d < min_age 7d"
+   ],
+   "size_kb": 959396,
+   "age_days": 1.85,
+   "age_sources": {
+    "weak:worktree_dir": 1.88,
+    "weak:dot_git": 1.88,
+    "weak:gitdir_HEAD": 1.88,
+    "weak:gitdir_index": 1.85,
+    "reflog_entry": 1.85
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/goofy-wilbur-07d31c",
+   "name": "goofy-wilbur-07d31c",
+   "branch": null,
+   "head": "54fb17f73e9cbabcb1aed7ff0490c13b90646cc2",
+   "verdict": "UNPUSHED",
+   "proof": "",
+   "reasons": [
+    "HEAD not on origin/main, no merged-PR proof"
+   ],
+   "size_kb": 787244,
+   "age_days": 16.66,
+   "age_sources": {
+    "weak:worktree_dir": 9.99,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 16.66,
+    "session_dir": 16.67
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/guide-visual-learning",
+   "name": "guide-visual-learning",
+   "branch": "claude/guide-visual-learning",
+   "head": "4489336550041b4060af3ce0bb76a17e09e94773",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 4.9d < min_age 7d"
+   ],
+   "size_kb": 967228,
+   "age_days": 4.85,
+   "age_sources": {
+    "weak:worktree_dir": 4.97,
+    "weak:dot_git": 4.97,
+    "weak:gitdir_HEAD": 4.85,
+    "weak:gitdir_index": 4.85,
+    "reflog_entry": 4.85
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/hk-key-stats-json-repair-20260730",
+   "name": "hk-key-stats-json-repair-20260730",
+   "branch": "claude/hk-key-stats-json-repair-20260730",
+   "head": "c6545e0d5066cde0b79c921e9d54b2b8ae67cec5",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.1d < min_age 7d"
+   ],
+   "size_kb": 1227544,
+   "age_days": 5.06,
+   "age_sources": {
+    "weak:worktree_dir": 5.05,
+    "weak:dot_git": 5.07,
+    "weak:gitdir_HEAD": 5.07,
+    "weak:gitdir_index": 5.06,
+    "reflog_entry": 5.06
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/hotfix-overnight",
+   "name": "hotfix-overnight",
+   "branch": null,
+   "head": "de385297f96cfa4de163f27d2b25cec9b6f2ce25",
+   "verdict": "UNPUSHED",
+   "proof": "",
+   "reasons": [
+    "HEAD not on origin/main, no merged-PR proof"
+   ],
+   "size_kb": 511940,
+   "age_days": 25.86,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 25.86
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/hungry-hugle-523523",
+   "name": "hungry-hugle-523523",
+   "branch": "claude/r2c-symbol-transition",
+   "head": "354c23cd93fb4fd2b67f28fb0097b48a5ae876f6",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 1199412,
+   "age_days": 1.7,
+   "age_sources": {
+    "weak:worktree_dir": 3.02,
+    "weak:dot_git": 3.02,
+    "weak:gitdir_HEAD": 2.92,
+    "weak:gitdir_index": 2.91,
+    "reflog_entry": 2.91,
+    "session_dir": 1.7
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/indicator-guide-experience",
+   "name": "indicator-guide-experience",
+   "branch": "claude/indicator-guide-experience",
+   "head": "398e2d36a9099267c80c531aefb8cadc6f0b7b2e",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.0d < min_age 7d"
+   ],
+   "size_kb": 939980,
+   "age_days": 5.01,
+   "age_sources": {
+    "weak:worktree_dir": 5.04,
+    "weak:dot_git": 5.04,
+    "weak:gitdir_HEAD": 5.01,
+    "weak:gitdir_index": 5.01,
+    "reflog_entry": 5.01
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/indicator-pane-labels-only-20260731",
+   "name": "indicator-pane-labels-only-20260731",
+   "branch": "claude/indicator-pane-labels-only-20260731",
+   "head": "d721681e967988b988d9175ea363a11b62ab8ba5",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 4.8d < min_age 7d"
+   ],
+   "size_kb": 999724,
+   "age_days": 4.84,
+   "age_sources": {
+    "weak:worktree_dir": 4.85,
+    "weak:dot_git": 4.85,
+    "weak:gitdir_HEAD": 4.85,
+    "weak:gitdir_index": 4.84,
+    "reflog_entry": 4.84
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/indicator-search-command",
+   "name": "indicator-search-command",
+   "branch": "claude/indicator-search-command",
+   "head": "74e2674036b341a326f12b9d06843fc7b4125605",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.1d < min_age 7d"
+   ],
+   "size_kb": 925444,
+   "age_days": 5.05,
+   "age_sources": {
+    "weak:worktree_dir": 5.08,
+    "weak:dot_git": 5.08,
+    "weak:gitdir_HEAD": 5.05,
+    "weak:gitdir_index": 5.05,
+    "reflog_entry": 5.05
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/insider-empty-state-20260730",
+   "name": "insider-empty-state-20260730",
+   "branch": "claude/insider-empty-state-20260730",
+   "head": "a6411ed8c84960a3aa947fa935e2364ddd22b123",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.1d < min_age 7d"
+   ],
+   "size_kb": 1272208,
+   "age_days": 5.15,
+   "age_sources": {
+    "weak:worktree_dir": 5.15,
+    "weak:dot_git": 5.15,
+    "weak:gitdir_HEAD": 5.15,
+    "weak:gitdir_index": 5.15,
+    "reflog_entry": 5.15
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/inspiring-dewdney-8a7037",
+   "name": "inspiring-dewdney-8a7037",
+   "branch": "claude/inspiring-dewdney-8a7037",
+   "head": "9631cdbe250af9d1d5549515b83d8854398d1112",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 6248,
+   "age_days": 32.57,
+   "age_sources": {
+    "weak:worktree_dir": 9.99,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 32.57
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/kind-jepsen-a54629",
+   "name": "kind-jepsen-a54629",
+   "branch": "claude/kind-jepsen-a54629",
+   "head": "2cf09010027e7a0703a71ba41c2c16df298a3300",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.8d < min_age 7d"
+   ],
+   "size_kb": 772012,
+   "age_days": 1.77,
+   "age_sources": {
+    "weak:worktree_dir": 9.61,
+    "weak:dot_git": 9.61,
+    "weak:gitdir_HEAD": 9.61,
+    "weak:gitdir_index": 9.61,
+    "reflog_entry": 9.61,
+    "session_dir": 1.77
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/kind-mahavira-b2033f",
+   "name": "kind-mahavira-b2033f",
+   "branch": null,
+   "head": "a4a7cd5a36e7247a541b28a32945f6a7c91ba3f4",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.8d < min_age 7d"
+   ],
+   "size_kb": 12984,
+   "age_days": 1.77,
+   "age_sources": {
+    "weak:worktree_dir": 9.99,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 1.77,
+    "weak:gitdir_index": 1.77,
+    "reflog_entry": 1.77,
+    "session_dir": 22.83
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/magical-chatterjee-202ec3",
+   "name": "magical-chatterjee-202ec3",
+   "branch": null,
+   "head": "7a80102ce3d712cf4fda61df5bdcb20e3a41a6ca",
+   "verdict": "UNPUSHED",
+   "proof": "",
+   "reasons": [
+    "HEAD not on origin/main, no merged-PR proof"
+   ],
+   "size_kb": 774204,
+   "age_days": 15.66,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 15.66,
+    "session_dir": 16.66
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/market-pref-terminal",
+   "name": "market-pref-terminal",
+   "branch": "claude/market-preference-terminal",
+   "head": "acf1e9f959a891b6def618b979fff7b3d0b420b6",
+   "verdict": "SAFE_MERGED",
+   "proof": "PR #202 merged at this exact head",
+   "reasons": [],
+   "size_kb": 849088,
+   "age_days": 9.94,
+   "age_sources": {
+    "weak:worktree_dir": 9.99,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.94,
+    "weak:gitdir_index": 9.94,
+    "reflog_entry": 9.94
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/mm-ia-reorg",
+   "name": "mm-ia-reorg",
+   "branch": "claude/mm-ia-reorg",
+   "head": "1cd9b3971161056d5c685954efea1b2ae75926f5",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 970504,
+   "age_days": 16.66,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 16.66
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/mm-production-revamp",
+   "name": "mm-production-revamp",
+   "branch": "claude/mm-production-revamp",
+   "head": "9dd3636534d7e54c0d18c9120b6c09bd598e8b37",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 735356,
+   "age_days": 16.75,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 16.75
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/mobile-regular-session-pricing-20260731",
+   "name": "mobile-regular-session-pricing-20260731",
+   "branch": "claude/mobile-regular-session-pricing-20260731",
+   "head": "6a8eecdc9b2175e0932ed2399d15e4d31dd7ca12",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 4.3d < min_age 7d"
+   ],
+   "size_kb": 920200,
+   "age_days": 4.26,
+   "age_sources": {
+    "weak:worktree_dir": 4.27,
+    "weak:dot_git": 4.27,
+    "weak:gitdir_HEAD": 4.27,
+    "weak:gitdir_index": 4.26,
+    "reflog_entry": 4.26
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/mobile-search-watchlist-scroll",
+   "name": "mobile-search-watchlist-scroll",
+   "branch": "claude/mobile-search-watchlist-scroll",
+   "head": "8e501f800a163f7932429a2b2a2f4b80f058c103",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.1d < min_age 7d"
+   ],
+   "size_kb": 874144,
+   "age_days": 5.09,
+   "age_sources": {
+    "weak:worktree_dir": 5.1,
+    "weak:dot_git": 5.1,
+    "weak:gitdir_HEAD": 5.1,
+    "weak:gitdir_index": 5.09,
+    "reflog_entry": 5.09
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/module-first-indicator-library",
+   "name": "module-first-indicator-library",
+   "branch": "claude/module-first-indicator-library",
+   "head": "d05588b42164067bdb8e0b151fd5969931793e45",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.8d < min_age 7d"
+   ],
+   "size_kb": 1346668,
+   "age_days": 5.8,
+   "age_sources": {
+    "weak:worktree_dir": 5.82,
+    "weak:dot_git": 5.82,
+    "weak:gitdir_HEAD": 5.8,
+    "weak:gitdir_index": 5.8,
+    "reflog_entry": 5.8
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/native-app-build-strategy-364eec",
+   "name": "native-app-build-strategy-364eec",
+   "branch": "claude/r2b-drawings-detent",
+   "head": "bc53232cf60a324ad1e7ae82a8125e5efa0a3a44",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 5543716,
+   "age_days": 1.71,
+   "age_sources": {
+    "weak:worktree_dir": 4.79,
+    "weak:dot_git": 5.05,
+    "weak:gitdir_HEAD": 3.07,
+    "weak:gitdir_index": 3.05,
+    "reflog_entry": 3.05,
+    "session_dir": 1.71
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/nifty-varahamihira-463739",
+   "name": "nifty-varahamihira-463739",
+   "branch": "claude/jovial-williamson-8ce66f",
+   "head": "2a7582ac51b785379d92b2d6e27148d095e1f74e",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.2d < min_age 7d"
+   ],
+   "size_kb": 519240,
+   "age_days": 1.22,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.98,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 21.99,
+    "session_dir": 1.22
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/objective-cray-f95b41",
+   "name": "objective-cray-f95b41",
+   "branch": "claude/objective-cray-f95b41",
+   "head": "6e0eb90f45bcc009605c2fb1d662af149046b40f",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.4d < min_age 7d"
+   ],
+   "size_kb": 506100,
+   "age_days": 2.38,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 32.71,
+    "session_dir": 2.38
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/oeu-ta",
+   "name": "oeu-ta",
+   "branch": "claude/oeu-ta",
+   "head": "a6d88ec1db883e8253268f76ff448ab9336fc576",
+   "verdict": "SAFE_MERGED",
+   "proof": "PR #200 merged at this exact head",
+   "reasons": [],
+   "size_kb": 904608,
+   "age_days": 10.34,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.98,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 10.34
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/oeu-tb",
+   "name": "oeu-tb",
+   "branch": "claude/oeu-tb",
+   "head": "009c28f309c79188f5d53b521d408043d6cd0546",
+   "verdict": "SAFE_MERGED",
+   "proof": "PR #205 merged at this exact head",
+   "reasons": [],
+   "size_kb": 812940,
+   "age_days": 9.91,
+   "age_sources": {
+    "weak:worktree_dir": 9.94,
+    "weak:dot_git": 9.94,
+    "weak:gitdir_HEAD": 9.91,
+    "weak:gitdir_index": 9.91,
+    "reflog_entry": 9.91
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/oeu-tc",
+   "name": "oeu-tc",
+   "branch": "claude/oeu-tc",
+   "head": "79ccf8bd84897fe6251125d3769160968bcc8ae9",
+   "verdict": "SAFE_MERGED",
+   "proof": "PR #201 merged at this exact head",
+   "reasons": [],
+   "size_kb": 938904,
+   "age_days": 10.33,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 10.33
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/oeu-td",
+   "name": "oeu-td",
+   "branch": "claude/oeu-td",
+   "head": "9c56bfec5e4723311d736659eba28b5581b07215",
+   "verdict": "SAFE_MERGED",
+   "proof": "PR #204 merged at this exact head",
+   "reasons": [],
+   "size_kb": 840872,
+   "age_days": 9.92,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.94,
+    "weak:gitdir_index": 9.92,
+    "reflog_entry": 9.92
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/oeu-te",
+   "name": "oeu-te",
+   "branch": "claude/oeu-te",
+   "head": "dad899723883f94103ff77f34b128724b9d2289e",
+   "verdict": "SAFE_MERGED",
+   "proof": "PR #209 merged at this exact head",
+   "reasons": [],
+   "size_kb": 794988,
+   "age_days": 9.88,
+   "age_sources": {
+    "weak:worktree_dir": 9.91,
+    "weak:dot_git": 9.91,
+    "weak:gitdir_HEAD": 9.91,
+    "weak:gitdir_index": 9.88,
+    "reflog_entry": 9.88
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/openmarket-drawing-system-20260731",
+   "name": "openmarket-drawing-system-20260731",
+   "branch": "claude/openmarket-drawing-system-20260731",
+   "head": "9ded6c55a3cba8d25d85858d82b2f31e639027dd",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 4.7d < min_age 7d"
+   ],
+   "size_kb": 1058628,
+   "age_days": 4.65,
+   "age_sources": {
+    "weak:worktree_dir": 4.74,
+    "weak:dot_git": 4.74,
+    "weak:gitdir_HEAD": 4.66,
+    "weak:gitdir_index": 4.65,
+    "reflog_entry": 4.65
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/openmarket-drawing-universe-mobile-20260731",
+   "name": "openmarket-drawing-universe-mobile-20260731",
+   "branch": "claude/openmarket-drawing-universe-mobile-20260731",
+   "head": "e7c2dcf11b12f2a60686d33c9d726255300c68d4",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 4.1d < min_age 7d"
+   ],
+   "size_kb": 1116324,
+   "age_days": 4.13,
+   "age_sources": {
+    "weak:worktree_dir": 4.26,
+    "weak:dot_git": 4.26,
+    "weak:gitdir_HEAD": 4.14,
+    "weak:gitdir_index": 4.13,
+    "reflog_entry": 4.13
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/openmarket-parity-reconciliation-20260731",
+   "name": "openmarket-parity-reconciliation-20260731",
+   "branch": "claude/openmarket-parity-reconciliation-20260731",
+   "head": "3a0afabb50e4cc0b52a9eb1b543e2a2eb1fd67ec",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 4.1d < min_age 7d"
+   ],
+   "size_kb": 939064,
+   "age_days": 4.07,
+   "age_sources": {
+    "weak:worktree_dir": 4.12,
+    "weak:dot_git": 4.12,
+    "weak:gitdir_HEAD": 4.08,
+    "weak:gitdir_index": 4.07,
+    "reflog_entry": 4.07
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/optimistic-shannon-d0c6d8",
+   "name": "optimistic-shannon-d0c6d8",
+   "branch": "claude/optimistic-shannon-d0c6d8",
+   "head": "c0b184041482d026fd159856959eeaf9098e8eab",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 27816,
+   "age_days": 1.71,
+   "age_sources": {
+    "weak:worktree_dir": 9.99,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 21.34,
+    "session_dir": 1.71
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/options-analytics-platform-rebuild-5817fe",
+   "name": "options-analytics-platform-rebuild-5817fe",
+   "branch": "claude/chinese-ticker-screenshot-bug-21e787",
+   "head": "ad95d3e1b171aa17d6b5924a859e2b465d825434",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 969684,
+   "age_days": null,
+   "age_sources": {},
+   "procs": [
+    "80723:disclaimer",
+    "80724:claude",
+    "80762:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/oracle-signal-known-date-20260730",
+   "name": "oracle-signal-known-date-20260730",
+   "branch": "claude/oracle-signal-known-date-20260730",
+   "head": "add989e1c1859d99869ac2cb7e512d366b1440bd",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.9d < min_age 7d"
+   ],
+   "size_kb": 920204,
+   "age_days": 5.89,
+   "age_sources": {
+    "weak:worktree_dir": 5.9,
+    "weak:dot_git": 5.91,
+    "weak:gitdir_HEAD": 5.91,
+    "weak:gitdir_index": 5.89,
+    "reflog_entry": 5.89
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/overnight-ext-macro-feeds",
+   "name": "overnight-ext-macro-feeds",
+   "branch": "claude/overnight-ext-macro-feeds",
+   "head": "59bd2a6001585cdef1a633e38790ee9eaf383cc3",
+   "verdict": "SAFE_MERGED",
+   "proof": "PR #220 merged at this exact head",
+   "reasons": [],
+   "size_kb": 533184,
+   "age_days": 8.73,
+   "age_sources": {
+    "weak:worktree_dir": 8.76,
+    "weak:dot_git": 8.78,
+    "weak:gitdir_HEAD": 8.78,
+    "weak:gitdir_index": 8.73,
+    "reflog_entry": 8.73
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/pass4-b-manifest-gics",
+   "name": "pass4-b-manifest-gics",
+   "branch": "claude/pass4-b-manifest-gics",
+   "head": "fdbd50b984645c606ee16d4f6fcd19faac0657c4",
+   "verdict": "SAFE_REMOTE",
+   "proof": "HEAD contained in origin/claude/pass4-b-manifest-gics; no open PR",
+   "reasons": [],
+   "size_kb": 11156,
+   "age_days": 26.65,
+   "age_sources": {
+    "weak:worktree_dir": 9.99,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 26.65
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/pass4-c-perf",
+   "name": "pass4-c-perf",
+   "branch": null,
+   "head": "c10f60907f3497d3a955bf0e62112cf08a8b98c5",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 803172,
+   "age_days": 26.61,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 26.61
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/pass6-p1",
+   "name": "pass6-p1",
+   "branch": "master",
+   "head": "db8534644ca99e612bf8097efe5a00a7762cb6b0",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.1d < min_age 7d"
+   ],
+   "size_kb": 800944,
+   "age_days": 0.09,
+   "age_sources": {
+    "weak:worktree_dir": 4.17,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 7.81,
+    "weak:gitdir_index": 0.09,
+    "reflog_entry": 0.09
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/pass6-stall",
+   "name": "pass6-stall",
+   "branch": "claude/pass6-stall-r2",
+   "head": "8f1a5e63b7880d8d6b2f59ebd305f40a87e97f85",
+   "verdict": "SAFE_REMOTE",
+   "proof": "HEAD contained in origin/claude/pass6-stall-r2; no open PR",
+   "reasons": [],
+   "size_kb": 511668,
+   "age_days": 25.97,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 25.97
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/pass8-ext",
+   "name": "pass8-ext",
+   "branch": null,
+   "head": "c080f5a5e5d9877d454dbb3739b795e405017d85",
+   "verdict": "UNPUSHED",
+   "proof": "",
+   "reasons": [
+    "HEAD not on origin/main, no merged-PR proof"
+   ],
+   "size_kb": 512112,
+   "age_days": 25.85,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 25.85
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/pass8-hub",
+   "name": "pass8-hub",
+   "branch": null,
+   "head": "f2b9443fee4527af7ee564f969f067ff1b04a617",
+   "verdict": "UNPUSHED",
+   "proof": "",
+   "reasons": [
+    "HEAD not on origin/main, no merged-PR proof"
+   ],
+   "size_kb": 485668,
+   "age_days": 25.83,
+   "age_sources": {
+    "weak:worktree_dir": 9.99,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 25.83
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/pedantic-maxwell-1425a5",
+   "name": "pedantic-maxwell-1425a5",
+   "branch": "claude/pedantic-maxwell-1425a5",
+   "head": "022cccc330b57829d27c4464762c4d675957f9f7",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 944468,
+   "age_days": 13.76,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 27.91,
+    "session_dir": 13.76
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/pensive-gagarin-c9c25b",
+   "name": "pensive-gagarin-c9c25b",
+   "branch": "claude/stoch-rsi-color-settings-cc3a90",
+   "head": "cb0f693ac318e0afc88a91e2106592833174482b",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "3 process(es) cwd inside"
+   ],
+   "size_kb": 975812,
+   "age_days": null,
+   "age_sources": {},
+   "procs": [
+    "32824:disclaimer",
+    "32825:claude",
+    "33017:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/pensive-kowalevski-6c1d99",
+   "name": "pensive-kowalevski-6c1d99",
+   "branch": "claude/pensive-kowalevski-6c1d99",
+   "head": "2c61f9fc7f438608dcb7b7ac6e91fe85a71b33bc",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 10964,
+   "age_days": 16.67,
+   "age_sources": {
+    "weak:worktree_dir": 9.99,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 19.26,
+    "session_dir": 16.67
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/pre-launch-sec-fixes",
+   "name": "pre-launch-sec-fixes",
+   "branch": "claude/pre-launch-sec-fixes",
+   "head": "dbd1831b2a2b8e215032db95cd870eb2c3cfa9ae",
+   "verdict": "SAFE_MERGED",
+   "proof": "PR #206 merged at this exact head",
+   "reasons": [],
+   "size_kb": 31224,
+   "age_days": 9.91,
+   "age_sources": {
+    "weak:worktree_dir": 9.91,
+    "weak:dot_git": 9.92,
+    "weak:gitdir_HEAD": 9.92,
+    "weak:gitdir_index": 9.91,
+    "reflog_entry": 9.91
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/premium-suites",
+   "name": "premium-suites",
+   "branch": "claude/premium-suites-w4b",
+   "head": "340690876eff341679c85774f3c8c3c94150b70f",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 6.2d < min_age 7d"
+   ],
+   "size_kb": 1235296,
+   "age_days": 6.15,
+   "age_sources": {
+    "weak:worktree_dir": 6.54,
+    "weak:dot_git": 7.01,
+    "weak:gitdir_HEAD": 6.19,
+    "weak:gitdir_index": 6.15,
+    "reflog_entry": 6.15,
+    "session_dir": 6.52
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/prism-exposure-merge-20260803",
+   "name": "prism-exposure-merge-20260803",
+   "branch": "claude/prism-exposure-merge-20260803",
+   "head": "54217161049576017b603030870d542afb65bbb0",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.9d < min_age 7d"
+   ],
+   "size_kb": 875080,
+   "age_days": 1.9,
+   "age_sources": {
+    "weak:worktree_dir": 1.95,
+    "weak:dot_git": 1.95,
+    "weak:gitdir_HEAD": 1.95,
+    "weak:gitdir_index": 1.9,
+    "reflog_entry": 1.9
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/prophet-before-v2",
+   "name": "prophet-before-v2",
+   "branch": null,
+   "head": "b73df9ca6228d405b9afb03535cb270e67b42ea8",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 4.8d < min_age 7d"
+   ],
+   "size_kb": 734388,
+   "age_days": 4.85,
+   "age_sources": {
+    "weak:worktree_dir": 4.85,
+    "weak:dot_git": 4.85,
+    "weak:gitdir_HEAD": 4.85,
+    "weak:gitdir_index": 4.85,
+    "reflog_entry": 4.85
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/prophet-layout-composition",
+   "name": "prophet-layout-composition",
+   "branch": "claude/prophet-layout-composition",
+   "head": "229366ebf64352d845ad2f823be4553829732a73",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 4.8d < min_age 7d"
+   ],
+   "size_kb": 981932,
+   "age_days": 4.83,
+   "age_sources": {
+    "weak:worktree_dir": 4.83,
+    "weak:dot_git": 4.84,
+    "weak:gitdir_HEAD": 4.83,
+    "weak:gitdir_index": 4.83,
+    "reflog_entry": 4.83
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/prophet-layout-regression",
+   "name": "prophet-layout-regression",
+   "branch": "claude/prophet-layout-regression",
+   "head": "868dfb9e1a974b0a33ecf6feff9c3be7522b7483",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 4.9d < min_age 7d"
+   ],
+   "size_kb": 844416,
+   "age_days": 4.86,
+   "age_sources": {
+    "weak:worktree_dir": 4.87,
+    "weak:dot_git": 4.87,
+    "weak:gitdir_HEAD": 4.86,
+    "weak:gitdir_index": 4.85,
+    "reflog_entry": 4.86
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/purposeful-indicator-guides-20260801",
+   "name": "purposeful-indicator-guides-20260801",
+   "branch": "claude/purposeful-indicator-guides-20260801",
+   "head": "d707c3021f7d2556853820cc4255b08e962b5546",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 4.0d < min_age 7d"
+   ],
+   "size_kb": 1064504,
+   "age_days": 4.04,
+   "age_sources": {
+    "weak:worktree_dir": 4.07,
+    "weak:dot_git": 4.07,
+    "weak:gitdir_HEAD": 4.04,
+    "weak:gitdir_index": 4.04,
+    "reflog_entry": 4.04
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/qd-continuation-20260802",
+   "name": "qd-continuation-20260802",
+   "branch": "claude/qd-continuation-20260802",
+   "head": "bf0fab992e3a9cc6f2a8157092bd055941437084",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.9d < min_age 7d"
+   ],
+   "size_kb": 802372,
+   "age_days": 1.95,
+   "age_sources": {
+    "weak:worktree_dir": 1.96,
+    "weak:dot_git": 1.96,
+    "weak:gitdir_HEAD": 1.95,
+    "weak:gitdir_index": 1.95,
+    "reflog_entry": 1.95
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/quanted-wave1",
+   "name": "quanted-wave1",
+   "branch": "claude/quanted-wave1",
+   "head": "fe5225b9682ae469d486f48f85d525b8800090d3",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 834164,
+   "age_days": 10.92,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 10.92
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/quanted-wave2a",
+   "name": "quanted-wave2a",
+   "branch": "claude/quanted-wave2a",
+   "head": "91fc66d28e6a2c40ff50f7bd5f41c61a7ce516ad",
+   "verdict": "SAFE_MERGED",
+   "proof": "PR #199 merged at this exact head",
+   "reasons": [],
+   "size_kb": 811480,
+   "age_days": 10.56,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.98,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 10.56
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/quanted-wave2e",
+   "name": "quanted-wave2e",
+   "branch": "claude/quanted-wave2e",
+   "head": "7ffc1b39d7b2530c3efe246964d3cd98dab9cb5f",
+   "verdict": "SAFE_MERGED",
+   "proof": "PR #198 merged at this exact head",
+   "reasons": [],
+   "size_kb": 861540,
+   "age_days": 10.56,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 10.56
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/quirky-driscoll-123331",
+   "name": "quirky-driscoll-123331",
+   "branch": "claude/quirky-driscoll-123331",
+   "head": "aa2ce8aab6d67147091ee89da60a0af61393dad1",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 287052,
+   "age_days": 1.68,
+   "age_sources": {
+    "weak:worktree_dir": 2.99,
+    "weak:dot_git": 2.99,
+    "weak:gitdir_HEAD": 2.99,
+    "weak:gitdir_index": 2.98,
+    "reflog_entry": 2.98,
+    "session_dir": 1.68
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/recently-viewed-100",
+   "name": "recently-viewed-100",
+   "branch": "claude/recently-viewed-100",
+   "head": "8f96b1b02e85bdd0239cab8a21ffd392919f8c94",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.1d < min_age 7d"
+   ],
+   "size_kb": 922668,
+   "age_days": 5.06,
+   "age_sources": {
+    "weak:worktree_dir": 5.07,
+    "weak:dot_git": 5.07,
+    "weak:gitdir_HEAD": 5.07,
+    "weak:gitdir_index": 5.06,
+    "reflog_entry": 5.06
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/remove-chart-event-markers",
+   "name": "remove-chart-event-markers",
+   "branch": "claude/remove-chart-event-markers",
+   "head": "faf535811ca9f3934bdb72d3c7fcafab59a1a30b",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 4.8d < min_age 7d"
+   ],
+   "size_kb": 905804,
+   "age_days": 4.81,
+   "age_sources": {
+    "weak:worktree_dir": 4.81,
+    "weak:dot_git": 4.81,
+    "weak:gitdir_HEAD": 4.81,
+    "weak:gitdir_index": 4.81,
+    "reflog_entry": 4.81
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/remove-tool-open-labels-20260802",
+   "name": "remove-tool-open-labels-20260802",
+   "branch": "claude/remove-tool-open-labels-20260802",
+   "head": "6edacbc9b4afdd8e8585b1ed94e58bac3ce322cf",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.8d < min_age 7d"
+   ],
+   "size_kb": 1219244,
+   "age_days": 2.78,
+   "age_sources": {
+    "weak:worktree_dir": 2.79,
+    "weak:dot_git": 2.79,
+    "weak:gitdir_HEAD": 2.79,
+    "weak:gitdir_index": 2.78,
+    "reflog_entry": 2.78
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/reset-chart-view-normalize-20260803",
+   "name": "reset-chart-view-normalize-20260803",
+   "branch": "claude/reset-chart-view-normalize-20260803",
+   "head": "93a50ff72e589d6b3fb25de0db093c4a9b11f9e5",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.6d < min_age 7d"
+   ],
+   "size_kb": 1220512,
+   "age_days": 1.62,
+   "age_sources": {
+    "weak:worktree_dir": 1.62,
+    "weak:dot_git": 1.62,
+    "weak:gitdir_HEAD": 1.62,
+    "weak:gitdir_index": 1.62,
+    "reflog_entry": 1.62
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/responsive-consolidation",
+   "name": "responsive-consolidation",
+   "branch": "claude/responsive-consolidation",
+   "head": "45c9453fe244b0920135bb1a970671c41b2247b9",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 6.1d < min_age 7d"
+   ],
+   "size_kb": 903968,
+   "age_days": 6.08,
+   "age_sources": {
+    "weak:worktree_dir": 6.08,
+    "weak:dot_git": 6.11,
+    "weak:gitdir_HEAD": 6.08,
+    "weak:gitdir_index": 6.08,
+    "reflog_entry": 6.08
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/revamp-p0",
+   "name": "revamp-p0",
+   "branch": "deploy-master",
+   "head": "353437f60033332ae98c29c3eba536cb4de6ab2b",
+   "verdict": "UNPUSHED",
+   "proof": "",
+   "reasons": [
+    "HEAD not on origin/main, no merged-PR proof"
+   ],
+   "size_kb": 1114608,
+   "age_days": 27.78,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 27.78
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/sad-borg-e31d48",
+   "name": "sad-borg-e31d48",
+   "branch": "claude/sad-borg-e31d48",
+   "head": "aa0e4ee09847e5e847d271eb2c733f3588724c3e",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 965788,
+   "age_days": 32.46,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.98,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 32.46
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/seasonal-intelligence-v2",
+   "name": "seasonal-intelligence-v2",
+   "branch": "claude/seasonal-intelligence-v2",
+   "head": "9f4656fcf926e77a8cfe2e000e90ecd32fb1ebb0",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.2d < min_age 7d"
+   ],
+   "size_kb": 892788,
+   "age_days": 5.16,
+   "age_sources": {
+    "weak:worktree_dir": 5.17,
+    "weak:dot_git": 5.18,
+    "weak:gitdir_HEAD": 5.18,
+    "weak:gitdir_index": 5.16,
+    "reflog_entry": 5.16
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/seasonal-tooltip-crowding-20260731",
+   "name": "seasonal-tooltip-crowding-20260731",
+   "branch": "claude/seasonal-tooltip-crowding-20260731",
+   "head": "ddc3d295a50ec7def9365e7c241fd1ac318604c1",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 4.9d < min_age 7d"
+   ],
+   "size_kb": 921644,
+   "age_days": 4.86,
+   "age_sources": {
+    "weak:worktree_dir": 4.87,
+    "weak:dot_git": 4.87,
+    "weak:gitdir_HEAD": 4.87,
+    "weak:gitdir_index": 4.86,
+    "reflog_entry": 4.86
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/shandong-gold-signal-blocking-2147c5",
+   "name": "shandong-gold-signal-blocking-2147c5",
+   "branch": "claude/shandong-gold-signal-blocking-2147c5",
+   "head": "9732a6a8a67c11b5cce4d0ec777303a15a2b4b83",
+   "verdict": "LIVE_PROC",
+   "proof": "",
+   "reasons": [
+    "1 process(es) cwd inside"
+   ],
+   "size_kb": 933832,
+   "age_days": null,
+   "age_sources": {},
+   "procs": [
+    "73381:zsh"
+   ],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/sharp-sinoussi-be3079",
+   "name": "sharp-sinoussi-be3079",
+   "branch": null,
+   "head": "55013b729bea282904989a2d1c622ebc61ab7e0e",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.1d < min_age 7d"
+   ],
+   "size_kb": 667080,
+   "age_days": 5.08,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.98,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 10.54,
+    "session_dir": 5.08
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/silly-satoshi-c02e3f",
+   "name": "silly-satoshi-c02e3f",
+   "branch": "claude/great-mestorf-9ac707",
+   "head": "2cd998cee1ee788fd2b382ca21b83dcc8a9e1423",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 12412,
+   "age_days": 23.78,
+   "age_sources": {
+    "weak:worktree_dir": 9.99,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 25.1,
+    "session_dir": 23.78
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/sleepy-perlman-78362c",
+   "name": "sleepy-perlman-78362c",
+   "branch": "claude/sleepy-perlman-78362c",
+   "head": "a8afeeff06635b5deba9ec00e2a8aef573d9fa1a",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 1145272,
+   "age_days": 23.14,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 29.8,
+    "session_dir": 23.14
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/sleepy-rhodes-9e227f",
+   "name": "sleepy-rhodes-9e227f",
+   "branch": null,
+   "head": "6d80e9fa133a0c6b71e66208572e3d1c5c0cb930",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.7d < min_age 7d"
+   ],
+   "size_kb": 1237444,
+   "age_days": 0.67,
+   "age_sources": {
+    "weak:worktree_dir": 2.11,
+    "weak:dot_git": 2.11,
+    "weak:gitdir_HEAD": 0.67,
+    "weak:gitdir_index": 0.67,
+    "reflog_entry": 0.67,
+    "session_dir": 1.67
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/strange-nobel-0b5c6b",
+   "name": "strange-nobel-0b5c6b",
+   "branch": null,
+   "head": "2a7582ac51b785379d92b2d6e27148d095e1f74e",
+   "verdict": "UNPUSHED",
+   "proof": "",
+   "reasons": [
+    "HEAD not on origin/main, no merged-PR proof"
+   ],
+   "size_kb": 10560,
+   "age_days": 10.54,
+   "age_sources": {
+    "weak:worktree_dir": 9.99,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 10.54,
+    "session_dir": 10.54
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/stripe-sandbox-testing-506971",
+   "name": "stripe-sandbox-testing-506971",
+   "branch": null,
+   "head": "73d032e84ec915bc2a0ec78b8401fd2a758ddf2c",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 27584,
+   "age_days": 1.71,
+   "age_sources": {
+    "weak:worktree_dir": 9.94,
+    "weak:dot_git": 9.94,
+    "weak:gitdir_HEAD": 1.71,
+    "weak:gitdir_index": 1.71,
+    "reflog_entry": 1.71,
+    "session_dir": 1.77
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/surface-granularity-20260803",
+   "name": "surface-granularity-20260803",
+   "branch": "claude/surface-granularity-20260803",
+   "head": "4765409b5da57ba2b602f7f15448d7fe526c3bae",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.9d < min_age 7d"
+   ],
+   "size_kb": 795536,
+   "age_days": 1.87,
+   "age_sources": {
+    "weak:worktree_dir": 1.95,
+    "weak:dot_git": 1.95,
+    "weak:gitdir_HEAD": 1.87,
+    "weak:gitdir_index": 1.87,
+    "reflog_entry": 1.87
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/surface-granularity-fixes-20260803",
+   "name": "surface-granularity-fixes-20260803",
+   "branch": "claude/surface-granularity-fixes-20260803",
+   "head": "f2f3ea75a3808cf293896b6d632eaedd3e440c03",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.8d < min_age 7d"
+   ],
+   "size_kb": 570284,
+   "age_days": 1.77,
+   "age_sources": {
+    "weak:worktree_dir": 1.86,
+    "weak:dot_git": 1.86,
+    "weak:gitdir_HEAD": 1.81,
+    "weak:gitdir_index": 1.77,
+    "reflog_entry": 1.77
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/surface-ux-chart-engine-20260801",
+   "name": "surface-ux-chart-engine-20260801",
+   "branch": "claude/surface-ux-chart-engine-20260801",
+   "head": "5e431571c916dcb055cda609671dee2d83412c37",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.9d < min_age 7d"
+   ],
+   "size_kb": 1064964,
+   "age_days": 3.88,
+   "age_sources": {
+    "weak:worktree_dir": 3.89,
+    "weak:dot_git": 3.89,
+    "weak:gitdir_HEAD": 3.89,
+    "weak:gitdir_index": 3.88,
+    "reflog_entry": 3.88
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/technical-gauge-spacing-20260730",
+   "name": "technical-gauge-spacing-20260730",
+   "branch": "claude/technical-gauge-spacing-20260730",
+   "head": "46143325b5c1b81bdae8b8ac4753c2500790a06e",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.2d < min_age 7d"
+   ],
+   "size_kb": 1239024,
+   "age_days": 5.16,
+   "age_sources": {
+    "weak:worktree_dir": 5.16,
+    "weak:dot_git": 5.16,
+    "weak:gitdir_HEAD": 5.16,
+    "weak:gitdir_index": 5.16,
+    "reflog_entry": 5.16
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/terminal-deployment-id-runtime-20260729",
+   "name": "terminal-deployment-id-runtime-20260729",
+   "branch": "claude/terminal-deployment-id-runtime-20260729",
+   "head": "49f5b0e36db44152c09baa75301230d6a17bc3fa",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.9d < min_age 7d"
+   ],
+   "size_kb": 557560,
+   "age_days": 5.92,
+   "age_sources": {
+    "weak:worktree_dir": 5.92,
+    "weak:dot_git": 5.92,
+    "weak:gitdir_HEAD": 5.92,
+    "weak:gitdir_index": 5.92,
+    "reflog_entry": 5.92
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/terminal-font-upgrade-1ec1ec",
+   "name": "terminal-font-upgrade-1ec1ec",
+   "branch": null,
+   "head": "daa2b73f8d08c3fa7d68b5c9e954510b03049cac",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 1035492,
+   "age_days": 1.71,
+   "age_sources": {
+    "weak:worktree_dir": 9.63,
+    "weak:dot_git": 9.63,
+    "weak:gitdir_HEAD": 1.71,
+    "weak:gitdir_index": 1.71,
+    "reflog_entry": 1.71,
+    "session_dir": 1.77
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/terminal-load-performance-20260729",
+   "name": "terminal-load-performance-20260729",
+   "branch": "claude/terminal-load-performance-20260729",
+   "head": "bcbae64514c02ef5d55f4371c6ad8c461f1ef21d",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.9d < min_age 7d"
+   ],
+   "size_kb": 593808,
+   "age_days": 5.93,
+   "age_sources": {
+    "weak:worktree_dir": 5.95,
+    "weak:dot_git": 5.95,
+    "weak:gitdir_HEAD": 5.95,
+    "weak:gitdir_index": 5.93,
+    "reflog_entry": 5.93
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/terminal-role-inference-20260801",
+   "name": "terminal-role-inference-20260801",
+   "branch": "claude/terminal-role-inference-20260801",
+   "head": "856d32c59ed548d65f9e7cb9567b934047f13fff",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.7d < min_age 7d"
+   ],
+   "size_kb": 59344,
+   "age_days": 3.7,
+   "age_sources": {
+    "weak:worktree_dir": 3.72,
+    "weak:dot_git": 3.72,
+    "weak:gitdir_HEAD": 3.7,
+    "weak:gitdir_index": 3.7,
+    "reflog_entry": 3.7
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/terminal-settings-default",
+   "name": "terminal-settings-default",
+   "branch": "claude/terminal-settings-default",
+   "head": "907c61cf52821ba9ef88698a7ff2974509a7867d",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 6.1d < min_age 7d"
+   ],
+   "size_kb": 930848,
+   "age_days": 6.06,
+   "age_sources": {
+    "weak:worktree_dir": 6.07,
+    "weak:dot_git": 6.07,
+    "weak:gitdir_HEAD": 6.07,
+    "weak:gitdir_index": 6.06,
+    "reflog_entry": 6.06
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/terminal-settings-upgrade-86561b",
+   "name": "terminal-settings-upgrade-86561b",
+   "branch": null,
+   "head": "7711676954decaa42371b236b551180743e44b99",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 1351884,
+   "age_days": 1.68,
+   "age_sources": {
+    "weak:worktree_dir": 6.86,
+    "weak:dot_git": 6.86,
+    "weak:gitdir_HEAD": 1.68,
+    "weak:gitdir_index": 1.68,
+    "reflog_entry": 1.68,
+    "session_dir": 1.77
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/ticker-identity-live-20260730",
+   "name": "ticker-identity-live-20260730",
+   "branch": "claude/ticker-identity-live-20260730",
+   "head": "3540cf92cecdc3efa03da61a844bd7610fd7b93e",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.2d < min_age 7d"
+   ],
+   "size_kb": 1201732,
+   "age_days": 5.19,
+   "age_sources": {
+    "weak:worktree_dir": 5.19,
+    "weak:dot_git": 5.19,
+    "weak:gitdir_HEAD": 5.19,
+    "weak:gitdir_index": 5.19,
+    "reflog_entry": 5.19
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/tier-alias-t1",
+   "name": "tier-alias-t1",
+   "branch": "claude/tier-essential-alias",
+   "head": "9013d5766f95c85df8f74eeb17a7dcc6caf72e0d",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 4.0d < min_age 7d"
+   ],
+   "size_kb": 55032,
+   "age_days": 3.96,
+   "age_sources": {
+    "weak:worktree_dir": 3.96,
+    "weak:dot_git": 3.96,
+    "weak:gitdir_HEAD": 3.96,
+    "weak:gitdir_index": 3.96,
+    "reflog_entry": 3.96
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/tier-display-t3",
+   "name": "tier-display-t3",
+   "branch": "claude/tier-essential-display",
+   "head": "6e8f6f2173d35ad51f8250235e045c54b7f6830c",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.2d < min_age 7d"
+   ],
+   "size_kb": 1256048,
+   "age_days": 2.24,
+   "age_sources": {
+    "weak:worktree_dir": 2.26,
+    "weak:dot_git": 2.26,
+    "weak:gitdir_HEAD": 2.26,
+    "weak:gitdir_index": 2.24,
+    "reflog_entry": 2.24
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/tier-flip-t2",
+   "name": "tier-flip-t2",
+   "branch": "claude/tier-essential-t2",
+   "head": "febe06b541f484888b1d96cb851b921b7b0e3591",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 2.3d < min_age 7d"
+   ],
+   "size_kb": 59904,
+   "age_days": 2.27,
+   "age_sources": {
+    "weak:worktree_dir": 2.3,
+    "weak:dot_git": 2.3,
+    "weak:gitdir_HEAD": 2.3,
+    "weak:gitdir_index": 2.27,
+    "reflog_entry": 2.27
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/tp-pane-clip-20260730",
+   "name": "tp-pane-clip-20260730",
+   "branch": "claude/tp-pane-clip-20260730",
+   "head": "c9d10b3198a3ed6669740c3b4411f95eedb1a7a4",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 5.8d < min_age 7d"
+   ],
+   "size_kb": 656224,
+   "age_days": 5.82,
+   "age_sources": {
+    "weak:worktree_dir": 5.82,
+    "weak:dot_git": 5.83,
+    "weak:gitdir_HEAD": 5.83,
+    "weak:gitdir_index": 5.82,
+    "reflog_entry": 5.82
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/transcript-search-core-20260801",
+   "name": "transcript-search-core-20260801",
+   "branch": "claude/transcript-search-core-20260801",
+   "head": "cba690f1618635476c310768286a8dfabd13bfee",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.1d < min_age 7d"
+   ],
+   "size_kb": 60524,
+   "age_days": 3.12,
+   "age_sources": {
+    "weak:worktree_dir": 3.12,
+    "weak:dot_git": 3.14,
+    "weak:gitdir_HEAD": 3.14,
+    "weak:gitdir_index": 3.12,
+    "reflog_entry": 3.12
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/transcript-search-deploy-20260801",
+   "name": "transcript-search-deploy-20260801",
+   "branch": null,
+   "head": "7b6807eb7fb82d63812d5fa4b9e555c7e8e1d5f7",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.0d < min_age 7d"
+   ],
+   "size_kb": 609704,
+   "age_days": 3.05,
+   "age_sources": {
+    "weak:worktree_dir": 3.05,
+    "weak:dot_git": 3.05,
+    "weak:gitdir_HEAD": 3.05,
+    "weak:gitdir_index": 3.05,
+    "reflog_entry": 3.05
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/transcript-search-integrated-20260801",
+   "name": "transcript-search-integrated-20260801",
+   "branch": "claude/transcript-search-integrated-20260801",
+   "head": "4024abaab53c38b5f9106b2b3ab346df76baeb22",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.1d < min_age 7d"
+   ],
+   "size_kb": 1040116,
+   "age_days": 3.07,
+   "age_sources": {
+    "weak:worktree_dir": 3.12,
+    "weak:dot_git": 3.12,
+    "weak:gitdir_HEAD": 3.12,
+    "weak:gitdir_index": 3.07,
+    "reflog_entry": 3.07
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/transcript-search-release-20260801",
+   "name": "transcript-search-release-20260801",
+   "branch": "claude/transcript-search-release-20260801",
+   "head": "5dfc386309dd8ef6f83d1978ec17f2dba9e77b1a",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.1d < min_age 7d"
+   ],
+   "size_kb": 1087208,
+   "age_days": 3.06,
+   "age_sources": {
+    "weak:worktree_dir": 3.09,
+    "weak:dot_git": 3.09,
+    "weak:gitdir_HEAD": 3.09,
+    "weak:gitdir_index": 3.06,
+    "reflog_entry": 3.06
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/transcript-search-ui-20260801",
+   "name": "transcript-search-ui-20260801",
+   "branch": "claude/transcript-search-ui-20260801",
+   "head": "35081dbf30e9f38d74ac5310b23adb1fba2531a4",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 3.1d < min_age 7d"
+   ],
+   "size_kb": 1033208,
+   "age_days": 3.12,
+   "age_sources": {
+    "weak:worktree_dir": 3.12,
+    "weak:dot_git": 3.14,
+    "weak:gitdir_HEAD": 3.14,
+    "weak:gitdir_index": 3.12,
+    "reflog_entry": 3.12
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/ui-institutional-overhaul",
+   "name": "ui-institutional-overhaul",
+   "branch": "claude/ui-v7b-quality-wave",
+   "head": "ee5eaa1d20582179c3fca2819587bfc1af328365",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.2d < min_age 7d"
+   ],
+   "size_kb": 1301244,
+   "age_days": 1.2,
+   "age_sources": {
+    "weak:worktree_dir": 6.02,
+    "weak:dot_git": 7.11,
+    "weak:gitdir_HEAD": 7.02,
+    "weak:gitdir_index": 6.02,
+    "reflog_entry": 6.02,
+    "session_dir": 1.2
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/unruffled-varahamihira-bd1df6",
+   "name": "unruffled-varahamihira-bd1df6",
+   "branch": null,
+   "head": "cd853b25ec8af3a9590f5547eeb8e0e108573adf",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.7d < min_age 7d"
+   ],
+   "size_kb": 41252,
+   "age_days": 1.71,
+   "age_sources": {
+    "weak:worktree_dir": 8.01,
+    "weak:dot_git": 8.01,
+    "weak:gitdir_HEAD": 1.71,
+    "weak:gitdir_index": 1.71,
+    "reflog_entry": 1.71,
+    "session_dir": 1.77
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/vigilant-leavitt-f5c272",
+   "name": "vigilant-leavitt-f5c272",
+   "branch": null,
+   "head": "bd7716c9642759f59b602c01d310d5e03e7770ed",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 0.0d < min_age 7d"
+   ],
+   "size_kb": 966548,
+   "age_days": 0.03,
+   "age_sources": {
+    "weak:worktree_dir": 1.88,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 0.03,
+    "weak:gitdir_index": 0.03,
+    "reflog_entry": 0.03,
+    "session_dir": 1.04
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/vol-structure-layout-20260802",
+   "name": "vol-structure-layout-20260802",
+   "branch": "claude/vol-structure-layout-20260802",
+   "head": "e21ff0d2c5238f9491b630a3889d9eb9d9c09e50",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 1.9d < min_age 7d"
+   ],
+   "size_kb": 775808,
+   "age_days": 1.94,
+   "age_sources": {
+    "weak:worktree_dir": 1.96,
+    "weak:dot_git": 1.96,
+    "weak:gitdir_HEAD": 1.96,
+    "weak:gitdir_index": 1.94,
+    "reflog_entry": 1.94
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/watchlist-logo-migration",
+   "name": "watchlist-logo-migration",
+   "branch": "claude/watchlist-logo-migration",
+   "head": "2c1fdfc80017766496c8146a39fe99590eef753e",
+   "verdict": "RECENT",
+   "proof": "",
+   "reasons": [
+    "strong activity 4.8d < min_age 7d"
+   ],
+   "size_kb": 1029672,
+   "age_days": 4.81,
+   "age_sources": {
+    "weak:worktree_dir": 4.81,
+    "weak:dot_git": 4.81,
+    "weak:gitdir_HEAD": 4.81,
+    "weak:gitdir_index": 4.81,
+    "reflog_entry": 4.81
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/zealous-khorana-faed80",
+   "name": "zealous-khorana-faed80",
+   "branch": null,
+   "head": "0d5c71e3b203a892b372757d36df21ec80eb5dbb",
+   "verdict": "UNPUSHED",
+   "proof": "",
+   "reasons": [
+    "HEAD not on origin/main, no merged-PR proof"
+   ],
+   "size_kb": 820736,
+   "age_days": 10.54,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 10.54,
+    "session_dir": 10.54
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/zen-brattain-8b9f8b",
+   "name": "zen-brattain-8b9f8b",
+   "branch": null,
+   "head": "2c61f9fc7f438608dcb7b7ac6e91fe85a71b33bc",
+   "verdict": "UNPUSHED",
+   "proof": "",
+   "reasons": [
+    "HEAD not on origin/main, no merged-PR proof"
+   ],
+   "size_kb": 727152,
+   "age_days": 16.66,
+   "age_sources": {
+    "weak:worktree_dir": 9.99,
+    "weak:dot_git": 9.99,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 16.66,
+    "session_dir": 16.67
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/zen-tereshkova-f83884",
+   "name": "zen-tereshkova-f83884",
+   "branch": "claude/zen-tereshkova-f83884",
+   "head": "8b518d5210f822ca4486d973e5fc906c92622318",
+   "verdict": "DIRTY",
+   "proof": "",
+   "reasons": [
+    "uncommitted changes or untracked files"
+   ],
+   "size_kb": 6472,
+   "age_days": 23.14,
+   "age_sources": {
+    "weak:worktree_dir": 9.98,
+    "weak:dot_git": 9.98,
+    "weak:gitdir_HEAD": 9.98,
+    "weak:gitdir_index": 9.98,
+    "reflog_entry": 29.89,
+    "session_dir": 23.14
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees",
+   "orphan": false
+  },
+  {
+   "path": "/Users/chriswong/Documents/Cluade/charting-app/.claire/worktrees/pass6-p1",
+   "name": "pass6-p1",
+   "branch": null,
+   "head": "",
+   "verdict": "ORPHAN",
+   "proof": "",
+   "reasons": [
+    "directory has no live worktree registration"
+   ],
+   "size_kb": 4,
+   "age_days": 9.99,
+   "age_sources": {
+    "weak:worktree_dir": 9.99
+   },
+   "procs": [],
+   "root": "/Users/chriswong/Documents/Cluade/charting-app/.claire/worktrees",
+   "orphan": true
+  }
+ ]
+}

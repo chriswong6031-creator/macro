@@ -1943,6 +1943,154 @@
   body.page-stocks #dash-mtf-section,
   body.page-stocks #accumulation,
   body.page-stocks #holdings{display:none!important}
+/* ══════════════════════════════════════════════════════════════════════════
+     LIGHT MODE — designed, not inherited (2026-08-03)
+     This board was drawn dark-first and light arrived as a token swap: panel and
+     canvas landed within one step of each other (#f5f5f7 on #eceef1), so the
+     five action lanes stopped being lanes, the gated teasers turned into beige
+     smudges, and the sign-up bands bleached into pastel. Light gets its own
+     three-level depth recipe here:
+
+         canvas #e8ebf1  →  panel #ffffff  →  card / lane wash
+
+     Rules of the port: (1) every selector is guarded on html[data-theme="light"]
+     AND scoped to body.page-stocks, so the dark render stays byte-identical and
+     the macro page is untouched; (2) theme.js injects
+     html.soft-contrast[data-theme="light"] LATE in <head> at specificity (0,2,1)
+     — every rule below clears it on SPECIFICITY, never on source order;
+     (3) directional colour goes through the estate's --ink-* twins so 红涨绿跌
+     still flips; only non-directional state hues (amber) are pinned as hex.
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  /* 1 · canvas — a step deeper than the estate default so white reads as material */
+  html[data-theme="light"] body.page-stocks{ background:#e8ebf1; }
+
+  /* 2 · panels — white material, hairline edge, one soft lift */
+  html[data-theme="light"] body.page-stocks .panel{
+    background:#fff; border-color:#dde2ea;
+    box-shadow:0 1px 2px rgba(23,32,55,.05), 0 8px 24px -12px rgba(23,32,55,.10);
+  }
+  html[data-theme="light"] body.page-stocks #stocks-header{
+    background:
+      radial-gradient(900px 180px at 12% -40%,color-mix(in srgb,var(--link) 9%,transparent),transparent 60%),
+      #fff;
+  }
+  html[data-theme="light"] body.page-stocks .stk-status{ background:#f4f6fa; border-color:#dde2ea; }
+
+  /* 3 · the action board — in light the five lane containers vanished into the
+     panel, so the board read as one undifferentiated list instead of five
+     stances side by side. Each lane gets a wash and an edge in its OWN accent,
+     so the column IS the stance before a single word is read. */
+  html[data-theme="light"] body.page-stocks .actcol{
+    background:color-mix(in srgb, var(--act-accent) 4%, #fff);
+    border-color:color-mix(in srgb, var(--act-accent) 14%, #dde2ea);
+    box-shadow:0 1px 2px rgba(23,32,55,.05), 0 8px 22px -15px rgba(23,32,55,.20);
+  }
+  html[data-theme="light"] body.page-stocks .acth{
+    border-bottom-color:color-mix(in srgb, var(--act-accent) 16%, #dde2ea);
+  }
+  html[data-theme="light"] body.page-stocks .actitem{
+    border-bottom-color:color-mix(in srgb, var(--act-accent) 10%, #e3e8f0);
+  }
+  html[data-theme="light"] body.page-stocks .actitem:hover,
+  html[data-theme="light"] body.page-stocks .actitem:focus{ background:rgba(255,255,255,.72); }
+  html[data-theme="light"] body.page-stocks .actitem.hovered{ background:rgba(255,255,255,.9); }
+
+  /* 4 · gated teasers — a blurred colour chip on white smears into a dirty beige
+     stain. Desaturating first makes the same rows read as what they are: a
+     deliberate skeleton of content that is there, just not yours yet. */
+  html[data-theme="light"] body.page-stocks .mx-tier-blurred{
+    filter:blur(5px) saturate(.35); opacity:.46;
+  }
+
+  /* 5 · RECENTLY FIRED — the "theme just confirmed" row. On ink a warm gradient
+     reads as a whisper; on white the same gradient shouts a cream band across
+     the panel. Light gets the quiet-notice form instead: near-white wash, one
+     amber rail, amber headline. */
+  html[data-theme="light"] body.page-stocks .pbr-r{
+    background:#f7f9fc; border-color:#e3e8f0;
+  }
+  html[data-theme="light"] body.page-stocks .pbr-r.pbr-warm{
+    background:color-mix(in srgb,#b98a2b 7%,#fff);
+    border-color:color-mix(in srgb,#b98a2b 26%,#dde2ea);
+    border-left:3px solid #b98a2b;
+  }
+  html[data-theme="light"] body.page-stocks .pbr-wl{ color:#7a5a14; }
+
+  /* 6 · entry chips — "pullback zone …" + "extended" sat as two abutting heavy
+     tints, reading as one double-highlighted blob. Thinner washes and a hairline
+     ring make them two chips again. The green keeps --ink-up (not a hex) so the
+     红涨绿跌 flip still swaps it to red; amber is a non-directional state hue and
+     is pinned. */
+  html[data-theme="light"] body.page-stocks .ent-good{
+    color:var(--ink-up, var(--up));
+    background:color-mix(in srgb, var(--ink-up, var(--up)) 9%, #fff);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--ink-up, var(--up)) 24%, transparent);
+  }
+  html[data-theme="light"] body.page-stocks .ent-warn{
+    color:#8a6410;
+    background:color-mix(in srgb,#b98a2b 10%,#fff);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,#b98a2b 26%,transparent);
+  }
+
+  /* 7 · the "?" affordance — a filled pill tuned for ink reads as a dark blob on
+     white. It is a hint, not a control: hollow ring, muted glyph. */
+  html[data-theme="light"] body.page-stocks span.help,
+  html[data-theme="light"] body.page-stocks span.help.help-upgraded{
+    background:transparent; color:var(--muted);
+    border:1px solid color-mix(in srgb, var(--muted) 55%, transparent);
+  }
+  html[data-theme="light"] body.page-stocks span.help:hover,
+  html[data-theme="light"] body.page-stocks span.help.help-upgraded:hover{
+    border-color:var(--muted); color:var(--text);
+  }
+
+  /* 8 · the sign-up bands stay DARK ISLANDS. Everything else on this page went
+     white, which is exactly why these two must not: they are the one place the
+     page asks for something, and a pastel band on a white page is furniture.
+     Buttons keep their vivid accent — unchanged from dark. */
+  html[data-theme="light"] body.page-stocks .mx-tier-gate{
+    background:linear-gradient(118deg,#233254 0%,#182034 62%,#151b2c 100%);
+    border-color:#2f3f63;
+    box-shadow:0 18px 44px -26px rgba(20,30,58,.55);
+  }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate--prophet{
+    background:linear-gradient(118deg,#2b2550 0%,#1d1c37 62%,#17172b 100%);
+    border-color:#3b3268;
+  }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate::before{ background:color-mix(in srgb,#8fb4f2 15%,transparent); }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate--prophet::before{ background:color-mix(in srgb,#a996ff 15%,transparent); }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate::after{
+    background:linear-gradient(90deg,transparent,color-mix(in srgb,#8fb4f2 85%,transparent),transparent);
+  }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate--prophet::after{
+    background:linear-gradient(90deg,transparent,color-mix(in srgb,#a996ff 85%,transparent),transparent);
+  }
+  html[data-theme="light"] body.page-stocks .mx-tier-eyebrow{ color:#8fb4f2; }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate--prophet .mx-tier-eyebrow{ color:#a996ff; }
+  html[data-theme="light"] body.page-stocks .mx-tier-mark{
+    background:color-mix(in srgb,#8fb4f2 16%,transparent);
+    border-color:color-mix(in srgb,#8fb4f2 34%,transparent);
+  }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate--prophet .mx-tier-mark{
+    background:color-mix(in srgb,#a996ff 16%,transparent);
+    border-color:color-mix(in srgb,#a996ff 34%,transparent);
+  }
+  html[data-theme="light"] body.page-stocks .mx-tier-copy b{ color:#f2f5fa; }
+  html[data-theme="light"] body.page-stocks .mx-tier-copy small{ color:rgba(224,232,245,.74); }
+  html[data-theme="light"] body.page-stocks .mx-tier-signin{ color:rgba(224,232,245,.66); }
+  html[data-theme="light"] body.page-stocks .mx-tier-signin:hover{ color:#fff; }
+
+  /* 9 · level 3 — the containers that live INSIDE a white panel. They must sit
+     just off white, or the hierarchy collapses back to one flat sheet. */
+  html[data-theme="light"] body.page-stocks .pbt,
+  html[data-theme="light"] body.page-stocks .pbf-bar{
+    background:#f4f6fa; border-color:#e3e8f0;
+  }
+  html[data-theme="light"] body.page-stocks .pbf-bar button[aria-pressed="true"]{
+    background:#fff; border-color:#dde2ea; box-shadow:0 1px 2px rgba(23,32,55,.10);
+  }
+  html[data-theme="light"] body.page-stocks .chip{ border-color:#dde2ea; }
   </style>
   <div class="panel span12" id="stocks-header">
     {% set _stk_hdr_su = us_standouts if (us_standouts is defined and us_standouts) else none %}
@@ -2677,24 +2825,6 @@ body.page-macro .mxqm-eyebrow-chip{margin-left:auto;font-size:9.5px;font-weight:
 body.page-macro #mx5FlipCtxPop .mxfs-badge{display:none}
 body.page-macro .mxqm-glance{font-size:12.5px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.78));margin:2px 0 10px}
 body.page-macro .mxqm-glance b{color:var(--warn,#f59e0b);font-weight:700}
-/* Historical base rate — deliberately quieter than the glance line above it, because it
-   answers a different (and slower) question than today's drift and must never be read as
-   a competing forecast. */
-body.page-macro .mxqm-hist{margin:-4px 0 6px;font-size:11px;line-height:1.45;
-  color:var(--ink-3,rgba(255,255,255,.42))}
-body.page-macro .mxqm-hist b{color:var(--ink-2,rgba(255,255,255,.72));font-weight:650;
-  font-variant-numeric:tabular-nums}
-[data-theme="light"] body.page-macro .mxqm-hist{color:rgba(0,0,0,.6)}
-/* Goldilocks trim (2026-07-20): ONE quiet compressed line (grip + weakest support)
-   replacing the deleted flip-strip section; + one-line footer. */
-body.page-macro .mxqm-hold{display:flex;align-items:baseline;gap:6px;margin:2px 0 4px;
-  font-size:12px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.68))}
-body.page-macro .mxqm-hold-txt b{color:var(--ink-1,rgba(255,255,255,.92));font-weight:650}
-body.page-macro .mxqm-hold .help{flex:0 0 auto}
-[data-theme="light"] body.page-macro .mxqm-hold{color:rgba(0,0,0,.62)}
-body.page-macro .mxqm-foot{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);
-  font-size:10.5px;line-height:1.45;color:var(--ink-3,rgba(255,255,255,.42))}
-[data-theme="light"] body.page-macro .mxqm-foot{color:rgba(0,0,0,.6)}
 body.page-macro .mxqm-wrap{margin:0 0 8px}
 body.page-macro .mxqm-svg-box{width:100%;max-width:300px;margin:0 auto}
 body.page-macro .mxqm-svg-box svg{width:100%;height:auto;display:block;overflow:visible}
@@ -2719,7 +2849,26 @@ body.page-macro .mxqm-axis-label{fill:rgba(255,255,255,.34);font-size:7.5px;lett
    more than Latin at small sizes. #}
 body.page-macro .mxqm-quad-label{fill:rgba(255,255,255,.62);font-size:6.6px;letter-spacing:.04em;font-family:Inter,-apple-system,sans-serif;font-weight:700}
 body.page-macro .mxqm-quad-label.l-zh{font-size:8px;letter-spacing:.06em}
-body.page-macro .mxqm-odds{fill:rgba(255,255,255,.72);font-size:17px;font-weight:800;font-family:Inter,-apple-system,sans-serif;font-variant-numeric:tabular-nums}
+/* The odds numeral carries a HALO so the position dot (drawn beneath it — see the
+   marker-layer note in the SVG) can pass behind the glyphs without eating them.
+   paint-order:stroke fill lays the stroke down first, so the stroke reads as an
+   outline OUTSIDE the letterform instead of thinning it.
+   The halo has to be the colour of the tile it sits on, or it shows up as a glow:
+   each tile is `fill:var(--qN); opacity:.14` (or .42 when active) composited over
+   the popup plate, which color-mix() reproduces exactly. Referencing --qN keeps
+   this correct through both themes AND the zh 红涨绿跌 q1/q3 swap for free. */
+body.page-macro .mxqm-odds{fill:rgba(255,255,255,.72);font-size:17px;font-weight:800;font-family:Inter,-apple-system,sans-serif;font-variant-numeric:tabular-nums;
+  paint-order:stroke fill;stroke-width:3.4;stroke-linejoin:round;
+  stroke:color-mix(in srgb,var(--q1,#2e9e4f) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-odds-q1{stroke:color-mix(in srgb,var(--q1,#2e9e4f) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-odds-q2{stroke:color-mix(in srgb,var(--q2,#d4a017) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-odds-q3{stroke:color-mix(in srgb,var(--q3,#d04545) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-odds-q4{stroke:color-mix(in srgb,var(--q4,#3f78d8) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+/* active tile = the .42 fill, and the ONLY tile the dot can ever land in */
+body.page-macro .mxqm-odds-q1.active{stroke:color-mix(in srgb,var(--q1,#2e9e4f) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-odds-q2.active{stroke:color-mix(in srgb,var(--q2,#d4a017) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-odds-q3.active{stroke:color-mix(in srgb,var(--q3,#d04545) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-odds-q4.active{stroke:color-mix(in srgb,var(--q4,#3f78d8) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
 body.page-macro .mxqm-odds.active{fill:#fff}
 body.page-macro .mxqm-dot{fill:var(--warn,#f59e0b);stroke:rgba(255,255,255,.92);stroke-width:1.5}
 body.page-macro .mxqm-pulse{fill:var(--warn,#f59e0b);opacity:.4;transform-box:fill-box;transform-origin:center;animation:mxqmPulse 2.4s ease-out infinite}
@@ -2775,6 +2924,11 @@ body.page-macro.mx4-grid .mx5-flipctx-pop{
      deleted, weakest+grip compressed to one line), so the scroll cap + bottom fade are
      removed per Fable's "a hover popup must never scroll" ruling. */
   background:var(--mx5-pop-bg,rgba(16,21,30,.97));
+  /* the plate the quad tiles composite over — the quad-map numeral halo mixes its
+     tile hue into this to land on the tile's exact colour. Kept as its own token
+     because the light theme overrides `background` with a literal below rather
+     than re-pointing --mx5-pop-bg, so the halo cannot read the background. */
+  --mxqm-plate:var(--mx5-pop-bg,rgba(16,21,30,.97));
   border:1px solid var(--mx5-glass-border,rgba(255,255,255,.12));
   border-radius:14px;
   box-shadow:0 18px 48px rgba(0,0,0,.5);
@@ -2783,6 +2937,7 @@ body.page-macro.mx4-grid .mx5-flipctx-pop{
 }
 [data-theme="light"] body.page-macro.mx4-grid .mx5-flipctx-pop{
   background:#fff;
+  --mxqm-plate:#fff;
   border-color:rgba(0,0,0,.12);
   box-shadow:0 18px 48px rgba(20,30,50,.18);
 }
@@ -7080,29 +7235,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <rect class="mxqm-q4-fill{% if _qm_hard == 'Q4' %} active{% endif %}" x="5" y="80" width="65" height="65" rx="8"/>
               {# Q1 Goldilocks bottom-right #}
               <rect class="mxqm-q1-fill{% if _qm_hard == 'Q1' %} active{% endif %}" x="80" y="80" width="65" height="65" rx="8"/>
-              {# Quad labels (top of each tile) + odds numeral (centre) — bilingual via
-                 l-en/l-zh (the toggle works on SVG <text>; NO t() inside <text>). #}
-              {# Q3 Stagflation #}
-              <text class="mxqm-quad-label l-en" x="37.5" y="24" text-anchor="middle">STAGFLATION</text>
-              <text class="mxqm-quad-label l-zh" x="37.5" y="24" text-anchor="middle">滞胀</text>
-              {% if _p_q3 is not none %}<text class="mxqm-odds{% if _qm_hard == 'Q3' %} active{% endif %}" x="37.5" y="52" text-anchor="middle">{{ _p_q3 }}%</text>{% endif %}
-              {# Q2 Reflation #}
-              <text class="mxqm-quad-label l-en" x="112.5" y="24" text-anchor="middle">REFLATION</text>
-              <text class="mxqm-quad-label l-zh" x="112.5" y="24" text-anchor="middle">再通胀</text>
-              {% if _p_q2 is not none %}<text class="mxqm-odds{% if _qm_hard == 'Q2' %} active{% endif %}" x="112.5" y="52" text-anchor="middle">{{ _p_q2 }}%</text>{% endif %}
-              {# Q4 Growth-scare #}
-              <text class="mxqm-quad-label l-en" x="37.5" y="99" text-anchor="middle">GROWTH-SCARE</text>
-              <text class="mxqm-quad-label l-zh" x="37.5" y="99" text-anchor="middle">增长恐慌</text>
-              {% if _p_q4 is not none %}<text class="mxqm-odds{% if _qm_hard == 'Q4' %} active{% endif %}" x="37.5" y="127" text-anchor="middle">{{ _p_q4 }}%</text>{% endif %}
-              {# Q1 Goldilocks #}
-              <text class="mxqm-quad-label l-en" x="112.5" y="99" text-anchor="middle">GOLDILOCKS</text>
-              <text class="mxqm-quad-label l-zh" x="112.5" y="99" text-anchor="middle">理想增长</text>
-              {% if _p_q1 is not none %}<text class="mxqm-odds{% if _qm_hard == 'Q1' %} active{% endif %}" x="112.5" y="127" text-anchor="middle">{{ _p_q1 }}%</text>{% endif %}
-              {# Axis labels — bilingual; kept subtle at the edges #}
-              <text class="mxqm-axis-label l-en" x="75" y="160" text-anchor="middle">growth →</text>
-              <text class="mxqm-axis-label l-zh" x="75" y="160" text-anchor="middle">增长 →</text>
-              <text class="mxqm-axis-label l-en" x="-2" y="75" dominant-baseline="middle" text-anchor="middle" transform="rotate(-90 -2 75)">infl ↑</text>
-              <text class="mxqm-axis-label l-zh" x="-2" y="75" dominant-baseline="middle" text-anchor="middle" transform="rotate(-90 -2 75)">通胀 ↑</text>
+              {# ── MARKER LAYER FIRST, TEXT SECOND — order is load-bearing ──────────
+                 SVG has no z-index; paint order IS document order. The position dot
+                 always lands in the ACTIVE quad, i.e. the same tile that carries the
+                 largest odds numeral, so the two collide by construction rather than
+                 by accident — it shipped as an amber smudge sitting across the "96%".
+                 Drawing the marker before the numerals, and giving the numerals a
+                 halo in their own tile's colour (.mxqm-odds below), keeps the number
+                 readable wherever growth/inflation put the dot. Moving these three
+                 elements back below the <text> re-breaks it. #}
               {# Drift arrow toward gaining quad (animated dash-draw) #}
               {% if _show_arrow %}
               <line class="mxqm-arrow" x1="{{ _dot_x }}" y1="{{ _dot_y }}" x2="{{ _arr_ex }}" y2="{{ _arr_ey }}"/>
@@ -7110,76 +7251,35 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               {# Current position — soft pulse ring behind a bright dot #}
               <circle class="mxqm-pulse" cx="{{ _dot_x }}" cy="{{ _dot_y }}" r="5"/>
               <circle class="mxqm-dot" cx="{{ _dot_x }}" cy="{{ _dot_y }}" r="4.5"/>
+              {# Quad labels (top of each tile) + odds numeral (centre) — bilingual via
+                 l-en/l-zh (the toggle works on SVG <text>; NO t() inside <text>).
+                 The per-quad mxqm-odds-qN class carries the halo colour: the halo has
+                 to match the tile it sits on, and each tile is a different hue. #}
+              {# Q3 Stagflation #}
+              <text class="mxqm-quad-label l-en" x="37.5" y="24" text-anchor="middle">STAGFLATION</text>
+              <text class="mxqm-quad-label l-zh" x="37.5" y="24" text-anchor="middle">滞胀</text>
+              {% if _p_q3 is not none %}<text class="mxqm-odds mxqm-odds-q3{% if _qm_hard == 'Q3' %} active{% endif %}" x="37.5" y="52" text-anchor="middle">{{ _p_q3 }}%</text>{% endif %}
+              {# Q2 Reflation #}
+              <text class="mxqm-quad-label l-en" x="112.5" y="24" text-anchor="middle">REFLATION</text>
+              <text class="mxqm-quad-label l-zh" x="112.5" y="24" text-anchor="middle">再通胀</text>
+              {% if _p_q2 is not none %}<text class="mxqm-odds mxqm-odds-q2{% if _qm_hard == 'Q2' %} active{% endif %}" x="112.5" y="52" text-anchor="middle">{{ _p_q2 }}%</text>{% endif %}
+              {# Q4 Growth-scare #}
+              <text class="mxqm-quad-label l-en" x="37.5" y="99" text-anchor="middle">GROWTH-SCARE</text>
+              <text class="mxqm-quad-label l-zh" x="37.5" y="99" text-anchor="middle">增长恐慌</text>
+              {% if _p_q4 is not none %}<text class="mxqm-odds mxqm-odds-q4{% if _qm_hard == 'Q4' %} active{% endif %}" x="37.5" y="127" text-anchor="middle">{{ _p_q4 }}%</text>{% endif %}
+              {# Q1 Goldilocks #}
+              <text class="mxqm-quad-label l-en" x="112.5" y="99" text-anchor="middle">GOLDILOCKS</text>
+              <text class="mxqm-quad-label l-zh" x="112.5" y="99" text-anchor="middle">理想增长</text>
+              {% if _p_q1 is not none %}<text class="mxqm-odds mxqm-odds-q1{% if _qm_hard == 'Q1' %} active{% endif %}" x="112.5" y="127" text-anchor="middle">{{ _p_q1 }}%</text>{% endif %}
+              {# Axis labels — bilingual; kept subtle at the edges #}
+              <text class="mxqm-axis-label l-en" x="75" y="160" text-anchor="middle">growth →</text>
+              <text class="mxqm-axis-label l-zh" x="75" y="160" text-anchor="middle">增长 →</text>
+              <text class="mxqm-axis-label l-en" x="-2" y="75" dominant-baseline="middle" text-anchor="middle" transform="rotate(-90 -2 75)">infl ↑</text>
+              <text class="mxqm-axis-label l-zh" x="-2" y="75" dominant-baseline="middle" text-anchor="middle" transform="rotate(-90 -2 75)">通胀 ↑</text>
             </svg>
           </div>
         </div>
-        {# ── TWO DIFFERENT "next quad" READINGS, named apart ────────────────────────
-           quad_vector.transition_momentum (the glance line + the arrow above) is where
-           TODAY's model odds are moving. playbook.next_quad / next_list is a HISTORICAL
-           BASE RATE — which quad followed this one in the past — and it routinely points
-           the other way. Unlabelled, side by side, they read as one contradictory claim,
-           so each names the question it answers. Guarded: no playbook, no row. #}
-        {% set _qm_nx = (pb.next_list if (pb is defined and pb and pb.next_list) else []) %}
-        {% if _qm_nx %}
-        <div class="mxqm-hist">
-          <span class="l-en">After past {{ _qm_hard_en }}s: {% for _n in _qm_nx[:3] %}{{ _qm_quad.get(_n.code, [_n.name, _n.name])[0] }} <b>{{ _n.prob_pct }}</b>{% if not loop.last %}, {% endif %}{% endfor %}.</span>
-          <span class="l-zh">历史上{{ _qm_hard_zh }}之后：{% for _n in _qm_nx[:3] %}{{ _qm_quad.get(_n.code, [_n.name, _n.name])[1] }} <b>{{ _n.prob_pct }}</b>{% if not loop.last %}、{% endif %}{% endfor %}。</span>
-        </div>
-        {% endif %}
         {% endif %}{# /_qm_hard #}
-        {# ── Goldilocks trim (Fable ruling 2026-07-20): a hover popup must never scroll.
-           The old "WHAT COULD CHANGE THE REGIME CALL" section (regime_flip_strip) + its
-           Drift row are DELETED here (the lead line + animated quad-map arrow already
-           carry drift twice). Weakest-support + grip COMPRESS into ONE quiet line, built
-           from the same flip_condition / confidence fields, null-safe. The mechanics
-           receipt (grip fraction, drift sessions) lives in one plain ? tip on this line.
-           regime_flip_strip stays defined — still called by the ledger hero (~L6485). #}
-        {%- set _gk_fc = latest.get('flip_condition') or {} %}
-        {%- set _gk_qv = latest.get('quad_vector') or {} %}
-        {%- set _gk_tm = (_gk_qv.get('transition_momentum') or {}) if not _gk_qv.get('degraded') else {} %}
-        {%- set _gk_conf = latest.get('confidence') %}
-        {#- weakest-support leg → plain name (compact mirror of regime_flip_strip's _fs_short) -#}
-        {%- set _gk_short = {
-          'copper_gold':['copper vs gold','铜对黄金'],'xly_xlp':['the shopper-confidence read','消费信心读数'],
-          'us2y_direction':['the 2-year yield','2年期收益率'],'iwm_spy':['small caps','小盘股'],
-          'cyclical_defensive':['cyclical vs defensive sectors','周期性板块'],'breadth_direction':['market breadth','市场广度'],
-          'payrolls_trend':['payrolls','非农就业'],'indpro_trend':['industrial production','工业生产'],
-          'breakeven_10y_direction':['10-yr inflation expectations','10年期通胀预期'],
-          'breakeven_5y5y_direction':['long-run inflation expectations','长期通胀预期'],
-          'energy_rs':['the energy sector','能源板块'],'oil_trend':['oil','原油'],
-          'inflation_beta_basket':['the inflation-winners basket','通胀受益篮子'],
-          'tips_nominal_momentum':['the TIPS spread','TIPS 利差'] } %}
-        {#- the weakest-support clause is SUPPRESSED when the label's own axes no longer
-            support it: there is no supporting component to name, and the glance rows
-            popup above already says what the axes read (see raw_quad_of()).
-            The engine returns component=None in that state; an older payload does not,
-            so the same check runs here. -#}
-        {%- set _gk_raw = raw_quad_of(latest) | trim %}
-        {%- set _gk_unsup = (_gk_fc.get('label_unsupported') is sameas true)
-                            or (latest.get('quad') and _gk_raw and _gk_raw != latest.get('quad')) %}
-        {%- set _gk_comp = none if _gk_unsup else _gk_fc.get('component') %}
-        {%- set _gk_cname = _gk_short.get(_gk_comp, [(_gk_comp | replace('_',' ')), (_gk_comp | replace('_',' '))]) if _gk_comp else none %}
-        {#- grip word from confidence (matches regime_flip_strip mapping) -#}
-        {%- set _gk_has_conf = (_gk_conf is not none and _gk_conf is number) %}
-        {%- set _gk_grip_en = ('held loosely' if _gk_conf < 0.33 else ('held reasonably firm' if _gk_conf < 0.66 else 'held firmly')) if _gk_has_conf else none %}
-        {%- set _gk_grip_zh = ('把握较松' if _gk_conf < 0.33 else ('把握尚可' if _gk_conf < 0.66 else '把握较稳')) if _gk_has_conf else none %}
-        {#- build the ? receipt tip (plain, short) from grip fraction + drift session count -#}
-        {%- set _gk_rc_bits_en = [] %}
-        {%- set _gk_rc_bits_zh = [] %}
-        {%- if _gk_has_conf %}{%- set _ = _gk_rc_bits_en.append('conviction ' ~ (_gk_conf | round(2)) ~ ' / 1') %}{%- set _ = _gk_rc_bits_zh.append('把握 ' ~ (_gk_conf | round(2)) ~ ' / 1') %}{%- endif %}
-        {%- if _gk_fc.get('margin') is not none %}{%- set _ = _gk_rc_bits_en.append('cushion ' ~ (_gk_fc.margin | round(2))) %}{%- set _ = _gk_rc_bits_zh.append('缓冲 ' ~ (_gk_fc.margin | round(2))) %}{%- endif %}
-        {%- if _gk_tm.get('window_sessions') %}{%- set _ = _gk_rc_bits_en.append('drift measured over ' ~ _gk_tm.window_sessions ~ ' sessions') %}{%- set _ = _gk_rc_bits_zh.append('漂移基于近 ' ~ _gk_tm.window_sessions ~ ' 个交易日') %}{%- endif %}
-        {% if _gk_grip_en or _gk_cname %}
-        <div class="mxqm-hold">
-          <span class="mxqm-hold-txt">
-            <span class="l-en">{% if _gk_grip_en %}{{ _gk_grip_en|capitalize }}{% endif %}{% if _gk_grip_en and _gk_cname %}. {% endif %}{% if _gk_cname %}Weakest leg: <b>{{ _gk_cname[0] }}</b>{% endif %}.</span>
-            <span class="l-zh">{% if _gk_grip_zh %}{{ _gk_grip_zh }}{% endif %}{% if _gk_grip_zh and _gk_cname %}。{% endif %}{% if _gk_cname %}最弱一环：<b>{{ _gk_cname[1] }}</b>{% endif %}。</span>
-          </span>
-          {% if _gk_rc_bits_en %}{{ help(_gk_rc_bits_en|join(' · '), _gk_rc_bits_zh|join(' · ')) }}{% endif %}
-        </div>
-        {% endif %}
-        {# Footer — one line, kept (Fable ruling). #}
-        <div class="mxqm-foot"><span class="l-en">Describes the label, not the risk score.</span><span class="l-zh">描述的是周期标签，而非风险评分。</span></div>
       </div>
       </div>{# /mx5-flipctx-anchor #}
 
@@ -15394,14 +15494,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {%- endif %}
     <script type="application/json" id="plv-names">{{ _plv_nm | tojson }}</script>
     {% endif %}
-    {#- THEME TAPE (W2) — sits directly above the board because that is the reading
-        order the panel exists to create: here is what the market is heating, here is
-        what these picks do with it, here are the picks. It is deliberately NOT a
-        second "themes in favour" strip: that one lives inside the board below, is
-        driven by board names, and by design drops a theme with no names on it — the
-        exact silence this panel prints. Own guard, so the placement survives any
-        re-nesting of the block above. Renders nothing on a dead tape. -#}
-    {% if mode == 'stocks' %}{% include "_theme_tape.html.j2" %}{% endif %}
     {% if _su or action_board.notable %}
     <div class="panel span12 notable" id="us-standouts">
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
@@ -15755,6 +15847,17 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% if (_vs_fired or n.get('alpha_entry') == 'extended') and _entry_ok %}{% set _fl.rows = _fl.rows + [("Already moving. Don't chase above the buy zone.", '已在异动。不要在买区上方追高。')] %}{% endif %}
         {% if n.get('ext_z') is not none and n.ext_z > 2.0 %}{% set _fl.rows = _fl.rows + [('Stretched unusually far above its trend line, so chasing is risky.', '远高于趋势线，追高风险较大。')] %}{% endif %}
         {% if n.get('antichase_shadow_blocked') %}{% set _fl.rows = _fl.rows + [('Parabolic tail. Treat any entry here as a chase.', '处于抛物线尾部。此处入场应视同追高。')] %}{% endif %}
+        {# ── COPY FENCE: the two rows ABOVE are the ext_z anti-chase read (px/SMA200
+             z-scored).  The "Blow-off risk" chip built in the marks row BELOW is a
+             SEPARATE, separately-measured construction (12-session ROC at its own
+             trailing p99 inside a burst-mover uptrend, engine/roc_blowoff.py), and the
+             battery's PM4 redundancy read puts max |rho| between them at 0.43 — so both
+             can legitimately fire on one card.  Because they can co-render, the blow-off
+             chip must NEVER use the bare word "Extended": that word already belongs to
+             the ext_z family here and in engine/stock_score.py's conviction verdict, and
+             two different measurements wearing one word is how a card starts arguing with
+             itself.  "Blow-off risk" / 冲顶风险 is the label; the numbers in its hover are
+             ITS OWN measured rates, never the ext_z ones. #}
         {% set _es_chip = n.get('earnings_soon') %}
         {% if _es_chip and _es_chip.get('days_to') is not none %}{% set _fl.rows = _fl.rows + [(_es_chip.get('chip_en') or ('Earnings in ' ~ _es_chip.days_to ~ 'd'), _es_chip.get('chip_zh') or ('财报还有' ~ _es_chip.days_to ~ '天'))] %}{% endif %}
         {% if n.get('sector_stance') and n.sector_stance in ('Reduce','Cautious') %}{% set _fl.rows = _fl.rows + [('Sector stance is ' ~ n.sector_stance|lower ~ '. This is a single-stock trigger, not a sector call.', '板块态度为' ~ (n.sector_stance_zh or n.sector_stance) ~ '。个股信号，非板块判断。')] %}{% endif %}
@@ -15777,6 +15880,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
              ranking_block, featured_requirements). "Above the board's midpoint" described
              a cross-sectional test the engine never runs, and on a weak board it would
              have promised the opposite of what the gate actually does. #}
+          {# Blow-off risk FIRST: it is the only risk read in this row, and a marks row
+             wraps — buried behind a theme name it would be the one chip a reader misses.
+             Display-only (engine/us_board_rank.ZERO_SCORE_AUTHORITY carries blowoff_risk);
+             see the copy fence above for why it never says "Extended". #}
+          {% if (n.get('blowoff') or {}).get('blowoff_risk') %}{% set _mk.rows = _mk.rows + [{'k':'blow','en':'Blow-off risk','zh':'冲顶风险',
+            'tip_en':'12-day move at its own 1-in-100 extreme near highs. Historically within 5 sessions of a local top 24% of the time (vs 19% base); next-21-session drawdowns ran ~2.5pp deeper. 3 of 4 such extremes are still not the top — risk context, not a sell signal.',
+            'tip_zh':'12日涨幅处于自身历史百分之一的极值，且贴近高点。历史上此类情形有24%在5个交易日内就是局部顶部（基准19%）；其后21个交易日的回撤中位数深约2.5个百分点。四次中仍有三次并非顶部——这是风险背景，不是卖出信号。'}] %}{% endif %}
           {% if _feat %}{% set _mk.rows = _mk.rows + [{'k':'feat','en':'★ Featured','zh':'★ 精选',
             'tip_en':'One of today’s top picks: the signal is fresh, the entry window is open, edge above zero (an absolute floor) and price is not extended. Capped at 12 names and 4 per sector, so fewer can show. Priority order, not a return forecast.',
             'tip_zh':'今日重点之一：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、价格未过度拉伸。全板最多12只、每个板块最多4只，因此可能更少。这是排序，不是收益预测。'}] %}{% endif %}
@@ -15811,8 +15921,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% set _mk_slot = _mk.rows if _sg.any else none %}
         {% set _bz = es.buy_zone if es else none %}
         {% set _zk = ('readd' if _verb == 'hold' else ('active' if _verb in ('buy','near') else 'muted')) if (_bz and _bz.high is not none) else ('confirm' if _verb in ('wait','near') else 'none') %}
-        {% set _tip_en = ((c.verdict if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline if es else '')) %}
-        {% set _tip_zh = ((c.verdict_zh if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline_zh if es else '')) %}
         {# ⚡ fresh-trigger chip: kind from the setups row's own signal tier (T3 = imminent,
            else fired). Tips are plain strings (attribute-safe — no t() in attrs). The verb
            stays the ruling stance; the tip says so for the Wait+⚡ case. #}
@@ -15827,7 +15935,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           'href': 'stock.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'us',
           'name': n.name, 'sec': n.sector, 'sec_zh': tr(n.sector),
           'price_txt': ('$' ~ ('%.2f'|format(n.price))) if n.get('price') is not none else none,
-          'verb': _verb, 'tip_en': _tip_en, 'tip_zh': _tip_zh,
+          'verb': _verb,
           'edge': (('%.0f'|format(_prs)) if _prs is not none
                    else (c.score_edge if (c and c.score_edge is defined and c.score_edge is not none) else none)),
           'edge_label_en': ('Priority' if _prs is not none else 'Edge'),
@@ -16197,6 +16305,20 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     })();
     </script>
     {% endif %}
+    {#- THEME TAPE (W2) — relocated BELOW the board (operator order 2026-08-04,
+        "it's obstructing this entire page"). It shipped above the board to build a
+        reading order — here is what the market is heating, here is what these picks
+        do with it, here are the picks — but at 692px it put the product two full
+        screens down to set up a panel that ranks, gates and sizes nothing. Context
+        that changes no decision reads AFTER the decision it contextualises; the
+        two-speed tape band below made the same move for the same reason
+        (operator order 2026-07-11).
+        It is still deliberately NOT a second "themes in favour" strip: that one
+        lives inside the board above, is driven by board names, and by design drops
+        a theme with no names on it — the exact silence this panel prints. Own
+        guard, so the placement survives any re-nesting of the block above. Renders
+        nothing on a dead tape. -#}
+    {% if mode == 'stocks' %}{% include "_theme_tape.html.j2" %}{% endif %}
     {# TS-U3: Two-speed tape band (mode=stocks only; client-side from live/basket_pulse.json).
        Self-labeling .dtp idiom; relocated BELOW the standout stocks panel
        (operator order 2026-07-11). Carries its own panel chrome; stays hidden

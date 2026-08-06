@@ -19,7 +19,7 @@ Siblings: `research/US_BOARD_MEASUREMENT.md` (the evidence), `engine/china_board
   `buy_now/partial` card.
 - **G0.2 — Featured works on both boards.** US: featured rows = the CN-mirrored requirements
   (§3.4) with sector cap 4 / board cap 12, flagged `featured: true` + glow treatment; buy-lane
-  MEMBERSHIP unchanged (featured is a flag + order, never a population change — DNR §1 row 49
+  MEMBERSHIP unchanged (featured is a flag + order, never a population change — DNR:KILL-PROPHET-POP-MERGE
   fence). CN: featured (6 today) and `more_actionable` (105) render in ONE grid, same full card
   idiom, featured glowing on top, score-ordered — the second-class "More live setups" compact
   list is deleted.
@@ -87,7 +87,7 @@ Siblings: `research/US_BOARD_MEASUREMENT.md` (the evidence), `engine/china_board
 
 | Registry row / ruling | Why this program is outside its fence |
 |---|---|
-| DNR §1 row 49 — Top-setups data merge / "single blended conviction×timing ranking" FORBIDDEN | No setups.json population enters the graded board; buy MEMBERSHIP rule byte-identical; featured = flag + order within buy. The priority score is CN-class display ordering ("priority heuristic", zero return-forecast claim), and within-stage ordering is EDGE-led per the measurement — not the killed conviction×timing return-blend. |
+| DNR:KILL-PROPHET-POP-MERGE — Top-setups data merge / "single blended conviction×timing ranking" FORBIDDEN | No setups.json population enters the graded board; buy MEMBERSHIP rule byte-identical; featured = flag + order within buy. The priority score is CN-class display ordering ("priority heuristic", zero return-forecast claim), and within-stage ordering is EDGE-led per the measurement — not the killed conviction×timing return-blend. |
 | Phase-0 timing-blend null (`reports/setup-score-phase0.md`) | Honoured, not re-opened: timing decides stage GROUPING (eligibility class), alpha decides order within stage. No claim that the blend ranks returns. |
 | Mag-7 forced-call kill (row 117) | Leaders v2 is engine-derived (momentum + structure gates + theme boost from the nightly baskets engine), display-tier, stance "watch — don't chase", forward-graded. No operator-pinned directional call. Mag-7 names may appear only by passing the same engine rules ("plain data display… allocation's own 200d-gated sleeve stays lawful"). |
 | Ignition Radar suspension (row 149) | No "igniting/#N theme" claims. Theme chips restate the existing baskets board's reco (its own governed surface) as per-card context. |

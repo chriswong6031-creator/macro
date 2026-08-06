@@ -536,3 +536,38 @@ class TestComposeHero:
             # differ from the raw regime key in at least some cases
             pass  # relaxed check: just ensure non-empty line
         assert len(line_en) > 10
+
+
+class TestComposeHeroTurnWatch:
+    def _contract(self, turn_watch=None):
+        rates = {"regime": "restrictive", "direction": "rising"}
+        if turn_watch is not None:
+            rates["turn_watch"] = turn_watch
+        return {"state": {"rates": rates,
+                          "inflation": {"regime": "above target", "direction": "cooling"},
+                          "expectations": {"anchoring": "anchored"}}}
+
+    def test_extreme_watch_moves_stance_not_state(self):
+        hero = compose_hero(self._contract("extreme_watch"), None)
+        assert hero["rates"]["state"]["en"] == "High & rising"       # honest: it IS rising
+        assert hero["rates"]["stance"]["en"] == "At a 5-yr extreme — watching for a turn"
+        assert hero["rates"]["stance"]["zh"] == "处于5年极值 — 关注拐点"
+
+    def test_rolldown_forming_overrides_state_and_stance(self):
+        hero = compose_hero(self._contract("rolldown_forming"), None)
+        assert hero["rates"]["state"]["en"] == "High but rolling down"
+        assert hero["rates"]["state"]["zh"] == "高位回落中"
+        assert hero["rates"]["stance"]["en"] == "Turn forming — watch, don't chase"
+        # the one-line verdict inherits the overridden state words
+        assert "high but rolling down" in hero["line"]["en"].lower()
+        assert "高位回落中" in hero["line"]["zh"]
+
+    def test_absent_turn_watch_is_era_stable(self):
+        base = compose_hero(self._contract(None), None)
+        assert base["rates"]["state"]["en"] == "High & rising"
+        assert base["rates"]["stance"]["en"] == "Headwind building — watch"
+
+    def test_unknown_turn_watch_value_is_ignored(self):
+        hero = compose_hero(self._contract("some_future_state"), None)
+        assert hero["rates"]["state"]["en"] == "High & rising"
+        assert hero["rates"]["stance"]["en"] == "Headwind building — watch"

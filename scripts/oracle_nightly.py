@@ -1029,12 +1029,17 @@ def _step_turn_desk(
         episodes_path = data_dir / "oracle" / "episodes_s.parquet"
         rg_path = data_dir / "oracle" / "rotation_groups.json"
 
+        # Skip returns MUST carry the documented 4-tuple shape: main() unpacks
+        # `td_ok, td_armed, td_panel_asof, td_all_dates = _step_turn_desk(...)`, so a
+        # bare `False` raises TypeError from the CALLER and kills Steps 16-19 (2026-08-05
+        # nightly, run 30960328285: the "skipping" annotation printed and the pipeline
+        # crashed anyway). Mirror the except-handler sentinel below.
         if not panel_path.exists():
             _annotation("oracle_nightly: turn_desk — panel_s.parquet missing, skipping")
-            return False
+            return False, [], "", []
         if not episodes_path.exists():
             _annotation("oracle_nightly: turn_desk — episodes_s.parquet missing, skipping")
-            return False
+            return False, [], "", []
 
         panel_raw = _pd.read_parquet(panel_path)
         episodes_df = _pd.read_parquet(episodes_path)
@@ -1292,7 +1297,11 @@ def _step_turn_desk(
             return True
 
         if not _check_banned_keys_recursive(payload, "payload"):
-            return False
+            # Same 4-tuple contract as the missing-input skips above: the banned-key
+            # sweep refuses the artifact, it does NOT hand the caller a bare bool.
+            # `armed` is withheld too — Step 17 must not stamp windows off a payload
+            # this sweep just rejected.
+            return False, [], "", []
 
         # ── 9. Stamp + write artifact ──
         artifact_path = site_dir / "basketdata" / "oracle_turn_desk.json"

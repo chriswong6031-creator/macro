@@ -622,6 +622,12 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
             "prophet_reversal_member": (
                 (_pr.get("components") or {}).get("reversal_member")
             ),
+            # V3 R2: the theme_timing component must persist or its per-leg
+            # attribution and the G0.8 bucket tripwire read a disclosed null
+            # forever (flagged by the rank-effectiveness build, PR #4570).
+            "prophet_theme_timing": (
+                (_pr.get("components") or {}).get("theme_timing")
+            ),
             "tier": sig.get("tier_cascade"),
             "setup": r.get("setup"),
             "extended": bool(ext.get("extended")),
@@ -811,6 +817,10 @@ WATCH_DEFINITIONS = frozenset({
     # v3-vs-v2 race runs from merge day with v3 live.  It is a challenger cohort,
     # never the headline record — excluding it here is what makes that safe.
     "cn_prophet_v2_shadow",
+    # W-C: the §2.7 never-eligible continuation cohort accrues its own forward
+    # record (engine/china_continuation_watch.py).  Shadow accrual with no
+    # display surface — it must never own a headline grade.
+    "cn_continuation_watch_v1",
 })
 
 

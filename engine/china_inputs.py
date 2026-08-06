@@ -111,9 +111,15 @@ def build_features() -> pd.DataFrame:
     for col in ["pct_above_50", "pct_above_200", "nh", "nl", "ad_line"]:
         put(col, br[col] if (br is not None and col in br.columns) else None)
 
-    # --- Stock Connect (context; northbound direction frozen since 2024-08-16) --
+    # --- Stock Connect (context; northbound direction retired since 2024-08-16) --
     # The `china_connect` store holds raw daily net per leg; cumulate here. Southbound
-    # is live; northbound_cum freezes flat after 2024-08-16 (no NET disclosed beyond that).
+    # is live. Northbound net/buy/sell were ALL retired after 2024-08-16 (the Apr-2024
+    # CSRC rule change ended daily flow disclosure — buy and sell died with net, not
+    # just net), so `net` is entirely null beyond that date. No reader change is
+    # needed: dropna() drops the null tail before cumsum, and ffill_limit=5 then stops
+    # carrying the frozen level, so northbound_cum self-truncates ~2024-08-23 instead
+    # of extending a flat line to today. The pre-2024 history is kept because it is
+    # still informative. Northbound `turnover` is unaffected and still daily.
     for cum, leg in [("southbound_cum", "southbound"), ("northbound_cum", "northbound")]:
         cf = store.read("china_connect", leg)
         if cf is not None and "net" in cf.columns:

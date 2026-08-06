@@ -3307,6 +3307,32 @@ def strip_scaffolding(plan: dict) -> dict:
     return out
 
 
+def _next_chart_id(root: str | Path | None, today: str) -> int:
+    """First chart id free in today's media directory. 1 when it is empty.
+
+    `chart_id` is the whole key: media_publish writes
+    ``data/marketing/outbox/media/<as_of>/<chart_id>.svg`` and uploads the PNG to
+    the matching public path. That namespace is per-DAY, so a counter that
+    restarts at 1 makes the second run of a day overwrite the first run's charts
+    — see the call site for the live $DVN/RMBS defect this exists to stop.
+
+    Reads only the FILENAMES, never the files: this runs before any chart is
+    rendered and must not cost a directory-sized read. Anything that is not
+    ``chart-<int>`` is ignored rather than guessed at, and any OSError degrades
+    to 1 (a fresh day, a fresh checkout, or a host with no media dir yet).
+    """
+    try:
+        media_dir = Path(root or ".") / "data" / "marketing" / "outbox" / "media" / today
+        highest = 0
+        for entry in media_dir.iterdir():
+            m = re.fullmatch(r"chart-(\d+)", entry.stem)
+            if m:
+                highest = max(highest, int(m.group(1)))
+        return highest + 1
+    except (OSError, ValueError):
+        return 1
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # content_plan — the full §2.3 artifact
 # ─────────────────────────────────────────────────────────────────────────────
@@ -3667,7 +3693,26 @@ def content_plan(
     # decides; raster_plan_media prunes the rest back out of the artifact.
 
     featured_charts: list[dict] = []
-    chart_id_counter = 1
+    # RESUME ABOVE WHAT TODAY ALREADY HOLDS — do not restart at 1.
+    #
+    # THE DEFECT (live, 2026-08-05): a $DVN post on the flagship carried an RMBS
+    # chart. The outbox item was correct (ticker DVN, chart-088); the FILE was
+    # not. `chart_id` is minted from this counter, and media_publish keys BOTH
+    # the local artifact and the R2 object on `<as_of>/<chart_id>` — a per-DAY
+    # namespace. This counter restarted at 1 on every run, so the second
+    # content_studio run of a day re-minted chart-001, chart-002 ... and
+    # overwrote the first run's files at the same paths and the same public
+    # URLs. Proven from git: chart-088.svg was committed as DVN at 09:38Z and
+    # rewritten as RMBS at 16:34Z, same path, same day. Items queued by the
+    # earlier run keep their URL and silently start serving another company's
+    # chart. An audit of every single-ticker card since 08-01 found a second
+    # instance nobody caught: 08-01 meagan posted $AMCR over an AMZN chart.
+    #
+    # Resuming above the highest id already on disk makes the namespace
+    # append-only for the day, so a later run can never land on an earlier
+    # run's key. Fail-soft: an unreadable/absent directory just starts at 1,
+    # which is the historical behaviour and is correct for the first run.
+    chart_id_counter = _next_chart_id(root, today)
 
     # Director fact packets, keyed (TICKER, timeframe_hint) — one name charted
     # for three desks computes its facts once. See `_director_chart`.
