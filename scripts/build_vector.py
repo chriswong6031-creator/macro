@@ -16,6 +16,7 @@ import os
 import re
 import sys
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -1710,11 +1711,50 @@ _ZH_HALF_TRANSLATED_RULES = frozenset({
     "sector_holdings_accumulation",
 })
 
+# Same treatment, but the rule id is per-tripwire ("cycle_falsifier_fired:<id>")
+# so membership is a PREFIX, not an equality. Its emitter used to interpolate the
+# author-written English `claim` into the zh body; the rows already baked with
+# that shape are healed by the rebuild below, which reads the registry's
+# authored `claim_zh`.
+_ZH_HALF_TRANSLATED_PREFIXES = ("cycle_falsifier_fired:",)
 
-def _translate_macro_detail(msg_en: str) -> str:
+
+def _zh_needs_rebuild(rule: str) -> bool:
+    """True when the persisted message_zh for `rule` is known to carry English."""
+    rule = str(rule or "")
+    return (rule in _ZH_HALF_TRANSLATED_RULES
+            or rule.startswith(_ZH_HALF_TRANSLATED_PREFIXES))
+
+
+@lru_cache(maxsize=1)
+def _falsifier_registry() -> tuple[dict, dict]:
+    """(by falsifier id, by English claim) → registry entry, for zh claim lookup.
+
+    data/cycle_ontology/falsifiers.json is hand-authored and small (24 rows);
+    read once per process.  Returns empty maps rather than raising when the file
+    is absent, so a data-less checkout still renders the English body.
+    """
+    try:
+        entries = json.loads(
+            (Path(config.ROOT) / "data" / "cycle_ontology" / "falsifiers.json")
+            .read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("falsifier registry unreadable for zh claims (%s)", exc)
+        return {}, {}
+    by_id = {str(e.get("id")): e for e in entries if e.get("id")}
+    by_claim = {str(e.get("claim")): e for e in entries if e.get("claim")}
+    return by_id, by_claim
+
+
+def _translate_macro_detail(msg_en: str, rule: str = "") -> str:
     """Attempt to translate a baked English macro alert message to Chinese.
     Returns the Chinese string if the pattern matches, or empty string to
-    signal "no match — caller should fall back to English"."""
+    signal "no match — caller should fall back to English".
+
+    `rule` is optional context: the cycle read-change branch resolves its zh
+    claim by falsifier id, which survives a re-worded claim the way matching on
+    the claim text itself does not.
+    """
     # Inflation / Growth axis confidence floor
     # EN: "Inflation axis confidence dropped below 30%: 42% -> 24%"
     # EN: "Growth axis confidence dropped below 30%: 42% -> 24%"
@@ -1742,15 +1782,31 @@ def _translate_macro_detail(msg_en: str) -> str:
 
     # Cycle read-change condition HIT (pre-#3821 logs say "Cycle falsifier FIRED";
     # both shapes translate to the sanctioned register)
-    # EN: "Cycle read-change condition HIT — credit: <claim>. Direction: ... Coverage: ..."
+    # EN: "Cycle read-change condition HIT — credit: '<claim>' (coverage: X, direction: Y)."
+    #     "Cycle read-change condition HIT — credit: <claim>. Direction: X. Coverage: Y."
     m = _re.match(r"Cycle (?:read-change condition HIT|falsifier FIRED) — ([^:]+): (.+)",
-                  msg_en)
+                  msg_en, flags=_re.DOTALL)
     if m:
-        cycle = m.group(1)
-        rest = m.group(2)
-        # strip trailing "Direction: X. Coverage: Y." suffix if present
-        rest_clean = _re.sub(r"\.\s*Direction:.*$", "", rest, flags=_re.DOTALL).strip()
-        return f"周期改判条件触发 — {cycle}：{rest_clean}。"
+        from engine.falsifier_tripwires import _CYCLE_ZH, _DIRECTION_ZH
+        cycle, rest = m.group(1), m.group(2)
+        # The claim is authored prose, so it can only be rendered by looking up
+        # the zh the author wrote — no vocabulary map can gloss it. Resolve by
+        # falsifier id (stable across a re-worded claim) and fall back to the
+        # claim text for a caller that has no rule to hand.
+        # Read the direction out of the METADATA SUFFIX, not out of `rest` as a
+        # whole — a claim is free prose and may itself contain the phrase.
+        suffix = (_re.search(r"\(coverage:[^)]*direction:\s*([^)]+)\)\.?\s*$", rest)
+                  or _re.search(r"\.\s*Direction:\s*([^.]+)\.", rest))
+        direction = "confirms" if suffix and "supports" in suffix.group(1) else "refutes"
+        rest = _re.sub(r"\s*\(coverage:[^)]*\)\.?\s*$", "", rest)
+        rest = _re.sub(r"\.\s*Direction:.*$", "", rest, flags=_re.DOTALL)
+        claim_en = rest.strip().strip("'").strip()
+        by_id, by_claim = _falsifier_registry()
+        fid = str(rule).split(":", 1)[1] if str(rule).startswith("cycle_falsifier_fired:") else ""
+        entry = by_id.get(fid) or by_claim.get(claim_en) or {}
+        claim_zh = str(entry.get("claim_zh") or "").strip()
+        return (f"周期改判条件触发 — {_CYCLE_ZH.get(cycle, cycle)}："
+                f"「{claim_zh or claim_en}」（{_DIRECTION_ZH[direction]}）。")
 
     # HY OAS widening
     # EN: "HY OAS 1-day widening +0.12pp is 2.3 sigma (level 4.56%)"
@@ -1922,12 +1978,12 @@ def home_alert_feed() -> list[dict]:
             # after the zh column landed in the parquet schema), then try the
             # template-prefix translation map for backlog entries that predate the
             # column (returns "" on no-match, falling back to English).
-            # EXCEPT for _ZH_HALF_TRANSLATED_RULES, whose persisted zh is known to
-            # carry raw English inside the Chinese wrapper — there the translator's
+            # EXCEPT for the rules whose persisted zh is known to carry raw
+            # English inside the Chinese wrapper — there the translator's
             # rebuild-from-canonical-English wins over the stored value.
             stored_zh = str(r.get("message_zh", "") or "").strip()
-            if not stored_zh or r["rule"] in _ZH_HALF_TRANSLATED_RULES:
-                stored_zh = _translate_macro_detail(r["message"]) or stored_zh
+            if not stored_zh or _zh_needs_rebuild(r["rule"]):
+                stored_zh = _translate_macro_detail(r["message"], r["rule"]) or stored_zh
             detail_zh = stored_zh or r["message"]
             out.append({
                 "source": "macro", "source_label": h["macro_label"],
