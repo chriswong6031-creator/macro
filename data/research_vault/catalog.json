@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T11:40:37.664074+00:00",
-  "count": 869,
+  "generated_at": "2026-08-06T12:10:43.754171+00:00",
+  "count": 870,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -74,6 +74,27 @@
       "tags": [],
       "tickers": [],
       "top_pick": true,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jntcav2xgof-a122e5",
+      "title": "ZipRecruiter Inc. (ZIP) Q2'26 Earnings Review Product Led Reacceleration Drives Outperformance Despite Subdued Labor Market",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T11:17:47Z",
+      "summary_points": [
+        "**Q2'26 Earnings Beat & Guidance Lift**: Revenue and Adj.",
+        "EBITDA exceeded estimates; FY26 revenue guidance raised to +LSD% YoY (from flat) and margins to 12-14% (from 9%), driven by 34% QoQ qualified apps growth despite labor headwinds.",
+        "**Valuation Upside vs.",
+        "Macro Risks**: Price target raised to $5.00 (+17.6% upside) via EV/Sales (0.85x NTM+1) and DCF, but macro uncertainty persists with hires/quits near 2015 lows and revenue per employer pressure.",
+        "**Rating Divergence & Technical Decline**: Global research shows 50% Buy vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
       "pages": 9,
       "language": "en",
       "needs_metadata": false
