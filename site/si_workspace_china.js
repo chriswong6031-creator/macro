@@ -188,7 +188,8 @@ function paint(view,pair){
   var r=RECEIPTS[view]||['',''];
   el.innerHTML='<span class="si-vr-g '+GLYPH[view]+'" aria-hidden="true"></span>'
     +'<span class="si-vr-t">'+L(pair[0],pair[1])+'</span>'
-    +'<span class="si-vr-q" data-tip-en="'+esc(r[0])+'" data-tip-zh="'+esc(r[1])+'">?</span>';
+    +'<span class="si-vr-q" data-tip-t-en="Where this line comes from" data-tip-t-zh="这句话的来源"'
+    +' data-tip-en="'+esc(r[0])+'" data-tip-zh="'+esc(r[1])+'">?</span>';
   el.hidden=false;
 }
 /* the rail footer: the workspace's provenance lives with its navigation */
