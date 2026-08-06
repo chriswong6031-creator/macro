@@ -2346,17 +2346,13 @@
     {% if s.earnings and s.earnings.days_to is defined and s.earnings.days_to is not none and s.earnings.days_to <= 21 %}{% set _fl.rows = _fl.rows + [('Reports in ' ~ s.earnings.days_to ~ 'd — timing context', '财报还有' ~ s.earnings.days_to ~ '天 — 择时背景')] %}{% endif %}
     {% if _hd and _hd.state == 'broken' %}{% set _fl.rows = _fl.rows + [('Base broken', '筑底破位')] %}{% endif %}
     {% set _al = c.alignment if c else none %}
-    {% set _ctx_en = ((' — ' ~ s.lead_en) if s.lead_en else '') ~ ((' · ' ~ _sig.tier ~ ' fresh cross') if (_sig and _sig.tier) else '') ~ (' · insider buying' if (s.insider and s.insider.lean == 'buying' and (s.insider.n_buys or 0) > 0) else '') ~ (' · oil tailwind' if s.oil_tailwind else '') ~ ' · momentum screen · unproven' %}
-    {% set _ctx_zh = ((' — ' ~ (s.lead_zh or s.lead_en)) if s.lead_en else '') ~ ((' · ' ~ _sig.tier ~ ' 新鲜金叉') if (_sig and _sig.tier) else '') ~ (' · 内部人买入' if (s.insider and s.insider.lean == 'buying' and (s.insider.n_buys or 0) > 0) else '') ~ (' · 油价顺风' if s.oil_tailwind else '') ~ ' · 动量筛选 · 未验证' %}
-    {% set _tip_en = ((c.verdict if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline if es else '')) ~ _ctx_en %}
-    {% set _tip_zh = ((c.verdict_zh if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline_zh if es else '')) ~ _ctx_zh %}
     {% set _bz = es.buy_zone if es else none %}
     {% set _zk = ('readd' if _verb == 'hold' else ('active' if _verb in ('buy','near') else 'muted')) if (_bz and _bz.high is not none) else ('confirm' if _verb in ('wait','near') else 'none') %}
     {{ pv.pv_card({
       'href': 'canada_stock.html#' ~ s.ticker, 'tk': s.ticker, 'mkt': 'ca',
       'name': s.name, 'sec': s.sector, 'sec_zh': s.sector,
       'price_txt': ('$' ~ ('%.2f'|format(s.price))) if (s.price is defined and s.price is not none) else none,
-      'verb': _verb, 'tip_en': _tip_en, 'tip_zh': _tip_zh,
+      'verb': _verb,
       'edge': none, 'edge_txt': ('#' ~ s.board_pos) if s.board_pos is defined and s.board_pos is not none else none,
       'edge_label_en': 'Rank', 'edge_label_zh': '排名',
       'edge_tip_en': 'Rank within this group, not a score.',
