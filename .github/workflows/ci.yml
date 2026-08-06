@@ -2557,6 +2557,13 @@ on:
       - "tests/test_data_quality_audit.py"
       - "tests/test_build_earnings_scores_from_history.py"
       - "tests/test_earnings_qual.py"
+      # The scorer's config carries BEHAVIOR, not just tuning: openai_compat's
+      # per-rung max_chars is what keeps the local 4,096-token endpoint from
+      # being handed a 24,000-char prompt (it answers 200-with-prose, not an
+      # error, and every transcript falls through to a metered provider).
+      # test_earnings_qual.py pins that bound, so an edit to the number alone
+      # must be able to start the job that measures it.
+      - "config/earnings_qual.yml"
       - "tests/test_earnings_seasons.py"
       - "tests/test_earnings_w5.py"
       - "tests/test_hk_fundamentals_collector.py"
