@@ -771,3 +771,46 @@ def test_schema_union_with_legacy_store(cn_store):
     legacy_row = df[df["ticker"] == "699070.SS"].iloc[0]
     val = legacy_row.get("fill_basis")
     assert val is None or pd.isna(val), f"legacy row fill_basis should be null, got {val!r}"
+
+
+def test_theme_timing_component_persists_to_the_ledger(tmp_path, monkeypatch):
+    """V3 R2's score leg must be gradeable: append_board persists
+    prophet_theme_timing from the row's prophet components. Without this column
+    the per-leg attribution and the G0.8 theme_timing bucket tripwire read a
+    disclosed null forever (rank-effectiveness build report, PR #4570)."""
+    from engine import china_standout_track as cst
+
+    monkeypatch.setattr(
+        "lib.config.data_dir", lambda: tmp_path, raising=True)
+    monkeypatch.setattr(
+        cst, "session_status",
+        lambda asof=None: {"partial_session": False}, raising=True)
+    rows = [{
+        "ticker": "000001.SZ", "price": 10.0,
+        "board_definition": "cn_prophet_v3",
+        "prophet": {"version": "cn_prophet_v3", "score": 77.0,
+                    "components": {"signal": 0.9, "entry": 1.0,
+                                   "runway": 0.5, "bottom_quality": 0.8,
+                                   "reversal_member": 0.0,
+                                   "theme_timing": 1.0}},
+        "signal": {"tier_cascade": "T2"},
+    }]
+    n = cst.append_board(rows, asof="2026-08-05", lane="asia")
+    assert n == 1
+    import pandas as pd
+    df = pd.read_parquet(tmp_path / "china_standout_track" / "board.parquet")
+    assert "prophet_theme_timing" in df.columns
+    assert float(df.iloc[0]["prophet_theme_timing"]) == 1.0
+
+
+def test_the_audit_runs_after_grade_writes_the_spine():
+    """Source-order pin for the one-night-stale-spine fix: cn_prophet_audit.run
+    must execute AFTER china_standout_track.grade() in the asia build, because
+    grade() is what writes fwd_mfe_*/terminal-state spine columns back to the
+    board rows the audit's rank-effectiveness block reads."""
+    src = open("scripts/build_china_library.py").read()
+    grade_at = src.index("_bt = china_standout_track.grade()")
+    audit_at = src.index("_audit = _cn_audit.run(asof=as_of, lane=_lane)")
+    assert audit_at > grade_at, (
+        "cn_prophet_audit.run() precedes grade() — the audit would read a "
+        "one-night-stale spine (PR #4570 report, item 2)")

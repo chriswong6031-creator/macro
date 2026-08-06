@@ -622,6 +622,12 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
             "prophet_reversal_member": (
                 (_pr.get("components") or {}).get("reversal_member")
             ),
+            # V3 R2: the theme_timing component must persist or its per-leg
+            # attribution and the G0.8 bucket tripwire read a disclosed null
+            # forever (flagged by the rank-effectiveness build, PR #4570).
+            "prophet_theme_timing": (
+                (_pr.get("components") or {}).get("theme_timing")
+            ),
             "tier": sig.get("tier_cascade"),
             "setup": r.get("setup"),
             "extended": bool(ext.get("extended")),
