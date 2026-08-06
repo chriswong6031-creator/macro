@@ -582,7 +582,21 @@ jobs:
         # capture that moved to the capital_structure job.
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: capital-structure-workspace-${{ github.run_id }}-${{ github.run_attempt }}
+          # RUN-scoped, deliberately NOT attempt-scoped. "Re-run failed jobs"
+          # increments github.run_attempt for the whole run, so an attempt-scoped
+          # name would make the capital_structure job impossible to re-run on its
+          # own: attempt 2 would look for an artifact only attempt 1 ever
+          # uploaded, and the download would fail every time. That is the single
+          # most likely thing an operator will want to do with this lane — it is
+          # the one that failed three nights running.
+          #
+          # `overwrite` covers the other direction: re-running the WHOLE workflow
+          # re-runs collect, which must be able to replace its own upload rather
+          # than fail on the duplicate name. The receipt stays consistent either
+          # way, because needs.collect.outputs and the artifact both come from
+          # whichever collect execution is current.
+          name: capital-structure-workspace-${{ github.run_id }}
+          overwrite: true
           # The gitignored subtrees are excluded BY NAME, not left to luck: a retained
           # local source store would otherwise turn a 4 MB handoff into hundreds of MB.
           # CAPITAL_STRUCTURE_LOCAL_STORE is unset in this workflow and all 1,447
@@ -733,7 +747,9 @@ jobs:
         # ledger in place.
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          name: capital-structure-workspace-${{ github.run_id }}-${{ github.run_attempt }}
+          # Must match collect's RUN-scoped name exactly — see the upload step for
+          # why github.run_attempt is deliberately absent from both.
+          name: capital-structure-workspace-${{ github.run_id }}
           path: data/capital_structure
       - name: verify the capital-structure handoff (fail closed — never compile a stale ledger)
         # THE guard of this split. `collect` writes tonight's manifest rows into a

@@ -305,6 +305,50 @@ def test_the_verification_compares_against_collects_own_receipt(steps):
     )
 
 
+def test_the_handoff_artifact_survives_a_job_rerun(daily, steps):
+    """The artifact name must be RUN-scoped, never attempt-scoped.
+
+    "Re-run failed jobs" increments `github.run_attempt` for the whole run while
+    re-executing only the failed job. An attempt-scoped artifact name therefore
+    makes this job impossible to re-run on its own: attempt 2 would look for a
+    name only attempt 1 ever uploaded, the download would fail, and the operator's
+    most obvious recovery action would be permanently broken — on the very lane
+    that failed three nights running.
+
+    The two names must also be byte-identical, because a download naming anything
+    the upload did not produce fails closed on every night, not just on a re-run.
+    """
+    upload = next(
+        s for s in daily["jobs"]["collect"]["steps"]
+        if "upload-artifact" in str(s.get("uses") or "")
+        and "capital-structure" in str((s.get("with") or {}).get("name") or "")
+    )
+    download = next(
+        s for s in steps if "download-artifact" in str(s.get("uses") or "")
+    )
+    up_name = str(upload["with"]["name"])
+    down_name = str(download["with"]["name"])
+
+    assert up_name == down_name, (
+        f"the handoff artifact is uploaded as {up_name!r} and downloaded as "
+        f"{down_name!r}. A mismatch fails closed every night."
+    )
+    assert "github.run_attempt" not in up_name, (
+        f"the handoff artifact name {up_name!r} is attempt-scoped. Re-running just "
+        "the capital_structure job bumps github.run_attempt without re-running "
+        "collect, so the artifact it wants would never have been uploaded."
+    )
+    assert "github.run_id" in up_name, (
+        f"the handoff artifact name {up_name!r} is not run-scoped; a fixed name "
+        "would let one night's run download another night's ledger"
+    )
+    assert upload["with"].get("overwrite") is True, (
+        "collect's upload needs `overwrite: true`: re-running the WHOLE workflow "
+        "re-runs collect, which must replace its own run-scoped artifact instead "
+        "of failing on the duplicate name."
+    )
+
+
 def test_collect_stamps_the_receipt_without_risking_the_night(daily):
     """The producing half: it must publish the receipt and must never red collect.
 
