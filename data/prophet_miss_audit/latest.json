@@ -4,10 +4,12 @@
  "tier": "ops_telemetry",
  "authority": "none — measurement only; no rank/gate/size consumer",
  "bases": {
+  "basket_misses": "equal-weight member returns over data/baskets/ohlcv with point-in-time dated membership — the basket machinery's own store and construction, NOT the breadth caches above (they are S&P-1500 and cannot see the off-index members the ignited baskets are full of).",
   "runner_eligibility": "engine.confluence_tiers.tier_stream (completed buckets, raw-3D-cross T1 fallback) — last row = eligible_today, tail(63) = days_eligible/first_eligible. One basis for both so the verdict and the window cannot disagree about a day.",
   "universe_eligible_today": "engine.confluence_tiers.cascade last bar, take_active=False (no §7 master supplied here) — a STRICTER set than the stream basis, which is why a runner can be stream-eligible and absent from it.",
   "board_gate": "engine.signal_gate.gate per runner (gate_* fields) — the live board's own basis, over a narrower universe than the board's.",
-  "name_score": "engine.name_score_grader's append-only PIT call ledger, forward-joined through engine.grading (next-bar fill, survivorship-aware). Read-only: this audit mirrors the grader's numbers, it does not change what the grader computes."
+  "name_score": "engine.name_score_grader's append-only PIT call ledger, forward-joined through engine.grading (next-bar fill, survivorship-aware). Read-only: this audit mirrors the grader's numbers, it does not change what the grader computes.",
+  "priority_score": "engine.us_prophet_grades' full-population grade store (H=10/21 sessions, excess vs SPY, next-bar fill) joined to the priority score the US Context Vector store stamped for that name on that night. Read-only: this audit recomputes neither the score nor the grade. EVERY stamped name is graded, so a pick's hit is judged against that night's whole universe, not against the picks alone."
  },
  "summary": {
   "universe_n": 1495,
@@ -28,7 +30,9 @@
   "top21_n": 50,
   "top21_eligible_today_n": 4,
   "conversion_rate": 0.0196,
-  "conversion_n": "2/102"
+  "conversion_n": "2/102",
+  "basket_misses_n": 0,
+  "basket_scored_n": 48
  },
  "top63_excluder_hist": {
   "not_topped_veto(stoch_bear+macd_bear)": 42,
@@ -119,7 +123,7 @@
    "THC",
    "GEN"
   ],
-  "plan_universe_n": 91
+  "plan_universe_n": 96
  },
  "themes": {
   "basis": "subsector_rotation.emerging_score",
@@ -134,14 +138,15 @@
     "emerging_score": 3.271,
     "n_members": 60,
     "present_counts": {
-     "buy": 2,
+     "buy": 3,
      "ran": 4,
      "leaders": 2
     },
     "present": {
      "buy": [
       "AMZN",
-      "APPF"
+      "APPF",
+      "MSTR"
      ],
      "ran": [
       "DOCU",
@@ -154,7 +159,7 @@
       "SNOW"
      ]
     },
-    "represented_n": 8,
+    "represented_n": 9,
     "days_since_top5_entry": null
    },
    {
@@ -163,19 +168,18 @@
     "emerging_score": 1.848,
     "n_members": 24,
     "present_counts": {
-     "buy": 2,
+     "buy": 1,
      "ran": 0,
      "leaders": 0
     },
     "present": {
      "buy": [
-      "AMZN",
-      "WMT"
+      "AMZN"
      ],
      "ran": [],
      "leaders": []
     },
-    "represented_n": 2,
+    "represented_n": 1,
     "days_since_top5_entry": null
    },
    {
@@ -184,13 +188,14 @@
     "emerging_score": 1.775,
     "n_members": 16,
     "present_counts": {
-     "buy": 1,
+     "buy": 2,
      "ran": 2,
      "leaders": 0
     },
     "present": {
      "buy": [
-      "AMZN"
+      "AMZN",
+      "NVDA"
      ],
      "ran": [
       "MSFT",
@@ -198,7 +203,7 @@
      ],
      "leaders": []
     },
-    "represented_n": 3,
+    "represented_n": 4,
     "days_since_top5_entry": null
    },
    {
@@ -229,13 +234,15 @@
     "emerging_score": 1.497,
     "n_members": 26,
     "present_counts": {
-     "buy": 1,
+     "buy": 3,
      "ran": 1,
      "leaders": 1
     },
     "present": {
      "buy": [
-      "AMZN"
+      "AMZN",
+      "MSTR",
+      "NVDA"
      ],
      "ran": [
       "MSFT"
@@ -244,8 +251,1215 @@
       "SNOW"
      ]
     },
-    "represented_n": 3,
+    "represented_n": 5,
     "days_since_top5_entry": null
+   }
+  ]
+ },
+ "basket_misses": {
+  "tier": "ops_telemetry",
+  "authority": "none — measurement only; no rank/gate/size/membership consumer",
+  "available": true,
+  "as_of": "2026-08-05",
+  "standouts_asof": "2026-07-31",
+  "basis": "equal-weight member returns over data/baskets/ohlcv with point-in-time dated membership (engine.baskets._ew_level construction); the 10d return ranked inside the basket's OWN trailing 252-session history of the same measure. Overlapping windows — the percentile is a description, not a test.",
+  "miss_rule": "pctile >= 0.9 AND zero live members on any of ['buy', 'watch', 'leaders', 'ran'] (featured is a flag inside buy)",
+  "lanes": [
+   "buy",
+   "watch",
+   "leaders",
+   "ran"
+  ],
+  "n_baskets": 48,
+  "n_scored": 48,
+  "n_misses": 0,
+  "n_top_decile": 10,
+  "n_unrepresented": 13,
+  "misses": [],
+  "baskets": [
+   {
+    "basket_id": "non_ai_software",
+    "name": "Non-AI Software",
+    "category": "Software",
+    "as_of": "2026-08-05",
+    "n_members": 14,
+    "n_members_live": 14,
+    "n_members_read": 14,
+    "n_members_on_board": 4,
+    "members_on_board": [
+     "DOCU",
+     "MDB",
+     "SNOW",
+     "TEAM"
+    ],
+    "present_counts": {
+     "buy": 1,
+     "watch": 0,
+     "leaders": 1,
+     "ran": 2
+    },
+    "pctile": 0.994,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.044727,
+    "ew_10d": 0.219141
+   },
+   {
+    "basket_id": "robotics_automation",
+    "name": "Robotics & Automation",
+    "category": "Industrials",
+    "as_of": "2026-08-05",
+    "n_members": 12,
+    "n_members_live": 12,
+    "n_members_read": 12,
+    "n_members_on_board": 3,
+    "members_on_board": [
+     "ISRG",
+     "ROK",
+     "TER"
+    ],
+    "present_counts": {
+     "buy": 1,
+     "watch": 2,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.994,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.111319,
+    "ew_10d": 0.125047
+   },
+   {
+    "basket_id": "ai_software",
+    "name": "AI Software & Platforms",
+    "category": "AI & Technology",
+    "as_of": "2026-08-05",
+    "n_members": 17,
+    "n_members_live": 17,
+    "n_members_read": 17,
+    "n_members_on_board": 6,
+    "members_on_board": [
+     "CRWD",
+     "MSFT",
+     "NET",
+     "PANW",
+     "PLTR",
+     "SNOW"
+    ],
+    "present_counts": {
+     "buy": 1,
+     "watch": 0,
+     "leaders": 3,
+     "ran": 2
+    },
+    "pctile": 0.9821,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.091878,
+    "ew_10d": 0.149561
+   },
+   {
+    "basket_id": "us_sector_health",
+    "name": "Health Care (Equal-Weight)",
+    "category": "US Sectors (EW)",
+    "as_of": "2026-08-05",
+    "n_members": 59,
+    "n_members_live": 59,
+    "n_members_read": 59,
+    "n_members_on_board": 1,
+    "members_on_board": [
+     "ISRG"
+    ],
+    "present_counts": {
+     "buy": 1,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.9742,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.002434,
+    "ew_10d": 0.059225
+   },
+   {
+    "basket_id": "ai_agents",
+    "name": "AI Agents & Applications",
+    "category": "Artificial Intelligence",
+    "as_of": "2026-08-05",
+    "n_members": 8,
+    "n_members_live": 8,
+    "n_members_read": 8,
+    "n_members_on_board": 2,
+    "members_on_board": [
+     "PATH",
+     "PLTR"
+    ],
+    "present_counts": {
+     "buy": 2,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.9702,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.086604,
+    "ew_10d": 0.141246
+   },
+   {
+    "basket_id": "us_sector_discretionary",
+    "name": "Consumer Discretionary (Equal-Weight)",
+    "category": "US Sectors (EW)",
+    "as_of": "2026-08-05",
+    "n_members": 47,
+    "n_members_live": 47,
+    "n_members_read": 47,
+    "n_members_on_board": 7,
+    "members_on_board": [
+     "AMZN",
+     "HD",
+     "LVS",
+     "RCL",
+     "RL",
+     "ROST",
+     "TJX"
+    ],
+    "present_counts": {
+     "buy": 3,
+     "watch": 3,
+     "leaders": 0,
+     "ran": 1
+    },
+    "pctile": 0.9583,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.010978,
+    "ew_10d": 0.059124
+   },
+   {
+    "basket_id": "retail",
+    "name": "Retail",
+    "category": "Consumer Cyclical",
+    "as_of": "2026-08-05",
+    "n_members": 21,
+    "n_members_live": 21,
+    "n_members_read": 21,
+    "n_members_on_board": 3,
+    "members_on_board": [
+     "HD",
+     "ROST",
+     "TJX"
+    ],
+    "present_counts": {
+     "buy": 1,
+     "watch": 2,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.9464,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.006263,
+    "ew_10d": 0.052214
+   },
+   {
+    "basket_id": "defense",
+    "name": "Defense & Aerospace",
+    "category": "Industrials & Defense",
+    "as_of": "2026-08-05",
+    "n_members": 22,
+    "n_members_live": 21,
+    "n_members_read": 22,
+    "n_members_on_board": 2,
+    "members_on_board": [
+     "GE",
+     "HEI"
+    ],
+    "present_counts": {
+     "buy": 2,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.9266,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.092848,
+    "ew_10d": 0.082919
+   },
+   {
+    "basket_id": "cybersecurity",
+    "name": "Cybersecurity",
+    "category": "Software",
+    "as_of": "2026-08-05",
+    "n_members": 12,
+    "n_members_live": 10,
+    "n_members_read": 12,
+    "n_members_on_board": 4,
+    "members_on_board": [
+     "CRWD",
+     "NET",
+     "OKTA",
+     "PANW"
+    ],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 3,
+     "ran": 1
+    },
+    "pctile": 0.9147,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.141022,
+    "ew_10d": 0.127152
+   },
+   {
+    "basket_id": "us_sector_industrials",
+    "name": "Industrials (Equal-Weight)",
+    "category": "US Sectors (EW)",
+    "as_of": "2026-08-05",
+    "n_members": 80,
+    "n_members_live": 80,
+    "n_members_read": 80,
+    "n_members_on_board": 6,
+    "members_on_board": [
+     "DAL",
+     "GE",
+     "GNRC",
+     "JBHT",
+     "ROK",
+     "UAL"
+    ],
+    "present_counts": {
+     "buy": 1,
+     "watch": 5,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.9028,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.044001,
+    "ew_10d": 0.04006
+   },
+   {
+    "basket_id": "reshoring",
+    "name": "Reshoring & Industrial Capex",
+    "category": "Industrials & Defense",
+    "as_of": "2026-08-05",
+    "n_members": 16,
+    "n_members_live": 16,
+    "n_members_read": 16,
+    "n_members_on_board": 2,
+    "members_on_board": [
+     "GNRC",
+     "ROK"
+    ],
+    "present_counts": {
+     "buy": 0,
+     "watch": 2,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.8948,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.079886,
+    "ew_10d": 0.059526
+   },
+   {
+    "basket_id": "insurance",
+    "name": "Insurance & Brokers",
+    "category": "Financials",
+    "as_of": "2026-08-05",
+    "n_members": 19,
+    "n_members_live": 19,
+    "n_members_read": 19,
+    "n_members_on_board": 0,
+    "members_on_board": [],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.8909,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": -0.025298,
+    "ew_10d": 0.04223
+   },
+   {
+    "basket_id": "us_sector_financials",
+    "name": "Financials (Equal-Weight)",
+    "category": "US Sectors (EW)",
+    "as_of": "2026-08-05",
+    "n_members": 76,
+    "n_members_live": 76,
+    "n_members_read": 76,
+    "n_members_on_board": 5,
+    "members_on_board": [
+     "APO",
+     "BEN",
+     "BRK-B",
+     "IBKR",
+     "WFC"
+    ],
+    "present_counts": {
+     "buy": 3,
+     "watch": 1,
+     "leaders": 0,
+     "ran": 1
+    },
+    "pctile": 0.8869,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.012624,
+    "ew_10d": 0.039723
+   },
+   {
+    "basket_id": "industrial_distribution",
+    "name": "Industrial Distribution & Capital Goods",
+    "category": "Industrials",
+    "as_of": "2026-08-05",
+    "n_members": 12,
+    "n_members_live": 12,
+    "n_members_read": 12,
+    "n_members_on_board": 0,
+    "members_on_board": [],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.871,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.060718,
+    "ew_10d": 0.050229
+   },
+   {
+    "basket_id": "payments_fintech",
+    "name": "Payments & Fintech",
+    "category": "Financials",
+    "as_of": "2026-08-05",
+    "n_members": 22,
+    "n_members_live": 21,
+    "n_members_read": 22,
+    "n_members_on_board": 1,
+    "members_on_board": [
+     "SOFI"
+    ],
+    "present_counts": {
+     "buy": 1,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.8631,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.023804,
+    "ew_10d": 0.049725
+   },
+   {
+    "basket_id": "travel",
+    "name": "Travel & Experiences",
+    "category": "Consumer Cyclical",
+    "as_of": "2026-08-05",
+    "n_members": 24,
+    "n_members_live": 24,
+    "n_members_read": 24,
+    "n_members_on_board": 4,
+    "members_on_board": [
+     "DAL",
+     "LVS",
+     "RCL",
+     "UAL"
+    ],
+    "present_counts": {
+     "buy": 1,
+     "watch": 2,
+     "leaders": 0,
+     "ran": 1
+    },
+    "pctile": 0.8591,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.020924,
+    "ew_10d": 0.06207
+   },
+   {
+    "basket_id": "us_sector_materials",
+    "name": "Materials (Equal-Weight)",
+    "category": "US Sectors (EW)",
+    "as_of": "2026-08-05",
+    "n_members": 26,
+    "n_members_live": 26,
+    "n_members_read": 26,
+    "n_members_on_board": 5,
+    "members_on_board": [
+     "ALB",
+     "DD",
+     "ECL",
+     "FCX",
+     "IFF"
+    ],
+    "present_counts": {
+     "buy": 3,
+     "watch": 2,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.8591,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.022013,
+    "ew_10d": 0.045318
+   },
+   {
+    "basket_id": "us_sector_tech",
+    "name": "Technology (Equal-Weight)",
+    "category": "US Sectors (EW)",
+    "as_of": "2026-08-05",
+    "n_members": 74,
+    "n_members_live": 74,
+    "n_members_read": 74,
+    "n_members_on_board": 9,
+    "members_on_board": [
+     "APH",
+     "CRWD",
+     "MSFT",
+     "NVDA",
+     "ON",
+     "PANW",
+     "PLTR",
+     "SNDK",
+     "TER"
+    ],
+    "present_counts": {
+     "buy": 3,
+     "watch": 3,
+     "leaders": 2,
+     "ran": 1
+    },
+    "pctile": 0.8591,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.103824,
+    "ew_10d": 0.066923
+   },
+   {
+    "basket_id": "quantum_computing",
+    "name": "Quantum Computing",
+    "category": "AI & Technology",
+    "as_of": "2026-08-05",
+    "n_members": 11,
+    "n_members_live": 11,
+    "n_members_read": 11,
+    "n_members_on_board": 2,
+    "members_on_board": [
+     "MSFT",
+     "NVDA"
+    ],
+    "present_counts": {
+     "buy": 1,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 1
+    },
+    "pctile": 0.8552,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.184854,
+    "ew_10d": 0.120616
+   },
+   {
+    "basket_id": "us_sector_comm",
+    "name": "Communication Services (Equal-Weight)",
+    "category": "US Sectors (EW)",
+    "as_of": "2026-08-05",
+    "n_members": 23,
+    "n_members_live": 23,
+    "n_members_read": 23,
+    "n_members_on_board": 1,
+    "members_on_board": [
+     "DIS"
+    ],
+    "present_counts": {
+     "buy": 1,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.8194,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.012489,
+    "ew_10d": 0.033317
+   },
+   {
+    "basket_id": "big_pharma",
+    "name": "Big Pharma",
+    "category": "Healthcare",
+    "as_of": "2026-08-05",
+    "n_members": 10,
+    "n_members_live": 9,
+    "n_members_read": 10,
+    "n_members_on_board": 0,
+    "members_on_board": [],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.8115,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.001262,
+    "ew_10d": 0.038894
+   },
+   {
+    "basket_id": "defensives",
+    "name": "Defensives",
+    "category": "Consumer Defensive",
+    "as_of": "2026-08-05",
+    "n_members": 18,
+    "n_members_live": 18,
+    "n_members_read": 18,
+    "n_members_on_board": 2,
+    "members_on_board": [
+     "CL",
+     "MDLZ"
+    ],
+    "present_counts": {
+     "buy": 1,
+     "watch": 1,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.8075,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": -0.017126,
+    "ew_10d": 0.020542
+   },
+   {
+    "basket_id": "housing",
+    "name": "Housing Chain",
+    "category": "Consumer Cyclical",
+    "as_of": "2026-08-05",
+    "n_members": 19,
+    "n_members_live": 18,
+    "n_members_read": 19,
+    "n_members_on_board": 1,
+    "members_on_board": [
+     "HD"
+    ],
+    "present_counts": {
+     "buy": 1,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.7679,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.058871,
+    "ew_10d": 0.049572
+   },
+   {
+    "basket_id": "gold_miners",
+    "name": "Gold Miners",
+    "category": "Materials & Mining",
+    "as_of": "2026-08-05",
+    "n_members": 12,
+    "n_members_live": 12,
+    "n_members_read": 12,
+    "n_members_on_board": 0,
+    "members_on_board": [],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.744,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.129009,
+    "ew_10d": 0.086287
+   },
+   {
+    "basket_id": "mag7",
+    "name": "Magnificent Seven",
+    "category": "AI & Technology",
+    "as_of": "2026-08-05",
+    "n_members": 7,
+    "n_members_live": 7,
+    "n_members_read": 7,
+    "n_members_on_board": 3,
+    "members_on_board": [
+     "AMZN",
+     "MSFT",
+     "NVDA"
+    ],
+    "present_counts": {
+     "buy": 2,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 1
+    },
+    "pctile": 0.7361,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.097502,
+    "ew_10d": 0.029384
+   },
+   {
+    "basket_id": "space_economy",
+    "name": "Space Economy",
+    "category": "Industrials & Defense",
+    "as_of": "2026-08-05",
+    "n_members": 15,
+    "n_members_live": 15,
+    "n_members_read": 15,
+    "n_members_on_board": 0,
+    "members_on_board": [],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.7163,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.240873,
+    "ew_10d": 0.109964
+   },
+   {
+    "basket_id": "us_sector_staples",
+    "name": "Consumer Staples (Equal-Weight)",
+    "category": "US Sectors (EW)",
+    "as_of": "2026-08-05",
+    "n_members": 35,
+    "n_members_live": 35,
+    "n_members_read": 35,
+    "n_members_on_board": 2,
+    "members_on_board": [
+     "CL",
+     "MDLZ"
+    ],
+    "present_counts": {
+     "buy": 1,
+     "watch": 1,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.6607,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": -0.019207,
+    "ew_10d": 0.013557
+   },
+   {
+    "basket_id": "uranium_miners",
+    "name": "Uranium & Nuclear Fuel",
+    "category": "Materials & Mining",
+    "as_of": "2026-08-05",
+    "n_members": 10,
+    "n_members_live": 10,
+    "n_members_read": 10,
+    "n_members_on_board": 2,
+    "members_on_board": [
+     "CCJ",
+     "NXE"
+    ],
+    "present_counts": {
+     "buy": 2,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.6567,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.142339,
+    "ew_10d": 0.044593
+   },
+   {
+    "basket_id": "critical_minerals",
+    "name": "Critical Minerals & Rare Earths",
+    "category": "Materials & Mining",
+    "as_of": "2026-08-05",
+    "n_members": 11,
+    "n_members_live": 11,
+    "n_members_read": 11,
+    "n_members_on_board": 1,
+    "members_on_board": [
+     "ALB"
+    ],
+    "present_counts": {
+     "buy": 0,
+     "watch": 1,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.621,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.225569,
+    "ew_10d": 0.059473
+   },
+   {
+    "basket_id": "silver_miners",
+    "name": "Silver Miners",
+    "category": "Materials & Mining",
+    "as_of": "2026-08-05",
+    "n_members": 10,
+    "n_members_live": 10,
+    "n_members_read": 8,
+    "n_members_on_board": 0,
+    "members_on_board": [],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.6091,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.16651,
+    "ew_10d": 0.068882
+   },
+   {
+    "basket_id": "us_sector_realestate",
+    "name": "Real Estate (Equal-Weight)",
+    "category": "US Sectors (EW)",
+    "as_of": "2026-08-05",
+    "n_members": 31,
+    "n_members_live": 31,
+    "n_members_read": 31,
+    "n_members_on_board": 0,
+    "members_on_board": [],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.5972,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": -0.018224,
+    "ew_10d": 0.0092
+   },
+   {
+    "basket_id": "crypto_rails",
+    "name": "Crypto & Digital Rails",
+    "category": "Crypto & Digital Assets",
+    "as_of": "2026-08-05",
+    "n_members": 7,
+    "n_members_live": 7,
+    "n_members_read": 7,
+    "n_members_on_board": 2,
+    "members_on_board": [
+     "BEN",
+     "MSTR"
+    ],
+    "present_counts": {
+     "buy": 2,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.5774,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.024802,
+    "ew_10d": -0.003951
+   },
+   {
+    "basket_id": "regional_banks",
+    "name": "Regional Banks",
+    "category": "Financials",
+    "as_of": "2026-08-05",
+    "n_members": 20,
+    "n_members_live": 20,
+    "n_members_read": 20,
+    "n_members_on_board": 1,
+    "members_on_board": [
+     "FCNCA"
+    ],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 1
+    },
+    "pctile": 0.5337,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.023215,
+    "ew_10d": 0.016294
+   },
+   {
+    "basket_id": "obesity_glp1",
+    "name": "GLP-1 & Obesity",
+    "category": "Healthcare",
+    "as_of": "2026-08-05",
+    "n_members": 14,
+    "n_members_live": 14,
+    "n_members_read": 14,
+    "n_members_on_board": 0,
+    "members_on_board": [],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.4901,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.008281,
+    "ew_10d": 0.007336
+   },
+   {
+    "basket_id": "ai_semiconductors",
+    "name": "AI Semiconductors",
+    "category": "Semiconductors",
+    "as_of": "2026-08-05",
+    "n_members": 12,
+    "n_members_live": 12,
+    "n_members_read": 12,
+    "n_members_on_board": 1,
+    "members_on_board": [
+     "NVDA"
+    ],
+    "present_counts": {
+     "buy": 1,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.3829,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.18946,
+    "ew_10d": -0.005195
+   },
+   {
+    "basket_id": "nuclear_power",
+    "name": "Nuclear & SMR Power",
+    "category": "Energy & Power",
+    "as_of": "2026-08-05",
+    "n_members": 9,
+    "n_members_live": 9,
+    "n_members_read": 9,
+    "n_members_on_board": 0,
+    "members_on_board": [],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.3591,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.092898,
+    "ew_10d": -0.040303
+   },
+   {
+    "basket_id": "data_center_power",
+    "name": "Data-Center Power & Cooling",
+    "category": "Energy & Power",
+    "as_of": "2026-08-05",
+    "n_members": 8,
+    "n_members_live": 8,
+    "n_members_read": 8,
+    "n_members_on_board": 0,
+    "members_on_board": [],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.3234,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.181368,
+    "ew_10d": 0.003646
+   },
+   {
+    "basket_id": "ai_infra",
+    "name": "AI Infrastructure",
+    "category": "AI & Technology",
+    "as_of": "2026-08-05",
+    "n_members": 24,
+    "n_members_live": 24,
+    "n_members_read": 24,
+    "n_members_on_board": 3,
+    "members_on_board": [
+     "APH",
+     "NVDA",
+     "TER"
+    ],
+    "present_counts": {
+     "buy": 2,
+     "watch": 1,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.3075,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.235749,
+    "ew_10d": 0.004905
+   },
+   {
+    "basket_id": "power_grid",
+    "name": "Power & Grid Buildout",
+    "category": "Energy & Power",
+    "as_of": "2026-08-05",
+    "n_members": 24,
+    "n_members_live": 24,
+    "n_members_read": 24,
+    "n_members_on_board": 1,
+    "members_on_board": [
+     "GNRC"
+    ],
+    "present_counts": {
+     "buy": 0,
+     "watch": 1,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.2996,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.081636,
+    "ew_10d": -0.020832
+   },
+   {
+    "basket_id": "non_ai_tech",
+    "name": "Non-AI Tech & Hardware",
+    "category": "Semiconductors & Hardware",
+    "as_of": "2026-08-05",
+    "n_members": 14,
+    "n_members_live": 13,
+    "n_members_read": 14,
+    "n_members_on_board": 2,
+    "members_on_board": [
+     "APH",
+     "ON"
+    ],
+    "present_counts": {
+     "buy": 1,
+     "watch": 1,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.2877,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.091092,
+    "ew_10d": -0.010678
+   },
+   {
+    "basket_id": "ai_neoclouds",
+    "name": "AI Neoclouds & HPC Hosting",
+    "category": "Artificial Intelligence",
+    "as_of": "2026-08-05",
+    "n_members": 13,
+    "n_members_live": 10,
+    "n_members_read": 13,
+    "n_members_on_board": 0,
+    "members_on_board": [],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.248,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.247464,
+    "ew_10d": -0.067313
+   },
+   {
+    "basket_id": "crypto",
+    "name": "Crypto & Digital Assets",
+    "category": "Crypto & Digital Assets",
+    "as_of": "2026-08-05",
+    "n_members": 12,
+    "n_members_live": 7,
+    "n_members_read": 12,
+    "n_members_on_board": 1,
+    "members_on_board": [
+     "MSTR"
+    ],
+    "present_counts": {
+     "buy": 1,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.2083,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.050014,
+    "ew_10d": -0.081848
+   },
+   {
+    "basket_id": "semicap_equipment",
+    "name": "Semiconductor Equipment (WFE)",
+    "category": "Semiconductors",
+    "as_of": "2026-08-05",
+    "n_members": 16,
+    "n_members_live": 16,
+    "n_members_read": 16,
+    "n_members_on_board": 1,
+    "members_on_board": [
+     "KLIC"
+    ],
+    "present_counts": {
+     "buy": 0,
+     "watch": 1,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.1329,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.21727,
+    "ew_10d": -0.072592
+   },
+   {
+    "basket_id": "us_sector_energy",
+    "name": "Energy (Equal-Weight)",
+    "category": "US Sectors (EW)",
+    "as_of": "2026-08-05",
+    "n_members": 21,
+    "n_members_live": 21,
+    "n_members_read": 21,
+    "n_members_on_board": 1,
+    "members_on_board": [
+     "WMB"
+    ],
+    "present_counts": {
+     "buy": 1,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.1329,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": -0.02009,
+    "ew_10d": -0.037958
+   },
+   {
+    "basket_id": "energy_complex",
+    "name": "US Energy Complex",
+    "category": "Energy & Power",
+    "as_of": "2026-08-05",
+    "n_members": 22,
+    "n_members_live": 22,
+    "n_members_read": 22,
+    "n_members_on_board": 1,
+    "members_on_board": [
+     "WMB"
+    ],
+    "present_counts": {
+     "buy": 1,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.1171,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": -0.023768,
+    "ew_10d": -0.038804
+   },
+   {
+    "basket_id": "memory_storage",
+    "name": "Memory, HBM & Storage",
+    "category": "Semiconductors",
+    "as_of": "2026-08-05",
+    "n_members": 5,
+    "n_members_live": 4,
+    "n_members_read": 5,
+    "n_members_on_board": 1,
+    "members_on_board": [
+     "SNDK"
+    ],
+    "present_counts": {
+     "buy": 0,
+     "watch": 1,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.0853,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": 0.189784,
+    "ew_10d": -0.087791
+   },
+   {
+    "basket_id": "managed_care",
+    "name": "Managed Care & Insurers",
+    "category": "Healthcare",
+    "as_of": "2026-08-05",
+    "n_members": 9,
+    "n_members_live": 9,
+    "n_members_read": 9,
+    "n_members_on_board": 0,
+    "members_on_board": [],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.0774,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": -0.038934,
+    "ew_10d": -0.077656
+   },
+   {
+    "basket_id": "us_sector_utilities",
+    "name": "Utilities (Equal-Weight)",
+    "category": "US Sectors (EW)",
+    "as_of": "2026-08-05",
+    "n_members": 31,
+    "n_members_live": 31,
+    "n_members_read": 31,
+    "n_members_on_board": 0,
+    "members_on_board": [],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.0099,
+    "pctile_n": 252,
+    "miss": false,
+    "ew_5d": -0.026676,
+    "ew_10d": -0.05012
    }
   ]
  },
@@ -257,95 +1471,94 @@
   "graded_by": "engine.grading.grade_next_bar_return (next-bar fill, survivorship-aware) via engine.name_score_grader's own forward-store ladder",
   "scored_field": "score — name_score.potential_score, the number the US board displays as conviction.score (scripts/build_stock_library.py overwrites c['score'] with the potential score for backward compatibility)",
   "available": true,
-  "n_calls": 75228,
-  "n_frozen_echoes_excluded": 216,
-  "n_stamp_dates": 35,
+  "n_calls": 78152,
+  "n_frozen_echoes_excluded": 217,
+  "n_stamp_dates": 36,
   "stamp_dates": {
    "first": "2026-06-29",
-   "last": "2026-08-05"
+   "last": "2026-08-06"
   },
   "forward_store": {
    "group": "stocks",
-   "n_names_stamped": 2989,
-   "n_names_resolved": 355,
-   "coverage_pct": 11.9,
+   "n_names_stamped": 2990,
+   "n_names_resolved": 358,
+   "coverage_pct": 12.0,
    "note": "the forward join resolves only names with a per-name close store; a stamped name with no store is absent from every horizon, not scored zero"
   },
   "by_horizon": {
    "21d": {
     "horizon_d": 21,
-    "n_graded": 435,
-    "rank_ic": -0.0571,
-    "n_ic_dates": 2,
+    "n_graded": 1858,
+    "rank_ic": -0.1531,
+    "n_ic_dates": 8,
     "ic_cross_section": {
-     "min": 216,
-     "median": 217,
-     "max": 219
+     "min": 232,
+     "median": 232,
+     "max": 233
     },
-    "buy_tier_hit_rate": 0.655,
-    "buy_tier_n": 55,
+    "buy_tier_hit_rate": 0.519,
+    "buy_tier_n": 339,
     "by_tier": {
      "no_setup": {
-      "n": 214,
-      "mean_fwd": 0.0124,
-      "pos_rate": 0.584
+      "n": 939,
+      "mean_fwd": 0.024,
+      "pos_rate": 0.59
      },
      "primed": {
-      "n": 5,
-      "mean_fwd": 0.0721,
-      "pos_rate": 1.0
+      "n": 47,
+      "mean_fwd": -0.0009,
+      "pos_rate": 0.532
      },
      "setting_up": {
-      "n": 50,
-      "mean_fwd": 0.004,
-      "pos_rate": 0.62
+      "n": 292,
+      "mean_fwd": -0.003,
+      "pos_rate": 0.517
      },
      "watch": {
-      "n": 166,
-      "mean_fwd": 0.0091,
-      "pos_rate": 0.572
+      "n": 580,
+      "mean_fwd": 0.0021,
+      "pos_rate": 0.462
      }
     },
     "precision_at_k": {
      "definition": "hit = forward return > that stamp date's median graded forward return; dates with a graded cross-section < 20 are excluded from P@k (the exclusion is stated and counted below, not silent)",
      "min_cross_section": 20,
-     "n_dates_eligible": 2,
+     "n_dates_eligible": 8,
      "n_dates_excluded_thin": 0,
      "cross_section": {
-      "min": 216,
-      "median": 217,
-      "max": 219
+      "min": 232,
+      "median": 232,
+      "max": 233
      },
      "by_k": {
       "p_at_1": {
-       "value": 1.0,
-       "lift_vs_base": 0.501,
-       "n_dates": 2,
-       "n_picks": 2
+       "value": 0.375,
+       "lift_vs_base": -0.124,
+       "n_dates": 8,
+       "n_picks": 8
       },
       "p_at_3": {
-       "value": 1.0,
-       "lift_vs_base": 0.501,
-       "n_dates": 2,
-       "n_picks": 6
+       "value": 0.458,
+       "lift_vs_base": -0.041,
+       "n_dates": 8,
+       "n_picks": 24
       },
       "p_at_5": {
-       "value": 1.0,
-       "lift_vs_base": 0.501,
-       "n_dates": 2,
-       "n_picks": 10
+       "value": 0.525,
+       "lift_vs_base": 0.026,
+       "n_dates": 8,
+       "n_picks": 40
       },
       "p_at_10": {
-       "value": 0.75,
-       "lift_vs_base": 0.251,
-       "n_dates": 2,
-       "n_picks": 20
+       "value": 0.5,
+       "lift_vs_base": 0.001,
+       "n_dates": 8,
+       "n_picks": 80
       }
      },
      "base_rate": 0.499
     },
-    "thin": true,
-    "thin_reason": "2 IC date(s) — below the 5-date disclosure floor; read as a sample, not a measurement"
+    "thin": false
    },
    "63d": {
     "horizon_d": 63,
@@ -360,6 +1573,54 @@
     "null_reason": "still accruing — 0 call(s) have 63 sessions of forward price past their next-bar fill; the grader reports 'accruing' below 5"
    }
   }
+ },
+ "scan_tier": {
+  "available": false,
+  "asof": null,
+  "null_reason": "data/prophet_scan_tier/latest.json absent or unreadable — scan-tier coverage unmeasured in this document"
+ },
+ "priority_score_scorecard": {
+  "tier": "ops_telemetry",
+  "authority": "none — read-only join of two zero-authority stores; no rank, gate, size, board, plan or user-facing consumer",
+  "source": "data/us_prophet_rank/grades/YYYY-MM/YYYY-MM-DD.parquet joined to data/us_prophet_rank/candidates/YYYY-MM.parquet",
+  "scored_field": "prophet_score — the us_prophet_v1 priority score exactly as us_board_rank.score_rows stamped it that night (itemized legs sit beside it in the candidates store; no composite is built here)",
+  "graded_by": "engine.us_prophet_grades — engine.grading.forward_metrics (next-bar fill, positional session horizons), excess vs SPY",
+  "available": false,
+  "population": "EVERY stamped candidate row is graded, not only the ~12 that become plans (operator order 2026-08-05). Two populations are carried separately and never pooled: CURATED (board-admissible) and SCAN (seen and stamped, never admitted). Within each, basing and momentum picks are reported separately at every horizon in the ladder",
+  "store": {
+   "available": false,
+   "n_rows": 0,
+   "n_stamp_dates": 0,
+   "by_horizon": {},
+   "by_cohort": {},
+   "by_signal_class": {},
+   "horizon_ladder": [
+    10,
+    21,
+    42,
+    63
+   ],
+   "chartered_horizon": {
+    "basing": {
+     "primary": 63,
+     "supporting": 21
+    },
+    "momentum": {
+     "primary": 10,
+     "supporting": 21
+    },
+    "other": {
+     "primary": 10,
+     "supporting": 21
+    }
+   },
+   "stamp_dates": {
+    "first": null,
+    "last": null
+   },
+   "null_reason": "no grade rows yet — the store accrues prospectively from the first nightly after merge; H=10 rows mature ~11 sessions after a stamp, H=21 rows ~22"
+  },
+  "null_reason": "no graded rows yet — the grade store accrues prospectively from the first nightly after merge (H=10 marks land ~11 sessions after a stamp, H=21 ~22). An absent record is not a null result"
  },
  "top63_runners": [
   {
@@ -6785,6 +8046,21 @@
    "input": "data/themes_heatmap/subsector_perf_history.jsonl",
    "severity": "structural",
    "reason": "carries asof+subsectors — no theme-level emerging_score rank, so the top-5 entry date is not recoverable from this archive; days_since_top5_entry reported null rather than approximated from the subsector unit (masterplan W2 owns the theme-level PIT rank archive)"
+  },
+  {
+   "input": "data/baskets/ohlcv",
+   "severity": "structural",
+   "reason": "1 basket(s) missing at least one member close while still reading at or above 60%: silver_miners — EW read over the members present, per-basket counts on each row's n_members_read. Disclosed rather than paged: a single unfetched member is a standing fact, and an annotation that fires every night is noise"
+  },
+  {
+   "input": "data/baskets/ohlcv",
+   "severity": "unexpected",
+   "reason": "basket store last bar 2026-08-05 != breadth-cache price_through 2026-07-31 — the basket block is keyed to its OWN store's last bar, never the other cache's clock"
+  },
+  {
+   "input": "data/prophet_scan_tier/latest.json",
+   "severity": "structural",
+   "reason": "unreadable: [Errno 2] No such file or directory: '/Users/chriswong/actions-runner-2/_work/macro/macro/data/prophet_scan_tier/latest.json' — scan-tier coverage not mirrored tonight (the scan lane writes it post-engine)"
   }
  ]
 }
