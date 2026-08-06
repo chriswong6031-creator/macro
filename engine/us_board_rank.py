@@ -175,6 +175,11 @@ ZERO_SCORE_AUTHORITY = (
     "sue",
     "options_gex",
     "theme",
+    # Blow-off (terminal) risk context — engine/roc_blowoff, stamped onto rows as
+    # ``blowoff``.  A measured RISK read, never a rank input: it earns no points, vetoes
+    # no featuring and changes no stage.  tests/test_roc_blowoff.py pins byte-identity
+    # of score_rows() output with the field present vs absent.
+    "blowoff_risk",
 )
 
 SCORE_KIND = "transparent priority heuristic; not a calibrated return forecast"
