@@ -2,7 +2,7 @@
   "schema": "marketing.radar_report/v1",
   "schema_version": 1,
   "produced_by": "engine/marketing/radar_internal.py",
-  "produced_at": "2026-08-05T16:34:07Z",
+  "produced_at": "2026-08-06T06:11:32Z",
   "tier": "display",
   "as_of": "2026-08-05",
   "feeds": [
@@ -22,7 +22,7 @@
       "name": "earnings",
       "ok": true,
       "n_assets": 20,
-      "as_of": "2026-08-05"
+      "as_of": "2026-08-06"
     },
     {
       "name": "movers",
@@ -38,7 +38,7 @@
     }
   ],
   "posted_recent": {
-    "n_tickers": 145,
+    "n_tickers": 159,
     "window_plans": 7
   },
   "surplus": [
@@ -54,65 +54,49 @@
       "ticker": "AAOI",
       "feed": "earnings",
       "why": "earnings 2026-08-06 after hours",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "staleness_days": 0,
-      "opportunity_id": "radar-earnings-AAOI-2026-08-05"
-    },
-    {
-      "ticker": "ABCL",
-      "feed": "earnings",
-      "why": "earnings 2026-08-05 after hours",
-      "as_of": "2026-08-05",
-      "staleness_days": 0,
-      "opportunity_id": "radar-earnings-ABCL-2026-08-05"
+      "opportunity_id": "radar-earnings-AAOI-2026-08-06"
     },
     {
       "ticker": "ABNB",
       "feed": "earnings",
       "why": "earnings 2026-08-06 after hours",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "staleness_days": 0,
-      "opportunity_id": "radar-earnings-ABNB-2026-08-05"
+      "opportunity_id": "radar-earnings-ABNB-2026-08-06"
     },
     {
       "ticker": "ABR",
       "feed": "earnings",
       "why": "earnings 2026-08-07",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "staleness_days": 0,
-      "opportunity_id": "radar-earnings-ABR-2026-08-05"
-    },
-    {
-      "ticker": "ACA",
-      "feed": "earnings",
-      "why": "earnings 2026-08-05 after hours",
-      "as_of": "2026-08-05",
-      "staleness_days": 0,
-      "opportunity_id": "radar-earnings-ACA-2026-08-05"
+      "opportunity_id": "radar-earnings-ABR-2026-08-06"
     },
     {
       "ticker": "ACIW",
       "feed": "earnings",
       "why": "earnings 2026-08-06 pre-market",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "staleness_days": 0,
-      "opportunity_id": "radar-earnings-ACIW-2026-08-05"
+      "opportunity_id": "radar-earnings-ACIW-2026-08-06"
     },
     {
       "ticker": "ACLS",
       "feed": "earnings",
       "why": "earnings 2026-08-06 pre-market",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "staleness_days": 0,
-      "opportunity_id": "radar-earnings-ACLS-2026-08-05"
+      "opportunity_id": "radar-earnings-ACLS-2026-08-06"
     },
     {
       "ticker": "ACMR",
       "feed": "earnings",
       "why": "earnings 2026-08-07 pre-market",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "staleness_days": 0,
-      "opportunity_id": "radar-earnings-ACMR-2026-08-05"
+      "opportunity_id": "radar-earnings-ACMR-2026-08-06"
     },
     {
       "ticker": "ACNB",
@@ -121,6 +105,22 @@
       "as_of": "2026-08-05",
       "staleness_days": 0,
       "opportunity_id": "radar-stage-ACNB-2026-08-05"
+    },
+    {
+      "ticker": "AES",
+      "feed": "earnings",
+      "why": "earnings 2026-08-06",
+      "as_of": "2026-08-06",
+      "staleness_days": 0,
+      "opportunity_id": "radar-earnings-AES-2026-08-06"
+    },
+    {
+      "ticker": "AFL",
+      "feed": "earnings",
+      "why": "earnings 2026-08-06 after hours",
+      "as_of": "2026-08-06",
+      "staleness_days": 0,
+      "opportunity_id": "radar-earnings-AFL-2026-08-06"
     },
     {
       "ticker": "AGM",
@@ -235,36 +235,12 @@
       "opportunity_id": "radar-confluence-SATS-2026-08-05"
     },
     {
-      "ticker": "MDB",
-      "feed": "prophet",
-      "why": "active Prophet plan MDB-BULL-20260803, phase pre_trigger, conviction 51",
-      "as_of": "2026-08-03",
-      "staleness_days": 2,
-      "opportunity_id": "radar-prophet-MDB-2026-08-03"
-    },
-    {
       "ticker": "SOFI",
       "feed": "prophet",
       "why": "active Prophet plan SOFI-BULL-20260803, phase pre_trigger, conviction 83",
       "as_of": "2026-08-03",
       "staleness_days": 2,
       "opportunity_id": "radar-prophet-SOFI-2026-08-03"
-    },
-    {
-      "ticker": "ALHC",
-      "feed": "movers",
-      "why": "S&P mover -20.2% 1D ()",
-      "as_of": "2026-07-31",
-      "staleness_days": 5,
-      "opportunity_id": "radar-movers-ALHC-2026-07-31"
-    },
-    {
-      "ticker": "AMBA",
-      "feed": "movers",
-      "why": "S&P mover +16.1% 1D ()",
-      "as_of": "2026-07-31",
-      "staleness_days": 5,
-      "opportunity_id": "radar-movers-AMBA-2026-07-31"
     },
     {
       "ticker": "BTSG",
@@ -323,6 +299,22 @@
       "opportunity_id": "radar-prophet-NUE-2026-07-31"
     },
     {
+      "ticker": "PODD",
+      "feed": "movers",
+      "why": "S&P mover -19.1% 1D (Healthcare)",
+      "as_of": "2026-07-31",
+      "staleness_days": 5,
+      "opportunity_id": "radar-movers-PODD-2026-07-31"
+    },
+    {
+      "ticker": "PRM",
+      "feed": "movers",
+      "why": "S&P mover -17.8% 1D ()",
+      "as_of": "2026-07-31",
+      "staleness_days": 5,
+      "opportunity_id": "radar-movers-PRM-2026-07-31"
+    },
+    {
       "ticker": "SYY",
       "feed": "prophet",
       "why": "active Prophet plan SYY-BULL-20260731, phase pre_trigger, conviction 38",
@@ -361,20 +353,28 @@
       "as_of": "2026-07-16",
       "staleness_days": 20,
       "opportunity_id": "radar-prophet-SONO-2026-07-16"
+    },
+    {
+      "ticker": "GPI",
+      "feed": "prophet",
+      "why": "active Prophet plan GPI-BULL-20260715, phase triggered_pre_t1, conviction 75",
+      "as_of": "2026-07-15",
+      "staleness_days": 21,
+      "opportunity_id": "radar-prophet-GPI-2026-07-15"
     }
   ],
   "queue": {
-    "added": 9,
+    "added": 8,
     "expired": 0,
-    "total": 192,
-    "open": 104,
+    "total": 199,
+    "open": 112,
     "doa_skipped": 8
   },
   "tiers_summary": {
     "as_of": "2026-07-31",
     "t1": 28,
-    "t2": 1052,
-    "t3": 1575
+    "t2": 345,
+    "t3": 147
   },
   "cadence": {
     "available": true,

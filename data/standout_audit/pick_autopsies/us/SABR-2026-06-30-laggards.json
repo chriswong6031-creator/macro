@@ -1,0 +1,117 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "SABR-2026-06-30-laggards",
+  "ticker": "SABR",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "SABR",
+    "as_of": "2026-06-30",
+    "lane": "laggards",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "SABR",
+    "lane": "laggards",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_break",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Consumer Discretionary",
+    "excess_spy": -0.12906141911878533,
+    "excess_sector": -0.11042219661316544,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 4.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "SABR stopped and underperformed SPY, with an idiosyncratic break recorded and a clean process label. Existing board tenure creates a testable feature-decay question, while the immediate causal mechanism remains undocumented.",
+    "root_cause": "SABR stopped and underperformed SPY, with an idiosyncratic break recorded and a clean process label. Existing board tenure creates a testable feature-decay question, while the immediate causal mechanism remains undocumented.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The laggards book surfaced SABR, while the issuer-risk, travel-rotation, catalyst, and tenure-monitoring books missed or did not preserve the evidence explaining the break.",
+    "engines_credit": "The process organ remains clean under the supplied taxonomy; the company-break, industry-rotation, catalyst, and path-risk organs are the main evidence laggards.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "The supplied taxonomy attributes SABR's underperformance to an issuer-specific break.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Comparable weakness across travel-technology peers would favor industry rotation or common factor exposure.",
+        "evidence_refs": [
+          "outcome_cause=idio_break",
+          "excess_spy=-0.12906141911878533",
+          "terminal_state=STOPPED"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "Board tenure allowed time for issuer, industry, or technical conditions to change before the pick date.",
+        "evidence_status": "claimed",
+        "timing_status": "known_at_entry",
+        "counterfactual": "Stable contemporaneous features throughout tenure would contradict a pre-entry decay mechanism.",
+        "evidence_refs": [
+          "board_tenure_days=4.0",
+          "lane=laggards"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The subsequent adverse path reached the recorded stopping condition.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "Avoiding the stop would change the outcome, but would not establish that the ex-ante thesis or conditioning was sound.",
+        "evidence_refs": [
+          "terminal_state=STOPPED",
+          "process_fault=clean"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Travel-technology or Consumer Discretionary rotation may have deteriorated.",
+      "Financing, leverage, customer, contract, or operating news may have emerged.",
+      "Feature decay during board tenure may have preceded the pick.",
+      "A failed-cycle or fake-breakout structure may have contributed."
+    ],
+    "missing_evidence": [
+      "Travel-technology peer-relative returns",
+      "Debt, liquidity, customer, and contract chronology",
+      "Feature snapshots across board tenure",
+      "Breakout structure and volume evidence",
+      "Entry-to-stop price path",
+      "Event visibility as of the pick date",
+      "Data freshness audit"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "sabr_tenure_and_balance_sheet_decay",
+        "feature": "Tenure-linked technical and balance-sheet deterioration",
+        "measurement": "Track changes in peer-relative trend, volume behavior, credit indicators, and estimate revisions from board inclusion through entry.",
+        "expected_direction": "Concurrent deterioration across these features should be associated with later issuer-specific breaks.",
+        "falsifier": "The features were stable before entry or the break was caused solely by an unforeseeable post-entry event.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T05:48:19+00:00"
+}
