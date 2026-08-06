@@ -626,6 +626,9 @@
       <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
       <!-- ===== Decision-first layout (shared stockview.js renders rec.view) ===== -->
       <div id="sv-decision"></div>
+      <!-- Weekly washout-turn dual-read — sits DIRECTLY under the entry-status
+           headline in #sv-decision, never instead of it (engine/washout_turn). -->
+      <div id="r_washout" style="display:none"></div>
       <div id="sv-fingerprint"></div>
       <div id="sv-honesty"></div>
       <!-- W6-C HOLD tracker — basing state / invalidation (display-only) -->
@@ -2989,6 +2992,69 @@
     if (window.LiveQuotes && window.LiveQuotes.refresh) window.LiveQuotes.refresh();
   }
 
+  // ---- Weekly washout-turn dual-read chip (engine/washout_turn, display-tier) ----
+  // Anchored immediately under #sv-decision — the band that carries the entry-status
+  // headline ("Bounce — turn not confirmed; wait"). The whole point is that it sits
+  // BESIDE that verdict, not instead of it: the daily entry gauge and the weekly
+  // washout read can honestly disagree, and stacking one trailing verdict with no
+  // counter-read is what hid MCD's 6th-percentile weekly cross on 2026-07-31.
+  // Display-tier watch vocabulary: no act-now verb, no rank, no size, no title=
+  // attribute (translated title text is CI-banned).
+  function renderWashoutTurn(d) {
+    var box = el('r_washout');
+    if (!box) return;
+    var w = d && d.washout_turn;
+    if (!w || !w.state) { box.innerHTML = ''; box.style.display = 'none'; return; }
+
+    var isTurn = w.state === 'WASHOUT_TURN';
+    var head = isTurn
+      ? lz('Washout turn', '洗盘转向')
+      : lz('Deep base — momentum curling up', '深部筑底 — 动能回升中');
+    var detail = isTurn
+      ? lz('weekly momentum crossed up from a deep base · since ' + (w.since || '—'),
+           '周线动能自深部上穿 · 起于 ' + (w.since || '—'))
+      : '';
+    var stance = lz('watch — early turn; windows, not certainties',
+                    '观察 — 转向初期；窗口而非定论');
+
+    // Receipts line: own-history depth + base rates, or the plain-word null form.
+    var h = w.history || {};
+    var n = (h.n == null) ? 0 : h.n;
+    var dp = (w.depth_pctile == null) ? '—' : w.depth_pctile;
+    var receipts;
+    if (n < 8 || h.med_13w == null || h.med_26w == null) {
+      // Hybrid null form: the depth receipt stands even when the base-rate
+      // sample is too thin to summarize — thin history is not no history.
+      receipts = lz('depth: bottom ' + dp + '% of own history · too few prior turns to summarize (n=' + n + ')',
+                    '深度：自身历史最低 ' + dp + '% · 历史样本不足（n=' + n + '）');
+    } else {
+      receipts = lz('depth: bottom ' + dp + '% of own history · similar turns n=' + n +
+                      ': 13w median ' + h.med_13w + '% · 26w median ' + h.med_26w + '%',
+                    '深度：自身历史最低 ' + dp + '% · 类似转向 n=' + n +
+                      '：13周中位 ' + h.med_13w + '% · 26周中位 ' + h.med_26w + '%');
+    }
+    // Disclose a lagging tape rather than letting a stale read pass as current.
+    if (w.data_through) {
+      var lagMs = Date.now() - Date.parse(w.data_through + 'T00:00:00Z');
+      if (isFinite(lagMs) && lagMs > 3 * 86400000) {
+        receipts += lz(' · data through ' + w.data_through,
+                       ' · 数据截至 ' + w.data_through);
+      }
+    }
+
+    box.innerHTML =
+      '<div style="margin:8px 0 2px">' +
+        '<span class="alpha-entry ' + (isTurn ? 'ae-intact' : 'ae-neutral') + '">' +
+          esc(head) + '</span>' +
+        (detail ? '<span class="muted" style="font-size:11.5px;margin-left:7px">' +
+          esc(detail) + '</span>' : '') +
+        '<span class="muted" style="font-size:11px;margin-left:7px">' +
+          esc(stance) + '</span>' +
+      '</div>' +
+      '<div class="muted" style="font-size:11px;margin:0 0 4px">' + esc(receipts) + '</div>';
+    box.style.display = '';
+  }
+
   function render(d) {
     document.getElementById('result').style.display = 'block';
     document.getElementById('r_name').textContent = d.name + ' (' + d.ticker + ')';
@@ -3024,6 +3090,7 @@
       if (_sd) _sd.innerHTML = '<div class="panel"><p class="muted">' +
         lz('Could not render the analysis — please refresh.', '无法渲染分析——请刷新页面。') + '</p></div>';
     }
+    renderWashoutTurn(d);   // dual-read chip, directly under the entry-status headline
     renderAlertFeed(d);
 
     var ageEl = document.getElementById('r_age');
@@ -3210,7 +3277,7 @@
     document.getElementById('r_points').innerHTML = '';
     document.getElementById('r_flags').textContent = '';
     document.getElementById('r_why').textContent = '';
-    ['r_eq', 'r_bc', 'r_age', 'r_early', 'r_macro', 'r_macrosens', 'r_altdata', 'r_govexp', 'r_hold', 'r_dtcontra', 'r_archetype', 'r_glance', 'r_afbtn', 'panel_mtf', 'panel_cal']
+    ['r_eq', 'r_bc', 'r_age', 'r_early', 'r_macro', 'r_macrosens', 'r_altdata', 'r_govexp', 'r_hold', 'r_washout', 'r_dtcontra', 'r_archetype', 'r_glance', 'r_afbtn', 'panel_mtf', 'panel_cal']
       .forEach(function (id) { var e = document.getElementById(id); if (e) e.style.display = 'none'; });
     if (afCtl) afCtl.close();
     hideFundamentals();

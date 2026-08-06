@@ -18,6 +18,7 @@
   'nominal_only': ('v-weak', 'Weak',             '偏弱'),
   'insufficient': ('v-none', 'Not enough data',  '数据不足'),
   'degenerate':   ('v-none', 'Not the model',    '并非该模型'),
+  'per_primitive':('v-none', 'Read part by part','逐项解读'),
   'no_data':      ('v-none', 'No data',          '无数据')
 } %}
 {% set FID = {
@@ -295,6 +296,16 @@
   {% if not m.buildable %}
   <p class="foot"><strong>{{ t('Cannot be rebuilt here','此处无法复刻') }}.</strong>
     {% for leg in m.legs if leg.fidelity == 'absent' %}{{ leg.distortion }}{% endfor %}</p>
+  {% elif m.fidelity.absent %}
+  {# A model that DOES build but still carries absences: the absences are a boundary of the
+     data, not a failure to rebuild, so they get their own heading and one line each rather
+     than being run together under "cannot be rebuilt". #}
+  <p class="foot" style="margin-bottom:2px"><strong>{{ t('What we cannot measure, printed rather than dropped','无法测量的部分，如实列出而非略去') }}:</strong></p>
+  <ul class="foot" style="margin:0 0 0 18px; padding:0">
+    {% for leg in m.legs if leg.fidelity == 'absent' %}
+    <li style="margin-bottom:3px"><strong>{{ leg.label }}</strong> — {{ leg.distortion }}</li>
+    {% endfor %}
+  </ul>
   {% endif %}
 
   <details style="margin-top:8px">
@@ -430,6 +441,17 @@
               '十二个季度的读数偏少。临界结果应视为未定论，而非已定论。') }}</li>
     <li>{{ t('We are testing our rebuild, not their model. Where a part is a stand-in, a poor result may be our substitute failing rather than their idea.',
               '我们检验的是自己的复刻件，而非厂商的模型。凡使用替代口径之处，结果不佳可能是替代口径失效，而非其思路有误。') }}</li>
+    {# The bullets above describe the quarterly fundamentals panel. The options family sits on
+       a different substrate entirely, so its limits are keyed off its own stamps rather than
+       letting a reader carry "three years / twelve quarters" across to a six-week panel. #}
+    {% if study_meta.limits.options_regime %}
+    <li>{{ t('The options family is a different panel: six weeks of a single market regime, which at a five-day horizon is about six independent windows. Every significance number on it is empty by construction — read those rows as directions to watch, not as measured effects.',
+              '期权族系所用面板完全不同：仅六周、单一市场状态，按五日前瞻计算约为六个独立窗口。其上任何显著性数字在构造上都不成立－该部分应视为待观察的方向，而非已测得的效应。') }}</li>
+    {% endif %}
+    {% if study_meta.limits.options_stamp %}
+    <li>{{ t("Options rows carry the date our collector ran, not the trading session it read: 9 of 41 stamps simply repeated the session before them. We collapse those before scoring, but the change-based rows still rest on about 13 usable dates.",
+              '期权数据行标注的是采集程序的运行日期，而非其读取的交易时段：41个标记中有9个只是重复了前一时段。计分前已合并重复项，但基于变化量的行仍仅依赖约13个可用日期。') }}</li>
+    {% endif %}
   </ul>
   {% if study_meta.generated_utc %}
   <p class="xs muted" style="margin:9px 0 0">{{ t('Measured','实测时间') }} {{ study_meta.generated_utc }} ·

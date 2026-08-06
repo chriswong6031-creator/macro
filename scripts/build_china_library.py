@@ -3605,8 +3605,14 @@ def main(alpha: dict | None = None) -> dict | None:
                 _bn_cw = china_standout_track.append_board(
                     _cont_watch_rows, asof=as_of, lane=_lane, top_n=_ccw.CAP)
                 log.info("china continuation_watch board-track: logged %d rows", _bn_cw)
+            _bt = china_standout_track.grade()
+            # Detach the tuple-keyed F7 map BEFORE _bt reaches wide/setups — it must
+            # never ride into the JSON artifact (see _detach_board_track_plumbing).
+            _bt, _fwd_map = _detach_board_track_plumbing(_bt)
             # W0 — loser + miss telemetry (engine/cn_prophet_audit.py). OPS-TELEMETRY
-            # tier with ZERO authority: it reads the board store we just appended to,
+            # tier with ZERO authority: it reads the board store AFTER grade() has written
+            # back the same-night spine axes (fwd_mfe_*, terminal states) — placed
+            # here so rank-effectiveness never reads a one-night-stale spine,
             # the price stores, and the PIT candidate ledger, and writes ONLY to
             # data/cn_prophet_audit/. It never touches wide["buy"], the lanes, the
             # scores or the ranks — tests/test_cn_prophet_audit.py pins that the buy
@@ -3623,10 +3629,6 @@ def main(alpha: dict | None = None) -> dict | None:
                          float(_audit.get("elapsed_seconds") or 0.0))
             except Exception as _cpa_e:  # noqa: BLE001 — telemetry never blocks the board
                 log.warning("cn_prophet_audit failed (%s) — board build continues", _cpa_e)
-            _bt = china_standout_track.grade()
-            # Detach the tuple-keyed F7 map BEFORE _bt reaches wide/setups — it must
-            # never ride into the JSON artifact (see _detach_board_track_plumbing).
-            _bt, _fwd_map = _detach_board_track_plumbing(_bt)
             if (
                 _bt.get("available")
                 and _bt.get("board_definition") == wide["board_definition"]

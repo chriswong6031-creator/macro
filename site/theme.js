@@ -450,7 +450,7 @@
     // Keep the dynamic dependency cache-safe too. theme.js itself is
     // content-hashed in every page; this explicit release key prevents a
     // year-cached account.js from pinning an older navigation loader.
-    s.src = pfx + 'account.js?v=20260803-onemenu'; s.async = true;
+    s.src = pfx + 'account.js?v=20260806-zh-megamenu'; s.async = true;
     document.head.appendChild(s);
   })();
 
@@ -551,25 +551,28 @@
 
   /* ---- soft-contrast palette (default for everyone) ------------------------
      Injects a <style id="soft-contrast-css"> that adds html.soft-contrast
-     overrides: warmer/softer bg + panels in light mode, lifted blacks in dark.
-     Measured on the softened light backgrounds: body --text 9.6-10.6:1 (AAA);
-     --muted 5.8-6.5:1 (comfortably above the 4.5:1 AA floor).
+     overrides: light gets the depth recipe (white panels on a deeper canvas +
+     real card shadows — DESIGN_DOCTRINE §5.8, estate rollout 2026-08-03 after
+     the us_stocks/subsectors light pass proved panel≈bg was the flatness bug);
+     dark keeps lifted blacks. Measured on the light surfaces (#fff panel /
+     #eef1f6 panel2 / #e8ebf1 canvas): body --text 9.7-11.6:1 (AAA); --muted
+     5.9-7.0:1 (comfortably above the 4.5:1 AA floor).
      Applied unconditionally at boot (no user toggle). theme.js loads end-of-
      body, so pages get one standard-palette paint first on cold load; the hub's
      <head> boot script also sets the class pre-paint (delta is subtle). */
   /* --line raised in both palettes (estate contrast pass 2026-08-03): the old
      #d0d4db / #262c38 hairlines measured 1.02–1.45:1 against these surfaces —
      card boundaries you had to hunt for, and dark sat FAINTER than light. The
-     raised pair lands both themes in the same 1.45–1.86 perceptual band
-     (#c0c4cd: 1.45–1.60 on the light surfaces · #3a4150: 1.61–1.86 on dark),
-     matching the W3 sector-page floor. This block outcascades theme.css, so
-     these are the operative estate values. */
+     raised pair keeps both themes in one perceptual band on the depth-recipe
+     surfaces (#c0c4cd: 1.46–1.75 light · #3a4150: 1.61–1.86 dark), matching
+     the W3 sector-page floor. This block outcascades theme.css, so these are
+     the operative estate values. */
   var SOFT_CONTRAST_CSS =
     'html.soft-contrast[data-theme="light"]{' +
-      '--bg:#eceef1;--panel:#f5f5f7;--panel2:#e8eaed;--text:#2e3950;--muted:#4c5a6c;--line:#c0c4cd;' +
-      '--glass-bg:color-mix(in srgb,#f5f5f7 64%,transparent);' +
+      '--bg:#e8ebf1;--panel:#ffffff;--panel2:#eef1f6;--text:#2e3950;--muted:#4c5a6c;--line:#c0c4cd;' +
+      '--glass-bg:color-mix(in srgb,#ffffff 64%,transparent);' +
       '--glass-brd:color-mix(in srgb,#2e3950 9%,transparent);' +
-      '--card-shadow:0 1px 3px rgba(20,30,50,.05)' +
+      '--card-shadow:0 1px 2px rgba(23,32,55,.05),0 8px 24px -12px rgba(23,32,55,.10)' +
     '}' +
     'html.soft-contrast[data-theme="dark"]{' +
       '--bg:#0d1018;--panel:#151820;--panel2:#1b1f28;--text:#c8d0dc;--line:#3a4150' +
@@ -1379,6 +1382,15 @@
       nav.classList.remove('nav-open');
       btn.setAttribute('aria-expanded', 'false');
       links.querySelectorAll('.nav-dd.open').forEach(function(d) { d.classList.remove('open'); });
+      // Drills carry their own state class. Leaving one open would strand a
+      // full-screen country sheet over the page after the nav itself closed.
+      links.querySelectorAll('.nav-drill.is-open').forEach(function (d) {
+        d.classList.remove('is-open');
+        var t = d.querySelector(':scope > [data-nav-drill-open]');
+        if (t) t.setAttribute('aria-expanded', 'false');
+        var p = d.querySelector(':scope > [data-nav-drill-panel]');
+        if (p) p.setAttribute('inert', '');
+      });
     }
     btn.addEventListener('click', function (e) {
       e.preventDefault(); e.stopPropagation();
@@ -1394,6 +1406,12 @@
       if (!trigger) return;
       trigger.addEventListener('click', function(e) {
         if (window.innerWidth > 900) return;
+        // A drill trigger is owned by initNavDrills' delegated handler, which
+        // listens on `document`. nav_market.js converts a folded country into
+        // exactly that (data-nav-drill-open) AFTER this listener is attached,
+        // so swallowing the click here with stopPropagation() left tapping a
+        // country inside International doing nothing at all on mobile. Yield.
+        if (trigger.hasAttribute('data-nav-drill-open')) return;
         e.preventDefault(); e.stopPropagation();
         var wasOpen = dd.classList.contains('open');
         dd.parentElement.querySelectorAll(':scope > .nav-dd.open').forEach(function(d) {
@@ -1442,7 +1460,14 @@
     // close after a destination link is picked, on Escape, on outside tap, on widen
     links.addEventListener('click', function (e) {
       var a = e.target.closest('a');
-      if (a && !a.closest('.nav-dd') || (a && a.closest('.nav-dd-menu'))) closeNav();
+      if (!a) return;
+      // A submenu/drill trigger is navigation WITHIN the menu, not a destination.
+      // Folded country triggers (nav_market.js) are <a class="nav-sub-trig"
+      // data-nav-drill-open> sitting inside International's .nav-dd-menu, so the
+      // rule below used to read them as "a link was picked" and shut the whole
+      // mobile nav — the reader tapped China and the menu simply vanished.
+      if (a.hasAttribute('data-nav-drill-open') || a.classList.contains('nav-sub-trig')) return;
+      if (!a.closest('.nav-dd') || a.closest('.nav-dd-menu')) closeNav();
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeNav(); });
     document.addEventListener('click', function (e) { if (!nav.contains(e.target)) closeNav(); });

@@ -99,6 +99,13 @@ on:
       - "admin/static/*.js"
       - "scripts/check_admin_js.py"
       - "tests/test_admin_js_no_undef.py"
+      # Same file, second failure mode: `onclick="fn(${JSON.stringify(v)})"` emits
+      # double quotes that close the attribute, so the browser stores `fn(` and the
+      # control is dead on click. Six sites shipped that way — the entitlements tier
+      # and status chips, the support status chips, and the ticket thread's Resolve,
+      # Close and Send-reply buttons (support replies could not be sent at all).
+      # Listed by name so a test-only edit still triggers the lane that runs it.
+      - "tests/test_admin_inline_handler_attrs.py"
       # Absolute-path prune guard (#3802): a walk excluding ".claude"/"worktrees"
       # via `path.parts` also matches the checkout's own path and scans nothing.
       # Named so a test-only edit still triggers the lane that runs it.

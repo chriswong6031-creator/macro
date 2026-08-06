@@ -61,7 +61,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | metabolism-phase-v2d | 4 |
 | metabolism-phase0 | 2 |
 | mlc | 1 |
-| momoedge | 9 |
+| momoedge | 10 |
 | narrative-ignition | 5 |
 | nasdaq-internals | 1 |
 | neural-web | 64 |
@@ -110,13 +110,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | display | 365 |
 | infrastructure | 141 |
 | scored | 4 |
-| shadow | 84 |
+| shadow | 85 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 562 |
+| git | 563 |
 | git+r2 | 2 |
 | gitignored-local | 15 |
 | r2 | 15 |
@@ -698,13 +698,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | options-structure-gex-state | `options_structure/gex_state/<ROOT>.json` | json | daily-engine | display | 2 | 2 |
 | prophet-trade-plan | `prophet/trade_plan/<ID>.json` | json | daily-engine | display | 2 | 1 |
+| us-context-vector | `data/us_prophet_rank/candidates/YYYY-MM.parquet` | parquet | daily-engine | shadow | 3 | 0 |
 | options-flow-chain-heat | `live_flow/chain_heat_current.json` | json | collect | display | 1 | 1 |
 | options-structure-matrix | `options_structure/matrix/<ROOT>.json` | json | daily-engine | display | 1 | 1 |
 | prophet-management-state | `prophet/state/<ID>.json` | json | daily-engine | display | 1 | 1 |
+| us-prophet-grades | `data/us_prophet_rank/grades/YYYY-MM/YYYY-MM-DD.parquet` | parquet | daily-engine | shadow | 2 | 0 |
 | options-structure-structural | `options_structure/structural/<ROOT>.json` | json | daily-engine | shadow | 1 | 0 |
 | prophet-index | `site/prophet/index.json` | json | daily-engine | display | 0 | 1 |
 | prophet-ledger | `data/prophet/ledger.jsonl` | jsonl | daily-engine | display | 1 | 0 |
-| us-context-vector | `data/us_prophet_rank/candidates/YYYY-MM.parquet` | parquet | daily-engine | shadow | 0 | 0 |
 
 ### narrative-ignition
 
