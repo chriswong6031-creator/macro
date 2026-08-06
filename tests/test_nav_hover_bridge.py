@@ -20,8 +20,8 @@ MACRO_HTML = (ROOT / "site" / "macro.html").read_text(encoding="utf-8")
 # The cache-buster the theme.js -> account.js -> nav_market.js chain is pinned
 # to, and a digest of the payload that key is responsible for busting. They MUST
 # move together -- see test_nav_release_key_moves_with_the_payload_it_busts.
-NAV_RELEASE_KEY = "20260803-onemenu"
-NAV_PAYLOAD_DIGEST = "5f766dac"
+NAV_RELEASE_KEY = "20260806-zh-megamenu"
+NAV_PAYLOAD_DIGEST = "ee7bf5c6"
 
 
 def _payload_digest() -> str:
@@ -176,6 +176,7 @@ def test_hover_gap_release_uses_fresh_immutable_asset_chain() -> None:
         "20260730-exact7",
         "20260731-folded2",
         "20260801-crossfade",
+        "20260803-onemenu",
     ):
         assert stale not in TEMPLATE_THEME_JS
         assert stale not in SITE_THEME_JS
@@ -306,7 +307,13 @@ def test_switching_menus_cross_fades_over_one_morphing_plate() -> None:
 
 def test_panel_choreography_is_killed_by_name_under_reduced_motion() -> None:
     """Repo law: a reduced-motion kill block names its pseudo-elements."""
-    block = TEMPLATE_CSS.split("@media (prefers-reduced-motion: reduce) {")[-1]
+    from tests.test_navigation_refresh import media_block_containing
+
+    block = media_block_containing(
+        TEMPLATE_CSS,
+        "@media (prefers-reduced-motion: reduce) {",
+        ".site-nav .nav-dd-menu.mega-menu.nav-panel-in",
+    )
     for selector in (
         ".site-nav .nav-dd-menu.mega-menu.nav-panel-in",
         ".site-nav .nav-dd-menu.mega-menu.nav-panel-out",

@@ -230,18 +230,43 @@ def _us_market_menu_js() -> str:
     return NAV_JS[start:end]
 
 
-def _us_market_structure_section_js() -> str:
+def _section_js(header: str) -> str:
+    """The whole `['<header>', [ …rows… ], '<zh>']` literal, brackets balanced.
+
+    Not `index("]]")`: a section is now `[label, rows, zhLabel]` (the mega menus
+    went bilingual, 2026-08-04) so its rows array no longer abuts the section's
+    own closing bracket. Balance the brackets instead, and the slice survives
+    any further trailing metadata.
+    """
     us = _us_market_menu_js()
-    start = us.index("['Market structure', [")
-    end = us.index("]]", start) + len("]]")
-    return us[start:end]
+    start = us.index(f"['{header}', [")
+    depth, i, in_str = 0, start, False
+    while i < len(us):
+        ch = us[i]
+        if in_str:
+            if ch == "\\":
+                i += 2
+                continue
+            if ch == "'":
+                in_str = False
+        elif ch == "'":
+            in_str = True
+        elif ch == "[":
+            depth += 1
+        elif ch == "]":
+            depth -= 1
+            if depth == 0:
+                return us[start:i + 1]
+        i += 1
+    raise AssertionError(f"unbalanced brackets in nav_market.js section {header!r}")
+
+
+def _us_market_structure_section_js() -> str:
+    return _section_js("Market structure")
 
 
 def _us_market_overview_section_js() -> str:
-    us = _us_market_menu_js()
-    start = us.index("['Market overview', [")
-    end = us.index("]]", start) + len("]]")
-    return us[start:end]
+    return _section_js("Market overview")
 
 
 def test_js_market_structure_section_carries_the_same_three_rows_in_order():
