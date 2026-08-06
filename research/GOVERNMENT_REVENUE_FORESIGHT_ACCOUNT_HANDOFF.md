@@ -2,9 +2,10 @@
 
 **Checkpoint:** 2026-08-06
 
-**Implementation through:** Wave 9B
+**Implementation through:** Wave 9C (award-event persistence recovery shipped 2026-08-06)
 
-**Next build:** forward event-spine recovery and exact issuer expansion
+**Next build:** Wave 9D exact issuer expansion — after a nightly `daily.yml` collect has actually
+persisted the event triad in production and `projection_state_absent` has cleared
 
 **Canonical implementation checkpoint:** this file
 
@@ -100,7 +101,44 @@ Exact PLTR reviewed UEIs at the checkpoint are `FSY4LVSBGWB7` and `HNN4F9JZWDY8`
 - `run_state` became `failed` and `last_successful_observed_at` remained null; and
 - the persistence error is stored as `ledger_write_failed`.
 
-The saved exception begins with `Invalid value '['` followed by a large list of receipt hashes, but `_safe_error` truncates the useful exception suffix. A list-valued/object cell crossing a Parquet schema boundary is the leading hypothesis; it is **not a confirmed root cause**. Possible inputs include receipt-manifest data or mixed legacy/new event-column types. Reproduce from the committed source/status/receipt bundle and capture the complete traceback before changing normalization.
+### Root cause — CONFIRMED 2026-08-06, and it was not the leading hypothesis
+
+The Parquet-schema hypothesis recorded above is **refuted**. Nothing ever reached `to_parquet`. The
+failure is a **pandas 3.0 migration break**:
+
+```
+File "collectors/usaspending_awards.py", line 1341, in _ensure_snapshot_hashes
+    out.loc[missing, "snapshot_content_sha256"] = [ ... ]
+File "pandas/core/internals/blocks.py", line 1118, in setitem
+    nb = self.coerce_to_target_dtype(value, raise_on_upcast=True)
+TypeError: Invalid value '['814c439cdeb3deed...', ...]' for dtype 'float64'
+```
+
+`data/government_revenue/award_snapshots.parquet` was committed at #4182; `snapshot_content_sha256`
+joined `SNAPSHOT_COLUMNS` later at #4216. So `reindex(columns=SNAPSHOT_COLUMNS)` materializes that
+column as an all-NaN **float64**, and the backfill of 1,936 hashes writes strings into it. pandas 2.x
+upcast silently (FutureWarning only); **pandas 3.0 raises**. The bug was latent from #4216 and became
+fatal the night the runner crossed the 2→3 boundary — `requirements.txt` pins only `pandas>=2.2`, and
+41 workflows share one mutable venv keyed solely by physical runner name
+(`$HOME/.cache/mm-venv-$RUNNER_NAME`, installed with no `--upgrade` and no ceiling), so one job's
+unbounded resolve upgrades pandas for every other workflow on that runner.
+
+Reproduced byte-exactly from the committed artifact: same leading hash `814c439cdeb3deed…`, same
+`for dtype 'float64'` tail.
+
+**Why the incident review was misdirected:** `_safe_error` truncated the exception's *suffix*, which
+is precisely where `for dtype 'float64'` lives. The head that survived was 800 characters of receipt
+hashes — which reads exactly like a list-valued cell hitting a Parquet boundary. Truncate exception
+text from the middle, never from the tail.
+
+A **second instance of the same hazard** in the same file was found by census and fixed in the same
+PR: `_ensure_award_keys` at line 1032 does `out.at[idx, "award_key"] = "<string>"` after
+`merge_awards` hands it a `reindex(columns=AWARD_COLUMNS)` frame — `TypeError: Invalid value
+'generated:CONT_AWD_N0001' for dtype 'float64'`.
+
+The cure already existed in-house: `engine/china_standout_track.py` and `engine/board_ledger.py` each
+carry a `_coerce_object_cols()` helper naming this exact pandas-3 TypeError. The collector simply
+never got it. **Grep for `_coerce_object_cols` before writing a third spelling.**
 
 Required safety behavior:
 
@@ -123,7 +161,35 @@ Those production artifacts were absent at this checkpoint.
 
 Wave numbers continue the shipped Wave 9A/9B candidate work. Keep PRs narrow. A wave may require several PRs, but no PR should silently combine new authority, new data semantics, and major UI work.
 
-### Wave 9C — forward event-spine recovery and activation
+### Wave 9C — forward event-spine recovery and activation — **SHIPPED 2026-08-06**
+
+Delivered in the recovery PR (`collectors/usaspending_awards.py`, `tests/test_usaspending_awards.py`
+only — no engine, UI, mapping, Neural Web, Prophet, or budget scope):
+
+- both pandas-3 assignment sites repaired with the in-house `_coerce_object_cols` idiom, over a
+  `_NUMERIC_LEDGER_COLS` complement verified against the real on-disk parquet dtypes so no legacy
+  numeric column changes type;
+- the two event ledgers pinned to a **declared** Parquet schema (`_normalize_event_ledger`) instead
+  of one inferred from whichever rows a run happened to fetch;
+- `persist()` restructured to stage **and verify every artifact** — including re-reading the staged
+  event pair and recomputing its projection-generation binding — before a single `os.replace`, so an
+  interrupted or malformed write leaves every live artifact byte-identical;
+- `_safe_error` now keeps the head *and* the diagnostic tail with an explicit elision marker.
+
+Verified end-to-end against the live USAspending API into a scratch root (the repo's ledgers were
+never written — nightly remains the sole forward-ledger advancer): the triad materializes, its
+generation binding matches the on-disk pair, no `.tmp` leaks, and the baseline emits **zero**
+eligible events. A second run over the same accrued root added **+0 snapshot rows and +0
+action-version rows** with an unchanged `projection_generation_id`, proving the declared schema
+round-trips without fabricating source revisions. Both pandas majors green (3.0.3 and 2.3.3).
+
+**Still open after this PR:** production only shows the triad once a **nightly `daily.yml` collect**
+runs the fixed collector. `government-revenue-live.yml` does not collect — it only folds an
+already-committed triad (`collectors/usaspending_awards.py` appears there solely as a push
+path-filter). Until that nightly runs, `/api/government-revenue/latest` keeps reporting
+`"availability":"projection_state_absent"`.
+
+**Original wave contract, retained for reference:**
 
 **Goal:** establish the first receipt-bound baseline, then emit only genuine changes observed after it.
 

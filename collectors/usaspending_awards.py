@@ -317,6 +317,55 @@ AWARD_ACTION_VERSION_STATE_FIELDS = tuple(
     }
 )
 
+# Columns of the three legacy ledgers that carry numbers.  Everything else in
+# AWARD_COLUMNS/ACTION_COLUMNS/SNAPSHOT_COLUMNS carries strings but is nullable:
+# an all-NaN column loaded from parquet types float64 and pandas 3.x then REFUSES
+# a string cell write (TypeError: Invalid value '['814c439c...']' for dtype
+# 'float64').  Coerce to object at every frame-assembly point.  The object set is
+# derived as the complement rather than hand-listed because the defect being
+# repaired *is* a column joining a canonical list without the accrued store
+# following: a copied literal would drift again on the next added column, while
+# this numeric set is small, fixed, and auditable by eye.
+_NUMERIC_LEDGER_COLS = (
+    "total_obligated",
+    "total_outlays",
+    "current_award_amount",
+    "potential_award_amount",
+    "federal_action_obligation",
+)
+_OBJECT_COLS = tuple(
+    column
+    for column in dict.fromkeys([*AWARD_COLUMNS, *ACTION_COLUMNS, *SNAPSHOT_COLUMNS])
+    if column not in _NUMERIC_LEDGER_COLS
+)
+
+# Declared cell kinds for the two forward event ledgers.  Every other canonical
+# event column is text.  These two ledgers are new, so the schema is chosen here
+# rather than inherited; the three legacy ledgers keep their historical dtypes.
+AWARD_EVENT_NUMBER_COLUMNS = frozenset({
+    "total_obligation",
+    "total_outlay",
+    "current_award_amount",
+    "potential_award_amount",
+    "federal_action_obligation",
+})
+# ``engine.government_revenue.award_events._strict_true`` accepts a real boolean
+# and never a truthy imported string, so these must persist as booleans.  A
+# source value that is not a real boolean is stored as null rather than parsed:
+# the reader already refuses such a value, so nulling it keeps the downstream
+# decision identical while removing the mixed cell.
+AWARD_EVENT_BOOLEAN_COLUMNS = frozenset({
+    "receipt_verified",
+    "event_eligible",
+    "is_retraction",
+    "action_retracted",
+    "retracted",
+    "rescinded",
+    "is_correction",
+    "action_corrected",
+    "corrected",
+})
+
 
 def _canonical_json_bytes(value: Any) -> bytes:
     """Canonical bytes for receipt binding; request headers/body never persist raw."""
@@ -333,14 +382,62 @@ def _sha256_json(value: Any) -> str:
     return hashlib.sha256(_canonical_json_bytes(value)).hexdigest()
 
 
-def _safe_error(exc: Exception | str) -> str:
-    """Keep status diagnostics useful without allowing credential-shaped text through."""
-    text = str(exc)
-    return re.sub(
+_SAFE_ERROR_MAX_CHARS = 800
+_SAFE_ERROR_ELISION = "...[{elided} chars elided]..."
+
+
+def _safe_error(exc: Exception | str, *, limit: int = _SAFE_ERROR_MAX_CHARS) -> str:
+    """Keep status diagnostics useful without allowing credential-shaped text through.
+
+    The bound keeps a runaway message out of ``ingest_status.json``, but a plain
+    head truncation throws away the half of an exception that names its cause.
+    Python puts the offending *value* first and the failing *type* last, so
+    ``TypeError: Invalid value '[<1,936 sha256 strings>]' for dtype 'float64'``
+    truncated at 800 characters preserves only the receipt hashes and deletes
+    ``for dtype 'float64'``.  That is exactly what the 2026-08-06 nightly
+    recorded, and it sent the incident review toward a Parquet schema
+    hypothesis for a failure that never reached ``to_parquet`` at all.  Keeping
+    both ends with an explicit elision marker preserves the diagnosis while
+    still bounding the stored text; the marker's own length is charged against
+    the limit so the result never exceeds it.
+    """
+    text = re.sub(
         r"(?i)(api[\s_-]?key|authorization|token|secret|password)\s*[=:]\s*[^,;\n]+",
         r"\1=[redacted]",
-        text,
-    )[:800]
+        str(exc),
+    )
+    if len(text) <= limit:
+        return text
+    # Reserve against the widest marker this message could need, so the final
+    # string is bounded without a second truncation that would re-drop the tail.
+    reserve = len(_SAFE_ERROR_ELISION.format(elided=len(text)))
+    budget = max(2, limit - reserve)
+    head_len = max(1, budget * 3 // 5)
+    tail_len = max(1, budget - head_len)
+    elided = len(text) - head_len - tail_len
+    return text[:head_len] + _SAFE_ERROR_ELISION.format(elided=elided) + text[-tail_len:]
+
+
+def _coerce_object_cols(df: pd.DataFrame) -> pd.DataFrame:
+    """Force the string-bearing nullable ledger columns to object dtype (NaN → None).
+
+    Pandas 3.x refuses string writes to all-NaN float64 columns loaded from
+    legacy parquet.  Call this at every frame-assembly point where an accrued
+    ledger may predate a canonical column.  Column set is complete: see
+    _OBJECT_COLS.
+
+    This is what failed the 2026-08-06 nightly.  ``award_snapshots.parquet`` was
+    committed before ``snapshot_content_sha256`` joined SNAPSHOT_COLUMNS, so the
+    reindex in ``_ensure_snapshot_hashes`` materialized that column as float64
+    and the backfill of 1,936 hashes raised before anything reached
+    ``to_parquet`` — the run was recorded as ``ledger_write_failed`` and no
+    artifact was ever written.
+    """
+    for col in _OBJECT_COLS:
+        if col in df.columns and df[col].dtype != object:
+            coerced = df[col].astype(object)
+            df[col] = coerced.where(pd.notna(coerced), None)
+    return df
 
 
 def _bool_or_none(value: Any) -> bool | None:
@@ -473,6 +570,60 @@ def _event_clean(value: Any) -> Any:
         except (TypeError, ValueError):
             pass
     return str(value)
+
+
+def _event_cell(value: Any, column: str) -> Any:
+    """Return the single canonical Python value one event column may persist.
+
+    The event ledgers are assembled from raw official JSON, so a source may put
+    a string, a number, a boolean, or a whole object in the same field on
+    different days.  Persisting that directly gives a column whose Parquet type
+    depends on which shapes happened to arrive -- and a mixed column has no
+    valid Arrow type at all.  Collapsing each cell to its declared kind here,
+    at normalization *and* at merge *and* at write, is what makes the written
+    schema a property of the column list instead of a property of the run.
+
+    The same function must be used everywhere because ``event_state_sha256`` is
+    computed over these values.  Canonicalizing only at write time would persist
+    a row whose stored hash no longer describes its stored cells, and the next
+    run's merge would then read that row back, recompute a different hash, and
+    emit a fabricated source revision that no official response ever made.
+    """
+    cleaned = _event_clean(value)
+    if column in AWARD_EVENT_BOOLEAN_COLUMNS:
+        return cleaned if isinstance(cleaned, bool) else None
+    if column in AWARD_EVENT_NUMBER_COLUMNS:
+        return _float(cleaned)
+    return _text(cleaned)
+
+
+def _canonical_event_row(row: dict[str, Any], columns: list[str]) -> dict[str, Any]:
+    """Project one normalized event row onto its canonical columns and kinds."""
+    return {column: _event_cell(row.get(column), column) for column in columns}
+
+
+def _normalize_event_ledger(frame: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    """Pin one event ledger to a deterministic, Parquet-safe schema before writing.
+
+    Dtypes are set explicitly rather than inferred.  Inference is not stable
+    across runs: an empty ledger infers ``object`` for every column and writes
+    an Arrow ``null`` type, a fully-null text column does the same, and the
+    identical column writes ``large_string`` as soon as one row carries a value.
+    A reader that pins types, and the cross-artifact projection digest that
+    binds the pair, both need the schema to depend only on the column list.
+    """
+    out = frame.reindex(columns=columns)
+    normalized: dict[str, pd.Series] = {}
+    for column in columns:
+        values = [_event_cell(value, column) for value in out[column].tolist()]
+        if column in AWARD_EVENT_BOOLEAN_COLUMNS:
+            dtype: str = "boolean"
+        elif column in AWARD_EVENT_NUMBER_COLUMNS:
+            dtype = "float64"
+        else:
+            dtype = "string"
+        normalized[column] = pd.Series(values, index=out.index, dtype=dtype)
+    return pd.DataFrame(normalized, columns=columns, index=out.index)
 
 
 def _present(mapping: dict | None, *names: str) -> tuple[bool, Any]:
@@ -869,8 +1020,11 @@ def normalize_award_event_snapshot(
     row["event_eligible"] = bool(event_eligible)
     row["coverage_scope"] = AWARD_EVENT_COVERAGE_SCOPE
     row["source_field_presence"] = _source_field_presence(present)
-    row["event_state_sha256"] = _event_state_sha256(row, AWARD_EVENT_SNAPSHOT_STATE_FIELDS)
-    return {column: row.get(column) for column in AWARD_EVENT_SNAPSHOT_COLUMNS}
+    canonical = _canonical_event_row(row, AWARD_EVENT_SNAPSHOT_COLUMNS)
+    canonical["event_state_sha256"] = _event_state_sha256(
+        canonical, AWARD_EVENT_SNAPSHOT_STATE_FIELDS
+    )
+    return canonical
 
 
 def normalize_award_event_action(
@@ -956,8 +1110,11 @@ def normalize_award_event_action(
     row["event_eligible"] = bool(event_eligible)
     row["coverage_scope"] = AWARD_EVENT_COVERAGE_SCOPE
     row["source_field_presence"] = _source_field_presence(present)
-    row["event_state_sha256"] = _event_state_sha256(row, AWARD_ACTION_VERSION_STATE_FIELDS)
-    return {column: row.get(column) for column in AWARD_ACTION_VERSION_COLUMNS}
+    canonical = _canonical_event_row(row, AWARD_ACTION_VERSION_COLUMNS)
+    canonical["event_state_sha256"] = _event_state_sha256(
+        canonical, AWARD_ACTION_VERSION_STATE_FIELDS
+    )
+    return canonical
 
 
 def _float(value: Any) -> float | None:
@@ -1021,7 +1178,7 @@ def _award_key(generated_award_id: Any, award_id: Any) -> str | None:
 
 def _ensure_award_keys(frame: pd.DataFrame) -> pd.DataFrame:
     """Backfill canonical identity when reading pre-award_key ledgers."""
-    out = frame.copy()
+    out = _coerce_object_cols(frame.copy())
     if "award_key" not in out.columns:
         out["award_key"] = None
     generated = out.get("generated_award_id", pd.Series(index=out.index, dtype=object))
@@ -1249,6 +1406,7 @@ def merge_awards(existing: pd.DataFrame, incoming: pd.DataFrame) -> pd.DataFrame
         explicit_null = new[observed_column].notna() & new[value_column].isna()
         for index in new.index[explicit_null]:
             combined.at[index, value_column] = None
+    combined = _coerce_object_cols(combined)
     for k, first_seen in old_first.items():
         if k in combined.index:
             combined.at[k, "first_seen_at"] = first_seen
@@ -1331,7 +1489,15 @@ def _snapshot_content_sha256(row: dict | pd.Series) -> str:
 
 
 def _ensure_snapshot_hashes(frame: pd.DataFrame) -> pd.DataFrame:
-    out = frame.reindex(columns=SNAPSHOT_COLUMNS).copy()
+    """Backfill the content hash for accrued rows that predate the column.
+
+    ``award_snapshots.parquet`` was committed before ``snapshot_content_sha256``
+    joined ``SNAPSHOT_COLUMNS``, so the reindex below hands this function an
+    all-null ``float64`` column that every accrued row needs filled.  The
+    ``_coerce_object_cols`` call is what makes that masked write legal under
+    pandas 3; without it this is the exact line the 2026-08-06 nightly died on.
+    """
+    out = _coerce_object_cols(frame.reindex(columns=SNAPSHOT_COLUMNS).copy())
     if out.empty:
         return out
     missing = out["snapshot_content_sha256"].isna() | out[
@@ -1418,7 +1584,7 @@ def _append_event_versions(
     latest: dict[tuple[str, ...], dict[str, Any]] = {}
     retained: list[dict[str, Any]] = []
     for _, prior in _event_known_sort(accrued).iterrows():
-        normalized = {column: _event_clean(prior.get(column)) for column in columns}
+        normalized = _canonical_event_row(dict(prior), columns)
         key = _event_key(normalized, key_columns)
         if key is None:
             # Do not silently make an unkeyed historical source record a public
@@ -1431,7 +1597,7 @@ def _append_event_versions(
 
     additions: list[dict[str, Any]] = []
     for _, row in _event_known_sort(fresh).drop(columns=["_known"]).iterrows():
-        candidate = {column: _event_clean(row.get(column)) for column in columns}
+        candidate = _canonical_event_row(dict(row), columns)
         key = _event_key(candidate, key_columns)
         if key is None:
             continue
@@ -1606,26 +1772,78 @@ def _read_existing(path: Path, columns: list[str]) -> pd.DataFrame:
         raise RuntimeError(f"refusing to overwrite unreadable accrued store: {path}: {exc}") from exc
 
 
-def _atomic_parquet(frame: pd.DataFrame, path: Path) -> None:
+def _staging_path(path: Path) -> Path:
+    return path.with_name(f".{path.name}.{os.getpid()}.tmp")
+
+
+def _stage_parquet(frame: pd.DataFrame, path: Path) -> tuple[Path, Path]:
+    """Write one artifact to its temp file without touching the live artifact."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
-    try:
-        frame.to_parquet(tmp, index=False)
+    tmp = _staging_path(path)
+    frame.to_parquet(tmp, index=False)
+    return tmp, path
+
+
+def _stage_json(payload: dict, path: Path) -> tuple[Path, Path]:
+    """Write one JSON artifact to its temp file without touching the live artifact."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = _staging_path(path)
+    tmp.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    return tmp, path
+
+
+def _verify_staged_parquet(tmp: Path, frame: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    """Re-read a staged artifact and prove it round-tripped before anything commits.
+
+    A frame that serializes without raising can still land unreadable, short, or
+    missing a canonical column, and a reader that discovers that is reading a
+    live artifact the collector already replaced.  Verifying the staged copy
+    moves the discovery to a point where every live artifact is still last-good.
+    """
+    replayed = pd.read_parquet(tmp)
+    if len(replayed) != len(frame):
+        raise RuntimeError(
+            f"staged artifact did not round-trip: {tmp.name} has {len(replayed)} rows, expected {len(frame)}"
+        )
+    absent = [column for column in columns if column not in replayed.columns]
+    if absent:
+        raise RuntimeError(
+            f"staged artifact dropped canonical columns: {tmp.name}: {', '.join(absent)}"
+        )
+    return replayed
+
+
+def _commit_staged(staged: Iterable[tuple[Path, Path]]) -> None:
+    """Move every verified temp file onto its live path."""
+    for tmp, path in staged:
         os.replace(tmp, path)
+
+
+def _discard_staged(staged: Iterable[tuple[Path, Path]]) -> None:
+    """Remove every temp file so a failed write leaves no partial artifact behind."""
+    for tmp, _path in staged:
+        try:
+            tmp.unlink(missing_ok=True)
+        except OSError:  # pragma: no cover - cleanup must never mask the real failure
+            pass
+
+
+def _atomic_parquet(frame: pd.DataFrame, path: Path) -> None:
+    staged: list[tuple[Path, Path]] = []
+    try:
+        staged.append(_stage_parquet(frame, path))
+        _commit_staged(staged)
     finally:
-        if tmp.exists():
-            tmp.unlink()
+        _discard_staged(staged)
 
 
 def _atomic_json(payload: dict, path: Path) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    staged: list[tuple[Path, Path]] = []
     try:
-        tmp.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
-        os.replace(tmp, path)
+        staged.append(_stage_json(payload, path))
+        _commit_staged(staged)
     finally:
-        if tmp.exists():
-            tmp.unlink()
+        _discard_staged(staged)
 
 
 def _read_json(path: Path) -> dict:
@@ -2949,32 +3167,67 @@ class UsaspendingAwardsCollector:
                 if isinstance(incoming_action_versions, pd.DataFrame)
                 else pd.DataFrame(columns=AWARD_ACTION_VERSION_COLUMNS)
             )
-            merged_event_snapshots = append_award_event_snapshots(
-                existing_event_snapshots,
-                event_snapshots,
+            # Pin both ledgers to their declared schema before the generation is
+            # computed, so the binding describes exactly the cells that will be
+            # written rather than whatever dtypes this run's rows happened to
+            # infer.
+            merged_event_snapshots = _normalize_event_ledger(
+                append_award_event_snapshots(existing_event_snapshots, event_snapshots),
+                AWARD_EVENT_SNAPSHOT_COLUMNS,
             )
-            merged_action_versions = append_award_action_versions(
-                existing_action_versions,
-                action_versions,
+            merged_action_versions = _normalize_event_ledger(
+                append_award_action_versions(existing_action_versions, action_versions),
+                AWARD_ACTION_VERSION_COLUMNS,
             )
-            # The state is committed after both event ledgers, but a process can
-            # still fail between their individual atomic replacements.  Bind the
-            # full merged pair into the state so a reader can reject a mixed
-            # generation rather than projecting whatever happens to be on disk.
+            # Bind the full merged pair into the state so a reader can reject a
+            # mixed generation rather than projecting whatever happens to be on
+            # disk.
             event_projection_state.update(award_event_projection_generation(
                 merged_event_snapshots,
                 merged_action_versions,
             ))
-        _atomic_parquet(merged_awards, award_path)
-        _atomic_parquet(merged_actions, action_path)
-        _atomic_parquet(merged_snapshots, snapshot_path)
-        if write_event_spine:
-            # Receipt persistence occurred before this method.  Write the two
-            # immutable event ledgers before activation state so a live marker
-            # can never appear without its baseline rows.
-            _atomic_parquet(merged_event_snapshots, event_snapshot_path)
-            _atomic_parquet(merged_action_versions, action_version_path)
-            _atomic_json(event_projection_state, event_state_path)
+
+        # Every artifact is staged and verified before any of them is committed.
+        # Replacing them one at a time meant a failure part-way through left some
+        # ledgers advanced and others last-good -- a mixed triad that no reader
+        # can undo -- and the 2026-08-06 failure raised while building a frame
+        # that would have been the third of five such replacements.  The commit
+        # decision is therefore made exactly once, after the last verification.
+        staged: list[tuple[Path, Path]] = []
+        try:
+            staged.append(_stage_parquet(merged_awards, award_path))
+            staged.append(_stage_parquet(merged_actions, action_path))
+            staged.append(_stage_parquet(merged_snapshots, snapshot_path))
+            _verify_staged_parquet(staged[0][0], merged_awards, AWARD_COLUMNS)
+            _verify_staged_parquet(staged[1][0], merged_actions, ACTION_COLUMNS)
+            _verify_staged_parquet(staged[2][0], merged_snapshots, SNAPSHOT_COLUMNS)
+            if write_event_spine:
+                # The two event ledgers precede the activation state so a live
+                # marker can never be committed without its baseline rows.
+                staged.append(_stage_parquet(merged_event_snapshots, event_snapshot_path))
+                staged.append(_stage_parquet(merged_action_versions, action_version_path))
+                staged.append(_stage_json(event_projection_state, event_state_path))
+                replayed_event_snapshots = _verify_staged_parquet(
+                    staged[3][0], merged_event_snapshots, AWARD_EVENT_SNAPSHOT_COLUMNS
+                )
+                replayed_action_versions = _verify_staged_parquet(
+                    staged[4][0], merged_action_versions, AWARD_ACTION_VERSION_COLUMNS
+                )
+                # Recompute the binding from what a reader will actually load.
+                # An in-memory generation only proves what this process built;
+                # replaying the staged bytes proves the pair a reader reads is
+                # the pair the committed state claims.
+                if not award_event_projection_generation_matches(
+                    event_projection_state,
+                    replayed_event_snapshots,
+                    replayed_action_versions,
+                ):
+                    raise RuntimeError(
+                        "staged award-event ledgers do not reproduce their projection generation binding"
+                    )
+            _commit_staged(staged)
+        finally:
+            _discard_staged(staged)
         totals = {
             "awards_seen": int(len(incoming_awards)),
             "awards_total": int(len(merged_awards)),
