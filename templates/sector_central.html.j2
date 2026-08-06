@@ -397,10 +397,14 @@
   .fs-chip.headwind { border-color:rgba(250,204,21,.40); background:rgba(250,204,21,.07); color:var(--warn); }
   .fs-chip.tailwind { border-color:rgba(74,222,128,.35); background:rgba(74,222,128,.08); color:var(--up); }
   /* ── zh 红涨绿跌: direction-coded chip TINTS swap with the text vars (which flip
-     at the --up/--down level in theme.css). Health/danger chips deliberately don't. ── */
+     at the --up/--down level in theme.css). Health/danger chips deliberately don't.
+     .fs-chip.tailwind left this group 2026-08-04: V2.1 de-boxes #factor-season into
+     the hero's receipt row, and this rule is (0,3,1) against that row's (0,3,0), so
+     it was the one surviving fill on an otherwise boxless chip — a red smear behind
+     the glyphs in dark+zh, and the light+zh fallback the moment the W3 layer below
+     stopped listing it. Nothing to flip either: the row paints var(--muted). ── */
   html[data-lang="zh"] .tc-chip.up,
-  html[data-lang="zh"] .tc-chip.aln,
-  html[data-lang="zh"] .fs-chip.tailwind { background:rgba(224,85,85,.10); border-color:rgba(224,85,85,.35); }
+  html[data-lang="zh"] .tc-chip.aln { background:rgba(224,85,85,.10); border-color:rgba(224,85,85,.35); }
   html[data-lang="zh"] .tc-chip.dn,
   html[data-lang="zh"] .tc-chip.was1 { background:rgba(69,184,115,.10); border-color:rgba(69,184,115,.35); }
   html[data-lang="zh"] .ftr-strip-chip.up { border-color:rgba(224,85,85,.32); }
@@ -1051,21 +1055,36 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
      over a near-white canvas lands at 1.14–1.29:1 — a chip with no visible edge.
      Recomposed over the ink tokens so the tint tracks the theme (and the zh flip)
      instead of a frozen literal. Fills stay light on purpose: a heavier tint
-     darkens the surface and pushes the chip's own label back under AA. */
-  /* .ftr-strip-chip left this family in V2.1 (see "the session tape's rank chips"
-     below): the tape strip's movers have no box at all any more, so there is no
-     dark-era rgba here to recompose. It stayed listed, and because this layer
-     out-specifies V2.1's `background:transparent` (0,4,1 vs 0,2,0) light mode kept
-     painting a tint behind a chip whose padding V2.1 had already taken to `1px 0` —
-     a colour smear clamped to the glyphs and bleeding into the next mover (operator
-     crop, 2026-08-03). Ink carries the state here; nothing else. */
-  html[data-theme="light"] .si-stage :is(.tc-chip.up, .tc-chip.aln, .fs-chip.tailwind, .sr-tw-chip.up) { --si-chip: var(--up); }
-  html[data-theme="light"] .si-stage :is(.tc-chip.dn, .tc-chip.was1, .sr-tw-chip.dn) { --si-chip: var(--down); }
-  html[data-theme="light"] .si-stage .fs-chip.headwind { --si-chip: var(--warn); }
+     darkens the surface and pushes the chip's own label back under AA.
+
+     MEMBERSHIP IS EARNED BY STILL HAVING A BOX. This layer is (0,4,1) — it
+     out-specifies every de-boxing rule in the V2.1 block below (0,3,0), so a chip
+     that V2.1 took to `border:0; background:transparent; padding:2px 0` keeps a
+     fill anyway: a colour smear clamped to the glyphs, with no horizontal padding
+     to make it read as a chip. Audit the container before adding a selector here.
+       · .ftr-strip-chip.up/.dn LEFT (2026-08-03, on main). The session tape's
+         movers lost their box in V2.1, so this layer was painting a tint behind
+         a chip already at `padding:1px 0` — a smear bleeding into the next mover
+         (operator crop). Ink carries the state there now.
+       · .fs-chip.headwind/.tailwind LEFT (2026-08-04). Its one instance,
+         #factor-season, sits in the hero's receipt row `.rvx-chips:not(.ctx)`,
+         which V2.1 de-boxes and paints var(--muted) — no box, no state ink, so
+         nothing to recompose. The matching zh tint at the top of this file had to
+         go with it — alone, this removal just hands light+zh the OTHER smear.
+       · .sr-tw-chip.up/.dn LEFT (2026-08-04). Still a real boxed chip — the
+         rotation-map trade-with pills, 1px edge and 2px 7px padding, injected by
+         subsector_rotation.js into the `moving` view — but it paints from
+         var(--panel2)/var(--line), not a frozen rgba, and it was never in the
+         fill list below, so its --si-chip resolved to nothing. Inert, not needed.
+       · .tc-chip.* STAY. Their base rules (top of this file) really are frozen
+         rgba and they really are boxed pills — no lane emits one on THIS page
+         today (only `.tc-chip.lever` and the bare `.si-changed` chips render),
+         but the recomposition is what keeps them legible the day one does. */
+  html[data-theme="light"] .si-stage :is(.tc-chip.up, .tc-chip.aln) { --si-chip: var(--up); }
+  html[data-theme="light"] .si-stage :is(.tc-chip.dn, .tc-chip.was1) { --si-chip: var(--down); }
   html[data-theme="light"] .si-stage .tc-chip.mig { --si-chip: var(--link); }
   html[data-theme="light"] .si-stage :is(
-    .tc-chip.up, .tc-chip.dn, .tc-chip.aln, .tc-chip.was1, .tc-chip.mig,
-    .fs-chip.headwind, .fs-chip.tailwind
+    .tc-chip.up, .tc-chip.dn, .tc-chip.aln, .tc-chip.was1, .tc-chip.mig
   ) {
     background: color-mix(in srgb, var(--si-chip) 9%, var(--panel));
     border-color: color-mix(in srgb, var(--si-chip) 52%, var(--line));
