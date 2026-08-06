@@ -275,7 +275,7 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     # China net-liquidity is a single market-wide regime applying to every A-share
     # name (mirrors the US build); the CN regime carries no macro_risk/VIX leg, so
     # liquidity is the only macro conviction modifier threaded into the ladder.
-    res = analyze(c, high, kind="equity", liquidity=liquidity)
+    res = analyze(c, high, kind="equity", liquidity=liquidity, market="CN")
     if not res.get("ladder"):
         return _limited_rec(ticker, c, name, sector) if allow_limited else None
     month = int(c.index.max().month)

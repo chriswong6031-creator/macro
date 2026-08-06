@@ -414,7 +414,7 @@ def _sector_cards(latest: dict) -> list[dict]:
         if len(close) < 60:
             continue
         try:
-            a = analyze(close)
+            a = analyze(close, market="CA")
         except Exception as e:  # noqa: BLE001
             log.warning("canada sector analyze failed for %s: %s", t, e)
             continue
@@ -527,7 +527,7 @@ def _benchmark_card() -> dict | None:
     if df is None or "close" not in df.columns:
         return None
     close = df["close"].dropna()
-    a = analyze(close)
+    a = analyze(close, market="CA")
     return {"name": "S&P/TSX Composite", "ticker": mi,
             "mtf_json": json.dumps(a["mtf"]),
             "state": a["ladder"].get("state"), "label": a["ladder"].get("label"),
@@ -632,7 +632,7 @@ def _build_sector_pages(env) -> int:
         if len(close) < 60:
             continue
         try:
-            a = analyze(close)
+            a = analyze(close, market="CA")
         except Exception as e:  # noqa: BLE001
             log.warning("canada sector page %s analyze failed: %s", fund, e)
             continue

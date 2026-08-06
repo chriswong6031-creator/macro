@@ -359,7 +359,7 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     # the search universe IS the heatmap universe.
     if len(c) < min_days:
         return _limited_rec(ticker, c, name, sector) if allow_limited else None
-    res = analyze(c, high, kind="equity", liquidity=liquidity)
+    res = analyze(c, high, kind="equity", liquidity=liquidity, market="HK")
     if not res.get("ladder"):
         return _limited_rec(ticker, c, name, sector) if allow_limited else None
     month = int(c.index.max().month)

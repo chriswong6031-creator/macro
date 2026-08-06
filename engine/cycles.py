@@ -29,10 +29,26 @@ import logging
 import numpy as np
 import pandas as pd
 
+from engine.session_anchor import session_positions
 from engine.technicals import macd_hist, rsi
 from lib import config
 
 log = logging.getLogger(__name__)
+
+#: Era stamp for the ABSOLUTE session-calendar anchor under every n-session grid in this
+#: module (the 3D leg of ``mtf_snapshot``, ``calibrate_ladder``'s walk-forward grid) and
+#: under ``leader_lifecycle.tf_state_2d``, which imports it. The previous
+#: ``resample("3B"/"2B")`` bins anchored to the SERIES' FIRST timestamp, so the ladder /
+#: bottoming-alignment read depended on how much leading history the caller loaded
+#: (measured: 99/99 deep US names flip 3D state on one dropped leading bar). Binding
+#: ruling: ``research/CYCLES_SESSION_ANCHOR_ADJUDICATION_BY_FABLE.md`` (R-CY1..R-CY9).
+#: A future anchor change mints a NEW dated string — never reuse this one.
+ANCHOR_ERA = "cyc-abs-session-2026-08-06"
+
+#: Epoch for the crypto calendar-day grid (R-CY1): 24/7 assets bucket by
+#: ``(date - epoch).days // n`` — absolute arithmetic, no session calendar, because a
+#: trading-session reference would be wrong for an asset that trades every day.
+_DAY_EPOCH = pd.Timestamp("1970-01-01")
 
 DC_BAND = (36, 42)        # equity daily cycle, trading days (timing band)
 DC_EARLY = 12             # "new cycle" window after a DCL
@@ -271,6 +287,37 @@ def _tf_state(close: pd.Series) -> dict:
     }
 
 
+def _anchor_bars(daily: pd.Series, tf: str, market: str = "US") -> pd.Series:
+    """Last close per ABSOLUTE n-bar bucket for a CYCLE_PRESETS ``tf3``-style freq.
+
+    ``"nB"`` (session bars — equity/fx): ``bucket(d) = session_positions(d, market) // n``
+    against the market's fixed reference session index (``engine/session_anchor``, R1-R3).
+    ``"nD"`` (calendar-day bars — 24/7 crypto): ``bucket(d) = (d - 1970-01-01).days // n``.
+    Both are functions of ``(calendar, date)`` alone — never of the series slice — so any
+    two windows of the same name agree bar-for-bar on every bucket. The previous
+    ``resample(tf)`` phased its bins to the series' first timestamp (for fixed ``nD``
+    freqs pandas' default ``origin='start_day'`` does the same), which made the 3D/2B
+    state a function of loaded history depth. Buckets are labelled by their last TRADED
+    session; nothing downstream reads these labels (R-CY2) — ``_tf_state`` consumes
+    values positionally — but the geometry is pinned by the invariance battery.
+    Ruling: research/CYCLES_SESSION_ANCHOR_ADJUDICATION_BY_FABLE.md (era ``ANCHOR_ERA``).
+    """
+    s = daily.dropna()
+    if not s.index.is_monotonic_increasing:
+        s = s.sort_index()                       # resample used to sort; keep that contract
+    s = s[~s.index.duplicated(keep="last")]
+    if s.empty:
+        return pd.Series(dtype="float64")
+    n = int(tf[:-1] or 1)
+    if tf.endswith("B"):
+        b = session_positions(s.index, market) // n
+    else:                                        # "nD" — calendar days, epoch-anchored
+        b = (s.index.normalize() - _DAY_EPOCH).days // n
+    g = pd.DataFrame({"v": s.to_numpy(), "d": s.index.to_numpy()}).groupby(
+        np.asarray(b), sort=True).last()
+    return pd.Series(g["v"].to_numpy(), index=pd.DatetimeIndex(g["d"]))
+
+
 def _w_fri_completed(daily: pd.Series) -> pd.Series:
     """Return the W-FRI resampled series keeping ONLY completed weekly bars.
 
@@ -300,10 +347,11 @@ def _me_completed(daily: pd.Series) -> pd.Series:
 
 
 def mtf_snapshot(close: pd.Series, kind: str = "equity",
-                 completed_only: bool = False) -> dict:
+                 completed_only: bool = False, market: str = "US") -> dict:
     """Daily / 3-day / weekly indicator states. The 3-day bar respects the
     asset's trading calendar (business days for equities, calendar days for
-    24/7 crypto).
+    24/7 crypto), bucketed on the ABSOLUTE session calendar (`market`, R-CY1/R-CY3
+    — CN/HK/CA callers pass their market; crypto's calendar-day grid ignores it).
 
     completed_only=True: the W *and* M timeframes use ONLY completed bars
     (IHM-R1 PIT gate — drops the trailing in-progress W-FRI / month-end bucket).
@@ -328,7 +376,7 @@ def mtf_snapshot(close: pd.Series, kind: str = "equity",
         m_state = _tf_state(daily.resample("ME").last().dropna()) if len(daily) > 900 else {}
     out = {
         "D": _tf_state(daily),
-        "3D": _tf_state(daily.resample(tf3).last().dropna()) if len(daily) > 150 else {},
+        "3D": _tf_state(_anchor_bars(daily, tf3, market)) if len(daily) > 150 else {},
         "W": w_state,
         # Monthly — for the multi-timeframe Bottom-Confidence confluence. Needs
         # ~40 month-end bars for the MACD/RSI math (_tf_state bows out under 40),
@@ -1630,7 +1678,11 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
             # W4.6: fitted RISK-channel SIZE multiplier (additive to sizing, never to the
             # directional score). 1.0 when no artifact / no family / null cell — currently
             # 1.0 for every cell (no risk-sizing signal survived the FDR gate).
-            "risk_size_mult": risk_size_mult(state, family)}
+            "risk_size_mult": risk_size_mult(state, family),
+            # era fence (R-CY4): this payload is what the libraries persist and the
+            # ladder log ingests — a graded record must be able to place a row against
+            # the bucketing that produced it.
+            "anchor_era": ANCHOR_ERA}
 
 
 # ----------------------------------------------------- signal age / strength ----
@@ -1639,7 +1691,8 @@ SIGNAL_AGE_LOOKBACK = 45   # trading days we look back for the last state change
 
 
 def signal_age(close: pd.Series, current_state: str, high: pd.Series | None = None,
-               kind: str = "equity", max_lookback: int = SIGNAL_AGE_LOOKBACK) -> dict:
+               kind: str = "equity", max_lookback: int = SIGNAL_AGE_LOOKBACK,
+               market: str = "US") -> dict:
     """How many trading days ago the signal last 'crossed' into `current_state`.
 
     Re-runs the ladder backward over the SAME trailing 600-day window used by
@@ -1672,7 +1725,10 @@ def signal_age(close: pd.Series, current_state: str, high: pd.Series | None = No
         cyc = cycle_state(sub, hsub, kind)
         if not cyc:
             return None
-        mtf = mtf_snapshot(sub, kind)
+        # The absolute anchor (R-CY6) is what makes this walk-back honest: every
+        # trailing-600 window reads THE 3D grid, so a state comparison against the
+        # full-history read can no longer flip on bin phase alone.
+        mtf = mtf_snapshot(sub, kind, market=market)
         early = early_signals(sub, cyc, mtf)
         return (ladder_state(cyc, mtf, early) or {}).get("state")
 
@@ -2436,7 +2492,8 @@ def analyze(close: pd.Series, high: pd.Series | None = None,
             kind: str = "equity", liquidity: str | None = None,
             macro_drag: float | None = None, macro_beta: float = 0.0,
             vix_ctx: dict | None = None, vol_regime: dict | None = None,
-            price: pd.Series | None = None, family: str | None = None) -> dict:
+            price: pd.Series | None = None, family: str | None = None,
+            market: str = "US") -> dict:
     """`liquidity` = live US net-liquidity regime ("expanding"/"contracting"/
     "neutral", from engine.regime.liquidity_overlay), threaded into the ladder as
     an orthogonal macro conviction modifier. None => no liquidity context (keeps
@@ -2470,14 +2527,14 @@ def analyze(close: pd.Series, high: pd.Series | None = None,
     # close (byte-identical legacy path).  MOMENTUM always runs on `close` (the TR series).
     struct = price if price is not None else close
     cyc = cycle_state(struct, high, kind)
-    mtf = mtf_snapshot(close, kind)
+    mtf = mtf_snapshot(close, kind, market=market)
     early = early_signals(close, cyc, mtf)
     lad = ladder_state(cyc, mtf, early, liquidity=liquidity,
                        macro_drag=macro_drag, macro_beta=macro_beta, vol_regime=vol_regime,
                        family=family)
     wo = washout(struct, cyc, vix_ctx) if cyc else {}
     if lad:
-        age = signal_age(struct, lad["state"], high, kind)
+        age = signal_age(struct, lad["state"], high, kind, market=market)
         if age:
             lad.update(signal_age_fields(lad["state"], lad["score"], age))
         regime = {"regime": lad.get("regime", "neutral")}
@@ -2500,19 +2557,31 @@ def analyze(close: pd.Series, high: pd.Series | None = None,
             if sma200:
                 ext_pct = (float(cc.iloc[-1]) / sma200 - 1.0) * 100.0
         lad["alignment"] = mtf_alignment(mtf, cyc, lad, wo=wo, ext_pct=ext_pct)
-    return {"cycle": cyc, "mtf": mtf, "early": early, "ladder": lad}
+    # era fence (R-CY4) at the payload root; NOT inside `mtf` — several builders dump
+    # a["mtf"] wholesale into mtf_json payloads whose clients iterate timeframe keys.
+    return {"cycle": cyc, "mtf": mtf, "early": early, "ladder": lad,
+            "anchor_era": ANCHOR_ERA}
 
 
 # ------------------------------------------------------------- calibration ----
 
 def calibrate_ladder(price_panel: dict[str, pd.Series], fwd: int = 21,
-                     step: int = 5, dd_bad: float = -0.10) -> dict:
+                     step: int = 5, dd_bad: float = -0.10,
+                     market: str = "US") -> dict:
     """Per-state forward record by ladder state. price_panel: name -> close.
     Tracks BOTH endpoint return AND forward DRAWDOWN (max adverse excursion over
     the next `fwd` days) — the drawdown lens is the honest one for risk states
     (D43: avg return is U-shaped/misleading; the path matters), and is what
     actually quantifies a counter-trend-bounce knife-catch. Heavy-ish
-    (re-evaluates state along history); cached to ladder_calibration.json."""
+    (re-evaluates state along history); cached to ladder_calibration.json.
+
+    `market` (R-CY3) picks the reference session calendar for the 3D grid — the
+    panels are single-market by construction (calibrate_china passes "CN",
+    calibrate_hk "HK"). Under the absolute anchor (R-CY6) every walk-forward
+    window reads THE grid: the old `sub.resample("3B")` re-phased its bins every
+    `step` bars (5 mod 3 = 2) as the trailing window's start slid, so the shipped
+    per-state stats were measured on a state machine whose 3D leg jittered with
+    the window, not with price."""
     # extra buckets isolate the pre-emptive layer's measured edge: the same
     # BOTTOM-WATCH context with vs without an early bullish read.
     extra = ["BOTTOM WATCH +early-bull", "BOTTOM WATCH no-early"]
@@ -2531,7 +2600,7 @@ def calibrate_ladder(price_panel: dict[str, pd.Series], fwd: int = 21,
             try:
                 cyc = cycle_state(sub)
                 mtf = {"D": _tf_state(sub),
-                       "3D": _tf_state(sub.resample("3B").last().dropna()),
+                       "3D": _tf_state(_anchor_bars(sub, "3B", market)),
                        "W": _tf_state(sub.resample("W-FRI").last().dropna())}
                 early = early_signals(sub, cyc, mtf)
                 st = ladder_state(cyc, mtf, early)
@@ -2561,5 +2630,9 @@ def calibrate_ladder(price_panel: dict[str, pd.Series], fwd: int = 21,
                       # and how often the next month draws down past dd_bad
                       "dd_med_pct": round(100 * float(np.median(dds)), 2),
                       "dd_p10_pct": round(100 * float(np.percentile(dds, 10)), 2),
-                      "dd_bad_pct": round(100 * float((dds <= dd_bad).mean()), 1)}
+                      "dd_bad_pct": round(100 * float((dds <= dd_bad).mean()), 1),
+                      # era fence (R-CY4) INSIDE each cell — the artifact's top level
+                      # is iterated by state-name consumers, so a root key would
+                      # masquerade as a ladder state.
+                      "anchor_era": ANCHOR_ERA}
     return out

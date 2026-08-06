@@ -103,7 +103,7 @@ def main() -> int:
     log.info("calibrating cycle ladder on the deep panel ...")
     ccfg = config.load()["china"]["engine"]["calibration"]
     panel = deep_panel()
-    ladder = calibrate_ladder(panel, fwd=ccfg.get("ladder_fwd", 21), step=ccfg.get("ladder_step", 10))
+    ladder = calibrate_ladder(panel, fwd=ccfg.get("ladder_fwd", 21), step=ccfg.get("ladder_step", 10), market="CN")
     # persist the ladder record as JSON for the stock-search "measured record" table
     import json as _json
     cdir = config.data_dir() / "china_regime"
