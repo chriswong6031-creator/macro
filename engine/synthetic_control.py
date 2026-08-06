@@ -77,6 +77,7 @@ Dependencies: numpy only.
 from __future__ import annotations
 
 import math
+import warnings
 
 import numpy as np
 
@@ -151,8 +152,12 @@ def eligible_donors(
     ok = coverage >= float(coverage_min)
     ok &= np.asarray(donor_dvol, dtype=float) >= float(dvol_floor)
     ok &= np.asarray(event_distance, dtype=float) > float(exclusion)
-    # A donor whose pre-window never moves cannot be standardized or fitted.
-    with np.errstate(invalid="ignore"):
+    # A donor whose pre-window never moves cannot be standardized or fitted. An all-NaN
+    # column is expected here (names that had not listed yet), and nanstd warns on it —
+    # suppressed at the source rather than globally, so real numeric warnings elsewhere
+    # in the study stay visible.
+    with np.errstate(invalid="ignore"), warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
         sd = np.nanstd(np.where(np.isfinite(donor_pre), donor_pre, np.nan), axis=0)
     ok &= np.isfinite(sd) & (sd > 0.0)
     if treated_col is not None and 0 <= int(treated_col) < n_donors:

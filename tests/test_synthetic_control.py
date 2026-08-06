@@ -396,19 +396,141 @@ def test_placebo_machinery_returns_zero_on_a_no_effect_panel():
             v = est[arm][:, est["_keys"].index(key)]
             v = v[np.isfinite(v)]
             se = v.std(ddof=1) / np.sqrt(v.size)
+            # An se-relative tolerance ALONE is vacuous against any mutation that inflates
+            # dispersion — the bar moves with the noise. The absolute ceiling is what
+            # makes this test bite; the se test is what makes it a statistical statement.
+            assert se < 0.004, f"{arm}/{key} sampling error {se:.5f} is implausibly wide"
+            assert abs(v.mean()) < 0.005, (
+                f"{arm}/{key} manufactured {v.mean():.5f} on a no-effect panel")
             assert abs(v.mean()) < 3.0 * se, (
                 f"{arm}/{key} manufactured {v.mean():.5f} on a no-effect panel "
                 f"({abs(v.mean()) / se:.1f} sigma)")
 
 
-def test_placebo_dates_respect_the_guard_band():
-    """A placebo date inside the guard band could contain the real effect."""
+def test_placebo_fit_window_never_contains_the_real_event():
+    """THE property, checked directly rather than via the guard constant.
+
+    A placebo at s' fits its donors on pre_window_slice(s') and scores its outcome on
+    [s', s'+20]. Neither may contain the real event session. The earlier SYMMETRIC ±42
+    guard passed a boundary test while still letting s' in [s+42, s+125] fit on a window
+    containing the real treatment — so this test asks the question the guard exists to
+    answer, and a revert to the symmetric form fails it.
+    """
     panel = _factor_panel(n_names=20, n_sess=600)
-    cand = eligible_placebo_sessions(panel, 0, 300)
+    real = 300
+    cand = eligible_placebo_sessions(panel, 0, real)
     assert cand.size > 0
-    assert np.abs(cand - 300).min() >= 42
-    assert cand.min() >= sc.PRE_WINDOW + sc.EMBARGO
-    assert cand.max() <= 600 - 21
+    for s2 in cand:
+        sl = sc.pre_window_slice(int(s2))
+        assert not (sl.start <= real < sl.stop), (
+            f"placebo at {s2} FITS on a window [{sl.start},{sl.stop}) containing the "
+            f"real event {real}")
+        assert not (s2 <= real <= s2 + 20), f"placebo at {s2} SCORES over the real event"
+
+
+def test_placebo_guard_band_is_asymmetric_at_its_boundaries():
+    """Literal boundaries (280 / 425 for a real event at 300), not the symbols — a
+    boundary test written against the constants moves with them and pins nothing."""
+    panel = _factor_panel(n_names=20, n_sess=600)
+    cand = set(eligible_placebo_sessions(panel, 0, 300).tolist())
+    # excluded band is [s-POST_WINDOW, s+PRE_WINDOW+EMBARGO] = [280, 425]
+    assert 279 in cand, "s-21 should be admissible (outcome window ends before s)"
+    assert 280 not in cand, "s-20 scores over the real event"
+    assert 425 not in cand, "s+125 fits on a window containing the real event"
+    assert 426 in cand, "s+126 is clean on both windows"
+    assert not any(280 <= c <= 425 for c in cand)
+    assert min(cand) >= sc.PRE_WINDOW + sc.EMBARGO
+    assert max(cand) <= 600 - 21
+
+
+def test_projection_matches_a_brute_force_reference():
+    """The simplex projection is the solver's correctness floor. Checked against an
+    independent bisection on the KKT dual, not against itself."""
+    rng = np.random.default_rng(77)
+
+    def reference(v):
+        # projection is max(v - theta, 0) with theta solving sum(max(v-theta,0)) = 1
+        lo, hi = v.min() - 1.0, v.max()
+        for _ in range(200):
+            mid = 0.5 * (lo + hi)
+            if np.maximum(v - mid, 0.0).sum() > 1.0:
+                lo = mid
+            else:
+                hi = mid
+        return np.maximum(v - 0.5 * (lo + hi), 0.0)
+
+    for scale in (0.001, 1.0, 50.0):
+        for _ in range(25):
+            v = rng.normal(0, scale, rng.integers(2, 30))
+            assert np.allclose(sc.project_to_simplex(v), reference(v), atol=1e-9), v
+
+
+def test_prescreen_ranking_is_load_bearing():
+    """The whole method rests on 'donors that tracked the treated name pre-event are the
+    right counterfactual'. If the ranking were reversed (or random), the fitted
+    counterfactual would track WORSE out of sample. Nothing else in the suite would
+    notice — every other test is invariant to donor order."""
+    rng = np.random.default_rng(83)
+    n_sess, n_don = 400, 60
+    mkt = rng.normal(0, 0.01, n_sess)
+    # donors 0-9 genuinely track the treated name; the rest are noise
+    good = np.column_stack([mkt + rng.normal(0, 0.004, n_sess) for _ in range(10)])
+    junk = rng.normal(0, 0.02, (n_sess, n_don - 10))
+    donors = np.column_stack([good, junk])
+    treated = mkt + rng.normal(0, 0.004, n_sess)
+
+    t = 300
+    sl = sc.pre_window_slice(t)
+    ranked = sc.prescreen_donors(treated[sl], donors[sl], m=10)
+    assert set(ranked.tolist()) <= set(range(10)), (
+        f"pre-screen picked noise donors {ranked}")
+
+    # out-of-sample tracking error: fitted top-10 vs the bottom-10 of the same ranking
+    post = slice(t, t + 21)
+    w_top = sc.solve_simplex_ls(treated[sl], donors[sl][:, ranked])
+    worst = sc.prescreen_donors(treated[sl], -donors[sl], m=10)
+    w_bad = sc.solve_simplex_ls(treated[sl], donors[sl][:, worst])
+    err_top = np.abs(treated[post] - donors[post][:, ranked] @ w_top).mean()
+    err_bad = np.abs(treated[post] - donors[post][:, worst] @ w_bad).mean()
+    assert err_top < err_bad, (err_top, err_bad)
+
+
+def test_donor_weights_batch_matches_the_loop_on_short_pools():
+    """Short pools are where the batched path used to go wrong: padding to a common width
+    with zero columns relaxed sum(w)=1 to sum(w)<=1 over the real donors."""
+    rng = np.random.default_rng(89)
+    t_pre, n = 120, 9
+    Y = rng.normal(0, 0.02, (4, t_pre))
+    D = rng.normal(0, 0.02, (4, t_pre, n))
+    # give each event a different effective pool width by flattening some donors
+    for e, live in enumerate((3, 5, 7, 9)):
+        D[e, :, live:] = 0.0
+    batch = sc.donor_weights_batch(Y, D, method="sc_nnls")
+    for e in range(4):
+        one = sc.donor_weights(Y[e], D[e], method="sc_nnls")
+        assert np.allclose(batch[e], one, atol=1e-6), (e, batch[e] - one)
+        assert abs(batch[e].sum() - 1.0) < 1e-9
+
+
+def test_donor_admission_reads_the_pre_window_end_not_the_event_day():
+    """dvol/close are read at the LAST session of the fitting window (t-6). A fixture with
+    constant liquidity cannot tell t-6 from t: this one flips liquidity between them, so
+    reading the wrong index changes the answer."""
+    panel = _factor_panel(n_names=140, n_sess=600, seed=131)
+    t = 300
+    end = sc.pre_window_slice(t).stop - 1          # t-6
+    dvol = panel.dvol20.copy()
+    dvol[end, 5:60] = sc.DVOL_FLOOR - 1.0          # illiquid AT the read index only
+    dvol[t, 5:60] = 50e6                           # liquid again on the event day
+    p2 = Panel(panel.dates, panel.tickers, panel.ret, dvol, panel.close, panel.raw_close)
+    ev = _events([1], [t])
+    est = estimate_events(p2, ev["col"].to_numpy(), ev["sess"].to_numpy(),
+                          contamination_map(p2, ev, sc.EVENT_EXCLUSION))
+    base = estimate_events(panel, ev["col"].to_numpy(), ev["sess"].to_numpy(),
+                           contamination_map(panel, ev, sc.EVENT_EXCLUSION))
+    assert est["_pool_mean"] < base["_pool_mean"], (
+        "the liquidity screen did not read the pre-window end")
+    assert base["_pool_mean"] - est["_pool_mean"] == 55
 
 
 def test_benchmark_arm_is_treated_minus_benchmark():

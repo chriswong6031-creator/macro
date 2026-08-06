@@ -887,6 +887,9 @@ def write_report(res: dict) -> None:
     L.append(f"## Verdict: `{res['gate_eval']['verdict']}`\n")
     if res["gate_eval"]["failing_gates"]:
         L.append(f"Failing gate(s): **{', '.join(res['gate_eval']['failing_gates'])}**\n")
+    if res["gate_eval"].get("unevaluated_gates"):
+        L.append(f"Gate(s) NOT EVALUATED (a gate that never ran is not a gate that "
+                 f"passed): **{', '.join(res['gate_eval']['unevaluated_gates'])}**\n")
     L.append("| Gate | Result | Reading |")
     L.append("|---|---|---|")
     L.append(f"| PC-1 positive control survives | {gs(g['PC1_positive_control_survives'])} | {rs['PC1']} |")
@@ -919,19 +922,37 @@ def write_report(res: dict) -> None:
                  f"(mean eligible donor pool {fam['mean_donor_pool']:,.0f} names)")
         L.append(f"- Scope {SCOPE_START} → panel end; construction diagnostics: "
                  f"`{json.dumps({k: v for k, v in d.items() if k != 'event_day_rule'})}`\n")
-        L.append("| Arm | Window | CAAR | monthly-NW t | ticker-cluster t | hit rate | "
-                 "placebo mean | placebo SD | empirical p |")
-        L.append("|---|---|---|---|---|---|---|---|---|")
+        if fam.get("placebo_events_dropped"):
+            L.append(f"- Placebo null runs on {fam['placebo_events']:,} events "
+                     f"({fam['placebo_events_dropped']:,} had no eligible placebo date "
+                     f"and were dropped rather than left at their real session)\n")
+        L.append("| Arm | Window | CAAR (event-wtd) | CAAR (month-wtd) | monthly-NW t | "
+                 "ticker-cluster t | hit rate | placebo mean | placebo SD | empirical p |")
+        L.append("|---|---|---|---|---|---|---|---|---|---|")
         for arm in fam["arms"]:
             for w in fam["windows"]:
                 r = fam["arms"][arm]["real"][w]
                 pl = fam["arms"][arm].get("placebo", {}).get(w, {})
                 L.append(
                     f"| `{arm}` | [{w.replace('_', ',')}] | {_pct(r.get('mean'))} | "
+                    f"{_pct(r.get('mean_monthly'))} | "
                     f"{_r(r.get('t'))} | {_r(r.get('ticker_cluster_t'))} | "
                     f"{_r(r.get('hit_rate'), 3)} | {_pct(pl.get('placebo_mean'))} | "
                     f"{_pct(pl.get('placebo_sd'))} | {_r(pl.get('empirical_p'))} |")
         L.append("")
+        if key == "sp_pure_adds" and res.get("incumbent_reconciliation"):
+            rc = res["incumbent_reconciliation"]
+            if rc.get("hac_t") is not None:
+                h = rc["house_full_sample_2019_on"]
+                L.append("**Reconciliation against the incumbent's exact statistic.** "
+                         f"`validate_index_reconstitution.py` scores a SPY-relative PRICE "
+                         f"RATIO over [-5,0] — five daily returns, where this study's "
+                         f"CAR[0,5] sums six (AM-7). Recomputing the incumbent's own "
+                         f"construction on THIS sample gives {_pct(rc['mean_abn'])} "
+                         f"(t={_r(rc['hac_t'])}, n={rc['n']}, {rc['n_months']} months) "
+                         f"against the house's 2019→ grade of {_pct(h['mean_abn'])} "
+                         f"(t={h['hac_t']}, n={h['n']}). The gap is the sample, not the "
+                         f"estimator.\n")
 
     L.append("## What the numbers mean\n")
     L.append(res["narrative"])
