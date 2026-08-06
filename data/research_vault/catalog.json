@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T07:24:06.325505+00:00",
-  "count": 856,
+  "generated_at": "2026-08-06T08:54:39.983705+00:00",
+  "count": 861,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -183,6 +183,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-nieczmmhdgj-31379c",
+      "title": "Global PCB CCL TAM raised by 38 18 in 2027E",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:50Z",
+      "summary_points": [
+        "**Global AI PCB/CCL TAM Revised Upward**: 2027E TAM raised to $38bn/$22bn (vs $27bn/$19bn), with triple-digit growth to $84bn/$48bn by 2028E, driven by AI server adoption and 30+ layer PCB/6L HDI demand.",
+        "**GPU Server Dominance in Demand**: GPU servers account for 55% of PCB and 52% of CCL demand, with AI server rack growth projected at +190% YoY (2026E), signaling structural shift from general servers (+14% YoY).",
+        "**Supply Chain Constraints & Spec Upgrades**: Capacity expansion lags yield constraints for high-end PCB/CCL; M9 CCL adoption (41%/58% TAM in 2027/28E) and M9 qualification delays risk M8 adoption, altering market dynamics.",
+        "**Geopolitical Shifts in Supply Chain**: Chinese PCB/CCL suppliers gain market share (PCB: 20-25% → 10-15% → 10-15%?; CCL: 5-10% → 5-10% → 5-10%), increasing reliance on China amid trade tensions.",
+        "**Tech Giant Allocation Control**: Google TPU and Meta ASIC dominate PCB/CCL allocations (e.g., Meta ASIC 80% PCB share), reflecting strategic control over specialized hardware and critical sector exposure risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-mqyfdysqb5z-41192d",
       "title": "Global Payments Inc. (GPN) First Take Relatively in line print with reduced guidance to reflect Middle East travel disruption",
       "institution": "Goldman Sachs",
@@ -287,6 +308,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-el0tukvenko-5a05f3",
+      "title": "Global Markets Daily China’s Balancing Act Needs a Stronger Yuan and Stronger Demand",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:37Z",
+      "summary_points": [
+        "**Trade-Demand Bifurcation**: Record $125bn trade surplus (June) contrasts with deteriorating domestic demand (Q2 GDP 1-2% yoy, retail sales below pre-COVID trend), creating structural reliance on exports amid weak consumption.",
+        "**CNY Undervaluation & Policy Imperative**: Yuan undervalued ~20% (GSDER/GSFEE), necessitating gradual appreciation to 6.50 USD/CNY over 12 months to address external imbalance (current account surplus at 3.8% GDP vs.",
+        "sustainable 1.7%) and mitigate protectionism.",
+        "**Policy Balancing Act**: Fiscal stimulus (targeting consumption) + gradual CNY appreciation required to achieve internal balance (domestic demand) without conflicting with external balance, constrained by high debt (debt-to-GDP 301% by 2025).",
+        "**Structural Export Competitiveness**: Manufacturing price discounts (EVs, solar, machinery) combined with undervalued CNY sustain trade surplus, risking protectionist responses without nominal appreciation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-gz0ejqpeavf-bf9471",
       "title": "Cushman & Wakefield Ltd. (CWK) 2Q26 First Take Top line beat and guidance raised, but Cap Markets softer",
       "institution": "Goldman Sachs",
@@ -297,6 +339,27 @@
         "**Guidance Upgrade & Segment Divergence**: 2026 EPS guidance raised to 18%-23% growth (vs prior 15%-20%), but Cap Markets declined 1% YoY due to Americas multifamily slowdown; Services (8% growth) and Leasing (27.5% growth) beat consensus, while EMEA Cap Markets weakened from macro uncertainty.",
         "**Earnings Beat with Segment Risks**: Adjusted EBITDA $183.6M beat consensus ($175.7M), but leasing outperformed (27.5% vs 10.8% consensus) while Cap Markets underperformed (-0.7% vs 9.4%); EMEA margin pressures offset growth.",
         "**Key Valuation Risks**: $17 target (10.6x EPS) faces macro/geopolitical disruptions, reduced capital availability, and margin pressures from slower business growth; current price ($14.08) offers 20.7% upside but hinges on sustaining revenue growth (10.288bn → 12.456bn by 12/28E)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-k5eej0zhupi-3cdfa6",
+      "title": "Circle Internet Group (CRCL) First take In line results, and higher RLDC margin guide, although driven by one time Arc toke...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:27Z",
+      "summary_points": [
+        "**Q2 Results & Guidance Driver**: Core EPS beat (30c vs 29c) but margin guide raise (41.7%-43.7%) driven by $222m one-time Arc token pre-sale, not sustainable operations; Hyperliquid partnership offsets net revenue upside with 20% lower net other revenue.",
+        "**Core Margin Uncertainty**: RLDC margin trajectory unclear due to Hyperliquid partnership impact; net revenue beat (2%/1% above consensus) offset by 20% lower net other revenue, questioning guidance credibility.",
+        "**Revenue Mix Risk**: Total revenue beat (+2%/1% vs consensus) but net other revenue down 25% (-20% vs consensus), signaling potential weakness in non-core segments despite strong net reserve income (+7%).",
+        "**Valuation Disconnect**: $82.00 price target (29.6% upside) based on projected revenue doubling (1.083bn → 2.082bn), yet growth heavily reliant on non-recurring Arc sale and unconfirmed USDC/AI catalysts.",
+        "**Key Risk Catalysts**: Upside hinges on crypto regulations, market cap growth, and USDC adoption; downside risks include ecosystem slowdown, USDT market share erosion, and Coinbase de-emphasis on USDC."
       ],
       "tags": [],
       "tickers": [],
@@ -327,6 +390,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-hq3jqng81ud-cf27da",
+      "title": "Global Markets Daily HUF Stocktake — Energy Vol Now, Domestic Drivers Later",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:13Z",
+      "summary_points": [
+        "**HUF's Energy Deficit**: Net energy balance at -3.4% of GDP (vs -2.2% in 2025), driven by oil/gas price shifts; 4% GDP energy deficit amplifies vulnerability amid nuclear plant shutdown (supplying 50% of electricity) and current account deterioration.",
+        "**EU Funds as Fiscal Anchor**: Unblocked RRF funds (€10bn, 3% GDP) and Cohesion Funds (~8-9% of 2025 GDP) represent critical near-term support; disbursement limited to Q4 2024, offsetting energy price impacts.",
+        "**EUR/HUF Correlation Drivers**: Oil (10% rise → +0.8% EUR/HUF, R²=0.34) and gas (10% rise → +0.5% EUR/HUF, R²=0.24) explain 34%/24% of daily volatility since Iran conflict; energy prices key near-term HUF direction.",
+        "**Inflation Target & FX Risk**: Lowering MNB inflation target to 2% could narrow EUR/HUF differentials, but high FX pass-through (>3%) and energy price volatility create two-sided risks during Euro adoption (Oct/Nov)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-7gej9c0mc43-152e85",
       "title": "SiTime Corp. (SITM) Strong quarter driven by datacenter timing and smartphone wins, with Renesas business driving material a...",
       "institution": "Goldman Sachs",
@@ -344,6 +427,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fzyaaicyuzx-3bce7b",
+      "title": "Fluence Energy Inc. (FLNC) First Take Revenue miss and FY26 guidance cut disappointing, but record orders (incl. hyperscale...)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:01:44Z",
+      "summary_points": [
+        "**Demand Visibility**: Record orders (incl.",
+        "hyperscalers) offset revenue miss & FY26 guidance cut, driving strong demand visibility.",
+        "**Pipeline Momentum**: Data-center pipeline at 16GW (+35% seq.), energy storage/services/digital backlog expanded to 12.6GW/7.9GW/13.9GW (6/30/2026).",
+        "**Price Target Premium**: GS $22.00 target (54.6% upside) consistently exceeds closing price ($18.97), signaling persistent bullish sentiment/undervaluation.",
+        "**Key Risks**: Slower energy storage adoption, supply chain disruptions (battery/logistics), litigation, and hardware-to-software mix shift."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
