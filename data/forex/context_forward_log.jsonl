@@ -53,3 +53,13 @@
 {"asof": "2026-08-01", "key": "carry_unwind", "state": false, "intensity_pct": 24.1, "graded": null}
 {"asof": "2026-08-01", "key": "dollar_wrecking_ball", "state": false, "intensity_pct": 4.8, "graded": null}
 {"asof": "2026-08-01", "key": "smile_regime", "state": "US growth premium", "intensity_pct": null, "graded": null}
+{"asof": "2026-08-04", "key": "triple_red", "state": false, "intensity_pct": null, "graded": null}
+{"asof": "2026-08-04", "key": "cnh_stress", "state": false, "intensity_pct": 43.1, "graded": null}
+{"asof": "2026-08-04", "key": "carry_unwind", "state": false, "intensity_pct": 11.6, "graded": null}
+{"asof": "2026-08-04", "key": "dollar_wrecking_ball", "state": false, "intensity_pct": 2.5, "graded": null}
+{"asof": "2026-08-04", "key": "smile_regime", "state": "US growth premium", "intensity_pct": null, "graded": null}
+{"asof": "2026-08-05", "key": "triple_red", "state": false, "intensity_pct": null, "graded": null}
+{"asof": "2026-08-05", "key": "cnh_stress", "state": false, "intensity_pct": 17.3, "graded": null}
+{"asof": "2026-08-05", "key": "carry_unwind", "state": false, "intensity_pct": 31.7, "graded": null}
+{"asof": "2026-08-05", "key": "dollar_wrecking_ball", "state": false, "intensity_pct": 1.9, "graded": null}
+{"asof": "2026-08-05", "key": "smile_regime", "state": "US growth premium", "intensity_pct": null, "graded": null}

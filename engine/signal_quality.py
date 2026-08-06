@@ -175,9 +175,119 @@ def _bear_div(i, price, macd, hi, look=12):
     return len(rh) >= 2 and pv[rh[-1]] > pv[rh[-2]] and mv[rh[-1]] < mv[rh[-2]]
 
 
-def _buy_filter(i, sig, bear, n):
+BEAR_DIV_REASON = "veto: bearish divergence"
+# A block reason must name the leg that was EVALUATED and FAILED — no more, no less.
+# Corrected 2026-08-04 (research/cn_prophet_audit/CN_RECLAIM_HOLD_AUDIT.md §10/§11): the two
+# shipped strings below described tests that had not run.
+#   * The main branch (a name NOT both below-200 and weekly-down) resolves on ``held`` ALONE,
+#     yet emitted "failed reclaim-and-hold" — 1,094 blocks in the audit year named a reclaim
+#     that was never evaluated, on names that may never have been near their 200-day line.
+#     002155.SZ sat 5.2% ABOVE its 200-day mean at its buy bar: its binding leg is the HOLD.
+#     It now emits HOLD_FAIL — the SAME literal the reclaim_veto=False branch already used for
+#     the identical one-test outcome, so no new vocabulary and no new plain-word copy.
+#   * The counter-trend branch tests TWO legs and collapsed all three failure shapes into one
+#     string, so a row reading "no 200-reclaim" was actually relieved by dropping the reclaim
+#     rule only 40.2% of the time (639 of 1,590; 922 failed both, 29 failed the hold only).
+#     The legacy string is now kept ONLY where both legs genuinely failed.
+# Same defect family as the first-match masking `gate_reasons` fixes, from the other side of
+# the filter: the label named a leg, just not the one doing the work.
+HOLD_FAIL = "failed next-bar hold"
+CT_BOTH_FAIL = "counter-trend, no 200-reclaim/hold"       # legacy — both legs tested, both fail
+CT_RECLAIM_FAIL = "counter-trend, held but no 200-reclaim"
+CT_HOLD_FAIL = "counter-trend, reclaimed 200 but no next-bar hold"
+
+
+def _confirm_legs(i, sig, n, *, reclaim_veto: bool = True):
+    """The post-divergence CONFIRMATION legs of :func:`_buy_filter` — the next-bar hold plus,
+    for a name that is BOTH below its 200-day average and weekly-down under ``reclaim_veto``,
+    the 2-bar 200-day reclaim. Returns (take: bool|None, reason).
+
+    SPLIT OUT FOR ONE REASON: so :func:`_buy_filter_full` can still evaluate these legs after
+    the bearish-divergence veto has already decided the verdict, and report an EXHAUSTIVE
+    account instead of a first-match label. It carries no policy of its own and has no other
+    caller. Every ``take`` value it returns is identical to the pre-split filter's; only the
+    failure STRINGS were corrected to name the leg each branch actually tested (see above).
+    """
+    c, a = sig["close"], sig["above200"]
+    if i + 1 >= n:
+        return None, "pending confirmation"
+    held = bool(c.iloc[i + 1] > c.iloc[i])
+    below, wkdn = (not bool(a.iloc[i])), (not bool(sig["w_bull"].iloc[i]))
+    if below and wkdn:
+        if reclaim_veto:
+            if i + 2 >= n:
+                return None, "pending confirmation"
+            reclaim = bool(a.iloc[i + 1]) or bool(a.iloc[i + 2])
+            ok = held and reclaim
+            if ok:
+                return True, "reclaimed 200 & held"
+            # BOTH legs ran here, so the reason names whichever of them actually refused.
+            if not held and not reclaim:
+                return False, CT_BOTH_FAIL
+            return False, (CT_RECLAIM_FAIL if held else CT_HOLD_FAIL)
+        # reclaim_veto=False: the counter-trend branch keeps the SAME next-bar
+        # follow-through every other name gets, and nothing else. Reason strings stay
+        # accurate — no reclaim was tested, so neither outcome may mention one.
+        return held, ("held confirmation (counter-trend)" if held else HOLD_FAIL)
+    # The MAIN branch. One test — ``held`` — and no reclaim anywhere in it.
+    return held, ("held confirmation" if held else HOLD_FAIL)
+
+
+def _buy_filter_full(i, sig, bear, n, *, reclaim_veto: bool = True):
+    """(take, reason, reasons) — the buy-filter verdict PLUS the EXHAUSTIVE ordered account.
+
+    ``take`` and ``reason`` are the SAME first-match values :func:`_buy_filter` returns, and
+    admission is untouched: when ``bear`` is False this is the original code path verbatim, and
+    when ``bear`` is True the verdict is still the hardcoded (False, veto) it always was.
+
+    ``reasons`` is the ordered list of every leg outcome that is not a clean pass, evaluated in
+    EVALUATION ORDER, with ``reasons[0]`` byte-identical to ``reason`` always. It exists because
+    ``reason`` is a FIRST-MATCH LABEL, not an account: the bearish-divergence veto returns before
+    the reclaim/hold legs are ever tested, so a name blocked twice over reads as blocked once.
+    That ambiguity sent an operator and a full audit down the wrong lever — 湖南黄金 002155.SZ
+    shipped ``buy blocked by filter: veto: bearish divergence`` while ALSO failing reclaim-and-hold,
+    and 575 of 743 vetoed fires (77%) were blocked by another leg anyway
+    (``research/cn_prophet_audit/CN_DIVERGENCE_VETO_AUDIT.md`` §Case receipt, recommendation 2).
+
+    The divergence veto is the ONLY short-circuiting leg — the confirmation legs are terminal —
+    so the extra evaluation runs on vetoed bars only, and costs the same handful of scalar
+    ``.iloc`` lookups the verdict itself costs. A leg that CANNOT be decided yet (the last 1-2
+    bars, 'pending confirmation') is reported rather than silently dropped, so a one-element list
+    always means 'every other leg passed', never 'we did not look'.
+    """
+    if not bear:
+        take, reason = _confirm_legs(i, sig, n, reclaim_veto=reclaim_veto)
+        return take, reason, [reason]
+    rest_take, rest_reason = _confirm_legs(i, sig, n, reclaim_veto=reclaim_veto)
+    reasons = [BEAR_DIV_REASON]
+    if rest_take is not True:                # False = a second real block; None = undecidable
+        reasons.append(rest_reason)
+    return False, BEAR_DIV_REASON, reasons
+
+
+def _buy_filter(i, sig, bear, n, *, reclaim_veto: bool = True):
     """The VALIDATED buy-filter: reclaim-and-hold + bearish-div veto + 200MA bar-raiser.
     Returns (take: bool|None, reason). None = pending (last 1-2 bars can't confirm yet).
+
+    This is the FIRST-MATCH verdict and the stable public shape — every existing caller keeps
+    it. :func:`_buy_filter_full` returns the same verdict plus the exhaustive leg account; read
+    that docstring before treating ``reason`` as a complete explanation of a block.
+
+    ``reclaim_veto`` (keyword-only, DEFAULT True = the validated US/CN behaviour, unchanged)
+    controls ONE leg: the 2-bar 200-day reclaim requirement applied to a name that is BOTH
+    below its 200-day average AND weekly-down. With it False, such a name is admitted on the
+    same terms as everyone else — the next-bar ``held`` confirmation — and the bearish-
+    divergence veto above still applies untouched.
+
+    WHY THE LEG IS SWITCHABLE (operator directive 2026-08-03, HK board). For a name in a deep
+    drawdown the reclaim test is not a risk judgement, it is an UNSATISFIABLE condition: a name
+    17% below its 200-day line cannot travel 17% in two sessions, so every buy signal it fires
+    while washed out is auto-blocked until it has already recovered to the 200-day average —
+    i.e. until the bounce being signalled is over. On the HK tape, whose setups are
+    predominantly deep-washout bounces, this blocked the board's best entries (measured on the
+    2026-06-26→07-31 leg: the blocked names ran +8.7% to +44%). The leg stays ON by default
+    because the US/CN drawdown validation was measured WITH it; only a board that has taken the
+    era stamp for the looser policy passes False.
 
     ⚠ MARKER-DATE GRADING IS FORBIDDEN (CN-1 masterplan §W6-CN). The ``held``/``reclaim`` tests
     below read bars i+1/i+2 — i.e. the label at bar ``i`` is knowable only in the FUTURE relative to
@@ -188,20 +298,9 @@ def _buy_filter(i, sig, bear, n):
     anchoring on the board-date close (post-confirmation) and measuring from the T+1 fill; see
     tests/test_signal_quality_no_leak.py which pins that any grade off ``analyze`` markers overstates
     forward returns. Do NOT grade forward returns from ``marker['date']``."""
-    c, a = sig["close"], sig["above200"]
     if bear:
-        return False, "veto: bearish divergence"
-    if i + 1 >= n:
-        return None, "pending confirmation"
-    held = bool(c.iloc[i + 1] > c.iloc[i])
-    below, wkdn = (not bool(a.iloc[i])), (not bool(sig["w_bull"].iloc[i]))
-    if below and wkdn:
-        if i + 2 >= n:
-            return None, "pending confirmation"
-        reclaim = bool(a.iloc[i + 1]) or bool(a.iloc[i + 2])
-        ok = held and reclaim
-        return ok, ("reclaimed 200 & held" if ok else "counter-trend, no 200-reclaim/hold")
-    return held, ("held confirmation" if held else "failed reclaim-and-hold")
+        return False, BEAR_DIV_REASON
+    return _confirm_legs(i, sig, n, reclaim_veto=reclaim_veto)
 
 
 # ---- the legal anchor for anything measured FORWARD from a marker ------------ #
@@ -294,12 +393,15 @@ def confirmation_date(daily_close: pd.Series, marker_date) -> pd.Timestamp | Non
 
 
 def analyze(ticker: str, daily_close: pd.Series, daily_high: pd.Series | None = None,
-            daily_low: pd.Series | None = None) -> dict | None:
+            daily_low: pd.Series | None = None, *, reclaim_veto: bool = True) -> dict | None:
     """Per-ticker chart-marker + state object (the site/signals/<T>.json contract, §7).
 
     Optional ``daily_high``/``daily_low`` let swing-high & bearish-divergence read
     intrabar extremes (true OHLC for US; a conservative reconstruction for close-only
-    names — see engine.ohlc_reconstruct). Omit them for the close-only default."""
+    names — see engine.ohlc_reconstruct). Omit them for the close-only default.
+
+    ``reclaim_veto`` is passed straight through to :func:`_buy_filter` (default True =
+    the validated US/CN policy, unchanged). See that docstring for why HK passes False."""
     sig = signal_frame(daily_close, daily_high, daily_low)
     if sig.empty:
         return None
@@ -331,10 +433,18 @@ def analyze(ticker: str, daily_close: pd.Series, daily_high: pd.Series | None = 
         ds = str(idx[i].date())
         is_buy = bool(sig["CB"].iloc[i]) or bool(sig["revBuy"].iloc[i])
         if is_buy:
-            ok, reason = _buy_filter(i, sig, _bear_div(i, sig["high"], macd, hi), n)
+            ok, reason, reasons = _buy_filter_full(
+                i, sig, _bear_div(i, sig["high"], macd, hi), n, reclaim_veto=reclaim_veto)
             q = "pending" if ok is None else ("take" if ok else "block")
-            markers.append({"date": ds, "type": "rebuy" if bool(sig["revBuy"].iloc[i]) else "buy",
-                            "quality": q, "reason": reason})
+            m = {"date": ds, "type": "rebuy" if bool(sig["revBuy"].iloc[i]) else "buy",
+                 "quality": q, "reason": reason}
+            # `reasons` (SCHEMA.json §marker) is emitted ONLY when it says something `reason`
+            # does not — i.e. when the block is over-determined. A single-leg verdict keeps the
+            # file byte-identical to the pre-change render, and its absence is unambiguous
+            # because reasons[0] is always `reason`: a reader falls back to [reason] exactly.
+            if len(reasons) > 1:
+                m["reasons"] = reasons
+            markers.append(m)
         elif bool(sig["CS"].iloc[i]):
             markers.append({"date": ds, "type": "sell"})
         elif bool(sig["revSell"].iloc[i]):

@@ -1175,7 +1175,12 @@ class TestGateOrdering:
         assert result["emitted"] == []
 
     def test_a_top_ranked_item_below_the_floor_still_does_not_emit(self):
-        item = _item("weak", "Analyst notes a modest move", url="https://w.example/1",
+        # The headline carries a reading so the item REACHES the floor gate: an
+        # uncreditable source with no checkable figure is now sent to the digest
+        # by the citation law (2026-08-04), which is a correct outcome but a
+        # different gate, and this test is about the FLOOR's place in the order.
+        item = _item("weak", "Analyst notes a modest move, index up 0.2%",
+                     url="https://w.example/1",
                      tier="aggregator", body="Nothing much happened.")
         result = _run([item], Path("."), cfg=_marketing_cfg(rank_ordering=True))
         assert result["emitted"] == []

@@ -1,4 +1,4 @@
-"""tests/test_hk_board_rank.py — engine/hk_board_rank.py (hk_prophet_v1).
+"""tests/test_hk_board_rank.py — engine/hk_board_rank.py (hk_prophet_v2 — era bumped 2026-08-03 with the reclaim-veto removal).
 
 Spec: research/HK_BOARD_RESURRECTION_MASTERPLAN_BY_FABLE.md §0 gates G1-G5.
 Machinery under test is the PARAMETERISATION of engine/us_board_rank.py, so the
@@ -24,7 +24,9 @@ from engine.setups import norm_company
 
 
 FIXTURE = Path(__file__).parent / "fixtures" / "hk_board_2026_07_31.json"
-ARTIFACT = Path(__file__).resolve().parents[1] / "site" / "factordata" / "hk_standouts.json"
+# The 2026-07-31 board, frozen alongside the price panel above.  NOT
+# site/factordata/hk_standouts.json — see the `prod_board` docstring.
+ARTIFACT = Path(__file__).parent / "fixtures" / "hk_standouts_2026_07_31.json"
 
 # The seven names the operator named as missing from the board (masterplan §1).
 # 9961.HK is the HK-listed exposure standing in for PDD, which has no HK line.
@@ -81,17 +83,26 @@ def board():
 def prod_board():
     """The production HK board for the fixture's own as_of — the exclusion source.
 
-    `site/factordata/hk_standouts.json` is the artifact the nightly shipped for
-    2026-07-31, the same session the G1 panel was frozen from.  Its buy and watch
-    arrays ARE the sets the builder hands the lanes as `exclude`; this PR does not
-    touch either lane's membership, so reading them here replays production rather
-    than approximating it.
+    The artifact the nightly shipped for 2026-07-31, the same session the G1 panel
+    was frozen from.  Its buy and watch arrays ARE the sets the builder hands the
+    lanes as `exclude`, so reading them here replays production rather than
+    approximating it.
+
+    FROZEN (incident 2026-08-04).  This read `site/factordata/hk_standouts.json`
+    live, and the guard below was a `pytest.skip` — so when the nightly moved the
+    board to `as_of: 2026-08-03` the pairing check stopped being a safety net and
+    became an off switch: NINE G1 gates (five-of-seven witness visibility, the
+    watch-strip witness, lane caps binding, the vetoed lane's missed moves) went
+    silently green-by-skip, and the suite reported `154 passed, 9 skipped` for a
+    board nobody was checking any more.  The pairing is now an ASSERT against a
+    frozen file: it cannot drift, so if it ever fails someone regenerated one half
+    of the pair without the other, and that must be loud.
     """
-    if not ARTIFACT.exists():                 # pragma: no cover — committed in-tree
-        pytest.skip(f"{ARTIFACT} not present")
+    assert ARTIFACT.exists(), f"missing frozen board artifact {ARTIFACT}"
     art = json.loads(ARTIFACT.read_text())
-    if str(art.get("as_of")) != BOARD_ASOF:   # pragma: no cover — same-session pairing
-        pytest.skip(f"artifact as_of {art.get('as_of')} != panel {BOARD_ASOF}")
+    assert str(art.get("as_of")) == BOARD_ASOF, (
+        f"frozen artifact as_of {art.get('as_of')} != panel {BOARD_ASOF} — re-pin "
+        f"the price panel, the artifact and BOARD_ASOF in the same commit")
     return art
 
 
@@ -257,7 +268,7 @@ def _as_series(dates, closes):
 # --------------------------------------------------------------------------- #
 class TestFrozenConstants:
     def test_definition_string(self):
-        assert hbr.BOARD_DEFINITION == "hk_prophet_v1"
+        assert hbr.BOARD_DEFINITION == "hk_prophet_v2"
 
     def test_caps(self):
         assert (hbr.FEATURED_CAP, hbr.SECTOR_CAP, hbr.RAN_CAP) == (12, 4, 12)
@@ -519,7 +530,7 @@ class TestScoreRows:
     def test_definition_is_stamped_on_every_row(self):
         rows = hbr.score_rows([self._row("A", edge_z=1.0),
                                self._row("B", edge_z=0.0)], board_asof=BOARD_ASOF)
-        assert {r["prophet"]["version"] for r in rows} == {"hk_prophet_v1"}
+        assert {r["prophet"]["version"] for r in rows} == {"hk_prophet_v2"}
 
     def test_membership_is_untouched(self):
         pool = [self._row("A", edge_z=1.0), self._row("B", edge_z=-1.0),
@@ -562,7 +573,7 @@ class TestScoreRows:
         rows = hbr.score_rows([self._row("A", edge_z=1.0),
                                self._row("B", edge_z=0.0)], board_asof=BOARD_ASOF)
         block = hbr.ranking_block(rows)
-        assert block["definition"] == "hk_prophet_v1"
+        assert block["definition"] == "hk_prophet_v2"
         assert block["weights"] == dict(ubr.SCORE_WEIGHTS)
         edge = [f for f in block["formula_points"] if f["component"] == "edge"][0]
         assert "HK edge" in edge["reads"]
@@ -1194,6 +1205,108 @@ class TestStageArithmetic:
         assert hbr.stage_rank("nonsense") == len(hbr.STAGE_ORDER)
 
 
+class TestBasingOptIn:
+    """The `basing` shelf, ported from the US board (W-E.1 / D18).
+
+    WHAT IS AND IS NOT CLAIMED HERE.  HK's staged pool is CASCADE-GATED — the builder
+    hands :func:`score_rows` only the names `hk_cascade_eligible` admitted — so a
+    pre-signal BOTTOM WATCH row is structurally rare on this board in a way it is not
+    on the US one: measured ZERO across all 14 committed board snapshots
+    (2026-07-20..08-04).  What is under test is the ROUTING, not a population.  The
+    shelf is the labelled home for the day the cycle ladder and the cascade disagree,
+    so such a row lands under a heading a reader can read instead of falling through
+    the template's catch-all, which renders an unknown stage LAST, below Blocked.
+
+    The full membership fence for the split (nothing but `stage` moves, no other
+    ladder state is read as basing) is pinned once, on the shared machinery, in
+    tests/test_us_board_rank.py::TestBasingStage.  This class pins the HK
+    PARAMETERISATION: the re-export, the keyword thread-through, and that the HK
+    builder actually asks for it.
+    """
+
+    def _row(self) -> dict:
+        """The HK row shape — the ladder's DISPLAY label, and no internal `state` key.
+
+        The builder maps the scoreboard's `cycle` into `label` and never stamps
+        `state` on an HK row (scripts/build_hk_library.py), so the LABEL rung of
+        `is_bottom_watch` is the only one that can fire on this board.  A fixture
+        carrying `state` would pin a path HK cannot reach.
+        """
+        return {"ticker": "8888.HK", "label": "NEARING A LOW", "dir": "down",
+                "entry_signal": {"status": "watch"}}
+
+    def test_the_re_export_is_the_shared_constant(self):
+        """Same identity idiom as `test_stage_vocabulary_is_shared` — a local copy of
+        the string would let the two boards' bucket names drift apart silently."""
+        assert hbr.STAGE_BASING is ubr.STAGE_BASING
+        assert hbr.STAGE_BASING in hbr.STAGE_ORDER
+
+    def test_the_default_keeps_bottom_watch_in_blocked(self):
+        """No opt-in, no change — the pre-shelf behaviour, byte for byte."""
+        rows = hbr.score_rows([self._row()], board_asof=BOARD_ASOF)
+        assert rows[0]["stage"] == hbr.STAGE_BLOCKED
+
+    def test_the_opt_in_reaches_the_shared_engine(self):
+        """The thread-through: HK's `score_rows` is a WRAPPER, so a parameter it
+        accepts and forgets to forward would look wired and route nothing."""
+        rows = hbr.score_rows([self._row()], board_asof=BOARD_ASOF,
+                              bottom_watch_stage=hbr.STAGE_BASING)
+        assert rows[0]["stage"] == hbr.STAGE_BASING
+
+    def test_the_shelf_moves_the_row_between_display_buckets_and_nothing_else(self):
+        """Display-tier, at row grain: the same row through both calls differs in
+        `stage` alone.  Position stamps are compared separately because they are
+        positions — they move with the bucket, which is the feature."""
+        before = hbr.score_rows([self._row()], board_asof=BOARD_ASOF)[0]
+        after = hbr.score_rows([self._row()], board_asof=BOARD_ASOF,
+                               bottom_watch_stage=hbr.STAGE_BASING)[0]
+        assert (before["stage"], after["stage"]) == (hbr.STAGE_BLOCKED,
+                                                     hbr.STAGE_BASING)
+        positional = {"stage", "display_rank", "score_rank"}
+        assert set(before) == set(after)
+        assert ({k: v for k, v in before.items() if k not in positional}
+                == {k: v for k, v in after.items() if k not in positional})
+
+    def test_the_builder_asks_for_the_shelf(self, tmp_path, monkeypatch):
+        """A REAL CALL, not a source grep: the builder runs and the kwarg is recorded.
+
+        An engine that accepts `bottom_watch_stage` while the builder never passes it
+        is a dark parameter — the HK surface would ship the shelf's markup and never
+        route a row to it.  The recorder delegates to the real function so the rest of
+        the build is unchanged; this fixture's rows are DECLINE, so it produces no
+        basing row and is not asked to.
+        """
+        import json as _json
+        import lib.config as cfg_module
+        from scripts.build_hk_library import compute_hk_standouts
+
+        helper = TestBuilderWiring()          # same synthetic fixture, one definition
+        tickers = ["9988.HK", "0700.HK", "9618.HK", "3690.HK", "1810.HK"]
+        hd = tmp_path / "site" / "hkstockdata"
+        hd.mkdir(parents=True, exist_ok=True)
+        for ticker in tickers:
+            (hd / f"{ticker}.json").write_text(_json.dumps(helper._stock_json(ticker)))
+        monkeypatch.setattr(cfg_module, "ROOT", tmp_path)
+
+        seen: list[dict] = []
+        real = hbr.score_rows
+
+        def _recorder(rows, **kwargs):
+            seen.append(dict(kwargs))
+            return real(rows, **kwargs)
+
+        monkeypatch.setattr(hbr, "score_rows", _recorder)
+        out = compute_hk_standouts({
+            "as_of": "2026-07-08", "risk_state": "risk_off",
+            "modes": {"all": [helper._scoreboard_row(t) for t in tickers]},
+        })
+        if out is None:                       # pragma: no cover — env-dependent
+            pytest.skip("compute_hk_standouts returned None — enriched < 4 here")
+        assert seen, "the builder never called hk_board_rank.score_rows"
+        assert [k.get("bottom_watch_stage") for k in seen] == [hbr.STAGE_BASING], (
+            "the HK builder must opt into the basing shelf explicitly")
+
+
 class TestFalsyZeroGuards:
     """The traps: a truthiness test on any of these silently inverts the answer."""
 
@@ -1419,9 +1532,28 @@ class TestG1Witnesses:
         MEASURED 2026-07-31: 46 refusals, median +3.1%, against a displayed set whose
         smallest member is several times that.  If these ever converge the disclosure
         is cheap; it is when they diverge — as here — that omitting it misleads.
+
+        THE SPREAD RATIO ALONE IS NOT A GATE (added 2026-08-05).  ``max > median*3``
+        survived the off-grid fixture at ``4.7 > 4.2`` — on a lane where 28 of 33
+        names had gone unmeasurable and the five survivors were the five SMALLEST
+        moves in it.  A ratio between two numbers drawn from the same 15% of a
+        population says nothing about the population, so the coverage is floored
+        directly: a disclosure line computed over a lane that is 85% null is not a
+        disclosure, it is a different measurement wearing the same label.
         """
         rows = frozen_lanes["vetoed"]
         assert rows[0]["population"] > len(rows), "the cap must actually bind"
+
+        population = rows[0]["population"]
+        measured = rows[0]["population_measured"]
+        assert measured / population >= 0.75, (
+            f"only {measured} of {population} names in the vetoed population carry a "
+            f"measurable move ({measured / population:.0%}) — the median and the "
+            f"maximum below are drawn from a censored slice, and on this panel the "
+            f"censoring is TOP-first (an off-grid fixture deleted ranks 1-11 of 33 "
+            f"and left a 4.7% 'maximum'). Check the frozen windows' 3B phase before "
+            f"reading anything on this lane")
+
         median = rows[0]["population_median_pct"]
         assert median is not None
         assert max(r["pct_since"] for r in rows if r["pct_since"] is not None) > median * 3
@@ -1446,7 +1578,7 @@ class TestBuilderWiring:
 
     A unit-tested engine that the builder never calls is a dark lane.  This runs
     the real function over a minimal synthetic fixture (the pattern
-    tests/test_hk_washout_watch.py established) and asserts the hk_prophet_v1 keys
+    tests/test_hk_washout_watch.py established) and asserts the hk_prophet_v2 keys
     reach the artifact.
     """
 
@@ -1484,8 +1616,8 @@ class TestBuilderWiring:
         return out
 
     def test_board_definition_is_stamped(self, built):
-        assert built["rank_by"] == "hk_prophet_v1"
-        assert built["board_definition"] == "hk_prophet_v1"
+        assert built["rank_by"] == "hk_prophet_v2"
+        assert built["board_definition"] == "hk_prophet_v2"
 
     def test_every_new_lane_key_is_present(self, built):
         for key in ("leaders", "ran", "vetoed", "ranking", "lane_counts"):
@@ -1504,7 +1636,7 @@ class TestBuilderWiring:
 
     def test_ranking_receipt_reaches_the_artifact(self, built):
         block = built["ranking"]
-        assert block["definition"] == "hk_prophet_v1"
+        assert block["definition"] == "hk_prophet_v2"
         assert block["score_kind"] == hbr.SCORE_KIND
         assert block["display_tier_lanes"] == list(hbr.DISPLAY_TIER_LANES)
 
@@ -1822,6 +1954,67 @@ class TestG1FixtureIsNotStale:
     re-derive the seven witnesses from that same slice.  This preserves the stale-data
     tripwire without making every new market session break an older measurement.
     """
+
+    def test_every_frozen_window_starts_on_a_3b_bucket_boundary(self, board):
+        """THE PHASE INVARIANT — asserted, not described.
+
+        ``regenerate_g1_fixture`` has called the 3B alignment "load-bearing rather
+        than cosmetic" since 2026-08-03 and NOTHING checked it.  It broke exactly as
+        prose predicts: a regenerator re-cutting a flat ``tail(_tail_sessions)``
+        (correct only if every window were the same length — 123 of these 157 are
+        not) put 123 windows off-grid, and because ``signal_quality.signal_frame``
+        anchors its ``resample("3B")`` bins on the series' FIRST index date, every
+        frozen marker date stopped being a bucket label.  The move-anchored lanes
+        then dropped the rows they could no longer anchor: the vetoed lane fell from
+        33 measured names (max +24.3%) to 5 (max +4.7%), TOP-FIRST.
+
+        The only thing that failed was ``test_the_vetoed_lane_prints_what_the_board
+        _missed``'s ``max(moves) > 20.0``, which reads as "the panel no longer
+        carries big missed moves" — a data-falsification claim.  A whole
+        investigation went that way.  A fixture-shape defect must fail as a
+        fixture-shape defect, so it is measured here, on the shape, by name.
+        """
+        np = pytest.importorskip("numpy")
+        pd = pytest.importorskip("pandas")
+        src = Path(board["_source"])
+        if not src.exists():                    # pragma: no cover — committed in-tree
+            pytest.skip(f"{src} not present")
+        panel = pd.read_parquet(src).loc[:board["_as_of"]]
+
+        off_grid = {}
+        for ticker, frozen in board["closes"].items():
+            column_start = str(panel[ticker].dropna().index[0].date())
+            phase = int(np.busday_count(column_start, frozen["dates"][0])) % 3
+            if phase:
+                off_grid[ticker] = phase
+        assert not off_grid, (
+            f"{len(off_grid)} of {len(board['closes'])} frozen windows do not start "
+            f"on a 3B bucket boundary of their own column "
+            f"(first few: {dict(list(off_grid.items())[:5])}) — the frozen verdicts' "
+            f"marker dates are no longer bucket labels, so the move-anchored lanes "
+            f"will silently drop rows rather than fail. Regenerate the fixture: "
+            f"{regenerate_g1_fixture()}")
+
+    def test_the_window_stamp_describes_the_windows_it_stamps(self, board):
+        """``_tail_sessions: 340`` was false for 123 of 157 tickers, and it was READ.
+
+        It was the era parameter the regenerator sliced by, so the file's own
+        metadata is what told the regenerator to flatten it.  The stamp is now
+        ``_tail_anchor`` — a RULE, not a count — and a count cannot come back
+        without this failing, because a count is not a thing these windows have.
+        """
+        assert "_tail_sessions" not in board, (
+            "a single session count cannot describe windows of three different "
+            "lengths; it is the field that caused the flattening")
+        anchor = board["_tail_anchor"]
+        assert anchor["rule"] == "3b_phase_aligned"
+        assert anchor["phase_mod"] == 3
+        lengths = {len(v["dates"]) for v in board["closes"].values()}
+        assert min(lengths) >= anchor["min_sessions"], (
+            f"windows {sorted(lengths)} vs declared minimum {anchor['min_sessions']}")
+        assert len(lengths) > 1, (
+            "if every window really were the same length this stamp would be "
+            "over-engineering — it is not: " + str(sorted(lengths)))
 
     def test_source_panel_history_is_unchanged(self, board):
         pd = pytest.importorskip("pandas")

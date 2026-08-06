@@ -17,6 +17,7 @@ gates in [[stock-conviction-profile]] and [[china-name-potential-score]].
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 
 import numpy as np
 import pandas as pd
@@ -192,7 +193,66 @@ def _drop_frozen_echoes(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
     return d.loc[~echo], int(echo.sum())
 
 
-def _fwd_return(market: str, ticker: str, d0: pd.Timestamp, h: int) -> float | None:
+def _series_reader(market: str) -> Callable[[str], pd.Series | None]:
+    """Per-ticker MEMOIZED close-series resolver — the resolution half of ``_fwd_return``,
+    split out so one ``grade()`` call reads each name ONCE instead of once per
+    (row, horizon).
+
+    The ledger accrues (~72k US rows, rising nightly) but spans a bounded universe
+    (~3k names), so per-(row, horizon) resolution cost ~145k parquet reads — measured
+    at ~13.4 minutes — while per-NAME resolution costs ~3k reads (seconds). The cache
+    is bounded by universe size, not ledger depth, so grade() stays cheap as the
+    ledger grows. Scope: one reader per grade() call (never module-level), so a store
+    file that changes between grade() calls is re-read, never served stale.
+
+    The prophet US miss-audit carries its own ``name_score_series_reader`` — a mirrored
+    caching adapter over this same ladder. The two implementations are deliberately
+    separate (anti-fork: that audit's suite pins them to identical series and identical
+    scorecard numbers), so a drift in either fails the suite instead of shipping two
+    sets of numbers under one name. That audit is ZERO-authority ops telemetry and its
+    module name is deliberately NOT spelled out here: its suite greps every other module
+    for the literal string, so even a docstring mention reads as a dependency and fails
+    the guard.
+
+    Resolution semantics are byte-identical to the pre-memo per-call body: group
+    ladder (_FWD_GROUP; tuple = ordered fallback, first hit wins), ``close`` coerced
+    to numeric + dropna, US extended by the dead-name terminal store
+    (grading.resolve_series), empty → None, sorted by index."""
+    m = (market or "CN").upper()
+    grp = _FWD_GROUP.get(m, "china")
+    groups = (grp,) if isinstance(grp, str) else grp
+    cache: dict[str, pd.Series | None] = {}
+
+    def read(ticker: str) -> pd.Series | None:
+        t = str(ticker)
+        if t in cache:
+            return cache[t]
+        df = None
+        try:
+            for g in groups:
+                df = store.read(g, t)
+                if df is not None and "close" in df:
+                    break
+            s = (pd.to_numeric(df["close"], errors="coerce").dropna()
+                 if (df is not None and "close" in df) else None)
+        except Exception:  # noqa: BLE001 — a per-name read failure is a null, never fatal
+            s = None
+        # US has the 8-K bankruptcy dead-name store; other markets have none →
+        # resolve_series simply returns the live series unchanged there.
+        if m == "US":
+            try:
+                s = grading.resolve_series(t, s)
+            except Exception:  # noqa: BLE001
+                pass
+        cache[t] = None if (s is None or s.empty) else s.sort_index()
+        return cache[t]
+
+    return read
+
+
+def _fwd_return(market: str, ticker: str, d0: pd.Timestamp, h: int,
+                *, series_for: Callable[[str], pd.Series | None] | None = None,
+                ) -> float | None:
     """Forward return of a call, NEXT-BAR filled + survivorship-aware (W1c, audit #15).
 
     Pre-W1c this did ``s.iloc[h] / s.iloc[0]`` — a SAME-BAR fill (the score's own as-of
@@ -201,31 +261,15 @@ def _fwd_return(market: str, ticker: str, d0: pd.Timestamp, h: int) -> float | N
     engine.grading: the call fires on d0's close but is FILLED on the next bar, the forward
     return is measured to h bars past that fill, and a delisted name is extended by its
     dead-name terminal close (US only for now — the dead-name store is US-side) so its loss
-    is graded instead of vanishing."""
-    try:
-        # _FWD_GROUP may be a str (single group) or a tuple (ordered fallback list, first hit wins).
-        # CN uses ("china_stocks", "china") so per-name A-shares resolve before the ETF store.
-        _grp = _FWD_GROUP.get((market or "CN").upper(), "china")
-        _groups = (_grp,) if isinstance(_grp, str) else _grp
-        df = None
-        for _g in _groups:
-            df = store.read(_g, str(ticker))
-            if df is not None and "close" in df:
-                break
-        s = pd.to_numeric(df["close"], errors="coerce").dropna() if (
-            df is not None and "close" in df) else None
-    except Exception:  # noqa: BLE001
-        s = None
-    # US has the 8-K bankruptcy dead-name store; other markets have none → resolve_series
-    # simply returns the live series unchanged there.
-    if (market or "").upper() == "US":
-        try:
-            s = grading.resolve_series(str(ticker), s)
-        except Exception:  # noqa: BLE001
-            pass
-    if s is None or s.empty:
+    is graded instead of vanishing.
+
+    Series resolution lives in ``_series_reader`` (per-ticker memo). ``series_for`` lets a
+    caller reuse ONE reader across many calls — grade() passes one per run, so a 72k-row
+    ledger costs ~3k store reads instead of ~145k — while a bare 4-arg call (tests,
+    ad-hoc) resolves fresh, byte-identical either way."""
+    s = (series_for or _series_reader(market))(str(ticker))
+    if s is None:
         return None
-    s = s.sort_index()
     # Snap to the call bar (nearest bar <= d0), fill next bar, measure h bars past the fill.
     # NOTE: this credits the call to the score's OWN as-of bar even if the price series
     # begins after d0-slicing would; grading._snap_loc handles the nearest-prior mapping.
@@ -273,10 +317,14 @@ def grade(market: str = "CN") -> dict | None:
         out["stamp_gap_dates"] = gaps[:14]
     except Exception:  # noqa: BLE001 — disclosure only, never fatal
         pass
+    # ONE memoized reader for this grade() call: rows × horizons revisit the same
+    # bounded universe of names, so each name's series is resolved once (see
+    # _series_reader — pre-memo this loop was ~145k parquet reads / ~13 min on US).
+    read = _series_reader(m)
     for h in _HORIZONS_D:
         recs = []
         for _i, row in df.iterrows():
-            fr = _fwd_return(m, row["ticker"], pd.Timestamp(row["date"]), h)
+            fr = _fwd_return(m, row["ticker"], pd.Timestamp(row["date"]), h, series_for=read)
             if fr is None:
                 continue
             recs.append({"date": row["date"], "ticker": row["ticker"],

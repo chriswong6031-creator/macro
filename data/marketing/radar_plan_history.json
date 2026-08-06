@@ -2,6 +2,20 @@
   "schema": "marketing.radar_plan_history/v1",
   "plans": [
     {
+      "as_of": "2026-08-05",
+      "tickers": [
+        "SOC",
+        "TEAM"
+      ]
+    },
+    {
+      "as_of": "2026-08-04",
+      "tickers": [
+        "JBLU",
+        "TPR"
+      ]
+    },
+    {
       "as_of": "2026-08-03",
       "tickers": [
         "AMZN",
@@ -78,65 +92,6 @@
       "tickers": [
         "LII",
         "VRT"
-      ]
-    },
-    {
-      "as_of": "2026-07-29",
-      "tickers": [
-        "ARES",
-        "ARLO",
-        "AVNT",
-        "CBOE",
-        "CUBI",
-        "CVI",
-        "EQT",
-        "FDS",
-        "GM",
-        "GPI",
-        "HAL",
-        "HSY",
-        "IQV",
-        "KMT",
-        "LKFN",
-        "LPG",
-        "MMM",
-        "MOS",
-        "MSFT",
-        "NRG",
-        "NSSC",
-        "ROST",
-        "SLB",
-        "SNDK",
-        "SONO",
-        "SRE",
-        "SW",
-        "TEAM",
-        "TEL",
-        "TPR",
-        "TSLA"
-      ]
-    },
-    {
-      "as_of": "2026-07-28",
-      "tickers": [
-        "ARES",
-        "CBOE",
-        "CUBI",
-        "CVI",
-        "EQT",
-        "FDS",
-        "GPI",
-        "KMT",
-        "LKFN",
-        "LPG",
-        "MOS",
-        "MSFT",
-        "ROST",
-        "SNDK",
-        "SONO",
-        "TEAM",
-        "TEL",
-        "WDAY"
       ]
     }
   ]

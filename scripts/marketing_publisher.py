@@ -62,6 +62,10 @@ if _CODE_ROOT not in sys.path:
 from engine.marketing.copywriter import banned_language as _banned_language  # noqa: E402
 from engine.marketing.copywriter import headline_fragments as _headline_fragments  # noqa: E402
 from engine.marketing.copywriter import queued_voice_violations as _queued_voice_violations  # noqa: E402
+from engine.marketing.copywriter import queued_relay_violations as _queued_relay_violations  # noqa: E402
+from engine.marketing.cold_read import cold_read_verdict as _cold_read_verdict  # noqa: E402
+from engine.marketing.cold_read import resolve_action as _cold_read_action  # noqa: E402
+from engine.marketing.cold_read import reset_run_budget as _cold_read_reset  # noqa: E402
 from engine.marketing.copywriter import batch_body_duplicate_violations as _batch_body_duplicate_violations  # noqa: E402
 from engine.marketing.copywriter import repeated_sentence_violations as _repeated_sentence_violations  # noqa: E402
 from engine.marketing import market_clock as _clock  # noqa: E402
@@ -1827,6 +1831,17 @@ def main(argv: list[str] | None = None) -> int:
     # first time a gate actually fired.
     quarantined_bare_cashtag = quarantined_unknown_cashtag = 0
     quarantined_voice_laws = quarantined_run_duplicate = 0
+    quarantined_relay_hygiene = 0
+    quarantined_cold_read = held_cold_read = cold_read_flagged = 0
+    cold_read_unavailable = cold_read_reads = 0
+    cold_read_unread = 0
+    # COLD READ config (2026-08-04) — config/marketing.yml `cold_read`. Absent =>
+    # `enabled: false`, i.e. not a single model call. Present and enabled but
+    # with no `action` => "shadow": the verdict is logged, nothing is blocked.
+    # Both defaults are chosen so that landing this file changes NOTHING about
+    # what posts until an operator says so.
+    _cold_cfg = (cfg.get("cold_read") or {}) if isinstance(cfg, dict) else {}
+    _cold_read_reset()   # a fresh per-run read budget for this sweep
     #: Sends refused for quota, not for content — requeued rather than failed.
     #: Counted separately because "3 failed" and "3 will retry next sweep" are
     #: opposite facts and the summary line was reporting them as the same one.
@@ -2380,6 +2395,105 @@ def main(argv: list[str] | None = None) -> int:
             quarantined += 1
             quarantined_voice_laws += 1
             continue
+
+        # -- relay gate: the queue is not a bypass around the hygiene laws -----
+        # THE MEASUREMENT THAT FORCED THIS (2026-08-04). The outbox holds 308
+        # queued items going back ELEVEN days, and content laws run at COMPOSE
+        # time — so every item enqueued before a law existed keeps its pre-law
+        # text forever. Five queued items still carry a foreign "@handle" that
+        # the de-handling law banned on 2026-08-02, and the relay-hygiene fix
+        # shipped alongside this screen would not have touched one of them.
+        # Fixing the generator fixes tomorrow's posts; only a last gate fixes
+        # the queue, and the queue is what actually reaches the timeline.
+        #
+        # SCOPED TO RELAYED LANES, INSIDE THE SCREEN. Our OWN desks write in the
+        # first person on purpose ("I'm not fighting this one" — 46 queued items,
+        # house voice, operator-approved 2026-07-30), so these rules applied to
+        # the marketing desks would quarantine the voice wholesale. The lane
+        # allowlist lives with the rules (relay_hygiene._RELAYED_PROVENANCES),
+        # not here: an allowlist this file owned would put the whole voice one
+        # forgotten argument away from a terminal quarantine. Passing an unknown
+        # provenance returns [] — an unrecognised lane is never screened.
+        #
+        # Fail-SAFE, like every screen on this terminal path: a hygiene module
+        # that cannot be imported leaves the item unscreened rather than dead.
+        _relay = _queued_relay_violations(text, str(it.get("provenance") or ""))
+        if _relay:
+            reason = "relay hygiene (queue vintage): " + "; ".join(_relay[:2])
+            print(f"::warning title=marketing-relay-gate::item {iid} "
+                  f"({account}/{it.get('kind')}) quarantined — {_relay[0][:110]}",
+                  flush=True)
+            log.warning("item %s (%s) QUARANTINED by relay gate: %s",
+                        iid, account, reason)
+            if live:
+                _outbox.transition(iid, "quarantined", actor="publisher",
+                                   root=root, note=reason)
+            quarantined += 1
+            quarantined_relay_hygiene += 1
+            continue
+
+        # -- cold read: can a STRANGER resolve this post? --------------------
+        # The screens above enumerate defects we have already seen. This one is
+        # for the next one. Every other copy gate in this file asks a question
+        # about the STRING (length, banned words, handles, token overlap); the
+        # 2026-08-04 post passed all of them and failed only "a reader who sees
+        # nothing but this post cannot resolve 'this'" — which is not a rule
+        # anyone can write, because the defect is what is MISSING from the
+        # reader's context.
+        #
+        # A DE-ESCALATION, WHICH IS THE ONLY DIRECTION A MODEL MAY MOVE HERE
+        # (A7). It runs last, after every deterministic gate has decided; it can
+        # only STOP a post, never pass, rank, promote or edit one; and a block
+        # is honoured only when it names one of cold_read.BLOCK_CATEGORIES, so a
+        # model that decides the copy is boring returns a category we discard.
+        #
+        # SHIPS IN SHADOW. `action` defaults to "shadow": the verdict is logged
+        # and nothing is blocked. Arming is a config flip made after reading
+        # what it would have done — the same probation the hardening charter
+        # demands of a new SOURCE, applied to a new GATE. Wiring a model veto
+        # straight into a terminal quarantine with no measured precision is the
+        # move that charter argues against.
+        _cold = _cold_read_verdict(
+            text, provenance=str(it.get("provenance") or ""), cfg=_cold_cfg,
+        )
+        # A DARK GATE HAS UNREVIEWED OUTPUT. `enabled: true` with no reachable
+        # model is the most dangerous state this can be in: the run summary says
+        # the gate is on, the notices say nothing, and the honest reading of
+        # "zero cold-read flags" is "nothing was ever read". Counted here and
+        # reported once at the end of the run rather than per item.
+        if _cold["mode"] == "unavailable":
+            cold_read_unavailable += 1
+        elif _cold["mode"] == "read":
+            cold_read_reads += 1
+        elif _cold["mode"] == "budget_exhausted":
+            cold_read_unread += 1
+        if _cold["blocked"]:
+            cold_read_flagged += 1
+            _why = f"{_cold['category']}: {_cold['reason']}"
+            if _cold["action"] == "shadow":
+                print(f"::notice title=marketing-cold-read-shadow::item {iid} "
+                      f"({account}/{it.get('kind')}) WOULD be held — {_why[:110]}",
+                      flush=True)
+            else:
+                reason = "cold read (a reader cannot resolve this): " + _why
+                print(f"::warning title=marketing-cold-read::item {iid} "
+                      f"({account}/{it.get('kind')}) "
+                      f"{_cold['action']} — {_why[:110]}", flush=True)
+                log.warning("item %s (%s) %s by cold read: %s",
+                            iid, account, _cold["action"], reason)
+                if live:
+                    # "hold" leaves the item QUEUED for another pass and an
+                    # operator's eye; only "quarantine" is terminal. A model
+                    # veto deserves the reversible rung as its first armed step.
+                    if _cold["action"] == "quarantine":
+                        _outbox.transition(iid, "quarantined", actor="publisher",
+                                           root=root, note=reason)
+                if _cold["action"] == "quarantine":
+                    quarantined += 1
+                    quarantined_cold_read += 1
+                else:
+                    held_cold_read += 1
+                continue
 
         # -- run dedup: the queue is not a bypass around "don't repeat yourself"
         # The FIRST of a near-duplicate pair posts; the clones do not. Terminal
@@ -2971,6 +3085,8 @@ def main(argv: list[str] | None = None) -> int:
         "named a ticker no price store knows": quarantined_unknown_cashtag,
         "reads machine-written": quarantined_voice_laws,
         "repeats a post already sent": quarantined_run_duplicate,
+        "relays the source's own page furniture": quarantined_relay_hygiene,
+        "a reader could not resolve it": quarantined_cold_read,
         "same skeleton as a recent post": quarantined_frame,
         "claimed a session that was not the posting session": quarantined_clock,
         "repeats a fact another post already carries": quarantined_fact_fanout,
@@ -3034,6 +3150,8 @@ def main(argv: list[str] | None = None) -> int:
         "skipped_cap=%d skipped_cadence=%d cadence_shadow=%d deferred_xa=%d "
         "quarantined_bare_cashtag=%d quarantined_unknown_cashtag=%d "
         "quarantined_voice_laws=%d quarantined_run_duplicate=%d "
+        "quarantined_relay_hygiene=%d "
+        "cold_read_flagged=%d quarantined_cold_read=%d held_cold_read=%d "
         "quarantined_frame=%d skipped_filler=%d quarantined_substance=%d "
         "substance_shadow=%d quarantined_clock=%d quarantined_fact_fanout=%d "
         "skipped_no_channel=%d skipped_halt=%d parked_dark=%d "
@@ -3046,6 +3164,8 @@ def main(argv: list[str] | None = None) -> int:
         skipped_cap, skipped_cadence, shadow_cadence, deferred_xa,
         quarantined_bare_cashtag, quarantined_unknown_cashtag,
         quarantined_voice_laws, quarantined_run_duplicate,
+        quarantined_relay_hygiene,
+        cold_read_flagged, quarantined_cold_read, held_cold_read,
         quarantined_frame, skipped_filler, quarantined_substance, shadow_substance,
         quarantined_clock, quarantined_fact_fanout,
         skipped_channel,
@@ -3056,6 +3176,32 @@ def main(argv: list[str] | None = None) -> int:
         len(stuck_posting),
         len(auto_approved),
     )
+
+    # ── IS THE COLD READ ACTUALLY READING? ───────────────────────────────────
+    # An armed gate with no reachable model is worse than a disarmed one: the
+    # config says it is on, the run summary shows zero flags, and "zero flags"
+    # reads as "the copy was clean" when it means "nothing was ever read". The
+    # local rung needs OLLAMA_BASE_URL in the process env, which is exactly the
+    # kind of thing that goes missing on one runner and nowhere else.
+    if bool(_cold_cfg.get("enabled", False)):
+        if cold_read_unavailable and not cold_read_reads:
+            print("::warning title=marketing-cold-read-dark::cold read is enabled "
+                  f"but NO model was reachable for any of {cold_read_unavailable} "
+                  "relayed item(s) — the gate is dark, and zero flags this run "
+                  "means nothing was read. Set OLLAMA_BASE_URL (and "
+                  "MARKETING_LLM_ENABLED=1) on this runner.", flush=True)
+        elif cold_read_reads:
+            print(f"::notice title=marketing-cold-read::{cold_read_reads} item(s) "
+                  f"cold-read, {cold_read_flagged} flagged "
+                  f"(action={_cold_read_action(_cold_cfg)})", flush=True)
+        if cold_read_unread:
+            # NO SILENT CAPS. A truncated screen that says nothing reads as a
+            # clean run, which is the same defect in a different coat.
+            print(f"::warning title=marketing-cold-read-budget::{cold_read_unread} "
+                  "relayed item(s) went UNREAD — the per-run read budget was "
+                  "reached. Raise cold_read.max_reads_per_run, or look at why "
+                  "the local endpoint is slow.", flush=True)
+
     try:
         _outbox._append_activity(root, {
             "at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -3081,6 +3227,13 @@ def main(argv: list[str] | None = None) -> int:
             "quarantined_unknown_cashtag": quarantined_unknown_cashtag,
             "quarantined_voice_laws": quarantined_voice_laws,
             "quarantined_run_duplicate": quarantined_run_duplicate,
+            "quarantined_relay_hygiene": quarantined_relay_hygiene,
+            "quarantined_cold_read": quarantined_cold_read,
+            "held_cold_read": held_cold_read,
+            "cold_read_flagged": cold_read_flagged,
+            "cold_read_reads": cold_read_reads,
+            "cold_read_unavailable": cold_read_unavailable,
+            "cold_read_unread": cold_read_unread,
             "quarantined_frame": quarantined_frame,
             "skipped_filler": skipped_filler,
             "quarantined_substance": quarantined_substance,

@@ -280,6 +280,15 @@ jobs:
         run: pip install jsonschema pytest pandas numpy pyyaml requests
       - name: signal §7 contract tests
         run: python -m pytest tests/test_validate_signals.py -q
+      # W-F reclaim-veto decision packet (2026-08-05). This job, not a new one: the suite
+      # drives the REAL engine.signal_quality._buy_filter and analyze() over synthetic
+      # series, so it needs pandas + numpy + pyyaml (lib.config, via engine.technicals) —
+      # all present in the install line above, so no importorskip is needed and none is
+      # used. No data fixtures: every case is hand-built, which is why it can ride a job
+      # that checks out no caches. It pins that the packet's refusal set isolates exactly
+      # one leg — if that drifts, a research file starts overstating the veto's cost.
+      - name: W-F reclaim-veto flip-isolation construction
+        run: python -m pytest tests/test_us_reclaim_veto_packet.py -q
       - name: fundamental forensics lineage, normalization, detector, and schema contracts
         run: >
           python -m pytest
@@ -861,8 +870,15 @@ jobs:
       - name: install capital-structure test deps
         run: pip install pytest pandas numpy pyarrow jsonschema==4.26.0 requests pyyaml jinja2 fastapi httpx boto3
       - name: capital-structure contracts, compilers, projection, graph, source store, and legacy boundary
+        # test_daily_collect_commit_path.py rides HERE on purpose: it names the set
+        # of collect-job steps allowed to fail before "commit data", and every entry
+        # in that allowlist is a capital-structure step. Its sibling pin
+        # (test_capital_structure_compiler.py::test_nightly_order_and_render_network
+        # _firewall_are_pinned) asserts the same step stays fatal, so the two must
+        # move together — co-locating means a change to either surfaces the other.
         run: >
           python -m pytest
+          tests/test_daily_collect_commit_path.py
           tests/test_capital_structure_compiler.py
           tests/test_capital_structure_contracts.py
           tests/test_capital_structure_document_terms.py
@@ -883,6 +899,10 @@ jobs:
           tests/test_capital_structure_share_count_publication.py
           tests/test_capital_structure_share_count_retention.py
           tests/test_capital_structure_share_count_materializer.py
+          tests/test_capital_structure_share_count_r2_conformance.py
+          tests/test_capital_structure_share_count_r2_operator.py
+          tests/test_capital_structure_share_count_r2_concurrency.py
+          tests/test_capital_structure_share_count_r2_concurrency_operator.py
           tests/test_sec_capital_structure.py
           tests/test_sec_capital_structure_companyfacts.py
           tests/test_nwqs_c_dilution.py -q
@@ -976,6 +996,30 @@ jobs:
         run: pip install pytest pandas numpy pyarrow requests pyyaml
       - name: whole-board breadth collector + heatmap payload contract
         run: python -m pytest tests/test_china_board_breadth.py tests/test_market_heatmap.py -q
+
+  china-search-universe:
+    if: ${{ false }}
+    # The A-Share Analyzer's searchable name set (Sina top-800 ∪ CSI 300 ∪ CSI 1000).
+    # WIRING LAW (#1253 precedent): both suites were named by NO job, so the CSI union —
+    # the part of this collector that has now produced four separate silent-shrink
+    # defects (#4577 duplicate codes, #4585 92xxxx→.SS, and the untimed fetch + silent
+    # lossy fallback fixed here) — merged untested for its whole life. Offline: canned
+    # CSIndex frames, generated .xls bytes, no network.
+    #
+    # openpyxl is not optional here: the direct CSIndex path is an .xls parsed through
+    # pd.read_excel, and the fixtures generate real workbook bytes rather than mocking
+    # the parser (a mocked read_excel cannot see the bilingual 成份 header dialect the
+    # live file actually ships). yfinance is a module-scope import of the collector.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml requests openpyxl yfinance
+      - name: CSI constituent union — timeout, header dialect, degraded-night membership
+        run: python -m pytest tests/test_china_universe_index_constituents.py tests/test_china_universe_extras.py -q
 
   cycle-consistency:
     if: ${{ false }}
@@ -3515,7 +3559,16 @@ jobs:
         # edit can no longer read as applied while every desk stays on the old
         # schedule. Reads committed config only; stdlib + pyyaml like its
         # neighbours.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_admin_marketing_floor.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_intelligence_desk.py tests/test_marketing_press_stream.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_reply_warmth.py tests/test_marketing_reply_tails.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py tests/test_marketing_hot_tape.py tests/test_marketing_hot_tape_radar.py tests/test_marketing_copy_v2.py tests/test_marketing_copy_auditor.py tests/test_marketing_bare_cashtag.py tests/test_marketing_voice_laws.py tests/test_marketing_publisher_names.py tests/test_marketing_media_backfill.py tests/test_chart_facts.py tests/test_confluence_source.py tests/test_chart_since_setup.py tests/test_marketing_selection.py tests/test_marketing_press_wire.py tests/test_marketing_x_intel.py tests/test_marketing_reply_voice.py tests/test_marketing_filing_lanes.py tests/test_marketing_cadence_ramp_coherence.py tests/test_marketing_ladder_collapse.py tests/test_marketing_wire_headroom.py tests/test_marketing_copy_yield.py tests/test_marketing_news_arming.py tests/test_marketing_breaking_card_geometry.py tests/test_marketing_ramp_speedup.py tests/test_news_translate_render_gate.py -q
+        # test_copywriter.py joins 2026-08-03: the suite predated this lane's
+        # roster and was named in NO CI job — unrun-suite rot, so regressions
+        # in copywriter.write_posts_deterministic shipped dark. It pins
+        # verify_signal_live's kill rules, validate_copy's defect gates, the
+        # numbers whitelist, the deterministic writer's no-dupe/no-filler laws
+        # and the graded-receipts grading. Same lane contract as copy_v2 above:
+        # copywriter keeps every heavy import lazy, the test file's own imports
+        # are stdlib-only, nothing importorskip-gated. Verified in a clean
+        # pytest+pyyaml+jinja2(+requests+pyarrow) venv.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_admin_marketing_floor.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_intelligence_desk.py tests/test_marketing_press_stream.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_reply_warmth.py tests/test_marketing_reply_tails.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py tests/test_marketing_hot_tape.py tests/test_marketing_hot_tape_radar.py tests/test_marketing_copy_v2.py tests/test_copywriter.py tests/test_marketing_copy_auditor.py tests/test_marketing_bare_cashtag.py tests/test_marketing_voice_laws.py tests/test_marketing_publisher_names.py tests/test_marketing_media_backfill.py tests/test_chart_facts.py tests/test_confluence_source.py tests/test_chart_since_setup.py tests/test_marketing_selection.py tests/test_marketing_press_wire.py tests/test_marketing_x_intel.py tests/test_marketing_reply_voice.py tests/test_marketing_filing_lanes.py tests/test_marketing_cadence_ramp_coherence.py tests/test_marketing_ladder_collapse.py tests/test_marketing_wire_headroom.py tests/test_marketing_copy_yield.py tests/test_marketing_news_arming.py tests/test_marketing_breaking_card_geometry.py tests/test_marketing_ramp_speedup.py tests/test_news_translate_render_gate.py -q
       - name: reply-target register validates (config/reply_targets.yml)
         # The register is operator-curated, so a bad handle or an unknown tier is
         # an editing mistake, not a code change. Runs as its own step so a
@@ -4251,6 +4304,12 @@ jobs:
         run: python -m pytest tests/test_check_ledger_advance.py tests/test_builder_failstreaks.py tests/test_notify_turn_events.py -q
       - name: polygon universe/intraday + dead-name prices + finviz archival + thetadata sessions
         run: python -m pytest tests/test_build_polygon_universe.py tests/test_polygon_intraday.py tests/test_fetch_dead_name_prices_polygon.py tests/test_finviz_archival.py tests/test_thetadata_tape_sessions.py -q
+      # Enumerated in NO workflow before this (calendar-asof audit follow-up
+      # 2026-08-05): the finviz collector's asof feeds these ledgers, but a PR
+      # touching the track record or its heal fired no run that could see a
+      # failure. Lives here because the collector's own suite already does.
+      - name: subsector rotation track record + significance guard + session-stamp heal
+        run: python -m pytest tests/test_subsector_track_record.py tests/test_subsector_significance_guard.py tests/test_heal_subsector_rotation_ledgers.py -q
 
   unrun-government-revenue:
     # Government Revenue Foresight — builder envelope, publication fence,
@@ -4560,6 +4619,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: vector allocation surfaces + the calibration ledger and basket pulse they read
         run: python -m pytest tests/test_basket_turn_watch.py tests/test_btc_overrides.py tests/test_build_basket_pulse.py tests/test_signal_surface_bugfixes.py tests/test_spvector_page.py tests/test_trial_log_refresh.py tests/test_validation_effective_t.py tests/test_vector_conviction.py -q
+      - name: basket-turn grading pack + session-stamp heal (forward-ledger audit 2026-08-05)
+        run: python -m pytest tests/test_basket_turn_grading.py tests/test_heal_basket_turn_ledger.py -q
       - name: W4 staged re-entry spine + P5 deferred-context BTC chips (dat/netliq/cascade)
         run: python -m pytest tests/test_btc_reentry.py tests/test_btc_deferred_legs.py -q
 
@@ -4603,6 +4664,9 @@ jobs:
     # pick lab runners + US/CN board surfaces — shipped picks, their outcome
     # ledgers, and the us_prophet_v1 priority-board rank + UI (#4331; suites
     # found unwired by its 2026-08-02 adversarial review).
+    # test_cn_prophet_candidates_schema.py joined 2026-08-04: the CN board's PIT
+    # candidate ledger and its stamp_date column (schema contract §3.1), same
+    # CN/US board-store family as the cn_board/cn_track suites already here.
     if: ${{ false }}
     timeout-minutes: 5
     runs-on: ubuntu-latest
@@ -4614,7 +4678,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: pick lab runners + US/CN board surfaces — shipped picks, outcome ledgers, priority board
-        run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_cn_board_unified_grid.py tests/test_cn_track_ledger_eras.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_shared.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_board_w3_evidence.py -q
+        run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_cn_board_unified_grid.py tests/test_cn_prophet_candidates_schema.py tests/test_cn_track_ledger_eras.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_shared.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_board_w3_evidence.py -q
 
   unrun-prophet-learning-loop:
     # Prophet learning loop (#4331) — postmortem forensics over the loser cohort
@@ -4709,7 +4773,15 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes
-        run: python -m pytest tests/test_attention_deterministic.py tests/test_build_live_quotes.py tests/test_clinicaltrials_themes.py tests/test_event_priors.py tests/test_foresight_ledger_lane_gates.py tests/test_gex_archive_snapshot.py tests/test_grade_thematic.py tests/test_live_delay_labeling.py tests/test_options_flow_attention_reflex.py tests/test_prophet_bridge.py tests/test_prophet_stage_tilt.py tests/test_tape_flow.py tests/test_tape_flow_stamp.py tests/test_tech_events_export.py tests/test_techlab_p0_fixes.py tests/test_thematic_state.py tests/test_theme_adoption.py tests/test_theme_clinical.py tests/test_theme_options_witness.py tests/test_theme_trade_flows.py tests/test_thetadata_resolver.py tests/test_validate_gex.py -q
+        run: python -m pytest tests/test_attention_deterministic.py tests/test_build_live_quotes.py tests/test_clinicaltrials_themes.py tests/test_event_priors.py tests/test_foresight_ledger_lane_gates.py tests/test_gex_archive_snapshot.py tests/test_grade_thematic.py tests/test_live_delay_labeling.py tests/test_options_flow_attention_reflex.py tests/test_prophet_bridge.py tests/test_prophet_bridge_order_invariance.py tests/test_prophet_stage_tilt.py tests/test_prophet_w1_intake_repair.py tests/test_tape_flow.py tests/test_tape_flow_stamp.py tests/test_tech_events_export.py tests/test_techlab_p0_fixes.py tests/test_thematic_state.py tests/test_theme_adoption.py tests/test_theme_clinical.py tests/test_theme_options_witness.py tests/test_theme_trade_flows.py tests/test_thetadata_resolver.py tests/test_validate_gex.py -q
+      # Prophet US W1 intake repair (2026-08-03), added to the run step above:
+      #   * test_prophet_w1_intake_repair.py — the priority-score sort key, the
+      #     active-plan re-origination block, and the index aging fields.
+      #   * test_prophet_bridge_order_invariance.py — was strictly dark (named by no
+      #     `run:` step in any workflow) while guarding the very sort key W1 rewrote.
+      #     A determinism guard nothing executes is not a guard.
+      # 61 + 12 tests, ~2 s serial; both need only the deps already installed here.
+      #
       # GEX modeling-core wiring (2026-07-29). Three suites, 42 tests, ~3 s serial.
       #
       # These were the three remaining strictly-dark suites in the GEX family — named by
@@ -4984,3 +5056,74 @@ jobs:
         run: python -m pytest tests/test_signup_email_validation.py -q
       - name: shared-GitHub-quota hook — the guard that keeps polling loops off the REST pool
         run: python -m pytest tests/test_gh_quota_guard.py -q
+
+  # ── THE HK BOARD PAIR — BORN DARK EIGHT DAYS AFTER THE CENSUS (2026-08-05) ──
+  # tests/test_hk_board_rank.py (163 tests) + tests/test_hk_board_ui.py landed
+  # with the HK board resurrection (#4421, 2026-08-03) — AFTER the 2026-07-26
+  # census sweep — named by no run: step in any workflow: the weekly-reopening
+  # leak docs/UNRUN_TEST_CENSUS.md warns about, on its schedule.  The bill came
+  # due within a day.  The 2026-08-04 asia collection re-adjusted 2338.HK
+  # (ex-dividend) and rewrote 28 sessions of the G1 panel's history; the suite's
+  # TestG1FixtureIsNotStale tripwire caught it — and CI never saw any of it.  No
+  # job ran the suite, and the heal (#4559) was a fixture-only diff that matched
+  # no ci.yml paths entry, so it merged having triggered zero pack checks: both
+  # the red and its fix existed only in hand runs.  (The queue-wide ci-pack red
+  # the same night was tests/test_marketing_hot_tape_radar.py — wired, a
+  # different market-state pin — easy to conflate, not the G1 red.)  This job
+  # ends the unrun half; the trigger halves (both test files, the frozen G1
+  # fixture pair, data/hk_search/**) land in ci.yml paths in the same PR.
+  #
+  # Runtime: the witness-replay test runs engine.signal_gate.gate() on seven
+  # full-history series from data/hk_search/closes_deep.parquet — minutes, not
+  # seconds; budget 8.  Deps: the builder-wiring tests import scripts/build_hk.py
+  # (plotly) and reach lib.config (pyyaml) — measured in a clean venv, where
+  # pytest+pandas+pyarrow+jinja2 alone left 23 tests red on those two imports.
+  # The shared unrun-* install repeated BYTE-FOR-BYTE keeps this job inside the
+  # set's single venv instead of adding one.
+  unrun-hk-board:
+    if: ${{ false }}
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: hk board rank — G1-G5 gates + the G1 staleness tripwire (witness replay)
+        run: python -m pytest tests/test_hk_board_rank.py -q
+      - name: hk board ui — the unified board template contract
+        run: python -m pytest tests/test_hk_board_ui.py -q
+
+  unrun-subsector-themes:
+    # The subsector rotation/turn engine family + the Theme Tracker page suite —
+    # named by NO run: step in any workflow before this (subsector CI-wiring
+    # audit 2026-08-05, following the #4584 calendar-asof heal): the TURN
+    # engine (#4085), the rotation state machine, its alerts/scan/confluence
+    # organs, and the themes heatmap ran only when someone happened to run
+    # them locally.  The Theme Tracker suite runs FULL here on purpose: the
+    # portfolio-ctx job deliberately selects the theme_lanes/byte-identity
+    # subset (5 of 42 tests) as the Portfolio-brief contract, so the other 37
+    # — live render off the committed artifacts, banned-word and title= scans,
+    # node --check over inline JS (the pack runners ship setup-node), and the
+    # TIL section wiring — were dark.  All seven suites measured green in a
+    # clean venv with exactly the install below: 119 tests / ~87s, the live
+    # renders dominating.  Deps: the engine suites reach numpy+pandas; the
+    # page builder reaches jinja2 + pyyaml (theme_crosswalk lane projection).
+    # The shared unrun-* install repeated BYTE-FOR-BYTE keeps this job inside
+    # the census set's single venv instead of adding one.
+    if: ${{ false }}
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: subsector rotation family — turn engine, state machine, alerts, scan, confluence
+        run: python -m pytest tests/test_subsector_turn.py tests/test_subsector_rotation.py tests/test_subsector_rotation_alerts.py tests/test_subsector_scan.py tests/test_subsector_confluence.py -q
+      - name: themes heatmap + Theme Tracker page (full suite; portfolio-ctx keeps its subset)
+        run: python -m pytest tests/test_themes_heatmap.py tests/test_state_of_themes.py -q

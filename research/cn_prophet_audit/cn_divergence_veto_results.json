@@ -1,0 +1,1287 @@
+{
+  "instrument": "research/cn_prophet_audit/cn_divergence_veto_audit.py",
+  "generated": "2026-08-05T06:35:47Z",
+  "status": "IN-SAMPLE, MOTIVATING-ONLY — no promotion, no gate change",
+  "leg": {
+    "name": "bearish divergence veto",
+    "implementation": "engine/signal_quality.py:178 _buy_filter -> `if bear: return False, 'veto: bearish divergence'` (line 208-209)",
+    "condition_source": "engine/signal_quality.py:169 _bear_div(i, price, macd, hi, look=12) over engine/signal_quality.py:164 _swing_highs(s, w=2)",
+    "condition": "the last two confirmed swing highs within the trailing 12 bars of the 3B frame print a HIGHER price high against a LOWER RSI-MACD high",
+    "cn_call_site": "scripts/build_china_library.py:1960 signal_gate.gate(ticker, close) -> engine/signal_gate.py:155 gate(..., reclaim_veto=True) [DEFAULT] -> analyze(ticker, daily_close) with NO high/low (close-only)",
+    "entangled": false,
+    "entanglement_note": "the veto is the FIRST statement of _buy_filter and returns before the reclaim/hold branches, so the counterfactual is the production call _buy_filter(i, sig, False, n, reclaim_veto=True) — no reimplementation, no shared state. tests/test_hk_reclaim_veto_policy.py:77-79 independently pins its orthogonality to reclaim_veto."
+  },
+  "design": {
+    "window": [
+      "2025-08-01",
+      "2026-07-31"
+    ],
+    "grade_asof": "2026-08-04",
+    "min_bars": 250,
+    "horizons": [
+      10,
+      21
+    ],
+    "benchmark": "510300.SS",
+    "fill": "T+1 HL2, locked-limit (T+1 high==low==close) EXCLUDED",
+    "anchor": "last daily session of 3B bar i+2 — the first close at which the label is knowable; marker-date grading is forbidden (engine/signal_quality.py:190-201)",
+    "dedup": "within-cell, 5 trading sessions per name",
+    "keep_rule": {
+      "margin_pp": 3.0,
+      "min_cell_n": 100,
+      "return_leg": "win%(VETOED_ADMIT) <= win%(ADMITTED) - 3pp",
+      "risk_leg": "catastrophic%(VETOED_ADMIT) >= catastrophic%(ADMITTED) + 3pp OR MAE-p10(VETOED_ADMIT) <= MAE-p10(ADMITTED) - 3pp",
+      "earns_iff": "either leg passes on a cell with n >= 100 on BOTH sides",
+      "precedent": "research/signal_engine/VETO_LEG_AUDIT.md (>= +3pp on the verdict metric); HK removal keep pairing in research/HK_BOARD_RESURRECTION_MASTERPLAN_BY_FABLE.md §0 G6"
+    },
+    "catastrophic_def": "ABSOLUTE return <= -15.0%"
+  },
+  "diagnostics": {
+    "ADMITTED": 1730,
+    "ADMITTED_FAILED_OTHER_LEG": 2684,
+    "VETOED_ADMIT": 168,
+    "VETOED_BLOCKED_ANYWAY": 575,
+    "fires_in_window": 5157,
+    "fires_raw": 77225,
+    "fires_unconfirmable": 156,
+    "names_scanned": 1637,
+    "names_skipped_thin": 41,
+    "not_vetoed": 4414,
+    "unfillable_locked_limit": 5,
+    "unfillable_no_t1": 1,
+    "vetoed": 743
+  },
+  "raw_event_counts_pre_dedup": {
+    "VETOED_ADMIT": 168,
+    "ADMITTED": 1724
+  },
+  "deduped_event_counts": {
+    "VETOED_ADMIT": 168,
+    "ADMITTED": 1724
+  },
+  "p0_cycle_reconstruction_gate": {
+    "pass": true,
+    "target_date": "2026-08-03",
+    "reconstructed": {
+      "phase": "Recovery",
+      "pos": 13.5,
+      "osc_slope": 12.9
+    },
+    "shipped": {
+      "phase": "Recovery",
+      "pos": 13.5,
+      "osc_slope": 12.9
+    },
+    "expected_from_brief": {
+      "phase": "Recovery",
+      "pos": 13.5,
+      "osc_slope": 12.9
+    },
+    "weekly_tape_vs_shipped_log": {
+      "pairs": 154,
+      "phase_match": 144,
+      "phase_match_pct": 93.51,
+      "median_abs_d_osc": 0.0
+    },
+    "note": "shipped truth = data/china_sector_cycles/forward_log.parquet (kind=basket); it only covers 2026-06-26+, which is why the stratifier tape is a reconstruction at all"
+  },
+  "veto_marginal_cost": {
+    "fires_in_window": 5157,
+    "vetoed_gross": 743,
+    "vetoed_pct_of_fires": 14.41,
+    "vetoed_that_another_leg_blocks_anyway": 575,
+    "decision_set_newly_admitted": 168,
+    "decision_set_pct_of_vetoed": 22.61,
+    "takes_today": 1730,
+    "extra_takes_pct_if_leg_removed": 9.71
+  },
+  "cycle_cell_composition": {
+    "vetoed_admit": {
+      "n_total": 168,
+      "n_mapped": 26,
+      "mapped_coverage_pct": 15.48,
+      "n_recovery_plus": 3,
+      "recovery_plus_share_of_mapped_pct": 11.54
+    },
+    "admitted": {
+      "n_total": 1724,
+      "n_mapped": 295,
+      "mapped_coverage_pct": 17.11,
+      "n_recovery_plus": 51,
+      "recovery_plus_share_of_mapped_pct": 17.29
+    },
+    "reading": "if the veto systematically blocked early-Recovery reclaims, its Recovery+/Trough+ share would EXCEED the admitted cell's"
+  },
+  "headline": {
+    "H10": {
+      "vetoed_admit": {
+        "n": 162,
+        "n_names": 156,
+        "win_pct": 48.77,
+        "win_ci95": [
+          41.19,
+          56.4
+        ],
+        "median_excess_pct": -0.58,
+        "mean_excess_pct": 1.21,
+        "median_abs_pct": -0.03,
+        "mae_p10_pct": -14.23,
+        "mae_median_pct": -5.15,
+        "catastrophic_pct": 4.94,
+        "top5_name_share_pct": 6.17
+      },
+      "admitted": {
+        "n": 1681,
+        "n_names": 1111,
+        "win_pct": 47.41,
+        "win_ci95": [
+          45.03,
+          49.8
+        ],
+        "median_excess_pct": -0.48,
+        "mean_excess_pct": 1.22,
+        "median_abs_pct": -0.21,
+        "mae_p10_pct": -14.87,
+        "mae_median_pct": -5.28,
+        "catastrophic_pct": 5.65,
+        "top5_name_share_pct": 1.19
+      },
+      "keep": {
+        "verdict": "FAILS",
+        "return_leg_pass": false,
+        "risk_leg_pass": false,
+        "return_keep_bar_win_pct": 44.41,
+        "ci_excludes_keep_bar": false,
+        "d_win_pp": 1.36,
+        "d_catastrophic_pp": -0.71,
+        "d_mae_p10_pp": 0.64,
+        "why": "win +1.4pp, catastrophic -0.7pp, MAE-p10 +0.6pp vs the +/-3.0pp bar"
+      }
+    },
+    "H21": {
+      "vetoed_admit": {
+        "n": 161,
+        "n_names": 155,
+        "win_pct": 52.17,
+        "win_ci95": [
+          44.5,
+          59.75
+        ],
+        "median_excess_pct": 0.67,
+        "mean_excess_pct": 2.52,
+        "median_abs_pct": 0.83,
+        "mae_p10_pct": -19.83,
+        "mae_median_pct": -6.51,
+        "catastrophic_pct": 10.56,
+        "top5_name_share_pct": 6.21
+      },
+      "admitted": {
+        "n": 1633,
+        "n_names": 1091,
+        "win_pct": 43.85,
+        "win_ci95": [
+          41.46,
+          46.26
+        ],
+        "median_excess_pct": -1.87,
+        "mean_excess_pct": 1.83,
+        "median_abs_pct": -1.53,
+        "mae_p10_pct": -20.71,
+        "mae_median_pct": -7.58,
+        "catastrophic_pct": 12.68,
+        "top5_name_share_pct": 1.22
+      },
+      "keep": {
+        "verdict": "FAILS",
+        "return_leg_pass": false,
+        "risk_leg_pass": false,
+        "return_keep_bar_win_pct": 40.85,
+        "ci_excludes_keep_bar": true,
+        "d_win_pp": 8.32,
+        "d_catastrophic_pp": -2.12,
+        "d_mae_p10_pp": 0.88,
+        "why": "win +8.3pp, catastrophic -2.1pp, MAE-p10 +0.9pp vs the +/-3.0pp bar"
+      }
+    }
+  },
+  "fill_convention_sensitivity": {
+    "H10_vetoed_admit": {
+      "n": 162,
+      "win_pct_hl2": 48.77,
+      "win_pct_prod_open": 49.38,
+      "median_excess_hl2": -0.58,
+      "median_excess_prod_open": -0.46
+    },
+    "H10_admitted": {
+      "n": 1681,
+      "win_pct_hl2": 47.41,
+      "win_pct_prod_open": 47.83,
+      "median_excess_hl2": -0.48,
+      "median_excess_prod_open": -0.48
+    },
+    "H21_vetoed_admit": {
+      "n": 161,
+      "win_pct_hl2": 52.17,
+      "win_pct_prod_open": 52.17,
+      "median_excess_hl2": 0.67,
+      "median_excess_prod_open": 0.67
+    },
+    "H21_admitted": {
+      "n": 1633,
+      "win_pct_hl2": 43.85,
+      "win_pct_prod_open": 43.72,
+      "median_excess_hl2": -1.87,
+      "median_excess_prod_open": -1.83
+    }
+  },
+  "strat_cycle_cell": {
+    "Recovery+/Trough+": {
+      "H10": {
+        "vetoed_admit": {
+          "n": 3,
+          "n_names": 3,
+          "win_pct": 66.67,
+          "win_ci95": [
+            20.77,
+            93.85
+          ],
+          "median_excess_pct": 6.33,
+          "mean_excess_pct": 9.91,
+          "median_abs_pct": 6.68,
+          "mae_p10_pct": -14.09,
+          "mae_median_pct": -4.8,
+          "catastrophic_pct": 0.0,
+          "top5_name_share_pct": 100.0
+        },
+        "admitted": {
+          "n": 44,
+          "n_names": 39,
+          "win_pct": 61.36,
+          "win_ci95": [
+            46.62,
+            74.28
+          ],
+          "median_excess_pct": 1.84,
+          "mean_excess_pct": 4.75,
+          "median_abs_pct": 0.78,
+          "mae_p10_pct": -10.08,
+          "mae_median_pct": -3.54,
+          "catastrophic_pct": 0.0,
+          "top5_name_share_pct": 22.73
+        },
+        "keep": {
+          "verdict": "UNDECIDED",
+          "why": "n below the 100 floor (vetoed_admit=3, admitted=44)",
+          "d_win_pp": 5.31
+        }
+      },
+      "H21": {
+        "vetoed_admit": {
+          "n": 3,
+          "n_names": 3,
+          "win_pct": 66.67,
+          "win_ci95": [
+            20.77,
+            93.85
+          ],
+          "median_excess_pct": 8.31,
+          "mean_excess_pct": 5.9,
+          "median_abs_pct": 6.9,
+          "mae_p10_pct": -14.09,
+          "mae_median_pct": -4.8,
+          "catastrophic_pct": 0.0,
+          "top5_name_share_pct": 100.0
+        },
+        "admitted": {
+          "n": 38,
+          "n_names": 35,
+          "win_pct": 42.11,
+          "win_ci95": [
+            27.85,
+            57.81
+          ],
+          "median_excess_pct": -1.93,
+          "mean_excess_pct": 3.14,
+          "median_abs_pct": -2.37,
+          "mae_p10_pct": -12.53,
+          "mae_median_pct": -5.48,
+          "catastrophic_pct": 7.89,
+          "top5_name_share_pct": 21.05
+        },
+        "keep": {
+          "verdict": "UNDECIDED",
+          "why": "n below the 100 floor (vetoed_admit=3, admitted=38)",
+          "d_win_pp": 24.56
+        }
+      }
+    },
+    "other": {
+      "H10": {
+        "vetoed_admit": {
+          "n": 23,
+          "n_names": 22,
+          "win_pct": 47.83,
+          "win_ci95": [
+            29.24,
+            67.04
+          ],
+          "median_excess_pct": -0.89,
+          "mean_excess_pct": 0.91,
+          "median_abs_pct": 1.34,
+          "mae_p10_pct": -14.44,
+          "mae_median_pct": -8.29,
+          "catastrophic_pct": 4.35,
+          "top5_name_share_pct": 26.09
+        },
+        "admitted": {
+          "n": 240,
+          "n_names": 173,
+          "win_pct": 49.17,
+          "win_ci95": [
+            42.9,
+            55.45
+          ],
+          "median_excess_pct": -0.21,
+          "mean_excess_pct": 1.02,
+          "median_abs_pct": 0.03,
+          "mae_p10_pct": -15.78,
+          "mae_median_pct": -5.26,
+          "catastrophic_pct": 8.33,
+          "top5_name_share_pct": 7.08
+        },
+        "keep": {
+          "verdict": "UNDECIDED",
+          "why": "n below the 100 floor (vetoed_admit=23, admitted=240)",
+          "d_win_pp": -1.34
+        }
+      },
+      "H21": {
+        "vetoed_admit": {
+          "n": 23,
+          "n_names": 22,
+          "win_pct": 43.48,
+          "win_ci95": [
+            25.63,
+            63.19
+          ],
+          "median_excess_pct": -2.79,
+          "mean_excess_pct": -0.41,
+          "median_abs_pct": 0.33,
+          "mae_p10_pct": -20.37,
+          "mae_median_pct": -9.11,
+          "catastrophic_pct": 17.39,
+          "top5_name_share_pct": 26.09
+        },
+        "admitted": {
+          "n": 229,
+          "n_names": 169,
+          "win_pct": 48.03,
+          "win_ci95": [
+            41.65,
+            54.48
+          ],
+          "median_excess_pct": -1.07,
+          "mean_excess_pct": 2.61,
+          "median_abs_pct": -1.42,
+          "mae_p10_pct": -20.21,
+          "mae_median_pct": -7.57,
+          "catastrophic_pct": 13.1,
+          "top5_name_share_pct": 7.42
+        },
+        "keep": {
+          "verdict": "UNDECIDED",
+          "why": "n below the 100 floor (vetoed_admit=23, admitted=229)",
+          "d_win_pp": -4.55
+        }
+      }
+    },
+    "unmapped": {
+      "H10": {
+        "vetoed_admit": {
+          "n": 136,
+          "n_names": 131,
+          "win_pct": 48.53,
+          "win_ci95": [
+            40.29,
+            56.85
+          ],
+          "median_excess_pct": -0.58,
+          "mean_excess_pct": 1.07,
+          "median_abs_pct": -0.26,
+          "mae_p10_pct": -13.55,
+          "mae_median_pct": -5.04,
+          "catastrophic_pct": 5.15,
+          "top5_name_share_pct": 7.35
+        },
+        "admitted": {
+          "n": 1397,
+          "n_names": 921,
+          "win_pct": 46.67,
+          "win_ci95": [
+            44.07,
+            49.29
+          ],
+          "median_excess_pct": -0.59,
+          "mean_excess_pct": 1.14,
+          "median_abs_pct": -0.33,
+          "mae_p10_pct": -14.8,
+          "mae_median_pct": -5.36,
+          "catastrophic_pct": 5.37,
+          "top5_name_share_pct": 1.43
+        },
+        "keep": {
+          "verdict": "FAILS",
+          "return_leg_pass": false,
+          "risk_leg_pass": false,
+          "return_keep_bar_win_pct": 43.67,
+          "ci_excludes_keep_bar": false,
+          "d_win_pp": 1.86,
+          "d_catastrophic_pp": -0.22,
+          "d_mae_p10_pp": 1.25,
+          "why": "win +1.9pp, catastrophic -0.2pp, MAE-p10 +1.2pp vs the +/-3.0pp bar"
+        }
+      },
+      "H21": {
+        "vetoed_admit": {
+          "n": 135,
+          "n_names": 130,
+          "win_pct": 53.33,
+          "win_ci95": [
+            44.94,
+            61.54
+          ],
+          "median_excess_pct": 0.71,
+          "mean_excess_pct": 2.95,
+          "median_abs_pct": 0.83,
+          "mae_p10_pct": -19.0,
+          "mae_median_pct": -6.4,
+          "catastrophic_pct": 9.63,
+          "top5_name_share_pct": 7.41
+        },
+        "admitted": {
+          "n": 1366,
+          "n_names": 908,
+          "win_pct": 43.19,
+          "win_ci95": [
+            40.59,
+            45.83
+          ],
+          "median_excess_pct": -2.04,
+          "mean_excess_pct": 1.66,
+          "median_abs_pct": -1.54,
+          "mae_p10_pct": -20.81,
+          "mae_median_pct": -7.7,
+          "catastrophic_pct": 12.74,
+          "top5_name_share_pct": 1.46
+        },
+        "keep": {
+          "verdict": "FAILS",
+          "return_leg_pass": false,
+          "risk_leg_pass": false,
+          "return_keep_bar_win_pct": 40.19,
+          "ci_excludes_keep_bar": true,
+          "d_win_pp": 10.14,
+          "d_catastrophic_pp": -3.11,
+          "d_mae_p10_pp": 1.81,
+          "why": "win +10.1pp, catastrophic -3.1pp, MAE-p10 +1.8pp vs the +/-3.0pp bar"
+        }
+      }
+    }
+  },
+  "strat_dd_tercile": {
+    "T1 deepest (<= -13.6%)": {
+      "H10": {
+        "vetoed_admit": {
+          "n": 34,
+          "n_names": 34,
+          "win_pct": 32.35,
+          "win_ci95": [
+            19.13,
+            49.16
+          ],
+          "median_excess_pct": -3.35,
+          "mean_excess_pct": -3.3,
+          "median_abs_pct": -2.44,
+          "mae_p10_pct": -15.09,
+          "mae_median_pct": -6.39,
+          "catastrophic_pct": 8.82,
+          "top5_name_share_pct": 14.71
+        },
+        "admitted": {
+          "n": 582,
+          "n_names": 483,
+          "win_pct": 46.91,
+          "win_ci95": [
+            42.89,
+            50.97
+          ],
+          "median_excess_pct": -0.43,
+          "mean_excess_pct": 0.55,
+          "median_abs_pct": -0.25,
+          "mae_p10_pct": -14.19,
+          "mae_median_pct": -5.11,
+          "catastrophic_pct": 6.19,
+          "top5_name_share_pct": 2.58
+        },
+        "keep": {
+          "verdict": "UNDECIDED",
+          "why": "n below the 100 floor (vetoed_admit=34, admitted=582)",
+          "d_win_pp": -14.56
+        }
+      },
+      "H21": {
+        "vetoed_admit": {
+          "n": 34,
+          "n_names": 34,
+          "win_pct": 32.35,
+          "win_ci95": [
+            19.13,
+            49.16
+          ],
+          "median_excess_pct": -4.94,
+          "mean_excess_pct": -0.96,
+          "median_abs_pct": -3.81,
+          "mae_p10_pct": -21.08,
+          "mae_median_pct": -7.59,
+          "catastrophic_pct": 20.59,
+          "top5_name_share_pct": 14.71
+        },
+        "admitted": {
+          "n": 553,
+          "n_names": 462,
+          "win_pct": 40.14,
+          "win_ci95": [
+            36.14,
+            44.28
+          ],
+          "median_excess_pct": -2.55,
+          "mean_excess_pct": 0.74,
+          "median_abs_pct": -2.39,
+          "mae_p10_pct": -19.97,
+          "mae_median_pct": -7.81,
+          "catastrophic_pct": 12.48,
+          "top5_name_share_pct": 2.71
+        },
+        "keep": {
+          "verdict": "UNDECIDED",
+          "why": "n below the 100 floor (vetoed_admit=34, admitted=553)",
+          "d_win_pp": -7.79
+        }
+      }
+    },
+    "T2 mid (-13.6..-5.6%)": {
+      "H10": {
+        "vetoed_admit": {
+          "n": 61,
+          "n_names": 61,
+          "win_pct": 59.02,
+          "win_ci95": [
+            46.5,
+            70.46
+          ],
+          "median_excess_pct": 1.08,
+          "mean_excess_pct": 3.09,
+          "median_abs_pct": 1.05,
+          "mae_p10_pct": -10.68,
+          "mae_median_pct": -4.77,
+          "catastrophic_pct": 1.64,
+          "top5_name_share_pct": 8.2
+        },
+        "admitted": {
+          "n": 547,
+          "n_names": 459,
+          "win_pct": 47.9,
+          "win_ci95": [
+            43.74,
+            52.08
+          ],
+          "median_excess_pct": -0.48,
+          "mean_excess_pct": 1.41,
+          "median_abs_pct": -0.23,
+          "mae_p10_pct": -13.36,
+          "mae_median_pct": -4.9,
+          "catastrophic_pct": 4.94,
+          "top5_name_share_pct": 2.74
+        },
+        "keep": {
+          "verdict": "UNDECIDED",
+          "why": "n below the 100 floor (vetoed_admit=61, admitted=547)",
+          "d_win_pp": 11.12
+        }
+      },
+      "H21": {
+        "vetoed_admit": {
+          "n": 61,
+          "n_names": 61,
+          "win_pct": 65.57,
+          "win_ci95": [
+            53.05,
+            76.25
+          ],
+          "median_excess_pct": 2.96,
+          "mean_excess_pct": 6.27,
+          "median_abs_pct": 3.41,
+          "mae_p10_pct": -16.99,
+          "mae_median_pct": -5.04,
+          "catastrophic_pct": 4.92,
+          "top5_name_share_pct": 8.2
+        },
+        "admitted": {
+          "n": 535,
+          "n_names": 449,
+          "win_pct": 45.42,
+          "win_ci95": [
+            41.25,
+            49.66
+          ],
+          "median_excess_pct": -1.47,
+          "mean_excess_pct": 1.92,
+          "median_abs_pct": -1.12,
+          "mae_p10_pct": -19.49,
+          "mae_median_pct": -6.89,
+          "catastrophic_pct": 10.47,
+          "top5_name_share_pct": 2.8
+        },
+        "keep": {
+          "verdict": "UNDECIDED",
+          "why": "n below the 100 floor (vetoed_admit=61, admitted=535)",
+          "d_win_pp": 20.15
+        }
+      }
+    },
+    "T3 shallowest (> -5.6%)": {
+      "H10": {
+        "vetoed_admit": {
+          "n": 67,
+          "n_names": 66,
+          "win_pct": 47.76,
+          "win_ci95": [
+            36.25,
+            59.51
+          ],
+          "median_excess_pct": -0.45,
+          "mean_excess_pct": 1.78,
+          "median_abs_pct": 0.61,
+          "mae_p10_pct": -15.25,
+          "mae_median_pct": -5.27,
+          "catastrophic_pct": 5.97,
+          "top5_name_share_pct": 8.96
+        },
+        "admitted": {
+          "n": 552,
+          "n_names": 462,
+          "win_pct": 47.46,
+          "win_ci95": [
+            43.33,
+            51.63
+          ],
+          "median_excess_pct": -0.59,
+          "mean_excess_pct": 1.74,
+          "median_abs_pct": -0.15,
+          "mae_p10_pct": -15.93,
+          "mae_median_pct": -5.91,
+          "catastrophic_pct": 5.8,
+          "top5_name_share_pct": 2.72
+        },
+        "keep": {
+          "verdict": "UNDECIDED",
+          "why": "n below the 100 floor (vetoed_admit=67, admitted=552)",
+          "d_win_pp": 0.3
+        }
+      },
+      "H21": {
+        "vetoed_admit": {
+          "n": 66,
+          "n_names": 65,
+          "win_pct": 50.0,
+          "win_ci95": [
+            38.27,
+            61.73
+          ],
+          "median_excess_pct": 0.2,
+          "mean_excess_pct": 0.86,
+          "median_abs_pct": 0.29,
+          "mae_p10_pct": -19.48,
+          "mae_median_pct": -7.3,
+          "catastrophic_pct": 10.61,
+          "top5_name_share_pct": 9.09
+        },
+        "admitted": {
+          "n": 545,
+          "n_names": 456,
+          "win_pct": 46.06,
+          "win_ci95": [
+            41.91,
+            50.25
+          ],
+          "median_excess_pct": -1.66,
+          "mean_excess_pct": 2.84,
+          "median_abs_pct": -1.3,
+          "mae_p10_pct": -22.26,
+          "mae_median_pct": -8.14,
+          "catastrophic_pct": 15.05,
+          "top5_name_share_pct": 2.75
+        },
+        "keep": {
+          "verdict": "UNDECIDED",
+          "why": "n below the 100 floor (vetoed_admit=66, admitted=545)",
+          "d_win_pp": 3.94
+        }
+      }
+    }
+  },
+  "strat_narrative_level": {
+    "HOT": {
+      "H10": {
+        "vetoed_admit": {
+          "n": 8,
+          "n_names": 8,
+          "win_pct": 37.5,
+          "win_ci95": [
+            13.68,
+            69.43
+          ],
+          "median_excess_pct": -1.12,
+          "mean_excess_pct": 4.94,
+          "median_abs_pct": 1.04,
+          "mae_p10_pct": -12.67,
+          "mae_median_pct": -6.76,
+          "catastrophic_pct": 0.0,
+          "top5_name_share_pct": 62.5
+        },
+        "admitted": {
+          "n": 131,
+          "n_names": 106,
+          "win_pct": 53.44,
+          "win_ci95": [
+            44.92,
+            61.76
+          ],
+          "median_excess_pct": 0.96,
+          "mean_excess_pct": 1.58,
+          "median_abs_pct": 0.27,
+          "mae_p10_pct": -16.07,
+          "mae_median_pct": -5.37,
+          "catastrophic_pct": 9.16,
+          "top5_name_share_pct": 9.92
+        },
+        "keep": {
+          "verdict": "UNDECIDED",
+          "why": "n below the 100 floor (vetoed_admit=8, admitted=131)",
+          "d_win_pp": -15.94
+        }
+      },
+      "H21": {
+        "vetoed_admit": {
+          "n": 8,
+          "n_names": 8,
+          "win_pct": 50.0,
+          "win_ci95": [
+            21.52,
+            78.48
+          ],
+          "median_excess_pct": 0.69,
+          "mean_excess_pct": 2.94,
+          "median_abs_pct": 1.16,
+          "mae_p10_pct": -15.33,
+          "mae_median_pct": -9.1,
+          "catastrophic_pct": 0.0,
+          "top5_name_share_pct": 62.5
+        },
+        "admitted": {
+          "n": 121,
+          "n_names": 100,
+          "win_pct": 48.76,
+          "win_ci95": [
+            40.03,
+            57.57
+          ],
+          "median_excess_pct": -0.82,
+          "mean_excess_pct": 2.0,
+          "median_abs_pct": -2.14,
+          "mae_p10_pct": -25.71,
+          "mae_median_pct": -8.44,
+          "catastrophic_pct": 22.31,
+          "top5_name_share_pct": 10.74
+        },
+        "keep": {
+          "verdict": "UNDECIDED",
+          "why": "n below the 100 floor (vetoed_admit=8, admitted=121)",
+          "d_win_pp": 1.24
+        }
+      }
+    },
+    "WARMING": {
+      "H10": {
+        "vetoed_admit": {
+          "n": 9,
+          "n_names": 9,
+          "win_pct": 55.56,
+          "win_ci95": [
+            26.67,
+            81.12
+          ],
+          "median_excess_pct": 3.33,
+          "mean_excess_pct": 0.46,
+          "median_abs_pct": 2.47,
+          "mae_p10_pct": -19.65,
+          "mae_median_pct": -8.29,
+          "catastrophic_pct": 11.11,
+          "top5_name_share_pct": 55.56
+        },
+        "admitted": {
+          "n": 61,
+          "n_names": 54,
+          "win_pct": 50.82,
+          "win_ci95": [
+            38.6,
+            62.94
+          ],
+          "median_excess_pct": 0.46,
+          "mean_excess_pct": 2.39,
+          "median_abs_pct": 0.51,
+          "mae_p10_pct": -13.4,
+          "mae_median_pct": -4.92,
+          "catastrophic_pct": 6.56,
+          "top5_name_share_pct": 16.39
+        },
+        "keep": {
+          "verdict": "UNDECIDED",
+          "why": "n below the 100 floor (vetoed_admit=9, admitted=61)",
+          "d_win_pp": 4.74
+        }
+      },
+      "H21": {
+        "vetoed_admit": {
+          "n": 9,
+          "n_names": 9,
+          "win_pct": 55.56,
+          "win_ci95": [
+            26.67,
+            81.12
+          ],
+          "median_excess_pct": 9.25,
+          "mean_excess_pct": 1.63,
+          "median_abs_pct": 7.84,
+          "mae_p10_pct": -28.43,
+          "mae_median_pct": -8.29,
+          "catastrophic_pct": 33.33,
+          "top5_name_share_pct": 55.56
+        },
+        "admitted": {
+          "n": 60,
+          "n_names": 54,
+          "win_pct": 48.33,
+          "win_ci95": [
+            36.18,
+            60.69
+          ],
+          "median_excess_pct": -0.84,
+          "mean_excess_pct": 5.45,
+          "median_abs_pct": -1.11,
+          "mae_p10_pct": -15.15,
+          "mae_median_pct": -6.23,
+          "catastrophic_pct": 3.33,
+          "top5_name_share_pct": 16.67
+        },
+        "keep": {
+          "verdict": "UNDECIDED",
+          "why": "n below the 100 floor (vetoed_admit=9, admitted=60)",
+          "d_win_pp": 7.23
+        }
+      }
+    },
+    "nan": {
+      "H10": {
+        "vetoed_admit": {
+          "n": 9,
+          "n_names": 9,
+          "win_pct": 55.56,
+          "win_ci95": [
+            26.67,
+            81.12
+          ],
+          "median_excess_pct": 1.06,
+          "mean_excess_pct": 0.77,
+          "median_abs_pct": 2.16,
+          "mae_p10_pct": -12.82,
+          "mae_median_pct": -7.78,
+          "catastrophic_pct": 0.0,
+          "top5_name_share_pct": 55.56
+        },
+        "admitted": {
+          "n": 92,
+          "n_names": 80,
+          "win_pct": 47.83,
+          "win_ci95": [
+            37.91,
+            57.91
+          ],
+          "median_excess_pct": -0.21,
+          "mean_excess_pct": 1.09,
+          "median_abs_pct": -0.49,
+          "mae_p10_pct": -10.43,
+          "mae_median_pct": -4.46,
+          "catastrophic_pct": 4.35,
+          "top5_name_share_pct": 13.04
+        },
+        "keep": {
+          "verdict": "UNDECIDED",
+          "why": "n below the 100 floor (vetoed_admit=9, admitted=92)",
+          "d_win_pp": 7.73
+        }
+      },
+      "H21": {
+        "vetoed_admit": {
+          "n": 9,
+          "n_names": 9,
+          "win_pct": 33.33,
+          "win_ci95": [
+            12.06,
+            64.58
+          ],
+          "median_excess_pct": -3.06,
+          "mean_excess_pct": -3.33,
+          "median_abs_pct": -0.79,
+          "mae_p10_pct": -17.79,
+          "mae_median_pct": -9.11,
+          "catastrophic_pct": 11.11,
+          "top5_name_share_pct": 55.56
+        },
+        "admitted": {
+          "n": 86,
+          "n_names": 74,
+          "win_pct": 44.19,
+          "win_ci95": [
+            34.16,
+            54.71
+          ],
+          "median_excess_pct": -1.63,
+          "mean_excess_pct": 1.73,
+          "median_abs_pct": -0.82,
+          "mae_p10_pct": -13.12,
+          "mae_median_pct": -6.07,
+          "catastrophic_pct": 4.65,
+          "top5_name_share_pct": 13.95
+        },
+        "keep": {
+          "verdict": "UNDECIDED",
+          "why": "n below the 100 floor (vetoed_admit=9, admitted=86)",
+          "d_win_pp": -10.86
+        }
+      }
+    },
+    "unmapped": {
+      "H10": {
+        "vetoed_admit": {
+          "n": 136,
+          "n_names": 131,
+          "win_pct": 48.53,
+          "win_ci95": [
+            40.29,
+            56.85
+          ],
+          "median_excess_pct": -0.58,
+          "mean_excess_pct": 1.07,
+          "median_abs_pct": -0.26,
+          "mae_p10_pct": -13.55,
+          "mae_median_pct": -5.04,
+          "catastrophic_pct": 5.15,
+          "top5_name_share_pct": 7.35
+        },
+        "admitted": {
+          "n": 1397,
+          "n_names": 921,
+          "win_pct": 46.67,
+          "win_ci95": [
+            44.07,
+            49.29
+          ],
+          "median_excess_pct": -0.59,
+          "mean_excess_pct": 1.14,
+          "median_abs_pct": -0.33,
+          "mae_p10_pct": -14.8,
+          "mae_median_pct": -5.36,
+          "catastrophic_pct": 5.37,
+          "top5_name_share_pct": 1.43
+        },
+        "keep": {
+          "verdict": "FAILS",
+          "return_leg_pass": false,
+          "risk_leg_pass": false,
+          "return_keep_bar_win_pct": 43.67,
+          "ci_excludes_keep_bar": false,
+          "d_win_pp": 1.86,
+          "d_catastrophic_pp": -0.22,
+          "d_mae_p10_pp": 1.25,
+          "why": "win +1.9pp, catastrophic -0.2pp, MAE-p10 +1.2pp vs the +/-3.0pp bar"
+        }
+      },
+      "H21": {
+        "vetoed_admit": {
+          "n": 135,
+          "n_names": 130,
+          "win_pct": 53.33,
+          "win_ci95": [
+            44.94,
+            61.54
+          ],
+          "median_excess_pct": 0.71,
+          "mean_excess_pct": 2.95,
+          "median_abs_pct": 0.83,
+          "mae_p10_pct": -19.0,
+          "mae_median_pct": -6.4,
+          "catastrophic_pct": 9.63,
+          "top5_name_share_pct": 7.41
+        },
+        "admitted": {
+          "n": 1366,
+          "n_names": 908,
+          "win_pct": 43.19,
+          "win_ci95": [
+            40.59,
+            45.83
+          ],
+          "median_excess_pct": -2.04,
+          "mean_excess_pct": 1.66,
+          "median_abs_pct": -1.54,
+          "mae_p10_pct": -20.81,
+          "mae_median_pct": -7.7,
+          "catastrophic_pct": 12.74,
+          "top5_name_share_pct": 1.46
+        },
+        "keep": {
+          "verdict": "FAILS",
+          "return_leg_pass": false,
+          "risk_leg_pass": false,
+          "return_keep_bar_win_pct": 40.19,
+          "ci_excludes_keep_bar": true,
+          "d_win_pp": 10.14,
+          "d_catastrophic_pp": -3.11,
+          "d_mae_p10_pp": 1.81,
+          "why": "win +10.1pp, catastrophic -3.1pp, MAE-p10 +1.8pp vs the +/-3.0pp bar"
+        }
+      }
+    }
+  },
+  "strat_half": {
+    "H1 2025-08..2026-01": {
+      "H10": {
+        "vetoed_admit": {
+          "n": 126,
+          "n_names": 122,
+          "win_pct": 53.17,
+          "win_ci95": [
+            44.5,
+            61.66
+          ],
+          "median_excess_pct": 0.45,
+          "mean_excess_pct": 2.09,
+          "median_abs_pct": 0.67,
+          "mae_p10_pct": -11.34,
+          "mae_median_pct": -4.76,
+          "catastrophic_pct": 1.59,
+          "top5_name_share_pct": 7.14
+        },
+        "admitted": {
+          "n": 983,
+          "n_names": 808,
+          "win_pct": 49.03,
+          "win_ci95": [
+            45.92,
+            52.16
+          ],
+          "median_excess_pct": -0.09,
+          "mean_excess_pct": 1.5,
+          "median_abs_pct": 0.25,
+          "mae_p10_pct": -12.34,
+          "mae_median_pct": -4.56,
+          "catastrophic_pct": 1.83,
+          "top5_name_share_pct": 1.63
+        },
+        "keep": {
+          "verdict": "FAILS",
+          "return_leg_pass": false,
+          "risk_leg_pass": false,
+          "return_keep_bar_win_pct": 46.03,
+          "ci_excludes_keep_bar": false,
+          "d_win_pp": 4.14,
+          "d_catastrophic_pp": -0.24,
+          "d_mae_p10_pp": 1.0,
+          "why": "win +4.1pp, catastrophic -0.2pp, MAE-p10 +1.0pp vs the +/-3.0pp bar"
+        }
+      },
+      "H21": {
+        "vetoed_admit": {
+          "n": 126,
+          "n_names": 122,
+          "win_pct": 57.94,
+          "win_ci95": [
+            49.21,
+            66.2
+          ],
+          "median_excess_pct": 1.62,
+          "mean_excess_pct": 5.52,
+          "median_abs_pct": 1.72,
+          "mae_p10_pct": -14.2,
+          "mae_median_pct": -5.35,
+          "catastrophic_pct": 3.97,
+          "top5_name_share_pct": 7.14
+        },
+        "admitted": {
+          "n": 983,
+          "n_names": 808,
+          "win_pct": 47.61,
+          "win_ci95": [
+            44.5,
+            50.73
+          ],
+          "median_excess_pct": -0.68,
+          "mean_excess_pct": 3.25,
+          "median_abs_pct": -0.35,
+          "mae_p10_pct": -15.47,
+          "mae_median_pct": -6.32,
+          "catastrophic_pct": 4.37,
+          "top5_name_share_pct": 1.63
+        },
+        "keep": {
+          "verdict": "FAILS",
+          "return_leg_pass": false,
+          "risk_leg_pass": false,
+          "return_keep_bar_win_pct": 44.61,
+          "ci_excludes_keep_bar": true,
+          "d_win_pp": 10.33,
+          "d_catastrophic_pp": -0.4,
+          "d_mae_p10_pp": 1.27,
+          "why": "win +10.3pp, catastrophic -0.4pp, MAE-p10 +1.3pp vs the +/-3.0pp bar"
+        }
+      }
+    },
+    "H2 2026-02..2026-07": {
+      "H10": {
+        "vetoed_admit": {
+          "n": 36,
+          "n_names": 36,
+          "win_pct": 33.33,
+          "win_ci95": [
+            20.21,
+            49.67
+          ],
+          "median_excess_pct": -4.64,
+          "mean_excess_pct": -1.88,
+          "median_abs_pct": -4.17,
+          "mae_p10_pct": -23.79,
+          "mae_median_pct": -10.29,
+          "catastrophic_pct": 16.67,
+          "top5_name_share_pct": 13.89
+        },
+        "admitted": {
+          "n": 698,
+          "n_names": 583,
+          "win_pct": 45.13,
+          "win_ci95": [
+            41.47,
+            48.84
+          ],
+          "median_excess_pct": -1.23,
+          "mean_excess_pct": 0.82,
+          "median_abs_pct": -1.13,
+          "mae_p10_pct": -18.11,
+          "mae_median_pct": -6.8,
+          "catastrophic_pct": 11.03,
+          "top5_name_share_pct": 2.15
+        },
+        "keep": {
+          "verdict": "UNDECIDED",
+          "why": "n below the 100 floor (vetoed_admit=36, admitted=698)",
+          "d_win_pp": -11.8
+        }
+      },
+      "H21": {
+        "vetoed_admit": {
+          "n": 35,
+          "n_names": 35,
+          "win_pct": 31.43,
+          "win_ci95": [
+            18.55,
+            47.98
+          ],
+          "median_excess_pct": -6.32,
+          "mean_excess_pct": -8.24,
+          "median_abs_pct": -4.73,
+          "mae_p10_pct": -35.51,
+          "mae_median_pct": -14.69,
+          "catastrophic_pct": 34.29,
+          "top5_name_share_pct": 14.29
+        },
+        "admitted": {
+          "n": 650,
+          "n_names": 550,
+          "win_pct": 38.15,
+          "win_ci95": [
+            34.5,
+            41.95
+          ],
+          "median_excess_pct": -5.18,
+          "mean_excess_pct": -0.32,
+          "median_abs_pct": -4.77,
+          "mae_p10_pct": -30.41,
+          "mae_median_pct": -11.14,
+          "catastrophic_pct": 25.23,
+          "top5_name_share_pct": 2.31
+        },
+        "keep": {
+          "verdict": "UNDECIDED",
+          "why": "n below the 100 floor (vetoed_admit=35, admitted=650)",
+          "d_win_pp": -6.72
+        }
+      }
+    }
+  },
+  "case_receipt_002155": {
+    "ticker": "002155.SZ",
+    "board_date": "2026-08-03",
+    "last_buy_bar_label": "2026-06-17",
+    "bear_div": true,
+    "production_verdict": {
+      "take": false,
+      "reason": "veto: bearish divergence"
+    },
+    "gate_reason_rendered": "buy blocked by filter: veto: bearish divergence",
+    "counterfactual_veto_removed": {
+      "take": false,
+      "reason": "failed reclaim-and-hold"
+    },
+    "swing_highs_in_look12": [
+      "2026-05-06",
+      "2026-05-22",
+      "2026-06-17"
+    ],
+    "price_at_swings": [
+      30.112,
+      25.7,
+      26.66
+    ],
+    "macd_at_swings": [
+      -3.60038,
+      -6.5323,
+      -7.41674
+    ],
+    "dd_from_252d_high_pct": -44.27,
+    "removing_the_leg_would_unblock_this_name": false,
+    "cell": "VETOED_BLOCKED_ANYWAY (another leg refuses it too — NOT in the decision set; the divergence string is merely the FIRST leg to fire)",
+    "close_only": true,
+    "note": "price leg reads the 3D CLOSE (h3==l3==s3) because CN calls signal_gate.gate(ticker, close) with no high/low — scripts/build_china_library.py:1960",
+    "shipped_board_row": {
+      "gate_reason": "buy blocked by filter: veto: bearish divergence",
+      "buyable": false,
+      "off_high": -44.3,
+      "narrative_level": "HOT",
+      "signal_bar_asof": "2026-08-03",
+      "board_definition": "cn_prophet_v2"
+    },
+    "reproduces_shipped_gate_reason": true
+  },
+  "runtime_sec": 199.6,
+  "quick": false
+}

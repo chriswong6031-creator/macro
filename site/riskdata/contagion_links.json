@@ -1,6 +1,6 @@
 {
   "schema": "contagion_links.v1",
-  "built": "2026-08-03T02:46:35.807183+00:00",
+  "built": "2026-08-05T15:37:35.444118+00:00",
   "params": {
     "structural_version": "structural.v1",
     "dy_window": 150,
@@ -452,22 +452,22 @@
   },
   "severity": {
     "us": {
-      "sigma": 0.1131,
-      "dd21": 0.0113,
-      "ret10": 0.0043,
-      "as_of": "2026-07-31"
-    },
-    "cn": {
-      "sigma": 0.5227,
-      "dd21": 0.0523,
-      "ret10": 0.0181,
-      "as_of": "2026-07-31"
-    },
-    "hk": {
       "sigma": 0.0,
       "dd21": 0.0,
-      "ret10": 0.0538,
-      "as_of": "2026-07-31"
+      "ret10": 0.0303,
+      "as_of": "2026-08-04"
+    },
+    "cn": {
+      "sigma": 0.3918,
+      "dd21": 0.0392,
+      "ret10": 0.0029,
+      "as_of": "2026-08-05"
+    },
+    "hk": {
+      "sigma": 0.036,
+      "dd21": 0.0036,
+      "ret10": 0.0411,
+      "as_of": "2026-08-05"
     },
     "ca": {
       "sigma": 0.1465,
@@ -520,7 +520,7 @@
   },
   "pressure": {
     "us": {
-      "raw": 0.3431,
+      "raw": 0.329,
       "pct": 0.7778,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — Taiwan's weakness is the main source",
@@ -557,12 +557,12 @@
           "contribution": 0.074
         }
       ],
-      "shadow_state": "watch",
-      "incumbent_state": "watch",
-      "incumbent_as_of": "2026-07-31"
+      "shadow_state": "caution",
+      "incumbent_state": "caution",
+      "incumbent_as_of": "2026-08-04"
     },
     "cn": {
-      "raw": 0.2673,
+      "raw": 0.2529,
       "pct": 0.6647,
       "level": "low",
       "line_en": "Pressure from abroad: low",
@@ -604,7 +604,7 @@
       "incumbent_as_of": "2026-07-16"
     },
     "hk": {
-      "raw": 0.3597,
+      "raw": 0.3276,
       "pct": 0.7996,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — Japan's weakness is the main source",
@@ -635,10 +635,10 @@
           "name_en": "China",
           "name_zh": "中国",
           "weight": 0.1528,
-          "dd21": 0.0523,
-          "ret10": 0.0181,
-          "sigma": 0.5227,
-          "contribution": 0.0799
+          "dd21": 0.0392,
+          "ret10": 0.0029,
+          "sigma": 0.3918,
+          "contribution": 0.0599
         }
       ],
       "shadow_state": "risk-off",
@@ -646,7 +646,7 @@
       "incumbent_as_of": "2026-07-16"
     },
     "ca": {
-      "raw": 0.312,
+      "raw": 0.2795,
       "pct": 0.75,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — Japan's weakness is the main source",
@@ -688,7 +688,7 @@
       "incumbent_as_of": "2026-07-31"
     },
     "kr": {
-      "raw": 0.4092,
+      "raw": 0.3891,
       "pct": 0.8274,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — Taiwan's weakness is the main source",
@@ -719,10 +719,10 @@
           "name_en": "China",
           "name_zh": "中国",
           "weight": 0.0844,
-          "dd21": 0.0523,
-          "ret10": 0.0181,
-          "sigma": 0.5227,
-          "contribution": 0.0441
+          "dd21": 0.0392,
+          "ret10": 0.0029,
+          "sigma": 0.3918,
+          "contribution": 0.0331
         }
       ],
       "shadow_state": "calm",
@@ -730,7 +730,7 @@
       "incumbent_as_of": "2026-07-31"
     },
     "jp": {
-      "raw": 0.4005,
+      "raw": 0.3808,
       "pct": 0.8155,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — South Korea's weakness is the main source",
@@ -761,10 +761,10 @@
           "name_en": "China",
           "name_zh": "中国",
           "weight": 0.0747,
-          "dd21": 0.0523,
-          "ret10": 0.0181,
-          "sigma": 0.5227,
-          "contribution": 0.0391
+          "dd21": 0.0392,
+          "ret10": 0.0029,
+          "sigma": 0.3918,
+          "contribution": 0.0293
         }
       ],
       "shadow_state": "calm",
@@ -772,7 +772,7 @@
       "incumbent_as_of": "2026-07-31"
     },
     "tw": {
-      "raw": 0.474,
+      "raw": 0.4499,
       "pct": 0.8492,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — South Korea's weakness is the main source",
@@ -803,10 +803,10 @@
           "name_en": "China",
           "name_zh": "中国",
           "weight": 0.0937,
-          "dd21": 0.0523,
-          "ret10": 0.0181,
-          "sigma": 0.5227,
-          "contribution": 0.049
+          "dd21": 0.0392,
+          "ret10": 0.0029,
+          "sigma": 0.3918,
+          "contribution": 0.0367
         }
       ],
       "shadow_state": "risk-off",
@@ -814,7 +814,7 @@
       "incumbent_as_of": "2026-07-31"
     },
     "in": {
-      "raw": 0.2958,
+      "raw": 0.2682,
       "pct": 0.748,
       "level": "low",
       "line_en": "Pressure from abroad: low",
@@ -841,13 +841,13 @@
           "contribution": 0.0579
         },
         {
-          "market": "cn",
-          "name_en": "China",
-          "name_zh": "中国",
-          "weight": 0.1035,
-          "dd21": 0.0523,
-          "ret10": 0.0181,
-          "sigma": 0.5227,
+          "market": "kr",
+          "name_en": "South Korea",
+          "name_zh": "韩国",
+          "weight": 0.0541,
+          "dd21": 0.1846,
+          "ret10": -0.033,
+          "sigma": 1.0,
           "contribution": 0.0541
         }
       ],
@@ -856,7 +856,7 @@
       "incumbent_as_of": "2026-07-31"
     },
     "au": {
-      "raw": 0.4071,
+      "raw": 0.3779,
       "pct": 0.8234,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — Japan's weakness is the main source",
@@ -898,7 +898,7 @@
       "incumbent_as_of": "2026-07-31"
     },
     "gb": {
-      "raw": 0.3608,
+      "raw": 0.3403,
       "pct": 0.7877,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — Japan's weakness is the main source",
@@ -940,7 +940,7 @@
       "incumbent_as_of": "2026-07-31"
     },
     "ez": {
-      "raw": 0.3419,
+      "raw": 0.3206,
       "pct": 0.7679,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — Japan's weakness is the main source",
@@ -983,5 +983,5 @@
     }
   },
   "gaps": [],
-  "timing_sec": 0.43
+  "timing_sec": 0.4
 }

@@ -6,20 +6,216 @@
     "granted": false,
     "lift_lb": null,
     "reason": "insufficient-n: n=17 < min_n=25",
-    "evidence_asof": "2026-08-02",
-    "evaluated_at": "2026-08-03T02:59:16+00:00"
+    "evidence_asof": "2026-08-05",
+    "evaluated_at": "2026-08-05T15:59:00+00:00"
   },
-  "generated_at": "2026-08-03T02:59:16.618182+00:00",
-  "state_asof": "2026-08-03",
+  "generated_at": "2026-08-05T15:59:00.432039+00:00",
+  "state_asof": "2026-08-05",
   "model": "claude-opus-4-8",
-  "regime_read": null,
-  "regime_read_zh": null,
-  "theses": [],
+  "regime_read": "Convergence is concentrated in mega-cap AI/infra names (NVDA, MSFT) supported by a wide array of channels including political holdings, dark-pool accumulation, and patent momentum, while a secondary pocket of activity shows up in healthcare and defense-linked names with notable catalyst bills pending. The absence of a track record warrants modest conviction across all reads.",
+  "regime_read_zh": "\u4fe1\u53f7\u6536\u655b\u96c6\u4e2d\u4e8eAI/\u57fa\u7840\u8bbe\u65bd\u9886\u57df\u7684\u5de8\u5934\uff08NVDA\u3001MSFT\uff09\uff0c\u5f97\u5230\u5305\u62ec\u653f\u5ba2\u6301\u4ed3\u3001\u6697\u6c60\u5438\u7b79\u548c\u4e13\u5229\u52a8\u91cf\u5728\u5185\u7684\u5e7f\u6cdb\u6e20\u9053\u652f\u6301\uff1b\u540c\u65f6\uff0c\u533b\u7597\u4fdd\u5065\u548c\u56fd\u9632\u76f8\u5173\u4e2a\u80a1\u5728\u5f85\u51b3\u50ac\u5316\u5242\u6cd5\u6848\u7684\u80cc\u666f\u4e0b\u4e5f\u51fa\u73b0\u4e86\u6b21\u7ea7\u7684\u6d3b\u8dc3\u8ff9\u8c61\u3002\u7531\u4e8e\u7f3a\u4e4f\u5386\u53f2\u6218\u7ee9\uff0c\u6240\u6709\u5224\u65ad\u7684\u7f6e\u4fe1\u5ea6\u9700\u4fdd\u6301\u514b\u5236\u3002",
+  "theses": [
+    {
+      "ticker": "NVDA",
+      "lean": "underweight",
+      "conviction": "low",
+      "action": "AVOID",
+      "horizon_d": 60,
+      "thesis": "NVDA shows the strongest and broadest convergence (score 8) in the pack: smart-money 13F additions, dark-pool accumulation (DPI 0.34 leaning accumulation [darkpool_accum]), a dense analyst upgrade cluster (98% bull ratio [analyst_upgrade_cluster]), massive retail/GitHub momentum (41.4M HF downloads [github_momentum]), and a heavy congressional position ($127.6M) held by four disclosed politicians including Nancy Pelosi and Michael McCaul [actor:Pelosi, actor:McCaul]. The stock is not extended (rs_vs_spy_60d -5.1), offering an entry window ahead of earnings on 2026-08-26, which the market expects a 10% surprise [special_situation].",
+      "thesis_zh": "NVDA\u5c55\u793a\u4e86\u6570\u636e\u5305\u4e2d\u6700\u5f3a\u4e14\u6700\u5e7f\u6cdb\u7684\u4fe1\u53f7\u6536\u655b\uff08\u5f97\u52068\uff09\uff1a\u806a\u660e\u94b113F\u589e\u6301\u3001\u6697\u6c60\u5438\u7b79\uff08DPI 0.34 \u504f\u5411\u79ef\u7d2f [darkpool_accum]\uff09\u3001\u5bc6\u96c6\u7684\u5206\u6790\u5e08\u5347\u7ea7\u96c6\u7fa4\uff0898%\u770b\u6da8\u6bd4\u7387 [analyst_upgrade_cluster]\uff09\u3001\u5de8\u5927\u7684\u6563\u6237/GitHub\u52a8\u91cf\uff084140\u4e07\u6b21HuggingFace\u4e0b\u8f7d [github_momentum]\uff09\uff0c\u4ee5\u53ca\u7531\u5305\u62ec\u5357\u5e0c\u00b7\u4f69\u6d1b\u897f\u548c\u8fc8\u514b\u5c14\u00b7\u9ea6\u8003\u5c14\u5728\u5185\u7684\u56db\u4f4d\u516c\u5f00\u653f\u5ba2\u6301\u6709\u7684\u5de8\u989d\u56fd\u4f1a\u6301\u4ed3\uff081.276\u4ebf\u7f8e\u5143\uff09[actor:Pelosi, actor:McCaul]\u3002\u8be5\u80a1\u5e76\u672a\u8d85\u4e70\uff08\u76f8\u5bf9SPY\u768460\u65e5\u6536\u76ca\u5dee\u4e3a-5.1\uff09\uff0c\u57282026-08-26\u8d22\u62a5\u524d\u63d0\u4f9b\u4e86\u4e00\u4e2a\u5165\u573a\u7a97\u53e3\uff0c\u5e02\u573a\u9884\u671f\u5176\u670910%\u7684\u76c8\u5229\u60ca\u559c [special_situation]\u3002",
+      "second_order": [
+        "MSFT: NVDA GPU demand directly drives Azure AI infrastructure buildout, making MSFT a primary enterprise beneficiary [affiliation].",
+        "AMD: as the second-source for AI GPUs, AMD captures overflow demand and benefits from the AI capex cycle [congress_cluster, retail_buzz].",
+        "HUT: the AI power and data-center infrastructure theme (Anthropic/Fluidstack deals) is a direct play on the physical buildout NVDA's chips enable [label_mismatch]."
+      ],
+      "evidence": [
+        "darkpool_accum: DPI 0.34 leaning accumulation",
+        "13f_add: smart money increase",
+        "analyst_upgrade_cluster: 0.98 bull ratio",
+        "github_momentum: 41.4M HF downloads",
+        "actors: Pelosi, McCaul, MTG hold stakes",
+        "special_situation: earnings 2026-08-26 with +10% surprise"
+      ],
+      "dissent": "A broad AI capex slowdown or an antitrust/export-control action against NVIDIA could disproportionately hit the stock given its premium valuation and elevated expectations, and the 'Jim Cramer' influencer signal adds noise rather than edge.",
+      "weighted_score": 2.85,
+      "channels": [
+        "13f_add",
+        "affiliation",
+        "analyst_upgrade_cluster",
+        "darkpool_accum",
+        "github_momentum",
+        "patent_cluster",
+        "retail_buzz",
+        "special_situation"
+      ],
+      "rs_vs_spy_60d": -5.1,
+      "extended": false,
+      "scorable": true,
+      "falsifier": {
+        "text": "NVDA's dark-pool DPI flips to distribution and the analyst upgrade cluster reverses (bull ratio drops below 0.7), OR the company misses its 2026-08-26 earnings and forward guidance.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "NVDA",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 60
+        }
+      },
+      "check_by": "2026-10-28",
+      "clamped": "lean 'overweight' \u2192 'underweight' (deterministic witness); conviction 'medium' \u2192 'low' (deterministic ceiling); action 'ACCUMULATE' \u2192 'AVOID' (deterministic ceiling)",
+      "det_baseline": {
+        "action": "AVOID",
+        "conviction": "low",
+        "lean": "underweight"
+      }
+    },
+    {
+      "ticker": "MSFT",
+      "lean": "overweight",
+      "conviction": "low",
+      "action": "WATCH",
+      "horizon_d": 60,
+      "thesis": "MSFT's convergence score (7) is driven by strong enterprise app demand (4.77 rating, 19.9M reviews [app_demand]), massive GitHub and HuggingFace momentum (188k stars, 32.9M downloads [github_momentum, hf_model_momentum]), a rich patent cluster (219 patents [patent_cluster]), and heavy D.C. lobbying ($3.65M [lobbying]). The affiliation with Sam Altman links MSFT to the OpenAI ecosystem's growth [actor:Altman]. With a massive congressional position ($813.4M [congress_buy]), MSFT is viewed as a core institutional asset. The stock is not extended (rs_vs_spy_60d +11.9), but the thesis lacks the 'insider/accumulation' edge that makes NVDA actionable; the channels point to steady, broad-based demand perfect for a pullback entry.",
+      "thesis_zh": "MSFT\u7684\u6536\u655b\u5206\u6570\uff087\uff09\u7531\u5f3a\u52b2\u7684\u4f01\u4e1a\u5e94\u7528\u9700\u6c42\uff08\u8bc4\u52064.77\uff0c1990\u4e07\u8bc4\u8bba [app_demand]\uff09\u3001\u5de8\u5927\u7684GitHub\u548cHuggingFace\u52a8\u91cf\uff0818.8\u4e07\u661f\uff0c3290\u4e07\u6b21\u4e0b\u8f7d [github_momentum, hf_model_momentum]\uff09\u3001\u4e30\u5bcc\u7684\u4e13\u5229\u96c6\u7fa4\uff08219\u9879\u4e13\u5229 [patent_cluster]\uff09\u548c\u5e9e\u5927\u7684\u534e\u76db\u987f\u6e38\u8bf4\u5f00\u652f\uff08365\u4e07\u7f8e\u5143 [lobbying]\uff09\u9a71\u52a8\u3002\u4e0eSam Altman\u7684\u5173\u7cfb\u5c06MSFT\u4e0eOpenAI\u751f\u6001\u7cfb\u7edf\u7684\u589e\u957f\u8054\u7cfb\u8d77\u6765 [actor:Altman]\u3002\u62e5\u6709\u5de8\u989d\u56fd\u4f1a\u6301\u4ed3\uff088.134\u4ebf\u7f8e\u5143 [congress_buy]\uff09\uff0cMSFT\u88ab\u89c6\u4e3a\u6838\u5fc3\u673a\u6784\u8d44\u4ea7\u3002\u8be5\u80a1\u672a\u8d85\u4e70\uff08\u76f8\u5bf9SPY\u768460\u65e5\u6536\u76ca\u5dee\u4e3a+11.9\uff09\uff0c\u4f46\u8be5\u8bba\u70b9\u7f3a\u4e4fNVDA\u90a3\u6837\u53ef\u64cd\u4f5c\u7684'\u5185\u90e8\u4eba/\u5438\u7b79'\u4f18\u52bf\uff1b\u8fd9\u4e9b\u6e20\u9053\u6307\u5411\u7684\u662f\u7a33\u5b9a\u3001\u5e7f\u6cdb\u7684\u9700\u6c42\uff0c\u975e\u5e38\u9002\u5408\u5728\u56de\u8c03\u65f6\u4ecb\u5165\u3002",
+      "second_order": [
+        "NVDA: MSFT's Azure AI buildout is a primary customer of NVIDIA GPUs [affiliation].",
+        "GOOGL: competes with MSFT in cloud/AI, and both benefit from similar app-demand and lobbying trends; Pelosi holds both [actor:Pelosi].",
+        "OPENAI (private): Sam Altman's partnership with MSFT directly links the private company's growth to MSFT's infrastructure [affiliation]."
+      ],
+      "evidence": [
+        "app_demand: high rating and massive review volume",
+        "github_momentum: 188k stars",
+        "hf_model_momentum: 32.9M downloads",
+        "patent_cluster: 219 patents",
+        "lobbying: $3.65M",
+        "actor: partnered with Sam Altman (OpenAI)"
+      ],
+      "dissent": "The 'affiliation' and 'partnership' signals are slow-moving, public knowledge heavily priced in. The unusual options signal (put/call 0.3) could indicate complacent bullish positioning or a hedge, and the thesis lacks any direct 'buying' or accumulation signal.",
+      "weighted_score": 2.9,
+      "channels": [
+        "affiliation",
+        "app_demand",
+        "github_momentum",
+        "hf_model_momentum",
+        "lobbying",
+        "patent_cluster",
+        "unusual_options"
+      ],
+      "rs_vs_spy_60d": 11.9,
+      "extended": false,
+      "scorable": true,
+      "falsifier": {
+        "text": "MSFT's Azure growth decelerates unexpectedly in the next quarterly report, or the OpenAI partnership shows signs of strain (e.g., loss of exclusive cloud rights).",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "MSFT",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 60
+        }
+      },
+      "check_by": "2026-10-28"
+    },
+    {
+      "ticker": "PLTR",
+      "lean": "overweight",
+      "conviction": "low",
+      "action": "WATCH",
+      "horizon_d": 45,
+      "thesis": "PLTR shows a narrow but coherent convergence around government and retail momentum: accelerating federal contracts (+19% [gov_contract_accel]), a pro-Trump 'buy' signal [trump], strong retail buzz (91 WSB mentions, 0.79 stocktwits bull ratio [retail_buzz, stocktwits_bull]), and a disclosed stake by political influencer Marjorie Taylor Greene [actor:Greene]. The government contract acceleration is a tangible, near-term revenue indicator. With a 60d RS of +13.3, the name is approaching heat-check territory but is not flagged as extended; the thesis is best played on a pullback given its momentum-driven character.",
+      "thesis_zh": "PLTR\u5c55\u793a\u4e86\u56f4\u7ed5\u653f\u5e9c\u548c\u6563\u6237\u52a8\u91cf\u7684\u72ed\u7a84\u4f46\u8fde\u8d2f\u7684\u4fe1\u53f7\u6536\u655b\uff1a\u8054\u90a6\u5408\u540c\u52a0\u901f\uff08+19% [gov_contract_accel]\uff09\u3001\u4eb2\u7279\u6717\u666e\u7684'\u4e70\u5165'\u4fe1\u53f7 [trump]\u3001\u5f3a\u52b2\u7684\u6563\u6237\u70ed\u5ea6\uff0891\u6b21WSB\u63d0\u53ca\uff0c0.79\u7684Stocktwits\u770b\u6da8\u6bd4 [retail_buzz, stocktwits_bull]\uff09\uff0c\u4ee5\u53ca\u653f\u6cbb\u5f71\u54cd\u8005Marjorie Taylor Greene\u7684\u516c\u5f00\u6301\u4ed3 [actor:Greene]\u3002\u8054\u90a6\u5408\u540c\u52a0\u901f\u662f\u4e00\u4e2a\u5207\u5b9e\u3001\u8fd1\u671f\u7684\u6536\u5165\u6307\u6807\u3002\u8be5\u80a160\u65e5\u76f8\u5bf9SPY\u6536\u76ca\u5dee+13.3\uff0c\u5df2\u63a5\u8fd1\u70ed\u5ea6\u68c0\u67e5\u533a\u57df\u4f46\u672a\u88ab\u6807\u8bb0\u4e3a\u8d85\u4e70\uff1b\u9274\u4e8e\u5176\u7531\u52a8\u91cf\u9a71\u52a8\u7684\u7279\u6027\uff0c\u8be5\u8bba\u70b9\u6700\u597d\u5728\u56de\u8c03\u65f6\u64cd\u4f5c\u3002",
+      "second_order": [
+        "BA: Both thrive on defense/security spending; BA's gov grant acceleration (+30%) and patent cluster support a broader defense-digitization theme [gov_grant_accel, patent_cluster].",
+        "MSFT: PLTR's FedRAMP and government AI deployments often run on Azure, making MSFT a quiet beneficiary of PLTR's government contract wins [affiliation]."
+      ],
+      "evidence": [
+        "gov_contract_accel: +19%",
+        "trump: buy signal",
+        "retail_buzz: 91 WSB mentions",
+        "stocktwits_bull: 0.79 ratio",
+        "actor: MTG holds stake"
+      ],
+      "dissent": "The thesis is heavier on sentiment (retail buzz, Trump) and a single legislator's personal bet than on institutional or operational data. Government contracts can be lumpy and a single +19% acceleration period is a thin reed without more context on contract value or margin.",
+      "weighted_score": 1.75,
+      "channels": [
+        "affiliation",
+        "gov_contract",
+        "retail_buzz",
+        "stocktwits_bull",
+        "trump"
+      ],
+      "rs_vs_spy_60d": 13.3,
+      "extended": false,
+      "scorable": true,
+      "falsifier": {
+        "text": "PLTR fails to convert the accelerated gov contracts into reported revenue growth in the next quarter, or its WSB/Stocktwits buzz fades without a corresponding price catalyst, leading to momentum reversal.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "PLTR",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 45
+        }
+      },
+      "check_by": "2026-10-07"
+    },
+    {
+      "ticker": "QCOM",
+      "lean": "underweight",
+      "conviction": "low",
+      "action": "AVOID",
+      "horizon_d": 60,
+      "thesis": "QCOM is a deep-value, multi-channel convergence case: a net-positive congressional buy signal (6 net, 2 members [congress_buy]), a massive patent cluster (559 patents [patent_cluster]), and an affiliation signal. The stock is deeply washed out (rs_vs_spy_60d -24.8), which creates a potential mean-reversion setup. The catalyst lens adds a 'special situation' tag, likely tied to the semiconductor sector's legislative tailwinds. The low weighted score (1.55) reflects few channels, but those present are high-quality (Congress buying a washed-out patent leader). This is a 'wait for a floor' watch, not a chase.",
+      "thesis_zh": "QCOM\u662f\u4e00\u4e2a\u6df1\u5ea6\u4ef7\u503c\u3001\u591a\u6e20\u9053\u6536\u655b\u7684\u6848\u4f8b\uff1a\u56fd\u4f1a\u51c0\u4e70\u5165\u4fe1\u53f7\uff086\u6b21\u51c0\u4e70\u5165\uff0c2\u540d\u6210\u5458 [congress_buy]\uff09\u3001\u5e9e\u5927\u7684\u4e13\u5229\u96c6\u7fa4\uff08559\u9879\u4e13\u5229 [patent_cluster]\uff09\u4ee5\u53ca\u5173\u8054\u4fe1\u53f7\u3002\u8be5\u80a1\u5df2\u4e25\u91cd\u8d85\u5356\uff08\u76f8\u5bf9SPY\u768460\u65e5\u6536\u76ca\u5dee-24.8\uff09\uff0c\u8fd9\u521b\u9020\u4e86\u6f5c\u5728\u7684\u5747\u503c\u56de\u5f52\u673a\u4f1a\u3002\u50ac\u5316\u5242\u89c6\u89d2\u6dfb\u52a0\u4e86\u4e00\u4e2a'\u7279\u6b8a\u4e8b\u4ef6'\u6807\u7b7e\uff0c\u53ef\u80fd\u4e0e\u534a\u5bfc\u4f53\u884c\u4e1a\u7684\u7acb\u6cd5\u987a\u98ce\u6709\u5173\u3002\u8f83\u4f4e\u7684\u52a0\u6743\u5f97\u5206\uff081.55\uff09\u53cd\u6620\u4e86\u6e20\u9053\u8f83\u5c11\uff0c\u4f46\u73b0\u6709\u7684\u90fd\u662f\u9ad8\u8d28\u91cf\u4fe1\u53f7\uff08\u56fd\u4f1a\u5728\u8d85\u5356\u7684\u4e13\u5229\u9f99\u5934\u80a1\u4e0a\u4e70\u5165\uff09\u3002\u8fd9\u662f\u4e00\u4e2a'\u7b49\u5f85\u89c1\u5e95'\u7684\u89c2\u5bdf\u6807\u7684\uff0c\u800c\u975e\u8ffd\u9ad8\u6807\u7684\u3002",
+      "second_order": [
+        "AAPL: QCOM's modem and IP are deeply tied to Apple's supply chain; a QCOM recovery implies healthy smartphone demand, benefiting AAPL [patent_cluster].",
+        "MSFT/NVDA: A recovering semiconductor/IP sector sentiment broadly lifts all AI and cloud-enabling semiconductor names [affiliation]."
+      ],
+      "evidence": [
+        "congress_buy: net +6, 2 members",
+        "patent_cluster: 559 patents",
+        "special_situation: likely tied to semi legislation",
+        "rs_vs_spy_60d: -24.8 (deeply oversold)"
+      ],
+      "dissent": "A deep oversold condition can persist or worsen if the underlying business is deteriorating (e.g., losing Apple modem share, end-market weakness in handsets/IoT). The 'congressional buy' signal is based on only 2 members, which could be noise, and the 'special situation' is unidentified.",
+      "weighted_score": 1.55,
+      "channels": [
+        "affiliation",
+        "congress_buy",
+        "patent_cluster",
+        "special_situation"
+      ],
+      "rs_vs_spy_60d": -24.8,
+      "extended": false,
+      "scorable": true,
+      "falsifier": {
+        "text": "QCOM loses a significant portion of Apple's modem business or issues a negative pre-announcement, leading to a new leg down in price that congress members may have failed to anticipate.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "QCOM",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 60
+        }
+      },
+      "check_by": "2026-10-28",
+      "clamped": "lean 'overweight' \u2192 'underweight' (deterministic witness); action 'WATCH' \u2192 'AVOID' (deterministic ceiling)",
+      "det_baseline": {
+        "action": "AVOID",
+        "conviction": "low",
+        "lean": "underweight"
+      }
+    }
+  ],
   "track_record": {
     "schema": "altdata_brain_track_record.v1",
-    "as_of": "2026-08-02",
+    "as_of": "2026-08-05",
     "scored_total": 0,
-    "open": 0,
+    "open": 4,
     "unscored_soft": 0,
     "expired": 0,
     "overall": {
@@ -76,7 +272,7 @@
   },
   "confidence": "low",
   "n_clusters": 12,
-  "raw_text": null,
-  "degraded_reason": "llm_error",
+  "raw_text": "{\n  \"regime_read\": \"Convergence is concentrated in mega-cap AI/infra names (NVDA, MSFT) supported by a wide array of channels including political holdings, dark-pool accumulation, and patent momentum, while a secondary pocket of activity shows up in healthcare and defense-linked names with notable catalyst bills pending. The absence of a track record warrants modest conviction across all reads.\",\n  \"regime_read_zh\": \"\u4fe1\u53f7\u6536\u655b\u96c6\u4e2d\u4e8eAI/\u57fa\u7840\u8bbe\u65bd\u9886\u57df\u7684\u5de8\u5934\uff08NVDA\u3001MSFT\uff09\uff0c\u5f97\u5230\u5305\u62ec\u653f\u5ba2\u6301\u4ed3\u3001\u6697\u6c60\u5438\u7b79\u548c\u4e13\u5229\u52a8\u91cf\u5728\u5185\u7684\u5e7f\u6cdb\u6e20\u9053\u652f\u6301\uff1b\u540c\u65f6\uff0c\u533b\u7597\u4fdd\u5065\u548c\u56fd\u9632\u76f8\u5173\u4e2a\u80a1\u5728\u5f85\u51b3\u50ac\u5316\u5242\u6cd5\u6848\u7684\u80cc\u666f\u4e0b\u4e5f\u51fa\u73b0\u4e86\u6b21\u7ea7\u7684\u6d3b\u8dc3\u8ff9\u8c61\u3002\u7531\u4e8e\u7f3a\u4e4f\u5386\u53f2\u6218\u7ee9\uff0c\u6240\u6709\u5224\u65ad\u7684\u7f6e\u4fe1\u5ea6\u9700\u4fdd\u6301\u514b\u5236\u3002\",\n  \"theses\": [\n    {\n      \"ticker\": \"NVDA\",\n      \"lean\": \"overweight\",\n      \"conviction\": \"medium\",\n      \"action\": \"ACCUMULATE\",\n      \"horizon_d\": 60,\n      \"thesis\": \"NVDA shows the strongest and broadest convergence (score 8) in the pack: smart-money 13F additions, dark-pool accumulation (DPI 0.34 leaning accumulation [darkpool_accum]), a dense analyst upgrade cluster (98% bull ratio [analyst_upgrade_cluster]), massive retail/GitHub momentum (41.4M HF downloads [github_momentum]), and a heavy congressional position ($127.6M) held by four disclosed politicians including Nancy Pelosi and Michael McCaul [actor:Pelosi, actor:McCaul]. The stock is not extended (rs_vs_spy_60d -5.1), offering an entry window ahead of earnings on 2026-08-26, which the market expects a 10% surprise [special_situation].\",\n      \"thesis_zh\": \"NVDA\u5c55\u793a\u4e86\u6570\u636e\u5305\u4e2d\u6700\u5f3a\u4e14\u6700\u5e7f\u6cdb\u7684\u4fe1\u53f7\u6536\u655b\uff08\u5f97\u52068\uff09\uff1a\u806a\u660e\u94b113F\u589e\u6301\u3001\u6697\u6c60\u5438\u7b79\uff08DPI 0.34 \u504f\u5411\u79ef\u7d2f [darkpool_accum]\uff09\u3001\u5bc6\u96c6\u7684\u5206\u6790\u5e08\u5347\u7ea7\u96c6\u7fa4\uff0898%\u770b\u6da8\u6bd4\u7387 [analyst_upgrade_cluster]\uff09\u3001\u5de8\u5927\u7684\u6563\u6237/GitHub\u52a8\u91cf\uff084140\u4e07\u6b21HuggingFace\u4e0b\u8f7d [github_momentum]\uff09\uff0c\u4ee5\u53ca\u7531\u5305\u62ec\u5357\u5e0c\u00b7\u4f69\u6d1b\u897f\u548c\u8fc8\u514b\u5c14\u00b7\u9ea6\u8003\u5c14\u5728\u5185\u7684\u56db\u4f4d\u516c\u5f00\u653f\u5ba2\u6301\u6709\u7684\u5de8\u989d\u56fd\u4f1a\u6301\u4ed3\uff081.276\u4ebf\u7f8e\u5143\uff09[actor:Pelosi, actor:McCaul]\u3002\u8be5\u80a1\u5e76\u672a\u8d85\u4e70\uff08\u76f8\u5bf9SPY\u768460\u65e5\u6536\u76ca\u5dee\u4e3a-5.1\uff09\uff0c\u57282026-08-26\u8d22\u62a5\u524d\u63d0\u4f9b\u4e86\u4e00\u4e2a\u5165\u573a\u7a97\u53e3\uff0c\u5e02\u573a\u9884\u671f\u5176\u670910%\u7684\u76c8\u5229\u60ca\u559c [special_situation]\u3002\",\n      \"second_order\": [\n        \"MSFT: NVDA GPU demand directly drives Azure AI infrastructure buildout, making MSFT a primary enterprise beneficiary [affiliation].\",\n        \"AMD: as the second-source for AI GPUs, AMD captures overflow demand and benefits from the AI capex cycle [congress_cluster, retail_buzz].\",\n        \"HUT: the AI power and data-center infrastructure theme (Anthropic/Fluidstack deals) is a direct play on the physical buildout NVDA's chips enable [label_mismatch].\"\n      ],\n      \"evidence\": [\n        \"darkpool_accum: DPI 0.34 leaning accumulation\",\n        \"13f_add: smart money increase\",\n        \"analyst_upgrade_cluster: 0.98 bull ratio\",\n        \"github_momentum: 41.4M HF downloads\",\n        \"actors: Pelosi, McCaul, MTG hold stakes\",\n        \"special_situation: earnings 2026-08-26 with +10% surprise\"\n      ],\n      \"dissent\": \"A broad AI capex slowdown or an antitrust/export-control action against NVIDIA could disproportionately hit the stock given its premium valuation and elevated expectations, and the 'Jim Cramer' influencer signal adds noise rather than edge.\",\n      \"falsifier_text\": \"NVDA's dark-pool DPI flips to distribution and the analyst upgrade cluster reverses (bull ratio drops below 0.7), OR the company misses its 2026-08-26 earnings and forward guidance.\"\n    },\n    {\n      \"ticker\": \"MSFT\",\n      \"lean\": \"overweight\",\n      \"conviction\": \"low\",\n      \"action\": \"WATCH\",\n      \"horizon_d\": 60,\n      \"thesis\": \"MSFT's convergence score (7) is driven by strong enterprise app demand (4.77 rating, 19.9M reviews [app_demand]), massive GitHub and HuggingFace momentum (188k stars, 32.9M downloads [github_momentum, hf_model_momentum]), a rich patent cluster (219 patents [patent_cluster]), and heavy D.C. lobbying ($3.65M [lobbying]). The affiliation with Sam Altman links MSFT to the OpenAI ecosystem's growth [actor:Altman]. With a massive congressional position ($813.4M [congress_buy]), MSFT is viewed as a core institutional asset. The stock is not extended (rs_vs_spy_60d +11.9), but the thesis lacks the 'insider/accumulation' edge that makes NVDA actionable; the channels point to steady, broad-based demand perfect for a pullback entry.\",\n      \"thesis_zh\": \"MSFT\u7684\u6536\u655b\u5206\u6570\uff087\uff09\u7531\u5f3a\u52b2\u7684\u4f01\u4e1a\u5e94\u7528\u9700\u6c42\uff08\u8bc4\u52064.77\uff0c1990\u4e07\u8bc4\u8bba [app_demand]\uff09\u3001\u5de8\u5927\u7684GitHub\u548cHuggingFace\u52a8\u91cf\uff0818.8\u4e07\u661f\uff0c3290\u4e07\u6b21\u4e0b\u8f7d [github_momentum, hf_model_momentum]\uff09\u3001\u4e30\u5bcc\u7684\u4e13\u5229\u96c6\u7fa4\uff08219\u9879\u4e13\u5229 [patent_cluster]\uff09\u548c\u5e9e\u5927\u7684\u534e\u76db\u987f\u6e38\u8bf4\u5f00\u652f\uff08365\u4e07\u7f8e\u5143 [lobbying]\uff09\u9a71\u52a8\u3002\u4e0eSam Altman\u7684\u5173\u7cfb\u5c06MSFT\u4e0eOpenAI\u751f\u6001\u7cfb\u7edf\u7684\u589e\u957f\u8054\u7cfb\u8d77\u6765 [actor:Altman]\u3002\u62e5\u6709\u5de8\u989d\u56fd\u4f1a\u6301\u4ed3\uff088.134\u4ebf\u7f8e\u5143 [congress_buy]\uff09\uff0cMSFT\u88ab\u89c6\u4e3a\u6838\u5fc3\u673a\u6784\u8d44\u4ea7\u3002\u8be5\u80a1\u672a\u8d85\u4e70\uff08\u76f8\u5bf9SPY\u768460\u65e5\u6536\u76ca\u5dee\u4e3a+11.9\uff09\uff0c\u4f46\u8be5\u8bba\u70b9\u7f3a\u4e4fNVDA\u90a3\u6837\u53ef\u64cd\u4f5c\u7684'\u5185\u90e8\u4eba/\u5438\u7b79'\u4f18\u52bf\uff1b\u8fd9\u4e9b\u6e20\u9053\u6307\u5411\u7684\u662f\u7a33\u5b9a\u3001\u5e7f\u6cdb\u7684\u9700\u6c42\uff0c\u975e\u5e38\u9002\u5408\u5728\u56de\u8c03\u65f6\u4ecb\u5165\u3002\",\n      \"second_order\": [\n        \"NVDA: MSFT's Azure AI buildout is a primary customer of NVIDIA GPUs [affiliation].\",\n        \"GOOGL: competes with MSFT in cloud/AI, and both benefit from similar app-demand and lobbying trends; Pelosi holds both [actor:Pelosi].\",\n        \"OPENAI (private): Sam Altman's partnership with MSFT directly links the private company's growth to MSFT's infrastructure [affiliation].\"\n      ],\n      \"evidence\": [\n        \"app_demand: high rating and massive review volume\",\n        \"github_momentum: 188k stars\",\n        \"hf_model_momentum: 32.9M downloads\",\n        \"patent_cluster: 219 patents\",\n        \"lobbying: $3.65M\",\n        \"actor: partnered with Sam Altman (OpenAI)\"\n      ],\n      \"dissent\": \"The 'affiliation' and 'partnership' signals are slow-moving, public knowledge heavily priced in. The unusual options signal (put/call 0.3) could indicate complacent bullish positioning or a hedge, and the thesis lacks any direct 'buying' or accumulation signal.\",\n      \"falsifier_text\": \"MSFT's Azure growth decelerates unexpectedly in the next quarterly report, or the OpenAI partnership shows signs of strain (e.g., loss of exclusive cloud rights).\"\n    },\n    {\n      \"ticker\": \"PLTR\",\n      \"lean\": \"overweight\",\n      \"conviction\": \"low\",\n      \"action\": \"WATCH\",\n      \"horizon_d\": 45,\n      \"thesis\": \"PLTR shows a narrow but coherent convergence around government and retail momentum: accelerating federal contracts (+19% [gov_contract_accel]), a pro-Trump 'buy' signal [trump], strong retail buzz (91 WSB mentions, 0.79 stocktwits bull ratio [retail_buzz, stocktwits_bull]), and a disclosed stake by political influencer Marjorie Taylor Greene [actor:Greene]. The government contract acceleration is a tangible, near-term revenue indicator. With a 60d RS of +13.3, the name is approaching heat-check territory but is not flagged as extended; the thesis is best played on a pullback given its momentum-driven character.\",\n      \"thesis_zh\": \"PLTR\u5c55\u793a\u4e86\u56f4\u7ed5\u653f\u5e9c\u548c\u6563\u6237\u52a8\u91cf\u7684\u72ed\u7a84\u4f46\u8fde\u8d2f\u7684\u4fe1\u53f7\u6536\u655b\uff1a\u8054\u90a6\u5408\u540c\u52a0\u901f\uff08+19% [gov_contract_accel]\uff09\u3001\u4eb2\u7279\u6717\u666e\u7684'\u4e70\u5165'\u4fe1\u53f7 [trump]\u3001\u5f3a\u52b2\u7684\u6563\u6237\u70ed\u5ea6\uff0891\u6b21WSB\u63d0\u53ca\uff0c0.79\u7684Stocktwits\u770b\u6da8\u6bd4 [retail_buzz, stocktwits_bull]\uff09\uff0c\u4ee5\u53ca\u653f\u6cbb\u5f71\u54cd\u8005Marjorie Taylor Greene\u7684\u516c\u5f00\u6301\u4ed3 [actor:Greene]\u3002\u8054\u90a6\u5408\u540c\u52a0\u901f\u662f\u4e00\u4e2a\u5207\u5b9e\u3001\u8fd1\u671f\u7684\u6536\u5165\u6307\u6807\u3002\u8be5\u80a160\u65e5\u76f8\u5bf9SPY\u6536\u76ca\u5dee+13.3\uff0c\u5df2\u63a5\u8fd1\u70ed\u5ea6\u68c0\u67e5\u533a\u57df\u4f46\u672a\u88ab\u6807\u8bb0\u4e3a\u8d85\u4e70\uff1b\u9274\u4e8e\u5176\u7531\u52a8\u91cf\u9a71\u52a8\u7684\u7279\u6027\uff0c\u8be5\u8bba\u70b9\u6700\u597d\u5728\u56de\u8c03\u65f6\u64cd\u4f5c\u3002\",\n      \"second_order\": [\n        \"BA: Both thrive on defense/security spending; BA's gov grant acceleration (+30%) and patent cluster support a broader defense-digitization theme [gov_grant_accel, patent_cluster].\",\n        \"MSFT: PLTR's FedRAMP and government AI deployments often run on Azure, making MSFT a quiet beneficiary of PLTR's government contract wins [affiliation].\"\n      ],\n      \"evidence\": [\n        \"gov_contract_accel: +19%\",\n        \"trump: buy signal\",\n        \"retail_buzz: 91 WSB mentions\",\n        \"stocktwits_bull: 0.79 ratio\",\n        \"actor: MTG holds stake\"\n      ],\n      \"dissent\": \"The thesis is heavier on sentiment (retail buzz, Trump) and a single legislator's personal bet than on institutional or operational data. Government contracts can be lumpy and a single +19% acceleration period is a thin reed without more context on contract value or margin.\",\n      \"falsifier_text\": \"PLTR fails to convert the accelerated gov contracts into reported revenue growth in the next quarter, or its WSB/Stocktwits buzz fades without a corresponding price catalyst, leading to momentum reversal.\"\n    },\n    {\n      \"ticker\": \"QCOM\",\n      \"lean\": \"overweight\",\n      \"conviction\": \"low\",\n      \"action\": \"WATCH\",\n      \"horizon_d\": 60,\n      \"thesis\": \"QCOM is a deep-value, multi-channel convergence case: a net-positive congressional buy signal (6 net, 2 members [congress_buy]), a massive patent cluster (559 patents [patent_cluster]), and an affiliation signal. The stock is deeply washed out (rs_vs_spy_60d -24.8), which creates a potential mean-reversion setup. The catalyst lens adds a 'special situation' tag, likely tied to the semiconductor sector's legislative tailwinds. The low weighted score (1.55) reflects few channels, but those present are high-quality (Congress buying a washed-out patent leader). This is a 'wait for a floor' watch, not a chase.\",\n      \"thesis_zh\": \"QCOM\u662f\u4e00\u4e2a\u6df1\u5ea6\u4ef7\u503c\u3001\u591a\u6e20\u9053\u6536\u655b\u7684\u6848\u4f8b\uff1a\u56fd\u4f1a\u51c0\u4e70\u5165\u4fe1\u53f7\uff086\u6b21\u51c0\u4e70\u5165\uff0c2\u540d\u6210\u5458 [congress_buy]\uff09\u3001\u5e9e\u5927\u7684\u4e13\u5229\u96c6\u7fa4\uff08559\u9879\u4e13\u5229 [patent_cluster]\uff09\u4ee5\u53ca\u5173\u8054\u4fe1\u53f7\u3002\u8be5\u80a1\u5df2\u4e25\u91cd\u8d85\u5356\uff08\u76f8\u5bf9SPY\u768460\u65e5\u6536\u76ca\u5dee-24.8\uff09\uff0c\u8fd9\u521b\u9020\u4e86\u6f5c\u5728\u7684\u5747\u503c\u56de\u5f52\u673a\u4f1a\u3002\u50ac\u5316\u5242\u89c6\u89d2\u6dfb\u52a0\u4e86\u4e00\u4e2a'\u7279\u6b8a\u4e8b\u4ef6'\u6807\u7b7e\uff0c\u53ef\u80fd\u4e0e\u534a\u5bfc\u4f53\u884c\u4e1a\u7684\u7acb\u6cd5\u987a\u98ce\u6709\u5173\u3002\u8f83\u4f4e\u7684\u52a0\u6743\u5f97\u5206\uff081.55\uff09\u53cd\u6620\u4e86\u6e20\u9053\u8f83\u5c11\uff0c\u4f46\u73b0\u6709\u7684\u90fd\u662f\u9ad8\u8d28\u91cf\u4fe1\u53f7\uff08\u56fd\u4f1a\u5728\u8d85\u5356\u7684\u4e13\u5229\u9f99\u5934\u80a1\u4e0a\u4e70\u5165\uff09\u3002\u8fd9\u662f\u4e00\u4e2a'\u7b49\u5f85\u89c1\u5e95'\u7684\u89c2\u5bdf\u6807\u7684\uff0c\u800c\u975e\u8ffd\u9ad8\u6807\u7684\u3002\",\n      \"second_order\": [\n        \"AAPL: QCOM's modem and IP are deeply tied to Apple's supply chain; a QCOM recovery implies healthy smartphone demand, benefiting AAPL [patent_cluster].\",\n        \"MSFT/NVDA: A recovering semiconductor/IP sector sentiment broadly lifts all AI and cloud-enabling semiconductor names [affiliation].\"\n      ],\n      \"evidence\": [\n        \"congress_buy: net +6, 2 members\",\n        \"patent_cluster: 559 patents\",\n        \"special_situation: likely tied to semi legislation\",\n        \"rs_vs_spy_60d: -24.8 (deeply oversold)\"\n      ],\n      \"dissent\": \"A deep oversold condition can persist or worsen if the underlying business is deteriorating (e.g., losing Apple modem share, end-market weakness in handsets/IoT). The 'congressional buy' signal is based on only 2 members, which could be noise, and the 'special situation' is unidentified.\",\n      \"falsifier_text\": \"QCOM loses a significant portion of Apple's modem business or issues a negative pre-announcement, leading to a new leg down in price that congress members may have failed to anticipate.\"\n    }\n  ],\n  \"confidence\": \"low\"\n}",
+  "degraded_reason": null,
   "disclaimer": "An AI reading of the desk's own deterministic convergence \u2014 accountable and checkable, not a guarantee. Every call cites the channels/actors it is based on, is graded vs SPY over the horizon, and can be wrong or overconfident. The Mastermind sizes it through its own risk framework; treat as odds, not a forecast."
 }

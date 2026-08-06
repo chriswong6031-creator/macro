@@ -33,6 +33,20 @@ MIN_SWEEP_COVERAGE re-stamps every row with the run's single `now`; consumers ma
 the store's as_of as a file-level freshness anchor. Only a partial refresh (smoke run,
 or a sweep below the coverage floor) leaves mixed per-row stamps — deliberately, as the
 honest signature of a partial refresh.
+
+ROTATION CONTRACT (W4) — the calendar sweep is free, but the surprise-history drip is
+budgeted (`max_new`, default 120/run). That budget is served OLDEST-STAMP-FIRST
+(`drip_order`), never alphabetically: an alphabetical head plus a REFRESH_DAYS re-stale
+clock is a starvation loop, not a rotation (see drip_order's docstring for the arithmetic
+that leaves the tail of the alphabet permanently un-dripped).
+
+STALENESS ALARM (W4) — every run ends by grading the SHARE of the store that has aged past
+the 10-trading-day mark where engine/earnings_blackout.assess starts failing open, plus any
+row reporting within 5 sessions. That is the exact silence W4 was chartered to break: on
+2026-08-03 PLTR's row held the right date (next_date=2026-08-03) and the veto still no-opped
+on it, because as_of=2026-06-19 made the row stale and the fail-open law returned
+in_blackout=False without a word. The veto's fail-open semantics are DELIBERATELY unchanged;
+the alarm is the fix for the silence.
 """
 from __future__ import annotations
 
@@ -40,10 +54,11 @@ import argparse
 import json
 import logging
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import date as _date, datetime, timedelta, timezone
 
 import pandas as pd
 
+from engine.earnings_catalyst import as_date as _as_date, trading_days_between as _td_between
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -63,6 +78,16 @@ REFRESH_DAYS = 7
 #: broken, not quiet — every name it missed keeps its previous as_of, so the store rots
 #: silently. Deliberately loose: it fires on a break, not on a slow earnings week.
 MIN_SWEEP_COVERAGE = 0.50
+
+#: W4 staleness alarm. STALE_AGE_TD mirrors engine.earnings_blackout._STALE_AGE_TD — the
+#: alarm must fire at exactly the age where the veto starts failing open, or it is grading
+#: a different question than the one that hurt. STALE_SHARE_ALARM is deliberately far below
+#: MIN_SWEEP_COVERAGE's inverse: coverage grades THIS RUN's reach, staleness grades the
+#: STORE's accumulated rot, and a store can pass every nightly coverage check while a fifth
+#: of it quietly ages out (the 2026-08-04 shape: 1,117 rows fresh, 835 still at 06-19).
+STALE_AGE_TD = 10
+STALE_SHARE_ALARM = 0.20
+IMMINENT_REPORT_TD = 5
 
 
 def _cache_path():
@@ -169,6 +194,120 @@ def _surprises(session, sym: str) -> list[dict]:
     return out
 
 
+def _stamp_of(stamps, ticker: str) -> str | None:
+    """A ticker's previous surprise stamp as a sortable ISO string, or None.
+
+    Accepts a pandas Series (the store column) or a plain dict.  Anything that is
+    missing, NaN, or not ISO-shaped comes back None and is treated as NEVER-DRIPPED —
+    fail-safe in the right direction: an unreadable stamp buys a name a place at the
+    FRONT of the queue (one cheap re-fetch), never a permanent seat at the back.
+    """
+    try:
+        v = stamps.get(ticker) if stamps is not None else None
+    except Exception:  # noqa: BLE001 — a malformed store must not break the ordering
+        return None
+    if v is None or v != v:                       # NaN-safe
+        return None
+    s = str(v)
+    # `as_of`/`surprises_as_of` are always datetime.now(timezone.utc).isoformat(), so
+    # every stamp shares one format and lexicographic order IS chronological order.
+    if len(s) >= 10 and s[4] == "-" and s[7] == "-":
+        return s
+    return None
+
+
+def drip_order(candidates, stamps) -> list[str]:
+    """Order the budgeted surprise-history drip OLDEST-STAMP-FIRST.
+
+    THE STARVATION THIS FIXES.  The drip used to take ``sorted(cal)[:max_new]`` — the
+    ALPHABETICAL head of the stale set.  Pair that with ``stale()``'s REFRESH_DAYS=7
+    re-stale clock and the queue is not a rotation, it is a treadmill:
+
+        night 1   names   1-120 (alphabetical) dripped
+        ...
+        night 7   names 721-840 dripped
+        night 8   names   1-120 are 7 days old again → stale again → and they still
+                  sort FIRST, so the budget goes back to them
+
+    The frontier stops at ~REFRESH_DAYS x max_new names (~840 of a ~1,500-name
+    universe) and everything alphabetically past it — roughly ticker "S" onward —
+    is never dripped at all, forever.  Nothing in the store shows this: those rows
+    carry a fresh calendar ``as_of`` (the cheap sweep re-stamps them nightly) with
+    surprise history that is empty or months old.
+
+    Oldest-first makes it a strict rotation: the longest-waiting name is served
+    first, so the worst-case wait for any name is bounded by
+    ``ceil(len(candidates) / max_new)`` nights instead of being unbounded.
+    Never-dripped names sort ahead of every dated one, and ties break on ticker so
+    the order is deterministic (a set's iteration order never leaks in).
+    """
+    return sorted(candidates,
+                  key=lambda t: (_stamp_of(stamps, t) is not None,
+                                 _stamp_of(stamps, t) or "",
+                                 t))
+
+
+def assess_staleness(df, today: _date | None = None,
+                     *, stale_age_td: int = STALE_AGE_TD,
+                     imminent_td: int = IMMINENT_REPORT_TD) -> dict:
+    """Grade the STORE (not the run) for rows that have aged out of usefulness.
+
+    A row is stale when its ``as_of`` is older than ``stale_age_td`` trading days —
+    the exact threshold at which ``engine.earnings_blackout.assess`` stops trusting
+    the row and silently returns ``in_blackout=False``.  A row is *imminent* when its
+    ``next_date`` is inside ``imminent_td`` sessions and has not passed; an imminent
+    row that is also stale is the PLTR-class failure and alarms on its own, at any
+    share, because one such row is one silent no-op on the day it mattered.
+
+    Returns ``{total, stale, stale_share, imminent, imminent_stale, should_warn}``.
+    Never raises: an unreadable frame grades as zero rows and does not warn (the
+    empty-sweep annotation in ``main`` owns that case).
+    """
+    out = {"total": 0, "stale": 0, "stale_share": 0.0,
+           "imminent": 0, "imminent_stale": 0, "should_warn": False}
+    if df is None or getattr(df, "empty", True) or "as_of" not in getattr(df, "columns", []):
+        return out
+    ref = today or datetime.now(timezone.utc).date()
+    next_dates = df["next_date"] if "next_date" in df.columns else None
+    total = stale_n = imminent = imminent_stale = 0
+    for i, (_t, as_of) in enumerate(df["as_of"].items()):
+        total += 1
+        d = _as_date(as_of)
+        # An unparseable/absent stamp cannot be shown to be fresh, so it counts stale.
+        row_stale = (d is None) or (_td_between(d, ref) > stale_age_td)
+        if row_stale:
+            stale_n += 1
+        if next_dates is not None:
+            nd = _as_date(next_dates.iloc[i])
+            if nd is not None and 0 <= _td_between(ref, nd) <= imminent_td:
+                imminent += 1
+                if row_stale:
+                    imminent_stale += 1
+    share = (stale_n / total) if total else 0.0
+    out.update(total=total, stale=stale_n, stale_share=share,
+               imminent=imminent, imminent_stale=imminent_stale,
+               should_warn=bool(total and (share > STALE_SHARE_ALARM or imminent_stale > 0)))
+    return out
+
+
+def _emit_staleness_annotation(df, today: _date | None = None) -> dict:
+    """Emit the W4 staleness alarm when the post-sweep store has rotted.
+
+    House law: `::warning` must START the line, so this is a BARE `print(..., flush=True)`
+    and never `log.warning(...)` — every builder here logs with a level-prefixing format,
+    which would emit "WARNING ::warning ..." and GitHub would silently drop it (guarded by
+    tests/test_gh_annotation_line_start.py, which scans collectors/).
+    """
+    rep = assess_staleness(df, today)
+    if rep["should_warn"]:
+        print(f"::warning title=earnings-staleness::{rep['stale']}/{rep['total']} rows "
+              f"stale (as_of older than {STALE_AGE_TD} trading days), "
+              f"{rep['imminent_stale']} imminent-report rows stale "
+              f"(next_date within {IMMINENT_REPORT_TD} trading days) — "
+              f"earnings_blackout.assess fails OPEN on every one of them", flush=True)
+    return rep
+
+
 def _emit_coverage_annotation(total: int, universe_n: int, swept_n: int,
                               blocked: bool = False) -> None:
     """Emit a GitHub annotation when the sweep did not refresh most of the universe.
@@ -210,6 +349,10 @@ def fetch_earnings(force: bool = False, max_new: int = 120,
     if blocked:
         log.warning("equity_earnings: Nasdaq calendar bot-walled (likely CI IP) — keeping cache")
         _emit_coverage_annotation(len(existing), len(universe), 0, blocked=True)
+        # A bot-walled run is exactly when the store rots, so grade it here too: the
+        # coverage annotation says "0 names refreshed", the staleness alarm says how
+        # much of the standing cache that has already cost us.
+        _emit_staleness_annotation(existing)
         return existing
     log.info("equity_earnings: calendar sweep found next dates for %d of %d universe names",
              len(cal), len(universe))
@@ -266,8 +409,13 @@ def fetch_earnings(force: bool = False, max_new: int = 120,
         keep = existing[~existing.index.isin(out.index)] if not out.empty else existing
         out = pd.concat([out, keep]) if not out.empty else existing
 
-    # surprise history: drip a capped batch of stale/uncached names (the only expensive call)
-    todo = [t for t in (tickers or sorted(cal) or list(universe)) if stale(t) and t in out.index][:max_new]
+    # surprise history: drip a capped batch of stale/uncached names (the only expensive call).
+    # ROTATION (W4): oldest surprises_as_of first — see drip_order for why the previous
+    # `sorted(cal)` alphabetical head starved the tail of the universe permanently.
+    todo = drip_order(
+        [t for t in (tickers or cal or universe) if stale(t) and t in out.index],
+        prev_surp_asof,
+    )[:max_new]
     if "surprises_as_of" not in out.columns and not out.empty:
         out["surprises_as_of"] = None
     for t in todo:
@@ -296,6 +444,10 @@ def fetch_earnings(force: bool = False, max_new: int = 120,
         out["as_of"] = now
     if not out.empty:
         out.to_parquet(cache)
+    # W4 staleness alarm — graded on the POST-sweep store, so it describes what the
+    # next build will actually read. Emitted on every path (smoke runs included: the
+    # store's rot is real regardless of which invocation last wrote it).
+    _emit_staleness_annotation(out)
     _n_surp = 0
     if not out.empty and "surprises_json" in out.columns:
         _n_surp = int(out["surprises_json"].fillna("[]").apply(

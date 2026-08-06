@@ -1,7 +1,7 @@
 {
   "schema": "stage_context.v1",
-  "asof": "2026-08-03",
-  "built": "2026-08-03T02:04:20Z",
+  "asof": "2026-08-05",
+  "built": "2026-08-05T14:58:16Z",
   "is_context_only": true,
   "display_only": true,
   "disclaimer": "Context only — stage classification display, never a signal or sizing input.",
@@ -430,7 +430,7 @@
       "vol_ratio": 0.66,
       "event": "pullback_resume",
       "gate_tier": "T2",
-      "blackout": false,
+      "blackout": true,
       "arc_pos": 0.3625,
       "earnings": {
         "present": true,
@@ -459,12 +459,12 @@
       "why": [
         "Early in its climb — 9 weeks up so far",
         "Already stretched well above its 30-week line — may need a rest",
-        "Also shows a strong confirmation from our other checks"
+        "Earnings soon — wait, don't chase"
       ],
       "why_zh": [
         "上升初期 — 已上行 9 周",
         "已明显高于 30 周均线 — 可能需要回踩",
-        "其他多项验证同样给出强确认"
+        "财报临近 — 先等待，不要追高"
       ],
       "atr_14w": 1.6726,
       "atr_ext": 2.033,
@@ -728,7 +728,7 @@
       "vol_ratio": 1.13,
       "event": "pullback_resume",
       "gate_tier": "T1",
-      "blackout": false,
+      "blackout": true,
       "arc_pos": 0.3375,
       "earnings": {
         "present": true,
@@ -755,12 +755,12 @@
       "why": [
         "Early in its climb — 7 weeks up so far",
         "Already stretched well above its 30-week line — may need a rest",
-        "Also shows a strong confirmation from our other checks"
+        "Earnings soon — wait, don't chase"
       ],
       "why_zh": [
         "上升初期 — 已上行 7 周",
         "已明显高于 30 周均线 — 可能需要回踩",
-        "其他多项验证同样给出强确认"
+        "财报临近 — 先等待，不要追高"
       ],
       "atr_14w": 3.9036,
       "atr_ext": 1.989,
@@ -827,7 +827,7 @@
       "vol_ratio": 0.83,
       "event": null,
       "gate_tier": null,
-      "blackout": false,
+      "blackout": true,
       "arc_pos": 0.375,
       "earnings": {
         "present": false,
@@ -840,11 +840,13 @@
       },
       "why": [
         "Early in its climb — 10 weeks up so far",
-        "Trading above its 30-week line — the trend is with it"
+        "Trading above its 30-week line — the trend is with it",
+        "Earnings soon — wait, don't chase"
       ],
       "why_zh": [
         "上升初期 — 已上行 10 周",
-        "位于 30 周均线之上 — 趋势向好"
+        "位于 30 周均线之上 — 趋势向好",
+        "财报临近 — 先等待，不要追高"
       ],
       "atr_14w": 1.1879,
       "atr_ext": 0.412,
@@ -913,68 +915,6 @@
       "sata_change_1w": 1,
       "stage_detailed": "2X_fallback_bullish",
       "industry_percentile": 65.2
-    },
-    {
-      "ticker": "NET",
-      "company": "Cloudflare, Inc.",
-      "sector": "Information Technology",
-      "stage": 2,
-      "weeks_in_stage": 7,
-      "fresh": true,
-      "sga_score": 56,
-      "ma30_slope_pct5w": 5.485,
-      "pct_vs_ma30": 31.03,
-      "mansfield_rs": 21.43,
-      "vol_ratio": 0.73,
-      "event": "pullback_resume",
-      "gate_tier": "T2",
-      "blackout": false,
-      "arc_pos": 0.3375,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.5555555555555556,
-        "performance": 5.0,
-        "tone_word": "confident",
-        "tags": [
-          "ai",
-          "restructuring",
-          "layoffs",
-          "cloud_security",
-          "developer_platform",
-          "large_customers",
-          "gross_margin_pressure",
-          "guidance",
-          "sase",
-          "zero_trust",
-          "cloud_infrastructure",
-          "cybersecurity",
-          "content_delivery_network",
-          "edge_computing",
-          "developer_platforms",
-          "saas",
-          "zero_trust_security",
-          "ai_infrastructure"
-        ],
-        "quarter": "Q1",
-        "summary": "AI is driving a fundamental replatforming of the Internet... the biggest tailwind for our network and Workers developer platform we have ever seen."
-      },
-      "why": [
-        "Early in its climb — 7 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 7 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 31.0585,
-      "atr_ext": 2.127,
-      "atr_pct_price": 0.11133,
-      "sata_score": 8,
-      "sata_change_1w": 0,
-      "stage_detailed": "2A_strong_breakout",
-      "industry_percentile": 77.3
     },
     {
       "ticker": "EML",
@@ -1854,7 +1794,7 @@
       "vol_ratio": 0.81,
       "event": null,
       "gate_tier": null,
-      "blackout": false,
+      "blackout": true,
       "arc_pos": 0.325,
       "earnings": {
         "present": false,
@@ -1867,11 +1807,13 @@
       },
       "why": [
         "Early in its climb — 6 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest"
+        "Already stretched well above its 30-week line — may need a rest",
+        "Earnings soon — wait, don't chase"
       ],
       "why_zh": [
         "上升初期 — 已上行 6 周",
-        "已明显高于 30 周均线 — 可能需要回踩"
+        "已明显高于 30 周均线 — 可能需要回踩",
+        "财报临近 — 先等待，不要追高"
       ],
       "atr_14w": 2.0066,
       "atr_ext": 0.965,
@@ -2073,7 +2015,7 @@
       "vol_ratio": 1.5,
       "event": "pullback_resume",
       "gate_tier": null,
-      "blackout": false,
+      "blackout": true,
       "arc_pos": 0.275,
       "earnings": {
         "present": false,
@@ -2086,11 +2028,13 @@
       },
       "why": [
         "Early in its climb — 2 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest"
+        "Already stretched well above its 30-week line — may need a rest",
+        "Earnings soon — wait, don't chase"
       ],
       "why_zh": [
         "上升初期 — 已上行 2 周",
-        "已明显高于 30 周均线 — 可能需要回踩"
+        "已明显高于 30 周均线 — 可能需要回踩",
+        "财报临近 — 先等待，不要追高"
       ],
       "atr_14w": 6.1416,
       "atr_ext": 1.137,
@@ -2155,7 +2099,7 @@
       "vol_ratio": 1.64,
       "event": null,
       "gate_tier": null,
-      "blackout": false,
+      "blackout": true,
       "arc_pos": 0.2625,
       "earnings": {
         "present": true,
@@ -2183,11 +2127,13 @@
       },
       "why": [
         "Early in its climb — 1 weeks up so far",
-        "Trading above its 30-week line — the trend is with it"
+        "Trading above its 30-week line — the trend is with it",
+        "Earnings soon — wait, don't chase"
       ],
       "why_zh": [
         "上升初期 — 已上行 1 周",
-        "位于 30 周均线之上 — 趋势向好"
+        "位于 30 周均线之上 — 趋势向好",
+        "财报临近 — 先等待，不要追高"
       ],
       "atr_14w": 3.1681,
       "atr_ext": 1.42,
@@ -2293,7 +2239,7 @@
       "vol_ratio": 0.88,
       "event": "pullback_resume",
       "gate_tier": null,
-      "blackout": false,
+      "blackout": true,
       "arc_pos": 0.35,
       "earnings": {
         "present": true,
@@ -2322,11 +2268,13 @@
       },
       "why": [
         "Early in its climb — 8 weeks up so far",
-        "Trading above its 30-week line — the trend is with it"
+        "Trading above its 30-week line — the trend is with it",
+        "Earnings soon — wait, don't chase"
       ],
       "why_zh": [
         "上升初期 — 已上行 8 周",
-        "位于 30 周均线之上 — 趋势向好"
+        "位于 30 周均线之上 — 趋势向好",
+        "财报临近 — 先等待，不要追高"
       ],
       "atr_14w": 5.4843,
       "atr_ext": 1.554,
@@ -2449,7 +2397,7 @@
       "vol_ratio": 5.2,
       "event": null,
       "gate_tier": null,
-      "blackout": false,
+      "blackout": true,
       "arc_pos": 0.275,
       "earnings": {
         "present": false,
@@ -2462,11 +2410,13 @@
       },
       "why": [
         "Early in its climb — 2 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest"
+        "Already stretched well above its 30-week line — may need a rest",
+        "Earnings soon — wait, don't chase"
       ],
       "why_zh": [
         "上升初期 — 已上行 2 周",
-        "已明显高于 30 周均线 — 可能需要回踩"
+        "已明显高于 30 周均线 — 可能需要回踩",
+        "财报临近 — 先等待，不要追高"
       ],
       "atr_14w": 1.0464,
       "atr_ext": 3.649,
@@ -2728,7 +2678,7 @@
       "vol_ratio": 0.71,
       "event": null,
       "gate_tier": null,
-      "blackout": false,
+      "blackout": true,
       "arc_pos": 0.3375,
       "earnings": {
         "present": true,
@@ -2755,11 +2705,13 @@
       },
       "why": [
         "Early in its climb — 7 weeks up so far",
-        "Trading above its 30-week line — the trend is with it"
+        "Trading above its 30-week line — the trend is with it",
+        "Earnings soon — wait, don't chase"
       ],
       "why_zh": [
         "上升初期 — 已上行 7 周",
-        "位于 30 周均线之上 — 趋势向好"
+        "位于 30 周均线之上 — 趋势向好",
+        "财报临近 — 先等待，不要追高"
       ],
       "atr_14w": 11.6991,
       "atr_ext": 1.32,
@@ -2866,6 +2818,64 @@
       "sata_change_1w": 0,
       "stage_detailed": "2X_catch_price_above_ma",
       "industry_percentile": null
+    },
+    {
+      "ticker": "URI",
+      "company": "United Rentals",
+      "sector": "Industrials",
+      "stage": 2,
+      "weeks_in_stage": 9,
+      "fresh": true,
+      "sga_score": 49,
+      "ma30_slope_pct5w": 5.195,
+      "pct_vs_ma30": 16.11,
+      "mansfield_rs": 9.46,
+      "vol_ratio": 0.87,
+      "event": null,
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.3625,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.7222222222222222,
+        "performance": 8.75,
+        "tone_word": "confident",
+        "tags": [
+          "mega_projects",
+          "specialty_rental",
+          "demand_strength",
+          "guidance_raise",
+          "margin_pressure",
+          "capital_expenditure",
+          "free_cash_flow",
+          "record_utilization",
+          "equipment_rental_leasing",
+          "capital_goods",
+          "industrial_machinery",
+          "non_residential_construction",
+          "infrastructure_spending",
+          "data_centers",
+          "energy_services",
+          "construction_equipment"
+        ],
+        "quarter": "Q2",
+        "summary": "The large projects drove this demand in the first half of the year, and we expect that will continue through the second half."
+      },
+      "why": [
+        "Early in its climb — 9 weeks up so far",
+        "Already stretched well above its 30-week line — may need a rest"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 9 周",
+        "已明显高于 30 周均线 — 可能需要回踩"
+      ],
+      "atr_14w": 74.406,
+      "atr_ext": 2.012,
+      "atr_pct_price": 0.06894,
+      "sata_score": 8,
+      "sata_change_1w": 0,
+      "stage_detailed": "2D_extended_run",
+      "industry_percentile": 58.8
     }
   ],
   "warnings_stage3": [
@@ -13989,7 +13999,7 @@
     "n": 0
   },
   "prev_state": {
-    "asof": "2026-08-02",
+    "asof": "2026-08-04",
     "by_key": {
       "A": {
         "stage": 1,

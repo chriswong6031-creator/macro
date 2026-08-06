@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_graph.v1",
   "artifact_id": "confluence-graph",
-  "asof": "2026-08-02",
+  "asof": "2026-08-04",
   "is_context_only": true,
   "display_only": true,
   "hard_law": "HARD LAW: confluence never gates, never ranks, never raises a priority.  All edges are display_only=True.  Cross-engine hard gates require their own pre-registered gauntlet (China falsification precedent).  Edge promotion beyond display requires a registered gauntlet result in config/qual_ladder.yml.",
@@ -11,7 +11,7 @@
       "type": "engine",
       "label": "altdata",
       "meta": {
-        "n_spine_rows": 945
+        "n_spine_rows": 1085
       }
     },
     {
@@ -19,7 +19,7 @@
       "type": "engine",
       "label": "altdata_conv",
       "meta": {
-        "n_spine_rows": 45
+        "n_spine_rows": 1
       }
     },
     {
@@ -43,7 +43,7 @@
       "type": "engine",
       "label": "china_special_sits",
       "meta": {
-        "n_spine_rows": 62
+        "n_spine_rows": 67
       }
     },
     {
@@ -51,7 +51,7 @@
       "type": "engine",
       "label": "cn_board",
       "meta": {
-        "n_spine_rows": 60
+        "n_spine_rows": 220
       }
     },
     {
@@ -59,7 +59,7 @@
       "type": "engine",
       "label": "cn_importance_v0",
       "meta": {
-        "n_spine_rows": 2025
+        "n_spine_rows": 2468
       }
     },
     {
@@ -67,7 +67,7 @@
       "type": "engine",
       "label": "cn_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 2025
+        "n_spine_rows": 2468
       }
     },
     {
@@ -75,7 +75,7 @@
       "type": "engine",
       "label": "desk:ai_desk",
       "meta": {
-        "n_spine_rows": 27
+        "n_spine_rows": 28
       }
     },
     {
@@ -91,7 +91,7 @@
       "type": "engine",
       "label": "desk:thematic_desk",
       "meta": {
-        "n_spine_rows": 50
+        "n_spine_rows": 53
       }
     },
     {
@@ -99,7 +99,7 @@
       "type": "engine",
       "label": "hk_board",
       "meta": {
-        "n_spine_rows": 1388
+        "n_spine_rows": 1480
       }
     },
     {
@@ -107,7 +107,7 @@
       "type": "engine",
       "label": "intel_hub",
       "meta": {
-        "n_spine_rows": 1734
+        "n_spine_rows": 1952
       }
     },
     {
@@ -115,7 +115,7 @@
       "type": "engine",
       "label": "macro_context",
       "meta": {
-        "n_spine_rows": 239
+        "n_spine_rows": 261
       }
     },
     {
@@ -123,7 +123,7 @@
       "type": "engine",
       "label": "narrative",
       "meta": {
-        "n_spine_rows": 322
+        "n_spine_rows": 333
       }
     },
     {
@@ -147,7 +147,7 @@
       "type": "engine",
       "label": "policy",
       "meta": {
-        "n_spine_rows": 36
+        "n_spine_rows": 40
       }
     },
     {
@@ -155,7 +155,7 @@
       "type": "engine",
       "label": "radar",
       "meta": {
-        "n_spine_rows": 10514
+        "n_spine_rows": 12521
       }
     },
     {
@@ -171,7 +171,7 @@
       "type": "engine",
       "label": "reflex.options_flow_attention",
       "meta": {
-        "n_spine_rows": 177
+        "n_spine_rows": 191
       }
     },
     {
@@ -219,7 +219,7 @@
       "type": "engine",
       "label": "us_importance_v0",
       "meta": {
-        "n_spine_rows": 9581
+        "n_spine_rows": 12285
       }
     },
     {
@@ -227,7 +227,7 @@
       "type": "engine",
       "label": "us_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 9581
+        "n_spine_rows": 12285
       }
     },
     {
@@ -235,7 +235,7 @@
       "type": "engine",
       "label": "whitehouse",
       "meta": {
-        "n_spine_rows": 44
+        "n_spine_rows": 53
       }
     },
     {
@@ -1653,7 +1653,7 @@
         "regime": "US growth premium",
         "risk": "risk-on",
         "usd_trend": "up",
-        "asof": "2026-08-01",
+        "asof": "2026-08-04",
         "display_only": true,
         "source_lobe": "fx_dollar",
         "smile_regime": "mixed",
@@ -1661,7 +1661,7 @@
         "regime_radar_dominant": null,
         "stance_word": "Watch — don't chase",
         "dominant_scenario": null,
-        "days_in_regime": 104
+        "days_in_regime": 107
       }
     },
     {
@@ -1674,10 +1674,10 @@
           "rates": {
             "real_10y": 2.41,
             "real_10y_pctile": 0.99,
-            "real_10y_chg_63d_bp": 45.0,
+            "real_10y_chg_63d_bp": 47.0,
             "nominal_10y": 4.68,
             "curve_2s10s": 0.47,
-            "curve_tp_adj": 1.31,
+            "curve_tp_adj": 0.47,
             "policy_gap": 0.6,
             "regime": "restrictive",
             "direction": "rising",
@@ -1719,7 +1719,7 @@
           "zh": "仅供展示。可计分腿检验：没有任何利率/通胀腿通过前瞻回撤门槛并满足清洗交叉验证稳健性（详见校准报告）。"
         },
         "yield_curve_regime": "bear_steepener",
-        "asof": "2026-07-31",
+        "asof": "2026-08-03",
         "display_only": true,
         "source_lobe": "rates_transmission"
       }
@@ -1732,8 +1732,8 @@
         "subtype": "rates_credit",
         "health_label": "healthy",
         "cycle_phase": "late",
-        "recession_risk": 4.653342794998939,
-        "asof": "2026-07-31",
+        "recession_risk": 4.655762462052753,
+        "asof": "2026-08-03",
         "display_only": true,
         "source_lobe": "rates_credit"
       }
@@ -1749,7 +1749,7 @@
           "Gold",
           "Copper"
         ],
-        "asof": "2026-07-31",
+        "asof": "2026-08-03",
         "display_only": true,
         "source_lobe": "commodity_context"
       }
@@ -1764,7 +1764,7 @@
         "regime": "mixed / no clear trend",
         "correlation_verdict": "concentrated",
         "state_text": "mixed / no clear trend",
-        "asof": "2026-08-01",
+        "asof": "2026-08-04",
         "display_only": true,
         "source_lobe": "cross_asset_flows"
       }
@@ -1779,7 +1779,7 @@
         "quad_name": "Reflation",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-31",
+        "asof": "2026-08-03",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -1794,7 +1794,7 @@
         "quad_name": "Stagflation",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-31",
+        "asof": "2026-08-03",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -1809,7 +1809,7 @@
         "quad_name": "Goldilocks",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-31",
+        "asof": "2026-08-03",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -1849,13 +1849,63 @@
         "regime": "long",
         "agreement": "split",
         "cor1m_regime": "dispersion",
-        "asof": "2026-07-31",
+        "asof": "2026-08-03",
         "display_only": true,
         "source_lobe": "world_state.market_structure"
       }
     }
   ],
   "edges": [
+    {
+      "src": "module:scripts/build_earnings_public_wire.py",
+      "dst": "artifact:earnings-evidence-context-latest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_earnings_public_wire.py writes site/premiumdata/earnings/context/latest.json"
+    },
+    {
+      "src": "artifact:earnings-evidence-context-latest",
+      "dst": "module:engine/neuralweb/earnings_context_reader.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/premiumdata/earnings/context/latest.json consumed by engine/neuralweb/earnings_context_reader.py"
+    },
+    {
+      "src": "artifact:earnings-evidence-context-latest",
+      "dst": "module:engine/neuralweb/ask_brain.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/premiumdata/earnings/context/latest.json consumed by engine/neuralweb/ask_brain.py"
+    },
+    {
+      "src": "artifact:earnings-evidence-context-latest",
+      "dst": "module:engine/neuralweb/cortex.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/premiumdata/earnings/context/latest.json consumed by engine/neuralweb/cortex.py"
+    },
+    {
+      "src": "artifact:earnings-evidence-context-latest",
+      "dst": "module:engine/neuralweb/brain_gateway.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/premiumdata/earnings/context/latest.json consumed by engine/neuralweb/brain_gateway.py"
+    },
     {
       "src": "module:scripts/run_fundamental_forensics_wave2.py",
       "dst": "artifact:fundamental-forensics-sec-source-snapshot",
@@ -4355,6 +4405,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/mag7_regime/latest.json consumed by scripts/build_site.py"
+    },
+    {
+      "src": "artifact:mag7-regime-latest",
+      "dst": "module:scripts/notify_turn_events.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/mag7_regime/latest.json consumed by scripts/notify_turn_events.py"
     },
     {
       "src": "module:engine/mag7_regime.py",
@@ -9518,13 +9578,13 @@
     },
     {
       "src": "artifact:options-flow-cohorts-json",
-      "dst": "module:templates/flow_desk.html.j2",
+      "dst": "module:templates/options.html.j2",
       "edge_type": "feeds",
       "n": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "structural: site/flowdata/cohorts.json consumed by templates/flow_desk.html.j2"
+      "note": "structural: site/flowdata/cohorts.json consumed by templates/options.html.j2"
     },
     {
       "src": "module:scripts/build_polygon_gex.py",
@@ -11547,6 +11607,16 @@
       "note": "structural: scripts/build_stock_seasonality.py writes site/seasonalitydata/index.json"
     },
     {
+      "src": "artifact:site-stock-seasonality-index",
+      "dst": "module:scripts/build_seasonality_shadow_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/seasonalitydata/index.json consumed by scripts/build_seasonality_shadow_state.py"
+    },
+    {
       "src": "module:scripts/build_stock_seasonality.py",
       "dst": "artifact:site-stock-seasonality-entity",
       "edge_type": "feeds",
@@ -11555,6 +11625,46 @@
       "display_only": true,
       "regime": null,
       "note": "structural: scripts/build_stock_seasonality.py writes site/seasonalitydata/entities/<SYM>.json"
+    },
+    {
+      "src": "artifact:site-stock-seasonality-entity",
+      "dst": "module:scripts/build_seasonality_shadow_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/seasonalitydata/entities/<SYM>.json consumed by scripts/build_seasonality_shadow_state.py"
+    },
+    {
+      "src": "module:scripts/build_seasonality_shadow_state.py",
+      "dst": "artifact:data-neuralweb-biopharma-seasonality-state",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_seasonality_shadow_state.py writes data/neuralweb/biopharma_seasonality_state.json"
+    },
+    {
+      "src": "artifact:data-neuralweb-biopharma-seasonality-state",
+      "dst": "module:engine/neuralweb/mastermind_context.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/biopharma_seasonality_state.json consumed by engine/neuralweb/mastermind_context.py"
+    },
+    {
+      "src": "module:scripts/build_seasonality_shadow_state.py",
+      "dst": "artifact:data-seasonality-nw-forward-ledger",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_seasonality_shadow_state.py writes data/seasonality/nw_forward_ledger.jsonl"
     },
     {
       "src": "module:scripts/build_stock_seasonality.py",
@@ -13185,6 +13295,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/prophet/ledger.jsonl consumed by engine/chronicle/adapters.py"
+    },
+    {
+      "src": "module:engine/us_context_vector.py",
+      "dst": "artifact:us-context-vector",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/us_context_vector.py writes data/us_prophet_rank/candidates/YYYY-MM.parquet"
     },
     {
       "src": "module:scripts/build_nasdaq_internals.py",
@@ -15538,13 +15658,13 @@
     },
     {
       "src": "artifact:site-flow-leaders",
-      "dst": "module:templates/flow_leaders.html.j2",
+      "dst": "module:templates/options.html.j2",
       "edge_type": "feeds",
       "n": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "structural: site/flowleaders/leaders.json consumed by templates/flow_leaders.html.j2"
+      "note": "structural: site/flowleaders/leaders.json consumed by templates/options.html.j2"
     },
     {
       "src": "artifact:site-flow-leaders",
@@ -17457,6 +17577,126 @@
       "note": "structural: data/government_revenue/recipient_resolution_coverage.json consumed by scripts/check_government_revenue_projection.py"
     },
     {
+      "src": "module:scripts/build_government_revenue_candidates.py",
+      "dst": "artifact:government-revenue-candidate-ledger",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_government_revenue_candidates.py writes data/government_revenue/candidate_ledger.jsonl"
+    },
+    {
+      "src": "artifact:government-revenue-candidate-ledger",
+      "dst": "module:scripts/build_government_revenue_candidates.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/candidate_ledger.jsonl consumed by scripts/build_government_revenue_candidates.py"
+    },
+    {
+      "src": "artifact:government-revenue-candidate-ledger",
+      "dst": "module:app/government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/candidate_ledger.jsonl consumed by app/government_revenue.py"
+    },
+    {
+      "src": "module:scripts/build_government_revenue_candidates.py",
+      "dst": "artifact:government-revenue-candidate-queue",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_government_revenue_candidates.py writes data/government_revenue/candidate_queue.json"
+    },
+    {
+      "src": "artifact:government-revenue-candidate-queue",
+      "dst": "module:app/government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/candidate_queue.json consumed by app/government_revenue.py"
+    },
+    {
+      "src": "artifact:government-revenue-candidate-queue",
+      "dst": "module:scripts/build_government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/candidate_queue.json consumed by scripts/build_government_revenue.py"
+    },
+    {
+      "src": "module:scripts/build_government_revenue_candidates.py",
+      "dst": "artifact:government-revenue-candidate-projection-state",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_government_revenue_candidates.py writes data/government_revenue/candidate_projection_state.json"
+    },
+    {
+      "src": "artifact:government-revenue-candidate-projection-state",
+      "dst": "module:scripts/build_government_revenue_candidates.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/candidate_projection_state.json consumed by scripts/build_government_revenue_candidates.py"
+    },
+    {
+      "src": "artifact:government-revenue-candidate-projection-state",
+      "dst": "module:scripts/check_government_revenue_projection.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/candidate_projection_state.json consumed by scripts/check_government_revenue_projection.py"
+    },
+    {
+      "src": "module:scripts/build_government_revenue_candidates.py",
+      "dst": "artifact:government-revenue-candidate-projection-status",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_government_revenue_candidates.py writes data/government_revenue/candidate_projection_status.json"
+    },
+    {
+      "src": "artifact:government-revenue-candidate-projection-status",
+      "dst": "module:app/government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/candidate_projection_status.json consumed by app/government_revenue.py"
+    },
+    {
+      "src": "artifact:government-revenue-candidate-projection-status",
+      "dst": "module:scripts/check_government_revenue_projection.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/candidate_projection_status.json consumed by scripts/check_government_revenue_projection.py"
+    },
+    {
       "src": "module:scripts/build_government_revenue.py",
       "dst": "artifact:site-government-revenue-latest",
       "edge_type": "feeds",
@@ -17485,6 +17725,36 @@
       "display_only": true,
       "regime": null,
       "note": "structural: site/government-revenue-data/latest.json consumed by app/government_revenue.py"
+    },
+    {
+      "src": "module:scripts/build_government_revenue_candidates.py",
+      "dst": "artifact:site-government-revenue-candidates",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_government_revenue_candidates.py writes site/government-revenue-data/candidates.json"
+    },
+    {
+      "src": "artifact:site-government-revenue-candidates",
+      "dst": "module:site/government_revenue.html",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/government-revenue-data/candidates.json consumed by site/government_revenue.html"
+    },
+    {
+      "src": "artifact:site-government-revenue-candidates",
+      "dst": "module:app/government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/government-revenue-data/candidates.json consumed by app/government_revenue.py"
     },
     {
       "src": "module:scripts/build_government_revenue.py",
@@ -17677,6 +17947,16 @@
       "note": "structural: data/capital_structure/companyfacts/generations/*/source_manifest.parquet consumed by collectors/sec_capital_structure_companyfacts.py"
     },
     {
+      "src": "artifact:capital-structure-companyfacts-source-manifest",
+      "dst": "module:scripts/materialize_capital_structure_share_counts.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/companyfacts/generations/*/source_manifest.parquet consumed by scripts/materialize_capital_structure_share_counts.py"
+    },
+    {
       "src": "module:collectors/sec_capital_structure_companyfacts.py",
       "dst": "artifact:capital-structure-companyfacts-coverage",
       "edge_type": "feeds",
@@ -17697,6 +17977,16 @@
       "note": "structural: data/capital_structure/companyfacts/generations/*/coverage.parquet consumed by collectors/sec_capital_structure_companyfacts.py"
     },
     {
+      "src": "artifact:capital-structure-companyfacts-coverage",
+      "dst": "module:scripts/materialize_capital_structure_share_counts.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/companyfacts/generations/*/coverage.parquet consumed by scripts/materialize_capital_structure_share_counts.py"
+    },
+    {
       "src": "module:collectors/sec_capital_structure_companyfacts.py",
       "dst": "artifact:capital-structure-companyfacts-current-pointer",
       "edge_type": "feeds",
@@ -17705,6 +17995,36 @@
       "display_only": true,
       "regime": null,
       "note": "structural: collectors/sec_capital_structure_companyfacts.py writes data/capital_structure/companyfacts/coverage_receipt.json"
+    },
+    {
+      "src": "artifact:capital-structure-companyfacts-current-pointer",
+      "dst": "module:engine/capital_structure/share_count_publication.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/companyfacts/coverage_receipt.json consumed by engine/capital_structure/share_count_publication.py"
+    },
+    {
+      "src": "artifact:capital-structure-companyfacts-current-pointer",
+      "dst": "module:engine/capital_structure/share_count_retention.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/companyfacts/coverage_receipt.json consumed by engine/capital_structure/share_count_retention.py"
+    },
+    {
+      "src": "artifact:capital-structure-companyfacts-current-pointer",
+      "dst": "module:scripts/materialize_capital_structure_share_counts.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/companyfacts/coverage_receipt.json consumed by scripts/materialize_capital_structure_share_counts.py"
     },
     {
       "src": "module:collectors/sec_capital_structure_companyfacts.py",
@@ -17725,6 +18045,186 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/capital_structure/companyfacts/receipts/*.json consumed by collectors/sec_capital_structure_companyfacts.py"
+    },
+    {
+      "src": "artifact:capital-structure-companyfacts-coverage-receipts",
+      "dst": "module:scripts/materialize_capital_structure_share_counts.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/companyfacts/receipts/*.json consumed by scripts/materialize_capital_structure_share_counts.py"
+    },
+    {
+      "src": "module:scripts/materialize_capital_structure_share_counts.py",
+      "dst": "artifact:capital-structure-share-count-ledger",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/materialize_capital_structure_share_counts.py writes capital_structure/share_counts/v2/generations/*/ledger.json"
+    },
+    {
+      "src": "artifact:capital-structure-share-count-ledger",
+      "dst": "module:engine/capital_structure/share_count_publication.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: capital_structure/share_counts/v2/generations/*/ledger.json consumed by engine/capital_structure/share_count_publication.py"
+    },
+    {
+      "src": "artifact:capital-structure-share-count-ledger",
+      "dst": "module:engine/capital_structure/share_count_retention.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: capital_structure/share_counts/v2/generations/*/ledger.json consumed by engine/capital_structure/share_count_retention.py"
+    },
+    {
+      "src": "artifact:capital-structure-share-count-ledger",
+      "dst": "module:scripts/materialize_capital_structure_share_counts.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: capital_structure/share_counts/v2/generations/*/ledger.json consumed by scripts/materialize_capital_structure_share_counts.py"
+    },
+    {
+      "src": "module:scripts/materialize_capital_structure_share_counts.py",
+      "dst": "artifact:capital-structure-share-count-current-pointer",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/materialize_capital_structure_share_counts.py writes data/capital_structure/share_counts/v2/current_receipt.json"
+    },
+    {
+      "src": "artifact:capital-structure-share-count-current-pointer",
+      "dst": "module:engine/capital_structure/share_count_publication.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/share_counts/v2/current_receipt.json consumed by engine/capital_structure/share_count_publication.py"
+    },
+    {
+      "src": "artifact:capital-structure-share-count-current-pointer",
+      "dst": "module:scripts/materialize_capital_structure_share_counts.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/share_counts/v2/current_receipt.json consumed by scripts/materialize_capital_structure_share_counts.py"
+    },
+    {
+      "src": "module:scripts/materialize_capital_structure_share_counts.py",
+      "dst": "artifact:capital-structure-share-count-materialization-receipts",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/materialize_capital_structure_share_counts.py writes capital_structure/share_counts/v2/receipts/*.json"
+    },
+    {
+      "src": "artifact:capital-structure-share-count-materialization-receipts",
+      "dst": "module:engine/capital_structure/share_count_publication.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: capital_structure/share_counts/v2/receipts/*.json consumed by engine/capital_structure/share_count_publication.py"
+    },
+    {
+      "src": "artifact:capital-structure-share-count-materialization-receipts",
+      "dst": "module:engine/capital_structure/share_count_retention.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: capital_structure/share_counts/v2/receipts/*.json consumed by engine/capital_structure/share_count_retention.py"
+    },
+    {
+      "src": "artifact:capital-structure-share-count-materialization-receipts",
+      "dst": "module:scripts/materialize_capital_structure_share_counts.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: capital_structure/share_counts/v2/receipts/*.json consumed by scripts/materialize_capital_structure_share_counts.py"
+    },
+    {
+      "src": "artifact:capital-structure-share-count-materialization-receipts",
+      "dst": "module:scripts/retain_capital_structure_share_counts.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: capital_structure/share_counts/v2/receipts/*.json consumed by scripts/retain_capital_structure_share_counts.py"
+    },
+    {
+      "src": "module:scripts/materialize_capital_structure_share_counts.py",
+      "dst": "artifact:capital-structure-share-count-external-head",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/materialize_capital_structure_share_counts.py writes capital_structure/share_counts/v2/current_head.json"
+    },
+    {
+      "src": "artifact:capital-structure-share-count-external-head",
+      "dst": "module:engine/capital_structure/share_count_publication.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: capital_structure/share_counts/v2/current_head.json consumed by engine/capital_structure/share_count_publication.py"
+    },
+    {
+      "src": "artifact:capital-structure-share-count-external-head",
+      "dst": "module:engine/capital_structure/share_count_retention.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: capital_structure/share_counts/v2/current_head.json consumed by engine/capital_structure/share_count_retention.py"
+    },
+    {
+      "src": "artifact:capital-structure-share-count-external-head",
+      "dst": "module:scripts/materialize_capital_structure_share_counts.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: capital_structure/share_counts/v2/current_head.json consumed by scripts/materialize_capital_structure_share_counts.py"
+    },
+    {
+      "src": "artifact:capital-structure-share-count-external-head",
+      "dst": "module:scripts/retain_capital_structure_share_counts.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: capital_structure/share_counts/v2/current_head.json consumed by scripts/retain_capital_structure_share_counts.py"
     },
     {
       "src": "module:scripts/compile_capital_structure_document_terms.py",
@@ -18034,7 +18534,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=33 ticker-level demand-vs-supply divergences b=n_divergences=33, top tickers=['AMZN', 'PSKY', 'NVDA', 'MO',"
+      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=33 ticker-level demand-vs-supply divergences b=n_divergences=33, top tickers=['AMZN', 'C', 'L', 'TENB', 'PS"
     },
     {
       "src": "data/regime/latest.json:cross_asset_confirm (bonds/FX)",
@@ -18050,23 +18550,23 @@
       "src": "engine:altdata",
       "dst": "engine:intel_hub",
       "edge_type": "confirms",
-      "n": 4,
+      "n": 8,
       "lift": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "n=4 < MIN_N=10 — lift=null (insufficient sample; display-only)"
+      "note": "n=8 < MIN_N=10 — lift=null (insufficient sample; display-only)"
     },
     {
       "src": "engine:altdata",
       "dst": "engine:radar",
       "edge_type": "confirms",
-      "n": 72,
-      "lift": -0.03345,
+      "n": 75,
+      "lift": -0.03197,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0335 n=72 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0320 n=75 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:altdata",
@@ -18105,12 +18605,12 @@
       "src": "engine:intel_hub",
       "dst": "engine:radar",
       "edge_type": "confirms",
-      "n": 358,
-      "lift": -0.0025,
+      "n": 455,
+      "lift": -0.00487,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0025 n=358 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0049 n=455 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:intel_hub",
@@ -18138,34 +18638,34 @@
       "src": "engine:policy",
       "dst": "engine:radar",
       "edge_type": "confirms",
-      "n": 16,
-      "lift": -0.00796,
+      "n": 17,
+      "lift": -0.00967,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0080 n=16 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0097 n=17 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:radar",
       "dst": "engine:track_record",
       "edge_type": "confirms",
       "n": 21,
-      "lift": -0.01212,
+      "lift": -0.01228,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0121 n=21 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0123 n=21 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:radar",
       "dst": "engine:us_board",
       "edge_type": "confirms",
       "n": 49,
-      "lift": 0.0115,
+      "lift": 0.01134,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=0.0115 n=49 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=0.0113 n=49 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:track_record",
@@ -18226,7 +18726,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLB net=-0.39 verdict=headwind source_lobe=rates_transmission asof=2026-07-31"
+      "note": "rates headwind: asset=XLB net=-0.356 verdict=headwind source_lobe=rates_transmission asof=2026-08-03"
     },
     {
       "src": "macro:rates_transmission",
@@ -18236,17 +18736,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLK net=-0.324 verdict=headwind source_lobe=rates_transmission asof=2026-07-31"
-    },
-    {
-      "src": "macro:rates_transmission",
-      "dst": "sector:xlf",
-      "edge_type": "headwind",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "rates headwind: asset=XLF net=-0.319 verdict=headwind source_lobe=rates_transmission asof=2026-07-31"
+      "note": "rates headwind: asset=XLK net=-0.338 verdict=headwind source_lobe=rates_transmission asof=2026-08-03"
     },
     {
       "src": "macro:fx_dollar",
@@ -18256,7 +18746,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "cross_asset diverge: fx_dollar contradicts regime:Q2 asof=2026-07-31 source_lobe=contradictions/cross_asset_confirm"
+      "note": "cross_asset diverge: fx_dollar contradicts regime:Q2 asof=2026-08-03 source_lobe=contradictions/cross_asset_confirm"
     },
     {
       "src": "macro:rates_credit",
@@ -18266,7 +18756,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "cross_asset diverge: rates_credit contradicts regime:Q2 asof=2026-07-31 source_lobe=contradictions/cross_asset_confirm"
+      "note": "cross_asset diverge: rates_credit contradicts regime:Q2 asof=2026-08-03 source_lobe=contradictions/cross_asset_confirm"
     }
   ],
   "contradiction_summary": {
@@ -18288,12 +18778,12 @@
       },
       "b": {
         "artifact": "site/intelligence/briefing.json",
-        "reading": "n_divergences=33, top tickers=['AMZN', 'PSKY', 'NVDA', 'MO', 'CL']"
+        "reading": "n_divergences=33, top tickers=['AMZN', 'C', 'L', 'TENB', 'PSKY']"
       },
       "kind": "directional-opposition",
       "severity": "tension",
-      "as_of": "2026-08-03",
-      "note": "33 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: AMZN, PSKY, NVDA, MO, CL.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
+      "as_of": "2026-08-05",
+      "note": "33 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: AMZN, C, L, TENB, PSKY.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
       "display_only": true
     },
     {
@@ -18308,7 +18798,7 @@
       },
       "kind": "directional-opposition",
       "severity": "tension",
-      "as_of": "2026-07-31",
+      "as_of": "2026-08-04",
       "note": "cross_asset_confirm signals 'diverge': bonds/FX and equity readings disagree.  Bonds/FX diverge from the equity read — fast-family caution the equity gauges don't yet show (credit).  Note: MOVE-vs-VIX, dollar/EM-FX, FX carry are COINCIDENT not leading (engine/cross_asset_confirm.py:15-20).  Display-only macro context.",
       "display_only": true
     }
@@ -18330,7 +18820,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-08-03T02:58:11Z",
-  "inputs_hash": "sha256:5a40402e03479330d1b6c74a2f634d361a18bf09541642ab5d8ea760ad3680ba",
+  "produced_at": "2026-08-05T08:55:02Z",
+  "inputs_hash": "sha256:404148b6a5be2cbe7ec01f7039069d9abc3b735075795146b502e85aa57b3df0",
   "tier": "display"
 }

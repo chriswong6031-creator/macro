@@ -655,6 +655,13 @@ def build_context(
     # bearish posts and neutral types; they are only excluded where they clash.
     top_facts: list[dict] = []
     whitelist: list[str] = []
+    # The COMPUTED technical state, when the producer supplied one (defect 4,
+    # 2026-08-03). movers_source.mover_facts emits it as a fact with this id
+    # whenever it was handed a repo root and the name's daily bars are readable;
+    # the `{mover_state}` token below renders it, and `_variant_allowed`'s
+    # "needs_state" tag makes every stance-carrying mover variant unselectable
+    # without it. Empty string is the whole gate: no computed state, no stance.
+    mover_state = ""
     if facts:
         # DISPLAY ROUNDING FIRST, then everything downstream reads the rounded
         # forms — the facts the writer sees, the `{top_fact}` the templates
@@ -686,6 +693,13 @@ def build_context(
             for _yr_tok in _year_re.findall(_f.get("text", "")):
                 if _yr_tok not in whitelist:
                     whitelist.append(_yr_tok)
+        # Read from the DISPLAY-ROUNDED fact list, like everything else the
+        # writer sees, and strip the fact's terminal period: the token is spliced
+        # mid-sentence by the templates, which supply their own punctuation.
+        for _f in all_facts:
+            if _f.get("id") == "mover_state":
+                mover_state = str(_f.get("text") or "").strip().rstrip(".")
+                break
 
     # Plan numbers — check plan dict first, fall back to direct item fields
     entry = plan.get("entry") if plan.get("entry") is not None else item.get("entry")
@@ -902,6 +916,18 @@ def build_context(
         "theme_question": theme_data.get("question", ""),
         "theme_agg_pct": (f"{float(_agg):+.1f}%" if _agg is not None else ""),
         "mover_pct": (f"{float(_mv_pct):+.1f}%" if _mv_pct is not None else ""),
+        # "" whenever the engines did not supply a state. See the block above.
+        "mover_state": mover_state,
+        # Trend bucket for the mover copy stance (movers_source.trend_context,
+        # FSLR postmortem 2026-08-03). Absent/unknown reads as "" and the
+        # context-tagged variants stay unselectable, generic bank only.
+        #
+        # TWO INDEPENDENT AXES, both landed for the same postmortem by different
+        # lanes: `mover_state` is the engines' computed technical sentence that
+        # the {mover_state} token RENDERS, `mover_context` is the coarse tape
+        # bucket that only GATES which lines are selectable. A line may need
+        # either, both, or neither.
+        "mover_context": str(mover_data.get("trend_context") or ""),
     }
 
 
@@ -1520,6 +1546,24 @@ def validate_copy(
     # generated. See config copy_laws (the "never write that a number proves YOU
     # wrong" law) and memory marketing-voice-fact-plus-cost.
     violations.extend(machine_risk_violations(full_text))
+
+    # 6a-bis. UNCOMPUTED DIRECTIONAL STANCE, on mover / theme_list ONLY.
+    #
+    # SCOPED, and the scope is the whole argument for wiring it here at all. A
+    # mover or theme_list post is a report on a move the desk did not predict and
+    # has done no setup work on, so ANY "what to do about it" sentence in one is
+    # by construction uncomputed — that is the 2026-08-03 $FSLR ruling. Other
+    # kinds are different: a `watchlist_runaway` post that says "not chasing" is
+    # talking about a level THIS DESK PUBLISHED and then watched a name run
+    # through, which is a computed position and an honest one, and a `signal`
+    # post's stance is the plan it ships with. Applying this to them would delete
+    # copy that has earned its stance, so it stays on the two kinds that cannot.
+    #
+    # The deterministic banks are already clean (tests walk them), so in practice
+    # this catches the OTHER routes into these two kinds: the nightly LLM writer,
+    # and any future lane that composes mover copy by hand.
+    if item_type in ("mover", "theme_list"):
+        violations.extend(uncomputed_stance(full_text))
 
     # 6b. Expression dial + codex quirk whitelist + AM-R1 detection (XG-W1).
     # Returns [] for every account without a persona codex, so the six desks that
@@ -2453,6 +2497,197 @@ def no_reaction_violations(text: str) -> list[str]:
     return out[:2]
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# UNCOMPUTED DIRECTIONAL STANCE (defect 4, operator 2026-08-03)
+#
+# THE POST. "$FSLR, biggest move in the index today / FSLR surged +10.3% today
+# (Technology). Real strength or real damage, either way I'd let it settle
+# first." The operator: "this just did a daily MACD cross and is washed out
+# after 2 months of downtrend... If it launched then the best thing to do is to
+# chase in, since it already got washed. So us saying to let it settle is the
+# dumbest thing ever and just ruins our reputation."
+#
+# THE RULING. The fault is not the direction, it is that the desk ISSUED A
+# TRADING STANCE IT HAD NOT COMPUTED. The sentence came out of a template bank
+# selected by a crc32 of ticker+account+slot; nothing in that hash reads a
+# chart. A line that says "let it settle" over every large move is wrong about
+# half the time by construction, and it reads as ignorance exactly when it is.
+# So: we do not tell anyone what to DO with a move unless we computed the setup.
+# Two lawful shapes remain — no stance at all, or a stance built on a state the
+# engines actually supplied (see movers_source.technical_state).
+#
+# WHY THIS IS A SHAPE RULE AND NOT A BANNED-PHRASE LIST. `_STOCK_CLOSERS` above
+# is the phrase-list version of the same class ("strength worth respecting not
+# chasing here"), and its own docstring records what happened next: the model
+# paraphrased the edges and kept the spine. A list scoped to the lines one
+# postmortem happened to catch is a regression pin, not a sweep — the fifth
+# variant nobody has written yet sails straight through it. The rule below is
+# two-factor instead:
+#
+#     an ACTION that names a trade decision  ×  a FRAME that prescribes or
+#     defers it
+#
+# "Watching, not chasing" is ACTION(chasing) × FRAME(not). "I'd let it settle
+# first" is ACTION(settle) × FRAME(I'd / let / first). "Day one after a move
+# this size is for watching, not heroics" is ACTION(heroics) × FRAME(not). None
+# of the three shares a phrase with the others; all three share the shape.
+#
+# WHAT IS DELIBERATELY *NOT* AN ACTION. "position" is absent from the list, and
+# that is load-bearing: "No position" is a statement of fact about our own book,
+# not a recommendation, and it is exactly the honest thing a no-stance post is
+# supposed to be able to say. Likewise "watch"/"watching" alone — observing is
+# not a trade decision, so it only trips the rule when it sits next to one
+# ("watching, not chasing").
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: THE DESCRIPTIVE CARVE-OUT. "Buying" and "selling" are also the ordinary mass
+#: nouns for what the TAPE did, and in that use they name nobody's decision:
+#: "First green that means anything after months of selling" reports a
+#: downtrend, exactly the observation this rule wants copy to make instead of a
+#: stance. Governed by a preposition, the word is a description of the market,
+#: so it is removed before the two-factor test rather than counted by it.
+#:
+#: Found by the 2026-08-04 merge, not by review: the bucket lines and this
+#: detector shipped from two different lanes for the SAME postmortem, and the
+#: detector quarantined the very copy the other lane wrote to fix it. Scoped
+#: deliberately narrow — only the buy/sell family, only after a preposition —
+#: because every other action stem in the list below has no innocent noun sense
+#: in this register ("months of chasing" is not a thing anyone writes).
+#: TWO descriptive shapes, both about the market rather than about us:
+#:   1. governed by a preposition - "months of selling", "after weeks of buying";
+#:   2. a market-structure NOUN COMPOUND - "a buy signal", "sell pressure",
+#:      "the buy side". These name a phenomenon, and copy most often reaches for
+#:      them to DENY one ("that's a fact about crowds, not a buy signal"), which
+#:      is the exact opposite of issuing an instruction.
+_STANCE_DESCRIPTIVE_ACTION_RE = re.compile(
+    r"\b(?:of|after|through|amid|despite|during|following)\s+"
+    r"(?:\w+\s+){0,2}?(?:buy\w*|sell\w*|dip[-\s]?buy\w*)\b"
+    r"|\b(?:buy|sell)\s+"
+    r"(?:signal|side|pressure|flow|program|order|wall|volume|tape)\b",
+    re.IGNORECASE,
+)
+
+#: Verbs and nouns that name a TRADE DECISION — entering, exiting, sizing, or
+#: timing a position. Stems, because the inflection is where a paraphrase hides.
+_STANCE_ACTION_RE = re.compile(
+    r"\b(?:chas\w*|settl\w*|stepp?ing\s+in|steps?\s+in|step\s+in|"
+    r"touch(?:ing|es)?|catch\w*|buy\w*|sell\w*|short(?:ing)?\s+it|"
+    r"trim\w*|scal\w+\s+in|leg\s+in|hero\w*|patien\w+|hurry|rush|"
+    r"pay(?:ing)?\s+(?:up|for|this)|entr(?:y|ies)|enter\w*|"
+    r"in\s+front\s+of|dip\s+buy\w*|pass(?:ing|ed|es)?\s+on)\b",
+    re.IGNORECASE,
+)
+
+#: Frames that turn one of those into an instruction or an advertised
+#: abstention: modals, negation, deferral, preference, and recommendation verbs.
+_STANCE_FRAME_RE = re.compile(
+    r"\b(?:i'?d|i\s+would|we'?d|not|never|no|don'?t|do\s+not|doesn'?t|"
+    r"rather|until|before|first|yet|let|lets|letting|wait\w*|worth|"
+    r"counsel\w*|should|need\w*|have\s+to|is\s+for|are\s+for|refus\w*|"
+    r"cost\w*)\b",
+    re.IGNORECASE,
+)
+
+#: THE CONFIRMATION WAIT. "I want it to hold first", "waiting for it to prove
+#: itself" — the trade decision is *defer until the tape confirms*, which is a
+#: directional call about what the next few sessions must look like, and neither
+#: half of the two-factor rule sees it (the verb belongs to the PRICE, not to
+#: us). Whether waiting for confirmation is right here is exactly the thing the
+#: desk has not computed.
+_STANCE_CONFIRMATION_RE = re.compile(
+    r"\b(?:want|wants|wait|waits|waiting|need|needs)\b[^.!?]{0,24}?"
+    r"\bto\s+(?:hold|confirm|prove|settle|stop|stabili[sz]e|come\s+back)\b",
+    re.IGNORECASE,
+)
+
+#: THE TIMING COMPARATIVE, which the two-factor rule cannot see because its
+#: trade decision is carried by an ADJECTIVE. "I'd rather be late here than
+#: early", "Late entries here get punished", "Am I too slow waiting for the
+#: pullback?" all rank one entry timing above another, which is the same
+#: uncomputed directional call in a different part of speech. Both halves must
+#: be present in one sentence: "early session" is a time of day, not a stance.
+_STANCE_TIMING_WORD_RE = re.compile(r"\b(?:late|early|slow)\b", re.IGNORECASE)
+_STANCE_TIMING_FRAME_RE = re.compile(
+    r"\b(?:rather|than|too|punish\w*|pay\w*|wait\w*|miss\w*|cost\w*|"
+    r"refus\w*|regret\w*|patien\w+)\b",
+    re.IGNORECASE,
+)
+
+#: The explicit do-nothing instruction. "Nothing to do until it stops going
+#: down" prescribes inaction as plainly as "buy it here" prescribes action, and
+#: it carries no verb either half of the two-factor rule recognises.
+_STANCE_DO_NOTHING_RE = re.compile(
+    r"\bnothing\s+(?:else\s+)?to\s+do\b|\bno\s+(?:rush|hurry)\b",
+    re.IGNORECASE,
+)
+
+#: The imperative half. A sentence that OPENS on one of these verbs is telling
+#: the reader what to do outright, with no frame needed ("Read it, don't chase
+#: it", "Respect the move, don't pay for it").
+_STANCE_IMPERATIVE_RE = re.compile(
+    r"^(?:don'?t|do\s+not|never|please\s+)?\s*"
+    r"(?:read|respect|chase|buy|sell|wait|hold|let|size|take|avoid|trim|"
+    r"add|catch|ignore|fade|front-?run)\b",
+    re.IGNORECASE,
+)
+
+#: "Moves this size need time" / "these take time" — a deferral with no verb the
+#: two-factor rule can see, because the trade decision is hidden in the noun.
+_STANCE_NEEDS_TIME_RE = re.compile(
+    r"\b(?:needs?|need|take[sn]?|want[s]?)\s+(?:more\s+)?time\b", re.IGNORECASE)
+
+
+def uncomputed_stance(text: str) -> list[str]:
+    """Sentences that tell the reader what to DO with a move. [] = clean.
+
+    See the block comment above for the ruling and for why this is a two-factor
+    shape rule rather than a list of the four lines that were caught. The
+    enforcement walk over the mover / theme_list / tail banks lives in
+    tests/test_marketing_mover_stance.py, and it proves the detector is not
+    vacuous by firing it on the copy that actually shipped.
+
+    A COMPUTED state is not a stance and does not trip this: "FSLR closed back
+    above its 50-day average for the first time in two months" names no action
+    and prescribes no timing.
+    """
+    out: list[str] = []
+    for sentence in _sentences(text):
+        low = sentence.strip().lower()
+        if not low:
+            continue
+        why = ""
+        # The descriptive strip applies to the imperative branch too: "Sell
+        # pressure finally let up" OPENS on a trade verb but the verb belongs to
+        # a noun compound, not to the reader. "Sell it here" and "Buy the dip"
+        # carry no compound, so they survive the strip and still fire.
+        probe = _STANCE_DESCRIPTIVE_ACTION_RE.sub(" ", low).strip()
+        if _STANCE_IMPERATIVE_RE.match(probe):
+            why = "imperative trade instruction"
+        elif (_STANCE_NEEDS_TIME_RE.search(low)
+              or _STANCE_DO_NOTHING_RE.search(low)
+              or _STANCE_CONFIRMATION_RE.search(low)):
+            why = "timing deferral"
+        elif (_STANCE_TIMING_WORD_RE.search(low)
+              and _STANCE_TIMING_FRAME_RE.search(low)):
+            why = "entry-timing comparative"
+        else:
+            # Strip the descriptive buy/sell noun uses BEFORE looking for an
+            # action, so "months of selling" cannot supply the trade decision.
+            # A sentence that still carries an action after the strip keeps
+            # firing, so this narrows the rule without disarming it.
+            probe = _STANCE_DESCRIPTIVE_ACTION_RE.sub(" ", low)
+            action = _STANCE_ACTION_RE.search(probe)
+            if action and _STANCE_FRAME_RE.search(low):
+                why = f"trade decision '{action.group(0)}' inside a prescriptive frame"
+        if why:
+            out.append(
+                f"uncomputed stance ({why}): {sentence[:70]!r} — say what the "
+                f"tape did, or cite a state the engines computed; never issue a "
+                f"trading instruction the desk did not work out"
+            )
+    return out[:2]
+
+
 # A RECEIPT is a result post: entry, exit and outcome are the content, not
 # ornament, and the house Scorekeeper exemplar the operator kept carries three
 # ("$QCOM: T1 hit +9.6%, runner stopped at 177. Net positive."). The operator's
@@ -2762,6 +2997,63 @@ def queued_voice_violations(text: str, kind: str = "",
     # batch_texts is empty on purpose: at publish time there is no batch, so
     # only the RETIRED house closers are reachable, never the repeat rule.
     out += stock_closer_violations(text, [])
+    return out
+
+
+def queued_relay_violations(text: str, provenance: str = "") -> list[str]:
+    """The RELAY hygiene laws, runnable against copy already in the queue.
+
+    Same argument as :func:`queued_voice_violations`, one lane over. The relay
+    laws landed on 2026-08-04 after "More info on this - South Korea core
+    inflation hits 2-1/2 year high despite headline cooling -- wire reports"
+    posted to the flagship; the fix was at COMPOSE time, and the outbox was
+    holding 308 queued items going back eleven days. Five of them still carried
+    a foreign "@handle" banned two days earlier. Fixing the writer fixes
+    tomorrow; only a last gate fixes the queue, and the queue is what reaches
+    the timeline.
+
+    SCOPED TO RELAYED LANES, INSIDE THE SCREEN. Our own desks write in the first
+    person deliberately ("I'm not fighting this one" — the house voice the
+    operator approved on 2026-07-30, 46 queued items at the time). These rules
+    ask "was this sentence written for a reader on somebody else's page", which
+    is only a defect when the sentence came from somebody else's page. Applied to
+    the marketing desks they would quarantine the voice wholesale.
+
+    That check is made HERE, from ``relay_hygiene._RELAYED_PROVENANCES``, and not
+    by the caller: an allowlist the caller owns puts the whole marketing voice one
+    forgotten argument away from a terminal quarantine. An empty or unrecognised
+    ``provenance`` returns [] — an unknown lane is never screened.
+
+    Fail-SOFT on an import error: post-time quarantine is terminal, so a screen
+    that cannot evaluate must let the item through, never kill it.
+    """
+    body = str(text or "")
+    if not body.strip():
+        return []
+
+    try:
+        from engine.marketing import relay_hygiene as _rh  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return []
+    if not _rh.lane_is_relayed(provenance):
+        return []
+
+    out: list[str] = []
+
+    # The de-handling law's own backstop, applied to queue vintage. A foreign
+    # handle in a post is the 2026-08-02 defect and there is no innocent
+    # reading of one on a relayed item.
+    for handle in foreign_handle_mentions(body):
+        out.append(f"foreign handle '@{handle}': we reword and republish, "
+                   "we never brand the original account")
+
+    # The post text is `headline\n\nbody`; both halves are screened, because the
+    # live defect lived in the HEADLINE half and the first-person one lived in
+    # the body half.
+    for part in [p for p in body.split("\n\n") if p.strip()]:
+        for slug in _rh.body_defects(part):
+            out.append(f"relay artifact '{slug}': written for a reader on the "
+                       "source's page, not ours")
     return out
 
 
@@ -4346,133 +4638,321 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     # ── mover (all voices) — biggest single mover, charted, bearish framing ok ──
     # {cashtag} = "$ISRG"  {top_fact} = "ISRG fell -14.2% today (Healthcare)."
     # {mover_pct} = "-14.2%"
+    # {mover_state} = "ISRG closed back above its 50-day average for the first
+    #                  time in two months"  (movers_source.technical_state)
     # Optional 3rd element = applicability tags (see _variant_allowed):
     #   "down_only"/"up_only" — the line's flavor only fits that tape direction
     #   "needs_chart" — the line claims an attached chart; text-only callers
     #   (publish-time lane sets ctx["has_chart"]=False) never select it
+    #   "needs_state"/"no_state" — the two lawful shapes below; they partition
+    #   the bank on whether a COMPUTED technical state exists for this name
+    #
+    # THE 2026-08-03 STANCE REWRITE. Every body in this bank used to end on a
+    # canned trading instruction: "I'd let it settle first", "Watching, not
+    # chasing", "Logged. Not stepping in.", "read it, don't chase it", "Moves
+    # this size need time". The variant was picked by a sha256 of
+    # ticker|account|slot — a hash that has never seen a chart — so the desk was
+    # issuing a directional call at random and being wrong about half the time.
+    # The live cost, operator 2026-08-03: "$FSLR, biggest move in the index
+    # today / FSLR surged +10.3% today (Technology). Real strength or real
+    # damage, either way I'd let it settle first." — written over a name that
+    # had just crossed up out of a two-month washout, i.e. the setup momentum
+    # traders buy. "us saying to let it settle is the dumbest thing ever and
+    # just ruins our reputation."
+    #
+    # The rule now: WE DO NOT ISSUE A DIRECTIONAL STANCE WE HAVE NOT COMPUTED.
+    # Two shapes are lawful and every line below is one of them:
+    #   (a) "no_state" — the move, an honest admission of what we have not done,
+    #       and stop. It still carries a reaction that COSTS (the house voice
+    #       law): "I have no explanation for it yet" is falsifiable and cheap to
+    #       be wrong about; "I'd let it settle" is neither.
+    #   (b) "needs_state" — the move plus the real technical situation it landed
+    #       in, computed from the name's own daily bars. THAT is a stance the
+    #       desk earned, and it survives being read back a week later.
+    # `uncomputed_stance` is the executable form of the rule and
+    # tests/test_marketing_mover_stance.py walks this whole bank through it, so
+    # the retired shape cannot come back by way of a "better line".
     ("mover", "authoritative desk"): [
         (
-            "{cashtag} {mover_pct} today. Ugly.",
-            "{top_fact} The kind of flush where I start watching for a bottom setup. "
-            "Not catching it yet, levels are on the chart.",
-            ("down_only", "needs_chart"),
-        ),
-        (
-            "{cashtag} did something today",
-            "{top_fact} One of the bigger moves in the index. The dip buyers get to find out "
-            "who was early. Watching, not chasing.",
-            ("down_only",),
-        ),
-        (
             "{cashtag} | {mover_pct} today",
-            "{top_fact} Respecting the move, not stepping in front of it. Levels on the chart.",
-            ("needs_chart",),
+            "{top_fact} The state that move landed in: {mover_state}.",
+            ("needs_state",),
         ),
         (
-            "{cashtag}, biggest move in the index today",
-            "{top_fact} Real strength or real damage, either way I'd let it settle first.",
+            "{cashtag} | {mover_pct}, and the state underneath",
+            "{top_fact} {mover_state}. That is the part I can show work on.",
+            ("needs_state",),
+        ),
+        (
+            "{cashtag}, one of the biggest moves on the tape today",
+            "{top_fact} I have no explanation for it yet and I am not going to invent one.",
+            ("no_state",),
         ),
         (
             "{cashtag} | {mover_pct}, noted",
-            "{top_fact} Worth knowing the same day, not worth chasing the candle. Chart below.",
-            ("needs_chart",),
+            "{top_fact} No position. Reading it properly is work I have not done yet.",
+            ("no_state",),
+        ),
+        # ── trend-context lines (FSLR postmortem 2026-08-03) ────────────────
+        # Selectable ONLY when movers_source.trend_context put that shape on
+        # the chart, and preferred over the generic caution when it did. The
+        # stance is still an observation, never a recommendation. House copy
+        # law: no em dashes in rendered strings (validate_copy bans U+2014).
+        (
+            "{cashtag} | first swing off the lows",
+            "{top_fact} First green that means anything after months of selling. "
+            "Bottoms and dead-cat bounces start identically. The next few closes "
+            "decide which this is.",
+            ("washout_only",),
+        ),
+        (
+            "{cashtag} pressing the highs",
+            "{top_fact} Strength at the top of the range is not a bounce, it's "
+            "leadership until proven otherwise. Chasing it here is a separate "
+            "decision from respecting it.",
+            ("breakout_only",),
+        ),
+        (
+            "{cashtag} | first crack",
+            "{top_fact} First real crack after a long run. One red day isn't a "
+            "top, but every top starts with one of these.",
+            ("crack_only",),
+        ),
+        (
+            "{cashtag} | late-stage flush",
+            "{top_fact} A flush this hard, this deep into a decline, is "
+            "capitulation territory. Watching the close, not guessing the bottom.",
+            ("capitulation_only",),
         ),
     ],
     ("mover", "dry, receipts-forward"): [
         (
-            "{cashtag} | {mover_pct} today",
-            "{top_fact} Watching, not chasing.",
-        ),
-        (
             "{cashtag} {mover_pct}",
-            "{top_fact} Numbers on the tape, chart below. Letting it settle.",
-            ("needs_chart",),
+            "{top_fact} Chart state: {mover_state}.",
+            ("needs_state",),
         ),
         (
             "{cashtag} | biggest mover, {mover_pct}",
-            "{top_fact} Logged. Not stepping in.",
+            "{top_fact} {mover_state}. Logged with the number.",
+            ("needs_state",),
+        ),
+        (
+            "{cashtag} | {mover_pct} today",
+            "{top_fact} Logged. No position, and no read I can back up yet.",
+            ("no_state",),
         ),
         (
             "{cashtag} | {mover_pct}",
-            "{top_fact} On the radar. No position, no hurry.",
+            "{top_fact} On the list. I do not know why it happened yet.",
+            ("no_state",),
+        ),
+        (
+            "{cashtag} | {mover_pct} off the lows",
+            "{top_fact} First bounce after a long slide. Logged. Follow-through "
+            "or it didn't happen.",
+            ("washout_only",),
+        ),
+        (
+            "{cashtag} | {mover_pct} at the highs",
+            "{top_fact} Strength on strength. Noted. Trend intact until it isn't.",
+            ("breakout_only",),
+        ),
+        (
+            "{cashtag} | {mover_pct} from the top",
+            "{top_fact} First dent in an uptrend. Logged, watching the next few "
+            "sessions.",
+            ("crack_only",),
+        ),
+        (
+            "{cashtag} | {mover_pct}, deep in the decline",
+            "{top_fact} Late flush. Capitulation watch, nothing else yet.",
+            ("capitulation_only",),
         ),
     ],
     ("mover", "specialist"): [
         (
-            "{cashtag} {mover_pct} | the group should care",
-            "{top_fact} Moves like this in these names are rarely random. Watching what "
-            "the rest of the space does next.",
+            "{cashtag} {mover_pct} | the starting point",
+            "{top_fact} {mover_state}. The group reads differently from that starting point.",
+            ("needs_state",),
         ),
         (
             "{cashtag} | {mover_pct}, and it echoes",
-            "{top_fact} This one ripples past the single name. Letting it settle before I touch anything.",
+            "{top_fact} {mover_state}, which is the part the rest of the space has to price.",
+            ("needs_state",),
         ),
         (
             "{cashtag} moved {mover_pct} today",
-            "{top_fact} The group will vote on whether it's real within days. Watching, not chasing.",
+            "{top_fact} One name is not a group read, and I do not have the group work yet.",
+            ("no_state",),
         ),
         (
             "{cashtag} | {mover_pct}, group read",
-            "{top_fact} Chart below. The neighbors' reaction tells you more than the name itself.",
-            ("needs_chart",),
+            "{top_fact} Chart below. Whether the neighbours agree is not something I know yet.",
+            ("no_state", "needs_chart"),
+        ),
+        (
+            "{cashtag} | the washed-out one just moved",
+            "{top_fact} When the most sold-off name in a group swings first, the "
+            "group usually votes within days. Watching the neighbors.",
+            ("washout_only",),
+        ),
+        (
+            "{cashtag} | leadership check",
+            "{top_fact} A group leader printing range highs either pulls the rest "
+            "along or it doesn't, and that answer comes fast.",
+            ("breakout_only",),
+        ),
+        (
+            "{cashtag} | the strong one just cracked",
+            "{top_fact} When a group's strongest name takes the first hit, the "
+            "rest usually answer within days. Watching how the neighbors take it.",
+            ("crack_only",),
+        ),
+        (
+            "{cashtag} | flushing late in the decline",
+            "{top_fact} Late-decline flushes in one name often mark the group's "
+            "low-water line. Watching who follows it down, and who refuses to.",
+            ("capitulation_only",),
         ),
     ],
     ("mover", "educational"): [
         (
-            "{cashtag} {mover_pct} | what a move this size means",
-            "{top_fact} A move like this is information first, opportunity maybe. The order matters.",
+            "{cashtag} {mover_pct} | the state it landed in",
+            "{top_fact} {mover_state}. A one-day move reads differently depending on that.",
+            ("needs_state",),
         ),
         (
-            "{cashtag} {mover_pct} | read it, don't chase it",
-            "{top_fact} Day one after a move this size is for watching, not heroics.",
+            "{cashtag} {mover_pct} | the chart underneath",
+            "{top_fact} {mover_state}. That is the difference between a turn and a step.",
+            ("needs_state",),
         ),
         (
-            "How to sit with a move like {cashtag}",
-            "{top_fact} Moves this size need time. The setup comes later or not at all, and both are fine.",
+            "{cashtag} {mover_pct} | a move worth understanding",
+            "{top_fact} The honest version is that I have not done the work on it yet.",
+            ("no_state",),
         ),
         (
-            "{cashtag} | {mover_pct}, what to watch next",
-            "{top_fact} The first day or two after a move this size tells you the most. Watching.",
+            "How a move like {cashtag} gets read",
+            "{top_fact} I am not sure yet what it changes. Guessing would be worse than saying so.",
+            ("no_state",),
+        ),
+        (
+            "{cashtag} {mover_pct} | bounce or bottom",
+            "{top_fact} After a long decline, the first big green day is "
+            "information: durable bottoms get follow-through, dead cats don't. "
+            "Day two and three tell you which one you're looking at.",
+            ("washout_only",),
+        ),
+        (
+            "{cashtag} {mover_pct} | what strength up here means",
+            "{top_fact} A big move at the top of the range is trend behavior, "
+            "not a dip. Different setup, different rules.",
+            ("breakout_only",),
+        ),
+        (
+            "{cashtag} {mover_pct} | the first crack",
+            "{top_fact} Big red days at the highs are how trends announce a "
+            "change of character. One day is a warning, not a verdict.",
+            ("crack_only",),
+        ),
+        (
+            "{cashtag} {mover_pct} | capitulation math",
+            "{top_fact} The hardest selling often comes nearest the end of a "
+            "decline. That's a fact about crowds, not a buy signal. The "
+            "difference is what the next week does with it.",
+            ("capitulation_only",),
         ),
     ],
     ("mover", "fast, reactive"): [
         (
             "{cashtag} {mover_pct} 👀",
-            "{top_fact} Watching, not chasing. What's your read?",
-        ),
-        (
-            "{cashtag} | {mover_pct}, fast chart",
-            "{top_fact} Letting the dust settle before doing anything clever.",
-            ("needs_chart",),
+            "{top_fact} {mover_state}. That is where it stands right now.",
+            ("needs_state",),
         ),
         (
             "{cashtag} moving {mover_pct} today",
-            "{top_fact} Chart below. Respecting it, not stepping in front.",
-            ("needs_chart",),
+            "{top_fact} Chart below. {mover_state}.",
+            ("needs_state", "needs_chart"),
         ),
         (
             "{cashtag} {mover_pct}",
-            "{top_fact} Tape check. Not touching it yet.",
+            "{top_fact} Tape check. I have no read on it yet and I am not faking one.",
+            ("no_state",),
+        ),
+        (
+            "{cashtag} | {mover_pct}, fast look",
+            "{top_fact} Big number, and that is genuinely all I know about it right now.",
+            ("no_state",),
+        ),
+        (
+            "{cashtag} woke up 👀",
+            "{top_fact} One of the most washed-out names out there just swung. "
+            "Bounce or bottom, next few closes decide. What's your read?",
+            ("washout_only",),
+        ),
+        (
+            "{cashtag} through the highs 👀",
+            "{top_fact} Leaders lead until they don't. Who's chasing this one?",
+            ("breakout_only",),
+        ),
+        (
+            "{cashtag} just cracked 👀",
+            "{top_fact} First red day that matters in this uptrend. Blip or turn?",
+            ("crack_only",),
+        ),
+        (
+            "{cashtag} | full flush 👀",
+            "{top_fact} This deep into a decline, that's capitulation tape. "
+            "Who's still selling down here?",
+            ("capitulation_only",),
         ),
     ],
     ("mover", "pattern/history"): [
         (
-            "{cashtag} {mover_pct} | seen this movie",
-            "{top_fact} These have a rough pattern. Watching for the setup, not catching the drop.",
-            ("down_only",),
-        ),
-        (
-            "{cashtag} | {mover_pct}, the base rate",
-            "{top_fact} Moves this size have a track record, and it counsels patience. Watching.",
-        ),
-        (
-            "{cashtag} {mover_pct} today | the precedent",
-            "{top_fact} Not predicting, pointing at how it usually goes. Not chasing here.",
-        ),
-        (
             "{cashtag} {mover_pct} | rhyme, not repeat",
-            "{top_fact} I let these settle before I trust them. Levels on the chart.",
-            ("needs_chart",),
+            "{top_fact} {mover_state}. The precedent worth checking starts there.",
+            ("needs_state",),
+        ),
+        (
+            "{cashtag} | {mover_pct}, the precedent",
+            "{top_fact} {mover_state}. Any comparison to older moves starts from that.",
+            ("needs_state",),
+        ),
+        (
+            "{cashtag} {mover_pct} | seen this movie",
+            "{top_fact} I have not gone back through the precedents yet, so I will not pretend.",
+            ("no_state",),
+        ),
+        (
+            "{cashtag} {mover_pct} today | no precedent read yet",
+            "{top_fact} The history on moves this size is work I owe, not work I have done.",
+            ("no_state",),
+        ),
+        (
+            "{cashtag} | seen this shape before",
+            "{top_fact} Long slide, then one violent green day. Durable lows "
+            "have started exactly like this, and so have bull traps. "
+            "Follow-through is the tell, and it shows up within days.",
+            ("washout_only",),
+        ),
+        (
+            "{cashtag} | familiar strength",
+            "{top_fact} Range-top strength has a habit of running further than "
+            "anyone's comfortable with. The pattern says respect it.",
+            ("breakout_only",),
+        ),
+        (
+            "{cashtag} | this is how turns have started",
+            "{top_fact} Long run, first hard red day. The precedent says "
+            "respect it and count the sessions until the level's reclaimed.",
+            ("crack_only",),
+        ),
+        (
+            "{cashtag} | endgame tape",
+            "{top_fact} Declines this mature usually end on a day that looks "
+            "exactly like this one. They also sometimes just keep going. The "
+            "reclaim tells you which.",
+            ("capitulation_only",),
         ),
     ],
 
@@ -4922,14 +5402,21 @@ _THEME_VOICE_FILLER: dict[str, str] = {
     "pattern/history": "This group has moved like this before.",
 }
 
-# Filler for mover when top_fact is empty
+# Filler for mover when top_fact is empty.
+#
+# "A move this size usually needs time" retired 2026-08-03 with the rest of the
+# canned stances: it is a timing instruction ("wait") dressed as an observation,
+# and nothing in this lane had measured whether waiting was right for the name
+# it was about to ship under. The replacement states the fact of the move and
+# stops — which is all a FILLER can honestly do, because it exists precisely for
+# the case where the producer handed the writer no facts at all.
 _MOVER_VOICE_FILLER: dict[str, str] = {
     "authoritative desk": "One of the bigger moves in the index today.",
-    "dry, receipts-forward": "Big move, chart below. Watching.",
+    "dry, receipts-forward": "Big move, chart below. Number's above.",
     "specialist": "Biggest move in my group today.",
     "educational": "A real single-day move worth studying.",
     "fast, reactive": "Biggest mover on the tape right now.",
-    "pattern/history": "A move this size usually needs time.",
+    "pattern/history": "A move this size has precedent worth checking.",
 }
 
 # When receipt has no graded data (gain/loss both absent), use this filler
@@ -5005,6 +5492,11 @@ def _render_template(template: str, ctx: dict) -> str:
         "{theme_agg_pct}": ctx.get("theme_agg_pct", ""),
         "{theme_question}": ctx.get("theme_question", ""),
         "{mover_pct}": ctx.get("mover_pct", ""),
+        # The COMPUTED technical state (defect 4). Only the "needs_state" mover
+        # variants carry this token and _variant_allowed makes those unselectable
+        # when the context has no state, so the empty substitution here is the
+        # belt to that braces rather than a live path.
+        "{mover_state}": ctx.get("mover_state", ""),
     }
     for token, value in substitutions.items():
         result = result.replace(token, value or "")
@@ -5071,6 +5563,17 @@ _CASHTAG_REQUIRED_TYPES = ("signal", "chart", "receipt", "watchlist", "mover",
                            "congress", "insider")
 
 
+#: mover trend bucket -> the variant tag that claims it (movers_source.
+#: trend_context vocabulary; "plain" maps to nothing on purpose).
+_MOVER_CONTEXT_TAGS = {
+    "washout_bounce": "washout_only",
+    "breakout": "breakout_only",
+    "crack_from_highs": "crack_only",
+    "capitulation": "capitulation_only",
+}
+_MOVER_CONTEXT_TAG_SET = frozenset(_MOVER_CONTEXT_TAGS.values())
+
+
 def _variant_allowed(variant: tuple, ctx: dict) -> bool:
     """Applicability filter for a template variant against this context.
 
@@ -5097,6 +5600,19 @@ def _variant_allowed(variant: tuple, ctx: dict) -> bool:
       "needs_chart": the line references an attached chart ("Chart below",
         "levels are on the chart"); filtered ONLY when the caller explicitly set
         ctx["has_chart"] = False (text-only publish-time items). Unset → kept.
+      "needs_state" / "no_state": the two mover shapes the 2026-08-03 stance
+        ruling leaves lawful, and they PARTITION the mover bank — exactly one of
+        the two is selectable for any given context, never a mix.
+          * "needs_state" lines cite ``{mover_state}``, the technical state
+            movers_source computed from the name's own daily bars. Without that
+            state the token renders empty and the sentence becomes a fragment,
+            so they are excluded when ctx["mover_state"] is empty.
+          * "no_state" lines are the no-stance shape: the move, what is
+            observable, and stop. They are excluded when a state IS available,
+            because a post that had the computed read and shipped the shrug
+            instead is a wasted read. The partition is what makes "a fixture
+            with a known state produces copy citing it" a testable claim rather
+            than a hope about which variant the hash lands on.
     """
     hl_t, body_t = variant[0], variant[1]
     uses_ticker = any(tok in hl_t or tok in body_t for tok in _CASHTAG_TOKENS)
@@ -5121,6 +5637,24 @@ def _variant_allowed(variant: tuple, ctx: dict) -> bool:
         return False
     if "needs_chart" in tags and ctx.get("has_chart") is False:
         return False
+    # State tags: a line carrying the {mover_state} token renders an empty
+    # fragment ("The state that move landed in: .") when the engines supplied
+    # no state, so it is gated on the state being present; `no_state` is the
+    # mirror for lines that read wrong once a state IS available.
+    has_state = bool(str(ctx.get("mover_state") or "").strip())
+    if "needs_state" in tags and not has_state:
+        return False
+    if "no_state" in tags and has_state:
+        return False
+    # Trend-context tags (FSLR postmortem 2026-08-03): a bucket line is written
+    # around a specific tape shape ("first green after months of selling"), so
+    # it is FAIL-CLOSED, selectable ONLY when the context says that shape is on
+    # the chart. Absent/unknown context excludes every bucket line, which is
+    # the pre-existing generic behavior.
+    ctx_tag = _MOVER_CONTEXT_TAGS.get(str(ctx.get("mover_context") or ""))
+    for tag in tags:
+        if tag in _MOVER_CONTEXT_TAG_SET and tag != ctx_tag:
+            return False
     return True
 
 
@@ -5332,6 +5866,19 @@ def write_posts_deterministic(
         # Applicability filter (direction / chart-dependency tags). An empty
         # pool falls back to the unfiltered bank — selection must never crash.
         pool = [v for v in variants if _variant_allowed(v, ctx)] or variants
+
+        # Trend-context preference (FSLR postmortem 2026-08-03): when the tape
+        # has a strong read (washout bounce, breakout, first crack,
+        # capitulation) and this voice's bank carries a line written FOR that
+        # read, the generic caution must not be able to outdraw it — "let it
+        # settle first" on a washed-out name that just swung IS the defect. The
+        # bucket lines already passed _variant_allowed, so this only narrows.
+        _ctx_tag = _MOVER_CONTEXT_TAGS.get(str(ctx.get("mover_context") or ""))
+        if _ctx_tag:
+            _ctx_pool = [v for v in pool
+                         if len(v) > 2 and _ctx_tag in (v[2] or ())]
+            if _ctx_pool:
+                pool = _ctx_pool
 
         ticker = ctx.get("ticker", "")
         slot = ctx.get("slot", str(i))

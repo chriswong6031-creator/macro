@@ -6,6 +6,7 @@ import email.message
 import importlib.util
 import json
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -249,9 +250,16 @@ def test_github_slug_accepts_https_and_ssh(monkeypatch, tmp_path):
     assert GUARD._github_slug(repo) == ("acme", "widgets")
 
 
-def test_find_commit_handles_nested_health_payload():
-    payload = {"ok": True, "deployment": {"revision": "a" * 40}}
-    assert GUARD._find_commit(payload) == "a" * 40
+def test_the_health_payload_is_never_sniffed_for_a_sha():
+    """The recursive sha-sniffer the live gate used to read is gone, not spare.
+
+    It returned whichever plausible key the payload yielded first, which made the
+    gate read `commit` for every merge — see
+    test_a_pull_only_merge_is_proven_live_by_the_checkout_field for what that cost.
+    `_health_sha` reads one NAMED field; nothing may reintroduce a walker beside it.
+    """
+    assert not hasattr(GUARD, "_find_commit")
+    assert GUARD._health_sha({"ok": True, "deployment": {"revision": "a" * 40}}, "commit") == ""
 
 
 def _commit(repo: Path, rel: str, body: str, message: str) -> str:
@@ -681,6 +689,220 @@ def test_needs_public_render_matches_the_real_merge_it_was_written_for():
     ).returncode:
         pytest.skip("7fe17018 not present (shallow clone)")
     assert GUARD._required_render_lanes(ROOT, "7fe17018", "HEAD", "HEAD") == {"public-render"}
+
+
+# ── The live gate: which /api/health field proves THIS merge live ──────────────
+# `commit` is the sha the running macro-api process imported; `checkout` is
+# /opt/macro's tree. Reading `commit` for every merge was unsatisfiable for the
+# merges that restart nothing — the two tests below pin BOTH halves, because a
+# fix that only unblocks them would be an escape hatch, not a gate.
+
+
+def _deploy_repo(tmp_path: Path) -> Path:
+    """A repo carrying THE REAL ``app/deploy/update.sh``.
+
+    Copied, never stubbed: the predicate under test is that script's own restart
+    regex, and a hand-written stand-in would pin the test's idea of the deploy
+    rather than the VPS's.
+    """
+    repo = _repo(tmp_path)
+    (repo / "app" / "deploy").mkdir(parents=True)
+    shutil.copy(ROOT / "app" / "deploy" / "update.sh", repo / "app" / "deploy" / "update.sh")
+    _git(repo, "add", "app/deploy/update.sh")
+    _git(repo, "commit", "-m", "deploy: install update.sh")
+    return repo
+
+
+def test_a_pull_only_merge_is_proven_live_by_the_checkout_field(tmp_path):
+    """A merge that restarts nothing is live the moment the pull loop has it.
+
+    Observed 2026-08-04 on PR #4499 (tests + fixtures only, merge 1995a987): the
+    gate read `commit`, which sat 70 commits and ~14 hours behind because nothing
+    in that window touched API code, and blocked `live_stale` on a merge that had
+    been serving for hours. Nothing the session could do would ever satisfy it —
+    restarting production to bless a test-only merge is the wrong action, so the
+    session was pinned until an unrelated later PR happened to change app/.
+    """
+    repo = _deploy_repo(tmp_path)
+    base = _git(repo, "rev-parse", "HEAD")
+    tests_only = _commit(repo, "tests/test_hk_board_ui.py", "def test_x():\n    pass\n", "test: freeze")
+
+    # Production as it actually was: the API never restarted, the pull loop is current.
+    payload = {"status": "ok", "commit": base, "checkout": tests_only}
+    assert GUARD._needs_api_restart(repo, tests_only, base, tests_only) is False
+    ok, detail = GUARD._live_gate(repo, tests_only, base, tests_only, payload)
+    assert ok, detail
+    assert "checkout" in detail
+
+    # And the block was real before the field choice, not an artefact of the fixture.
+    assert not GUARD._is_ancestor(repo, tests_only, base)
+
+
+def test_an_api_code_merge_is_not_proven_live_by_the_checkout_field(tmp_path):
+    """The other half: `checkout` must never stand in for an API DEPLOY.
+
+    A merge that changes code macro-api imported is on disk the moment the pull
+    loop runs and still NOT live — the process keeps serving its old import until
+    update.sh restarts it. If `checkout` could satisfy this merge the fix would be
+    a general escape hatch rather than a lane selector.
+    """
+    repo = _deploy_repo(tmp_path)
+    base = _git(repo, "rev-parse", "HEAD")
+    api_code = _commit(repo, "app/main.py", "PORT = 8000\n", "feat(api): port")
+
+    payload = {"status": "ok", "commit": base, "checkout": api_code}
+    assert GUARD._needs_api_restart(repo, api_code, base, api_code) is True
+    assert GUARD._live_health_fields(repo, api_code, base, api_code) == ("commit",)
+    ok, detail = GUARD._live_gate(repo, api_code, base, api_code, payload)
+    assert not ok, "an unrestarted API must not be blessed by its own checkout"
+    assert "RESTARTED" in detail
+
+    # The checkout genuinely carries it — the False comes from the field choice,
+    # not from the merge being absent everywhere.
+    assert GUARD._health_sha(payload, "checkout") == api_code
+
+    # Once the API restarts into it, the same merge clears.
+    restarted = {"status": "ok", "commit": api_code, "checkout": api_code}
+    assert GUARD._live_gate(repo, api_code, base, api_code, restarted)[0]
+
+
+def test_one_production_payload_answers_the_two_merges_differently(tmp_path):
+    """Both halves against a SINGLE health reading, which is how `_stop` sees it."""
+    repo = _deploy_repo(tmp_path)
+    base = _git(repo, "rev-parse", "HEAD")
+    pull_only = _commit(repo, "docs/NOTES.md", "hello\n", "docs: note")
+    api_code = _commit(repo, "app/main.py", "PORT = 8000\n", "feat(api): port")
+
+    payload = {"status": "ok", "commit": base, "checkout": api_code}
+    assert GUARD._live_gate(repo, pull_only, base, api_code, payload)[0] is True
+    assert GUARD._live_gate(repo, api_code, base, api_code, payload)[0] is False
+
+
+def test_the_restart_predicate_is_the_deploy_scripts_own_regex(tmp_path):
+    """Parsed from update.sh at runtime — never a second copy that drifts.
+
+    That list names ~120 modules and grows most weeks as new engine code enters
+    the API's sys.modules; transcribing it here would be wrong within days.
+    """
+    pattern = GUARD._api_restart_filter(ROOT)
+    assert pattern.startswith("^(app/.*\\.py|"), pattern[:60]
+    compiled = re.compile(pattern)
+    for restarts in (
+        "app/main.py",
+        "app/requirements.txt",
+        "config/site_access.yml",
+        "engine/neuralweb/brain_gateway.py",
+        "lib/config.py",
+    ):
+        assert compiled.search(restarts), f"{restarts} restarts macro-api"
+    for pulls in (
+        "tests/test_hk_board_ui.py",
+        "docs/DESIGN_DOCTRINE.md",
+        "templates/index.html",
+        "site/index.html",
+        "engine/hk_board.py",
+        "scripts/build_thing.py",
+        "app/deploy/update.sh",
+    ):
+        assert not compiled.search(pulls), f"{pulls} does not restart macro-api"
+
+    # `$API_UNIT_UPDATED` is what distinguishes the macro-api guard from the dozen
+    # other `grep -qE` restart blocks in that script (admin, press feeds,
+    # biocatalyst, the live timers). Exactly one line may match.
+    lines = (ROOT / "app" / "deploy" / "update.sh").read_text(encoding="utf-8").splitlines()
+    matched = [n for n, line in enumerate(lines, 1) if GUARD._API_RESTART_GUARD.search(line)]
+    assert len(matched) == 1, f"ambiguous macro-api restart guard on lines {matched}"
+    assert "systemctl restart macro-api" in "\n".join(lines[matched[0] : matched[0] + 25])
+
+
+def test_an_unreadable_deploy_script_demands_the_restarted_field(tmp_path):
+    """Not knowing whether the API restarts means demanding the field that shows it."""
+    repo = _repo(tmp_path)  # no app/deploy/update.sh at all
+    base = _git(repo, "rev-parse", "HEAD")
+    tests_only = _commit(repo, "tests/test_x.py", "pass\n", "test: x")
+    assert GUARD._api_restart_filter(repo) == ""
+    assert GUARD._needs_api_restart(repo, tests_only, base, tests_only) is True
+
+    payload = {"status": "ok", "commit": base, "checkout": tests_only}
+    assert not GUARD._live_gate(repo, tests_only, base, tests_only, payload)[0]
+
+    # A script whose guard was renamed reads the same way — silence, not permission.
+    (tmp_path / "renamed").mkdir()
+    renamed = _deploy_repo(tmp_path / "renamed")
+    script = renamed / "app" / "deploy" / "update.sh"
+    script.write_text(
+        script.read_text(encoding="utf-8").replace("API_UNIT_UPDATED", "API_SVC_CHANGED"),
+        encoding="utf-8",
+    )
+    assert GUARD._api_restart_filter(renamed) == ""
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"status": "ok", "commit": "deadbee"},  # older build, no `checkout` key
+        {"status": "ok", "commit": "deadbee", "checkout": None},
+        {"status": "ok", "commit": "deadbee", "checkout": "not-a-sha"},
+        {"status": "ok", "commit": "deadbee", "checkout": "0" * 40},  # unknown here
+        {},
+        "ok",
+    ],
+)
+def test_an_unusable_health_field_blocks_rather_than_passes(tmp_path, payload):
+    """Absent, non-string, sha-less, or unknown to this checkout — all no evidence."""
+    repo = _deploy_repo(tmp_path)
+    base = _git(repo, "rev-parse", "HEAD")
+    tests_only = _commit(repo, "tests/test_x.py", "pass\n", "test: x")
+    assert not GUARD._live_gate(repo, tests_only, base, tests_only, payload)[0]
+
+
+def test_an_unreachable_health_endpoint_shares_the_stale_deploys_escape_class():
+    """A network blip and a stale deploy are different faults, both external.
+
+    The fetch failure now reports `live_unreachable` instead of borrowing
+    `live_stale`, so the operator reads the real cause. Both must stay EXTERNAL:
+    the internal ladder only releases at 10 consecutive blocks, and neither fault
+    is anything the session can fix.
+    """
+    assert {"live_unreachable", "live_stale"} <= GUARD.EXTERNAL_BLOCKERS
+
+
+def test_the_health_field_is_read_by_name_not_sniffed(tmp_path):
+    """`commit` and `checkout` answer different questions in the same payload.
+
+    So the reader takes the field the gate decided on and never the payload's
+    first plausible sha — the two live side by side and both look like one.
+    """
+    payload = {"status": "ok", "commit": "a" * 11, "checkout": "b" * 11}
+    assert GUARD._health_sha(payload, "checkout") == "b" * 11
+    assert GUARD._health_sha(payload, "commit") == "a" * 11
+    assert GUARD._health_sha(payload, "absent") == ""
+
+
+def test_the_live_gate_replays_the_merge_it_was_written_for():
+    """Replayed against this repo's own history and the payload measured that day.
+
+    1995a987 = #4499 (tests/test_hk_board_{ui,rank}.py + two fixtures) — the merge
+    that returned `live_stale` forever while it was serving in production. The two
+    shas are the real 2026-08-04T07:13Z reading of /api/health.
+    """
+    if subprocess.run(
+        ("git", "cat-file", "-e", "1995a987^{commit}"), cwd=ROOT, check=False
+    ).returncode:
+        pytest.skip("1995a987 not present (shallow clone)")
+    measured = {"status": "ok", "commit": "33b81f82ef4", "checkout": "96ebe5cc903"}
+    if subprocess.run(
+        ("git", "cat-file", "-e", "96ebe5cc903^{commit}"), cwd=ROOT, check=False
+    ).returncode:
+        pytest.skip("the measured production shas are not in this checkout")
+
+    assert GUARD._needs_api_restart(ROOT, "1995a987", "HEAD", "HEAD") is False
+    ok, detail = GUARD._live_gate(ROOT, "1995a987", "HEAD", "HEAD", measured)
+    assert ok, detail
+
+    # And the field it used to read really did not carry the merge — the block was
+    # honest about its evidence and wrong about its question.
+    assert not GUARD._is_ancestor(ROOT, "1995a987", "33b81f82ef4")
 
 
 @pytest.fixture(autouse=True)
@@ -2695,11 +2917,217 @@ def test_the_escape_never_arms_without_the_reported_phrase(tmp_path, capsys):
     # Well past both the consecutive (10) and total (15) ceilings, still blocking.
     assert GUARD._load(path)["total_blocks"] == 30
 
-    # And a reported message without stop_hook_active is equally inert.
+    # And a reported message on the FIRST block is inert however it is phrased —
+    # the report cannot buy a bailout before the session has tried again.
     path = _block_state(tmp_path)
     no_active = {"stop_hook_active": False, "last_assistant_message": _REPORTED}
+    assert _drive_block(path, capsys, "render_pending", no_active) is False
+    assert GUARD._load(path)["total_blocks"] == 1
+
+
+# --- the ladders have to be REACHABLE (measured brick, 2026-08-04) ---
+#
+# The escape ladders above were unreachable in the field, so the guard inflicted the
+# exact brick they exist to prevent. Two independent causes, both about DETECTING the
+# `SHIP LOOP BLOCKED:` report rather than about whether one is required:
+#
+#   1. `stop_hook_active` describes how the CURRENT turn was started, not whether the
+#      guard has ever blocked. A background `<task-notification>` starting the turn
+#      clears it. Session 787452b5 filed a correct token-leading report on live_stale
+#      at count 5 and was refused on exactly that turn.
+#   2. `last_assistant_message` is an UNDOCUMENTED payload field. This harness sends
+#      it; a client that does not would make every report invisible.
+
+
+def _transcript(tmp_path: Path, *messages, sidechain_tail: bool = False) -> Path:
+    """A JSONL transcript ending in `messages` as assistant turns.
+
+    Shaped like a real one: user rows, tool_result rows, and a thinking block ahead
+    of the visible text, so the reader is exercised against the noise it must skip
+    rather than a one-line fixture.
+    """
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    path = tmp_path / "transcript.jsonl"
+    rows: list[dict] = [
+        {"type": "user", "message": {"role": "user", "content": "ship it"}},
+        {
+            "type": "user",
+            "message": {
+                "role": "user",
+                "content": [{"type": "tool_result", "content": "x" * 4096}],
+            },
+        },
+    ]
+    for text in messages:
+        rows.append(
+            {
+                "type": "assistant",
+                "message": {
+                    "role": "assistant",
+                    "content": [
+                        {"type": "thinking", "thinking": "SHIP LOOP BLOCKED: not visible"},
+                        {"type": "text", "text": text},
+                    ],
+                },
+            }
+        )
+    if sidechain_tail:
+        rows.append(
+            {
+                "type": "assistant",
+                "isSidechain": True,
+                "message": {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "subagent finished"}],
+                },
+            }
+        )
+    path.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
+    return path
+
+
+def test_a_payload_supplied_report_is_still_the_source_of_truth(tmp_path, capsys):
+    """(a) When the harness supplies `last_assistant_message`, nothing changes.
+
+    The transcript is not consulted at all, proved by pointing at one whose final
+    message says the OPPOSITE of the payload in both directions.
+    """
+    contradicting = _transcript(tmp_path, "done for now")
+    path = _block_state(tmp_path)
+    payload = {
+        "stop_hook_active": True,
+        "last_assistant_message": _REPORTED,
+        "transcript_path": str(contradicting),
+    }
+    assert _drive_block(path, capsys, "render_pending", payload) is False
+    assert _drive_block(path, capsys, "render_pending", payload) is True
+
+    # Inverse: a payload message that is NOT the report keeps blocking even though
+    # the transcript holds a valid one. A present message is never second-guessed.
+    reporting = _transcript(tmp_path / "b", "SHIP LOOP BLOCKED: evidence")
+    path = _block_state(tmp_path)
+    unreported = {
+        "stop_hook_active": True,
+        "last_assistant_message": "still working on it",
+        "transcript_path": str(reporting),
+    }
     for _ in range(20):
-        assert _drive_block(path, capsys, "render_pending", no_active) is False
+        assert _drive_block(path, capsys, "render_pending", unreported) is False
+
+
+def test_the_report_is_recovered_from_the_transcript_when_the_field_is_absent(tmp_path, capsys):
+    """(b) No `last_assistant_message`, but the transcript's last assistant message
+    starts with the token -> the ladder arms once the counters clear the ceiling."""
+    path = _block_state(tmp_path)
+    payload = {
+        "stop_hook_active": True,
+        "transcript_path": str(_transcript(tmp_path, "SHIP LOOP BLOCKED: live_stale, evidence")),
+    }
+    assert _drive_block(path, capsys, "render_pending", payload) is False
+    assert _drive_block(path, capsys, "render_pending", payload) is True
+
+
+def test_a_transcript_without_the_token_still_blocks(tmp_path, capsys):
+    """(c) Recovering the message must not lower the bar: a transcript whose final
+    assistant message is ordinary prose files no report and never escapes."""
+    path = _block_state(tmp_path)
+    payload = {
+        "stop_hook_active": True,
+        "transcript_path": str(
+            _transcript(tmp_path, "SHIP LOOP BLOCKED: an earlier one", "all done, merged and live")
+        ),
+    }
+    for _ in range(20):
+        assert _drive_block(path, capsys, "render_pending", payload) is False
+    assert GUARD._load(path)["total_blocks"] == 20
+
+
+def test_an_unreadable_transcript_fails_closed(tmp_path, capsys):
+    """(d) Missing, absent, or unparseable transcripts leave the report unfiled."""
+    for transcript in (
+        {},
+        {"transcript_path": ""},
+        {"transcript_path": str(tmp_path / "nope.jsonl")},
+        {"transcript_path": str(tmp_path)},  # a directory
+    ):
+        path = _block_state(tmp_path)
+        payload = {"stop_hook_active": True, **transcript}
+        for _ in range(20):
+            assert _drive_block(path, capsys, "render_pending", payload) is False
+
+    corrupt = tmp_path / "corrupt.jsonl"
+    corrupt.write_bytes(b"\x00not json\nalso not json\n")
+    path = _block_state(tmp_path)
+    payload = {"stop_hook_active": True, "transcript_path": str(corrupt)}
+    for _ in range(20):
+        assert _drive_block(path, capsys, "render_pending", payload) is False
+
+
+def test_a_task_notification_turn_no_longer_vetoes_a_filed_report(tmp_path, capsys):
+    """The measured brick. `stop_hook_active` is False on a turn a background
+    `<task-notification>` started, even though the guard had already blocked. The
+    guard's own ledger proves re-entrancy instead, so a filed report still counts."""
+    path = _block_state(tmp_path)
+    notification_turn = {"stop_hook_active": False, "last_assistant_message": _REPORTED}
+    # First block: total_blocks == 1, so no arm can fire and no bailout is possible.
+    assert _drive_block(path, capsys, "live_stale", notification_turn) is False
+    # Second: external arm armed (count >= 2) and the ledger proves re-entrancy.
+    assert _drive_block(path, capsys, "live_stale", notification_turn) is True
+
+
+def test_the_ledger_never_widens_a_ladder_beyond_its_counters(tmp_path, capsys):
+    """`total_blocks >= 2` cannot release anything the counters would not already
+    allow: an INTERNAL code still has to reach its own far higher ceiling."""
+    path = _block_state(tmp_path)
+    notification_turn = {"stop_hook_active": False, "last_assistant_message": _REPORTED}
+    for index in range(9):
+        assert _drive_block(path, capsys, "unmerged", notification_turn) is False, index
+    assert _drive_block(path, capsys, "unmerged", notification_turn) is True
+
+
+def test_the_transcript_reader_skips_thinking_and_sidechain_rows(tmp_path):
+    """A report has to be text the operator can read in the transcript. Reasoning the
+    session never surfaced does not count, and a subagent's last word is not the
+    session's — both would otherwise forge a report the session never filed."""
+    thinking_only = _transcript(tmp_path, "ordinary closing text")
+    assert not GUARD._transcript_final_message(
+        {"transcript_path": str(thinking_only)}
+    ).startswith("SHIP LOOP BLOCKED:")
+
+    with_subagent = _transcript(
+        tmp_path / "s", "SHIP LOOP BLOCKED: evidence", sidechain_tail=True
+    )
+    assert GUARD._transcript_final_message(
+        {"transcript_path": str(with_subagent)}
+    ).startswith("SHIP LOOP BLOCKED:")
+
+
+def test_the_report_is_found_past_a_tool_result_larger_than_the_tail_window(tmp_path):
+    """The tail window is an optimisation, not a cap. One pathological tool_result
+    row bigger than the window must not hide the report behind it."""
+    path = tmp_path / "huge.jsonl"
+    rows = [
+        {
+            "type": "assistant",
+            "message": {
+                "role": "assistant",
+                "content": [{"type": "text", "text": "SHIP LOOP BLOCKED: behind a wall"}],
+            },
+        },
+        {
+            "type": "user",
+            "message": {
+                "role": "user",
+                "content": [
+                    {"type": "tool_result", "content": "y" * (GUARD._TRANSCRIPT_TAIL_BYTES + 4096)}
+                ],
+            },
+        },
+    ]
+    path.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
+    assert GUARD._transcript_final_message({"transcript_path": str(path)}).startswith(
+        "SHIP LOOP BLOCKED:"
+    )
 
 
 def test_the_escape_hint_is_gated_by_proximity_to_the_ceiling(tmp_path, capsys):

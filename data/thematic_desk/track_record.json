@@ -1,30 +1,30 @@
 {
   "schema": "thematic_desk.v1",
-  "as_of": "2026-08-03",
-  "scored_total": 50,
-  "open": 109,
-  "unscored_soft": 24,
+  "as_of": "2026-08-05",
+  "scored_total": 54,
+  "open": 125,
+  "unscored_soft": 29,
   "overall": {
-    "n": 50,
-    "hits": 29,
-    "misses": 21,
-    "hit_rate": 0.58,
-    "dir_accuracy": 0.4
+    "n": 54,
+    "hits": 31,
+    "misses": 23,
+    "hit_rate": 0.574,
+    "dir_accuracy": 0.389
   },
   "by_market": {
     "us": {
-      "n": 12,
-      "hits": 4,
-      "misses": 8,
-      "hit_rate": 0.333,
-      "dir_accuracy": 0.167
+      "n": 15,
+      "hits": 6,
+      "misses": 9,
+      "hit_rate": 0.4,
+      "dir_accuracy": 0.2
     },
     "china": {
-      "n": 20,
+      "n": 21,
       "hits": 9,
-      "misses": 11,
-      "hit_rate": 0.45,
-      "dir_accuracy": 0.35
+      "misses": 12,
+      "hit_rate": 0.429,
+      "dir_accuracy": 0.333
     },
     "hk": {
       "n": 1,
@@ -43,11 +43,11 @@
   },
   "by_conviction": {
     "low": {
-      "n": 50,
-      "hits": 29,
-      "misses": 21,
-      "hit_rate": 0.58,
-      "dir_accuracy": 0.4
+      "n": 54,
+      "hits": 31,
+      "misses": 23,
+      "hit_rate": 0.574,
+      "dir_accuracy": 0.389
     },
     "medium": {
       "n": 0,
@@ -64,8 +64,48 @@
       "dir_accuracy": null
     }
   },
-  "calibration_note": "50 scored, hit-rate 0.58 (directional accuracy 0.4).",
+  "calibration_note": "54 scored, hit-rate 0.574 (directional accuracy 0.389). Chance alone would land a hit-rate near 0.859 (directional accuracy near 0.5139) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
   "recent": [
+    {
+      "id": "china-2026-07-07-1",
+      "market": "china",
+      "subject": "AI Compute & Optics",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.1509,
+      "check_by": "2026-08-04"
+    },
+    {
+      "id": "us-2026-07-06-1",
+      "market": "us",
+      "subject": "Memory, HBM & Storage",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.0964,
+      "check_by": "2026-08-03"
+    },
+    {
+      "id": "us-2026-07-06-2",
+      "market": "us",
+      "subject": "Managed Care & Insurers",
+      "lean": "avoid",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0265,
+      "check_by": "2026-08-03"
+    },
+    {
+      "id": "us-2026-07-06-3",
+      "market": "us",
+      "subject": "Non-AI Software",
+      "lean": "underweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.0192,
+      "check_by": "2026-08-03"
+    },
     {
       "id": "china-2026-07-03-1",
       "market": "china",
@@ -145,46 +185,6 @@
       "outcome": "miss",
       "realized": -0.1208,
       "check_by": "2026-07-29"
-    },
-    {
-      "id": "china-2026-06-30-1",
-      "market": "china",
-      "subject": "AI Compute & Optics",
-      "lean": "overweight",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": -0.1919,
-      "check_by": "2026-07-28"
-    },
-    {
-      "id": "us-2026-06-30-1",
-      "market": "us",
-      "subject": "Memory, HBM & Storage",
-      "lean": "overweight",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": -0.1846,
-      "check_by": "2026-07-28"
-    },
-    {
-      "id": "canada-2026-06-30-1",
-      "market": "canada",
-      "subject": "Big Banks",
-      "lean": "overweight",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": -0.0081,
-      "check_by": "2026-07-28"
-    },
-    {
-      "id": "china-2026-06-30-3",
-      "market": "china",
-      "subject": "Consumer Electronics",
-      "lean": "overweight",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": -0.1947,
-      "check_by": "2026-07-28"
     }
   ]
 }

@@ -1,18 +1,32 @@
-"""Rendered-HTML contract for the HK board priority display layer (hk_prophet_v1).
+"""Rendered-HTML contract for the HK board priority display layer (hk_prophet_v2 — era bumped 2026-08-03 with the reclaim-veto removal).
 
 Program: research/HK_BOARD_RESURRECTION_MASTERPLAN_BY_FABLE.md
 Gates covered here: G1 (the seven witnesses are visible), G2 (leaders lane),
 G3 (ran lane, marker-anchored, fail-closed on unknown age), G4 (stage buckets +
 filter chips + featured + priority score), G9 (fail-soft on pre-v1 artifacts).
 
-TWO SHAPES, ONE TEMPLATE.  The committed `site/factordata/hk_standouts.json`
-carries NONE of the v1 fields (stage / prophet / featured / new / theme, the
-`ran[]` and `leaders[]` arrays, the `ranking` block) — the first nightly after the
-engine lane merges fills them.  So the assertions come in pairs: the new schema
-must produce the priority surface, and the OLD schema must still produce the flat
+TWO SHAPES, ONE TEMPLATE.  The assertions come in pairs: the new schema must
+produce the priority surface, and the OLD schema must still produce the flat
 three-lane board with none of it.  A regression that quietly drops the fail-soft
-branch would ship a broken board on merge night, when the artifact on disk is
-still the old one.
+branch would ship a broken board the first night the engine lane degrades and the
+artifact on disk comes back without `ran[]` / `leaders[]` / the era stamp.
+
+FROZEN FIXTURES, NEVER THE LIVE ARTIFACT (incident 2026-08-04).  Both shapes are
+read from committed fixtures pinned to the 2026-07-31 session — the same session
+`tests/fixtures/hk_board_2026_07_31.json` and ``BOARD_ASOF`` are pinned to.  They
+used to be read from `site/factordata/hk_standouts.json`, which the NIGHTLY
+REWRITES, and that is a fixture with a fuse in it: this suite pins BOTH sides of a
+one-way migration, so no single state of a live file can satisfy it.  The nightly
+at 94568a91302 crossed the boundary (`ran: None→12`, `leaders: None→15`,
+`board_definition: None→hk_prophet_v1`, `as_of: 07-31→08-03`) and took NINE gates
+here red in one commit, while the same drift silently SKIPPED nine more in
+tests/test_hk_board_rank.py through an ``as_of``-mismatch guard — eighteen dark
+gates, and the red ones read as a template regression that had never happened.
+The live artifact keeps exactly one, era-agnostic assertion here
+(``test_the_live_artifact_still_renders``); everything era-specific reads a
+fixture.  A fixture that has to be regenerated is a ledger event: re-pin
+``BOARD_ASOF``, the price panel and BOTH json files in the same commit, or the
+board is being scored against a session it did not happen in.
 
 ASSERTION STYLE (harness law): every presence/absence assertion targets a full
 markup string (`'<div class="nb-stage-hd sg-live"'`), never a bare class token.
@@ -41,9 +55,15 @@ import pytest
 from jinja2 import Environment, FileSystemLoader
 
 ROOT = Path(__file__).resolve().parent.parent
-ARTIFACT = ROOT / "site" / "factordata" / "hk_standouts.json"
+FIXTURES = ROOT / "tests" / "fixtures"
 
-_STAGE_ORDER = ["live", "setting_up", "ran", "blocked"]
+# The 2026-07-31 board, frozen.  Same session as the price panel and BOARD_ASOF.
+LEGACY_ARTIFACT = FIXTURES / "hk_standouts_2026_07_31.json"
+# The nightly's own output — read ONLY by the era-agnostic smoke test, because it
+# is rewritten every night and cannot satisfy both halves of the era contract.
+LIVE_ARTIFACT = ROOT / "site" / "factordata" / "hk_standouts.json"
+
+_STAGE_ORDER = ["live", "setting_up", "ran", "basing", "blocked"]
 
 
 # --------------------------------------------------------------------------- #
@@ -107,8 +127,33 @@ def _tags(html: str) -> list[str]:
 # Fixtures
 # --------------------------------------------------------------------------- #
 
-def committed_artifact() -> dict:
-    return json.loads(ARTIFACT.read_text())
+def legacy_artifact() -> dict:
+    """The 2026-07-31 board as the nightly shipped it, BEFORE the priority engine.
+
+    Frozen — see the module docstring.  Was `committed_artifact()`, reading the live
+    `site/factordata/hk_standouts.json`; the word "committed" was doing the damage,
+    because the file is committed AND rewritten nightly, and the second half is the
+    one that matters to a fixture.
+    """
+    return json.loads(LEGACY_ARTIFACT.read_text())
+
+
+def priority_era_artifact() -> dict:
+    """The SAME board carrying the era stamp — the minimal-difference other half.
+
+    The template gates the whole priority layer on
+    ``(board_definition or rank_by).startswith('hk_prophet_v')`` and on nothing else
+    (templates/hk.html.j2:3532), so stamping that one key is the exact inverse of the
+    strip in :func:`test_legacy_render_is_tag_stream_identical_to_the_base_branch`.
+    Deriving it here rather than freezing a second 184 KB artifact is what lets the
+    pair claim what it claims: the era stamp is the ONLY variable between the two
+    renders, so anything the second render gains, it gained from the stamp.
+    """
+    from engine import hk_board_rank as hbr
+
+    art = dict(legacy_artifact())
+    art["board_definition"] = hbr.BOARD_DEFINITION
+    return art
 
 
 def score_buy_lane(rows: list[dict]) -> list[dict]:
@@ -119,6 +164,13 @@ def score_buy_lane(rows: list[dict]) -> list[dict]:
     from its own copy of the mapping.  A harness that reimplements the thing under
     test can only ever agree with itself, and the numbers it put on the reference
     screenshots were not the board's.  `hk_board_rank.score_rows` is the board.
+
+    `bottom_watch_stage` is passed for the same reason every other argument is: the
+    builder passes it (scripts/build_hk_library.py), so a harness that left it out
+    would stage a BOTTOM WATCH row into `blocked` and photograph a board the nightly
+    does not produce.  It changes nothing on the 2026-07-31 tape — that board carries
+    no BOTTOM WATCH row in any lane — which is exactly why the shelf's subject is a
+    synthetic one in `shapes_fixture()`.
     """
     from engine import hk_board_rank as hbr
 
@@ -130,7 +182,8 @@ def score_buy_lane(rows: list[dict]) -> list[dict]:
                             else r.get("adv63"))
               for r in rows if r.get("ticker")}
     return hbr.score_rows(rows, verdict_by=verdict_by, entry_by=entry_by,
-                          adv_by=adv_by, board_asof=BOARD_ASOF)
+                          adv_by=adv_by, board_asof=BOARD_ASOF,
+                          bottom_watch_stage=hbr.STAGE_BASING)
 
 
 # The seven witnesses (masterplan §1): every one of them bottomed 2026-06-26 and ran
@@ -155,7 +208,7 @@ def _a_real_spark() -> str:
     recolors it to the verb hue in CSS, so any row's SVG is visually valid on any
     other — and a fixture whose cards have no chart produces a screenshot of a board
     that does not exist."""
-    for row in committed_artifact().get("buy") or []:
+    for row in legacy_artifact().get("buy") or []:
         if row.get("spark_svg"):
             return row["spark_svg"]
     return ""
@@ -223,19 +276,23 @@ _LEADERSHIP = {"state": "leaders_participating", "cohesion_now": 0.9,
                "broad_breadth_pct": 71.2, "breadth_confirming": True}
 
 
-SCOREBOARD = ROOT / "site" / "factordata" / "hk_scoreboard.json"
+SCOREBOARD = FIXTURES / "hk_scoreboard_2026_07_31.json"
 
 
 def _universe_rows() -> list[dict]:
     """The whole scored HK universe for the fixture's session — name, sector, edge_z.
 
-    `site/factordata/hk_scoreboard.json` is the same 156-name cross-section the
-    builder's `enriched` list carries, from the same 2026-07-31 render, and it is the
-    only committed source with a company NAME and a SECTOR for every ticker.  Both
+    The 156-name cross-section the builder's `enriched` list carries for 2026-07-31,
+    and the only source with a company NAME and a SECTOR for every ticker.  Both
     matter to the picture: the frozen G1 price panel stores the ticker in its `name`
     slot and no sector at all, so a screenshot shot without this backfill shows a
     Sector column of em-dashes and rows reading "0669.HK  0669.HK" — a board that
     does not exist, which is what the review objected to.
+
+    FROZEN for the same reason the board artifact is (module docstring).  This read
+    was `site/factordata/hk_scoreboard.json` — nightly-rewritten, and by 2026-08-04
+    already stamped `as_of: 2026-08-03` while every other input here is 07-31, so the
+    "same session" the paragraph above claims had quietly stopped being true.
     """
     if not SCOREBOARD.exists():             # pragma: no cover — committed in-tree
         return []
@@ -298,7 +355,7 @@ def engine_lanes(exclude: set[str] | None = None) -> dict:
         for key in ("name", "name_zh", "sector"):
             if row.get(key) and not (m.get(key) and key != "name"):
                 m[key] = row[key]
-    art = committed_artifact()
+    art = legacy_artifact()
     for lane in ("buy", "watch", "laggards"):
         for row in art.get(lane) or []:
             m = meta.get(row.get("ticker"))
@@ -356,7 +413,7 @@ def production_fixture() -> dict:
     """
     from engine import hk_board_rank as hbr
 
-    art = committed_artifact()
+    art = legacy_artifact()
     su = dict(art)
 
     buy = [dict(r) for r in (art.get("buy") or [])]
@@ -438,7 +495,30 @@ def shapes_fixture() -> dict:
         _witness_buy_row(("8808.HK", "Sample Holdings H", "样本控股辛",
                           "Property", 6.0, 0.0),
                          "blocked", "counter-trend, no 200-reclaim/hold"),
+        # `failed next-bar hold` is what reclaim_veto=False (hk_prophet_v2) emits on a
+        # counter-trend refusal — 10 of the first v2 board's 12 vetoed rows carried it.
+        # Carded here so its CARD copy is exercised by a render, not only asserted
+        # against a map literal: with no _HK_BLOCK entry the popover fell through to
+        # the generic sentence with the raw engine slug appended.
+        _witness_buy_row(("8809.HK", "Sample Holdings I", "样本控股壬",
+                          "Healthcare", 7.0, 0.0),
+                         "blocked", "failed next-bar hold"),
     ]
+    # The BASING subject (W-E.1). HK's staged pool is cascade-gated, so a pre-signal
+    # BOTTOM WATCH row is near-impossible on the real board — measured ZERO across the
+    # 14 committed snapshots — which is precisely why the shelf's copy, tone and
+    # filtering have to be pinned on a rendered row here rather than on a map literal.
+    # The row carries the ladder's DISPLAY label and no `state` key, because that is
+    # the HK row shape (the builder maps the scoreboard's `cycle` into `label`).
+    # `await_confluence` is deliberate: no entry has fired — it is a setting-up
+    # status, so without the shelf this row would read "Setting up" — and the card's
+    # own verb map turns it into `near`, which makes this row the subject that proves
+    # a buy-family verb demotes to Wait underneath a "no entry signal yet" heading.
+    _basing = _witness_buy_row(("8806.HK", "Sample Holdings F", "样本控股己",
+                                "Materials", 24.0, 0.0), "await_confluence")
+    _basing.update({"label": "NEARING A LOW", "label_zh": "接近低点",
+                    "dir": "down", "group": "setting_up"})
+    extra_buy.append(_basing)
     # a setting-up subject the real tape does supply — its own stage, untouched
     su["buy"] = score_buy_lane([dict(r) for r in su["buy"]] + extra_buy)
     from engine import hk_board_rank as _hbr
@@ -453,12 +533,13 @@ def shapes_fixture() -> dict:
         "live": sum(1 for r in su["buy"] if r["stage"] == "live"),
         "setting_up": sum(1 for r in su["buy"] if r["stage"] == "setting_up"),
         "ran": sum(1 for r in su["buy"] if r["stage"] == "ran"),
+        "basing": sum(1 for r in su["buy"] if r["stage"] == "basing"),
         "blocked": sum(1 for r in su["buy"] if r["stage"] == "blocked"),
         "ran_lane": len(su["ran"]),
         "vetoed_lane": len(su["vetoed"]),
     }
     su["ranking"] = {
-        "version": "hk_prophet_v1",
+        "version": "hk_prophet_v2",
         "weights": {"signal": 0.30, "entry": 0.25, "edge": 0.25,
                     "runway": 0.10, "quality": 0.10},
         "component_coverage": {"runway": {"nonzero": 0, "n": len(su["buy"])},
@@ -486,7 +567,7 @@ def prod_html() -> str:
 
 @pytest.fixture(scope="module")
 def legacy_html() -> str:
-    return _render(committed_artifact())
+    return _render(legacy_artifact())
 
 
 # --------------------------------------------------------------------------- #
@@ -513,6 +594,60 @@ def test_stage_heading_carries_label_count_and_stance(prio_html):
     assert '<span class="l-zh">现在可操作</span>' in block
     assert '<span class="sh-n">%d</span>' % n_live in block
     assert '<span class="l-en">entry window is open</span>' in block
+
+
+# --------------------------------------------------------------------------- #
+# W-E.1 — the basing shelf, ported from the US board (#4609)
+# --------------------------------------------------------------------------- #
+
+def test_the_basing_shelf_renders_between_ran_and_blocked(prio_html):
+    """The shelf is the whole deliverable: a BOTTOM WATCH name rendered inside
+    `Blocked`, beside the falling knives, is where the reader stops looking.  Its own
+    shelf ABOVE Blocked is what makes the state visible.
+
+    On HK this ships for vocabulary parity — the cascade-gated pool has produced no
+    BOTTOM WATCH row in any committed snapshot — so what is pinned is the routing and
+    the position, not a population.
+    """
+    basing = prio_html.find('<div class="nb-stage-hd sg-basing" data-stage="basing"')
+    assert basing != -1, "the basing shelf never rendered"
+    assert (prio_html.find('<div class="nb-stage-hd sg-ran" data-stage="ran"') < basing
+            < prio_html.find('<div class="nb-stage-hd sg-blocked" data-stage="blocked"'))
+    # the basing subject is ON the shelf, and a blocked subject is NOT
+    subject = prio_html.find('data-ticker="8806.HK" data-stage="basing"')
+    assert subject > basing, "the basing subject did not land under its own heading"
+    assert subject < prio_html.find('data-ticker="8804.HK" data-stage="blocked"')
+
+
+def test_the_basing_shelf_speaks_watch_words_in_both_languages(prio_html):
+    """A watch lane that never makes a claim: the shelf says what the state is and
+    what to do about it, and 'buy' is not one of the things it can say."""
+    assert '<span class="l-en">Basing</span><span class="l-zh">筑底中</span>' in prio_html
+    assert ('<span class="l-en">no entry signal yet — watch, don’t chase</span>'
+            '<span class="l-zh">尚无入场信号 — 观察，勿追高</span>') in prio_html
+    shelf = prio_html[prio_html.find('<div class="nb-stage-hd sg-basing"'):]
+    shelf = shelf[:shelf.find("</div>") + 6]
+    for banned in ("Buy", "buy", "买入"):
+        assert banned not in shelf, "%r on a watch-only shelf" % banned
+
+
+def test_the_basing_shelf_takes_a_direction_neutral_tone(prio_html):
+    """--pv-wait and --muted are the two verb tones theme.css does NOT flip under the
+    zh 红涨绿跌 convention, so a stance with no direction in it reads the same in both
+    languages.  Inheriting --pv-avoid (what these rows had inside Blocked) would paint
+    a basing name with the stand-aside colour it is being taken out of."""
+    assert ".sg-basing     { --sgc: var(--pv-wait); }" in prio_html
+    assert ".sg-blocked    { --sgc: var(--pv-avoid); }" in prio_html
+
+
+def test_the_basing_bucket_is_filterable_like_every_other(prio_html):
+    """Both halves of the filter pair, or the facet is half-built: the hide half alone
+    leaves a basing row below the show-more fold invisible when you filter to it."""
+    assert 'data-stagepick="basing"' in prio_html
+    assert ('#standouts:not(.st-table-mode)[data-stagef="basing"]     '
+            '[data-stage]:not([data-stage="basing"])') in prio_html
+    assert ('#standouts:not(.st-table-mode)[data-stagef="basing"]     '
+            '.sm-hidden[data-stage="basing"]') in prio_html
 
 
 def test_no_blocked_card_above_a_live_card(prio_html):
@@ -1027,6 +1162,46 @@ def test_leaders_rows_keep_the_engines_order(prio_html):
     assert rendered == [r["ticker"] for r in shapes_fixture()["leaders"][:15]]
 
 
+def test_leaders_rows_are_terminal_routable(prio_html):
+    """Every leaders row must be reachable by theme.js's Terminal intercept.
+
+    That intercept is a capture-phase listener on `a[href]` — it re-points
+    hk_lookup.html#TKR (one of theme.js's TERMINAL_PAGES) at the Terminal portal.
+    A `<tr onclick="location.href=…">` is invisible to it, so these rows navigated
+    to the retired hk_lookup.html analyzer no matter what theme.js did (the same
+    defect fixed for us_stocks in #4489, reported here 2026-08-03). The pin is
+    two-sided: the anchor must exist AND the onclick form must be gone, on a
+    render that actually has rows (an empty strip would make the absence half
+    vacuous).
+    """
+    seg = _leaders_block(prio_html)
+    tickers = [r["ticker"] for r in shapes_fixture()["leaders"][:15]]
+    assert tickers, "fixture has no leaders — the assertions below are vacuous"
+
+    for ticker in tickers:
+        assert '<tr class="ts-row" data-tkr="%s">' % ticker in seg, (
+            "%s row is not carrying the ticker the delegated handler reads" % ticker)
+        assert '<a class="ts-tk-a" href="hk_lookup.html#%s">' % ticker in seg, (
+            "%s ticker is not an anchor — theme.js cannot see it" % ticker)
+
+    # The defect itself: no ts-row may navigate via an inline location.href.
+    assert "onclick=\"location.href='hk_lookup.html#" not in prio_html
+
+    # The delegated handler that covers clicks on the REST of the row. It lives
+    # just past the table, so it is outside `seg` — search the whole page.
+    assert "tr.ts-row[data-tkr]" in prio_html
+    assert "window.MDXTerminal" in prio_html
+
+
+def test_leaders_ticker_anchor_does_not_read_as_a_link(prio_html):
+    """The row is the affordance; the anchor exists only so theme.js can see it
+    (and so cmd-/middle-click keeps its native new-tab behaviour). Without this
+    rule every ticker in the strip turns blue and underlined."""
+    css = (Path(__file__).resolve().parents[1] / "templates" / "hk.html.j2").read_text()
+    assert ".ts-tk-a { color: inherit; text-decoration: none; }" in css
+    assert 'class="ts-tk-a"' in prio_html   # the rule has something to style
+
+
 def test_every_leaders_column_carries_a_c_class_so_none_escapes_the_mobile_budget(prio_html):
     """The c-* classes ARE the mobile contract (≤680px hides the tertiary set); a th
     or td without one silently escapes that budget."""
@@ -1143,10 +1318,13 @@ def test_a_card_never_contradicts_the_bucket_it_sits_in(prio_html):
     """The bucket outranks the verb. HK's 200-day veto stamps a blocking marker while
     the entry gauge may still read `partial`, which would print a solid green BUY
     chip under a heading that says "stand aside". No buy-family verb is reachable in
-    the ran or blocked buckets."""
+    the ran, basing or blocked buckets — basing is the sharpest case, since its
+    heading says "no entry signal yet" while its `await_confluence` subject would
+    otherwise card as `near`."""
     su = shapes_fixture()
-    shut = {r["ticker"] for r in su["buy"] if r["stage"] in ("ran", "blocked")}
-    assert shut, "fixture must contain ran/blocked rows"
+    shut = {r["ticker"] for r in su["buy"]
+            if r["stage"] in ("ran", "basing", "blocked")}
+    assert shut, "fixture must contain ran/basing/blocked rows"
     for tk in shut:
         m = re.search(r'<a class="pvcard pv-(\w+)[^"]*" href="[^"]*" data-ticker="%s"'
                       % re.escape(tk), prio_html)
@@ -1177,12 +1355,30 @@ def test_the_glow_can_never_land_outside_the_live_bucket(prio_html):
 
 def test_blocked_witnesses_name_the_check_that_is_holding_them_out(prio_html):
     """G6 display-tier relief: a blocked name is visible AND its reason is nameable
-    in plain words, on Tier 2 where mechanics belong."""
-    assert "Price has not reclaimed its 200-day line and held there" in prio_html
-    assert "价格尚未重新站上200日均线并守住" in prio_html
+    in plain words, on Tier 2 where mechanics belong.
+
+    The `failed reclaim-and-hold` sentence used to be "Price has not reclaimed its
+    200-day line and held there, so entries stay shut until it does" — a promise about
+    a 200-day condition that branch of `_buy_filter` never evaluates (it tests the
+    next 3-day bar's close alone).  It now states the test that actually ran.
+    """
+    assert "The 3-day bar after the signal closed lower" in prio_html
+    assert "信号后的下一根 3 日K线收低" in prio_html
     assert "still under its 200-day line" in prio_html
-    assert "failed reclaim-and-hold</span>" not in prio_html, (
-        "the engine's raw reason string must not reach the glance tier verbatim")
+    for slug in ("failed reclaim-and-hold", "failed next-bar hold"):
+        assert "%s</span>" % slug not in prio_html, (
+            "the engine's raw reason string must not reach the glance tier verbatim")
+
+
+def test_the_blocked_card_copy_never_promises_a_200day_reclaim_it_did_not_test(
+        prio_html):
+    """The inverse guard.  `counter-trend, no 200-reclaim/hold` DOES test the 200-day
+    line, so its sentence must keep naming it — otherwise the fix above could be
+    'passed' by deleting every 200-day mention from the page."""
+    assert "This would be a bounce against the bigger downtrend" in prio_html
+    assert "Price has not reclaimed its 200-day line and held there" not in prio_html, (
+        "the next-bar-hold branch is again narrating a 200-day round trip it never "
+        "measured")
 
 
 # --------------------------------------------------------------------------- #
@@ -1202,7 +1398,7 @@ def test_footnote_states_the_weights_read_from_the_artifact(prio_html):
     assert "Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%." in prio_html
     assert "优先级＝信号30%＋入场25%＋优势25%＋上行空间10%＋形态质量10%。" in prio_html
     assert "it is not a win probability" in prio_html
-    assert "The hk_prophet_v1 forward record is accruing separately." in prio_html
+    assert "The hk_prophet_v2 forward record is accruing separately." in prio_html
 
 
 def test_footnote_follows_the_artifact_when_the_engine_changes_a_weight(prio_html):
@@ -1289,10 +1485,21 @@ _NEW_MARKUP = [
 ]
 
 
-def test_committed_artifact_carries_none_of_the_v1_contract():
+def test_the_frozen_legacy_fixture_carries_none_of_the_v1_contract():
     """If this ever fails the fixture has drifted and the fail-soft tests below have
-    quietly stopped testing fail-soft."""
-    art = committed_artifact()
+    quietly stopped testing fail-soft.
+
+    It fired for real on 2026-08-04 — correctly, and against the wrong subject.  It
+    was reading the LIVE artifact, so what it actually detected was the nightly
+    shipping the priority engine, not a fixture someone had broken; the fail-soft
+    tests below went red beside it and the whole set read as a template regression.
+    Pointed at the frozen fixture it now means what its name says: this file is the
+    pre-v1 board, and nobody has regenerated it off a priority-era nightly.
+    """
+    art = legacy_artifact()
+    assert art.get("as_of") == BOARD_ASOF, (
+        "the legacy fixture must be the same session as the price panel and "
+        "BOARD_ASOF, got %r" % art.get("as_of"))
     assert art.get("ran") is None and art.get("leaders") is None
     assert art.get("ranking") is None
     assert not any(r.get("stage") for r in art.get("buy") or [])
@@ -1305,7 +1512,7 @@ def test_legacy_artifact_renders_the_flat_board_with_no_priority_markup(legacy_h
     # the absence test is anchored to a real TAG, never to the bare attribute name.
     stray = re.search(r'<[a-zA-Z][a-zA-Z0-9-]*[^>]*\sdata-stage="', legacy_html)
     assert stray is None, "legacy element carries data-stage: %r" % (stray and stray.group(0))
-    assert legacy_html.count('<a class="pvcard') == len(committed_artifact()["buy"])
+    assert legacy_html.count('<a class="pvcard') == len(legacy_artifact()["buy"])
 
 
 def test_legacy_board_keeps_its_own_copy_and_the_edge_slot(legacy_html):
@@ -1318,7 +1525,7 @@ def test_legacy_board_keeps_its_own_copy_and_the_edge_slot(legacy_html):
 
 def test_legacy_board_keeps_the_artifacts_own_card_order(legacy_html):
     order = re.findall(r'<a class="pvcard[^"]*" href="hk_lookup\.html#([^"]+)"', legacy_html)
-    assert order == [r["ticker"] for r in committed_artifact()["buy"]]
+    assert order == [r["ticker"] for r in legacy_artifact()["buy"]]
 
 
 def test_laggards_value_class_follows_the_sign(legacy_html):
@@ -1326,7 +1533,7 @@ def test_laggards_value_class_follows_the_sign(legacy_html):
     colour — and because `.neg` maps to --down, which inverts under
     html[data-lang="zh"], the same +1.05 read "loss" in English and "gain" in
     Chinese. The class must follow the sign; the theme still owns the hue."""
-    art = committed_artifact()
+    art = legacy_artifact()
     lagg = art.get("laggards") or []
     assert lagg, "the committed artifact has no laggards — this test is vacuous"
     assert any(r.get("alpha") is not None and r["alpha"] > 0 for r in lagg), (
@@ -1351,11 +1558,11 @@ def test_health_banner_survives_the_rebuild(legacy_html, prio_html):
 
 
 def test_legacy_render_is_tag_stream_identical_to_the_base_branch():
-    """The strongest form of the fail-soft proof: render the COMMITTED artifact
-    through this template and through the base branch's, and compare the element
-    streams.  Skipped (never failed) when the base ref is unreachable — a shallow or
-    sparse CI checkout has no business reddening main — because every observable half
-    of the same contract is pinned unconditionally by the tests above."""
+    """The strongest form of the fail-soft proof: render the LEGACY artifact through
+    this template and through the base branch's, and compare the element streams.
+    Skipped (never failed) when the base ref is unreachable — a shallow or sparse CI
+    checkout has no business reddening main — because every observable half of the
+    same contract is pinned unconditionally by the tests above."""
     base = None
     for ref in ("origin/main", "main"):
         try:
@@ -1367,10 +1574,33 @@ def test_legacy_render_is_tag_stream_identical_to_the_base_branch():
             continue
     if not base:
         pytest.skip("base ref templates/hk.html.j2 unavailable in this checkout")
-    art = committed_artifact()
+    # The era stamps used to be STRIPPED here, because the live artifact this read
+    # from had become a priority-era board and comparing it whole had stopped testing
+    # fail-soft and started asserting the priority layer never changes — which the
+    # hk_prophet_v2 admission disclosure legitimately does.  The fixture is genuinely
+    # legacy now, so the strip is gone and the absence is ASSERTED instead: a silent
+    # pop would hide a fixture regenerated off a priority-era nightly, which is the
+    # exact drift that took this file down.
+    art = legacy_artifact()
+    assert art.get("board_definition") is None and art.get("rank_by") is None
     mine, theirs = _tags(_render(art)), _tags(_render_source(base, art))
     assert mine == theirs, "legacy render changed shape vs the base branch (%d vs %d tags)" % (
         len(mine), len(theirs))
+
+
+def test_the_priority_era_render_gains_exactly_the_admission_disclosure():
+    """The other half of the pair above: on a PRIORITY-era artifact the render is NOT
+    unchanged — hk_prophet_v2 owes the reader the admission change in plain words.  Pin
+    that it is present and that it names the cost, so a later edit cannot quietly drop
+    the disclosure while keeping the wider board."""
+    # Collapse whitespace: the copy wraps across template lines, so a raw substring
+    # match would pin the indentation rather than the sentence.
+    flat = re.sub(r"\s+", " ", _render(priority_era_artifact()))
+    assert "until 3 Aug this board also" in flat
+    assert "close back above that average within two sessions" in flat
+    assert "roughly a third more names here, and deeper drawdowns" in flat, (
+        "the disclosure must state the cost, not just the loosening")
+    assert "8月3日之前" in flat and "回撤会更深" in flat
 
 
 # --------------------------------------------------------------------------- #
@@ -1399,7 +1629,7 @@ def test_no_raw_stage_slug_reaches_the_glance_tier(prio_html):
     """`setting_up` may live in data-stage / data-stagepick attributes; it must never
     be the words a reader sees."""
     for text in re.findall(r'<span class="(?:sh-l|sh-s)">(.*?)</span></?', prio_html):
-        assert "setting_up" not in text and "hk_prophet_v1" not in text
+        assert "setting_up" not in text and "hk_prophet_v" not in text
     assert ">setting_up<" not in prio_html
 
 
@@ -1450,11 +1680,60 @@ def test_an_empty_buy_lane_on_a_v1_artifact_keeps_every_section():
 
 def test_a_legacy_artifact_still_renders_none_of_it():
     """The other half: fail-soft is unchanged, and it is decided by the same key."""
-    art = committed_artifact()
+    art = legacy_artifact()
     assert art.get("board_definition") is None and art.get("rank_by") is None
     html = _render(art)
     for frag in _V1_SECTIONS:
         assert frag not in html, "priority markup leaked onto a legacy artifact: %r" % frag
+
+
+def test_the_live_artifact_still_renders():
+    """The ONE assertion in this file that reads `site/factordata/hk_standouts.json`.
+
+    Freezing the fixtures bought determinism at a price: nothing here would notice
+    the NIGHTLY's own artifact drifting into a shape this template cannot render.
+    This buys that back without re-arming the fuse, by asserting only what is true in
+    BOTH eras — the page renders, it cards the buy lane, and the priority layer is
+    present exactly when the era stamp says it should be.  No era-specific copy, no
+    row counts, no lane membership: those are what made the old reads unsatisfiable.
+
+    A failure here is a real incompatibility between the shipped board and the
+    shipped template, which is the thing the era-pinned tests could never separate
+    from an ordinary nightly.
+
+    LANE-GATED, NOT ERA-GATED.  Three of the five priority sections are
+    ``{% if _hsg.any and <lane> %}`` (templates/hk.html.j2:3861/3941/4010) — an empty
+    lane correctly prints nothing.  Demanding them on every priority-era board would
+    red main on a thin night, which is a worse gate than none; each is asserted
+    against its OWN lane instead.
+    """
+    if not LIVE_ARTIFACT.exists():           # pragma: no cover — committed in-tree
+        pytest.skip("%s not present" % LIVE_ARTIFACT)
+    art = json.loads(LIVE_ARTIFACT.read_text())
+    html = _render(art)
+
+    assert html.count('<a class="pvcard') == len(art.get("buy") or []), (
+        "the live board cards every buy row in both eras")
+
+    stamp = str(art.get("board_definition") or art.get("rank_by") or "")
+    priority_era = stamp.startswith("hk_prophet_v")
+    # era stamp alone decides these two
+    era_only = ('<div class="pbf-bar" id="hk-stage-filter"', '<p class="pb-fn">')
+    # these need the era stamp AND rows in their own lane
+    lane_gated = {'<div class="topsetups leaders-strip">': "leaders",
+                  '<div class="pbr" data-stage="ran">': "ran",
+                  '<div class="pbv" data-stage="blocked">': "vetoed"}
+
+    for frag in era_only:
+        assert (frag in html) is priority_era, (
+            "live artifact stamps %r but the render %s %r"
+            % (stamp, "dropped" if priority_era else "kept", frag))
+    for frag, lane in lane_gated.items():
+        expected = priority_era and bool(art.get(lane))
+        assert (frag in html) is expected, (
+            "live artifact stamps %r with %d %s row(s) but the render %s %r"
+            % (stamp, len(art.get(lane) or []), lane,
+               "dropped" if expected else "kept", frag))
 
 
 def test_the_sentinel_reads_the_artifact_stamp_not_the_rows():
@@ -1518,7 +1797,7 @@ def test_no_display_lane_re_lists_a_name_the_board_already_placed():
 
 def test_the_watch_lane_is_never_promoted_into_the_buy_lane():
     su = production_fixture()
-    art = committed_artifact()
+    art = legacy_artifact()
     assert [r["ticker"] for r in su["buy"]] != []
     assert not ({r["ticker"] for r in su["buy"]}
                 & {r["ticker"] for r in art["watch"]})
@@ -1528,14 +1807,14 @@ def test_the_watch_lane_is_never_promoted_into_the_buy_lane():
 
 def test_the_production_board_stamps_the_keys_the_page_reads():
     su = production_fixture()
-    assert su["board_definition"] == "hk_prophet_v1"
-    assert su["rank_by"] == "hk_prophet_v1"
+    assert su["board_definition"] == "hk_prophet_v2"
+    assert su["rank_by"] == "hk_prophet_v2"
     assert isinstance(su["universe_excluded"], int)
     assert isinstance(su["universe_source_rows"], int)
     weights = su["ranking"]["weights"]
     assert sum(weights.values()) == pytest.approx(100.0), (
         "the artifact carries POINTS, not fractions — the footnote scales from the sum")
-    assert su["ranking"]["definition"] == "hk_prophet_v1"
+    assert su["ranking"]["definition"] == "hk_prophet_v2"
 
 
 def test_the_vetoed_section_on_the_production_board_has_real_rows(prod_html):

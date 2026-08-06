@@ -113,6 +113,26 @@ _ACTIVITY_WORDS: dict[str, str] = {
     "quarantined_unknown_cashtag": "pulled — named a ticker no price store knows",
     "quarantined_voice_laws": "pulled — reads machine-written",
     "quarantined_run_duplicate": "pulled — repeats a post already sent today",
+    # The 2026-08-04 relay gate. Names what the READER would have seen, not the
+    # rule: the post that forced it said "More info on this - ..." with no
+    # "this" anywhere, because that is how the source's own site writes a
+    # follow-up to its own earlier post. A count here means the wire is relaying
+    # a publisher's page furniture rather than the news on it.
+    "quarantined_relay_hygiene": "pulled — repeats the source's page, not its news",
+    # The 2026-08-04 cold read. Three rows because they are three different
+    # facts and only one of them is a decision: `flagged` counts what the read
+    # objected to (in shadow, that is ALL it does), `held` is a reversible park
+    # for another pass, `quarantined` is terminal. Reading flagged-vs-held is
+    # how an operator decides whether to arm the gate past shadow.
+    "cold_read_flagged": "a reader would have been left guessing",
+    # The two that answer "is this gate awake?". `reads` at zero while the gate
+    # is enabled means nothing was read, and zero flags then says nothing about
+    # the copy — the state a dark gate is most dangerous in.
+    "cold_read_reads": "posts read as a stranger would read them",
+    "cold_read_unavailable": "not read — no local model reachable",
+    "cold_read_unread": "not read — the run's reading budget ran out",
+    "held_cold_read": "held — a reader could not resolve it",
+    "quarantined_cold_read": "pulled — a reader could not resolve it",
     # The 2026-08-02 clock gates. Both name the DEFECT the operator reported,
     # not the check: he wrote down "Friday's move called today on a Saturday"
     # and "six posts off one stale breadth read", so those are the words. A

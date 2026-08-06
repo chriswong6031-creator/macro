@@ -1,0 +1,147 @@
+name: capital-share-count-r2-conformance
+
+# Deliberately manual and main-only. This isolated operator check has no
+# schedule, no push trigger, no publication step, and no repository mutation.
+on:
+  workflow_dispatch:
+    inputs:
+      run_conformance:
+        description: "Explicitly run the isolated conditional R2 conformance witness"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: capital-share-count-r2-conformance
+  cancel-in-progress: false
+
+jobs:
+  conformance:
+    # Environment secrets must never be exposed to an arbitrary dispatch ref.
+    if: ${{ inputs.run_conformance == true && github.ref == 'refs/heads/main' }}
+    runs-on: [self-hosted, macstudio-light]
+    timeout-minutes: 5
+    # Configure this Environment with required reviewers. Its five secrets are
+    # unique to the isolated conformance bucket and must not exist at repo scope.
+    environment: capital-share-count-r2-conformance
+    steps:
+      # actions/checkout v4.4.0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: create isolated Python 3.12 environment
+        run: |
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          VENV="$RUNNER_TEMP/capital-share-count-r2-conformance-${suffix}-venv"
+          OUTPUT="$RUNNER_TEMP/capital-share-count-r2-conformance-${suffix}-artifact"
+          LOCK_COPY="$RUNNER_TEMP/capital-share-count-r2-conformance-${suffix}.lock"
+          SOURCE_ARCHIVE="$RUNNER_TEMP/capital-share-count-r2-conformance-${suffix}-source.tar"
+          EXEC_ROOT="$RUNNER_TEMP/capital-share-count-r2-conformance-${suffix}-source"
+          for candidate in "$VENV" "$OUTPUT" "$LOCK_COPY" "$SOURCE_ARCHIVE" "$EXEC_ROOT"; do
+            test ! -e "$candidate"
+          done
+          /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+      - name: install exact hash-locked dependency set
+        id: dependency-lock
+        run: |
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          VENV="$RUNNER_TEMP/capital-share-count-r2-conformance-${suffix}-venv"
+          LOCK_COPY="$RUNNER_TEMP/capital-share-count-r2-conformance-${suffix}.lock"
+          test ! -e "$LOCK_COPY"
+          git show "$GITHUB_SHA:requirements/capital-share-r2-conformance-macos-arm64-py312.lock" > "$LOCK_COPY"
+          digest="$(shasum -a 256 "$LOCK_COPY" | awk '{print $1}')"
+          echo "sha256=$digest" >> "$GITHUB_OUTPUT"
+          "$VENV/bin/python" -m pip --isolated install \
+            --no-input \
+            --disable-pip-version-check \
+            --only-binary=:all: \
+            --require-hashes \
+            --retries 2 \
+            --timeout 15 \
+            -r "$LOCK_COPY"
+      - name: verify exact reviewed execution tree
+        id: reviewed-source
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git diff --quiet "$GITHUB_SHA" -- .
+          git diff --cached --quiet "$GITHUB_SHA" -- .
+          test -z "$(git ls-files --others --exclude-standard -- .)"
+          test -z "$(git ls-files --others --ignored --exclude-standard -- .)"
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          SOURCE_ARCHIVE="$RUNNER_TEMP/capital-share-count-r2-conformance-${suffix}-source.tar"
+          test ! -e "$SOURCE_ARCHIVE"
+          execution_paths=(
+            engine/capital_structure/share_count_r2_conformance.py
+            contracts/capital_structure_share_count_r2_conformance_receipt.schema.json
+            scripts/probe_capital_structure_share_count_r2.py
+            .github/workflows/capital-share-count-r2-conformance.yml
+            requirements/capital-share-r2-conformance-macos-arm64-py312.lock
+          )
+          git archive --format=tar --output "$SOURCE_ARCHIVE" "$GITHUB_SHA" -- "${execution_paths[@]}"
+          digest="$(shasum -a 256 "$SOURCE_ARCHIVE" | awk '{print $1}')"
+          echo "archive_sha256=$digest" >> "$GITHUB_OUTPUT"
+      - name: smoke-test reviewed execution tree without credentials
+        run: |
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          VENV="$RUNNER_TEMP/capital-share-count-r2-conformance-${suffix}-venv"
+          SOURCE_ARCHIVE="$RUNNER_TEMP/capital-share-count-r2-conformance-${suffix}-source.tar"
+          EXEC_ROOT="$RUNNER_TEMP/capital-share-count-r2-conformance-${suffix}-source"
+          test "$(shasum -a 256 "$SOURCE_ARCHIVE" | awk '{print $1}')" = "${{ steps.reviewed-source.outputs.archive_sha256 }}"
+          test ! -e "$EXEC_ROOT"
+          mkdir "$EXEC_ROOT"
+          tar -xf "$SOURCE_ARCHIVE" -C "$EXEC_ROOT"
+          cd "$EXEC_ROOT"
+          "$VENV/bin/python" -E -s - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.probe_capital_structure_share_count_r2 import _load_conformance_core
+          core = _load_conformance_core()
+          assert core.RECEIPT_SCHEMA == "capital_structure.share_count_r2_conformance_receipt/v1"
+          schema = Path("contracts/capital_structure_share_count_r2_conformance_receipt.schema.json")
+          assert isinstance(json.loads(schema.read_text(encoding="utf-8")), dict)
+          PY
+      - name: run isolated conditional conformance probe
+        env:
+          R2_SHARE_COUNT_CONFORMANCE_ENDPOINT: ${{ secrets.R2_SHARE_COUNT_CONFORMANCE_ENDPOINT }}
+          R2_SHARE_COUNT_CONFORMANCE_ACCOUNT_ID: ${{ secrets.R2_SHARE_COUNT_CONFORMANCE_ACCOUNT_ID }}
+          R2_SHARE_COUNT_CONFORMANCE_BUCKET: ${{ secrets.R2_SHARE_COUNT_CONFORMANCE_BUCKET }}
+          R2_SHARE_COUNT_CONFORMANCE_ACCESS_KEY_ID: ${{ secrets.R2_SHARE_COUNT_CONFORMANCE_ACCESS_KEY_ID }}
+          R2_SHARE_COUNT_CONFORMANCE_SECRET_ACCESS_KEY: ${{ secrets.R2_SHARE_COUNT_CONFORMANCE_SECRET_ACCESS_KEY }}
+          CAPITAL_STRUCTURE_R2_CONFORMANCE_SOURCE_ARCHIVE_SHA256: ${{ steps.reviewed-source.outputs.archive_sha256 }}
+          CAPITAL_STRUCTURE_R2_CONFORMANCE_DEPENDENCY_LOCK_SHA256: ${{ steps.dependency-lock.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          VENV="$RUNNER_TEMP/capital-share-count-r2-conformance-${suffix}-venv"
+          OUTPUT="$RUNNER_TEMP/capital-share-count-r2-conformance-${suffix}-artifact"
+          SOURCE_ARCHIVE="$RUNNER_TEMP/capital-share-count-r2-conformance-${suffix}-source.tar"
+          EXEC_ROOT="$RUNNER_TEMP/capital-share-count-r2-conformance-${suffix}-source"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git diff --quiet "$GITHUB_SHA" -- .
+          git diff --cached --quiet "$GITHUB_SHA" -- .
+          test -z "$(git ls-files --others --exclude-standard -- .)"
+          test -z "$(git ls-files --others --ignored --exclude-standard -- .)"
+          test "$(shasum -a 256 "$SOURCE_ARCHIVE" | awk '{print $1}')" = "${{ steps.reviewed-source.outputs.archive_sha256 }}"
+          test -d "$EXEC_ROOT"
+          test ! -e "$OUTPUT"
+          cd "$EXEC_ROOT"
+          "$VENV/bin/python" -E -s -m scripts.probe_capital_structure_share_count_r2 \
+            --output-dir "$OUTPUT"
+      - name: upload review-only conformance receipt
+        if: ${{ always() }}
+        # actions/upload-artifact v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: capital-share-count-r2-conformance-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/capital-share-count-r2-conformance-${{ github.run_id }}-${{ github.run_attempt }}-artifact/capital_structure_share_count_r2_conformance_receipt.json
+          if-no-files-found: warn
+          retention-days: 90

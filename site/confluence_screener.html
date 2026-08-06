@@ -5,6 +5,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="utf-8">
 <script data-dbase>(function () {
   window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
   var B = window.DATA_BASE;
@@ -32,10 +33,9 @@
     return orig.call(this, u, o);
   };
 })();</script>
-<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>Signals Lining Up — 2026-08-03 | MastermindX</title>
+<title>Signals Lining Up — 2026-08-05 | MastermindX</title>
 
 
 
@@ -56,10 +56,146 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="theme.css?v=8798caae">
-<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
-<link rel="stylesheet" href="assets/css/7d5af2ad.css?v=7d5af2ad">
+<link rel="stylesheet" href="theme.css">
+<style>
+/* ── bilingual toggle (mirrors theme.css mechanism for the self-contained head) ── */
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--link);text-decoration:none}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px 72px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+
+/* ── page brand / lead ── */
+.pg-brand{font-weight:800;font-size:23px;color:var(--text);letter-spacing:-.02em;margin:8px 0 2px;display:flex;align-items:center;gap:9px}
+.pg-brand .gn{color:var(--info)}
+.pg-lead{color:var(--muted);font-size:14px;margin:0 0 22px;max-width:60ch}
+
+/* ── HERO — glass state card ── */
+.hero{position:relative;background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-brd);border-radius:20px;padding:26px 28px;box-shadow:var(--glass-shadow);overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 140% at 88% -20%, color-mix(in srgb,var(--info) 20%,transparent), transparent 60%)}
+.hero-inner{position:relative;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center}
+.hero-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:9px}
+.hero-state{font-size:32px;font-weight:800;letter-spacing:-.03em;line-height:1.08;margin:0;color:var(--text)}
+.hero-state .n{color:var(--info)}
+.stance{display:inline-flex;align-items:center;gap:7px;padding:5px 14px;border-radius:999px;font-size:13px;font-weight:700;margin-top:14px;
+  background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
+.stance::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.hero-sentence{font-size:14px;color:var(--muted);margin:12px 0 0;max-width:46ch;line-height:1.55}
+/* right rail — the "line-up" motif: 3 stacked leg ticks converging into a dot */
+.hero-motif{width:132px;height:112px;flex:none}
+
+/* ── section head ── */
+.sec-h{display:flex;align-items:baseline;gap:10px;margin:34px 0 4px;flex-wrap:wrap}
+.sec-h h2{margin:0;font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.01em}
+.sec-h .sub{font-size:12.5px;color:var(--muted)}
+
+/* ── LEDGER CARD (signature) ── */
+.ledger{display:flex;flex-direction:column;gap:16px;margin-top:14px}
+.lc{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;
+  padding:20px 22px 18px;transition:border-color .16s,box-shadow .16s,transform .16s}
+.lc:hover{border-color:color-mix(in srgb,var(--info) 40%,var(--line));box-shadow:0 10px 30px -18px rgba(0,0,0,.5)}
+.lc.free{border-color:color-mix(in srgb,var(--info) 34%,var(--line))}
+.lc-top{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:start}
+/* rank chip — rank_score IS a real ordering, so the numeral carries information */
+.lc-rank{font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--muted);
+  border:1px solid var(--line);border-radius:9px;padding:5px 9px;line-height:1;letter-spacing:.02em;white-space:nowrap;margin-top:2px}
+.lc.free .lc-rank{color:var(--info);border-color:color-mix(in srgb,var(--info) 40%,var(--line))}
+.lc-title{font-size:16px;font-weight:700;color:var(--text);line-height:1.35;letter-spacing:-.01em}
+.lc-since{font-size:11.5px;color:var(--muted);margin-top:3px}
+/* win-rate hero block — the number is the type hero, honestly paired with the older era */
+.lc-wr{text-align:right;flex:none;min-width:118px}
+.lc-wr-big{font-family:var(--font-mono);font-size:30px;font-weight:800;line-height:1;color:var(--up);letter-spacing:-.02em}
+.lc-wr-unit{font-size:11px;color:var(--muted);font-weight:600;margin-top:3px}
+.lc-wr-old{font-size:11.5px;color:var(--muted);margin-top:8px;font-family:var(--font-mono)}
+.lc-wr-old b{color:var(--text);font-weight:700}
+
+/* the line-up leg stack */
+.legs{display:flex;flex-direction:column;gap:7px;margin:16px 0 4px}
+.leg{display:grid;grid-template-columns:26px 1fr;gap:11px;align-items:center}
+.leg-tf{font-family:var(--font-mono);font-size:10.5px;font-weight:700;text-align:center;border-radius:6px;padding:3px 0;line-height:1}
+.leg-tf.d{background:color-mix(in srgb,var(--muted) 20%,transparent);color:var(--muted)}
+.leg-tf.w{background:color-mix(in srgb,var(--info) 20%,transparent);color:var(--info)}
+.leg-txt{font-size:13px;color:var(--text);line-height:1.35;display:flex;align-items:center;gap:9px}
+.leg-txt::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:color-mix(in srgb,var(--up) 70%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 14%,transparent)}
+
+/* wins-per-10 segmented bar */
+.w10{display:inline-flex;gap:3px;vertical-align:middle}
+.w10 i{width:10px;height:10px;border-radius:3px;background:color-mix(in srgb,var(--muted) 26%,transparent)}
+.w10.tone-free i.on{background:var(--up)}
+.w10.tone-gated i.on{background:color-mix(in srgb,var(--muted) 60%,transparent)}
+
+/* footer receipts row */
+.lc-foot{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--muted)}
+.chip.ok{color:var(--up)}
+.chip .w10{margin-left:2px}
+.tickers{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+.tkr{display:inline-flex;align-items:baseline;gap:6px;font-family:var(--font-mono);font-weight:700;font-size:13px;color:var(--text);
+  background:color-mix(in srgb,var(--up) 12%,transparent);border:1px solid color-mix(in srgb,var(--up) 26%,transparent);
+  border-radius:8px;padding:5px 10px}
+.tkr .nm{font-family:var(--font-ui);font-weight:500;font-size:11px;color:var(--muted)}
+
+/* locked state — honest, built from active_count only. NO blurred text. */
+.locked{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:16px;padding:14px 16px;border-radius:12px;
+  background:color-mix(in srgb,var(--info) 7%,transparent);border:1px dashed color-mix(in srgb,var(--info) 34%,var(--line))}
+.locked .ic{flex:none;width:32px;height:32px;border-radius:9px;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--info) 16%,transparent);color:var(--info)}
+.locked .lk-tx{flex:1;min-width:180px;font-size:13px;color:var(--text);line-height:1.4}
+.locked .lk-tx b{font-weight:700}
+.locked .lk-tx .sub{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.btn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;border-radius:10px;padding:9px 16px;
+  background:var(--info);color:#fff;border:0;cursor:pointer;transition:filter .15s,transform .15s;white-space:nowrap}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn.ghost{background:transparent;color:var(--info);border:1px solid color-mix(in srgb,var(--info) 40%,var(--line))}
+
+/* honesty footer + big CTA */
+.honesty{margin-top:30px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px 22px}
+.honesty h3{margin:0 0 10px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.honesty ul{margin:0;padding:0;list-style:none;display:grid;gap:9px}
+.honesty li{position:relative;padding-left:20px;font-size:13px;color:var(--text);line-height:1.5}
+.honesty li::before{content:"";position:absolute;left:2px;top:8px;width:7px;height:7px;border-radius:2px;background:color-mix(in srgb,var(--warn) 70%,transparent)}
+.cta-band{margin-top:22px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
+  background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-brd);border-radius:16px;padding:20px 24px;box-shadow:var(--glass-shadow)}
+.cta-band .cb-tx{font-size:15px;font-weight:700;color:var(--text)}
+.cta-band .cb-sub{font-size:12.5px;color:var(--muted);font-weight:400;margin-top:3px}
+
+/* empty state */
+.empty{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:40px 24px;text-align:center;margin-top:14px}
+.empty .ec-ic{font-size:30px;margin-bottom:10px;opacity:.7}
+.empty h3{margin:0 0 6px;font-size:18px;font-weight:800;color:var(--text)}
+.empty p{margin:0 auto;font-size:13.5px;color:var(--muted);max-width:40ch;line-height:1.55}
+
+/* footer */
+.site-foot{max-width:1080px;margin:34px auto 0;padding:18px 20px;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+
+/* zh Asia colour convention — theme.css swaps --up/--down globally, but our
+   green-tinted ticker chips + win cells reference --up so they follow for free.
+   Keep the wins bar semantic (win = good), so we DON'T flip it: a win is a win in
+   both languages. Guard only the ticker chip, which reads as "price up = green"
+   and should invert in zh. */
+html[data-lang="zh"] .tkr{background:color-mix(in srgb,var(--down) 12%,transparent);border-color:color-mix(in srgb,var(--down) 26%,transparent)}
+
+/* focus visibility */
+a:focus-visible,.btn:focus-visible,summary:focus-visible{outline:2px solid var(--info);outline-offset:2px;border-radius:8px}
+
+/* responsive */
+@media(max-width:640px){
+  .hero-inner{grid-template-columns:1fr}
+  .hero-motif{display:none}
+  .hero-state{font-size:26px}
+  .lc-top{grid-template-columns:auto 1fr;grid-template-areas:"rank title" "wr wr"}
+  .lc-rank{grid-area:rank}.lc-title-wrap{grid-area:title}.lc-wr{grid-area:wr;text-align:left;margin-top:6px}
+  .lc-wr-old{margin-top:4px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
 </head>
 <body>
 
@@ -69,7 +205,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=073377a0">
+    <link rel="stylesheet" href="navigation-refresh.css">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -104,6 +240,8 @@
         <a href="us_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · sectors · flows</span><span class="l-zh">先知 · 板块 · 资金</span></span></a>
         
         <a href="movers.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
+        
+        <a href="intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Live session board — volume, tape and stance lanes · ≈15-min delayed</span><span class="l-zh">盘中实时看板 — 量能、盘面与操作分级 · 约延迟15分钟</span></span></a>
         <a href="stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span><span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
         
         <a href="sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Sectors, themes & rotation in one read · lanes · cycle map · graded</span><span class="l-zh">板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分</span></span></a>
@@ -113,11 +251,9 @@
         <a href="alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span><span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Flow</span><span class="l-zh">期权与资金流</span><span class="d"><span class="l-en">Workspace · desk · flow tracker · dark pool</span><span class="l-zh">工作台 · 期权台 · 资金流追踪 · 暗池</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Market Structure</span><span class="l-zh">期权与市场结构</span><span class="d"><span class="l-en">Workspace · dark pool · index regime</span><span class="l-zh">工作台 · 暗池 · 指数结构</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
-            <a href="options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 筛选 · 个股 · 领头股</span></span></a>
-            <a href="gex.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">Instrument bench — charts, walls, vol surface</span><span class="l-zh">工具台 — 图表、墙位、波动率曲面</span></span></a>
-            <a href="intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
+            <a href="options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Flow · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 资金流 · 筛选 · 个股 · 领头股</span></span></a>
             <a href="darkpool.html"><span class="submenu-icon submenu-icon-darkpool" aria-hidden="true"></span><span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
             <a href="market_structure.html"><span class="submenu-icon submenu-icon-structure" aria-hidden="true"></span><span class="l-en">Market Structure</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">GEX regime · machine flows · dispersion · weekly range</span><span class="l-zh">做市商制度 · 机器资金 · 离散度 · 周度区间</span></span></a>
           </div>
@@ -130,16 +266,10 @@
       <div class="nav-dd-menu" role="menu">
         <a href="china.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
         <a href="china_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · alpha · setups</span><span class="l-zh">先知 · 阿尔法 · 布局</span></span></a>
-        <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="sector_central_china.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
-          <div class="nav-dd-menu" role="menu">
-            <a href="sector_central_china.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
-            <a href="baskets_china.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
-            <a href="subsector_rotation_china.html"><span class="submenu-icon submenu-icon-rotation" aria-hidden="true"></span><span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">233 同花顺 concepts + curated themes · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">233 同花顺概念 + 精选主题 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
-            <a href="subsectors_china.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
-            <a href="china_heatmap.html"><span class="submenu-icon submenu-icon-heatmap" aria-hidden="true"></span><span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
-          </div>
-        </div>
+        
+        <a href="sector_central_china.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Gated board · cycle map · whole-market rotation · theme baskets — one page</span><span class="l-zh">门控研判 · 周期图谱 · 全市场轮动 · 主题篮子 — 一页尽览</span></span></a>
+        <a href="subsectors_china.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+        <a href="china_heatmap.html"><span class="submenu-icon submenu-icon-heatmap" aria-hidden="true"></span><span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
         <a href="china_strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="china_news.html"><span class="submenu-icon submenu-icon-news" aria-hidden="true"></span><span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
         <div class="nav-dd nav-sub">
@@ -224,6 +354,7 @@
               <a class="mega-item nm-feat" href="intelligence_hub.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 12 24 3l18 9v23l-18 10L6 35Z"/><path d="m24 9 12 7v15l-12 7-12-7V16Z"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 20V9M28 24h8M24 28v10M20 24h-8M21 21l-6-5M27 21l6-5M21 27l-6 5M27 27l6 5"/><circle cx="24" cy="9" r="1.5"/><circle cx="36" cy="24" r="1.5"/><circle cx="24" cy="38" r="1.5"/><circle cx="12" cy="24" r="1.5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="item-desc d"><span class="l-en">Your complete market command center</span><span class="l-zh">你的完整市场指挥中心</span></span></span></a>
               <a class="mega-item nm-feat" href="reports.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="item-desc d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
               <a class="mega-item nm-feat" href="research_vault.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="item-desc d"><span class="l-en">Search every published research note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
+              <a class="mega-item nm-feat" data-nav-file="earnings_wire" href="stocks/earnings/index.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 7h25l7 7v27H8z"/><path d="M6 5h25l7 7v27H6zM31 5v8h7"/><path class="accent" d="M12 29h5l3-7 5 12 4-9 3 4h3"/><path d="M12 16h14M12 20h9"/><circle class="soft-fill" cx="34" cy="29" r="3"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Earnings Wire</span><span class="l-zh">财报情报线</span></span><span class="item-desc d"><span class="l-en">Verified calls, weekly intelligence and company context</span><span class="l-zh">已核验电话会、每周情报与公司语境</span></span></span></a>
               <a class="mega-item nm-feat" href="fundamental_forensics.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M9 6h24l6 6v28H9z"/><path d="M7 4h24l6 6v23H7zM31 4v7h6"/><path d="M13 15h16M13 21h12M13 27h8"/><circle class="soft-fill" cx="31" cy="31" r="8"/><circle cx="29" cy="29" r="7"/><path class="accent" d="m34 34 7 7M25 29h8M29 25v8"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Filing Forensics</span><span class="l-zh">财报取证</span></span><span class="item-desc d"><span class="l-en">Find the accounting changes worth reviewing</span><span class="l-zh">发现值得复核的会计变化</span></span></span></a>
               <a class="mega-item nm-feat" href="neural_web.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 24h36M24 6v36"/><circle class="soft-fill" cx="24" cy="24" r="5"/><circle cx="11" cy="12" r="3"/><circle cx="37" cy="12" r="3"/><circle cx="9" cy="34" r="3"/><circle cx="39" cy="34" r="3"/><path class="accent" d="M20 21 13 14M28 21l7-7M20 27l-8 5M28 27l8 5M14 12h20M11 15l-2 16M37 15l2 16M12 34h24"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="item-desc d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
             </div>
@@ -234,6 +365,7 @@
               <a class="mega-item nav-mega-item" href="foresight.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M4 24h40M24 4v40"/><path d="M7 25s7-11 17-11 17 11 17 11-7 11-17 11S7 25 7 25Z"/><circle class="soft-fill" cx="24" cy="25" r="5"/><path class="accent" d="M31 12 38 5M34 16h9M13 14 8 9"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="item-desc d"><span class="l-en">Themes before markets price them</span><span class="l-zh">市场定价前的主题</span></span></span></a>
               <a class="mega-item nav-mega-item" href="state_of_themes.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 11h30v23H8z"/><rect x="6" y="8" width="30" height="23" rx="2"/><rect x="12" y="15" width="30" height="23" rx="2"/><path class="accent" d="m17 31 5-6 5 3 8-9M31 19h4v4"/><circle class="soft-fill" cx="22" cy="25" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="item-desc d"><span class="l-en">What’s strengthening and fading now</span><span class="l-zh">正在增强与减弱的主题</span></span></span></a>
               <a class="mega-item nav-mega-item" href="radar.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 39h36M9 7v32"/><path d="M10 32c7-1 10-6 15-8s8-1 13-10"/><path class="accent" d="M10 18c7 1 10 6 15 8s9 2 13 10"/><circle class="soft-fill" cx="25" cy="24" r="2.5"/><path d="M36 12h4v4M36 36h4v-4"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="item-desc d"><span class="l-en">Where price and reality split</span><span class="l-zh">价格与现实的分歧</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="stock_seasonality.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M10 14h32v28H10z"/><rect x="6" y="11" width="32" height="28" rx="3"/><path d="M6 19h32M15 7v8M29 7v8"/><path class="accent" d="m12 32 5-6 5 3 6-9 4 5"/><circle class="soft-fill" cx="28" cy="20" r="2.4"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Stock Seasonality</span><span class="l-zh">个股季节性</span></span><span class="item-desc d"><span class="l-en">Which calendar windows actually repeat</span><span class="l-zh">哪些日历窗口真的会重演</span></span></span></a>
               <a class="mega-item nav-mega-item" href="confluence_screener.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="6" y="8" width="36" height="28" rx="3"/><path class="ghost" d="M11 13h26v18H11z"/><path class="accent" d="m12 27 6-7 5 4 7-9 6 4"/><circle class="soft-fill" cx="30" cy="15" r="2.4"/><path d="M18 41h12M24 36v5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="item-desc d"><span class="l-en">Today’s strongest confirmed setups</span><span class="l-zh">今日最强确认信号</span></span></span></a>
             </div>
           </section>
@@ -280,10 +412,10 @@
     </div>
   </div>
   
-  <script src="logo_config.js?v=b37d33d3" defer></script>
-  <script src="stock-logos.js?v=cc29be53" defer></script>
-  <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=e19f6af3" defer></script>
+  <script src="logo_config.js"></script>
+  <script src="stock-logos.js"></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -319,7 +451,7 @@
   <div class="hero">
     <div class="hero-inner">
       <div>
-        <div class="hero-eyebrow"><span class="l-en">SETUP TAPE · 2026-08-03</span><span class="l-zh">布局磁带 · 2026-08-03</span></div>
+        <div class="hero-eyebrow"><span class="l-en">SETUP TAPE · 2026-08-05</span><span class="l-zh">布局磁带 · 2026-08-05</span></div>
         <h1 class="hero-state">
           <span class="l-en"><span class="n">3</span> setups lining up today</span>
           <span class="l-zh"><span class="n">3</span> 组信号今日共振</span>
@@ -622,12 +754,12 @@
   
 
   <div class="site-foot">
-    <span><span class="l-en">Data as of 2026-08-03 · large-cap US universe · updated daily.</span><span class="l-zh">数据截至 2026-08-03 · 美国大盘股 · 每日更新。</span></span>
+    <span><span class="l-en">Data as of 2026-08-05 · large-cap US universe · updated daily.</span><span class="l-zh">数据截至 2026-08-05 · 美国大盘股 · 每日更新。</span></span>
     <span><span class="l-en">Context, not investment advice.</span><span class="l-zh">仅供参考，非投资建议。</span></span>
   </div>
 </div>
 
-<script src="theme.js?v=3d2163fc" defer></script>
+<script src="theme.js"></script>
 <script>
 (function(){
   'use strict';

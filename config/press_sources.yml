@@ -476,6 +476,54 @@ alpaca:
   snippet_max_chars: 400
 
 # ─────────────────────────────────────────────────────────────────────────────
+# CITATION POLICY (operator law, 2026-08-04) — engine/marketing/source_authority.py
+#
+#   "Reduce the citing unless it's a popular news outlet that can help to give us
+#    authority. We shouldn't be citing some random site like ForexLive or citing
+#    other X accounts. But we can say WSJ, Reuters, NYT... We gain when we cite
+#    from big shots, we gain nothing and even lose prestige by citing places no
+#    one knows about."
+#
+# THE STRING THIS REPLACES was "-- wire reports", stamped on every single-source
+# item. There is no masthead called Wire; it was an anonymiser written on
+# 2026-08-02 to stop an X relay shipping "-- @FirstSquawk reporting", and it
+# solved de-branding by making EVERY credit read as a source nobody has heard of.
+#
+# Three tiers, resolved in source_authority (hosts are the durable key):
+#   primary   the body that ISSUED the fact — Fed, BLS, BEA, ECB, White House
+#   marquee   a masthead that lends standing — Reuters, WSJ, NYT, Bloomberg, FT,
+#             AP, CNBC, MarketWatch, Barron's, The Economist
+#   unnamed   everything else — NO CREDIT CLAUSE IS EMITTED AT ALL
+#
+# The lists below only ADD to or SUBTRACT from the built-in defaults; the policy
+# itself is code, not config, so it cannot be switched off by an edit here.
+#
+# AND THE HALF THAT KEEPS THE SILENCE HONEST: an uncreditable item must be able
+# to stand WITHOUT a credit (a published print, a market level, an official
+# action, or two independent sources). An uncreditable CLAIM — "sources say",
+# a geopolitical relay — goes to the digest instead of the timeline. We stop
+# borrowing credibility we cannot name.
+# ─────────────────────────────────────────────────────────────────────────────
+citation:
+  # Promote a source into a tier (matched on feed key, URL host, or display name).
+  primary_extra: []
+  marquee_extra: []
+  # Retire a masthead whatever else matches. ABSOLUTE — checked first.
+  #
+  # zerohedge and investing.com are DELIBERATELY not in the built-in marquee list
+  # and are named here so the judgment is visible rather than implied: both are
+  # widely read, neither is a byline a research desk gains standing by citing.
+  # Moving one is a one-line edit and an operator call.
+  never_cite:
+    - zerohedge_feed
+    - zerohedge.com
+    - investing_news
+    - investing.com
+    - forexlive_news
+    - forexlive.com
+    - investinglive.com
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Wire lane emission policy — flagship interim lane (B1). Only the top-K highest
 # salience wire items/day may emit for the flagship account; counter persisted in
 # the daemon's LOCAL state (data/marketing/press/, never the repo).
@@ -780,6 +828,43 @@ wire:
     quote_store_paths:
       - "/var/lib/macro-live/public/live/quotes.json"
       - "site/live/quotes.json"
+
+    # ── US MACRO REACTION BASKET (2026-08-05) ───────────────────────────────
+    # Measured on the outbox: 83 of 83 breaking items since 2026-08-03T14:39Z
+    # shipped with an EMPTY tape_stamp, 79 of them because the entity map needs
+    # the headline to NAME an instrument and a macro print names a statistic.
+    # `wire_routing.classes` keeps macro_print on the brand account because "the
+    # half our readers come for is what it does to the path" — this is the block
+    # that actually attaches that half.
+    #
+    # A US macro print's reaction instruments are known a priori, so they come
+    # from the CLASS rather than the headline: risk tape, front of the path,
+    # dollar. Every leg is still measured, freshness-gated and threshold-gated,
+    # and a quiet or stale leg simply drops out. The clause is a co-timed
+    # session reading vs prior close and makes NO causal claim; the LLM never
+    # touches it (constitution A7 — the LLM may not originate a signal).
+    #
+    # Gated on macro_economy == "us" (stamped by breaking_relevance.score_item):
+    # every leg here is a US instrument, so hanging it off a Canadian trade
+    # print would be real numbers with a fabricated link. An item with no
+    # macro_economy field gets no basket at all — fail-closed, today's behaviour.
+    reaction:
+      enabled: true
+      max_legs: 3
+      # min_move is that instrument's MEDIAN absolute daily move over the
+      # trailing ~3y (2023-08-01 -> 2026-08-05, n≈750 sessions), so the three
+      # legs mean the same thing as each other rather than sharing one number
+      # that is a shrug on one and a shock on another. Sources in-repo:
+      #   ES=F     0.5   SPY |pct_change| p50 = 0.497 %  data/yahoo/SPY.parquet
+      #   ^TNX     4     DGS10 |diff| p50   = 4.0 bp     data/fred/DGS10.parquet
+      #   DX-Y.NYB 0.17  DTWEXBGS p50       = 0.168 %    data/fred/DTWEXBGS.parquet
+      # ^TNX's min_move is in BASIS POINTS, not percent: a yield index is quoted
+      # in percent, so its changePct is a percent OF a percent and printing it
+      # would ship "the 10-year -1.3%" for a 6bp move.
+      basket:
+        - {symbol: "ES=F",     min_move: 0.5}
+        - {symbol: "^TNX",     min_move: 4.0}
+        - {symbol: "DX-Y.NYB", min_move: 0.17}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Summarize-with-citation LLM lane — reuses config/marketing.yml breaking.llm

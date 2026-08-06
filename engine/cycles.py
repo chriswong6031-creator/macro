@@ -1431,11 +1431,15 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
         # read "don't chase", not the generic TOP WATCH "take profits"
         entry = {"tag": "DON'T CHASE", "tag_zh": "勿追高", "urgency": "caution",
                  "lane_hint": "on_the_run",
-                 "text": ("You missed the bottoming entry — the low already formed and price is now "
-                          f"extended ({caveat}). Don't chase; wait for a pullback to the "
-                          "10-day average or the next cycle low. Hold if already long."),
-                 "text_zh": (f"已错过筑底入场——低点已经形成，目前价格已拉伸（{caveat_zh}）。"
-                             "不要追高；等待回调至 10 日均线或下一个周期低点。若已持有则继续持有。")}
+                 # Glance-tier line: state + what to do, nothing else. The old
+                 # copy inlined `caveat` and ran past 200 characters, so the
+                 # dossier hero — which word-truncates this at 160 — printed it
+                 # cut off mid-clause ("…Don't…"). WHY the move is extended is
+                 # already spelled out in `why` below, which is where the
+                 # mechanics belong; repeating them here bought the truncation.
+                 "text": ("The low is already in and price has run. Wait for a "
+                          "pullback; hold if you're long."),
+                 "text_zh": "低点已经形成、价格已经拉升。等待回调再入场；若已持有可继续持有。"}
 
     # ── Below-MA10 TURN SIGNALED de-escalation gate ──────────────────────────
     # The branch at ~line 929 fires when price is LATE in the cycle, a swing low

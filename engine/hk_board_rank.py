@@ -71,6 +71,7 @@ from engine.us_board_rank import (  # noqa: F401 — shared vocabulary, re-expor
     BASIS_SESSIONS,
     SCORE_KIND,
     SCORE_WEIGHTS,
+    STAGE_BASING,
     STAGE_BLOCKED,
     STAGE_LABELS,
     STAGE_LIVE,
@@ -95,7 +96,13 @@ from engine.us_board_rank import (  # noqa: F401 — shared vocabulary, re-expor
 )
 from engine.us_board_rank import _as_date, _finite_float, _finite_int, _notice
 
-BOARD_DEFINITION = "hk_prophet_v1"
+# v2 (operator ruling 2026-08-03): ADMISSION changed — HK stopped requiring the 2-bar
+# 200-day reclaim (`signal_gate.gate(..., reclaim_veto=False)`; see
+# engine.signal_quality._buy_filter for why that leg was unsatisfiable-by-construction on
+# this tape). An admission change makes v1 and v2 two different products, so the stamp
+# moves and the ledger scopes to the newest definition — exactly the fence that keeps the
+# v1 forward record readable instead of silently pooled with a board that admits more.
+BOARD_DEFINITION = "hk_prophet_v2"
 
 # Board shape.  Caps are HK's own (masterplan §0 G4): a 156-name universe against
 # the US 1579, so the same 12/4 pair is a proportionally much wider net here.
@@ -152,20 +159,89 @@ _BUY_MARKERS = frozenset(("buy", "rebuy"))
 # Plain-word reason copy.  The verdict's own `reason` strings are internal
 # vocabulary ("counter-trend, no 200-reclaim/hold"); the glance tier gets these
 # instead, and the raw string rides along as `reason_raw` for the detail view.
+#
+# ONLY BLOCK REASONS BELONG IN THIS MAP.  :func:`veto_reason_copy` is called from
+# exactly one place — :func:`build_vetoed_rows`, which admits ``quality == "block"``
+# only — so a key for a take/pending reason would be unreachable copy that no
+# surface can render, and a test asserting its wording would be pinning dead code.
+# The complete block set `_buy_filter` can emit is the four keys below.
+#
+# WHY TWO KEYS SHARE ONE SENTENCE.  Read `engine.signal_quality._confirm_legs`: both
+# "failed next-bar hold" (the hk_prophet_v2 counter-trend branch, reclaim_veto=False)
+# and the legacy "failed reclaim-and-hold" (the FINAL branch, reached whenever the name
+# is NOT both below-200 and weekly-down) resolve on ONE test — ``held = c.iloc[i+1] >
+# c.iloc[i]`` on the 3D signal frame.  Neither evaluates a 200-day reclaim at all,
+# so the same sentence is the whole truth for both.
+#
+# ⚠ "failed reclaim-and-hold" WAS A MISLEADING ENGINE STRING — and as of 2026-08-04 the
+# engine no longer emits it.  It used to render as "Reclaimed the 200-day average, then
+# lost it again", narrating a 200-day round trip its branch never measured, on a name
+# that may never have been near its 200-day line.  The copy was fixed first (2026-08-03)
+# and the literal deliberately left alone, because renaming it changes US/CN §7 marker
+# bytes to fix a copy defect.  `research/cn_prophet_audit/CN_RECLAIM_HOLD_AUDIT.md`
+# §10/§11 then MEASURED the cost of leaving it: 1,094 blocks in the audit year named a
+# reclaim that never ran, and 002155.SZ — 5.2% ABOVE its 200-day mean at its buy bar —
+# was misread by two separate investigations because of it.  The main branch now emits
+# `HOLD_FAIL`, the literal that was already correct for the identical one-test outcome.
+#
+# THE KEY STAYS ANYWAY.  Rows stamped before that change still carry the old string in
+# the PIT candidate stores, the graded ledgers and already-rendered signal files, and
+# this map is what turns a stored reason into a sentence.  Deleting the key would blank
+# the copy on every historical vetoed row.  It is a RETIRED key, not a dead one.
+#
+# UNITS: the confirmation bar is a 3-DAY bar, not a session — `signal_frame`
+# resamples to "3B" before the filter reads i+1.  The copy says "3-day bar" for
+# that reason; "the next session" would be the same species of small false narrative
+# this entry exists to remove.
+_NEXT_BAR_HOLD_COPY = {
+    "en": "The next 3-day bar closed lower, so the entry never confirmed",
+    "zh": "信号后的下一根 3 日K线收低，入场未获确认",
+}
 VETO_REASON_COPY: dict[str, dict[str, str]] = {
+    # Both legs ran and both refused: no reclaim AND no hold.  The only shape that
+    # still earns the legacy sentence — 58.0% of the rows that used to carry it.
     "counter-trend, no 200-reclaim/hold": {
         "en": "Price never held above its 200-day average after the signal",
         "zh": "信号出现后股价未能站稳 200 日均线之上",
     },
-    "failed reclaim-and-hold": {
-        "en": "Reclaimed the 200-day average, then lost it again",
-        "zh": "曾收复 200 日均线，但随后再度失守",
+    # The other two shapes of the same branch, split out 2026-08-04 so a reader is told
+    # WHICH leg refused.  40.2% of the legacy rows are these — the ones a reclaim-rule
+    # change would actually relieve — and 1.8% are the inverse.
+    "counter-trend, held but no 200-reclaim": {
+        "en": "The 3-day bar after the signal held, but price never reclaimed its "
+              "200-day average",
+        "zh": "信号后的 3 日K线守住，但股价始终未收复 200 日均线",
     },
+    "counter-trend, reclaimed 200 but no next-bar hold": {
+        "en": "Price reclaimed its 200-day average, but the next 3-day bar closed lower",
+        "zh": "股价收复 200 日均线，但下一根 3 日K线收低",
+    },
+    # The reason `reclaim_veto=False` (hk_prophet_v2) made common.  Without this
+    # entry the rows fell through to VETO_REASON_FALLBACK: 10 of the 12 vetoed rows
+    # on the first v2 board rendered the contentless "The entry gate refused this
+    # signal", which tells a reader nothing at all.  It is now ALSO what the main
+    # branch emits, so one sentence covers every hold-only block on every market.
+    "failed next-bar hold": dict(_NEXT_BAR_HOLD_COPY),
+    "failed reclaim-and-hold": dict(_NEXT_BAR_HOLD_COPY),   # RETIRED — historical rows
     "veto: bearish divergence": {
         "en": "Momentum was already fading as the signal fired",
         "zh": "信号出现时动能已在衰减",
     },
 }
+
+# Keys the engine NO LONGER EMITS but stored rows still carry.  A vetoed row is rendered
+# from whatever reason was stamped on it, so a retired key must keep its sentence or every
+# historical row loses its copy — while an UNRETIRED key that the engine cannot emit is a
+# dead entry whose wording no surface can show.  Declaring the difference here is what lets
+# the reachability guard keep catching the second case
+# (tests/test_hk_v2_reason_copy_and_ran_lane.py).  Add a key here ONLY with the commit that
+# stops the engine emitting it.
+RETIRED_VETO_REASONS = frozenset({
+    # Retired 2026-08-04: the main branch tests the next-bar hold alone and now says so.
+    # research/cn_prophet_audit/CN_RECLAIM_HOLD_AUDIT.md §11 — 1,094 blocks carried this
+    # string for a reclaim test that never ran.
+    "failed reclaim-and-hold",
+})
 VETO_REASON_FALLBACK = {
     "en": "The entry gate refused this signal",
     "zh": "入场闸门未放行该信号",
@@ -278,6 +354,7 @@ def score_rows(
     board_asof: Any = None,
     featured_cap: int = FEATURED_CAP,
     sector_cap: int = SECTOR_CAP,
+    bottom_watch_stage: str = _ubr.STAGE_BLOCKED,
 ) -> list[dict]:
     """Score, stage, feature and order the HK buy pool.
 
@@ -288,6 +365,23 @@ def score_rows(
     MEMBERSHIP IS UNTOUCHED — byte-identically so.  The caller hands this function
     the pool the confluence cascade already admitted, in whatever order; this
     function adds fields and re-orders.  It never adds, drops or re-filters a row.
+
+    ``bottom_watch_stage`` names the bucket the cycle ladder's BOTTOM WATCH state
+    routes to.  It defaults to ``STAGE_BLOCKED`` — the behaviour every caller had
+    before the basing shelf existed — so a board whose template has no basing shelf
+    keeps rendering byte-identically; the HK builder passes ``STAGE_BASING`` (see
+    :func:`engine.us_board_rank.stage_for`).  DISPLAY-TIER ONLY: it decides which
+    shelf a row renders under, never membership, never score, never who is featured.
+
+    THE HK TRUTH, so nobody reads this as a population claim.  The HK pool is
+    CASCADE-GATED — ``scripts/build_hk_library.py`` hands this function only the
+    names ``hk_cascade_eligible`` admitted — so a pre-signal BOTTOM WATCH row is
+    structurally rare here in a way it is not on the US board: MEASURED ZERO across
+    all 14 committed board snapshots (2026-07-20..08-04).  The parameter exists so
+    the HK surface speaks the same five-bucket language as the US one, and so the day
+    the cycle ladder and the confluence cascade DO disagree, the row lands on a
+    labelled shelf instead of falling through the template's catch-all — which
+    renders an unknown stage LAST, below Blocked, the worst place for it.
     """
     return _ubr.score_rows(
         rows,
@@ -300,6 +394,7 @@ def score_rows(
         definition=BOARD_DEFINITION,
         alpha_of=selection_value,
         featured_extra=featured_shortfalls_extra(adv_by),
+        bottom_watch_stage=bottom_watch_stage,
     )
 
 
@@ -557,6 +652,7 @@ def build_ran_rows(
     cap: int = RAN_CAP,
     ticks_min: int = RAN_TICKS_MIN,
     ticks_max: int = RAN_TICKS_MAX,
+    require_above200: bool = True,
 ) -> list[dict]:
     """Build the HK ran lane — the shared implementation, plus the cohort chip.
 
@@ -577,6 +673,10 @@ def build_ran_rows(
     the same three words: ``confirm`` (move from the confirmation close, date and age
     still the marker's), ``marker`` and ``approx`` (both print no move at all).
     """
+    members = _cohort_set(cohort)
+    # Build UNCAPPED, then apply the cap cohort-first (see _cohort_first): with the
+    # above200 door open the lane is ~5x oversubscribed and a plain freshest-first
+    # truncation drops every mega-cap a reader would come here to check.
     rows = _ubr.build_ran_rows(
         verdict_by,
         meta_by=meta_by,
@@ -584,12 +684,13 @@ def build_ran_rows(
         exclude=exclude,
         theme_by=theme_by,
         board_asof=board_asof,
-        cap=cap,
+        cap=None,
         ticks_min=ticks_min,
         ticks_max=ticks_max,
         move_read=confirmation_move,
+        require_above200=require_above200,
     )
-    members = _cohort_set(cohort)
+    rows = _cohort_first(rows, members, cap)
     chip = leadership_chip(leadership)
     for row in rows:
         in_cohort = str(row.get("ticker") or "").strip().upper() in members
@@ -600,6 +701,32 @@ def build_ran_rows(
         if in_cohort and chip:
             row["leadership"] = dict(chip)
     return rows
+
+
+def _cohort_first(rows: list[dict], members: set[str], cap: int) -> list[dict]:
+    """Cohort members keep their slot; the rest fill what is left, order preserved.
+
+    THE CAP, NOT THE TREND TEST, IS WHAT HID THE MEGA-CAPS.  Opening the ran lane's
+    ``above200`` door (so a name recovering from a deep drawdown can appear at all)
+    takes HK admits from 13 to **64** for **12** slots, and the lane sorts
+    freshest-cross-first — so every name the operator named lands at rank 14-56 and
+    is cut, INCLUDING 3690.HK, which the stricter lane had been showing.  Measured on
+    the committed panel 2026-08-04: opening the door alone surfaces NONE of them and
+    evicts the one that was already there, which is a strictly worse board.
+
+    This is the rule :func:`build_vetoed_rows` already applies, for the same reason:
+    a lane whose job is "what the board did not act on" is worthless if the names a
+    reader is asking about are exactly the ones the cap drops.  It admits NOBODY new
+    — every row here already passed ``ran_admits`` — it only decides who keeps a seat
+    when the lane is oversubscribed.  Cohort membership is the ONE display-tier
+    priority (HKRV-R5: hk_leadership never touches rank, size or gate on the graded
+    buy lane; this is a display strip and carries no entry claim).
+    """
+    if cap is None or len(rows) <= cap:
+        return rows
+    keep = [r for r in rows if str(r.get("ticker") or "").strip().upper() in members]
+    rest = [r for r in rows if str(r.get("ticker") or "").strip().upper() not in members]
+    return (keep + rest)[:cap] if len(keep) <= cap else keep[:cap]
 
 
 # --------------------------------------------------------------------------- #

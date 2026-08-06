@@ -1107,8 +1107,8 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
         extended = (state == "TOP WATCH" or grade == _PARABOLIC or _ovx
                     or rec.get("alpha_entry") == "extended")
         if extended:
-            return _v("Extended — don't chase; wait for a pullback",
-                      "过度拉升 — 勿追高；等待回撤", drivers, cautions)
+            return _v("Extended — wait for a pullback",
+                      "过度拉伸 — 等待回撤", drivers, cautions)
         if sel_t == "high":
             return _v("Strong name · wrong tape — wait for a base",
                       "强势个股 · 趋势不利 — 等待筑底", drivers, cautions)
@@ -1130,8 +1130,8 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
         return _v("Leader · accounting warning — verify before buying",
                   "领先 · 财务质量警示 — 买入前先核实", drivers, cautions)
     if grade == _PARABOLIC and sel_t in ("high", "mid"):
-        return _v("Extended — don't chase; wait for a pullback",
-                  "过度拉升 — 勿追高；等待回撤", drivers, cautions)
+        return _v("Extended — wait for a pullback",
+                  "过度拉伸 — 等待回撤", drivers, cautions)
 
     # ---- the constructive cases --------------------------------------------
     ent_ok = (ent is not None and ent > 0)

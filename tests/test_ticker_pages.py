@@ -15,6 +15,7 @@ Covers:
 from __future__ import annotations
 
 import json
+import re
 import sys
 from datetime import date, timedelta
 from pathlib import Path
@@ -1455,7 +1456,13 @@ class TestTemplateRender:
         assert 'data-company-intelligence' in html
         assert 'data-ticker="AAPL"' in html
         assert '<script defer src="../theme.js"></script>' in html
-        assert "company-intelligence-dossier.js?v=20260802d" in html
+        # Pin that the dossier script ships WITH a cache-bust key, not which key.
+        # The literal value was pinned here, so every edit to that file failed a
+        # test whose subject is the product layer — and the fix ("update the
+        # string") is the one that hides a genuinely missing bump.
+        assert re.search(
+            r'company-intelligence-dossier\.js\?v=[0-9a-z]+"', html
+        ), "the CI dossier script must load with a ?v= cache key"
         assert "The latest call, in context" in html
         assert "把最新财报放回历史脉络" in html
         assert "Coverage incomplete" not in html  # runtime state, never preclaimed
@@ -2129,7 +2136,13 @@ class TestR2000UniverseExpansion:
         assert chips[0]["zh"] == "罗素2000"
 
     def test_sp500_dow30_chips(self, tmp_path):
-        """S&P 500 + Dow 30 ticker gets chips [Dow 30, S&P 500] in that order."""
+        """A Dow 30 name is chipped Dow 30 — and never also 'S&P 500'.
+
+        S&P 500 membership stopped being chipped on 2026-08-04 (operator): it is
+        the assumed baseline for a US large-cap dossier, so it spent a hero slot
+        restating what the reader already assumed. Chips are reserved for what
+        moves a name OFF that baseline.
+        """
         agg, per = self._make_agg_and_per(tmp_path)
         ctx = build_page_context(
             "AAPL", "Apple Inc.", "Information Technology", per, agg, "2026-07-20 00:00 UTC",
@@ -2139,7 +2152,16 @@ class TestR2000UniverseExpansion:
         assert chips is not None
         labels_en = [c["en"] for c in chips]
         assert labels_en[0] == "Dow 30", "Dow 30 must be first"
-        assert "S&P 500" in labels_en
+        assert "S&P 500" not in labels_en
+
+    def test_plain_sp500_gets_no_index_chip(self, tmp_path):
+        """An S&P 500 name with no other membership gets no index chip at all."""
+        agg, per = self._make_agg_and_per(tmp_path)
+        ctx = build_page_context(
+            "MSFT", "Microsoft", "Information Technology", per, agg, "2026-07-20 00:00 UTC",
+            group="sp500", all_groups={"sp500"}, dow30_set=set(),
+        )
+        assert ctx["hero"]["index_chips"] is None
 
     def test_sp500_no_r2000_chip(self, tmp_path):
         """A large-cap sp500 ticker must NOT get a Russell 2000 chip even if in all_groups."""
