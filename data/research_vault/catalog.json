@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T23:29:01.735096+00:00",
-  "count": 903,
+  "generated_at": "2026-08-06T23:44:29.509286+00:00",
+  "count": 904,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -1287,6 +1287,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-5p1dipehbli-939757",
+      "title": "Hon Hai (2317)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:01:46Z",
+      "summary_points": [
+        "**Hon Hai Revenue Momentum**: Jul rev +54% YoY (vs.",
+        "est), Aug rev +73% YoY / +11% MoM (NT$1.05T), 3Q26E rev +48% YoY / +22% QoQ (NT$3.1T) driven by AI server market share gains and smartphone form factor shifts.",
+        "**Dual Growth Catalysts**: AI server demand (market share expansion) and smartphone form factor changes (2026E) underpin near-term revenue growth; Foxtron (EV subsidiary) launched self-branded \"Bria\" vehicle and secured Mitsubishi Motors partnership for passenger cars/zero-emission buses.",
+        "**Valuation Gap & Upside**: Goldman Sachs 12m TP at NT$400 (54.7% upside from NT$258.50), reflecting 120%+ revenue/EBITDA growth (2025–2028E) and 2027E P/E of 18.9x, with current price significantly below target.",
+        "**Key Downside Risks**: Slower AI server ramp-up, weaker EV solution performance (assembly/design/software), and intensified competition in consumer electronics EMS."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
