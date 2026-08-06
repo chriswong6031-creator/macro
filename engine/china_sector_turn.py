@@ -101,8 +101,11 @@ def sector_turn_map(closes: pd.DataFrame, tkr_sector: dict, *, asof=None) -> dic
             dd126 = float(idx.iloc[-1] / idx.iloc[-126:].max() - 1.0)
             washout = (dd126 <= WASHOUT_DD_126) or (ret63 <= WASHOUT_RET_63)
 
-            # leg A — the sector composite's fresh 2D-MACD x 3D-StochRSI turn
-            v = cascade(idx)
+            # leg A — the sector composite's fresh 2D-MACD x 3D-StochRSI turn.
+            # market="CN" explicitly: this is a SECTOR COMPOSITE, not a ticker, so there is no
+            # suffix for signal_gate to infer from — but its members trade on the Shanghai
+            # calendar and its 2D/3D buckets must be anchored there (session_anchor R3).
+            v = cascade(idx, market="CN")
             tier = v.get("tier") if v.get("tier") in _TURN_TIERS else None
             turn = ({"tier": tier, "ticks": v.get("ticks"), "sub": v.get("sub"),
                      "provisional": bool(v.get("provisional"))} if tier else None)
