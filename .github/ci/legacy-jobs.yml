@@ -3362,7 +3362,19 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install pytest pyyaml
+        # numpy/pandas/pyarrow are NOT optional here despite this being a "pure
+        # publisher" job: tests/test_marketing_publish_time_content.py's
+        # _write_proxy_bars helper builds correlated OHLCV bars with
+        # numpy.random.default_rng + pandas.bdate_range and lands them via
+        # DataFrame.to_parquet (pyarrow). The declaration was never widened when
+        # that helper landed, so the job passed only while its venv happened to
+        # carry them — `run_ci_pack.py` shares an environment across legacy jobs
+        # whose install commands are byte-identical, which makes the gap depend on
+        # pack composition rather than on anything in this job. It surfaced as
+        # `ModuleNotFoundError: No module named 'numpy'` (9 failures, run
+        # 31127503582) the moment an unrelated PR re-balanced the packs. Declare
+        # what the suites import; never rely on a neighbour's environment.
+        run: pip install pytest pyyaml numpy pandas pyarrow
       - name: social publisher + outbox + wiring-layer unit tests
         # test_marketing_live_verify is co-run: the post-time tape gate ships
         # inside the publisher loop (pandas-free here — its earnings guard is
