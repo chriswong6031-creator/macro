@@ -1793,6 +1793,12 @@
     errSdk:    ['Could not load sign-in. Check your connection.', '无法加载登录组件，请检查网络。'],
     errGen:    ['Something went wrong — please try again.', '出错了，请重试。'],
     legal:     ['Research, not investment advice.', '本产品为研究工具，非投资建议。'],
+    forgot:    ['Forgot your password?', '忘记密码？'],
+    // One line, because _authShow re-localises by KEY. Names the one-hour expiry and
+    // the same-browser constraint PKCE imposes (the emailed code is worthless without
+    // the verifier this browser stored) — both are how the link actually fails.
+    sentOk:    ['Check your inbox for a reset link — open it in this browser, and within the hour.',
+                '请查收重置链接——请在此浏览器中打开，且需在一小时内。'],
     close:     ['Close', '关闭'],
     showpw:    ['Show password', '显示密码'],
     signedin:  ['Synced across your devices', '已在各设备间同步'],
@@ -1847,6 +1853,8 @@
     '.auth-msg.err{background:color-mix(in srgb,var(--down,#ff5c6c) 14%,transparent);color:var(--down,#ff5c6c);border:1px solid color-mix(in srgb,var(--down,#ff5c6c) 30%,transparent)}',
     '.auth-msg.ok{background:color-mix(in srgb,var(--up,#23c08a) 14%,transparent);color:var(--up,#23c08a);border:1px solid color-mix(in srgb,var(--up,#23c08a) 30%,transparent)}',
     '.auth-foot{margin:15px 0 0;text-align:center}',
+    '.auth-forgot-row{margin:9px 0 0}',
+    '.auth-forgot{color:var(--muted,var(--ink-3));font-weight:600;font-size:12px}',
     '.auth-switch{background:none;border:0;color:var(--link,var(--blue,#4f8cff));font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;padding:4px}',
     '.auth-switch:hover{text-decoration:underline}',
     '.auth-legal{margin:12px 0 0;font-size:10px;line-height:1.5;color:var(--muted,var(--ink-3));text-align:center}',
@@ -1887,6 +1895,7 @@
               '<button type="button" class="auth-reveal" id="auth-reveal">' + EYE_SVG + '</button></div></div>' +
           '<button type="submit" class="auth-submit" id="auth-submit"></button>' +
         '</form>' +
+        '<div class="auth-foot auth-forgot-row"><button type="button" class="auth-switch auth-forgot" id="auth-forgot"></button></div>' +
         '<div class="auth-msg" id="auth-msg" role="alert"></div>' +
         '<div class="auth-foot"><button type="button" class="auth-switch" id="auth-switch"></button></div>' +
         '<p class="auth-legal" id="auth-legal"></p>' +
@@ -1912,6 +1921,9 @@
     _setTxt('auth-submit', _authBusyState ? _authL('working') : _authL(si ? 'si' : 'su'));
     _setTxt('auth-switch', _authL(si ? 'toSignup' : 'toSignin'));
     _setTxt('auth-legal', _authL('legal'));
+    // Recovery is a sign-in concern only — a signup form has no password to forget.
+    var fg = document.getElementById('auth-forgot');
+    if (fg) { fg.textContent = _authL('forgot'); fg.parentNode.style.display = si ? '' : 'none'; }
     var em = document.getElementById('auth-email'); if (em) em.placeholder = _authL('emailPh');
     var pw = document.getElementById('auth-pw');
     if (pw) { pw.placeholder = _authL('pwPh'); pw.setAttribute('autocomplete', si ? 'current-password' : 'new-password'); }
@@ -1957,6 +1969,7 @@
       var pw = document.getElementById('auth-pw'); if (!pw) return;
       pw.type = pw.type === 'password' ? 'text' : 'password';
     });
+    document.getElementById('auth-forgot').addEventListener('click', _authForgot);
     document.getElementById('auth-google').addEventListener('click', _authGoogle);
     document.getElementById('auth-xbtn').addEventListener('click', _authX);
     document.getElementById('auth-wechat').addEventListener('click', function () { _authShow('wechatSoon', 'ok'); });
@@ -2004,6 +2017,25 @@
       return sb.auth.signInWithOAuth({ provider: provider, options: { redirectTo: location.href.split('#')[0] } });
     }).then(function (res) {
       if (res && res.error) { _authBusy(false); _authShow(_authErrKey(res.error), 'err'); }
+    }).catch(function () { _authBusy(false); _authShow('errSdk', 'err'); });
+  }
+  // "Forgot your password?" — mail a recovery link. The redirect is the SITE ROOT,
+  // not this page: onboard.js owns the return leg (the form that calls updateUser),
+  // and index.html is the one page that loads it as a real <script> tag. gotrue
+  // answers /recover identically for an unknown address (anti-enumeration), so a
+  // non-null error here is a genuine failure — a cooldown, a mail-transport fault,
+  // or a redirect the project has not allow-listed — and is shown verbatim.
+  function _authForgot() {
+    var emEl = document.getElementById('auth-email');
+    var email = (emEl && emEl.value || '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { _authShow('errEmail', 'err'); if (emEl) emEl.focus(); return; }
+    _authBusy(true); _authMsg('', null);
+    getSupabaseClient().then(function (sb) {
+      return sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/?onboard=recovery' });
+    }).then(function (res) {
+      _authBusy(false);
+      if (res && res.error) { _authMsgKey = null; _authMsg(res.error.message, 'err'); return; }
+      _authShow('sentOk', 'ok');
     }).catch(function () { _authBusy(false); _authShow('errSdk', 'err'); });
   }
   function _authGoogle() { _authOAuth('google', 'redirect'); }
