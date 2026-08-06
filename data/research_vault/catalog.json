@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T19:43:19.584481+00:00",
-  "count": 892,
+  "generated_at": "2026-08-06T19:58:40.810598+00:00",
+  "count": 893,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -504,6 +504,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-0wuwvimifuk-a29c5f",
+      "title": "Duolingo Inc. (DUOL) Q2'26 Earnings Review Focus Remains on Strategic Shift While Building Future Monetization Levers",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T11:17:37Z",
+      "summary_points": [
+        "**Q2 Performance & AI Efficiency**: Exceeded bookings/revenue/EBITDA guidance; AI-driven cost efficiencies (e.g., Video Call inference reduction) boosted gross margins; $44m stock buybacks in Q2.",
+        "**Valuation vs.",
+        "Profitability Gap**: Elevated P/E (40.4x) and revenue growth (38.7%) offset by low EBIT margin (13.1%), raising sustainability concerns amid user acquisition costs or monetization pressures.",
+        "**Cash Flow Sustainability Risk**: Net income ($414.1m) > operating cash flow ($387.8m), indicating working capital strain; operational efficiency must improve to support growth/dividends.",
+        "**Target Price Underestimation Trend**: Consistent 2024-2026 target prices below closing prices (e.g., $100 vs $105.52 on 22-Apr-26), signaling potential overvaluation or bearish sentiment."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
