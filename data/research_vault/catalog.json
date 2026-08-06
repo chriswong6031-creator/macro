@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T10:25:42.058669+00:00",
-  "count": 865,
+  "generated_at": "2026-08-06T10:40:25.235240+00:00",
+  "count": 866,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -57,6 +57,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-liekasdjj8j-59d3a9",
+      "title": "JPM US Market Intelligence Morning Briefing Aug 6",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T10:23:43Z",
+      "summary_points": [
+        "**US Macro Data Contradiction**: ADP jobs data missed (44k vs 75k forecast) signaling slowing labor growth, yet ISM-Services Biz Activity hit highest since May 2024, indicating resilient economic momentum despite inflation risks.",
+        "**Mag7 Valuation Gap**: Mag7 forward P/E (16.22) at 2 SD below 2018Q3 mean, with backlog growth (150% YoY) outpacing capex (80% YoY), implying ~56% upside to average valuation.",
+        "**Iran-Oman Strait Deal Risk**: Unresolved US-Iran MOU and Hormuz deal review create near-term oil volatility risk (WTI -1.0% to $75.04), with potential for sharp price moves amid Gulf tensions.",
+        "**Tech Sector Fundamentals**: Cloud infrastructure (Google Cloud net new ARR growth) shows consistent momentum vs cyclical dips in AWS/Azure; SPX earnings driven by 47% YoY bottom-line growth (margins ~16.7%).",
+        "**EM Tactical Allocation**: Long China H-shares over A-shares (H-shares lagged YTD but benefit from cost-effective AI build-out) and Asia Refiners (record refining margins, supply/demand tailwinds)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-thyjpaspjda-967067",
       "title": "JPM Flows Liquidity 2026 08 05",
