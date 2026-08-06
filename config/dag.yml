@@ -2574,6 +2574,22 @@ lanes:
       - id: build_vector_on_change
         module: scripts.build_vector
         note: conditional on rc=10 only; event-driven sentinel
+      - id: inject_data_base
+        module: scripts.inject_data_base
+      - id: externalize_css
+        module: scripts.externalize_css
+      - id: optimize_assets
+        module: scripts.optimize_assets
+        note: >
+          normalize chain inside the commit step, before `git add` (P0 2026-08-04,
+          9a997e9da3f — the #4492 follow-up). This lane commits site/vector.html but
+          had no sweep of any kind, so every flash-crash alert shipped a RAW page:
+          inline <style>, no assets/css/<hash>.css ref, stale ?v=, held until the
+          next full-tree render re-baked it. All three are idempotent and non-fatal
+          (|| echo) so a sweep failure can never cost an alert its publish. The step
+          also stages templates/index.html — index.html is a plain-copy PAIR and
+          these sweeps write the template side too, so staging the site copy alone
+          would land the pair diverged and red the pages.yml publish gate.
 
   # ── commodity-sentinel.yml / shock ──────────────────────────────────────
   - workflow: .github/workflows/commodity-sentinel.yml
@@ -2584,6 +2600,19 @@ lanes:
       - id: build_commodities_on_change
         module: scripts.build_commodities
         note: conditional on rc=10 only; event-driven sentinel
+      - id: inject_data_base
+        module: scripts.inject_data_base
+      - id: externalize_css
+        module: scripts.externalize_css
+      - id: optimize_assets
+        module: scripts.optimize_assets
+        note: >
+          normalize chain inside the commit step, before `git add` (P0 2026-08-04,
+          9a997e9da3f — the #4492 follow-up). This lane commits site/commodities.html
+          but had no sweep of any kind, so every shock alert shipped a RAW page:
+          inline <style>, no assets/css/<hash>.css ref, stale ?v=, held until the
+          next full-tree render re-baked it. All three are idempotent and non-fatal
+          (|| echo) so a sweep failure can never cost an alert its publish.
 
   # ── whitehouse-sentinel.yml / monitor ───────────────────────────────────
   - workflow: .github/workflows/whitehouse-sentinel.yml
@@ -2592,6 +2621,20 @@ lanes:
       - id: build_whitehouse
         module: scripts.build_whitehouse
         note: event-driven; commit only on change (rc=10)
+      - id: inject_data_base
+        module: scripts.inject_data_base
+      - id: externalize_css
+        module: scripts.externalize_css
+      - id: optimize_assets
+        module: scripts.optimize_assets
+        note: >
+          normalize chain inside the commit step, before `git add` (P0 2026-08-04,
+          9a997e9da3f — the #4492 follow-up). This lane commits site/whitehouse.html
+          but had no sweep of any kind, so every activated alert shipped a RAW page:
+          inline <style>, no assets/css/<hash>.css ref, stale ?v=. An alert page is
+          read the same hour it lands, which makes it the worst one to ship raw. All
+          three are idempotent (~20s over the tree, inside this job's 10m budget) and
+          non-fatal (|| echo) so a sweep failure can never cost an alert its publish.
 
   # ── government-revenue-live.yml / refresh ───────────────────────────────
   - workflow: .github/workflows/government-revenue-live.yml

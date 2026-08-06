@@ -81,8 +81,25 @@ jobs:
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
+          # normalize the page this step stages (P0 2026-08-04, 9a997e9da3f): a lane
+          # that commits site/ HTML without the shim/externalize/stamp chain publishes
+          # a RAW page — inline <style>, no assets/css/<hash>.css ref, stale ?v= — and
+          # holds it until the next full-tree render re-bakes special_situations.html.
+          # All three passes are idempotent (~20s over the tree) and non-blocking, so a
+          # sweep failure can never cost the backlog burn-down its commit.
+          python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+          python -m scripts.externalize_css || echo "::warning title=externalize::pre-commit css externalize FAILED — pages may ship un-externalized (9a997e9da3f)"
+          python -m scripts.optimize_assets || echo "::warning title=stamp::asset optimize FAILED — ?v= stamps may be stale"
           # data/special_situations is staged recursively — covers event_priors/*.json (B3 fix)
           git add data/special_situations site/special_situations.html site/allocationdata/special_situations.json data/regime/special_situations_latest.json
+          # ...and the content-hashed assets the page now links: externalize_css rewrites
+          # special_situations.html to <link> site/assets/css/<hash>.css, so staging the
+          # page without the asset ships a 404 stylesheet. --ignore-removal never stages a
+          # DELETION — the orphan prune reasons only from pages it can see, and this lane
+          # has no post-rebase normalize to re-mint an asset a sibling still links.
+          # Separate lines: `git add a b` exits 128 when either pathspec matches nothing.
+          git add --ignore-removal site/assets/css 2>/dev/null || true
+          git add --ignore-removal site/assets/js 2>/dev/null || true
           if git diff --cached --quiet; then echo "no special-sits changes to commit"; exit 0; fi
           git commit -m "special-sits: backlog burn-down + priors refresh $(date -u +%F)"
           # best-effort push: daily now runs in its own lane and may push concurrently.
