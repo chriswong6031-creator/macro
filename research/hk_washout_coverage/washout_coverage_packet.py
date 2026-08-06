@@ -28,8 +28,6 @@ import sys
 import warnings
 from pathlib import Path
 
-warnings.filterwarnings("ignore")
-
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 
@@ -339,4 +337,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # Script-only: at module level this mutes the process-global filter for
+    # every importer (tests/test_no_module_level_logging_disable.py).
+    warnings.filterwarnings("ignore")
     raise SystemExit(main())
