@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T00:52:28.833105+00:00",
-  "count": 838,
+  "generated_at": "2026-08-06T01:17:21.230998+00:00",
+  "count": 839,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -1437,6 +1437,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-apfbuhcslmy-7e1947",
+      "title": "JPM Asia Tech Strategy A",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T01:02:42Z",
+      "summary_points": [
+        "**Asian Tech Drawdown Fundamentals**: Third 20%+ drawdown in Asian Tech since 2022 with no fundamental weakness (AI scaling, token demand, profitability intact); hyperscaler capex sustainability (FCF negative 2H26-2027) a risk but no AI compute step-back, pricing EPS cuts (end 2026/early 2027).",
+        "**Hyperscaler Capex Acceleration**: Top 7 hyperscalers' capex surges from $443Bn (2025) to $1,489Bn (2027), YoY growth peaking at 103% in 2026, signaling aggressive infrastructure investment with no inventory build for AI components.",
+        "**Memory Segment Narrative vs Fundamentals**: Sound supply shortage fundamentals but \"price-inelastic\" AI demand narrative persists; 40% correction may trigger 6-month bounce but stocks unlikely to reclaim May-26 highs.",
+        "**Public Cloud Backlog Expansion**: MSFT backlog jumps from $392Bn (3Q25) to $678Bn (2Q26), Google/Amazon backlogs surge, indicating strong near-term revenue visibility driven by AI token consumption.",
+        "**Valuation Disconnect Risk**: Forward P/E near +2std (Jan-25/26) vs historical avg (~18x), Forward P/B above avg (~3x) with rising ROE—elevated growth expectations raise overvaluation risk requiring careful assessment."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
