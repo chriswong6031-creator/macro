@@ -23,7 +23,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-warnings.filterwarnings("ignore")
 
 from engine.quant_lab import specs, study                       # noqa: E402
 from lib import config                                          # noqa: E402
@@ -94,4 +93,10 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # Scoped to the CLI entry point on purpose. At module level this mutates the
+    # process-global warnings filter for every importer, which is what the
+    # import-hygiene ratchet (tests/test_no_module_level_logging_disable.py) exists
+    # to stop — the study walk is noisy, but that is this script's problem to mute,
+    # not its callers'.
+    warnings.filterwarnings("ignore")
     raise SystemExit(main())
