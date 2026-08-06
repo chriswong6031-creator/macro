@@ -5324,9 +5324,14 @@ def main() -> int:
                 # macd/k/d scalars in its return; re-run close-only (no I/O).
                 _plab_d3: dict[str, dict] = {}
                 _OS3, _OB3, _CONF_W3 = 20, 80, 8
+                from engine import session_anchor as _plab_sa
                 for _plab_t3, _plab_c3 in _ext_closes.items():
                     try:
-                        _sf3 = _plab_sf(_plab_c3.dropna())
+                        # 3D buckets anchored to the ticker's own market calendar (R-SQ1);
+                        # this library is US, so market_for_ticker returns "US" for every
+                        # name here — inferring it keeps that a FACT rather than a guess.
+                        _sf3 = _plab_sf(_plab_c3.dropna(),
+                                        market=_plab_sa.market_for_ticker(_plab_t3))
                         if _sf3.empty or len(_sf3) < 2:
                             continue
                         _last3 = _sf3.iloc[-1]
