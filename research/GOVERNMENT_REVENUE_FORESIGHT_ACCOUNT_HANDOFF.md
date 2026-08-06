@@ -189,6 +189,34 @@ already-committed triad (`collectors/usaspending_awards.py` appears there solely
 path-filter). Until that nightly runs, `/api/government-revenue/latest` keeps reporting
 `"availability":"projection_state_absent"`.
 
+**Wave 9C follow-ups — found during the recovery, deliberately NOT fixed in that PR.** Each is real
+and reproducible; none is a crash. Do not let them disappear into the next wave's scope.
+
+1. **A silently dead explicit-null branch.** `awards.parquet` has no
+   `current_award_amount_observed_at` / `potential_award_amount_observed_at` column, so
+   `merge_awards` evaluates `new[observed_column].notna()` against an all-NaN float64 placeholder.
+   The branch that clears a value on an explicit source null therefore never fires for any accrued
+   row. Behavioural gap, not a crash — and exactly the shape of defect that hid the pandas-3 break:
+   a canonical column the accrued store never grew.
+2. **`merge_awards` writes an Arrow `null`-typed column.** `program_acronym` is all-None in
+   `awards.parquet`, so it infers no type. `_normalize_event_ledger` removes this class from the two
+   event ledgers; the three legacy ledgers still have it, and their dtypes were deliberately left
+   alone so existing readers keep working.
+3. **The next pandas trap in the same file.** `append_snapshot_versions`
+   (`collectors/usaspending_awards.py`, the `pd.concat` around line 1365) raises a pandas-2
+   `FutureWarning`: concatenation "will no longer exclude empty or all-NA columns when determining
+   result dtypes." Pre-existing, and the same all-NA-column family that caused this incident.
+4. **`scripts/check_government_revenue_projection.py` fails from a bare shell.** With an empty
+   `PYTHONPATH`, `from scripts import build_government_revenue` resolves `scripts` to a *different
+   worktree* on this machine. `env PYTHONPATH="$PWD" python3 scripts/check_government_revenue_projection.py`
+   works. Environment pollution rather than a repo defect, but it will mislead anyone running the
+   guard outside pytest.
+5. **The systemic gap: no suite reads a committed production artifact.** Every Government Revenue
+   test builds `tmp_path` frames from the *current* column lists, so no test could ever see an
+   accrued ledger that predates a column — which is why this bug was invisible for two release
+   cycles. The two new regression tests write a legacy-shaped parquet and read it back, closing the
+   specific case; the general gap is open.
+
 **Original wave contract, retained for reference:**
 
 **Goal:** establish the first receipt-bound baseline, then emit only genuine changes observed after it.
