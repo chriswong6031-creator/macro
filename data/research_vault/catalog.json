@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T22:50:02.090269+00:00",
-  "count": 832,
+  "generated_at": "2026-08-06T01:17:21.230998+00:00",
+  "count": 839,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -256,6 +256,46 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jc4mzxd9qhw-a8373b",
+      "title": "Neutron Holdings Inc. (LIME) Q2'26 Review Core Growth Algorithm on Display Against Continued Investments",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T11:07:07Z",
+      "summary_points": [
+        "**Growth Catalysts & Scalability**: LimePrime traction (double-digit user growth), Canadian market expansion, and fleet/rider growth drive 24% YoY revenue growth (AOV +22%, MAUs +22%); $1.417B 2026 revenue/EBITDA $211.3M/CFO $386.4M signal operational resilience.",
+        "**Valuation Upside & Rating**: Goldman Sachs raises PT to $40 (from $39) with 43% upside vs.",
+        "$27.14 close; 2026 revenue/EBITDA estimates raised by $300M/$3M, supported by EV/Sales and DCF models.",
+        "**Key Risk: Margin Pressure**: Near-term gross margin compression from growth investments (LimePrime, Canadian ops) and SBC expense; sequential Q3 margin improvement expected but short-term profitability at risk.",
+        "**Critical Risks**: Slower micro-mobility growth (consumer spending), city-level regulation, competitive intensity, and elevated R&D/SG&A reducing operating leverage."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-8wy3fbyuzy8-336a02",
+      "title": "JPM US AI and the labor",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T11:05:40Z",
+      "summary_points": [
+        "**Labor Share Depression**: Labor share of national income hit all-time low in Q2 2026, reflecting genuine decline in labor bargaining power (not measurement error); AI models predict further decline, threatening corporate margins and labor costs.",
+        "**Reliable Proxy Metric**: Net capital share (QFR data) mirrors labor share trends despite 2017 tax act distortions, providing a critical alternative metric for portfolio analysis.",
+        "**Elevated Capital Returns**: Nonfinancial corporate sector’s rate of return (before/after tax) remains above historical norms through Q2 2026, indicating persistent capital returns post-pandemic."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
@@ -525,6 +565,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-u7jswcdytdb-a02335",
+      "title": "Hong Kong PMI fell in July",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:20:23Z",
+      "summary_points": [
+        "**Inventory Contraction**: Inventory sub-index dropped to 47.5 (below 50 contraction threshold) from 51.7, signaling active inventory reduction and weakening business activity.",
+        "**External Demand Softening**: New export orders fell to 50.0 (from 51.8), indicating deteriorating global demand and potential export sector headwinds.",
+        "**Margin Pressure Easing**: Input prices eased to 54.6 (from 55.3) and output prices dropped to 51.9 (from 52.1), with explicit price cuts noted, reflecting competitive pricing and margin compression."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-mf0juhopn2c-537d29",
       "title": "Devon Energy Corp",
       "institution": "Goldman Sachs",
@@ -646,6 +705,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-0mwrf2uu0pz-168c83",
+      "title": "Japan June Wages Growth Maintains High Level of Over 3",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:20:17Z",
+      "summary_points": [
+        "**Wage Acceleration & Real Wage Momentum**: Nominal cash wages rose +3.4% yoy (May: +3.3%), driven by special (+3.5%) and basic wages (+3.4%); real wages positive for six consecutive months (+1.6% yoy June), signaling sustained consumer purchasing power growth.",
+        "**Shunto Agreement Dynamics**: Shunto agreements set 6.2% part-timer wage growth (exceeding 2024's 5.8%), but current part-timer wage growth slowed to +4.3% yoy (May: +5.0%), indicating potential future inflationary pressure not yet reflected in data.",
+        "**Data Reliability Risk**: \"Same sample\" wage data suffers from persistent bias due to Monthly Labour Survey rotation (5-29 employee firms: Jan/Jul rotation; larger firms: Jan revised figures), distorting headline wage growth accuracy for portfolio decisions.",
+        "**Shunto Base Pay Slowdown**: Shunto agreements narrowed large/mid-sized enterprise gaps with base pay rise slowing to 3.5% (from 3.7% in 2025), signaling moderation in wage growth trajectory despite high overall hikes."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
@@ -1161,6 +1240,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-d7kwdyfhe3a-e93471",
+      "title": "Weekly CIO commentary",
+      "institution": "Nuveen",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T01:58:27Z",
+      "summary_points": [
+        "**Fed's Data-Dependent Stance**: Chair Warsh prioritizes \"just facts\" over forward guidance, with Dallas Fed Trimmed-Mean PCE above 2% target signaling persistent inflation despite headline moderation, demanding durable stability before policy shifts.",
+        "**Mixed Macro Data**: Q2 GDP at +1.5% (missed forecast) contrasts with strong consumer spending (+3.2%), but PCE headline (3.7%) and trimmed-mean PCE remain elevated, fueling inflation concerns amid soft growth.",
+        "**CMBS Yield Premium**: BBB-rated CMBS yields 10.8% vs.",
+        "BBB corporate bonds at 5.6% (Figure 2), offering significant income advantage amid rate volatility, with A-rated CMBS at 7.5% vs.",
+        "A corporate bonds at 5.3%."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-oyhwulsds9o-51b80d",
       "title": "BNZ Markets Today 04 August 2026",
       "institution": "Other",
@@ -1171,6 +1271,27 @@
         "**Geopolitical & Data Shock**: US-Japan intervention triggered oil price plunge (Brent crude $82.50–$84.50), while strong US ISM manufacturing (55.6 vs 53.9 exp) and NZ/CH PMI data fueled equity gains and USD strength.",
         "**NZ Rate Dynamics**: Offshore forces drove NZ rates higher (2-yr 3.71%, 5-yr 4.07%, 10-yr 4.45%), with NZGBs rally adding downward pressure on yields.",
         "**Critical Upcoming Catalysts**: Australian household spending (Jun) and US JOLTS job openings (Jun) are pivotal for market direction, with NZ rates highly sensitive to these releases."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xyhkexpqy8a-06c8c9",
+      "title": "ING Think low water levels and the german economy",
+      "institution": "ING Direct",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T01:57:34Z",
+      "summary_points": [
+        "**GDP Growth Threat**: Rhine drought risks shaving 0.3 percentage points off German GDP growth, disrupting 285 million tonnes of annual freight and threatening the 0.8% annual growth trajectory.",
+        "**Unprecedented Water Levels**: Critical Rhine water levels at 24cm (Kaub) are lowest since 1880, breaching critical thresholds with no viable barge transport alternatives due to infrastructure constraints.",
+        "**Supply Chain Disruption Magnitude**: 80% of Germany’s inland waterways face unprecedented disruption, targeting key industrial clusters (Rhine-Ruhr, Rhine-Main, Ludwigshafen) with summer timing worsening impact beyond historical norms.",
+        "**Historical Precedent Validated**: 2018 drought reduced industrial production by 1% and GDP growth by 0.3pp; current conditions risk equivalent or greater impact amid worsening forecasts and no rainfall.",
+        "**Systemic Economic Risk**: Low water levels threaten production across Germany’s key industries, with potential impact exceeding the Rhine’s 0.6% output share due to timing and infrastructure vulnerability."
       ],
       "tags": [],
       "tickers": [],
@@ -1316,6 +1437,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-apfbuhcslmy-7e1947",
+      "title": "JPM Asia Tech Strategy A",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T01:02:42Z",
+      "summary_points": [
+        "**Asian Tech Drawdown Fundamentals**: Third 20%+ drawdown in Asian Tech since 2022 with no fundamental weakness (AI scaling, token demand, profitability intact); hyperscaler capex sustainability (FCF negative 2H26-2027) a risk but no AI compute step-back, pricing EPS cuts (end 2026/early 2027).",
+        "**Hyperscaler Capex Acceleration**: Top 7 hyperscalers' capex surges from $443Bn (2025) to $1,489Bn (2027), YoY growth peaking at 103% in 2026, signaling aggressive infrastructure investment with no inventory build for AI components.",
+        "**Memory Segment Narrative vs Fundamentals**: Sound supply shortage fundamentals but \"price-inelastic\" AI demand narrative persists; 40% correction may trigger 6-month bounce but stocks unlikely to reclaim May-26 highs.",
+        "**Public Cloud Backlog Expansion**: MSFT backlog jumps from $392Bn (3Q25) to $678Bn (2Q26), Google/Amazon backlogs surge, indicating strong near-term revenue visibility driven by AI token consumption.",
+        "**Valuation Disconnect Risk**: Forward P/E near +2std (Jan-25/26) vs historical avg (~18x), Forward P/B above avg (~3x) with rising ROE—elevated growth expectations raise overvaluation risk requiring careful assessment."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
