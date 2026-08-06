@@ -2050,6 +2050,7 @@ on:
       - "tests/test_track_record_dlg.py"
       - "tests/test_us_board_outcomes.py"
       - "tests/test_us_board_outcomes_strip.py"
+      - "tests/test_us_board_zero_accrual_alarm.py"
       - "scripts/audit_claim_accountability.py"
       - "scripts/grade_us_board.py"
       # unrun-intl-libraries — China / HK / Canada library writers behind the international surfaces

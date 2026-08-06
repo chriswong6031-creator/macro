@@ -397,6 +397,97 @@ def warn_if_stale(cont: dict) -> bool:
 
 
 # --------------------------------------------------------------------------- #
+# ZERO-ACCRUAL — a grader that records nothing must say so, and say why
+# --------------------------------------------------------------------------- #
+# Measured outage 2026-07-31 -> 2026-08-06: the store sat at 2,282 rows for nine days
+# while the step concluded `success` every night. Nothing was broken in this module —
+# the breadth close caches (engine.equity_factors._closes) froze at 2026-07-31 when the
+# collect lane's "data: daily collection" commit wedged, so no horizon could mature and
+# the grader correctly emitted nothing. Correct, and invisible.
+#
+# The trap that makes a naive alarm vacuous: grade_boards re-computes EVERY matured row
+# on EVERY run and _merge_into_store is keep-fresh, so `len(df)` is re-grades, not
+# accrual. The nightly of 2026-08-04 printed "[grade] 1332 new matured rows this run"
+# while the store went 2282 -> 2282. A zero-row alarm keyed on the fresh frame would
+# never have fired through the entire outage. It must be keyed on STORE GROWTH.
+def _panel_reach(names: pd.DataFrame, boards: list[dict]) -> str | None:
+    """Modal last-close date across the tickers the boards actually name.
+
+    NOT ``names.index.max()``. extend_prices_to_admitted splices in yahoo-sourced
+    columns that run ahead of the breadth caches, so the frame's index max reads fresh
+    while almost every column is stale — measured on origin/main 2026-08-06, index.max()
+    was 2026-08-04 while 1498 of 1540 columns ended 2026-07-31. An index-level max is
+    exactly the number that let this outage look healthy."""
+    if names is None or getattr(names, "empty", True) or not boards:
+        return None
+    tickers = {r["ticker"] for b in boards for r in b["rows"] if r.get("ticker")}
+    cols = [t for t in tickers if t in names.columns]
+    if not cols:
+        return None
+    lasts = [names[c].last_valid_index() for c in cols]
+    lasts = [str(d)[:10] for d in lasts if d is not None]
+    if not lasts:
+        return None
+    return max(set(lasts), key=lasts.count)  # modal, not max
+
+
+def no_accrual_reason(*, boards: list[dict], names: pd.DataFrame, cont: dict,
+                      ungraded: list[str], skipped_no_price: int) -> tuple[str, str]:
+    """(slug, human clause) naming WHY a nightly added no rows. Pure — no I/O.
+
+    The benign case (weekend, or a horizon that simply has not come round yet) and the
+    malignant case (the price lane died) are indistinguishable from the board's own
+    panel — a build that never ran leaves board and prices frozen together and reads as
+    perfectly fresh. They are told apart by the SAME independent clock continuity_block
+    already uses: the benchmark ETF close, refreshed by a different lane than the board.
+    Panel behind that clock = starved. Level with it = genuinely nothing to grade.
+
+    That is also why the alarm is never suppressed on the benign branch: the two cases
+    are one branch apart, so a silent 'probably just the weekend' path would re-open the
+    exact hole it is here to close. The reason slug is what makes it filterable."""
+    n_board_rows = sum(len(b["rows"]) for b in boards)
+    reach = _panel_reach(names, boards)
+    last_session = cont.get("last_session")
+    if not boards:
+        return ("no_boards",
+                "no board could be reconstructed at all (snapshots and git history "
+                "both came back empty)")
+    if n_board_rows and skipped_no_price >= n_board_rows:
+        return ("no_priceable_names",
+                f"not one of the {n_board_rows} board rows resolved to a price series "
+                "(live cache and dead-name store both missed every name)")
+    if reach and last_session and reach < last_session:
+        return ("price_panel_stale",
+                f"the price panel's modal last close is {reach} but the last completed "
+                f"session is {last_session} — no horizon can mature past a frozen panel, "
+                "so the collect lane is what has to move, not this grader")
+    return ("no_new_maturity",
+            f"the panel is level with the session clock ({reach or 'n/a'}) and no "
+            "horizon came round this run — nothing to record")
+
+
+def warn_if_no_accrual(n_added: int, *, nightly: bool, boards: list[dict],
+                       names: pd.DataFrame, cont: dict, ungraded: list[str],
+                       skipped_no_price: int) -> bool:
+    """Emit the line-start annotation when a nightly grades but records NOTHING.
+
+    Returns True when it fired. Bare ``print`` with ``flush=True`` per the repo's
+    annotation law. `n_added` is store growth, never the fresh frame's length."""
+    if not nightly or n_added > 0:
+        return False
+    slug, why = no_accrual_reason(boards=boards, names=names, cont=cont,
+                                  ungraded=ungraded, skipped_no_price=skipped_no_price)
+    newest = boards[-1]["as_of"] if boards else None
+    print("::warning title=us-board-ledger-no-accrual::"
+          f"the nightly added 0 rows to {RETRO_PARQUET.name} [{slug}] — {why}; "
+          f"newest board on file {newest}, {len(ungraded)} board date(s) still awaiting "
+          f"a first grade, {skipped_no_price} board row(s) skipped for no price. "
+          "The missing days stay missing — they are disclosed, never backfilled",
+          flush=True)
+    return True
+
+
+# --------------------------------------------------------------------------- #
 # board reconstruction (git archaeology + snapshot union)
 # --------------------------------------------------------------------------- #
 def _git_revisions() -> list[tuple[str, str]]:
@@ -552,11 +643,19 @@ def _num(x):
         return None
 
 
-def collect_boards() -> list[dict]:
+def collect_boards(receipt: dict | None = None) -> list[dict]:
     """Union git-history boards with snapshot JSONL, de-dup on (as_of).
 
     Each element: {as_of: 'YYYY-MM-DD', dispersion_state, rank_by, rows: [ {lane, position, **features} ]}.
-    Position = 0-based order within lane as published (this IS the ranking under test)."""
+    Position = 0-based order within lane as published (this IS the ranking under test).
+
+    `receipt`, when supplied, is filled with the PROVENANCE SPLIT — how many board
+    dates each of the two legs actually contributed, and how many revisions of the
+    board artifact git could see.  _git_revisions() is LOUD when git *errors*, but a
+    truncated history is not an error: on a shallow checkout `git log -- <path>`
+    exits 0 and returns one revision, so the retro half degrades to nothing while
+    every other number in the run looks normal.  The split is what makes that
+    visible (see warn_if_history_truncated)."""
     boards: dict[str, dict] = {}
 
     # 1) snapshots (forward-accruing source) — take precedence (exact bytes at build time)
@@ -572,9 +671,11 @@ def collect_boards() -> list[dict]:
             b = _board_to_record(snap)
             if b:
                 boards[b["as_of"]] = b
+    n_from_snapshots = len(boards)
 
     # 2) git history (retro source) — fills any as_of not already present
-    for sha in _git_revisions():
+    revisions = _git_revisions()
+    for sha in revisions:
         d = _load_blob(sha)
         if not d:
             continue
@@ -582,7 +683,51 @@ def collect_boards() -> list[dict]:
         if b and b["as_of"] not in boards:
             boards[b["as_of"]] = b
 
+    if receipt is not None:
+        receipt.update({
+            "n_git_revisions": len(revisions),
+            "n_from_snapshots": n_from_snapshots,
+            "n_from_git": len(boards) - n_from_snapshots,
+            "n_boards": len(boards),
+        })
     return sorted(boards.values(), key=lambda x: x["as_of"])
+
+
+def warn_if_history_truncated(receipt: dict) -> bool:
+    """Emit the line-start annotation when the retro (git-archaeology) leg is DARK.
+
+    Returns True when it fired.  Bare ``print`` with ``flush=True`` per the repo's
+    annotation law (a logger prefixes the line and GitHub drops the annotation).
+
+    WHY THIS EXISTS (measured 2026-08-06).  `_git_revisions` is loud on a git *error*,
+    which closed the 2026-07-26 class where a failing subprocess silently halved the
+    ledger.  It cannot see the other way this half dies: `actions/checkout@v4` defaults
+    to ``fetch-depth: 1``, so on the nightly runner `git log -- site/factordata/
+    us_standouts.json` exits 0 with ONE revision and the archaeology leg contributes
+    nothing.  Evidence from the nightlies' own logs — the grader printed
+    ``[boards] 13 distinct as_of dates`` (2026-07-27) and ``[boards] 17`` (2026-08-05),
+    both exactly the snapshot count, while the same code over a full local checkout
+    reads 524 revisions and 32 board dates.  The 15 archaeology-only dates
+    (2026-06-15..06-29, 07-07, 07-08, 07-13, 07-22, 07-23) are therefore invisible to
+    every nightly: 8 of them have never had a single graded row, and 2026-06-17..06-24
+    are frozen at the 5d horizon because no later run could re-reach them.
+
+    The trigger is deliberately narrow — one revision or none, while the ledger already
+    knows about more than one board date. A repo that genuinely holds a single revision
+    of a single board cannot trip it, and a healthy full checkout is nowhere near it."""
+    n_rev = int(receipt.get("n_git_revisions") or 0)
+    n_boards = int(receipt.get("n_boards") or 0)
+    if n_rev > 1 or n_boards <= 1:
+        return False
+    print("::warning title=us-board-ledger-history-truncated::"
+          f"git log over {BOARD_PATH} returned {n_rev} revision(s) but the ledger knows "
+          f"{n_boards} board date(s) — this checkout is too shallow to reconstruct any "
+          f"history, so the retro half of the ledger contributed "
+          f"{int(receipt.get('n_from_git') or 0)} board date(s) and every board that "
+          "exists only in git history is ungraded and unreachable from this run; "
+          "the fix is fetch-depth: 0 on this job's checkout, not a backfill",
+          flush=True)
+    return True
 
 
 def _board_to_record(d: dict) -> dict | None:
@@ -2144,10 +2289,18 @@ def main() -> None:
             print(f"[v2_snapshot] as_of={snap_v2} → {V2_SNAPSHOTS_JSONL.name}")
 
     names, etfs = _load_prices()
-    boards = collect_boards()
+    _board_receipt: dict = {}
+    boards = collect_boards(_board_receipt)
     if not args.quiet:
         print(f"[boards] {len(boards)} distinct as_of dates "
-              f"({boards[0]['as_of']}..{boards[-1]['as_of']})" if boards else "[boards] none")
+              f"({boards[0]['as_of']}..{boards[-1]['as_of']}; "
+              f"{_board_receipt.get('n_from_snapshots')} from snapshots, "
+              f"{_board_receipt.get('n_from_git')} from "
+              f"{_board_receipt.get('n_git_revisions')} git revision(s))"
+              if boards else "[boards] none")
+    # A shallow checkout kills the retro half silently — git log exits 0 and returns one
+    # revision, so the count above degrades with nothing else in the run to say so.
+    warn_if_history_truncated(_board_receipt)
 
     # Price what the board ADMITTED, not just what the breadth caches carry — otherwise
     # every curated-extras admission (ADRs, recent IPOs) is ungradeable forever.
@@ -2169,6 +2322,11 @@ def main() -> None:
 
     # P2: load existing store BEFORE grading so _board_tenure can look up history
     _pre_existing = pd.read_parquet(RETRO_PARQUET) if RETRO_PARQUET.exists() else None
+    _n_stored_before = 0 if _pre_existing is None else len(_pre_existing)
+    _graded_before = (set(_pre_existing["as_of"].astype(str))
+                      if _pre_existing is not None and "as_of" in _pre_existing.columns
+                      else set())
+    _ungraded = [b["as_of"] for b in boards if b["as_of"] not in _graded_before]
     df = grade_boards(boards, names, etfs, _stored_df=_pre_existing)
     LEDGER_DIR.mkdir(parents=True, exist_ok=True)
     # Merge freshly-graded rows INTO the accumulated store, then always build the
@@ -2176,13 +2334,23 @@ def main() -> None:
     # whenever no *new* rows mature in a given nightly run (the store still holds
     # all previously-graded rows and must not be discarded).
     full_df = _merge_into_store(df)
+    # ACCRUAL is store growth, not the size of the fresh frame. grade_boards re-computes
+    # every matured row every run and the merge is keep-fresh, so len(df) counts
+    # re-grades: the nightly of 2026-08-04 emitted 1332 "new matured rows" while the
+    # store went 2282 -> 2282. Reporting len(df) as accrual is what made a nine-day
+    # outage read as nine normal nights.
+    _n_added = max(0, len(full_df) - _n_stored_before)
     if not args.quiet:
-        new_rows = len(df) if not df.empty else 0
         dead_n = df.attrs.get("dead_price_store_tickers", 0)
-        print(f"[grade] {new_rows} new matured rows this run "
-              f"(skipped {df.attrs.get('skipped_no_price', 0)} no-price rows, "
+        print(f"[grade] {_n_added} rows ADDED to the store this run "
+              f"({len(df)} matured rows re-graded, skipped "
+              f"{df.attrs.get('skipped_no_price', 0)} no-price rows, "
               f"dead_name_store_tickers={dead_n}); "
               f"store total -> {len(full_df)} rows in {RETRO_PARQUET.name}")
+    # A nightly that records nothing for nine days is the defect underneath the defect.
+    warn_if_no_accrual(_n_added, nightly=args.nightly, boards=boards, names=names,
+                       cont=_cont, ungraded=_ungraded,
+                       skipped_no_price=int(df.attrs.get("skipped_no_price", 0) or 0))
 
     # W0.1 B-b: backfill null regime stamps on historical rows where the persisted
     # regime_vector covers the as_of date (PIT-safe: reads only persisted rows ≤ as_of)

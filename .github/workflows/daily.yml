@@ -2347,7 +2347,26 @@ jobs:
         # data/us_board_ledger/retro_grades.parquet + site/factordata/us_board_track.json.
         # Context-only (never feeds a score); the ledger accrues forward from here. The commit
         # step below (git add data/ site/) lands both artifacts. Idempotent per as_of. Resilient.
-        run: python -m scripts.grade_us_board --nightly || true
+        #
+        # WAS `|| true`, which cannot fail AND cannot report — ran-clean-no-op, crashed, and
+        # worked-fine all concluded `success` identically. That is how the 2026-07-31..08-06
+        # zero-accrual outage stayed invisible for nine days (the step was in fact innocent:
+        # the breadth close caches were frozen, so nothing could mature). NON-FATAL IS KEPT
+        # DELIBERATELY — this step sits ~57 steps into the engine job with 8+ NON-always()
+        # steps after it (Bottom Ledger, Prophet US full-population grades, Prophet miss-audit,
+        # Options-state stamp, Options entry-quality gate, Calibration Hub, macro snapshot/
+        # context) before the if:always() band. A raise here would SKIP those, and nightly is
+        # the sole forward advancer of their ledgers too, so one grader bug would silently
+        # freeze several unrelated forward ledgers for the night. So: same blast radius as
+        # before (the deploy still cannot go red), strictly more information — the rc is
+        # named in the Actions summary, and the module now annotates a zero-accrual night
+        # and a history-truncated checkout on its own. Same idiom as risk_radar_review /
+        # radar_scorer above.
+        run: |
+          set +e
+          python -m scripts.grade_us_board --nightly; rc=$?
+          if [ "$rc" -ne 0 ]; then echo "::warning title=grade_us_board::rc=$rc (non-fatal)"; fi
+          exit 0
       - name: Prophet doors — accrue Door T (theme-relay) + Door R (re-arm) flags (shadow, zero authority)
         # Prophet W3 shadow doors (research/PROPHET_DOORS_PREREG.md, frozen before first accrual).
         # Evaluates both doors on the committed caches and appends to data/prophet_doors/flags.jsonl.
