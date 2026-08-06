@@ -184,6 +184,62 @@ shut"). Never-buy words, EN/zh, capped rows, honest-null state ("no basing candi
 *Routing: builder (opus) with the CN lane as pinned reference; template edit scoped to
 the Act-board section of `sector_central.html.j2`.*
 
+#### W-A Amendment 1 — the graduation gap (adjudicated 2026-08-05)
+
+**The hole.** The lane gate is a *phase* test, so a basket leaves the lane the session
+the cycle engine graduates it Trough→Recovery. The Act board's momentum label only
+releases a name from reduce/avoid when its 20-day relative return flips positive
+(`theme_scoring._label`, first branch). Between those two events a recovering basket sits
+on **no lane at all** — the same re-blindness W-A was built to close, one phase later.
+
+**Measured, not assumed.** `b-gold_miners` graduated on 2026-08-05 (Trough→Recovery,
+pos 2.3, osc_slope +1.5, signal BUY) and left the lane, while its board row still read
+`deteriorating / avoid`. Three measurements decided the ruling:
+
+| Question | Measurement | Verdict |
+|---|---|---|
+| Is the gap transient (1–3 sessions)? | 20d relative **−8.14pp** — the engine's own `flip_distance.route_b_pp` — with 5-day velocity **−0.091** (widening) and 5d relative still −2.8% | **No.** Open-ended. |
+| Does CN show the gap is benign? | `b-cn_gold` graduated 2026-07-21 with 20d relative already **+16.7%** → CN's board picked it up on the **buy** lane | CN never traversed it. Same structural hole, simply unexercised. |
+| Is Recovery itself short? | CN log: median run **6.5 sessions**, 21 of 30 runs still open, longest 18+ | **No.** Not a transient phase. |
+
+**Ruling — option (b), as a sibling chip.** Candidate (a) *widen the lane to
+`phase ∈ {Trough, Recovery} ∧ pos≤10`* is **rejected**: it changes what the lane means.
+The lane sorts `pos` ASC ("deepest in the low first"), its header reads "cycle lows
+forming", its empty state reads "no basing candidates tonight", and its honest-null
+speaks of "a forming low" — all false for a row the organ has already moved past a low.
+It would also diverge the gate from the CN reference (P5's control) and admit `xlc` on an
+invented constant with no gauntlet behind it. Candidate (c) *accept and document* is
+**rejected**: it fails P3, which is explicit that a state the engine holds must be visible
+where the operator looks with the conflict printed.
+
+So (b) ships — but **not** by extending FT-R1's `dual_read_ids`, as first proposed. That
+chip's copy says *"This name is also on Bottoming watch"*, which for a graduated basket is
+a false sentence pointing the reader at a lane the name has left; folding the ids together
+would also break the invariant `dual_read_ids ⊆ bottoming_watch` that its consumers rely
+on. The bridge is therefore a **second, disjoint id set** — `recovering_ids` — with its own
+sentence ("recovering from cycle low" / 正从周期低位回升), its own hover receipt, and its
+own footnote disclosure. The two sets are disjoint by construction (`phase` is exclusive)
+and a row renders at most one chip.
+
+**Fence.** `pos ≤ RECOVERING_POS_MAX (10)`, because `Recovery` spans pos 2.3→31.9 on a
+single night and a basket a third of the way up its cycle range is not "recovering from
+its low" to a reduce-lane reader. Display-tier, disclosed in the chip's own hover copy
+("still in the bottom tenth of its cycle range"), pinned by test. On the adjudication
+night it chips exactly one row of thirty (`gold_miners`), leaving FT-R1's `uranium_miners`
+chip untouched.
+
+**Divergence from CN is internal, not user-facing.** CN has no such chip; that fact is
+recorded here and in the module docstring, never on the page (a user surface citing an
+internal reference implementation is house jargon). P5 holds — `engine/china_act_now.py`
+is not touched.
+
+**Test-fixture note (a defect this shipped with).** The original receipt
+`test_gold_miners_case_from_committed_log` read `date.max()` and asserted gold_miners was
+*on the lane*. The graduation made that assertion false and the suite went red on
+unchanged code. Both committed-log receipts now pin an **explicit session date** —
+2026-08-04 for the Trough case, 2026-08-05 for the graduation. A receipt for a transient
+state must name the session it is a receipt for.
+
 ### W-B — Basket-turn organ: member ladder + coverage disclosure (infra; after #4579)
 Member loads walk `("stocks", "baskets/ohlcv")` (the `audit_universe.MembershipResolver`
 precedent) — benchmark ladder from #4579 untouched; per-basket `members_read/members_total`

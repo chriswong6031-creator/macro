@@ -30,8 +30,15 @@ TWO INDEPENDENT STAMP FAMILIES, each with its OWN retry gate (merge of W-C + P2.
     gate — it is calendar-derived and non-null on essentially every valid business date,
     so counting it would permanently lock opex-only rows out of future
     GEX/skew/ivspread fills (the W-C retry-gate fix).
-  * tape-flow family (P2.2 cols): a row is retryable while ALL
-    ``TAPE_FLOW_STAMP_COLS`` are null.
+  * tape-flow family (P2.2 cols): a row is retryable while ANY
+    ``TAPE_FLOW_STAMP_COLS`` is null, and the commit is PER COLUMN, fill-null-only
+    (2026-08-04).  The family-wide commit this replaces wrote all four columns as soon
+    as one was non-null, so the first computable column (usually opt_dte_quality, which
+    needs a single store row) locked the two 20-obs-gated columns at null forever — the
+    same defect class as the W-C retry-gate fix above, one family over.  Rows frozen
+    before the fix stay honest nulls (their PIT inputs are frozen), but a store repair or
+    backfill can now heal whichever cells it actually touches.  A non-null cell is never
+    overwritten.
 
   The gates are independent so one family's coverage never locks the other out.
 
@@ -46,9 +53,16 @@ the 2026-06-15+ window (where chains/summaries exist); rows outside coverage sta
 and are re-tried on future runs (cheap; the coverage window only grows).
 
 P2.2 tape-flow columns (opt_net_signed_prem_5d_z, opt_flow_breadth_group, opt_dte_quality,
-opt_crowding_flag) will be null-heavy initially because the tape_flow store starts accruing
-from 2026-07-05 forward. This is correct behaviour — the W1.3 precedent: nullable,
-retry-as-coverage-grows.
+opt_crowding_flag) are null-heavy, and two of them will stay 0% into late 2026. Measured
+2026-08-04: the tape_flow store's first rows are 2026-07-10 (not 07-05), and per-root
+accrual is ~WEEKLY, not nightly — the T2a forward mode budget-rotates a ~360-root universe
+with resume-from-last, and the step self-skips on runner hosts without the ThetaData
+Terminal (~2/5 nights in daily.yml). ``opt_net_signed_prem_5d_z`` and ``opt_crowding_flag``
+each carry a 20-prior-observation PIT gate, so they stay null until a root has 20 store rows
+strictly before a fire's as_of — ~Oct 2026 as_of dates at the measured cadence (median 5
+rows/root over 15 sessions), vs ~4 weeks at true nightly cadence. This is correct behaviour
+— the W1.3 precedent: nullable, retry-as-coverage-grows. Full per-column coverage map and
+start dates: data/us_board_ledger/README.md.
 
 NOTE: opt_iv_rank_252 remains always-null (ruling A9). It reads data/thetadata_eod greeks,
 which is mid-backfill and has a known dedup defect (#1363). That wiring waits for the dedup
@@ -164,8 +178,9 @@ def stamp_ledger(
         coverage-gated value.  opt_opex_days (calendar-derived) is always written when
         available but never flips the row to "stamped" — future runs can still fill the
         coverage-gated cols (W-C retry-gate fix).
-      * tape-flow family: ALL ``TAPE_FLOW_STAMP_COLS`` null → retryable.  Committed only
-        when at least one tape value is non-null.
+      * tape-flow family: ANY ``TAPE_FLOW_STAMP_COLS`` null → retryable, and each column
+        commits on its own (fill-null-only).  A computable column therefore never freezes
+        a still-null sibling, and a non-null cell is never overwritten.
 
     ``n_newly_stamped`` counts rows where at least one family committed values
     (opex-only writes do not count).
@@ -202,7 +217,9 @@ def stamp_ledger(
         opts_retry_mask = opts_retry_mask | df[pos_cols_present].notna().any(axis=1)
     tf_cols_present = [c for c in TAPE_FLOW_STAMP_COLS if c in df.columns]
     if tf_cols_present:
-        tf_retry_mask = df[tf_cols_present].isna().all(axis=1)
+        # ANY (not ALL) null → retryable: the family commits per column, so a row whose
+        # dte_quality filled must stay open for the two 20-obs-gated columns (2026-08-04).
+        tf_retry_mask = df[tf_cols_present].isna().any(axis=1)
     else:
         tf_retry_mask = pd.Series(True, index=df.index)
 
@@ -295,9 +312,16 @@ def stamp_ledger(
                     group_members=group_cache[group_key],
                 )
             tf_stamp = tf_cache[key]
-            if any(v is not None for v in tf_stamp.values()):
-                for col in TAPE_FLOW_STAMP_COLS:
-                    df.at[idx, col] = tf_stamp[col]
+            # PER-COLUMN, fill-null-only (2026-08-04).  The family-wide commit this
+            # replaces wrote all four columns the moment ANY was non-null, so a row whose
+            # opt_dte_quality computed had its two 20-obs-gated siblings frozen at null
+            # forever — the W-C retry-gate defect class, one family over.  A non-null cell
+            # is never overwritten here by anything, so the pass stays idempotent.
+            for col in TAPE_FLOW_STAMP_COLS:
+                val = tf_stamp.get(col)
+                if val is None or pd.notna(df.at[idx, col]):
+                    continue
+                df.at[idx, col] = val
                 row_committed = True
 
         if row_committed:
@@ -635,6 +659,14 @@ def main() -> None:
                 n_col = int(df[col].notna().sum())
                 pct = round(n_col / max(n_before, 1) * 100, 1)
                 print(f"  W-OVC coverage [{col}]: {n_col}/{n_before} rows ({pct}%)")
+        # P2.2 tape-flow coverage summary — PER COLUMN, because the family commits per
+        # column: the row-level count above cannot show that the two 20-obs-gated columns
+        # are still at zero while their siblings fill (see module header).
+        for col in TAPE_FLOW_STAMP_COLS:
+            if col in df.columns:
+                n_col = int(df[col].notna().sum())
+                pct = round(n_col / max(n_before, 1) * 100, 1)
+                print(f"  P2.2 coverage [{col}]: {n_col}/{n_before} rows ({pct}%)")
 
     # Silent-permanent-null tripwire (W-OVC class): a stamp column that is 100% null
     # while its display-store twin is populated means the ledger write path is dead.

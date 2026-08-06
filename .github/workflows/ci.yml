@@ -168,6 +168,12 @@ on:
       - "scripts/build_signal_quality.py"
       - "engine/signal_quality.py"
       - "tests/test_validate_signals.py"
+      # The §7 marker-date look-ahead guard on _buy_filter (wired into the
+      # signal-contract job 2026-08-05, dark before that). engine/** above
+      # already triggers on the subject module; this is the test half, which
+      # nothing matched — the #3488/#4559 lesson that a guard whose own edit
+      # cannot start the workflow is only half wired.
+      - "tests/test_signal_quality_no_leak.py"
       # W-F reclaim-veto decision packet (2026-08-05). Both halves per #3488: the suite AND
       # the module it measures, so an edit to either can trigger the job that proves the
       # flip-isolation construction still isolates exactly one leg.
@@ -521,6 +527,9 @@ on:
       - "tests/test_government_revenue_dossier_ui.py"
       - "tests/test_government_revenue_briefcase_ui.py"
       - "tests/test_sam_gov_opportunities.py"
+      # quota-aware radar-leg collector (2026-08-05 SAM key integration): the
+      # batch/rotation/429-stop/merge disciplines that fit the shared ~10/day key.
+      - "tests/test_sam_gov_radar_leg.py"
       - "tests/test_usaspending_awards.py"
       - "tests/test_usaspending_subawards.py"
       - "tests/test_census_trade.py"
@@ -783,6 +792,52 @@ on:
       # the trigger has to reach the guard for it to say so.
       - "tests/test_check_skip_only_suites.py"
       - "requirements.txt"
+      # TRIGGER-CLOSURE guard (job: workflow-yaml). scripts/*.py already reaches
+      # the checker; this is its other half, per the same two-halves law the guard
+      # enforces on everything else.
+      - "tests/test_ci_trigger_closure.py"
+      # ── the 31 subjects that guard found unreachable on its first run ──────
+      # Each line is a file some suite in the packed legacy jobs actually reads
+      # (import, whole-string path literal, or a __file__-rooted path join) and
+      # that NO entry above matched — so a PR touching only that file merged
+      # without ever running the suite that measures it. That is the #3488 shape
+      # exactly, 31 times, none of it visible to audit_unrun_tests.py because
+      # every one of those suites is reachable through its own test file.
+      # These are cheap to carry: config/, contracts/, research/ pre-registrations
+      # and unit files change rarely, so they widen the trigger surface barely at
+      # all. Do not delete a line here without deleting the read that needs it —
+      # scripts/check_ci_trigger_closure.py will fail the PR.
+      - "admin/deploy/admin.service"
+      - "admin/static/styles.css"
+      - "app/deploy/codex-runtime-setup.sh"
+      - "app/deploy/macro-live-fast.service"
+      - "app/deploy/marketing-press-feeds.service"
+      - "app/deploy/marketing-reply-desk.service"
+      - "app/tape_symbols.py"
+      - "config/causal_priors.yml"
+      - "config/fable_mode_core.md"
+      - "config/metabolism_schedule.yml"
+      - "config/reflexes.yml"
+      - "config/trade_flow_codes.yml"
+      - "config/ux_simplicity_rules.yml"
+      - "contracts/government_revenue/government_revenue_candidate.v1.schema.json"
+      - "contracts/government_revenue/government_revenue_candidate_queue.v1.schema.json"
+      - "contracts/government_revenue/government_revenue_dossiers.v1.schema.json"
+      - "contracts/marketing_publication_receipt.schema.json"
+      - "research/DISLOCATION_VALIDATION.md"
+      - "research/MARKETING_REPLY_DOCTRINE_BY_FABLE.md"
+      - "research/OPTIONS_HISTORY_GAUNTLET_E1.md"
+      - "research/PSS_RH1_RELIEF_HAZARD_PROSPECTIVE_CHARTER.md"
+      - "research/US_BOARD_MEASUREMENT.md"
+      - "research/VECTOR_IMPULSE_PREDICTION.md"
+      - "research/WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md"
+      - "research/agentic_media/X_GROWTH_UNIFIED_OPERATION_BY_FABLE.md"
+      - "research/cycle_masterplan/PREREGISTRATION.md"
+      - "research/cycle_masterplan/W42_HAZARD_VERDICT.md"
+      - "research/entry_timing/WAVE2_REPORT.md"
+      - "research/fable_exit/05_ENTITY_THESIS_MECHANISM_REGISTRY_HANDOFF.md"
+      - "research/release_playbook/results/playbook_v1.json"
+      - "tools/earnings_worker/run_worker.py"
       # render.yml scope contract (job: workflow-yaml). .github/workflows/**
       # already reaches render.yml itself; this entry is so a test-only edit
       # still starts CI, per the two-halves law.
@@ -913,6 +968,14 @@ on:
       - "tests/test_admin_orchestrator.py"
       - "tests/test_admin_prophet.py"
       - "tests/test_admin_trade_memory.py"
+      # Macro Thesis Ledger — sibling of Trade Memory in the same admin area
+      # (thesis-grain, committed JSONL, zero authority). Both halves listed: the
+      # test file AND every module it guards, plus the committed seed ledger,
+      # which is the suite's own input and can drift on its own.
+      - "tests/test_macro_thesis.py"
+      - "engine/macro_thesis.py"
+      - "admin/macro_thesis.py"
+      - "data/macro_thesis/ledger.jsonl"
       - "admin/prophet.py"
       - "admin/trade_memory.py"
       - "engine/neuralweb/trade_memory.py"
@@ -2018,6 +2081,13 @@ on:
       - "tests/fixtures/hk_board_2026_07_31.json"
       - "tests/fixtures/hk_standouts_2026_07_31.json"
       - "data/hk_search/**"
+      # The HK reclaim-veto admission policy (operator ruling 2026-08-03),
+      # joined to unrun-hk-board 2026-08-05 — dark since it landed. Its two
+      # subjects reach this list already (engine/** for signal_quality /
+      # signal_gate / hk_board_rank, scripts/**/*.py for build_hk_library's
+      # HK_RECLAIM_VETO); the test half matched nothing, so an edit narrowing
+      # the pin itself could not start the workflow that runs it.
+      - "tests/test_hk_reclaim_veto_policy.py"
       # nyse-calendar-freshness — the exchange-calendar reference under every
       # freshness SLA. lib/** above already triggers on lib/nyse_calendar.py, but
       # a test-only edit must reach its own guard too (#3488: "a guard the guarded
@@ -2377,6 +2447,8 @@ on:
       - "tests/test_b3_forex_consumer.py"
       - "tests/test_board_contradictions.py"
       - "tests/test_bottom_ledger.py"
+      - "tests/test_china_board_rank.py"
+      - "tests/test_china_prophet_shadow.py"
       - "tests/test_cn_board_unified_grid.py"
       - "tests/test_cn_prophet_candidates_schema.py"
       - "tests/test_cn_track_ledger_eras.py"
@@ -2391,6 +2463,7 @@ on:
       - "tests/test_us_board_priority_ui.py"
       - "tests/test_us_board_rank.py"
       - "tests/test_us_board_w3_evidence.py"
+      - "tests/test_us_context_vector.py"
       - "scripts/build_china_pick_lab.py"
       - "scripts/build_pick_lab.py"
       - "scripts/build_stock_board_v2.py"
@@ -2401,12 +2474,34 @@ on:
       # that reintroduced the pre-rename column must be able to start this workflow.
       # The producer engine/china_prophet_shadow.py is already covered by engine/**.
       - "data/china_prophet_rank/**"
+      # prophet-us-context-and-grades (PROPHET US §W7)
+      - "tests/test_us_prophet_grades.py"
+      - "tests/test_us_context_vector.py"
+      - "tests/test_prophet_miss_audit.py"
+      - "scripts/grade_us_prophet_candidates.py"
+      # The US candidate + grade stores are the SUBJECT of that suite (PIT keep-first,
+      # monthly-part isolation, the frozen grade key), so a nightly append or a hand
+      # rewrite of either store must be able to start this workflow — the same reason
+      # data/china_prophet_rank/** is listed above. The producers engine/us_context_vector.py
+      # and engine/us_prophet_grades.py are already covered by engine/**.
+      - "data/us_prophet_rank/**"
       # unrun-prophet-learning-loop
       - "tests/test_prophet_postmortem.py"
       - "tests/test_exit_policy_study.py"
+      - "tests/test_cn_prophet_audit.py"
+      - "tests/test_htf_super_tiers.py"
+      - "tests/test_prophet_stage_fusion.py"
       - "engine/postmortem.py"
       - "scripts/prophet_postmortem.py"
       - "scripts/exit_policy_study.py"
+      # The COMMITTED CN board store + china_stocks price panel are the input grid
+      # of test_cn_prophet_audit.py's frozen reproduction (REPRO_ASOF-truncated),
+      # so a hand rewrite of either store — a re-adjustment sweep, an era edit —
+      # must be able to start this workflow and hit the re-freeze protocol.
+      # Engine subjects (cn_prophet_audit, confluence_tiers, signal_gate,
+      # prophet_stage_fusion) ride the broad engine/** entry above.
+      - "data/china_standout_track/**"
+      - "data/china_stocks/**"
       # unrun-intl-collectors
       - "tests/test_action_board_lane_split.py"
       - "tests/test_china_alpha_w3c_infra.py"
@@ -2699,6 +2794,17 @@ on:
       - "tests/test_fix43_analyst_and_whitehouse.py"
       - "tests/test_sector_central.py"
       - "tests/test_spotlight.py"
+      # ── W-A US bottoming-watch lane (2026-08-05) ────────────────────────────
+      # The suite shipped DARK with #4599: `tests/test_us_act_now.py` was in no
+      # pack, so it never ran once — while its CN sibling test_china_act_now.py
+      # had been enumerated all along. It was found red on committed data (the
+      # receipt asserted gold_miners was on the lane; the cycle engine graduated
+      # it Trough→Recovery and the assertion silently became false). Now runs in
+      # engine-render-guards beside the CN sibling. Subject engine/us_act_now.py
+      # rides the engine/** catch-all above; tests/** is deliberately NOT broad,
+      # so the test half needs this entry or a test-only edit stays dark.
+      # engine-render-guards
+      - "tests/test_us_act_now.py"
       # ── Breakdown event tape (BD Phase-0/0b) + AVOID-1 stamper (2026-07-27) ──
       # Subjects (scripts/research/dump_breakdown_events.py, bd_avoid1_stamper.py,
       # engine/grading.py) ride the scripts/** + engine/** catch-alls above, so

@@ -1,0 +1,816 @@
+{
+  "summary": {
+    "snapshots": 10,
+    "date_range": [
+      "2026-07-23",
+      "2026-08-05"
+    ],
+    "rsi_recompute_validation": "166/166",
+    "washout_watch_name_days": 166,
+    "lane_pct_nearing_a_high": 42.2,
+    "lane_pct_nearing_a_low": 10.2,
+    "bottom_watch_name_days": 38,
+    "bottom_watch_invisible_name_days": 19,
+    "bottom_watch_invisible_pct": 50.0,
+    "bottom_watch_visible_elsewhere_only_name_days": 2,
+    "option_b_lane_delta_name_days": 21,
+    "mean_lane_size_option_b_full_delta": 18.7,
+    "invisible_in_reclaim_zone": 18,
+    "invisible_outside_reclaim_zone": 1,
+    "invisible_deep_below_200dma": 12,
+    "invisible_deep_below_200dma_pct": 63.2,
+    "dist_200dma_nonnull_rows_total": 0,
+    "washout_rows_total": 166,
+    "mean_lane_size_now": 16.6,
+    "mean_lane_size_option_b": 18.5,
+    "thresholds": {
+      "RSI_OVERSOLD": 40.0,
+      "RSI_RECLAIM_MIN": 30.0,
+      "RSI_RECLAIM_MAX": 50.0,
+      "PCT_BELOW_200DMA_THRESH": -0.12,
+      "CONFLUENCE_WATCH": 1
+    },
+    "option_costs_latest_snapshot": {
+      "as_of": "2026-08-05",
+      "universe": 156,
+      "lane_size_now": 16,
+      "option_a_rsi_band_40_50": 45,
+      "option_a_new": 44,
+      "option_b_new": 2,
+      "option_c_deep_below_200dma": 49,
+      "option_c_new": 44,
+      "option_c_labels": {
+        "BOTTOMING": 19,
+        "BUY ZONE": 10,
+        "NEARING A HIGH": 5,
+        "NEARING A LOW": 2,
+        "UNCONFIRMED TURN": 9,
+        "UPTREND": 4
+      },
+      "option_c_naive_unit_bug_admits": 98
+    },
+    "latest_cohort_all_organ_confluence": [
+      {
+        "ticker": "0345.HK",
+        "rsi": 50.0,
+        "in_washout_watch": false,
+        "in_any_lane": false,
+        "confluence_count": 1,
+        "confluence_signals": [
+          "RSI_RECLAIM"
+        ],
+        "dilution_veto": false,
+        "would_render": true
+      },
+      {
+        "ticker": "9868.HK",
+        "rsi": 39.0,
+        "in_washout_watch": true,
+        "in_any_lane": true,
+        "confluence_count": 1,
+        "confluence_signals": [
+          "RSI_RECLAIM"
+        ],
+        "dilution_veto": false,
+        "would_render": true
+      },
+      {
+        "ticker": "9926.HK",
+        "rsi": 49.0,
+        "in_washout_watch": false,
+        "in_any_lane": false,
+        "confluence_count": 1,
+        "confluence_signals": [
+          "RSI_RECLAIM"
+        ],
+        "dilution_veto": false,
+        "would_render": true
+      }
+    ]
+  },
+  "per_day": [
+    {
+      "as_of": "2026-08-05",
+      "universe": 156,
+      "washout_watch_size": 16,
+      "lane_label_mix": {
+        "BOTTOMING": 2,
+        "NEARING A HIGH": 11,
+        "NEARING A LOW": 1,
+        "UNCONFIRMED TURN": 2
+      },
+      "bottom_watch_cohort": 3,
+      "cohort_detail": [
+        {
+          "ticker": "0345.HK",
+          "name": "Vitasoy",
+          "rsi": 50.0,
+          "lanes": []
+        },
+        {
+          "ticker": "9868.HK",
+          "name": "XPeng",
+          "rsi": 39.0,
+          "lanes": [
+            "washout_watch"
+          ]
+        },
+        {
+          "ticker": "9926.HK",
+          "name": "Akeso",
+          "rsi": 49.0,
+          "lanes": []
+        }
+      ],
+      "bottom_watch_in_washout_watch": 1,
+      "bottom_watch_visible_elsewhere_only": 0,
+      "bottom_watch_visible_elsewhere_detail": [],
+      "option_b_lane_delta": 2,
+      "bottom_watch_invisible": 2,
+      "invisible_detail": [
+        {
+          "ticker": "9926.HK",
+          "rsi": 49.0,
+          "dist_200dma_would_be": -0.1576,
+          "deep_below_200dma": true,
+          "in_reclaim_zone": true,
+          "oversold_candidate": false
+        },
+        {
+          "ticker": "0345.HK",
+          "rsi": 50.0,
+          "dist_200dma_would_be": -0.0345,
+          "deep_below_200dma": false,
+          "in_reclaim_zone": true,
+          "oversold_candidate": false
+        }
+      ],
+      "dist_200dma_nonnull_rows": 0,
+      "washout_rows": 16
+    },
+    {
+      "as_of": "2026-08-04",
+      "universe": 156,
+      "washout_watch_size": 11,
+      "lane_label_mix": {
+        "BOTTOMING": 2,
+        "DOWNTREND": 1,
+        "NEARING A HIGH": 5,
+        "NEARING A LOW": 1,
+        "UNCONFIRMED TURN": 2
+      },
+      "bottom_watch_cohort": 5,
+      "cohort_detail": [
+        {
+          "ticker": "0486.HK",
+          "name": "RUSAL",
+          "rsi": 41.0,
+          "lanes": []
+        },
+        {
+          "ticker": "1347.HK",
+          "name": "Hua Hong Semiconductor",
+          "rsi": 42.0,
+          "lanes": []
+        },
+        {
+          "ticker": "2382.HK",
+          "name": "Sunny Optical",
+          "rsi": 46.0,
+          "lanes": []
+        },
+        {
+          "ticker": "9868.HK",
+          "name": "XPeng",
+          "rsi": 38.0,
+          "lanes": [
+            "washout_watch"
+          ]
+        },
+        {
+          "ticker": "9926.HK",
+          "name": "Akeso",
+          "rsi": 47.0,
+          "lanes": []
+        }
+      ],
+      "bottom_watch_in_washout_watch": 1,
+      "bottom_watch_visible_elsewhere_only": 0,
+      "bottom_watch_visible_elsewhere_detail": [],
+      "option_b_lane_delta": 4,
+      "bottom_watch_invisible": 4,
+      "invisible_detail": [
+        {
+          "ticker": "2382.HK",
+          "rsi": 46.0,
+          "dist_200dma_would_be": -0.1017,
+          "deep_below_200dma": false,
+          "in_reclaim_zone": true,
+          "oversold_candidate": false
+        },
+        {
+          "ticker": "9926.HK",
+          "rsi": 47.0,
+          "dist_200dma_would_be": -0.1734,
+          "deep_below_200dma": true,
+          "in_reclaim_zone": true,
+          "oversold_candidate": false
+        },
+        {
+          "ticker": "0486.HK",
+          "rsi": 41.0,
+          "dist_200dma_would_be": -0.3047,
+          "deep_below_200dma": true,
+          "in_reclaim_zone": true,
+          "oversold_candidate": false
+        },
+        {
+          "ticker": "1347.HK",
+          "rsi": 42.0,
+          "dist_200dma_would_be": 0.2472,
+          "deep_below_200dma": false,
+          "in_reclaim_zone": true,
+          "oversold_candidate": false
+        }
+      ],
+      "dist_200dma_nonnull_rows": 0,
+      "washout_rows": 11
+    },
+    {
+      "as_of": "2026-08-03",
+      "universe": 156,
+      "washout_watch_size": 13,
+      "lane_label_mix": {
+        "BOTTOMING": 3,
+        "BUY ZONE": 1,
+        "DOWNTREND": 1,
+        "NEARING A HIGH": 6,
+        "NEARING A LOW": 1,
+        "UPTREND": 1
+      },
+      "bottom_watch_cohort": 3,
+      "cohort_detail": [
+        {
+          "ticker": "1347.HK",
+          "name": "Hua Hong Semiconductor",
+          "rsi": 37.0,
+          "lanes": [
+            "washout_watch"
+          ]
+        },
+        {
+          "ticker": "2382.HK",
+          "name": "Sunny Optical",
+          "rsi": 42.0,
+          "lanes": []
+        },
+        {
+          "ticker": "9926.HK",
+          "name": "Akeso",
+          "rsi": 44.0,
+          "lanes": []
+        }
+      ],
+      "bottom_watch_in_washout_watch": 1,
+      "bottom_watch_visible_elsewhere_only": 0,
+      "bottom_watch_visible_elsewhere_detail": [],
+      "option_b_lane_delta": 2,
+      "bottom_watch_invisible": 2,
+      "invisible_detail": [
+        {
+          "ticker": "2382.HK",
+          "rsi": 42.0,
+          "dist_200dma_would_be": -0.1232,
+          "deep_below_200dma": true,
+          "in_reclaim_zone": true,
+          "oversold_candidate": false
+        },
+        {
+          "ticker": "9926.HK",
+          "rsi": 44.0,
+          "dist_200dma_would_be": -0.1927,
+          "deep_below_200dma": true,
+          "in_reclaim_zone": true,
+          "oversold_candidate": false
+        }
+      ],
+      "dist_200dma_nonnull_rows": 0,
+      "washout_rows": 13
+    },
+    {
+      "as_of": "2026-07-31",
+      "universe": 156,
+      "washout_watch_size": 19,
+      "lane_label_mix": {
+        "BOTTOMING": 1,
+        "DOWNTREND": 1,
+        "NEARING A HIGH": 14,
+        "NEARING A LOW": 1,
+        "UNCONFIRMED TURN": 2
+      },
+      "bottom_watch_cohort": 4,
+      "cohort_detail": [
+        {
+          "ticker": "1072.HK",
+          "name": "Dongfang Electric",
+          "rsi": 42.0,
+          "lanes": []
+        },
+        {
+          "ticker": "1347.HK",
+          "name": "Hua Hong Semiconductor",
+          "rsi": 37.0,
+          "lanes": [
+            "washout_watch"
+          ]
+        },
+        {
+          "ticker": "2382.HK",
+          "name": "Sunny Optical",
+          "rsi": 41.0,
+          "lanes": []
+        },
+        {
+          "ticker": "9926.HK",
+          "name": "Akeso",
+          "rsi": 47.0,
+          "lanes": []
+        }
+      ],
+      "bottom_watch_in_washout_watch": 1,
+      "bottom_watch_visible_elsewhere_only": 0,
+      "bottom_watch_visible_elsewhere_detail": [],
+      "option_b_lane_delta": 3,
+      "bottom_watch_invisible": 3,
+      "invisible_detail": [
+        {
+          "ticker": "1072.HK",
+          "rsi": 42.0,
+          "dist_200dma_would_be": -0.225,
+          "deep_below_200dma": true,
+          "in_reclaim_zone": true,
+          "oversold_candidate": false
+        },
+        {
+          "ticker": "2382.HK",
+          "rsi": 41.0,
+          "dist_200dma_would_be": -0.1331,
+          "deep_below_200dma": true,
+          "in_reclaim_zone": true,
+          "oversold_candidate": false
+        },
+        {
+          "ticker": "9926.HK",
+          "rsi": 47.0,
+          "dist_200dma_would_be": -0.1761,
+          "deep_below_200dma": true,
+          "in_reclaim_zone": true,
+          "oversold_candidate": false
+        }
+      ],
+      "dist_200dma_nonnull_rows": 0,
+      "washout_rows": 19
+    },
+    {
+      "as_of": "2026-07-30",
+      "universe": 156,
+      "washout_watch_size": 18,
+      "lane_label_mix": {
+        "BOTTOMING": 1,
+        "DOWNTREND": 4,
+        "NEARING A HIGH": 7,
+        "NEARING A LOW": 2,
+        "TURN IN PROGRESS": 1,
+        "UNCONFIRMED TURN": 3
+      },
+      "bottom_watch_cohort": 2,
+      "cohort_detail": [
+        {
+          "ticker": "0486.HK",
+          "name": "RUSAL",
+          "rsi": 39.0,
+          "lanes": [
+            "washout_watch"
+          ]
+        },
+        {
+          "ticker": "1347.HK",
+          "name": "Hua Hong Semiconductor",
+          "rsi": 36.0,
+          "lanes": [
+            "washout_watch"
+          ]
+        }
+      ],
+      "bottom_watch_in_washout_watch": 2,
+      "bottom_watch_visible_elsewhere_only": 0,
+      "bottom_watch_visible_elsewhere_detail": [],
+      "option_b_lane_delta": 0,
+      "bottom_watch_invisible": 0,
+      "invisible_detail": [],
+      "dist_200dma_nonnull_rows": 0,
+      "washout_rows": 18
+    },
+    {
+      "as_of": "2026-07-29",
+      "universe": 156,
+      "washout_watch_size": 13,
+      "lane_label_mix": {
+        "BOTTOMING": 1,
+        "DOWNTREND": 1,
+        "NEARING A HIGH": 7,
+        "NEARING A LOW": 2,
+        "UNCONFIRMED TURN": 1,
+        "UPTREND": 1
+      },
+      "bottom_watch_cohort": 3,
+      "cohort_detail": [
+        {
+          "ticker": "0884.HK",
+          "name": "CIFI Holdings",
+          "rsi": 38.0,
+          "lanes": [
+            "laggards",
+            "washout_watch"
+          ]
+        },
+        {
+          "ticker": "1347.HK",
+          "name": "Hua Hong Semiconductor",
+          "rsi": 40.0,
+          "lanes": [
+            "washout_watch"
+          ]
+        },
+        {
+          "ticker": "3993.HK",
+          "name": "CMOC Group",
+          "rsi": 49.0,
+          "lanes": []
+        }
+      ],
+      "bottom_watch_in_washout_watch": 2,
+      "bottom_watch_visible_elsewhere_only": 0,
+      "bottom_watch_visible_elsewhere_detail": [],
+      "option_b_lane_delta": 1,
+      "bottom_watch_invisible": 1,
+      "invisible_detail": [
+        {
+          "ticker": "3993.HK",
+          "rsi": 49.0,
+          "dist_200dma_would_be": -0.1,
+          "deep_below_200dma": false,
+          "in_reclaim_zone": true,
+          "oversold_candidate": false
+        }
+      ],
+      "dist_200dma_nonnull_rows": 0,
+      "washout_rows": 13
+    },
+    {
+      "as_of": "2026-07-28",
+      "universe": 156,
+      "washout_watch_size": 18,
+      "lane_label_mix": {
+        "BOTTOMING": 1,
+        "DOWNTREND": 3,
+        "NEARING A HIGH": 7,
+        "NEARING A LOW": 3,
+        "TURN IN PROGRESS": 2,
+        "UNCONFIRMED TURN": 2
+      },
+      "bottom_watch_cohort": 8,
+      "cohort_detail": [
+        {
+          "ticker": "0083.HK",
+          "name": "Sino Land",
+          "rsi": 47.0,
+          "lanes": []
+        },
+        {
+          "ticker": "0323.HK",
+          "name": "Maanshan Iron & Steel",
+          "rsi": 45.0,
+          "lanes": []
+        },
+        {
+          "ticker": "0486.HK",
+          "name": "RUSAL",
+          "rsi": 41.0,
+          "lanes": []
+        },
+        {
+          "ticker": "0669.HK",
+          "name": "Techtronic Industries",
+          "rsi": 53.0,
+          "lanes": []
+        },
+        {
+          "ticker": "0884.HK",
+          "name": "CIFI Holdings",
+          "rsi": 38.0,
+          "lanes": [
+            "laggards",
+            "washout_watch"
+          ]
+        },
+        {
+          "ticker": "1347.HK",
+          "name": "Hua Hong Semiconductor",
+          "rsi": 40.0,
+          "lanes": [
+            "laggards",
+            "washout_watch"
+          ]
+        },
+        {
+          "ticker": "2331.HK",
+          "name": "Li Ning",
+          "rsi": 37.0,
+          "lanes": [
+            "washout_watch",
+            "watch"
+          ]
+        },
+        {
+          "ticker": "3993.HK",
+          "name": "CMOC Group",
+          "rsi": 50.0,
+          "lanes": []
+        }
+      ],
+      "bottom_watch_in_washout_watch": 3,
+      "bottom_watch_visible_elsewhere_only": 0,
+      "bottom_watch_visible_elsewhere_detail": [],
+      "option_b_lane_delta": 5,
+      "bottom_watch_invisible": 5,
+      "invisible_detail": [
+        {
+          "ticker": "3993.HK",
+          "rsi": 50.0,
+          "dist_200dma_would_be": -0.0975,
+          "deep_below_200dma": false,
+          "in_reclaim_zone": true,
+          "oversold_candidate": false
+        },
+        {
+          "ticker": "0323.HK",
+          "rsi": 45.0,
+          "dist_200dma_would_be": -0.3049,
+          "deep_below_200dma": true,
+          "in_reclaim_zone": true,
+          "oversold_candidate": false
+        },
+        {
+          "ticker": "0669.HK",
+          "rsi": 53.0,
+          "dist_200dma_would_be": 0.1925,
+          "deep_below_200dma": false,
+          "in_reclaim_zone": false,
+          "oversold_candidate": false
+        },
+        {
+          "ticker": "0486.HK",
+          "rsi": 41.0,
+          "dist_200dma_would_be": -0.3071,
+          "deep_below_200dma": true,
+          "in_reclaim_zone": true,
+          "oversold_candidate": false
+        },
+        {
+          "ticker": "0083.HK",
+          "rsi": 47.0,
+          "dist_200dma_would_be": -0.0381,
+          "deep_below_200dma": false,
+          "in_reclaim_zone": true,
+          "oversold_candidate": false
+        }
+      ],
+      "dist_200dma_nonnull_rows": 0,
+      "washout_rows": 18
+    },
+    {
+      "as_of": "2026-07-27",
+      "universe": 156,
+      "washout_watch_size": 18,
+      "lane_label_mix": {
+        "BOTTOMING": 1,
+        "DOWNTREND": 3,
+        "NEARING A HIGH": 3,
+        "NEARING A LOW": 2,
+        "TURN IN PROGRESS": 5,
+        "UNCONFIRMED TURN": 4
+      },
+      "bottom_watch_cohort": 3,
+      "cohort_detail": [
+        {
+          "ticker": "0285.HK",
+          "name": "BYD Electronic",
+          "rsi": 51.0,
+          "lanes": [
+            "laggards"
+          ]
+        },
+        {
+          "ticker": "0486.HK",
+          "name": "RUSAL",
+          "rsi": 38.0,
+          "lanes": [
+            "washout_watch"
+          ]
+        },
+        {
+          "ticker": "2331.HK",
+          "name": "Li Ning",
+          "rsi": 37.0,
+          "lanes": [
+            "washout_watch",
+            "watch"
+          ]
+        }
+      ],
+      "bottom_watch_in_washout_watch": 2,
+      "bottom_watch_visible_elsewhere_only": 1,
+      "bottom_watch_visible_elsewhere_detail": [
+        "0285.HK"
+      ],
+      "option_b_lane_delta": 1,
+      "bottom_watch_invisible": 0,
+      "invisible_detail": [],
+      "dist_200dma_nonnull_rows": 0,
+      "washout_rows": 18
+    },
+    {
+      "as_of": "2026-07-24",
+      "universe": 156,
+      "washout_watch_size": 20,
+      "lane_label_mix": {
+        "BOTTOMING": 2,
+        "DOWNTREND": 3,
+        "NEARING A HIGH": 6,
+        "NEARING A LOW": 2,
+        "TURN IN PROGRESS": 1,
+        "UNCONFIRMED TURN": 6
+      },
+      "bottom_watch_cohort": 4,
+      "cohort_detail": [
+        {
+          "ticker": "0285.HK",
+          "name": "BYD Electronic",
+          "rsi": 49.0,
+          "lanes": [
+            "laggards"
+          ]
+        },
+        {
+          "ticker": "0323.HK",
+          "name": "Maanshan Iron & Steel",
+          "rsi": 43.0,
+          "lanes": []
+        },
+        {
+          "ticker": "0486.HK",
+          "name": "RUSAL",
+          "rsi": 37.0,
+          "lanes": [
+            "washout_watch"
+          ]
+        },
+        {
+          "ticker": "2331.HK",
+          "name": "Li Ning",
+          "rsi": 33.0,
+          "lanes": [
+            "washout_watch"
+          ]
+        }
+      ],
+      "bottom_watch_in_washout_watch": 2,
+      "bottom_watch_visible_elsewhere_only": 1,
+      "bottom_watch_visible_elsewhere_detail": [
+        "0285.HK"
+      ],
+      "option_b_lane_delta": 2,
+      "bottom_watch_invisible": 1,
+      "invisible_detail": [
+        {
+          "ticker": "0323.HK",
+          "rsi": 43.0,
+          "dist_200dma_would_be": -0.3115,
+          "deep_below_200dma": true,
+          "in_reclaim_zone": true,
+          "oversold_candidate": false
+        }
+      ],
+      "dist_200dma_nonnull_rows": 0,
+      "washout_rows": 20
+    },
+    {
+      "as_of": "2026-07-23",
+      "universe": 156,
+      "washout_watch_size": 20,
+      "lane_label_mix": {
+        "BOTTOMING": 1,
+        "DOWNTREND": 1,
+        "NEARING A HIGH": 4,
+        "NEARING A LOW": 2,
+        "TURN IN PROGRESS": 10,
+        "UNCONFIRMED TURN": 2
+      },
+      "bottom_watch_cohort": 3,
+      "cohort_detail": [
+        {
+          "ticker": "0486.HK",
+          "name": "RUSAL",
+          "rsi": 40.0,
+          "lanes": [
+            "washout_watch"
+          ]
+        },
+        {
+          "ticker": "2331.HK",
+          "name": "Li Ning",
+          "rsi": 38.0,
+          "lanes": [
+            "washout_watch"
+          ]
+        },
+        {
+          "ticker": "9863.HK",
+          "name": "Zhejiang Leapmotor",
+          "rsi": 44.0,
+          "lanes": []
+        }
+      ],
+      "bottom_watch_in_washout_watch": 2,
+      "bottom_watch_visible_elsewhere_only": 0,
+      "bottom_watch_visible_elsewhere_detail": [],
+      "option_b_lane_delta": 1,
+      "bottom_watch_invisible": 1,
+      "invisible_detail": [
+        {
+          "ticker": "9863.HK",
+          "rsi": 44.0,
+          "dist_200dma_would_be": -0.2693,
+          "deep_below_200dma": true,
+          "in_reclaim_zone": true,
+          "oversold_candidate": false
+        }
+      ],
+      "dist_200dma_nonnull_rows": 0,
+      "washout_rows": 20
+    }
+  ],
+  "validation": [
+    {
+      "as_of": "2026-08-05",
+      "matched": 16,
+      "total": 16
+    },
+    {
+      "as_of": "2026-08-04",
+      "matched": 11,
+      "total": 11
+    },
+    {
+      "as_of": "2026-08-03",
+      "matched": 13,
+      "total": 13
+    },
+    {
+      "as_of": "2026-07-31",
+      "matched": 19,
+      "total": 19
+    },
+    {
+      "as_of": "2026-07-30",
+      "matched": 18,
+      "total": 18
+    },
+    {
+      "as_of": "2026-07-29",
+      "matched": 13,
+      "total": 13
+    },
+    {
+      "as_of": "2026-07-28",
+      "matched": 18,
+      "total": 18
+    },
+    {
+      "as_of": "2026-07-27",
+      "matched": 18,
+      "total": 18
+    },
+    {
+      "as_of": "2026-07-24",
+      "matched": 20,
+      "total": 20
+    },
+    {
+      "as_of": "2026-07-23",
+      "matched": 20,
+      "total": 20
+    }
+  ]
+}

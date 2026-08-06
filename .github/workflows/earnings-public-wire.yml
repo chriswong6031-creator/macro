@@ -101,19 +101,50 @@ jobs:
             python -m scripts.build_earnings_public_wire --private-out-dir "$PRIVATE_STAGE"
             python -m scripts.publish_earnings_private_store --source-dir "$PRIVATE_STAGE"
 
+            # normalize the EXACT tree this step stages (P0 2026-08-04, 9a997e9da3f):
+            # the same defect class as daily.yml's, reached by a different road —
+            # daily SKIPPED its normalize chain on a timeout-cancel, this lane never
+            # had one at all. Every publication since the launch (#4298) shipped ~25KB
+            # of inline <style> per page with no assets/css/<hash>.css ref, and
+            # site/stocks/earnings/ is in NO render lane's rebuild scope, so unlike the
+            # nightly's 5,895 pages nothing ever re-baked these: 444 raw pages stood for
+            # 527 commits. Run the chain here, immediately before staging, so the tree is
+            # normalized by construction; all three passes are idempotent (~20s total).
+            python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+            python -m scripts.externalize_css || echo "::warning title=externalize::pre-commit css externalize FAILED — earnings pages may ship un-externalized (9a997e9da3f)"
+            python -m scripts.optimize_assets || echo "::warning title=stamp::asset optimize FAILED — ?v= stamps may be stale"
+
             # Git owns only the redacted public shells. Member continuations,
             # receipts, and context were promoted privately above and are never
             # added from RUNNER_TEMP or emitted anywhere under site/.
             git add site/stocks/earnings
+            # ...and the content-hashed assets those shells now link. externalize_css
+            # lifts each page's inline CSS into site/assets/css/<hash>.css and rewrites
+            # the page to <link> it, so staging the page WITHOUT the asset ships a link
+            # to a file that was never committed — a 404 stylesheet, strictly worse than
+            # the inline block it replaced. Separate lines because a single `git add a b`
+            # exits 128 when either pathspec matches nothing, and this runs under
+            # `set -euo pipefail` (same reasoning as the render lanes' templates/ add).
+            # --ignore-removal stages mints and updates but never a DELETION: the orphan
+            # prune reasons only from pages it can SEE, and this lane has no post-rebase
+            # normalize to re-mint an asset that a page landed mid-run still links.
+            # Pruning stays owned by the full-tree render lanes, which can re-mint.
+            git add --ignore-removal site/assets/css 2>/dev/null || true
+            git add --ignore-removal site/assets/js 2>/dev/null || true
             if git diff --cached --quiet; then
               echo "earnings-public-wire: latest main already carries the current publication"
               exit 0
             fi
-            if git diff --cached --name-only | grep -Ev '^site/stocks/earnings/' >/dev/null; then
+            # containment: the redacted earnings estate, plus exactly the content-hashed
+            # assets its own pages link (see the staging note above). Nothing else — no
+            # data/, no templates/, no other site page — may ride out on this lane.
+            if git diff --cached --name-only | grep -Ev '^site/(stocks/earnings|assets/(css|js))/' >/dev/null; then
               echo "::error title=earnings-public-wire containment::refusing to commit outside the redacted earnings public estate"
               exit 1
             fi
-            if ! push_staged_clean site/stocks/earnings; then
+            # scan every path the staging above can reach — a conflict-marker gate
+            # scoped narrower than the staging scope is a gate with a hole in it.
+            if ! push_staged_clean site/stocks/earnings site/assets/css site/assets/js; then
               echo "::error title=earnings-public-wire conflict markers::refusing to commit an unsafe publication"
               exit 1
             fi

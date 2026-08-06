@@ -1,0 +1,1499 @@
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script data-dbase>(function () {
+  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
+  var B = window.DATA_BASE;
+  if (!B) return;                                         // no-op when unset -> zero behavior change
+  B = B.replace(/\/+$/, "");                              // strip trailing slash
+  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var orig = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === "string") {
+        /* theme.js resolves shared assets from its own script URL, so its stock
+           libraries arrive here as absolute same-origin URLs.  The old shim only
+           recognized bare/../ paths, leaving those requests on the protected HTML
+           origin (401 on Start) and the search spinner alive forever.  Normalize
+           every same-origin string to a root-relative key before matching; preserve
+           query/hash cache keys, and never rewrite an already-external URL. */
+        var a = new URL(u, location.href);
+        if (a.origin === location.origin) {
+          var rel = a.pathname.replace(/^\/+/, "") + a.search + a.hash;
+          if (RE.test(rel)) u = B + "/" + rel;            // -> https://<data-host>/ohlc/AAPL.json
+        }
+      }
+    } catch (e) { /* never let the shim break a fetch */ }
+    return orig.call(this, u, o);
+  };
+})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quant Lab — outside models, rebuilt and measured here</title>
+
+<meta name="description" content="We rebuild published quant models on our own filings panel and measure whether they rank anything. Fintel&#39;s Quality+Value, QVM, and a fully-specified control screen.">
+<link rel="canonical" href="https://www.mastermind-x.com/quant_lab.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MastermindX">
+<meta property="og:title" content="Quant Lab — Mastermind">
+<meta property="og:description" content="We rebuild published quant models on our own filings panel and measure whether they rank anything. Fintel&#39;s Quality+Value, QVM, and a fully-specified control screen.">
+<meta property="og:url" content="https://www.mastermind-x.com/quant_lab.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Quant Lab — Mastermind">
+<meta name="twitter:description" content="We rebuild published quant models on our own filings panel and measure whether they rank anything. Fintel&#39;s Quality+Value, QVM, and a fully-specified control screen.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.55 var(--font-ui,-apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif); margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1320px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:21px; margin:0; letter-spacing:-.01em; }
+  h2 { font-size:12px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
+       letter-spacing:.08em; font-weight:600; }
+  h3 { font-size:15px; margin:0; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:15px 17px; margin-bottom:14px; }
+  .muted { color:var(--muted); } .sm { font-size:12px; } .xs { font-size:11px; }
+  .lead { font-size:14.5px; max-width:74ch; }
+  .mono { font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);
+          font-variant-numeric:tabular-nums; }
+  table { border-collapse:collapse; width:100%; font-size:12.5px; }
+  th,td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:500; white-space:nowrap; }
+  td.r, th.r { text-align:right; font-variant-numeric:tabular-nums; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+
+  /* ---- header stance ---- */
+  .topline { display:flex; flex-wrap:wrap; align-items:baseline; gap:12px; }
+  .stance { font-size:11px; font-weight:700; letter-spacing:.04em; padding:3px 10px;
+            border-radius:20px; border:1px solid color-mix(in srgb,var(--info) 45%,var(--line));
+            color:var(--ink-info,var(--info)); background:color-mix(in srgb,var(--info) 8%,transparent); }
+
+  /* ---- THE GAP BAND — the page's signature.
+         Three readings of the same model, left to right, each weaker than the last.
+         The arrows are the argument: a claim degrades as it travels to our data. ---- */
+  .gap { display:grid; gap:0; grid-template-columns:1fr auto 1fr auto 1fr; align-items:stretch; }
+  @media (max-width:900px){ .gap { grid-template-columns:1fr; } .gap .arrow { display:none; } }
+  .gapcell { padding:13px 15px; border:1px solid var(--line); border-radius:9px;
+             background:var(--panel2); display:flex; flex-direction:column; gap:5px; }
+  .gapcell .k { font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted);
+                font-weight:600; }
+  .gapcell .v { font-size:23px; font-weight:650; line-height:1.15; letter-spacing:-.02em; }
+  .gapcell .n { font-size:12px; color:var(--muted); }
+  .gapcell.claim  .v { color:var(--muted); }
+  .gapcell.build  .v { color:var(--text); }
+  .gapcell.meas   { border-color:color-mix(in srgb,var(--down) 32%,var(--line)); }
+  .gapcell.meas   .v { color:var(--down); }
+  .arrow { display:flex; align-items:center; justify-content:center; width:34px;
+           color:var(--muted); font-size:15px; }
+
+  /* ---- model cards ---- */
+  .mhead { display:flex; flex-wrap:wrap; align-items:baseline; gap:9px; margin-bottom:3px; }
+  .vendor { font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+            color:var(--muted); border:1px solid var(--line); border-radius:5px; padding:1px 6px; }
+  .quote { border-left:2px solid var(--line); padding:2px 0 2px 11px; margin:9px 0;
+           color:var(--muted); font-size:12.5px; max-width:82ch; }
+  .quote cite { display:block; margin-top:4px; font-size:11px; font-style:normal; opacity:.85; }
+
+  /* ---- fidelity ledger: one row per leg, vendor -> ours -> coverage -> verdict ---- */
+  .ledger { width:100%; font-size:12.5px; }
+  .ledger th { font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; }
+  .ledger td { padding:7px 8px; }
+  .ledger .legname { font-weight:600; }
+  .ledger .said { color:var(--muted); font-style:italic; }
+  .ledger .said.inf { font-style:normal; }
+  .ledger .said.inf::before { content:'inferred — '; font-size:10.5px; text-transform:uppercase;
+                              letter-spacing:.05em; opacity:.75; }
+  html[data-lang="zh"] .ledger .said.inf::before { content:'推断 — '; }
+  .cov { display:flex; align-items:center; gap:6px; min-width:88px; }
+  .covbar { flex:1; height:5px; border-radius:3px; background:var(--line); overflow:hidden; min-width:34px; }
+  .covbar i { display:block; height:100%; background:var(--muted); }
+  .covbar i.lo { background:var(--down); }
+  .pill { font-size:10px; font-weight:700; padding:2px 8px; border-radius:8px; white-space:nowrap;
+          border:1px solid var(--line); display:inline-block; }
+  .v-ok   { color:var(--up);   border-color:color-mix(in srgb,var(--up) 45%,var(--line)); }
+  .v-inv  { color:var(--down); border-color:color-mix(in srgb,var(--down) 45%,var(--line)); }
+  .v-weak { color:var(--info); border-color:color-mix(in srgb,var(--info) 40%,var(--line)); }
+  .v-null, .v-none { color:var(--muted); }
+  .v-none { border-style:dashed; }
+  .f-ok   { color:var(--up);   border-color:color-mix(in srgb,var(--up) 40%,var(--line)); }
+  .f-prox { color:var(--muted); }
+  .f-none { color:var(--down); border-style:dashed;
+            border-color:color-mix(in srgb,var(--down) 40%,var(--line)); }
+
+  .chips { display:flex; flex-wrap:wrap; gap:7px; margin:9px 0 0; }
+  .chip { font-size:11.5px; padding:3px 10px; border-radius:16px; border:1px solid var(--line);
+          background:var(--panel2); color:var(--muted); }
+  .chip b { color:var(--text); font-weight:650; }
+
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px;
+          border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px;
+          font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:0; width:330px; background:var(--panel);
+               border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60;
+               font-size:12px; line-height:1.45; color:var(--text); font-weight:400;
+               box-shadow:var(--popover-shadow); text-align:left; text-transform:none;
+               letter-spacing:normal; max-height:min(60vh,420px); overflow-y:auto;
+               overscroll-behavior:contain; }
+  .help:hover::before { content:''; position:absolute; top:100%; left:-30px; right:-30px; height:10px; }
+  .help:hover .tip { display:block; }
+  .scroll { overflow-x:auto; }
+  details > summary { cursor:pointer; color:var(--muted); font-size:12px; padding:3px 0;
+                      list-style:none; }
+  details > summary::-webkit-details-marker { display:none; }
+  details > summary::before { content:'▸ '; }
+  details[open] > summary::before { content:'▾ '; }
+  .foot { font-size:11.5px; color:var(--muted); margin-top:9px; max-width:88ch; }
+  @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+
+
+<nav class="site-nav">
+
+
+
+    <link rel="stylesheet" href="navigation-refresh.css">
+    <div class="nav-links">
+    
+    <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
+      <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/>
+            <stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+          <linearGradient id="mbSheen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+          <radialGradient id="mbGlow" cx=".5" cy=".4" r=".65">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+          <linearGradient id="mbInk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient>
+        </defs>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbTile)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbGlow)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbSheen)"/>
+        <rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/>
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3">
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/>
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#mbInk)"/>
+        </g>
+      </svg>
+      <span class="brand-word">MASTERMINDX</span>
+    </a>
+    
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html"><span class="menu-icon menu-icon-flag menu-icon-us" aria-hidden="true"></span><span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · sectors · flows</span><span class="l-zh">先知 · 板块 · 资金</span></span></a>
+        
+        <a href="movers.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
+        
+        <a href="intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Live session board — volume, tape and stance lanes · ≈15-min delayed</span><span class="l-zh">盘中实时看板 — 量能、盘面与操作分级 · 约延迟15分钟</span></span></a>
+        <a href="stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span><span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
+        
+        <a href="sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Sectors, themes & rotation in one read · lanes · cycle map · graded</span><span class="l-zh">板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分</span></span></a>
+        <a href="subsectors.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+        <a href="strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="news.html"><span class="submenu-icon submenu-icon-news" aria-hidden="true"></span><span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
+        <a href="alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span><span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Market Structure</span><span class="l-zh">期权与市场结构</span><span class="d"><span class="l-en">Workspace · dark pool · index regime</span><span class="l-zh">工作台 · 暗池 · 指数结构</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Flow · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 资金流 · 筛选 · 个股 · 领头股</span></span></a>
+            <a href="darkpool.html"><span class="submenu-icon submenu-icon-darkpool" aria-hidden="true"></span><span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
+            <a href="market_structure.html"><span class="submenu-icon submenu-icon-structure" aria-hidden="true"></span><span class="l-en">Market Structure</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">GEX regime · machine flows · dispersion · weekly range</span><span class="l-zh">做市商制度 · 机器资金 · 离散度 · 周度区间</span></span></a>
+          </div>
+        </div>
+        <a href="leader_radar.html"><span class="submenu-icon submenu-icon-radar" aria-hidden="true"></span><span class="l-en">Leader Radar</span><span class="l-zh">领袖雷达</span><span class="d"><span class="l-en">Lifecycle board · regime · handoff watch · rerating watch</span><span class="l-zh">生命周期看板 · 领导力制度 · 交接观察 · 重估观察</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html"><span class="menu-icon menu-icon-flag menu-icon-cn" aria-hidden="true"></span><span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · alpha · setups</span><span class="l-zh">先知 · 阿尔法 · 布局</span></span></a>
+        
+        <a href="sector_central_china.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Gated board · cycle map · whole-market rotation · theme baskets — one page</span><span class="l-zh">门控研判 · 周期图谱 · 全市场轮动 · 主题篮子 — 一页尽览</span></span></a>
+        <a href="subsectors_china.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+        <a href="china_heatmap.html"><span class="submenu-icon submenu-icon-heatmap" aria-hidden="true"></span><span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
+        <a href="china_strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="china_news.html"><span class="submenu-icon submenu-icon-news" aria-hidden="true"></span><span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="china_intel.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span><span class="d"><span class="l-en">Intel hub · flows · policy</span><span class="l-zh">情报中心 · 资金流 · 政策</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="china_intel.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
+            <a href="china_mechanics.html"><span class="submenu-icon submenu-icon-research" aria-hidden="true"></span><span class="l-en">Market Mechanics</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">Participation · limit breadth · phase memory · policy tape</span><span class="l-zh">参与度 · 涨跌停广度 · 阶段记忆 · 政策磁带</span></span></a>
+            <a href="baskets_china_ths.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">同花顺 Theme Baskets</span><span class="l-zh">同花顺主题篮子</span><span class="d"><span class="l-en">Tonghuashun concept boards · members & performance</span><span class="l-zh">同花顺概念板块 · 成分与表现</span></span></a>
+            <a href="flow_velocity.html"><span class="submenu-icon submenu-icon-flow" aria-hidden="true"></span><span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Big-money flow into names &amp; sectors · velocity · accel</span><span class="l-zh">主力资金流入个股与板块 · 流速 · 加速度</span></span></a>
+            <a href="china_altdata.html"><span class="submenu-icon submenu-icon-altdata" aria-hidden="true"></span><span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+            <a href="china_policy_watch.html"><span class="submenu-icon submenu-icon-policy" aria-hidden="true"></span><span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+            <a href="china_radar.html"><span class="submenu-icon submenu-icon-radar" aria-hidden="true"></span><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="china_special_situations.html"><span class="submenu-icon submenu-icon-event" aria-hidden="true"></span><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Unlocks · inquiry letters · preannouncements · pledge stress</span><span class="l-zh">解禁 · 问询函 · 业绩预告 · 质押风险</span></span></a>
+            <a href="narrative_radar.html"><span class="submenu-icon submenu-icon-narrative" aria-hidden="true"></span><span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html"><span class="menu-icon menu-icon-flag menu-icon-hk" aria-hidden="true"></span><span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet HK · alpha</span><span class="l-zh">先知港股 · 阿尔法</span></span></a>
+        <a href="hk_heatmap.html"><span class="submenu-icon submenu-icon-heatmap" aria-hidden="true"></span><span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">HK universe · sector treemap · turnover-sized</span><span class="l-zh">港股全景 · 板块树图 · 按成交额</span></span></a>
+        <a href="flow_velocity.html"><span class="submenu-icon submenu-icon-flow" aria-hidden="true"></span><span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Southbound + A-share big-money velocity</span><span class="l-zh">南向 + A股主力资金流速</span></span></a>
+        <a href="baskets_hk.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html"><span class="submenu-icon submenu-icon-rebalance" aria-hidden="true"></span><span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html"><span class="menu-icon menu-icon-flag menu-icon-ca" aria-hidden="true"></span><span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet TSX · sectors · alpha</span><span class="l-zh">先知TSX · 板块 · 阿尔法</span></span></a>
+        <a href="canada_heatmap.html"><span class="submenu-icon submenu-icon-heatmap" aria-hidden="true"></span><span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">TSX universe · sector treemap · market-cap</span><span class="l-zh">TSX全景 · 板块树图 · 按市值</span></span></a>
+        <a href="baskets_canada.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html"><span class="submenu-icon submenu-icon-rebalance" aria-hidden="true"></span><span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html"><span class="menu-icon menu-icon-intl" aria-hidden="true"></span><span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="japan.html"><span class="nav-sub-text"><span aria-hidden="true">🌐</span> <span class="l-en">Country Dashboards</span><span class="l-zh">国家看板</span><span class="d"><span class="l-en">Japan · Korea · Euro Area · UK · India</span><span class="l-zh">日本 · 韩国 · 欧元区 · 英国 · 印度</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="japan.html" data-intl-country="jp"><span aria-hidden="true">🇯🇵</span> <span class="l-en">Japan Macro</span><span class="l-zh">日本宏观</span><span class="d"><span class="l-en">BoJ · wages · JGBs · yen</span><span class="l-zh">日银 · 工资 · JGB · 日元</span></span></a>
+            <a href="south_korea.html" data-intl-country="kr"><span aria-hidden="true">🇰🇷</span> <span class="l-en">South Korea Macro</span><span class="l-zh">韩国宏观</span><span class="d"><span class="l-en">BOK · exports · household credit · won</span><span class="l-zh">韩银 · 出口 · 家庭信贷 · 韩元</span></span></a>
+            <a href="euro_area.html" data-intl-country="ez"><span aria-hidden="true">🇪🇺</span> <span class="l-en">Euro Area Macro</span><span class="l-zh">欧元区宏观</span><span class="d"><span class="l-en">EA21 · ECB · HICP · bank credit</span><span class="l-zh">EA21 · 欧洲央行 · HICP · 银行信贷</span></span></a>
+            <a href="united_kingdom.html" data-intl-country="gb"><span aria-hidden="true">🇬🇧</span> <span class="l-en">United Kingdom Macro</span><span class="l-zh">英国宏观</span><span class="d"><span class="l-en">BoE · services CPI · wages · gilts</span><span class="l-zh">英央行 · 服务CPI · 工资 · 英债</span></span></a>
+            <a href="india.html" data-intl-country="in"><span aria-hidden="true">🇮🇳</span> <span class="l-en">India Macro</span><span class="l-zh">印度宏观</span><span class="d"><span class="l-en">RBI · food inflation · credit · rupee</span><span class="l-zh">RBI · 食品通胀 · 信贷 · 卢比</span></span></a>
+          </div>
+        </div>
+        <a href="intl_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet cross-market · sectors</span><span class="l-zh">先知跨市场 · 板块</span></span></a>
+        <a href="baskets_intl.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)"><span class="menu-icon menu-icon-assets" aria-hidden="true"></span><span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="commodities.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-commodities" aria-hidden="true"></span><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="commodities.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="commodity_strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="spr.html"><span class="submenu-icon submenu-icon-commodities" aria-hidden="true"></span><span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="forex.html"><span class="submenu-icon submenu-icon-forex" aria-hidden="true"></span><span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="bonds.html"><span class="submenu-icon submenu-icon-policy" aria-hidden="true"></span><span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+    
+    <div class="nav-dd nav-mega-dd">
+      <a class="nav-link" href="intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu nav-mega mega-menu" role="menu">
+        <div class="mega-main nav-mega-main">
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nm-feat" href="intelligence_hub.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 12 24 3l18 9v23l-18 10L6 35Z"/><path d="m24 9 12 7v15l-12 7-12-7V16Z"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 20V9M28 24h8M24 28v10M20 24h-8M21 21l-6-5M27 21l6-5M21 27l-6 5M27 27l6 5"/><circle cx="24" cy="9" r="1.5"/><circle cx="36" cy="24" r="1.5"/><circle cx="24" cy="38" r="1.5"/><circle cx="12" cy="24" r="1.5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="item-desc d"><span class="l-en">Your complete market command center</span><span class="l-zh">你的完整市场指挥中心</span></span></span></a>
+              <a class="mega-item nm-feat" href="reports.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="item-desc d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
+              <a class="mega-item nm-feat" href="research_vault.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="item-desc d"><span class="l-en">Search every published research note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
+              <a class="mega-item nm-feat" data-nav-file="earnings_wire" href="stocks/earnings/index.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 7h25l7 7v27H8z"/><path d="M6 5h25l7 7v27H6zM31 5v8h7"/><path class="accent" d="M12 29h5l3-7 5 12 4-9 3 4h3"/><path d="M12 16h14M12 20h9"/><circle class="soft-fill" cx="34" cy="29" r="3"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Earnings Wire</span><span class="l-zh">财报情报线</span></span><span class="item-desc d"><span class="l-en">Verified calls, weekly intelligence and company context</span><span class="l-zh">已核验电话会、每周情报与公司语境</span></span></span></a>
+              <a class="mega-item nm-feat" href="fundamental_forensics.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M9 6h24l6 6v28H9z"/><path d="M7 4h24l6 6v23H7zM31 4v7h6"/><path d="M13 15h16M13 21h12M13 27h8"/><circle class="soft-fill" cx="31" cy="31" r="8"/><circle cx="29" cy="29" r="7"/><path class="accent" d="m34 34 7 7M25 29h8M29 25v8"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Filing Forensics</span><span class="l-zh">财报取证</span></span><span class="item-desc d"><span class="l-en">Find the accounting changes worth reviewing</span><span class="l-zh">发现值得复核的会计变化</span></span></span></a>
+              <a class="mega-item nm-feat" href="neural_web.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 24h36M24 6v36"/><circle class="soft-fill" cx="24" cy="24" r="5"/><circle cx="11" cy="12" r="3"/><circle cx="37" cy="12" r="3"/><circle cx="9" cy="34" r="3"/><circle cx="39" cy="34" r="3"/><path class="accent" d="M20 21 13 14M28 21l7-7M20 27l-8 5M28 27l8 5M14 12h20M11 15l-2 16M37 15l2 16M12 34h24"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="item-desc d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
+            </div>
+          </section>
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Find the Edge</span><span class="l-zh">寻找边际</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nav-mega-item" href="foresight.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M4 24h40M24 4v40"/><path d="M7 25s7-11 17-11 17 11 17 11-7 11-17 11S7 25 7 25Z"/><circle class="soft-fill" cx="24" cy="25" r="5"/><path class="accent" d="M31 12 38 5M34 16h9M13 14 8 9"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="item-desc d"><span class="l-en">Themes before markets price them</span><span class="l-zh">市场定价前的主题</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="state_of_themes.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 11h30v23H8z"/><rect x="6" y="8" width="30" height="23" rx="2"/><rect x="12" y="15" width="30" height="23" rx="2"/><path class="accent" d="m17 31 5-6 5 3 8-9M31 19h4v4"/><circle class="soft-fill" cx="22" cy="25" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="item-desc d"><span class="l-en">What’s strengthening and fading now</span><span class="l-zh">正在增强与减弱的主题</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="radar.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 39h36M9 7v32"/><path d="M10 32c7-1 10-6 15-8s8-1 13-10"/><path class="accent" d="M10 18c7 1 10 6 15 8s9 2 13 10"/><circle class="soft-fill" cx="25" cy="24" r="2.5"/><path d="M36 12h4v4M36 36h4v-4"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="item-desc d"><span class="l-en">Where price and reality split</span><span class="l-zh">价格与现实的分歧</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="stock_seasonality.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M10 14h32v28H10z"/><rect x="6" y="11" width="32" height="28" rx="3"/><path d="M6 19h32M15 7v8M29 7v8"/><path class="accent" d="m12 32 5-6 5 3 6-9 4 5"/><circle class="soft-fill" cx="28" cy="20" r="2.4"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Stock Seasonality</span><span class="l-zh">个股季节性</span></span><span class="item-desc d"><span class="l-en">Which calendar windows actually repeat</span><span class="l-zh">哪些日历窗口真的会重演</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="confluence_screener.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="6" y="8" width="36" height="28" rx="3"/><path class="ghost" d="M11 13h26v18H11z"/><path class="accent" d="m12 27 6-7 5 4 7-9 6 4"/><circle class="soft-fill" cx="30" cy="15" r="2.4"/><path d="M18 41h12M24 36v5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="item-desc d"><span class="l-en">Today’s strongest confirmed setups</span><span class="l-zh">今日最强确认信号</span></span></span></a>
+            </div>
+          </section>
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Capital & Regimes</span><span class="l-zh">资金与周期</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nav-mega-item" href="smart_money.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="7" y="15" width="34" height="25" rx="4"/><path d="M17 15v-5h14v5M7 24h34"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 21v6M21 24h6M13 10 8 5M35 10l5-5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Smart Money</span><span class="l-zh">聪明钱</span></span><span class="item-desc d"><span class="l-en">How top investors are positioned</span><span class="l-zh">顶级投资者的仓位</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="etfs.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="m8 14 16-8 16 8-16 8Z"/><path d="m8 22 16 8 16-8M8 30l16 8 16-8"/><path class="accent" d="M14 18v12c0 5 4 9 10 9s10-4 10-9V18"/><path class="ghost" d="M24 22v15"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Fund Flows</span><span class="l-zh">基金流向</span></span><span class="item-desc d"><span class="l-en">Where institutional capital is moving</span><span class="l-zh">机构资金流向</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="cycle.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="17"/><circle class="ghost" cx="24" cy="24" r="11"/><path d="M24 7v6M41 24h-6M24 41v-6M7 24h6"/><path class="accent" d="M24 24 34 14M34 10v4h4"/><circle class="soft-fill" cx="24" cy="24" r="3"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="item-desc d"><span class="l-en">Where the economy is heading</span><span class="l-zh">经济周期的下一站</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="macro_context.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><circle class="soft-fill" cx="31" cy="14" r="7"/><path class="accent" d="M31 3v4M31 21v4M20 14h4M38 14h4M23 6l3 3M36 19l3 3"/><path d="M11 34c-4 0-6-3-6-6s2-6 6-6c2-6 11-7 15-2 5-1 9 2 9 7 0 4-3 7-8 7Z"/><path d="m13 42 5-5 4 3 6-5 6 2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="item-desc d"><span class="l-en">Growth, inflation and liquidity now</span><span class="l-zh">当前增长、通胀与流动性</span></span></span></a>
+            </div>
+          </section>
+        </div>
+        <aside class="mega-rail nav-mega-rail" aria-label="Explore research">
+          <h2 class="section-label nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></h2>
+          <a class="rail-link nav-rail-item" href="policy_watch.html"><span><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="government_revenue.html"><span><span class="l-en">Government Revenue</span><span class="l-zh">政府收入前瞻</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="alt_data.html"><span><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="special_situations.html"><span><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="biocatalyst.html"><span><span class="l-en">BioCatalyst Intelligence</span><span class="l-zh">生物医药催化剂智能</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="capital_structure.html"><span><span class="l-en">Capital Structure</span><span class="l-zh">资本结构</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <div class="nav-drill" data-nav-drill>
+            <button class="rail-link nav-rail-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
+              <span><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">›</span>
+            </button>
+            <div class="nav-drill-panel" data-nav-drill-panel inert>
+              <button class="nav-drill-back" type="button" data-nav-drill-back>‹ <span><span class="l-en">Research</span><span class="l-zh">研究</span></span></button>
+              <div class="nav-drill-heading"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></div>
+              <a class="nav-mega-item" href="markets.html"><span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Compare national equity clocks</span><span class="l-zh">比较各国股市周期</span></span></span></a>
+              <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic research-icon research-icon-country-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Track countries and regions</span><span class="l-zh">追踪国家与区域</span></span></span></a>
+              <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">U.S. Sector Cycles</span><span class="l-zh">美国行业周期</span></span><span class="d"><span class="l-en">See every sector clock</span><span class="l-zh">查看所有行业周期</span></span></span></a>
+              <a class="nav-mega-item" href="sector_cycles_china.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">China Sector Cycles</span><span class="l-zh">中国行业周期</span></span><span class="d"><span class="l-en">Read China sector rotation</span><span class="l-zh">查看中国行业轮动</span></span></span></a>
+              <a class="nav-mega-item" href="cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Understand the full cycle</span><span class="l-zh">理解完整经济周期</span></span></span></a>
+              <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Read today’s macro regime</span><span class="l-zh">读取当前宏观环境</span></span></span></a>
+            </div>
+          </div>
+          <a class="rail-link nav-rail-item" href="intelligence_hub.html"><span><span class="l-en">Browse all research</span><span class="l-zh">浏览全部研究</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">→</span></a>
+          <div class="rail-note">
+            <strong><span class="l-en">Cleaner by design</span><span class="l-zh">简洁设计</span></strong>
+            <span class="l-en">Detailed diagnostics and proprietary labs move to the admin console.</span><span class="l-zh">详细诊断和专有实验室移至管理控制台。</span>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+  
+  <script src="logo_config.js"></script>
+  <script src="stock-logos.js"></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
+  <div class="nav-search">
+    <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock — US, China, HK, Canada &amp; more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    
+    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-terminal" aria-hidden="true"></span><span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+
+<div class="panel">
+  <div class="topline">
+    <h1><span class="l-en">Quant Lab</span><span class="l-zh">量化实验室</span></h1>
+    <span class="stance"><span class="l-en">Study only — nothing here ranks a stock</span><span class="l-zh">仅供研究－不参与任何选股排序</span></span>
+  </div>
+  <p class="lead" style="margin:8px 0 0">
+    <span class="l-en">We rebuild published quant models on our own filings data and check whether they actually sort winners from losers here. Where a model cannot be rebuilt, we say which part is missing and why.</span><span class="l-zh">我们用自有财报数据复刻公开的量化模型，检验它们在这里能否真正区分赢家与输家。若某个模型无法复刻，我们会说明缺哪一块、为何缺。</span>
+  </p>
+  
+  <p class="sm muted" style="margin:7px 0 0">
+    <span class="l-en">Latest reading</span><span class="l-zh">最新读数</span> 2026-07-31 · 1552 <span class="l-en">companies with filings</span><span class="l-zh">家有财报覆盖的公司</span>
+  </p>
+  
+</div>
+
+
+
+
+
+<div class="panel">
+  <h2><span class="l-en">The gap</span><span class="l-zh">落差</span></h2>
+  <div class="gap">
+    <div class="gapcell claim">
+      <span class="k"><span class="l-en">What the vendor claims</span><span class="l-zh">厂商的说法</span></span>
+      <span class="v mono">20.73%</span>
+      <span class="n"><span class="l-en">a year, 1992–2013, vs 10.33% for small caps — their number, their test, their universe</span><span class="l-zh">年化，1992–2013，对比小盘股10.33%－出自厂商自述的测试与股票池</span></span>
+    </div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="gapcell build">
+      <span class="k"><span class="l-en">What we rebuilt exactly</span><span class="l-zh">完全一致地复刻了多少</span></span>
+      <span class="v mono">0 / 6</span>
+      <span class="n"><span class="l-en">parts. They describe three of the six inputs and we could only approximate those; the other three we inferred from scratch</span><span class="l-zh">项。六项输入中厂商描述了三项，而这三项我们也只能近似；其余三项完全由我们推断。</span></span>
+    </div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="gapcell meas">
+      <span class="k"><span class="l-en">What it did here</span><span class="l-zh">在我们这里的表现</span></span>
+      <span class="v"><span class="l-en">Backwards</span><span class="l-zh">方向相反</span></span>
+      <span class="n"><span class="l-en">over three years on our companies, the rebuilt score put weaker stocks above stronger ones</span><span class="l-zh">在我们的三年样本中，复刻分数把较弱的股票排在了较强的股票之上</span></span>
+    </div>
+  </div>
+  <p class="foot">
+    <span class="l-en">These three numbers are not comparable, and that is the point. The claim is a small-cap test from a different era that we cannot audit; the rebuild is missing inputs we do not hold; the measurement is three years of our own large- and mid-cap names. A vendor result does not transfer to a different universe just because the formula does.</span><span class="l-zh">这三个数字本就不可直接比较，这正是要点所在。厂商的说法来自另一个年代、无法核验的小盘股测试；我们的复刻缺少手头没有的输入；而实测只覆盖自有样本中三年的大中盘股。公式可以照搬，结论不会跟着照搬。</span>
+  </p>
+</div>
+
+
+
+
+<div class="panel">
+  <div class="mhead">
+    <h3><span class="l-en">Quality + Value (QV / QuantSoft)</span><span class="l-zh">质量＋价值</span></h3>
+    <span class="vendor">Fintel</span>
+    
+      
+      <span class="pill v-inv"><span class="l-en">Ranked backwards</span><span class="l-zh">排序方向相反</span></span>
+    
+  </div>
+  <p class="sm muted" style="margin:0 0 2px">Durable cash generators that have fallen out of favour.</p>
+
+  <div class="quote">
+    A six-factor model that ranks companies on their cash-generating ability and growth, with a significant value factor. Developed by Wilton Risenhoover from research at UCLA Anderson. Scored 0-100 as a percentile of a screened universe.
+    <cite><span class="l-en">Vendor description</span><span class="l-zh">厂商描述</span> ·
+      <a href="https://www.nasdaq.com/articles/coal-miner-alpha-metallurgical-resources-begins-2023-leading-the-qvf-quant-model" rel="nofollow noopener" target="_blank">Fintel, syndicated on Nasdaq, 2023-01-04</a> · <a href="https://www.nasdaq.com/articles/mid-august-momentum-monday-ranks-are-sparse-as-only-a-half-dozen-names-garner-high-scores" rel="nofollow noopener" target="_blank">Fintel, syndicated on Nasdaq, 2023-08-21</a> · <a href="https://fintel.io/qv" rel="nofollow noopener" target="_blank">Fintel, accessed 2026-08-05</a>
+    </cite>
+  </div>
+
+  
+  <details>
+    <summary><span class="l-en">Their performance claim, and what we make of it</span><span class="l-zh">厂商的业绩宣称，以及我们的看法</span></summary>
+    <div class="quote" style="margin-top:6px">The Quality+Value Score was analysed by an independent firm and they found that an investing strategy based on the model outperformed both the Russell 2000 and the S&amp;P over time. In one test over the period of 1992 to 2013, the theoretical CAGR of the Quality+Value score was 20.73% vs. the Russell 2000 CAGR of 10.33%. In that analysis, the Sharpe Ratios were 0.91 (Q+V) vs. 0.46 (R2000) and the Sortino Ratios were 1.18 (Q+V) vs. 0.48 (R2000).</div>
+    <p class="sm" style="max-width:86ch">Reproduced as the vendor&#39;s claim. It is not evidence about our universe: the window (1992-2013) predates the model&#39;s publication, the benchmark is the Russell 2000 (small caps), the testing firm is unnamed, and no turnover, capacity, or transaction-cost assumption is stated. Treat as marketing provenance, not a prior.</p>
+  </details>
+  
+
+  
+  <h2 style="margin-top:14px"><span class="l-en">Part by part</span><span class="l-zh">逐项拆解</span>
+    <span class="help">?<span class="tip"><span class="l-en">Left to right: what the vendor said the input is, what we actually computed, how much of our universe that covers, and whether it sorted the right way over the tested window. A part we could not build at all is marked so — it is dropped from the score, never quietly imputed.</span><span class="l-zh">自左至右：厂商声明的输入、我们实际计算的口径、覆盖了多少股票池、以及在测试窗口内排序方向是否正确。完全无法构建的部分会明确标出－该项直接从分数中剔除，绝不静默填补。</span></span></span>
+  </h2>
+  <div class="scroll">
+  <table class="ledger">
+    <thead><tr>
+      <th><span class="l-en">Part</span><span class="l-zh">项目</span></th>
+      <th><span class="l-en">Vendor said</span><span class="l-zh">厂商口径</span></th>
+      <th><span class="l-en">We built</span><span class="l-zh">我们的口径</span></th>
+      <th><span class="l-en">Covers</span><span class="l-zh">覆盖率</span></th>
+      <th><span class="l-en">Sorted</span><span class="l-zh">排序结果</span></th>
+    </tr></thead>
+    <tbody>
+    
+      
+      
+      
+      <tr>
+        <td class="legname">3y average ROIC<br>
+          <span class="pill f-prox" style="margin-top:3px"><span class="l-en">Stand-in</span><span class="l-zh">替代口径</span></span></td>
+        <td class="said " style="max-width:26ch">
+          3 year average return on investor capital</td>
+        <td style="max-width:34ch">mean over the 3 most recent knowable FYs of NOPAT / invested capital, NOPAT = op_income x (1 - 21%), invested capital = equity + total debt - cash
+          <span class="help">?<span class="tip"><span class="l-en">Fintel does not state its tax rate, its debt definition, or whether cash is netted. debt_lt is present for only ~49% of the panel and short-term debt is absent entirely, so invested capital is understated for levered names -&gt; ROIC overstated for exactly the leveraged small caps this model targets.</span><span class="l-zh">Fintel does not state its tax rate, its debt definition, or whether cash is netted. debt_lt is present for only ~49% of the panel and short-term debt is absent entirely, so invested capital is understated for levered names -&gt; ROIC overstated for exactly the leveraged small caps this model targets.</span></span></span></td>
+        <td>
+          
+          <span class="cov"><span class="covbar"><i class=""
+            style="width:74%"></i></span>
+            <span class="mono xs">75%</span></span>
+          
+        </td>
+        <td>
+          
+            <span class="pill v-inv"><span class="l-en">Ranked backwards</span><span class="l-zh">排序方向相反</span></span>
+            <div class="xs muted mono" style="margin-top:3px">-0.0351</div>
+          
+        </td>
+      </tr>
+    
+      
+      
+      
+      <tr>
+        <td class="legname">ROIC growth<br>
+          <span class="pill f-prox" style="margin-top:3px"><span class="l-en">Stand-in</span><span class="l-zh">替代口径</span></span></td>
+        <td class="said " style="max-width:26ch">
+          ...which has grown by 11.54%</td>
+        <td style="max-width:34ch">ROIC(latest FY) / ROIC(FY-2) - 1, defined only when the base ROIC is positive
+          <span class="help">?<span class="tip"><span class="l-en">The vendor&#39;s growth window and base are unstated; a 3y CAGR and a 2y point-to-point differ materially for cyclicals, which is most of the model&#39;s published winners (coal, cement, packaging).</span><span class="l-zh">The vendor&#39;s growth window and base are unstated; a 3y CAGR and a 2y point-to-point differ materially for cyclicals, which is most of the model&#39;s published winners (coal, cement, packaging).</span></span></span></td>
+        <td>
+          
+          <span class="cov"><span class="covbar"><i class=""
+            style="width:58%"></i></span>
+            <span class="mono xs">58%</span></span>
+          
+        </td>
+        <td>
+          
+            <span class="pill v-null"><span class="l-en">No signal</span><span class="l-zh">无信号</span></span>
+            <div class="xs muted mono" style="margin-top:3px">-0.0110</div>
+          
+        </td>
+      </tr>
+    
+      
+      
+      
+      <tr>
+        <td class="legname">3y average EBIT/EV<br>
+          <span class="pill f-prox" style="margin-top:3px"><span class="l-en">Stand-in</span><span class="l-zh">替代口径</span></span></td>
+        <td class="said " style="max-width:26ch">
+          3 year average EBIT/EV ratio</td>
+        <td style="max-width:34ch">mean over the 3 most recent knowable FYs of op_income / enterprise value, EV = market cap + total debt - cash, priced at the rebalance date
+          <span class="help">?<span class="tip"><span class="l-en">op_income is EBIT only when there are no material non-operating items; and the vendor almost certainly re-prices EV at each historical FY, whereas we hold market cap at the rebalance date across all three FYs. Ours is therefore &#39;current EV vs 3y average EBIT&#39;, not a 3y average of the ratio.</span><span class="l-zh">op_income is EBIT only when there are no material non-operating items; and the vendor almost certainly re-prices EV at each historical FY, whereas we hold market cap at the rebalance date across all three FYs. Ours is therefore &#39;current EV vs 3y average EBIT&#39;, not a 3y average of the ratio.</span></span></span></td>
+        <td>
+          
+          <span class="cov"><span class="covbar"><i class=""
+            style="width:66%"></i></span>
+            <span class="mono xs">66%</span></span>
+          
+        </td>
+        <td>
+          
+            <span class="pill v-null"><span class="l-en">No signal</span><span class="l-zh">无信号</span></span>
+            <div class="xs muted mono" style="margin-top:3px">-0.0090</div>
+          
+        </td>
+      </tr>
+    
+      
+      
+      
+      <tr>
+        <td class="legname">Gross profitability (GP/Assets)<br>
+          <span class="pill f-prox" style="margin-top:3px"><span class="l-en">Stand-in</span><span class="l-zh">替代口径</span></span></td>
+        <td class="said inf" style="max-width:26ch">
+          <span class="l-en">never disclosed</span><span class="l-zh">未公开</span></td>
+        <td style="max-width:34ch">gross_profit / assets (Novy-Marx)
+          <span class="help">?<span class="tip"><span class="l-en">INFERRED leg — the vendor never names it. Included because &#39;cash-generating ability&#39; is the stated construct and GP/A is its canonical published form. gross_profit covers only ~43% of the panel.</span><span class="l-zh">INFERRED leg — the vendor never names it. Included because &#39;cash-generating ability&#39; is the stated construct and GP/A is its canonical published form. gross_profit covers only ~43% of the panel.</span></span></span></td>
+        <td>
+          
+          <span class="cov"><span class="covbar"><i class="lo"
+            style="width:42%"></i></span>
+            <span class="mono xs">43%</span></span>
+          
+        </td>
+        <td>
+          
+            <span class="pill v-null"><span class="l-en">No signal</span><span class="l-zh">无信号</span></span>
+            <div class="xs muted mono" style="margin-top:3px">-0.0278</div>
+          
+        </td>
+      </tr>
+    
+      
+      
+      
+      <tr>
+        <td class="legname">Low accruals<br>
+          <span class="pill f-prox" style="margin-top:3px"><span class="l-en">Stand-in</span><span class="l-zh">替代口径</span></span></td>
+        <td class="said inf" style="max-width:26ch">
+          <span class="l-en">never disclosed</span><span class="l-zh">未公开</span></td>
+        <td style="max-width:34ch">-(ni - cfo) / assets (Sloan) — higher is better
+          <span class="help">?<span class="tip"><span class="l-en">INFERRED leg. The stated construct is cash generation, and the accrual gap between earnings and cash is its standard published test.</span><span class="l-zh">INFERRED leg. The stated construct is cash generation, and the accrual gap between earnings and cash is its standard published test.</span></span></span></td>
+        <td>
+          
+          <span class="cov"><span class="covbar"><i class=""
+            style="width:93%"></i></span>
+            <span class="mono xs">94%</span></span>
+          
+        </td>
+        <td>
+          
+            <span class="pill v-inv"><span class="l-en">Ranked backwards</span><span class="l-zh">排序方向相反</span></span>
+            <div class="xs muted mono" style="margin-top:3px">-0.0241</div>
+          
+        </td>
+      </tr>
+    
+      
+      
+      
+      <tr>
+        <td class="legname">FCF / total debt<br>
+          <span class="pill f-prox" style="margin-top:3px"><span class="l-en">Stand-in</span><span class="l-zh">替代口径</span></span></td>
+        <td class="said inf" style="max-width:26ch">
+          <span class="l-en">never disclosed</span><span class="l-zh">未公开</span></td>
+        <td style="max-width:34ch">(cfo - capex) / total debt
+          <span class="help">?<span class="tip"><span class="l-en">INFERRED leg. capex covers only ~32% of the pit panel, so this leg is computable on roughly a third of the universe.</span><span class="l-zh">INFERRED leg. capex covers only ~32% of the pit panel, so this leg is computable on roughly a third of the universe.</span></span></span></td>
+        <td>
+          
+          <span class="cov"><span class="covbar"><i class="lo"
+            style="width:46%"></i></span>
+            <span class="mono xs">46%</span></span>
+          
+        </td>
+        <td>
+          
+            <span class="pill v-inv"><span class="l-en">Ranked backwards</span><span class="l-zh">排序方向相反</span></span>
+            <div class="xs muted mono" style="margin-top:3px">-0.0321</div>
+          
+        </td>
+      </tr>
+    
+    </tbody>
+  </table>
+  </div>
+
+  
+    
+    <div class="chips">
+      <span class="chip"><span class="l-en">Tested over</span><span class="l-zh">测试期</span> <b>12</b> <span class="l-en">quarters</span><span class="l-zh">个季度</span></span>
+      <span class="chip"><span class="l-en">Sorting strength</span><span class="l-zh">排序强度</span> <b class="mono neg">-0.0296</b>
+        <span class="help">?<span class="tip"><span class="l-en">Mean cross-sectional rank correlation between the score and the next quarter&#39;s return (rank IC). Positive means higher-scored names did better. Values this small are a weak effect either way — the sign and the significance matter more than the magnitude.</span><span class="l-zh">分数与下季度收益的横截面秩相关均值（rank IC）。为正表示高分股表现更好。这种量级本身很微弱－符号与显著性比数值大小更重要。</span></span></span></span>
+      
+      <span class="chip"><span class="l-en">Top fifth minus bottom fifth</span><span class="l-zh">前1/5减后1/5</span> <b class="mono neg">-3.74%</b></span>
+      
+      
+      <span class="chip"><span class="l-en">Parts blended</span><span class="l-zh">实际混合项数</span> <b>6–6</b> / 6</span>
+      
+    </div>
+    
+  
+
+  
+
+  <details style="margin-top:8px">
+    <summary><span class="l-en">How the parts are combined</span><span class="l-zh">各项如何合成</span></summary>
+    <p class="sm" style="max-width:86ch"><strong>unknown</strong> — Not disclosed. Our study scores it as a re-percentiled equal-weight blend of the available legs, which is a CHOICE, not the vendor&#39;s rule.</p>
+    
+  </details>
+
+  
+  
+  <details style="margin-top:6px">
+    <summary><span class="l-en">What it picks today</span><span class="l-zh">当前选出的股票</span> (1023 <span class="l-en">scored</span><span class="l-zh">只已评分</span>)</summary>
+    <p class="xs muted" style="margin:5px 0">
+      <span class="l-en">Shown because a model you cannot look at is a model you cannot judge. These are not recommendations — this score is not wired into any ranking on this site.</span><span class="l-zh">列出是为了可被检视：看不见的模型无法评判。这些不构成推荐－该分数未接入本站任何排序。</span>
+    </p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th><span class="l-en">Stock</span><span class="l-zh">股票</span></th><th class="r"><span class="l-en">Score</span><span class="l-zh">分数</span></th>
+        <th class="r"><span class="l-en">Parts used</span><span class="l-zh">使用项数</span></th><th class="r"><span class="l-en">Size ($bn)</span><span class="l-zh">市值（十亿美元）</span></th>
+        <th class="r xs">roic_3y</th><th class="r xs">roic_growth</th><th class="r xs">ebit_ev_3y</th><th class="r xs">gross_profitability</th><th class="r xs">accruals</th><th class="r xs">fcf_to_debt</th></tr></thead>
+      <tbody>
+      
+      <tr><td class="mono">CARG</td>
+        <td class="r mono">100.0</td>
+        <td class="r mono muted">4/6</td>
+        <td class="r mono muted">nan</td>
+        <td class="r mono xs muted">89</td><td class="r mono xs muted">96</td><td class="r mono xs muted">nan</td><td class="r mono xs muted">100</td><td class="r mono xs muted">98</td><td class="r mono xs muted">nan</td>
+      </tr>
+      
+      <tr><td class="mono">ADBE</td>
+        <td class="r mono">99.9</td>
+        <td class="r mono ">6/6</td>
+        <td class="r mono muted">102.8</td>
+        <td class="r mono xs muted">94</td><td class="r mono xs muted">92</td><td class="r mono xs muted">76</td><td class="r mono xs muted">96</td><td class="r mono xs muted">86</td><td class="r mono xs muted">94</td>
+      </tr>
+      
+      <tr><td class="mono">NGVT</td>
+        <td class="r mono">99.8</td>
+        <td class="r mono ">6/6</td>
+        <td class="r mono muted">2.6</td>
+        <td class="r mono xs muted">98</td><td class="r mono xs muted">100</td><td class="r mono xs muted">92</td><td class="r mono xs muted">52</td><td class="r mono xs muted">99</td><td class="r mono xs muted">89</td>
+      </tr>
+      
+      <tr><td class="mono">META</td>
+        <td class="r mono">99.7</td>
+        <td class="r mono muted">5/6</td>
+        <td class="r mono muted">nan</td>
+        <td class="r mono xs muted">80</td><td class="r mono xs muted">78</td><td class="r mono xs muted">100</td><td class="r mono xs muted">nan</td><td class="r mono xs muted">93</td><td class="r mono xs muted">80</td>
+      </tr>
+      
+      <tr><td class="mono">YELP</td>
+        <td class="r mono">99.6</td>
+        <td class="r mono muted">4/6</td>
+        <td class="r mono muted">1.6</td>
+        <td class="r mono xs muted">70</td><td class="r mono xs muted">94</td><td class="r mono xs muted">82</td><td class="r mono xs muted">nan</td><td class="r mono xs muted">98</td><td class="r mono xs muted">nan</td>
+      </tr>
+      
+      <tr><td class="mono">COLL</td>
+        <td class="r mono">99.5</td>
+        <td class="r mono muted">4/6</td>
+        <td class="r mono muted">1.1</td>
+        <td class="r mono xs muted">99</td><td class="r mono xs muted">nan</td><td class="r mono xs muted">94</td><td class="r mono xs muted">52</td><td class="r mono xs muted">95</td><td class="r mono xs muted">nan</td>
+      </tr>
+      
+      <tr><td class="mono">SAM</td>
+        <td class="r mono">99.4</td>
+        <td class="r mono muted">4/6</td>
+        <td class="r mono muted">nan</td>
+        <td class="r mono xs muted">52</td><td class="r mono xs muted">90</td><td class="r mono xs muted">nan</td><td class="r mono xs muted">98</td><td class="r mono xs muted">92</td><td class="r mono xs muted">nan</td>
+      </tr>
+      
+      <tr><td class="mono">TDC</td>
+        <td class="r mono">99.3</td>
+        <td class="r mono muted">4/6</td>
+        <td class="r mono muted">2.9</td>
+        <td class="r mono xs muted">nan</td><td class="r mono xs muted">nan</td><td class="r mono xs muted">78</td><td class="r mono xs muted">90</td><td class="r mono xs muted">86</td><td class="r mono xs muted">77</td>
+      </tr>
+      
+      <tr><td class="mono">COKE</td>
+        <td class="r mono">99.2</td>
+        <td class="r mono ">6/6</td>
+        <td class="r mono muted">nan</td>
+        <td class="r mono xs muted">83</td><td class="r mono xs muted">94</td><td class="r mono xs muted">97</td><td class="r mono xs muted">94</td><td class="r mono xs muted">81</td><td class="r mono xs muted">46</td>
+      </tr>
+      
+      <tr><td class="mono">MA</td>
+        <td class="r mono">99.1</td>
+        <td class="r mono muted">5/6</td>
+        <td class="r mono muted">nan</td>
+        <td class="r mono xs muted">95</td><td class="r mono xs muted">75</td><td class="r mono xs muted">99</td><td class="r mono xs muted">nan</td><td class="r mono xs muted">61</td><td class="r mono xs muted">82</td>
+      </tr>
+      
+      <tr><td class="mono">MGY</td>
+        <td class="r mono">99.0</td>
+        <td class="r mono muted">4/6</td>
+        <td class="r mono muted">nan</td>
+        <td class="r mono xs muted">98</td><td class="r mono xs muted">36</td><td class="r mono xs muted">100</td><td class="r mono xs muted">nan</td><td class="r mono xs muted">96</td><td class="r mono xs muted">nan</td>
+      </tr>
+      
+      <tr><td class="mono">UPBD</td>
+        <td class="r mono">98.9</td>
+        <td class="r mono muted">5/6</td>
+        <td class="r mono muted">1.1</td>
+        <td class="r mono xs muted">88</td><td class="r mono xs muted">57</td><td class="r mono xs muted">95</td><td class="r mono xs muted">95</td><td class="r mono xs muted">75</td><td class="r mono xs muted">nan</td>
+      </tr>
+      
+      <tr><td class="mono">ENVA</td>
+        <td class="r mono">98.8</td>
+        <td class="r mono muted">5/6</td>
+        <td class="r mono muted">6.4</td>
+        <td class="r mono xs muted">90</td><td class="r mono xs muted">86</td><td class="r mono xs muted">83</td><td class="r mono xs muted">54</td><td class="r mono xs muted">98</td><td class="r mono xs muted">nan</td>
+      </tr>
+      
+      <tr><td class="mono">EXPE</td>
+        <td class="r mono">98.7</td>
+        <td class="r mono muted">5/6</td>
+        <td class="r mono muted">34.5</td>
+        <td class="r mono xs muted">99</td><td class="r mono xs muted">97</td><td class="r mono xs muted">48</td><td class="r mono xs muted">nan</td><td class="r mono xs muted">87</td><td class="r mono xs muted">78</td>
+      </tr>
+      
+      <tr><td class="mono">GSHD</td>
+        <td class="r mono">98.6</td>
+        <td class="r mono muted">5/6</td>
+        <td class="r mono muted">nan</td>
+        <td class="r mono xs muted">70</td><td class="r mono xs muted">97</td><td class="r mono xs muted">94</td><td class="r mono xs muted">nan</td><td class="r mono xs muted">94</td><td class="r mono xs muted">52</td>
+      </tr>
+      
+      </tbody>
+    </table>
+    </div>
+    <p class="xs muted"><span class="l-en">A name is only scored when it has at least</span><span class="l-zh">仅当股票至少具备</span> 4/6 <span class="l-en">parts — otherwise a company good at two things would outrank one judged on all of them.</span><span class="l-zh">项时才计分－否则只擅长两项的公司会压过被全面评估的公司。</span></p>
+  </details>
+  
+</div>
+
+<div class="panel">
+  <div class="mhead">
+    <h3><span class="l-en">Quality + Value + Momentum (QVM)</span><span class="l-zh">质量＋价值＋动量</span></h3>
+    <span class="vendor">Fintel</span>
+    
+      
+      <span class="pill v-null"><span class="l-en">No signal</span><span class="l-zh">无信号</span></span>
+    
+  </div>
+  <p class="sm muted" style="margin:0 0 2px">QV with a light momentum tilt — the vendor&#39;s &#39;enhanced&#39; board.</p>
+
+  <div class="quote">
+    Fintel&#39;s QV Score combined with the Quantitative Momentum Model (QMM). The momentum score factors the share price performance over the last 6 months.
+    <cite><span class="l-en">Vendor description</span><span class="l-zh">厂商描述</span> ·
+      <a href="https://www.nasdaq.com/articles/mid-august-momentum-monday-ranks-are-sparse-as-only-a-half-dozen-names-garner-high-scores" rel="nofollow noopener" target="_blank">Fintel, syndicated on Nasdaq, 2023-08-21</a> · <a href="https://fintel.io/qvm" rel="nofollow noopener" target="_blank">Fintel, accessed 2026-08-05</a>
+    </cite>
+  </div>
+
+  
+  <details>
+    <summary><span class="l-en">Their performance claim, and what we make of it</span><span class="l-zh">厂商的业绩宣称，以及我们的看法</span></summary>
+    <div class="quote" style="margin-top:6px">An enhanced quantitative model to improve on the returns of the original Quality/Value model.</div>
+    <p class="sm" style="max-width:86ch">No separate QVM backtest statistic is published anywhere we can find.</p>
+  </details>
+  
+
+  
+  <h2 style="margin-top:14px"><span class="l-en">Part by part</span><span class="l-zh">逐项拆解</span>
+    <span class="help">?<span class="tip"><span class="l-en">Left to right: what the vendor said the input is, what we actually computed, how much of our universe that covers, and whether it sorted the right way over the tested window. A part we could not build at all is marked so — it is dropped from the score, never quietly imputed.</span><span class="l-zh">自左至右：厂商声明的输入、我们实际计算的口径、覆盖了多少股票池、以及在测试窗口内排序方向是否正确。完全无法构建的部分会明确标出－该项直接从分数中剔除，绝不静默填补。</span></span></span>
+  </h2>
+  <div class="scroll">
+  <table class="ledger">
+    <thead><tr>
+      <th><span class="l-en">Part</span><span class="l-zh">项目</span></th>
+      <th><span class="l-en">Vendor said</span><span class="l-zh">厂商口径</span></th>
+      <th><span class="l-en">We built</span><span class="l-zh">我们的口径</span></th>
+      <th><span class="l-en">Covers</span><span class="l-zh">覆盖率</span></th>
+      <th><span class="l-en">Sorted</span><span class="l-zh">排序结果</span></th>
+    </tr></thead>
+    <tbody>
+    
+      
+      
+      
+      <tr>
+        <td class="legname">QV composite<br>
+          <span class="pill f-prox" style="margin-top:3px"><span class="l-en">Stand-in</span><span class="l-zh">替代口径</span></span></td>
+        <td class="said " style="max-width:26ch">
+          Fintel&#39;s QV score</td>
+        <td style="max-width:34ch">the fintel_qv recreation&#39;s composite percentile
+          <span class="help">?<span class="tip"><span class="l-en">inherits every fintel_qv leg distortion</span><span class="l-zh">inherits every fintel_qv leg distortion</span></span></span></td>
+        <td>
+          <span class="muted">—</span>
+        </td>
+        <td>
+          <span class="muted">—</span>
+        </td>
+      </tr>
+    
+      
+      
+      
+      <tr>
+        <td class="legname">6-month price momentum<br>
+          <span class="pill f-ok" style="margin-top:3px"><span class="l-en">Same input</span><span class="l-zh">输入一致</span></span></td>
+        <td class="said " style="max-width:26ch">
+          share price performance over the last 6 months</td>
+        <td style="max-width:34ch">close(t) / close(t - 126 trading days) - 1
+          </td>
+        <td>
+          
+          <span class="cov"><span class="covbar"><i class=""
+            style="width:72%"></i></span>
+            <span class="mono xs">73%</span></span>
+          
+        </td>
+        <td>
+          
+            <span class="pill v-ok"><span class="l-en">Ranked forward</span><span class="l-zh">排序方向正确</span></span>
+            <div class="xs muted mono" style="margin-top:3px">+0.0321</div>
+          
+        </td>
+      </tr>
+    
+    </tbody>
+  </table>
+  </div>
+
+  
+    
+    <div class="chips">
+      <span class="chip"><span class="l-en">Tested over</span><span class="l-zh">测试期</span> <b>12</b> <span class="l-en">quarters</span><span class="l-zh">个季度</span></span>
+      <span class="chip"><span class="l-en">Sorting strength</span><span class="l-zh">排序强度</span> <b class="mono neg">-0.0166</b>
+        <span class="help">?<span class="tip"><span class="l-en">Mean cross-sectional rank correlation between the score and the next quarter&#39;s return (rank IC). Positive means higher-scored names did better. Values this small are a weak effect either way — the sign and the significance matter more than the magnitude.</span><span class="l-zh">分数与下季度收益的横截面秩相关均值（rank IC）。为正表示高分股表现更好。这种量级本身很微弱－符号与显著性比数值大小更重要。</span></span></span></span>
+      
+      <span class="chip"><span class="l-en">Top fifth minus bottom fifth</span><span class="l-zh">前1/5减后1/5</span> <b class="mono neg">-2.61%</b></span>
+      
+      
+      <span class="chip"><span class="l-en">Parts blended</span><span class="l-zh">实际混合项数</span> <b>6–7</b> / 7</span>
+      
+    </div>
+    
+  
+
+  
+
+  <details style="margin-top:8px">
+    <summary><span class="l-en">How the parts are combined</span><span class="l-zh">各项如何合成</span></summary>
+    <p class="sm" style="max-width:86ch"><strong>blend_then_rank</strong> · <span class="l-en">fitted by us, not published</span><span class="l-zh">由我们拟合，非厂商公开</span> — FITTED, not disclosed. OLS of QVM on (Q, V, M) over the ten published tuples gives 0.410 Q + 0.588 V + 0.110 M - 5.70 with R2 = 0.998 and max residual 0.60. Weights summing above 1 (1.108) with a negative intercept is the signature of a blend that is then RE-PERCENTILED: in the thin upper tail the rank map is locally linear with slope &gt; 1. Confirmed independently — MCEM and WSM both score HIGHER on QVM than on any of their three sub-scores, which no convex weighted average can do. Read plainly: QVM is the QV score with a LIGHT momentum tilt (~11%), which matches the vendor&#39;s own framing that momentum &#39;slightly&#39; adjusts the ranks. Caveat: n = 10, one date, all high scorers, so this is the TOP-DECILE local rule, not the global one.</p>
+    
+    <p class="sm mono muted">quality 0.41 · value 0.59 · momentum 0.11</p>
+    
+  </details>
+
+  
+  
+</div>
+
+<div class="panel">
+  <div class="mhead">
+    <h3><span class="l-en">Quality + Value + Fund Sentiment (QVO / QVF)</span><span class="l-zh">质量＋价值＋基金情绪</span></h3>
+    <span class="vendor">Fintel</span>
+    
+      <span class="pill v-none"><span class="l-en">Cannot rebuild here</span><span class="l-zh">此处无法复刻</span></span>
+    
+  </div>
+  <p class="sm muted" style="margin:0 0 2px">QV tilted toward names institutions are accumulating.</p>
+
+  <div class="quote">
+    Adds two more factors to the Quality/Value Score — both based on measures of fund sentiment. The addition slightly increases the ranks of companies that have high accumulation by institutions.
+    <cite><span class="l-en">Vendor description</span><span class="l-zh">厂商描述</span> ·
+      <a href="https://www.nasdaq.com/articles/coal-miner-alpha-metallurgical-resources-begins-2023-leading-the-qvf-quant-model" rel="nofollow noopener" target="_blank">Fintel, syndicated on Nasdaq, 2023-01-04</a>
+    </cite>
+  </div>
+
+  
+  <details>
+    <summary><span class="l-en">Their performance claim, and what we make of it</span><span class="l-zh">厂商的业绩宣称，以及我们的看法</span></summary>
+    <div class="quote" style="margin-top:6px">...is expected to improve returns over the long term.</div>
+    <p class="sm" style="max-width:86ch">An expectation, not a measurement. No statistic is attached to it.</p>
+  </details>
+  
+
+  
+  <h2 style="margin-top:14px"><span class="l-en">Part by part</span><span class="l-zh">逐项拆解</span>
+    <span class="help">?<span class="tip"><span class="l-en">Left to right: what the vendor said the input is, what we actually computed, how much of our universe that covers, and whether it sorted the right way over the tested window. A part we could not build at all is marked so — it is dropped from the score, never quietly imputed.</span><span class="l-zh">自左至右：厂商声明的输入、我们实际计算的口径、覆盖了多少股票池、以及在测试窗口内排序方向是否正确。完全无法构建的部分会明确标出－该项直接从分数中剔除，绝不静默填补。</span></span></span>
+  </h2>
+  <div class="scroll">
+  <table class="ledger">
+    <thead><tr>
+      <th><span class="l-en">Part</span><span class="l-zh">项目</span></th>
+      <th><span class="l-en">Vendor said</span><span class="l-zh">厂商口径</span></th>
+      <th><span class="l-en">We built</span><span class="l-zh">我们的口径</span></th>
+      <th><span class="l-en">Covers</span><span class="l-zh">覆盖率</span></th>
+      <th><span class="l-en">Sorted</span><span class="l-zh">排序结果</span></th>
+    </tr></thead>
+    <tbody>
+    
+      
+      
+      
+      <tr>
+        <td class="legname">QV composite<br>
+          <span class="pill f-prox" style="margin-top:3px"><span class="l-en">Stand-in</span><span class="l-zh">替代口径</span></span></td>
+        <td class="said " style="max-width:26ch">
+          Fintel&#39;s QV score</td>
+        <td style="max-width:34ch">the fintel_qv recreation&#39;s composite percentile
+          <span class="help">?<span class="tip"><span class="l-en">inherits every fintel_qv leg distortion</span><span class="l-zh">inherits every fintel_qv leg distortion</span></span></span></td>
+        <td>
+          <span class="muted">—</span>
+        </td>
+        <td>
+          <span class="muted">—</span>
+        </td>
+      </tr>
+    
+      
+      
+      
+      <tr>
+        <td class="legname">Institutional ownership growth<br>
+          <span class="pill f-none" style="margin-top:3px"><span class="l-en">Cannot build</span><span class="l-zh">无法构建</span></span></td>
+        <td class="said " style="max-width:26ch">
+          growth of institutional ownership on the register</td>
+        <td style="max-width:34ch">quarter-on-quarter growth in shares held, summed across tracked funds
+          <span class="help">?<span class="tip"><span class="l-en">MEASURED AT 1.3% COVERAGE — effectively absent, and graded as such rather than shipped as a working leg. Two independent reasons: Fintel reads the full 13F register (444 owners for AMR) while we track 53 curated managers, so the construct differs; and after CUSIP/name resolution only ~20 names have two consecutive quarters inside our universe. A leg on 1.3% of the panel cannot rank it, so QVO is NOT recreatable here today. Closing this needs a full 13F aggregate feed, not a better mapper.</span><span class="l-zh">MEASURED AT 1.3% COVERAGE — effectively absent, and graded as such rather than shipped as a working leg. Two independent reasons: Fintel reads the full 13F register (444 owners for AMR) while we track 53 curated managers, so the construct differs; and after CUSIP/name resolution only ~20 names have two consecutive quarters inside our universe. A leg on 1.3% of the panel cannot rank it, so QVO is NOT recreatable here today. Closing this needs a full 13F aggregate feed, not a better mapper.</span></span></span></td>
+        <td>
+          
+          <span class="cov"><span class="covbar"><i class="lo"
+            style="width:1%"></i></span>
+            <span class="mono xs">1%</span></span>
+          
+        </td>
+        <td>
+          <span class="muted">—</span>
+        </td>
+      </tr>
+    
+    </tbody>
+  </table>
+  </div>
+
+  
+
+  
+  <p class="foot"><strong><span class="l-en">Cannot be rebuilt here</span><span class="l-zh">此处无法复刻</span>.</strong>
+    MEASURED AT 1.3% COVERAGE — effectively absent, and graded as such rather than shipped as a working leg. Two independent reasons: Fintel reads the full 13F register (444 owners for AMR) while we track 53 curated managers, so the construct differs; and after CUSIP/name resolution only ~20 names have two consecutive quarters inside our universe. A leg on 1.3% of the panel cannot rank it, so QVO is NOT recreatable here today. Closing this needs a full 13F aggregate feed, not a better mapper.</p>
+  
+
+  <details style="margin-top:8px">
+    <summary><span class="l-en">How the parts are combined</span><span class="l-zh">各项如何合成</span></summary>
+    <p class="sm" style="max-width:86ch"><strong>unknown</strong> — Not disclosed; the second fund-sentiment factor is not even named.</p>
+    
+  </details>
+
+  
+  
+</div>
+
+<div class="panel">
+  <div class="mhead">
+    <h3><span class="l-en">Quality-Value-Momentum screen (Quant Investing)</span><span class="l-zh">质量－价值－动量筛选</span></h3>
+    <span class="vendor">Quant Investing</span>
+    
+      
+      <span class="pill v-null"><span class="l-en">No signal</span><span class="l-zh">无信号</span></span>
+    
+  </div>
+  <p class="sm muted" style="margin:0 0 2px">A fully specified sequential screen — the reproducible control.</p>
+
+  <div class="quote">
+    Sequential elimination: FCF-to-Debt 0-70%, Gross Margin (Marx) 0-70%, Accrual Ratio CF 30-100%; then the top 20% by earnings yield (EBIT/EV); then the top 50% by combined 3-month and 6-month Price Index; then 20 stocks ranked by Value Composite One.
+    <cite><span class="l-en">Vendor description</span><span class="l-zh">厂商描述</span> ·
+      <a href="https://www.quant-investing.com/blog/quality-value-momentum-the-best-strategy-you-have-never-heard-of" rel="nofollow noopener" target="_blank">Quant Investing, accessed 2026-08-05</a>
+    </cite>
+  </div>
+
+  
+  <details>
+    <summary><span class="l-en">Their performance claim, and what we make of it</span><span class="l-zh">厂商的业绩宣称，以及我们的看法</span></summary>
+    <div class="quote" style="margin-top:6px">European equities 2001-06-29 to 2014-08-22 (13.16y), STOXX 600 TR benchmark, 20 positions, 6-month rebalance, 0.6% cost per rebalance: total return 1,141.8% vs 57.2%; CAGR 21.1% vs 3.5%; max drawdown -50.8% vs -58.4%; Sharpe 1.05; annualised stdev 20.2%; win rate 66.1%.</div>
+    <p class="sm" style="max-width:86ch">A different continent, a different era, and a 20-name concentrated book with a -50.8% drawdown. The drawdown is the number that travels: this is a high-variance construct even on its own home data.</p>
+  </details>
+  
+
+  
+  <h2 style="margin-top:14px"><span class="l-en">Part by part</span><span class="l-zh">逐项拆解</span>
+    <span class="help">?<span class="tip"><span class="l-en">Left to right: what the vendor said the input is, what we actually computed, how much of our universe that covers, and whether it sorted the right way over the tested window. A part we could not build at all is marked so — it is dropped from the score, never quietly imputed.</span><span class="l-zh">自左至右：厂商声明的输入、我们实际计算的口径、覆盖了多少股票池、以及在测试窗口内排序方向是否正确。完全无法构建的部分会明确标出－该项直接从分数中剔除，绝不静默填补。</span></span></span>
+  </h2>
+  <div class="scroll">
+  <table class="ledger">
+    <thead><tr>
+      <th><span class="l-en">Part</span><span class="l-zh">项目</span></th>
+      <th><span class="l-en">Vendor said</span><span class="l-zh">厂商口径</span></th>
+      <th><span class="l-en">We built</span><span class="l-zh">我们的口径</span></th>
+      <th><span class="l-en">Covers</span><span class="l-zh">覆盖率</span></th>
+      <th><span class="l-en">Sorted</span><span class="l-zh">排序结果</span></th>
+    </tr></thead>
+    <tbody>
+    
+      
+      
+      
+      <tr>
+        <td class="legname">FCF / debt screen<br>
+          <span class="pill f-prox" style="margin-top:3px"><span class="l-en">Stand-in</span><span class="l-zh">替代口径</span></span></td>
+        <td class="said " style="max-width:26ch">
+          retain FCF-to-Debt in the 0-70% band</td>
+        <td style="max-width:34ch">(cfo - capex) / total debt, percentile-banded
+          <span class="help">?<span class="tip"><span class="l-en">capex coverage ~32% on the pit panel</span><span class="l-zh">capex coverage ~32% on the pit panel</span></span></span></td>
+        <td>
+          
+          <span class="cov"><span class="covbar"><i class="lo"
+            style="width:46%"></i></span>
+            <span class="mono xs">46%</span></span>
+          
+        </td>
+        <td>
+          
+            <span class="pill v-inv"><span class="l-en">Ranked backwards</span><span class="l-zh">排序方向相反</span></span>
+            <div class="xs muted mono" style="margin-top:3px">-0.0321</div>
+          
+        </td>
+      </tr>
+    
+      
+      
+      
+      <tr>
+        <td class="legname">Gross margin (Marx)<br>
+          <span class="pill f-prox" style="margin-top:3px"><span class="l-en">Stand-in</span><span class="l-zh">替代口径</span></span></td>
+        <td class="said " style="max-width:26ch">
+          retain gross margin in the 0-70% band</td>
+        <td style="max-width:34ch">gross_profit / revenue, percentile-banded
+          <span class="help">?<span class="tip"><span class="l-en">gross_profit coverage ~43%; Novy-Marx&#39;s own construct is GP/ASSETS, not GP/revenue — the vendor&#39;s &#39;Gross Margin (Marx)&#39; label conflates the two</span><span class="l-zh">gross_profit coverage ~43%; Novy-Marx&#39;s own construct is GP/ASSETS, not GP/revenue — the vendor&#39;s &#39;Gross Margin (Marx)&#39; label conflates the two</span></span></span></td>
+        <td>
+          
+          <span class="cov"><span class="covbar"><i class="lo"
+            style="width:40%"></i></span>
+            <span class="mono xs">41%</span></span>
+          
+        </td>
+        <td>
+          
+            <span class="pill v-inv"><span class="l-en">Ranked backwards</span><span class="l-zh">排序方向相反</span></span>
+            <div class="xs muted mono" style="margin-top:3px">-0.0585</div>
+          
+        </td>
+      </tr>
+    
+      
+      
+      
+      <tr>
+        <td class="legname">Accrual ratio (CF)<br>
+          <span class="pill f-prox" style="margin-top:3px"><span class="l-en">Stand-in</span><span class="l-zh">替代口径</span></span></td>
+        <td class="said " style="max-width:26ch">
+          retain the 30-100% band</td>
+        <td style="max-width:34ch">-(ni - cfo) / assets, percentile-banded
+          <span class="help">?<span class="tip"><span class="l-en">The vendor&#39;s &#39;Accrual Ratio CF&#39; scales the accrual by average NET OPERATING ASSETS; we scale by total assets because the panel carries no operating-asset split. Same sign, different denominator — the ordering differs most for asset-heavy financials.</span><span class="l-zh">The vendor&#39;s &#39;Accrual Ratio CF&#39; scales the accrual by average NET OPERATING ASSETS; we scale by total assets because the panel carries no operating-asset split. Same sign, different denominator — the ordering differs most for asset-heavy financials.</span></span></span></td>
+        <td>
+          
+          <span class="cov"><span class="covbar"><i class=""
+            style="width:93%"></i></span>
+            <span class="mono xs">94%</span></span>
+          
+        </td>
+        <td>
+          
+            <span class="pill v-inv"><span class="l-en">Ranked backwards</span><span class="l-zh">排序方向相反</span></span>
+            <div class="xs muted mono" style="margin-top:3px">-0.0241</div>
+          
+        </td>
+      </tr>
+    
+      
+      
+      
+      <tr>
+        <td class="legname">Earnings yield<br>
+          <span class="pill f-prox" style="margin-top:3px"><span class="l-en">Stand-in</span><span class="l-zh">替代口径</span></span></td>
+        <td class="said " style="max-width:26ch">
+          top 20% by EBIT to enterprise value</td>
+        <td style="max-width:34ch">op_income / EV
+          <span class="help">?<span class="tip"><span class="l-en">same EV caveats as fintel_qv</span><span class="l-zh">same EV caveats as fintel_qv</span></span></span></td>
+        <td>
+          
+          <span class="cov"><span class="covbar"><i class=""
+            style="width:65%"></i></span>
+            <span class="mono xs">66%</span></span>
+          
+        </td>
+        <td>
+          
+            <span class="pill v-null"><span class="l-en">No signal</span><span class="l-zh">无信号</span></span>
+            <div class="xs muted mono" style="margin-top:3px">+0.0032</div>
+          
+        </td>
+      </tr>
+    
+      
+      
+      
+      <tr>
+        <td class="legname">3m + 6m price index<br>
+          <span class="pill f-ok" style="margin-top:3px"><span class="l-en">Same input</span><span class="l-zh">输入一致</span></span></td>
+        <td class="said " style="max-width:26ch">
+          top 50% by combined 3m and 6m momentum</td>
+        <td style="max-width:34ch">mean of the 3m and 6m return percentiles
+          </td>
+        <td>
+          
+          <span class="cov"><span class="covbar"><i class=""
+            style="width:74%"></i></span>
+            <span class="mono xs">75%</span></span>
+          
+        </td>
+        <td>
+          
+            <span class="pill v-null"><span class="l-en">No signal</span><span class="l-zh">无信号</span></span>
+            <div class="xs muted mono" style="margin-top:3px">+0.0137</div>
+          
+        </td>
+      </tr>
+    
+    </tbody>
+  </table>
+  </div>
+
+  
+    
+    <div class="chips">
+      <span class="chip"><span class="l-en">Tested over</span><span class="l-zh">测试期</span> <b>12</b> <span class="l-en">quarters</span><span class="l-zh">个季度</span></span>
+      <span class="chip"><span class="l-en">Sorting strength</span><span class="l-zh">排序强度</span> <b class="mono neg">-0.0083</b>
+        <span class="help">?<span class="tip"><span class="l-en">Mean cross-sectional rank correlation between the score and the next quarter&#39;s return (rank IC). Positive means higher-scored names did better. Values this small are a weak effect either way — the sign and the significance matter more than the magnitude.</span><span class="l-zh">分数与下季度收益的横截面秩相关均值（rank IC）。为正表示高分股表现更好。这种量级本身很微弱－符号与显著性比数值大小更重要。</span></span></span></span>
+      
+      <span class="chip"><span class="l-en">Top fifth minus bottom fifth</span><span class="l-zh">前1/5减后1/5</span> <b class="mono neg">-1.63%</b></span>
+      
+      
+      <span class="chip"><span class="l-en">Parts blended</span><span class="l-zh">实际混合项数</span> <b>4–5</b> / 5</span>
+      
+    </div>
+    
+  
+
+  
+
+  <details style="margin-top:8px">
+    <summary><span class="l-en">How the parts are combined</span><span class="l-zh">各项如何合成</span></summary>
+    <p class="sm" style="max-width:86ch"><strong>sequential_screen</strong> — Sequential elimination, then rank the survivors. Not a score blend.</p>
+    
+  </details>
+
+  
+  
+  <details style="margin-top:6px">
+    <summary><span class="l-en">What it picks today</span><span class="l-zh">当前选出的股票</span> (800 <span class="l-en">scored</span><span class="l-zh">只已评分</span>)</summary>
+    <p class="xs muted" style="margin:5px 0">
+      <span class="l-en">Shown because a model you cannot look at is a model you cannot judge. These are not recommendations — this score is not wired into any ranking on this site.</span><span class="l-zh">列出是为了可被检视：看不见的模型无法评判。这些不构成推荐－该分数未接入本站任何排序。</span>
+    </p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th><span class="l-en">Stock</span><span class="l-zh">股票</span></th><th class="r"><span class="l-en">Score</span><span class="l-zh">分数</span></th>
+        <th class="r"><span class="l-en">Parts used</span><span class="l-zh">使用项数</span></th><th class="r"><span class="l-en">Size ($bn)</span><span class="l-zh">市值（十亿美元）</span></th>
+        <th class="r xs">fcf_to_debt</th><th class="r xs">gross_margin</th><th class="r xs">accrual_ratio_cf</th><th class="r xs">ebit_ev</th><th class="r xs">momentum_3_6</th></tr></thead>
+      <tbody>
+      
+      <tr><td class="mono">ENVA</td>
+        <td class="r mono">100.0</td>
+        <td class="r mono muted">4/5</td>
+        <td class="r mono muted">6.4</td>
+        <td class="r mono xs muted">nan</td><td class="r mono xs muted">77</td><td class="r mono xs muted">98</td><td class="r mono xs muted">88</td><td class="r mono xs muted">97</td>
+      </tr>
+      
+      <tr><td class="mono">RNG</td>
+        <td class="r mono">99.9</td>
+        <td class="r mono ">5/5</td>
+        <td class="r mono muted">nan</td>
+        <td class="r mono xs muted">71</td><td class="r mono xs muted">90</td><td class="r mono xs muted">99</td><td class="r mono xs muted">88</td><td class="r mono xs muted">98</td>
+      </tr>
+      
+      <tr><td class="mono">GIII</td>
+        <td class="r mono">99.8</td>
+        <td class="r mono muted">4/5</td>
+        <td class="r mono muted">1.5</td>
+        <td class="r mono xs muted">98</td><td class="r mono xs muted">nan</td><td class="r mono xs muted">82</td><td class="r mono xs muted">83</td><td class="r mono xs muted">84</td>
+      </tr>
+      
+      <tr><td class="mono">SNDR</td>
+        <td class="r mono">99.6</td>
+        <td class="r mono muted">4/5</td>
+        <td class="r mono muted">nan</td>
+        <td class="r mono xs muted">79</td><td class="r mono xs muted">nan</td><td class="r mono xs muted">88</td><td class="r mono xs muted">99</td><td class="r mono xs muted">81</td>
+      </tr>
+      
+      <tr><td class="mono">KSS</td>
+        <td class="r mono">99.5</td>
+        <td class="r mono muted">4/5</td>
+        <td class="r mono muted">2.1</td>
+        <td class="r mono xs muted">79</td><td class="r mono xs muted">nan</td><td class="r mono xs muted">80</td><td class="r mono xs muted">95</td><td class="r mono xs muted">85</td>
+      </tr>
+      
+      <tr><td class="mono">PTON</td>
+        <td class="r mono">99.4</td>
+        <td class="r mono muted">4/5</td>
+        <td class="r mono muted">nan</td>
+        <td class="r mono xs muted">98</td><td class="r mono xs muted">68</td><td class="r mono xs muted">97</td><td class="r mono xs muted">nan</td><td class="r mono xs muted">73</td>
+      </tr>
+      
+      <tr><td class="mono">HRMY</td>
+        <td class="r mono">99.2</td>
+        <td class="r mono ">5/5</td>
+        <td class="r mono muted">2.0</td>
+        <td class="r mono xs muted">89</td><td class="r mono xs muted">93</td><td class="r mono xs muted">93</td><td class="r mono xs muted">90</td><td class="r mono xs muted">46</td>
+      </tr>
+      
+      <tr><td class="mono">MPC</td>
+        <td class="r mono">99.1</td>
+        <td class="r mono muted">4/5</td>
+        <td class="r mono muted">95.1</td>
+        <td class="r mono xs muted">89</td><td class="r mono xs muted">nan</td><td class="r mono xs muted">62</td><td class="r mono xs muted">80</td><td class="r mono xs muted">97</td>
+      </tr>
+      
+      <tr><td class="mono">WDAY</td>
+        <td class="r mono">99.0</td>
+        <td class="r mono muted">4/5</td>
+        <td class="r mono muted">nan</td>
+        <td class="r mono xs muted">82</td><td class="r mono xs muted">nan</td><td class="r mono xs muted">90</td><td class="r mono xs muted">97</td><td class="r mono xs muted">58</td>
+      </tr>
+      
+      <tr><td class="mono">NTAP</td>
+        <td class="r mono">98.9</td>
+        <td class="r mono ">5/5</td>
+        <td class="r mono muted">35.4</td>
+        <td class="r mono xs muted">80</td><td class="r mono xs muted">95</td><td class="r mono xs muted">79</td><td class="r mono xs muted">50</td><td class="r mono xs muted">99</td>
+      </tr>
+      
+      <tr><td class="mono">ETSY</td>
+        <td class="r mono">98.8</td>
+        <td class="r mono muted">4/5</td>
+        <td class="r mono muted">7.9</td>
+        <td class="r mono xs muted">nan</td><td class="r mono xs muted">91</td><td class="r mono xs muted">96</td><td class="r mono xs muted">41</td><td class="r mono xs muted">95</td>
+      </tr>
+      
+      <tr><td class="mono">LIVN</td>
+        <td class="r mono">98.6</td>
+        <td class="r mono ">5/5</td>
+        <td class="r mono muted">4.4</td>
+        <td class="r mono xs muted">76</td><td class="r mono xs muted">87</td><td class="r mono xs muted">96</td><td class="r mono xs muted">53</td><td class="r mono xs muted">90</td>
+      </tr>
+      
+      <tr><td class="mono">NTCT</td>
+        <td class="r mono">98.5</td>
+        <td class="r mono muted">4/5</td>
+        <td class="r mono muted">2.9</td>
+        <td class="r mono xs muted">nan</td><td class="r mono xs muted">96</td><td class="r mono xs muted">82</td><td class="r mono xs muted">49</td><td class="r mono xs muted">92</td>
+      </tr>
+      
+      <tr><td class="mono">QLYS</td>
+        <td class="r mono">98.4</td>
+        <td class="r mono muted">4/5</td>
+        <td class="r mono muted">5.2</td>
+        <td class="r mono xs muted">nan</td><td class="r mono xs muted">98</td><td class="r mono xs muted">86</td><td class="r mono xs muted">49</td><td class="r mono xs muted">82</td>
+      </tr>
+      
+      <tr><td class="mono">MSGS</td>
+        <td class="r mono">98.2</td>
+        <td class="r mono muted">4/5</td>
+        <td class="r mono muted">nan</td>
+        <td class="r mono xs muted">62</td><td class="r mono xs muted">nan</td><td class="r mono xs muted">77</td><td class="r mono xs muted">87</td><td class="r mono xs muted">86</td>
+      </tr>
+      
+      </tbody>
+    </table>
+    </div>
+    <p class="xs muted"><span class="l-en">A name is only scored when it has at least</span><span class="l-zh">仅当股票至少具备</span> 4/5 <span class="l-en">parts — otherwise a company good at two things would outrank one judged on all of them.</span><span class="l-zh">项时才计分－否则只擅长两项的公司会压过被全面评估的公司。</span></p>
+  </details>
+  
+</div>
+
+
+
+
+<div class="panel">
+  <h2><span class="l-en">Working out their hidden formula</span><span class="l-zh">推算其未公开的合成公式</span></h2>
+  <p class="lead sm">
+    <span class="l-en">Fintel never publishes how it combines the three parts. But it prints the parts and the total for individual stocks, so the formula can be recovered from its own numbers.</span><span class="l-zh">Fintel从未公开三项如何合成。但它会逐股列出各分项与总分，因此可以用它自己的数字反推出公式。</span>
+  </p>
+  <div class="chips">
+    <span class="chip"><span class="l-en">Value</span><span class="l-zh">价值</span> <b class="mono">0.59</b></span>
+    <span class="chip"><span class="l-en">Quality</span><span class="l-zh">质量</span> <b class="mono">0.41</b></span>
+    <span class="chip"><span class="l-en">Momentum</span><span class="l-zh">动量</span> <b class="mono">0.11</b></span>
+    <span class="chip"><span class="l-en">Fit</span><span class="l-zh">拟合度</span> <b class="mono">0.998</b></span>
+    <span class="chip"><span class="l-en">Worst miss</span><span class="l-zh">最大偏差</span> <b class="mono">0.60</b> <span class="l-en">points</span><span class="l-zh">分</span></span>
+  </div>
+  <p class="foot">
+    <span class="l-en">Read plainly: their momentum model barely moves the answer — it is a quality-and-value score with a light momentum tilt, which matches how they describe it. Two stocks (MCEM, WSM) score higher on the total than on any of their three parts, which no simple average can do; so the total is re-ranked against the whole universe after blending. Both readings point at the same extra step.</span><span class="l-zh">直白地说：动量模型几乎不改变结论－这是一个带轻微动量倾斜的质量价值分数，与厂商自身的描述一致。有两只股票（MCEM、WSM）的总分高于其任一分项，简单加权平均不可能做到；因此总分在合成后又相对全样本重新排了一次名次。两条线索指向同一个额外步骤。</span>
+  </p>
+  <details>
+    <summary><span class="l-en">The published numbers this was fitted to</span><span class="l-zh">用于拟合的公开数字</span> (10 <span class="l-en">stocks, one day</span><span class="l-zh">只股票，同一天</span>)</summary>
+    <div class="scroll" style="margin-top:6px">
+    <table><thead><tr><th><span class="l-en">Stock</span><span class="l-zh">股票</span></th><th class="r"><span class="l-en">Quality</span><span class="l-zh">质量</span></th>
+      <th class="r"><span class="l-en">Value</span><span class="l-zh">价值</span></th><th class="r"><span class="l-en">Momentum</span><span class="l-zh">动量</span></th>
+      <th class="r"><span class="l-en">Total</span><span class="l-zh">总分</span></th></tr></thead><tbody>
+      <tr><td class="mono">CLS</td>
+        <td class="r mono">72.46</td><td class="r mono">71.84</td>
+        <td class="r mono">95.36</td>
+        <td class="r mono">76.58</td></tr><tr><td class="mono">STRL</td>
+        <td class="r mono">89.16</td><td class="r mono">65.28</td>
+        <td class="r mono">94.97</td>
+        <td class="r mono">79.12</td></tr><tr><td class="mono">CMT</td>
+        <td class="r mono">82.04</td><td class="r mono">71.01</td>
+        <td class="r mono">94.38</td>
+        <td class="r mono">80.06</td></tr><tr><td class="mono">IESC</td>
+        <td class="r mono">65.30</td><td class="r mono">70.38</td>
+        <td class="r mono">94.36</td>
+        <td class="r mono">72.63</td></tr><tr><td class="mono">KRT</td>
+        <td class="r mono">82.20</td><td class="r mono">70.71</td>
+        <td class="r mono">92.97</td>
+        <td class="r mono">79.88</td></tr><tr><td class="mono">GAMB</td>
+        <td class="r mono">81.03</td><td class="r mono">50.87</td>
+        <td class="r mono">91.25</td>
+        <td class="r mono">68.00</td></tr><tr><td class="mono">SCPL</td>
+        <td class="r mono">81.16</td><td class="r mono">92.73</td>
+        <td class="r mono">85.48</td>
+        <td class="r mono">91.68</td></tr><tr><td class="mono">MCEM</td>
+        <td class="r mono">86.15</td><td class="r mono">89.66</td>
+        <td class="r mono">75.60</td>
+        <td class="r mono" style="font-weight:700">91.04</td></tr><tr><td class="mono">WSM</td>
+        <td class="r mono">85.06</td><td class="r mono">89.83</td>
+        <td class="r mono">74.55</td>
+        <td class="r mono" style="font-weight:700">90.64</td></tr><tr><td class="mono">VASO</td>
+        <td class="r mono">87.95</td><td class="r mono">91.12</td>
+        <td class="r mono">61.38</td>
+        <td class="r mono">90.08</td></tr>
+    </tbody></table></div>
+    <p class="xs muted">Fintel, syndicated on Nasdaq, 2023-08-21 —
+      <a href="https://www.nasdaq.com/articles/mid-august-momentum-monday-ranks-are-sparse-as-only-a-half-dozen-names-garner-high-scores" rel="nofollow noopener" target="_blank">Mid-August Momentum Monday Ranks Are Sparse as Only a Half-Dozen Names Garner High Scores</a>.
+      <span class="l-en">Ten stocks from one day, all of them high scorers, so this describes the top of their range rather than the whole formula.</span><span class="l-zh">仅十只股票、同一天、且均为高分股，故此式描述的是其高分区间，而非完整公式。</span></p>
+  </details>
+</div>
+
+
+
+<div class="panel">
+  <h2><span class="l-en">Why their winners are mostly invisible to us</span><span class="l-zh">为何他们的优选股在我们这里大多看不到</span></h2>
+  <div class="chips" style="margin-top:0">
+    <span class="chip"><span class="l-en">Their screened universe</span><span class="l-zh">其筛选股票池</span> <b class="mono">36,606</b></span>
+    <span class="chip"><span class="l-en">Our price coverage</span><span class="l-zh">我们的行情覆盖</span> <b class="mono">2,895</b></span>
+    <span class="chip"><span class="l-en">Our filings coverage</span><span class="l-zh">我们的财报覆盖</span> <b class="mono">1,552</b></span>
+    <span class="chip"><span class="l-en">Their published winners we can even see</span><span class="l-zh">其公开优选股中我们能看到的</span>
+      <b class="mono">4/10</b></span>
+  </div>
+  <p class="foot">
+    <span class="l-en">This is the finding that matters most. The model is built to find small, overlooked companies, and it is measured against a small-cap index. Our prices reach that far down, but our filings data does not — so most of the companies the model exists to surface are ones we cannot score at all. Closing this needs wider filings coverage, not a better formula.</span><span class="l-zh">这是最关键的发现。该模型的用途是挖掘被忽视的小公司，其业绩也对标小盘指数。我们的行情能覆盖到那个层级，财报数据却不能－因此该模型真正要挖掘的公司，我们大多根本无法评分。要弥补这一点，需要的是更广的财报覆盖，而非更好的公式。</span>
+  </p>
+</div>
+
+
+<div class="panel">
+  <h2><span class="l-en">What we tested on</span><span class="l-zh">测试所用数据</span></h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th><span class="l-en">Source</span><span class="l-zh">数据源</span></th><th><span class="l-en">Safe for history tests</span><span class="l-zh">可用于历史检验</span></th>
+      <th><span class="l-en">Span</span><span class="l-zh">时间跨度</span></th><th><span class="l-en">Note</span><span class="l-zh">说明</span></th></tr></thead>
+    <tbody>
+    
+    <tr>
+      <td class="mono xs">data/edgar/fundamentals_panel.parquet</td>
+      <td><span class="pill v-ok"><span class="l-en">Yes</span><span class="l-zh">是</span></span>
+          
+        <div class="xs muted" style="margin-top:3px">asof_date (period_end + reporting lag; 436 distinct dates)</div></td>
+      <td class="xs">FY2009-FY2025<div class="muted">1552</div></td>
+      <td class="xs" style="max-width:40ch">The deep PIT spine. Lacks cash and short-term debt.</td>
+    </tr>
+    
+    <tr>
+      <td class="mono xs">data/edgar/statements_quarterly.parquet</td>
+      <td><span class="pill v-ok"><span class="l-en">Yes</span><span class="l-zh">是</span></span>
+          
+        <div class="xs muted" style="margin-top:3px">filed (3,452 distinct filing dates)</div></td>
+      <td class="xs">2009Q1-2026Q2<div class="muted">1507</div></td>
+      <td class="xs" style="max-width:40ch">Where cash (90.6%) and net_debt (51%) come from.</td>
+    </tr>
+    
+    <tr>
+      <td class="mono xs">data/edgar/statements.parquet</td>
+      <td><span class="pill v-inv"><span class="l-en">No</span><span class="l-zh">否</span></span>
+        <div class="xs muted" style="margin-top:3px">as_of is a FETCH timestamp (5 distinct, all 2026-06-15) — NOT a filing date</div></td>
+      <td class="xs">FY2020-FY2025<div class="muted">1506</div></td>
+      <td class="xs" style="max-width:40ch">LIVE MODE ONLY. Richest schema (cash, debt_cur, inventory, receivables) but using it in a backtest would make every row knowable at every past date.</td>
+    </tr>
+    
+    <tr>
+      <td class="mono xs">data/smart_money/&lt;fund&gt;/&lt;period_end&gt;.parquet</td>
+      <td><span class="pill v-ok"><span class="l-en">Yes</span><span class="l-zh">是</span></span>
+          
+        <div class="xs muted" style="margin-top:3px">filing_date</div></td>
+      <td class="xs">13F quarters<div class="muted">53 tracked funds</div></td>
+      <td class="xs" style="max-width:40ch">A curated manager set, NOT the 13F institutional register.</td>
+    </tr>
+    
+    <tr>
+      <td class="mono xs">data/yahoo/&lt;ticker&gt;.parquet + data/breadth/_closes_cache.parquet</td>
+      <td><span class="pill v-ok"><span class="l-en">Yes</span><span class="l-zh">是</span></span>
+          
+        <div class="xs muted" style="margin-top:3px">trading date (truncate to asof)</div></td>
+      <td class="xs">rolling ~3y per name in-tree; deeper history is fetched, not committed<div class="muted">739</div></td>
+      <td class="xs" style="max-width:40ch">The binding constraint on how far back a momentum leg can be studied.</td>
+    </tr>
+    
+    </tbody>
+  </table>
+  </div>
+  <p class="foot">
+    <span class="l-en">One source is deliberately excluded. Our richest financial-statement table would improve these models, but its dates record when we downloaded the data, not when companies filed it — so a history test using it would let every past date see reports that had not been published yet, and every result would flatter itself.</span><span class="l-zh">有一个数据源被刻意排除。我们最完整的财报表本可改进这些模型，但其日期记录的是我们下载数据的时间，而非公司披露的时间－用它做历史检验，会让过去的每一天都看到尚未发布的报告，所有结果都会自我美化。</span>
+  </p>
+</div>
+
+
+
+<div class="panel">
+  <h2><span class="l-en">What these results cannot tell you</span><span class="l-zh">这些结果无法说明什么</span></h2>
+  <ul class="sm muted" style="margin:0; padding-left:18px; max-width:88ch">
+    <li><span class="l-en">Three years is one market mood. Quality and value lagged badly over this stretch; a different stretch could easily read the other way.</span><span class="l-zh">三年只覆盖一种市场情绪。质量与价值在这段时间明显落后；换一段时间很可能得出相反读数。</span></li>
+    <li><span class="l-en">Companies that were delisted are missing from our prices, so every number here flatters the result slightly.</span><span class="l-zh">已退市公司不在我们的行情数据中，因此此处所有数字都略微偏乐观。</span></li>
+    <li><span class="l-en">Twelve quarterly readings is thin. Treat a borderline result as undecided rather than settled.</span><span class="l-zh">十二个季度的读数偏少。临界结果应视为未定论，而非已定论。</span></li>
+    <li><span class="l-en">We are testing our rebuild, not their model. Where a part is a stand-in, a poor result may be our substitute failing rather than their idea.</span><span class="l-zh">我们检验的是自己的复刻件，而非厂商的模型。凡使用替代口径之处，结果不佳可能是替代口径失效，而非其思路有误。</span></li>
+  </ul>
+  
+  <p class="xs muted" style="margin:9px 0 0"><span class="l-en">Measured</span><span class="l-zh">实测时间</span> 2026-08-05T11:15:11+00:00 ·
+    <span class="l-en">forward window</span><span class="l-zh">前瞻窗口</span> 63<span class="l-en"> trading days</span><span class="l-zh"> 个交易日</span></p>
+  
+</div>
+
+
+<p class="sm muted" style="text-align:center; margin:18px 0 6px">
+  <span class="l-en">Quant Lab is a research surface. Scores here are display-only and are not used to rank, size, or gate anything on this site.</span><span class="l-zh">量化实验室为研究页面。此处分数仅供展示，不用于本站任何排序、仓位或准入判断。</span>
+</p>
+<p class="xs muted" style="text-align:center; margin:0 0 8px">2026-08-05T00:00:00Z</p>
+<script src="theme.js"></script>
+</body>
+</html>
