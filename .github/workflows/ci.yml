@@ -2605,6 +2605,16 @@ on:
       - "tests/test_earnings_private_store.py"
       - "tests/test_prophet_bridge.py"
       - "engine/company_intelligence/**"
+      # Company Intelligence golden corpus (Earnings/Company Event Suite R0-D): the
+      # frozen benchmark Wave 1 is graded against. BOTH halves are listed on purpose —
+      # the suites so a test-only edit re-runs them, AND the corpus itself (manifest +
+      # fixtures) so an edit to the benchmark runs its own guard rather than shipping a
+      # manifest that claims coverage it no longer has. The builder is already reachable
+      # through the scripts/**/*.py entry below.
+      - "research/company_intelligence/**"
+      - "tests/fixtures/company_intelligence/**"
+      - "tests/test_company_intelligence_golden_corpus.py"
+      - "tests/test_company_intelligence_golden_corpus_replay.py"
       - "engine/company_theme_exposure/**"
       - "engine/earnings_transcript_intake.py"
       - "scripts/build_company_intelligence.py"
