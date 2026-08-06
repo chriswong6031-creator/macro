@@ -130,7 +130,16 @@ def test_canada_stocks_template_renders():
     assert "TD Bank" in html                            # the standout setup renders here
     # Branch B: composite 0-100 chip SUPPRESSED, rank pill + accruing screen badge present
     assert "rankpill" in html and ">#1<" in html
-    assert "momentum screen · unproven" in html         # W6 why-now evidence-tag chip (plain-language label)
+    # RULING 2026-08-06: the per-card "momentum screen · unproven" chip is GONE, and this
+    # assertion moves to the caveat's surviving home rather than being deleted. The chip
+    # was appended to EVERY card unconditionally — the exact shape DESIGN_DOCTRINE Law 4
+    # names ("the old strip printed 'T+1 58% fade' on every row"). The same caveat already
+    # ships ONCE in the desk header (.dh-isnt) and again on the Mom Screen column tip
+    # ("display-only, accruing"), so nothing is undisclosed — it is disclosed once instead
+    # of once per row. Assert the header twin, which is the copy a reader actually reads.
+    assert "The momentum screen is still being tested" in html
+    assert "动量筛选仍在检验中" in html                  # zh twin — disclosure is bilingual
+    assert "momentum screen · unproven" not in html    # never per-card again (Law 4)
     assert 'class="nb-cscore' not in html               # composite score chip is gone
     assert 'data-showmore-rows=' in html                # the progressive reveal is wired (#888 row-capped)
     assert "Commodity / CAD" not in html                # overlay hero is macro-only

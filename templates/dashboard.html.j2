@@ -15811,8 +15811,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% set _mk_slot = _mk.rows if _sg.any else none %}
         {% set _bz = es.buy_zone if es else none %}
         {% set _zk = ('readd' if _verb == 'hold' else ('active' if _verb in ('buy','near') else 'muted')) if (_bz and _bz.high is not none) else ('confirm' if _verb in ('wait','near') else 'none') %}
-        {% set _tip_en = ((c.verdict if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline if es else '')) %}
-        {% set _tip_zh = ((c.verdict_zh if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline_zh if es else '')) %}
         {# ⚡ fresh-trigger chip: kind from the setups row's own signal tier (T3 = imminent,
            else fired). Tips are plain strings (attribute-safe — no t() in attrs). The verb
            stays the ruling stance; the tip says so for the Wait+⚡ case. #}
@@ -15827,7 +15825,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           'href': 'stock.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'us',
           'name': n.name, 'sec': n.sector, 'sec_zh': tr(n.sector),
           'price_txt': ('$' ~ ('%.2f'|format(n.price))) if n.get('price') is not none else none,
-          'verb': _verb, 'tip_en': _tip_en, 'tip_zh': _tip_zh,
+          'verb': _verb,
           'edge': (('%.0f'|format(_prs)) if _prs is not none
                    else (c.score_edge if (c and c.score_edge is defined and c.score_edge is not none) else none)),
           'edge_label_en': ('Priority' if _prs is not none else 'Edge'),
