@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T12:30:15.596753+00:00",
-  "count": 871,
+  "generated_at": "2026-08-06T12:40:49.678126+00:00",
+  "count": 872,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -117,6 +117,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7535qbcueop-3d1700",
+      "title": "Global Metals & Mining Channel Checking Iron Ore Traders",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T11:17:12Z",
+      "summary_points": [
+        "**Iron Ore Price Pressure**: Prices test low $90s amid weak demand (subdued property sector offsetting seasonal pickup) and resilient supply (high-cost producers hedged at ~$100/t); downside limited by elevated cost curve and freight rates ($36/t Brazil-China vs.",
+        "$25/t avg 1Q).",
+        "**Upside Catalysts**: Critical risks include CMRG cargo restrictions (e.g., BHP), Middle East conflict resolution boosting steel exports to China, and anti-involution policy effectiveness lifting steel profitability.",
+        "**Steel Margin Erosion**: Declining China Rebar/HRC cash margins (Exhibit 4) signal sector-wide pricing pressure and potential rotation risks, directly impacting producer valuations.",
+        "**Inventory Imbalance**: Persistent China port inventory peaks (2023) reflect supply-demand mismatches, pressuring mining sector valuations and hedging strategies."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
