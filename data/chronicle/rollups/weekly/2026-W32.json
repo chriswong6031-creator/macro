@@ -1,9 +1,9 @@
 {
-  "as_of": "2026-08-05",
+  "as_of": "2026-08-06",
   "coverage": {
-    "end": "2026-08-05",
+    "end": "2026-08-06",
     "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W32; 14 week(s) have events so far; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
-    "start": "2026-05-06"
+    "start": "2026-05-07"
   },
   "iso_week": "2026-W32",
   "schema": "chronicle.rollup.weekly/v1",
@@ -11,7 +11,7 @@
     {
       "clusters": [
         {
-          "n_events": 150,
+          "n_events": 184,
           "source": "research_vault",
           "theme": null,
           "top_events": [
@@ -68,7 +68,7 @@
           ]
         },
         {
-          "n_events": 48,
+          "n_events": 112,
           "source": "earnings_call",
           "theme": "earnings",
           "top_events": []
@@ -298,7 +298,7 @@
           "top_events": []
         },
         {
-          "n_events": 1,
+          "n_events": 2,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -350,7 +350,7 @@
     {
       "clusters": [
         {
-          "n_events": 2,
+          "n_events": 3,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -367,7 +367,7 @@
     {
       "clusters": [
         {
-          "n_events": 2,
+          "n_events": 3,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -389,7 +389,7 @@
     {
       "clusters": [
         {
-          "n_events": 8,
+          "n_events": 9,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -400,7 +400,7 @@
     {
       "clusters": [
         {
-          "n_events": 8,
+          "n_events": 15,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -411,7 +411,7 @@
     {
       "clusters": [
         {
-          "n_events": 19,
+          "n_events": 25,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -422,7 +422,7 @@
     {
       "clusters": [
         {
-          "n_events": 16,
+          "n_events": 20,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -439,7 +439,7 @@
     {
       "clusters": [
         {
-          "n_events": 39,
+          "n_events": 62,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -462,20 +462,20 @@
     {
       "clusters": [
         {
-          "n_events": 91,
+          "n_events": 81,
           "source": "earnings",
           "theme": "earnings",
           "top_events": [
             {
-              "date": "2026-05-06",
-              "id": "cev-earnings-07264edb9e1f",
+              "date": "2026-05-07",
+              "id": "cev-earnings-06e260fd5abe",
               "kind": "earnings",
               "source": "earnings",
-              "source_ref": "CENT#2026-05-06",
+              "source_ref": "ELVN#2026-05-07",
               "tickers": [
-                "CENT"
+                "ELVN"
               ],
-              "title": "Earnings: CENT actual vs est",
+              "title": "Earnings: ELVN actual vs est",
               "weight_hint": 2
             },
             {
@@ -492,47 +492,23 @@
             },
             {
               "date": "2026-05-07",
-              "id": "cev-earnings-0b5214fd0241",
+              "id": "cev-earnings-0960bfd504b0",
               "kind": "earnings",
               "source": "earnings",
-              "source_ref": "CELH#2026-05-07",
+              "source_ref": "FROG#2026-05-07",
               "tickers": [
-                "CELH"
+                "FROG"
               ],
-              "title": "Earnings: CELH actual vs est",
+              "title": "Earnings: FROG actual vs est",
               "weight_hint": 2
             }
           ]
         },
         {
-          "n_events": 14,
+          "n_events": 11,
           "source": "earnings_call",
           "theme": "earnings",
           "top_events": [
-            {
-              "date": "2026-05-06",
-              "id": "cev-earnings_call-22904a25bb6a",
-              "kind": "earnings",
-              "source": "earnings_call",
-              "source_ref": "defeatbeta:NDLS:2026Q1",
-              "tickers": [
-                "NDLS"
-              ],
-              "title": "Earnings call: NDLS Q1 FY2026 — confident",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-05-06",
-              "id": "cev-earnings_call-3f1b3685fa4a",
-              "kind": "earnings",
-              "source": "earnings_call",
-              "source_ref": "defeatbeta:HY:2026Q1",
-              "tickers": [
-                "HY"
-              ],
-              "title": "Earnings call: HY Q1 FY2026 — mixed",
-              "weight_hint": 2
-            },
             {
               "date": "2026-05-08",
               "id": "cev-earnings_call-4fe10e3e3baa",
@@ -567,6 +543,30 @@
                 "GEL"
               ],
               "title": "Earnings call: GEL Q1 FY2026 — mixed",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-07",
+              "id": "cev-earnings_call-a690f4334447",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:PSQH:2026Q1",
+              "tickers": [
+                "PSQH"
+              ],
+              "title": "Earnings call: PSQH Q1 FY2026 — confident",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-08",
+              "id": "cev-earnings_call-a9f4e02e3cf1",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:GTE:2026Q1",
+              "tickers": [
+                "GTE"
+              ],
+              "title": "Earnings call: GTE Q1 FY2026 — confident",
               "weight_hint": 2
             }
           ]
