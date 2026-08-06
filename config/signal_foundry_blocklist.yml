@@ -1299,4 +1299,15 @@ entries:
       narrow-theme
     source: 'Operator ruling 2026-07-23 + `POSTMORTEM_20260723_MAG7_FORCED_CALL_BY_FABLE.md` §2'
 
+  - id: BL-G107
+    match:
+      any_of:
+        - 'reclaim.{0,30}veto.{0,30}flat'
+    reason: >
+      REJECTED-ON-MEASUREMENT (operator-delegated ruling 2026-08-05) —
+      pooled packet read favours the veto (refused fires −4.54pp @21,
+      173 losers saved vs 91 winners cost, no drawdown band positive at
+      any h
+    source: '`research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md` §9 + frozen JSON (#4607)'
+
 # --- END GENERATED FROM DO_NOT_REBUILD.md ---

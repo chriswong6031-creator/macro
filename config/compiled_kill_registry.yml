@@ -748,3 +748,10 @@ entries:
     section: 4
     section_name: held_suspended
 
+  - topic: 'US 200dma reclaim-veto flat drop (the HK #4470 mirror on `signal_quality._buy_filter`)'
+    key: KILL-200DMA-RECLAIM-VETO-FLAT
+    verdict: 'REJECTED-ON-MEASUREMENT (operator-delegated ruling 2026-08-05) — pooled packet read favours the veto (refused fires −4.54pp @21, 173 losers saved vs 91 winners cost, no drawdown band positive at any horizon); pro-drop evidence confined to a date-clustered May–Jul slice. Revive ONLY as a regime-conditional construction (CN handoff §6 machinery) + fresh prereg + `us_prophet_v1→v2` era stamp; packet re-run after ≥60 sessions is lawful prereg input'
+    source: '`research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md` §9 + frozen JSON (#4607)'
+    section: 4
+    section_name: held_suspended
+
