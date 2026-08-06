@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T07:54:13.696817+00:00",
-  "count": 858,
+  "generated_at": "2026-08-06T08:39:33.991824+00:00",
+  "count": 860,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -308,6 +308,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-el0tukvenko-5a05f3",
+      "title": "Global Markets Daily China’s Balancing Act Needs a Stronger Yuan and Stronger Demand",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:37Z",
+      "summary_points": [
+        "**Trade-Demand Bifurcation**: Record $125bn trade surplus (June) contrasts with deteriorating domestic demand (Q2 GDP 1-2% yoy, retail sales below pre-COVID trend), creating structural reliance on exports amid weak consumption.",
+        "**CNY Undervaluation & Policy Imperative**: Yuan undervalued ~20% (GSDER/GSFEE), necessitating gradual appreciation to 6.50 USD/CNY over 12 months to address external imbalance (current account surplus at 3.8% GDP vs.",
+        "sustainable 1.7%) and mitigate protectionism.",
+        "**Policy Balancing Act**: Fiscal stimulus (targeting consumption) + gradual CNY appreciation required to achieve internal balance (domestic demand) without conflicting with external balance, constrained by high debt (debt-to-GDP 301% by 2025).",
+        "**Structural Export Competitiveness**: Manufacturing price discounts (EVs, solar, machinery) combined with undervalued CNY sustain trade surplus, risking protectionist responses without nominal appreciation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-gz0ejqpeavf-bf9471",
       "title": "Cushman & Wakefield Ltd. (CWK) 2Q26 First Take Top line beat and guidance raised, but Cap Markets softer",
       "institution": "Goldman Sachs",
@@ -318,6 +339,27 @@
         "**Guidance Upgrade & Segment Divergence**: 2026 EPS guidance raised to 18%-23% growth (vs prior 15%-20%), but Cap Markets declined 1% YoY due to Americas multifamily slowdown; Services (8% growth) and Leasing (27.5% growth) beat consensus, while EMEA Cap Markets weakened from macro uncertainty.",
         "**Earnings Beat with Segment Risks**: Adjusted EBITDA $183.6M beat consensus ($175.7M), but leasing outperformed (27.5% vs 10.8% consensus) while Cap Markets underperformed (-0.7% vs 9.4%); EMEA margin pressures offset growth.",
         "**Key Valuation Risks**: $17 target (10.6x EPS) faces macro/geopolitical disruptions, reduced capital availability, and margin pressures from slower business growth; current price ($14.08) offers 20.7% upside but hinges on sustaining revenue growth (10.288bn → 12.456bn by 12/28E)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-k5eej0zhupi-3cdfa6",
+      "title": "Circle Internet Group (CRCL) First take In line results, and higher RLDC margin guide, although driven by one time Arc toke...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:27Z",
+      "summary_points": [
+        "**Q2 Results & Guidance Driver**: Core EPS beat (30c vs 29c) but margin guide raise (41.7%-43.7%) driven by $222m one-time Arc token pre-sale, not sustainable operations; Hyperliquid partnership offsets net revenue upside with 20% lower net other revenue.",
+        "**Core Margin Uncertainty**: RLDC margin trajectory unclear due to Hyperliquid partnership impact; net revenue beat (2%/1% above consensus) offset by 20% lower net other revenue, questioning guidance credibility.",
+        "**Revenue Mix Risk**: Total revenue beat (+2%/1% vs consensus) but net other revenue down 25% (-20% vs consensus), signaling potential weakness in non-core segments despite strong net reserve income (+7%).",
+        "**Valuation Disconnect**: $82.00 price target (29.6% upside) based on projected revenue doubling (1.083bn → 2.082bn), yet growth heavily reliant on non-recurring Arc sale and unconfirmed USDC/AI catalysts.",
+        "**Key Risk Catalysts**: Upside hinges on crypto regulations, market cap growth, and USDC adoption; downside risks include ecosystem slowdown, USDT market share erosion, and Coinbase de-emphasis on USDC."
       ],
       "tags": [],
       "tickers": [],
