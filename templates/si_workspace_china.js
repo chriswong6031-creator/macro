@@ -196,21 +196,18 @@ function paint(view,pair){
 function paintFoot(){
   var d=SC(), p=P();
   var asof=(d&&d.as_of)||(p&&p.as_of)||null;
+  /* Operator 2026-08-04: the rail's "as of <date>" + "Self-grader: N% hit · n=M"
+     stamp is removed. Provenance is NOT lost — the desk header still prints
+     "… · as of {{ desk.as_of }}", and the measured-accuracy read keeps its own
+     card (the #grader panel), so the rail was showing the same two facts a third
+     time in the smallest type on the page.
+     The slots themselves stay in the markup: tests/test_china_si_workspace_shell.py
+     asserts id="si-side-asof" and id="si-side-grade" exist. Left empty, they
+     collapse — remove the ids and that test goes red for the wrong reason. */
   var a=document.getElementById('si-side-asof');
-  if(a&&asof) a.innerHTML=L('as of '+esc(asof),'截至 '+esc(asof));
+  if(a) a.innerHTML='';
   var g=document.getElementById('si-side-grade');
-  var GR=(d&&d.grader)||null;
-  if(!g||!GR) return;
-  if(!GR.available){
-    g.innerHTML=L('Self-grader: accruing · '+(GR.n_calls||0)+' calls logged',
-                  '自评分器：累积中 · 已记录 '+(GR.n_calls||0)+' 个判断');
-    return;
-  }
-  var bh=GR.by_horizon||{}, h=bh['21d']||bh['63d']||bh['126d']||null;
-  g.innerHTML=(h&&h.dir_hit_rate!=null)
-    ? L('Self-grader: '+Math.round(h.dir_hit_rate*100)+'% hit · n='+(h.n||0),
-        '自评分器：命中 '+Math.round(h.dir_hit_rate*100)+'% · n='+(h.n||0))
-    : L('Self-grader: accruing','自评分器：累积中');
+  if(g) g.innerHTML='';
 }
 function reads(){
   paint('map',readMap());
