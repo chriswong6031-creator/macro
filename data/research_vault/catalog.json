@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T01:22:33.890237+00:00",
-  "count": 839,
+  "generated_at": "2026-08-06T04:53:55.129778+00:00",
+  "count": 849,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -56,6 +56,197 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-r9gm9x1pdwl-b32532",
+      "title": "Asia Pacific Portfolio Strategy Asian equity market daily update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:03:00Z",
+      "summary_points": [
+        "**FII Outflows vs DII Inflows**: EM Asia ex-China faces significant FII outflows (Taiwan: -210 US$bn, India largest), countered by strong DII inflows into Asia equities, signaling liquidity risks but institutional support for regional markets.",
+        "**Earnings Revision Momentum**: Accelerating upward revisions in APJ Tech/Real Estate (driving MXAPJ index) contrast with negative revisions in Energy/Financials, indicating sector rotation opportunities and valuation risks.",
+        "**Korea/Taiwan Dominance vs Indonesia Lag**: Korea/Taiwan outperform (Info Tech 127%, Financials 34%), dragging MXAPJ returns, while Indonesia/Singapore underperform (breadth -55%/-38%), highlighting critical regional divergence.",
+        "**Sector Rotation Signals**: Info Tech (+3.9% daily, +70.8% YTD) leads, Energy (-0.8% daily, -2.6% YTD) lags, with Financials (0.0% Mtd) underperforming amid sector rotation dynamics.",
+        "**Valuation Discount vs US**: Asian equities trade at 0.55x valuation discount vs US (vs Europe 0.74x), signaling relative value opportunity despite elevated TOPIX P/E (16.1x)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-t8diav0ykg0-e83917",
+      "title": "Valvoline Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:58Z",
+      "summary_points": [
+        "**EPS Beat & Guidance Upgrade**: Q3 adj.",
+        "EPS $0.57 beat consensus ($0.50); FY26 system-wide same-store sales guidance raised to 27.9% (vs.",
+        "3% consensus) driven by franchised channel outperformance (13.0% y/y vs.",
+        "GS +11.0%).",
+        "**Margin Expansion & Revised Targets**: Adj."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-2slmvqugvvr-cb1770",
+      "title": "The Brink's Co. (BCO) 2Q First Take Top line and bottom line beat with the full year guide reaffirmed",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:57Z",
+      "summary_points": [
+        "**Q2 Beat & Margin Expansion**: Revenue $1.392B (+7.1% y/y), EBITDA margins 18.5% (vs.",
+        "2% est), EPS $2.13 (vs.",
+        "$2.04 est) driven by DRS/AMS conversion and organic growth (4.2% y/y).",
+        "**DRS/AMS Growth Catalyst**: DRS/AMS combined mid-teens growth (14% Q1), targeting 30-32% revenue in 2026; NCR Athlos acquisition progressing for incremental synergies.",
+        "**Valuation Upside & Confidence**: 12m price target $141 (19.5% upside, 23% above current price), with steady target trend (111→141) reflecting sustained analyst confidence in fundamentals."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-v62yeuunjru-67f791",
+      "title": "SolarEdge Technologies Inc. (SEDG) First Take 2Q26 beat, but 3Q26 guidance below expectations",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:56Z",
+      "summary_points": [
+        "**Q2 Beat/Q3 Miss**: Q2 revenue ($346m) and adj.",
+        "EPS ($0.05) beat consensus, but Q3 guidance ($310m-$340m) misses $367m/$368m estimate with gross margins 22%-26% vs.",
+        "8% estimate, signaling near-term revenue and margin pressure.",
+        "**Fundamental Weakness**: Projected EBITDA decline from $271.2mn (current) to $105.5mn by 12/26E, indicating severe deteriorating profitability and operational challenges.",
+        "**Rating Deterioration**: Goldman Sachs downgraded from Buy (Oct 2023) to Neutral (Oct 2023) to Sell (Apr 2026), with \"Price target at removal\" notes reflecting eroding confidence in fundamentals."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-knc8sov6uqi-63938b",
+      "title": "SharkNinja, Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:54Z",
+      "summary_points": [
+        "**EPS Beat & Guidance Upside**: Adjusted EPS beat consensus ($1.26 vs.",
+        "$1.17), with FY26 EPS guidance raised to $6.45–$6.55 (vs.",
+        "$6.00–$6.10), driven by 22.2% Y/Y sales growth and net tariff refund benefit.",
+        "**Segment Growth Drivers**: Domestic sales +15.5% Y/Y, International +36.6% Y/Y; Cooking & Beverage Appliances +36.5% ($499M), Beauty & Home Environment +65.3%, underpinning strong revenue growth.",
+        "**Margin Divergence Risk**: Adjusted gross margin beat consensus (48.7% vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wzeriqs1oqf-f017bc",
+      "title": "Flutter Entertainment (FLUT) 2Q26 Full year US guidance downgraded amid higher investment",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:47Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dp0hlhcjucz-9c38c4",
+      "title": "Western Digital Corp. (WDC) First Take Solid results and roughly in line guidance, set against elevated expectations",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:43Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gz0ejqpeavf-bf9471",
+      "title": "Cushman & Wakefield Ltd. (CWK) 2Q26 First Take Top line beat and guidance raised, but Cap Markets softer",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:29Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-chdex07zpkt-56c6a3",
+      "title": "Invesco uncommon truths should we be worried about inflation august 2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-06T03:31:26Z",
+      "summary_points": [
+        "**Fed Policy Shift & Inflation Dynamics**: Dovish Fed rate decision (3.50%-3.75%) despite hawkish MPC votes, shifting first hike to Oct/Dec; cyclical inflation (Phillips Curve) with core CPI/PCE above target but trimmed mean PCE near 2%, signaling temporary pressures vs structural risks.",
+        "**Geopolitical Energy Risk**: Middle East conflict (Strait of Hormuz/Red Sea) and UAE OPEC+ departure threaten energy supply, amplifying upside inflation risks amid lagging wage growth and potential house price inflation (12-18m lag).",
+        "**Energy Commodities Surge**: GSCI energy commodities up 67.3% 12m USD return, reflecting acute supply/demand shifts and critical for commodity portfolio positioning amid geopolitical volatility.",
+        "**Sector Divergence & Factor Strength**: Energy (+11.3% YTD) outperforms discretionary (-12.1%); Value (20.1% YTD) and Price momentum (23.2% YTD) dominate factors, highlighting resilience in energy and value-driven strategies."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fcqatmq1ipy-0b41fd",
+      "title": "JPM JPM US Market Intell",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T03:25:13Z",
+      "summary_points": [
+        "**US Macro Data & Labor Signals**: Critical tomorrow’s releases (Challenger Job Cuts, Jobless Claims, Productivity) amid ADP showing slowing job growth (44k vs 75k BLS forecast), signaling potential labor market deceleration despite strong GDP-driven earnings (14% top-line, 47% bottom-line).",
+        "**Geopolitical Escalation Risk**: US/Iran tensions and Middle East escalation driving EU/UK short positions (ME shorts outperform), with Asia gross refining margins at record highs due to Iran crisis and China easing fuel exports.",
+        "**Earnings Divergence & Tech Catalysts**: SHOP Q2 beat (30%+ GMV/revenue/FCF growth, +25% pre-market surge) highlighting US vs.",
+        "Asia consumer weakness (DIS: 4% US domestic growth vs.",
+        "Shanghai/HK Q3-Q4 decline), while CXMT rejects Apple DRAM discounts, signaling China’s tech pricing leverage."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-vfkv0wexe0j-21d1a6",
       "title": "Markets Cannot Agree To Disagree Once Warsh Stops Subsidizing Term Yields",
