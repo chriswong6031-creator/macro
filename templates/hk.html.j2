@@ -3796,10 +3796,6 @@
       {% if _blm %}{% set _fl.rows = _fl.rows + [(_blm[0], _blm[1])] %}
       {% else %}{% set _fl.rows = _fl.rows + [('An entry check is holding this name out' ~ ((' — ' ~ _blr) if _blr else '') ~ '.', '一项入场检查正把该股挡在外面' ~ ((' —— ' ~ _blr) if _blr else '') ~ '。')] %}{% endif %}
       {% endif %}
-      {% set _ctx_en = ((' — ' ~ n.lead.en) if n.lead else '') ~ ((' · cheap H vs its A twin' if (n.ah_value and n.ah_value.cheap) else '')) ~ ((' · mainland Connect adding' if (n.southbound and n.southbound.accum_z is not none and n.southbound.accum_z >= 0.6) else '')) %}
-      {% set _ctx_zh = ((' — ' ~ n.lead.zh) if n.lead else '') ~ ((' · H 较 A 股便宜' if (n.ah_value and n.ah_value.cheap) else '')) ~ ((' · 南向资金加仓' if (n.southbound and n.southbound.accum_z is not none and n.southbound.accum_z >= 0.6) else '')) %}
-      {% set _tip_en = ((c.verdict if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline if es else '')) ~ _ctx_en %}
-      {% set _tip_zh = ((c.verdict_zh if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline_zh if es else '')) ~ _ctx_zh %}
       {% set _bz = es.buy_zone if es else none %}
       {% set _zk = ('readd' if _verb == 'hold' else ('active' if _verb in ('buy','near') else 'muted')) if (_bz and _bz.high is not none) else ('confirm' if _verb in ('wait','near') else 'none') %}
       {# ── MARKS ROW — three categorically different facts in descending weight:
@@ -3859,7 +3855,7 @@
         'href': 'hk_lookup.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'hk',
         'name': n.name, 'sec': n.sector, 'sec_zh': _csz,
         'price_txt': ('%.2f'|format(n.price)) if n.price is not none else none,
-        'verb': _verb, 'tip_en': _tip_en, 'tip_zh': _tip_zh,
+        'verb': _verb,
         'edge': (('%.0f'|format(_prs)) if _prs is not none
                  else (c.score if (c and c.score is not none) else none)),
         'edge_label_en': ('Priority' if _prs is not none else 'Edge'),

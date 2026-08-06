@@ -28,8 +28,10 @@
        score meaning → Edge data-tip. The verdict sentence + entry headline USED to ride a
        verb-chip data-tip; the operator removed it 2026-08-03 (see the chip in the markup)
        because it only re-worded the chip, tracker and zone footer the reader can already
-       see. `tip_en`/`tip_zh` are consequently INERT — accepted and ignored, so no caller
-       breaks; delete them from the builders when one is next touched for another reason.
+       see. The five builders no longer compute or pass a top-level `tip_en`/`tip_zh`, and
+       the chip takes no tip. Do not reintroduce one. (The similarly-named keys that DO
+       still render are unrelated: `trigger.tip_en`/`tip_zh` on the ⚡ chip, `edge_tip_en`/
+       `edge_tip_zh` on the score, and `marks[].tip_en`/`tip_zh` on the sub-line chips.)
 
    The macro is deliberately dumb: every market-specific derivation (verb mapping, stage
    mapping, flag folding, zone kind) happens in the calling board template where the row
