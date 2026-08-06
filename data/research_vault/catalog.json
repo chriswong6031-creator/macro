@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T22:28:51.505473+00:00",
-  "count": 900,
+  "generated_at": "2026-08-06T22:43:53.698613+00:00",
+  "count": 901,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -690,6 +690,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fauuekbwwl0-f56715",
+      "title": "Royalty Pharma Plc (RPRX) Steady Outperformance, Another Beat and Raise",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T11:17:14Z",
+      "summary_points": [
+        "**Beat & Raised Guidance**: RPRX beats FY2026 estimates ($773mn vs $754mn portfolio receipts), raises guidance to $3.4bn–$3.5bn (7–10% royalty growth), valuation upgraded to $66 (12.5x EV/EBITDA).",
+        "**Strategic Acquisition**: Deployed $1.7bn in H1 2026, including $425m for AZN’s Clarimutig royalty (3.75% on $3-5bn sales, peak royalties $110m–$190m), enhancing near-term revenue streams.",
+        "**Near-Term Catalysts**: Critical 2026 clinical (Novartis’ pelacarsen Phase 3) and regulatory events (FDA approvals for Avayah/Trodelvy) drive immediate upside potential.",
+        "**Outperformance & Cash Position**: Outperforms pharma/biotech benchmarks (YTD +49% vs DRG +8%), with $812mn cash, $9.2bn debt, and 2.8x leverage—unique royalty vehicle avoiding biotech volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
