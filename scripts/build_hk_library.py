@@ -859,6 +859,12 @@ def _board_ledger_calls(buys: list[dict], watch: list[dict], *,
             # ONE selection instrument instead of pooling three; rows written before
             # each stamp read as legacy and keep their own pool.
             "board_definition": hk_board_rank.BOARD_DEFINITION,
+            # BUCKETING-ERA fences (cascade R5 + §7 R-SQ3): the verdict's own era
+            # stamps, so the graded row places against BOTH grids that produced
+            # its tier fields. compact() carries both post-era; a pre-era or
+            # missing verdict yields None and the row pools as pre-fence.
+            "anchor_era": sig.get("anchor_era"),
+            "sq_anchor_era": sig.get("sq_anchor_era"),
         })
     return calls
 

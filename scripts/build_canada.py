@@ -705,6 +705,12 @@ def _canada_board_ledger(setups: dict | None, latest: dict) -> list[dict]:
             "extended": (bool(r.get("extended")) or ((r.get("pullback_zone") or {}).get("stance") == "chase")) if (r.get("extended") or r.get("pullback_zone")) else None,
             "hold_basing": ((r.get("hold") or {}).get("state") == "intact") if r.get("hold") else None,
             "dt_compress": ((r.get("dt_contra") or {}).get("state") not in (None, "neutral")) if r.get("dt_contra") else None,
+            # BUCKETING-ERA fences (cascade R5 + §7 R-SQ3), threaded off the row's
+            # compact verdict like gate_tier above. A row with no verdict dict
+            # stays None and pools as pre-fence — same nullable idiom as gate_ver.
+            # (The watch strip below carries no verdict, so its rows stay None.)
+            "anchor_era": sig.get("anchor_era"),
+            "sq_anchor_era": sig.get("sq_anchor_era"),
         })
     # W0.2 Stage C (§5.2 move 2): the CA WATCH strip was never appended — its
     # strong-but-blocked rows are exactly the near-miss cohort the rejection
