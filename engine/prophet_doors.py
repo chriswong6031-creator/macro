@@ -17,7 +17,7 @@ laggard-cross cell was the one positive (+1.44% per-name). So neither door loose
   eligible ∧ :func:`engine.signal_gate.is_buyable`, tiers T1/T2/T3), fired on a member of a
   top-5 heating theme. The only new thing is candidacy ROUTING — theme heat conditions WHICH
   validated fires get recorded, never WHETHER a fire is a fire. Theme state is a
-  cross-sectional context, so this claims nothing per-name (DNR rows 114-115).
+  cross-sectional context, so this claims nothing per-name (DNR:KILL-ONSET-FINGERPRINTS / DNR:KILL-VOLUME-FINGERPRINTS).
 
   **Door R (re-arm).** The MSFT/PLTR-class re-entry: a name whose trend is intact
   (above200 ∧ weekly_bull) but whose master cross has gone stale (3-15 ticks) and is

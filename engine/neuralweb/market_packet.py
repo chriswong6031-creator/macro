@@ -49,6 +49,9 @@ Repo: site/master_brief.json (else data/regime/master_brief.json),
 data/neuralweb/world_state.json, data/rates_command/latest.json,
 site/vol/regime.json, data/crossasset/latest.json, and a final wires fallback at
 data/marketing/press/wires.json.
+CN board: site/factordata/china_standouts.json (the published board) +
+data/cn_prophet_audit/latest.json (nightly ops telemetry) — both PRODUCT
+artifacts, per CXI-R23: chat context reads products, never repo internals.
 
 DESIGN
 ------
@@ -325,7 +328,7 @@ _REGIONS: tuple[_Region, ...] = (
 
 _SECTION_ORDER: tuple[str, ...] = (
     "HEADER", "TAPE", "CURVE", "FLAGS", "SHOCK", "EVENTS", "DRIVERS",
-    "RATES", "VOL", "BREADTH", "LEADERS", "REGIONAL", "CROSSASSET", "DESK", "WATCH",
+    "RATES", "VOL", "BREADTH", "LEADERS", "REGIONAL", "CROSSASSET", "CNBOARD", "DESK", "WATCH",
 )
 _NEVER_DROP: frozenset[str] = frozenset({"HEADER", "TAPE"})
 
@@ -916,6 +919,106 @@ def _desk_block(root: Path, gaps: list[str]) -> tuple[dict | None, dict | None]:
     return desk, watch
 
 
+#: Row flags counted out of the CN board's own ``lane_reasons`` strings. The
+#: builder writes these; nothing is inferred or re-derived here.
+_CN_FLAG_REASONS: tuple[tuple[str, str], ...] = (
+    ("chase_veto", "chase-vetoed"),
+    ("relay_late", "relay-late"),
+)
+_CN_LANE_ORDER: tuple[str, ...] = (
+    "featured", "more_actionable", "late_or_unfillable", "forming",
+)
+
+
+def _cn_board_block(root: Path, gaps: list[str]) -> dict | None:
+    """The China Prophet board's own state — counts, definition, telemetry.
+
+    AGGREGATION ONLY, and only over PRODUCT artifacts (CXI-R23 — chat context
+    never reads repo internals): ``site/factordata/china_standouts.json`` is the
+    published board, ``data/cn_prophet_audit/latest.json`` is the nightly
+    ops-telemetry artifact.  Every number below was computed by
+    ``scripts/build_china_library.py`` or ``engine/cn_prophet_audit.py`` and is
+    read back unchanged; the only arithmetic is counting rows that already carry
+    a flag, and rendering a stored fraction as a percent.  No ranking, no score,
+    no forecast, no judgement about a name.
+
+    Why it belongs in the packet: without it the brain can describe the tape but
+    not the desk's OWN China read, so "what is the China board doing, and why"
+    was answerable only from memory.  With it, the board's lane split and its
+    measured record arrive as figures with an as-of stamp.
+    """
+    board = _read_json(root / "site" / "factordata" / "china_standouts.json",
+                       gaps, "china_standouts")
+    if not isinstance(board, dict):
+        return None
+    lane_counts = board.get("lane_counts")
+    lane_counts = lane_counts if isinstance(lane_counts, dict) else {}
+    featured = lane_counts.get("featured")
+    if featured is None:
+        buy = board.get("buy")
+        featured = len(buy) if isinstance(buy, list) else None
+    lanes = [(_humanize(k), int(v)) for k, v in
+             sorted(lane_counts.items(),
+                    key=lambda kv: (_CN_LANE_ORDER.index(kv[0])
+                                    if kv[0] in _CN_LANE_ORDER else 99, kv[0]))
+             if isinstance(v, (int, float)) and not isinstance(v, bool)]
+
+    # Flag counts: read each row's OWN lane_reasons list. A definition that does
+    # not emit a given flag simply contributes 0 and is omitted below, so this
+    # survives a board-definition change without claiming a flag that never fired.
+    counts: dict[str, int] = {key: 0 for key, _label in _CN_FLAG_REASONS}
+    for key in ("buy", "more_actionable", "late_or_unfillable", "forming"):
+        rows = board.get(key)
+        if not isinstance(rows, list):
+            continue
+        for r in rows:
+            if not isinstance(r, dict):
+                continue
+            reasons = {str(x) for x in (r.get("lane_reasons") or [])
+                       if isinstance(x, (str, int, float))}
+            for flag, _label in _CN_FLAG_REASONS:
+                if flag in reasons:
+                    counts[flag] += 1
+    flags = [(label, counts[flag]) for flag, label in _CN_FLAG_REASONS if counts[flag]]
+
+    if featured is None and not lanes:
+        gaps.append("cnboard: no lane counts")
+        return None
+    out: dict = {
+        "asof": str(board.get("as_of") or "").strip(),
+        "definition": str(board.get("board_definition") or "").strip(),
+        "featured": int(featured) if isinstance(featured, (int, float)) else None,
+        "lanes": lanes,
+        "flags": flags,
+    }
+
+    # ---- nightly ops telemetry (separate artifact, separate stamp) ----------
+    tel = _read_json(root / "data" / "cn_prophet_audit" / "latest.json",
+                     [], "cn_prophet_audit")
+    if isinstance(tel, dict):
+        defs = ((tel.get("loser_telemetry") or {}).get("definitions")
+                if isinstance(tel.get("loser_telemetry"), dict) else None)
+        blk = defs[-1] if isinstance(defs, list) and defs and isinstance(defs[-1], dict) else None
+        if blk:
+            chase = blk.get("chase") if isinstance(blk.get("chase"), dict) else {}
+            out["telemetry"] = {
+                "asof": str(tel.get("as_of") or tel.get("generated_utc") or "").strip(),
+                "definition": str(blk.get("board_definition") or "").strip(),
+                "n_matured": blk.get("n_matured"),
+                "win_rate": _f(blk.get("win_rate")),
+                "median_excess": _f(blk.get("median_excess")),
+                "chase_share": _f(chase.get("share_of_matured")),
+            }
+        funnel = tel.get("miss_funnel") if isinstance(tel.get("miss_funnel"), dict) else {}
+        pooled = funnel.get("pooled") if isinstance(funnel.get("pooled"), dict) else None
+        if pooled and isinstance(pooled.get("shares"), dict):
+            shares = [(_humanize(k), _f(v)) for k, v in pooled["shares"].items()
+                      if _f(v) is not None]
+            if shares:
+                out["funnel"] = {"top_n": funnel.get("top_n"), "shares": shares}
+    return out
+
+
 def _events_block(raw: object, now: datetime, gaps: list[str]) -> dict | None:
     """Live news wire, headline + stamp + salience ONLY (TI-R5: no authored
     effect or beneficiary field is read here). Top N fresh items by salience
@@ -1063,6 +1166,12 @@ def build_packet(root: Path) -> dict:
                 packet["regional"] = regional
         except Exception as exc:  # noqa: BLE001
             gaps.append(f"regional: build failed ({type(exc).__name__})")
+        try:
+            cnboard = _cn_board_block(root, gaps)
+            if cnboard:
+                packet["cnboard"] = cnboard
+        except Exception as exc:  # noqa: BLE001
+            gaps.append(f"cnboard: build failed ({type(exc).__name__})")
 
         try:
             desk, watch = _desk_block(root, gaps)
@@ -1529,6 +1638,52 @@ def _render_watch(p: dict) -> str:
     return "\n".join(out)
 
 
+def _render_cn_board(p: dict) -> str:
+    """'CN BOARD (08-03, cn prophet v2): featured 24 · more actionable 110 …'
+
+    Three lines at most: the lane split, the flag counts the rows themselves
+    carry, and the measured forward record with its OWN stamp (a different
+    artifact, so it never borrows the board's).  Slugs are humanized before they
+    reach the prompt, per the same rule LEADERS follows.
+    """
+    cb = p["cnboard"]
+    bits = ", ".join(x for x in (_stamp(cb.get("asof")),
+                                 _humanize(cb.get("definition") or "")) if x)
+    body = _SEP.join(f"{label} {n}" for label, n in cb.get("lanes") or [])
+    if not body:
+        n = cb.get("featured")
+        body = f"featured {n}" if n is not None else ""
+    if not body:
+        return ""
+    lines = [(f"CN BOARD ({bits}): " if bits else "CN BOARD: ") + body]
+    flags = cb.get("flags") or []
+    if flags:
+        lines.append("CN BOARD flags: "
+                     + _SEP.join(f"{label} {n}" for label, n in flags))
+    t = cb.get("telemetry") or {}
+    if t.get("n_matured"):
+        parts = [f"{t['n_matured']} matured"]
+        wr = _f(t.get("win_rate"))
+        if wr is not None:
+            parts.append(f"win {wr * 100:.0f}%")
+        me = _f(t.get("median_excess"))
+        if me is not None:
+            parts.append(f"median excess {_signed(me * 100, 1, 'pp')}")
+        cs = _f(t.get("chase_share"))
+        if cs is not None:
+            parts.append(f"chase-flagged {cs * 100:.0f}% of matured")
+        stamp = _stamp(t.get("asof"))
+        head = f"CN BOARD record ({stamp}): " if stamp else "CN BOARD record: "
+        lines.append(head + _SEP.join(parts))
+    f = p["cnboard"].get("funnel") or {}
+    if f.get("shares"):
+        top = f.get("top_n")
+        head = f"CN BOARD runner funnel (top {top}): " if top else "CN BOARD runner funnel: "
+        lines.append(head + _SEP.join(f"{label} {v * 100:.0f}%"
+                                      for label, v in f["shares"]))
+    return "\n".join(lines)
+
+
 _RENDERERS: dict[str, object] = {
     "TAPE": ("tape", _render_tape),
     "CURVE": ("curve", _render_curve),
@@ -1542,6 +1697,7 @@ _RENDERERS: dict[str, object] = {
     "LEADERS": ("leaders", _render_leaders),
     "REGIONAL": ("regional", _render_regional),
     "CROSSASSET": ("crossasset", _render_crossasset),
+    "CNBOARD": ("cnboard", _render_cn_board),
     "DESK": ("desk", _render_desk),
     "WATCH": ("watch", _render_watch),
 }
@@ -1633,6 +1789,7 @@ _ROOT_SOURCES: tuple[str, ...] = (
     "site/vol/regime.json", "data/crossasset/latest.json",
     "data/marketing/press/wires.json",
     *(p for r in _REGIONS for p in (r.basket_rel, r.regime_rel)),
+    "site/factordata/china_standouts.json", "data/cn_prophet_audit/latest.json",
 )
 
 

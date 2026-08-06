@@ -3659,12 +3659,31 @@ def _authority_policy_entrypoints() -> tuple[SemanticEntrypoint, ...]:
 # Release goldens are recalculated only when the authority implementation or its
 # closed schema intentionally changes. They are independent of parser-version
 # goldens so a mutable parser registration can never rewrite trust policy.
-_AUTHORITY_POLICY_DEPENDENCY_COUNT = 421
+#
+# Re-sealing procedure (any edit inside the closure -- including
+# ``source_identity`` -- makes this module raise at import until it is redone):
+#   1. Copy the tracked authority source to a scratch tree exactly as
+#      ``tests/test_capital_structure_document_terms._copy_tracked_authority_source``
+#      does, and neutralise ONLY the two module-level ``_self_check_*()``
+#      invocations at the end of this file so the digests can be observed.
+#   2. Run the control FIRST, on unmodified source: the observed values must
+#      reproduce the goldens below byte for byte. That is what proves the
+#      observation harness itself does not perturb the closure -- without it a
+#      recomputed digest is just a number that makes the error go away.
+#   3. Re-run with the intended change and copy the observed values here.
+#      ``_semantic_closure`` hashes node NAMES into the manifest digest and
+#      node DESCRIPTORS into the implementation digest, so a pure behaviour
+#      change (e.g. a regex pattern) moves only ``implementation_sha256``,
+#      while adding or removing a function also moves the count and manifest.
+#   4. Import the real module to confirm the startup self-check passes, and
+#      re-check the digests on every reviewed runtime -- they are portable
+#      across CPython 3.12 patch releases by design.
+_AUTHORITY_POLICY_DEPENDENCY_COUNT = 426
 _AUTHORITY_POLICY_DEPENDENCY_MANIFEST_SHA256 = (
-    "de327cf44e5e00e5a43e36f0f26ddc4ba71d3f2ea662a93c303d9af3a46142fa"
+    "52b07cecee3990eba3d059ad5cce51f5d1b75a1d278af06db13a56bacbaee23a"
 )
 _AUTHORITY_POLICY_IMPLEMENTATION_SHA256 = (
-    "3650894df320e83771b1d9c0de6fd658cde50e2d7533cb958fc835837c32a18c"
+    "a5f1ef92d101b0028d234219247613b7812350e9938a768f606ceade9d3db4ba"
 )
 
 _AUTHORITY_POLICY = _AuthorityPolicy(

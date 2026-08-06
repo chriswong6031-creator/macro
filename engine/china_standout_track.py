@@ -811,6 +811,10 @@ WATCH_DEFINITIONS = frozenset({
     # v3-vs-v2 race runs from merge day with v3 live.  It is a challenger cohort,
     # never the headline record — excluding it here is what makes that safe.
     "cn_prophet_v2_shadow",
+    # W-C: the §2.7 never-eligible continuation cohort accrues its own forward
+    # record (engine/china_continuation_watch.py).  Shadow accrual with no
+    # display surface — it must never own a headline grade.
+    "cn_continuation_watch_v1",
 })
 
 

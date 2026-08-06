@@ -59,11 +59,13 @@ FENCES.
 """
 from __future__ import annotations
 
+from statistics import median as _median
 from typing import Any, Callable, Iterable, Mapping, MutableMapping, Sequence
 
 from engine import us_board_rank as _ubr
 from engine.us_board_rank import (  # noqa: F401 — shared vocabulary, re-exported by design
     ANCHOR_APPROX,
+    ANCHOR_CONFIRM,
     ANCHOR_MARKER,
     BASIS_CALENDAR,
     BASIS_SESSIONS,
@@ -144,6 +146,12 @@ VETOED_STANCE = "blocked — the board did not act on this"
 VETOED_STANCE_ZH = "受阻 — 看板未据此操作"
 VETOED_LABEL = "BLOCKED"
 VETOED_LABEL_ZH = "受阻"
+# `ANCHOR_CONFIRM` is imported from the shared vocabulary above: it is the third
+# anchor word, and the only one either HK lane's MOVE may carry.  `marker` and
+# `approx` keep their meaning exactly — they describe the DATE and the AGE, which are
+# still the marker's — but a row anchored on either prints no move at all.  See
+# :func:`build_vetoed_rows`; the split is what makes a marker-anchored `pct_since`
+# unreachable from these lanes rather than merely discouraged.
 # Marker qualities that mean "a buy signal fired and the gate refused it".
 _VETOED_QUALITIES = frozenset(("block",))
 _BUY_MARKERS = frozenset(("buy", "rebuy"))
@@ -654,8 +662,16 @@ def build_ran_rows(
     an age derived from ``ticks`` — ticks live on the signal's native 2D/3D grid, so
     that fallback understated the age roughly threefold and mis-anchored the move
     with it.  A missing PRICE SERIES is a different question and keeps the row, with
-    ``pct_since: null`` disclosed.  Every emitted row carries ``anchor`` ∈
-    {``marker``, ``approx``}.
+    ``pct_since: null`` disclosed.
+
+    THE MOVE IS CONFIRMATION-ANCHORED (2026-08-03), via the shared builder's
+    ``move_read`` hook so the lane is also ORDERED and truncated by the number it
+    prints.  The audit that produced the vetoed lane's fix found the identical defect
+    here — same ``cross_read(..., cross_date=marker_date)`` call, same forbidden
+    anchor — and it was not smaller: MEASURED 2026-07-31, all 12 displayed rows
+    overstated, mean +8.09pp against the vetoed lane's +8.40pp.  So ``anchor`` here has
+    the same three words: ``confirm`` (move from the confirmation close, date and age
+    still the marker's), ``marker`` and ``approx`` (both print no move at all).
     """
     members = _cohort_set(cohort)
     # Build UNCAPPED, then apply the cap cohort-first (see _cohort_first): with the
@@ -671,6 +687,7 @@ def build_ran_rows(
         cap=None,
         ticks_min=ticks_min,
         ticks_max=ticks_max,
+        move_read=confirmation_move,
         require_above200=require_above200,
     )
     rows = _cohort_first(rows, members, cap)
@@ -758,6 +775,59 @@ def veto_reason_copy(reason: Any) -> dict[str, str]:
     return dict(VETO_REASON_COPY.get(key, VETO_REASON_FALLBACK))
 
 
+def confirmation_move(
+    series: tuple[Sequence[Any], Sequence[Any]] | None,
+    marker_date: Any,
+) -> dict[str, Any] | None:
+    """``{pct_since, measured_from}`` measured from the CONFIRMATION close, or None.
+
+    The honest forward read off a blocked §7 marker.  ``marker['date']`` is the 3B
+    bucket's left edge and the label at that bucket reads two buckets forward, so it
+    precedes the first close at which the block was knowable by ~8 daily sessions —
+    and it sits at the trough that CREATED the signal.  ``engine.signal_quality``
+    owns that geometry (:func:`~engine.signal_quality.confirmation_date`) and this
+    just spends it on the lane's own closes.
+
+    Returns None on every path where the anchor is not exactly the confirmation
+    session, so the caller prints a disclosed null instead of a number measured from
+    a bar nobody could have traded on.  pandas is imported lazily: the rest of this
+    module and :mod:`engine.us_board_rank` are pure stdlib, and a lane helper should
+    not change what importing the ranker costs.
+    """
+    if not series:
+        return None
+    dates, closes = series
+    try:
+        import pandas as pd
+
+        from engine.signal_quality import confirmation_date
+    except ImportError:                                  # pragma: no cover
+        return None
+    try:
+        index = pd.to_datetime(list(dates), errors="coerce")
+        values = pd.to_numeric(pd.Series(list(closes)), errors="coerce")
+    except (TypeError, ValueError):
+        return None
+    if len(index) != len(values) or len(index) < 2:
+        return None
+    daily = pd.Series(values.to_numpy(), index=index).sort_index()
+    daily = daily[~daily.index.duplicated(keep="last")]
+    daily = daily[daily.index.notna()]
+    confirmed = confirmation_date(daily, marker_date)
+    if confirmed is None:
+        return None
+    stamp = str(confirmed.date())
+    read = cross_read(dates, closes, cross_date=stamp)
+    # FAIL CLOSED ON A NEAR MISS.  cross_read anchors on the last session AT OR BEFORE
+    # the date it is given, so a confirmation date that is not itself a session in
+    # THESE closes would silently slide the anchor backwards — back toward the marker,
+    # which is the direction of the overstatement being fixed.  Only an exact landing
+    # is a confirmation read; anything else is a null.
+    if read is None or read.get("cross_date") != stamp:
+        return None
+    return {"pct_since": read["pct_since"], "measured_from": stamp}
+
+
 def build_vetoed_rows(
     verdict_by: Mapping[str, Mapping[str, Any]],
     *,
@@ -788,9 +858,33 @@ def build_vetoed_rows(
     shown with an invented age.  ``max_sessions`` bounds staleness — a veto older
     than a quarter is no longer news about this tape.
 
+    THE MOVE IS ANCHORED ON THE CONFIRMATION CLOSE, NOT THE MARKER (2026-08-03).  It
+    used to read ``cross_read(..., cross_date=marker_date)``, which is the anchor
+    ``signal_quality._buy_filter`` explicitly forbids: the marker date is the 3B
+    bucket's LEFT EDGE and the label there reads two buckets forward, so it precedes
+    the first close at which the block was knowable by ~8 daily sessions — and it sits
+    at the trough that CREATED the signal.  MEASURED across this lane's own 48-54 name
+    population (2026-07-31 and 2026-08-03 as-of dates): +7.16pp of mean overstatement.
+    Xiaomi (1810.HK) printed +20.1% here; from the confirmation close the same span is
+    +1.7%, and +15.9% to its peak.  That is not a rounding error, it is the pre-signal
+    move, and a lane whose whole job is to hold the gate to account cannot be the one
+    surface on the page that flatters its own numbers.
+
+    So ``anchor`` now has three words and they split the row's two facts:
+    ``confirm`` (date + age from the marker, move from the confirmation close),
+    ``marker`` (date + age exact, move NOT derivable), ``approx`` (no marker date at
+    all — age counted back from recent bars, move not derivable).  ``pct_since`` is
+    non-null ONLY under ``confirm``, which is what makes a marker-anchored move
+    unreachable from here rather than merely discouraged.  The age deliberately stays
+    on the marker: "this block has stood for N sessions" is a claim about the block,
+    and ``max_sessions`` keeps measuring the same thing it always did.
+
     NO ENTRY CLAIM.  These rows carry no ``entry_signal``, no priority score and no
     conviction call.  ``pct_since`` here is not a missed profit — it is the distance
     the name travelled while the board stayed out, printed so the gate can be judged.
+    Because the lane ranks by that move and then truncates to ``cap``, every row also
+    carries ``population`` / ``population_measured`` / ``population_median_pct`` so
+    the displayed set can never be read as the whole story.
     """
     skip = {str(t or "").strip().upper() for t in exclude}
     members = _cohort_set(cohort)
@@ -801,6 +895,7 @@ def build_vetoed_rows(
     other_rows: list[dict] = []
     dropped_no_anchor = 0
     dropped_stale = 0
+    no_confirmed_move = 0
 
     for ticker, verdict in (verdict_by or {}).items():
         key = str(ticker or "").strip().upper()
@@ -832,6 +927,15 @@ def build_vetoed_rows(
             dropped_stale += 1
             continue
 
+        # THE MOVE IS CONFIRMATION-ANCHORED OR IT IS NULL.  `read` still supplies the
+        # DATE and the AGE — those are the marker's, and the marker date is the honest
+        # answer to "when was this blocked" — but its `pct_since` is measured from the
+        # marker bar and is forbidden here, so it is dropped on the floor rather than
+        # carried forward.  Only an exact confirmation read can put a number on this
+        # row; every other path prints the disclosed null.
+        move = confirmation_move(series, marker_date) if _as_date(marker_date) else None
+        if move is None:
+            no_confirmed_move += 1
         copy = veto_reason_copy(marker.get("reason"))
         in_cohort = key in members
         row: dict[str, Any] = {
@@ -842,8 +946,9 @@ def build_vetoed_rows(
             "price": meta.get("price"),
             "signal_date": read["cross_date"],
             "sessions_since": sessions,
-            "pct_since": read["pct_since"],
-            "anchor": read["anchor"],
+            "pct_since": move["pct_since"] if move else None,
+            "measured_from": move["measured_from"] if move else None,
+            "anchor": ANCHOR_CONFIRM if move else read["anchor"],
             "blocked_reason_en": copy["en"],
             "blocked_reason_zh": copy["zh"],
             # The engine's own wording, kept for the detail view and for anyone
@@ -882,6 +987,30 @@ def build_vetoed_rows(
         _notice("hk_board_vetoed_stale",
                 f"{dropped_stale} vetoed-lane admit(s) dropped — the block has stood "
                 f"longer than {int(max_sessions)} sessions, past this lane's window")
+    if no_confirmed_move:
+        _notice("hk_board_vetoed_unconfirmed",
+                f"{no_confirmed_move} vetoed-lane row(s) print pct_since: null — the "
+                f"confirmation close the move must be measured from could not be "
+                f"derived (series too short, marker off this series' 3B grid, or the "
+                f"block is still inside its own confirmation window)")
+
+    # THE POPULATION, STAMPED ON EVERY ROW IT DESCRIBES.  This lane RANKS BY THE MOVE
+    # and then truncates, so the rows that survive are the winners of the very quantity
+    # they print — read without the population behind them, twelve big green numbers
+    # are a P&L claim the lane never made.  The median is the middle of the WHOLE
+    # admitted set, on the same confirmation anchor as the displayed rows, and
+    # `population_measured` is its denominator: medianing the measurable subset while
+    # printing the full count would quietly drop the disclosed nulls out of the base.
+    population = cohort_rows + other_rows
+    measured = sorted(m for m in (_finite_float(r.get("pct_since")) for r in population)
+                      if m is not None)
+    stats = {
+        "population": len(population),
+        "population_measured": len(measured),
+        "population_median_pct": (round(_median(measured), 1) if measured else None),
+    }
+    for row in population:
+        row.update(stats)
 
     room = max(0, int(cap) - len(cohort_rows))
     return cohort_rows + other_rows[:room]

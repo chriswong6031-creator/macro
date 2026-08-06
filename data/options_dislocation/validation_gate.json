@@ -1,0 +1,202 @@
+{
+  "schema": "options_dislocation.gate.v1",
+  "generated_at": "2026-08-05 11:29 UTC",
+  "scored": false,
+  "scored_primitives": [],
+  "status": "insufficient_history (have 41/120 dates, 392/15 names)",
+  "weight": 0.0,
+  "n_dates": 41,
+  "n_names": 392,
+  "min_dates": 120,
+  "min_names": 15,
+  "fdr_alpha": 0.1,
+  "neutralised_against": [
+    "iv30",
+    "log_spot"
+  ],
+  "results": {
+    "oi_tilt": {
+      "prereg_sign": -1,
+      "by_horizon": {
+        "5": {
+          "n_dates": 30,
+          "mean_ic": -0.0873,
+          "hac_t": -3.365,
+          "sign_ok": true,
+          "fdr_pass": true
+        },
+        "10": {
+          "n_dates": 25,
+          "mean_ic": -0.1287,
+          "hac_t": -10.21,
+          "sign_ok": true,
+          "fdr_pass": true
+        },
+        "21": {
+          "n_dates": 14,
+          "mean_ic": -0.2028,
+          "hac_t": -21.819,
+          "sign_ok": true,
+          "fdr_pass": true
+        }
+      }
+    },
+    "d5_ivspread": {
+      "prereg_sign": 1,
+      "by_horizon": {
+        "5": {
+          "n_dates": 11,
+          "mean_ic": 0.0505,
+          "hac_t": 3.361,
+          "sign_ok": true,
+          "fdr_pass": true
+        },
+        "10": {
+          "n_dates": 9,
+          "mean_ic": 0.0196,
+          "hac_t": 1.349,
+          "sign_ok": true,
+          "fdr_pass": false
+        },
+        "21": {
+          "n_dates": 2,
+          "mean_ic": null,
+          "hac_t": null,
+          "sign_ok": false,
+          "fdr_pass": false
+        }
+      }
+    },
+    "d5_term_slope": {
+      "prereg_sign": 1,
+      "by_horizon": {
+        "5": {
+          "n_dates": 25,
+          "mean_ic": 0.0659,
+          "hac_t": 9.472,
+          "sign_ok": true,
+          "fdr_pass": true
+        },
+        "10": {
+          "n_dates": 20,
+          "mean_ic": 0.0303,
+          "hac_t": 1.549,
+          "sign_ok": true,
+          "fdr_pass": false
+        },
+        "21": {
+          "n_dates": 9,
+          "mean_ic": 0.053,
+          "hac_t": 2.537,
+          "sign_ok": true,
+          "fdr_pass": true
+        }
+      }
+    },
+    "skew_accel": {
+      "prereg_sign": -1,
+      "by_horizon": {
+        "5": {
+          "n_dates": 11,
+          "mean_ic": -0.0554,
+          "hac_t": -6.043,
+          "sign_ok": true,
+          "fdr_pass": true
+        },
+        "10": {
+          "n_dates": 10,
+          "mean_ic": 0.0054,
+          "hac_t": 0.305,
+          "sign_ok": false,
+          "fdr_pass": false
+        },
+        "21": {
+          "n_dates": 4,
+          "mean_ic": null,
+          "hac_t": null,
+          "sign_ok": false,
+          "fdr_pass": false
+        }
+      }
+    },
+    "skew": {
+      "prereg_sign": -1,
+      "by_horizon": {
+        "5": {
+          "n_dates": 25,
+          "mean_ic": -0.0305,
+          "hac_t": -3.595,
+          "sign_ok": true,
+          "fdr_pass": true
+        },
+        "10": {
+          "n_dates": 23,
+          "mean_ic": -0.0387,
+          "hac_t": -2.568,
+          "sign_ok": true,
+          "fdr_pass": true
+        },
+        "21": {
+          "n_dates": 14,
+          "mean_ic": -0.0551,
+          "hac_t": -2.717,
+          "sign_ok": true,
+          "fdr_pass": true
+        }
+      }
+    },
+    "ivspread": {
+      "prereg_sign": 1,
+      "by_horizon": {
+        "5": {
+          "n_dates": 18,
+          "mean_ic": 0.0199,
+          "hac_t": 1.185,
+          "sign_ok": true,
+          "fdr_pass": false
+        },
+        "10": {
+          "n_dates": 16,
+          "mean_ic": -0.0088,
+          "hac_t": -0.613,
+          "sign_ok": false,
+          "fdr_pass": false
+        },
+        "21": {
+          "n_dates": 7,
+          "mean_ic": -0.0017,
+          "hac_t": null,
+          "sign_ok": false,
+          "fdr_pass": false
+        }
+      }
+    },
+    "term_slope": {
+      "prereg_sign": -1,
+      "by_horizon": {
+        "5": {
+          "n_dates": 30,
+          "mean_ic": -0.0402,
+          "hac_t": -2.725,
+          "sign_ok": true,
+          "fdr_pass": true
+        },
+        "10": {
+          "n_dates": 25,
+          "mean_ic": -0.0909,
+          "hac_t": -3.394,
+          "sign_ok": true,
+          "fdr_pass": true
+        },
+        "21": {
+          "n_dates": 14,
+          "mean_ic": -0.1362,
+          "hac_t": -3.549,
+          "sign_ok": true,
+          "fdr_pass": true
+        }
+      }
+    }
+  },
+  "note": "the chain panel is one short regime, far below the power floor -> display-only context, accruing toward a verdict. Every t-statistic below is computed on overlapping windows inside that single regime and must not be read as evidence."
+}

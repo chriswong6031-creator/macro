@@ -396,14 +396,24 @@ def _decision(rec: dict, conv: dict, falsifiers: list[dict]) -> dict:
         "bc_score": lad.get("bc_score"), "bc_grade": lad.get("bc_grade"),
         "capped_by_entry": bool(size.get("capped_by_entry")),
     }
+    # B2 (research/ADJUDICATION_20260803_UNIVERSE_SIDE_STORE_FRESHNESS.md): a demoted
+    # rec (scripts/build_stock_library.py::_apply_feed_demotion) carries a non-empty
+    # `conviction` block (band/verdict/axes survive — display-only) but an explicit
+    # `score: None` — the raw logistic value is cleared because attach_panel_scores
+    # never overwrites it to a percentile for a name excluded from `profiles`. A "board
+    # rank" gauge + note next to a "not scored" freshness banner would be a self-
+    # contradicting page, so both are suppressed together whenever score is null —
+    # not just for the demotion case, but for ANY conv with no score (consistent).
+    _score = conv.get("score")
     return {
         "headline": conv.get("verdict"), "headline_zh": conv.get("verdict_zh"),
         "gloss": gloss_en, "gloss_zh": gloss_zh,
         "band": conv.get("band"), "band_en": conv.get("band_en"),
-        "band_zh": conv.get("band_zh"), "score": conv.get("score"),
+        "band_zh": conv.get("band_zh"), "score": _score,
         # NAME lane (the "what") — the score reframed as a board RANK of name strength.
         "name_label": name_en, "name_label_zh": name_zh,
-        "rank_note": "board rank", "rank_note_zh": "板内排名",
+        "rank_note": ("board rank" if _score is not None else None),
+        "rank_note_zh": ("板内排名" if _score is not None else None),
         # ACT-NOW lane (the "when / how much") — one buy-frame verb, decoupled from rank.
         "action": _action(conv, rec),
         "trust": conv.get("trust_tier"), "regime": conv.get("regime"),

@@ -1438,7 +1438,7 @@ def _summarize_transmission_chains(repo: Path) -> tuple[dict, str | None]:
     engine.transmission_chains.run (scripts nightly, AFTER build_site — so the site JSON
     lags but this NW read is fresh). Absent until the first chains run → empty lobe + gap.
 
-    Standing laws (masterplan §4; DNR row 45 / TXI Article 1/2):
+    Standing laws (masterplan §4; DNR:KILL-CAUSAL-DAG-ALPHA / TXI Article 1/2):
     - 100% deterministic re-projection of already-computed display-tier state; no LLM.
     - A chain state is a WATCH item — nothing here gates, ranks, sizes, or escalates. The
       summary text carries the tier honesty ("early monitor; base rates untested") and uses

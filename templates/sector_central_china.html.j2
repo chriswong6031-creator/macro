@@ -33,6 +33,10 @@
 <link rel="prefetch" href="sector_cycles_china_narr_data.js" as="script">
 <link rel="prefetch" href="sector_cycles_china_dna_data.js" as="script">
 <link rel="prefetch" href="subsector_rotation.js" as="script">
+{# Confluence view (5th rail view): subsectors_china.js is injected by the router when
+   #confluence first opens (LAZY map) — a stamped head link so vUrl() reads the ?v= URL
+   back and the injected tag reuses that immutable response instead of loading unversioned. #}
+<link rel="prefetch" href="subsectors_china.js" as="script">
 {# the gated board / regime banner / grader all read window.SECTOR_CENTRAL from this file #}
 <link rel="preload" href="sector_central_china_data.js" as="script">
 <style>
@@ -241,10 +245,28 @@
   .scc-section-h { margin: 0 0 8px; }
   .scc-section-h h2 { font-size: 17px; font-weight: 760; margin: 0; }
   .scc-section-h .scc-section-sub { font-size: 12.5px; color: var(--muted); }
-  /* the embedded overlay reuses cycle.css/.sc-* but lives outside a .cyc-wrap — give the stage a panel frame */
-  .scc-cycle .cyc-stage { background: var(--panel); border: 1px solid var(--line); border-radius: 13px; padding: 12px 14px; }
-  /* embedded live sector desk table */
-  .scc-desk-tblwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 13px; }
+  /* ══ SECTION ISLANDS — one container per section, never a container in a container ══
+     Operator 2026-08-04. Every section on this page now wears the SAME chrome as the
+     Overview verdict hero (.rvx-hero, ~L614): var(--panel) fill, a TRANSPARENT 1px
+     border (keeps the box model, drops the drawn frame) and a soft two-stop drop
+     shadow. That is the macro.html island idiom — borderless, lifted, flat.
+
+     The tokens live here so a section can opt in with one class-free selector, and
+     so the light/dark shadow stays in ONE place instead of per-section literals. */
+  .scc-tbl-details {
+    background: var(--panel);
+    border: 1px solid transparent;
+    border-radius: 18px;
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
+                0 12px 32px -14px color-mix(in srgb, var(--text) 12%, transparent);
+  }
+  /* The cycle stage's island + the flattening of .cyc-hero/.cyc-detail live in
+     macro-desk.css, NOT here: `body.macro-desk.page-sector-central .scc-cycle …`
+     (0,4,1) out-specificities anything this sheet can say about those elements,
+     so a copy here would be dead CSS that reads as the live rule. */
+  /* embedded live sector desk table — the wrapper is INSIDE .scc-tbl-details, which
+     is already the island, so it carries no frame of its own (container-in-container). */
+  .scc-desk-tblwrap { overflow-x: auto; border: 0; border-radius: 0; }
   table.scc-desk-tbl { border-collapse: collapse; width: 100%; min-width: 920px; font-size: 12.5px; }
   table.scc-desk-tbl th, table.scc-desk-tbl td { padding: 8px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
   table.scc-desk-tbl th { font-size: 10px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); font-weight: 700; position: sticky; top: 0; background: var(--panel); cursor: pointer; user-select: none; }
@@ -468,7 +490,7 @@
   .cat-filter-bar button.on { background:var(--panel2); color:var(--text); font-weight:650;
     border-color:color-mix(in srgb,var(--link) 32%,var(--line)); }
 </style>
-<link rel="stylesheet" href="macro-desk.css?v=b4966394">
+<link rel="stylesheet" href="macro-desk.css?v=e46e15d5">
 <style>
 /* ══════════════════════════════════════════════════════════════════════════
    ROTATION-MAP DESIGN LAYER (rvx-) — ported from the US Sector Intelligence
@@ -654,6 +676,112 @@ body { font-family:-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
 /* the hero IS the overview's read — no echo line beneath it */
 .si-view[data-view="overview"] .si-view-read { display:none; }
 </style>
+<style>
+  /* ══════════════════════════════════════════════════════════════════════════
+     CONFLUENCE VIEW (5th rail view) — the 同花顺 subsector-confluence board,
+     brought from the standalone subsectors_china page and mounted here by the
+     router (subsectors_china.js writes concept cards + tables into #sc-app). The
+     donor page's page-local <style> was authored with UNSCOPED selectors
+     (.card / .tier / .pill / table.tbl / .num / .pos / .neg / .tk / .sec / …) that
+     COLLIDE with this page's own .card/.pos/.neg board rules and the shared
+     macro-desk.css (.card is defined differently in three places). Every rule
+     below is therefore rescoped under #si-confluence so it styles ONLY the
+     confluence board and never leaks onto the other four views — the id lifts each
+     rule's specificity above the page's bare-class rules inside the view, and
+     constrains it to nothing outside. Nothing here is changed from the donor beyond
+     the scope prefix (and dropping the donor's global *, body, a and .wrap resets
+     this page already owns). theme.css / macro-desk.css are untouched by design.
+     ══════════════════════════════════════════════════════════════════════════ */
+  #si-confluence .sc-head { display:flex; flex-wrap:wrap; align-items:flex-end; gap:6px 22px; margin:8px 2px 6px; }
+  #si-confluence .sc-head h1 { font-size:23px; margin:0; font-weight:800; letter-spacing:-.015em; }
+  #si-confluence .sc-head .asof { color:var(--muted); font-size:12px; margin-left:auto; }
+  #si-confluence .sc-sub { color:var(--muted); font-size:12.5px; margin:2px 2px 14px; max-width:96ch; line-height:1.55; }
+  #si-confluence .sec { margin:22px 0 8px; }
+  #si-confluence .sec h2 { font-size:15px; font-weight:700; margin:0 2px 3px; display:flex; align-items:center; gap:8px; }
+  #si-confluence .sec .desc { color:var(--muted); font-size:11.5px; margin:0 2px 10px; max-width:92ch; }
+  #si-confluence .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(238px,1fr)); gap:10px; }
+  #si-confluence .card { background:var(--panel); border:1px solid var(--line); border-left-width:3px; border-radius:11px; padding:11px 12px; display:block; transition:border-color .12s,transform .08s; }
+  #si-confluence .card:hover { transform:translateY(-1px); border-color:var(--link); }
+  #si-confluence .card .top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  #si-confluence .card .nm { font-weight:700; font-size:13.5px; line-height:1.25; }
+  #si-confluence .card .sct { color:var(--muted); font-size:10.5px; margin-top:1px; text-transform:uppercase; letter-spacing:.03em; }
+  #si-confluence .card .row2 { display:flex; align-items:center; gap:6px; margin-top:9px; flex-wrap:wrap; }
+  #si-confluence .card .meta { color:var(--muted); font-size:11px; margin-top:7px; line-height:1.45; }
+  #si-confluence .tier { font-weight:800; font-size:11px; padding:1px 6px; border-radius:5px; letter-spacing:.02em; color:#fff; }
+  #si-confluence .tier.T1{ background:var(--up); } #si-confluence .tier.T2{ background:#3da564; } #si-confluence .tier.T3{ background:var(--info); } #si-confluence .tier.T4{ background:#6b7cc4; }
+  #si-confluence .tier.none{ background:var(--g-mid); color:var(--muted); }
+  /* zh 红涨绿跌: T2 bullish tier badge swaps green→red */
+  html[data-lang="zh"] #si-confluence .tier.T2{ background:#d04545; }
+  #si-confluence .pill { font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:9px; border:1px solid var(--line); }
+  #si-confluence .pill.buy{ color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,transparent); }
+  #si-confluence .pill.avoid{ color:var(--down); border-color:color-mix(in srgb,var(--down) 45%,transparent); }
+  #si-confluence .pill.neutral{ color:var(--muted); }
+  #si-confluence .pill.tactical,#si-confluence .pill.late{ color:var(--orange); border-color:color-mix(in srgb,var(--orange) 45%,transparent); }
+  #si-confluence table.tbl { width:100%; border-collapse:collapse; font-size:12.5px; }
+  #si-confluence table.tbl th { text-align:left; color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em; padding:6px 9px; border-bottom:1px solid var(--line); cursor:pointer; white-space:nowrap; }
+  #si-confluence table.tbl td { padding:7px 9px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  #si-confluence table.tbl tr:hover td { background:var(--panel); }
+  #si-confluence .sc-card-hidden { display:none !important; }
+  #si-confluence .sc-more { margin:9px 2px 0; font:600 12px/1.4 inherit; color:var(--link); background:none; border:1px solid var(--line); border-radius:8px; padding:5px 12px; cursor:pointer; transition:border-color .12s,background .12s; }
+  #si-confluence .sc-more:hover { border-color:var(--link); background:color-mix(in srgb,var(--link) 8%,transparent); }
+  #si-confluence .tk { font-weight:700; }
+  #si-confluence .num { font-variant-numeric:tabular-nums; }
+  #si-confluence .pos{ color:var(--up); } #si-confluence .neg{ color:var(--down); }
+  #si-confluence .scbar { display:inline-block; height:7px; border-radius:4px; background:var(--up); vertical-align:middle; }
+  #si-confluence .relb { font-size:9.5px; font-weight:800; padding:0 5px; border-radius:6px; letter-spacing:.02em; vertical-align:middle; white-space:nowrap; }
+  #si-confluence .rel-low { color:var(--orange); border:1px solid color-mix(in srgb,var(--orange) 45%,transparent); }
+  #si-confluence .rel-med { color:var(--muted); }
+  #si-confluence .npc { color:var(--muted); font-size:10.5px; font-variant-numeric:tabular-nums; }
+  #si-confluence details.thin { margin:14px 2px 0; border:1px dashed var(--line); border-radius:10px; padding:0 12px 12px; background:color-mix(in srgb,var(--orange) 4%,transparent); }
+  #si-confluence details.thin > summary { cursor:pointer; font-weight:700; font-size:13.5px; padding:11px 2px; list-style:none; display:flex; align-items:center; gap:8px; }
+  #si-confluence details.thin > summary::-webkit-details-marker { display:none; }
+  #si-confluence details.thin > summary::before { content:'▸'; color:var(--muted); }
+  #si-confluence details.thin[open] > summary::before { content:'▾'; }
+  #si-confluence .sc-foot { color:var(--muted); font-size:11px; margin:24px 2px 0; line-height:1.65; max-width:108ch; border-top:1px solid var(--line); padding-top:12px; }
+  #si-confluence .empty { color:var(--muted); padding:14px; }
+  /* base scroll wrapper (subsectors_china.js's wrapTbls injects .tbl-scroll) — desktop
+     horizontal scroll for wide tables; the mobile override below flips it to visible */
+  #si-confluence .tbl-scroll { overflow-x:auto; }
+  @media (max-width:720px){
+    #si-confluence .sec { margin-top:18px; }
+    #si-confluence .sec h2 { font-size:14px; gap:6px; }
+    #si-confluence .sec .desc { font-size:11px; line-height:1.45; }
+    #si-confluence .cards { grid-template-columns:1fr; gap:8px; }
+    #si-confluence .card { border-radius:9px; padding:10px; }
+    #si-confluence .card .nm { overflow-wrap:anywhere; }
+    #si-confluence .card .sct,#si-confluence .card .meta { overflow-wrap:anywhere; }
+    #si-confluence .tbl-scroll { overflow-x:visible; }
+    #si-confluence table.tbl.db-table,
+    #si-confluence table.tbl.hw-table,
+    #si-confluence table.tbl.all-table { table-layout:fixed; width:100%; font-size:11.5px; }
+    #si-confluence table.tbl.db-table th,
+    #si-confluence table.tbl.db-table td,
+    #si-confluence table.tbl.hw-table th,
+    #si-confluence table.tbl.hw-table td,
+    #si-confluence table.tbl.all-table th,
+    #si-confluence table.tbl.all-table td { padding:6px 5px; white-space:normal; overflow-wrap:anywhere; vertical-align:top; }
+    #si-confluence table.tbl.db-table .col-stock,
+    #si-confluence table.tbl.hw-table .col-stock { width:82px; overflow-wrap:normal; }
+    #si-confluence table.tbl.db-table .col-tier,
+    #si-confluence table.tbl.hw-table .col-tier { width:54px; }
+    #si-confluence table.tbl.db-table .col-concept,
+    #si-confluence table.tbl.hw-table .col-concept { width:auto; }
+    #si-confluence table.tbl.all-table .col-concept { width:50%; }
+    #si-confluence table.tbl.all-table .col-entry { width:56px; }
+    #si-confluence table.tbl.all-table .col-regime { width:70px; }
+    #si-confluence table.tbl.db-table .col-concept-state,
+    #si-confluence table.tbl.db-table .col-conviction,
+    #si-confluence table.tbl.db-table .col-vs20,
+    #si-confluence table.tbl.hw-table .col-regime,
+    #si-confluence table.tbl.all-table .col-fresh,
+    #si-confluence table.tbl.all-table .col-rs,
+    #si-confluence table.tbl.all-table .col-n { display:none; }
+    #si-confluence table.tbl .stock-name,
+    #si-confluence table.tbl .npc { display:none; }
+    #si-confluence .tier,#si-confluence .pill { font-size:10px; padding:1px 5px; }
+    #si-confluence .relb { font-size:9px; padding:0 4px; }
+  }
+</style>
 </head>
 <body class="macro-desk page-sector-central">
 <div class="rvx-aurora" aria-hidden="true"><b class="a1"></b><b class="a2"></b><b class="a3"></b></div>
@@ -681,8 +809,12 @@ body { font-family:-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
     <a class="si-view-btn" data-view="map" href="#map"><span class="si-vb-g dash-icon dash-icon-compass" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">The Map</span><span class="l-zh">全景图谱</span></span></a>
     <a class="si-view-btn" data-view="moving" href="#moving"><span class="si-vb-g dash-icon submenu-icon-rotation" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">What&#39;s Moving</span><span class="l-zh">正在轮动</span></span></a>
     <a class="si-view-btn" data-view="explore" href="#explore"><span class="si-vb-g dash-icon dash-icon-search" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Explore</span><span class="l-zh">深入探索</span></span></a>
-    {# the funnel exit the retired rail carried — a link, never a fifth view #}
-    <a class="si-side-out" href="subsectors_china.html"><span class="si-vb-g dash-icon submenu-icon-confluence" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Stock entry funnel →</span><span class="l-zh">个股入场漏斗 →</span></span></a>
+    {# 5th rail view (operator 2026-08: "a new Confluence rail view") — the 同花顺 subsector-
+       confluence board is now a routed #confluence view in the stage, not a link out to the
+       standalone subsectors_china page. Same .si-view-btn idiom as the four above; glyph is the
+       estate's masked confluence icon. ZH uses the estate's established 子行业汇聚 (matches the
+       view's own hero + both global-nav rows), not the brief's 子行业共振 — see the PR notes. #}
+    <a class="si-view-btn" data-view="confluence" href="#confluence"><span class="si-vb-g dash-icon submenu-icon-confluence" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Confluence</span><span class="l-zh">子行业汇聚</span></span></a>
     <div class="si-side-foot">
       <span id="si-side-asof"></span>
       <span id="si-side-grade"></span>
@@ -985,9 +1117,14 @@ body { font-family:-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
   .rc-caveat-cn { margin-top:10px; font-size:10.5px; color:var(--muted); line-height:1.55; }
 </style>
     <h2>⟲ {{ t('China Rotation Events', '中国轮动事件') }}</h2>
+    {# Operator 2026-08-04: was a 4-sentence spec paragraph (detector internals,
+       the US port's registry id, the ledger tier, four binding kills). A reader
+       needs one thing here — what an event on this rail means. The governance
+       detail lives in the masterplan; the ledger/expected-NULL disclosure is
+       still printed once, on the caveat line under the cards. #}
     <p class="rc-sub-cn">{{ t(
-      'First-class leadership handoffs across curated A-share baskets: blowoff-crash on one basket leg + fresh-low turn on a peer leg + pair ratio confirming. Port of the US Rotation Command detector (RC-R14). Display-tier context with receipts — ledgered, expected-NULL, never a buy list. Binding kills: no cycle-position confluence, no A-share reversal gating by rotation state, no Connect flow as a detector input.',
-      '精选A股篮子间的领导权交接事件：某篮子冲顶崩落 + 同类篮子自新低回升 + 两者比值确认。美国 Rotation Command 检测器的 A 股移植（RC-R14）。展示层上下文（含依据）——已入账、预期无效应声明，绝非买入清单。约束条款：不做周期位置叠加，不以轮动状态门控A股反转信号，沪深港通资金不作为检测器输入。') }}</p>
+      'When one theme tops out as a peer turns up off a low — and the pair confirms it. Context, not a buy list.',
+      '一个主题冲顶回落、同类主题自低位转强，且两者比值确认时记录。仅为背景，不是买入清单。') }}</p>
     <div id="rc-events-cn-content"><p class="rc-quiet-cn">
       <span class="l-en">Loading…</span><span class="l-zh">加载中…</span></p></div>
 <script>
@@ -1057,16 +1194,22 @@ function renderCn(ev, partJson){
     connectHtml += t('Southbound flow: —','南向资金：—')+' · ';
   }
   // Honest northbound disclosure
+  /* Operator 2026-08-04: shortened. The fact a reader needs is that northbound
+     daily flow stopped being published — the "turnover still shown / proxy
+     probationary" half described our own plumbing, not the market. */
   connectHtml += '<span class="rc-nb-disc">'
-    +t('Northbound daily flow disclosure ended Aug 2024 — turnover still shown / proxy probationary',
-       '北向每日净买入披露已于2024年8月停止——换手额仍有公布，代理指标为试用状态')
+    +t('Northbound daily flow is no longer published (since Aug 2024)',
+       '北向每日净买入自2024年8月起已停止披露')
     +'</span>';
   connectHtml += '</div>';
   html += connectHtml;
 
+  /* Operator 2026-08-04: compressed from four clauses of internal governance
+     vocabulary. The disclosure that has to survive is the honest one: nothing
+     here ranks or sizes anything, and the track record is still accruing. */
   html+='<div class="rc-caveat-cn">'
-    +t('Display/context tier — no rank, gate, or size anywhere. Events + outcomes accrue to an append-only ledger (expected-NULL until RC-R9 studies mature). Connect flows shown as context receipts only — never a detector input, confirmation criterion, or gate. as-of: ',
-       '仅展示/上下文层——不排名、不设门控、不调仓位。事件与结果计入只增账本（在RC-R9研究成熟前为预期无效应声明）。沪深港通资金仅作上下文凭据展示——从不作为检测器输入、确认标准或门控条件。截至：')
+    +t('Nothing here ranks or sizes a position. Every event is logged and graded over time — the track record is still building. As of ',
+       '此处不对任何标的排名或定仓位。每个事件都会记录并持续评分——历史成绩仍在累积。截至 ')
     +esc((ev&&ev.as_of)||'—')+'</div>';
   el.innerHTML=html;
 }
@@ -1091,10 +1234,9 @@ _rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
 </script>
   </div>
   <div id="rotation-app"></div>
-  <div class="sr-foot">
-    {{ t('Subsectors are the 同花顺 concept boards (reliable set ≥ 6 priced members); Themes are our curated A-share thematic baskets — both equal-weighted, refreshed nightly. Relative strength is measured cross-sectionally vs the median basket. On the rotation map the horizontal axis is strength vs. the market (right = stronger) and the vertical axis is whether that strength is heating up or cooling (up = heating); each trail traces where a basket has been and the arrow points where it is heading, so a longer trail is a faster mover. Click a quadrant to zoom in. Benchmark context is CSI 300. Research context only — not investment advice.',
-          '「子行业」为同花顺概念板块（可靠集 ≥ 6 只可定价成分）；「主题」为我们精选的 A 股主题篮子——均为等权，每晚刷新。相对强度以横截面方式相对中位数篮子衡量。轮动图中，横轴为相对大盘的强弱（越靠右越强），纵轴为该强度在升温还是降温（越靠上越热）；每条轨迹描绘篮子的来路，箭头指向去向，轨迹越长移动越快。点击象限可放大。基准参考为沪深300。仅供研究参考，非投资建议。') }}
-  </div>
+  {# Operator 2026-08-04: the 105-word "Subsectors are the 同花顺 concept boards…"
+     footnote is removed. It restated the axes the rotation map already labels and
+     the methodology the section heading already carries. #}
   </section>
   </section>{# /si-view moving #}
 
@@ -1196,6 +1338,28 @@ _rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
     </div>
   </section>
   </section>{# /si-view explore #}
+
+  <section class="si-view" data-view="confluence" id="si-confluence">
+  {# Subsector Confluence — 5th rail view (operator 2026-08: "a new Confluence rail view").
+     Hero + #sc-app mount brought from the standalone subsectors_china page (its SEO twin
+     stays intact). The board is rendered by subsectors_china.js, which the router injects on
+     first #confluence open (LAZY map) and which fetches
+     marketdata/subsector_confluence_china.board.json — a 343KB read deferred off every other
+     view's first paint. The board writes innerHTML only (no width measurement), so unlike the
+     cycle/rotation organs it is safe to mount without a laid-out box. The donor page's
+     page-local CSS is rescoped under #si-confluence in the head. The rich sub uses direct
+     l-en/l-zh spans (this page's t() macro escapes, so <b> tags must be literal template HTML,
+     matching the page footer's idiom) — NOT the donor's |safe macro. #}
+    <div class="sc-head">
+      <h1>💫 {{ t('Subsector Confluence · China', '子行业汇聚 · 中国') }} <span style="color:var(--muted);font-size:14px;font-weight:600">同花顺概念</span></h1>
+      <div class="asof" id="sc-asof"></div>
+    </div>
+    <div class="sc-sub"><span class="l-en">Each 同花顺 (Tonghuashun) CONCEPT board as an equal-weight synthetic A-share index, read through the owner's T1-T4 MACD-RSI × StochRSI confluence cascade (the ENTRY gate) and the validated regime state machine (the rotation CONTEXT), benchmarked to CSI 300 (沪深300). <b>ENTRY-NOW</b> = a concept that just fired, or is about to. The <b>double-gate</b> funnels A-shares whose own cascade fires AND whose concept has a tailwind — and flags strong names whose concept is distributing. THS concepts overlap (a stock sits in many), so this is a thematic read, not a sector partition. A risk / rotation-timing map — one door, confirm before acting; not alpha.</span><span class="l-zh">将每个同花顺概念板块视作等权合成A股指数，用业主的 T1-T4 MACD-RSI × StochRSI 汇聚级联（入场闸门）与已验证的状态机（轮动背景）解读，基准为沪深300。<b>现可入场</b>=刚触发或即将触发的概念。<b>双重闸门</b>筛出自身级联触发且所在概念顺风的A股，并标记所在概念正在派发的强势股。同花顺概念相互重叠（一只股属于多个概念），故为主题式解读而非行业划分。风险/轮动择时图——仅一道门，行动前请确认；非阿尔法。</span></div>
+
+    <div id="sc-app"><div class="empty"><span class="l-en">Loading…</span><span class="l-zh">加载中…</span></div></div>
+
+    <div class="sc-foot">{{ t('Built', '生成于') }} {{ generated_utc }}</div>
+  </section>{# /si-view confluence #}
 
   <footer>
     <span class="l-en">Read-only analytics — not investment advice. Conviction is a gated-confluence read: the validated credit/vol/margin regime and the

@@ -20,6 +20,11 @@ membership to data/baskets_china_ths/snapshots/YYYY-MM-DD.json so membership his
 (any future theme study is look-ahead-dead without it). Content-deduped: a new dated file is
 written only when membership differs from the most recent snapshot; PIT read = most recent
 snapshot ≤ date. Skips the full page render entirely.
+
+The same flag also stamps BOTH CN basket suites into the queryable per-suite PIT parquets
+data/<suite>/membership_history.parquet (engine/basket_membership_pit.py) — CN Prophet
+masterplan §5 W-C, the prerequisite for any relay-construction promotion. Same lane, same
+content-dedup, keep-first per snapshot_date.
 """
 from __future__ import annotations
 
@@ -41,9 +46,17 @@ log = logging.getLogger("build_baskets_china_ths")
 
 
 def snapshot_membership() -> int:
-    """Append a dated PIT snapshot of THS concept membership (content-deduped, never fatal)."""
+    """Append a dated PIT snapshot of THS concept membership (content-deduped, never fatal).
+
+    Two stores, one lane.  The dated JSON side-car below is the original
+    (2026-06-30 / 2026-07-08 are its only rows); ``_snapshot_membership_pit``
+    stamps the SAME membership into the queryable per-suite parquet the relay
+    program needs, and does the curated suite at the same time.  Both are
+    content-deduped and keep-first, so a same-day re-run is a no-op in either.
+    """
     import hashlib
 
+    _snapshot_membership_pit()
     try:
         src = config.data_dir() / "baskets_china_ths" / "membership.json"
         if not src.exists():
@@ -68,6 +81,38 @@ def snapshot_membership() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("ths snapshot failed (%s)", e)
     return 0
+
+
+def _snapshot_membership_pit() -> None:
+    """Stamp BOTH CN basket suites into their append-only PIT parquets.
+
+    CN Prophet masterplan §2.12 / §5 W-C: the THS membership behind the 12-month
+    ignition study was ONE snapshot applied backward, and the two PIT snapshots
+    that exist differ by 7.7% of member-slots in 8 days.  A queryable PIT store
+    is the stated prerequisite for promoting any relay construction, so it
+    accrues from the lane that already owns membership side-cars rather than
+    waiting on the study that needs it.
+
+    LANE: ``--snapshot`` is invoked only by the asia collection lane
+    (.github/workflows/asia-close.yml, step "CN/HK builder band A", CN_LANE=asia)
+    — the only lane that commits ``data/``.  The gate is passed explicitly
+    anyway, so a hand-run from a render lane writes nothing.  Never fatal.
+    """
+    try:
+        import os  # noqa: PLC0415 — local to the side-car path
+
+        from engine import basket_membership_pit as _pit  # noqa: PLC0415
+
+        res = _pit.append_all(lane=os.environ.get("CN_LANE", "asia"))
+        for suite, r in res.items():
+            snap = r.get("snapshot") or {}
+            log.info("membership PIT [%s]: %s (+%d rows, backfill +%d)", suite,
+                     snap.get("snapshot_date") if snap.get("written")
+                     else f"skipped — {snap.get('reason')}",
+                     int(snap.get("rows_added") or 0),
+                     int((r.get("backfill") or {}).get("rows_added") or 0))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("membership PIT snapshot failed (%s)", e)
 
 
 HYDRATE_REL = "chinabasketdata/baskets_ths_hydrate.json"
