@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T19:12:58.235578+00:00",
-  "count": 891,
+  "generated_at": "2026-08-06T19:43:19.584481+00:00",
+  "count": 892,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -255,6 +255,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6o9f2dwss48-928580",
+      "title": "LATAM Today August 6, 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:51:59Z",
+      "summary_points": [
+        "**Brazil Copom Rate Cut & Inflation Outlook**: Selic cut to 14.00% (25bp), neutral stance, headline inflation forecast 3.8% by Q4 2027; limited policy room for further cuts amid elevated uncertainty.",
+        "**Colombia MPC Dissent & FX Risks**: MPC held rate at 12.0% (4-3 split), 4 directors \"clearly restrictive\" citing FX risks from rate hikes and long lags, signaling cautious monetary stance.",
+        "**Mexico MPC Growth Priority**: MPC held rate at 6.50% (unanimous) prioritizing weak growth over core/services inflation above 3.0% target, with El Niño posing food inflation risk.",
+        "**Inflation Drivers Shift**: Supply shocks (not wage hikes) cited as primary price pressure; El Niño moderating inflation expectations, normalization cycle unlikely before mid-2027.",
+        "**Inflation Risk Balance**: Upside risks include unanchored inflation, climate-agriculture impacts, and demand stimulus; downside risks feature deeper domestic deceleration and trade/oil shocks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
