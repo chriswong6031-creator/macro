@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T10:40:25.235240+00:00",
-  "count": 866,
+  "generated_at": "2026-08-06T11:10:30.599807+00:00",
+  "count": 867,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -137,6 +137,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 19,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pt8qecixosg-1406b8",
+      "title": "DB Early Morning Reid Macro Strategy",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T09:13:22Z",
+      "summary_points": [
+        "**Hormuz Geopolitical Tension**: Temporary Iran-Oman Strait route (2-4 months) hinges on US naval blockade lift; US ambiguity driving fading equity rally, tech index retreats (KOSPI, Hang Seng down), oil prices dipping - **Fed Policy & Data Shift**: Fed rate hike probability eased to 54% (from 58%), Kashkari dissent; mixed US data (ADP 44k vs 65k, ISM services employment 47.4 vs 51.2) dampening rate cut expectations - **Eurozone PMI Resilience**: Composite PMI revised higher (52.0 vs 51.9), supporting +0.25% q/q GDP growth despite energy shock, signaling underlying strength - **Critical Data Catalysts**: Upcoming US Q2 productivity/unit labor costs, UK construction PMI, Germany factory orders, and ECB Bulletin pivotal for near-term market direction"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
