@@ -913,6 +913,14 @@ on:
       - "tests/test_admin_orchestrator.py"
       - "tests/test_admin_prophet.py"
       - "tests/test_admin_trade_memory.py"
+      # Macro Thesis Ledger — sibling of Trade Memory in the same admin area
+      # (thesis-grain, committed JSONL, zero authority). Both halves listed: the
+      # test file AND every module it guards, plus the committed seed ledger,
+      # which is the suite's own input and can drift on its own.
+      - "tests/test_macro_thesis.py"
+      - "engine/macro_thesis.py"
+      - "admin/macro_thesis.py"
+      - "data/macro_thesis/ledger.jsonl"
       - "admin/prophet.py"
       - "admin/trade_memory.py"
       - "engine/neuralweb/trade_memory.py"
