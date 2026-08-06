@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T05:38:42.991510+00:00",
-  "count": 851,
+  "generated_at": "2026-08-06T05:53:50.595308+00:00",
+  "count": 852,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -17,6 +17,7 @@
     "Danske",
     "Deutsche Bank",
     "Franklin",
+    "GMO",
     "Goldman Sachs",
     "ING",
     "ING Direct",
@@ -280,6 +281,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-t4jiktpq0ig-b9206a",
+      "title": "Gmo the evolution and edge of gmo systematic equity 8 26",
+      "institution": "GMO",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T03:30:08Z",
+      "summary_points": [
+        "**Systematic Fundamental Edge**: Addresses systemic failures (crowded risks, false precision) via glass-box processes and proprietary models to sustain long-term alpha, prioritizing economic reality over ratios.",
+        "**Economic Book Value Adjustment**: Corrects accounting distortions (intangibles, R&D, advertising) to reveal true economic value, exemplified by Novartis' $44B reported vs.",
+        "$150B GMO Economic Book Value.",
+        "**Quality-Driven Valuation**: Prioritizes durable profitability over cheapness; high-quality firms sustain ROE longer, avoiding regression seen in low-quality peers post-Covid.",
+        "**Multi-Dimensional Alpha**: Integrates lifecycle modeling, country-industry intersections, transaction cost calibration, uncertainty optimization, and GenAI-enhanced analysis to bridge fundamental/quantitative investing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
