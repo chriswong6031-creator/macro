@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T18:12:49.088020+00:00",
-  "count": 888,
+  "generated_at": "2026-08-06T18:59:14.416304+00:00",
+  "count": 890,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -58,6 +58,25 @@
   ],
   "items": [
     {
+      "id": "marketdesk-ykidyjd5ywx-2c1595",
+      "title": "JPM US Market Intelligence Macro Week Ahead CPI, PPI and Retail Sales Next Week",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T17:55:21Z",
+      "summary_points": [
+        "**Key Macro Data Releases**: ADP Employment (Aug 11), CPI/Real Avg Hourly Earnings (Aug 12), Retail Sales (Aug 14) critical for labor market, inflation, and consumer spending fundamentals.",
+        "**US-China Trade Truce Expiry**: Expiration (Nov 1) and APEC/G20 summits (Nov 18–19, Dec 15–16) pose immediate policy uncertainty and trade risk.",
+        "**Global Growth Data**: Germany CPI revision (Aug 12), UK GDP/Private Consumption (Aug 13), France CPI (Aug 14), Eurozone GDP/employment (Aug 14) dominate European monetary policy narratives."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-cxhg6jrrsxt-f9dcc4",
       "title": "JPM Europe Equity Research | Today’s Morning Meeting",
       "institution": "J.P. Morgan",
@@ -72,6 +91,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pba5rzfj6lt-586062",
+      "title": "Citi The Point for Europe Thursday, 06 August 2026",
+      "institution": "Citi",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T17:31:45Z",
+      "summary_points": [
+        "**Symrise AG Growth Recovery & Guidance Validation**: Broadening growth recovery confirmed via CFO roadshow, pipeline strength supports 5-7% medium-term target, 1H cash flow validates margin expansion and 2028 margin range confidence.",
+        "**LSEG Markets Outperformance & Upside**: Markets business exceeds consensus with 8.1% OCC growth (vs.",
+        "0-7.5% expected), 50bp EBITDA tailwind drives revenue guidance upgrade to 51.5% FY 2026.",
+        "**Schneider Electric: AI Capex Growth Driver**: Hyperscaler customers boost mid-term growth in Energy Management/Industrial Automation, revenue guidance up, target price raised to €370.",
+        "**European Banks Policy Risk**: China’s Document #21 tightening offshore tax rules (20% personal income tax on offshore insurance returns) causes share declines, limited earnings impact but signals regulatory shift."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
