@@ -569,7 +569,7 @@ entries:
       shape (shallow, partial, and merge-ref checkouts carry no
       historical blobs), so the guard converts a benign lane race into
       nondeterministi
-    source: 'Exit-policy vintage adjudication (2026-08-06, this row''s introducing PR); heal-session forensics #4739'
+    source: 'Exit-policy vintage adjudication (2026-08-06, #4753); heal-session forensics #4739'
 
   - id: BL-G029
     match:
