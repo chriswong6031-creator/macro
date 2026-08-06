@@ -12210,14 +12210,17 @@ artifacts:
 
   # ── nw-context-intelligence program (W3 — personality risk lens) ──────────
 
-  # NOTE: engine/neuralweb/context_api.py is a RESEARCH-SIDE QUERY LIBRARY with no
-  # nightly caller — analogous to alpha_grammar.py / alpha_overlap.py (FR-12 pattern).
-  # It produces NO artifact and is NOT wired into daily.yml.  Its consumer-of-artifacts
-  # relationship (it reads regime/personality/spine at query time) is noted in the
-  # individual artifact consumer lists above as a QUERY-TIME consumer, not a nightly one.
+  # NOTE: engine/neuralweb/context_api.py is a RESEARCH-SIDE QUERY LIBRARY —
+  # analogous to alpha_grammar.py / alpha_overlap.py (FR-12 pattern).
+  # It produces NO artifact.  Its consumer-of-artifacts relationship (it reads
+  # regime/personality/spine at query time) is noted in the individual artifact
+  # consumer lists above as a QUERY-TIME consumer.  ONE nightly caller exists as of
+  # 2026-08-04: scripts/grade_us_board.py lazy-imports archetype_asof to stamp the
+  # US board ledger's archetype context column (read-only PIT label lookup; still
+  # no artifact produced by this module, no signal/score/rank/gate computed).
   # It does NOT have a standalone synapse entry because it neither produces nor surfaces
   # any committed artifact; its entry here would be dishonest.
-  # Consumers: future pre-registered context studies only.
+  # Consumers: pre-registered context studies + the grade_us_board archetype stamp.
 
   context-risk:
     path: data/neuralweb/context_risk.json
