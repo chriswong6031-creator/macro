@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T09:54:50.930995+00:00",
-  "count": 864,
+  "generated_at": "2026-08-06T11:40:37.664074+00:00",
+  "count": 869,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -58,6 +58,90 @@
   ],
   "items": [
     {
+      "id": "marketdesk-eglyaiphi8v-4403b5",
+      "title": "Expedia Group (EXPE) Q2'26 Earnings Review Strong Execution and B2B Momentum Drive Beat and Raise Quarter",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T11:17:50Z",
+      "summary_points": [
+        "**Q2 Beat & B2B Momentum**: Q2 Gross Bookings, Revenue, Adj.",
+        "EBITDA exceed guidance (+196bps YoY margin expansion); B2B segment achieves 20th consecutive double-digit growth; strategic M&A and $200m share repurchases drive execution; price target raised to $370 (15.7% upside).",
+        "**Growth & Margin Expansion**: 12/26E forecasts 88.8% EPS growth (vs 9.7% in 12/25) and EBIT margin expanding to 17.5% (from 12.7%), signaling strong operational leverage and margin expansion.",
+        "**Valuation Update**: Goldman Sachs raises PT to $370 (from $330) using 12.0x EV/EBITDA and 16.0x EV/FCF-SBC on NTM+1/4 estimates, reflecting robust growth premium (EXPE trading at 17.0x P/E).",
+        "**Key Risks**: Slower travel demand from macro headwinds (Europe), loss of North America market share, industry competition pressuring margins, and disappointing shareholder returns limiting catalysts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zxmieh2imoh-caf727",
+      "title": "JPM Flows Liquidity TM",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T10:58:41Z",
+      "summary_points": [
+        "**TMT Sector Hedge Fund Losses**: TMT Equity funds lost 10% in July (excluding Situational Awareness’s $45bn→$10bn collapse), exposing severe tech concentration risks and forcing reduced exposure capacity amid forced liquidations.",
+        "**Hyperliquid ETF Flow Stalling**: Hyperliquid ETF inflows stalled post-May/June surge (despite $2bn–$3bn AUM), signaling reduced liquidity participation and heightened volatility risk for crypto-linked assets.",
+        "**Fed Policy Uncertainty Drives Term Premia Surge**: FOMC volatility and Warsh’s hawkish stance elevated term premia (Blue Chip Fed, ACM models), with 10y UST premia exceeding Bunds/gilts and room for further rise.",
+        "**Duration Positioning Signal**: Bond investors are positioned longer than desired (positive beta difference), with real money long vs.",
+        "hedge funds short—implying term premium upside from unwinding."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 33,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-liekasdjj8j-59d3a9",
+      "title": "JPM US Market Intelligence Morning Briefing Aug 6",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T10:23:43Z",
+      "summary_points": [
+        "**US Macro Data Contradiction**: ADP jobs data missed (44k vs 75k forecast) signaling slowing labor growth, yet ISM-Services Biz Activity hit highest since May 2024, indicating resilient economic momentum despite inflation risks.",
+        "**Mag7 Valuation Gap**: Mag7 forward P/E (16.22) at 2 SD below 2018Q3 mean, with backlog growth (150% YoY) outpacing capex (80% YoY), implying ~56% upside to average valuation.",
+        "**Iran-Oman Strait Deal Risk**: Unresolved US-Iran MOU and Hormuz deal review create near-term oil volatility risk (WTI -1.0% to $75.04), with potential for sharp price moves amid Gulf tensions.",
+        "**Tech Sector Fundamentals**: Cloud infrastructure (Google Cloud net new ARR growth) shows consistent momentum vs cyclical dips in AWS/Azure; SPX earnings driven by 47% YoY bottom-line growth (margins ~16.7%).",
+        "**EM Tactical Allocation**: Long China H-shares over A-shares (H-shares lagged YTD but benefit from cost-effective AI build-out) and Asia Refiners (record refining margins, supply/demand tailwinds)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-thyjpaspjda-967067",
+      "title": "JPM Flows Liquidity 2026 08 05",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T09:25:17Z",
+      "summary_points": [
+        "**TMT Hedge Fund Structural Losses**: TMT equity funds lost ~10% in July (excl.",
+        "Situational Awareness), multi-strat funds lost 2.3% (4th worst monthly loss ever), signaling structural capacity limits for tech exposure and severe concentration risk.",
+        "**Term Premia Rising Due to Policy Uncertainty**: Fed Chair Warsh’s hawkish comments and credibility concerns drive term premia to 0.8% (US 10y), above historical avg (1.2%), with surveys confirming sustained rise since late June.",
+        "**Global Equity-Bond Flow Imbalance**: Q2 2026 equity flows ($1,355bn) far exceed bond flows ($1,330bn), widening from 2023, reflecting persistent risk-on sentiment and potential equity rotation.",
+        "**EM Equity Liquidity Risk**: EM equity turnover surged 135% y/y vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 33,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-7l6zqifah1l-f2af3c",
       "title": "Mizuho EMEA Multi Asset Strategy Daily",
       "institution": "Mizuho",
@@ -95,6 +179,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 19,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pt8qecixosg-1406b8",
+      "title": "DB Early Morning Reid Macro Strategy",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T09:13:22Z",
+      "summary_points": [
+        "**Hormuz Geopolitical Tension**: Temporary Iran-Oman Strait route (2-4 months) hinges on US naval blockade lift; US ambiguity driving fading equity rally, tech index retreats (KOSPI, Hang Seng down), oil prices dipping - **Fed Policy & Data Shift**: Fed rate hike probability eased to 54% (from 58%), Kashkari dissent; mixed US data (ADP 44k vs 65k, ISM services employment 47.4 vs 51.2) dampening rate cut expectations - **Eurozone PMI Resilience**: Composite PMI revised higher (52.0 vs 51.9), supporting +0.25% q/q GDP growth despite energy shock, signaling underlying strength - **Critical Data Catalysts**: Upcoming US Q2 productivity/unit labor costs, UK construction PMI, Germany factory orders, and ECB Bulletin pivotal for near-term market direction"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
