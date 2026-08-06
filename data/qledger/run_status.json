@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-08-06T09:16:41.951142+00:00",
+  "generated_at": "2026-08-06T12:18:49.009380+00:00",
   "as_of": "2026-08-06",
   "n_open": 38698,
-  "n_graded_today": 3207,
-  "n_blocked_by_coverage": 27609,
+  "n_graded_today": 35,
+  "n_blocked_by_coverage": 27574,
   "n_ungradeable": 0,
-  "n_already_graded": 42154,
+  "n_already_graded": 45361,
   "dry_run": false,
   "w6_readiness": {
     "n_families_ready": 0,
