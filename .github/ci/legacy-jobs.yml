@@ -4684,6 +4684,27 @@ jobs:
       - name: pick lab runners + US/CN board surfaces — shipped picks, outcome ledgers, priority board
         run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_china_board_rank.py tests/test_china_prophet_shadow.py tests/test_cn_board_unified_grid.py tests/test_cn_prophet_candidates_schema.py tests/test_cn_track_ledger_eras.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_shared.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_board_w3_evidence.py tests/test_us_context_vector.py -q
 
+  prophet-us-context-and-grades:
+    # PROPHET US §W7 — the full-population candidate record: the PIT context store that
+    # REMEMBERS each night's score, the forward grader that says what those names then did,
+    # and the miss-audit that scores the score. All three ship together and all three were
+    # dark before this job: test_us_context_vector.py and test_prophet_miss_audit.py were
+    # tier-P1 unwired (scripts/audit_unrun_tests.py census), so the stores' PIT discipline,
+    # nightly-lane gates and scorecard null-disclosure had no CI eye on them at all.
+    # A gate hung on a suite nothing runs is a gate that is already open.
+    if: ${{ false }}
+    timeout-minutes: 6
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: US context vector + full-population grades + miss-audit scorecards
+        run: python -m pytest tests/test_us_prophet_grades.py tests/test_us_context_vector.py tests/test_prophet_miss_audit.py -q
+
   unrun-prophet-learning-loop:
     # Prophet learning loop (#4331) — postmortem forensics over the loser cohort
     # + the exit-policy horse race on the US buy-lane cohort. Same install

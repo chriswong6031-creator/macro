@@ -11233,7 +11233,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers: [engine/us_prophet_grades.py, scripts/grade_us_prophet_candidates.py,
+                engine/prophet_miss_audit.py]
     external_consumers: []
     notes: >
       US Context Vector point-in-time candidate store (PROPHET US roadmap §2 keystone).
@@ -11247,8 +11248,13 @@ artifacts:
       scripts/build_stock_library.py, which calls engine/us_context_vector.py at the end
       of its nightly run (no separate dag module; the write is declared on
       scripts.build_stock_library in config/dag.yml).
-      ZERO AUTHORITY AT BIRTH: consumers is deliberately EMPTY. Nothing reads this store
-      for scoring; it changes no lane, rank, score or gate, and originates nothing —
+      ZERO AUTHORITY: the consumers are the §W7 full-population forward grader
+      (engine/us_prophet_grades.py, which READS identity columns to find rows it has not
+      graded and writes only its own sibling store, plus its CLI) and
+      engine/prophet_miss_audit.py, whose priority_score_scorecard block joins the stamped
+      score to that grader's outcomes. Both are read-only ops telemetry with no threshold
+      and no alarm. Nothing reads this store for SCORING;
+      it changes no lane, rank, score or gate, and originates nothing —
       every column is READ off a producer that already ran that night (glass-box, A7).
       Columns reach decision authority only through the roadmap §3 bounded-authority
       ladder, one axis at a time, each with its own prereg.
@@ -11260,6 +11266,61 @@ artifacts:
       measured for this name tonight", never "false" (#4485). Named debts
       (turnover_pctile_60d data-blocked; stoch_ob/stoch_bear/macd_bear not exposed by
       confluence_tiers) are documented in data/us_prophet_rank/README.md.
+
+  # --- us-prophet-grades: full-population forward grades (§W7, operator 2026-08-05) ---
+  us-prophet-grades:
+    path: data/us_prophet_rank/grades/YYYY-MM/YYYY-MM-DD.parquet
+    format: parquet
+    producer: engine/us_prophet_grades.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: daily-engine
+    storage: git
+    asof_field: graded_asof
+    freshness_sla_hours: 9999
+    schema: us.prophet_grades/v1
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/prophet_miss_audit.py, scripts/grade_us_prophet_candidates.py]
+    external_consumers: []
+    notes: >
+      Forward outcome record for the FULL analyzed US universe (PROPHET US
+      trend-intelligence masterplan §W7; operator order 2026-08-05 — "we should be
+      remembering the score that we give picks … so that we can later assess how robust and
+      correct our scoring system is"). Grades EVERY row of the us-context-vector store —
+      ~1,579 names a night today and ~10.3k once the scan tier lands, not the ~12 that
+      become plans — across the H=10/21/42/63 SESSION ladder, excess vs SPY, one row per
+      (candidate, horizon). H=42/63 were added by operator ruling 2026-08-05: basing-class
+      picks are structurally punished by a 10-session headline. Every row carries two
+      conditioning columns, universe_tier (curated vs scan, roadmap §4.5) and signal_class
+      (basing/momentum/other, mapped from engine/cycles.py's EXISTING vocabulary — nothing
+      new is stamped), so the scorecard reports those populations SEPARATELY and never
+      pools them. Both columns are resolved from the candidates store by name and then
+      VALIDATED by value; neither has landed there yet, so today they read null with a
+      printed warning rather than a silent default.
+      RULER REUSED, NOT FORKED: engine.grading.forward_metrics, the same next-bar-fill,
+      positional-horizon function grade_us_board and grade_prophet_doors use; pinned
+      mark-for-mark against scripts/grade_prophet_doors.py by tests/test_us_prophet_grades.py.
+      POLICY-FREE: fixed-horizon marks only — no stops, exits, hold rules or sizing.
+      ONE-GRADER LAW: a graded (stamp_date, ticker, board_definition, horizon) is FROZEN;
+      a re-run appends nothing, so the store is idempotent per night.
+      MONTH-GROUPED DAILY PARTS keyed by the GRADING RUN (graded_asof), not the stamp
+      month: grading is a monotone forward process, so a nightly writes a NEW file and
+      rewrites nothing, and every earlier part is byte-identical forever. Day grain rather
+      than one monthly file because a parquet cannot be appended in place — measured, a
+      monthly file costs 11x the git history at both scales (1.14 GB/yr curated-only,
+      6.30 GB/yr with the scan tier, vs 0.10 / 0.57 GB/yr for day parts).
+      Each row still carries stamp_date and mark_date, so a study joins by stamp month
+      regardless of which part the row physically lives in.
+      NIGHTLY IS THE SOLE ADVANCER: ledger_lane.nightly_advance_enabled() (COLLECT_LANE=nightly)
+      is the FIRST statement of append_grades; intraday and render lanes write nothing.
+      ZERO AUTHORITY: outcomes here confer no rank, gate, size, board or plan rights on
+      anything. The single consumer is engine/prophet_miss_audit.py's priority_score_scorecard
+      block — read-only ops telemetry with no threshold and no alarm. The suite greps every
+      engine/scripts/app/admin/lib/collectors module to pin that fence.
+      A null excess_spy means the SPY cache was missing that night; it is never a zero.
 
   # --- nasdaq-internals (TI-R2/R3/R5, program: nasdaq-internals) ---
   nasdaq-internals:
