@@ -13,13 +13,28 @@ reporting only.
 
 TWO LANES, TWO FILES — THEY NEVER MIX
 -------------------------------------
-``--retro``   replays history from the spine (and tape, if present) and writes
-              ONLY ``data/neuralweb/edge_outcomes_retro.jsonl``.  Bounded and
-              idempotent: re-running appends zero rows.  Safe in any lane.
+``--retro``   replays history from the spine and REWRITES
+              ``data/neuralweb/edge_outcomes_retro.jsonl`` whole, atomically.
+              The retro file is a replay artifact, not an accruing record: this
+              run's output IS the file.  Appending instead double-counted —
+              summary rows are keyed by the fire span they cover, so an
+              advanced store minted a second summary for the same edge and both
+              were counted.  Bounded, idempotent, safe in any lane, and the
+              only mode that may use ``--fire-def tape_transition``.
 
-``--nightly`` appends the latest session only to the prospective forward ledger
+``--nightly`` sweeps the trailing ``NIGHTLY_LOOKBACK_SESSIONS`` (63 + 5 = 68)
+              sessions into the prospective forward ledger
               ``data/neuralweb/edge_outcomes.jsonl``, and REFUSES unless
               ``COLLECT_LANE == "nightly"``.
+
+              The lookback is load-bearing, not a convenience.  A fire on
+              session t has its outcomes in [t, t+5] and its longest horizon
+              settles 63 sessions later, so a lane pinned to the newest session
+              would write an ungraded stub every night and never revisit it —
+              0 graded rows over a 60-night simulation, against 39 for a retro
+              over the same store.  Sweeping the lookback lets a settled row
+              SUPERSEDE the stub it replaces (monotonic: accruing -> graded,
+              never the reverse).
 
 The forward ledger is nightly-only from day one.  Nightly is the sole advancer
 of forward ledgers (house law); intraday and ad-hoc lanes discard ``data/``
@@ -35,6 +50,11 @@ graders the same way::
 A retro replay can never contaminate the prospective record because it does not
 know the prospective path: ``--retro`` resolves ``RETRO_LEDGER`` and ``--nightly``
 resolves ``PROSPECTIVE_LEDGER``, and neither flag can reach the other file.
+
+The ``tape_transition`` fire definition is retro-only.  The RUL-ORTH-4
+compliance argument for this ledger is that it is a spine-DERIVED join; a
+nightly path that decided what fired from the confluence tape would be reading
+a second substrate, which that argument does not cover.
 
 NOT WIRED — ON PURPOSE
 ----------------------
@@ -62,12 +82,17 @@ from engine.neuralweb.edge_outcomes import (  # noqa: E402
     FIRE_DEF_SPINE,
     FIRE_DEF_TAPE,
     MIN_N,
+    NIGHTLY_LOOKBACK_SESSIONS,
     VALID_FIRE_DEFS,
     aggregate,
     append_rows,
     build_rows,
     coverage_table,
+    load_spine,
+    make_base_provider,
+    read_ledger,
     resolve_data_root,
+    write_rows,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s [%(name)s] %(message)s")
@@ -92,19 +117,30 @@ def nightly_lane_ok(env: dict[str, str] | None = None) -> bool:
     return environ.get(NIGHTLY_LANE_ENV) == NIGHTLY_LANE_VALUE
 
 
-def _latest_session(nw_dir: Path) -> str | None:
-    """The spine's newest ``as_of``.  ``--nightly`` appends only that session."""
+def _nightly_window(nw_dir: Path) -> tuple[str | None, str | None]:
+    """The (since, until) a nightly run sweeps.
+
+    NOT just the newest session.  A fire on session t has its outcomes in
+    [t, t+LINK_WINDOW] and its longest horizon settles 63 sessions later, so a
+    lane that only looked at t could never grade anything it recorded — it
+    would write a stub every night and never revisit it. The lane therefore
+    re-sweeps ``NIGHTLY_LOOKBACK_SESSIONS`` back from the newest session, and
+    the settled row supersedes the earlier stub (see append_rows).
+    """
     path = nw_dir / "spine_index.parquet"
     if not path.exists():
-        return None
+        return None, None
     try:
         import pandas as pd
         df = pd.read_parquet(path, columns=["as_of"])
-        vals = [str(v) for v in df["as_of"].dropna().unique().tolist()]
-        return max(vals) if vals else None
+        sessions = sorted({str(v) for v in df["as_of"].dropna().unique().tolist()})
     except Exception as exc:  # noqa: BLE001 - fail-open
-        log.warning("build_edge_outcomes: latest session unreadable — %s", exc)
-        return None
+        log.warning("build_edge_outcomes: session grid unreadable — %s", exc)
+        return None, None
+    if not sessions:
+        return None, None
+    lo = max(0, len(sessions) - 1 - NIGHTLY_LOOKBACK_SESSIONS)
+    return sessions[lo], sessions[-1]
 
 
 def _print_report(mode: str, meta: dict, cov: dict, board: dict, write: dict, gaps: list[str]) -> None:
@@ -128,6 +164,8 @@ def _print_report(mode: str, meta: dict, cov: dict, board: dict, write: dict, ga
         if e["state"] == "measured":
             ci = e.get("agreement_ci95") or [float("nan"), float("nan")]
             warn = "  [OVERLAP: nominal CI]" if e.get("overlap_warning") else ""
+            if e.get("thin_numerator_warning"):
+                warn += "  [THIN: %d distinct dst session(s)]" % e["n_distinct_dst_sessions"]
             base = e.get("dst_base_rate_matched")
             lift = e.get("agreement_lift_vs_base")
             base_s = "n/a" if base is None else f"{base:.3f}"
@@ -137,9 +175,11 @@ def _print_report(mode: str, meta: dict, cov: dict, board: dict, write: dict, ga
                   f"agree={e['agreement_rate']:.3f} vs base={base_s} (lift {lift_s}) "
                   f"CI95=[{ci[0]:.3f},{ci[1]:.3f}] lag={e.get('median_lag_sessions')}{warn}")
         else:
+            thin = ("  [THIN: %d distinct dst session(s)]" % e["n_distinct_dst_sessions"]
+                    if e.get("thin_numerator_warning") else "")
             print(f"    {e['edge_type']:<12} {e['src']} -> {e['dst']}  "
                   f"n_fires={e['n_fires']} n_graded={e['n_graded']} "
-                  f"ACCRUING (rate suppressed: {e['rate_suppressed_reason']})")
+                  f"ACCRUING (rate suppressed: {e['rate_suppressed_reason']}){thin}")
     if gaps:
         print("  gaps:")
         for g in gaps:
@@ -155,8 +195,9 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--retro", action="store_true",
                       help="Replay history into the RETRO ledger (never the prospective one).")
     mode.add_argument("--nightly", action="store_true",
-                      help="Append the latest session to the PROSPECTIVE ledger. "
-                           "Refuses unless COLLECT_LANE=nightly.")
+                      help=f"Sweep the trailing {NIGHTLY_LOOKBACK_SESSIONS} sessions into "
+                           "the PROSPECTIVE ledger, upgrading stubs whose outcomes have "
+                           "settled. Refuses unless COLLECT_LANE=nightly.")
     ap.add_argument("--data-root", default=None,
                     help="Path to a data/neuralweb directory (top of the resolution ladder).")
     ap.add_argument("--fire-def", default=FIRE_DEF_SPINE, choices=sorted(VALID_FIRE_DEFS),
@@ -169,6 +210,19 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--dry-run", action="store_true",
                     help="Compute and report, but write no ledger rows.")
     args = ap.parse_args(argv)
+
+    # --- the tape is a SECOND substrate; keep it off the forward ledger ----
+    # The commissioner's RUL-ORTH-4 reading covers spine-DERIVED joins.  A
+    # nightly path that decides what fired from the confluence tape steps
+    # outside that reading, so the variant is a retro-only research tool.
+    if args.nightly and args.fire_def != FIRE_DEF_SPINE:
+        log.error(
+            "build_edge_outcomes: REFUSING --nightly --fire-def %s — the prospective "
+            "ledger is spine-derived only. The %s variant is retro-only: it reads a "
+            "second substrate, which the RUL-ORTH-4 compliance argument does not cover.",
+            args.fire_def, FIRE_DEF_TAPE,
+        )
+        return 1
 
     # --- lane gate, before anything touches the forward ledger -------------
     if args.nightly and not nightly_lane_ok():
@@ -189,12 +243,12 @@ def main(argv: list[str] | None = None) -> int:
 
     since, until = args.since, args.until
     if args.nightly:
-        latest = _latest_session(nw_dir)
-        if latest is None:
+        since, until = _nightly_window(nw_dir)
+        if until is None:
             log.error("build_edge_outcomes: --nightly needs a readable spine; none found")
             return 1
-        since = until = latest
-        log.info("build_edge_outcomes: nightly session %s", latest)
+        log.info("build_edge_outcomes: nightly sweep %s .. %s (lookback %d sessions)",
+                 since, until, NIGHTLY_LOOKBACK_SESSIONS)
 
     gaps: list[str] = []
     try:
@@ -209,18 +263,28 @@ def main(argv: list[str] | None = None) -> int:
     ledger_path = nw_dir / ledger_name
 
     if args.dry_run:
-        write = {"n_appended": 0, "n_skipped_content_hash": 0,
+        write = {"n_appended": 0, "n_superseded": 0, "n_skipped_content_hash": 0,
                  "n_skipped_key": 0, "n_existing": 0}
         log.info("build_edge_outcomes: --dry-run — no rows written to %s", ledger_path)
+    elif args.retro:
+        # The retro file IS this run's replay — rewritten whole, not merged.
+        write = write_rows(ledger_path, rows)
+        log.info("build_edge_outcomes: %s rewritten (%d rows)", ledger_path, write["n_written"])
     else:
         write = append_rows(ledger_path, rows)
-        log.info("build_edge_outcomes: %s +%d rows", ledger_path, write["n_appended"])
+        log.info("build_edge_outcomes: %s +%d rows (%d superseded a stub)",
+                 ledger_path, write["n_appended"], write["n_superseded"])
 
     # Score the FULL ledger on disk (or this run's rows under --dry-run), so the
     # scoreboard reflects everything accrued, not just tonight's slice.
-    from engine.neuralweb.edge_outcomes import read_ledger
     scored = rows if args.dry_run else (read_ledger(ledger_path) or rows)
-    board = aggregate(scored, min_n=MIN_N)
+
+    # Recompute each edge's base rate from the spine rather than reading the
+    # value stamped at write time: the fire span grows as the ledger accrues,
+    # so a stamped base goes stale the moment another fire lands.
+    spine, _ = load_spine(nw_dir, [])
+    provider = make_base_provider(spine) if spine is not None else None
+    board = aggregate(scored, min_n=MIN_N, base_provider=provider)
     cov = coverage_table(scored)
 
     _print_report("retro" if args.retro else "nightly", meta, cov, board, write, gaps)

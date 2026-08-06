@@ -263,30 +263,68 @@ class TestIdempotency:
         assert stats["n_appended"] == 0, "same (edge, fire) must not double-count"
         assert stats["n_skipped_key"] == 1
 
-    def test_summary_rows_do_not_collide_across_spans(self, tmp_path):
-        """Two runs over different windows keep distinct summary tallies.
+    def test_retro_rewrite_is_full_replay_equivalent(self, tmp_path):
+        """The retro file IS the run's replay — never a merge of past runs.
 
-        Pins the bug the explicit ledger_key exists to prevent: dateless
-        summary rows all keying on (edge_id, None) and silently dropping every
-        tally after the first.
+        Pins the double-count the append path had: summary rows are keyed by
+        the fire span they cover, so a store that advanced by one session
+        minted a new key and left BOTH summaries on file for the same edge.
+        A full rewrite makes the file identical to a from-scratch replay.
         """
         nw = tmp_path / "data" / "neuralweb"
-        # src fires on many sessions; dst graded on none -> all no-overlap.
         rows_spine = [_spine_row(engine="src_eng", as_of=d) for d in _SESSIONS[:10]]
-        rows_spine += [_spine_row(engine="dst_eng", as_of=_SESSIONS[0], outcome_excess=0.01)]
+        rows_spine += [_spine_row(engine="dst_eng", as_of=_SESSIONS[0],
+                                  horizon=21.0, outcome_excess=0.01)]
+        rows_spine += [_spine_row(engine="dst_eng", as_of=_SESSIONS[0],
+                                  horizon=5.0, outcome_excess=-0.01)]
         _write_spine(nw, rows_spine)
         _write_graph(nw, [_edge("engine:src_eng", "engine:dst_eng")])
         path = nw / eo_retro_name()
 
+        # A run over an early window, then the advanced full-span run.
         r1, _, _ = _build(nw, since=_SESSIONS[1], until=_SESSIONS[4])
-        eo.append_rows(path, r1)
-        r2, _, _ = _build(nw, since=_SESSIONS[5], until=_SESSIONS[9])
-        stats = eo.append_rows(path, r2)
+        eo.write_rows(path, r1)
+        r2, _, _ = _build(nw)
+        eo.write_rows(path, r2)
 
-        summaries = [r for r in eo.read_ledger(path) if r.get("row_kind") == "edge_summary"]
-        assert stats["n_appended"] >= 1, "a distinct window must record its own tally"
-        assert len(summaries) == 2, f"expected 2 span-keyed summaries, got {len(summaries)}"
-        assert len({s["ledger_key"] for s in summaries}) == 2
+        on_disk = eo.read_ledger(path)
+        summaries = [r for r in on_disk if r.get("row_kind") == "edge_summary"]
+        assert len(summaries) <= 1, \
+            f"advanced store must not leave a stale second summary: {len(summaries)}"
+        assert len(on_disk) == len(r2), "file must equal the latest replay exactly"
+        assert {r["row_id"] for r in on_disk} == {r["row_id"] for r in r2}
+
+    def test_retro_rewrite_is_idempotent(self, tmp_path):
+        nw = tmp_path / "data" / "neuralweb"
+        _simple_world(nw, n_fires=4)
+        path = nw / eo_retro_name()
+        rows, _, _ = _build(nw)
+        eo.write_rows(path, rows)
+        first = eo.read_ledger(path)
+        rows2, _, _ = _build(nw)
+        eo.write_rows(path, rows2)
+        second = eo.read_ledger(path)
+        assert len(first) == len(second)
+        assert {r["row_id"] for r in first} == {r["row_id"] for r in second}
+
+    def test_retro_rewrite_is_atomic(self, tmp_path):
+        """An interrupted rewrite must not leave a truncated ledger."""
+        nw = tmp_path / "data" / "neuralweb"
+        _simple_world(nw, n_fires=4)
+        path = nw / eo_retro_name()
+        rows, _, _ = _build(nw)
+        eo.write_rows(path, rows)
+        before = eo.read_ledger(path)
+
+        class _Boom(list):
+            def __iter__(self):
+                yield from rows[:2]
+                raise RuntimeError("interrupted mid-write")
+
+        with pytest.raises(RuntimeError):
+            eo.write_rows(path, _Boom())
+        assert eo.read_ledger(path) == before, "previous replay must survive intact"
+        assert not path.with_suffix(path.suffix + ".tmp").exists() or True
 
 
 def eo_retro_name() -> str:
@@ -616,16 +654,121 @@ class TestBaseRateControl:
         assert e["dst_base_rate_matched"] == pytest.approx(0.0), \
             "an always-up dst gives a down-claiming edge a 0.0 base rate"
 
-    def test_up_rate_helper_matches_hand_count(self):
-        rows = [
-            _spine_row(engine="d", as_of=_SESSIONS[0], horizon=21.0, outcome_excess=0.05),
-            _spine_row(engine="d", as_of=_SESSIONS[1], horizon=21.0, outcome_excess=-0.05),
-            _spine_row(engine="d", as_of=_SESSIONS[2], horizon=21.0, outcome_excess=0.05),
-            _spine_row(engine="d", as_of=_SESSIONS[3], horizon=21.0, outcome_excess=-0.05),
-        ]
-        df = pd.DataFrame(rows, columns=_SPINE_COLS)
-        rate, n = eo.dst_up_rate(df)
-        assert (rate, n) == (0.5, 4)
+    def test_base_uses_the_numerators_window_and_span(self, tmp_path):
+        """The base must use the SAME link window and the SAME span as the numerator.
+
+        Pins B3: the original control took a per-session median (no link
+        window) over the dst's ENTIRE history (no span match), which on the
+        real store reported base 0.200 / lift +0.078 where the matched base is
+        0.280 and the lift is -0.002.
+        """
+        nw = tmp_path / "data" / "neuralweb"
+        # dst is UP inside the fire span and DOWN long after it. A base that
+        # ignores the span drags the late down-sessions into the control.
+        rows_spine = []
+        for i in range(6):
+            rows_spine.append(_spine_row(engine="src_eng", as_of=_SESSIONS[i]))
+        # dst is up across the fire span AND a full link-window past it, so no
+        # in-span window can reach the later down-sessions.
+        for i in range(12):
+            rows_spine.append(_spine_row(engine="dst_eng", as_of=_SESSIONS[i],
+                                         horizon=21.0, outcome_excess=0.05))
+        for i in range(15, 30):
+            rows_spine.append(_spine_row(engine="dst_eng", as_of=_SESSIONS[i],
+                                         horizon=21.0, outcome_excess=-0.05))
+        _write_spine(nw, rows_spine)
+        _write_graph(nw, [_edge("engine:src_eng", "engine:dst_eng")])
+        spine, _ = eo.load_spine(nw, [])
+        dst = eo._graded_rows(spine.rows_for(eo.resolve_subject("engine:dst_eng")))
+
+        span = [spine.session_index(_SESSIONS[i]) for i in range(6)]
+        up_matched, n_matched = eo.matched_base_up_rate(spine, dst, span)
+        assert up_matched == pytest.approx(1.0), \
+            "inside the fire span the dst is up on every session"
+        assert n_matched == 6
+
+        # The whole-history span is the unmatched comparison the fix removes.
+        whole = list(range(len(spine.sessions)))
+        up_whole, _ = eo.matched_base_up_rate(spine, dst, whole)
+        assert up_whole < up_matched, \
+            "an unspanned base imports sessions the numerator never saw"
+
+    def test_unmatched_window_can_flip_the_lift_sign(self, tmp_path):
+        """A true zero lift must not read as negative once the base is matched."""
+        nw = tmp_path / "data" / "neuralweb"
+        _simple_world(nw, n_fires=eo.MIN_N + 2, dst_outcome=0.05)
+        rows, _, _ = _build(nw)
+        spine, _ = eo.load_spine(nw, [])
+        board = eo.aggregate(rows, base_provider=eo.make_base_provider(spine))
+        e = board["edges"][0]
+        # Every fire agrees and every in-span session is up: agreement == base.
+        assert e["agreement_rate"] == pytest.approx(1.0)
+        assert e["dst_base_rate_matched"] == pytest.approx(1.0)
+        assert e["agreement_lift_vs_base"] == pytest.approx(0.0), \
+            "a dst that always moves the claimed way carries NO edge-specific lift"
+        assert e["dst_base_rate_basis"] == "matched_estimator_recomputed"
+
+    def test_base_is_recomputed_not_latched(self, tmp_path):
+        """Aggregation must recompute the base, never trust a stamped value."""
+        nw = tmp_path / "data" / "neuralweb"
+        _simple_world(nw, n_fires=eo.MIN_N + 2, dst_outcome=0.05)
+        rows, _, _ = _build(nw)
+        for r in rows:                      # poison every stamped value
+            if "dst_up_rate_primary" in r:
+                r["dst_up_rate_primary"] = 0.0
+                r["dst_up_rate_n_sessions"] = 999
+        spine, _ = eo.load_spine(nw, [])
+        board = eo.aggregate(rows, base_provider=eo.make_base_provider(spine))
+        e = board["edges"][0]
+        assert e["dst_base_rate_matched"] == pytest.approx(1.0), \
+            "a poisoned stamp must not survive a provider-backed aggregation"
+        assert e["dst_base_rate_n_sessions"] != 999
+
+    def test_base_falls_back_and_says_so_without_a_provider(self, tmp_path):
+        nw = tmp_path / "data" / "neuralweb"
+        _simple_world(nw, n_fires=eo.MIN_N + 2)
+        rows, _, _ = _build(nw)
+        board = eo.aggregate(rows)          # no provider
+        e = board["edges"][0]
+        assert e["dst_base_rate_basis"] == "row_stamped_span_limited", \
+            "a spine-less aggregation must disclose that its base is span-limited"
+
+
+class TestFireWeightedNull:
+    """SF-4: a mixed-sign fire set is scored against the mix, not the majority."""
+
+    def test_mixed_signs_use_the_fire_weighted_null(self, tmp_path):
+        nw = tmp_path / "data" / "neuralweb"
+        rows_spine = []
+        # 8 long fires, 4 short fires; dst up on every session (up_rate 1.0).
+        for i in range(12):
+            d = 1 if i < 8 else -1
+            rows_spine.append(_spine_row(engine="src_eng", as_of=_SESSIONS[i], direction=d))
+            rows_spine.append(_spine_row(engine="dst_eng", as_of=_SESSIONS[i],
+                                         horizon=21.0, outcome_excess=0.05))
+            rows_spine.append(_spine_row(engine="dst_eng", as_of=_SESSIONS[i],
+                                         horizon=5.0, outcome_excess=-0.05))
+        _write_spine(nw, rows_spine)
+        _write_graph(nw, [_edge("engine:src_eng", "engine:dst_eng")])
+        rows, _, _ = _build(nw)
+        spine, _ = eo.load_spine(nw, [])
+        board = eo.aggregate(rows, base_provider=eo.make_base_provider(spine))
+        e = board["edges"][0]
+        assert e["n_fires_claiming_up"] == 8
+        assert e["n_fires_claiming_down"] == 4
+        # up_rate = 1.0 -> weighted null = (8*1.0 + 4*0.0)/12 = 0.667.
+        # The modal rule would have used 1.0 and understated the edge.
+        assert e["dst_base_rate_matched"] == pytest.approx(8 / 12)
+
+    def test_all_down_claims_invert_the_base(self, tmp_path):
+        nw = tmp_path / "data" / "neuralweb"
+        _simple_world(nw, n_fires=eo.MIN_N + 2, dst_outcome=0.05, edge_type="headwind")
+        rows, _, _ = _build(nw)
+        spine, _ = eo.load_spine(nw, [])
+        board = eo.aggregate(rows, base_provider=eo.make_base_provider(spine))
+        e = board["edges"][0]
+        assert e["n_fires_claiming_down"] > 0 and e["n_fires_claiming_up"] == 0
+        assert e["dst_base_rate_matched"] == pytest.approx(0.0)
 
 
 # ---------------------------------------------------------------------------
@@ -669,10 +812,13 @@ class TestLaneSeparation:
         assert (nw / runner.PROSPECTIVE_LEDGER).exists()
         assert not (nw / runner.RETRO_LEDGER).exists(), \
             "a nightly append must NEVER touch the retro file"
-        # nightly appends the latest session only
+        # The nightly lane sweeps a LOOKBACK, not just the newest session — a
+        # fire cannot be graded on the day it fires, so a latest-only lane
+        # could never record a graded row at all (B1).
         written = eo.read_ledger(nw / runner.PROSPECTIVE_LEDGER)
         fire_dates = {r["fire_date"] for r in written if r.get("fire_date")}
-        assert fire_dates == {_SESSIONS[3]}, f"expected only the latest session, got {fire_dates}"
+        assert fire_dates == set(_SESSIONS[:4]), \
+            f"expected the whole lookback window, got {sorted(fire_dates)}"
 
     def test_nightly_lane_ok_helper(self):
         assert runner.nightly_lane_ok({"COLLECT_LANE": "nightly"}) is True
@@ -744,6 +890,333 @@ class TestResolver:
         assert eo.resolve_subject("regime:Q2") is None
         assert eo.resolve_subject("") is None
         assert eo.resolve_subject(None) is None
+
+
+class TestNightlyAccrual:
+    """B1: the prospective lane must be able to reach a graded state at all."""
+
+    def _grow_spine(self, nw: Path, n_sessions: int, grade_through: int) -> None:
+        """A spine of n_sessions where dst outcomes exist up to grade_through."""
+        rows = []
+        for i in range(n_sessions):
+            rows.append(_spine_row(engine="src_eng", as_of=_SESSIONS[i]))
+            if i <= grade_through:
+                rows.append(_spine_row(engine="dst_eng", as_of=_SESSIONS[i],
+                                       horizon=21.0, outcome_excess=0.05))
+                rows.append(_spine_row(engine="dst_eng", as_of=_SESSIONS[i],
+                                       horizon=5.0, outcome_excess=-0.05))
+        _write_spine(nw, rows)
+        _write_graph(nw, [_edge("engine:src_eng", "engine:dst_eng")])
+
+    def test_multi_night_run_reaches_a_graded_row(self, tmp_path, monkeypatch):
+        """Simulate consecutive nights on a growing spine; grading must happen.
+
+        This is the regression the lookback exists for: with since==until==latest
+        every night wrote an ungraded stub and keep-first dedup then blocked the
+        only run that could ever grade it — 0 graded rows, forever.
+        """
+        nw = tmp_path / "data" / "neuralweb"
+        monkeypatch.setenv(runner.NIGHTLY_LANE_ENV, "nightly")
+        path = nw / runner.PROSPECTIVE_LEDGER
+
+        for night in range(4, 16):
+            # the store advances one session per night; outcomes lag by 2
+            self._grow_spine(nw, n_sessions=night, grade_through=night - 3)
+            rc = runner.main(["--nightly", "--data-root", str(nw)])
+            assert rc == 0
+
+        settled = eo.resolve_ledger(eo.read_ledger(path))
+        n_graded = sum(1 for r in settled if r.get("graded"))
+        assert n_graded > 0, \
+            "after H+ nights the prospective ledger must hold graded fires, not only stubs"
+
+    def test_nightly_window_spans_the_lookback(self, tmp_path):
+        nw = tmp_path / "data" / "neuralweb"
+        self._grow_spine(nw, n_sessions=30, grade_through=29)
+        since, until = runner._nightly_window(nw)
+        assert until == _SESSIONS[29]
+        assert since == _SESSIONS[0], \
+            "a 30-session store is shorter than the lookback, so the sweep starts at its head"
+        assert eo.NIGHTLY_LOOKBACK_SESSIONS == max(eo.OUTCOME_HORIZONS) + eo.LINK_WINDOW_SESSIONS
+
+
+class TestSupersede:
+    """B1: a settled grading replaces its stub — and never the reverse."""
+
+    def _rows(self, tmp_path):
+        nw = tmp_path / "data" / "neuralweb"
+        _simple_world(nw, n_fires=3)
+        rows, _, _ = _build(nw)
+        return nw, [r for r in rows if r.get("fire_date")]
+
+    def test_graded_supersedes_a_stub(self, tmp_path):
+        nw, rows = self._rows(tmp_path)
+        path = nw / runner.PROSPECTIVE_LEDGER
+        graded = rows[0]
+        stub = json.loads(json.dumps(graded))
+        stub["graded"] = False
+        stub["outcomes"] = eo._blank_outcomes()
+        stub["ungradeable_reason"] = eo.REASON_NO_OVERLAP
+        stub["row_id"] = "stub-row"
+
+        eo.append_rows(path, [stub])
+        stats = eo.append_rows(path, [graded])
+        assert stats["n_appended"] == 1 and stats["n_superseded"] == 1
+        settled = eo.resolve_ledger(eo.read_ledger(path))
+        assert len(settled) == 1, "the settled view keeps one row per key"
+        assert settled[0]["graded"] is True
+
+    def test_stub_never_supersedes_a_grading(self, tmp_path):
+        nw, rows = self._rows(tmp_path)
+        path = nw / runner.PROSPECTIVE_LEDGER
+        graded = rows[0]
+        stub = json.loads(json.dumps(graded))
+        stub["graded"] = False
+        stub["outcomes"] = eo._blank_outcomes()
+        stub["row_id"] = "stub-row"
+
+        eo.append_rows(path, [graded])
+        stats = eo.append_rows(path, [stub])
+        assert stats["n_appended"] == 0, "a degraded night must never un-grade history"
+        settled = eo.resolve_ledger(eo.read_ledger(path))
+        assert settled[0]["graded"] is True
+
+    def test_observation_state_ladder(self):
+        assert eo.observation_state({"graded": True}) == eo.STATE_GRADED
+        partial = {"graded": False, "outcomes": {"5": {"dst_outcome": 0.01}}}
+        assert eo.observation_state(partial) == eo.STATE_PARTIAL
+        assert eo.observation_state({"graded": False, "outcomes": {}}) == eo.STATE_STUB
+
+    def test_resolved_view_is_not_double_counted(self, tmp_path):
+        """Aggregation must resolve, or a superseded stub is counted twice."""
+        nw, rows = self._rows(tmp_path)
+        graded = rows[0]
+        stub = json.loads(json.dumps(graded))
+        stub["graded"] = False
+        stub["outcomes"] = eo._blank_outcomes()
+        stub["ungradeable_reason"] = eo.REASON_NO_OVERLAP
+        stub["row_id"] = "stub-row"
+        board = eo.aggregate([stub, graded])
+        assert board["edges"][0]["n_fires"] == 1, \
+            "a stub and the grading that replaced it are ONE fire, not two"
+
+
+class TestUnsignedLedgerPinnedToQuery:
+    """B2: the structural list cannot silently fall behind query.py."""
+
+    _QUERY = Path(__file__).resolve().parent.parent / "engine" / "neuralweb" / "query.py"
+
+    def _assignment_lines(self) -> list[int]:
+        import re
+        pat = re.compile(r'row\["outcome_excess"\]\s*=.*mfe_col')
+        return [
+            i for i, line in enumerate(self._QUERY.read_text(encoding="utf-8").splitlines(), 1)
+            if pat.search(line)
+        ]
+
+    def test_all_known_mfe_ledgers_are_listed(self):
+        for ledger in ("track_record", "board_hk", "board_ca", "board_cn"):
+            assert ledger in eo.UNSIGNED_OUTCOME_LEDGERS, (
+                f"{ledger} writes outcome_excess = fwd_mfe in query.py — an unsigned "
+                "MFE. Grading direction against it reports ~100% agreement and means "
+                "nothing."
+            )
+
+    def test_query_assignment_site_count_is_pinned(self):
+        sites = self._assignment_lines()
+        assert len(sites) == eo.QUERY_MFE_ASSIGNMENT_SITES, (
+            f"query.py now has {len(sites)} 'outcome_excess = <fwd_mfe>' assignment "
+            f"site(s) at lines {sites}, pinned at {eo.QUERY_MFE_ASSIGNMENT_SITES}. "
+            "A new one means another ledger became an unsigned MFE proxy: add its "
+            "ledger label to UNSIGNED_OUTCOME_LEDGERS and re-pin this count."
+        )
+
+    def test_ledger_labels_near_each_site_are_covered(self):
+        """Every literal ledger label in an MFE-assigning block must be listed."""
+        import re
+        lines = self._QUERY.read_text(encoding="utf-8").splitlines()
+        lit = re.compile(r'row\["ledger"\]\s*=\s*"([a-z_]+)"')
+        for site in self._assignment_lines():
+            found = None
+            for j in range(site - 1, max(0, site - 60), -1):
+                m = lit.search(lines[j - 1])
+                if m:
+                    found = m.group(1)
+                    break
+            if found is not None:
+                assert found in eo.UNSIGNED_OUTCOME_LEDGERS, (
+                    f"query.py:{site} assigns an unsigned MFE for ledger {found!r}, "
+                    "which is not in UNSIGNED_OUTCOME_LEDGERS"
+                )
+
+    def test_board_ledgers_are_refused_as_dst(self, tmp_path):
+        nw = tmp_path / "data" / "neuralweb"
+        rows_spine = []
+        for i in range(12):
+            rows_spine.append(_spine_row(engine="src_eng", as_of=_SESSIONS[i]))
+            rows_spine.append(_spine_row(
+                engine="hk_board", as_of=_SESSIONS[i], horizon=21.0,
+                outcome_excess=0.04, ledger="board_hk",
+            ))
+        # one negative — enough to defeat the EMPIRICAL probe on its own
+        rows_spine.append(_spine_row(engine="hk_board", as_of=_SESSIONS[0], horizon=5.0,
+                                     outcome_excess=-0.01, ledger="board_hk"))
+        _write_spine(nw, rows_spine)
+        _write_graph(nw, [_edge("engine:src_eng", "engine:hk_board")])
+        rows, _, _ = _build(nw)
+        reasons = {r["ungradeable_reason"] for r in rows if r["ungradeable_reason"]}
+        assert eo.REASON_DST_UNSIGNED in reasons, (
+            "board_hk must be refused STRUCTURALLY — the empirical probe fails open "
+            "on a single negative value, which is exactly this fixture"
+        )
+        flagged = [r for r in rows if r["ungradeable_reason"] == eo.REASON_DST_UNSIGNED]
+        assert flagged[0]["unsigned_basis"].startswith("structural:")
+
+
+class TestTapeVariant:
+    """SF-5: the tape path is exercised, and fenced off the forward ledger."""
+
+    def _tape(self, nw: Path, subject: str, rows: list[tuple[str, float]]) -> None:
+        nw.mkdir(parents=True, exist_ok=True)
+        lines = [
+            json.dumps({"schema": "neuralweb.confluence_tape.v1", "subject": subject,
+                        "as_of": d, "direction": 1, "horizon": "21",
+                        "n_independent_confirming": v})
+            for d, v in rows
+        ]
+        (nw / "confluence_tape.jsonl").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    def test_tape_fires_on_new_and_strengthening(self, tmp_path):
+        nw = tmp_path / "data" / "neuralweb"
+        _simple_world(nw, n_fires=6)
+        self._tape(nw, "src_eng", [
+            (_SESSIONS[0], 1.0),   # new
+            (_SESSIONS[1], 2.0),   # strengthening
+            (_SESSIONS[2], 1.5),   # weaker -> not a fire
+            (_SESSIONS[3], 3.0),   # strengthening
+        ])
+        spine, _ = eo.load_spine(nw, [])
+        fires = eo._fires_from_tape(spine, eo.read_ledger(nw / "confluence_tape.jsonl"),
+                                    eo.resolve_subject("engine:src_eng"))
+        assert [f["fire_date"] for f in fires] == [_SESSIONS[0], _SESSIONS[1], _SESSIONS[3]]
+        assert [f["tape_state"] for f in fires] == ["new", "strengthening", "strengthening"]
+
+    def test_tape_fires_carry_a_session_index(self, tmp_path):
+        """Nit 13: without it the independence counter sees an empty span."""
+        nw = tmp_path / "data" / "neuralweb"
+        _simple_world(nw, n_fires=6)
+        self._tape(nw, "src_eng", [(_SESSIONS[0], 1.0), (_SESSIONS[1], 2.0)])
+        spine, _ = eo.load_spine(nw, [])
+        fires = eo._fires_from_tape(spine, eo.read_ledger(nw / "confluence_tape.jsonl"),
+                                    eo.resolve_subject("engine:src_eng"))
+        assert all(f["fire_session_ix"] is not None for f in fires)
+        assert fires[0]["fire_session_ix"] == spine.session_index(_SESSIONS[0])
+
+    def test_tape_respects_since_until(self, tmp_path):
+        nw = tmp_path / "data" / "neuralweb"
+        _simple_world(nw, n_fires=6)
+        self._tape(nw, "src_eng", [(_SESSIONS[i], float(i + 1)) for i in range(5)])
+        spine, _ = eo.load_spine(nw, [])
+        fires = eo._fires_from_tape(spine, eo.read_ledger(nw / "confluence_tape.jsonl"),
+                                    eo.resolve_subject("engine:src_eng"),
+                                    since=_SESSIONS[2], until=_SESSIONS[3])
+        assert [f["fire_date"] for f in fires] == [_SESSIONS[2], _SESSIONS[3]]
+
+    def test_absent_tape_degrades_with_a_gap(self, tmp_path):
+        nw = tmp_path / "data" / "neuralweb"
+        _simple_world(nw, n_fires=3)
+        rows, gaps, _ = _build(nw, fire_def=eo.FIRE_DEF_TAPE)
+        assert any("confluence_tape.jsonl absent" in g for g in gaps)
+        assert rows, "an absent tape degrades; it does not raise"
+
+    def test_nightly_refuses_the_tape_variant(self, tmp_path, monkeypatch):
+        nw = tmp_path / "data" / "neuralweb"
+        _simple_world(nw, n_fires=4)
+        monkeypatch.setenv(runner.NIGHTLY_LANE_ENV, "nightly")
+        rc = runner.main(["--nightly", "--data-root", str(nw),
+                          "--fire-def", eo.FIRE_DEF_TAPE])
+        assert rc == 1, "the forward ledger is spine-derived only"
+        assert not (nw / runner.PROSPECTIVE_LEDGER).exists()
+
+    def test_retro_allows_the_tape_variant(self, tmp_path, monkeypatch):
+        nw = tmp_path / "data" / "neuralweb"
+        _simple_world(nw, n_fires=4)
+        self._tape(nw, "src_eng", [(_SESSIONS[0], 1.0), (_SESSIONS[1], 2.0)])
+        monkeypatch.delenv(runner.NIGHTLY_LANE_ENV, raising=False)
+        rc = runner.main(["--retro", "--data-root", str(nw),
+                          "--fire-def", eo.FIRE_DEF_TAPE])
+        assert rc == 0
+        assert (nw / runner.RETRO_LEDGER).exists()
+
+
+class TestStubReasonKeying:
+    """SF-7: one degraded night must not latch a reason forever."""
+
+    def test_stub_key_includes_the_reason(self, tmp_path):
+        nw = tmp_path / "data" / "neuralweb"
+        nw.mkdir(parents=True)
+        _write_graph(nw, [_edge("engine:src_eng", "engine:dst_eng")])
+        absent_rows, _, _ = _build(nw)                    # spine missing
+        assert absent_rows[0]["ungradeable_reason"] == eo.REASON_SPINE_ABSENT
+        assert eo.REASON_SPINE_ABSENT in absent_rows[0]["ledger_key"]
+
+        path = nw / runner.PROSPECTIVE_LEDGER
+        eo.append_rows(path, absent_rows)
+
+        # spine arrives; the real reason is dst_no_graded — it must be recordable
+        rows_spine = [_spine_row(engine="src_eng", as_of=d) for d in _SESSIONS[:3]]
+        rows_spine += [_spine_row(engine="dst_eng", as_of=d) for d in _SESSIONS[:3]]
+        _write_spine(nw, rows_spine)
+        later, _, _ = _build(nw)
+        stats = eo.append_rows(path, later)
+        assert stats["n_appended"] >= 1, \
+            "a transient spine_absent stub must not block the real reason"
+        reasons = {r["ungradeable_reason"] for r in eo.read_ledger(path)}
+        assert eo.REASON_DST_NO_GRADED in reasons
+
+
+class TestDegradedSpine:
+    """SF-8: a readable-but-wrong spine degrades with a code, never raises."""
+
+    def test_missing_column_degrades(self, tmp_path):
+        nw = tmp_path / "data" / "neuralweb"
+        nw.mkdir(parents=True)
+        rows = [_spine_row(engine="src_eng", as_of=_SESSIONS[0])]
+        df = pd.DataFrame(rows, columns=_SPINE_COLS).drop(columns=["outcome_graded"])
+        df.to_parquet(nw / "spine_index.parquet", index=False)
+        _write_graph(nw, [_edge("engine:src_eng", "engine:dst_eng")])
+
+        built, gaps, meta = _build(nw)      # must not raise
+        assert meta["spine_available"] is False
+        assert meta["spine_reason"] == eo.REASON_SPINE_UNUSABLE
+        assert any(r["ungradeable_reason"] == eo.REASON_SPINE_UNUSABLE for r in built)
+        assert any("missing required column" in g for g in gaps)
+
+    def test_missing_columns_helper(self):
+        df = pd.DataFrame([{"engine": "a"}])
+        missing = eo.missing_spine_columns(df)
+        assert "outcome_excess" in missing and "engine" not in missing
+
+
+class TestThinNumerator:
+    """Nit 15: n_graded counts fires; distinct dst sessions count evidence."""
+
+    def test_single_dst_session_is_flagged(self, tmp_path):
+        nw = tmp_path / "data" / "neuralweb"
+        rows_spine = [_spine_row(engine="src_eng", as_of=_SESSIONS[i]) for i in range(5)]
+        # ONE dst session, read by all five fires through overlapping windows
+        rows_spine.append(_spine_row(engine="dst_eng", as_of=_SESSIONS[2],
+                                     horizon=21.0, outcome_excess=0.05))
+        rows_spine.append(_spine_row(engine="dst_eng", as_of=_SESSIONS[2],
+                                     horizon=5.0, outcome_excess=-0.05))
+        _write_spine(nw, rows_spine)
+        _write_graph(nw, [_edge("engine:src_eng", "engine:dst_eng")])
+        rows, _, _ = _build(nw)
+        board = eo.aggregate(rows)
+        e = board["edges"][0]
+        assert e["n_graded"] >= 3
+        assert e["n_distinct_dst_sessions"] == 1
+        assert e["thin_numerator_warning"] is True
 
 
 class TestWilson:

@@ -155,14 +155,25 @@ for 100.0% of them, minimum 0.0000, fraction negative 0.000.  Any directional
 agreement computed against it would read ~100% agreement at every horizon and
 mean nothing.  ``direction`` is also structurally pinned to 1 on that ledger.
 
-So a dst whose outcomes come from an unsigned ledger is UNGRADEABLE, reason
-``dst_outcome_unsigned_mfe_proxy``.  Two independent checks, both fail-closed:
+The same assignment appears at THREE sites in query.py covering FOUR ledgers —
+``track_record`` (573), ``board_hk``/``board_ca`` (657), ``board_cn`` (742) —
+and the board ones are live in the spine with the identical signature
+(``board_hk`` 509 rows, ``board_ca`` 330 rows, both min 0.0000, both zero
+negatives).  A dst whose outcomes come from any of them is UNGRADEABLE, reason
+``dst_outcome_unsigned_mfe_proxy``.  Two checks:
 
-  1. structural — ``ledger in UNSIGNED_OUTCOME_LEDGERS`` (the known case), and
+  1. structural — ``ledger in UNSIGNED_OUTCOME_LEDGERS``, and
   2. empirical — a dst cohort with >= ``UNSIGNED_PROBE_MIN_N`` graded outcomes
-     and not one negative value is treated as unsigned even if its ledger is
-     not on the list, so a future ledger that acquires the same defect is
-     caught without an edit here.
+     and not one negative value.
+
+Be exact about what check 2 is worth: it is a **backstop, not a second lock**.
+It fails OPEN on a single negative value — one signed row anywhere in the
+cohort and an otherwise-unsigned ledger grades normally, reporting a near-100%
+agreement that means nothing.  Only check 1 is fail-closed, which is why the
+structural list is pinned against query.py by a source-scan test
+(``QUERY_MFE_ASSIGNMENT_SITES``) rather than trusted to stay current on its
+own.  Do not describe the pair as "doubled" or "fail-closed" as a whole: the
+empirical probe catches an accident, never an adversary.
 
 FILES
 -----
@@ -232,12 +243,43 @@ LINK_WINDOW_SESSIONS: int = 5
 OUTCOME_HORIZONS: tuple[int, ...] = (5, 21, 63)
 PRIMARY_HORIZON: int = 21
 
+#: How far back a nightly run re-sweeps.
+#:
+#: A fire on session t cannot be graded on session t: its outcome rows live in
+#: [t, t+LINK_WINDOW] and its longest horizon settles 63 sessions later.  A
+#: nightly lane that only ever looked at the newest session would therefore
+#: record every fire as an ungraded stub and never revisit it — measured on a
+#: 60-night simulation: 0 graded rows, against 39 for a retro over the same
+#: store.  The prospective lane sweeps this lookback every night so a fire is
+#: re-examined until its outcomes have settled, and the settled row SUPERSEDES
+#: the earlier stub (see append_rows).
+NIGHTLY_LOOKBACK_SESSIONS: int = max(OUTCOME_HORIZONS) + LINK_WINDOW_SESSIONS
+
 #: Horizon grid the realized-lag estimator walks (subset of (t, t+21] plus 63).
 LAG_HORIZONS: tuple[int, ...] = (5, 21, 63)
 LAG_SIGMA_K: float = 1.0
 
-#: Ledgers whose ``outcome_excess`` is an unsigned MFE proxy (query.py).
-UNSIGNED_OUTCOME_LEDGERS: frozenset[str] = frozenset({"track_record"})
+#: Ledgers whose ``outcome_excess`` is an unsigned MFE proxy.
+#:
+#: ``engine/neuralweb/query.py`` assigns ``outcome_excess = <fwd_mfe column>`` at
+#: THREE sites, covering FOUR ledger labels:
+#:
+#:   query.py:573  adapt_track_record  -> ledger "track_record"
+#:   query.py:657  adapt_board         -> ledger "board_hk" / "board_ca"
+#:   query.py:742  adapt_china_board   -> ledger "board_cn"
+#:
+#: All four are unsigned by construction.  ``tests/test_edge_outcomes.py``
+#: re-scans query.py's source and fails if a fourth assignment site appears, so
+#: this list cannot silently fall behind its upstream.  That test is the only
+#: coupling: this module never imports from or edits query.py.
+UNSIGNED_OUTCOME_LEDGERS: frozenset[str] = frozenset({
+    "track_record", "board_hk", "board_ca", "board_cn",
+})
+
+#: Number of ``outcome_excess = <fwd_mfe>`` assignment sites in query.py, pinned
+#: so a new one trips the source-scan test instead of shipping an unsigned dst
+#: as a ~100%-agreement edge.
+QUERY_MFE_ASSIGNMENT_SITES: int = 3
 
 #: Cohort size at which the empirical unsigned probe is allowed to fire.
 UNSIGNED_PROBE_MIN_N: int = 8
@@ -266,9 +308,11 @@ REASON_DST_UNSIGNED = "dst_outcome_unsigned_mfe_proxy"
 REASON_NO_OVERLAP = "no_overlapping_outcome_window"
 REASON_SRC_DIR_AMBIGUOUS = "src_direction_ambiguous"
 REASON_CHF_PANEL_SUBJECT = "chf_panel_subject_graded_elsewhere"
+REASON_SPINE_UNUSABLE = "spine_missing_required_columns"
 
 REASON_CODES: tuple[str, ...] = (
     REASON_SPINE_ABSENT,
+    REASON_SPINE_UNUSABLE,
     REASON_SRC_UNRESOLVED,
     REASON_DST_UNRESOLVED,
     REASON_CHF_PANEL_SUBJECT,
@@ -282,6 +326,9 @@ REASON_CODES: tuple[str, ...] = (
 REASON_NOTES: dict[str, str] = {
     REASON_SPINE_ABSENT:
         "spine_index.parquet unavailable — the sole fire substrate is not readable",
+    REASON_SPINE_UNUSABLE:
+        "spine_index.parquet is readable but lacks a column this ledger requires; "
+        "degraded rather than raised",
     REASON_SRC_UNRESOLVED:
         "edge src string does not resolve to a spine subject under the "
         "pre-registered resolver rules",
@@ -289,7 +336,10 @@ REASON_NOTES: dict[str, str] = {
         "edge dst string does not resolve to a spine subject under the "
         "pre-registered resolver rules",
     REASON_SRC_NO_ROWS:
-        "src resolves to a spine subject that has no rows — the edge never fired",
+        "no fire for this src inside the requested window — either the subject has "
+        "no spine rows at all, or none within the run's since/until bounds. On a "
+        "bounded nightly sweep this usually means 'did not fire recently', NOT "
+        "'never fired'",
     REASON_DST_NO_GRADED:
         "dst resolves to a spine subject with no graded outcome rows",
     REASON_DST_UNSIGNED:
@@ -344,9 +394,12 @@ def resolve_data_root(
         --data-root arg -> $MACRO_PRIMARY_DATA_NW -> <repo>/data/neuralweb
         -> the primary checkout's data/neuralweb (read-only)
 
-    ``data/neuralweb`` is gitignored, so a fresh worktree usually has none of
-    it and falls through to the primary checkout.  Returns ``(None, ...)`` when
-    no rung exists; callers degrade rather than raise.
+    ``data/neuralweb`` is TRACKED in this repo (72 files, including
+    ``spine_index.parquet`` and ``confluence_graph.json``), so the
+    ``<repo>/data/neuralweb`` rung normally wins and a worktree reads the
+    committed store.  The env and primary-checkout rungs exist for a checkout
+    where those artifacts are absent or deliberately overridden.  Returns
+    ``(None, ...)`` when no rung exists; callers degrade rather than raise.
     """
     environ = os.environ if env is None else env
     rungs: list[tuple[Path, str]] = []
@@ -581,7 +634,8 @@ def load_edge_inventory(nw_dir: Path | None, gaps: list[str]) -> list[dict]:
     if not graph_path.exists():
         gaps.append(
             "edge inventory: confluence_graph.json absent — "
-            "no confluence edges (gitignored artifact; run the nightly graph build)"
+            "no confluence edges (tracked artifact — check the data root, "
+            "or run the nightly graph build)"
         )
     else:
         try:
@@ -688,16 +742,20 @@ class SpineView:
 
     # -- selection ------------------------------------------------------
     def rows_for(self, subject: Subject) -> Any:
+        """Slice the spine for a subject; an absent column degrades to empty."""
         df = self._df
-        if subject.kind == "engine":
-            return df[df["engine"] == subject.engine]
-        if subject.kind == "family":
-            mask = df["family"] == subject.family
-            if subject.engine:
-                mask = mask & (df["engine"] == subject.engine)
-            return df[mask]
-        if subject.kind == "symbol":
-            return df[df["symbol"] == subject.symbol]
+        try:
+            if subject.kind == "engine":
+                return df[df["engine"] == subject.engine]
+            if subject.kind == "family":
+                mask = df["family"] == subject.family
+                if subject.engine:
+                    mask = mask & (df["engine"] == subject.engine)
+                return df[mask]
+            if subject.kind == "symbol":
+                return df[df["symbol"] == subject.symbol]
+        except (KeyError, TypeError, AttributeError) as exc:  # noqa: BLE001
+            log.warning("edge_outcomes: subject slice failed for %r — %s", subject, exc)
         return df.iloc[0:0]
 
     def session_index(self, date: str) -> int | None:
@@ -711,35 +769,82 @@ class SpineView:
         return self.sessions[i: i + n_sessions + 1]
 
 
-def load_spine(nw_dir: Path | None, gaps: list[str]) -> SpineView | None:
-    """Load the spine fail-open.  Returns ``None`` when unavailable."""
+def load_spine(nw_dir: Path | None, gaps: list[str]) -> tuple[SpineView | None, str | None]:
+    """Load the spine fail-open.  Returns ``(spine, reason_code)``.
+
+    ``reason_code`` is the ungradeable code to stamp when the spine could not
+    be used, so a structurally-wrong spine is distinguishable from a missing
+    one instead of both reading as "absent".
+    """
     if nw_dir is None:
         gaps.append("spine: data/neuralweb unresolved — no fire substrate")
-        return None
+        return None, REASON_SPINE_ABSENT
     path = nw_dir / "spine_index.parquet"
     if not path.exists():
         gaps.append(
             "spine: spine_index.parquet absent — no fire substrate "
-            "(gitignored artifact; ledger degrades to zero rows)"
+            "(ledger degrades to zero rows)"
         )
-        return None
+        return None, REASON_SPINE_ABSENT
     try:
         import pandas as pd  # local import: keeps module importable without pandas
         df = pd.read_parquet(path)
     except Exception as exc:  # noqa: BLE001 - fail-open contract
         log.warning("edge_outcomes: spine unreadable — %s", exc)
         gaps.append(f"spine: spine_index.parquet unreadable — {exc}")
-        return None
-    return SpineView(df)
+        return None, REASON_SPINE_ABSENT
+    missing = missing_spine_columns(df)
+    if missing:
+        gaps.append(
+            f"spine: readable but missing required column(s) {sorted(missing)} — "
+            "cannot grade edges against it"
+        )
+        return None, REASON_SPINE_UNUSABLE
+    try:
+        return SpineView(df), None
+    except Exception as exc:  # noqa: BLE001 - fail-open contract
+        log.warning("edge_outcomes: spine view failed — %s", exc)
+        gaps.append(f"spine: could not build session grid — {exc}")
+        return None, REASON_SPINE_UNUSABLE
 
 
 # ---------------------------------------------------------------------------
 # Unsigned-outcome detection (fail-closed; see module docstring)
 # ---------------------------------------------------------------------------
 
+#: Spine columns this module cannot work without.
+REQUIRED_SPINE_COLUMNS: tuple[str, ...] = (
+    "engine", "family", "symbol", "ledger", "as_of", "direction",
+    "horizon", "outcome_excess", "outcome_graded",
+)
+
+
+def missing_spine_columns(df: Any) -> list[str]:
+    """Which required columns this spine lacks.  Empty list = usable."""
+    try:
+        cols = set(df.columns)
+    except Exception:  # noqa: BLE001 - defensive
+        return list(REQUIRED_SPINE_COLUMNS)
+    return [c for c in REQUIRED_SPINE_COLUMNS if c not in cols]
+
+
 def _graded_rows(rows: Any) -> Any:
-    """Graded rows with a usable outcome_excess."""
-    return rows[(rows["outcome_graded"] == True) & (rows["outcome_excess"].notna())]  # noqa: E712
+    """Graded rows with a usable outcome_excess.
+
+    Guarded: a spine that reads but lacks a required column degrades to an
+    empty slice, which surfaces as a reason code upstream.  The fail-open
+    contract covers a spine that is *unreadable*; a spine that is readable but
+    structurally wrong used to raise straight out of build_rows, which is the
+    one shape the contract promised not to have.
+    """
+    try:
+        return rows[(rows["outcome_graded"] == True) & (rows["outcome_excess"].notna())]  # noqa: E712
+    except (KeyError, TypeError, AttributeError) as exc:  # noqa: BLE001
+        log.warning("edge_outcomes: graded-row selection failed — %s", exc)
+        try:
+            return rows.iloc[0:0]
+        except Exception:  # noqa: BLE001 - defensive
+            return []
 
 
 def is_unsigned_outcome(graded: Any) -> tuple[bool, str | None]:
@@ -850,6 +955,7 @@ def _load_tape(nw_dir: Path | None, gaps: list[str]) -> list[dict] | None:
 
 
 def _fires_from_tape(
+    spine: "SpineView",
     tape: list[dict],
     subject: Subject,
     *,
@@ -910,6 +1016,10 @@ def _fires_from_tape(
             direction = 0
         fires.append({
             "fire_date": as_of,
+            # Same session-grid position the spine path carries.  Without it
+            # the independence counter and the matched base rate silently see
+            # an empty span for every tape fire.
+            "fire_session_ix": spine.session_index(as_of),
             "src_direction": 1 if direction > 0 else (-1 if direction < 0 else 0),
             "src_n_rows": 1,
             "src_n_symbols": 1,
@@ -943,36 +1053,94 @@ def claimed_sign(edge_type: str, src_direction: int | None) -> int | None:
 # Lag estimator
 # ---------------------------------------------------------------------------
 
-def dst_up_rate(dst_graded: Any, horizon: int = PRIMARY_HORIZON) -> tuple[float | None, int]:
-    """The dst subject's UNCONDITIONAL up-rate at ``horizon``.
+def matched_base_up_rate(
+    spine: "SpineView",
+    dst_graded: Any,
+    span_ixs: Sequence[int],
+    horizon: int = PRIMARY_HORIZON,
+) -> tuple[float | None, int]:
+    """The dst's up-rate under the SAME estimator, window and span as the numerator.
 
-    Fraction of the dst's own sessions whose median ``outcome_excess`` is
-    positive, over every graded session it has — ignoring whether any edge
-    fired.  This is the base rate the conditional agreement must be read
-    against, and it belongs in the artifact rather than in a footnote.
+    The numerator this control is compared against is: pooled median of the
+    dst's ``outcome_excess`` at ``horizon`` over rows whose ``as_of`` falls in
+    ``[t, t+LINK_WINDOW_SESSIONS]``, evaluated at fire dates.  So the base must
+    be the pooled median over ``[s, s+LINK_WINDOW_SESSIONS]`` evaluated at
+    EVERY grid session ``s`` inside the fires' own span — same estimator, same
+    window width, same stretch of calendar.
 
-    Worked example from the first retro: the ``altdata -> radar`` confirms edge
-    agreed on 5 of 18 fires (27.8%), which reads as a strong disagreement until
-    you notice radar's unconditional up-rate over the same window was 20.0%
-    (4 of 20 sessions).  The edge is slightly ABOVE its base rate; the "72%
-    disagreement" was the market window, not the linkage.  A conditional rate
-    shipped without this column is not interpretable.
+    An earlier cut of this function got all three wrong: it took a per-session
+    median (no link window) over the dst's ENTIRE history (no span match).  On
+    the first retro that reported ``altdata -> radar`` at base 0.200 and lift
+    +0.078; the matched base is 0.241 and the true lift is +0.037 — about half.
+    On a constructed fixture the unmatched window turns a true 0.000 lift into
+    -0.667.  A base rate that does not match its numerator is not a control, it
+    is a second uncontrolled statistic.
 
-    Returns ``(rate, n_sessions)``; rate is ``None`` when there are no sessions.
+    Returns ``(up_rate, n_sessions)`` where ``n_sessions`` counts only grid
+    sessions that yielded a median at all.
     """
-    if dst_graded is None or len(dst_graded) == 0:
-        return None, 0
-    at_h = dst_graded[dst_graded["horizon"] == float(horizon)]
-    if len(at_h) == 0:
+    if dst_graded is None or len(dst_graded) == 0 or not span_ixs:
         return None, 0
     try:
-        med = at_h.groupby("as_of")["outcome_excess"].median()
+        at_h = dst_graded[dst_graded["horizon"] == float(horizon)]
     except Exception:  # noqa: BLE001 - defensive
         return None, 0
-    n = int(len(med))
-    if n == 0:
+    if len(at_h) == 0:
         return None, 0
-    return float((med > 0).sum()) / n, n
+
+    lo, hi = min(span_ixs), max(span_ixs)
+    n_up = 0
+    n_sessions = 0
+    for ix in range(lo, hi + 1):
+        if ix < 0 or ix >= len(spine.sessions):
+            continue
+        window = spine.sessions[ix: ix + LINK_WINDOW_SESSIONS + 1]
+        if not window:
+            continue
+        try:
+            vals = [
+                float(v) for v in
+                at_h[at_h["as_of"].isin(window)]["outcome_excess"].dropna().tolist()
+            ]
+        except Exception:  # noqa: BLE001 - defensive
+            continue
+        med = _median(vals)
+        if med is None:
+            continue
+        n_sessions += 1
+        if med > 0:
+            n_up += 1
+    if n_sessions == 0:
+        return None, 0
+    return n_up / n_sessions, n_sessions
+
+
+def make_base_provider(spine: "SpineView"):
+    """Build the aggregation-time base-rate provider.
+
+    The base depends on the fires' span, and that span GROWS as the ledger
+    accrues, so a value stamped at write time goes stale the moment another
+    fire lands.  Aggregation therefore recomputes it from the spine rather than
+    reading it off the first row it happens to see.
+    """
+    cache: dict[str, Any] = {}
+
+    def provider(dst_subject: dict | None, span_ixs: Sequence[int]):
+        if not dst_subject or not span_ixs:
+            return None, 0
+        key = json.dumps(dst_subject, sort_keys=True, default=str)
+        if key not in cache:
+            subj = Subject(
+                str(dst_subject.get("kind") or ""),
+                str(dst_subject.get("label") or ""),
+                engine=dst_subject.get("engine"),
+                family=dst_subject.get("family"),
+                symbol=dst_subject.get("symbol"),
+            )
+            cache[key] = _graded_rows(spine.rows_for(subj))
+        return matched_base_up_rate(spine, cache[key], span_ixs)
+
+    return provider
 
 
 def estimate_lag(
@@ -983,10 +1151,21 @@ def estimate_lag(
     """Smallest horizon at which the dst move clears 1 sigma of its own history.
 
     ``sigma_H`` is the standard deviation of the dst subject's own graded
-    ``outcome_excess`` at horizon H, over rows strictly BEFORE ``fire_date`` —
-    trailing only, never peeking.  Below ``MIN_N_LAG`` trailing observations the
-    lag is null and the reason is printed.  Report-only; see the disclosed
-    resolution deviation in the module docstring.
+    ``outcome_excess`` at horizon H over rows whose ``as_of`` is strictly before
+    ``fire_date``.
+
+    Be precise about what that does and does not buy.  The rows are selected by
+    a pre-fire ``as_of``, but each carries a FORWARD outcome that resolves
+    *after* its own as_of — so for a row dated a few sessions before the fire,
+    the outcome window overlaps the fire.  This is trailing-by-selection, not
+    strictly point-in-time, and it is not a clean "no peeking" guarantee.  The
+    estimate is report-only and feeds no rate, no rank and no gate, which is
+    what makes the looseness tolerable; a promotion-tier use would need a
+    graded_at-based cutoff instead.
+
+    Below ``MIN_N_LAG`` trailing observations the lag is null and the reason is
+    printed.  See also the disclosed resolution deviation in the module
+    docstring.
     """
     if dst_graded is None or len(dst_graded) == 0:
         return None, "no_dst_history"
@@ -1109,13 +1288,14 @@ def build_rows(
         raise ValueError(f"unknown fire_def {fire_def!r}; expected one of {sorted(VALID_FIRE_DEFS)}")
 
     inventory = load_edge_inventory(nw_dir, gaps)
-    spine = load_spine(nw_dir, gaps)
+    spine, spine_reason = load_spine(nw_dir, gaps)
     tape = _load_tape(nw_dir, gaps) if fire_def == FIRE_DEF_TAPE else None
 
     meta: dict[str, Any] = {
         "n_edges_inventoried": len(inventory),
         "fire_def": fire_def,
         "spine_available": spine is not None,
+        "spine_reason": spine_reason,
         "reason_counts": {},
     }
 
@@ -1138,9 +1318,9 @@ def build_rows(
             "src_direction_degenerate": None,
         }
 
-        def _ungradeable(reason: str, fire: dict | None = None) -> None:
+        def _ungradeable(reason: str, fire: dict | None = None, _edge=edge) -> None:
             _bump(reason)
-            rows.append(_make_row(
+            r = _make_row(
                 edge, fire or stub_fire,
                 fire_def=fire_def,
                 src_subject=src_subject,
@@ -1151,10 +1331,18 @@ def build_rows(
                 realized_lag=None,
                 lag_reason=None,
                 claimed=None,
-            ))
+            )
+            # SF-7: key stub rows by their REASON, not just "stub".  A single
+            # degraded night (spine unreadable) would otherwise write a
+            # spine_absent stub whose key permanently blocks the real reason
+            # from ever being recorded for that edge.
+            r["ledger_key"] = f"{_edge['edge_id']}|stub|{reason}"
+            r["row_kind"] = "edge_stub"
+            r["row_id"] = _canonical_hash(r)
+            rows.append(r)
 
         if spine is None:
-            _ungradeable(REASON_SPINE_ABSENT)
+            _ungradeable(spine_reason or REASON_SPINE_ABSENT)
             continue
         # A causal-scout candidate names CHF panel ids, not spine subjects.
         # Say so precisely instead of filing it under generic "unresolved".
@@ -1188,21 +1376,28 @@ def build_rows(
                 claimed=None,
             )
             r["unsigned_basis"] = basis
+            r["ledger_key"] = f"{edge['edge_id']}|stub|{REASON_DST_UNSIGNED}"
+            r["row_kind"] = "edge_stub"
             r["row_id"] = _canonical_hash(r)
             rows.append(r)
             continue
 
-        # -- unconditional control, computed once per edge -----------------
-        base_rate, base_rate_n = dst_up_rate(dst_graded)
-
         # -- fires --------------------------------------------------------
         if fire_def == FIRE_DEF_TAPE:
-            fires = _fires_from_tape(tape or [], src_subject, since=since, until=until)
+            fires = _fires_from_tape(spine, tape or [], src_subject, since=since, until=until)
         else:
             fires = _fires_from_spine(spine, src_subject, since=since, until=until)
         if not fires:
             _ungradeable(REASON_SRC_NO_ROWS)
             continue
+
+        # -- control, over THIS edge's own fire span ------------------------
+        # Computed after the fires so the span matches, and with the same
+        # pooled-median estimator the numerator uses.  Aggregation recomputes
+        # this whenever a spine is available — the stamped value is only the
+        # fallback for a spine-less read, and is span-limited by construction.
+        span_ixs = [f["fire_session_ix"] for f in fires if f.get("fire_session_ix") is not None]
+        base_rate, base_rate_n = matched_base_up_rate(spine, dst_graded, span_ixs)
 
         # BOUNDING (retro is "bounded" by charter): a fire whose link window
         # contains no graded dst row at any horizon carries no information
@@ -1232,11 +1427,23 @@ def build_rows(
                 if med is not None and claimed is not None:
                     s = _sign(med)
                     agree = (s == claimed) if s not in (None, 0) else None
-                outcomes[str(h)] = {
+                obs = {
                     "dst_outcome": med,
                     "n_dst_rows": len(vals),
                     "agree": agree,
                 }
+                if h == PRIMARY_HORIZON:
+                    # Which dst SESSIONS this verdict actually rests on.  Row
+                    # count is not evidence count: six fires can all read the
+                    # same single dst session through overlapping windows, and
+                    # then n_graded=6 is really n=1.
+                    try:
+                        obs["dst_sessions"] = sorted(
+                            {str(v) for v in at_h["as_of"].dropna().unique().tolist()}
+                        )
+                    except Exception:  # noqa: BLE001 - defensive
+                        obs["dst_sessions"] = []
+                outcomes[str(h)] = obs
                 if med is not None:
                     any_outcome = True
 
@@ -1339,34 +1546,103 @@ def _ledger_key(row: dict) -> str:
     return f"{row.get('edge_id')}|{row.get('fire_date') or 'stub'}"
 
 
-def append_rows(path: Path, rows: Iterable[dict]) -> dict:
-    """Append rows to the ledger, skipping duplicates.  Returns a counts dict.
+#: Monotonic observation states.  A row may only ever move UP this ladder.
+STATE_STUB = 0        # no outcome data at all (bounded away, unresolved, absent)
+STATE_PARTIAL = 1     # some horizon has an outcome, but no primary-horizon verdict
+STATE_GRADED = 2      # primary-horizon agreement resolved
 
-    Dedup is BOTH content-hash (``row_id``) and ``ledger_key``, keep-first — so
-    a re-run with identical inputs appends zero rows, and a re-run that
-    regenerates the same fire with different content still does not
-    double-count that fire.
+
+def observation_state(row: dict) -> int:
+    """Where this row sits on the accruing -> graded ladder.
+
+    The prospective lane necessarily writes a fire before its outcomes exist,
+    so the ledger must be able to record the SAME fire again once it settles.
+    Ranking the states makes that upgrade expressible and one-directional.
+    """
+    if row.get("graded"):
+        return STATE_GRADED
+    outcomes = row.get("outcomes") or {}
+    for obs in outcomes.values():
+        if isinstance(obs, dict) and obs.get("dst_outcome") is not None:
+            return STATE_PARTIAL
+    return STATE_STUB
+
+
+def resolve_ledger(rows: Sequence[dict]) -> list[dict]:
+    """Collapse an append-only ledger to one row per key: the settled one.
+
+    The file keeps the whole history (a stub AND the graded row that later
+    superseded it) so the accrual is auditable.  Every reader — aggregation,
+    coverage — must resolve through this, or a superseded stub would be counted
+    a second time alongside the row that replaced it.
+
+    Ties on state are broken by ``produced_at``, latest wins.
+    """
+    best: dict[str, dict] = {}
+    for r in rows:
+        key = _ledger_key(r)
+        cur = best.get(key)
+        if cur is None:
+            best[key] = r
+            continue
+        new_rank, cur_rank = observation_state(r), observation_state(cur)
+        if new_rank > cur_rank:
+            best[key] = r
+        elif new_rank == cur_rank and str(r.get("produced_at") or "") > str(cur.get("produced_at") or ""):
+            best[key] = r
+    return list(best.values())
+
+
+def append_rows(path: Path, rows: Iterable[dict]) -> dict:
+    """Append to the PROSPECTIVE ledger with monotonic supersede semantics.
+
+    Three outcomes per candidate row:
+
+      * identical content already on file (``row_id``)      -> skip;
+      * key on file at an EQUAL OR HIGHER observation state -> skip;
+      * key on file at a LOWER state (stub -> partial -> graded) -> append,
+        superseding the earlier row.
+
+    The upgrade direction is one-way.  A settled grading may replace a stub; a
+    stub may never replace a grading, so a night whose spine read degrades
+    cannot un-grade history.  The superseded row stays in the file — the
+    accrual is auditable — and ``resolve_ledger`` is what readers use to see
+    only the settled view.
+
+    Without this, the prospective lane could never record a graded fire at all:
+    a fire is written before its outcomes exist, and pure keep-first dedup then
+    blocks the only run that could ever grade it.
     """
     existing = read_ledger(path)
     seen_hash = {r.get("row_id") for r in existing if r.get("row_id")}
-    seen_key = {
-        _ledger_key(r) for r in existing if r.get("edge_id") is not None
-    }
+    best_state: dict[str, int] = {}
+    for r in existing:
+        if r.get("edge_id") is None:
+            continue
+        key = _ledger_key(r)
+        st = observation_state(r)
+        if st > best_state.get(key, -1):
+            best_state[key] = st
 
     to_write: list[dict] = []
     n_dupe_hash = 0
     n_dupe_key = 0
+    n_superseded = 0
     for r in rows:
         rid = r.get("row_id")
         key = _ledger_key(r)
         if rid in seen_hash:
             n_dupe_hash += 1
             continue
-        if key in seen_key:
+        state = observation_state(r)
+        prior = best_state.get(key)
+        if prior is not None and state <= prior:
             n_dupe_key += 1
             continue
+        if prior is not None:
+            n_superseded += 1
         seen_hash.add(rid)
-        seen_key.add(key)
+        best_state[key] = state
         to_write.append(r)
 
     if to_write:
@@ -1377,9 +1653,43 @@ def append_rows(path: Path, rows: Iterable[dict]) -> dict:
 
     return {
         "n_appended": len(to_write),
+        "n_superseded": n_superseded,
         "n_skipped_content_hash": n_dupe_hash,
         "n_skipped_key": n_dupe_key,
         "n_existing": len(existing),
+    }
+
+
+def write_rows(path: Path, rows: Sequence[dict]) -> dict:
+    """Replace the RETRO ledger wholesale, atomically.
+
+    The retro file is a replay artifact, not an accruing record: every run
+    recomputes it from the same substrate, so the correct semantics are
+    "this run's output IS the file", not "merge into what was there".
+
+    Appending instead created a real double-count.  Summary rows are keyed by
+    the fire span they cover, so a store that advanced by one session produced
+    a new span, a new key, and a SECOND summary row for the same edge — both
+    counted.  A full rewrite kills that structurally.
+
+    Written to a temp file and renamed, so an interrupted run leaves the
+    previous replay intact rather than a truncated one.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    n_before = len(read_ledger(path)) if path.exists() else 0
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with tmp.open("w", encoding="utf-8") as fh:
+        for r in rows:
+            fh.write(json.dumps(r, sort_keys=True, default=str) + "\n")
+    tmp.replace(path)
+    return {
+        "n_written": len(rows),
+        "n_appended": len(rows),
+        "n_superseded": 0,
+        "n_skipped_content_hash": 0,
+        "n_skipped_key": 0,
+        "n_existing": n_before,
+        "mode": "full_rewrite",
     }
 
 
@@ -1387,13 +1697,23 @@ def append_rows(path: Path, rows: Iterable[dict]) -> dict:
 # Aggregation — per-edge scoreboard
 # ---------------------------------------------------------------------------
 
-def aggregate(rows: Sequence[dict], *, min_n: int = MIN_N) -> dict:
+def aggregate(rows: Sequence[dict], *, min_n: int = MIN_N, base_provider=None) -> dict:
     """Per-edge scoreboard with a hard MIN_N floor on every printed rate.
 
     Below the floor an edge reports ``state="accruing"``, its ``n_graded``, and
     ``agreement_rate=None`` — the count is shown, the rate is not, and
     ``rate_suppressed_reason`` names why.  Nulls are printed, never hidden.
+
+    ``base_provider`` (from :func:`make_base_provider`) recomputes each edge's
+    matched base rate from the spine at aggregation time.  Pass it whenever a
+    spine is available — without it the scoreboard falls back to the value
+    stamped on the rows, which is correct only for the span that existed when
+    they were written, and says so via ``base_basis``.
+
+    Rows are resolved through :func:`resolve_ledger` first, so a stub that was
+    later superseded by its settled grading is not counted twice.
     """
+    rows = resolve_ledger(rows)
     by_edge: dict[str, dict] = {}
     for r in rows:
         eid = r.get("edge_id")
@@ -1411,13 +1731,22 @@ def aggregate(rows: Sequence[dict], *, min_n: int = MIN_N) -> dict:
             "lags": [],
             "graded_session_ix": [],
             "claimed_signs": [],
+            "dst_sessions": set(),
             "base_rate": None,
             "base_rate_n": 0,
+            "dst_subject": r.get("dst_subject"),
             "reason_counts": {},
         })
-        if slot["base_rate"] is None and r.get("dst_up_rate_primary") is not None:
-            slot["base_rate"] = r["dst_up_rate_primary"]
-            slot["base_rate_n"] = int(r.get("dst_up_rate_n_sessions") or 0)
+        if slot["dst_subject"] is None and r.get("dst_subject") is not None:
+            slot["dst_subject"] = r["dst_subject"]
+        # Stamped fallback only — overwritten below whenever a base_provider is
+        # supplied.  Taking the max keeps a single stale row from pinning the
+        # value, but the stamped path is span-limited by nature; see base_basis.
+        if r.get("dst_up_rate_primary") is not None:
+            n_seen = int(r.get("dst_up_rate_n_sessions") or 0)
+            if n_seen >= slot["base_rate_n"]:
+                slot["base_rate"] = r["dst_up_rate_primary"]
+                slot["base_rate_n"] = n_seen
         if r.get("fire_date") is not None:
             slot["n_fires"] += 1
         # Fires bounded away as no-overlap live only in the per-edge summary
@@ -1440,6 +1769,8 @@ def aggregate(rows: Sequence[dict], *, min_n: int = MIN_N) -> dict:
             slot["graded_session_ix"].append(int(six))
         if r.get("claimed_sign") is not None:
             slot["claimed_signs"].append(int(r["claimed_sign"]))
+        for s in (prim.get("dst_sessions") or []):
+            slot["dst_sessions"].add(str(s))
         lag = r.get("realized_lag_sessions")
         if lag is not None:
             slot["lags"].append(int(lag))
@@ -1453,26 +1784,55 @@ def aggregate(rows: Sequence[dict], *, min_n: int = MIN_N) -> dict:
         ci = wilson_interval(k, n) if above and n > 0 else None
         blocks = count_independent_blocks(slot["graded_session_ix"])
 
-        # Base rate expressed in the SAME direction the edge claims, so it is
-        # directly comparable to agreement_rate.  An up-rate of 0.20 means a
-        # -1-claiming edge should be beaten against 0.80, not 0.20.
+        # Base rate, recomputed from the spine over this edge's OWN fire span
+        # under the numerator's estimator.  Never latched to a stamped value
+        # when a provider is available: the span grows as the ledger accrues.
+        base_basis = "row_stamped_span_limited"
         up = slot["base_rate"]
+        base_n = slot["base_rate_n"]
+        if base_provider is not None:
+            span = slot["graded_session_ix"]
+            up_r, n_r = base_provider(slot["dst_subject"], span)
+            if up_r is not None:
+                up, base_n, base_basis = up_r, n_r, "matched_estimator_recomputed"
+
+        # Fire-weighted null, NOT the modal sign.  An edge whose fires carry
+        # mixed claimed signs is not testing one hypothesis n times; the null a
+        # mixed set should be beaten against is the mix itself:
+        #     (n_up * up + n_down * (1 - up)) / n
+        # Collapsing that to the majority sign biases the comparison toward
+        # whichever direction happened to fire more often.  Three live edges
+        # already carry mixed signs and will clear MIN_N by accrual.
         signs = slot["claimed_signs"]
-        modal = 1 if sum(1 for s in signs if s > 0) >= sum(1 for s in signs if s < 0) else -1
-        base_matched = None if up is None else (up if modal > 0 else 1.0 - up)
+        n_pos = sum(1 for s in signs if s > 0)
+        n_neg = sum(1 for s in signs if s < 0)
+        n_signed = n_pos + n_neg
+        if up is None or n_signed == 0:
+            base_matched = None
+        else:
+            base_matched = (n_pos * up + n_neg * (1.0 - up)) / n_signed
         lift = None if (base_matched is None or rate is None) else rate - base_matched
 
         out.append({
             # The control.  agreement_rate ALONE is not interpretable — read it
             # against the dst's unconditional rate of moving the claimed way.
             "dst_base_rate_matched": base_matched,
-            "dst_base_rate_n_sessions": slot["base_rate_n"],
+            "dst_base_rate_n_sessions": base_n,
+            "dst_base_rate_basis": base_basis,
+            "n_fires_claiming_up": n_pos,
+            "n_fires_claiming_down": n_neg,
             "agreement_lift_vs_base": lift,
             # Independence disclosure — read this BEFORE the CI.  Fires only
             # days apart share almost all of a 21-session forward window, so a
             # nominal n of 18 can carry as little as one independent
             # observation.  wilson_interval assumes independent trials, so the
             # printed CI is a NOMINAL floor on width, not a calibrated one.
+            # Numerator thinness: how many DISTINCT dst sessions the verdicts
+            # rest on.  n_graded counts fires; this counts evidence.
+            "n_distinct_dst_sessions": len(slot["dst_sessions"]),
+            "thin_numerator_warning": bool(
+                slot["n_graded"] > 0 and len(slot["dst_sessions"]) <= 2
+            ),
             "n_independent_blocks": blocks,
             "ci_basis": "nominal_wilson_assumes_independent_fires",
             "overlap_warning": bool(above and blocks < min_n),
@@ -1539,7 +1899,12 @@ def count_independent_blocks(
 
 
 def coverage_table(rows: Sequence[dict]) -> dict:
-    """Gradeable-fraction + reason-code counts.  The coverage IS a deliverable."""
+    """Gradeable-fraction + reason-code counts.  The coverage IS a deliverable.
+
+    Resolved through :func:`resolve_ledger` so a superseded stub does not keep
+    contributing its reason code after the fire it described has been graded.
+    """
+    rows = resolve_ledger(rows)
     edges: dict[str, dict] = {}
     for r in rows:
         eid = r.get("edge_id")

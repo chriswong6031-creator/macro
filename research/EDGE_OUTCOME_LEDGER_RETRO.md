@@ -57,63 +57,93 @@ reason code:
 | `dst_unresolved` | 2 | `regime:Q2` is a regime quad; the spine carries quads as row *stamps*, not as subjects. |
 
 Separately, **13,145 fires** were bounded away as `no_overlapping_outcome_window`
-— the target had no graded row inside the link window. 13,074 of those belong
-to one edge (`track_record → us_board`), whose src emits on 12,979 sessions back
-to 1962 while its target is graded over a handful of 2026 sessions. Those fires
-are **counted, not dropped**: each edge carries a summary row with the exact
-tally, so coverage arithmetic is unchanged while the ledger stays readable at
-273 rows instead of 13,407.
+— the target had no graded row inside the link window. **13,042** of those
+belong to one edge (`track_record → us_board`), whose src emits on 12,979
+sessions back to 1962 while its target is graded over a handful of 2026
+sessions; that edge fired 13,074 times in total, 32 of which did land a window.
+The remaining 103 bounded-away fires (13,145 − 13,042) are spread across the
+other ten gradeable edges. Those fires are **counted, not dropped**: each edge
+carries a summary row with the exact tally, so coverage arithmetic is unchanged
+while the ledger stays readable at 273 rows instead of 13,407.
 
 ## §3 The unsigned-outcome trap (why 3 edges were refused)
 
-`engine/neuralweb/query.py` builds the `track_record` ledger with
-`row["outcome_excess"] = _safe_float(r.get(mfe_col))` — for that ledger,
-`outcome_excess` **is** `fwd_mfe_H`, a max favorable excursion, which is
-unsigned by construction. Measured on the store: 276,279 graded `track_record`
-rows, `outcome_excess == fwd_mfe_H` for 100.0% of them, minimum 0.0000,
-fraction negative 0.000. `direction` is also pinned to 1 on that ledger.
+`engine/neuralweb/query.py` assigns `row["outcome_excess"] = _safe_float(r.get(mfe_col))`
+at **three sites covering four ledgers** — `track_record` (line 573),
+`board_hk`/`board_ca` (657), `board_cn` (742). For all of them `outcome_excess`
+**is** `fwd_mfe_H`, a max favorable excursion, unsigned by construction.
+Measured on the store: 288,884 graded `track_record` rows with
+`outcome_excess == fwd_mfe_H` for 100.0% of them; `board_hk` 509 rows and
+`board_ca` 330 rows, all three with minimum 0.0000 and **zero** negative
+values. `direction` is also pinned to 1 on those ledgers.
 
-Any direction-agreement computed against it would have read ~100% agreement at
-every horizon and meant nothing. Three `confirms` edges targeting
-`engine:track_record` are therefore refused with
-`dst_outcome_unsigned_mfe_proxy` rather than shipped as near-perfect
-confirmations. The guard is fail-closed and doubled: a structural ledger list
-plus an empirical probe that flags any cohort of ≥8 graded outcomes containing
-no negative value, so a future ledger acquiring the same defect is caught
-without an edit.
+Any direction-agreement computed against them would have read ~100% agreement
+at every horizon and meant nothing. Three `confirms` edges targeting
+`engine:track_record` are refused with `dst_outcome_unsigned_mfe_proxy` rather
+than shipped as near-perfect confirmations; the board ledgers are refused on
+the same grounds whenever an edge targets them.
+
+**The two checks are not equals, and the earlier draft of this document
+overstated them as "fail-closed and doubled".** Only the structural check —
+ledger membership in `UNSIGNED_OUTCOME_LEDGERS` — is fail-closed. The empirical
+probe (a cohort of ≥8 graded outcomes with no negative value) is a *backstop*
+that fails **open** on a single negative: one signed row anywhere in an
+otherwise-unsigned cohort and the edge grades normally at a meaningless ~100%.
+Because the structural list is the real lock, it is pinned to its upstream by a
+test that re-scans `query.py` and fails when a fourth assignment site appears,
+naming the ledger to add. `tests/test_edge_outcomes.py::TestUnsignedLedgerPinnedToQuery`.
 
 ## §4 Per-edge scoreboard
 
 **Above the MIN_N=10 floor: 1 edge.**
 
-| Edge | n_graded | indep. blocks | agreement (H=21) | base rate | lift | Wilson CI95 | median lag |
+| Edge | n_graded | indep. blocks | agreement (H=21) | matched base | lift | Wilson CI95 | median lag |
 |---|---|---|---|---|---|---|---|
-| `confirms  engine:altdata → engine:radar` | 18 | **2** | 0.278 | 0.200 (n=20 sessions) | **+0.078** | [0.125, 0.509] | null |
+| `confirms  engine:altdata → engine:radar` | 18 | **2** | 0.278 | 0.280 (25 sessions) | **−0.002** | [0.125, 0.509] | null |
 
-**Read this row carefully — the naive read is wrong.** 5 agreements in 18 fires
-looks like a 72% disagreement, i.e. evidence *against* the confirms edge. It is
-not. Radar's **unconditional** up-rate at H=21 over the same window was 4 of 20
-sessions = 0.200. Conditioning on an altdata fire gives 0.278. The edge sits
-slightly *above* its own base rate; the apparent disagreement was the market
-window, not the linkage. This is why the ledger carries
-`dst_base_rate_matched` in the artifact rather than in a footnote — an
-agreement rate shipped without its base rate is not interpretable.
+**Two naive reads are both wrong, in opposite directions.**
 
-Two further honesty notes on that single row, both stamped in the artifact:
+The first: 5 agreements in 18 fires looks like a 72% disagreement — evidence
+*against* the confirms edge. It is not. Radar's own rate of moving the claimed
+way over the same stretch is essentially identical, so the apparent
+disagreement is the market window, not the linkage.
 
-- **Effective n is 2, not 18.** The 18 fires span 2026-06-19 → 2026-07-29 and
-  share a 21-session forward window; `n_independent_blocks = 2`. The Wilson CI
-  assumes independent trials, so `[0.125, 0.509]` is a nominal floor on width,
-  not a calibrated interval. Every row carries
+The second was in this document's first cut, and it was ours: it reported the
+base as 0.200 and the lift as **+0.078**, i.e. a small positive edge. That base
+was computed with the *wrong estimator over the wrong span* — a per-session
+median (no link window) across the dst's entire history (no span match), while
+the numerator is a pooled median over `[t, t+5]` at fire dates. Recomputed with
+the numerator's own estimator over the fires' own span, the base is **0.280**
+and the lift is **−0.002**.
+
+The corrected reading: **this edge is indistinguishable from its base rate.**
+Not confirmation, not refutation — no detectable signal either way. A base rate
+that does not match its numerator is not a control, it is a second uncontrolled
+statistic, so the ledger now recomputes it at aggregation time with the
+matching estimator and stamps `dst_base_rate_basis` to say which path produced
+it.
+
+Three further honesty notes on that single row, all stamped in the artifact:
+
+- **Effective n is 2, not 18.** The 18 H=21-graded fires span 2026-06-19 →
+  2026-07-13 (2026-07-29 is the last fire overall, but it carries no H=21
+  verdict) and share a 21-session forward window; `n_independent_blocks = 2`.
+  The Wilson CI assumes independent trials, so `[0.125, 0.509]` is a nominal
+  floor on width, not a calibrated interval. Every row carries
   `ci_basis: nominal_wilson_assumes_independent_fires` and `overlap_warning: true`.
 - **The src direction is structurally constant.** `altdata` emits `direction=1`
-  only, so "confirms" collapses to "did radar's median 21d excess go up".
-  `src_direction_degenerate: true` is stamped on each fire.
+  only (18 up-claims, 0 down-claims), so "confirms" collapses to "did radar's
+  median 21d excess go up". `src_direction_degenerate: true` is stamped on each
+  fire. Where an edge's fires *do* carry mixed signs, the base is the
+  fire-weighted null `(n₊·up + n₋·(1−up))/n`, not the majority sign — three
+  live edges already have mixed signs and will clear the floor by accrual.
+- **The numerator rests on 20 distinct dst sessions**, which is the one thin-ness
+  check this edge passes. Others do not — see below.
 
 **Accruing (below floor — count shown, rate suppressed):** 57 edges. The eight
 with any graded data:
 
-| Edge | fires | n_graded | base-rate n |
+| Edge | fires | n_graded | distinct dst sessions |
 |---|---|---|---|
 | `headwind  macro:rates_transmission → sector:xlb` | 24 | 7 | 12 |
 | `headwind  macro:rates_transmission → sector:xlk` | 24 | 7 | 20 |
@@ -124,11 +154,15 @@ with any graded data:
 | `confirms  engine:intel_hub → engine:radar` | 27 | 4 | 20 |
 | `confirms  engine:policy → engine:radar` | 7 | 4 | 20 |
 
-The bolded base-rate denominators are the second thin-denominator warning in
-this table: `us_board` has exactly **one** session graded at H=21, so its base
-rate of 0.000 is an artifact of that single session, not a property of the
-engine. The denominator is printed next to every base rate for exactly this
-reason. No rate is drawn from these rows.
+**The bolded rows are thinner than their `n_graded` suggests.** `us_board` has
+exactly **one** session graded at H=21, so all six of `radar → us_board`'s
+"graded fires" read that same single dst session through overlapping link
+windows. `n_graded = 6` there is really n = 1. That is a different failure from
+the block-overlap one above — overlapping *fires* versus a single *observation*
+read repeatedly — so the scoreboard carries both counters:
+`n_independent_blocks` and `n_distinct_dst_sessions`, with
+`thin_numerator_warning` set when the latter is ≤ 2. No rate is drawn from any
+of these rows regardless; the floor already suppresses them.
 
 ## §5 Realized lag — null, and why
 
@@ -158,6 +192,12 @@ inventory for a structural reason: the confluence tape is keyed by **ticker**
 coverage fact, not a defect — the variant becomes live when ticker-level edges
 enter the inventory. Bridging tape subjects to engine ids would be an amendment
 to the pre-registration, not a refactor.
+
+**The variant is `--retro` only.** The RUL-ORTH-4 compliance argument in §0 is
+that this ledger is a spine-*derived* join. A nightly path deciding what fired
+from the confluence tape would be reading a second substrate, which that
+argument does not cover, so `--nightly --fire-def tape_transition` is refused
+outright rather than left available.
 
 ## §7 What would make the next read informative
 
