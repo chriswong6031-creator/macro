@@ -37,6 +37,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts import build_china_library as bcl  # noqa: E402
+from engine import china_board_rank  # noqa: E402 — the LIVE stamp's producer
+from engine import china_standout_track as cst  # noqa: E402 — the watch cohorts' producer
 
 BOARD_PARQUET = ROOT / "data" / "china_standout_track" / "board.parquet"
 
@@ -57,29 +59,69 @@ class TestRealStoreEraSplit:
         assert "board_definition" in board.columns
 
     def test_the_known_cohorts_partition_the_store_exactly(self, board):
-        """Eras + adjudicated shelves cover every row; a FOURTH stamp still fails here.
+        """Eras + adjudicated cohorts cover every row; an UNREGISTERED stamp fails here.
 
         2026-08-04: the reversal_watch shelf (#4393) wrote its first rows under
-        `cn_reversal_watch_v1` and this tripwire fired exactly as designed. The
-        adjudication: a known labelled cohort (never pooled), registered in
-        `bcl._CN_ADJUDICATED_SHELF_STAMPS` — which this test shares with the emitter's
-        alarm gate, so the allowlist and the warning can never drift apart.
-        """
-        stamps = board["board_definition"]
-        prior = stamps.map(bcl._cn_is_legacy_stamp)
-        current = stamps.astype(str) == "cn_prophet_v2"
-        shelf = stamps.astype(str).isin(bcl._CN_ADJUDICATED_SHELF_STAMPS)
-        assert not (prior & current).any(), "a row landed in BOTH eras"
-        assert not ((prior | current) & shelf).any(), "a shelf row landed in an era"
-        assert int(prior.sum()) + int(current.sum()) + int(shelf.sum()) == len(board), \
-            "a row landed in NO known cohort — a new stamp needs adjudication"
-        assert int(current.sum()) > 0 and int(prior.sum()) > int(current.sum())
+        `cn_reversal_watch_v1` and this tripwire fired exactly as designed.
 
-    def test_the_eras_do_not_overlap_in_time(self, board):
-        stamps = board["board_definition"]
-        prior_dates = board.loc[stamps.map(bcl._cn_is_legacy_stamp), "date"].astype(str)
-        cur_dates = board.loc[stamps.astype(str) == "cn_prophet_v2", "date"].astype(str)
-        assert prior_dates.max() < cur_dates.min()
+        2026-08-06: it fired again — and this time the drift was IN THE GUARD. #4509
+        moved the engine to cn_prophet_v3 while this test still spelled "cn_prophet_v2"
+        by hand, so the 24 live v3 rows plus the 8 cn_prophet_v2_shadow challenger rows
+        matched no mask at all. A guard that re-spells a producer's constant cannot
+        catch that producer moving. Every mask below now reads its stamps from the
+        module that emits them.
+        """
+        raw = board["board_definition"]
+        stamps = raw.astype(str)
+        prior = raw.map(bcl._cn_is_legacy_stamp)
+        # LIVE stamp — from engine.china_board_rank, never re-spelled here.
+        current = stamps == china_board_rank.BOARD_DEFINITION
+        # CLOSED former headline eras — historical facts, see the constant's comment.
+        superseded = stamps.isin(bcl._CN_SUPERSEDED_ERA_STAMPS)
+        # Parallel watch/measurement cohorts — from engine.china_standout_track.
+        shelf = stamps.isin(cst.WATCH_DEFINITIONS)
+
+        counts = (prior.astype(int) + current.astype(int)
+                  + superseded.astype(int) + shelf.astype(int))
+        assert (counts <= 1).all(), \
+            "a row landed in TWO cohorts: " + str(sorted(set(stamps[counts > 1])))
+        assert int(counts.sum()) == len(board), \
+            ("a row landed in NO known cohort — a new stamp needs adjudication: "
+             + str(sorted(set(stamps[counts == 0]))))
+        assert int(prior.sum()) > 0
+
+    def test_the_partition_and_the_nightly_alarm_can_never_disagree(self, board):
+        """The set this test accepts IS the set the emitter's ::warning gate accepts.
+
+        Split them and one of two silent failures follows: a stamp accepted here but
+        not there alarms every night for an expected state until the alarm rots into
+        noise, and a stamp accepted there but not here hides an unadjudicated cohort
+        behind a green test.
+        """
+        known = bcl._cn_known_cohort_stamps()
+        unadjudicated = {s for s in set(board["board_definition"].astype(str))
+                         if not bcl._cn_is_legacy_stamp(s) and s not in known}
+        assert unadjudicated == set(), unadjudicated
+
+    def test_the_headline_eras_do_not_overlap_in_time(self, board):
+        """Headline eras are SEQUENTIAL: legacy → each superseded stamp → live.
+
+        Watch/shelf cohorts are deliberately excluded: they run in PARALLEL with the
+        live board by design — cn_prophet_v2_shadow writes on the SAME dates as
+        cn_prophet_v3, which is the entire point of the v3-vs-v2 race — so a global
+        ordering claim over every stamp would be false. _CN_SUPERSEDED_ERA_STAMPS is
+        ordered oldest-first, which is what makes this chain meaningful.
+        """
+        raw = board["board_definition"]
+        stamps = raw.astype(str)
+        d = board["date"].astype(str)
+        chain = ([d[raw.map(bcl._cn_is_legacy_stamp)]]
+                 + [d[stamps == s] for s in bcl._CN_SUPERSEDED_ERA_STAMPS]
+                 + [d[stamps == china_board_rank.BOARD_DEFINITION]])
+        chain = [c for c in chain if not c.empty]
+        assert len(chain) >= 2, "need at least two populated eras to test ordering"
+        for older, newer in zip(chain, chain[1:]):
+            assert older.max() < newer.min(), (older.max(), newer.min())
 
     def test_legacy_stamp_recognises_every_pre_version_spelling(self):
         for value in (None, float("nan"), "", "  ", "legacy", "NaN", "None", "<NA>"):
