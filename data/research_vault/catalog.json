@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T08:54:39.983705+00:00",
-  "count": 861,
+  "generated_at": "2026-08-06T09:24:44.571859+00:00",
+  "count": 862,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -406,6 +406,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vg24zhoyx65-9829e5",
+      "title": "The 720 Global PCB CCL, Xiaomi, Anker, Coupang, Aspeed, Nittobo, Rohm, Taiyo Yuden, HSBC STAN",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:01:56Z",
+      "summary_points": [
+        "**Global PCB/CCL AI Growth**: Goldman Sachs raises global PCB/CCL TAM estimates by 38%/18% to $38bn/$22bn by 2027E, driven by AI server racks and M9 materials; Buy-rated supply chain names (Shengyi Tech, Nittobo) highlighted with high utilization rates.",
+        "**SpaceX Q2 Earnings Beat**: Revenue 17% above estimates, GAAP income 92% above; management targets $100B ARR by Dec 2026, raising 2026 revenue to $47.64B, strengthening AI/cloud/space tech momentum.",
+        "**India RBI Policy Shift**: Holds rate at 5.25%, delays hikes to Dec 2026/Feb 2027; lowers FY27 inflation forecast to 5.0% (from 5.1%), raises real GDP growth to 6.7% (from 6.6%), critical for emerging market positioning.",
+        "**Rohm's AI Server Demand Beat**: 1Q operating profit beat (¥9.6bn) driven by 67% YoY sales growth in AI/server apps; raises FY3/27-FY3/29 estimates by 2-14%, reflecting strong demand tailwinds."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
