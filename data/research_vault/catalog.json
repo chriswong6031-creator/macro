@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T12:10:43.754171+00:00",
-  "count": 870,
+  "generated_at": "2026-08-06T12:30:15.596753+00:00",
+  "count": 871,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -57,6 +57,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-qe54u5uvpk1-edf802",
+      "title": "Angi Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T11:17:51Z",
+      "summary_points": [
+        "**GAAP EPS Collapse**: GAAP EPS plunges 2131% to ($5.61) in 2026 (vs $0.28 prior), signaling severe financial distress despite modest revenue adjustments; recovery only projected in 2027/2028.",
+        "**Goodwill Impairment & Guidance Shift**: $235m US goodwill impairment (GAAP loss $234mm) and removal of FY27 revenue acceleration guidance, critical risk for valuation and growth trajectory.",
+        "**Consistent Revenue Decline**: GAAP Sales decline persistently (Q3'26: -1%, 2026: -2%, 2027: -3%, 2028: -4%), highlighting operational fragility amid volatile Adj.",
+        "EBITDA margins.",
+        "**Underperformance vs Benchmark**: Stock underperformed S&P 500 by 69.5% over 12 months, indicating poor relative performance and valuation disconnect."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-eglyaiphi8v-4403b5",
       "title": "Expedia Group (EXPE) Q2'26 Earnings Review Strong Execution and B2B Momentum Drive Beat and Raise Quarter",
