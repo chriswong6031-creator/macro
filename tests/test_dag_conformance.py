@@ -566,12 +566,18 @@ class TestLiveConformance:
             "python -m scripts.collect --only sam_gov_opportunities "
             "--skip-quality --skip-shadow-importance"
         ) in collect["run"]
-        # The quota gate itself is now part of the contract: dropping it would put a
+        # The quota gate itself is part of the contract: dropping it would put a
         # ~10/day shared key behind a 30-minute schedule and starve every other
-        # consumer (see collectors/sam_gov.py).
+        # consumer (see collectors/sam_gov.py). Both halves are pinned — the marker
+        # so the gate cannot be quietly renamed away, and the full `if [ ... ]` test
+        # so a mere MENTION of the event name in a comment cannot satisfy it.
+        assert "SAM quota gate" in collect["run"], (
+            "the bounded lane's quota gate must stay — it is what keeps the shared "
+            "~10/day SAM key from being spent by the half-hourly schedule"
+        )
         assert 'if [ "${GITHUB_EVENT_NAME}" = "schedule" ]' in collect["run"], (
-            "the scheduled-run SAM quota gate must not be dropped — the free key is "
-            "~10 requests/day and is shared across consumers"
+            "the gate must key on the SCHEDULE event only, so a manual or push run "
+            "still collects"
         )
         assert "default historical sweep is 1,826 days" in text
         assert "--only usaspending_awards" not in collect["run"], (
