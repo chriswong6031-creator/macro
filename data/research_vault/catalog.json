@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T14:11:14.445172+00:00",
-  "count": 876,
+  "generated_at": "2026-08-06T14:26:15.730443+00:00",
+  "count": 877,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -199,6 +199,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bbwhgnn69kk-d9eaf0",
+      "title": "Taiwan July Headline Inflation Inches Down to 2.5 on Falling Energy Prices",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T11:17:43Z",
+      "summary_points": [
+        "**Fuel-Driven Moderation**: Headline CPI at 2.5% yoy (↓ from 2.6%) driven by 6.4% YoY fall in fuel prices, signaling key disinflationary pressure.",
+        "**Sequential Cooling**: Headline and core CPI momentum slowed to 0.2% mom sa (from 0.4%), indicating accelerating easing in price pressures.",
+        "**Services-Goods Divergence**: Persistent elevated services inflation (vs.",
+        "goods) suggests ongoing sector-specific pricing pressures impacting consumer spending and margins."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
