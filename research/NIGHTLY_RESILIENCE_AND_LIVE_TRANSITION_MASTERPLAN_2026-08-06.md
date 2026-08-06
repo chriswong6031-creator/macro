@@ -72,7 +72,18 @@ daily.yml's history (70→120→150→200→240 engine; 40→120 tech_lab;
 tiny per-band timing ledger (job start/end per named band, committed nightly or
 pushed to R2) + a guard that `::warning`s at >85% of cap. Caps then get raised
 from trend data BEFORE a kill night. This is ~30 lines of shell in the jobs +
-one reader script.
+one reader script. **SHIPPED 2026-08-06:** every self-hosted daily.yml job
+carries a pre-checkout start mark + an `always()` finish step
+(`scripts/ci/nightly_timings_finish.sh`) that appends per-band rows to
+`data/ops/nightly_timings/<job>.jsonl` (per-job files — the append can never
+race a sibling job's) and trips the line-start `::warning` above 85% of
+`timeout-minutes`; band marks instrument collect/collect_tail/engine/tech_lab.
+Reader: `scripts/nightly_timings_report.py`. Guard:
+`tests/test_nightly_timings.py` (in the dag-conformance CI pack) pins the
+wiring, pins each finish arg == the job's `timeout-minutes` so a cap raise
+cannot silently rescale the tripwire, and drives the synthetic 86% run of gate
+§0.2. Ledger seeded with the 2026-08-06 kill night — whose engine row reads
+85.4% of even the NEW 240m cap, i.e. the tripwire fires on night one.
 
 **W3 — Workload trims.** build_news GDELT de-rate first (~26–29m of 429
 backoff inside the engine critical path even on green nights — cache/de-rate

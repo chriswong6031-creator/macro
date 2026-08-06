@@ -737,6 +737,14 @@ on:
       # .github/workflows/daily.yml (already covered above); this entry is the other
       # half — a PR editing only the budget test must reach its own guard.
       - "tests/test_tech_lab_offrender_budget.py"
+      # W2 nightly runtime telemetry, run in the same dag-conformance job. daily.yml
+      # itself is covered by ".github/workflows/**" above; these entries are the
+      # other half — a PR editing only the timings module, its finish wrapper, or
+      # the test must still reach the wiring + tripwire guard.
+      - "scripts/nightly_timings.py"
+      - "scripts/nightly_timings_report.py"
+      - "scripts/ci/nightly_timings_finish.sh"
+      - "tests/test_nightly_timings.py"
       # TXI W1 transmission chains: the chain library, the compiler/engine, the runner, and
       # the test file must all trigger the chain suite so a bad edit reds the PR (the #3357
       # vacuous-green trap needs BOTH the paths entry here AND the job below).

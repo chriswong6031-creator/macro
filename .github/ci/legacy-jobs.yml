@@ -1440,6 +1440,15 @@ jobs:
       # step sequence was perfectly conformant, and the publish tail never ran.
       - name: nightly lane budgets (tech_lab_offrender publish tail)
         run: python -m pytest tests/test_tech_lab_offrender_budget.py -q
+      # Third layer of the same family: W2 runtime telemetry (masterplan
+      # 2026-08-06). Every self-hosted daily.yml job must carry the job-start
+      # mark as its FIRST step and the always() timings/85%-tripwire finish as
+      # its LAST, the finish cap argument must equal the job's timeout-minutes
+      # (a cap raise that skips the arg silently rescales the tripwire — the
+      # tech_lab stale-label class), and a synthetic 86% run must trip the
+      # line-start ::warning (masterplan §0.2 acceptance gate).
+      - name: nightly runtime telemetry (W2 wiring + 85% tripwire behavior)
+        run: python -m pytest tests/test_nightly_timings.py -q
 
   push-retry-policy:
     if: ${{ false }}
