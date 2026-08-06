@@ -1433,19 +1433,66 @@ def _src(item: dict) -> dict:
 
 
 def _log_tick(result: dict, now: datetime, *, dry_run: bool) -> None:
+    """One ATTRIBUTABLE line per earnings pass, plus an alarm the summary can't be.
+
+    `emitted=0 skipped=0 quarantined=0` used to be the whole readout, and it is
+    the same three zeroes whether nobody reported in the window or the lane's
+    universe file was missing from a sparse checkout — the fail-closed skip only
+    exists once there is a candidate to skip, so an empty window leaves a broken
+    universe no trace at all. Run 31113734214 (2026-08-06) logged those zeroes
+    for a lane that could not have emitted anything, concluded `success`, and
+    said "nothing queued this pass".
+
+    So the line now carries `events_in`, the universe state, and the skip /
+    quarantine counts BY REASON — and a dead universe additionally raises a
+    GitHub annotation, because the only trace it left before was a
+    `logger.warning`, which this repo's prefixing log format pushes off line
+    start where GitHub silently drops it (house law; tests/test_gh_annotation_
+    line_start.py). The annotation is a bare line-start print with flush=True:
+    stdout is block-buffered when piped in CI.
+    """
+    from engine.marketing.fastlane import summarize_tick  # noqa: PLC0415
+
     dry_tag = " [DRY-RUN]" if dry_run else ""
-    emitted_n = len(result.get("emitted", []))
-    skipped_n = len(result.get("skipped", []))
-    quarantined_n = len(result.get("quarantined", []))
     ts = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    # summarize_tick is total by contract — this helper runs BEFORE
+    # _touch_heartbeat, so anything that can raise here presents as a dead daemon.
+    summary = summarize_tick(result)
+    emitted_n = summary["emitted"]
+    skipped_n = summary["skipped"]
+    quarantined_n = summary["quarantined"]
+    universe_ok = summary["universe_available"]
     logger.info(
-        "[fastlane] tick%s | emitted=%d skipped=%d quarantined=%d | %s",
+        "[fastlane] tick%s | emitted=%d skipped=%d quarantined=%d | "
+        "events_in=%s universe=%s size=%d src=%s | skipped_by_reason=%s "
+        "quarantined_by_reason=%s | %s",
         dry_tag,
         emitted_n,
         skipped_n,
         quarantined_n,
+        summary["events_in"],
+        "ok" if universe_ok else "UNAVAILABLE",
+        summary["universe_size"],
+        summary["universe_source"],
+        summary["skipped_by_reason"] or "{}",
+        summary["quarantined_by_reason"] or "{}",
         ts,
     )
+    if not universe_ok:
+        # NOT a quiet earnings day: with no universe, EVERY candidate is skipped
+        # fail-closed and this lane cannot queue a post on any pass, in any
+        # window, until the file is readable again.
+        print(
+            f"::warning title=marketing-earnings-wire::universe unavailable — "
+            f"{summary['universe_source']} could not be read, so eligibility "
+            f"failed CLOSED: every candidate is skipped and this lane can queue "
+            f"nothing, on any pass, until that file is readable again "
+            f"(this pass: events_in={summary['events_in']}, "
+            f"skipped={skipped_n}). Check that site/marketdata is in the "
+            f"workflow's sparse-checkout cone — a zero-emission pass here is a "
+            f"broken checkout, not a quiet reporting window.",
+            flush=True,
+        )
     if dry_run and emitted_n:
         for item in result["emitted"]:
             # XG-W2 item shape: `provenance` is a lane SLUG string and the rich
