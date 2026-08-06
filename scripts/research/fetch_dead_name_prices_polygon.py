@@ -41,6 +41,11 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from collectors.edgar_deadname_prices import (  # noqa: E402
+    TENURE_LOOKBACK_DAYS,
+    split_identity_seam,
+    tenure_bounds,
+)
 from lib import config  # noqa: E402
 
 log = logging.getLogger(__name__)
@@ -158,6 +163,29 @@ def _delist_date_map(tickers: list[str]) -> dict[str, str]:
     return {t: latest[t].strftime("%Y-%m-%d") for t in tickers if t in latest}
 
 
+def _fetch_start_map(tickers: list[str]) -> dict[str, str]:
+    """Map ticker → the EARLIEST date this registrant may be asked for.
+
+    ANCHOR_DATE is a single global constant, so asking Polygon for
+    [ANCHOR_DATE, delist] reaches back before the name held the string whenever its
+    tenure began after 2021-07-06 — and Polygon answers for whoever held the string
+    then. That is how FI (Frank's International welded to Fiserv across an empty
+    2022) and ALTM (Altus Midstream welded to Arcadium Lithium) entered the store.
+    Clamp the request to tenure_start - TENURE_LOOKBACK_DAYS so the window cannot
+    predate the registrant by more than a legitimate rebalance lookback.
+    """
+    m = _load_pit_membership()
+    sub = m[m["ticker"].isin(tickers)]
+    first = sub.groupby("ticker")["start_date"].min()
+    out: dict[str, str] = {}
+    for t in tickers:
+        floor = pd.Timestamp(ANCHOR_DATE)
+        if t in first.index and pd.notna(first[t]):
+            floor = max(floor, first[t] - pd.Timedelta(days=TENURE_LOOKBACK_DAYS))
+        out[t] = floor.strftime("%Y-%m-%d")
+    return out
+
+
 def _oos_dead_tickers(dead: list[str]) -> list[str]:
     """Dead tickers that fired in the honest-OOS window (2021-07-06 → 2021-10-25)."""
     fires_path = config.data_dir() / "research" / "gate_fires_baskets.parquet"
@@ -227,6 +255,7 @@ def fetch(
     log.info("Dead universe: %d tickers; post-anchor: %d", len(dead), len(post_anchor))
 
     delist_map = _delist_date_map(post_anchor)
+    start_map = _fetch_start_map(post_anchor)
 
     if tickers is not None:
         # Explicit list: validate against post_anchor universe
@@ -272,10 +301,23 @@ def fetch(
     n_success, n_fail = 0, 0
     now_utc = datetime.now(timezone.utc).isoformat()
 
+    mem_all = _load_pit_membership()
     for i, ticker in enumerate(todo):
         delist = delist_map.get(ticker, "2026-12-31")
-        s = _polygon_fetch(ticker, ANCHOR_DATE, delist, key)
+        s = _polygon_fetch(ticker, start_map.get(ticker, ANCHOR_DATE), delist, key)
         time.sleep(1.0 / REQUEST_RATE)
+
+        # Second line of defence: the clamped window still cannot know when a string
+        # changed hands, so refuse any pre-tenure segment behind an identity seam.
+        n_refused = 0
+        if s is not None:
+            bounds = tenure_bounds(ticker, mem_all)
+            s, foreign = split_identity_seam(s, bounds[0] if bounds else None)
+            n_refused = int(len(foreign))
+            if n_refused:
+                print(f"::warning title=dead-name-splice::{ticker}: refused {n_refused} "
+                      f"pre-tenure bar(s) ending {foreign.index.max().date()} — string held "
+                      f"by another registrant before {bounds[0].date()}", flush=True)
 
         if s is not None and len(s) >= 2:
             n_success += 1
@@ -285,6 +327,7 @@ def fetch(
                 "n": int(len(s)),
                 "start": str(s.index[0].date()),
                 "end": str(s.index[-1].date()),
+                "refused_pre_tenure": n_refused,
             }
             for d, c in s.items():
                 new_rows.append({
