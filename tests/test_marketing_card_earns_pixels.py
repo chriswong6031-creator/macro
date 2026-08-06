@@ -1391,30 +1391,52 @@ def test_caps_are_measured_wider_than_lowercase():
 # ABSTAINED, nothing emitted; digit present -> emitted with media=[] and then
 # QUARANTINED by scripts/marketing_publisher._bare_cashtag_post. The operator's
 # complaint was a doubled card and the delivered behaviour was no post at all.
+#
+# THE RULING THAT DECIDES HOW THIS IS FIXED (2026-08-06). The first repair
+# taught value_gate to read a WITHHELD card as `hard` proof. That was circular:
+# the only thing that sets the withheld flag is card_earns_attachment answering
+# False, whose meaning is exactly "this picture contains nothing the post does
+# not already say", and the claim was persisted into `source.value_gate`, the
+# calibration record. A WIRE RELAY'S PROOF IS ITS SOURCE, not a picture of its
+# own text — so the withheld proof rung is gone and the repaired citation rung
+# (press_lane read provenance["url"], build_breaking_payload writes
+# "source_url") carries these posts. MEASURED before committing to it: 75/75
+# (100%) of the press-lane emissions in data/marketing/outbox/items.jsonl carry
+# an http(s) source_url, 6 of them are carried by that rung ALONE, and 0 are
+# held for want of proof. A post with no figure, no link and no picture is held,
+# and that is the gate working.
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _kill_fixture(proof: str = "none") -> list[dict]:
+def _kill_fixture(proof: str = "none", cashtag: bool = True) -> list[dict]:
     """The repo's own press-copy fixture item (tests/test_marketing_press_copy).
 
-    `proof` names what ELSE the copy has to rest on, because value_gate reaches
-    `hard` by several rungs and only one of them is the card:
+    `proof` names what the copy has to rest on once the card is withheld,
+    because value_gate reaches `hard` by several rungs and — since the ruling —
+    none of them is the card we chose not to print:
 
-      "digit"    — the workaround round 1 shipped instead of a fix: a figure
-                   inserted into the headline so the copy proves itself.
-      "url"      — the fixture's own source link, via the citation rung (dead on
-                   this lane until the `source_url` key fix).
-      "none"     — neither. THE CARD WAS THE ONLY HARD PROOF, which is the case
-                   that used to die silently and the one the withheld state
-                   exists for. A wire flash with no figure and an opaque source
-                   id is an ordinary item, not a contrived one.
-
-    All three must emit.
+      "digit"    — a figure in the headline, so the copy proves itself.
+      "url"      — the fixture's own source link, via the citation rung. This is
+                   the ORDINARY case: every real press emission has one.
+      "none"     — neither, and an opaque non-URL source id. No figure, no link,
+                   no visible picture: nothing checkable at all. HELD, and that
+                   is correct. Kept in the matrix as the floor, not as a target.
     """
-    head = (
-        "Trump orders a new 25% tariff and export controls on $AAPL and $NVDA"
-        if proof == "digit" else
-        "Trump orders new tariffs and export controls on $AAPL and $NVDA"
-    )
+    if cashtag:
+        head = (
+            "Trump orders a new 25% tariff and export controls on $AAPL and $NVDA"
+            if proof == "digit" else
+            "Trump orders new tariffs and export controls on $AAPL and $NVDA"
+        )
+        body = "The president said tariffs and export controls on $AAPL and $NVDA rise."
+    else:
+        head = (
+            "Trump says tariff rates will rise because trading partners refused "
+            "to lower their own barriers, the White House says"
+        )
+        body = (
+            "The president said the increase takes effect because negotiations "
+            "stalled, and that rates stay until partners move, the White House says."
+        )
     return [{
         "id": "trumpstruth:strong", "source": "trumpstruth",
         "source_name": "Truth Social (via trumpstruth.org)",
@@ -1423,9 +1445,7 @@ def _kill_fixture(proof: str = "none") -> list[dict]:
                 else "trumpstruth:strong"),
         "published_at": "2026-07-27T13:59:00Z",
         "headline": head,
-        "body_snippet": (
-            "The president said tariffs and export controls on $AAPL and $NVDA rise."
-        ),
+        "body_snippet": body,
         "truth_status_id": "strong", "corroboration_class": "direct-quote",
     }]
 
@@ -1449,25 +1469,26 @@ def _emitting_tick(items: list[dict]) -> dict:
     )
 
 
-@pytest.mark.parametrize("proof", ["none", "url", "digit"])
+@pytest.mark.parametrize("proof", ["url", "digit"])
 def test_a_withheld_card_ships_the_post_text_only(proof):
-    """BLOCKER 1 — the value gate must not read a withheld card as no evidence.
+    """BLOCKER 1 — a withheld card must not delete the post.
 
     Mechanism: value_gate.KIND_PROOF["breaking"] == "hard", and `_proof_tier`
-    reached `hard` for a press flash only through `has_media`. Dropping the card
-    removed the post's only hard proof, press_lane saw an armed abstention
-    (config/marketing.yml enforce: true, breaking in enforce_kinds) and returned
-    None. A wire flash with no digit in its copy therefore vanished.
+    reached `hard` for a press flash only through `has_media`, because the
+    citation rung was reading a provenance key nothing writes. Dropping the card
+    removed the post's only reachable hard proof, press_lane saw an armed
+    abstention (config/marketing.yml enforce: true, breaking in enforce_kinds)
+    and returned None.
 
-    PARAMETRISED OVER WHAT ELSE THE COPY HAS. `proof="none"` is the one that
-    isolates this fix: with a figure in the headline or a URL to cite, the post
-    proves itself and the withheld card changes nothing, so a single-fixture
-    version of this test passes with the fix reverted. Verified by mutation —
-    the "none" case is the one that goes back to `emitted == []`.
+    `proof="url"` IS THE PIN FOR THE REPAIR, and it is behavioural, not textual:
+    it passes only because press_lane hands value_gate
+    `provenance["source_url"]`. `proof="digit"` proves the withheld card does
+    not BLOCK a post that proves itself either.
 
-    MUTATION: pass `media_withheld=False` at press_lane._emit_outbox_item's
-    stamp_value_gate call (i.e. undo the fix) and `proof="none"` is refused with
-    `outbox_refused` again.
+    MUTATION (run in place, restored): revert press_lane's citation read to
+    `provenance.get("url")` and `proof="url"` goes back to EMITTED 0 /
+    `outbox_refused` with `::warning ... ABSTAINED, not posted
+    (proof:below_hard)`.
     """
     res = _emitting_tick(_kill_fixture(proof))
     emitted = [e for e in res["emitted"] if e.get("kind") == "breaking"]
@@ -1483,6 +1504,31 @@ def test_a_withheld_card_ships_the_post_text_only(proof):
     # The gate stamped a PASS, and its record says which media state it read.
     verdict = (item.get("source") or {}).get("value_gate") or {}
     assert verdict.get("verdict") == "pass", verdict
+    # ...and the pass rests on the copy's OWN evidence, never on the picture we
+    # just declared uninformative.
+    assert (verdict.get("components") or {}).get("reached_proof") == "hard"
+    assert (verdict.get("components") or {}).get("surplus", {}).get("media") is False
+
+
+def test_a_post_with_nothing_checkable_is_held_and_that_is_correct():
+    """THE FLOOR OF THE RULING, stated as a test so it cannot be quietly moved.
+
+    No figure, no source link, and a picture the gate judged to add nothing: the
+    post rests on nothing a reader can check, and `breaking` requires `hard`. It
+    is HELD. That is the gate working, not a kill path — and it is the outcome
+    the removed `media_withheld -> hard` rung was buying its way out of.
+
+    MEASURED SCOPE, so nobody re-adds the rung on a guess: 75/75 shipped
+    press-lane items in data/marketing/outbox/items.jsonl carry an http(s)
+    `source_url`, so this shape does not occur on the live lane at all.
+
+    MUTATION: restore `if has_media or media_withheld: return "hard"` in
+    value_gate._proof_tier and this test fails (the post emits).
+    """
+    res = _emitting_tick(_kill_fixture("none"))
+    emitted = [e for e in res["emitted"] if e.get("kind") == "breaking"]
+    assert emitted == [], "a post with no checkable evidence shipped anyway"
+    assert [s.get("reason") for s in res.get("skipped") or []] == ["outbox_refused"]
 
 
 def test_the_publisher_does_not_quarantine_a_withheld_card_post():
@@ -1534,12 +1580,18 @@ def test_a_post_that_never_had_a_card_is_still_quarantined():
     assert mp._bare_cashtag_post(withheld, {"media_enabled": True}, []) == ""
 
 
-def test_the_value_gate_media_state_is_three_valued():
-    """`shown` / `withheld_for_value` / `none` — never two.
+def test_a_withheld_card_buys_no_proof_and_no_gift():
+    """THE RULING (2026-08-06), pinned on the gate itself.
 
-    A withheld card is PROOF (the evidence exists; we declined to reprint it)
-    and never a GIFT (the reader does not see it). Keeping those apart is what
-    stops the withheld state becoming a blanket pass.
+    `media_state` stays three-valued — a card drawn and deliberately not printed
+    is a different FACT about the post from a card that never existed, and the
+    calibration record should be able to tell them apart — but it is a
+    DIAGNOSTIC and it gates nothing. Reading it as `hard` proof was circular:
+    the only thing that sets it is card_earns_attachment answering "this picture
+    contains nothing the post does not already say".
+
+    MUTATION: restore `if has_media or media_withheld: return "hard"` in
+    value_gate._proof_tier and the `held.proof is False` assertion fails.
     """
     from engine.marketing import value_gate as vg
 
@@ -1548,34 +1600,141 @@ def test_the_value_gate_media_state_is_three_valued():
     held = vg.evaluate("", copy, kind="breaking", media_withheld=True)
     shown = vg.evaluate("", copy, kind="breaking", has_media=True)
 
+    # The record still distinguishes all three.
     assert none_.components["media_state"] == "none"
     assert held.components["media_state"] == "withheld_for_value"
     assert shown.components["media_state"] == "shown"
-    # Proof moves; the gift does not.
-    assert none_.proof is False and held.proof is True and shown.proof is True
+    # ...and only a card the READER SEES counts, on either arm.
+    assert none_.proof is False and held.proof is False and shown.proof is True
     assert held.components["surplus"]["media"] is False
     assert shown.components["surplus"]["media"] is True
+    # No withheld post is ever stamped with a proof tier it did not reach.
+    assert held.components["reached_proof"] == none_.components["reached_proof"]
 
 
-def test_press_lane_reads_the_citation_key_that_exists():
+def test_the_citation_rung_is_what_carries_a_wire_post():
     """The URL proof rung was dead on this lane: `url` vs `source_url`.
 
     build_breaking_payload writes provenance["source_url"]; press_lane asked for
     provenance["url"] and got "" on every press emission, so value_gate's
     citation rung — a wire item's actual evidence, the link back to the source —
     had never once fired here. Invisible while every press post carried a card
-    (has_media short-circuits to `hard` first) and load-bearing the moment cards
-    could be withheld.
+    (has_media short-circuits to `hard` first), and load-bearing the moment the
+    withheld-card rung was removed as circular.
+
+    BEHAVIOURAL, NOT A SOURCE GREP (review F5). The previous version asserted
+    `'provenance.get("source_url")' in inspect.getsource(...)`, which passes for
+    a rung that is present and dead — the exact shape this file rejects
+    elsewhere. This drives the rung: the value press_lane actually assembles is
+    fed to the real gate, with no picture and no digit anywhere in the copy, and
+    `hard` can only have come from the citation.
     """
-    import inspect
+    from engine.marketing import value_gate as vg
 
-    from engine.marketing import press_lane
+    p = _payload("US CPI cooled again in July", "Consensus was for a hold.")
+    cite = str(p["provenance"].get("source_url") or "")
+    assert cite, "build_breaking_payload stopped writing the key press_lane reads"
 
-    src = inspect.getsource(press_lane._emit_outbox_item)
-    assert 'provenance.get("source_url")' in src, (
-        "the citation rung is reading a provenance key nothing writes")
-    p = _payload("US CPI cooled to 2.4% in July", "Consensus was 2.6%.")
-    assert "source_url" in p["provenance"]
+    copy = ("Trump says tariff rates will rise because trading partners refused "
+            "to lower their own barriers, the White House says")
+    assert not any(ch.isdigit() for ch in copy), "the fixture grew a digit"
+
+    with_cite = vg.evaluate("", copy, kind="breaking", has_media=False, citation=cite)
+    without = vg.evaluate("", copy, kind="breaking", has_media=False, citation="")
+    assert with_cite.components["reached_proof"] == "hard"
+    assert with_cite.proof is True
+    assert without.proof is False, (
+        "the citation is not what carried this post — the test cannot see the rung")
+
+
+def test_a_degraded_render_is_retried_not_quarantined_and_not_deleted():
+    """BLOCKER 3 — the FOURTH producer of `media == []`.
+
+    The M9 degraded-render fix drops the renderer's blank fail-soft fallback,
+    which is right, but it lands in the dispatch looking exactly like a post
+    that never wanted a picture. MEASURED before the fix, forcing the fail-soft
+    by making chart_render._bc_fit_headline raise: the ticker post EMITTED with
+    media=[] and the REAL publisher gate returned "$AAPL $NVDA" — quarantined,
+    terminal. A failed render is an ENVIRONMENT fault, so it now joins
+    press_lane._TRANSIENT_REFUSALS: the story is not marked seen and comes back
+    next tick with a fresh render.
+
+    THE NO-TICKER HALF STILL SHIPS. A post that owes nobody a picture goes on to
+    the value gate and passes on its own citation, which is the whole point of
+    the ruling.
+
+    MUTATION: delete the `card_absent_reason == "render_degraded"` branch in
+    press_lane._emit_outbox_item and the first half fails with
+    `_bare_cashtag_post -> "$AAPL $NVDA"`; remove `card_absent_reason` from
+    build_breaking_payload's provenance and it fails the same way.
+    """
+    import scripts.marketing_publisher as mp
+    from engine.marketing import chart_render
+
+    def _boom(*_a, **_k):
+        raise RuntimeError("forced fail-soft")
+
+    orig = chart_render._bc_fit_headline
+    chart_render._bc_fit_headline = _boom
+    try:
+        ticker_res = _emitting_tick(_kill_fixture("url"))
+        prose_res = _emitting_tick(_kill_fixture("url", cashtag=False))
+    finally:
+        chart_render._bc_fit_headline = orig
+
+    # (1) A ticker post owes a picture it did not get: refused TRANSIENTLY, so
+    #     the story survives to the next tick instead of dying in quarantine.
+    assert [e for e in ticker_res["emitted"] if e.get("kind") == "breaking"] == []
+    reasons = [s.get("reason") for s in ticker_res.get("skipped") or []]
+    assert reasons == ["card_render_degraded"], reasons
+    from engine.marketing.press_lane import _TRANSIENT_REFUSALS
+    assert "card_render_degraded" in _TRANSIENT_REFUSALS, (
+        "the refusal is terminal, so a renderer hiccup permanently kills the story")
+
+    # (2) A post with no cashtag ships TEXT-ONLY on its citation, and the real
+    #     publisher gate lets it through.
+    emitted = [e for e in prose_res["emitted"] if e.get("kind") == "breaking"]
+    assert emitted, (
+        "a degraded render deleted a post that owed nobody a picture: "
+        f"{[s.get('reason') for s in prose_res.get('skipped') or []]}"
+    )
+    item = emitted[0]
+    assert item.get("media") in ([], None)
+    assert mp._bare_cashtag_post(item, {"media_enabled": True}, []) == ""
+    verdict = (item.get("source") or {}).get("value_gate") or {}
+    assert (verdict.get("components") or {}).get("reached_proof") == "hard"
+    # ...and it is NOT stamped as a withheld card: nothing judged this picture.
+    assert (item.get("source") or {}).get("card_withheld_for_value") is None
+
+
+def test_the_withheld_exemption_does_not_reach_a_chart_bearing_kind():
+    """Review F6 — the exemption is a per-KIND relaxation, so it is kind-scoped.
+
+    `_bare_cashtag_post` honoured a bare boolean off `source`, above the kind
+    test. Nothing sets it on a chart-bearing kind today, but the rule it stands
+    down ("these kinds always carry their chart") is exactly the rule those
+    kinds exist under, and a future producer stamping the flag would have bought
+    its way out silently.
+
+    MUTATION: drop the kind check from
+    scripts/marketing_publisher._card_withheld_for_value and the `signal` /
+    `mover` assertions fail.
+    """
+    import scripts.marketing_publisher as mp
+
+    flagged = {"card_withheld_for_value": True, "lane": "press"}
+    text = "$ALL $ERIE $TRV lead the tape today."
+    cfg = {"media_enabled": True}
+
+    # The two kinds whose lanes legitimately set it.
+    for kind in ("breaking", "earnings"):
+        it = {"kind": kind, "text": text, "media": [], "source": dict(flagged)}
+        assert mp._bare_cashtag_post(it, cfg, []) == "", kind
+    # ...and every kind that owes a picture by its own definition.
+    for kind in sorted(mp._CHART_BEARING_KINDS | mp._TICKER_ROLLUP_KINDS):
+        it = {"kind": kind, "text": text, "media": [], "source": dict(flagged)}
+        assert mp._bare_cashtag_post(it, cfg, []) == "$ALL $ERIE $TRV", (
+            f"a {kind} item bought an exemption from the rule it exists under")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1682,6 +1841,119 @@ def test_every_card_drawing_lane_consults_the_gate():
         f"these lanes draw a breaking card without consulting the card-value "
         f"gate: {offenders}"
     )
+
+
+def test_every_card_drawing_lane_judges_what_the_card_drew():
+    """The gate's own law, applied to the lanes that call it (review F4/M12).
+
+    card_earns_attachment's contract is "both texts must be WHAT THE READER
+    SEES". press_lane obeyed it; earnings_call_lane did not — it scored
+    `_short_clause(summary, 190)` against a box whose measured capacity is
+    card_summary_budget_chars() == 129, and it decided BEFORE calling the
+    renderer at all. A summary whose drawn head restates the post and whose
+    UNDRAWN tail is additive therefore attached a restating card, which is the
+    defect the gate exists for. The same fact falsified the premise
+    scripts/marketing_publisher._card_withheld_for_value's exemption rests on
+    ("nothing sets this flag except a gate that has SEEN a rendered card").
+
+    STRUCTURAL, on the AST, because prose decays and this is a property of every
+    future lane too: the gate's `summary` argument must read the render's fit
+    report, not the producer's string.
+
+    MUTATION: pass `card_summary or ""` back to card_earns_attachment in
+    earnings_call_lane._media_for_event and this fails naming that file.
+    """
+    import ast
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent
+    offenders = []
+    for rel in ("engine/marketing/press_lane.py",
+                "engine/marketing/earnings_call_lane.py"):
+        tree = ast.parse((root / rel).read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if not (isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Name)
+                    and node.func.id == "card_earns_attachment"):
+                continue
+            # args: (post_text, hero, body, tickers). The two the CARD drew are
+            # 1 and 2, and EACH must be sourced from a drawn/fit field — a
+            # version that checked them together passed on press_lane, whose
+            # hero was still the producer's pre-render string.
+            for pos, role in ((1, "hero"), (2, "body")):
+                expr = ast.unparse(node.args[pos])
+                if "drawn" not in expr:
+                    offenders.append(f"{rel}: {role}={expr}")
+    assert offenders == [], (
+        "these gate calls judge text the card never drew: " + "; ".join(offenders))
+
+
+def test_the_earnings_lane_renders_before_it_judges(tmp_path, monkeypatch):
+    """...and the render really does come first, not just the argument.
+
+    The publisher's exemption is justified by "a gate that has SEEN a rendered
+    card, so a lane cannot buy an exemption by skipping the render". This drives
+    the lane and asserts the renderer ran before the gate decided.
+
+    MUTATION: move the card_earns_attachment call back above
+    render_breaking_card in earnings_call_lane._media_for_event and `order`
+    comes back ['gate'] with no 'render' before it.
+    """
+    from engine.marketing import breaking_summary as _bs
+    from engine.marketing import chart_render
+    from engine.marketing import earnings_call_lane as _ecl
+    from tests.test_marketing_earnings_call_lane import NOW, _event, _hosted
+
+    _hosted(monkeypatch)
+    order: list[str] = []
+    real_render = chart_render.render_breaking_card
+    real_gate = _bs.card_earns_attachment
+
+    def _render(*a, **k):
+        order.append("render")
+        return real_render(*a, **k)
+
+    def _gate(*a, **k):
+        order.append("gate")
+        return real_gate(*a, **k)
+
+    monkeypatch.setattr(chart_render, "render_breaking_card", _render)
+    monkeypatch.setattr(_bs, "card_earns_attachment", _gate)
+    _ecl.enqueue_event(_event(summary="Revenue grew 93% in a spectacular quarter."),
+                       root=tmp_path, now=NOW)
+    assert order[:2] == ["render", "gate"], (
+        f"the earnings lane judged a card it had not drawn: {order}")
+
+
+def test_a_degraded_earnings_render_never_buys_the_withheld_exemption(
+        tmp_path, monkeypatch):
+    """The premise the publisher's exemption rests on, on the sibling lane.
+
+    Rendering first is what makes "nothing sets this flag except a gate that has
+    SEEN a rendered card" true — but only if a render that FAILED is refused
+    instead of judged. Without the fit-report guard the lane falls back to the
+    producer's hero, the gate compares it to the post's own first line, answers
+    False, and stamps `card_withheld_for_value` on a card nobody ever drew: an
+    exemption bought by a broken renderer, which is the exact thing the premise
+    denies is possible.
+
+    MUTATION: disable the `if "headline_drawn" not in fit` branch in
+    earnings_call_lane._media_for_event and this fails with status 'queued' and
+    the flag set.
+    """
+    from engine.marketing import chart_render
+    from engine.marketing import earnings_call_lane as _ecl
+    from tests.test_marketing_earnings_call_lane import NOW, _event, _hosted
+
+    cards = _hosted(monkeypatch)
+    monkeypatch.setattr(
+        chart_render, "_bc_fit_headline",
+        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("forced fail-soft")))
+    result = _ecl.enqueue_event(_event(), root=tmp_path, now=NOW)
+
+    assert result["status"] == "media_unhosted", result
+    assert result["item"] is None
+    assert cards == [], "a card with no fit report was published anyway"
 
 
 def test_the_earnings_call_lane_withholds_a_restating_card(tmp_path, monkeypatch):

@@ -128,7 +128,13 @@ def reset_media_host_stats() -> None:
 #: are missing on the host. One flaky raster on a breaking cashtag story used to
 #: bury that story for the whole life of the seen ledger, and the LLM spend that
 #: produced its copy bought nothing.
-_TRANSIENT_REFUSALS: frozenset[str] = frozenset({"media_unhosted"})
+_TRANSIENT_REFUSALS: frozenset[str] = frozenset({
+    "media_unhosted",
+    # The renderer fell through its outer fail-soft, so a ticker post has no
+    # picture to ship — an ENVIRONMENT fault, same class as a lost raster, and
+    # the next tick redraws from scratch. See _emit_outbox_item.
+    "card_render_degraded",
+})
 
 #: Consecutive transient refusals of the SAME story before the lane alarms. A
 #: retry loop that never surfaces is the other half of the same fault: a host
@@ -1202,6 +1208,39 @@ def _emit_outbox_item(
     _post_text = (text_override if text_override is not None
                   else _ob.compose_text(headline, body))
 
+    # ── A CARD WE MEANT TO DRAW AND COULD NOT ────────────────────────────────
+    # THE FOURTH PRODUCER OF media == [] (2026-08-06 review, blocker 3). The
+    # degraded-render fix in build_breaking_payload drops the blank fail-soft
+    # fallback, which is right — a card nobody can read is not a card — but it
+    # lands here looking exactly like a post that never wanted a picture. It is
+    # not: measured on this fixture with the renderer forced through its outer
+    # fail-soft, the emission shipped with media=[] and the REAL publisher gate
+    # returned "$AAPL $NVDA", i.e. QUARANTINED, terminal.
+    #
+    # This is the SAME question the unhosted-card block below answers one step
+    # later — "the copy names tickers and we have no picture" — so it gets the
+    # same answer, and `card_render_degraded` joins _TRANSIENT_REFUSALS: the
+    # story is not marked seen, comes back next tick with a fresh render, and
+    # the existing stuck-retry alarm fires if the renderer is genuinely down.
+    # A POLICY refusal (a foreign @handle on a card param) is deliberately NOT
+    # routed here: the next tick redraws the identical unlawful card.
+    _absent_why = str(provenance.get("card_absent_reason") or "")
+    if not media and _absent_why == "render_degraded":
+        _cashtags = sorted(set(_CASHTAG_RE.findall(_post_text)))
+        if _cashtags:
+            print("::warning title=press-lane-card-render-degraded::"
+                  f"{item_id}: the card render fell through its fail-soft and the "
+                  f"copy names {' '.join(_cashtags)} — not enqueued, retrying next "
+                  "tick (a ticker post ships a picture, operator 2026-07-30)",
+                  flush=True)
+            if refusal is not None:
+                refusal["reason"] = "card_render_degraded"
+                refusal["violations"] = list(_cashtags)
+            return None
+        # No cashtag: the post owes nobody a picture, so it goes on to the value
+        # gate and ships text-only on its own evidence, exactly as it would have
+        # if no card had ever been attempted.
+
     # ── CARD RASTER + HOST ───────────────────────────────────────────────────
     # Runs BEFORE the value gate so `has_media` is the truth (a card nobody can
     # fetch is not media) and before make_item so the media_url rides on the item
@@ -1281,9 +1320,23 @@ def _emit_outbox_item(
         # not ship is a ::warning, not a ::notice.
         _enforced = _ob._value_gate_enforced(cfg, "breaking")
         _why = ",".join(_verdict.get("reasons") or [])
+        # COUNTABLE, because this class is an OPEN PRODUCT DECISION (2026-08-06).
+        # A verbatim headline relay with no figure, no ticker and no stance has
+        # no informational surplus of its own; while a card was attached the
+        # picture stood in as that surplus, and withholding it as a restatement
+        # leaves the post held on `gift:no_informational_surplus`. MEASURED over
+        # the 75 shipped press-lane items: 5 (6.7%) land here. That is the gate
+        # applying its own charter, not a bug — but the operator has to be able
+        # to count it before ruling on it, so the withheld card is named in the
+        # line rather than left to be inferred from a ::notice further up.
         if _enforced:
+            _held_with_card = (
+                " — the card was withheld as a restatement, so the copy stood alone"
+                if card_withheld else ""
+            )
             print("::warning title=press-lane-value-gate::"
-                  f"{item_id}: ABSTAINED, not posted ({_why})", flush=True)
+                  f"{item_id}: ABSTAINED, not posted ({_why}){_held_with_card}",
+                  flush=True)
         elif not _ob.value_gate_kind_is_measured(cfg, "breaking"):
             # The kind is outside the armed set: the verdict is EVIDENCE being
             # collected, not a judgment being applied. Say so, or the next
@@ -2575,7 +2628,12 @@ def run_press_tick(
         if _card_svg:
             _attach, _card_why = card_earns_attachment(
                 _clamp["text"],
-                payload.get("card_headline") or headline,
+                # BOTH texts are what the RENDERER PLACED, not what the producer
+                # handed it: `card_headline` is derive_card_headline's sentence
+                # bound and the box may fit less of it. Pinned on the AST by
+                # test_every_card_drawing_lane_judges_what_the_card_drew.
+                payload.get("card_headline_drawn")
+                or payload.get("card_headline") or headline,
                 payload.get("card_summary_drawn") or "",
                 payload.get("card_tickers") or [],
             )

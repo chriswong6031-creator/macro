@@ -376,32 +376,34 @@ def _proof_tier(
     has_media: bool,
     numbers_whitelist: Iterable[str] = (),
     citation: str = "",
-    media_withheld: bool = False,
 ) -> str:
     """The STRONGEST proof tier this copy reaches, or "" for none.
 
-    ``media_withheld`` is the third state of the media question (2026-08-06). A
-    post can reach this gate with no picture for two completely different
-    reasons, and reading them as one is what turned a card-quality rule into a
-    press outage:
+    A WITHHELD CARD IS NOT PROOF (ruling 2026-08-06, replacing the rung shipped
+    earlier the same day). For one afternoon this function returned ``hard`` on
+    ``media_withheld`` alone, so that a press flash whose card was dropped would
+    still ship. That rung was circular: the ONLY thing that sets the withheld
+    flag is breaking_summary.card_earns_attachment answering False, and its
+    meaning is precisely "this picture contains nothing the post does not
+    already say". Crediting the post with proof from a picture we had just
+    judged to carry no information beyond the copy — and persisting that claim
+    into ``source.value_gate``, the calibration record the enforcement decision
+    will be raised on — is not defensible, whatever it does for throughput.
 
-      * NO CARD WAS EVER BUILT — the post genuinely has no visual evidence, and
-        `has_media=False` is the honest reading;
-      * A CARD WAS BUILT, MEASURED AND DELIBERATELY WITHHELD because it only
-        restated the post (breaking_summary.card_earns_attachment). The evidence
-        did not disappear; we declined to print a second, redundant copy of it.
+    A WIRE RELAY'S PROOF IS ITS SOURCE. The honest rung for these posts is the
+    citation below: the link back to the item the desk relayed. It had never
+    fired on the press lane because press_lane read ``provenance["url"]`` while
+    build_breaking_payload writes ``source_url``; with that key repaired it
+    carries the lane. Measured over the 75 press-lane emissions in
+    data/marketing/outbox/items.jsonl, 75 (100%) carry an http(s) source_url,
+    and both feed readers derive it from a field RSS/JSON Feed always populate
+    (``link``/``guid``/``url``), so this is the lane's ordinary state and not a
+    lucky sample.
 
-    Only the first weakens the post. Treating the second as "no proof" made the
-    card-value law delete the post it was supposed to slim down: on 2026-08-05
-    every cashtag-free wire flash whose card was withheld came back
-    `proof:below_hard` and was refused outright by press_lane.
-
-    NOTE THE SCOPE — this changes PROOF only. `evaluate` still records
-    ``surplus["media"] = has_media``, because a withheld card is not a GIFT: the
-    reader never sees it. Proof asks "does this rest on something checkable",
-    and the answer is unchanged by our decision not to reprint it.
+    A post with no figure, no link and no visible evidence reaching
+    ``proof:below_hard`` and being held is the gate working, not a kill path.
     """
-    if has_media or media_withheld:
+    if has_media:
         return "hard"
     if citation and _URL_RE.search(str(citation)):
         return "hard"
@@ -495,7 +497,7 @@ def evaluate(
     # ── PROOF ───────────────────────────────────────────────────────────────
     reached = _proof_tier(
         text, has_media=has_media, numbers_whitelist=numbers_whitelist,
-        citation=citation, media_withheld=media_withheld,
+        citation=citation,
     )
     proof = _tier_ok(reached, required)
 
@@ -508,10 +510,10 @@ def evaluate(
         "mechanism": bool(_MECHANISM_RE.search(text)),
         "condition": bool(_RULE_RE.search(text)),
         "explanation": bool(_EXPLANATION_RE.search(text)),
-        # A WITHHELD CARD IS NOT A GIFT. The reader never sees it, so it cannot
-        # be the informational surplus this post offers — only `proof` counts it
-        # (see _proof_tier). Keeping the two apart is what stops the withheld
-        # state from becoming a blanket pass.
+        # A WITHHELD CARD IS NOT A GIFT — the reader never sees it — and since
+        # the 2026-08-06 ruling it is not PROOF either (see _proof_tier). This
+        # is `has_media`, plainly, for the same reason on both arms: a picture
+        # judged to add nothing to the copy cannot be what the copy adds.
         "media": bool(has_media),
         "stance": bool(_PERSON_RE.search(text)),
     }
@@ -572,10 +574,13 @@ def evaluate(
             "kind_known": str(kind) in KIND_PROOF,
             "required_proof": required,
             "reached_proof": reached,
-            # THREE-STATE, not two (2026-08-06). "shown" | "withheld_for_value"
-            # | "none" — a card that was drawn and deliberately not printed must
-            # never read back the same as a post that never had one, or the
-            # card-value law silently becomes a post-deletion law.
+            # THREE-STATE, not two: "shown" | "withheld_for_value" | "none".
+            # DIAGNOSTIC ONLY — it gates nothing (2026-08-06 ruling). A card
+            # drawn and deliberately not printed is a different fact about the
+            # post from a card that never existed, and the calibration record
+            # should be able to tell them apart when the enforcement decision is
+            # raised; what it must NOT do is buy the post a proof tier off a
+            # picture the gate has just declared uninformative.
             "media_state": (
                 "shown" if has_media
                 else ("withheld_for_value" if media_withheld else "none")

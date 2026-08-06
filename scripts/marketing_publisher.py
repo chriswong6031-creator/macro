@@ -794,9 +794,22 @@ def _card_withheld_for_value(it: dict) -> bool:
     the queue and is readable here, in a process that never sees the card.
     Absent/unparseable reads as False: the gate stays armed by default and only
     an explicit, positively-stamped decision stands it down.
+
+    SCOPED BY KIND (review F6). The 2026-07-30 rule this stands down is a
+    PER-KIND rule — "these kinds always carry their chart" — and reading a bare
+    boolean off `source` let any producer buy an exemption from it. `breaking`
+    and `earnings` sit outside both media-owing sets on purpose and are the only
+    kinds whose lanes draw this card, so the flag is honoured only where the
+    rule it relaxes was never absolute. A future lane stamping the flag on a
+    `signal`/`chart`/`watchlist`/`receipt`/`theme_list`/`mover` item gets
+    nothing: those kinds owe a picture by their own definition. Derived from the
+    same frozensets as everything else here, so widening one widens this.
     """
     src = it.get("source")
-    return bool(isinstance(src, dict) and src.get("card_withheld_for_value"))
+    if not (isinstance(src, dict) and src.get("card_withheld_for_value")):
+        return False
+    kind = str(it.get("kind") or "")
+    return kind not in (_CHART_BEARING_KINDS | _TICKER_ROLLUP_KINDS)
 
 
 def _bare_cashtag_post(it: dict, pub_cfg: dict, media_paths: list[str]) -> str:
@@ -870,8 +883,19 @@ def _bare_cashtag_post(it: dict, pub_cfg: dict, media_paths: list[str]) -> str:
         # THIS IS NOT A HOLE IN THE 2026-07-30 RULE. The 19 posts that outage
         # quarantined carried no `media` and no lane-set withholding decision;
         # they simply shipped bare. Nothing sets this flag except a card gate
-        # that has SEEN a rendered card, so a lane cannot buy an exemption by
-        # skipping the render.
+        # that has SEEN a rendered card and read back what it DREW, so a lane
+        # cannot buy an exemption by skipping the render. That premise was false
+        # when first written — earnings_call_lane decided before rendering, and
+        # scored a 190-char string against a 129-char box — and is enforced now
+        # by tests/test_marketing_card_earns_pixels.py::
+        # test_every_card_drawing_lane_judges_what_the_card_drew, which walks
+        # each lane's AST and fails on a gate call that does not read the fit
+        # report. A renderer that fell through its fail-soft is NOT this case in
+        # either lane: it returns the transient `media_unhosted` /
+        # `card_render_degraded` refusal and never stamps the flag.
+        #
+        # AND IT IS SCOPED BY KIND — see _card_withheld_for_value. A `signal` or
+        # `watchlist` item stamping the flag gets nothing.
         return ""
     if not _built_a_card and str(it.get("kind") or "") not in _BARE_CASHTAG_KINDS:
         # Prose that mentions a ticker in passing and never claimed a picture.

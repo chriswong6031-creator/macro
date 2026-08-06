@@ -901,6 +901,29 @@ class _CardHandleLeak(Exception):
     """A card param carried a foreign @handle — the render is abandoned."""
 
 
+#: WHY A PAYLOAD CARRIES NO CARD, recorded in `provenance.card_absent_reason`.
+#:
+#: `card_svg == ""` used to reach the dispatch with no reason attached, and the
+#: dispatch has three opposite readings to choose between:
+#:
+#:   * (no key)        — no card was attempted, or the card is attached. The
+#:                       post never claimed a picture.
+#:   * RENDER_DEGRADED — a card WAS attempted and the renderer fell through its
+#:                       outer fail-soft. An ENVIRONMENT fault: the next tick
+#:                       may well succeed, so press_lane refuses the emission
+#:                       transiently rather than shipping a ticker post bare
+#:                       into the publisher's quarantine.
+#:   * POLICY_REFUSED  — a card was built and may not lawfully be drawn (a
+#:                       foreign @handle reached a card param). A retry redraws
+#:                       exactly the same card, so this is NOT transient.
+#:
+#: What this key is NOT: a card the value gate withheld for adding nothing. That
+#: one is `card_withheld_for_value`, set by press_lane, and it is the only one of
+#: the four that stands a downstream gate down.
+_CARD_ABSENT_RENDER_DEGRADED = "render_degraded"
+_CARD_ABSENT_POLICY_REFUSED = "policy_refused"
+
+
 def _card_param_violations(card_kwargs: dict) -> list[str]:
     """Foreign @mentions in anything the card would draw. [] = clean.
 
@@ -1219,6 +1242,14 @@ def build_breaking_payload(
     # "the card has no body" and let a restatement through the gate.
     card_fit_report: dict = {}
     card_summary_drawn = card_summary or ""
+    card_headline_drawn = ""
+    # WHY THERE IS NO CARD, when there is no card. `card_svg == ""` reaches the
+    # dispatch with no reason attached, and the dispatch has to choose between
+    # two opposite readings: a picture we DECLINED to print (the post ships
+    # text-only) and a picture we FAILED to make (an environment fault). This
+    # string is that difference, recorded by the only code that knows it. Empty
+    # whenever the render succeeded or was never attempted.
+    card_absent_reason = ""
 
     # Lazy import of card renderer (degrades gracefully)
     card_svg = ""
@@ -1295,13 +1326,26 @@ def build_breaking_payload(
         # card, and the post has its own text.
         if "headline_drawn" in card_fit_report:
             card_summary_drawn = str(card_fit_report.get("summary_drawn") or "")
+            # THE HERO, READ BACK THE SAME WAY (2026-08-06 review). The gate
+            # scored `card_headline` — derive_card_headline's pre-render
+            # sentence bound — while the renderer fits that string into its own
+            # box and may place less of it. Both texts the gate compares must be
+            # what the READER SEES, and only the fit report knows that.
+            card_headline_drawn = (
+                str(card_fit_report.get("headline_drawn") or "") or card_headline
+            )
         elif card_svg:
+            # NOT "posting text-only" — that is the dispatch's call, not ours
+            # (2026-08-06 review). This is a FAILED render, not a withheld card,
+            # and a post that names tickers owes a picture it did not get; the
+            # line used to promise a post that press_lane then refused.
             print("::warning title=breaking-card-render-degraded::"
                   f"{item.get('id', '?')}: the renderer returned a card with no "
-                  "fit report (fail-soft fallback) — card dropped, posting "
-                  "text-only", flush=True)
+                  "fit report (fail-soft fallback) — card dropped", flush=True)
             card_svg = ""
             card_summary_drawn = ""
+            card_headline_drawn = ""
+            card_absent_reason = _CARD_ABSENT_RENDER_DEGRADED
         _sm_dropped = int(card_fit_report.get("summary_chars_dropped", 0) or 0)
         if _sm_dropped:
             # COUNTED, never silent — the sibling of the headline warning above.
@@ -1324,6 +1368,15 @@ def build_breaking_payload(
                 "the post body still carries the full summary",
                 flush=True,
             )
+    except _CardHandleLeak:
+        # NAMED, not swallowed by the blanket handler below. The card is gone
+        # for a reason a retry cannot fix, and the dispatch has to be able to
+        # tell that from a renderer that merely fell over — one is worth another
+        # tick, the other is not.
+        card_svg = ""
+        card_summary_drawn = ""
+        card_headline_drawn = ""
+        card_absent_reason = _CARD_ABSENT_POLICY_REFUSED
     except Exception:  # noqa: BLE001
         card_svg = ""
 
@@ -1359,11 +1412,19 @@ def build_breaking_payload(
         # the producer writes to 320, so card_summary is routinely a paragraph
         # the reader never sees. "" means the card drew no second voice at all.
         "card_summary_drawn": card_summary_drawn,
+        # ...and the HERO the card drew, read back from the same fit report.
+        # `card_headline` is what the producer HANDED the renderer; this is what
+        # the renderer placed. The gate must judge the second one.
+        "card_headline_drawn": card_headline_drawn,
         "card_tickers": card_tickers,
         "provenance": {
             "source_url": item.get("url", ""),
             "source": item.get("source", ""),
             "ingested_at": ingested_at,
+            # WHY THERE IS NO CARD — "" whenever one is attached or none was
+            # ever attempted. See _CARD_ABSENT_RENDER_DEGRADED for the contract;
+            # press_lane is the reader.
+            "card_absent_reason": card_absent_reason,
             # Counted drop, persisted: press_lane merges this dict into the
             # outbox item's `source`, so `source.card_fit` is the durable record
             # of how much source text the card could not show.

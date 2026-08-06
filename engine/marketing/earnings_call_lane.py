@@ -408,10 +408,23 @@ def _media_for_event(
 ) -> tuple[list[dict[str, Any]], str]:
     """Render through the existing card family and require a hosted image.
 
-    Returns ``([], reason)`` on refusal. ``reason`` distinguishes the two:
-    ``media_unhosted`` (the upload failed — transient, the post cannot ship) from
+    Returns ``([], reason)`` on refusal. ``reason`` distinguishes three things:
+    ``media_unhosted`` (the upload failed, or the renderer fell through its
+    fail-soft — transient, the post cannot ship) from
     ``card_withheld_for_value`` (the card was drawn and is a restatement — the
     post ships text-only). The caller must not treat them alike.
+
+    RENDER FIRST, THEN JUDGE (2026-08-06 review, M4/M12). The gate used to run
+    BEFORE the render, on `_short_clause(summary, 190)` — 190 characters scored
+    against a box whose measured capacity is chart_render.card_summary_budget_chars()
+    == 129. So the body veto was computed over a tail the card does not print: a
+    summary whose drawn head restates the post while its undrawn tail is
+    additive attached a restating card, which is the defect the gate exists for.
+    It also falsified the premise the publisher's exemption rests on
+    (scripts/marketing_publisher._card_withheld_for_value: "nothing sets this
+    flag except a gate that has SEEN a rendered card"). Both are now true: the
+    render happens first, and the gate scores `fit["headline_drawn"]` /
+    `fit["summary_drawn"]` — the same two fields press_lane scores.
     """
 
     from engine.marketing.breaking_summary import card_earns_attachment
@@ -425,22 +438,7 @@ def _media_for_event(
     )
     card_headline = str(composed["headline"])
     card_summary = _short_clause(event.get("summary"), 190) or None
-    # THE CARD-VALUE LAW IS NOT PRESS-LANE-LOCAL (2026-08-06). This lane drew a
-    # `breaking`-family card whose hero is `composed["headline"]` — the post's
-    # own first line, verbatim — and never consulted the gate, so the exact
-    # defect the gate was built for (one fact, two surfaces, the tweet in poster
-    # type) kept shipping from here while press_lane was fixed. Every lane that
-    # draws this card asks the same question, with the same post text it is
-    # about to publish. Pinned structurally by
-    # tests/test_marketing_card_earns_pixels.py::test_every_card_drawing_lane_consults_the_gate.
-    attach, why = card_earns_attachment(
-        str(composed["text"]), card_headline, card_summary or "", [],
-    )
-    if not attach:
-        print("::notice title=earnings-call-card-dropped::"
-              f"{ticker} {event['quarter']} FY{event['year']}: {why}; "
-              "posting text-only", flush=True)
-        return [], "card_withheld_for_value"
+    fit: dict = {}
     svg = render_breaking_card(
         headline=card_headline,
         source_name="Earnings call transcript",
@@ -457,7 +455,37 @@ def _media_for_event(
         eyebrow="EARNINGS CALL",
         logo_root=root,
         cta=chart_cta_enabled(cfg),
+        fit=fit,
     )
+    if "headline_drawn" not in fit:
+        # The renderer's outer fail-soft returned a blank fallback and populated
+        # no fit report. There is nothing to judge and nothing worth printing —
+        # same reading as press_lane's, and an earnings post names a ticker, so
+        # it does not ship bare.
+        print("::warning title=earnings-call-card-render-degraded::"
+              f"{ticker} {event['quarter']} FY{event['year']}: the renderer "
+              "returned a card with no fit report (fail-soft fallback)",
+              flush=True)
+        return [], "media_unhosted"
+    # THE CARD-VALUE LAW IS NOT PRESS-LANE-LOCAL (2026-08-06). This lane drew a
+    # `breaking`-family card whose hero is `composed["headline"]` — the post's
+    # own first line, verbatim — and never consulted the gate, so the exact
+    # defect the gate was built for (one fact, two surfaces, the tweet in poster
+    # type) kept shipping from here while press_lane was fixed. Every lane that
+    # draws this card asks the same question, with the same post text it is
+    # about to publish, over WHAT THE CARD DREW. Pinned structurally by
+    # tests/test_marketing_card_earns_pixels.py::test_every_card_drawing_lane_consults_the_gate.
+    attach, why = card_earns_attachment(
+        str(composed["text"]),
+        str(fit.get("headline_drawn") or card_headline),
+        str(fit.get("summary_drawn") or ""),
+        [],
+    )
+    if not attach:
+        print("::notice title=earnings-call-card-dropped::"
+              f"{ticker} {event['quarter']} FY{event['year']}: {why}; "
+              "posting text-only", flush=True)
+        return [], "card_withheld_for_value"
     published = publish_card(
         svg,
         chart_id=card_id,
