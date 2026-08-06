@@ -555,9 +555,22 @@ class TestLiveConformance:
         )
         assert collect["continue-on-error"] is True
         assert collect["env"]["COLLECT_LANE"] == "government-revenue-live"
-        assert collect["run"] == (
+        # 2026-08-06: the step grew a SAM quota gate ahead of the invocation
+        # (schedule-only quiet-skip outside 00/01 UTC — shared ~10/day key,
+        # radar-first allocation). Byte-equality against the whole script no longer
+        # holds, so pin BOTH halves instead: the invocation keeps its exact flags,
+        # and the gate is pinned too, so a silent change to either fails here.
+        assert (
             "python -m scripts.collect --only sam_gov_opportunities "
             "--skip-quality --skip-shadow-importance"
+        ) in collect["run"]
+        assert "SAM quota gate" in collect["run"], (
+            "the bounded lane's quota gate must stay — it is what keeps the shared "
+            "~10/day SAM key from being spent by the half-hourly schedule"
+        )
+        assert '"${GITHUB_EVENT_NAME}" = "schedule"' in collect["run"], (
+            "the gate must key on the SCHEDULE event only, so a manual or push run "
+            "still collects"
         )
         assert "default historical sweep is 1,826 days" in text
         assert "--only usaspending_awards" not in collect["run"], (
