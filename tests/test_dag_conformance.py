@@ -555,9 +555,23 @@ class TestLiveConformance:
         )
         assert collect["continue-on-error"] is True
         assert collect["env"]["COLLECT_LANE"] == "government-revenue-live"
-        assert collect["run"] == (
+        # The bounded SAM fast path, asserted by CONTENT rather than by whole-block
+        # equality. #4601 prepended a scheduled-run quota gate to this step (the SAM
+        # free key is ~10 requests/day, shared with every other consumer) and the
+        # exact-string pin here turned that improvement into a permanent red on main
+        # — the test was never updated with the workflow it guards. Equality on a
+        # multi-line shell body cannot survive any legitimate edit; these assertions
+        # pin what the step must DO, so the lane stays guarded while it can still change.
+        assert (
             "python -m scripts.collect --only sam_gov_opportunities "
             "--skip-quality --skip-shadow-importance"
+        ) in collect["run"]
+        # The quota gate itself is now part of the contract: dropping it would put a
+        # ~10/day shared key behind a 30-minute schedule and starve every other
+        # consumer (see collectors/sam_gov.py).
+        assert 'if [ "${GITHUB_EVENT_NAME}" = "schedule" ]' in collect["run"], (
+            "the scheduled-run SAM quota gate must not be dropped — the free key is "
+            "~10 requests/day and is shared across consumers"
         )
         assert "default historical sweep is 1,826 days" in text
         assert "--only usaspending_awards" not in collect["run"], (

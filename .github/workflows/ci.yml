@@ -186,6 +186,12 @@ on:
       # flip-isolation construction still isolates exactly one leg.
       - "research/prophet_us_audit/reclaim_veto_packet.py"
       - "tests/test_us_reclaim_veto_packet.py"
+      # The packet ARTIFACTS the merge-on-green suite reads by literal path
+      # (#4652 added the reads, #4617 shipped the files, neither added a trigger),
+      # so a PR touching only one of them never started the workflow-yaml job that
+      # runs that suite. Same #3488 half-wiring as the two lines above.
+      - "research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md"
+      - "research/prophet_us_audit/reclaim_veto_packet_results_2026-08-05.json"
       # W1d trial-budget gate: any new multiple-testing harness must register its budget.
       - "scripts/*_phase0.py"
       - "scripts/*_phase1.py"
