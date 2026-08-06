@@ -459,6 +459,20 @@ jobs:
         # exits 0 for data findings (flags-only law, never gates the night); the ||
         # echo below only guards an unexpected crash. Writes
         # data/quality/stocks_freshness_audit.json, picked up by "commit data" below.
+        #
+        # always() (2026-08-06): the SAME hole its sibling step above closed one day
+        # earlier, left open one step below it. continue-on-error stops this step from
+        # failing the job but does NOT stop an EARLIER failure from skipping it — a
+        # bare step inherits success(). Measured on run 31056495943 (08-05 night):
+        # `run collectors` succeeded at step 17, `compile capital-structure direct
+        # document terms` failed at step 21, and this audit was SKIPPED at step 27 —
+        # so on the four consecutive nights that veto fired (08-02 -> 08-05) the
+        # per-name stale-tip tripwire was dark, which is precisely how the data/stocks
+        # freeze this audit exists to catch (QCOM/HOOD 21d, MRVL 18d, CVNA/HON 14d,
+        # SATS 43d) went another four nights unannounced. The alarm must be loudest
+        # exactly on the nights the night is lost. It stays continue-on-error, so this
+        # cannot red the collect job.
+        if: always()
         continue-on-error: true
         run: |
           python -m scripts.audit_stocks_freshness \
