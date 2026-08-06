@@ -670,6 +670,62 @@ def _plain_cycle(s: str | None) -> tuple[str, str]:
     return CYCLE_PHASE_LABELS.get(s, (s, s))
 
 
+# --------------------------------------------------------------------------- #
+# W-C display-tier copy (no scored authority — see the PR body's tier note)
+# --------------------------------------------------------------------------- #
+# W-C(4): "Cycle low" alone reads as a WARNING at the exact position where the
+# clock says cheap.  With a confirmed base under it, say what the state IS.
+_CYCLE_TROUGH_BASING = ("At cycle low — basing", "处于周期底部——筑底中")
+# W-C(4): watch-tier ignition chip.  Deliberately never buy words.
+_IGNITING_CHIP = ("Igniting — early turn confirming", "点火中——早期转折确认")
+# W-C(3): the house "read being updated" idiom for a lagging momentum anchor.
+_DUAL_READ_CHIP = ("read being updated — short-term thrust vs trend anchors",
+                   "读数更新中——短期动能与趋势锚冲突")
+
+
+def _plain_cycle_state(phase: str | None, basing: bool = False) -> tuple[str, str]:
+    """Cycle-phase copy, W-C(4)-aware.
+
+    Trough + a confirmed base is a STATE ("at cycle low — basing"), not the bare
+    warning-shaped "Cycle low".  Every other phase falls through unchanged.
+    """
+    if phase == "Trough" and basing:
+        return _CYCLE_TROUGH_BASING
+    return _plain_cycle(phase)
+
+
+def _dual_read(mom_state: str | None, ts_trend: str | None,
+               roc20: float | None) -> bool:
+    """W-C(3): does the momentum cell need the "read being updated" chip?
+
+    True only on the full three-condition conjunction — the hysteresis momentum
+    state is bear, the slow trend is up, and the 20-day rate-of-change vote is
+    positive.  That trio is the signature of trend anchors (ema_trend/ema_cross/
+    sma200) still carrying an old downtrend while short-term thrust has already
+    turned.  Never changes momentum_state itself — it only discloses the split.
+    """
+    return bool(
+        mom_state == "bear"
+        and ts_trend == "up"
+        and roc20 is not None
+        and roc20 > 0
+    )
+
+
+def _roc20(close: "pd.Series") -> float | None:
+    """20-session rate of change on the last bar, or None when too short.
+
+    Mirrors the `roc20` vote inside engine.commodity_signals.momentum (which
+    votes np.sign of exactly this quantity); recomputed here because the vote
+    columns are not carried on the assembled member frame.
+    """
+    c = close.dropna()
+    if len(c) < 21:
+        return None
+    v = c.pct_change(20).iloc[-1]
+    return float(v) if pd.notna(v) else None
+
+
 def _conf_action(state: str | None) -> tuple[str, str]:
     if not state:
         return ("Watch — not enough signal yet", "观望——信号不足")
@@ -898,6 +954,9 @@ def _build_sector_vm_inner(
 
     # --- heat grid ------------------------------------------------------------
     # Build lookup: name → member_results last-row fields
+    # W-C: the confluence assessment already ran technical_arming per member, so
+    # basing / armed_recent come off it rather than being recomputed 17x here.
+    conf_by_name = {m.get("name", ""): m for m in members_conf}
     mem_lookup: dict[str, dict] = {}
     for name, df in member_results.items():
         if not isinstance(df, pd.DataFrame) or df.empty:
@@ -908,6 +967,10 @@ def _build_sector_vm_inner(
         mom_state = str(last.get("momentum_state", "") or "")
         shock_st  = str(last.get("shock_state", "") or "")
         cycle_ph  = (_cycle_positions.get(name) or {}).get("phase")
+        _mconf    = conf_by_name.get(name, {})
+        _basing   = bool(_mconf.get("basing"))
+        _igniting = bool(_mconf.get("armed_recent"))
+        _dual     = _dual_read(mom_state, str(last.get("ts_trend", "") or ""), _roc20(cl))
         # tone class for the cell left-border
         if mom_state == "bull":
             tone = "c-up"
@@ -919,7 +982,7 @@ def _build_sector_vm_inner(
             tone = "c-flat"
 
         mom_en, mom_zh = _plain_mom_state(mom_state if mom_state else None)
-        cyc_en, cyc_zh = _plain_cycle(cycle_ph)
+        cyc_en, cyc_zh = _plain_cycle_state(cycle_ph, _basing)
         chg_sign = "up" if (chg or 0) >= 0 else "dn"
 
         mem_lookup[name] = {
@@ -930,6 +993,13 @@ def _build_sector_vm_inner(
             "state_short_zh": mom_zh,
             "cycle_phase_en": cyc_en,
             "cycle_phase_zh": cyc_zh,
+            # --- W-C display-tier chips ---------------------------------------
+            "dual_read":    _dual,
+            "dual_read_en": _DUAL_READ_CHIP[0],
+            "dual_read_zh": _DUAL_READ_CHIP[1],
+            "igniting":     _igniting,
+            "igniting_en":  _IGNITING_CHIP[0],
+            "igniting_zh":  _IGNITING_CHIP[1],
         }
 
     grid: list[dict] = []
@@ -949,6 +1019,12 @@ def _build_sector_vm_inner(
                 "state_short_zh": info.get("state_short_zh", "—"),
                 "cycle_phase_en": info.get("cycle_phase_en", "—"),
                 "cycle_phase_zh": info.get("cycle_phase_zh", "—"),
+                "dual_read":    info.get("dual_read", False),
+                "dual_read_en": info.get("dual_read_en", _DUAL_READ_CHIP[0]),
+                "dual_read_zh": info.get("dual_read_zh", _DUAL_READ_CHIP[1]),
+                "igniting":     info.get("igniting", False),
+                "igniting_en":  info.get("igniting_en", _IGNITING_CHIP[0]),
+                "igniting_zh":  info.get("igniting_zh", _IGNITING_CHIP[1]),
             })
         grid.append({
             "group":    grp_key,
@@ -958,8 +1034,7 @@ def _build_sector_vm_inner(
         })
 
     # --- detail panels --------------------------------------------------------
-    # Build a conf_by_name lookup
-    conf_by_name = {m.get("name", ""): m for m in members_conf}
+    # conf_by_name is built above the heat grid (W-C reads basing/armed_recent there)
     core4 = {"gold", "silver", "copper", "oil"}
     assets_by_key = {a["key"]: a for a in assets}
 
@@ -1007,6 +1082,9 @@ def _build_sector_vm_inner(
     detail: list[dict] = []
     # Iterate over all 17 members in a stable display order
     all_names = [n for _, _, _, ns in _GRID_GROUPS for n in ns]
+    # W-C: "turn developing" copy for the suppressed-divergence case.
+    _TURN_DEVELOPING = ("turn developing — momentum read lags",
+                        "转势形成中——动量读数滞后")
     for name in all_names:
         en, zh = MEMBER_LABELS.get(name, (name.replace("_", " ").title(), name))
         df = member_results.get(name)
@@ -1029,7 +1107,9 @@ def _build_sector_vm_inner(
         # cycle clock
         pos_data = _cycle_positions.get(name) or {}
         cycle_phase = pos_data.get("phase")
-        cyc_en, cyc_zh = _plain_cycle(cycle_phase)
+        # W-C(4): basing under a Trough turns the bare warning into a state read
+        _basing = bool(mconf.get("basing"))
+        cyc_en, cyc_zh = _plain_cycle_state(cycle_phase, _basing)
         cycle_hazard = bool(pos_data.get("hazard_3m"))
 
         # shock/driver
@@ -1072,6 +1152,14 @@ def _build_sector_vm_inner(
             "mtf_rows":     mtf_rows,
             "verdict":      verdict,
             "is_core4":     name in core4,
+            # --- W-C display-tier chips (never scored, never ranked) ----------
+            "basing":          _basing,
+            "igniting":        bool(mconf.get("armed_recent")),
+            "igniting_en":     _IGNITING_CHIP[0],
+            "igniting_zh":     _IGNITING_CHIP[1],
+            "turn_developing":    bool(mconf.get("turn_developing")),
+            "turn_developing_en": _TURN_DEVELOPING[0],
+            "turn_developing_zh": _TURN_DEVELOPING[1],
         }
         if name in core4 and a_vm:
             entry["conviction"] = conviction
