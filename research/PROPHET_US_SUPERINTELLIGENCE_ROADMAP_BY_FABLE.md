@@ -56,7 +56,7 @@ from the CN adjudications and this repo's kill registry:
 
 - **Glass-box law / no composite blend, ever.** Every authority is a bounded, individually
   revertible leg earned through its own adjudication (the conviction composite measured
-  anti-predictive; DNR row 49 forbids blended rankings; PSF killed stage-as-win-gate). The
+  anti-predictive; DNR:KILL-PROPHET-POP-MERGE forbids blended rankings; PSF killed stage-as-win-gate). The
   priority score stays a sum of defensible legs; new axes join it one at a time or not at all.
 - **Confirmation is not free.** CN-RC0 measured confirmation as negatively priced at entry
   timing; the US operator independently ratified T2-above-T1 in 2026-07. §5 re-measures this
@@ -184,8 +184,113 @@ with its measured card printed.
 `build_polygon_universe` already maintains ~8.7k names with sector + cap for the charting
 app. Charter (not build yet): a liquidity-floored SCAN tier — context vector + miss-audit
 coverage over the widened set, board ADMISSION untouched (curated universe stays the
-population; DNR row 49). "See everything, admit selectively." The CRCL incident becomes
+population; DNR:KILL-PROPHET-POP-MERGE). "See everything, admit selectively." The CRCL incident becomes
 structurally impossible: an off-index runner would at minimum be SEEN and counted missed.
+
+#### 4.5.1 RATIFIED AND BUILT — 2026-08-05 (operator nod; PR #4552)
+
+Operator ratification 2026-08-05 ("Yes we should do the full universe then"), following
+the receipts that **FNV / FSM / EXK / AG / SBSW were structurally invisible** — not merely
+un-admitted, but absent from every frame the engine looks at. §9's "scan-tier universe
+after operator nod" gate is now cleared and the tier is SHIPPED.
+
+**Two premises in the paragraph above are corrected by the build census (2026-08-04):**
+
+1. **`build_polygon_universe` does not maintain ~8.7k names.** It writes
+   `data/polygon_universe/reference.parquet` = **504 rows** (S&P 500 GICS labels +
+   `us_sector_*` basket names, market cap fetched per ticker). The ~8.7k in its own
+   docstring is the *charting app's* cross-market search manifest (US + China A + HK +
+   Canada + Intl) — whose US leg is built FROM this repo. There was no 8.7k US sector+cap
+   table to widen onto.
+2. **The store that actually carries a whole-market US tape is `data/massive_stock_day`** —
+   20,476 per-ticker parquets, 617 MB, OHLCV + `transactions`, history from 2021-07-06,
+   R2-canonical. Volume is present, so the liquidity floor is computable from the same
+   read: **no new collection, no API key, no rate limit.**
+
+**The floor, as displayed** (`engine/us_scan_universe.py`, constants build the printed
+rule so it cannot drift from the applied one): still trading (last bar = the store's own
+last bar) AND ≥ 200 bars (`confluence_tiers.MIN_HISTORY`, imported not redefined) AND
+close ≥ $3 AND *median* close×volume over the last 20 bars ≥ $5M. Median, not mean, so one
+halt-and-dump session cannot buy a name in.
+
+**Measured effect (2026-07-02 store):**
+
+| step | names | removed |
+|---|---|---|
+| in store | 20,476 | — |
+| still trading | 12,434 | −8,042 delisted/stale tape |
+| ≥ 200 bars | 10,422 | −2,012 too young to gate |
+| pass price + MDV20 | **3,980** | −6,442 below the liquidity floor |
+| minus curated overlap (1,728) | **2,252 scan tier** | — |
+
+Coverage: **1,838 seen before → 4,090 seen after.** Sensitivity is disclosed rather than
+optimized — at $1/$1M the floored set is 5,721, at $5/$20M it is 2,684. All five
+structurally-invisible exhibits (FNV, FSM, EXK, AG, SBSW) are now SEEN, each with 1,254
+bars of history already on disk.
+
+**Cost, and why it is not in the engine job.** Measured on the Mac Studio: store census
+over all 20,476 files 30 s; close panel ~10 s; `signal_gate.gate` ~120 ms/name;
+`context_frame` 74 ms/name ⇒ **~13 min** for the full assembly. The engine job does NOT
+restore `massive_stock_day` (daily.yml's three restores are in `collect`,
+`oracle_offrender`, `standout_audit_us`) and already runs 135–190 min against a 200-min
+cap, so the tier ships as its own post-engine `us_scan_tier` job (`needs: engine`, timeout
+60). Engine-job cost is therefore **unchanged**; the W0 audit mirrors the scan artifact's
+summary rather than recomputing it, carrying the scan tier's own `asof` beside its own.
+
+**What shipped:** `engine/us_scan_universe.py` (resolver + floor + disclosure);
+`tier` ∈ {`curated`,`scan`} and `mdv20_usd` on the context vector, with `tier` deliberately
+NOT in the dedupe key so keep-first makes the curated row win on any overlap;
+`prophet_miss_audit.build_scan_tier_audit` (same `tier_stream` basis and same
+`attribute_excluder` as the curated runners — no forked tier math) writing
+`data/prophet_scan_tier/`; a `scan_tier` key on the W0 artifact and six `scan_tier_*`
+fields on its forward-log row. First run: 150 scan-tier runners, 10 eligible today, 26
+never eligible in 63 sessions; excluder mix 134 `not_topped_veto` / 4 `rsi_cap_on_fresh_cross`
+/ 2 `freshness_expired`.
+
+**ADMISSION IS UNCHANGED.** Board admission, gates, scores, ranks, sizing and plan intake
+read the curated universe and only the curated universe. The scan tier is stamped, seen and
+counted; nothing written by it is read for any decision. Any scan-tier column reaching
+authority still needs the §3 ladder and its own preregistration.
+
+#### 4.5.2 Deliverable-2 correction — there was no backfill to build
+
+The brief commissioned a rate-limited multi-night full-history backfill for curated names
+whose caches were shallow "because OUR collection started recently" (exhibits: GOLD 23
+bars, SPCX 35, CDE 51). Re-measured against the ref:
+
+* **The backfill mechanism already exists and already runs unconditionally.**
+  `scripts/fetch_basket_ohlcv.py` hard-codes `START = "2014-01-01"` and is called every
+  night by `scripts/collect.py`, so a newly-added basket member gets twelve years on its
+  first night. Building a second one would have been a fix for a defect that is not there.
+* **The exhibits' numbers are real but point at a different store.** `data/yahoo/GOLD.parquet`
+  carries exactly **23 bars** (from 2026-07-01) and `data/yahoo/SPCX.parquet` exactly **35** —
+  the operator was reading `data/yahoo`, where the gold-miner cohort (GOLD, GFI, HMY, KGC,
+  NEM, EGO, EQX) all begin 2026-07-01. Meanwhile `data/baskets/ohlcv/GOLD.parquet` holds
+  **3,113 bars back to 2014-03-17** for the same ticker.
+* **The actual defect is a missing fallback, not missing data.**
+  `build_stock_library.universe()` serves ETFs, commodities and curated searchable extras
+  from `data/yahoo` and never falls back to `data/baskets/ohlcv` — so a name is gated on
+  last month's history while twelve years sit one directory over.
+* **SPCX is genuinely young** (listed 2026-06-12; `config.yml` already annotates it). No
+  backfill can invent history a company did not trade. **CDE** is not a member of any of
+  the 47 curated baskets at all.
+
+Shipped instead: `scripts/heal_shallow_caches.py` — a prepend-only, idempotent, nightly-gated
+splice from deeper history **already on local disk** (`data/baskets/ohlcv`, then
+`data/massive_stock_day`). Rules: it only adds rows strictly BEFORE the target's own first
+date (existing rows are the fresher authoritative tail and are never touched); it preserves
+the target's column set exactly (`close_price` is filled from the donor's `close` via an
+explicit alias, verified byte-identical, so no `open`/`high`/`low` leaks into a schema other
+readers parse); and a healed file is above the floor, so re-running is a no-op. **Measured
+dry run: 11 names healable** — GOLD 23 → 3,114 bars, plus GFI/HMY/KGC/NEM/EGO/EQX — and 27
+correctly reported unhealable as genuine young listings. **Completion horizon: one nightly
+run, seconds, no rate limit** — there is nothing to spread across nights.
+
+Named debt, unfixed and disclosed: **MMC has zero bars in every store the production
+fallback chain reads**, corroborated by the repo's own committed census
+(`data/quality/basket_ohlcv_freshness.json`: `"missing": ["MMC"]`). A `ticker_fixups`
+entry for it already exists in `config.yml`; the fetch still fails. That is a collector
+bug in a different lane and is deliberately NOT ridden along here.
 
 ## §5 Frozen-frame stand-ins — RUN, results frozen alongside
 

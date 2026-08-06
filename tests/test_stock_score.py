@@ -838,3 +838,89 @@ def test_w9b_ca_tailwind_still_affects_composite():
     p_tw = ss.conviction_profile(rec_tw, "CA")
     # With positive tailwind weight, the composite should differ
     assert p_no.get("composite_z") != pytest.approx(p_tw.get("composite_z"), abs=1e-6)
+
+
+# ── the caution DUAL-READ (W-D.3) ───────────────────────────────────────────
+# The caution speaks for ONE basket — the name's best-ranked membership — and
+# says nothing about the others. ASTS was sized down on 2026-07-30/31 citing
+# "Defense & Aerospace below its long-term trend" while its space_economy
+# membership was the washout-recovery read: one membership's state silently
+# overwrote the other's. The fix is a second SENTENCE, never a second anchor.
+
+def _alloc(**kw):
+    base = {"name": "Defense & Aerospace", "name_zh": "国防与航空航天",
+            "slug": "defense", "rank": 31, "eligible": False,
+            "above_trend": False, "label": "fading", "crowded": False}
+    base.update(kw)
+    return base
+
+
+_TURNING = {"slug": "space_economy", "name": "Space Economy",
+            "name_zh": "太空经济", "pos": 2.1, "osc_slope": 4.2}
+
+
+def test_the_other_membership_is_disclosed_when_it_is_turning():
+    hc, cau = ss._basket_risk({"basket_alloc": _alloc(also_turning=_TURNING)})
+    assert cau["en"].endswith("Space Economy turning from washout.")
+    assert cau["zh"].endswith("太空经济正从洗盘中转折。")
+    # The PRIMARY caution is untouched — this is disclosure, not resolution.
+    assert cau["en"].startswith("Its Defense & Aerospace basket is below its long-term trend.")
+
+
+def test_the_disclosure_moves_no_size():
+    """The haircut is decided before the sentence is chosen and must not move.
+
+    This is the fence that keeps W-D.3 display-tier: it may change what a reader
+    is TOLD, never what the engine does.
+    """
+    plain = ss._basket_risk({"basket_alloc": _alloc()})
+    dual = ss._basket_risk({"basket_alloc": _alloc(also_turning=_TURNING)})
+    assert plain[0] == dual[0] == ss._BASKET_RISK_MAX
+    for label, expect in (("fading", 0.7), ("deteriorating", 0.7)):
+        a = ss._basket_risk({"basket_alloc": _alloc(
+            above_trend=True, eligible=True, label=label)})
+        b = ss._basket_risk({"basket_alloc": _alloc(
+            above_trend=True, eligible=True, label=label, also_turning=_TURNING)})
+        assert a[0] == b[0] == pytest.approx(ss._BASKET_RISK_MAX * expect)
+
+
+def test_every_caution_shape_can_carry_the_disclosure():
+    """All three cautions, not just the one the case happened to hit — a rule
+    wired into one branch is a rule that silently misses the other two."""
+    shapes = [
+        _alloc(),                                                    # below trend
+        _alloc(above_trend=True, eligible=True, label="deteriorating"),
+        _alloc(above_trend=True, eligible=True, label="steady", crowded=True),
+    ]
+    for ba in shapes:
+        _, plain = ss._basket_risk({"basket_alloc": ba})
+        _, dual = ss._basket_risk({"basket_alloc": {**ba, "also_turning": _TURNING}})
+        assert plain is not None and dual is not None
+        assert dual["en"] == f"{plain['en']} Space Economy turning from washout."
+        assert dual["zh"] == f"{plain['zh']}太空经济正从洗盘中转折。"
+
+
+def test_nothing_is_appended_when_no_other_membership_is_turning():
+    """ASTS on 2026-08-04 reproduces here: space_economy sits at Trough pos 2.1
+    with a FALLING oscillator (−33.4) on every date in the forward log, so the
+    build attaches no `also_turning` and the caution reads exactly as before."""
+    _, cau = ss._basket_risk({"basket_alloc": _alloc()})
+    assert "turning from washout" not in cau["en"]
+    assert "洗盘" not in cau["zh"]
+
+
+def test_a_name_with_no_caution_gains_no_sentence():
+    """There is nothing to append to. A basket in good standing must not acquire
+    a line of commentary just because a sibling basket is bottoming."""
+    hc, cau = ss._basket_risk({"basket_alloc": _alloc(
+        above_trend=True, eligible=True, label="steady", crowded=False,
+        also_turning=_TURNING)})
+    assert (hc, cau) == (0.0, None)
+
+
+def test_a_malformed_turn_payload_is_ignored_rather_than_printed():
+    """Half a record must never reach a user surface as "None turning from
+    washout" — absence beats a sentence with a hole in it."""
+    for bad in (None, {}, {"slug": "x"}, {"name": ""}, {"name": 123}, "space_economy"):
+        _, cau = ss._basket_risk({"basket_alloc": _alloc(also_turning=bad)})
+        assert cau is not None and "turning from washout" not in cau["en"], bad

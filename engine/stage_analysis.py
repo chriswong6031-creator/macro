@@ -1012,13 +1012,37 @@ def append_forward_ledger(contract: dict, root: Path | None = None) -> int:
     """Append one JSONL row per fresh-Stage-2 name to
     data/stage_analysis/forward_ledger.jsonl, DEDUPED on (date,ticker).
 
-    Same-day re-runs never duplicate (existing (date,ticker) keys are skipped).
-    Returns the number of new rows appended. Fail-open: any error logs
+    THE ROW DATE IS A DATA-PLANE SESSION, NEVER A CLOCK READ (forward-ledger
+    calendar-asof audit 2026-08-05, #4568 pattern). The pre-fix writer stamped
+    `date` from `contract["asof"]`, which build_context_feed defaulted to
+    `datetime.now(timezone.utc)`. The nightly runs 20:00-22:30 PT, so the UTC
+    date is already the NEXT calendar day: all 13 committed row batches were
+    committed on the PT evening BEFORE the date they stamped, 180 of 780 rows
+    landed on weekend dates, and the whole ledger sat +1 against the tape.
+    This file is the engine's ONLY point-in-time record of which names were
+    fresh Stage 2 on a given session, and every read of it is date-keyed (the
+    Prophet US §9 "stage-ran shelf" study), so the drift is not cosmetic.
+
+    Resolution ladder per row (wall clock and `contract["asof"]` are NOT in it):
+
+      a. the row's own `stage_source_asof` — the exact bar THAT ticker's stage
+         was computed from, and therefore the base bar a forward-return grader
+         must resolve from  -> session_source="stage_source_asof"
+      b. the contract's `data_session` (newest bar any leg read)
+         -> session_source="contract_data_session"
+      c. neither -> the row is SKIPPED and counted; one ::warning:: discloses
+         the total. A row with no provable session is not written at all.
+
+    The dedupe key stays (date,ticker) — now keyed on the session, so a re-run
+    against a frozen store re-derives the same keys and appends nothing.
+    Returns the number of new rows appended. Fail-open: any error prints
     ::warning:: and returns 0 without raising.
     """
     try:
         dr = _data_root(root)
-        asof = contract.get("asof")
+        # Contract-level fallback only; `contract["asof"]` is deliberately not
+        # read here — it is a display label, not evidence about the tape.
+        data_session = str(contract.get("data_session") or "").strip() or None
         path = dr / "stage_analysis" / "forward_ledger.jsonl"
 
         # Load existing (date,ticker) keys for idempotence.
@@ -1042,19 +1066,29 @@ def append_forward_ledger(contract: dict, root: Path | None = None) -> int:
                 print(f"::warning:: stage ledger read failed ({e})", flush=True)
 
         new_rows: list[str] = []
+        n_no_session = 0
         for row in (contract.get("top_stage2") or []):
             if not row.get("fresh"):
                 continue
             tk = row.get("ticker")
             if not tk:
                 continue
-            key = (str(asof), str(tk))
+            # Ladder (a) per-ticker exact bar -> (b) contract data session.
+            session = str(row.get("stage_source_asof") or "").strip() or None
+            session_source = "stage_source_asof"
+            if not session:
+                session, session_source = data_session, "contract_data_session"
+            if not session:
+                # (c) No data-plane evidence at all — refuse to invent a date.
+                n_no_session += 1
+                continue
+            key = (str(session), str(tk))
             if key in seen:
                 continue
             seen.add(key)
             earn = row.get("earnings") or {}
             led = {
-                "date": asof,
+                "date": session,
                 "ticker": tk,
                 "sga_score": row.get("sga_score"),
                 "gate_tier": row.get("gate_tier"),
@@ -1062,8 +1096,15 @@ def append_forward_ledger(contract: dict, root: Path | None = None) -> int:
                 "earnings_present": bool(earn.get("present")),
                 "sentiment": earn.get("sentiment"),
                 "performance": earn.get("performance"),
+                # Which rung of the ladder resolved this row's session.
+                "session_source": session_source,
             }
             new_rows.append(json.dumps(_json_safe(led), ensure_ascii=False))
+
+        if n_no_session:
+            # Bare print, NOT a logger call — see the read-failure note above.
+            print(f"::warning title=stage-ledger-no-session::{n_no_session} "
+                  "row(s) skipped — no data-plane session", flush=True)
 
         if not new_rows:
             return 0
@@ -1761,6 +1802,29 @@ def build_context_feed(root: Path | None = None,
                 rec[key] = ref[key]
         rec["industry_percentile"] = industry_pctile.get(tk)
 
+    # --- underlying session: the newest bar any classified leg actually read ---
+    # Forward-ledger calendar-asof audit 2026-08-05 (#4568 pattern). `asof`
+    # above is a CLOCK read (or a caller's label) and keeps its display
+    # semantics untouched — exactly as the basket-turn sibling left `as_of`.
+    # This field is the DATA plane: max over the per-ticker
+    # `stage_source_asof`, which _classify_one derives from the classified
+    # OHLCV's own index. append_forward_ledger stamps row dates from the data
+    # plane only, so a run against a frozen store re-derives the sessions it
+    # already recorded and appends nothing instead of re-describing old tape
+    # under a fresh calendar date.
+    data_session: str | None = None
+    try:
+        _sessions = [
+            str(r["stage_source_asof"])
+            for r in recs
+            if r.get("stage_source_asof")
+        ]
+        if _sessions:
+            data_session = max(_sessions)
+    except Exception as _ex:  # noqa: BLE001 — stamp derivation is never fatal
+        log.debug("stage_analysis: data_session derivation failed: %s", _ex)
+        data_session = None
+
     total = len(recs)
     counts_full = {
         "total": total,
@@ -1832,7 +1896,11 @@ def build_context_feed(root: Path | None = None,
 
     contract = {
         "schema": "stage_context.v1",
+        # DISPLAY label (clock or caller-supplied) — deliberately unchanged by
+        # the 2026-08-05 forward-ledger audit; only the ledger stamp moved.
         "asof": asof,
+        # Provenance: the newest bar the classified legs read. Additive.
+        "data_session": data_session,
         "built": built,
         "is_context_only": True,
         "display_only": True,
@@ -1951,6 +2019,10 @@ def _top_row(r: dict) -> dict:
         "ticker": r["ticker"],
         "company": r["company"],
         "sector": r["sector"],
+        # The bar this name's stage was actually computed from (additive,
+        # forward-ledger calendar-asof audit 2026-08-05). append_forward_ledger
+        # stamps the row date from it, so the projection must carry it through.
+        "stage_source_asof": r.get("stage_source_asof"),
         "stage": r["stage"],
         "weeks_in_stage": r["weeks_in_stage"],
         "fresh": r["fresh"],

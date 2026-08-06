@@ -29,6 +29,7 @@ from scripts.fetch_basket_ohlcv import (  # noqa: E402
     COLS,
     _membership_tickers,
     _removed_members,
+    _absent_from_all_rungs,
     _resolve_universe,
     _sessions_behind,
     check_membership_staleness,
@@ -232,6 +233,56 @@ def test_bld_is_stamped_removed_in_live_membership():
             "price series, so an un-removed BLD row is a permanent staleness red line")
         assert "DELIST" in (m.get("rationale") or "").upper(), (
             "BLD's exit must DISCLOSE the delisting, not read as a curation swap")
+# ------------------------------------------------- absent from ALL rungs (2026-08-05)
+# Absence from THIS store is graceful degradation — engine/basket_index falls through to
+# data/stocks, data/china_stocks and data/yahoo. Absence from every rung is data loss: the
+# basket renders and grades on N-1 members and its coverage receipt just rounds down. MMC
+# was dark on all four for seven months (Marsh renamed MMC->MRSH 2026-01-14) and the only
+# tell was a "structural" line in a coverage receipt.
+def _write_rung(tmp_path: Path, rung: tuple[str, ...], ticker: str) -> None:
+    p = tmp_path.joinpath(*rung) / f"{ticker}.parquet"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame({"close": [1.0]}, index=pd.DatetimeIndex(["2026-07-15"], name="Date")).to_parquet(p)
+
+
+def test_absent_from_all_rungs_ignores_names_a_fallback_covers(tmp_path):
+    _write_rung(tmp_path, ("stocks",), "COVERED_US")
+    _write_rung(tmp_path, ("china_stocks",), "600519.SS")
+    _write_rung(tmp_path, ("yahoo",), "COVERED_Y")
+    dark = _absent_from_all_rungs(
+        ["COVERED_US", "600519.SS", "COVERED_Y", "DARK"], tmp_path)
+    assert dark == ["DARK"]
+
+
+def test_census_warns_loudly_only_for_members_dark_on_every_rung(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    _write_membership(tmp_path, ["FRESH", "FALLBACK", "DARK"])
+    _write_ohlcv(tmp_path, "FRESH", "2026-07-15")
+    _write_rung(tmp_path, ("yahoo",), "FALLBACK")     # missing here, but covered downstream
+
+    payload = check_membership_staleness(ops_alert=False)
+    assert payload["missing"] == ["DARK", "FALLBACK"]      # both absent from THIS store
+    assert payload["absent_all_rungs"] == ["DARK"]         # only one is actual loss
+    assert payload["n_absent_all_rungs"] == 1
+
+    lines = [ln for ln in capsys.readouterr().out.splitlines() if "no-price-series" in ln]
+    assert len(lines) == 1, "the all-rungs disclosure must be emitted exactly once"
+    # GitHub drops an annotation that does not START the line — a logger prefix ("WARNING
+    # ::warning ...") reviews as an alarm, runs clean, and produces nothing in the summary.
+    assert lines[0].startswith("::warning title=basket-member-no-price-series::")
+    assert "DARK" in lines[0] and "FALLBACK" not in lines[0]
+    assert "lib/ticker_aliases" in lines[0], "the disclosure must name the usual repair"
+
+
+def test_census_silent_on_all_rungs_when_every_member_resolves(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    _write_membership(tmp_path, ["A", "B"])
+    _write_ohlcv(tmp_path, "A", "2026-07-15")
+    _write_rung(tmp_path, ("stocks",), "B")
+
+    payload = check_membership_staleness(ops_alert=False)
+    assert payload["absent_all_rungs"] == []
+    assert "no-price-series" not in capsys.readouterr().out
 
 
 # ------------------------------------------------------------------ collect.py wiring pin

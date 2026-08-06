@@ -1,0 +1,470 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% macro num(v, nd=4, plus=False) -%}
+{%- if v is none -%}<span class="muted">—</span>{%- elif plus -%}{{ ('%+.'~nd~'f')|format(v) }}{%- else -%}{{ ('%.'~nd~'f')|format(v) }}{%- endif -%}
+{%- endmacro %}
+{% macro pct0(v) -%}
+{%- if v is none -%}<span class="muted">—</span>{%- else -%}{{ '%.0f%%'|format(v*100) }}{%- endif -%}
+{%- endmacro %}
+{#- verdict -> (css class, EN, ZH). One vocabulary, defined once. -#}
+{% set VERD = {
+  'survives_fdr': ('v-ok',   'Ranked forward',   '排序方向正确'),
+  'inverted':     ('v-inv',  'Ranked backwards', '排序方向相反'),
+  'null':         ('v-null', 'No signal',        '无信号'),
+  'nominal_only': ('v-weak', 'Weak',             '偏弱'),
+  'insufficient': ('v-none', 'Not enough data',  '数据不足'),
+  'degenerate':   ('v-none', 'Not the model',    '并非该模型'),
+  'per_primitive':('v-none', 'Read part by part','逐项解读'),
+  'no_data':      ('v-none', 'No data',          '无数据')
+} %}
+{% set FID = {
+  'faithful': ('f-ok',   'Same input',   '输入一致'),
+  'proxy':    ('f-prox', 'Stand-in',     '替代口径'),
+  'absent':   ('f-none', 'Cannot build', '无法构建')
+} %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quant Lab — outside models, rebuilt and measured here</title>
+{% set seo_title = "Quant Lab — Mastermind" %}{% set seo_desc = "We rebuild published quant models on our own filings panel and measure whether they rank anything. Fintel's Quality+Value, QVM, and a fully-specified control screen." %}{% set seo_path = "quant_lab.html" %}
+{% include "_seo_head.html.j2" %}
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.55 var(--font-ui,-apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif); margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1320px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:21px; margin:0; letter-spacing:-.01em; }
+  h2 { font-size:12px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
+       letter-spacing:.08em; font-weight:600; }
+  h3 { font-size:15px; margin:0; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:15px 17px; margin-bottom:14px; }
+  .muted { color:var(--muted); } .sm { font-size:12px; } .xs { font-size:11px; }
+  .lead { font-size:14.5px; max-width:74ch; }
+  .mono { font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);
+          font-variant-numeric:tabular-nums; }
+  table { border-collapse:collapse; width:100%; font-size:12.5px; }
+  th,td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:500; white-space:nowrap; }
+  td.r, th.r { text-align:right; font-variant-numeric:tabular-nums; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+
+  /* ---- header stance ---- */
+  .topline { display:flex; flex-wrap:wrap; align-items:baseline; gap:12px; }
+  .stance { font-size:11px; font-weight:700; letter-spacing:.04em; padding:3px 10px;
+            border-radius:20px; border:1px solid color-mix(in srgb,var(--info) 45%,var(--line));
+            color:var(--ink-info,var(--info)); background:color-mix(in srgb,var(--info) 8%,transparent); }
+
+  /* ---- THE GAP BAND — the page's signature.
+         Three readings of the same model, left to right, each weaker than the last.
+         The arrows are the argument: a claim degrades as it travels to our data. ---- */
+  .gap { display:grid; gap:0; grid-template-columns:1fr auto 1fr auto 1fr; align-items:stretch; }
+  @media (max-width:900px){ .gap { grid-template-columns:1fr; } .gap .arrow { display:none; } }
+  .gapcell { padding:13px 15px; border:1px solid var(--line); border-radius:9px;
+             background:var(--panel2); display:flex; flex-direction:column; gap:5px; }
+  .gapcell .k { font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted);
+                font-weight:600; }
+  .gapcell .v { font-size:23px; font-weight:650; line-height:1.15; letter-spacing:-.02em; }
+  .gapcell .n { font-size:12px; color:var(--muted); }
+  .gapcell.claim  .v { color:var(--muted); }
+  .gapcell.build  .v { color:var(--text); }
+  .gapcell.meas   { border-color:color-mix(in srgb,var(--down) 32%,var(--line)); }
+  .gapcell.meas   .v { color:var(--down); }
+  .arrow { display:flex; align-items:center; justify-content:center; width:34px;
+           color:var(--muted); font-size:15px; }
+
+  /* ---- model cards ---- */
+  .mhead { display:flex; flex-wrap:wrap; align-items:baseline; gap:9px; margin-bottom:3px; }
+  .vendor { font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+            color:var(--muted); border:1px solid var(--line); border-radius:5px; padding:1px 6px; }
+  .quote { border-left:2px solid var(--line); padding:2px 0 2px 11px; margin:9px 0;
+           color:var(--muted); font-size:12.5px; max-width:82ch; }
+  .quote cite { display:block; margin-top:4px; font-size:11px; font-style:normal; opacity:.85; }
+
+  /* ---- fidelity ledger: one row per leg, vendor -> ours -> coverage -> verdict ---- */
+  .ledger { width:100%; font-size:12.5px; }
+  .ledger th { font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; }
+  .ledger td { padding:7px 8px; }
+  .ledger .legname { font-weight:600; }
+  .ledger .said { color:var(--muted); font-style:italic; }
+  .ledger .said.inf { font-style:normal; }
+  .ledger .said.inf::before { content:'inferred — '; font-size:10.5px; text-transform:uppercase;
+                              letter-spacing:.05em; opacity:.75; }
+  html[data-lang="zh"] .ledger .said.inf::before { content:'推断 — '; }
+  .cov { display:flex; align-items:center; gap:6px; min-width:88px; }
+  .covbar { flex:1; height:5px; border-radius:3px; background:var(--line); overflow:hidden; min-width:34px; }
+  .covbar i { display:block; height:100%; background:var(--muted); }
+  .covbar i.lo { background:var(--down); }
+  .pill { font-size:10px; font-weight:700; padding:2px 8px; border-radius:8px; white-space:nowrap;
+          border:1px solid var(--line); display:inline-block; }
+  .v-ok   { color:var(--up);   border-color:color-mix(in srgb,var(--up) 45%,var(--line)); }
+  .v-inv  { color:var(--down); border-color:color-mix(in srgb,var(--down) 45%,var(--line)); }
+  .v-weak { color:var(--info); border-color:color-mix(in srgb,var(--info) 40%,var(--line)); }
+  .v-null, .v-none { color:var(--muted); }
+  .v-none { border-style:dashed; }
+  .f-ok   { color:var(--up);   border-color:color-mix(in srgb,var(--up) 40%,var(--line)); }
+  .f-prox { color:var(--muted); }
+  .f-none { color:var(--down); border-style:dashed;
+            border-color:color-mix(in srgb,var(--down) 40%,var(--line)); }
+
+  .chips { display:flex; flex-wrap:wrap; gap:7px; margin:9px 0 0; }
+  .chip { font-size:11.5px; padding:3px 10px; border-radius:16px; border:1px solid var(--line);
+          background:var(--panel2); color:var(--muted); }
+  .chip b { color:var(--text); font-weight:650; }
+
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px;
+          border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px;
+          font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:0; width:330px; background:var(--panel);
+               border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60;
+               font-size:12px; line-height:1.45; color:var(--text); font-weight:400;
+               box-shadow:var(--popover-shadow); text-align:left; text-transform:none;
+               letter-spacing:normal; max-height:min(60vh,420px); overflow-y:auto;
+               overscroll-behavior:contain; }
+  .help:hover::before { content:''; position:absolute; top:100%; left:-30px; right:-30px; height:10px; }
+  .help:hover .tip { display:block; }
+  .scroll { overflow-x:auto; }
+  details > summary { cursor:pointer; color:var(--muted); font-size:12px; padding:3px 0;
+                      list-style:none; }
+  details > summary::-webkit-details-marker { display:none; }
+  details > summary::before { content:'▸ '; }
+  details[open] > summary::before { content:'▾ '; }
+  .foot { font-size:11.5px; color:var(--muted); margin-top:9px; max-width:88ch; }
+  @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+{% include "_site_nav.html.j2" %}
+
+{# ============================ HEADER — Tier 1 ============================ #}
+<div class="panel">
+  <div class="topline">
+    <h1>{{ t('Quant Lab','量化实验室') }}</h1>
+    <span class="stance">{{ t('Study only — nothing here ranks a stock','仅供研究－不参与任何选股排序') }}</span>
+  </div>
+  <p class="lead" style="margin:8px 0 0">
+    {{ t('We rebuild published quant models on our own filings data and check whether they actually sort winners from losers here. Where a model cannot be rebuilt, we say which part is missing and why.',
+          '我们用自有财报数据复刻公开的量化模型，检验它们在这里能否真正区分赢家与输家。若某个模型无法复刻，我们会说明缺哪一块、为何缺。') }}
+  </p>
+  {% if live.asof %}
+  <p class="sm muted" style="margin:7px 0 0">
+    {{ t('Latest reading','最新读数') }} {{ live.asof }} · {{ live.n_universe }} {{ t('companies with filings','家有财报覆盖的公司') }}
+  </p>
+  {% endif %}
+</div>
+
+{# ==================== THE GAP BAND — the signature ==================== #}
+{% set flag = (models | selectattr('key','equalto','fintel_qv') | list | first) %}
+{% if flag %}
+{% set fst = flag.study.composite if flag.study else none %}
+<div class="panel">
+  <h2>{{ t('The gap','落差') }}</h2>
+  <div class="gap">
+    <div class="gapcell claim">
+      <span class="k">{{ t('What the vendor claims','厂商的说法') }}</span>
+      <span class="v mono">20.73%</span>
+      <span class="n">{{ t('a year, 1992–2013, vs 10.33% for small caps — their number, their test, their universe',
+                            '年化，1992–2013，对比小盘股10.33%－出自厂商自述的测试与股票池') }}</span>
+    </div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="gapcell build">
+      <span class="k">{{ t('What we rebuilt exactly','完全一致地复刻了多少') }}</span>
+      <span class="v mono">{{ flag.fidelity.faithful }} / {{ flag.fidelity.n_legs }}</span>
+      <span class="n">{{ t('parts. They describe three of the six inputs and we could only approximate those; the other three we inferred from scratch',
+                            '项。六项输入中厂商描述了三项，而这三项我们也只能近似；其余三项完全由我们推断。') }}</span>
+    </div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="gapcell meas">
+      <span class="k">{{ t('What it did here','在我们这里的表现') }}</span>
+      <span class="v">{{ t('Backwards','方向相反') }}</span>
+      <span class="n">{{ t('over three years on our companies, the rebuilt score put weaker stocks above stronger ones',
+                            '在我们的三年样本中，复刻分数把较弱的股票排在了较强的股票之上') }}</span>
+    </div>
+  </div>
+  <p class="foot">
+    {{ t('These three numbers are not comparable, and that is the point. The claim is a small-cap test from a different era that we cannot audit; the rebuild is missing inputs we do not hold; the measurement is three years of our own large- and mid-cap names. A vendor result does not transfer to a different universe just because the formula does.',
+          '这三个数字本就不可直接比较，这正是要点所在。厂商的说法来自另一个年代、无法核验的小盘股测试；我们的复刻缺少手头没有的输入；而实测只覆盖自有样本中三年的大中盘股。公式可以照搬，结论不会跟着照搬。') }}
+  </p>
+</div>
+{% endif %}
+
+{# ============================ MODEL CARDS ============================ #}
+{% for m in models %}
+<div class="panel">
+  <div class="mhead">
+    <h3>{{ t(m.name, m.name_zh or m.name) }}</h3>
+    <span class="vendor">{{ m.vendor }}</span>
+    {% if m.study and m.study.verdict %}
+      {% set vv = VERD.get(m.study.verdict, VERD['no_data']) %}
+      <span class="pill {{ vv[0] }}">{{ t(vv[1], vv[2]) }}</span>
+    {% elif not m.buildable %}
+      <span class="pill v-none">{{ t('Cannot rebuild here','此处无法复刻') }}</span>
+    {% else %}
+      <span class="pill v-none">{{ t('Not measured yet','尚未实测') }}</span>
+    {% endif %}
+  </div>
+  <p class="sm muted" style="margin:0 0 2px">{{ m.one_line }}</p>
+
+  <div class="quote">
+    {{ m.vendor_says }}
+    <cite>{{ t('Vendor description','厂商描述') }} ·
+      {% for p in m.provenance %}<a href="{{ p.url }}" rel="nofollow noopener" target="_blank">{{ p.publisher }}{% if p.date %}, {{ p.date }}{% endif %}</a>{% if not loop.last %} · {% endif %}{% endfor %}
+    </cite>
+  </div>
+
+  {% for c in m.vendor_claims %}
+  <details>
+    <summary>{{ t('Their performance claim, and what we make of it','厂商的业绩宣称，以及我们的看法') }}</summary>
+    <div class="quote" style="margin-top:6px">{{ c.claim }}</div>
+    <p class="sm" style="max-width:86ch">{{ c.appraisal }}</p>
+  </details>
+  {% endfor %}
+
+  {# ---------- the fidelity ledger ---------- #}
+  <h2 style="margin-top:14px">{{ t('Part by part','逐项拆解') }}
+    {{ help('Left to right: what the vendor said the input is, what we actually computed, how much of our universe that covers, and whether it sorted the right way over the tested window. A part we could not build at all is marked so — it is dropped from the score, never quietly imputed.',
+            '自左至右：厂商声明的输入、我们实际计算的口径、覆盖了多少股票池、以及在测试窗口内排序方向是否正确。完全无法构建的部分会明确标出－该项直接从分数中剔除，绝不静默填补。') }}
+  </h2>
+  <div class="scroll">
+  <table class="ledger">
+    <thead><tr>
+      <th>{{ t('Part','项目') }}</th>
+      <th>{{ t('Vendor said','厂商口径') }}</th>
+      <th>{{ t('We built','我们的口径') }}</th>
+      <th>{{ t('Covers','覆盖率') }}</th>
+      <th>{{ t('Sorted','排序结果') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for leg in m.legs %}
+      {% set fd = FID.get(leg.fidelity, FID['proxy']) %}
+      {% set st = (m.study.legs or {}).get(leg.key) if m.study else none %}
+      {% set cov = st.mean_coverage if st else (live.coverage or {}).get(leg.key) %}
+      <tr>
+        <td class="legname">{{ leg.label }}<br>
+          <span class="pill {{ fd[0] }}" style="margin-top:3px">{{ t(fd[1], fd[2]) }}</span></td>
+        <td class="said {{ '' if leg.vendor_disclosed else 'inf' }}" style="max-width:26ch">
+          {{ leg.vendor_definition if leg.vendor_definition else t('never disclosed','未公开') }}</td>
+        <td style="max-width:34ch">{{ leg.our_definition }}
+          {% if leg.distortion %}{{ help(leg.distortion, leg.distortion) }}{% endif %}</td>
+        <td>
+          {% if cov is not none %}
+          <span class="cov"><span class="covbar"><i class="{{ 'lo' if cov < 0.5 else '' }}"
+            style="width:{{ (cov*100)|round(0,'floor')|int }}%"></i></span>
+            <span class="mono xs">{{ pct0(cov) }}</span></span>
+          {% else %}<span class="muted">—</span>{% endif %}
+        </td>
+        <td>
+          {% if st %}{% set lv = VERD.get(st.verdict, VERD['no_data']) %}
+            <span class="pill {{ lv[0] }}">{{ t(lv[1], lv[2]) }}</span>
+            <div class="xs muted mono" style="margin-top:3px">{{ num(st.mean_ic, 4, True) }}</div>
+          {% else %}<span class="muted">—</span>{% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  {% if m.study and m.study.composite %}
+    {% set c = m.study.composite %}
+    <div class="chips">
+      <span class="chip">{{ t('Tested over','测试期') }} <b>{{ c.n_dates }}</b> {{ t('quarters','个季度') }}</span>
+      <span class="chip">{{ t('Sorting strength','排序强度') }} <b class="mono {{ 'pos' if (c.mean_ic or 0) > 0 else 'neg' }}">{{ num(c.mean_ic, 4, True) }}</b>
+        {{ help('Mean cross-sectional rank correlation between the score and the next quarter\'s return (rank IC). Positive means higher-scored names did better. Values this small are a weak effect either way — the sign and the significance matter more than the magnitude.',
+                '分数与下季度收益的横截面秩相关均值（rank IC）。为正表示高分股表现更好。这种量级本身很微弱－符号与显著性比数值大小更重要。') }}</span>
+      {% if c.mean_decile_spread is not none %}
+      <span class="chip">{{ t('Top fifth minus bottom fifth','前1/5减后1/5') }} <b class="mono {{ 'pos' if c.mean_decile_spread > 0 else 'neg' }}">{{ '%+.2f%%'|format(c.mean_decile_spread*100) }}</b></span>
+      {% endif %}
+      {% if m.study.legs_blended %}
+      <span class="chip">{{ t('Parts blended','实际混合项数') }} <b>{{ m.study.legs_blended.min }}–{{ m.study.legs_blended.max }}</b> / {{ m.study.legs_blended.of }}</span>
+      {% endif %}
+    </div>
+    {% if c.degenerate_note %}
+      <p class="foot"><strong>{{ t('Not a valid test','此测试无效') }}:</strong> {{ c.degenerate_note }}</p>
+    {% endif %}
+  {% endif %}
+
+  {% if not m.buildable %}
+  <p class="foot"><strong>{{ t('Cannot be rebuilt here','此处无法复刻') }}.</strong>
+    {% for leg in m.legs if leg.fidelity == 'absent' %}{{ leg.distortion }}{% endfor %}</p>
+  {% elif m.fidelity.absent %}
+  {# A model that DOES build but still carries absences: the absences are a boundary of the
+     data, not a failure to rebuild, so they get their own heading and one line each rather
+     than being run together under "cannot be rebuilt". #}
+  <p class="foot" style="margin-bottom:2px"><strong>{{ t('What we cannot measure, printed rather than dropped','无法测量的部分，如实列出而非略去') }}:</strong></p>
+  <ul class="foot" style="margin:0 0 0 18px; padding:0">
+    {% for leg in m.legs if leg.fidelity == 'absent' %}
+    <li style="margin-bottom:3px"><strong>{{ leg.label }}</strong> — {{ leg.distortion }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <details style="margin-top:8px">
+    <summary>{{ t('How the parts are combined','各项如何合成') }}</summary>
+    <p class="sm" style="max-width:86ch"><strong>{{ m.combination.rule }}</strong>{% if m.combination.fitted %} · {{ t('fitted by us, not published','由我们拟合，非厂商公开') }}{% endif %} — {{ m.combination.note }}</p>
+    {% if m.combination.weights %}
+    <p class="sm mono muted">{% for k, v in m.combination.weights.items() %}{{ k }} {{ '%.2f'|format(v) }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+    {% endif %}
+  </details>
+
+  {# ---------- live board ---------- #}
+  {% if m.board %}
+  <details style="margin-top:6px">
+    <summary>{{ t('What it picks today','当前选出的股票') }} ({{ m.board.n_scored }} {{ t('scored','只已评分') }})</summary>
+    <p class="xs muted" style="margin:5px 0">
+      {{ t('Shown because a model you cannot look at is a model you cannot judge. These are not recommendations — this score is not wired into any ranking on this site.',
+            '列出是为了可被检视：看不见的模型无法评判。这些不构成推荐－该分数未接入本站任何排序。') }}
+    </p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>{{ t('Stock','股票') }}</th><th class="r">{{ t('Score','分数') }}</th>
+        <th class="r">{{ t('Parts used','使用项数') }}</th><th class="r">{{ t('Size ($bn)','市值（十亿美元）') }}</th>
+        {% for k in m.board.leg_keys %}<th class="r xs">{{ k }}</th>{% endfor %}</tr></thead>
+      <tbody>
+      {% for r in m.board.rows %}
+      <tr><td class="mono">{{ r.ticker }}</td>
+        <td class="r mono">{{ num(r.score, 1) }}</td>
+        <td class="r mono {{ 'muted' if r.n_legs < m.board.n_legs_total else '' }}">{{ r.n_legs }}/{{ m.board.n_legs_total }}</td>
+        <td class="r mono muted">{{ num(r.mktcap_bn, 1) }}</td>
+        {% for k in m.board.leg_keys %}<td class="r mono xs muted">{{ num(r.legs[k], 0) }}</td>{% endfor %}
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    <p class="xs muted">{{ t('A name is only scored when it has at least','仅当股票至少具备') }} {{ m.board.min_legs }}/{{ m.board.n_legs_total }} {{ t('parts — otherwise a company good at two things would outrank one judged on all of them.','项时才计分－否则只擅长两项的公司会压过被全面评估的公司。') }}</p>
+  </details>
+  {% endif %}
+</div>
+{% endfor %}
+
+{# ==================== EVIDENCE: the combination rule ==================== #}
+{% if rule_fit %}
+<div class="panel">
+  <h2>{{ t('Working out their hidden formula','推算其未公开的合成公式') }}</h2>
+  <p class="lead sm">
+    {{ t('Fintel never publishes how it combines the three parts. But it prints the parts and the total for individual stocks, so the formula can be recovered from its own numbers.',
+          'Fintel从未公开三项如何合成。但它会逐股列出各分项与总分，因此可以用它自己的数字反推出公式。') }}
+  </p>
+  <div class="chips">
+    <span class="chip">{{ t('Value','价值') }} <b class="mono">{{ '%.2f'|format(rule_fit.weights.value) }}</b></span>
+    <span class="chip">{{ t('Quality','质量') }} <b class="mono">{{ '%.2f'|format(rule_fit.weights.quality) }}</b></span>
+    <span class="chip">{{ t('Momentum','动量') }} <b class="mono">{{ '%.2f'|format(rule_fit.weights.momentum) }}</b></span>
+    <span class="chip">{{ t('Fit','拟合度') }} <b class="mono">{{ '%.3f'|format(rule_fit.r2) }}</b></span>
+    <span class="chip">{{ t('Worst miss','最大偏差') }} <b class="mono">{{ '%.2f'|format(rule_fit.max_abs_resid) }}</b> {{ t('points','分') }}</span>
+  </div>
+  <p class="foot">
+    {{ t('Read plainly: their momentum model barely moves the answer — it is a quality-and-value score with a light momentum tilt, which matches how they describe it. Two stocks (MCEM, WSM) score higher on the total than on any of their three parts, which no simple average can do; so the total is re-ranked against the whole universe after blending. Both readings point at the same extra step.',
+          '直白地说：动量模型几乎不改变结论－这是一个带轻微动量倾斜的质量价值分数，与厂商自身的描述一致。有两只股票（MCEM、WSM）的总分高于其任一分项，简单加权平均不可能做到；因此总分在合成后又相对全样本重新排了一次名次。两条线索指向同一个额外步骤。') }}
+  </p>
+  <details>
+    <summary>{{ t('The published numbers this was fitted to','用于拟合的公开数字') }} ({{ rule_fit.n }} {{ t('stocks, one day','只股票，同一天') }})</summary>
+    <div class="scroll" style="margin-top:6px">
+    <table><thead><tr><th>{{ t('Stock','股票') }}</th><th class="r">{{ t('Quality','质量') }}</th>
+      <th class="r">{{ t('Value','价值') }}</th><th class="r">{{ t('Momentum','动量') }}</th>
+      <th class="r">{{ t('Total','总分') }}</th></tr></thead><tbody>
+      {% for row in observed %}<tr><td class="mono">{{ row[0] }}</td>
+        <td class="r mono">{{ '%.2f'|format(row[1]) }}</td><td class="r mono">{{ '%.2f'|format(row[2]) }}</td>
+        <td class="r mono">{{ '%.2f'|format(row[3]) }}</td>
+        <td class="r mono"{% if row[4] > [row[1],row[2],row[3]]|max %} style="font-weight:700"{% endif %}>{{ '%.2f'|format(row[4]) }}</td></tr>{% endfor %}
+    </tbody></table></div>
+    <p class="xs muted">{{ observed_source.publisher }}, {{ observed_source.date }} —
+      <a href="{{ observed_source.url }}" rel="nofollow noopener" target="_blank">{{ observed_source.title }}</a>.
+      {{ t('Ten stocks from one day, all of them high scorers, so this describes the top of their range rather than the whole formula.',
+            '仅十只股票、同一天、且均为高分股，故此式描述的是其高分区间，而非完整公式。') }}</p>
+  </details>
+</div>
+{% endif %}
+
+{# ==================== EVIDENCE: universe gap ==================== #}
+<div class="panel">
+  <h2>{{ t('Why their winners are mostly invisible to us','为何他们的优选股在我们这里大多看不到') }}</h2>
+  <div class="chips" style="margin-top:0">
+    <span class="chip">{{ t('Their screened universe','其筛选股票池') }} <b class="mono">{{ '{:,}'.format(universe_gap.fintel_screened) }}</b></span>
+    <span class="chip">{{ t('Our price coverage','我们的行情覆盖') }} <b class="mono">{{ '{:,}'.format(universe_gap.our_price_universe) }}</b></span>
+    <span class="chip">{{ t('Our filings coverage','我们的财报覆盖') }} <b class="mono">{{ '{:,}'.format(universe_gap.our_fundamentals_universe) }}</b></span>
+    <span class="chip">{{ t('Their published winners we can even see','其公开优选股中我们能看到的') }}
+      <b class="mono">{{ universe_gap.published_leaders_in_our_fundamentals_panel }}/{{ universe_gap.published_leaders_tested }}</b></span>
+  </div>
+  <p class="foot">
+    {{ t('This is the finding that matters most. The model is built to find small, overlooked companies, and it is measured against a small-cap index. Our prices reach that far down, but our filings data does not — so most of the companies the model exists to surface are ones we cannot score at all. Closing this needs wider filings coverage, not a better formula.',
+          '这是最关键的发现。该模型的用途是挖掘被忽视的小公司，其业绩也对标小盘指数。我们的行情能覆盖到那个层级，财报数据却不能－因此该模型真正要挖掘的公司，我们大多根本无法评分。要弥补这一点，需要的是更广的财报覆盖，而非更好的公式。') }}
+  </p>
+</div>
+
+{# ==================== EVIDENCE: substrate ==================== #}
+<div class="panel">
+  <h2>{{ t('What we tested on','测试所用数据') }}</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>{{ t('Source','数据源') }}</th><th>{{ t('Safe for history tests','可用于历史检验') }}</th>
+      <th>{{ t('Span','时间跨度') }}</th><th>{{ t('Note','说明') }}</th></tr></thead>
+    <tbody>
+    {% for k, s in substrate.items() %}
+    <tr>
+      <td class="mono xs">{{ s.path }}</td>
+      <td>{% if s.point_in_time %}<span class="pill v-ok">{{ t('Yes','是') }}</span>
+          {% else %}<span class="pill v-inv">{{ t('No','否') }}</span>{% endif %}
+        <div class="xs muted" style="margin-top:3px">{{ s.pit_key }}</div></td>
+      <td class="xs">{{ s.span }}<div class="muted">{{ s.tickers }}</div></td>
+      <td class="xs" style="max-width:40ch">{{ s.note }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="foot">
+    {{ t('One source is deliberately excluded. Our richest financial-statement table would improve these models, but its dates record when we downloaded the data, not when companies filed it — so a history test using it would let every past date see reports that had not been published yet, and every result would flatter itself.',
+          '有一个数据源被刻意排除。我们最完整的财报表本可改进这些模型，但其日期记录的是我们下载数据的时间，而非公司披露的时间－用它做历史检验，会让过去的每一天都看到尚未发布的报告，所有结果都会自我美化。') }}
+  </p>
+</div>
+
+{# ==================== LIMITS ==================== #}
+{% if study_meta.limits %}
+<div class="panel">
+  <h2>{{ t('What these results cannot tell you','这些结果无法说明什么') }}</h2>
+  <ul class="sm muted" style="margin:0; padding-left:18px; max-width:88ch">
+    <li>{{ t('Three years is one market mood. Quality and value lagged badly over this stretch; a different stretch could easily read the other way.',
+              '三年只覆盖一种市场情绪。质量与价值在这段时间明显落后；换一段时间很可能得出相反读数。') }}</li>
+    <li>{{ t('Companies that were delisted are missing from our prices, so every number here flatters the result slightly.',
+              '已退市公司不在我们的行情数据中，因此此处所有数字都略微偏乐观。') }}</li>
+    <li>{{ t('Twelve quarterly readings is thin. Treat a borderline result as undecided rather than settled.',
+              '十二个季度的读数偏少。临界结果应视为未定论，而非已定论。') }}</li>
+    <li>{{ t('We are testing our rebuild, not their model. Where a part is a stand-in, a poor result may be our substitute failing rather than their idea.',
+              '我们检验的是自己的复刻件，而非厂商的模型。凡使用替代口径之处，结果不佳可能是替代口径失效，而非其思路有误。') }}</li>
+    {# The bullets above describe the quarterly fundamentals panel. The options family sits on
+       a different substrate entirely, so its limits are keyed off its own stamps rather than
+       letting a reader carry "three years / twelve quarters" across to a six-week panel. #}
+    {% if study_meta.limits.options_regime %}
+    <li>{{ t('The options family is a different panel: six weeks of a single market regime, which at a five-day horizon is about six independent windows. Every significance number on it is empty by construction — read those rows as directions to watch, not as measured effects.',
+              '期权族系所用面板完全不同：仅六周、单一市场状态，按五日前瞻计算约为六个独立窗口。其上任何显著性数字在构造上都不成立－该部分应视为待观察的方向，而非已测得的效应。') }}</li>
+    {% endif %}
+    {% if study_meta.limits.options_stamp %}
+    <li>{{ t("Options rows carry the date our collector ran, not the trading session it read: 9 of 41 stamps simply repeated the session before them. We collapse those before scoring, but the change-based rows still rest on about 13 usable dates.",
+              '期权数据行标注的是采集程序的运行日期，而非其读取的交易时段：41个标记中有9个只是重复了前一时段。计分前已合并重复项，但基于变化量的行仍仅依赖约13个可用日期。') }}</li>
+    {% endif %}
+  </ul>
+  {% if study_meta.generated_utc %}
+  <p class="xs muted" style="margin:9px 0 0">{{ t('Measured','实测时间') }} {{ study_meta.generated_utc }} ·
+    {{ t('forward window','前瞻窗口') }} {{ study_meta.horizon_d }}{{ t(' trading days',' 个交易日') }}</p>
+  {% endif %}
+</div>
+{% endif %}
+
+<p class="sm muted" style="text-align:center; margin:18px 0 6px">
+  {{ t('Quant Lab is a research surface. Scores here are display-only and are not used to rank, size, or gate anything on this site.',
+        '量化实验室为研究页面。此处分数仅供展示，不用于本站任何排序、仓位或准入判断。') }}
+</p>
+{% if generated_utc %}<p class="xs muted" style="text-align:center; margin:0 0 8px">{{ generated_utc }}</p>{% endif %}
+<script src="theme.js"></script>
+</body>
+</html>

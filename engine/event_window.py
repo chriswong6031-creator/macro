@@ -8,7 +8,7 @@ DISCIPLINE (honoring RIC-R3, RIC-R6, research/DO_NOT_REBUILD.md):
   • This module tags and MEASURES calendar-phase behaviour. It does NOT score or
     gate anything. No entry may be added to risk_radar._SCARES. Calendar-gated
     risk legs are FORBIDDEN at any tier (judge-panel ruling 2026-07-13; registered
-    in DO_NOT_REBUILD.md §4).
+    as DNR:KILL-CALENDAR-GATED-RISK).
   • The pre-FOMC drift (Lucca-Moench) is measured and EXPECTED to print DEAD
     post-2016. That honest null is the correct display — the house already ruled.
   • Collision states are pure calendar math: displayed as context, never scored.

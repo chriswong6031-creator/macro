@@ -13,6 +13,29 @@
   'use strict';
   var L = function (en, zh) { return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh == null ? en : zh) + '</span>'; };
 
+  /* Monoline icon set — the JS twin of templates/_icons.html.j2 (`_ICON_PATHS`).
+     Path data is byte-identical to the macro's, so a glyph drawn here and one
+     drawn server-side are the same drawing. stroke=currentColor via .ic-svg, so
+     each slot's ink (and the theme / zh swaps) come free — which is the whole
+     reason these replaced the emoji they used to be: an emoji is a colour-fixed,
+     OS-dependent picture sitting inside a typographic system. */
+  var ICON_PATHS = {
+    target:  '<circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none"/>',
+    star:    '<path d="M12 3.4 14.09 9.13 20.18 9.34 15.38 13.1 17.06 18.96 12 15.55 6.94 18.96 8.62 13.1 3.82 9.34 9.91 9.13Z"/>',
+    diamond: '<path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/>',
+    swirl:   '<path d="M20.4 12a8.4 8.4 0 1 0-8.4 8.4 4.6 4.6 0 0 0 4.6-4.6"/><polyline points="17.1,8.9 20.4,12 23,8.7"/>',
+    map:     '<path d="M9 4.6 3.4 7v12.4L9 17l6 2.4 5.6-2.4V4.6L15 7Z"/><line x1="9" y1="4.6" x2="9" y2="17"/><line x1="15" y1="7" x2="15" y2="19.4"/>',
+    bars:    '<line x1="3.6" y1="20" x2="20.4" y2="20"/><line x1="7.5" y1="20" x2="7.5" y2="12.4"/><line x1="12" y1="20" x2="12" y2="6.4"/><line x1="16.5" y1="20" x2="16.5" y2="15"/>',
+    list:    '<line x1="9.4" y1="6.6" x2="20.4" y2="6.6"/><line x1="9.4" y1="12" x2="20.4" y2="12"/><line x1="9.4" y1="17.4" x2="20.4" y2="17.4"/><circle cx="4.6" cy="6.6" r="1.15"/><circle cx="4.6" cy="12" r="1.15"/><circle cx="4.6" cy="17.4" r="1.15"/>',
+    search:  '<circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.4" y1="15.4" x2="21" y2="21"/>',
+    accel:   '<path d="M3.6 19.2c5.2-.4 11.6-3.6 16.6-13"/><polyline points="14.8,5.6 20.6,5.6 20.6,11.4"/>',
+    coil:    '<line x1="3.4" y1="6.6" x2="12.6" y2="6.6"/><line x1="5.2" y1="12" x2="12.6" y2="12"/><line x1="7" y1="17.4" x2="12.6" y2="17.4"/><line x1="17.6" y1="19.6" x2="17.6" y2="5.4"/><polyline points="14.2,8.8 17.6,5.4 21,8.8"/>',
+    avoid:   '<circle cx="12" cy="12" r="8.2"/><line x1="6.4" y1="6.4" x2="17.6" y2="17.6"/>'
+  };
+  function ic(name, cls) {
+    return '<svg class="ic-svg' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + (ICON_PATHS[name] || '') + '</svg>';
+  }
+
   var DS = {
     subsectors: { url: 'marketdata/subsector_confluence.json', dir: 'subsector/', prefix: '', groupsKey: 'subsectors', noun: ['subsectors', '子行业'], rollup: ['Sector backdrop', '板块背景'], rollupDesc: ['Each sector as one equal-weight basket — the backdrop the subsectors live inside.', '每个板块作为一个等权篮子——子行业所处的大背景。'] },
     baskets: { url: 'marketdata/basket_confluence.json', dir: 'subsector/', prefix: 'b-', groupsKey: 'baskets', noun: ['baskets', '篮子'], rollup: null },
@@ -286,7 +309,7 @@
       : '<div class="empty">' + L('Nothing extended or in a downtrend right now — no obvious groups to avoid.', '当前无过热或下行趋势的组——暂无明显应回避者。') + '</div>';
     avoidCol += '</div>';
 
-    return '<div class="sec sc-stagger sc-s1"><div class="sec-head"><h2>🎯 ' + L('What to do now', '当下操作') + '</h2></div>'
+    return '<div class="sec sc-stagger sc-s1"><div class="sec-head"><h2>' + ic('target','sc-h2-ic') + ' ' + L('What to do now', '当下操作') + '</h2></div>'
       + '<div class="desc">' + L('Fresh T1–T3 confluence crosses on the left (buy-ready); groups that are overbought or below trend on the right (don\'t chase). The detail page shows each group\'s chart and which members are firing.',
         '左侧为新触发的 T1–T3 汇聚交叉（可买）；右侧为超买或跌破趋势的组（勿追）。详情页展示各组图表与触发成分。') + '</div>'
       + '<div class="sc-board">' + buyCol + avoidCol + '</div></div>';
@@ -311,7 +334,7 @@
     else if (buys.length <= PICKS_CAP) body = table;
     else body = '<div class="sc-collapse sc-collapsed" data-n="' + buys.length + '" data-cap="' + PICKS_CAP + '">' + table
       + '<button class="sc-more" type="button"><span class="l-en">Show all ' + buys.length + ' picks ▾</span><span class="l-zh">展开全部 ' + buys.length + ' 个 ▾</span></button></div>';
-    return '<div class="sec sc-stagger sc-s2"><div class="sec-head"><h2>💠 ' + L('Double-confluence picks', '双重汇聚精选') + ' <span class="n">' + buys.length + '</span></h2></div>'
+    return '<div class="sec sc-stagger sc-s2"><div class="sec-head"><h2>' + ic('diamond','sc-h2-ic') + ' ' + L('Double-confluence picks', '双重汇聚精选') + ' <span class="n">' + buys.length + '</span></h2></div>'
       + '<div class="desc">' + L('Stocks whose own T1–T4 cascade is buyable <b>and</b> whose subsector has a tailwind — the two gates agree. Ranked by conviction = stock weight × subsector buyability (T1×T1 = 1.0)' + (buys.length > PICKS_CAP ? '. Top ' + PICKS_CAP + ' shown.' : '.'),
         '自身 T1–T4 级联可买<b>且</b>所在子行业顺风的个股——两道闸门一致。按把握度排序 = 个股权重 × 子行业可买系数（T1×T1 = 1.0）' + (buys.length > PICKS_CAP ? '，默认显示前 ' + PICKS_CAP + ' 个。' : '。')) + '</div>'
       + '<div class="sc-tablecard">' + body + '</div></div>';
@@ -351,14 +374,14 @@
         + (list.length ? '<div class="lcards">' + list.map(leadCard).join('') + '</div>' : '<div class="empty">' + L(een, ezh) + '</div>') + (note || '') + '</div>';
     };
     var filtered = t.coil_filtered || 0;
-    var coilNote = filtered ? '<div class="lc-filtered">⛔ ' + L(filtered + ' more dropped by the weekly / 2-week / monthly downtrend veto (a bounce inside a higher-timeframe bear — not a durable coil).', filtered + ' 个被周/双周/月线下跌否决过滤（更高周期熊市中的反弹——非可持续蓄势）。') + '</div>' : '';
-    return '<div class="sec sc-stagger sc-s3"><div class="sec-head"><h2>🌀 ' + L('Leadership — running & coiling', '领导地位——领跑与蓄势') + '</h2></div>'
+    var coilNote = filtered ? '<div class="lc-filtered">' + ic('avoid', 'lc-veto-ic') + ' ' + L(filtered + ' more dropped by the weekly / 2-week / monthly downtrend veto (a bounce inside a higher-timeframe bear — not a durable coil).', filtered + ' 个被周/双周/月线下跌否决过滤（更高周期熊市中的反弹——非可持续蓄势）。') + '</div>' : '';
+    return '<div class="sec sc-stagger sc-s3"><div class="sec-head"><h2>' + ic('swirl','sc-h2-ic') + ' ' + L('Leadership — running & coiling', '领导地位——领跑与蓄势') + '</h2></div>'
       + '<div class="lead-cols">'
-      + col('🏃', 'Running — rising leaders', '领跑——上升领导',
+      + col(ic('accel','sc-h3-ic ic-run'), 'Running — rising leaders', '领跑——上升领导',
         'Already leading their peers and still accelerating (RRG leading quadrant, not topping). Ranked by acceleration, not level.',
         '已领先同侪且仍在加速（RRG 领先象限，未见顶）。按加速度而非水平排序。',
         run, 'None accelerating cleanly in the leading quadrant.', '领先象限中暂无干净加速者。')
-      + col('🌱', 'Coiling — about to run', '蓄势——即将启动',
+      + col(ic('coil','sc-h3-ic ic-coil'), 'Coiling — about to run', '蓄势——即将启动',
         'Laggards turning up that pass a coil confirmation (RSI divergence, multi-timeframe turn, volatility contraction, RS-hold) and survive a weekly / 2-week / monthly downtrend veto. W/2W/M chips show the higher-timeframe trend.',
         '开始转强的落后组，通过蓄势确认（RSI 背离、多周期转向、波动收缩、相对强弱守稳）并通过周/双周/月线下跌否决。W/2W/M 标签显示更高周期趋势。',
         coil, 'No laggards passed higher-timeframe coil confirmation.', '暂无落后组通过更高周期蓄势确认。', coilNote)
@@ -377,7 +400,7 @@
         + (r.rs_60d != null ? '<div style="color:var(--muted);font-size:10.5px;margin-top:4px" class="num">RS60 ' + signed(r.rs_60d) + '</div>' : '');
       return href ? '<a class="s" href="' + href + '">' + inner + '</a>' : '<div class="s">' + inner + '</div>';
     }).join('');
-    return '<div class="sec sc-stagger sc-s4"><div class="sec-head"><h2>🗺️ ' + L(meta[0], meta[1]) + '</h2></div><div class="desc">' + L(DS[ds].rollupDesc[0], DS[ds].rollupDesc[1]) + '</div><div class="secstrip">' + cells + '</div></div>';
+    return '<div class="sec sc-stagger sc-s4"><div class="sec-head"><h2>' + ic('map','sc-h2-ic') + ' ' + L(meta[0], meta[1]) + '</h2></div><div class="desc">' + L(DS[ds].rollupDesc[0], DS[ds].rollupDesc[1]) + '</div><div class="secstrip">' + cells + '</div></div>';
   }
 
   /* nasdaq internals archetype panel (TI-R4) — display-only, fail-open. */
@@ -418,7 +441,7 @@
       }
       var wm = L(esc(d.watermark_en || ''), esc(d.watermark_zh || ''));
       var footHtml = '<div style="color:var(--muted);font-size:11px;margin-top:10px;line-height:1.5">' + (d.watermark_en ? wm + ' &nbsp;·&nbsp; ' : '') + L('Descriptive, display-only — no forward claim.', '描述性，仅供展示——不构成前瞻性主张。') + '</div>';
-      return '<div class="sec sc-stagger sc-s5"><div class="sec-head"><h2>📊 ' + L('Nasdaq internals', '纳斯达克内部结构') + '</h2></div>'
+      return '<div class="sec sc-stagger sc-s5"><div class="sec-head"><h2>' + ic('bars','sc-h2-ic') + ' ' + L('Nasdaq internals', '纳斯达克内部结构') + '</h2></div>'
         + '<div class="desc">' + L('Archetype group breadth and momentum vs QQQ. Descriptive only — no forward claim.', '各原型组相对 QQQ 的宽度与动量。仅描述性，不构成前瞻性主张。') + '</div>'
         + ewHtml + groupStrip + divHtml + footHtml + '</div>';
     } catch (e) { console.debug('[ni-panel] render error (artifact may be absent):', e && e.message); return ''; }
@@ -467,8 +490,8 @@
         + '<td>' + signed(r.rs_60d) + '</td>'
         + '<td class="num">' + (g.n_priced || g.n_members) + '</td></tr>';
     }).join('');
-    return '<div class="sec sc-stagger sc-s6"><div class="sec-head"><h2>📋 ' + L('All ' + noun[0], '全部' + noun[1]) + ' <span class="n">' + groups.length + '</span></h2></div>'
-      + '<div class="sc-tablecard"><div class="sc-search"><span style="color:var(--muted)">🔎</span>'
+    return '<div class="sec sc-stagger sc-s6"><div class="sec-head"><h2>' + ic('list','sc-h2-ic') + ' ' + L('All ' + noun[0], '全部' + noun[1]) + ' <span class="n">' + groups.length + '</span></h2></div>'
+      + '<div class="sc-tablecard"><div class="sc-search">' + ic('search', 'sc-find-ic')
       + '<input type="text" id="sc-fulltable-q" placeholder="' + (document.documentElement.getAttribute('data-lang') === 'zh' ? '筛选子行业或板块…' : 'Filter subsector or sector…') + '" value="' + esc(FILTER[ds] || '') + '">'
       + '<span class="cnt">' + rowsData.length + ' / ' + groups.length + '</span></div>'
       + '<div class="tbl-scroll"><table class="sc-tbl" id="sc-fulltable"><thead>' + thead + '</thead><tbody>' + body + '</tbody></table></div></div></div>';
@@ -547,7 +570,7 @@
       LEAD = lead;
       if (LEAD && LEAD.ok && LEAD.rising_star) {
         var el = document.querySelector('.sc-tab[data-tab="' + LEAD.rising_star.tab + '"]');
-        if (el && !el.querySelector('.star-badge')) { var b = document.createElement('span'); b.className = 'star-badge'; b.textContent = '⭐'; b.title = 'Rising star — leadership accelerating fastest'; el.appendChild(b); }
+        if (el && !el.querySelector('.star-badge')) { var b = document.createElement('span'); b.className = 'star-badge'; b.innerHTML = ic('star'); b.title = 'Rising star — leadership accelerating fastest'; el.appendChild(b); }
       }
       return fetch('marketdata/nasdaq_internals.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
     }).then(function (ni) {

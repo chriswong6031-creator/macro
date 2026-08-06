@@ -238,3 +238,105 @@ def publish_card(
         log.warning("publish_card: upload failed for %s: %s", chart_id, exc)
         out["media_url"] = None
     return out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Card/ticker agreement — the last thing between a wrong chart and a live post
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# THE DEFECT (live, flagship, 2026-08-05). A post reading "$DVN 45.1. Signals are
+# lining up..." shipped with a chart of RMBS. The outbox item was RIGHT (ticker
+# DVN, chart-088); the FILE at that id was another company's. `chart_id` is the
+# whole storage key — this module writes <as_of>/<chart_id>.svg and uploads the
+# PNG to the matching public path — and content_studio's id counter restarted at
+# 1 every run, so the second run of a day overwrote the first run's charts at the
+# same paths and the same URLs. content_studio._next_chart_id now makes the day's
+# namespace append-only, which stops NEW collisions.
+#
+# This is the other half, and the half the operator actually asked for: "if
+# someone didn't catch this then we wouldn't even know". A reader caught it. An
+# audit of every single-ticker card since 08-01 then found a second one nobody
+# had: 08-01, meagan, $AMCR posted over an AMZN chart. Two live posts, one
+# noticed. So the pipeline needs a check that SEES this, not just a fix that
+# prevents the known cause — the next cause will be different.
+#
+# THE TEST IS "DOES THE CLAIMED TICKER APPEAR", not "what ticker is this chart".
+# Deliberate: several renderers draw the symbol differently (v2 header text, the
+# ghost watermark, the signal-chart label), so picking THE ticker out of the
+# markup is a guess that would quarantine good posts when a renderer changes.
+# Presence is unambiguous, and it is exactly what fails in the real defect: DVN
+# appears nowhere in an RMBS chart.
+
+#: Text that is drawn on cards and is not a symbol. Kept small on purpose — the
+#: check only has to avoid claiming a card names a ticker it does not.
+#: A word left OUT of this set cannot create a false NEGATIVE, but it can create
+#: a false POSITIVE: a card whose only ticker-shaped token is an unlisted label
+#: reads as "names a symbol, and not the claimed one" and would quarantine a good
+#: post. So pills and axis labels belong here. `SETUP` is the live example — the
+#: v2 chart draws a SETUP pill, and without it a card that labels nothing else
+#: would fire.
+_CARD_TEXT_NOISE = frozenset({
+    "MASTERMIND", "DAILY", "WEEKLY", "AI", "POC", "SMA", "EMA", "MACD", "RSI",
+    "VOL", "ATR", "HIGH", "LOW", "OPEN", "CLOSE", "PRO", "FREE", "TRY", "NEW",
+    "SETUP", "ENTRY", "STOP", "TARGET", "BUY", "SELL", "HOLD", "LONG", "SHORT",
+    "GAP", "AVG", "YTD", "EPS", "PE", "IV", "OI", "USD", "ETF", "NA", "TBD",
+})
+
+
+def card_symbols(svg_text: str) -> set[str]:
+    """Every ticker-shaped token this card DRAWS. Empty when it names none.
+
+    TEXT NODE contents only, so a symbol inside an attribute, a URL or the footer
+    link cannot vouch for a card. Punctuation-normalised, because a card may draw
+    `BRK.B` where the item says `BRK-B`.
+    """
+    import re  # noqa: PLC0415
+
+    out = set()
+    for node in re.findall(r">([A-Z][A-Z0-9.\-]{1,5})<", str(svg_text or "")):
+        tok = re.sub(r"[^A-Z0-9]", "", node)
+        if tok and tok not in _CARD_TEXT_NOISE:
+            out.add(tok)
+    return out
+
+
+def card_ticker_mismatch(media: list[dict] | None, *, root: Any = None) -> str | None:
+    """Reason string when a card contradicts the ticker its item claims; None if OK.
+
+    Only SINGLE-name cards are judged. A `tickers` list (sector/theme cards) is
+    skipped: those legitimately draw a subset of their members, so absence proves
+    nothing and a check that fired on it would be noise.
+
+    THREE WAYS TO ABSTAIN, one way to fire. Absent/unreadable SVG, a card that
+    draws NO symbol at all, and a multi-name card are all UNANSWERABLE, not
+    evidence — the publish runner is not guaranteed to carry the media tree, and
+    a post must never be quarantined because a file was not fetched or because a
+    renderer does not label its chart. The check fires only when the card names
+    at least one symbol AND the claimed one is not among them, which is exactly
+    the live defect: chart-088 names RMBS, the item claimed DVN.
+    """
+    import re  # noqa: PLC0415
+    from pathlib import Path as _Path  # noqa: PLC0415
+
+    repo_root = _Path(root) if root is not None else _Path(__file__).resolve().parents[2]
+    for entry in (media or []):
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("tickers"):
+            continue
+        ticker = str(entry.get("ticker") or "").strip()
+        rel = str(entry.get("path") or "").strip()
+        if not ticker or not rel:
+            continue
+        try:
+            svg_text = (repo_root / rel).read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue  # absent artifact is not evidence of a mismatch
+        drawn = card_symbols(svg_text)
+        if not drawn:
+            continue  # card labels no symbol; nothing to disagree with
+        want = re.sub(r"[^A-Z0-9]", "", ticker.upper())
+        if want and want not in drawn:
+            return (f"card/ticker mismatch: the item claims {ticker} but "
+                    f"{rel} draws {sorted(drawn)}")
+    return None

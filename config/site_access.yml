@@ -1,12 +1,33 @@
 # config/site_access.yml — reviewed serving boundary for www.mastermind-x.com.
 #
-# Caddy is DEFAULT-DENY for static content: anything not in `public` is routed
-# through the registration wall, then through app/paywall.py.  The paywall is
-# independently feature-flagged; registration protection is live regardless.
+# Caddy is DEFAULT-DENY for static ASSETS: any non-HTML path not in `public` is
+# routed through the registration wall, then through app/paywall.py. The paywall
+# is independently feature-flagged; registration protection is live regardless.
 #
-# Moving a path into `public` is a security-sensitive product change. Keep the
-# matching list in app/deploy/Caddyfile byte-for-byte aligned; the boundary test
-# fails if the two drift.
+# HTML DOCUMENTS ARE NOT IN THAT CLASS ANY MORE (operator 2026-08-04). Every
+# *.html page shell is served to anonymous visitors — the registration wall that
+# used to 302 ~239 member pages to /?signin=1&ret=<path> was removed, along with
+# the @reg_html / @reg_html_err matchers that enforced it. See the block comment
+# in app/deploy/Caddyfile above @reg_asset.
+#
+# So this file's `public` list no longer decides whether a PAGE is reachable —
+# it decides whether an ASSET is. The .html entries below are retained because
+# the Caddy @reg_asset exclusion list is compared against this file byte-for-byte
+# by tests/test_site_access_boundary.py; they are now belt-and-braces, not the
+# thing holding a page open.
+#
+# The paid product is the PAYLOAD, not the page. What still gates:
+#   * everything under `premium.enforced_early` (/premiumdata/,
+#     /capital-structure-data/, and the two named snapshots) — 403 for anonymous
+#     AND Free, ahead of the PAYWALL_ENABLED switch;
+#   * every per-ticker <market>stockdata/*.json graded emit;
+#   * every other data path not named under `public` below.
+# An anonymous visitor therefore reads the shell, the methodology and the honest
+# totals, and tier_preview.js paints the locked slot where the paid rows sit.
+#
+# Moving an ASSET into `public` is still a security-sensitive product change.
+# Keep the matching list in app/deploy/Caddyfile byte-for-byte aligned; the
+# boundary test fails if the two drift.
 schema: site_access.v1
 
 public:

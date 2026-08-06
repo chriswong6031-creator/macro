@@ -1281,6 +1281,116 @@ class SamGovOpportunitiesAdapter(Adapter):
             raise RuntimeError("SAM.gov opportunity collection failed; last-good ledgers retained")
         return {"sam_opportunity_heartbeat": sam_opportunity_heartbeat_frame(status)}
 
+# ── Radar-leg quota economics (measured 2026-08-05, first key install) ───────
+# A free personal SAM.gov key is quota'd at ~10 requests/DAY (docs: "requests
+# per day are limited based on the federal or non-federal or general roles";
+# empirically exactly 10 → hard 429s). The old fetch spent 14 requests/night
+# (one per NAICS) and retried each 429 twice — guaranteed starvation once the
+# 30-minute government-revenue-live lane shares the key. v2 discipline:
+#   1. BATCH FIRST: try ONE comma-joined ncode request; SAM's list handling is
+#      undocumented, so accept the result only when rows span ≥2 distinct NAICS
+#      (proof the server treated it as a list, not a literal). Outcome is
+#      remembered in the cursor file; a failed probe re-tests weekly.
+#   2. ROTATION FALLBACK: codes sharing a basket must travel together (a basket
+#      velocity computed from HALF its codes undercounts), so rotation packs
+#      whole code↔basket connected components, up to SAM_NIGHT_BUDGET requests
+#      per night, cursor-resumed — full coverage every ~3 nights on 90d windows.
+#   3. 429 = STOP: a daily quota does not un-429 in six seconds. First 429
+#      aborts the sweep (single attempt per request, no retries).
+#   4. MERGE, don't overwrite: only baskets whose FULL code set was fetched
+#      tonight are recomputed; other baskets keep their last reading for at
+#      most SAM_MERGE_KEEP_D days (sidecar opp_velocity_meta.json carries
+#      per-basket as_of; the parquet schema the fuser reads is unchanged).
+SAM_NIGHT_BUDGET = 7          # radar leg's nightly ceiling (leaves the rest of the pool to the GovRev lane)
+SAM_MERGE_KEEP_D = 7          # un-refreshed basket rows survive at most this long
+SAM_BATCH_RETEST_D = 7        # re-probe comma-batching this often after a failed probe
+_CURSOR_FILE = "naics_cursor.json"          # data/sam_gov/ — rotation + batch memory
+_VELOCITY_META_FILE = "opp_velocity_meta.json"  # data/sam_gov/ — per-basket as_of
+
+
+def _is_quota_429(exc: Exception) -> bool:
+    r = getattr(exc, "response", None)
+    return getattr(r, "status_code", None) == 429
+
+
+def coverage_groups(naics_map: dict[str, list[str]]) -> list[list[str]]:
+    """Deterministic connected components of the code↔basket graph.
+
+    A basket's velocity is only honest when EVERY code mapping to it was fetched
+    in the same sweep, so rotation packs whole components — codes that share any
+    basket travel together (e.g. 541715 welds defense/quantum/ai_semiconductors
+    into one 7-code group)."""
+    parent = {c: c for c in naics_map}
+
+    def find(x: str) -> str:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    by_basket: dict[str, list[str]] = {}
+    for code, baskets in naics_map.items():
+        for b in baskets:
+            by_basket.setdefault(b, []).append(code)
+    for codes in by_basket.values():
+        for other in codes[1:]:
+            ra, rb = find(codes[0]), find(other)
+            if ra != rb:
+                parent[max(ra, rb)] = min(ra, rb)
+    groups: dict[str, list[str]] = {}
+    for c in sorted(naics_map):
+        groups.setdefault(find(c), []).append(c)
+    return [sorted(g) for _, g in sorted(groups.items())]
+
+
+def merge_velocity(new_vel: pd.DataFrame, covered_baskets: set[str],
+                   old_vel: pd.DataFrame | None, meta: dict,
+                   today) -> tuple[pd.DataFrame, dict]:
+    """Pure: upsert tonight's recomputed baskets over the last parquet.
+
+    Covered baskets take tonight's rows (including REMOVAL when a covered basket
+    now has zero early notices); uncovered baskets keep their previous row while
+    its as_of is within SAM_MERGE_KEEP_D days, then age out. Returns the merged
+    frame (basket_id-indexed, fuser schema unchanged) + the updated as_of meta."""
+    today_ts = pd.Timestamp(today)
+    today_s = today_ts.date().isoformat()
+    asof: dict[str, str] = dict((meta or {}).get("as_of") or {})
+
+    rows: dict[str, dict] = {}
+    if old_vel is not None and not old_vel.empty:
+        old = old_vel.reset_index() if "basket_id" not in old_vel.columns else old_vel
+        for _, r in old.iterrows():
+            b = str(r["basket_id"])
+            if b in covered_baskets:
+                continue                      # recomputed (or honestly removed) tonight
+            prev = asof.get(b)
+            try:
+                age = (today_ts - pd.Timestamp(prev)).days if prev else None
+            except Exception:  # noqa: BLE001
+                age = None
+            if age is None or age > SAM_MERGE_KEEP_D:
+                asof.pop(b, None)             # stale or unstamped — age out
+                continue
+            rows[b] = {c: r[c] for c in old.columns if c != "basket_id"}
+    if new_vel is not None and not new_vel.empty:
+        new = new_vel.reset_index() if "basket_id" not in new_vel.columns else new_vel
+        for _, r in new.iterrows():
+            b = str(r["basket_id"])
+            if b not in covered_baskets:
+                continue                      # partial-code counts would understate
+            rows[b] = {c: r[c] for c in new.columns if c != "basket_id"}
+            asof[b] = today_s
+    for b in covered_baskets:
+        if b not in rows:
+            asof.pop(b, None)                 # covered, zero notices → row removed
+    if not rows:
+        return pd.DataFrame(), {"as_of": {}}
+    out = pd.DataFrame([{"basket_id": b, **v} for b, v in sorted(rows.items())]
+                       ).set_index("basket_id")
+    asof = {b: d for b, d in asof.items() if b in rows}
+    return out, {"as_of": asof}
+
+
 class SamGovAdapter(Adapter):
     name = "sam_gov"
     group = "sam_gov"
@@ -1294,8 +1404,25 @@ class SamGovAdapter(Adapter):
     def _search(self, naics: str, posted_from: str, posted_to: str) -> list[dict]:
         params = {"api_key": self.api_key, "ncode": naics, "limit": 1000,
                   "postedFrom": posted_from, "postedTo": posted_to}
-        r = self.http_get(SEARCH_URL, params=params, retries=2, timeout=60)
+        # retries=1: a single attempt. Retrying into a spent DAILY quota only
+        # burns time and log noise (the 429 will not clear tonight).
+        r = self.http_get(SEARCH_URL, params=params, retries=1, timeout=60)
         return (r.json() or {}).get("opportunitiesData", [])
+
+    # -- cursor / meta sidecars ------------------------------------------------
+    def _cursor_path(self) -> Path:
+        return config.data_dir() / "sam_gov" / _CURSOR_FILE
+
+    def _load_cursor(self) -> dict:
+        try:
+            return json.loads(self._cursor_path().read_text()) or {}
+        except Exception:  # noqa: BLE001
+            return {}
+
+    def _save_cursor(self, cur: dict) -> None:
+        p = self._cursor_path()
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(cur, indent=2))
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         if not self.api_key:
@@ -1306,43 +1433,153 @@ class SamGovAdapter(Adapter):
         end = datetime.now(timezone.utc).date()
         start = end - timedelta(days=RECENT_D + PRIOR_D + 10)
         pf, pt = start.strftime("%m/%d/%Y"), end.strftime("%m/%d/%Y")
-        opps, errors = [], 0
-        for naics in naics_map:
+        all_codes = sorted(naics_map)
+        cursor = self._load_cursor()
+
+        opps: list[dict] = []
+        fetched_ok: set[str] = set()
+        requests_spent = 0
+        quota_blocked = False
+
+        # -- 1. batch attempt (one request for every code) ----------------------
+        batch_ok = cursor.get("batch_ok")
+        checked = cursor.get("batch_checked")
+        retest_due = True
+        if batch_ok is False and checked:
             try:
-                opps.extend(self._search(naics, pf, pt))
-                time.sleep(0.5)
+                retest_due = (pd.Timestamp(end) - pd.Timestamp(checked)).days >= SAM_BATCH_RETEST_D
+            except Exception:  # noqa: BLE001
+                retest_due = True
+        try_batch = len(all_codes) > 1 and (batch_ok is True or batch_ok is None or retest_due)
+        if try_batch:
+            try:
+                requests_spent += 1            # count ATTEMPTS — quota is spent on 429s too
+                rows = self._search(",".join(all_codes), pf, pt)
+                distinct = {str(o.get("naicsCode") or "").strip() for o in rows}
+                distinct.discard("")
+                if rows and len(distinct) >= 2:
+                    opps = rows
+                    fetched_ok = set(all_codes)
+                    cursor.update({"batch_ok": True, "batch_checked": end.isoformat()})
+                    log.info("sam_gov: batched %d NAICS in ONE request (%d rows, %d distinct codes)",
+                             len(all_codes), len(rows), len(distinct))
+                else:
+                    cursor.update({"batch_ok": False, "batch_checked": end.isoformat()})
+                    log.info("sam_gov: comma-batch rejected by API (rows=%d, distinct=%d) — rotation fallback",
+                             len(rows), len(distinct))
             except Exception as e:  # noqa: BLE001
                 if is_connection_error(e):
                     raise
-                errors += 1
-                log.debug("sam_gov NAICS %s: %s", naics, e)
-                continue
-        if not opps:
-            raise RuntimeError(f"sam_gov: no opportunities ({len(naics_map)} NAICS, {errors} errors)")
-        vel = velocity(opps, naics_map)
-        if not vel.empty:
-            p = config.data_dir() / "sam_gov" / "opp_velocity.parquet"
+                if _is_quota_429(e):
+                    quota_blocked = True
+                    log.warning("sam_gov: daily quota already spent at batch probe — no requests left tonight")
+                else:
+                    cursor.update({"batch_ok": False, "batch_checked": end.isoformat()})
+                    log.warning("sam_gov: batch probe failed (%s) — rotation fallback", e)
+
+        # -- 2. rotation fallback (whole coverage-groups, budget-capped) --------
+        errors = 0
+        if not fetched_ok and not quota_blocked:
+            groups = coverage_groups(naics_map)
+            gi = int(cursor.get("group_idx") or 0) % len(groups)
+            consumed = 0
+            for step in range(len(groups)):
+                group = groups[(gi + step) % len(groups)]
+                # always allow at least one group per night, even if oversized
+                if consumed and requests_spent + len(group) > SAM_NIGHT_BUDGET:
+                    break
+                group_rows: list[dict] = []
+                group_ok = True
+                for code in group:
+                    try:
+                        requests_spent += 1    # attempts, not successes (quota-relevant)
+                        group_rows.extend(self._search(code, pf, pt))
+                        time.sleep(0.5)
+                    except Exception as e:  # noqa: BLE001
+                        if is_connection_error(e):
+                            raise
+                        if _is_quota_429(e):
+                            quota_blocked = True
+                        else:
+                            errors += 1
+                            log.debug("sam_gov NAICS %s: %s", code, e)
+                        group_ok = False
+                        break
+                if group_ok:
+                    opps.extend(group_rows)
+                    fetched_ok.update(group)
+                    consumed += 1
+                if quota_blocked:
+                    log.warning("sam_gov: 429 mid-sweep after %d requests — stopping (daily quota)",
+                                requests_spent)
+                    break
+            cursor["group_idx"] = (gi + consumed) % len(groups) if groups else 0
+
+        self._save_cursor(cursor)
+
+        # -- 3. recompute covered baskets, merge over the last parquet ----------
+        covered_baskets = {b for code in fetched_ok for b in naics_map.get(code, [])
+                           if set(_basket_codes(naics_map).get(b, [])) <= fetched_ok}
+        vel_new = velocity(opps, naics_map) if opps else pd.DataFrame()
+        p = config.data_dir() / "sam_gov" / "opp_velocity.parquet"
+        meta_p = config.data_dir() / "sam_gov" / _VELOCITY_META_FILE
+        old_vel = None
+        if p.exists():
+            try:
+                old_vel = pd.read_parquet(p)
+            except Exception:  # noqa: BLE001
+                old_vel = None
+        meta = {}
+        if meta_p.exists():
+            try:
+                meta = json.loads(meta_p.read_text()) or {}
+            except Exception:  # noqa: BLE001
+                meta = {}
+        merged, meta_out = merge_velocity(vel_new, covered_baskets, old_vel, meta, end)
+        if not merged.empty:
             p.parent.mkdir(parents=True, exist_ok=True)
-            vel.to_parquet(p)
+            merged.to_parquet(p)
+            meta_p.write_text(json.dumps(meta_out, indent=2))
+        elif quota_blocked and old_vel is not None:
+            log.warning("sam_gov: quota-blocked night — keeping existing parquet untouched")
+
+        if not opps and not quota_blocked:
+            raise RuntimeError(f"sam_gov: no opportunities ({len(naics_map)} NAICS, {errors} errors)")
+
         # W0d: new-program detection — first-seen NAICS per basket; appends to program_ledger.
         # ledger_path doubles as the seen-set recovery source if naics_seen.json is lost.
-        seen_path = config.data_dir() / "sam_gov" / "naics_seen.json"
-        ledger_path = config.data_dir() / "theme_activity" / "program_ledger.parquet"
-        np_events = new_programs(opps, naics_map, seen_path, ledger_path=ledger_path)
-        if np_events:
-            ledger_path.parent.mkdir(parents=True, exist_ok=True)
-            new_df = pd.DataFrame(np_events)
-            if ledger_path.exists():
-                existing = pd.read_parquet(ledger_path)
-                new_df = pd.concat([existing, new_df], ignore_index=True)
-            new_df = new_df.drop_duplicates(subset=["basket_id", "naics_or_cfda"], keep="first")
-            new_df.to_parquet(ledger_path, index=False)
-            log.info("sam_gov: %d new NAICS programs detected", len(np_events))
-        log.info("sam_gov: %d opportunities over %d NAICS -> %d baskets, %d errors",
-                 len(opps), len(naics_map), len(vel), errors)
-        ingest = pd.DataFrame({"opps": [len(opps)], "baskets": [len(vel)]},
-                              index=[pd.Timestamp(end)])
+        if opps:
+            seen_path = config.data_dir() / "sam_gov" / "naics_seen.json"
+            ledger_path = config.data_dir() / "theme_activity" / "program_ledger.parquet"
+            np_events = new_programs(opps, naics_map, seen_path, ledger_path=ledger_path)
+            if np_events:
+                ledger_path.parent.mkdir(parents=True, exist_ok=True)
+                new_df = pd.DataFrame(np_events)
+                if ledger_path.exists():
+                    existing = pd.read_parquet(ledger_path)
+                    new_df = pd.concat([existing, new_df], ignore_index=True)
+                new_df = new_df.drop_duplicates(subset=["basket_id", "naics_or_cfda"], keep="first")
+                new_df.to_parquet(ledger_path, index=False)
+                log.info("sam_gov: %d new NAICS programs detected", len(np_events))
+
+        log.info("sam_gov: %d opportunities, %d/%d NAICS fetched (%d requests, %d covered baskets"
+                 "%s) -> %d merged rows",
+                 len(opps), len(fetched_ok), len(all_codes), requests_spent, len(covered_baskets),
+                 ", QUOTA-BLOCKED" if quota_blocked else "", len(merged))
+        ingest = pd.DataFrame(
+            {"opps": [len(opps)], "baskets": [len(merged)],
+             "requests": [requests_spent], "quota_blocked": [int(quota_blocked)]},
+            index=[pd.Timestamp(end)])
         return {"sam_gov__ingest": ingest}
+
+
+def _basket_codes(naics_map: dict[str, list[str]]) -> dict[str, list[str]]:
+    """Invert code→baskets to basket→codes (the full-coverage test for merge)."""
+    inv: dict[str, list[str]] = {}
+    for code, baskets in naics_map.items():
+        for b in baskets:
+            inv.setdefault(b, []).append(code)
+    return inv
 
 
 if __name__ == "__main__":

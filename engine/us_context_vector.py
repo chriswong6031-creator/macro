@@ -82,7 +82,27 @@ STORE_SUBDIR = "candidates"
 
 #: Keep-first key.  ``board_definition`` participates so a definition change
 #: starts a fresh series for the same night instead of silently shadowing it.
+#:
+#: ``tier`` is deliberately NOT part of this key.  The curated stamp runs first
+#: and the scan stamp runs later the same night; if ``tier`` joined the key, a
+#: name in both sets would be kept TWICE and every cohort count would
+#: double-count it.  Leaving it out makes keep-first the precedence rule instead:
+#: the curated row (written first, and the one carrying board legs, lane and
+#: near-miss reason) wins, and the scan row for that name is dropped.  The scan
+#: resolver already excludes curated names for the same reason, so this is the
+#: second fence, not the first.
 DEDUPE_KEY = ("stamp_date", "ticker", "board_definition")
+
+#: Coverage tier — the §4.5 discriminator, so the two populations never blur.
+#:
+#: ``curated`` the graded population.  Board admission, gates, scores, ranks and
+#:             plan intake read this set and ONLY this set; §4.5 changed nothing
+#:             about it.
+#: ``scan``    liquidity-floored coverage over the whole-market daily store
+#:             (``engine/us_scan_universe.py``).  Stamped and counted, never
+#:             admitted.  "See everything, admit selectively."
+TIER_CURATED = "curated"
+TIER_SCAN = "scan"
 
 #: The itemized priority-score legs as ``engine.us_board_rank.score_rows``
 #: already computes them.  Read off, never recomputed here.
@@ -110,7 +130,8 @@ def _part_path(stamp_date: str, root: Any = None):
     return _store_dir(root) / f"{str(stamp_date)[:7]}.parquet"
 
 
-def load_candidates(root: Any = None, *, months: Iterable[str] | None = None):
+def load_candidates(root: Any = None, *, months: Iterable[str] | None = None,
+                    columns: Iterable[str] | None = None):
     """Read the store as ONE frame — the only supported way to consume it.
 
     The monthly parts are a storage detail; nothing outside this module should
@@ -124,17 +145,38 @@ def load_candidates(root: Any = None, *, months: Iterable[str] | None = None):
 
     ``months`` optionally restricts to ``YYYY-MM`` keys, so a study that only
     needs one quarter never reads the whole store.
+
+    ``columns`` projects at the parquet level.  The store is ~150 columns wide
+    and, once the scan tier widens the universe (roadmap §4.5), accrues on the
+    order of 180k rows a month — so the §W7 full-population forward grader,
+    which walks the whole store nightly for a handful of identity columns to
+    find rows it has not graded, must not have to materialise the other ~145.
+    A part that predates a requested column rejects the projection, so that
+    case falls back to a full read and the column reads back null for that
+    month: the same forward-only self-healing as above, never an error.  This
+    parameter is what lets that consumer honour "never glob the parts".
+    (Named by role, not by module: the grader's own suite greps every other
+    module for its literal name to pin its zero-authority fence, so a mention
+    here would read as a dependency.)
     """
     store = _store_dir(root)
     if not store.exists():
         return pd.DataFrame()
     wanted = {str(m) for m in months} if months is not None else None
+    wanted_cols = [str(c) for c in columns] if columns is not None else None
     frames: list[pd.DataFrame] = []
     for part in sorted(store.glob("*.parquet")):
         if wanted is not None and part.stem not in wanted:
             continue
         try:
-            frames.append(pd.read_parquet(part))
+            if wanted_cols is None:
+                frames.append(pd.read_parquet(part))
+            else:
+                try:
+                    frame = pd.read_parquet(part, columns=wanted_cols)
+                except Exception:  # noqa: BLE001 — column absent from an older part
+                    frame = pd.read_parquet(part)
+                frames.append(frame.reindex(columns=wanted_cols))
         except Exception as exc:  # noqa: BLE001 — one bad part must not blind the rest
             log.warning("us_context_vector: part %s unreadable (%s)", part.name, exc)
     if not frames:
@@ -598,12 +640,24 @@ def build_records(
     turnover: Mapping[str, Mapping[str, Any]] | None = None,
     eightk_days: Mapping[str, int] | None = None,
     regime: Mapping[str, Any] | None = None,
+    tier: str = TIER_CURATED,
+    liquidity: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """One flattened context row per universe name.  Pure; no I/O.
 
     ``verdicts`` is the spine — its keys ARE the universe, so a name with no
     board row, no theme and no event still gets a row (that is the point of a
     full-universe store).
+
+    ``tier`` stamps every row of this call as ``curated`` or ``scan`` (§4.5).
+    One call is one tier by construction: the two populations are assembled by
+    different lanes from different price stores, so a row can never be ambiguous
+    about which cohort it belongs to.
+
+    ``liquidity`` carries ``mdv20_usd`` for the scan tier, where it was measured
+    on the way in and is free to record.  The curated lane does not read the
+    whole-market store, so curated rows leave it NULL — "not measured for this
+    name tonight", never zero (#4485).
     """
     universe_meta = universe_meta or {}
     board_rows = board_rows or {}
@@ -620,6 +674,7 @@ def build_records(
     turnover = turnover or {}
     eightk_days = eightk_days or {}
     regime = regime or {}
+    liquidity = liquidity or {}
 
     records: list[dict[str, Any]] = []
     for ticker in sorted(verdicts):
@@ -650,6 +705,10 @@ def build_records(
             # ── identity / board ───────────────────────────────────────────
             "stamp_date": stamp_date,
             "ticker": ticker,
+            # §4.5 coverage tier. "curated" = the graded population (admission
+            # unchanged); "scan" = liquidity-floored coverage, seen and counted
+            # but never admitted.
+            "tier": _text(tier) or TIER_CURATED,
             "name": _text(meta.get("name")),
             "sector": _text(meta.get("sector")),
             "board_definition": board_definition,
@@ -721,6 +780,11 @@ def build_records(
             "turnover_window_20d": _finite(flow.get("turnover_window_20d")),
             # 60d spec is DATA-BLOCKED (caches carry ~51 sessions); self-heals.
             "turnover_pctile_60d": None,
+            # Median dollar volume over the trailing 20 sessions — the value the
+            # §4.5 liquidity floor was applied on, recorded so a reader can see
+            # WHERE in the floor a scan name sits. Null on curated rows: that
+            # lane never reads the whole-market store, so it is unmeasured, not 0.
+            "mdv20_usd": _finite(_mapping(liquidity.get(ticker)).get("mdv20_usd")),
             # ── risk ──────────────────────────────────────────────────────
             "ext_z": _finite(_mapping(ext_map.get(ticker)).get("ext_z")),
             "antichase_shadow_blocked": _bool(profile.get("antichase_shadow_blocked")),
@@ -787,7 +851,7 @@ def context_dimension_frame(
 # --------------------------------------------------------------------------- #
 
 _OBJECT_COLUMNS = (
-    "stamp_date", "ticker", "name", "sector", "board_definition", "lane",
+    "stamp_date", "ticker", "tier", "name", "sector", "board_definition", "lane",
     "tier_cascade", "tier_sub", "gate_state", "gate_reason", "near_miss_reason",
     "signal_asof", "stage", "theme_membership_ids", "theme_primary_id",
     "theme_primary_name", "theme_label", "theme_reco", "relay_basket_id",
@@ -830,6 +894,9 @@ def append_candidates(
     gate_go: Any = None,
     root: Any = None,
     with_context_dims: bool = True,
+    tier: str = TIER_CURATED,
+    liquidity: Mapping[str, Mapping[str, Any]] | None = None,
+    volumes: pd.DataFrame | None = None,
 ) -> int:
     """Append one settled full-universe US context snapshot.
 
@@ -839,6 +906,18 @@ def append_candidates(
     ``verdicts`` must be the COMPLETE ``sig_verdict`` map (every analyzed name,
     not just board rows) — the store's whole value is that ineligible names are
     present too.
+
+    ``tier`` selects the coverage cohort (§4.5).  ``TIER_CURATED`` is the
+    builder's nightly call and is unchanged.  ``TIER_SCAN`` is the later
+    liquidity-floored pass over the whole-market store; it appends into the SAME
+    monthly part, and keep-first on ``(stamp_date, ticker, board_definition)``
+    guarantees the earlier curated row wins for any name that appears in both.
+
+    ``volumes`` lets a caller supply the volume panel the turnover percentile is
+    computed from.  The curated lane leaves it None and the builder's own
+    ``prophet_doors.load_volumes`` is used; the scan lane passes the
+    whole-market panel, because the curated volume caches do not carry scan
+    names at all and would silently null the whole block.
 
     NIGHTLY IS THE SOLE ADVANCER.  The lane gate is the first statement: an
     intraday or render lane returns 0 without loading a single file, so the
@@ -873,11 +952,12 @@ def append_candidates(
             position_window=prophet_doors.RELAY_POSITION_WINDOW,
             min_members=prophet_doors.RELAY_MIN_MEMBERS,
         )
-        try:
-            volumes = prophet_doors.load_volumes(root)
-        except Exception as exc:  # noqa: BLE001
-            log.warning("us_context_vector: volume caches unreadable (%s)", exc)
-            volumes = None
+        if volumes is None:
+            try:
+                volumes = prophet_doors.load_volumes(root)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("us_context_vector: volume caches unreadable (%s)", exc)
+                volumes = None
 
         if event_rows is None:
             event_rows = event_features(
@@ -907,6 +987,8 @@ def append_candidates(
             turnover=turnover_percentiles(volumes, stamp_date),
             eightk_days=eightk_recency(stamp_date, root=root),
             regime=regime_block(gate_go, root=root),
+            tier=tier,
+            liquidity=liquidity,
         )
         if not records:
             return 0

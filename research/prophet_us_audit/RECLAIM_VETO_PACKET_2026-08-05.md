@@ -249,3 +249,33 @@ Every number in this document comes from
 `research/prophet_us_audit/reclaim_veto_packet_results_2026-08-05.json`; the per-fire rows are
 committed in that file under `fires`, and the clustering block under
 `aggregate.episode_clustering`.
+
+---
+
+## §9 RULING (operator-delegated adjudication, 2026-08-05)
+
+The operator reviewed §1–§8 and delegated the decision ("you decide for me"). Ruling:
+
+**The US keeps `reclaim_veto=True`. The flat drop (the HK #4470 mirror) is REJECTED on
+this packet's measurement.** Grounds, in order of weight:
+
+1. The pooled balance sheet is not close: refused fires ran **−4.54pp** median excess
+   @21 (56.7% losers), the veto saved **173 losers (median −11.08pp)** against **91
+   winners cost (median +9.17pp)**, and **no drawdown band is positive at any horizon**
+   — including the deepest band, where the "unsatisfiable by construction" argument is
+   strongest.
+2. The pro-drop evidence is confined to one regime slice (May–Jul **+4.67pp**) whose
+   fires are date-clustered (top-5 dates carry 43.9%; per-date weighting more than
+   halves the pooled effect). One clustered slice does not overturn a leg whose
+   original validation (avg max drawdown −23.7% → −15.5% on 110 held-out names) stands
+   unrebutted.
+3. HK's flip was earned by the opposite balance sheet (refused winners +8.7%..+44%,
+   68% of all rejections). The mirror measurement is how the question was settled —
+   and it settled the other way.
+
+**Revival path (the only one):** a REGIME-CONDITIONAL construction — the veto relaxing
+only under a measured continuation-regime state — built on the cross-market
+regime-conditional machinery chartered in `CN_TO_US_PROPHET_HANDOFF_2026-08-04.md` §6,
+through its own prereg, with the era stamp (`us_prophet_v1 → v2`) §7 specifies. A
+re-run of this packet after ≥60 further sessions is a lawful input to that prereg; a
+flat flip is not, absent that construction. Registry: DNR §4 row added in this PR.

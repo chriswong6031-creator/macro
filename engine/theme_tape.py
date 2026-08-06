@@ -23,7 +23,7 @@ ordering that exists (which THEMES to show) is the rotation artifact's own
 
 THE THREE FENCES THAT SHAPED IT
 -------------------------------
-1. `research/DO_NOT_REBUILD.md` row 151 (Ignition Radar, suspended 2026-07-23)
+1. `research/DO_NOT_REBUILD.md` DNR:HOLD-IGNITION-SURFACES (Ignition Radar, suspended 2026-07-23)
    requires "an honest-null state, no forced top-K ranking in a dead tape".
    So the tape is FLOOR-gated, not rank-gated: a theme must actually be
    accelerating (`emerging_score > 0`) and sit in a constructive quadrant to
@@ -81,6 +81,9 @@ __all__ = [
     "THEME_MAP",
     "THEME_UNMAPPED",
     "THEME_NAME_ZH",
+    "TURN_N",
+    "TURN_1W_MIN",
+    "TURN_1M_MAX",
 ]
 
 # ── tunables ────────────────────────────────────────────────────────────────
@@ -92,6 +95,40 @@ MAX_AGE_DAYS = 10   # older rotation artifact than this → no panel at all
 # A theme must be accelerating AND not decaying to appear. This is the floor that
 # makes the tape self-empty on a dead tape (fence 1); it is not a ranker.
 CONSTRUCTIVE_QUADRANTS = ("leading", "improving")
+
+# ── the washout-turn group (W-D) ────────────────────────────────────────────
+# The floor above is a MOMENTUM floor, and a washout-turn is by construction the
+# state a momentum lens certifies last: a theme down hard over a month and up over
+# the past week prints `quadrant="lagging"` with a negative `emerging_score`, so it
+# is structurally invisible on the ladder. Space Tech on 2026-08-02 is the case —
+# 28th of 41, "lagging", emerging_score −0.485, while its Satellites subsector ran
+# +2.03% against the market on the week after −14.17% on the month. The tape could
+# not say "washed out, now turning" at all.
+#
+# This is a SECOND, CLEARLY-LABELLED group, never a floor change: the TOP_N
+# selection above is untouched, and nothing here can add, remove or reorder a heat
+# row. Charter: research/PROPHET_US_MISSED_IGNITIONS_MASTERPLAN_BY_FABLE.md §W-D.
+#
+# ZERO AUTHORITY, AND A MEASURED NULL BEHIND IT. The sector washout→turn
+# construction is a measured NULL as a scored trigger (Oracle P8 / DNR "Washout ×
+# turn"), so this group is a disclosure of engine state and never a buy claim —
+# the copy is watch-vocabulary throughout and no row carries a stance sentence.
+TURN_N = 3            # at most three rows; honest-null (no group) when none qualify
+TURN_1W_MIN = 2.0     # relative 1W, %  — the turn leg
+TURN_1M_MAX = -10.0   # relative 1M, %  — the washout leg
+
+# WHY THE SHAPE IS READ AT BOTH GRAINS.
+# Measured over the 25 archived rotation days (2026-07-05..08-02), the theme-grain
+# test alone fires on ONE day in 25 (Semiconductors, 07-24) and never once selects
+# Space Tech: a theme rolls up as the MEAN of its subsectors, so the two Space Tech
+# sleeves still falling (Defense −1.05% 1W, Launch −0.08%) average the turning ones
+# away and the theme's own 1W lands at −0.92%. The same thresholds at subsector
+# grain select the turn exactly — Satellites +2.03 / −14.17 on 2026-08-02.
+# So a theme qualifies on its OWN figures or on any ONE of its subsectors, and a
+# row that qualified through a sleeve NAMES that sleeve. Naming it is not a
+# decoration: an unnamed row would say "Space Tech is turning" when what is turning
+# is one of its five sleeves, which is precisely the slice-overstates-the-row
+# failure THEME_UNMAPPED documents below.
 
 # ── vocabulary ──────────────────────────────────────────────────────────────
 # Quadrant → the plain-word heat phrase. The raw quadrant slug never reaches the
@@ -417,6 +454,76 @@ def _theme_members(rotation: dict[str, Any], theme_name: str) -> list[str]:
     return members
 
 
+def _member_state(
+    members: list[str], board: dict[str, dict[str, Any]]
+) -> dict[str, Any]:
+    """Partition a theme's members across BUCKETS, with the Law-4 reason lifting.
+
+    Extracted verbatim from the row loop so the washout-turn group below narrates
+    membership through the SAME machinery as a heat row — one implementation, so
+    the two groups cannot drift into describing the board differently. Pure: it
+    reads the board index and returns a new dict, touching neither input.
+    """
+    counts = dict.fromkeys(BUCKETS, 0)
+    grouped: dict[str, list[dict[str, Any]]] = {b: [] for b in BUCKETS if b != "quiet"}
+    quiet: list[str] = []
+
+    for ticker in members:
+        hit = board.get(ticker)
+        if hit is None:
+            counts["quiet"] += 1
+            quiet.append(ticker)
+            continue
+        bucket = hit["bucket"]
+        counts[bucket] += 1
+        grouped[bucket].append(
+            {"t": ticker, "why_en": hit["why_en"], "why_zh": hit["why_zh"]}
+        )
+
+    # Law 4 — a constant belongs in one place, not on every row. When every name
+    # in a group was held back for the SAME reason (the common case: a whole
+    # leading group is "already extended"), the reason is lifted to the group and
+    # struck from the names, so the list reads "SNOW · OKTA — already extended"
+    # instead of saying it once per ticker. Mixed groups keep per-name reasons.
+    shared: dict[str, tuple[str, str] | None] = {}
+    for bucket, rows_in in grouped.items():
+        reasons = {(r["why_en"], r["why_zh"]) for r in rows_in}
+        if len(rows_in) > 1 and len(reasons) == 1 and rows_in[0]["why_en"]:
+            shared[bucket] = (rows_in[0]["why_en"], rows_in[0]["why_zh"])
+            for r in rows_in:
+                r["why_en"] = r["why_zh"] = None
+        else:
+            shared[bucket] = None
+
+    return {
+        "n_members": len(members),
+        "n_on_board": len(members) - counts["quiet"],
+        "counts": counts,
+        "members": grouped,
+        "shared_why": shared,
+        "quiet_sample": quiet[:QUIET_SAMPLE],
+        "quiet_more": max(0, len(quiet) - QUIET_SAMPLE),
+    }
+
+
+def _rs_pair(row: Any) -> tuple[float | None, float | None]:
+    """(1W, 1M) relative strength off a theme or subsector record, or (None, None)."""
+    rs = row.get("rs") if isinstance(row, dict) else None
+    if not isinstance(rs, dict):
+        return (None, None)
+    out: list[float | None] = []
+    for horizon in ("1W", "1M"):
+        value = rs.get(horizon)
+        out.append(float(value) if isinstance(value, (int, float)) else None)
+    return (out[0], out[1])
+
+
+def _turn_shape(one_w: float | None, one_m: float | None) -> bool:
+    """The washout-turn shape: up hard on the week, down hard on the month."""
+    return (one_w is not None and one_m is not None
+            and one_w > TURN_1W_MIN and one_m < TURN_1M_MAX)
+
+
 def _numerically_confirmed(theme: dict[str, Any]) -> bool:
     """Does a price- or flow-independent NUMBER stand behind this stage?
 
@@ -535,6 +642,78 @@ def _foresight_index(staged: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return index
 
 
+def _washout_turns(
+    rotation: dict[str, Any],
+    ranked: list[dict[str, Any]],
+    shown: set[str],
+    board: dict[str, dict[str, Any]],
+    top_n: int = TURN_N,
+) -> list[dict[str, Any]]:
+    """Themes the momentum floor rejects that are nonetheless turning up.
+
+    Runs AFTER the heat rows are final and reads none of their state beyond the
+    set of names already shown, so it is structurally incapable of changing the
+    TOP_N selection or its order.
+
+    A theme qualifies when it is NOT on the heat list and the washout-turn shape
+    holds on its own relative figures OR on any one of its subsectors; a row that
+    qualified through a subsector carries that subsector's name and figures, since
+    those are the numbers that earned it its place. Capped, sorted by the
+    qualifying 1W descending — the strongest turn first.
+    """
+    subs_by_theme: dict[str, list[dict[str, Any]]] = {}
+    for sub in rotation.get("subsectors") or []:
+        if isinstance(sub, dict) and isinstance(sub.get("theme"), str):
+            subs_by_theme.setdefault(sub["theme"], []).append(sub)
+
+    turns: list[dict[str, Any]] = []
+    for position, theme in enumerate(ranked, start=1):
+        name = theme.get("theme")
+        if not isinstance(name, str) or not name or name in shown:
+            continue
+
+        one_w, one_m = _rs_pair(theme)
+        lead: dict[str, Any] | None = None
+        if _turn_shape(one_w, one_m):
+            turn_w, turn_m = one_w, one_m
+        else:
+            # The sleeve read. Best (largest 1W) qualifying subsector wins the row.
+            candidates = []
+            for sub in subs_by_theme.get(name, []):
+                sub_w, sub_m = _rs_pair(sub)
+                if _turn_shape(sub_w, sub_m):
+                    candidates.append((sub_w, sub_m, sub))
+            if not candidates:
+                continue
+            turn_w, turn_m, lead = max(candidates, key=lambda c: c[0])
+
+        members = _theme_members(rotation, name)
+        if not members:
+            continue
+
+        lead_en = lead.get("name") if lead else None
+        lead_zh = (lead.get("name_zh") or lead_en) if lead else None
+        turns.append(
+            {
+                "name": name,
+                "name_zh": theme.get("theme_zh") or name,
+                # Its place on the heat ladder it just failed — the row's own
+                # admission that the acceleration read ranks it near the bottom.
+                "rank": position,
+                "turn_1w": round(float(turn_w), 2),
+                "turn_1m": round(float(turn_m), 2),
+                # None when the theme's own figures earned the row; the subsector's
+                # display name when a single sleeve did.
+                "lead_en": lead_en if isinstance(lead_en, str) else None,
+                "lead_zh": lead_zh if isinstance(lead_zh, str) else None,
+                **_member_state(members, board),
+            }
+        )
+
+    turns.sort(key=lambda t: -t["turn_1w"])
+    return turns[:top_n]
+
+
 def _age_days(as_of: Any, today: Any = None) -> int | None:
     """Whole days between an ISO date string and today. None when unparseable."""
     from datetime import date
@@ -610,40 +789,11 @@ def build_theme_tape(
         if not members:
             continue
 
-        counts = dict.fromkeys(BUCKETS, 0)
-        grouped: dict[str, list[dict[str, Any]]] = {b: [] for b in BUCKETS if b != "quiet"}
-        quiet: list[str] = []
-
-        for ticker in members:
-            hit = board.get(ticker)
-            if hit is None:
-                counts["quiet"] += 1
-                quiet.append(ticker)
-                continue
-            bucket = hit["bucket"]
-            counts[bucket] += 1
-            grouped[bucket].append(
-                {"t": ticker, "why_en": hit["why_en"], "why_zh": hit["why_zh"]}
-            )
-
-        # Law 4 — a constant belongs in one place, not on every row. When every name
-        # in a group was held back for the SAME reason (the common case: a whole
-        # leading group is "already extended"), the reason is lifted to the group and
-        # struck from the names, so the list reads "SNOW · OKTA — already extended"
-        # instead of saying it once per ticker. Mixed groups keep per-name reasons.
-        shared: dict[str, tuple[str, str] | None] = {}
-        for bucket, rows_in in grouped.items():
-            reasons = {(r["why_en"], r["why_zh"]) for r in rows_in}
-            if len(rows_in) > 1 and len(reasons) == 1 and rows_in[0]["why_en"]:
-                shared[bucket] = (rows_in[0]["why_en"], rows_in[0]["why_zh"])
-                for r in rows_in:
-                    r["why_en"] = r["why_zh"] = None
-            else:
-                shared[bucket] = None
+        state = _member_state(members, board)
 
         heat_en, heat_zh = QUADRANT_HEAT.get(quadrant, (None, None))
         relative = theme.get("rs") if isinstance(theme.get("rs"), dict) else {}
-        stance = _stance_for(counts)
+        stance = _stance_for(state["counts"])
         say_en, say_zh = STANCES[stance]
         rows.append(
             {
@@ -653,13 +803,7 @@ def build_theme_tape(
                 "quadrant": quadrant,
                 "heat_en": heat_en,
                 "heat_zh": heat_zh,
-                "n_members": len(members),
-                "n_on_board": len(members) - counts["quiet"],
-                "counts": counts,
-                "members": grouped,
-                "shared_why": shared,
-                "quiet_sample": quiet[:QUIET_SAMPLE],
-                "quiet_more": max(0, len(quiet) - QUIET_SAMPLE),
+                **state,
                 # The stance key stays for tests and styling; the resolved pair is
                 # carried on the row so the template never indexes a table itself.
                 "stance": stance,
@@ -686,6 +830,14 @@ def build_theme_tape(
     # excluded — it is on the heat list by definition, and printing it here too
     # would say the opposite. Grouped by word, each group in the desk's order.
     shown = {r["name"] for r in rows}
+
+    # THE WASHOUT-TURN GROUP (W-D) — the states the momentum floor above rejects
+    # by construction. Computed here, off the finished heat rows, so it can only
+    # ever be a second group BELOW them and never a change to them. Empty list on
+    # a night when nothing is turning, and the template then renders exactly what
+    # it rendered before this group existed: no header, no rows, no shell.
+    turns = _washout_turns(rotation, ranked, shown, board)
+
     shelf: list[dict[str, Any]] = []
     for label in ("loading", "re_rating"):
         off = [s for s in staged if s["label"] == label and s.get("target") not in shown]
@@ -724,6 +876,8 @@ def build_theme_tape(
         "board_as_of": (standouts or {}).get("as_of") if isinstance(standouts, dict) else None,
         "rank_of": rank_of,
         "rows": rows,
+        # The washout-turn group (W-D). [] is the honest null: no group is drawn.
+        "washout_turns": turns,
         # Doctrine Law 5 — the null the template must disclose in plain words.
         # True whenever no horizon has cleared the artifact's own significance bar.
         "measuring": not any(bool(v) for v in proven.values()),

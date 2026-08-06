@@ -1638,7 +1638,22 @@ class TestTemplateRender:
         assert "Article" not in meta["jsonld_str"]
 
     def test_index_template_renders(self):
-        """ticker_index.html.j2 renders without error for a list of rows."""
+        """Every covered ticker still ships a crawlable <a> on the hub index.
+
+        The hub rebuild moved the listing off ~1,544 DOM cards onto a positional
+        search payload plus the A-Z directory, so the template reads `hub` — which
+        `build_ticker_pages` always supplies (`**_build_hub_context(site, rows)` at
+        the `tmpl_index.render` call). Passing `rows` alone lists NOTHING.
+
+        The old assertions were `"AAPL" in html` / `"MSFT" in html` on a hub-less
+        render. `"AAPL"` is also placeholder text in the empty-state string ("Try a
+        ticker (AAPL)…"), so that half passed over a page with zero tickers on it
+        and only the MSFT half failed. Assert the A-Z anchor instead: that is the
+        SEO guarantee the rebuild had to preserve, and a substring of the page
+        chrome cannot satisfy it.
+        """
+        from engine import stocks_hub
+
         env = _jinja_env()
         tmpl = env.get_template("ticker_index.html.j2")
         rows = [
@@ -1652,11 +1667,22 @@ class TestTemplateRender:
             n_total=2,
             generated_utc="2026-07-18T00:00:00Z",
             canonical_url="https://mastermind-x.com/stocks/index.html",
+            hub={
+                "search": stocks_hub.search_index(rows),
+                "directory": stocks_hub.directory(rows),
+                "sector_keys": [],
+            },
         )
         assert html
-        assert "AAPL" in html
-        assert "MSFT" in html
-        assert "Stock Coverage" in html
+        for ticker in ("AAPL", "MSFT"):
+            assert f'href="{ticker}.html"' in html, f"{ticker} lost its crawlable link"
+            assert ticker in json.loads(
+                re.search(r"window\.__HUB_ROWS=(\[.*?\]);", html).group(1)
+            )[0 if ticker == "AAPL" else 1]
+        # The old "Stock Coverage" <h1> is gone: the headline is now written from
+        # hub.stance/hub.breadth. Pin the A-Z section instead — it is the block
+        # that carries the anchors asserted above, so it cannot drift away silently.
+        assert "All coverage A–Z" in html
 
     def test_index_template_no_validated_word(self):
         """'validated' must not appear in index page."""

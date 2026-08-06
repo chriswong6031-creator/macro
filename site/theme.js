@@ -450,7 +450,7 @@
     // Keep the dynamic dependency cache-safe too. theme.js itself is
     // content-hashed in every page; this explicit release key prevents a
     // year-cached account.js from pinning an older navigation loader.
-    s.src = pfx + 'account.js?v=20260803-onemenu'; s.async = true;
+    s.src = pfx + 'account.js?v=20260806-zh-megamenu'; s.async = true;
     document.head.appendChild(s);
   })();
 
@@ -551,25 +551,28 @@
 
   /* ---- soft-contrast palette (default for everyone) ------------------------
      Injects a <style id="soft-contrast-css"> that adds html.soft-contrast
-     overrides: warmer/softer bg + panels in light mode, lifted blacks in dark.
-     Measured on the softened light backgrounds: body --text 9.6-10.6:1 (AAA);
-     --muted 5.8-6.5:1 (comfortably above the 4.5:1 AA floor).
+     overrides: light gets the depth recipe (white panels on a deeper canvas +
+     real card shadows — DESIGN_DOCTRINE §5.8, estate rollout 2026-08-03 after
+     the us_stocks/subsectors light pass proved panel≈bg was the flatness bug);
+     dark keeps lifted blacks. Measured on the light surfaces (#fff panel /
+     #eef1f6 panel2 / #e8ebf1 canvas): body --text 9.7-11.6:1 (AAA); --muted
+     5.9-7.0:1 (comfortably above the 4.5:1 AA floor).
      Applied unconditionally at boot (no user toggle). theme.js loads end-of-
      body, so pages get one standard-palette paint first on cold load; the hub's
      <head> boot script also sets the class pre-paint (delta is subtle). */
   /* --line raised in both palettes (estate contrast pass 2026-08-03): the old
      #d0d4db / #262c38 hairlines measured 1.02–1.45:1 against these surfaces —
      card boundaries you had to hunt for, and dark sat FAINTER than light. The
-     raised pair lands both themes in the same 1.45–1.86 perceptual band
-     (#c0c4cd: 1.45–1.60 on the light surfaces · #3a4150: 1.61–1.86 on dark),
-     matching the W3 sector-page floor. This block outcascades theme.css, so
-     these are the operative estate values. */
+     raised pair keeps both themes in one perceptual band on the depth-recipe
+     surfaces (#c0c4cd: 1.46–1.75 light · #3a4150: 1.61–1.86 dark), matching
+     the W3 sector-page floor. This block outcascades theme.css, so these are
+     the operative estate values. */
   var SOFT_CONTRAST_CSS =
     'html.soft-contrast[data-theme="light"]{' +
-      '--bg:#eceef1;--panel:#f5f5f7;--panel2:#e8eaed;--text:#2e3950;--muted:#4c5a6c;--line:#c0c4cd;' +
-      '--glass-bg:color-mix(in srgb,#f5f5f7 64%,transparent);' +
+      '--bg:#e8ebf1;--panel:#ffffff;--panel2:#eef1f6;--text:#2e3950;--muted:#4c5a6c;--line:#c0c4cd;' +
+      '--glass-bg:color-mix(in srgb,#ffffff 64%,transparent);' +
       '--glass-brd:color-mix(in srgb,#2e3950 9%,transparent);' +
-      '--card-shadow:0 1px 3px rgba(20,30,50,.05)' +
+      '--card-shadow:0 1px 2px rgba(23,32,55,.05),0 8px 24px -12px rgba(23,32,55,.10)' +
     '}' +
     'html.soft-contrast[data-theme="dark"]{' +
       '--bg:#0d1018;--panel:#151820;--panel2:#1b1f28;--text:#c8d0dc;--line:#3a4150' +
@@ -1379,6 +1382,15 @@
       nav.classList.remove('nav-open');
       btn.setAttribute('aria-expanded', 'false');
       links.querySelectorAll('.nav-dd.open').forEach(function(d) { d.classList.remove('open'); });
+      // Drills carry their own state class. Leaving one open would strand a
+      // full-screen country sheet over the page after the nav itself closed.
+      links.querySelectorAll('.nav-drill.is-open').forEach(function (d) {
+        d.classList.remove('is-open');
+        var t = d.querySelector(':scope > [data-nav-drill-open]');
+        if (t) t.setAttribute('aria-expanded', 'false');
+        var p = d.querySelector(':scope > [data-nav-drill-panel]');
+        if (p) p.setAttribute('inert', '');
+      });
     }
     btn.addEventListener('click', function (e) {
       e.preventDefault(); e.stopPropagation();
@@ -1394,6 +1406,12 @@
       if (!trigger) return;
       trigger.addEventListener('click', function(e) {
         if (window.innerWidth > 900) return;
+        // A drill trigger is owned by initNavDrills' delegated handler, which
+        // listens on `document`. nav_market.js converts a folded country into
+        // exactly that (data-nav-drill-open) AFTER this listener is attached,
+        // so swallowing the click here with stopPropagation() left tapping a
+        // country inside International doing nothing at all on mobile. Yield.
+        if (trigger.hasAttribute('data-nav-drill-open')) return;
         e.preventDefault(); e.stopPropagation();
         var wasOpen = dd.classList.contains('open');
         dd.parentElement.querySelectorAll(':scope > .nav-dd.open').forEach(function(d) {
@@ -1442,7 +1460,14 @@
     // close after a destination link is picked, on Escape, on outside tap, on widen
     links.addEventListener('click', function (e) {
       var a = e.target.closest('a');
-      if (a && !a.closest('.nav-dd') || (a && a.closest('.nav-dd-menu'))) closeNav();
+      if (!a) return;
+      // A submenu/drill trigger is navigation WITHIN the menu, not a destination.
+      // Folded country triggers (nav_market.js) are <a class="nav-sub-trig"
+      // data-nav-drill-open> sitting inside International's .nav-dd-menu, so the
+      // rule below used to read them as "a link was picked" and shut the whole
+      // mobile nav — the reader tapped China and the menu simply vanished.
+      if (a.hasAttribute('data-nav-drill-open') || a.classList.contains('nav-sub-trig')) return;
+      if (!a.closest('.nav-dd') || a.closest('.nav-dd-menu')) closeNav();
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeNav(); });
     document.addEventListener('click', function (e) { if (!nav.contains(e.target)) closeNav(); });
@@ -1720,7 +1745,14 @@
     user: function () { return _curUser; },
     hasSession: function () { return _hasSessionCookie(); },
     client: getSupabaseClient,
-    open: function (mode) { openAuthModal(mode || 'signin'); },
+    // Opens the LANDING-NATIVE onboarding sheet (onboard.js), lazy-loaded on
+    // demand — NOT the legacy in-file auth modal. Every gate on the estate
+    // reaches auth through here (tier_preview.js's locked-container CTA, the
+    // Brain's 401 path, plans.html, committee/news/portfolio/watchlist), so the
+    // sheet is what an unregistered visitor meets everywhere. The old
+    // openAuthModal stays reachable as window.openAuthModal for a hand-driven
+    // fallback, but nothing routes to it by default any more.
+    open: function (mode) { _mmOpenOnboard(mode || 'signin'); },
     signOut: function () {
       if (!_authEnabled) return Promise.resolve();
       // sb.auth.signOut() fires SIGNED_OUT via onAuthStateChange -> _onAuth, which
@@ -1793,6 +1825,12 @@
     errSdk:    ['Could not load sign-in. Check your connection.', '无法加载登录组件，请检查网络。'],
     errGen:    ['Something went wrong — please try again.', '出错了，请重试。'],
     legal:     ['Research, not investment advice.', '本产品为研究工具，非投资建议。'],
+    forgot:    ['Forgot your password?', '忘记密码？'],
+    // One line, because _authShow re-localises by KEY. Names the one-hour expiry and
+    // the same-browser constraint PKCE imposes (the emailed code is worthless without
+    // the verifier this browser stored) — both are how the link actually fails.
+    sentOk:    ['Check your inbox for a reset link — open it in this browser, and within the hour.',
+                '请查收重置链接——请在此浏览器中打开，且需在一小时内。'],
     close:     ['Close', '关闭'],
     showpw:    ['Show password', '显示密码'],
     signedin:  ['Synced across your devices', '已在各设备间同步'],
@@ -1847,6 +1885,8 @@
     '.auth-msg.err{background:color-mix(in srgb,var(--down,#ff5c6c) 14%,transparent);color:var(--down,#ff5c6c);border:1px solid color-mix(in srgb,var(--down,#ff5c6c) 30%,transparent)}',
     '.auth-msg.ok{background:color-mix(in srgb,var(--up,#23c08a) 14%,transparent);color:var(--up,#23c08a);border:1px solid color-mix(in srgb,var(--up,#23c08a) 30%,transparent)}',
     '.auth-foot{margin:15px 0 0;text-align:center}',
+    '.auth-forgot-row{margin:9px 0 0}',
+    '.auth-forgot{color:var(--muted,var(--ink-3));font-weight:600;font-size:12px}',
     '.auth-switch{background:none;border:0;color:var(--link,var(--blue,#4f8cff));font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;padding:4px}',
     '.auth-switch:hover{text-decoration:underline}',
     '.auth-legal{margin:12px 0 0;font-size:10px;line-height:1.5;color:var(--muted,var(--ink-3));text-align:center}',
@@ -1887,6 +1927,7 @@
               '<button type="button" class="auth-reveal" id="auth-reveal">' + EYE_SVG + '</button></div></div>' +
           '<button type="submit" class="auth-submit" id="auth-submit"></button>' +
         '</form>' +
+        '<div class="auth-foot auth-forgot-row"><button type="button" class="auth-switch auth-forgot" id="auth-forgot"></button></div>' +
         '<div class="auth-msg" id="auth-msg" role="alert"></div>' +
         '<div class="auth-foot"><button type="button" class="auth-switch" id="auth-switch"></button></div>' +
         '<p class="auth-legal" id="auth-legal"></p>' +
@@ -1912,6 +1953,9 @@
     _setTxt('auth-submit', _authBusyState ? _authL('working') : _authL(si ? 'si' : 'su'));
     _setTxt('auth-switch', _authL(si ? 'toSignup' : 'toSignin'));
     _setTxt('auth-legal', _authL('legal'));
+    // Recovery is a sign-in concern only — a signup form has no password to forget.
+    var fg = document.getElementById('auth-forgot');
+    if (fg) { fg.textContent = _authL('forgot'); fg.parentNode.style.display = si ? '' : 'none'; }
     var em = document.getElementById('auth-email'); if (em) em.placeholder = _authL('emailPh');
     var pw = document.getElementById('auth-pw');
     if (pw) { pw.placeholder = _authL('pwPh'); pw.setAttribute('autocomplete', si ? 'current-password' : 'new-password'); }
@@ -1957,6 +2001,7 @@
       var pw = document.getElementById('auth-pw'); if (!pw) return;
       pw.type = pw.type === 'password' ? 'text' : 'password';
     });
+    document.getElementById('auth-forgot').addEventListener('click', _authForgot);
     document.getElementById('auth-google').addEventListener('click', _authGoogle);
     document.getElementById('auth-xbtn').addEventListener('click', _authX);
     document.getElementById('auth-wechat').addEventListener('click', function () { _authShow('wechatSoon', 'ok'); });
@@ -2004,6 +2049,25 @@
       return sb.auth.signInWithOAuth({ provider: provider, options: { redirectTo: location.href.split('#')[0] } });
     }).then(function (res) {
       if (res && res.error) { _authBusy(false); _authShow(_authErrKey(res.error), 'err'); }
+    }).catch(function () { _authBusy(false); _authShow('errSdk', 'err'); });
+  }
+  // "Forgot your password?" — mail a recovery link. The redirect is the SITE ROOT,
+  // not this page: onboard.js owns the return leg (the form that calls updateUser),
+  // and index.html is the one page that loads it as a real <script> tag. gotrue
+  // answers /recover identically for an unknown address (anti-enumeration), so a
+  // non-null error here is a genuine failure — a cooldown, a mail-transport fault,
+  // or a redirect the project has not allow-listed — and is shown verbatim.
+  function _authForgot() {
+    var emEl = document.getElementById('auth-email');
+    var email = (emEl && emEl.value || '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { _authShow('errEmail', 'err'); if (emEl) emEl.focus(); return; }
+    _authBusy(true); _authMsg('', null);
+    getSupabaseClient().then(function (sb) {
+      return sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/?onboard=recovery' });
+    }).then(function (res) {
+      _authBusy(false);
+      if (res && res.error) { _authMsgKey = null; _authMsg(res.error.message, 'err'); return; }
+      _authShow('sentOk', 'ok');
     }).catch(function () { _authBusy(false); _authShow('errSdk', 'err'); });
   }
   function _authGoogle() { _authOAuth('google', 'redirect'); }
@@ -4903,27 +4967,26 @@
       'border-color:color-mix(in srgb,var(--info,var(--blue,#5b9bf0)) 55%,transparent);' +
       'background:color-mix(in srgb,var(--info,var(--blue,#5b9bf0)) 13%,transparent);' +
       'box-shadow:0 0 0 3px color-mix(in srgb,var(--info,var(--blue,#5b9bf0)) 12%,transparent)}' +
+    /* One glass shell, shared with the rotation hover card and the heatmap card so
+       every popup on a page reads as one component. --glass-* are theme-aware
+       (theme.css rebinds them for light); the dark values stay inlined as fallbacks
+       for vector-family pages that carry their own token set. */
     '.lens-pop{--lens-panel:var(--panel,var(--card,#181b21));--lens-text:var(--text,var(--ink,#d7dce3));' +
       '--lens-mut:var(--muted,var(--mut,#8b93a1));--lens-accent:var(--info,var(--blue,#5b9bf0));' +
-      'position:fixed;left:0;top:0;z-index:12600;width:min(304px,calc(100vw - 24px));border-radius:16px;' +
-      'background:linear-gradient(180deg,color-mix(in srgb,#fff 4%,transparent),transparent 46%),color-mix(in srgb,var(--lens-panel) 88%,transparent);' +
-      '-webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px);' +
-      'box-shadow:0 24px 64px -18px rgba(3,7,18,.72),0 8px 22px -10px rgba(3,7,18,.5);' +
-      'opacity:0;pointer-events:none;transform:translateY(7px) scale(.96);transition:opacity .12s ease,transform .12s ease;' +
+      'position:fixed;left:0;top:0;z-index:12600;width:min(300px,calc(100vw - 24px));border-radius:15px;' +
+      'background:var(--glass-bg,color-mix(in srgb,var(--lens-panel) 88%,transparent));' +
+      '-webkit-backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));' +
+      'box-shadow:var(--glass-shadow,0 24px 64px -18px rgba(3,7,18,.72),0 8px 22px -10px rgba(3,7,18,.5));' +
+      'opacity:0;pointer-events:none;transform:translateY(6px) scale(.97);transition:opacity .12s ease,transform .12s ease;' +
       'font-family:var(--font-ui,Inter,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif);' +
       'text-align:left;text-transform:none;letter-spacing:normal;white-space:normal}' +
     '@supports not (backdrop-filter:blur(1px)){.lens-pop{background:color-mix(in srgb,var(--panel,var(--card,#181b21)) 98%,#fff)}}' +
-    '.lens-pop.open{opacity:1;pointer-events:auto;transform:none;transition:opacity .2s ease,transform .28s cubic-bezier(.34,1.26,.4,1)}' +
+    '.lens-pop.open{opacity:1;pointer-events:auto;transform:none;transition:opacity .18s ease,transform .26s cubic-bezier(.34,1.26,.4,1)}' +
     '.lens-pop::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;' +
-      'background:radial-gradient(140px 70px at 22% -4%,color-mix(in srgb,var(--lens-accent) 75%,transparent),transparent 72%),' +
-      'linear-gradient(180deg,color-mix(in srgb,var(--lens-text) 17%,transparent),color-mix(in srgb,var(--lens-text) 7%,transparent));' +
+      'background:radial-gradient(150px 74px at 20% -6%,color-mix(in srgb,var(--lens-accent) 72%,transparent),transparent 70%),' +
+      'var(--glass-brd,color-mix(in srgb,var(--lens-text) 14%,transparent));' +
       '-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;' +
       'mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude;pointer-events:none}' +
-    '.lens-pop::after{content:"";position:absolute;inset:1px;border-radius:inherit;pointer-events:none;' +
-      'background:linear-gradient(112deg,transparent 40%,rgba(255,255,255,.07) 50%,transparent 60%);' +
-      'background-size:240% 100%;background-position:130% 0;opacity:0}' +
-    '.lens-pop.open::after{animation:lensSheen .95s cubic-bezier(.4,.1,.2,1) .1s 1 both}' +
-    '@keyframes lensSheen{0%{opacity:0;background-position:130% 0}18%{opacity:1}100%{opacity:0;background-position:-40% 0}}' +
     '.lens-pop[data-kind=define]{--lens-accent:var(--info,var(--blue,#5b9bf0))}' +
     '.lens-pop[data-kind=read]{--lens-accent:var(--q2,#d4a017)}' +
     '.lens-pop[data-kind=record]{--lens-accent:var(--ok,var(--up,#3da564))}' +
@@ -4946,10 +5009,18 @@
     '.lens-receipt .r-i{display:inline-flex;align-items:baseline;gap:5px;white-space:nowrap}' +
     '.lens-receipt .r-k{font:700 8.5px/1 var(--font-ui,Inter,sans-serif);letter-spacing:.12em;text-transform:uppercase;' +
       'color:color-mix(in srgb,var(--lens-mut) 75%,transparent)}' +
+    /* String tier. Most of the site's ~780 tips land here, so this is the container
+       that has to carry itself with no illustrated anatomy to lean on: a headline
+       when the author supplies one (data-tip-t-en/zh), a comfortable measure, and
+       nothing else. A tip that needs more structure than this belongs in the rich
+       tier — that is what it is for. */
     '.lens-pop.lens-plain{width:auto;max-width:min(300px,calc(100vw - 24px))}' +
-    '.lens-pop.lens-plain .lens-body{padding:11px 14px 12px;font-size:12px}' +
-    '.lens-pop.lens-plain .lens-receipt{margin:0 14px}' +
-    '.lens-pop.open .lens-hd,.lens-pop.open .lens-body,.lens-pop.open .lens-receipt{animation:lensRise .34s cubic-bezier(.34,1.26,.4,1) both}' +
+    '.lens-ttl{display:block;padding:13px 15px 0;font:700 12.5px/1.38 var(--font-ui,Inter,sans-serif);' +
+      'letter-spacing:-.012em;color:var(--lens-text)}' +
+    '.lens-pop.lens-plain .lens-body{padding:12px 15px 13px;font-size:12.5px;line-height:1.6}' +
+    '.lens-ttl+.lens-body{padding-top:5px}' +
+    '.lens-pop.lens-plain .lens-receipt{margin:0 15px}' +
+    '.lens-pop.open .lens-hd,.lens-pop.open .lens-ttl,.lens-pop.open .lens-body,.lens-pop.open .lens-receipt{animation:lensRise .34s cubic-bezier(.34,1.26,.4,1) both}' +
     '.lens-pop.open .lens-body{animation-delay:.045s}' +
     '.lens-pop.open .lens-receipt{animation-delay:.09s}' +
     '@keyframes lensRise{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}' +
@@ -4974,13 +5045,14 @@
         'color:var(--lens-mut);background:color-mix(in srgb,var(--lens-mut) 14%,transparent);cursor:pointer}' +
       '.lens-hd{padding-top:8px}' +
       '.lens-ill{width:38px;height:38px}' +
+      '.lens-ttl{padding:8px 18px 0;font-size:14px}' +
       '.lens-pop.lens-plain .lens-body{font-size:13px;padding:12px 18px 6px}' +
+      '.lens-ttl+.lens-body{padding-top:6px}' +
       '.lens-pop.lens-plain .lens-receipt{margin:0 18px}' +
     '}' +
     '@media (prefers-reduced-motion:reduce){' +
       '.lens-pop,.lens-pop.open{transition:opacity .12s ease;transform:none}' +
-      '.lens-pop.open::after{animation:none}' +
-      '.lens-pop.open .lens-hd,.lens-pop.open .lens-body,.lens-pop.open .lens-receipt{animation:none}' +
+      '.lens-pop.open .lens-hd,.lens-pop.open .lens-ttl,.lens-pop.open .lens-body,.lens-pop.open .lens-receipt{animation:none}' +
     '}';
 
   function injectCss() {
@@ -5049,7 +5121,12 @@
     var en = t.getAttribute('data-tip-en');
     if (!en) return null;
     var rcEn = t.getAttribute('data-tip-rc-en') || '';
+    /* Optional headline for the string tier. Without one the card opens on a
+       paragraph and the reader has to parse before they know what they are
+       reading; with one they can stop after four words. */
+    var tEn = t.getAttribute('data-tip-t-en') || '';
     return { kind: t.getAttribute('data-lens-kind') || '',
+             tEn: tEn, tZh: t.getAttribute('data-tip-t-zh') || tEn,
              en: en, zh: t.getAttribute('data-tip-zh') || en,
              rcEn: rcEn, rcZh: t.getAttribute('data-tip-rc-zh') || rcEn };
   }
@@ -5091,6 +5168,11 @@
       while (wrap.firstChild) pop.appendChild(wrap.firstChild);
     } else {
       pop.classList.add('lens-plain');
+      if (c.tEn) {
+        var ttl = document.createElement('div'); ttl.className = 'lens-ttl';
+        ttl.appendChild(mkSpan('l-en', c.tEn)); ttl.appendChild(mkSpan('l-zh', c.tZh));
+        pop.appendChild(ttl);
+      }
       var body = document.createElement('div'); body.className = 'lens-body';
       body.appendChild(mkSpan('l-en', c.en)); body.appendChild(mkSpan('l-zh', c.zh));
       pop.appendChild(body);
