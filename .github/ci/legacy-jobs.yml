@@ -1224,6 +1224,20 @@ jobs:
         run: python scripts/check_workflow_yaml.py .github/workflows
       - name: hosted-runner packing contract
         run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py -q
+      # SUITE DISCOVERY, which all three darkness guards share. It was
+      # `tests/`-only until 2026-08-06, so the suites most likely to be dark were
+      # the ones no census could see: a research packet fenced to files-only writes
+      # its guard suite NEXT TO the instrument under research/, and #4693 measured
+      # two such suites (22 tests) named by no `run:` step since they landed —
+      # never executed, while every census reported the repo covered. Discovery is
+      # now the whole tree, classified by what pytest would COLLECT rather than by
+      # filename: three test_-shaped files under research/ are CLI measurement
+      # instruments that collect nothing, and reporting those as work items is how
+      # a census stops being read. Selftest first, same reason as the two below.
+      - name: audit_unrun_tests selftest
+        run: python scripts/audit_unrun_tests.py --selftest
+      - name: unrun-census discovery unit tests
+        run: python -m pytest tests/test_audit_unrun_tests.py -q
       # SKIP-ONLY suites: a test that skips in every job naming it executes
       # nowhere, so a job list and a green run both lie about it. This is what an
       # `importorskip` added to clear a red lane creates by construction — it

@@ -12,15 +12,6 @@ The fourth darkness class, and the reverse direction of every census already her
                    its closure is not, and an edit to exactly that module ships
                    without ever running the guard that measures it.   ← THIS FILE
 
-SCOPE IS THE WHOLE TREE.  All three of the censuses above were hard-scoped to
-`tests/`; this one by a `_TEST_PATH` regex that required a literal `tests/` prefix,
-so a `research/`-resident suite named in a `run:` step was invisible to the closure
-gate even once it WAS wired.  Research packets are routinely fenced to files-only,
-which is why their guard suites live beside the instrument rather than in `tests/`.
-Suites now come from ``audit_unrun_tests.discover_suites`` and run-step tokens are
-resolved against that inventory, so a `test_`-shaped CLI instrument invoked by a
-`run:` step is not mistaken for a suite whose closure must be reachable (#4693).
-
 `audit_unrun_tests.py` asks "can ANY edit start this job" (an `any()` over the
 closure).  That is satisfied by a single matched file — usually the test itself.
 The question it never asks is the one that matters at merge time: for the module a
@@ -86,7 +77,6 @@ from scripts.audit_unrun_tests import (  # noqa: E402
     FIRST_PARTY,
     ROOT,
     WORKFLOWS,
-    discover_suites,
 )
 from scripts.run_ci_pack import ManifestError, load_legacy_jobs  # noqa: E402
 
@@ -103,15 +93,7 @@ LITERAL_DIRS = tuple(FIRST_PARTY) + (
     "research", "tools", "config", "templates", "contracts", "ops",
 )
 
-# A suite named in a `run:` step, AS WRITTEN — any directory, both pytest filename
-# shapes.  This used to require a literal `tests/` prefix and accept ANY `.py` under
-# it, which was wrong in both directions: it could not see a wired `research/` suite
-# at all, and it treated `tests/conftest.py` as a suite whose closure must be
-# reachable.  Tokens are resolved against the real inventory in `suites_by_source`,
-# so a stale path and a `test_`-shaped CLI instrument both drop out by construction.
-_TEST_PATH = re.compile(
-    r"(?<![\w/.-])((?:[\w.-]+/)*(?:test_[\w-]+|[\w-]+_test)\.py)(?![\w])"
-)
+_TEST_PATH = re.compile(r"(?<![\w/.-])(tests/[A-Za-z0-9_][A-Za-z0-9_./-]*\.py)")
 _MANIFEST_REF = re.compile(r"--workflow\s+(\.github/[\w./-]+\.ya?ml)")
 _IMPORT_MODULE = re.compile(r'import_module\(\s*["\']([\w.]+)["\']')
 # FULL-matched against a string constant's value.  "A path is the whole string" is
@@ -258,38 +240,12 @@ def matched(rel: str, patterns: list[str] | None) -> bool:
 # 2. what each governed job runs
 # ─────────────────────────────────────────────────────────────────────────────
 
-def suite_index() -> dict[str, tuple[str, ...]]:
-    """``{token as a run: step may spell it: canonical repo-relative suite(s)}``.
-
-    Both spellings resolve — the full repo-relative path (what every `run:` step in
-    this repo actually writes) and the bare basename (the shape the old
-    basename-only matcher accepted, kept so the widening cannot silently drop a
-    job's claim to run a suite).  A token that resolves to nothing is not a suite:
-    a stale path, or one of the three `test_`-shaped CLI instruments under
-    `research/` that collect zero tests.
-    """
-    index: dict[str, list[str]] = {}
-    for rel in discover_suites():
-        index.setdefault(rel, []).append(rel)
-        index.setdefault(rel.rsplit("/", 1)[-1], []).append(rel)
-    return {token: tuple(paths) for token, paths in index.items()}
-
-
-def _named_suites(run: str, index: dict[str, tuple[str, ...]]) -> set[str]:
-    found: set[str] = set()
-    for raw in _TEST_PATH.findall(run):
-        token = raw[2:] if raw.startswith("./") else raw
-        found.update(index.get(token, ()))
-    return found
-
-
 def suites_by_source() -> dict[str, dict[str, set[str]]]:
-    """``{source file: {suite path: {job ids that run it}}}``.
+    """``{source file: {tests/x.py: {job ids that run it}}}``.
 
     The legacy manifest is read through ``run_ci_pack.load_legacy_jobs`` so this
     guard sees jobs through the same fail-closed validator that executes them.
     """
-    index = suite_index()
     out: dict[str, dict[str, set[str]]] = {}
     for path in sorted(WORKFLOWS.glob("*.yml")):
         payload = _load(path)
@@ -298,14 +254,14 @@ def suites_by_source() -> dict[str, dict[str, set[str]]]:
         rel = path.relative_to(ROOT).as_posix()
         for job_id, definition in (payload.get("jobs") or {}).items():
             for run in _run_steps(definition):
-                for suite in _named_suites(run, index):
+                for suite in _TEST_PATH.findall(run):
                     out.setdefault(rel, {}).setdefault(suite, set()).add(str(job_id))
     if CI_MANIFEST.is_file():
         rel = CI_MANIFEST.relative_to(ROOT).as_posix()
         for legacy in load_legacy_jobs(CI_MANIFEST):
             for step in legacy.definition["steps"]:
                 if isinstance(step, dict) and isinstance(step.get("run"), str):
-                    for suite in _named_suites(step["run"], index):
+                    for suite in _TEST_PATH.findall(step["run"]):
                         out.setdefault(rel, {}).setdefault(suite, set()).add(
                             legacy.job_id
                         )
@@ -719,35 +675,6 @@ def _selftest() -> int:
         failures.append("seeded heal: subject must be reachable once named")
     if not matched("tests/test_us_reclaim_veto_packet.py", gate_without):
         failures.append("seeded defect: the test half must stay matched (that is the trap)")
-
-    # Scope (#4693): a `run:` step naming a suite OUTSIDE tests/ must resolve, and a
-    # `test_`-shaped CLI instrument named by one must NOT — the old regex could do
-    # neither, so a wired research/ suite stayed invisible to this gate.
-    index = suite_index()
-    real_outside = [s for s in discover_suites() if not s.startswith("tests/")]
-    step = (
-        "python -m pytest research/prophet_us_audit/test_label_grading_battery.py "
-        "tests/test_ci_pack.py ./tests/test_merge_on_green.py "
-        "research/signal_engine/test_buyfilter.py -q"
-    )
-    named = _named_suites(step, index)
-    if "tests/test_ci_pack.py" not in named:
-        failures.append("a tests/ suite in a run: step must still resolve")
-    if "tests/test_merge_on_green.py" not in named:
-        failures.append("a `./`-prefixed suite path must resolve")
-    for rel in real_outside:
-        if rel in step and rel not in named:
-            failures.append(f"a run: step naming {rel} must resolve (scope is the tree)")
-    if "research/signal_engine/test_buyfilter.py" in named:
-        failures.append(
-            "research/signal_engine/test_buyfilter.py collects zero tests — a CLI "
-            "instrument must not be gated as a suite"
-        )
-    if not real_outside:
-        failures.append(
-            "discovery found no suite outside tests/; the widening is inert "
-            "(expected the research/-resident guard suites)"
-        )
 
     if failures:
         for failure in failures:

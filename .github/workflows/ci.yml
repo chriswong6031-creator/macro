@@ -186,6 +186,17 @@ on:
       # flip-isolation construction still isolates exactly one leg.
       - "research/prophet_us_audit/reclaim_veto_packet.py"
       - "tests/test_us_reclaim_veto_packet.py"
+      # The two evidence files the SAME suite reads by path literal. #4652 taught
+      # tests/test_merge_on_green.py to read the reclaim-veto packet's write-up and its
+      # frozen results as a worked example, and scripts/check_ci_trigger_closure.py has
+      # failed RED on main ever since (4768a3c1574, 2026-08-05) — the closure gate lives
+      # in the workflow-yaml job, so every PR cut since inherits that red. Adding the two
+      # paths is the fix the guard's own error message prescribes verbatim: the suite
+      # reads them, so an edit to either must be able to start the job that runs it.
+      # NOTE these same two lines are also in the in-flight #4693; whichever lands
+      # second should drop its copy rather than duplicate the entries.
+      - "research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md"
+      - "research/prophet_us_audit/reclaim_veto_packet_results_2026-08-05.json"
       # W1d trial-budget gate: any new multiple-testing harness must register its budget.
       - "scripts/*_phase0.py"
       - "scripts/*_phase1.py"
@@ -803,6 +814,11 @@ on:
       # the checker; this is its other half, per the same two-halves law the guard
       # enforces on everything else.
       - "tests/test_ci_trigger_closure.py"
+      # UNRUN-CENSUS discovery (job: workflow-yaml). scripts/*.py reaches
+      # audit_unrun_tests.py itself; this is the test half. The census owns suite
+      # discovery for all THREE darkness guards, so a regression here re-blinds
+      # every one of them at once — which is what tests/ scoping did until #4693.
+      - "tests/test_audit_unrun_tests.py"
       # ── the 31 subjects that guard found unreachable on its first run ──────
       # Each line is a file some suite in the packed legacy jobs actually reads
       # (import, whole-string path literal, or a __file__-rooted path join) and
