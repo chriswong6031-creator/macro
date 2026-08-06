@@ -221,6 +221,11 @@ the run that produced them was discarded and re-run under these corrections)
         10:1 reads as $0.80 (excluded). Sub-$1 names are the dominant reverse-split case,
         i.e. exactly what AM-3 exists to remove.
 
+EXECUTION: MANUAL, OFF THE RENDER PATH. This is not wired into daily.yml, render.yml or
+config/dag.yml and must never be — a full run is ~95 minutes against the whole 20k-file
+store, roughly 1.5x the entire nightly render budget (HOUSE-U6: heavy compute off the
+render path). It is run by hand when the estimator or the event families change.
+
 Run:    python -m scripts.synthetic_control_phase0
 Writes: research/SYNTHETIC_CONTROL_PHASE0.md
         data/experiments/synthetic_control_phase0_results.json
@@ -233,6 +238,7 @@ import argparse
 import glob
 import json
 import logging
+import math
 import os
 import sys
 import time
@@ -256,7 +262,7 @@ if str(WT_ROOT) not in sys.path:
 
 from engine import synthetic_control as sc          # noqa: E402
 from engine import validation as V                  # noqa: E402
-from engine.index_changes import classify_cohort, pit_history   # noqa: E402
+from engine.index_changes import classify_cohort, load_gate, pit_history   # noqa: E402
 from engine.trial_ledger import TrialLedger         # noqa: E402
 from scripts.replay_standout_pipeline import split_adjust       # noqa: E402
 
@@ -269,7 +275,11 @@ WRITEUP_MD = WT_ROOT / "research" / "SYNTHETIC_CONTROL_PHASE0.md"
 SCOPE_START = "2022-01-01"
 ANNOUNCE_LEAD = 5          # index adds: event day = effective - 5 sessions
 PLACEBO_DRAWS = 200
-PLACEBO_GUARD = 42         # placebo dates must be this far from the real event
+# NOTE: there is deliberately no PLACEBO_GUARD constant. The placebo exclusion band is
+# ASYMMETRIC and derived from the windows themselves — [s-POST_WINDOW, s+PRE_WINDOW+EMBARGO]
+# — in eligible_placebo_sessions(). A scalar guard existed here once, was superseded by
+# AM-10, and survived as a dead constant that the results JSON kept publishing as if it
+# were the live rule. Derive the band, never restate it.
 PRICE_MIN = 5.0
 POST_WINDOW = 20           # sessions after t that must exist
 BENCH_SPY = "SPY"
@@ -407,7 +417,16 @@ def sp_pure_add_events(panel: Panel, data_dir: Path) -> tuple[pd.DataFrame, dict
     adds = adds.dropna(subset=["d", "ticker"])
     diag = {"raw_adds_all_time": int(len(adds))}
 
+    # pit_history() resolves its own path through engine.config.data_dir(). Assert it
+    # agrees with the data_dir this study reads, so a study run against one checkout can
+    # never classify cohorts from another's membership file.
     pit_by_t = pit_history()
+    if pit_by_t:
+        n_pit = sum(len(v) for v in pit_by_t.values())
+        if n_pit != len(pit):
+            print(f"[warn] pit_history() returned {n_pit} rows but {data_dir} holds "
+                  f"{len(pit)} — engine.config.data_dir() resolves elsewhere; cohort "
+                  f"labels may not match this study's event list", flush=True)
     adds["cohort"] = [classify_cohort(r.ticker, r.d, r.index, pit_by_t)
                       for r in adds.itertuples(index=False)]
     diag["cohort_counts"] = {k: int(v) for k, v in adds["cohort"].value_counts().items()}
@@ -519,13 +538,24 @@ def estimate_events(
     post_d = np.zeros((e, POST_WINDOW + 1, m))
     n_sel = np.zeros(e, dtype=int)
     pool_sizes = np.zeros(e, dtype=int)
+    # PANEL column index of each selected donor, in the pre-screen's rank order. Kept so
+    # the harness's own donor selection is auditable from outside (weights alone live in
+    # the m-wide selected space and cannot be checked against the panel).
+    sel_cols = np.full((e, m), -1, dtype=int)
 
+    drops = {"treated_pre_window_gap": 0, "thin_pool": 0, "thin_prescreen": 0}
     for i in range(e):
         c, s = int(cols[i]), int(sessions[i])
         sl = sc.pre_window_slice(s)
         pre = panel.ret[sl, :]
         y = pre[:, c]
         if not np.isfinite(y).all():
+            # The treated name has a hole in its own fitting window. On this store the
+            # dominant cause is SYMBOL DISCONTINUITY, not illiquidity: massive_stock_day
+            # keys by CURRENT symbol, so a renamed/merged name (PARA, ELV, GEHC, WBD,
+            # BALL, RVTY, WTW) carries its history only under whichever symbol it holds
+            # today, and even a survivor like META shows a multi-month hole.
+            drops["treated_pre_window_gap"] += 1
             continue
         end = sl.stop - 1                       # last session inside the pre-window
         mask = sc.eligible_donors(
@@ -545,22 +575,25 @@ def estimate_events(
         idx = np.flatnonzero(mask)
         pool_sizes[i] = idx.size
         if idx.size < m:
+            drops["thin_pool"] += 1
             continue
         sub = pre[:, idx]
         sub = np.where(np.isfinite(sub), sub, 0.0)
         sel_local = sc.prescreen_donors(y, sub, m=m)
         if sel_local.size < m:
+            drops["thin_prescreen"] += 1
             continue
         cols_sel = idx[sel_local]
         pre_t[i] = y
         pre_d[i] = pre[:, cols_sel]
         post_t[i] = panel.ret[s:s + POST_WINDOW + 1, c]
         post_d[i] = panel.ret[s:s + POST_WINDOW + 1, cols_sel]
+        sel_cols[i] = cols_sel
         n_sel[i] = m
 
     live = n_sel > 0
     if not live.any():
-        return {"_keys": keys, "_n_live": 0, "_pool_mean": 0.0,
+        return {"_keys": keys, "_n_live": 0, "_pool_mean": 0.0, "_drops": drops,
                 **{a: out[a] for a in arms}}
 
     # A missing donor print inside the fitting window is filled with a zero return: for a
@@ -570,9 +603,11 @@ def estimate_events(
     li = np.flatnonzero(live)
 
     # matched_k: equal weight over the top-k. prescreen_donors returns columns in
-    # correlation rank order, so the first MATCHED_K columns of pre_d ARE the top-k that
-    # engine.donor_weights(method='matched_k') would select — pinned by
-    # tests/test_synthetic_control.py::test_matched_k_is_top_k_of_the_prescreen.
+    # correlation rank order, so the first MATCHED_K columns of pre_d ARE the top-k the
+    # equal-weight estimator selects. Pinned END-TO-END THROUGH THIS FUNCTION by
+    # tests/test_synthetic_control.py::test_harness_recovers_a_known_mixture_end_to_end
+    # (test_matched_k_is_top_k_of_the_prescreen pins the module in isolation and never
+    # calls estimate_events, so it cannot see a defect introduced on this path).
     w_mk = np.zeros((li.size, m))
     w_mk[:, : sc.MATCHED_K] = 1.0 / sc.MATCHED_K
     # sc_nnls: simplex-constrained LS over all M
@@ -594,8 +629,10 @@ def estimate_events(
             vals = np.where(good, np.nansum(d, axis=1), np.nan)
             out[bname][li, j] = vals
 
-    return {"_keys": keys, "_n_live": int(li.size),
+    return {"_keys": keys, "_n_live": int(li.size), "_drops": drops,
             "_pool_mean": float(pool_sizes[live].mean()) if live.any() else 0.0,
+            "_weights": {"matched_k": w_mk, "sc_nnls": w_sc}, "_live_idx": li,
+            "_sel_cols": sel_cols[li],
             **{a: out[a] for a in arms}}
 
 
@@ -690,16 +727,29 @@ def run_family(panel: Panel, ev: pd.DataFrame, label: str, *,
               f"({time.time() - t0:.1f}s)", flush=True)
 
     stats: dict = {"n_events": int(len(ev)), "n_fitted": int(real["_n_live"]),
+                   "n_dropped_unfitted": int(len(ev) - real["_n_live"]),
+                   "drop_reasons": dict(real.get("_drops", {})),
                    "mean_donor_pool": round(float(real["_pool_mean"]), 1),
                    "windows": keys, "arms": {}}
     for arm in arms:
         per_win = {}
+        # A ticker-clustered t is only a CLUSTERED statistic when tickers actually repeat.
+        # Index adds are one-per-name, so every cluster is a singleton and the estimator
+        # collapses to the plain iid t the pre-registration itself calls invalid here.
+        # Suppressed rather than printed with a caveat nobody reads.
+        n_ev_ = int(len(ev))
+        n_tk_ = int(ev["ticker"].nunique()) if n_ev_ else 0
+        clusters_meaningful = bool(n_ev_ and n_tk_ < 0.75 * n_ev_)
         for j, k in enumerate(keys):
             car = real[arm][:, j]
             s = monthly_nw(car, pd.DatetimeIndex(ev["date"]))
-            s["ticker_cluster_t"] = ticker_cluster_t(car, ev["ticker"].to_numpy())
+            s["ticker_cluster_t"] = (ticker_cluster_t(car, ev["ticker"].to_numpy())
+                                     if clusters_meaningful else None)
             per_win[k] = s
         stats["arms"][arm] = {"real": per_win}
+    stats["n_tickers"] = int(ev["ticker"].nunique()) if len(ev) else 0
+    stats["ticker_cluster_t_reported"] = bool(
+        len(ev) and stats["n_tickers"] < 0.75 * len(ev))
 
     # ---- placebo: re-date every event, `draws` times
     cand = [eligible_placebo_sessions(panel, int(c), int(s)) for c, s in zip(cols, sess)]
@@ -717,12 +767,14 @@ def run_family(panel: Panel, ev: pd.DataFrame, label: str, *,
               f"{int(usable.sum())}/{len(ev)} re-datable events "
               f"({len(ev) - keep.size} dropped as un-re-datable)", flush=True)
     null = {a: np.full((draws, len(keys)), np.nan) for a in arms}
+    draw_fitted = np.zeros(draws, dtype=int)
     tp = time.time()
     for d in range(draws):
         psess = p_sess_real.copy()
         for i, c in enumerate(p_cand):
             psess[i] = c[rng.integers(c.size)]
         est = estimate_events(panel, p_cols, psess, contaminated, benchmarks=benchmarks)
+        draw_fitted[d] = int(est["_n_live"])
         for arm in arms:
             for j in range(len(keys)):
                 v = est[arm][:, j]
@@ -756,8 +808,59 @@ def run_family(panel: Panel, ev: pd.DataFrame, label: str, *,
                 blk["empirical_p_floor"] = float(1.0 / (dn.size + 1))
             stats["arms"][arm].setdefault("placebo", {})[k] = blk
 
+    # Per-draw placebo CAARs are PERSISTED so the PC-3 dispersion ratio can carry an
+    # interval. The two arms are measured on the SAME draws (identical placebo dates), so
+    # the comparison is paired and the paired form is the honest one — an unpaired SD
+    # comparison throws away exactly the correlation that makes the test sharp.
+    stats["placebo_draws_detail"] = {
+        "windows": keys,
+        "n_fitted_per_draw": {"mean": float(draw_fitted.mean()),
+                              "min": int(draw_fitted.min()),
+                              "max": int(draw_fitted.max())},
+        "caar_by_arm": {a: [None if not np.isfinite(x) else round(float(x), 8)
+                            for x in null[a][:, keys.index("0_5")]] for a in arms},
+    }
+    stats["pc3_dispersion"] = _pc3_dispersion(null, keys, arms)
     stats["runtime_s"] = round(time.time() - t0, 1)
     return stats
+
+
+def _pc3_dispersion(null: dict, keys: list, arms: list) -> dict:
+    """PC-3's SD ratio with an interval, computed on PAIRED draws at [0,5].
+
+    PC-3 compares sc_nnls's placebo dispersion against the incumbent's. Both are measured
+    on identical placebo dates, so the per-draw CAARs are paired and their difference is
+    what carries the information. Reported: the raw ratio, a bootstrap CI on it, and the
+    paired test on squared deviations (the variance-difference the ratio summarizes).
+    """
+    j = keys.index("0_5")
+    if "sc_nnls" not in arms or BENCH_SPY not in arms:
+        return {}
+    a = null["sc_nnls"][:, j]
+    b = null[BENCH_SPY][:, j]
+    ok = np.isfinite(a) & np.isfinite(b)
+    a, b = a[ok], b[ok]
+    if a.size < 20:
+        return {"n_draws": int(a.size)}
+    sd_a, sd_b = float(a.std(ddof=1)), float(b.std(ddof=1))
+    da, db = a - a.mean(), b - b.mean()
+    # paired difference of squared deviations: mean < 0 means SC is tighter
+    diff = da ** 2 - db ** 2
+    se = float(diff.std(ddof=1) / np.sqrt(diff.size))
+    rng = np.random.default_rng(SEED + 1)
+    boot = []
+    for _ in range(2000):
+        idx = rng.integers(0, a.size, a.size)          # paired resample
+        boot.append(a[idx].std(ddof=1) / max(b[idx].std(ddof=1), 1e-18))
+    lo, hi = np.percentile(boot, [2.5, 97.5])
+    return {"n_draws": int(a.size), "sd_sc_nnls": sd_a, "sd_benchmark": sd_b,
+            "ratio": sd_a / sd_b if sd_b else None,
+            "ratio_ci95_paired_bootstrap": [float(lo), float(hi)],
+            "paired_var_diff_t": float(diff.mean() / se) if se > 0 else None,
+            "note": "ratio < 1 means synthetic control is tighter under the null. The CI "
+                    "is a paired bootstrap over draws; the t is a paired test on squared "
+                    "deviations. PC-3 itself is registered as a bare point comparison, so "
+                    "these quantify it rather than re-decide it."}
 
 
 # ================================================================== gates
@@ -781,11 +884,18 @@ def evaluate_gates(pc: dict, fl: dict | None) -> dict:
     m = _get(pc, "sc_nnls", "real", "0_5", "mean")
     mm = _get(pc, "sc_nnls", "real", "0_5", "mean_monthly")
     t = _get(pc, "sc_nnls", "real", "0_5", "t")
-    g["PC1_positive_control_survives"] = bool(
-        None not in (m, mm, t) and m > 0 and mm > 0 and t > 2.0)
-    reasons["PC1"] = (f"sc_nnls S&P pure-add CAAR[0,5]={_pct(m)} event-weighted / "
-                      f"{_pct(mm)} month-weighted, monthly-NW t={_r(t)} "
-                      "(need both >0 and t>2)")
+    if None in (m, mm, t):
+        # An absent positive-control family is a data-reach failure. Reporting it as FAIL
+        # publishes ESTIMATOR_POWERLESS — "synthetic control erased a graded effect" —
+        # when the truth is that the effect was never measured.
+        g["PC1_positive_control_survives"] = None
+        reasons["PC1"] = ("NOT EVALUABLE — the S&P pure-add family produced no estimate "
+                          "(no events in scope, or the price store was unreachable)")
+    else:
+        g["PC1_positive_control_survives"] = bool(m > 0 and mm > 0 and t > 2.0)
+        reasons["PC1"] = (f"sc_nnls S&P pure-add CAAR[0,5]={_pct(m)} event-weighted / "
+                          f"{_pct(mm)} month-weighted, monthly-NW t={_r(t)} "
+                          "(need both >0 and t>2)")
 
     # PC-2 — neither SC estimator is biased under the null, on BOTH families
     pc2, bits, pc2_skipped = True, [], []
@@ -883,6 +993,11 @@ def write_report(res: dict) -> None:
              "the house already established are used as instruments to measure whether "
              "donor-pool synthetic control tells the truth on this panel. Nothing here "
              "promotes anything or gates any surface.\n")
+    L.append(f"**Run MANUALLY, off the render path.** This study is not wired into "
+             f"`daily.yml`, `render.yml` or `config/dag.yml` and must not be: a full run "
+             f"is ~{res['runtime_s'] / 60:.0f} minutes against the whole 20k-file store, "
+             f"comfortably more than the entire nightly render budget (HOUSE-U6). It is "
+             f"re-run by hand when the estimator or the event families change.\n")
 
     L.append(f"## Verdict: `{res['gate_eval']['verdict']}`\n")
     if res["gate_eval"]["failing_gates"]:
@@ -920,6 +1035,42 @@ def write_report(res: dict) -> None:
         L.append(f"- Event day rule: {d.get('event_day_rule')}")
         L.append(f"- {fam['n_fitted']:,} of {fam['n_events']:,} in-scope events fitted "
                  f"(mean eligible donor pool {fam['mean_donor_pool']:,.0f} names)")
+        dr = fam.get("drop_reasons") or {}
+        if fam.get("n_dropped_unfitted"):
+            nd_, ne_ = fam["n_dropped_unfitted"], fam["n_events"]
+            L.append(
+                f"- **{nd_:,} of {ne_:,} events ({100 * nd_ / ne_:.1f}%) produced no "
+                f"estimate** and are absent from every number in this table: "
+                f"{dr.get('treated_pre_window_gap', 0):,} because the treated name has a "
+                f"hole in its own 120-session fitting window, "
+                f"{dr.get('thin_pool', 0):,} for a donor pool below the pre-screen width, "
+                f"{dr.get('thin_prescreen', 0):,} for a short pre-screen. The dominant "
+                f"cause is SYMBOL DISCONTINUITY, not illiquidity: `massive_stock_day` "
+                f"keys by CURRENT symbol, so a renamed or merged company carries history "
+                f"only under the symbol it holds today (PARA, ELV, GEHC, WBD, BALL, RVTY, "
+                f"WTW in this window; even META shows a multi-month hole). The headline "
+                f"is therefore computed on SURVIVORS. PC-1's verdict is robust to this — "
+                f"it would take an implausible reversal among the dropped events to "
+                f"overturn a t of this size — but the point estimate is a survivor "
+                f"statistic and is not directly comparable to the incumbent's, which "
+                f"fetches prices per-ticker and keeps them.")
+        if key == "sp_pure_adds":
+            L.append(
+                "- **Cohort labelling inherits a house defect.** "
+                "`engine.index_changes.classify_cohort` calls an add \"pure\" when it "
+                "finds no prior PIT membership row, which also catches ticker RENAMES and "
+                "SPIN-OFFS — entities that were already inside the S&P universe under "
+                "another symbol and therefore DO have an offsetting forced seller (roughly "
+                "seven such names in the 2022+ window). Reproducing the incumbent's "
+                "construction faithfully was the point of this control, so the defect is "
+                "disclosed here and deliberately NOT fixed in this PR; fixing it would "
+                "change the family and break the comparison it exists to make.")
+        if not fam.get("ticker_cluster_t_reported", True):
+            L.append(
+                f"- Ticker-clustered t is **not reported** for this family: "
+                f"{fam.get('n_tickers', 0):,} tickers across {fam['n_events']:,} events "
+                f"means clusters are effectively singletons, and the estimator collapses "
+                f"to the plain iid t the pre-registration itself calls invalid here.")
         L.append(f"- Scope {SCOPE_START} → panel end; construction diagnostics: "
                  f"`{json.dumps({k: v for k, v in d.items() if k != 'event_day_rule'})}`\n")
         if fam.get("placebo_events_dropped"):
@@ -943,16 +1094,29 @@ def write_report(res: dict) -> None:
         if key == "sp_pure_adds" and res.get("incumbent_reconciliation"):
             rc = res["incumbent_reconciliation"]
             if rc.get("hac_t") is not None:
-                h = rc["house_full_sample_2019_on"]
+                hf, hr = rc.get("house_full_sample", {}), rc.get("house_recent_cut", {})
+                gap = rc.get("unexplained_gap_vs_house_recent")
                 L.append("**Reconciliation against the incumbent's exact statistic.** "
-                         f"`validate_index_reconstitution.py` scores a SPY-relative PRICE "
-                         f"RATIO over [-5,0] — five daily returns, where this study's "
-                         f"CAR[0,5] sums six (AM-7). Recomputing the incumbent's own "
-                         f"construction on THIS sample gives {_pct(rc['mean_abn'])} "
-                         f"(t={_r(rc['hac_t'])}, n={rc['n']}, {rc['n_months']} months) "
-                         f"against the house's 2019→ grade of {_pct(h['mean_abn'])} "
-                         f"(t={h['hac_t']}, n={h['n']}). The gap is the sample, not the "
-                         f"estimator.\n")
+                         "`validate_index_reconstitution.py` scores a SPY-relative PRICE "
+                         "RATIO over [-5,0] — five daily returns, where this study's "
+                         "CAR[0,5] sums six (AM-7). Recomputing the incumbent's own "
+                         f"construction on THIS study's event list gives "
+                         f"{_pct(rc['mean_abn'])} (t={_r(rc['hac_t'])}, n={rc['n']}, "
+                         f"{rc['n_months']} months). The house publishes "
+                         f"{_pct(hf.get('mean_abn'))} (t={hf.get('hac_t')}, "
+                         f"n={hf.get('n')}) on 2019→ and {_pct(hr.get('mean_abn'))} "
+                         f"(t={hr.get('hac_t')}, n={hr.get('n')}) on its recent cut.\n")
+                if gap is not None:
+                    L.append(
+                        f"The recent cut is the nearest published comparator to this "
+                        f"window, and **{_pct(gap)} of the difference is not explained by "
+                        f"the sample period**. Index mix is ruled out (both are pure adds "
+                        f"across the same three indices) and the constructions agree, so "
+                        f"the residual is a coverage/construction gap — most plausibly "
+                        f"the event-list attrition disclosed above, which drops "
+                        f"symbol-discontinuous names the incumbent's own price fetch "
+                        f"keeps. It is stated here rather than absorbed into the word "
+                        f"\"sample\".\n")
 
     L.append("## What the numbers mean\n")
     L.append(res["narrative"])
@@ -962,6 +1126,13 @@ def write_report(res: dict) -> None:
                  "pre-registration so the gates were not retro-fitted to the answer.*\n")
         for n in res["gate_honesty"]:
             L.append(f"- {n}")
+    L.append("\n## Amendments to the frozen pre-registration\n")
+    L.append("*AM-1..AM-6 were recorded while wiring, before any compute. AM-7..AM-11 came "
+             "out of an adversarial review of the first full run; that run was DISCARDED "
+             "and re-run under these corrections, so no number below was produced under "
+             "the defective forms.*\n")
+    for a in AMENDMENTS:
+        L.append(f"- {a}")
     L.append("\n## Caveats carried forward\n")
     for c in res["caveats"]:
         L.append(f"- {c}")
@@ -981,8 +1152,12 @@ def incumbent_reconciliation(panel: Panel, ev: pd.DataFrame) -> dict:
     CAR[0,5] sums SIX daily returns (ret[e-5..e], i.e. closes e-6 -> e), because the
     event day is set to e-5 and window [0,5] is inclusive at both ends. The two are
     therefore NOT the same window, and the prereg's "spans exactly" was an overstatement
-    (AM-7). This function prints the incumbent's exact statistic on the same events so
-    the gap is measured rather than argued about.
+    (AM-7). This function prints the incumbent's exact statistic on the SAME EVENT LIST
+    this study fits (not the incumbent's own 2019-> event list) so the gap is measured
+    rather than argued about. House reference numbers are read from
+    data/index_reconstitution/validation_gate.json via engine.index_changes.load_gate(),
+    never transcribed — a hardcoded reference number silently goes stale the moment the
+    incumbent re-runs.
     """
     if ev.empty or BENCH_SPY not in panel.col:
         return {"error": "no events or no SPY"}
@@ -1002,13 +1177,36 @@ def incumbent_reconciliation(panel: Panel, ev: pd.DataFrame) -> dict:
         return {"n": len(recs)}
     d = pd.DataFrame(recs, columns=["d", "abn"])
     s = monthly_nw(d["abn"].to_numpy(), pd.DatetimeIndex(d["d"]))
-    return {"window": "[-5,0] price ratio vs SPY (incumbent construction)",
-            "n": s["n"], "n_months": s["n_months"], "mean_abn": s["mean"],
-            "mean_abn_monthly": s.get("mean_monthly"), "hac_t": s["t"],
-            "house_full_sample_2019_on": {"mean_abn": 0.0164, "hac_t": 4.63, "n": 877},
-            "note": "Same construction as scripts/validate_index_reconstitution.py on "
-                    "THIS study's 2022-01→ sample. Any gap vs the house's 2019→ number "
-                    "is the sample, not the estimator."}
+
+    gate = load_gate() or {}
+    ann = (gate.get("announce") or {}) if isinstance(gate.get("announce"), dict) else gate
+    house_full = ann.get("pure_gross") or {}
+    house_recent = ann.get("pure_gross_recent") or {}
+
+    # The house's own RECENT cut (2023-01->) is the closest thing it publishes to this
+    # study's window, so it is the right comparator — the full 2019-> number differs from
+    # this run for two reasons at once and quoting only that one lets "the sample" absorb
+    # everything.
+    out = {"window": "[-5,0] price ratio vs SPY (incumbent construction), "
+                     "recomputed on THIS study's event list",
+           "n": s["n"], "n_months": s["n_months"], "mean_abn": s["mean"],
+           "mean_abn_monthly": s.get("mean_monthly"), "hac_t": s["t"],
+           "house_full_sample": {k: house_full.get(k) for k in ("n", "mean_abn", "hac_t")},
+           "house_recent_cut": {k: house_recent.get(k) for k in ("n", "mean_abn", "hac_t")},
+           "house_gate_source": "data/index_reconstitution/validation_gate.json"}
+    hr = house_recent.get("mean_abn")
+    if hr is not None and s["mean"] is not None:
+        out["unexplained_gap_vs_house_recent"] = round(float(s["mean"]) - float(hr), 5)
+        out["note"] = (
+            "The house's own recent cut is the nearest published comparator to this "
+            "window. The residual difference is NOT all 'sample': index-mix is ruled out "
+            "(both are pure adds across the same three indices) and the constructions "
+            "agree, so part of the gap is an unexplained construction/coverage "
+            "difference — most likely the event-list attrition disclosed in "
+            "drop_reasons, which removes symbol-discontinuous names the incumbent keeps.")
+    else:
+        out["note"] = ("House gate numbers unavailable — comparison is to this run only.")
+    return out
 
 
 def build_gate_honesty(res: dict) -> list[str]:
@@ -1027,23 +1225,52 @@ def build_gate_honesty(res: dict) -> list[str]:
     def pm(arm, win="0_5"):
         return pc["arms"][arm]["placebo"][win].get("placebo_mean")
 
-    sc_m, mk_m, bm_m = pm("sc_nnls"), pm("matched_k"), pm(BENCH_SPY)
-    if None not in (sc_m, mk_m, bm_m):
-        same_sign = (np.sign(sc_m) == np.sign(bm_m))
+    # --- centring: is the offset the COHORT's or the ESTIMATOR's? Decided by MAGNITUDE
+    # against the incumbent, not by sign. Every arm drifting the same DIRECTION says
+    # nothing on its own — the incumbent drifts too. What matters is whether the fitted
+    # counterfactual removes MORE of that drift than the benchmark does, and it is read
+    # on BOTH families because they can disagree.
+    fams = [("S&P pure adds", res.get("families", {}).get("sp_pure_adds")),
+            ("Phase-3 starts", res.get("families", {}).get("phase3_start"))]
+    rows, worse_on = [], []
+    for fname, fam in fams:
+        if not fam or BENCH_SPY not in fam.get("arms", {}):
+            continue
+        try:
+            a_sc = fam["arms"]["sc_nnls"]["placebo"]["0_5"]
+            a_mk = fam["arms"]["matched_k"]["placebo"]["0_5"]
+            a_bm = fam["arms"][BENCH_SPY]["placebo"]["0_5"]
+        except KeyError:
+            continue
+        s, k, b = a_sc.get("placebo_mean"), a_mk.get("placebo_mean"), a_bm.get("placebo_mean")
+        ts, tb = a_sc.get("placebo_bias_t"), a_bm.get("placebo_bias_t")
+        if None in (s, k, b):
+            continue
+        ratio = abs(s) / abs(b) if b else float("nan")
+        rows.append(f"{fname}: fitted SC {_pct(s)} (t={_r(ts)}), equal-weight {_pct(k)}, "
+                    f"incumbent SPY-CAR {_pct(b)} (t={_r(tb)}) — SC is {ratio:.2f}x the "
+                    f"incumbent's offset")
+        if abs(s) > abs(b):
+            worse_on.append(fname)
+    if rows:
+        verdict = (
+            f"On {', '.join(worse_on)} the fitted SC is offset MORE than the incumbent it "
+            "is supposed to improve on, so on that family the offset is NOT merely the "
+            "cohort's — the donor pool is not spanning these names and the weights are "
+            "buying a systematic shortfall rather than removing one. "
+            if worse_on else
+            "On every family the fitted SC is the LEAST offset arm, so the residual "
+            "offset is a property of the COHORT rather than of the estimator. ")
         notes.append(
-            "**PC-2 cannot separate an estimator bias from a cohort drift.** It asks "
-            "whether the SC arms are centred at random dates on these names — but a "
-            "cohort that genuinely drifts fails it however good the estimator is. The "
-            f"incumbent SPY-CAR arm, which is NOT under test, reads {_pct(bm_m)} on the "
-            f"same draws against the fitted SC's {_pct(sc_m)} and the equal-weight "
-            f"basket's {_pct(mk_m)}"
-            + (", i.e. all three arms are offset the same way. The comparison ACROSS "
-               "arms is the discriminating statistic and it lives in the table above, "
-               "not in the gate. Read a PC-2 failure as 'this cohort drifts', not as "
-               "'synthetic control invents effects'."
-               if same_sign else
-               ", i.e. the arms disagree in direction — here the gate IS reading the "
-               "estimator rather than the cohort."))
+            "**PC-2 mixes an estimator question with a cohort question, and the two "
+            "families answer differently.** Every arm drifts in the same direction at "
+            "random dates, including the incumbent SPY-CAR arm that is NOT under test — "
+            "so direction alone settles nothing. The discriminating comparison is "
+            "MAGNITUDE against the incumbent, on identical draws: "
+            + "; ".join(rows) + ". " + verdict
+            + "Note also that the incumbent arm is not uniformly worse: where it clears "
+              "the t-arm that the SC arms fail, PC-2 is separating estimators rather "
+              "than describing the cohort. Read the per-arm table, not the gate flag.")
 
     d20 = pc["arms"]["sc_nnls"]["placebo"].get("0_20", {}).get("placebo_mean")
     r20 = pc["arms"]["sc_nnls"]["real"].get("0_20", {}).get("mean")
@@ -1062,22 +1289,80 @@ def build_gate_honesty(res: dict) -> list[str]:
         "both are comparisons: PC-1 against a number the house already graded, PC-3 "
         "against the incumbent's own placebo dispersion on identical draws. PC-2 and F-1 "
         "are absolute thresholds and inherit whatever the cohort does.")
-    nd = res.get("placebo_draws")
+    nd = int(res.get("placebo_draws") or 0)
+    ts = []
+    for _, fam in fams:
+        if not fam:
+            continue
+        for arm in ("matched_k", "sc_nnls"):
+            try:
+                v = fam["arms"][arm]["placebo"]["0_5"].get("placebo_bias_t")
+            except KeyError:
+                v = None
+            if v is not None:
+                ts.append(abs(float(v)))
+    if ts and nd:
+        # t scales as sqrt(B): t(B') = t(B) * sqrt(B'/B)
+        def rng_at(b):
+            lo = min(ts) * math.sqrt(b / nd)
+            hi = max(ts) * math.sqrt(b / nd)
+            return lo, hi
+        tbl = " · ".join(f"B={b}: |t| {rng_at(b)[0]:.2f}–{rng_at(b)[1]:.2f} "
+                         f"({'PASS' if rng_at(b)[1] < 2 else 'FAIL'})"
+                         for b in (50, nd, 1000))
+        b_pass = int(math.floor(nd * (2.0 / max(ts)) ** 2))
+        notes.append(
+            f"**PC-2's |t|<2 arm is controlled by the DRAW COUNT, not by the estimator.** "
+            f"That t is the Monte-Carlo standard error of the placebo mean "
+            f"(mean / (sd/sqrt(B))), so for any non-zero cohort drift it grows as "
+            f"sqrt(B) without bound. Across the four arm x family cells: {tbl}. So the "
+            f"arm does NOT flip at a plausible B — it would take B <= {b_pass} for every "
+            f"cell to clear |t|<2, which is far too few draws to estimate a null "
+            f"distribution at all. The honest statement is that this arm is guaranteed "
+            f"to fail at ANY usable draw count once the cohort drift is non-zero, which "
+            f"makes it a test of 'is the drift exactly zero', not a test of the "
+            f"estimator. The economic content of PC-2 is carried entirely by its "
+            f"|mean| < 0.3% arm, which IS B-invariant and which every cell passes.")
+    pcf = pc.get("placebo_draws_detail", {}).get("n_fitted_per_draw", {})
     notes.append(
-        f"**PC-2's |t|<2 arm is controlled by the DRAW COUNT, not by the estimator.** "
-        f"That t is the Monte-Carlo standard error of the placebo mean "
-        f"(mean / (sd/sqrt(B))), so for any non-zero cohort drift it grows without bound "
-        f"as B rises — the same estimator passes at B=50 and fails at B=1000. B is frozen "
-        f"at {nd} here and the reading is only interpretable at that B. The economic "
-        f"content of PC-2 is carried by its |mean| < 0.3% arm, which is B-invariant.")
-    notes.append(
-        "**Donor attrition is not symmetric between the real and placebo arms.** Real "
-        "index events batch on quarterly reconstitution dates, so many donors are "
-        "simultaneously inside the ±21-session exclusion and are dropped together; "
-        "placebo dates are uniform and lose far fewer. The real arm therefore fits a "
-        "systematically smaller — and differently composed — donor pool than the null "
-        "does. A calendar-matched placebo would remove this and is the sharper design "
-        "for the next rung.")
+        "**Neither the donor pool nor the TREATED set is matched between the real and "
+        "placebo arms.** Real index events batch on quarterly reconstitution dates, so "
+        "many donors sit inside the ±21-session exclusion simultaneously and are dropped "
+        "together; placebo dates are uniform and lose far fewer. On the treated side the "
+        f"real statistic fits {pc.get('n_fitted', 0):,} events while each placebo draw "
+        f"fits about {pcf.get('mean', 0):.0f} (range {pcf.get('min', 0):,}–"
+        f"{pcf.get('max', 0):,}) out of {pc.get('placebo_events', 0):,} re-datable names "
+        "— a placebo date is free to land where the name's window is clean, whereas the "
+        "real date is not. So the null is estimated on a slightly LARGER and easier "
+        "treated set than the statistic it is judging, which if anything understates the "
+        "null's dispersion. A calendar-matched placebo drawn only from dates where the "
+        "real event would also have fitted removes both asymmetries and is the sharper "
+        "design for the next rung.")
+    d3 = pc.get("pc3_dispersion") or {}
+    if d3.get("ratio") is not None:
+        ci = d3.get("ratio_ci95_paired_bootstrap") or [None, None]
+        notes.append(
+            f"**PC-3 is registered as a bare point comparison and passes by a margin "
+            f"inside its own uncertainty.** The dispersion ratio is "
+            f"{d3['ratio']:.3f} (SC {_pct(d3['sd_sc_nnls'])} vs incumbent "
+            f"{_pct(d3['sd_benchmark'])}) with a paired-bootstrap 95% CI of "
+            f"[{ci[0]:.3f}, {ci[1]:.3f}] over {d3['n_draws']} draws and a paired "
+            f"variance-difference t of {_r(d3.get('paired_var_diff_t'))}. The gate's "
+            f"PASS is real but should be read as 'SC is not noisier', not as 'SC is "
+            f"materially tighter'.")
+    try:
+        mk_t = pc["arms"]["matched_k"]["real"]["0_5"]["t"]
+        sc_t = pc["arms"]["sc_nnls"]["real"]["0_5"]["t"]
+        if mk_t and sc_t and mk_t > sc_t:
+            notes.append(
+                f"**The unfitted estimator wins PC-1.** The equal-weight `matched_k` "
+                f"basket carries t={_r(mk_t)} on the announce window against the fitted "
+                f"`sc_nnls`'s t={_r(sc_t)}. PC-1 is registered on sc_nnls alone, so this "
+                f"does not change the gate — but a zero-parameter basket matching or "
+                f"beating the fitted counterfactual is the relevant signal about how much "
+                f"the fitting is actually buying here.")
+    except (KeyError, TypeError):
+        pass
     if res.get("vol_band_fallbacks"):
         notes.append(
             f"**The pre-registered 0.5×–2.0× vol band disengaged "
@@ -1091,6 +1376,48 @@ def build_gate_honesty(res: dict) -> list[str]:
         "calendar composition of the null is not matched to the real events, and a "
         "calendar-matched placebo is the sharper design the next rung should use.")
     return notes
+
+
+#: Reader-facing summary of every amendment in the frozen header. The header is the
+#: authority; this exists so the WRITEUP carries them too — a correction recorded only in
+#: a source docstring is a correction the reader of the results never sees.
+AMENDMENTS = [
+    "**AM-1 announce source.** `data/sp_index_changes/changes.parquet` holds 50 rows "
+    "(4 sp500 adds) and is not the store the house's +1.64% grade came from; the family "
+    "is rebuilt from `sp1500_pit_membership.parquet` exactly as "
+    "`scripts/validate_index_reconstitution.py` does.",
+    "**AM-2 sector arm.** Not derivable for index adds (`data/sector_holdings` covers 236 "
+    "S&P 500 names = 6.2% of in-scope adds). Phase-3 keeps its XLV arm.",
+    "**AM-3 universe floor.** The house $5 price floor is applied to donors; the charter's "
+    "donor rules named coverage, liquidity and event exclusion but no price floor.",
+    "**AM-4 donor pre-screen.** The fitted solver receives the top-50 by pre-window "
+    "correlation, not all ~4,000 eligible names. M=50 and k=20 were frozen before any "
+    "result and are not tuned.",
+    "**AM-5 instrument type.** No whole-market security-type classifier exists here, so "
+    "ETFs/ADRs/preferreds clearing the liquidity floor are admissible donors.",
+    "**AM-6 Phase-3 cells.** Multiple NCTs posted by one sponsor on one day are ONE event, "
+    "matching the prior study's `ticker_date_cells` construction.",
+    "**AM-7 window.** `CAR[0,5]` is NOT byte-identical to the incumbent's announce window: "
+    "the incumbent scores a five-return price ratio, this sums six. The prereg's \"spans "
+    "exactly\" is withdrawn; `incumbent_reconciliation` computes the incumbent's exact "
+    "statistic on this sample instead.",
+    "**AM-8 charter matching.** The charter specifies matching on "
+    "path/vol/beta/sector/size/liquidity. SECTOR and SIZE are NOT matched on — no "
+    "whole-market classifier exists. Correlation matching subsumes path and, for a returns "
+    "fit, beta; sector exposure is recovered only implicitly.",
+    "**AM-9 PC-1 estimand.** PC-1 requires BOTH the event-weighted and month-weighted CAAR "
+    "to be positive. `monthly_nw` pairs an event-weighted mean with a month-weighted t, and "
+    "with quarterly-batched reconstitutions the two can disagree in sign. Strictly stronger "
+    "than the registered single-mean form.",
+    "**AM-10 placebo band.** ASYMMETRIC `[s−20, s+125]`, not the symmetric ±42 first "
+    "written. A placebo at s' fits on `[s'−125, s'−6]`, so `s' ∈ [s+42, s+125]` passed the "
+    "old guard while FITTING on a window containing the real treatment — 9.6% of eligible "
+    "dates, contaminating only the SC arms and therefore biasing PC-3 specifically.",
+    "**AM-11 price floor is PIT.** The $5 floor reads the close AS PRINTED, not the "
+    "back-adjusted close. `split_adjust` back-multiplies prior bars by a factor detected "
+    "later in the series, which is not PIT and inverts the selection: a raw $0.60 name that "
+    "later reverse-splits 1:10 reads as $6.00 and would be admitted.",
+]
 
 
 def build_caveats() -> list[str]:
@@ -1129,11 +1456,25 @@ def build_caveats() -> list[str]:
         "Missing donor prints inside the fitting window are filled with a zero return "
         "(for a buy-and-hold donor a non-trading day IS a zero return); the ≥90% coverage "
         "rule caps this at 12 of 120 sessions.",
-        "Placebo dates are drawn per name with a ±42-session guard around the real event; "
-        "the real events' donor-contamination map is applied to placebo draws too, which "
-        "is conservative.",
+        "Placebo dates are drawn per name outside the ASYMMETRIC exclusion band "
+        "[s−20, s+125] sessions around the real event s — asymmetric because a placebo at "
+        "s' scores forward over [s', s'+20] but FITS backward over [s'−125, s'−6], so the "
+        "two windows sit on opposite sides of the event day (AM-10). An earlier symmetric "
+        "±42 guard let 9.6% of eligible dates fit on a window containing the real "
+        "treatment. The real events' donor-contamination map is applied to placebo draws "
+        "too, which is conservative.",
         "Placebo draws are the only stochastic element and are seeded; every other number "
         "here is deterministic given the store.",
+        "Cohort labelling inherits an incumbent defect: `classify_cohort` calls an add "
+        "\"pure\" whenever it finds no prior PIT membership row, which also catches ticker "
+        "RENAMES and SPIN-OFFS — entities already inside the S&P universe under another "
+        "symbol, which therefore DO have an offsetting forced seller. Reproducing the "
+        "incumbent's construction faithfully was the point of the positive control, so "
+        "this is disclosed and deliberately not fixed here.",
+        "Events whose treated name has a hole in its own fitting window produce no "
+        "estimate and are absent from every reported number; the dominant cause is symbol "
+        "discontinuity in a store keyed by CURRENT ticker, so the headline is a survivor "
+        "statistic. Counts and reasons are in `drop_reasons`.",
         "Monthly clustering keys on the EVENT day (effective − 5 sessions) while the "
         "incumbent keys on the effective date, so a handful of events fall in a different "
         "month than they would there; the estimator is the same, the month partition is "
@@ -1255,12 +1596,18 @@ def main() -> int:
 
     if not args.skip_ledger:
         led = TrialLedger(path=LEDGER_PATH, family=FAMILY)
+        # Every arm x family x window cell that gets a t printed against it is a test and
+        # is ledgered. The XLV sector arm runs on the Phase-3 family ONLY (AM-2), and it
+        # is the cell carrying the one |t|>2 read in that family — leaving it unledgered
+        # would understate the multiple-testing budget exactly where it matters.
         configs = [{"family": fam, "estimator": arm, "window": w}
                    for fam in ("sp_pure_adds", "phase3_start")
-                   for arm in ("matched_k", "sc_nnls", BENCH_SPY)
+                   for arm in (("matched_k", "sc_nnls", BENCH_SPY)
+                               + ((BENCH_SECTOR_PHASE3,) if fam == "phase3_start" else ()))
                    for w in ("0", "0_5", "0_20")]
         n_new = led.log_grid(configs, info_cutoff="2026-08-06",
-                             note="frozen prereg; 2 families x 3 arms x 3 windows = 18 tests")
+                             note=f"frozen prereg; {len(configs)} arm x family x window "
+                                  "cells (Phase-3 carries the extra XLV sector arm)")
         print(f"[ledger] logged {n_new} new trial configs "
               f"(family={FAMILY}, literal n={led.literal_n(FAMILY)})")
 
@@ -1322,7 +1669,14 @@ def main() -> int:
                       "event_exclusion": sc.EVENT_EXCLUSION,
                       "min_coverage": sc.MIN_COVERAGE, "dvol_floor": sc.DVOL_FLOOR,
                       "prescreen_m": sc.PRESCREEN_M, "matched_k": sc.MATCHED_K,
-                      "price_min": PRICE_MIN, "placebo_guard": PLACEBO_GUARD},
+                      "price_min": PRICE_MIN, "post_window": POST_WINDOW,
+                      "placebo_exclusion_band": [-POST_WINDOW,
+                                                 sc.PRE_WINDOW + sc.EMBARGO],
+                      "placebo_exclusion_band_note":
+                          "sessions relative to the real event s that a placebo date may "
+                          "NOT take: [s-20, s+125]. Asymmetric because the outcome window "
+                          "runs forward from s' and the FIT window runs backward from it "
+                          "(AM-10)."},
         "family_diag": diag,
         "families": families,
         "incumbent_reconciliation": recon,

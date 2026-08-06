@@ -35,7 +35,7 @@ import pandas as pd  # noqa: E402
 
 from engine import synthetic_control as sc  # noqa: E402
 from scripts.synthetic_control_phase0 import (  # noqa: E402
-    Panel, contamination_map, eligible_placebo_sessions, estimate_events,
+    PRICE_MIN, Panel, contamination_map, eligible_placebo_sessions, estimate_events,
 )
 
 
@@ -60,7 +60,12 @@ def _factor_panel(n_names: int = 120, n_sess: int = 600, seed: int = 11,
     close = 100.0 * np.cumprod(1.0 + np.nan_to_num(ret), axis=0)
     dvol = np.full((n_sess, n_names), 50e6)
     dates = pd.bdate_range("2021-01-04", periods=n_sess)
-    return Panel(dates, [f"N{i:03d}" for i in range(n_names)], ret, dvol, close)
+    # raw_close must be POPULATED: the AM-11 price floor reads panel.raw_close and falls
+    # back to panel.close only when it is None. A fixture leaving it None silently routes
+    # every test around the shipped branch, so dropping the AM-11 fix would pass the
+    # whole suite.
+    return Panel(dates, [f"N{i:03d}" for i in range(n_names)], ret, dvol, close,
+                 raw_close=close.copy())
 
 
 def _events(cols, sessions) -> pd.DataFrame:
@@ -77,7 +82,10 @@ def test_solver_recovers_known_convex_mixture():
     b = rng.normal(0, 0.02, 200)
     y = 0.6 * a + 0.4 * b
     w = sc.solve_simplex_ls(y, np.column_stack([a, b]))
-    assert np.allclose(w, [0.6, 0.4], atol=1e-4), w
+    # atol tracks what the solver actually achieves on an exactly-representable problem
+    # (~1e-9 at the shipped max_iter). A loose 1e-4 would pass a solver stopped an order
+    # of magnitude early, which is the failure this test exists to catch.
+    assert np.allclose(w, [0.6, 0.4], atol=1e-7), w
 
 
 def test_solver_recovers_mixture_among_distractors():
@@ -105,18 +113,48 @@ def test_donor_weights_end_to_end_recovers_mixture():
 
 
 def test_batch_matches_single_problem_solver():
-    """The batched solver the study runs must equal the single-problem form it documents."""
+    """The batched solver must equal the single-problem form.
+
+    The fixture is deliberately HETEROGENEOUS in scale and conditioning across the batch:
+    the solver takes a per-problem step size from each Gram's own top eigenvalue, and a
+    regression to one shared step (e.g. a batch max) is invisible on a homogeneous
+    fixture but wrecks the low-scale problems here.
+    """
     rng = np.random.default_rng(13)
     ys, ds = [], []
-    for _ in range(6):
-        d = rng.normal(0, 0.02, (120, 12))
+    for i in range(6):
+        scale = 10.0 ** (i - 3)                       # 1e-3 .. 1e2, six decades
+        d = rng.normal(0, 0.02 * scale, (120, 12))
+        if i % 2:                                     # half get a dominant common factor
+            d += rng.normal(0, 0.05 * scale, (120, 1))
         w = rng.dirichlet(np.ones(12))
-        ys.append(d @ w + rng.normal(0, 0.001, 120))
+        ys.append(d @ w + rng.normal(0, 0.001 * scale, 120))
         ds.append(d)
     batch = sc.solve_simplex_ls_batch(np.array(ys), np.array(ds))
     for i in range(6):
         one = sc.solve_simplex_ls(ys[i], ds[i])
         assert np.allclose(batch[i], one, atol=1e-8), (i, batch[i] - one)
+
+
+def test_vol_band_screens_and_counts_its_own_fallback():
+    """VOL_BAND is a pre-registered screen, so it must (a) actually exclude out-of-band
+    donors and (b) COUNT the times it disengages — a screen that silently turns itself
+    off is a screen the study cannot claim it applied."""
+    rng = np.random.default_rng(163)
+    t_pre = 120
+    y = rng.normal(0, 0.02, t_pre)
+    inband = rng.normal(0, 0.02, (t_pre, 6))            # ~1.0x treated vol
+    wild = rng.normal(0, 0.40, (t_pre, 6))              # ~20x -> outside 0.5-2.0x
+    d = np.column_stack([inband, wild])
+    sel = sc.prescreen_donors(y, d, m=12)
+    assert set(sel.tolist()) <= set(range(6)), (
+        f"vol band admitted out-of-band donors: {sel}")
+
+    before = int(sc.VOL_BAND_FALLBACKS[0])
+    only_wild = sc.prescreen_donors(y, wild, m=3)        # band empties the pool
+    assert only_wild.size == 3, "fallback should still return donors"
+    assert int(sc.VOL_BAND_FALLBACKS[0]) == before + 1, (
+        "the vol band disengaged without incrementing its counter")
 
 
 # ------------------------------------------------------------------ (b) injected treatment
@@ -323,6 +361,9 @@ def test_weights_are_on_the_simplex():
 
 
 def test_projection_is_an_exact_simplex_projection():
+    """Feasibility (sums to 1, non-negative) is satisfied by ANY simplex point — a
+    uniform 1/n would pass it. What makes this a PROJECTION is minimal distance, so that
+    is what is asserted."""
     rng = np.random.default_rng(43)
     v = rng.normal(0, 3.0, (25, 9))
     p = sc.project_to_simplex(v)
@@ -331,6 +372,15 @@ def test_projection_is_an_exact_simplex_projection():
     # a point already on the simplex is its own projection
     q = rng.dirichlet(np.ones(9), size=25)
     assert np.allclose(sc.project_to_simplex(q), q, atol=1e-12)
+    # OPTIMALITY: no other feasible point is closer to v than the projection
+    d_proj = ((p - v) ** 2).sum(axis=1)
+    for _ in range(200):
+        alt = rng.dirichlet(np.ones(9), size=25)
+        assert (d_proj <= ((alt - v) ** 2).sum(axis=1) + 1e-12).all(), (
+            "a random feasible point beat the 'projection' — it is not minimal-distance")
+    # and it beats the trivial uniform point, which feasibility alone would accept
+    uni = np.full_like(v, 1.0 / v.shape[1])
+    assert (d_proj <= ((uni - v) ** 2).sum(axis=1) + 1e-12).all()
 
 
 def test_matched_k_is_top_k_of_the_prescreen():
@@ -349,11 +399,17 @@ def test_matched_k_is_top_k_of_the_prescreen():
 
 
 def test_counterfactual_renormalizes_over_live_donors():
-    """A halted donor must not silently shrink the counterfactual toward zero."""
-    w = np.array([0.5, 0.5])
-    r = np.array([[0.02, 0.02], [0.04, np.nan]])
+    """A halted donor must not silently shrink the counterfactual toward zero.
+
+    ASYMMETRIC weights and DIFFERENT per-donor returns on purpose: with w=[0.5,0.5] and
+    equal returns the day-0 value is invariant to swapping the weights, so the test could
+    not see a transposed weight vector at all.
+    """
+    w = np.array([0.6, 0.4])
+    r = np.array([[0.02, 0.07], [0.04, np.nan]])
     path = sc.counterfactual_path(w, r)
-    assert np.isclose(path[0], 0.02)
+    assert np.isclose(path[0], 0.6 * 0.02 + 0.4 * 0.07), "weights applied wrongly"
+    assert not np.isclose(path[0], 0.4 * 0.02 + 0.6 * 0.07), "weights are transposed"
     assert np.isclose(path[1], 0.04), "NaN donor dragged the counterfactual down"
 
 
@@ -533,6 +589,73 @@ def test_donor_admission_reads_the_pre_window_end_not_the_event_day():
     assert base["_pool_mean"] - est["_pool_mean"] == 55
 
 
+def test_harness_recovers_a_known_mixture_end_to_end():
+    """THE harness-level pin: both pre-registered estimators, through `estimate_events`.
+
+    Everything else in this suite tests the module in isolation, so the harness's own
+    weight construction was unpinned — the reviewer replaced `w_sc` with "put all weight
+    on the first donor" (the exact construction synthetic control exists to replace) and
+    `matched_k` with the WORST 20 donors, and 31/31 still passed.
+
+    Fixture: the treated name IS a known convex mixture of two donors, plus 60 unrelated
+    names. A correct harness must put ~all sc_nnls weight on those two in the registered
+    proportions, and must fill matched_k from the TOP of the correlation ranking (where
+    the two ingredients sit), not the bottom.
+    """
+    rng = np.random.default_rng(20260806)
+    n_sess, n_junk = 600, 60
+    a = rng.normal(0.0, 0.014, n_sess)
+    b = rng.normal(0.0, 0.014, n_sess)
+    junk = rng.normal(0.0, 0.014, (n_sess, n_junk))
+    treated = 0.6 * a + 0.4 * b
+    ret = np.column_stack([treated, a, b, junk])          # col 0 treated, 1=A, 2=B
+    ret[0, :] = np.nan
+    close = 100.0 * np.cumprod(1.0 + np.nan_to_num(ret), axis=0)
+    n_names = ret.shape[1]
+    panel = Panel(pd.bdate_range("2021-01-04", periods=n_sess),
+                  [f"N{i:03d}" for i in range(n_names)], ret,
+                  np.full((n_sess, n_names), 50e6), close, raw_close=close.copy())
+    ev = pd.DataFrame({"ticker": ["N000"], "col": [0], "sess": [300],
+                       "date": [panel.dates[300]]})
+
+    est = estimate_events(panel, ev["col"].to_numpy(), ev["sess"].to_numpy(),
+                          contamination_map(panel, ev, sc.EVENT_EXCLUSION))
+    assert est["_n_live"] == 1
+    w = est["_weights"]
+    cols_all = np.arange(n_names)
+
+    # --- sc_nnls must recover the mixture, in the harness's own donor ordering
+    sel_sc = np.argsort(-w["sc_nnls"][0])[:2]
+    recovered = np.sort(w["sc_nnls"][0][sel_sc])[::-1]
+    assert np.allclose(recovered, [0.6, 0.4], atol=0.02), (
+        f"sc_nnls did not recover the 0.6/0.4 mixture: top weights {recovered}")
+    assert w["sc_nnls"][0].sum() > 0.999
+    assert float(np.sort(w["sc_nnls"][0])[::-1][2:].sum()) < 0.02, (
+        "sc_nnls smeared weight onto donors that are not in the mixture")
+
+    # --- the two mixture ingredients must be the top-2 PANEL columns the harness picked
+    sel = est["_sel_cols"][0]                       # panel columns, in rank order
+    assert set(sel[sel_sc].tolist()) == {1, 2}, (
+        f"sc_nnls put its weight on panel columns {sel[sel_sc]}, not the mixture (1, 2)")
+
+    # --- matched_k must be equal-weight over exactly MATCHED_K donors, drawn from the
+    #     TOP of the ranking: the two real ingredients must be among them.
+    nz = np.flatnonzero(w["matched_k"][0] > 0)
+    assert nz.size == sc.MATCHED_K
+    assert np.allclose(w["matched_k"][0][nz], 1.0 / sc.MATCHED_K)
+    assert set(nz.tolist()) == set(range(sc.MATCHED_K)), (
+        "matched_k was not filled from the TOP of the pre-screen ranking")
+    assert {1, 2} <= set(sel[nz].tolist()), (
+        "matched_k's equal-weight basket excludes the two donors the treated name is "
+        "actually made of")
+    del cols_all
+
+    # and the counterfactual it builds must actually track: near-zero effect on a
+    # fixture where the treated name is exactly reproducible from its donors
+    day0 = est["sc_nnls"][0, est["_keys"].index("0")]
+    assert abs(day0) < 1e-6, f"exact mixture should give ~0 effect, got {day0}"
+
+
 def test_benchmark_arm_is_treated_minus_benchmark():
     """PC-3 compares SC's placebo dispersion against the INCUMBENT arm, so the incumbent
     arm has to be right. Two pins: a name benchmarked against its own return must score
@@ -552,6 +675,34 @@ def test_benchmark_arm_is_treated_minus_benchmark():
                            contamination_map(shocked, ev, sc.EVENT_EXCLUSION),
                            benchmarks={"SELF": own})
     assert abs(est2["SELF"][0, est2["_keys"].index("0")] - 0.05) < 1e-12
+
+
+def test_price_floor_reads_the_raw_close_not_the_back_adjusted_one():
+    """AM-11. The floor must screen on the close AS PRINTED.
+
+    `split_adjust` back-multiplies prior bars by a factor detected LATER in the series,
+    so an adjusted-price floor is not point-in-time and inverts the selection: a name
+    that printed $0.60 and later reverse-split 1:10 reads as $6.00 back-adjusted and
+    would be ADMITTED — which is exactly the sub-$1 quantisation-noise donor the floor
+    exists to remove.
+
+    A fixture where raw and adjusted closes are equal cannot see this at all (both
+    branches agree), so this one makes them diverge: 55 donors print below the floor
+    while their back-adjusted series sits comfortably above it.
+    """
+    panel = _factor_panel(n_names=140, n_sess=600, seed=151)
+    raw = panel.raw_close.copy()
+    raw[:, 5:60] = 0.60                                  # printed sub-$1 ...
+    assert (panel.close[:, 5:60] > PRICE_MIN).all()      # ... but adjusted well above
+    p2 = Panel(panel.dates, panel.tickers, panel.ret, panel.dvol20, panel.close,
+               raw_close=raw)
+    ev = _events([1], [300])
+    cm = contamination_map(p2, ev, sc.EVENT_EXCLUSION)
+    est = estimate_events(p2, ev["col"].to_numpy(), ev["sess"].to_numpy(), cm)
+    base = estimate_events(panel, ev["col"].to_numpy(), ev["sess"].to_numpy(), cm)
+    assert base["_pool_mean"] - est["_pool_mean"] == 55, (
+        "the $5 floor did not read the raw close — 55 sub-$1 donors were admitted on "
+        "their back-adjusted price")
 
 
 def test_estimate_events_refuses_a_thin_donor_pool():
