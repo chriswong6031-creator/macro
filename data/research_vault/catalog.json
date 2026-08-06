@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T11:25:31.493537+00:00",
-  "count": 868,
+  "generated_at": "2026-08-06T11:40:37.664074+00:00",
+  "count": 869,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -57,6 +57,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-eglyaiphi8v-4403b5",
+      "title": "Expedia Group (EXPE) Q2'26 Earnings Review Strong Execution and B2B Momentum Drive Beat and Raise Quarter",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T11:17:50Z",
+      "summary_points": [
+        "**Q2 Beat & B2B Momentum**: Q2 Gross Bookings, Revenue, Adj.",
+        "EBITDA exceed guidance (+196bps YoY margin expansion); B2B segment achieves 20th consecutive double-digit growth; strategic M&A and $200m share repurchases drive execution; price target raised to $370 (15.7% upside).",
+        "**Growth & Margin Expansion**: 12/26E forecasts 88.8% EPS growth (vs 9.7% in 12/25) and EBIT margin expanding to 17.5% (from 12.7%), signaling strong operational leverage and margin expansion.",
+        "**Valuation Update**: Goldman Sachs raises PT to $370 (from $330) using 12.0x EV/EBITDA and 16.0x EV/FCF-SBC on NTM+1/4 estimates, reflecting robust growth premium (EXPE trading at 17.0x P/E).",
+        "**Key Risks**: Slower travel demand from macro headwinds (Europe), loss of North America market share, industry competition pressuring margins, and disappointing shareholder returns limiting catalysts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-zxmieh2imoh-caf727",
       "title": "JPM Flows Liquidity TM",
