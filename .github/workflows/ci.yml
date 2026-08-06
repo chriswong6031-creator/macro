@@ -539,6 +539,9 @@ on:
       - "tests/fixtures/capital_structure/**"
       # LHB-W2b 8-K item expansion: test-only edits must still trigger the job
       - "tests/test_edgar_8k_items.py"
+      # W2-A fundamentals universe widening: test-only edits must still trigger the job
+      # (collectors/** already covers the collector itself)
+      - "tests/test_edgar_universe_widening.py"
       # LHB-W3 A1 falsifier packet: engine + builder + admin block + test re-run together.
       - "engine/falsifier_packet.py"
       - "scripts/research/build_falsifier_packets.py"
