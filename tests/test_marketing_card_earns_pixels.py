@@ -728,35 +728,84 @@ def test_dispatch_does_not_blanket_drop_every_card(tmp_path, monkeypatch):
     assert not (item.get("source") or {}).get("card_withheld_for_value")
 
 
-def test_dispatch_scores_the_hero_the_renderer_actually_draws():
+def _stub_renderer(monkeypatch, *, hero: str):
+    """Force the renderer's FIT REPORT to say it drew `hero`, and nothing else.
+
+    The producer's own `card_headline` is untouched, so the only thing that moves
+    between two runs of the same item is what the card is reported to have DRAWN
+    — which is exactly the variable the gate is supposed to read.
+    """
+    from engine.marketing import chart_render
+
+    def _render(*_a, fit=None, **_kw):
+        if isinstance(fit, dict):
+            fit["headline_drawn"] = hero
+            fit["summary_drawn"] = ""      # hero-only, so the hero decides alone
+            fit["summary_source_chars"] = 0
+            fit["summary_card_chars"] = 0
+            fit["summary_chars_dropped"] = 0
+        return '<svg viewBox="0 0 1080 1080"><text>stub</text></svg>'
+
+    monkeypatch.setattr(chart_render, "render_breaking_card", _render)
+
+
+def test_dispatch_scores_the_hero_the_renderer_actually_draws(monkeypatch):
     """press_lane passed the RAW wire headline while the card drew card_headline.
 
     The raw field can be an entire relayed post; the hero is the W4g
-    sentence-bounded derivation of it. Scoring the raw field asked the gate a
-    question about a string no reader ever saw.
+    sentence-bounded derivation of it, and the renderer may place less of even
+    that. Scoring anything but the drawn string asks the gate a question about
+    text no reader ever saw.
+
+    BEHAVIOURAL, NOT A SOURCE SLICE (round-3 review, finding 4). The previous
+    version sliced run_press_tick's source between `card_earns_attachment(` and
+    its matching close paren and asserted `'card_headline' in call`. The reviewer
+    MUTATION-VERIFIED it vacuous: reverting the hero argument to the raw
+    `headline` left it GREEN, because the sliced text still contained the in-call
+    comment describing the argument. That is the exact shape this file rejects
+    at test_every_card_drawing_lane_consults_the_gate ("a first version grepped
+    the file text and passed with the gate's import deleted").
+
+    THE PIN: run the SAME item twice through the real tick, changing only what
+    the fit report says the card DREW. An additive hero must keep the card; a
+    hero that is the post again must drop it. A lane reading the producer's
+    pre-render string cannot tell the two runs apart and fails one of them —
+    which is what the A/B replay could not show, since on the live corpus the
+    drawn and producer heroes agreed on all 75 shipped items.
+
+    MUTATION (verified): replace the hero argument in press_lane.run_press_tick
+    with the raw `headline` and the restating arm fails — the card is kept.
     """
-    import inspect
-
-    from engine.marketing import press_lane
-
-    src = inspect.getsource(press_lane.run_press_tick)
-    start = src.index("card_earns_attachment(")
-    # Walk to the matching close paren — the arguments contain nested calls.
-    depth = 0
-    for i in range(start, len(src)):
-        if src[i] == "(":
-            depth += 1
-        elif src[i] == ")":
-            depth -= 1
-            if depth == 0:
-                break
-    call = src[start:i + 1]
-    assert "card_headline" in call, (
-        "the dispatch gate is not scoring the drawn hero"
+    item = _relay_item(
+        "drawn-hero-1",
+        "Gold rose about 0.6% to around $4,070 an ounce after fresh Iran talks",
+        "Gold rose about 0.6% to around $4,070 an ounce after fresh Iran talks",
     )
-    assert "card_summary_drawn" in call, (
-        "the dispatch gate is not scoring the drawn body"
-    )
+
+    # ── ARM A: the card drew a hero that says far more than the post ─────────
+    _stub_renderer(monkeypatch, hero=(
+        "Gold rose about 0.6% to around $4,070 an ounce after fresh Iran talks, "
+        "extending a run that has added roughly 14% since the June low while "
+        "real yields slipped and central-bank buying stayed heavy"
+    ))
+    kept = [e for e in _press_tick([item])["emitted"] if e.get("kind") == "breaking"]
+    assert kept, "the additive-hero arm did not emit at all, so nothing is pinned"
+    assert kept[0].get("media"), (
+        "a card whose DRAWN hero is strictly additive was dropped")
+    post_text = str(kept[0].get("text") or "")
+    assert post_text, "the emission carried no text to compare against"
+
+    # ── ARM B: same item, same producer hero — the card drew the POST ────────
+    _stub_renderer(monkeypatch, hero=post_text)
+    dropped = [e for e in _press_tick([item])["emitted"]
+               if e.get("kind") == "breaking"]
+    assert dropped, (
+        "the restating-hero arm deleted the post instead of slimming it")
+    assert dropped[0].get("media") in ([], None), (
+        "the gate scored a hero the card did not draw: the DRAWN hero is the "
+        "post verbatim and the card was kept anyway")
+    assert (dropped[0].get("source") or {}).get("card_dropped"), \
+        "no card_dropped reason recorded on the emission"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1145,35 +1194,165 @@ def test_long_headline_fills_the_box_rather_than_clipping():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Defect 7 — NEVER BRAND THE SOURCE (operator law 2026-08-05)
+# Defect 7 — NEVER BRAND THE SOURCE (operator law 2026-08-05), narrowed to
+# "name real newswires only" (operator ruling 2026-08-06)
 # ─────────────────────────────────────────────────────────────────────────────
 
-@pytest.mark.parametrize("outlet", [
-    # The three that actually shipped...
-    "ZeroHedge", "CNBC", "ForexLive",
-    # ...and the mastheads the old denylist was equally powerless against.
-    "Reuters", "Bloomberg", "The Wall Street Journal", "Financial Times",
-])
-def test_a_chip_never_carries_a_publication_name(outlet):
-    """THE PIN FOR THE LIVE DEFECT, on real outlets.
+def _chip_cfg() -> dict:
+    """The OPERATOR'S OWN allowlist, read from config — never a test fixture.
 
-    REWRITTEN 2026-08-05. The previous version of this test asserted the
-    OPPOSITE law — that "Federal Reserve · OFFICIAL SOURCE" belongs in the chip
-    because it is "two facts" — and it passed on a fixture ("Newswire") that the
-    six-entry generic-name denylist could actually match. No test in the suite
-    ever asked what happened to a REAL masthead, which is why three of them
-    reached the timeline in our own card art.
-
-    We are a markets desk: another publication's name in our card advertises
-    them and claims a relationship with a newsroom we do not have. The tier
-    survives — the law kills the NAME, not the admission.
+    The ruling put the list in config/press_sources.yml precisely so the operator
+    can move a masthead without a deploy. A test that invented its own list would
+    pin the mechanism and leave the live answer unmeasured, which is how "the
+    suppressor never once fired on the case it was needed for" happened.
     """
-    for tier in ("wire", "official", "aggregator"):
+    from pathlib import Path
+
+    import yaml
+
+    root = Path(__file__).resolve().parent.parent
+    cfg = yaml.safe_load((root / "config" / "press_sources.yml").read_text())
+    return (cfg or {}).get("citation") or {}
+
+
+def _chip_text(svg: str) -> str:
+    """The provenance chip's own text, not "anywhere in the SVG". "" = seal only.
+
+    A whole-document substring is NOT a pin for this law and reads as one: the
+    deterministic fallback summary ends "— {source_name}", so a card whose chip
+    correctly shows "WIRE SERVICE" alone still contains the masthead in its BODY.
+    A first cut of test_the_press_lane_hands_the_renderer_the_operator_list
+    asserted `"CNBC" in svg` and passed with the config unwired for exactly that
+    reason. The chip is the only element carrying a tier caption, so that is what
+    identifies it.
+    """
+    for body in re.findall(r"<text[^>]*>(.*?)</text>", svg, re.S):
+        if "WIRE SERVICE" in body or "OFFICIAL SOURCE" in body:
+            return body
+    return ""
+
+
+@pytest.mark.parametrize("outlet", [
+    # THE TWO THE OPERATOR NAMED as still-unnamed after the narrowing. Both are
+    # configured `tier: wire` in config/marketing.yml breaking.sources, so the
+    # TIER cannot be what refuses them — only the allowlist can.
+    "ZeroHedge", "ForexLive",
+    # ...and the aggregators/relays the 08-05 blanket law was written against.
+    "Investing.com", "SomeBlog", "Newswire",
+])
+def test_a_chip_never_carries_an_unadmitted_name(outlet):
+    """THE PIN FOR THE LIVE DEFECT, on the real outlets, after the narrowing.
+
+    HISTORY, because this test has now asserted three different laws and the
+    next reader needs to know which one is live. Before 2026-08-05 it required
+    "Federal Reserve · OFFICIAL SOURCE" and passed on a fixture ("Newswire") that
+    the six-entry generic-name denylist could actually match — no test ever asked
+    what happened to a REAL masthead, which is how three of them reached the
+    timeline in our own card art. On 2026-08-05 the operator killed the name
+    outright and this test asserted that no name is ever drawn. On 2026-08-06 the
+    operator narrowed that: "name real newswires only".
+
+    So the law is now DEFAULT-DENY, not silence. A publication a reader does not
+    gain from seeing stays off our card art; a real newswire may be named. These
+    are the ones that must still be refused, and the tier is never what refuses
+    them — ZeroHedge and ForexLive are configured `wire`, the same tier as CNBC.
+    """
+    cfg = _chip_cfg()
+    for tier in ("wire", "official", "aggregator", "mirror", "x_relay"):
         svg = render_breaking_card(
-            GOLD_HEAD, outlet, tier, "2026-08-05T00:12:02Z")
+            GOLD_HEAD, outlet, tier, "2026-08-05T00:12:02Z", chip_cfg=cfg)
         assert outlet not in svg, (
             f"{outlet!r} was branded onto a {tier} card"
         )
+
+
+@pytest.mark.parametrize("outlet,tier,caption", [
+    # THE OPERATOR'S OWN EXAMPLE, verbatim: "Federal Reserve · OFFICIAL SOURCE
+    # is two facts and is lawful".
+    ("Federal Reserve", "official", "OFFICIAL SOURCE"),
+    ("Bureau of Labor Statistics", "official", "OFFICIAL SOURCE"),
+    # THE LIVE CASE THE 08-05 BLANKET LAW TOOK DOWN WITH THE OTHER TWO.
+    ("CNBC", "wire", "WIRE SERVICE"),
+    ("Reuters", "wire", "WIRE SERVICE"),
+    ("MarketWatch", "wire", "WIRE SERVICE"),
+])
+def test_a_real_newswire_or_primary_source_is_named(outlet, tier, caption):
+    """The other half of the ruling: an admitted source IS named, beside its tier.
+
+    MUTATION: delete the source's line from `citation.card_chip` in
+    config/press_sources.yml and this fails — which is the point of putting the
+    list in config: the operator's edit is the behaviour, with no deploy.
+    """
+    svg = render_breaking_card(
+        GOLD_HEAD, outlet, tier, "2026-08-05T00:12:02Z", chip_cfg=_chip_cfg())
+    chip = _chip_text(svg)
+    assert chip == f"{outlet} · {caption}", (
+        f"{outlet!r} is on the allowlist; the chip read {chip!r}")
+
+
+def test_the_chip_allowlist_is_default_deny():
+    """No config, no name — for the SAME sources the config would admit.
+
+    A policy whose fallback is "print it" fails open on exactly the surface the
+    operator has now ruled on twice. This drives the two arms against each other:
+    the same call, the only difference being whether the operator's list was
+    handed to the renderer.
+
+    MUTATION: make card_chip_name return the name when `cfg` is None/absent and
+    both assertions here fail.
+    """
+    for outlet, tier in (("CNBC", "wire"), ("Federal Reserve", "official")):
+        bare = render_breaking_card(
+            GOLD_HEAD, outlet, tier, "2026-08-05T00:12:02Z")
+        armed = render_breaking_card(
+            GOLD_HEAD, outlet, tier, "2026-08-05T00:12:02Z", chip_cfg=_chip_cfg())
+        assert outlet not in _chip_text(bare), (
+            f"{outlet!r} was drawn with no allowlist in hand")
+        assert outlet in _chip_text(armed), (
+            "the config arm is not actually admitting it")
+
+
+@pytest.mark.parametrize("name", ["Not-CNBC", "Reuters-style", "cnbc.com",
+                                  "The Reuters Institute"])
+def test_the_chip_allowlist_never_matches_a_substring(name):
+    """Exact, lower-cased, whole-string — the failure mode _MARQUEE_NAMES documents.
+
+    A substring match would let any relay promote itself by putting a masthead
+    in its own display name, which is the same laundering the tier weights exist
+    to stop.
+    """
+    svg = render_breaking_card(
+        GOLD_HEAD, name, "wire", "2026-08-05T00:12:02Z", chip_cfg=_chip_cfg())
+    assert name not in svg
+    assert "WIRE SERVICE" in svg
+
+
+def test_our_own_desks_are_not_on_the_allowlist():
+    """DEFAULT-DENY COVERS THIS WITHOUT A CARVE-OUT, and that is the design.
+
+    Round 3 deleted an own-desk allowlist for being unreachable (it matched bare
+    X handles against a display-name field, so no production value could hit it)
+    and the ruling says not to revive it. With the policy default-deny, our own
+    names are refused by the same rule that refuses every unlisted source — no
+    special case to keep in sync, and no way for one to rot open.
+
+    It also covers the earnings lane's "Earnings call transcript", which is a
+    description of an artefact rather than a masthead: a card that signs itself
+    is not a citation.
+    """
+    cfg = _chip_cfg()
+    lists = (cfg.get("card_chip") or {})
+    flat = {str(x).strip().lower()
+            for key in ("official", "newswire")
+            for x in (lists.get(key) or [])}
+    for ours in ("mastermind", "mastermindx001", "@mastermindx001",
+                 "earnings call transcript"):
+        assert ours not in flat, f"{ours!r} is on the card-chip allowlist"
+    svg = render_breaking_card(
+        "$AAPL Q3 FY2026 call: confident tone.", "Earnings call transcript",
+        "official", "2026-08-05T00:12:02Z", eyebrow="EARNINGS CALL", chip_cfg=cfg)
+    assert "Earnings call transcript" not in svg
+    assert "OFFICIAL SOURCE" in svg
 
 
 def test_the_chip_keeps_the_tier_admission():
@@ -1240,15 +1419,22 @@ def test_a_transcript_card_is_not_captioned_as_a_relay():
     assert "OFFICIAL SOURCE" in svg
 
 
-def test_the_chip_label_takes_no_citation_and_no_name():
-    """The citation kwarg and the own-desk allowlist are GONE, not dormant.
+def test_the_chip_label_takes_no_per_item_citation_ruling():
+    """The `citation` kwarg and the own-desk allowlist are GONE, not dormant.
 
     Both were dead weight the review measured: deleting the citation branch
     changed no test's answer (it could only return the tier, which is what the
-    function returns anyway), and the own-desk allowlist compared bare X handles
+    function returned anyway), and the own-desk allowlist compared bare X handles
     against a display-name field, so no production value could match it. A
     dormant special case in a law-bearing function is a place for the law to
-    leak back out; the law is now the whole function body.
+    leak back out.
+
+    `citation_cfg`/`chip_cfg` ARE NOT THAT KWARG COMING BACK. The dead one
+    carried a per-ITEM source_authority RULING made for the post body; these
+    carry the OPERATOR'S CONFIG LIST, they have a live consumer, and reverting
+    them fails test_a_real_newswire_or_primary_source_is_named. The distinction
+    that matters here is per-item ruling vs standing policy: a policy the
+    operator edits is not a field kept "in case".
     """
     import inspect
     from engine.marketing import chart_render
@@ -1265,10 +1451,65 @@ def test_the_chip_label_takes_no_citation_and_no_name():
     for fn in (_break_chip_label, chart_render.render_breaking_card,
                build_breaking_payload):
         assert "citation" not in inspect.signature(fn).parameters, fn.__name__
-    # Every source_name, ours or theirs, resolves to the tier and nothing else.
+    # ...and the chip config rung is live at EVERY link of that chain, which is
+    # what stops it becoming the dead kwarg it replaced.
+    assert "chip_cfg" in inspect.signature(_break_chip_label).parameters
+    assert "chip_cfg" in inspect.signature(chart_render.render_breaking_card).parameters
+    assert "citation_cfg" in inspect.signature(build_breaking_payload).parameters
+    # With no list in hand, every source_name — ours or theirs, admitted
+    # elsewhere or not — resolves to the tier and nothing else.
     for name in ("Reuters", "CNBC", "mastermindx001", "@mastermindx001", ""):
         assert _break_chip_label(name, "WIRE SERVICE") == "WIRE SERVICE"
         assert _break_chip_label(name, "") == ""
+    # ...and an EMPTY tier label never carries a name on its own, however
+    # admitted the source is: a masthead floating with no grade beside it is the
+    # branding the 2026-08-05 law was written against.
+    assert _break_chip_label("Reuters", "", chip_cfg=_chip_cfg()) == ""
+
+
+def test_the_press_lane_hands_the_renderer_the_operator_list(monkeypatch):
+    """THE CHAIN IS WIRED, driven rather than grepped.
+
+    The allowlist can be perfect and the card still unbranded if press_lane never
+    passes it — an imported policy that is never consulted is the failure mode
+    this file keeps re-learning. This drives the REAL tick on a CNBC-tier item
+    and reads the SVG the REAL renderer produced inside it, so nothing about the
+    assertion can be satisfied by the test supplying the config itself.
+
+    MUTATION: drop `citation_cfg=citation_cfg` from press_lane's
+    build_breaking_payload call and the CNBC assertion fails ("WIRE SERVICE" with
+    no name). Dropping `chip_cfg=citation_cfg` from build_breaking_payload's
+    card_kwargs fails it the same way.
+    """
+    from engine.marketing import chart_render
+
+    drawn: list[str] = []
+    real = chart_render.render_breaking_card
+
+    def _spy(*a, **kw):
+        svg = real(*a, **kw)
+        drawn.append(svg)
+        return svg
+
+    monkeypatch.setattr(chart_render, "render_breaking_card", _spy)
+
+    item = _relay_item(
+        "chip-wired-1",
+        "US CPI cooled to 2.4% in July, versus 2.6% consensus and 2.7% prior",
+        "The July print came in under consensus, with core easing for a third "
+        "month and shelter decelerating.",
+    )
+    item["source"] = "cnbc_top"
+    item["source_name"] = "CNBC"
+    item["source_tier"] = "wire"
+    item["url"] = "https://www.cnbc.com/2026/08/03/cpi.html"
+    _press_tick([item])
+
+    assert drawn, "the lane rendered no card at all, so the chip is untested"
+    chips = [_chip_text(svg) for svg in drawn]
+    assert chips == ["CNBC · WIRE SERVICE"] * len(chips), (
+        "the lane drew its card without the operator's allowlist in hand — the "
+        f"chip read {chips!r}")
 
 
 def test_anti_laundering_survives_the_redesign():
@@ -1400,11 +1641,18 @@ def test_caps_are_measured_wider_than_lowercase():
 # calibration record. A WIRE RELAY'S PROOF IS ITS SOURCE, not a picture of its
 # own text — so the withheld proof rung is gone and the repaired citation rung
 # (press_lane read provenance["url"], build_breaking_payload writes
-# "source_url") carries these posts. MEASURED before committing to it: 75/75
-# (100%) of the press-lane emissions in data/marketing/outbox/items.jsonl carry
-# an http(s) source_url, 6 of them are carried by that rung ALONE, and 0 are
-# held for want of proof. A post with no figure, no link and no picture is held,
-# and that is the gate working.
+# "source_url") carries these posts.
+#
+# MEASURED, WITH THE METHOD STATED (re-run 2026-08-06; the earlier figure of "6
+# carried by that rung ALONE" carried no method and did not reproduce). Read
+# data/marketing/outbox/items.jsonl, keep source.lane == "press" (75 rows), and
+# for each row re-evaluate value_gate with has_media=False — the withheld-card
+# world — twice: once with the row's own source.source_url as `citation`, once
+# with citation="". Splitting the persisted `text` on outbox.compose_text's
+# "\n\n" gives the headline/body pair the gate saw. RESULT: 75/75 (100%) carry an
+# http(s) source_url; 15 reach `hard` ONLY with the citation, i.e. the repaired
+# rung is what carries them; 0 are held for want of proof. A post with no figure,
+# no link and no picture is held, and that is the gate working.
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _kill_fixture(proof: str = "none", cashtag: bool = True) -> list[dict]:
@@ -1450,8 +1698,15 @@ def _kill_fixture(proof: str = "none", cashtag: bool = True) -> list[dict]:
     }]
 
 
-def _emitting_tick(items: list[dict]) -> dict:
-    """run_press_tick at PRODUCTION config — no floors relaxed."""
+def _emitting_tick(items: list[dict], *, state: dict | None = None,
+                   seen: set | None = None) -> dict:
+    """run_press_tick at PRODUCTION config — no floors relaxed.
+
+    `state` and `seen` default to fresh objects, i.e. one isolated tick. Pass
+    the SAME objects across calls to model consecutive daemon ticks: the
+    transient-refusal retry tally lives in `state`, so a bound on it is
+    unreachable — and any test of one vacuous — with a per-tick dict.
+    """
     from datetime import datetime, timezone
     from pathlib import Path
 
@@ -1465,7 +1720,9 @@ def _emitting_tick(items: list[dict]) -> dict:
         now=datetime(2026, 7, 27, 14, 0, tzinfo=timezone.utc),
         cfg=yaml.safe_load((root / "config" / "marketing.yml").read_text()),
         press_cfg=yaml.safe_load((root / "config" / "press_sources.yml").read_text()),
-        state={}, seen_ids=set(), dry_run=True,
+        state={} if state is None else state,
+        seen_ids=set() if seen is None else seen,
+        dry_run=True,
     )
 
 
@@ -1735,6 +1992,252 @@ def test_the_withheld_exemption_does_not_reach_a_chart_bearing_kind():
         it = {"kind": kind, "text": text, "media": [], "source": dict(flagged)}
         assert mp._bare_cashtag_post(it, cfg, []) == "$ALL $ERIE $TRV", (
             f"a {kind} item bought an exemption from the rule it exists under")
+    # NAMED EXPLICITLY, not only reached through the frozensets: `theme_list` and
+    # `mover` are the two kinds the 2026-07-30 outage actually shipped bare, and
+    # the operator's 2026-08-06 narrowing is scoped to leave them untouched. A
+    # loop over a set can go quiet if the set is edited; these two cannot.
+    for kind in ("theme_list", "mover"):
+        assert kind in mp._TICKER_ROLLUP_KINDS
+        it = {"kind": kind, "text": text, "media": [], "source": dict(flagged)}
+        assert mp._bare_cashtag_post(it, cfg, []) == "$ALL $ERIE $TRV", kind
+
+
+def test_a_real_press_emission_relabelled_to_a_rollup_kind_is_still_quarantined():
+    """THE NARROWING PROVEN BOTH WAYS, on a REAL emitted item (operator 2026-08-06).
+
+    "Charts yes, text cards no." The wire flash ships; the price/rollup post does
+    not. The sibling above builds its item by hand, which pins the gate but not
+    the SHAPE the lane actually produces — so this takes the real emission from a
+    real tick (media=[], source.card_withheld_for_value=True, a live withheld
+    stamp no test wrote) and asks the REAL publisher gate the same question under
+    two kinds. Nothing changes but `kind`.
+
+    MUTATION: drop the kind check from
+    scripts/marketing_publisher._card_withheld_for_value and the rollup arms
+    return "" — the 2026-07-30 law would be standing down for the posts it was
+    written about.
+    """
+    import scripts.marketing_publisher as mp
+
+    res = _emitting_tick(_kill_fixture("digit"))
+    emitted = [e for e in res["emitted"] if e.get("kind") == "breaking"]
+    assert emitted, "nothing emitted, so the publisher gate is untested"
+    item = emitted[0]
+    assert "$AAPL" in item["text"], "the fixture stopped naming tickers"
+    assert (item.get("source") or {}).get("card_withheld_for_value") is True
+    cfg = {"media_enabled": True}
+
+    # (1) THE WIRE FLASH SHIPS. A card was drawn, measured and found to restate
+    #     the post; the operator ruled that a text card is a screenshot of the
+    #     post, not data, so withholding it is not shipping naked.
+    assert mp._bare_cashtag_post(item, cfg, []) == "", (
+        "the ratified wire-flash exemption stopped working")
+
+    # (2) THE SAME ITEM AS A PRICE/ROLLUP POST IS STILL QUARANTINED. Same text,
+    #     same withheld stamp, same empty media — only the kind moves.
+    for kind in ("theme_list", "mover", "signal", "chart", "watchlist", "receipt"):
+        relabelled = dict(item, kind=kind)
+        assert mp._bare_cashtag_post(relabelled, cfg, []) == "$AAPL $NVDA", (
+            f"a {kind} post bought the wire flash's exemption")
+
+
+def test_a_policy_refused_card_is_refused_at_the_lane_not_quarantined_downstream():
+    """THE FOURTH KILL PATH (round-3 review, finding 1).
+
+    press_lane's routing block tested `card_absent_reason == "render_degraded"`
+    alone. build_breaking_payload also produces "policy_refused" — a foreign
+    @handle reached a card param (_CardHandleLeak) — and that state fell straight
+    through to the emission with media=[] and NO withheld stamp. MEASURED by the
+    reviewer: the item was ENQUEUED and then TERMINALLY quarantined by
+    scripts/marketing_publisher._bare_cashtag_post ("$AAPL $NVDA"), i.e. the
+    branch's own citation repair relocated a lane-side refusal into the exact
+    2026-07-30 bare-cashtag signature it exists to prevent, burning a queue slot
+    and a quarantine record.
+
+    THE HONEST DISPOSITION, and why it is not the sibling's. A retry redraws the
+    IDENTICAL unlawful card from the identical stored item, so the transient lane
+    is wrong; but a publisher quarantine of the POST for a CARD policy fault is
+    also wrong — it records a copy violation the copy never committed and asks a
+    reviewer to approve text that was never in question. So the refusal is taken
+    at the LANE, non-transiently, named in the skip census.
+
+    MUTATION: drop `_ABSENT_POLICY_REFUSED` from press_lane's routing test and
+    the ticker arm emits again, with mp._bare_cashtag_post -> "$AAPL $NVDA".
+    """
+    import scripts.marketing_publisher as mp
+    from engine.marketing import breaking_summary as _bs
+    from engine.marketing.press_lane import _TRANSIENT_REFUSALS
+
+    orig = _bs._card_param_violations
+    _bs._card_param_violations = lambda _kw: [
+        "card param 'summary': source handle mention: '@FirstSquawk'"]
+    try:
+        ticker_res = _emitting_tick(_kill_fixture("url"))
+        prose_res = _emitting_tick(_kill_fixture("url", cashtag=False))
+    finally:
+        _bs._card_param_violations = orig
+
+    # (1) A ticker post whose card may not lawfully be drawn is refused HERE.
+    assert [e for e in ticker_res["emitted"] if e.get("kind") == "breaking"] == [], (
+        "a policy-refused card still bought a queue slot the publisher would "
+        "terminally quarantine")
+    rows = ticker_res.get("skipped") or []
+    assert [r.get("reason") for r in rows] == ["card_policy_refused"], rows
+    assert rows[0].get("violations") == ["$AAPL", "$NVDA"], rows
+
+    # ...and it is NOT retried: the redraw is the same unlawful card.
+    assert "card_policy_refused" not in _TRANSIENT_REFUSALS, (
+        "a policy refusal is being retried, which re-pays an LLM call to reach "
+        "the identical answer")
+    # The MIRROR-COLLAPSED emission key ("truth:strong"), which is what the seen
+    # ledger stores — not the feed id.
+    assert "truth:strong" in (ticker_res.get("_seen") or []), (
+        "the story was left unseen, so every tick will redraw the same "
+        f"unlawful card forever: {ticker_res.get('_seen')}")
+
+    # (2) THE NO-TICKER HALF STILL SHIPS, exactly as on the degraded sibling: the
+    #     fault is in the picture, and a post that owed nobody one is not
+    #     implicated by it.
+    emitted = [e for e in prose_res["emitted"] if e.get("kind") == "breaking"]
+    assert emitted, (
+        "a card policy fault deleted a post that owed nobody a picture: "
+        f"{[s.get('reason') for s in prose_res.get('skipped') or []]}")
+    assert emitted[0].get("media") in ([], None)
+    assert mp._bare_cashtag_post(emitted[0], {"media_enabled": True}, []) == ""
+
+
+def test_the_handle_leak_annotation_no_longer_promises_a_post(capsys):
+    """It said "card dropped, posting text-only" on a path that does not post.
+
+    The sibling degraded-render line was corrected for exactly this and this one
+    was missed (round-3 review, finding 1). A ticker post whose card is
+    policy-refused is REFUSED by press_lane; an annotation that promises the
+    reader a post is a false promise in the Actions summary, and it is the
+    operator-facing half of the same defect.
+
+    MUTATION: put "posting text-only" back in breaking_summary's handle-mention
+    print and this fails.
+    """
+    from engine.marketing import breaking_summary as _bs
+
+    orig = _bs._card_param_violations
+    _bs._card_param_violations = lambda _kw: [
+        "card param 'summary': source handle mention: '@FirstSquawk'"]
+    try:
+        _payload("US CPI cooled again in July", "Consensus was for a hold.")
+    finally:
+        _bs._card_param_violations = orig
+    lines = [ln for ln in capsys.readouterr().out.splitlines()
+             if "breaking-card-handle-mention" in ln]
+    assert lines, "the handle-leak path printed nothing at all"
+    for ln in lines:
+        assert ln.startswith("::warning title="), ln
+        assert "posting text-only" not in ln, (
+            "the annotation promises a post the dispatch then refuses")
+
+
+def test_a_deterministic_render_failure_gives_up_instead_of_retrying_forever():
+    """Review F6 — `card_render_degraded` had no give-up bound.
+
+    It joined _TRANSIENT_REFUSALS on the stated grounds of being "an ENVIRONMENT
+    fault, same class as a lost raster". What it actually names is
+    render_breaking_card's outer blanket `except Exception` around a
+    DETERMINISTIC pure-Python layout over the same stored strings, so an
+    unexpected glyph or a malformed ticker row raises identically on every tick:
+    the story was never marked seen, nothing bounded the retries, and each
+    attempt re-paid the summarize_item LLM call.
+
+    THE BOUND IS PER-REASON on purpose. `media_unhosted` stays unbounded — during
+    a real R2 outage every story is refused, and giving up would be a mass kill.
+
+    MUTATION: empty press_lane._TRANSIENT_GIVE_UP_AT and the bound assertion
+    fails; raise the bound to 999 and it fails too, because a give-up nobody
+    reaches inside a daemon's working life is the same as no give-up. (The test
+    reads the bound from the module rather than hard-coding 5 — the NUMBER is a
+    tunable, the existence and reachability of the bound are the law.)
+    """
+    from engine.marketing import chart_render
+    from engine.marketing.press_lane import (
+        _TRANSIENT_GIVE_UP_AT,
+        _TRANSIENT_REFUSALS,
+    )
+
+    assert "media_unhosted" not in _TRANSIENT_GIVE_UP_AT, (
+        "a genuine host outage now kills every story it touches")
+    bound = _TRANSIENT_GIVE_UP_AT.get("card_render_degraded")
+    assert bound and 1 < bound <= 10, (
+        "a deterministic renderer failure has no REACHABLE give-up bound: "
+        f"{bound!r}. Below 2 a single blip kills the story; above ~10 the story "
+        "is held and billed for hours, which is the defect this bound closes.")
+
+    def _boom(*_a, **_k):
+        raise RuntimeError("forced fail-soft")
+
+    orig = chart_render._bc_fit_headline
+    chart_render._bc_fit_headline = _boom
+    try:
+        # ONE PERSISTENT state dict across ticks — the retry tally lives in
+        # daemon state, so a per-tick dict would make the bound unreachable and
+        # the test vacuous.
+        state: dict = {}
+        seen: set = set()
+        results = [_emitting_tick(_kill_fixture("url"), state=state, seen=seen)
+                   for _ in range(bound)]
+    finally:
+        chart_render._bc_fit_headline = orig
+
+    for i, res in enumerate(results, start=1):
+        assert [r.get("reason") for r in res.get("skipped") or []] == \
+            ["card_render_degraded"], (i, res.get("skipped"))
+        assert "card_render_degraded" in _TRANSIENT_REFUSALS
+        # "truth:strong" is the MIRROR-COLLAPSED emission key the seen ledger
+        # stores; the feed id ("trumpstruth:strong") never appears in it.
+        story_seen = "truth:strong" in (res.get("_seen") or [])
+        if i < bound:
+            assert not story_seen, (
+                f"gave up after {i} ticks, before the bound of {bound} — a "
+                "raster blip now kills the story")
+        else:
+            assert story_seen, (
+                f"still retrying after {bound} identical failures: a "
+                "deterministic renderer bug holds the story and bills an LLM "
+                "call every tick")
+
+
+def test_the_held_class_is_countable_per_run(capsys):
+    """Operator ruling 2026-08-06 — HOLD THEM, and make the class countable.
+
+    "A post whose only value was a picture of its own text has nothing to say."
+    No surplus rung is invented to rescue it. What the operator asked for is a
+    COUNT, not an alarm, so the run prints one ::notice naming how many posts
+    were held with their card withheld.
+
+    RE-MEASURED ONCE (three figures had been quoted for this class): 4 of the 75
+    shipped press-lane emissions, 5.3%, counted from their persisted
+    source.value_gate.components.surplus — the record of what the gate actually
+    saw — as the rows whose ONLY true surplus key is `media`. The method is
+    stated at the emission site in press_lane; this pins the mechanism.
+
+    MUTATION: delete the `refusal["held_card_withheld"]` stamp in
+    press_lane._emit_outbox_item and the ::notice never prints.
+    """
+    res = _emitting_tick(_kill_fixture("none"))
+    assert [e for e in res["emitted"] if e.get("kind") == "breaking"] == []
+    lines = [ln for ln in capsys.readouterr().out.splitlines()
+             if "press-lane-held-card-withheld" in ln]
+    assert len(lines) == 1, lines
+    # HOUSE LAW: bare line-start annotation, never through a logger.
+    assert lines[0].startswith("::notice title=press-lane-held-card-withheld::")
+    assert "1 post(s) held" in lines[0], lines[0]
+    assert "gift:no_informational_surplus" in lines[0]
+
+
+def test_the_held_class_notice_is_silent_on_a_clean_run(capsys):
+    """A quiet tick stays quiet — a count that always prints is not a count."""
+    res = _emitting_tick(_kill_fixture("url"))
+    assert [e for e in res["emitted"] if e.get("kind") == "breaking"]
+    assert not [ln for ln in capsys.readouterr().out.splitlines()
+                if "press-lane-held-card-withheld" in ln]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1860,21 +2363,41 @@ def test_every_card_drawing_lane_judges_what_the_card_drew():
     future lane too: the gate's `summary` argument must read the render's fit
     report, not the producer's string.
 
+    IT ENUMERATES THE SAME CALL SET AS ITS SIBLING (round-3 review, finding 5).
+    This matched `ast.Name` only, while test_every_card_drawing_lane_consults_the
+    _gate collects `fn.id` AND `fn.attr` — so a lane written as
+    `breaking_summary.card_earns_attachment(post, card_headline, ...)` satisfied
+    the consults-the-gate pin and was completely INVISIBLE here, free to score
+    the producer's pre-render strings. Two structural guards that disagree about
+    what a call is leave the gap on whichever one enforces the newer law.
+
     MUTATION: pass `card_summary or ""` back to card_earns_attachment in
-    earnings_call_lane._media_for_event and this fails naming that file.
+    earnings_call_lane._media_for_event and this fails naming that file. SECOND
+    MUTATION (for the widening itself): rewrite either lane's call as a module
+    attribute with a producer-string hero and this still fails; before the fix it
+    passed.
     """
     import ast
     from pathlib import Path
 
     root = Path(__file__).resolve().parent.parent
+
+    def _is_gate_call(node: ast.AST) -> bool:
+        if not isinstance(node, ast.Call):
+            return False
+        fn = node.func
+        # BOTH shapes: a bare name and a module attribute. Mirrors _called_names
+        # in test_every_card_drawing_lane_consults_the_gate exactly.
+        return ((isinstance(fn, ast.Name) and fn.id == "card_earns_attachment")
+                or (isinstance(fn, ast.Attribute)
+                    and fn.attr == "card_earns_attachment"))
+
     offenders = []
     for rel in ("engine/marketing/press_lane.py",
                 "engine/marketing/earnings_call_lane.py"):
         tree = ast.parse((root / rel).read_text(encoding="utf-8"))
         for node in ast.walk(tree):
-            if not (isinstance(node, ast.Call)
-                    and isinstance(node.func, ast.Name)
-                    and node.func.id == "card_earns_attachment"):
+            if not _is_gate_call(node):
                 continue
             # args: (post_text, hero, body, tickers). The two the CARD drew are
             # 1 and 2, and EACH must be sourced from a drawn/fit field — a

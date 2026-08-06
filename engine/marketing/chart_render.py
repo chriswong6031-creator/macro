@@ -4785,8 +4785,10 @@ _BC_HL_LADDER = (132.0, 118.0, 106.0, 96.0, 88.0, 84.0, 78.0)
 #: flashes never reach these rungs.
 _BC_HL_EXTENDED = (68.0, 60.0, 52.0, 46.0)
 
-def _break_chip_label(source_name: str, tier_label: str) -> str:
-    """The slug-chip text: the source TIER, never the publication name.
+def _break_chip_label(
+    source_name: str, tier_label: str, *, chip_cfg: dict | None = None
+) -> str:
+    """The slug-chip text: the tier, and the publication name ONLY if admitted.
 
     OPERATOR LAW 2026-08-05 — NEVER BRAND THE SOURCE. Three live RADAR cards
     (Aug 4-5) printed "ZeroHedge · WIRE SERVICE", "CNBC · WIRE SERVICE" and
@@ -4794,19 +4796,38 @@ def _break_chip_label(source_name: str, tier_label: str) -> str:
     publication's masthead in our own card art advertises them, and it claims a
     relationship with a newsroom we do not have.
 
-    The previous rule was the inverse: print "<publication> · <TIER>" and fall
+    The rule BEFORE that was the inverse: print "<publication> · <TIER>" and fall
     back to the tier only when the name matched a six-entry denylist of generic
     placeholders ("newswire", "wire", "unknown", ...). That list could not match
     a real outlet by construction, so the suppressor never once fired on the case
     it was needed for. Every real masthead printed, by design.
 
+    OPERATOR RULING 2026-08-06 — "NAME REAL NEWSWIRES ONLY", which narrows the
+    blanket kill above. The 08-05 law took CNBC down with ZeroHedge and
+    ForexLive; a real newswire or a primary source may be named, and everything
+    else may not. The admission is a CONFIG ALLOWLIST, default-deny, resolved by
+    engine.marketing.source_authority.card_chip_name against
+    config/press_sources.yml ``citation.card_chip`` — see that function for the
+    policy. The list lives in config so the operator can move a masthead without
+    a deploy; nothing in this module carries a built-in name.
+
     WHAT THE CHIP SHOWS NOW:
 
-      * official tier            → "OFFICIAL SOURCE"
-      * wire tier                → "WIRE SERVICE"
-      * aggregator/unknown tier  → NOTHING. The chip is drawn as the tier seal
-        alone (see the caller). The tier carries no badge word and this function
-        does not invent one.
+      * official tier, name admitted   → "Federal Reserve · OFFICIAL SOURCE"
+      * official tier, name not on it  → "OFFICIAL SOURCE"
+      * wire tier, name admitted       → "CNBC · WIRE SERVICE"
+      * wire tier, name not on it      → "WIRE SERVICE"   (ZeroHedge, ForexLive)
+      * aggregator/unknown/mirror tier → NOTHING. The chip is drawn as the tier
+        seal alone (see the caller), and the name is refused before the list is
+        even read. The tier carries no badge word and this function does not
+        invent one.
+
+    ``chip_cfg`` ABSENT MEANS NO NAME, and that is the safe default rather than
+    an oversight: a lane that has not been given the operator's list has no basis
+    for printing a masthead, so it prints the caption alone (the 2026-08-05
+    behaviour). engine/marketing/earnings_call_lane passes none on purpose — a
+    card that signs itself is not a citation, and "Earnings call transcript" is a
+    description of an artefact, not a masthead.
 
     IT DOES NOT INVENT A CAPTION FOR THE UNLABELLED TIER (fixed 2026-08-06). A
     first pass filled the empty pill with "RELAYED REPORT", which turns a
@@ -4819,21 +4840,39 @@ def _break_chip_label(source_name: str, tier_label: str) -> str:
     make passes ``source_tier`` for it (the transcript lane now says
     ``official``); it does not get a caption by default.
 
-    ``source_name`` is ACCEPTED AND NEVER DRAWN. It stays in the signature so the
-    name-suppression law has one greppable home and a caller cannot route a
-    masthead onto the card by a different door — pinned by
-    tests/test_marketing_card_earns_pixels.py::test_a_chip_never_carries_a_publication_name.
+    THIS IS THE ONE DOOR. Every name that reaches the card art comes through
+    here, so the allowlist cannot be dodged by a lane assembling its own chip
+    string — pinned by
+    tests/test_marketing_card_earns_pixels.py::test_a_chip_never_carries_an_unadmitted_name.
     There is deliberately no own-desk carve-out and no `citation` override: both
-    shipped in the first pass and neither could fire in production (the desk
-    allowlist matched @handles against a display-name field; after the name
-    suppression above, a citation ruling had nothing left to decide — verified by
-    mutation, deleting its whole branch changed no test's answer).
+    shipped in an earlier pass and neither could fire in production (the desk
+    allowlist matched @handles against a display-name field), and default-deny
+    now covers our own desks without a special case.
 
     The tier is ALSO carried by the chip's weight, fill, stroke, rail and its
     ``bc-tier-*`` class, so the anti-laundering signature (D05) is untouched: an
     aggregator still cannot look like an official print.
     """
-    return str(tier_label or "").strip()
+    label = str(tier_label or "").strip()
+    if not label:
+        # The unlabelled tier claims nothing, and a name without a grade beside
+        # it would be a masthead floating alone on our card art.
+        return ""
+    try:
+        from engine.marketing.source_authority import (  # noqa: PLC0415
+            card_chip_name,
+        )
+        # The TIER is re-derived from the label rather than threaded a second
+        # time: _break_tier_style is the only producer of these two strings and
+        # a second tier parameter could disagree with the one that inked the pill.
+        tier = "official" if label == "OFFICIAL SOURCE" else "wire"
+        name = card_chip_name(source_name, tier, cfg=chip_cfg)
+    except Exception:  # noqa: BLE001
+        # Fail SAFE, in the direction of the 2026-08-05 law: a broken policy
+        # module costs a name we were allowed to print, never prints one we
+        # were not.
+        name = ""
+    return f"{name} · {label}" if name else label
 
 
 def _break_tier_style(tier: str) -> dict[str, str]:
@@ -5281,6 +5320,7 @@ def render_breaking_card(
     height: int = _BREAK_H,
     cta: bool = True,
     fit: "dict | None" = None,
+    chip_cfg: "dict | None" = None,
 ) -> str:
     """Render a branded breaking-news card SVG in the Mastermind card family.
 
@@ -5310,7 +5350,13 @@ def render_breaking_card(
             with MEASURED glyph widths against a size ladder — so it is never
             truncated with an ellipsis, at any length (W4g).
         source_name: Display name of the source ("Reuters", "Federal Reserve").
+            DRAWN ONLY IF `chip_cfg` ADMITS IT — see _break_chip_label and the
+            operator ruling of 2026-08-06. With no chip_cfg the chip shows the
+            tier caption alone, which is the 2026-08-05 behaviour.
         source_tier: "official" | "wire" | "aggregator" (unknown → aggregator).
+        chip_cfg: The operator's citation config block (config/press_sources.yml
+            `citation`), carrying the `card_chip` name allowlist. None/absent =
+            default-deny: no publication name is drawn.
         published_at: ISO8601 UTC timestamp — the ONLY time input (deterministic).
         tickers: Optional [{"ticker","price","pct"}, ...]; capped at 4, house
             up/down coloring; strip omitted entirely when empty/None.
@@ -5477,7 +5523,7 @@ def render_breaking_card(
         # keeps three lines of chrome from pushing the headline off the top.
         ts_str = _break_fmt_ts(published_at)
         tier = _break_tier_style(source_tier)
-        chip_label = _break_chip_label(source_name, tier["label"])
+        chip_label = _break_chip_label(source_name, tier["label"], chip_cfg=chip_cfg)
         chip_text = _xesc(chip_label)
         chip_size = u(28)
         chip_h = u(62)

@@ -939,9 +939,14 @@ def _card_param_violations(card_kwargs: dict) -> list[str]:
     except Exception:  # noqa: BLE001
         return []
     try:
+        # `chip_cfg` is OPERATOR CONFIG, not wire input, and it contributes no
+        # drawn string of its own: the only thing the chip draws from it is an
+        # exact match against `source_name`, which IS screened here. Screening
+        # the allowlist would let one stray "@" in a config comment drop every
+        # card, which is a self-inflicted outage for no reader-visible gain.
         screened = {
             k: v for k, v in card_kwargs.items()
-            if k not in ("logo_root", "cta", "suppress_cta")
+            if k not in ("logo_root", "cta", "suppress_cta", "chip_cfg")
         }
         return card_input_violations(**screened)
     except Exception:  # noqa: BLE001
@@ -1161,6 +1166,7 @@ def build_breaking_payload(
     root: Path | str | None = None,
     _llm_override: Any = None,
     wire: dict | None = None,   # B2-COPY: wire-voice tier/prompt config (optional)
+    citation_cfg: dict | None = None,
 ) -> dict:
     """Build the full outbox-shaped breaking payload.
 
@@ -1192,14 +1198,16 @@ def build_breaking_payload(
         card_tickers: list[dict]  # enriched rows the card's tape strip drew
         provenance: {source_url: str, source: str, ingested_at: str}
 
-    THERE IS NO `citation` KWARG. One was threaded press_lane ->
-    build_breaking_payload -> render_breaking_card -> _break_chip_label so a
-    source_authority "no credit" ruling made for the POST BODY would bind the
-    picture too. The chip now carries the TIER and never a name
-    (chart_render._break_chip_label), so the only output that ruling could
-    change no longer exists — mutation-verified before removal: deleting the
-    branch it fed changed no test's answer. A kwarg kept "in case" is a dead
-    field, and this repo has been bitten by those.
+    THERE IS NO `citation` KWARG, AND `citation_cfg` IS NOT ITS RETURN. The old
+    kwarg carried a per-item source_authority RULING ("credit this post to
+    Reuters, or to nobody") made for the POST BODY, and binding the picture to a
+    body decision was the wrong shape; it was deleted after mutation showed that
+    removing the branch it fed changed no test's answer. `citation_cfg` is the
+    operator's CONFIG BLOCK (config/press_sources.yml `citation`), not a ruling:
+    it carries the `card_chip` name allowlist the 2026-08-06 ruling put in the
+    operator's hands, and it is live — with it the chip draws
+    "CNBC · WIRE SERVICE", without it "WIRE SERVICE". Default-deny, so a caller
+    that passes nothing prints no masthead (chart_render._break_chip_label).
     """
     summary_result = summarize_item(item, cfg, _llm_override=_llm_override, wire=wire)
 
@@ -1287,6 +1295,10 @@ def build_breaking_payload(
             cta=chart_cta_enabled(cfg),
             summary=card_summary,
             logo_root=root,
+            # THE OPERATOR'S CARD-CHIP ALLOWLIST (ruling 2026-08-06). Decides
+            # whether the chip may print this source's masthead beside its tier
+            # caption. None = default-deny = caption alone.
+            chip_cfg=citation_cfg,
         )
         # BACKSTOP — no source handle may reach a card surface (operator law
         # 2026-08-02). De-handling happens at ingestion, so this should never
@@ -1298,9 +1310,14 @@ def build_breaking_payload(
         # tags a competitor.
         _card_violations = _card_param_violations(card_kwargs)
         if _card_violations:
+            # NOT "posting text-only" — that is the dispatch's call, not ours
+            # (2026-08-06 review, finding 1). The sibling degraded-render line
+            # was corrected the same way and this one was missed: a post that
+            # names tickers owes a picture it will not get, and press_lane
+            # refuses it. The line used to promise a post that does not post.
             print("::warning title=breaking-card-handle-mention::"
                   f"{item.get('id', '')}: {'; '.join(_card_violations[:3])} — "
-                  f"card dropped, posting text-only", flush=True)
+                  f"card dropped", flush=True)
             raise _CardHandleLeak(_card_violations[0])
 
         try:

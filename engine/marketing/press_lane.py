@@ -70,6 +70,20 @@ from typing import Any
 # stdlib + pyyaml, so the thin marketing-engine CI lane stays green.
 from engine.marketing.copywriter import banned_language as _banned_language
 
+# WHY A CARD IS MISSING — the producer's own vocabulary, IMPORTED rather than
+# re-spelled. `_CARD_ABSENT_POLICY_REFUSED` was a constant written into
+# provenance and read by nothing (round-3 review, finding 9), which is how the
+# policy-refused card reached the publisher's bare-cashtag quarantine. It has a
+# reader now, and binding to the producer's constants is what stops the two
+# spellings drifting apart again. breaking_summary's import closure is stdlib
+# only, so this costs the thin marketing-engine CI lane nothing.
+from engine.marketing.breaking_summary import (
+    _CARD_ABSENT_POLICY_REFUSED as _ABSENT_POLICY_REFUSED,
+)
+from engine.marketing.breaking_summary import (
+    _CARD_ABSENT_RENDER_DEGRADED as _ABSENT_RENDER_DEGRADED,
+)
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Constants
 # ─────────────────────────────────────────────────────────────────────────────
@@ -131,10 +145,30 @@ def reset_media_host_stats() -> None:
 _TRANSIENT_REFUSALS: frozenset[str] = frozenset({
     "media_unhosted",
     # The renderer fell through its outer fail-soft, so a ticker post has no
-    # picture to ship — an ENVIRONMENT fault, same class as a lost raster, and
-    # the next tick redraws from scratch. See _emit_outbox_item.
+    # picture to ship. Retried, but BOUNDED — see _TRANSIENT_GIVE_UP_AT, and
+    # read its docstring before reclassifying this as environmental.
     "card_render_degraded",
 })
+
+#: Consecutive transient refusals after which a reason GIVES UP and falls
+#: through to the terminal branch (mark seen, name the reason in the census).
+#: A reason absent from this map retries without bound.
+#:
+#: WHY card_render_degraded IS BOUNDED AND media_unhosted IS NOT (round-3 review,
+#: finding 6). `media_unhosted` is genuinely environmental: it fires on a lost
+#: Chrome raster, an R2 blip, absent boto3 or R2_* creds, and during a real
+#: outage EVERY story is refused — giving up would convert a five-minute outage
+#: into a mass kill, which is the defect the transient class was created to fix.
+#: `card_render_degraded` names something else: render_breaking_card's outer
+#: blanket `except Exception` around a DETERMINISTIC pure-Python layout over the
+#: same stored strings. An unexpected glyph, a malformed ticker row or a missing
+#: logo asset therefore raises identically on every tick — the story is never
+#: marked seen, and each attempt re-pays the summarize_item LLM call. It was
+#: classed as "an ENVIRONMENT fault, same class as a lost raster" on no evidence.
+#: Five ticks (~25 minutes of the press daemon) rides out anything that varies
+#: between renders and stops a deterministic renderer bug from holding one story
+#: and billing an LLM call for the life of the process.
+_TRANSIENT_GIVE_UP_AT: dict[str, int] = {"card_render_degraded": 5}
 
 #: Consecutive transient refusals of the SAME story before the lane alarms. A
 #: retry loop that never surfaces is the other half of the same fault: a host
@@ -1218,28 +1252,58 @@ def _emit_outbox_item(
     # returned "$AAPL $NVDA", i.e. QUARANTINED, terminal.
     #
     # This is the SAME question the unhosted-card block below answers one step
-    # later — "the copy names tickers and we have no picture" — so it gets the
-    # same answer, and `card_render_degraded` joins _TRANSIENT_REFUSALS: the
-    # story is not marked seen, comes back next tick with a fresh render, and
-    # the existing stuck-retry alarm fires if the renderer is genuinely down.
-    # A POLICY refusal (a foreign @handle on a card param) is deliberately NOT
-    # routed here: the next tick redraws the identical unlawful card.
+    # later — "the copy names tickers and we have no picture" — so both reasons
+    # a meant-to-be-drawn card is missing get the same answer HERE, at the lane,
+    # where the skip census can name it. They differ only in whether a RETRY can
+    # change the answer:
+    #
+    #   render_degraded  TRANSIENT (bounded — see _TRANSIENT_GIVE_UP_AT). The
+    #                    renderer fell over; the next tick redraws from scratch,
+    #                    so the story is not marked seen.
+    #   policy_refused   NOT TRANSIENT. A foreign @handle reached a card param,
+    #                    and the next tick redraws the IDENTICAL unlawful card
+    #                    from the identical stored item — a retry cannot change
+    #                    the answer, and re-rendering re-pays the summarize_item
+    #                    LLM call to reach the same refusal. It is marked seen.
+    #
+    # THE SECOND ROW IS THE FIX FOR ROUND 3's FOURTH KILL PATH (2026-08-06).
+    # This block used to test `== "render_degraded"` alone, so a policy-refused
+    # card on cashtag copy fell straight through to the emission with media=[]
+    # and no withheld stamp. MEASURED: the item was enqueued and then TERMINALLY
+    # quarantined by scripts/marketing_publisher._bare_cashtag_post — the exact
+    # 2026-07-30 bare-cashtag signature, arrived at by a CARD policy fault, and
+    # it burned a queue slot and a quarantine record on the way. Refusing it
+    # here reaches the same end state for the story and names the reason where
+    # an operator can count it, instead of leaving a publisher quarantine record
+    # that reads as a copy violation the copy never committed.
     _absent_why = str(provenance.get("card_absent_reason") or "")
-    if not media and _absent_why == "render_degraded":
+    if not media and _absent_why in (_ABSENT_RENDER_DEGRADED, _ABSENT_POLICY_REFUSED):
+        _degraded = _absent_why == _ABSENT_RENDER_DEGRADED
         _cashtags = sorted(set(_CASHTAG_RE.findall(_post_text)))
         if _cashtags:
-            print("::warning title=press-lane-card-render-degraded::"
-                  f"{item_id}: the card render fell through its fail-soft and the "
-                  f"copy names {' '.join(_cashtags)} — not enqueued, retrying next "
-                  "tick (a ticker post ships a picture, operator 2026-07-30)",
-                  flush=True)
+            if _degraded:
+                print("::warning title=press-lane-card-render-degraded::"
+                      f"{item_id}: the card render fell through its fail-soft and "
+                      f"the copy names {' '.join(_cashtags)} — not enqueued, "
+                      "retrying next tick (a ticker post ships a picture, "
+                      "operator 2026-07-30)", flush=True)
+            else:
+                print("::warning title=press-lane-card-policy-refused::"
+                      f"{item_id}: a card param carried a foreign handle, so the "
+                      f"picture may not be drawn, and the copy names "
+                      f"{' '.join(_cashtags)} — not enqueued and NOT retried "
+                      "(the redraw is the same unlawful card; a ticker post "
+                      "ships a picture, operator 2026-07-30)", flush=True)
             if refusal is not None:
-                refusal["reason"] = "card_render_degraded"
+                refusal["reason"] = ("card_render_degraded" if _degraded
+                                     else "card_policy_refused")
                 refusal["violations"] = list(_cashtags)
             return None
         # No cashtag: the post owes nobody a picture, so it goes on to the value
         # gate and ships text-only on its own evidence, exactly as it would have
-        # if no card had ever been attempted.
+        # if no card had ever been attempted. TRUE FOR BOTH REASONS — the fault
+        # is in the picture, and a post that never owed one is not implicated by
+        # either.
 
     # ── CARD RASTER + HOST ───────────────────────────────────────────────────
     # Runs BEFORE the value gate so `has_media` is the truth (a card nobody can
@@ -1306,9 +1370,16 @@ def _emit_outbox_item(
         # to the source — has never fired on this lane. It was invisible while
         # every press post carried a card (has_media short-circuits to `hard`
         # first) and became load-bearing the moment cards could be withheld.
-        # `url` is kept as a fallback so a caller that assembles provenance the
-        # other way round is not silently un-cited again.
-        citation=str(provenance.get("source_url") or provenance.get("url") or ""),
+        #
+        # AND THERE IS NO `url` FALLBACK (round-3 review, finding 8). One was
+        # kept "so a caller that assembles provenance the other way round is not
+        # silently un-cited again", but nothing writes that key: not
+        # build_breaking_payload's provenance dict, not this lane's extension of
+        # it, not the two later writes. It was unreachable — and it re-introduced
+        # the exact dead-field class the same commit deleted from the citation
+        # kwarg chain ("a kwarg kept 'in case' is a dead field, and this repo has
+        # been bitten by those"). The behavioural test owns the correct key now.
+        citation=str(provenance.get("source_url") or ""),
         cfg=cfg,
     )
     if _would_block:
@@ -1320,15 +1391,34 @@ def _emit_outbox_item(
         # not ship is a ::warning, not a ::notice.
         _enforced = _ob._value_gate_enforced(cfg, "breaking")
         _why = ",".join(_verdict.get("reasons") or [])
-        # COUNTABLE, because this class is an OPEN PRODUCT DECISION (2026-08-06).
+        # COUNTABLE, AND THE OPERATOR HAS RATIFIED HOLDING IT (2026-08-06).
         # A verbatim headline relay with no figure, no ticker and no stance has
         # no informational surplus of its own; while a card was attached the
         # picture stood in as that surplus, and withholding it as a restatement
-        # leaves the post held on `gift:no_informational_surplus`. MEASURED over
-        # the 75 shipped press-lane items: 5 (6.7%) land here. That is the gate
-        # applying its own charter, not a bug — but the operator has to be able
-        # to count it before ruling on it, so the withheld card is named in the
-        # line rather than left to be inferred from a ::notice further up.
+        # leaves the post held on `gift:no_informational_surplus`. The operator's
+        # ruling: HOLD THEM. "A post whose only value was a picture of its own
+        # text has nothing to say." No surplus rung is to be invented to rescue
+        # the class — the gate is applying its own charter.
+        #
+        # THE NUMBER, RE-MEASURED ONCE (2026-08-06). Three figures were quoted
+        # for this class across two rounds of review — 5 (6.7%) in this comment,
+        # 9/75 (12%) in a builder report, 4 in a reviewer replay — so it was
+        # measured again from the only inputs that are not a reconstruction.
+        # METHOD: read data/marketing/outbox/items.jsonl; keep the rows with
+        # source.lane == "press" (the other `breaking` rows are lane=hot_tape and
+        # never draw a card); keep the rows carrying a persisted
+        # source.value_gate.components.surplus, which is the record of what the
+        # gate ACTUALLY saw in production; count the rows whose ONLY true surplus
+        # key is `media`. That set is exactly the held class, because gift is
+        # `(body_words >= 6) and (not restates) and any(surplus.values())` and
+        # withholding the card flips surplus["media"] to False: a row with any
+        # other true key still passes, a row with only `media` drops to all-False.
+        # RESULT: 4 of 75 (5.3%), all four post_shape=short_form — SpaceX
+        # post-IPO, Japan real wages, India RBI, Uber bookings.
+        #
+        # The per-item line names the withheld card so the class is visible from
+        # one emission; the per-RUN ::notice at the end of run_press_tick counts
+        # it so an operator does not have to grep for it.
         if _enforced:
             _held_with_card = (
                 " — the card was withheld as a restatement, so the copy stood alone"
@@ -1337,6 +1427,11 @@ def _emit_outbox_item(
             print("::warning title=press-lane-value-gate::"
                   f"{item_id}: ABSTAINED, not posted ({_why}){_held_with_card}",
                   flush=True)
+            if refusal is not None and card_withheld:
+                # The run-level tally reads this. Set only when the refusal is
+                # ARMED (a shadow-mode verdict ships the post, so counting it
+                # would report holds that never happened).
+                refusal["held_card_withheld"] = True
         elif not _ob.value_gate_kind_is_measured(cfg, "breaking"):
             # The kind is outside the armed set: the verdict is EVIDENCE being
             # collected, not a judgment being applied. Say so, or the next
@@ -2156,6 +2251,12 @@ def run_press_tick(
     # Per-tick summarizer census — see the fallback warning below for why a bare
     # counter is load-bearing rather than telemetry garnish.
     summary_modes: dict[str, int] = {}
+    # THE HELD CLASS, COUNTED PER RUN (operator ruling 2026-08-06). Posts whose
+    # only informational surplus was the picture, held once the card was withheld
+    # as a restatement of the copy. The operator ratified holding them; the ask
+    # was that the class be COUNTABLE, not alarmed. See the measurement and its
+    # method in _emit_outbox_item's value-gate block.
+    held_card_withheld = 0
     for s in scored:
         iid = str(s.get("id", ""))
         ck = _corroboration_key(s)
@@ -2358,18 +2459,21 @@ def run_press_tick(
 
         # Summarize-with-citation + build the outbox-shaped payload.
         #
-        # THE CITATION RULING NO LONGER TRAVELS TO THE CARD, and the reason is
-        # that there is nothing left for it to rule on. It was threaded here so
-        # a "no credit" decision made for the POST BODY would bind the picture
-        # too — the card used to re-derive its own answer from `source_name` and
-        # print the masthead the body had refused to name. The chip now carries
-        # the TIER and never a name (chart_render._break_chip_label), so the only
-        # output a credit ruling could change is one that no longer exists.
-        # Mutation-verified before removal: deleting the branch it fed changed no
-        # test's answer. A kwarg kept "in case" is a dead field, and this repo
-        # has been bitten by those.
+        # THE PER-ITEM CITATION RULING STILL DOES NOT TRAVEL TO THE CARD. It was
+        # threaded here so a "no credit" decision made for the POST BODY would
+        # bind the picture too; that kwarg is gone, and mutation showed deleting
+        # the branch it fed changed no test's answer.
+        #
+        # THE OPERATOR'S CONFIG DOES TRAVEL (ruling 2026-08-06). `citation_cfg`
+        # is config/press_sources.yml `citation` — the block whose `card_chip`
+        # allowlist decides whether the chip may print this source's masthead
+        # beside its tier caption. It is a LIST THE OPERATOR EDITS, not a ruling
+        # this lane computed, and it is live: without it every chip falls back to
+        # the caption alone (default-deny), which is how CNBC is named on the
+        # card and ZeroHedge and ForexLive are not.
         payload = build_breaking_payload(
             s, cfg, root=root, _llm_override=llm_override, wire=wire_llm,
+            citation_cfg=citation_cfg,
         )
 
         headline = payload.get("headline", "")
@@ -2660,7 +2764,27 @@ def run_press_tick(
         if out_item is None:
             _reason = str(_refusal.get("reason") or "outbox_refused")
             _ekey = _emission_key(s)
-            if _reason in _TRANSIENT_REFUSALS:
+            if _refusal.get("held_card_withheld"):
+                held_card_withheld += 1
+            # A BOUNDED TRANSIENT HAS RUN OUT OF TICKS (round-3 review, F6).
+            # `card_render_degraded` names a deterministic pure-Python layout
+            # exception, so a per-item renderer bug raised the same refusal on
+            # every tick with no give-up anywhere: the story was never marked
+            # seen and every attempt re-paid an LLM call. Counting the streak
+            # FIRST and demoting it to the terminal branch is what bounds that;
+            # `media_unhosted` is absent from the map and still retries forever,
+            # because during a genuine R2 outage giving up would be a mass kill.
+            _give_up_at = _TRANSIENT_GIVE_UP_AT.get(_reason)
+            _prior_tries = int(transient_tries.get(_ekey, 0) or 0)
+            _exhausted = bool(_give_up_at) and _prior_tries + 1 >= _give_up_at
+            if _exhausted:
+                print("::warning title=press-lane-transient-refusal-exhausted::"
+                      f"{iid}: refused {_prior_tries + 1} ticks in a row with "
+                      f"{_reason!r}, the give-up bound — this is not varying "
+                      "between renders, so it is being treated as a property of "
+                      "the item and marked seen. Nothing will retry it: look at "
+                      "the renderer, not the host.", flush=True)
+            if _reason in _TRANSIENT_REFUSALS and not _exhausted:
                 # NOT RECORDED AS SEEN. The invariant below holds only for
                 # refusals decided by the COPY; this one is decided by the
                 # environment (a lost Chrome raster, an R2 blip, absent creds),
@@ -2696,12 +2820,22 @@ def run_press_tick(
                 # TEXT — so leaving the item unseen means re-generating and
                 # re-refusing the same story on every tick, forever, burning
                 # billed spend on an outcome we already know. EVERY REASON THAT
-                # REACHES THIS BRANCH IS A STABLE PROPERTY OF THE COPY, so a
+                # REACHES THIS BRANCH IS A STABLE PROPERTY OF THE ITEM, so a
                 # retry cannot change the answer; the transient class above is
                 # the exception the old blanket comment wrongly claimed did not
                 # exist. The seen ledger is size-capped and rolls (daemon
                 # _PRESS_SEEN_CAP), so this is a suppression with a horizon, not
                 # a permanent kill.
+                #
+                # "OF THE ITEM", not "of the copy" — two reasons that reach here
+                # are properties of the CARD, and the older wording read as a
+                # promise this branch could not keep. `card_policy_refused` is a
+                # foreign @handle on a card param, and the redraw is the same
+                # unlawful card. An EXHAUSTED `card_render_degraded` is a
+                # renderer exception that did not vary across its give-up bound,
+                # which is the evidence that it is deterministic. Both are stable
+                # for the same reason the copy refusals are: nothing between one
+                # tick and the next changes the input.
                 seen.add(_ekey)
                 transient_tries.pop(_ekey, None)   # settled: the streak is over
             _skip_row = {"id": iid, "reason": _reason, "account": account}
@@ -2755,6 +2889,24 @@ def run_press_tick(
                   "summarizer", flush=True)
         else:
             print(f"::notice title=press-summarizer-census::{_line}", flush=True)
+
+    # ── THE HELD CLASS, COUNTED (operator ruling 2026-08-06) ─────────────────
+    # A ::notice, not a ::warning: the operator ratified holding these ("a post
+    # whose only value was a picture of its own text has nothing to say") and
+    # asked for a count, not an alarm. Printed only when the count is non-zero,
+    # so a quiet tick stays quiet. Bare line-start print, flushed — this module
+    # logs with a prefixing format and GitHub silently drops a prefixed
+    # annotation.
+    #
+    # RE-MEASURED ONCE, method stated at the emission site: 4 of the 75 shipped
+    # press-lane emissions (5.3%) are in this class, counted from their persisted
+    # source.value_gate.components.surplus. Expect roughly one per busy day.
+    if held_card_withheld:
+        print("::notice title=press-lane-held-card-withheld::"
+              f"{held_card_withheld} post(s) held on "
+              "gift:no_informational_surplus with the card withheld as a "
+              "restatement — the picture was their only surplus (operator "
+              "ruling 2026-08-06: hold them)", flush=True)
 
     # ── B4a rail ───────────────────────────────────────────────────────────────
     # The rail shows EVERYTHING above a LOWER floor (incl. digest-class items X

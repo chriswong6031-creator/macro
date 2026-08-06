@@ -795,9 +795,13 @@ def _card_withheld_for_value(it: dict) -> bool:
     Absent/unparseable reads as False: the gate stays armed by default and only
     an explicit, positively-stamped decision stands it down.
 
-    SCOPED BY KIND (review F6). The 2026-07-30 rule this stands down is a
-    PER-KIND rule — "these kinds always carry their chart" — and reading a bare
-    boolean off `source` let any producer buy an exemption from it. `breaking`
+    SCOPED BY KIND, AND THE SCOPE IS THE OPERATOR'S (ruling 2026-08-06 —
+    "charts yes, text cards no"; review F6 found the hole). The 2026-07-30 rule
+    this stands down is a PER-KIND rule — "these kinds always carry their chart"
+    — and reading a bare boolean off `source` let any producer buy an exemption
+    from it. The narrowing the operator granted covers exactly one line, the wire
+    flash that merely mentions a ticker; a price or rollup post is where "a chart
+    is DATA" applies and it is untouched. `breaking`
     and `earnings` sit outside both media-owing sets on purpose and are the only
     kinds whose lanes draw this card, so the flag is honoured only where the
     rule it relaxes was never absolute. A future lane stamping the flag on a
@@ -819,6 +823,29 @@ def _bare_cashtag_post(it: dict, pub_cfg: dict, media_paths: list[str]) -> str:
     account: "YOU WILL NOT SHIP THESE TEXT ONLY, ID RATHER YOU DESTROY THE
     ENTIRE ENGINE THAN SHIP TEXT ONLY, CUZ NO ONE CARES ABOUT THESE TICKER POSTS
     IF UR GOING TO SHIP THEM NAKED WITH NO CHARTS."
+
+    …AND THE OPERATOR NARROWED IT, 2026-08-06, IN ONE PLACE: "CHARTS YES, TEXT
+    CARDS NO." A WIRE FLASH that merely mentions a ticker MAY ship text-only when
+    its card was drawn, MEASURED, and found to only restate the post. The
+    operator's reasoning, recorded here because it is the whole argument: A CHART
+    IS DATA; A TEXT CARD IS A SCREENSHOT OF THE POST. Withholding a screenshot of
+    the post is not shipping naked — there was nothing under the clothes.
+
+    THE 2026-07-30 LAW KEEPS ITS FULL FORCE EVERYWHERE ELSE, unchanged: the
+    price/rollup posts it was written about — every kind in
+    ``_CHART_BEARING_KINDS`` and ``_TICKER_ROLLUP_KINDS``, i.e. `signal`,
+    `chart`, `watchlist`, `receipt`, `theme_list`, `mover` — carry a real chart
+    or they do not ship, withheld stamp or no withheld stamp. That scoping is
+    :func:`_card_withheld_for_value`'s kind test, and it is pinned both ways by
+    tests/test_marketing_card_earns_pixels.py::
+    test_the_withheld_exemption_does_not_reach_a_chart_bearing_kind and
+    ::test_a_real_press_emission_relabelled_to_a_rollup_kind_is_still_quarantined.
+
+    THIS IS A NARROWING BY THE OPERATOR, NOT BY A BUILDER. The engineering
+    argument (the lane drew a card, measured it against the copy, and found it
+    said nothing the copy did not) was made in this docstring for one day with no
+    ruling cited, and the round-3 review was right to refuse to merge on it. It
+    is cited now.
 
     :func:`_missing_required_media` could not enforce that. It keys on
     ``_CHART_BEARING_KINDS`` (signal/chart/watchlist/receipt) AND requires a

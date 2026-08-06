@@ -1,5 +1,19 @@
 """Deterministic Chronicle earnings-call derivative for the X outbox.
 
+NOT WIRED TO ANYTHING TODAY (stated plainly, 2026-08-06). Nothing in
+``engine/``, ``scripts/``, ``app/`` or ``.github/`` calls :func:`enqueue_event`
+or :func:`run_ledger`; the only callers are under ``tests/``, and the two
+mentions elsewhere are inert (a comment in ``config/marketing.yml`` and an
+artifact row in ``config/synapse.yml``). Read that before spending review budget
+here, and before treating a green test in this module as evidence about the live
+timeline: three rounds of card-gate review hardened this lane, and
+``tests/test_marketing_card_earns_pixels.py::test_dispatch_does_not_blanket_drop_every_card``
+— the suite's only demonstration that a real emission can still KEEP its card —
+proves it through this lane and not through the press wire. Wiring it or
+deleting it is an open operator decision, not a builder's call; until one is
+made, the module is kept correct rather than left to rot, because a dormant lane
+that is wrong is worse than one that is right.
+
 This is a projection, not another research engine.  Its only input is the
 committed :mod:`engine.chronicle.earnings_calls` ``earnings.call_event.v1``
 ledger.  The qualitative model has already done its work upstream; this module
