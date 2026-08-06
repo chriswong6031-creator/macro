@@ -11790,7 +11790,7 @@ artifacts:
     storage: git
     asof_field: asof
     freshness_sla_hours: 36
-    schema: darkpool_context.v1
+    schema: darkpool_context.v2
     tier: display
     horizon_role: context
     weights: none
@@ -11801,14 +11801,28 @@ artifacts:
       - mastermind:context
     notes: >
       Nightly context feed for off-exchange (dark-pool) positioning, built by
-      engine/darkpool_context.py alongside the Dark Pool desk page. Turns the raw desk
-      into plain-word leans — quiet-accumulation / distribution / unusual — from a
-      deterministic threshold on each name's off-exchange share vs its own norm (oe_z)
-      paired with the CHANGE in short-marked selling (never the raw level, since ~half
-      of off-exchange volume is short-marked by default). Carries a hero verdict, a
-      laid-out standout board, weekly per-ATS venue shifts, and a same-day idempotent
-      change-feed (names entering/leaving each lean + venue movers vs prev_state).
-      Off-exchange volume hides direction, so every lean is a heads-up to watch —
+      engine/darkpool_context.py alongside the Dark Pool desk page. Groups standout
+      names by the CONJUNCTION observed — off-exchange participation unusually high vs
+      the name's OWN trailing norm (median/MAD, current observation excluded, baseline
+      restarted after a share split) together with what price did over the same stretch:
+      heavy_into_weakness / heavy_into_strength / heavy_price_flat. Carries a hero state
+      line, a dollar-weighted market participation gauge, a laid-out standout board with
+      the ATS-vs-wholesaler-internalisation split per name, weekly per-ATS venue shifts
+      with a MEASURED publication lag, a coverage block naming what could not be seen,
+      and a same-day idempotent change-feed vs prev_state.
+
+      v2 (2026-08-05) REPLACED v1's accumulation/distribution/unusual "leans" and its
+      leaning-up/leaning-down copy. That derived a direction from raw off-exchange share
+      + raw short ratio, which DO_NOT_REBUILD (PSS-AF1 row) forbids as a standalone
+      directional signal; walk-forward testing also gave it no support (acc-minus-dist
+      +0.22%/-0.87%/-0.10% at 1/5/10d, p 0.74/0.53/0.96, sign flipping). v2 emits NO
+      direction at all — the tag requires price precisely so it is not standalone, and
+      data/darkpool/ledger/forward.jsonl now accrues the observed state at tag time so
+      the question becomes gradeable rather than assumed. Consumers reading v1 keys
+      (`leans`, `oe_share`, `oe_z`) off a v2 artifact get silent nulls — migrate to
+      `patterns`, `participation`, `participation_z`.
+
+      Off-exchange volume hides who is trading, so nothing here calls a direction —
       display/context tier only, NEVER a signal, rank, size, or escalation.
       is_context_only=true, display_only=true. Absent until scripts/build_darkpool_desk.py
       first runs; all consumers fail-open (block=None or honest-null).
