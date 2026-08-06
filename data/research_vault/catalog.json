@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T07:39:09.554931+00:00",
-  "count": 857,
+  "generated_at": "2026-08-06T07:54:13.696817+00:00",
+  "count": 858,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -179,6 +179,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-nieczmmhdgj-31379c",
+      "title": "Global PCB CCL TAM raised by 38 18 in 2027E",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:50Z",
+      "summary_points": [
+        "**Global AI PCB/CCL TAM Revised Upward**: 2027E TAM raised to $38bn/$22bn (vs $27bn/$19bn), with triple-digit growth to $84bn/$48bn by 2028E, driven by AI server adoption and 30+ layer PCB/6L HDI demand.",
+        "**GPU Server Dominance in Demand**: GPU servers account for 55% of PCB and 52% of CCL demand, with AI server rack growth projected at +190% YoY (2026E), signaling structural shift from general servers (+14% YoY).",
+        "**Supply Chain Constraints & Spec Upgrades**: Capacity expansion lags yield constraints for high-end PCB/CCL; M9 CCL adoption (41%/58% TAM in 2027/28E) and M9 qualification delays risk M8 adoption, altering market dynamics.",
+        "**Geopolitical Shifts in Supply Chain**: Chinese PCB/CCL suppliers gain market share (PCB: 20-25% → 10-15% → 10-15%?; CCL: 5-10% → 5-10% → 5-10%), increasing reliance on China amid trade tensions.",
+        "**Tech Giant Allocation Control**: Google TPU and Meta ASIC dominate PCB/CCL allocations (e.g., Meta ASIC 80% PCB share), reflecting strategic control over specialized hardware and critical sector exposure risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
       "language": "en",
       "needs_metadata": false
     },
