@@ -1087,6 +1087,50 @@ def main() -> None:
         ", ".join(intake_stats.get("reorigination_blocked_keys") or []) or "none",
     )
 
+    # ── 2b. Prophet Arena — champion-vs-challenger shadow harness (ZERO AUTHORITY) ──
+    # Frozen challenger intake/closure policies re-slice THIS night's artifact into
+    # shadow plan sets, graded by the same closure rules as the champion, onto their own
+    # prospective ledgers (data/prophet_arena/) plus a scoreboard. Registration + frozen
+    # policy definitions: research/PROPHET_ARENA_REGISTRATION.md.
+    #
+    # NOTHING HERE REACHES THE LIVE CHAIN. This block only CALLS the arena; build_prophet
+    # never reads an arena ledger, scoreboard, or artifact back (fence test-pinned in
+    # tests/test_prophet_arena.py::TestImportFence). `all_plans` below is built from
+    # `new_plans` exactly as it was before this hook existed.
+    #
+    # existing_ids is REBUILT from existing_plans rather than reused: originate_plans
+    # MUTATES the set it is handed (it adds each id it originates), so by this line the
+    # original set already contains tonight's new ids and would suppress everything C0
+    # tried to mirror. existing_plans itself is untouched.
+    #
+    # The standouts artifact is loaded HERE and passed in-memory, so the arena provably
+    # slices the same world the live origination did rather than re-reading a file that
+    # another lane could have rewritten in between. C0's plan ids are checked against the
+    # live ids as the harness-validity pin.
+    try:
+        from engine.prophet_arena import run_arena  # noqa: PLC0415
+
+        with STANDOUTS_PATH.open(encoding="utf-8") as _f:
+            _arena_standouts = json.load(_f)
+        _arena_board = run_arena(
+            _arena_standouts,
+            asof=asof,
+            existing_ids=set(existing_plans.keys()),
+            active_keys=active_keys,
+            live_plan_ids={p["id"] for p in new_plans},
+            repo_root=_REPO,
+        )
+        log.info(
+            "build_prophet: prophet_arena ran — %d policies, harness_ok=%s",
+            len(_arena_board.get("policies") or []),
+            (_arena_board.get("harness_validity") or {}).get("harness_ok"),
+        )
+    except Exception as e:  # noqa: BLE001 — a shadow harness is NEVER fatal to the nightly
+        # Bare print, NOT a logger call: GitHub parses a workflow command only when "::"
+        # STARTS the line, and this module's logging format prefixes every record.
+        print(f"::warning::prophet_arena hook failed: {e}", flush=True)
+        log.warning("build_prophet: prophet_arena hook failed", exc_info=True)
+
     # Merge all plans
     all_plans = {**existing_plans}
     for p in new_plans:
