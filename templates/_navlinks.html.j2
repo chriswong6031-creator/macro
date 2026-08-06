@@ -120,11 +120,16 @@
            Subsector Confluence is now the merged page's #confluence rail VIEW too (2026-08
            rail-view addition — "lives on the one consolidated page"): this row deep-links there.
            The standalone subsectors_china.html survives as its SEO twin (own SEO head, still
-           linked from china_intel/chat) but is no longer the nav target. (US parity shipped later: "Subsector Confluence" now
-           deep-links sector_central.html#confluence the same way, and the standalone
-           subsectors.html is a redirect stub. The "SEO twin" rationale above does NOT hold on
-           this estate — both pages 302 Googlebot to sign-in and neither is in sitemap.xml, so
-           there is no crawlable content to keep, only internal links, which a stub serves.) #}
+           linked from china_intel/chat) but is no longer the nav target. (US parity shipped
+           later: "Subsector Confluence" deep-links sector_central.html#confluence the same
+           way, and the standalone subsectors.html is likewise KEPT, not stubbed. The SEO-twin
+           reason is real but only became so on 2026-08-06: before #4519 opened the page shells
+           both pages 302'd Googlebot to sign-in, and a page a crawler cannot fetch has no SEO
+           to protect. Post-#4519 a crawler gets 200 with a real title and no noindex, and —
+           the load-bearing half — a #hash is NOT a distinct URL to an index, so the merged
+           page cannot rank for these queries in the standalone's place however good the rail
+           view is. Both still sit outside sitemap.xml, so they are discovered by internal
+           link only. Re-check this before stubbing either: the answer flipped once already. #}
         <a href="{{ NP }}sector_central_china.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span>{{ t('Sector Intelligence', '行业智慧') }}<span class="d">{{ t('Gated board · cycle map · whole-market rotation · theme baskets — one page', '门控研判 · 周期图谱 · 全市场轮动 · 主题篮子 — 一页尽览') }}</span></a>
         <a href="{{ NP }}sector_central_china.html#confluence"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span>{{ t('Subsector Confluence', '子行业汇聚') }}<span class="d">{{ t('Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts', '同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图') }}</span></a>
         <a href="{{ NP }}china_heatmap.html"><span class="submenu-icon submenu-icon-heatmap" aria-hidden="true"></span>{{ t('Market Heatmap', '市场热力图') }}<span class="d">{{ t('Every A-share · sector treemap · market-cap', '全部A股 · 板块树图 · 按市值') }}</span></a>
