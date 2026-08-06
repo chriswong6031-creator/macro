@@ -44,6 +44,7 @@ _CTA_DEADBAND     = 0.02   # |5d CTA score change| < 0.02 → pausing
 _COR1M_PCTILE_LO  = 20     # ≤20th pctile → dispersion
 _COR1M_PCTILE_HI  = 80     # ≥80th pctile → elevated
 _HISTORY_ROWS     = 500    # max rows in history sections
+_COVERAGE_WINDOW  = 20     # sessions the gamma block audits for missing chain snapshots
 
 
 # ---------------------------------------------------------------------------
@@ -127,6 +128,7 @@ def _build_gamma_block(data_dir: Path) -> dict:
         "regime": None, "net_gex_bn": None, "net_gex_pctile": None,
         "gamma_flip": None, "spot": None, "dist_to_flip_pct": None,
         "days_in_regime": None, "series_start": None, "history": [],
+        "coverage": None,
     }
     try:
         df = _read_gex_spx(data_dir)
@@ -148,11 +150,22 @@ def _build_gamma_block(data_dir: Path) -> dict:
             latest_gex = float(gex_series.iloc[-1])
             pctile = float((gex_series < latest_gex).sum() / len(gex_series) * 100)
 
-        # Days in current regime
+        # Days in current regime.
+        #
+        # COUNTS SESSIONS, NOT ROWS (2026-08-06). This used to count consecutive tail
+        # ROWS, which silently equates "a row" with "a session" — true only while the
+        # store has no holes. gex_SPX has permanent ones (collectors/cboe.py
+        # KNOWN_PERMANENT_GAPS: 07-27, 07-30, 08-03, 08-04), so a run spanning
+        # 07-31→08-05 rendered "2 days in this state" for a stretch that is six
+        # sessions long. Session span is what the panel's own words claim; on a
+        # hole-free store the two are identical, so this only ever corrects a lie.
+        # What we CANNOT know is the regime on the unobserved sessions inside the
+        # run — that is disclosed, not smoothed over (house law: nulls printed).
         days_in_regime: int | None = None
+        days_in_regime_observed: int | None = None
+        regime_gap: list[str] = []
         if regime and "gamma_regime" in df.columns:
             regime_ser = df["gamma_regime"].fillna("null")
-            # Count consecutive tail rows with same regime
             rev = regime_ser.iloc[::-1]
             count = 0
             for v in rev:
@@ -160,9 +173,32 @@ def _build_gamma_block(data_dir: Path) -> dict:
                     count += 1
                 else:
                     break
-            days_in_regime = count
+            days_in_regime_observed = count
+            if count:
+                run = df.index[-count:]
+                first_d, last_d = run.min().date(), run.max().date()
+                days_in_regime = len(nyse_calendar.sessions_between(first_d, last_d))
+                regime_gap = [str(d) for d in
+                              nyse_calendar.missing_sessions(run, first_d, last_d)]
 
         series_start = str(df.index.min().date())
+
+        # Store-coverage disclosure for every consumer of this block.
+        last_obs = df.index.max().date()
+        expected = nyse_calendar.expected_last_session()
+        recent_window = nyse_calendar.sessions_between(
+            df.index.min().date(), expected)[-_COVERAGE_WINDOW:]
+        missing_recent = ([str(d) for d in nyse_calendar.missing_sessions(
+            df.index, recent_window[0], expected)] if recent_window else [])
+        coverage = {
+            "last_obs": str(last_obs),
+            "expected_last_session": str(expected),
+            "sessions_behind": nyse_calendar.sessions_behind(last_obs),
+            "window_sessions": len(recent_window),
+            "missing_recent": missing_recent,
+            "missing_in_regime": regime_gap,
+            "complete": not missing_recent and not regime_gap,
+        }
 
         # History (last ≤500 rows)
         hist_df = df[["net_gex_bn", "gamma_regime", "gamma_flip", "spot"]].copy()
@@ -185,8 +221,10 @@ def _build_gamma_block(data_dir: Path) -> dict:
             "spot": _safe_float(latest.get("spot")),
             "dist_to_flip_pct": _safe_float(latest.get("dist_to_flip_pct")),
             "days_in_regime": days_in_regime,
+            "days_in_regime_observed": days_in_regime_observed,
             "series_start": series_start,
             "history": history,
+            "coverage": coverage,
         }
     except Exception as exc:  # noqa: BLE001
         log.warning("market_structure: gamma block failed: %s", exc)

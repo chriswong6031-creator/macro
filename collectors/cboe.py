@@ -253,11 +253,46 @@ CORE_CHAIN_SERIES: tuple[str, ...] = ("putcall", "gex", "gex_SPX")
 # the disclosure entry here is the accepted terminal state (never fabricate a row).
 # The coverage tripwire stays loud about an unregistered hole until it is either
 # healed (impossible for chains) or explicitly registered here with its cause.
+#
+# TWO CAUSES LIVE IN HERE, AND THEY HAVE DIFFERENT FIXES (2026-08-06 postmortem).
+# The 07-27 entry taught every later reader to blame the CBOE CDN, and for a week
+# nobody found the bigger half: MOST of the lost sessions were collected perfectly
+# and then thrown away by our own pipeline.
+#   * SOURCE loss  — the CDN 429'd the chain endpoint through the retry window.
+#     Nothing was ever on disk. Unfixable after the fact; mitigate with retries.
+#   * COMMIT loss  — the adapter wrote the row, the collect job then died at a LATER
+#     step, `commit data` was skipped, and the next night's `actions/checkout` reset
+#     the tracked parquet. The row EXISTED and we deleted it.
+# Telling them apart is one command — the store advances only on nights that
+# committed, so compare the run log's `cboe_putcall -> ok (1 rows, last <date>)`
+# against `git log --format='%ad %s' --date=short -- data/cboe/putcall.parquet`.
+# "ok" in the log with no commit that evening is COMMIT loss, not a CBOE outage.
 KNOWN_PERMANENT_GAPS: dict[date, str] = {
-    date(2026, 7, 27): "CBOE CDN rate-limited (HTTP 429) the delayed_quotes chain "
-                       "endpoint through the whole retry window of the 07-27 evening "
-                       "collect (run 30314534128): putcall + gex/gex_SPX/gex_SPY/"
-                       "gex_MSFT lost the session; snapshots are unrecoverable.",
+    date(2026, 7, 27): "SOURCE loss — CBOE CDN rate-limited (HTTP 429) the "
+                       "delayed_quotes chain endpoint through the whole retry window "
+                       "of the 07-27 evening collect (run 30314534128): putcall + "
+                       "gex/gex_SPX/gex_SPY/gex_MSFT lost the session; unrecoverable.",
+    date(2026, 7, 30): "SOURCE loss — same 429 shape, index/ETF endpoints only "
+                       "(run 30590845976). The single names came back and were "
+                       "committed (f437c3d69f7 carries gex_AAPL/AMD/META/MSFT/NVDA/"
+                       "TSLA and NO putcall/gex/gex_SPX/gex_SPY/gex_QQQ/gex_IWM), so "
+                       "_SPX/SPY/QQQ/IWM lost the session; unrecoverable.",
+    date(2026, 8, 3): "MIXED — putcall lost at the source (both retry ladders 429'd: "
+                      "`cboe_putcall -> failed [70.2s] err=HTTPError: HTTP 429`). "
+                      "gex + all 10 symbols RECOVERED on the post-cooldown sweep "
+                      "(`cboe_gex -> ok (11 rows, last 2026-08-03)`) and were then "
+                      "discarded: `run collectors` died on `AttributeError: "
+                      "'NYGamingAdapter' object has no attribute "
+                      "'fetch_result_status'`, so `commit data` never ran "
+                      "(job 91848095334, steps 17→26).",
+    date(2026, 8, 4): "COMMIT loss, no source problem at all — the whole family was "
+                      "collected clean (`cboe_putcall -> ok (1 rows, last "
+                      "2026-08-04)`, `cboe_gex -> ok (11 rows)`) and the coverage "
+                      "tripwire in that same run still read `last obs 2026-08-04`. "
+                      "The job then died at `compile capital-structure event spine` "
+                      "(ManifestIdentityError) and `commit data` — which carried no "
+                      "`if: always()` before #4618 — was skipped, so the next "
+                      "checkout reset the parquet (job 92199957280, steps 20→26).",
 }
 
 
@@ -321,16 +356,25 @@ def check_chain_session_coverage(lookback_sessions: int = 5) -> list[dict]:
         print(f"::warning title=cboe-session-miss::{len(problems)} of "
               f"{len(CHAIN_FAMILY_SERIES)} cboe delayed-chain series missing session "
               f"rows: {affected} — chain snapshots are unrecoverable; investigate "
-              f"TODAY or register the gap in collectors/cboe.py KNOWN_PERMANENT_GAPS",
+              f"TODAY or register the gap in collectors/cboe.py KNOWN_PERMANENT_GAPS. "
+              f"FIRST check WHICH failure this is, because they have different fixes: "
+              f"grep that evening's collect log for `cboe_putcall -> ` / `cboe_gex -> `. "
+              f"`-> ok` means the row was COLLECTED and the pipeline then dropped it "
+              f"(the collect job died before `commit data`, and the next checkout reset "
+              f"the parquet) — look at the job's failing STEP, not at CBOE. `-> failed` "
+              f"or `gex: <sym> failed: HTTP 429` is a genuine source loss.",
               flush=True)
         core_missing = set.intersection(
             *(set(missing_by_series.get(s, [])) for s in CORE_CHAIN_SERIES))
         if core_missing:
             days = ", ".join(map(str, sorted(core_missing)))
             print(f"::error title=cboe-session-miss::whole-family miss — putcall + gex "
-                  f"+ gex_SPX all lack session(s) {days} (the 2026-07-27 shape); the "
-                  f"board regime panel, conditions P/C and the gex_flip_cross alert "
-                  f"are all running without that session", flush=True)
+                  f"+ gex_SPX all lack session(s) {days} (the 2026-07-27 shape: every "
+                  f"board-critical series losing the SAME session, from either a CDN "
+                  f"429 or a skipped `commit data` — see KNOWN_PERMANENT_GAPS for how "
+                  f"to tell them apart); the board regime panel, conditions P/C and "
+                  f"the gex_flip_cross alert are all running without that session",
+                  flush=True)
     else:
         log.info("chain coverage: all %d series carry the last %d sessions "
                  "(through %s)", len(CHAIN_FAMILY_SERIES), lookback_sessions, expected)

@@ -148,6 +148,38 @@ def sessions_between(start: date, end: date) -> list[date]:
     return out
 
 
+def sessions_strictly_between(earlier: date, later: date) -> list[date]:
+    """Sessions AFTER `earlier` and BEFORE `later`, ascending; [] when adjacent.
+
+    The adjacency primitive for readers that compare two consecutive STORE ROWS as
+    if they were consecutive SESSIONS (`iloc[-2]` vs `iloc[-1]`). That equivalence
+    holds only while the store has no holes — and the cboe delayed-chain stores do
+    have holes (collectors/cboe.py KNOWN_PERMANENT_GAPS), so "yesterday vs today"
+    silently became "07-31 vs 08-05" for every such reader. A non-empty return is
+    exactly the disclosure such a reader owes its user.
+
+    Empty when the two dates are adjacent sessions, equal, or inverted."""
+    if later <= earlier:
+        return []
+    return sessions_between(earlier + timedelta(days=1), later - timedelta(days=1))
+
+
+def missing_sessions(have, start: date, end: date) -> list[date]:
+    """Expected sessions in the INCLUSIVE range [start, end] that `have` lacks.
+
+    `have` is any iterable of `date`/`datetime`/`pd.Timestamp` (a store index is
+    the usual caller). Non-session members are ignored rather than rejected: the
+    chain stores carry pre-gate weekend rows (#3721), and a fabricated Saturday
+    row must never be able to satisfy a real Tuesday's absence."""
+    seen = set()
+    # NOT `have or ()`: a pandas Index raises on truthiness ("truth value is
+    # ambiguous"), so the guard has to be an explicit None check.
+    for t in (() if have is None else have):
+        d = getattr(t, "date", None)
+        seen.add(d() if callable(d) else t)
+    return [s for s in sessions_between(start, end) if s not in seen]
+
+
 def expected_last_session(now: datetime | None = None) -> date:
     """The most recent COMPLETED session whose daily bar the price store should hold.
 

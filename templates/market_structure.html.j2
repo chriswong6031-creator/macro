@@ -264,7 +264,11 @@ html[data-lang="zh"] .stance-chip.caution{background:rgba(26,127,67,.14);color:v
     </div>
     {% endif %}
     {% if gamma.days_in_regime is not none %}
-    <div class="hmeta"><b>{{ gamma.days_in_regime }} {{ t('day in this state' if gamma.days_in_regime|int == 1 else 'days in this state', '天处于此状态') }}</b></div>
+    <div class="hmeta"><b>{{ gamma.days_in_regime }} {{ t('day in this state' if gamma.days_in_regime|int == 1 else 'days in this state', '天处于此状态') }}</b>
+      {% if gamma.days_in_regime_observed is defined and gamma.days_in_regime_observed is not none and gamma.days_in_regime_observed|int < gamma.days_in_regime|int %}
+      <span class="l-en">{{ gamma.days_in_regime_observed }} of them read</span><span class="l-zh">其中 {{ gamma.days_in_regime_observed }} 天有读数</span>
+      {% endif %}
+    </div>
     {% endif %}
     {% if gamma.net_gex_bn is not none %}
     <div class="hmeta">
@@ -278,6 +282,23 @@ html[data-lang="zh"] .stance-chip.caution{background:rgba(26,127,67,.14);color:v
     <span class="l-en"><b>How shock absorbers work</b><br>When dealer net GEX is positive (long gamma), they sold options and hedge by buying dips / selling rips — damping moves. When negative (short gamma), hedging requires buying rallies and selling dips — amplifying moves.<br><br>Net GEX today: {{ '%.1f'|format(gamma.net_gex_bn|float if gamma.net_gex_bn is not none else 0) }}B ({{ '%.0f'|format(gamma.net_gex_pctile|float if gamma.net_gex_pctile is not none else 0) }}th pctile since {{ gamma.series_start if gamma.series_start is not none else 'inception' }}).<br><br><em>Model estimate only — actual dealer books are unobservable. Reconstructed from the SPX options chain.</em></span>
     <span class="l-zh"><b>缓冲机制原理</b><br>当做市商净GEX为正（多伽马）时，他们卖出期权，通过逢低买/逢高卖对冲——抑制波动。当GEX为负（空伽马）时，对冲需要追涨杀跌——放大波动。<br><br>当前净GEX：{{ '%.1f'|format(gamma.net_gex_bn|float if gamma.net_gex_bn is not none else 0) }}B（自{{ gamma.series_start if gamma.series_start is not none else '首日' }}以来{{ '%.0f'|format(gamma.net_gex_pctile|float if gamma.net_gex_pctile is not none else 0) }}百分位）。<br><br><em>仅为模型估算——做市商实际账簿不可观测，由标普500指数期权链重建。</em></span>
   </span></span>
+
+  {# Missing-session disclosure. The options chain we rebuild this from is a live
+     snapshot — a session we did not capture that evening can never be filled in,
+     so the honest thing is to name the days the read skips rather than let the
+     line and the day-count quietly close over them. #}
+  {% if gamma.coverage and not gamma.coverage.complete %}
+  {% set _miss = (gamma.coverage.missing_recent or []) + (gamma.coverage.missing_in_regime or []) %}
+  {% set _miss = _miss | unique | list | sort %}
+  {% if _miss %}
+  {% set _shown = _miss[-5:] %}
+  {% set _more = _miss | length - _shown | length %}
+  <div class="sec-foot" style="margin-top:14px">
+    <span class="l-en"><b>No chain reading for {{ _miss | length }} recent {{ 'session' if _miss|length == 1 else 'sessions' }}</b> ({{ _shown | join(', ') }}{% if _more > 0 %} and {{ _more }} earlier{% endif %}) — the options chain is a live snapshot, so a session we miss cannot be filled in later. Everything above skips those days.</span>
+    <span class="l-zh"><b>近期有 {{ _miss | length }} 个交易日无期权链读数</b>（{{ _shown | join('、') }}{% if _more > 0 %} 及更早 {{ _more }} 日{% endif %}）— 期权链为实时快照，当日未采集便无法补录。以上所有读数均跳过这些日期。</span>
+  </div>
+  {% endif %}
+  {% endif %}
 
   {% if gamma.series_start is not none or (msp is defined and msp is not none and msp.asof is not none) %}
   <div class="sec-foot" style="margin-top:14px">
