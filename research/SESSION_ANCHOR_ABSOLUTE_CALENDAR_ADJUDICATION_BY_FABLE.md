@@ -117,6 +117,61 @@ SEMANTICS (the 345-bar breadth-cache one-armed confirm gate — wbull needs 391 
 a DEPTH effect, disclosed via `null_legs`, measured in the blast-radius report; not an
 anchor effect and not silently "fixed" here). Ledger history: no backfill, no retro-edit.
 
+## Post-implementation amendments (2026-08-06, measured during the build)
+
+**A1 — CN reference store gaps, scoped.** `data/china/000001.SS.parquet` lacks ~131
+majority-trading dates that appear in the DEEP CN replay stores (`data/china_stocks`,
+pre-2021 — e.g. 2014-12-25, a real CN session with 274/300 names trading). Against the
+LIVE CN lane (`data/china_search/closes.parquet`, 2021→) the reference has **zero** gaps.
+So live CN verdicts are cleanly anchored; only deep-replay bucket EDGES are approximate on
+~1.66% of pre-2021 CN bars (invariance is unaffected — an absent date shares the next
+session's slot deterministically). Union with `399001.SZ` was considered and REJECTED: it
+doubles the reference's revision surface for zero live-lane benefit. **Binding rule:** a
+future backfill that ADDS historical sessions to the CN reference store re-phases every CN
+bucket after the inserted date — that is a graded-population change and REQUIRES a new era
+stamp; never backfill the reference silently. If CN gap quality ever matters, the
+designated upgrade is a committed append-only CN session artifact with an immutability
+guard, not a wider store union.
+
+**A2 — R2's "before R's start is unreachable" was wrong for CN replay.** 95
+`data/china_stocks` names predate the 1997 CN reference start (`000001.SZ`: 1,695
+pre-reference bars from 1991). The mirrored negative-rank branch is therefore LIVE, not a
+guard. Containment: negative positions never cross 0, so every post-1997 bucket is
+absolute regardless of how much pre-1997 history a caller loads; start-dependence is
+confined to pre-1997 bucket rows plus an ewm warm-up carry that decays within about a
+year. Replay grading windows (2021→) are unaffected.
+
+**A3 — Sibling defect, out of charter, follow-up required.** `engine/signal_quality.py`
+(the §7 marker engine that feeds `take_active`/`take_date` INTO the cascade) still runs
+its own `resample("3B"/"2B")` — so while the CASCADE layer is now start-invariant (this
+PR's measured 0/0), `gate()` END-TO-END is not: a leading-bar drop still moves §7 marker
+dates on all five quintet names and flips `ticks` (PEP 7→3, SW 15→3), which can flip the
+freshness gate. Same class in `engine/coiled.py`, `engine/mtf_upturn.py`,
+`engine/leader_lifecycle.py`, `engine/cycles.py`, `engine/pick_lab/signals_1d.py`. Each
+repair is its own charter with its own era stamp — `abs-session-2026-08-06` covers ONLY
+confluence_tiers' buckets. Repairing signal_quality touches the validated §7 master's
+calibration lineage and MUST NOT be folded into an unrelated PR.
+
+**A4 — One downstream consumer DID read the old bin labels.** The adjudication's claim
+that nothing reads `_tf_bars`' index semantically was false: `prophet_doors.completed_tf`
+derived its closed-bucket test from the pandas bin-START label. Under the new
+known-date-labelled buckets that expression silently delayed every Door R fire by one
+session; caught by its own suite and repaired in-PR with exact position arithmetic
+(`session_positions(last_obs) % n == n-1`), pinned by
+`tests/test_prophet_doors.py::test_closed_tail_bucket_is_kept`.
+
+**A5 — massive_stock_day measured in a restored lane only.** The store is R2-canonical
+(0 parquets in dev checkouts; restored by the collect job), so the scan-tier blast slice
+is deferred: `scripts/measure_anchor_blast_radius.py` is committed and emits a
+`::warning` naming the absent universe; run it in a restored lane. Its names are
+2021-start — the same depth class as baskets/ohlcv, whose slice IS measured.
+
+**A6 — S-B frozen cross-age table.** The anchor redistributes S-B's cross-age events
+across tick buckets (n 53/30/26 → 43/39/25). The frozen W5.2 packet JSON is untouched
+(asserted untouched); the gate now pins the post-era reproduction so further drift still
+reds. Re-reading the packet's verdicts at a fresh `REPRO_ASOF` is an open research
+decision, chartered separately.
+
 ## Ship requirements (charter §SHIP, all in this PR)
 
 1. Blast-radius measurement: `scripts/measure_anchor_blast_radius.py` →
