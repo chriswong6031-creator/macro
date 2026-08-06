@@ -217,7 +217,7 @@
             '行业智慧', '板块、主题与轮动一页读']
         ], '市场总览'],
         ['Signals & strategy', [
-          ['Subsector Confluence', 'Entry-now subsectors, double-gated funnel', 'subsectors.html', 'confluence',
+          ['Subsector Confluence', 'Entry-now subsectors, double-gated funnel', 'sector_central.html#confluence', 'confluence',
             '子行业汇聚', '现可入场子行业 · 双重闸门选股'],
           ['Strategies', 'Tactical scorecards and positioning', 'strategies.html', 'strategy',
             '策略', '战术记分卡与仓位'],
@@ -251,7 +251,7 @@
       // entry belongs to the global nav search, which every page already carries.
       rail: [
         ['Market Heatmap', 'See the whole tape', 'sector_central.html', 'heatmap', '市场热力图'],
-        ['Subsector Confluence', 'Find aligned groups', 'subsectors.html', 'confluence', '子行业汇聚'],
+        ['Subsector Confluence', 'Find aligned groups', 'sector_central.html#confluence', 'confluence', '子行业汇聚'],
         ['Browse U.S. markets', 'All U.S. destinations', 'macro.html', 'dashboard', '浏览美国全部页面']
       ],
       note: ['Built for quick decisions', 'The most-used desks stay one click away.'],

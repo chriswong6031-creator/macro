@@ -9,10 +9,15 @@
    ══════════════════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var VIEWS=['overview','map','moving','money','explore'];
+/* Six views. The sixth, 'confluence', is the subsector-confluence board brought in from
+   the standalone subsectors page (US parity with the China desk's 5th view, #4637, which
+   deferred this side). It ships its own hero and its own payload (subsectors.js,
+   lazy-mounted below), so it is a promise the data can keep. It has no si-read slot — its
+   hero is its read. */
+var VIEWS=['overview','map','moving','money','explore','confluence'];
 var TITLES={overview:['Overview','总览'],map:['The Map','全景图谱'],
   moving:["What's Moving",'正在轮动'],money:['Money & Breadth','资金与广度'],
-  explore:['Explore','深入探索']};
+  explore:['Explore','深入探索'],confluence:['Confluence','子行业汇聚']};
 /* View glyphs = the estate's hand-drawn masked-icon family (product-nav-icons /
    dashboard-icons — the same set the nav mega-menus draw), tinted via currentColor.
    Never raw emoji beside the wordmark. */
@@ -21,7 +26,8 @@ var GLYPH={
   map:'dash-icon dash-icon-compass',
   moving:'dash-icon submenu-icon-rotation',
   money:'dash-icon submenu-icon-flow',
-  explore:'dash-icon dash-icon-search'};
+  explore:'dash-icon dash-icon-search',
+  confluence:'dash-icon submenu-icon-confluence'};
 
 /* ── LEGACY_ANCHORS (§2b) ───────────────────────────────────────────────────────
    Every pre-V2 deep link on the estate — the two redirect stubs, chat citations,
@@ -49,7 +55,12 @@ var LEGACY_ANCHORS={
   'table-section':['explore','table-section'],
   'chart-section':['explore','chart-section'],
   'forming-narratives':['explore','forming-narratives'],
-  'tm-mount':['explore','tm-mount']
+  'tm-mount':['explore','tm-mount'],
+  /* the standalone subsectors page's own ids, so its redirect stub and every chat / detail
+     back-link that cited them still lands on the right rail view rather than overview. */
+  'confluence':['confluence','si-confluence'],
+  'sc-app':['confluence','sc-app'],
+  'sc-top':['confluence','sc-top']
 };
 
 /* ── lazy mount (gate 8) ────────────────────────────────────────────────────────
@@ -66,7 +77,12 @@ var LAZY={
   map:['@cycles'],
   moving:['subsector_rotation.js','rotation_events.js','desk_watch.js'],
   money:['heatmap.js'],
-  explore:['subsector_rotation.js','time_machine.js']
+  explore:['subsector_rotation.js','time_machine.js'],
+  /* the confluence board: subsectors.js self-boots on injection, finds #sc-app inside the
+     now-visible view and fetches its board JSON. It writes innerHTML only — no clientWidth
+     read — so it needs no laid-out box; it is lazy purely so that heavy fetch never fires
+     on an Overview-only visit. */
+  confluence:['subsectors.js']
 };
 var loaded={}, mounted={}, pendingTrace=null;
 
