@@ -132,13 +132,20 @@ def test_mobile_animation_avoids_transformed_or_clipped_iframe_ancestors():
     code = _read("templates/terminal_overlay.js")
     assert "@media(max-width:700px)" in code
     assert "clip-path:none!important;transform:none!important" in code
-    assert ".mmto-frame{opacity:1!important;transform:none!important;transition:none!important}" in code
+    assert ".mmto-frame{transform:none!important;transition:none!important}" in code
+    # The `!important` opacity is scoped to the OPEN state on purpose: hoisting it
+    # into the unconditional rule deletes the closed overlay's non-inheriting hide.
+    # tests/test_terminal_overlay_closed_state.py evaluates that cascade for real.
+    assert "#mm-terminal-overlay.is-open .mmto-frame{opacity:1!important}" in code
+    assert "#mm-terminal-overlay.is-open .mmto-stage{clip-path:none!important;" \
+           "transform:none!important;opacity:1!important}" in code
 
 
 def test_close_reveals_dashboard_immediately_without_an_opaque_exit_frame():
     code = _read("templates/terminal_overlay.js")
     assert "var CLOSE_ANIMATION_MS = 300;" in code
-    assert "#mm-terminal-overlay.is-closing{visibility:visible;pointer-events:none;background:transparent}" in code
+    assert ("#mm-terminal-overlay.is-closing{visibility:visible;opacity:1;"
+            "pointer-events:none;background:transparent}") in code
     assert "if (remount) {" in code
     assert "destroyFrame();\n      unlockDashboard({ restoreFocus: false });\n      return;" in code
     assert "transition-duration:.16s,.28s,.28s" in code

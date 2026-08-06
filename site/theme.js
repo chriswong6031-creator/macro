@@ -5430,11 +5430,17 @@
     style.id = 'mm-terminal-overlay-css';
     style.textContent = [
       'html.mm-terminal-lock,html.mm-terminal-lock body{overscroll-behavior:none}',
+      /* A CLOSED overlay must paint nothing, and `visibility` alone cannot promise
+         that: visibility INHERITS, so any descendant re-declaring
+         `visibility:visible` un-hides itself and its subtree straight through the
+         root's `hidden`. `opacity:0` is the one hide a descendant can never
+         escape — the compositor applies it to the whole subtree. Both are kept,
+         and no child may own the closed state. */
       '#mm-terminal-overlay{--mmto-x:50vw;--mmto-y:18vh;position:fixed;inset:0;z-index:2147483000;',
-        'visibility:hidden;pointer-events:none;isolation:isolate;overflow:hidden;background:#05070b;',
+        'visibility:hidden;opacity:0;pointer-events:none;isolation:isolate;overflow:hidden;background:#05070b;',
         'font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#f4f7ff}',
-      '#mm-terminal-overlay.is-open{visibility:visible;pointer-events:auto}',
-      '#mm-terminal-overlay.is-closing{visibility:visible;pointer-events:none;background:transparent}',
+      '#mm-terminal-overlay.is-open{visibility:visible;opacity:1;pointer-events:auto}',
+      '#mm-terminal-overlay.is-closing{visibility:visible;opacity:1;pointer-events:none;background:transparent}',
       '#mm-terminal-overlay::before{content:"";position:absolute;inset:-25%;z-index:0;pointer-events:none;',
         'background:radial-gradient(circle at var(--mmto-x) var(--mmto-y),rgba(77,130,255,.23),transparent 23%),',
         'radial-gradient(circle at 82% 16%,rgba(129,92,246,.15),transparent 25%),#05070b;',
@@ -5455,9 +5461,16 @@
       '.mmto-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#07090e;',
         'opacity:0;transform:scale(1.008);transition:opacity .28s ease,transform .48s cubic-bezier(.16,1,.3,1)}',
       '#mm-terminal-overlay.is-ready .mmto-frame{opacity:1;transform:none}',
+      /* No `visibility:visible` here. The loader INHERITS visible from an open
+         root and hidden from a closed one; declaring it made this full-screen
+         splash outlive every close whose teardown drops `is-ready` — which is
+         exactly what the mobile remount path does (destroyFrame →
+         resetFrameState). The dashboard was restored underneath, scrolled and
+         interactive, with the branded splash pinned over it at z-index
+         2147483000 until a full page load. */
       '.mmto-loader{position:absolute;inset:0;z-index:3;display:grid;place-items:center;overflow:hidden;',
         'background:linear-gradient(145deg,#080b12 0%,#05070b 58%,#080b14 100%);',
-        'opacity:1;visibility:visible;transition:opacity .26s ease,visibility 0s linear .26s}',
+        'opacity:1;transition:opacity .26s ease,visibility 0s linear .26s}',
       '#mm-terminal-overlay.is-ready .mmto-loader{opacity:0;visibility:hidden;pointer-events:none}',
       '.mmto-loader::before{content:"";position:absolute;width:min(70vw,760px);aspect-ratio:1;border-radius:50%;',
         'background:radial-gradient(circle,rgba(77,130,255,.13),rgba(77,130,255,.035) 36%,transparent 68%);',
@@ -5497,17 +5510,28 @@
       '.mmto-toast-icon svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}',
       '.mmto-toast kbd{margin-left:4px;padding:3px 6px;border:1px solid rgba(150,167,202,.28);border-bottom-color:rgba(150,167,202,.45);',
         'border-radius:5px;background:rgba(255,255,255,.055);color:#fff;font:650 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace}',
+      /* A closed overlay must not keep four infinite animations alive: they cost
+         battery, and on WebKit a running animation keeps its compositor layer
+         resident — the exact condition that strands a hidden layer on screen. */
+      '#mm-terminal-overlay:not(.is-open) .mmto-loader::before,',
+      '#mm-terminal-overlay:not(.is-open) .mmto-mark::before,',
+      '#mm-terminal-overlay:not(.is-open) .mmto-mark::after,',
+      '#mm-terminal-overlay:not(.is-open) .mmto-progress::after{animation-play-state:paused}',
       '@keyframes mmtoProgress{0%{transform:translateX(-125%)}100%{transform:translateX(340%)}}',
       '@keyframes mmtoOrbit{to{transform:rotate(360deg)}}',
       '@keyframes mmtoAura{0%,100%{transform:scale(.92);opacity:.72}50%{transform:scale(1.05);opacity:1}}',
       '@media(max-width:700px){',
         /* Mobile Safari is prone to black cross-origin iframe layers when an
            ancestor is transformed or clip-pathed. Keep the mobile reveal on
-           the loader/background; desktop retains the full radial/scale transition. */
-        '.mmto-stage{clip-path:none!important;transform:none!important;opacity:1!important;transition:none!important}',
+           the loader/background; desktop retains the full radial/scale transition.
+           The opacity override belongs to the OPEN state only — hoisting it into
+           the unconditional rule (as it was) removed the closed overlay's second,
+           inheritance-proof hide and left only the root `visibility`. */
+        '.mmto-stage{clip-path:none!important;transform:none!important;transition:none!important}',
         '#mm-terminal-overlay.is-open .mmto-stage{clip-path:none!important;transform:none!important;opacity:1!important}',
         '#mm-terminal-overlay.is-closing .mmto-stage{clip-path:none!important;transform:none!important;opacity:0!important}',
-        '.mmto-frame{opacity:1!important;transform:none!important;transition:none!important}',
+        '.mmto-frame{transform:none!important;transition:none!important}',
+        '#mm-terminal-overlay.is-open .mmto-frame{opacity:1!important}',
         '.mmto-toast{top:max(8px,env(safe-area-inset-top));font-size:11.5px;padding-right:10px}',
         '.mmto-loader-title{font-size:13px}.mmto-loader-sub{max-width:290px;line-height:1.45}',
       '}',
