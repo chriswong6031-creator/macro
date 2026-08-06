@@ -65,6 +65,25 @@ indistinguishable from silence. Silence must become impossible: the check
 lives on infrastructure that fails independently of GitHub. (The existing R2
 freshness tripwire inside `engine` is the right idea in the wrong place — it
 only fires when the nightly RUNS.)
+**SHIPPED 2026-08-06:** `scripts/freshness_sentinel.py` +
+`app/deploy/macro-sentinel.{service,timer}` (self-armed by `update.sh` on the
+serving VPS, every 30 min, `Persistent=true`), state served at
+`/live/staleness.json`. Budgets: 26h bakes (max observed healthy gap 23.2h over
+60 days) + 4 calendar days on the us_stocks board's OWN delayed-board
+disclosure (`prices as of` — rendered only when the engine reports the lag).
+The board anchor matters: the Jul-31→Aug-6 outage re-baked the page every day
+with fresh per-panel as-of annotations while the board froze, so neither
+Last-Modified nor a page-wide as-of scrape can see that mode. china.html emits
+no board stamp yet (its only `as of` is an FX widget) → bake-only until the
+template grows one (follow-up chip filed). Alerts = Telegram + Discord + mailer
+fan-out, 6h re-alert (immediate on a NEW surface joining; sticky through
+blindness so a dark site never reads as recovery), blind escalation after ~3h,
+alerts dispatched BEFORE state writes so a full disk cannot silence them.
+Gate §0.1 pinned by
+`tests/test_freshness_sentinel.py::test_simulated_dead_nightly_delivers_a_real_alert`
+(real local webhook, no mocks on the transport path); the outage replay by
+`test_jul31_outage_replay_breaches_on_the_board_marker`. Ops runbook:
+`docs/VPS_LIVE_ORCHESTRATION.md` §Lanes.
 
 **W2 — Runtime budget telemetry + 85% trend alarm.** Every cap raise in
 daily.yml's history (70→120→150→200→240 engine; 40→120 tech_lab;
