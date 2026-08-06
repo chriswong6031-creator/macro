@@ -175,6 +175,15 @@ jobs:
         run: python3 scripts/check_admin_js.py
       - name: guard tests (real tree + planted #3693 offender, fail-closed in CI)
         run: python -m pytest tests/test_admin_js_no_undef.py -q
+      # Companion guard, same file, different failure: an inline on*= handler
+      # built with JSON.stringify emits double quotes that CLOSE the attribute,
+      # so the browser stores a truncated expression and the control is dead on
+      # click. check_inline_js.py already parses on*= attributes, but only in
+      # site/ and templates/ where they exist on disk — app.js materialises them
+      # in the browser, so the defect is visible only in the source that builds
+      # them. Pure Python: no node, so a minimal pip lane cannot disarm it.
+      - name: inline handler attributes must not interpolate JS string literals
+        run: python -m pytest tests/test_admin_inline_handler_attrs.py -q
 
   path-prune-lint:
     if: ${{ false }}
