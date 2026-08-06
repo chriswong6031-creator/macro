@@ -1,5 +1,19 @@
 #!/usr/bin/env python3
-"""Census: which tests/test_*.py suites does NO workflow ever run, and how dark are they?
+"""Census: which pytest suites does NO workflow ever run, and how dark are they?
+
+SCOPE IS THE WHOLE TREE, NOT `tests/`.  This census, `check_skip_only_suites.py` and
+`check_ci_trigger_closure.py` were all hard-scoped to `tests/`, and therefore
+structurally blind to the suites most likely to be dark.  Research packets here are
+routinely fenced to files-only, so a packet's guard suite gets written next to the
+instrument under `research/` instead of in `tests/` — and measured 2026-08-06 (#4693),
+`research/prophet_us_audit/test_label_grading_battery.py` (16 tests, #4547) and
+`research/signal_engine/test_buy_filters.py` (6 tests) had been named by no `run:`
+step in any of the 75 workflows since they landed.  Never executed, while all three
+censuses reported the repo covered.  Discovery now walks the repo, so a suite is
+visible wherever its author put it.
+
+A `test_`-shaped FILENAME is not a suite, and classifying by name would replace one
+blind spot with a noisy one — see `defines_tests`.
 
 Two independent holes, deliberately measured separately:
 
@@ -22,17 +36,21 @@ Usage:
     python3 scripts/audit_unrun_tests.py                     # summary table
     python3 scripts/audit_unrun_tests.py --tier P0           # list one tier
     python3 scripts/audit_unrun_tests.py --json out.json     # full machine-readable rows
+    python3 scripts/audit_unrun_tests.py --selftest          # discovery round-trip
 
-Exit status is always 0: this is a reporting tool, not a gate.  Wiring every unrun
-suite would blow the ci-pack budget, so the output is triage input, not a to-do list.
+Exit status is always 0 (except `--selftest`): this is a reporting tool, not a gate.
+Wiring every unrun suite would blow the ci-pack budget, so the output is triage
+input, not a to-do list.
 """
 from __future__ import annotations
 
 import argparse
 import ast
 import fnmatch
+import functools
 import json
 import re
+import subprocess
 import sys
 from collections import Counter
 from pathlib import Path
@@ -43,6 +61,24 @@ ROOT = Path(__file__).resolve().parent.parent
 WORKFLOWS = ROOT / ".github/workflows"
 CI_MANIFEST = ROOT / ".github/ci/legacy-jobs.yml"
 TESTS = ROOT / "tests"
+
+# pytest's own default `python_files`.  This repo ships NO pytest configuration —
+# no pytest.ini, no setup.cfg, no [tool.pytest] in pyproject — so collection uses
+# exactly these two shapes and a file named anything else is never collected.
+_SUITE_FILENAME = re.compile(r"^(?:test_.+|.+_test)\.py$")
+
+# Trees that are not this repo's source.  The session-worktree entries are
+# load-bearing, not defensive: the primary checkout carries 357,599 test-shaped
+# files under `.claude/worktrees/` alone, so an unpruned walk turns a 2,017-row
+# census into a 368,938-row one.  A census that large is noise, and noise is how a
+# census stops being read — the exact failure mode these guards exist to end.
+EXCLUDED_DIRS = frozenset({
+    ".git", ".claude", ".claire", ".codex-worktrees", ".worktrees",
+    "node_modules", "site-packages", "vendor",
+    ".venv", "venv", ".tox", ".nox",
+    "__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache",
+    "ObsidianBrain",          # a symlink VIEW over memory/ + research/, not source
+})
 
 FIRST_PARTY = ("engine", "scripts", "app", "collectors", "lib", "admin", "site")
 
@@ -66,6 +102,123 @@ TIERS = (
     ("P4", "unrun, writes a data/ ledger (triggerable)"),
     ("P5", "unrun (remainder)"),
 )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# suite discovery — the whole tree, classified by what pytest would collect
+# ─────────────────────────────────────────────────────────────────────────────
+
+def defines_tests(path: Path) -> bool:
+    """Would pytest collect anything from this file?
+
+    A `test_`-shaped FILENAME is not a suite.  Three of them in this tree are CLI
+    measurement instruments — a `def main()` behind `if __name__ == "__main__"`, no
+    test functions at all — and `pytest` exits 5 (no tests collected) on each:
+
+        research/cn_prophet_audit/sector_intel_exante_test.py
+        research/signal_engine/test_breadth_consume.py
+        research/signal_engine/test_buyfilter.py
+
+    Listing those as unrun work items would trade a blind census for a noisy one,
+    and a guard that cries wolf gets ignored.  So the question asked is pytest's
+    own: does the file define a `test*` function, or a `Test*` class holding one?
+    (Those are `python_functions`/`python_classes` defaults, which apply because
+    the repo overrides neither.)  Verified against real collection: of 2,020
+    filename-shaped candidates this agrees with `pytest --collect-only` on all
+    2,020 — 2,017 suites, and exactly the three instruments above.
+
+    A file that will not parse returns True.  pytest ERRORS at collection on it,
+    which is louder than a miscounted row, and over-including is the safe direction
+    for every consumer here: two only report, and the third fails only on a suite
+    some job actually NAMES.
+    """
+    try:
+        tree = ast.parse(path.read_text(errors="ignore"))
+    except (SyntaxError, ValueError):
+        return True
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if node.name.startswith("test"):
+                return True
+        elif isinstance(node, ast.ClassDef) and node.name.startswith("Test"):
+            if any(
+                isinstance(member, (ast.FunctionDef, ast.AsyncFunctionDef))
+                and member.name.startswith("test")
+                for member in node.body
+            ):
+                return True
+    return False
+
+
+def _tracked_candidates(root: Path) -> list[str] | None:
+    """Every file git knows about, or ``None`` when git cannot answer.
+
+    `git ls-files` is the authoritative inventory — it is exactly "files in this
+    repo" — so an untracked sibling worktree, a vendored tree or a virtualenv
+    cannot leak in whatever it happens to be named.  The pruned walk below is the
+    fallback for a checkout git cannot read (an exported tarball, a sandbox).
+    """
+    try:
+        completed = subprocess.run(
+            ["git", "ls-files", "-z"],
+            cwd=root, capture_output=True, text=True, check=True, timeout=120,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return [entry for entry in completed.stdout.split("\0") if entry]
+
+
+def _walked_candidates(root: Path) -> list[str]:
+    """Fallback inventory: a PRUNED walk, never a bare rglob (see EXCLUDED_DIRS)."""
+    found: list[str] = []
+    stack = [root]
+    while stack:
+        current = stack.pop()
+        try:
+            entries = list(current.iterdir())
+        except OSError:
+            continue
+        for entry in entries:
+            if entry.is_symlink():
+                continue          # ObsidianBrain is a symlink VIEW, not source
+            if entry.is_dir():
+                if entry.name not in EXCLUDED_DIRS:
+                    stack.append(entry)
+            elif _SUITE_FILENAME.match(entry.name):
+                found.append(entry.relative_to(root).as_posix())
+    return found
+
+
+@functools.lru_cache(maxsize=None)
+def _classify(root_str: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """``(real suites, filename-shaped non-suites)`` — cached per root.
+
+    Keyed on the root string so a caller that repoints ``ROOT`` (the guards' own
+    tests do, to seed a suite into a synthetic tree) gets a fresh classification
+    instead of a stale cache.
+    """
+    root = Path(root_str)
+    names = _tracked_candidates(root)
+    if names is None:
+        names = _walked_candidates(root)
+    candidates = sorted({
+        rel for rel in names
+        if _SUITE_FILENAME.match(rel.rsplit("/", 1)[-1])
+        and not any(part in EXCLUDED_DIRS for part in rel.split("/")[:-1])
+        and (root / rel).is_file()
+    })
+    suites = tuple(rel for rel in candidates if defines_tests(root / rel))
+    return suites, tuple(rel for rel in candidates if rel not in set(suites))
+
+
+def discover_suites() -> list[str]:
+    """Repo-relative paths of every real pytest suite, wherever it lives."""
+    return list(_classify(str(ROOT))[0])
+
+
+def not_a_suite() -> list[str]:
+    """Filename-shaped files that collect nothing — printed, never silently dropped."""
+    return list(_classify(str(ROOT))[1])
 
 
 def _workflow_blob() -> str:
@@ -210,9 +363,10 @@ def census() -> list[dict]:
     patterns = _ci_paths()
     pipeline = _pipeline_modules()
     rows = []
-    for path in sorted(TESTS.glob("test_*.py")):
+    for rel_test in discover_suites():
+        path = ROOT / rel_test
         name = path.name
-        if f"tests/{name}" in blob or name in blob:
+        if rel_test in blob or name in blob:
             continue                                    # named by some run: step
         subjects = sorted({
             rel for mod in _subject_modules(path) for rel in _to_relpaths(mod)
@@ -220,7 +374,7 @@ def census() -> list[dict]:
         real = [s for s in subjects
                 if not s.startswith("tests") and not s.endswith("__init__.py")]
         on_pipeline = sorted(s for s in real if s in pipeline)
-        triggerable = (_matched(f"tests/{name}", patterns)
+        triggerable = (_matched(rel_test, patterns)
                        or any(_matched(s, patterns) for s in subjects))
         ledger = _writes_ledger(real)
         if on_pipeline and not triggerable:
@@ -235,7 +389,7 @@ def census() -> list[dict]:
             tier = "P4"
         else:
             tier = "P5"
-        rows.append(dict(test=name, tier=tier, triggerable=triggerable,
+        rows.append(dict(test=rel_test, tier=tier, triggerable=triggerable,
                          writes_ledger=ledger, pipeline_subjects=on_pipeline,
                          subjects=real))
     return rows
@@ -246,19 +400,42 @@ def main(argv: list[str] | None = None) -> int:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--tier", help="list the suites in one tier (P0..P5)")
     ap.add_argument("--json", type=Path, help="write all rows as JSON")
+    ap.add_argument("--selftest", action="store_true",
+                    help="round-trip discovery and classification against fixtures")
     args = ap.parse_args(argv)
 
+    if args.selftest:
+        return _selftest()
+
     rows = census()
-    total = len(list(TESTS.glob("test_*.py")))
+    suites = discover_suites()
+    excluded = not_a_suite()
+    outside = [s for s in suites if not s.startswith("tests/")]
     counts = Counter(r["tier"] for r in rows)
     dark = sum(1 for r in rows if not r["triggerable"])
 
-    print(f"tests/test_*.py suites : {total}")
+    print(f"pytest suites (whole tree) : {len(suites)}")
+    print(f"  of which outside tests/  : {len(outside)}")
     print(f"  never run by any workflow : {len(rows)}")
     print(f"  ... of which STRICTLY DARK (also untriggerable) : {dark}")
     print()
     for tier, label in TIERS:
         print(f"  {tier}  {counts.get(tier, 0):5d}  {label}")
+
+    # Printed, never silently dropped: a reader who greps for one of these names
+    # has to be able to see WHY it is absent from the tiers above.
+    if excluded:
+        print(f"\n  not a suite ({len(excluded)}) — pytest-shaped filename, collects "
+              f"nothing (CLI instruments):")
+        for rel in excluded:
+            print(f"    {rel}")
+
+    if outside:
+        print(f"\n  suites outside tests/ ({len(outside)}) — invisible to this census "
+              f"before 2026-08-06:")
+        for rel in outside:
+            unrun = any(r["test"] == rel for r in rows)
+            print(f"    {rel}  {'UNRUN' if unrun else 'run by a job'}")
 
     if args.tier:
         want = args.tier.upper()
@@ -271,6 +448,97 @@ def main(argv: list[str] | None = None) -> int:
     if args.json:
         args.json.write_text(json.dumps(rows, indent=1))
         print(f"\nwrote {args.json} ({len(rows)} rows)")
+    return 0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# selftest — a census that stops seeing is worse than no census
+# ─────────────────────────────────────────────────────────────────────────────
+
+_FIXTURE_SUITE = "import pytest\n\n\ndef test_thing():\n    assert True\n"
+_FIXTURE_CLASS_SUITE = (
+    "class TestBattery:\n"
+    "    def test_case(self):\n"
+    "        assert True\n"
+)
+# The shape of all three real non-suites: a CLI instrument that pytest exits 5 on.
+_FIXTURE_INSTRUMENT = (
+    "import sys\n\n\n"
+    "def main(argv=None):\n"
+    "    print('measurement')\n"
+    "    return 0\n\n\n"
+    'if __name__ == "__main__":\n'
+    "    sys.exit(main(sys.argv[1:]))\n"
+)
+
+
+def _selftest() -> int:
+    import tempfile
+
+    failures: list[str] = []
+    global ROOT
+    original = ROOT
+
+    # 1. Discovery reaches outside tests/ — the whole point of the widening.
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        for rel, body in (
+            ("tests/test_in_tests.py", _FIXTURE_SUITE),
+            ("research/packet/test_beside_the_instrument.py", _FIXTURE_SUITE),
+            ("research/packet/test_class_based.py", _FIXTURE_CLASS_SUITE),
+            ("research/packet/test_instrument.py", _FIXTURE_INSTRUMENT),
+            ("research/packet/sector_exante_test.py", _FIXTURE_INSTRUMENT),
+            ("scripts/research/test_nested.py", _FIXTURE_SUITE),
+            (".claude/worktrees/other/tests/test_someone_elses.py", _FIXTURE_SUITE),
+            ("node_modules/pkg/test_vendored.py", _FIXTURE_SUITE),
+            ("research/packet/helper.py", _FIXTURE_SUITE),
+        ):
+            target = root / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(body)
+        try:
+            ROOT = root
+            found = set(discover_suites())
+            skipped = set(not_a_suite())
+        finally:
+            ROOT = original
+
+    for want in (
+        "tests/test_in_tests.py",
+        "research/packet/test_beside_the_instrument.py",
+        "research/packet/test_class_based.py",
+        "scripts/research/test_nested.py",
+    ):
+        if want not in found:
+            failures.append(f"discovery missed {want}")
+    for wrong, why in (
+        ("research/packet/test_instrument.py", "a CLI instrument collects no tests"),
+        ("research/packet/sector_exante_test.py", "a *_test.py instrument likewise"),
+        ("research/packet/helper.py", "not a pytest filename shape"),
+        (".claude/worktrees/other/tests/test_someone_elses.py",
+         "another session's worktree is not this repo's source"),
+        ("node_modules/pkg/test_vendored.py", "vendored code is not this repo's source"),
+    ):
+        if wrong in found:
+            failures.append(f"discovery returned {wrong}: {why}")
+    for want in ("research/packet/test_instrument.py",
+                 "research/packet/sector_exante_test.py"):
+        if want not in skipped:
+            failures.append(f"{want} must be REPORTED as a non-suite, not dropped")
+
+    # 2. Classification agrees with pytest on the real tree's known instruments.
+    for rel in ("research/cn_prophet_audit/sector_intel_exante_test.py",
+                "research/signal_engine/test_breadth_consume.py",
+                "research/signal_engine/test_buyfilter.py"):
+        target = original / rel
+        if target.is_file() and defines_tests(target):
+            failures.append(f"{rel} collects no tests but classified as a suite")
+
+    if failures:
+        for failure in failures:
+            print(f"::error title=unrun-census-selftest::{failure}", flush=True)
+        return 1
+    print("SELFTEST OK — discovery reaches outside tests/, instruments classified out.")
     return 0
 
 
