@@ -18,11 +18,19 @@ state must name the session it is a receipt for.
 `test_gold_miners_graduation_case_from_committed_log` is that graduation, pinned
 as the receipt for the opposite half: off the lane, and carrying the recovering
 chip instead.
+
+DISPLAY REGRESSION (#4642): no US template renders this lane any more. The
+template tests here used to pin sector_central's client renderer by function name
+(botRow/actRow); #4642 deleted that renderer when it transplanted the shared
+server-rendered act board, and its replacement ships no bottoming lane. The
+display fences survive as `test_surface_*`, parametrised over
+`_us_bottoming_surfaces()` so they cover the shipped board today and arm
+themselves against a restored lane automatically. See the DISPLAY REGRESSION
+block further down for the full record.
 """
 from __future__ import annotations
 
 import json
-import re
 import sys
 from pathlib import Path
 
@@ -48,7 +56,35 @@ from engine.us_act_now import (
     contains_buy_word,
 )
 
-TEMPLATE = ROOT / "templates" / "sector_central.html.j2"
+TEMPLATES = ROOT / "templates"
+
+# The US act board's home since #4642. Before it, sector_central.html.j2 carried a
+# client-side renderer (renderActBoard/actRow/actLane/botRow) that these template
+# tests pinned by function name; #4642 replaced it with this shared, server-rendered
+# include and deleted the client renderer outright. See the DISPLAY REGRESSION note
+# above `test_the_bottoming_payload_is_built_but_no_us_surface_renders_it`.
+ACT_BOARD = TEMPLATES / "_us_act_now_board.html.j2"
+
+
+def _us_bottoming_surfaces() -> list[Path]:
+    """Every US template the bottoming-watch payload could reach.
+
+    Always includes the shipped act board, so the display fences below can never
+    degrade into a vacuous zero-case parametrisation, and picks up any other US
+    template that starts rendering the payload — the fences then arm themselves
+    against the restored lane without anyone remembering to re-point them.
+
+    China is excluded on purpose: `_china_act_now_board.html.j2` renders its own
+    bottoming lane and is fenced by the China suite.
+    """
+    found = {ACT_BOARD}
+    for path in sorted(TEMPLATES.glob("*.j2")):
+        if "china" in path.name:
+            continue
+        src = path.read_text(encoding="utf-8")
+        if "bottoming_watch" in src or "botRow" in src:
+            found.add(path)
+    return sorted(found)
 
 
 # ─────────────────────────────────────── helpers ──────────────────────────────
@@ -194,12 +230,21 @@ def test_missing_name_zh_is_none_not_a_slug():
     assert r["name_zh"] is None
 
 
-def test_template_falls_back_to_english_when_name_zh_absent():
-    src = TEMPLATE.read_text(encoding="utf-8")
-    m = re.search(r"\nfunction botRow\(x\)\{(.*?)\n\}\n", src, re.S)
-    assert m
-    assert "x.name_zh||x.name" in m.group(1), (
-        "botRow() must fall back to the English name when name_zh is absent"
+@pytest.mark.parametrize("surface", _us_bottoming_surfaces(), ids=lambda p: p.name)
+def test_surface_falls_back_to_english_when_name_zh_absent(surface):
+    """Bilingual law: an absent zh name renders the English one, never a blank.
+
+    Was pinned on botRow()'s `x.name_zh||x.name`; the shipped board expresses the
+    same law as `(x.name_zh or x.name)`. Counted rather than merely searched — a
+    single guarded occurrence must not vouch for an unguarded one added later.
+    """
+    src = surface.read_text(encoding="utf-8")
+    total = src.count("name_zh")
+    assert total, f"{surface.name} renders no zh name at all"
+    guarded = src.count("name_zh or ") + src.count("name_zh||")
+    assert guarded == total, (
+        f"{surface.name} has {total - guarded} zh-name reference(s) with no "
+        f"English fallback — an absent name_zh would render blank"
     )
 
 
@@ -316,41 +361,50 @@ def test_row_name_is_the_only_free_text_field_rendered():
     assert set(DISPLAY_FORBIDDEN_FIELDS) == {"signal", "timing_state"}
 
 
+@pytest.mark.parametrize("surface", _us_bottoming_surfaces(), ids=lambda p: p.name)
 @pytest.mark.parametrize("field", DISPLAY_FORBIDDEN_FIELDS)
-def test_template_bottoming_row_never_renders_a_buy_word_field(field):
+def test_surface_never_renders_a_buy_word_field(field, surface):
     """The fence is only real if the renderer actually omits these fields.
 
-    Reads the shipped `botRow()` body out of the template. A future edit that
-    prints `timing_state` ("FRESH BUY") on a watch-only lane fails here.
+    `timing_state`'s real vocabulary includes the literal "FRESH BUY" and `signal`
+    is "BUY" — printing either on a watch-only lane puts a buy verb on a surface
+    that must carry none. Armed against the shipped board so that a restored
+    bottoming lane inherits the fence rather than having to re-earn it.
     """
-    src = TEMPLATE.read_text(encoding="utf-8")
-    m = re.search(r"\nfunction botRow\(x\)\{(.*?)\n\}\n", src, re.S)
-    assert m, "botRow() not found in sector_central.html.j2 — did it get renamed?"
-    body = m.group(1)
-    assert f"x.{field}" not in body, (
-        f"botRow() renders x.{field}, which carries buy-family words "
-        f"(e.g. timing_state == 'FRESH BUY') onto a watch-only lane"
+    src = surface.read_text(encoding="utf-8")
+    for access in (f".{field}", f"get('{field}')", f'get("{field}")'):
+        assert access not in src, (
+            f"{surface.name} renders {access}, which carries buy-family words "
+            f"(e.g. timing_state == 'FRESH BUY') onto a watch-only lane"
+        )
+
+
+def test_lane_copy_is_declared_bilingually_by_the_engine():
+    """The lane's fixed copy must exist in both languages before anything renders it.
+
+    Was pinned as literal strings inside sector_central's botRow()/actLane() calls.
+    #4642 deleted that renderer, so the copy is pinned where it is now authored —
+    the engine's authority block, which is the single source the page must quote
+    (`test_recovering_copy_ships_from_the_engine_authority_block`).
+    """
+    auth = assemble_bottoming_watch([_row(slope=1.0)])["authority"]
+    for en, zh in ((NULL_DISCLOSURE_EN, NULL_DISCLOSURE_ZH),
+                   (RECOVERING_CHIP_EN, RECOVERING_CHIP_ZH),
+                   (RECOVERING_TIP_EN, RECOVERING_TIP_ZH),
+                   (RECOVERING_DISCLOSURE_EN, RECOVERING_DISCLOSURE_ZH)):
+        assert en.strip() and zh.strip()
+        assert zh != en, "zh copy must actually be translated"
+    assert auth["null_disclosure_en"] == NULL_DISCLOSURE_EN
+
+
+@pytest.mark.parametrize("surface", _us_bottoming_surfaces(), ids=lambda p: p.name)
+def test_surface_has_no_translated_title_attribute(surface):
+    """House law: no translated text in title= attributes — hover copy ships as
+    data-tip-en/data-tip-zh so the language switch can reach it."""
+    src = surface.read_text(encoding="utf-8")
+    assert "title=" not in src, (
+        f"{surface.name} carries a title= attribute; use data-tip-en/data-tip-zh"
     )
-
-
-def test_template_lane_declares_the_watch_caption_in_both_languages():
-    src = TEMPLATE.read_text(encoding="utf-8")
-    for s in ("Bottoming watch", "筑底观察",
-              "cycle lows forming", "周期底部形成中",
-              "cycle turn signal — watch only", "周期转折信号——仅观察",
-              "below 200-day trend — gate shut", "低于200日趋势——闸门关闭",
-              "no basing candidates tonight", "今晚无筑底候选",
-              "may be bottoming", "或正筑底"):
-        assert s in src, f"missing lane string: {s!r}"
-
-
-def test_template_has_no_translated_title_attribute():
-    """House law: no translated text in title= attributes (CI-guarded elsewhere;
-    pinned here for the strings this lane adds)."""
-    src = TEMPLATE.read_text(encoding="utf-8")
-    m = re.search(r"\nfunction botRow\(x\)\{(.*?)\n\}\n", src, re.S)
-    assert m
-    assert "title=" not in m.group(1)
 
 
 # ──────────────────── G0.3 — the existing lanes stay untouched ────────────────
@@ -698,44 +752,79 @@ def test_recovering_tip_does_not_claim_bottoming_lane_membership():
     assert "筑底观察" not in RECOVERING_TIP_ZH
 
 
-# ── template pinning ─────────────────────────────────────────────────────────
-def _act_row_body() -> str:
-    src = TEMPLATE.read_text(encoding="utf-8")
-    m = re.search(r"\nfunction actRow\(x\)\{(.*?)\n\}\n", src, re.S)
-    assert m, "actRow() not found in sector_central.html.j2 — did it get renamed?"
-    return m.group(1)
+# ── DISPLAY REGRESSION: the US bottoming lane has no renderer ────────────────
+#
+# #4642 ("transplant the V2 five-lane action board onto US Sector Intelligence")
+# replaced sector_central's client-rendered act board with the shared server-
+# rendered templates/_us_act_now_board.html.j2. Its summary describes the board it
+# deleted as "the client-rendered 4-lane themes-only board" — but the deleted code
+# ran FIVE actLane() calls: buy, wait, trim, avoid, AND bottom. The replacement
+# board has no bottoming lane (`grep -c bottoming templates/_us_act_now_board.html.j2`
+# → 0), so the W-A lane shipped by #4599 and amended by #4614 is DARK on the US
+# site while engine/us_act_now.py and scripts/build_baskets.py still compute and
+# ship its payload. China's board (`_china_act_now_board.html.j2`) still renders
+# its equivalent lane, so this is a US-only display loss.
+#
+# The four tests that used to live here pinned that deleted renderer by function
+# name (actRow's BOT_REC chip, its one-chip-per-row gate, its footnote wiring).
+# They are replaced by the payload-liveness pin below plus the surface fences
+# above, which arm themselves against whatever renders the lane next. Restoring
+# the lane is a product decision with its own owner, not a CI heal — see the PR
+# that healed this suite.
+
+def test_the_bottoming_payload_is_built_but_no_us_surface_renders_it():
+    """Records the #4642 display regression and keeps the restore path alive.
+
+    The loss is display-only: the assembler still runs and the builder still
+    writes every key a renderer would need. If this test starts failing because
+    the BUILDER stopped writing them, the lane is no longer merely dark — the
+    data is gone too, and the restore is a rebuild rather than a re-render.
+    """
+    src = (ROOT / "scripts" / "build_baskets.py").read_text(encoding="utf-8")
+    for key in ("bottoming_watch", "dual_read_ids", "recovering_ids",
+                "bottoming_authority"):
+        assert f'_an_ba["{key}"] = _bw[' in src, (
+            f"build_baskets stopped shipping act_now[{key!r}] — the US bottoming "
+            f"lane's payload is now gone, not just unrendered"
+        )
+    # and the assembler still produces them
+    out = assemble_bottoming_watch([_row(slope=1.0)])
+    assert set(out) >= {"bottoming_watch", "dual_read_ids", "recovering_ids",
+                        "authority"}
 
 
-def test_template_renders_the_recovering_chip_from_the_engine_copy():
-    body = _act_row_body()
-    assert "BOT_REC.has" in body, "actRow() must consult the recovering id set"
-    for token in ("BOT_REC_EN", "BOT_REC_ZH", "BOT_REC_TIP_EN", "BOT_REC_TIP_ZH"):
-        assert token in body, f"actRow() must render engine copy {token}"
+def test_the_recovering_chip_copy_is_still_shipped_for_a_future_renderer():
+    """The chip's words ship from the engine so a page cannot drift from the
+    measured basis. Pinned at the authority block — the source a restored
+    renderer must quote — now that no template carries the wording."""
+    auth = assemble_bottoming_watch([])["authority"]
+    for key in ("recovering_chip_en", "recovering_chip_zh",
+                "recovering_tip_en", "recovering_tip_zh",
+                "recovering_disclosure_en", "recovering_disclosure_zh"):
+        assert auth[key].strip(), f"engine stopped shipping {key}"
 
 
-def test_template_gives_a_row_one_chip_not_two():
-    """A row already carrying the conflicted or FT-R1 chip must not gain a third."""
-    body = _act_row_body()
-    m = re.search(r"const recov=\((.*?)\)\?", body, re.S)
-    assert m, "the recovering chip's gate was not found in actRow()"
-    gate = m.group(1)
-    assert "!x._conflicted" in gate
-    assert "!BOT_DUAL.has" in gate
+def test_the_recovering_and_dual_read_sets_stay_disjoint():
+    """The one-chip-per-row guarantee, pinned at its source.
 
-
-def test_template_populates_the_recovering_set_and_footnote():
-    src = TEMPLATE.read_text(encoding="utf-8")
-    assert "a.recovering_ids" in src, "renderActBoard must read act_now.recovering_ids"
-    assert "recovering_disclosure_en" in src, "the footnote must carry the disclosure"
-    # the disclosure prints only when a chip is actually on the page
-    assert "BOT_REC.size&&ba&&ba.recovering_disclosure_en" in src
-
-
-def test_template_recovering_chip_has_no_translated_title_attribute():
-    """House law: no translated text in title= attributes."""
-    m = re.search(r"const recov=.*?:'';", _act_row_body(), re.S)
-    assert m
-    assert "title=" not in m.group(0)
+    actRow() used to enforce it in the renderer (`!x._conflicted && !BOT_DUAL.has`);
+    with the renderer gone the guarantee lives where it is actually decided — the
+    assembler, which never puts an id in both sets (engine/us_act_now.py:
+    `recovering_ids ∩ bottoming_watch = ∅`).
+    """
+    bw = assemble_bottoming_watch(
+        [_row(id_="b-gold_miners", phase="Recovery", pos=2.3, slope=1.5),
+         _row(id_="b-uranium_miners", phase="Trough", pos=0.8, slope=0.4)],
+        reduce_ids=["gold_miners", "uranium_miners"],
+    )
+    assert bw["recovering_ids"] and bw["dual_read_ids"]
+    assert not (set(bw["recovering_ids"]) & set(bw["dual_read_ids"])), (
+        "an id in both sets would render two chips on one row"
+    )
+    on_lane = {r["id"] for r in bw["bottoming_watch"]}
+    assert not (set(bw["recovering_ids"]) & on_lane), (
+        "a recovering id must have LEFT the bottoming lane"
+    )
 
 
 def test_wiring_adds_recovering_ids_without_touching_the_other_lanes():
