@@ -193,6 +193,9 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.fetch_r2 --dirs massive_stock_day --workers 24
       - name: run collectors (graceful degradation — never fails the build on one source)
+        # id is load-bearing: "commit data" gates on THIS step's outcome by name.
+        # It is the sole bulk producer of the tree that commit stages.
+        id: collectors
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
           FINRA_API_CLIENT_ID: ${{ secrets.FINRA_API_CLIENT_ID }}      # CCW-W5: FINRA breadth/sentiment/capped-vol (collectors/finra_corp_bonds.py); absent -> skip-clean, non-fatal
@@ -333,6 +336,9 @@ jobs:
             perl -e 'alarm 930; exec @ARGV or die' -- python -m scripts.retain_capital_structure_share_counts "${retention_args[@]}"
           fi
       - name: compile capital-structure event spine (offline, context-only)
+        # id: consumed by "commit data" to decide whether the capital-structure PATHS
+        # may be staged — never whether the commit itself runs (see that step).
+        id: cs_spine
         # AFTER collection so today's verified SEC manifests are visible, and BEFORE
         # the data commit so immutable event versions/edges ride the same checkpoint.
         # This compiler is network-free by contract and has no Prophet/rank authority.
@@ -340,6 +346,7 @@ jobs:
         # the checkpoint; a partial capital-structure generation is never committed.
         run: python -m scripts.compile_capital_structure_events
       - name: compile capital-structure direct document terms (SEC-network-free, context-only)
+        id: cs_terms
         # The fee-table compiler reads only source-manifest-addressed complete
         # submissions through their exact R2 namespace. The collector's source-store
         # environment is step-local, so wire it again here rather than pretending a
@@ -362,6 +369,7 @@ jobs:
           R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
         run: python -m scripts.compile_capital_structure_document_terms
       - name: build capital-structure projection (offline, context-only)
+        id: cs_projection
         # Reads only the verified telemetry-last event generation. It publishes an
         # observed-filing-state artifact and byte-identical public twin; terms,
         # capacity, runway, scores, probabilities, and Prophet authority stay absent.
@@ -425,6 +433,14 @@ jobs:
         # fail; continue-on-error keeps the night's commit safe while the annotations
         # plus the engine job's strict audit_r2 anchor carry the alarm. Writes
         # data/quality/massive_store_audit.json, picked up by "commit data" below.
+        #
+        # always() (2026-08-05): continue-on-error stops this step from failing the job,
+        # but it does NOT stop an EARLIER failure from skipping it — a bare step inherits
+        # success(). So on every night a veto fired (08-02 → 08-05) the store's own
+        # tripwire was dark, and the freeze surfaced only 6 days later as the engine job's
+        # R2 staleness anchor. The alarm must be loudest exactly on the nights the night
+        # is lost. It stays continue-on-error, so this cannot red the collect job.
+        if: always()
         continue-on-error: true
         env:
           COLLECT_LANE: nightly   # load-bearing: the skip path only annotates on this lane
@@ -448,7 +464,65 @@ jobs:
           python -m scripts.audit_stocks_freshness \
             || echo "::warning::audit_stocks_freshness crashed (non-fatal — per-name freshness disclosure absent this run)"
       - name: commit data (local checkpoint — no network ops in this step)
+        # NAMED-STEPS GATE (2026-08-05). This step used to carry no `if:` at all, so it
+        # inherited an implicit success() and ANY earlier red discarded the night's
+        # market collection — 08-02, 08-03 (collectors duck-typing, #4560), 08-04 (host
+        # disk), 08-05 (capital-structure ManifestIdentityError). Four nights lost to
+        # three causes, none of which had anything to do with whether the PRICE data on
+        # disk was sound.
+        #
+        # A bare always() is NOT the fix and is forbidden here: on 2026-08-04 an
+        # always() commit step outran its SKIPPED normalizers and committed raw
+        # un-normalized pages sitewide (P0). A skipped producer must block exactly like
+        # a failed one, which is why this gates on `.outcome == 'success'` — outcome is
+        # the raw step result, so 'skipped' and 'cancelled' both block, and unlike
+        # `.conclusion` it is not laundered by a continue-on-error.
+        #
+        # STAGED PATH -> PRODUCING STEP  (the mapping this gate is derived from; extend
+        # it when you add a step that WRITES into the staged tree):
+        #
+        #   data/**                    -> `run collectors`  (id: collectors)  GATES
+        #     the whole market plane: data/stocks, data/baskets/ohlcv, breadth close
+        #     caches, macro series, ~228 adapters. The only bulk producer here.
+        #   site/qledger/track_record.json
+        #                              -> `run collectors`  (grade_qledger)   GATES
+        #   data/capital_structure/**  -> `run collectors` (sec_capital_structure writes
+        #     site/capital-structure-data/  source_manifest.jsonl) + cs_spine + cs_terms
+        #                                 + cs_projection.  PATH-SCOPED, see below.
+        #   data/themes_heatmap/perf_snapshot.json
+        #                              -> `refresh Finviz themes`   does NOT gate
+        #   data/zori/national.parquet -> `collect ZORI`             does NOT gate
+        #     Both are self-guarded (`|| echo ::warning::`) and purely additive: a miss
+        #     re-commits the previous snapshot, which is a no-op diff, not a torn tree.
+        #   data/quality/massive_store_audit.json
+        #                              -> `audit massive_stock_day store`  does NOT gate
+        #     A tripwire REPORTS on the tree; it does not produce it. Gating on an alarm
+        #     would let the alarm delete the evidence.
+        #
+        # NOT in the gate, deliberately:
+        #   * the capital-structure compile chain — a compile failure must never again
+        #     discard price collection. But those steps DO write tracked staged paths
+        #     (source_manifest.jsonl, event_versions/edges.parquet, projection.json,
+        #     site/capital-structure-data/latest.json), so committing through a failure
+        #     would stage a REJECTED source ledger beside stale events — a torn
+        #     generation, and it would destroy the self-heal that makes the failure
+        #     recoverable (#4600: each night restores a clean ledger from git, so a
+        #     committed drift becomes permanent). Resolved by SCOPE, not by veto: the
+        #     commit runs, and the capital-structure paths are unstaged below unless
+        #     their whole chain succeeded. Both laws hold.
+        #   * the two var-gated share-count steps — designed to be SKIPPED (vars off).
+        #     `== 'success'` on a normally-skipped step would deadlock the pipeline
+        #     forever. They write only under data/capital_structure/, already covered
+        #     by the scope carve-out.
+        #   * collect_tail — a SEPARATE JOB with its own commit; nothing it produces is
+        #     staged here (site/basketdata moved with it in the 2026-07-14 split), and
+        #     cross-job step outcomes are not referenceable in an `if:` anyway.
+        if: always() && steps.collectors.outcome == 'success'
         id: commitdata
+        env:
+          CS_SPINE: ${{ steps.cs_spine.outcome }}
+          CS_TERMS: ${{ steps.cs_terms.outcome }}
+          CS_PROJECTION: ${{ steps.cs_projection.outcome }}
         run: |
           echo "committed=false" >> "$GITHUB_OUTPUT"
           git config user.name "dashboard-bot"
@@ -474,6 +548,21 @@ jobs:
           # `china` or `hk` (scripts/collect.py group_members), so excludes cover all
           # data/china*, data/hk*, and data/hkma (adapter key `hkma` starts with `hk`).
           git reset -q -- data/hk data/hk_* data/hkma data/china data/china_* 2>/dev/null || true
+          # Capital-structure SCOPE CARVE-OUT (2026-08-05) — same idiom as the asia
+          # unstage above, and the reason a capital-structure failure no longer needs to
+          # veto the whole night. That lane is an all-or-nothing SEC publication
+          # protocol: its own generation is coherent only if the entire chain ran. The
+          # collectors step has ALREADY rewritten the tracked source_manifest.jsonl by
+          # the time the spine validates it, so on a rejection the tree holds a REFUSED
+          # source ledger next to the previous generation's events. Committing that
+          # would (a) publish a torn generation and (b) make it permanent — #4600's
+          # self-heal depends on each night restoring a clean ledger from git.
+          # So: keep the price data, drop the capital-structure paths, say so loudly.
+          if [ "$CS_SPINE" != success ] || [ "$CS_TERMS" != success ] || [ "$CS_PROJECTION" != success ]; then
+            git reset -q -- data/capital_structure site/capital-structure-data 2>/dev/null || true
+            git checkout -q -- data/capital_structure site/capital-structure-data 2>/dev/null || true
+            printf '::warning title=capital-structure-excluded::%s\n' "capital-structure generation incomplete (spine=$CS_SPINE terms=$CS_TERMS projection=$CS_PROJECTION) — its paths are excluded from tonight's data commit; market collection still committed"
+          fi
           if git diff --cached --quiet; then echo "no data changes to commit"; exit 0; fi
           git commit -m "data: daily collection $(date -u +%F)"
           echo "committed=true" >> "$GITHUB_OUTPUT"
@@ -545,7 +634,10 @@ jobs:
         # clobber 11y of history. Gaps self-heal: the collector's ~120d fetch window
         # re-covers any missed days on the next successful cycle. Runs AFTER "commit
         # data" so the commit is never delayed by the upload. Non-fatal.
-        if: steps.attention_restore.outcome == 'success'
+        # always(): see the massive_stock_day publish below — an `if:` carrying no status
+        # function gets an implicit success(), so ANY earlier red in this ~2h job silently
+        # skips the publish. The restore gate is the real fence and it is preserved.
+        if: always() && steps.attention_restore.outcome == 'success'
         env:
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -561,7 +653,24 @@ jobs:
         # shallow or partial local tree must never overwrite the deep store, and here the
         # collector's store-absent fence means such a tree would not even have advanced.
         # Runs after "commit data" so the upload never delays the commit. Non-fatal.
-        if: steps.massive_restore.outcome == 'success'
+        #
+        # always() (2026-08-05, run 30960328285): an `if:` containing NO status-check
+        # function gets an implicit success(), so this step was skipped by ANY earlier
+        # red in the ~3h collect job. It has therefore NEVER run: added 2026-08-01
+        # (#4013), eligible on exactly three nights, and skipped all three — 08-02/08-03
+        # on the collectors duck-typing crash (#4560), 08-05 on the capital-structure
+        # ManifestIdentityError (#4600). That last night the collector had already spent
+        # 1,898s advancing the store to latest=2026-08-03; the skip discarded all of it
+        # and left the R2 anchor stuck at 2026-07-30T03:08Z / content 2026-07-28.
+        #
+        # The deliberate veto set (tests/test_daily_collect_commit_path.py) exists to
+        # stop a PARTIAL capital-structure generation from being COMMITTED. That is a
+        # git-checkpoint law and it stands. It is not a reason to also throw away an
+        # unrelated R2 store's completed advance: publish_r2 is upsert-only, never
+        # prunes remote keys, and PUTs the anchor manifest last and only after every
+        # file lands. The restore gate below remains the real fence against clobbering
+        # the deep store with a shallow tree.
+        if: always() && steps.massive_restore.outcome == 'success'
         env:
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
