@@ -486,10 +486,11 @@ on:
       - "contracts/capital_structure_*.schema.json"
       - "docs/CAPITAL_STRUCTURE_INTELLIGENCE_CONTRACT.md"
       - "templates/capital_structure.html.j2"
-      # The collect-job veto allowlist rides in the capital-structure pack (every
-      # entry in it IS a capital-structure step). Its SUBJECT — daily.yml — already
-      # reaches CI via ".github/workflows/**"; this line covers the other direction,
-      # so an edit that only widens the allowlist still runs the suite that checks it.
+      # The collect-job checkpoint guard rides in the capital-structure pack: it
+      # pins the 2026-08-06 split that keeps every capital-structure step BELOW the
+      # market checkpoint. Its SUBJECT — daily.yml — already reaches CI via
+      # ".github/workflows/**"; this line covers the other direction, so an edit
+      # that only widens the veto allowlist still runs the suite that checks it.
       - "tests/test_daily_collect_commit_path.py"
       - "templates/capital_structure_boot.js"
       - "templates/capital_structure.css"
