@@ -34,6 +34,9 @@ _CAP_REFRESH_DAYS = 7  # reference (shares/industry) cache staleness ceiling
 _REF_SHARES_WARN_COVERAGE = 0.90    # ::warning below this non-null share coverage
 _REF_SHARES_CLOBBER_FLOOR = 0.50    # majority line: a <50%-populated sweep may not
                                     # replace a >=50%-populated committed reference
+_REF_SHARES_REGRESS_TOL = 0.90      # no-regress: keep the old cache when a sweep
+                                    # loses >10% of its coverage (same tolerance
+                                    # build_polygon_universe uses on this endpoint)
 
 
 def _data(*parts: str) -> Path:
@@ -391,19 +394,29 @@ def refresh_caps(constituents: pd.DataFrame, *, force: bool = False) -> None:
               f"errors{'; first: ' + first_err if first_err else ''})", flush=True)
 
     out = _data("sp500_heatmap", "reference.parquet")
-    if coverage < _REF_SHARES_CLOBBER_FLOOR and out.exists():
+    prev_cov = 0.0
+    if out.exists():
         try:
             prev_cov = _shares_coverage(pd.read_parquet(out))
         except Exception as e:  # noqa: BLE001 — an unreadable old cache loses its veto
-            log.warning("existing reference unreadable during clobber check: %s", e)
-            prev_cov = 0.0
-        if prev_cov >= _REF_SHARES_CLOBBER_FLOOR:
-            print(f"::warning title=sp500-ref-refused-overwrite::majority-None sweep "
+            log.warning("existing reference unreadable during no-regress check: %s", e)
+    if prev_cov > 0:
+        # Two vetoes over the same committed cache. The majority line is the
+        # floor this bug needed; the relative one is what build_polygon_universe
+        # already applies to the SAME endpoint, and it is the only one that sees
+        # a partial collapse (503 -> 260 is a 48% regression that clears every
+        # absolute >=50% test).
+        gutted = coverage < _REF_SHARES_CLOBBER_FLOOR <= prev_cov
+        regressed = coverage < prev_cov * _REF_SHARES_REGRESS_TOL
+        if gutted or regressed:
+            why = "majority-None sweep" if gutted else "coverage regression"
+            print(f"::warning title=sp500-ref-refused-overwrite::{why} "
                   f"({coverage:.0%} shares) would clobber a {prev_cov:.0%}-populated "
                   f"reference — keeping the old cache (stale asof retries next "
                   f"nightly)", flush=True)
             log.warning("refresh_caps: refused to overwrite %.0f%%-populated "
-                        "reference with a %.0f%% sweep", prev_cov * 100, coverage * 100)
+                        "reference with a %.0f%% sweep (%s)",
+                        prev_cov * 100, coverage * 100, why)
             return
     out.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(out)

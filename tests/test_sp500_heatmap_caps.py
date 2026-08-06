@@ -145,6 +145,44 @@ def test_refresh_low_coverage_bootstrap_still_writes(data_dir, monkeypatch, caps
                for ln in out.splitlines())
 
 
+def test_refresh_refuses_partial_coverage_regression(data_dir, monkeypatch, capsys):
+    # The hole the majority line alone leaves: 100% -> 60% is a 40-point collapse
+    # in which BOTH sides clear the 50% floor, so `gutted` is False and only the
+    # relative no-regress rule (build_polygon_universe's, same endpoint) sees it.
+    df = pd.DataFrame({"ticker": list("ABCDE"),
+                       "shares": [1e9, 2e9, 3e9, 4e9, 5e9]}).set_index("ticker")
+    df["asof"] = "2020-01-01"
+    df.to_parquet(data_dir / "reference.parquet")
+    by_sym = {"A": {"weighted_shares_outstanding": 1e9},
+              "B": {"weighted_shares_outstanding": 2e9},
+              "C": {"weighted_shares_outstanding": 3e9},
+              "D": RuntimeError("boom"), "E": RuntimeError("boom")}
+    _run_refresh(monkeypatch, by_sym, list("ABCDE"))
+    ref = pd.read_parquet(data_dir / "reference.parquet")
+    assert bh._shares_coverage(ref) == 1.0          # old 100% kept, not the new 60%
+    assert ref.loc["A", "asof"] == "2020-01-01"
+    assert any(ln.startswith("::warning title=sp500-ref-refused-overwrite::")
+               and "coverage regression" in ln
+               for ln in capsys.readouterr().out.splitlines())
+
+
+def test_refresh_accepts_coverage_within_tolerance(data_dir, monkeypatch):
+    # A sweep that loses one name out of ten is normal delist/404 churn and must
+    # still land — a no-regress guard that blocks ordinary attrition would freeze
+    # the cache and quietly stop tracking real share-count changes.
+    syms = [f"S{i}" for i in range(10)]
+    df = pd.DataFrame({"ticker": syms, "shares": [1e9] * 10}).set_index("ticker")
+    df["asof"] = "2020-01-01"
+    df.to_parquet(data_dir / "reference.parquet")
+    by_sym = {s: {"weighted_shares_outstanding": 2e9} for s in syms}
+    by_sym["S9"] = RuntimeError("404")
+    _run_refresh(monkeypatch, by_sym, syms)
+    ref = pd.read_parquet(data_dir / "reference.parquet")
+    assert bh._shares_coverage(ref) == 0.9          # 90% == tolerance, accepted
+    assert ref.loc["S0", "shares"] == 2e9           # fresh counts really landed
+    assert ref.loc["S0", "asof"] != "2020-01-01"
+
+
 def test_refresh_all_none_over_all_none_overwrites(data_dir, monkeypatch):
     # The current committed cache is 0% populated — a fresh (even failing) sweep
     # may replace it; the clobber veto belongs to majority-POPULATED caches only.
