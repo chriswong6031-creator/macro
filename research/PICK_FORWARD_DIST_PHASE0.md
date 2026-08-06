@@ -1,7 +1,7 @@
 # Pick-class conditional forward distributions — Phase-0 (diagnostic)
 
 **Family** `pick_forward_dist_phase0` · **Program** `advanced-quant-methods-w1` · **Tier** diagnostic — phase-0 measurement; promotes nothing
-**Generated** 2026-08-06T02:37:22.618717+00:00 · **Runtime** 240s
+**Generated** 2026-08-06T03:07:58.082285+00:00 · **Runtime** 321s
 
 Phase-0 measures. It promotes nothing and authorizes nothing: the verdicts below are diagnostic labels for a later adjudication, not a ship decision.
 
@@ -126,6 +126,16 @@ Verdicts are issued at H=21 only; H=10 and H=63 are descriptive rows.
 - THE RAW-PERCENT FRAME DOUBLE-COUNTS SCALE: in raw percent, a cell that sorts on extension or vol also sorts on return DISPERSION, so a scheme can score a large raw-frame gain purely by predicting width that the vol-standardizer already supplies in the primary frame. Where the raw delta is large and the standardized delta is not, the honest reading is that the scheme is re-deriving the vol scale, not adding information to it. The primary frame is the one the gates read.
 - DATA END (AM-1): the readable store ends 2026-07-02, not 2026-07-28 as the worktree's committed manifest claims. A separate lane owns that publish outage.
 
+## 3b. Post-run review addenda (2026-08-06 adversarial review — disclosures only, nothing retuned)
+
+- REVIEW-1 (G1 IS NON-DISCRIMINATING AT THIS DESIGN): the unconditional null itself sits mid-band — B0 covers ~0.794 and B1 ~0.786 against the [0.72, 0.88] gate — so an empirical marginal fitted on a large cohort passes G1 by construction. G1+G4 being structurally weak means 'passes all four gates' really rests on G2/G3, the two gates capable of failing. The pooled coverage number also carries no overlap-corrected test statistic (the HEDGEYE C.4 spec's Kupiec/Christoffersen point about overlapping origins applies); a coverage TEST at non-overlapping origins belongs in the phase-1 harness.
+- REVIEW-2 (COHORT RAMP / B1 NON-INDEPENDENCE): the store starts 2021-07-06, so the 504-session window is first full at 2024-10-16 — 52% of evaluation dates ran on a partial cohort — and B1's 252-observation floor is unsatisfiable before 2023-10-16, so early B1 cones degrade to B0 (honest_frac 0.60 overall: ~40% of name-days scored the 'own-name' baseline AS the pooled baseline). G3 is therefore a ~60/40 blend of the own-name test and G2, not a fully independent second gate.
+- REVIEW-3 (S5 IS FRAGILE, S3 IS NOT): under a 10-test Bonferroni floor (5 schemes x 2 baselines, 0.005), S5-vs-B0's one-sided p=0.0074 fails while S3 survives at p<0.0002 on both baselines; clustering deltas at the 14 quarterly refits gives S3 t=3.23 (12/14 quarters positive) but S5 t=2.04, under the df=13 critical value. Read S3 as the finding and S5 as suggestive. The CI is stable across block lengths 21-126, so the block choice itself is sound.
+- REVIEW-5 (NEGATIVE CONTROL, MEASURED): a state-independent noise partition over an above-floor fixture cohort scores mean delta -0.00054 across 40 seeds (never exactly zero — random cells are noisy subsamples of the marginal, so they price slightly WORSE than it). The harness manufactures no positive edge from partitioning alone, and the two CALIBRATED_ONLY schemes (S1 -0.00052, S2 -0.00028) sit at noise-partition level, which sharpens the S3/S5 contrast. Pinned by test_noise_partition_manufactures_no_edge.
+- REVIEW-ORDERING (CONSISTENT WITH THE STANDARDIZER CAVEAT): ranked by delta vs B0 at H=21, every positive scheme is a trailing-vol transform (S3 rvol_z +0.00280, S5 trend x vol +0.00219, S4 range-coil +0.00091) and both non-vol schemes are negative (S2 -0.00028, S1 -0.00052) — exactly the ordering the standardizer-artifact mechanism predicts. This raises the prior on the 'vol-forecast correction' reading; the HAR discriminator decides it.
+- REVIEW-7 (sharpe_ci): earlier artifacts annualized the delta-series Sharpe at 365; regenerated at 252. The quantity is a sign-check only.
+- REVIEW-9 (SPLIT-STAMP MECHANISM): the ineligibility stamp marks bar i-1 via one-bar-ahead factor information (touched = step | roll(step, -1)). Feature-side removal only (7,554 of 3.69M rows); outcomes are computed on the already-repaired series and never read the stamp.
+
 ## 4. Data + universe as actually read
 
 - Store `/Users/chriswong/Documents/Cluade/Macro Dashboard/data/massive_stock_day` — 20,476 parquet files, 20,476 read, 12,078 past the cheap prefilter
@@ -151,7 +161,7 @@ Tier:    DIAGNOSTIC. This harness measures; it does not promote. No ship languag
 QUESTION
 --------
 engine/forward_dist.py conditions ONE asset's history on ONE state series and reads
-the empirical forward cone; engine/anticipation.py drives it live for ~49 curated
+the empirical forward cone; engine/anticipation.py drives it live for 48 configured
 cross-asset names. The ~2,900-name Prophet equity board has NO distributional read at
 all. Before building one, measure the premise:
 

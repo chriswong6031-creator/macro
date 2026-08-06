@@ -2,7 +2,7 @@
 engine/forward_dist.py.
 
 engine/forward_dist.py conditions ONE asset's own history on ONE state series and
-emits an empirical forward cone; engine/anticipation.py drives it live for ~49
+emits an empirical forward cone; engine/anticipation.py drives it live for 48
 curated cross-asset names. Neither reaches the equity cross-section: the ~2,900
 Prophet board names carry no distributional read at all. This module is that layer.
 
@@ -99,6 +99,10 @@ def carry_split_factor(ohlcv: pd.DataFrame, adj_close: pd.Series) -> tuple[pd.Da
     if "volume" in out.columns:
         out["volume"] = out["volume"].astype(float) * factor
     # A factor step between bar i and bar i+1 is the split print: stamp both bars.
+    # Stamping bar i-1 uses one-bar-AHEAD factor information (roll(step, -1)) — this is
+    # deliberate and disclosed (REVIEW-9): the stamp is feature-side removal only, is
+    # never read by outcome construction, and identifying a split print inherently
+    # requires seeing the bar after it.
     # Compared with a tolerance, not ==: the factor is recovered by division, so exact
     # equality would flag float noise on every bar and stamp the whole series ineligible.
     f = factor.to_numpy()

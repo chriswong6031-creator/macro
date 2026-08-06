@@ -12,7 +12,7 @@ Tier:    DIAGNOSTIC. This harness measures; it does not promote. No ship languag
 QUESTION
 --------
 engine/forward_dist.py conditions ONE asset's history on ONE state series and reads
-the empirical forward cone; engine/anticipation.py drives it live for ~49 curated
+the empirical forward cone; engine/anticipation.py drives it live for 48 configured
 cross-asset names. The ~2,900-name Prophet equity board has NO distributional read at
 all. Before building one, measure the premise:
 
@@ -291,9 +291,14 @@ def resolve_data_root(arg: str | None) -> Path | None:
 # ------------------------------------------------------------------ load + repair
 def load_frames(store: Path, max_names: int | None = None) -> tuple[dict, dict]:
     """Read every instrument, split-repair it, and keep the ones that could possibly
-    clear the universe filter. The prefilter is strictly WEAKER than the daily filter in
-    build_panel (a 20d median can never exceed the max), so it cannot drop a qualifying
-    name — it only avoids paying feature cost on hopeless ones."""
+    clear the universe filter. The dollar-volume half of the prefilter is strictly
+    WEAKER than build_panel's daily filter (a 20d median can never exceed the max, and
+    close*volume is invariant under carry_split_factor). The PRICE half is not exact
+    (REVIEW-8): it tests the RAW close against PRICE_MIN before back-adjustment, while
+    build_panel tests the back-adjusted close — a name that never printed above $5 raw
+    but clears $5 back-adjusted (reverse splits) is dropped here though build_panel
+    would admit it. Removal-only (never adds a name, never touches an outcome); one
+    more universe-definition whisker, stated rather than hidden."""
     paths = sorted(store.glob("*.parquet"))
     if max_names:
         paths = paths[:max_names]
@@ -437,7 +442,9 @@ def delta_stats(wf: dict, scheme: str, baseline: str, block: int) -> dict:
         return {"n_dates": int(len(d)), "mean_delta": None, "ci": None,
                 "excludes_zero": False, "reason": "insufficient_dates"}
     mean_ci = pfd.block_bootstrap_mean_ci(d, block=block, B=BOOT_B, seed=BOOT_SEED)
-    sh = block_bootstrap_ci(d, block=block, B=BOOT_B, seed=BOOT_SEED)
+    # ann=252: trading-day series (REVIEW-7 — the default 365 inflated the published
+    # sharpe_ci ~1.20x; only the sign is ever consumed, but ship the honest number).
+    sh = block_bootstrap_ci(d, block=block, B=BOOT_B, seed=BOOT_SEED, ann=252)
     sci = sh.get("sharpe_ci")
     return {
         "n_dates": int(len(d)),
@@ -701,6 +708,55 @@ def run_study(store: Path, max_names: int | None = None) -> dict:
             f"{cal[-1].date()}, not 2026-07-28 as the worktree's committed manifest "
             "claims. A separate lane owns that publish outage.",
         ],
+        # Findings from the commissioned adversarial review (2026-08-06), recorded in
+        # the artifact so the design weaknesses travel with the numbers. These are
+        # post-registration DISCLOSURES — no gate, scheme, or number was retuned.
+        "post_run_review": [
+            "REVIEW-1 (G1 IS NON-DISCRIMINATING AT THIS DESIGN): the unconditional "
+            "null itself sits mid-band — B0 covers ~0.794 and B1 ~0.786 against the "
+            "[0.72, 0.88] gate — so an empirical marginal fitted on a large cohort "
+            "passes G1 by construction. G1+G4 being structurally weak means 'passes "
+            "all four gates' really rests on G2/G3, the two gates capable of failing. "
+            "The pooled coverage number also carries no overlap-corrected test "
+            "statistic (the HEDGEYE C.4 spec's Kupiec/Christoffersen point about "
+            "overlapping origins applies); a coverage TEST at non-overlapping origins "
+            "belongs in the phase-1 harness.",
+            "REVIEW-2 (COHORT RAMP / B1 NON-INDEPENDENCE): the store starts 2021-07-06, "
+            "so the 504-session window is first full at 2024-10-16 — 52% of evaluation "
+            "dates ran on a partial cohort — and B1's 252-observation floor is "
+            "unsatisfiable before 2023-10-16, so early B1 cones degrade to B0 "
+            "(honest_frac 0.60 overall: ~40% of name-days scored the 'own-name' "
+            "baseline AS the pooled baseline). G3 is therefore a ~60/40 blend of the "
+            "own-name test and G2, not a fully independent second gate.",
+            "REVIEW-3 (S5 IS FRAGILE, S3 IS NOT): under a 10-test Bonferroni floor "
+            "(5 schemes x 2 baselines, 0.005), S5-vs-B0's one-sided p=0.0074 fails "
+            "while S3 survives at p<0.0002 on both baselines; clustering deltas at the "
+            "14 quarterly refits gives S3 t=3.23 (12/14 quarters positive) but S5 "
+            "t=2.04, under the df=13 critical value. Read S3 as the finding and S5 as "
+            "suggestive. The CI is stable across block lengths 21-126, so the block "
+            "choice itself is sound.",
+            "REVIEW-5 (NEGATIVE CONTROL, MEASURED): a state-independent noise "
+            "partition over an above-floor fixture cohort scores mean delta "
+            "-0.00054 across 40 seeds (never exactly zero — random cells are noisy "
+            "subsamples of the marginal, so they price slightly WORSE than it). The "
+            "harness manufactures no positive edge from partitioning alone, and the "
+            "two CALIBRATED_ONLY schemes (S1 -0.00052, S2 -0.00028) sit at "
+            "noise-partition level, which sharpens the S3/S5 contrast. Pinned by "
+            "test_noise_partition_manufactures_no_edge.",
+            "REVIEW-ORDERING (CONSISTENT WITH THE STANDARDIZER CAVEAT): ranked by "
+            "delta vs B0 at H=21, every positive scheme is a trailing-vol transform "
+            "(S3 rvol_z +0.00280, S5 trend x vol +0.00219, S4 range-coil +0.00091) "
+            "and both non-vol schemes are negative (S2 -0.00028, S1 -0.00052) — "
+            "exactly the ordering the standardizer-artifact mechanism predicts. This "
+            "raises the prior on the 'vol-forecast correction' reading; the HAR "
+            "discriminator decides it.",
+            "REVIEW-7 (sharpe_ci): earlier artifacts annualized the delta-series "
+            "Sharpe at 365; regenerated at 252. The quantity is a sign-check only.",
+            "REVIEW-9 (SPLIT-STAMP MECHANISM): the ineligibility stamp marks bar i-1 "
+            "via one-bar-ahead factor information (touched = step | roll(step, -1)). "
+            "Feature-side removal only (7,554 of 3.69M rows); outcomes are computed "
+            "on the already-repaired series and never read the stamp.",
+        ],
     }
     return out, results, panel, cal
 
@@ -809,6 +865,12 @@ def write_markdown(out: dict, path: Path) -> None:
     L.append("## 3. Honest caveats")
     L.append("")
     for c in out["caveats"]:
+        L.append(f"- {c}")
+    L.append("")
+    L.append("## 3b. Post-run review addenda (2026-08-06 adversarial review — "
+             "disclosures only, nothing retuned)")
+    L.append("")
+    for c in out.get("post_run_review", []):
         L.append(f"- {c}")
     L.append("")
     d = out["data"]

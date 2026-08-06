@@ -6,7 +6,11 @@ eyeballing a results table —
 
   * POINT-IN-TIME: a cone fitted as-of date t from the FULL panel must equal the cone
     fitted from the panel truncated at t (and at t+h). The embargo is what makes that
-    true; a leak of any size breaks the equality.
+    true. (Boundary precision — REVIEW-10: a one-session LOOSENING of the embargo is
+    invisible to this equality test, because in a panel truncated at t an observation
+    at d = t - h still has a finite outcome; the exact <= boundary is pinned by
+    test_embargo_excludes_unrealized_outcomes, which mutation-fails on either an
+    off-by-one loosening or tightening. The two tests together cover the axis.)
   * NO LOOK-AHEAD: perturbing bars after t must not move the date-t feature row.
   * EMBARGO: an observation whose forward outcome is not yet realized at t must not be
     in t's training cohort.
@@ -403,6 +407,98 @@ def test_block_bootstrap_mean_ci_signs():
     assert cp["ci"][0] < cp["mean"] < cp["ci"][2]
     assert pfd.block_bootstrap_mean_ci(pd.Series(np.zeros(10))) == {}
     print("ok test_block_bootstrap_mean_ci_signs")
+
+
+# ------------------------------------------------- (h) REVIEW-5: negative control
+def test_noise_partition_manufactures_no_edge():
+    """A state-INDEPENDENT random partition must not out-price the marginal it
+    subsamples. Random cells are noisy estimates of the same distribution, so their
+    mean pinball delta vs the marginal must be <= 0 up to noise — if a noise
+    partition ever shows a solid positive delta, the harness itself manufactures
+    edge and every scheme verdict is void. (Committed form of the review's 40-seed
+    scratchpad control; S1/S2 on the real panel sit at exactly this level.)"""
+    panel, _cal = _panel(k=14, n=800)
+    h, asof = 21, 620
+    m = pfd.cohort_mask(panel["sess"].to_numpy(), asof, h, window=400)
+    z_tr = panel.loc[m, f"z_ret_{h}"].to_numpy(dtype=float)
+    fin = np.isfinite(z_tr)
+    z_tr = z_tr[fin]
+    assert z_tr.size > 800, f"fixture cohort too thin ({z_tr.size}) for the control"
+
+    ev = (panel["sess"].to_numpy() > asof) & (panel["sess"].to_numpy() <= asof + 60)
+    y = panel.loc[ev, f"z_ret_{h}"].to_numpy(dtype=float)
+    y = y[np.isfinite(y)]
+    assert y.size > 200, f"fixture eval set too thin ({y.size})"
+
+    marg = pfd.empirical_cone(z_tr)
+    q_marg = np.array([marg["ret_q"][pfd._qkey(t)] for t in pfd.TAUS])
+    pin_marg = float(np.mean(pfd.mean_pinball(y, np.tile(q_marg, (y.size, 1)), pfd.TAUS)))
+
+    deltas = []
+    for seed in range(8):
+        rng = np.random.default_rng(1000 + seed)
+        codes_tr = rng.integers(0, 4, size=z_tr.size)
+        fit = pfd.fit_cones(codes_tr, z_tr, min_n=100)
+        codes_ev = rng.integers(0, 4, size=y.size)
+        qmat, deg = pfd.cone_matrix(fit, codes_ev)
+        assert not deg.any(), "control must exercise the partition, not the degrade path"
+        pin_rand = float(np.mean(pfd.mean_pinball(y, qmat, pfd.TAUS)))
+        deltas.append(pin_marg - pin_rand)  # positive would mean the noise cells WON
+    mean_d = float(np.mean(deltas))
+    worst = float(np.max(deltas))
+    # Mean must not be meaningfully positive; a single seed may squeak above zero by
+    # sampling luck, but never by more than a hair of the marginal's own pinball.
+    assert mean_d <= 1e-4, f"noise partition out-priced the marginal on average: {mean_d}"
+    assert worst <= 0.01 * pin_marg, f"a noise seed beat the marginal solidly: {worst}"
+    print(f"ok test_noise_partition_manufactures_no_edge (mean {mean_d:+.6f}, "
+          f"worst {worst:+.6f}, marginal pinball {pin_marg:.4f})")
+
+
+# ------------------------------------------------- (i) REVIEW-6: dual-path parity
+def test_coverage_and_tail_functions_match_pooled_count_arithmetic():
+    """The phase-0 study accumulates interval hits and tail hits as pooled COUNTS
+    across per-date chunks; the exported interval_coverage / tail_hit_rate compute
+    rates directly. Both paths must agree on shared data — this cross-pins the
+    exported API to the study's accumulation arithmetic so neither can drift
+    silently (the mirrored-guard hazard flagged in review)."""
+    rng = np.random.default_rng(42)
+    n = 5000
+    y = rng.normal(0, 1, n)
+    lo = np.quantile(y, 0.10) + rng.normal(0, 0.05, n)
+    hi = np.quantile(y, 0.90) + rng.normal(0, 0.05, n)
+    y[rng.integers(0, n, 137)] = np.nan  # exercise the finite mask
+
+    # Study-shaped accumulation: pooled counts across 7 uneven chunks, NaN rows
+    # pre-dropped per chunk exactly as the walk-forward's `ok` filter does.
+    hits = tot = 0
+    bounds = np.sort(rng.choice(np.arange(1, n), 6, replace=False)).tolist() + [n]
+    a = 0
+    for b in bounds:
+        yy, ll, hh = y[a:b], lo[a:b], hi[a:b]
+        ok = np.isfinite(yy)
+        inside = (yy[ok] >= ll[ok]) & (yy[ok] <= hh[ok])
+        hits += int(inside.sum()); tot += int(inside.size)
+        a = b
+    assert tot == np.isfinite(y).sum()
+    pooled_rate = hits / tot
+    fn_rate = pfd.interval_coverage(y, lo, hi)
+    assert abs(pooled_rate - fn_rate) < 1e-12, f"{pooled_rate} vs {fn_rate}"
+
+    mae = -np.abs(rng.normal(0.5, 0.3, n))
+    q05 = -np.abs(rng.normal(0.9, 0.2, n))
+    mae[rng.integers(0, n, 61)] = np.nan
+    hits = tot = 0
+    a = 0
+    for b in bounds:
+        mm, qq = mae[a:b], q05[a:b]
+        ok = np.isfinite(mm) & np.isfinite(qq)
+        hits += int((mm[ok] <= qq[ok]).sum()); tot += int(ok.sum())
+        a = b
+    pooled_tail = hits / tot
+    fn_tail = pfd.tail_hit_rate(mae, q05)
+    assert abs(pooled_tail - fn_tail) < 1e-12, f"{pooled_tail} vs {fn_tail}"
+    print(f"ok test_coverage_and_tail_functions_match_pooled_count_arithmetic "
+          f"(coverage {fn_rate:.4f}, tail {fn_tail:.4f})")
 
 
 if __name__ == "__main__":

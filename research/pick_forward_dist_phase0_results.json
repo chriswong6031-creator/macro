@@ -3,8 +3,8 @@
  "program": "advanced-quant-methods-w1",
  "tier": "diagnostic \u2014 phase-0 measurement; promotes nothing",
  "prereg": "frozen in the module docstring of scripts/pick_forward_dist_phase0.py",
- "generated_utc": "2026-08-06T02:37:22.618717+00:00",
- "runtime_sec": 240.2,
+ "generated_utc": "2026-08-06T03:07:58.082285+00:00",
+ "runtime_sec": 321.2,
  "data": {
   "store": "/Users/chriswong/Documents/Cluade/Macro Dashboard/data/massive_stock_day",
   "files_seen": 20476,
@@ -93,9 +93,9 @@
     "excludes_zero": false,
     "gt0_prob": 0.229,
     "sharpe_ci": [
-     -7.05,
-     -1.77,
-     2.66
+     -5.85,
+     -1.47,
+     2.21
     ],
     "sharpe_ci_excludes_zero": false,
     "frac_dates_positive": 0.3855,
@@ -114,9 +114,9 @@
     "excludes_zero": false,
     "gt0_prob": 0.759,
     "sharpe_ci": [
-     -2.79,
-     1.61,
-     5.97
+     -2.32,
+     1.34,
+     4.96
     ],
     "sharpe_ci_excludes_zero": false,
     "frac_dates_positive": 0.4813,
@@ -151,9 +151,9 @@
     "excludes_zero": false,
     "gt0_prob": 0.2652,
     "sharpe_ci": [
-     -5.85,
-     -1.51,
-     3.28
+     -4.86,
+     -1.25,
+     2.72
     ],
     "sharpe_ci_excludes_zero": false,
     "frac_dates_positive": 0.5409,
@@ -172,9 +172,9 @@
     "excludes_zero": false,
     "gt0_prob": 0.8816,
     "sharpe_ci": [
-     -1.88,
-     2.82,
-     7.36
+     -1.56,
+     2.34,
+     6.12
     ],
     "sharpe_ci_excludes_zero": false,
     "frac_dates_positive": 0.5467,
@@ -209,9 +209,9 @@
     "excludes_zero": true,
     "gt0_prob": 1.0,
     "sharpe_ci": [
-     3.19,
-     7.69,
-     12.15
+     2.65,
+     6.39,
+     10.09
     ],
     "sharpe_ci_excludes_zero": true,
     "frac_dates_positive": 0.7336,
@@ -230,9 +230,9 @@
     "excludes_zero": true,
     "gt0_prob": 1.0,
     "sharpe_ci": [
-     5.72,
-     9.47,
-     13.17
+     4.75,
+     7.87,
+     10.94
     ],
     "sharpe_ci_excludes_zero": true,
     "frac_dates_positive": 0.6764,
@@ -267,9 +267,9 @@
     "excludes_zero": false,
     "gt0_prob": 0.969,
     "sharpe_ci": [
-     -0.2,
-     3.89,
-     7.89
+     -0.17,
+     3.23,
+     6.55
     ],
     "sharpe_ci_excludes_zero": false,
     "frac_dates_positive": 0.5794,
@@ -288,9 +288,9 @@
     "excludes_zero": true,
     "gt0_prob": 0.9998,
     "sharpe_ci": [
-     2.52,
-     6.35,
-     10.09
+     2.1,
+     5.27,
+     8.39
     ],
     "sharpe_ci_excludes_zero": true,
     "frac_dates_positive": 0.6005,
@@ -325,9 +325,9 @@
     "excludes_zero": true,
     "gt0_prob": 0.9926,
     "sharpe_ci": [
-     1.08,
-     5.16,
-     9.13
+     0.9,
+     4.29,
+     7.58
     ],
     "sharpe_ci_excludes_zero": true,
     "frac_dates_positive": 0.6659,
@@ -346,9 +346,9 @@
     "excludes_zero": true,
     "gt0_prob": 0.9996,
     "sharpe_ci": [
-     3.04,
-     6.87,
-     10.79
+     2.52,
+     5.71,
+     8.97
     ],
     "sharpe_ci_excludes_zero": true,
     "frac_dates_positive": 0.6121,
@@ -402,9 +402,9 @@
       "excludes_zero": false,
       "gt0_prob": 0.0784,
       "sharpe_ci": [
-       -4.72,
-       -2.18,
-       0.9
+       -3.92,
+       -1.81,
+       0.75
       ],
       "sharpe_ci_excludes_zero": false,
       "frac_dates_positive": 0.4441,
@@ -422,9 +422,9 @@
       "excludes_zero": false,
       "gt0_prob": 0.169,
       "sharpe_ci": [
-       -4.47,
-       -1.52,
-       1.66
+       -3.72,
+       -1.26,
+       1.38
       ],
       "sharpe_ci_excludes_zero": false,
       "frac_dates_positive": 0.4325,
@@ -447,9 +447,9 @@
       "excludes_zero": false,
       "gt0_prob": 0.229,
       "sharpe_ci": [
-       -7.05,
-       -1.77,
-       2.66
+       -5.85,
+       -1.47,
+       2.21
       ],
       "sharpe_ci_excludes_zero": false,
       "frac_dates_positive": 0.3855,
@@ -467,9 +467,9 @@
       "excludes_zero": false,
       "gt0_prob": 0.759,
       "sharpe_ci": [
-       -2.79,
-       1.61,
-       5.97
+       -2.32,
+       1.34,
+       4.96
       ],
       "sharpe_ci_excludes_zero": false,
       "frac_dates_positive": 0.4813,
@@ -492,9 +492,9 @@
       "excludes_zero": false,
       "gt0_prob": 0.209,
       "sharpe_ci": [
-       -11.04,
-       -2.4,
-       2.86
+       -9.17,
+       -1.99,
+       2.38
       ],
       "sharpe_ci_excludes_zero": false,
       "frac_dates_positive": 0.3329,
@@ -512,9 +512,9 @@
       "excludes_zero": true,
       "gt0_prob": 1.0,
       "sharpe_ci": [
-       5.28,
-       11.16,
-       16.99
+       4.39,
+       9.27,
+       14.11
       ],
       "sharpe_ci_excludes_zero": true,
       "frac_dates_positive": 0.731,
@@ -538,9 +538,9 @@
      "excludes_zero": false,
      "gt0_prob": 0.839,
      "sharpe_ci": [
-      -2.27,
-      2.13,
-      5.74
+      -1.89,
+      1.77,
+      4.77
      ],
      "sharpe_ci_excludes_zero": false,
      "frac_dates_positive": 0.4696,
@@ -587,9 +587,9 @@
       "excludes_zero": false,
       "gt0_prob": 0.5238,
       "sharpe_ci": [
-       -2.95,
-       0.1,
-       3.49
+       -2.45,
+       0.08,
+       2.9
       ],
       "sharpe_ci_excludes_zero": false,
       "frac_dates_positive": 0.5848,
@@ -607,9 +607,9 @@
       "excludes_zero": false,
       "gt0_prob": 0.5422,
       "sharpe_ci": [
-       -2.89,
-       0.17,
-       3.34
+       -2.4,
+       0.14,
+       2.77
       ],
       "sharpe_ci_excludes_zero": false,
       "frac_dates_positive": 0.4925,
@@ -632,9 +632,9 @@
       "excludes_zero": false,
       "gt0_prob": 0.2652,
       "sharpe_ci": [
-       -5.85,
-       -1.51,
-       3.28
+       -4.86,
+       -1.25,
+       2.72
       ],
       "sharpe_ci_excludes_zero": false,
       "frac_dates_positive": 0.5409,
@@ -652,9 +652,9 @@
       "excludes_zero": false,
       "gt0_prob": 0.8816,
       "sharpe_ci": [
-       -1.88,
-       2.82,
-       7.36
+       -1.56,
+       2.34,
+       6.12
       ],
       "sharpe_ci_excludes_zero": false,
       "frac_dates_positive": 0.5467,
@@ -677,9 +677,9 @@
       "excludes_zero": false,
       "gt0_prob": 0.0698,
       "sharpe_ci": [
-       -13.71,
-       -5.74,
-       1.75
+       -11.4,
+       -4.77,
+       1.46
       ],
       "sharpe_ci_excludes_zero": false,
       "frac_dates_positive": 0.4251,
@@ -697,9 +697,9 @@
       "excludes_zero": true,
       "gt0_prob": 0.9912,
       "sharpe_ci": [
-       2.11,
-       10.24,
-       19.37
+       1.75,
+       8.51,
+       16.09
       ],
       "sharpe_ci_excludes_zero": true,
       "frac_dates_positive": 0.6683,
@@ -723,9 +723,9 @@
      "excludes_zero": true,
      "gt0_prob": 1.0,
      "sharpe_ci": [
-      26.65,
-      34.46,
-      47.12
+      22.14,
+      28.63,
+      39.16
      ],
      "sharpe_ci_excludes_zero": true,
      "frac_dates_positive": 0.9696,
@@ -772,9 +772,9 @@
       "excludes_zero": true,
       "gt0_prob": 0.999,
       "sharpe_ci": [
-       1.74,
-       5.34,
-       9.57
+       1.44,
+       4.44,
+       7.95
       ],
       "sharpe_ci_excludes_zero": true,
       "frac_dates_positive": 0.7313,
@@ -792,9 +792,9 @@
       "excludes_zero": true,
       "gt0_prob": 0.9986,
       "sharpe_ci": [
-       1.6,
-       4.95,
-       8.46
+       1.33,
+       4.11,
+       7.03
       ],
       "sharpe_ci_excludes_zero": true,
       "frac_dates_positive": 0.6228,
@@ -817,9 +817,9 @@
       "excludes_zero": true,
       "gt0_prob": 1.0,
       "sharpe_ci": [
-       3.19,
-       7.69,
-       12.15
+       2.65,
+       6.39,
+       10.09
       ],
       "sharpe_ci_excludes_zero": true,
       "frac_dates_positive": 0.7336,
@@ -837,9 +837,9 @@
       "excludes_zero": true,
       "gt0_prob": 1.0,
       "sharpe_ci": [
-       5.72,
-       9.47,
-       13.17
+       4.75,
+       7.87,
+       10.94
       ],
       "sharpe_ci_excludes_zero": true,
       "frac_dates_positive": 0.6764,
@@ -862,9 +862,9 @@
       "excludes_zero": true,
       "gt0_prob": 1.0,
       "sharpe_ci": [
-       5.64,
-       9.71,
-       14.2
+       4.68,
+       8.06,
+       11.8
       ],
       "sharpe_ci_excludes_zero": true,
       "frac_dates_positive": 0.769,
@@ -882,9 +882,9 @@
       "excludes_zero": true,
       "gt0_prob": 1.0,
       "sharpe_ci": [
-       13.81,
-       20.03,
-       27.63
+       11.48,
+       16.64,
+       22.96
       ],
       "sharpe_ci_excludes_zero": true,
       "frac_dates_positive": 0.8415,
@@ -908,9 +908,9 @@
      "excludes_zero": false,
      "gt0_prob": 0.3598,
      "sharpe_ci": [
-      -5.46,
-      -0.81,
-      3.18
+      -4.54,
+      -0.67,
+      2.64
      ],
      "sharpe_ci_excludes_zero": false,
      "frac_dates_positive": 0.4182,
@@ -957,9 +957,9 @@
       "excludes_zero": false,
       "gt0_prob": 0.9654,
       "sharpe_ci": [
-       -0.19,
-       2.92,
-       6.07
+       -0.16,
+       2.43,
+       5.05
       ],
       "sharpe_ci_excludes_zero": false,
       "frac_dates_positive": 0.564,
@@ -977,9 +977,9 @@
       "excludes_zero": false,
       "gt0_prob": 0.9352,
       "sharpe_ci": [
-       -0.71,
-       2.49,
-       5.53
+       -0.59,
+       2.07,
+       4.59
       ],
       "sharpe_ci_excludes_zero": false,
       "frac_dates_positive": 0.5317,
@@ -1002,9 +1002,9 @@
       "excludes_zero": false,
       "gt0_prob": 0.969,
       "sharpe_ci": [
-       -0.2,
-       3.89,
-       7.89
+       -0.17,
+       3.23,
+       6.55
       ],
       "sharpe_ci_excludes_zero": false,
       "frac_dates_positive": 0.5794,
@@ -1022,9 +1022,9 @@
       "excludes_zero": true,
       "gt0_prob": 0.9998,
       "sharpe_ci": [
-       2.52,
-       6.35,
-       10.09
+       2.1,
+       5.27,
+       8.39
       ],
       "sharpe_ci_excludes_zero": true,
       "frac_dates_positive": 0.6005,
@@ -1047,9 +1047,9 @@
       "excludes_zero": false,
       "gt0_prob": 0.9356,
       "sharpe_ci": [
-       -1.43,
-       4.14,
-       8.82
+       -1.19,
+       3.44,
+       7.33
       ],
       "sharpe_ci_excludes_zero": false,
       "frac_dates_positive": 0.5577,
@@ -1067,9 +1067,9 @@
       "excludes_zero": true,
       "gt0_prob": 1.0,
       "sharpe_ci": [
-       11.11,
-       17.57,
-       25.28
+       9.23,
+       14.6,
+       21.0
       ],
       "sharpe_ci_excludes_zero": true,
       "frac_dates_positive": 0.7961,
@@ -1093,9 +1093,9 @@
      "excludes_zero": false,
      "gt0_prob": 0.3806,
      "sharpe_ci": [
-      -5.05,
-      -0.69,
-      3.23
+      -4.2,
+      -0.58,
+      2.68
      ],
      "sharpe_ci_excludes_zero": false,
      "frac_dates_positive": 0.4568,
@@ -1142,9 +1142,9 @@
       "excludes_zero": true,
       "gt0_prob": 0.9976,
       "sharpe_ci": [
-       1.33,
-       4.69,
-       8.59
+       1.11,
+       3.9,
+       7.14
       ],
       "sharpe_ci_excludes_zero": true,
       "frac_dates_positive": 0.6943,
@@ -1162,9 +1162,9 @@
       "excludes_zero": true,
       "gt0_prob": 0.9956,
       "sharpe_ci": [
-       1.02,
-       4.27,
-       7.6
+       0.85,
+       3.55,
+       6.31
       ],
       "sharpe_ci_excludes_zero": true,
       "frac_dates_positive": 0.5998,
@@ -1187,9 +1187,9 @@
       "excludes_zero": true,
       "gt0_prob": 0.9926,
       "sharpe_ci": [
-       1.08,
-       5.16,
-       9.13
+       0.9,
+       4.29,
+       7.58
       ],
       "sharpe_ci_excludes_zero": true,
       "frac_dates_positive": 0.6659,
@@ -1207,9 +1207,9 @@
       "excludes_zero": true,
       "gt0_prob": 0.9996,
       "sharpe_ci": [
-       3.04,
-       6.87,
-       10.79
+       2.52,
+       5.71,
+       8.97
       ],
       "sharpe_ci_excludes_zero": true,
       "frac_dates_positive": 0.6121,
@@ -1232,9 +1232,9 @@
       "excludes_zero": true,
       "gt0_prob": 0.9758,
       "sharpe_ci": [
-       0.07,
-       5.45,
-       9.76
+       0.06,
+       4.53,
+       8.11
       ],
       "sharpe_ci_excludes_zero": true,
       "frac_dates_positive": 0.6155,
@@ -1252,9 +1252,9 @@
       "excludes_zero": true,
       "gt0_prob": 1.0,
       "sharpe_ci": [
-       9.55,
-       16.19,
-       23.28
+       7.93,
+       13.45,
+       19.34
       ],
       "sharpe_ci_excludes_zero": true,
       "frac_dates_positive": 0.8047,
@@ -1278,9 +1278,9 @@
      "excludes_zero": false,
      "gt0_prob": 0.762,
      "sharpe_ci": [
-      -2.97,
-      1.5,
-      5.06
+      -2.47,
+      1.25,
+      4.21
      ],
      "sharpe_ci_excludes_zero": false,
      "frac_dates_positive": 0.4544,
@@ -1364,5 +1364,14 @@
   "THE STANDARDIZER IS PART OF THE HYPOTHESIS, NOT NEUTRAL GROUND: outcomes are scaled by TRAILING realized 20d vol, which is a naive forecast of forward vol \u2014 realized vol mean-reverts, so a name whose 20d vol just spiked will realize LESS than one trailing sigma, and one in a vol trough will realize more. Any cell that sorts on vol state (S3_vol, and the vol axis of S5_trend_vol) can therefore earn a pinball gain purely by correcting that known bias in the scale. That is a real and useful correction, but it is a different claim from 'state carries forward-return information'. The decisive follow-up, OUT OF SCOPE for this phase-0: re-run with a HAR forward-vol forecast as the standardizer (engine/vol_forecast.py already ships one, exercised by tests/test_anticipation.py). If a vol-state scheme still beats B0 under that scale, the conditioning carries information; if the edge collapses, the finding is 'use a better vol forecast', not 'condition on vol state'. No verdict below distinguishes these two cases.",
   "THE RAW-PERCENT FRAME DOUBLE-COUNTS SCALE: in raw percent, a cell that sorts on extension or vol also sorts on return DISPERSION, so a scheme can score a large raw-frame gain purely by predicting width that the vol-standardizer already supplies in the primary frame. Where the raw delta is large and the standardized delta is not, the honest reading is that the scheme is re-deriving the vol scale, not adding information to it. The primary frame is the one the gates read.",
   "DATA END (AM-1): the readable store ends 2026-07-02, not 2026-07-28 as the worktree's committed manifest claims. A separate lane owns that publish outage."
+ ],
+ "post_run_review": [
+  "REVIEW-1 (G1 IS NON-DISCRIMINATING AT THIS DESIGN): the unconditional null itself sits mid-band \u2014 B0 covers ~0.794 and B1 ~0.786 against the [0.72, 0.88] gate \u2014 so an empirical marginal fitted on a large cohort passes G1 by construction. G1+G4 being structurally weak means 'passes all four gates' really rests on G2/G3, the two gates capable of failing. The pooled coverage number also carries no overlap-corrected test statistic (the HEDGEYE C.4 spec's Kupiec/Christoffersen point about overlapping origins applies); a coverage TEST at non-overlapping origins belongs in the phase-1 harness.",
+  "REVIEW-2 (COHORT RAMP / B1 NON-INDEPENDENCE): the store starts 2021-07-06, so the 504-session window is first full at 2024-10-16 \u2014 52% of evaluation dates ran on a partial cohort \u2014 and B1's 252-observation floor is unsatisfiable before 2023-10-16, so early B1 cones degrade to B0 (honest_frac 0.60 overall: ~40% of name-days scored the 'own-name' baseline AS the pooled baseline). G3 is therefore a ~60/40 blend of the own-name test and G2, not a fully independent second gate.",
+  "REVIEW-3 (S5 IS FRAGILE, S3 IS NOT): under a 10-test Bonferroni floor (5 schemes x 2 baselines, 0.005), S5-vs-B0's one-sided p=0.0074 fails while S3 survives at p<0.0002 on both baselines; clustering deltas at the 14 quarterly refits gives S3 t=3.23 (12/14 quarters positive) but S5 t=2.04, under the df=13 critical value. Read S3 as the finding and S5 as suggestive. The CI is stable across block lengths 21-126, so the block choice itself is sound.",
+  "REVIEW-5 (NEGATIVE CONTROL, MEASURED): a state-independent noise partition over an above-floor fixture cohort scores mean delta -0.00054 across 40 seeds (never exactly zero \u2014 random cells are noisy subsamples of the marginal, so they price slightly WORSE than it). The harness manufactures no positive edge from partitioning alone, and the two CALIBRATED_ONLY schemes (S1 -0.00052, S2 -0.00028) sit at noise-partition level, which sharpens the S3/S5 contrast. Pinned by test_noise_partition_manufactures_no_edge.",
+  "REVIEW-ORDERING (CONSISTENT WITH THE STANDARDIZER CAVEAT): ranked by delta vs B0 at H=21, every positive scheme is a trailing-vol transform (S3 rvol_z +0.00280, S5 trend x vol +0.00219, S4 range-coil +0.00091) and both non-vol schemes are negative (S2 -0.00028, S1 -0.00052) \u2014 exactly the ordering the standardizer-artifact mechanism predicts. This raises the prior on the 'vol-forecast correction' reading; the HAR discriminator decides it.",
+  "REVIEW-7 (sharpe_ci): earlier artifacts annualized the delta-series Sharpe at 365; regenerated at 252. The quantity is a sign-check only.",
+  "REVIEW-9 (SPLIT-STAMP MECHANISM): the ineligibility stamp marks bar i-1 via one-bar-ahead factor information (touched = step | roll(step, -1)). Feature-side removal only (7,554 of 3.69M rows); outcomes are computed on the already-repaired series and never read the stamp."
  ]
 }
