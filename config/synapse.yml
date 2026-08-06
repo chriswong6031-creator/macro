@@ -2141,6 +2141,19 @@ artifacts:
       not available); species_id=null by design (CN-WASHOUT/CN-REVERSAL both
       bind 'china_standout_track'; no unambiguous one-to-one species_id mapping).
       Producer write call: engine/china_standout_track.py:637 combined.to_parquet.
+      MULTI-DEFINITION STORE: keep-first keys on (date, ticker, board_definition), so one
+      parquet holds several cohorts side by side and a name on two shelves keeps one row
+      per definition. Exactly ONE definition owns the headline grade at a time; every
+      other cohort is listed in china_standout_track.WATCH_DEFINITIONS, which
+      _latest_definition_frame excludes so an append ORDER can never flip grade() onto a
+      watch cohort. Watch cohorts: cn_reversal_watch_v1 (washout-reversal measurement,
+      charting-app docs/PREREG_WASHOUT_REVERSAL.md §5.4), cn_prophet_v2_shadow (the
+      displaced v2 admission rule grading in parallel per CN Prophet masterplan G0.8) and
+      cn_continuation_watch_v1 (the §2.7 never-eligible continuation cohort — 11% of the
+      top-150 era runners, median era return +18.7%, blocked by the counter-trend /
+      no-200-reclaim leg; SHADOW ACCRUAL with zero display surface, producer
+      engine/china_continuation_watch.py). A cohort is added to WATCH_DEFINITIONS in the
+      SAME change that starts appending it.
 
   # --- W2 sweep 2a: HK Board Ledger ---
   board-ledger-hk:
@@ -3730,6 +3743,7 @@ artifacts:
       - scripts/export_signal_contracts.py
       - scripts/backfill_stock_open.py
       - engine/neuralweb/mastermind_context.py
+      - engine/neuralweb/market_packet.py
     external_consumers:
       - mastermind:vendored
       - mastermind:context
@@ -17133,3 +17147,159 @@ artifacts:
       per-ledger row counts and sha256 hashes for chronicle-events,
       chronicle-earnings-call-events, and chronicle-state-log + compile elapsed_s (binding
       budget: printed every run; target well under the 200-minute nightly cap).
+
+  # --- CN Prophet W-C: PIT membership store + loser/miss telemetry + episode ledger ---
+  # Program of record: research/CHINA_PROPHET_LOSER_INTELLIGENCE_MASTERPLAN_BY_FABLE.md.
+  # Registration tier per config/adjudication_rubrics.yml: t0 ROUTINE (display /
+  # infrastructure / shadow rows on existing lanes). No new lobe is chartered here and
+  # nothing is promoted onto a scored path, so no t2 packet or adversarial panel applies
+  # (FABLE_SUCCESSION_OPERATING_SYSTEM.md §RUL-SUCC — new_lobe_charter and
+  # scored_path_behavior_change are the t2 classes; neither is in scope).
+  cn-prophet-audit-latest:
+    path: data/cn_prophet_audit/latest.json
+    format: json
+    producer: engine/cn_prophet_audit.py
+    known_extra_writers: []
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/market_packet.py
+    external_consumers: []
+    notes: >
+      W0 of the CN Prophet program: per-night matured-episode loser forensics
+      (chase-fingerprint fields, sector/theme cells, entry-status cohorts), the era-runner
+      coverage funnel (caught / eligible_missed / never_eligible), and the featured-vs-rest
+      running score — one block per board_definition, NEVER pooled across definitions.
+      Ops-telemetry with ZERO authority: the artifact's own "authority" field reads
+      "none — ops telemetry; never scores, ranks, gates or sizes", and
+      tests/test_cn_prophet_audit.py pins that the buy rows come out of the producing call
+      byte-identical. Gated on CN_LANE=asia + partial-session refusal, the same two gates
+      china_standout_track.append_board uses. Producer write call:
+      engine/cn_prophet_audit.py:_write_latest. Consumed by the Live Market State Packet
+      as a telemetry HEADLINE only (n_matured / win rate / median excess / chase share) —
+      aggregation, never a per-name read.
+  cn-prophet-audit-forward-log:
+    path: data/cn_prophet_audit/forward_log.parquet
+    format: parquet
+    producer: engine/cn_prophet_audit.py
+    known_extra_writers: []
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Append-only headline row per (run date × board_definition) for the W0 telemetry —
+      the gradeable forward record behind data/cn_prophet_audit/latest.json. Also the
+      declared host for the R-slate auto-tripwires (masterplan G0.8: each ratified wiring
+      ships with a named tripwire, its threshold and its revert action). Nightly/asia is
+      the sole advancer (house law); keep-first on re-run.
+  site-cn-track-ledger:
+    path: site/factordata/cn_track_ledger.json
+    format: json
+    producer: scripts/build_china_library.py
+    known_extra_writers: []
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: track_ledger/v1
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/china.html.j2
+      - scripts/backfill_cn_board_definition_legacy.py
+    external_consumers: []
+    notes: >
+      EPISODE-grain (contiguous board run) CN track record from
+      data/china_standout_track/board.parquet, scored on CSI300-relative excess at a
+      forced 10-session verdict via engine/track_scoring.py — the same core the US desk
+      uses. Carries BOTH records and they are never pooled: prior_record is the CLOSED
+      pre-v2 era book (never edited, never re-graded) and the live record accrues under
+      the current board_definition only. Producer:
+      scripts/build_china_library.py:emit_cn_track_ledger (out_name default). The watch
+      cohorts write their own files through the same emitter (cn_reversal_ledger.json)
+      and never enter this one.
+  china-ths-membership-pit:
+    path: data/baskets_china_ths/membership_history.parquet
+    format: parquet
+    producer: engine/basket_membership_pit.py
+    known_extra_writers:
+      - "scripts/build_baskets_china_ths.py — calls basket_membership_pit.append_all() on --snapshot"
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: snapshot_date
+    freshness_sla_hours: 720
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Point-in-time THS concept-board membership: one row per
+      (snapshot_date, basket_id, ticker), keep-FIRST on that key, append-only.
+      Masterplan §2.12 names back-applied membership the WEAKEST JOINT of the relay
+      program — the 12-month ignition study ran on a single 2026-07-08 snapshot applied
+      backward, and the two real PIT snapshots differ by 7.7% of member-slots in 8 days —
+      so §5 W-C charters this store as the prerequisite for ANY future relay-construction
+      promotion. Content-deduped on a sha over the normalized member tuples (a calendar
+      day with unchanged membership is not stamped); PIT read = newest snapshot <= date,
+      via basket_membership_pit.members_asof, which ALWAYS returns a pit True/False basis
+      flag and falls back to current membership only for dates predating coverage.
+      TWO SOURCE SHAPES, recorded per row in source_shape: the 2026-06-30 side-car is the
+      RAW vendor concept dump (~9,069 member-slots, keyed by the Chinese board name) while
+      2026-07-08 onward are membership.json copies (~3,532 slots, the seeded/capped subset).
+      Both are true about their own population and neither is dropped, but differencing
+      naively across that boundary reports ~61% "drift" that is mostly the seeding cap —
+      members_asof attaches an explicit note whenever the resolved snapshot's shape is not
+      the store's newest. A dated side-car matching no known shape is reported as unparsed,
+      never silently skipped.
+      freshness_sla is deliberately loose: membership moves on the vendor's schedule, not
+      the trading calendar, so a long unchanged stretch is a correct reading, not a stall.
+      CN_LANE=asia gated (house law: nightly is sole advancer of data/).
+  china-curated-membership-pit:
+    path: data/baskets_china/membership_history.parquet
+    format: parquet
+    producer: engine/basket_membership_pit.py
+    known_extra_writers:
+      - "scripts/build_baskets_china_ths.py — calls basket_membership_pit.append_all() on --snapshot"
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: snapshot_date
+    freshness_sla_hours: 720
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      The curated CN basket suite's PIT membership history — same columns, same
+      keep-first key and same reader as china-ths-membership-pit, so a consumer needs one
+      contract rather than two. The curated membership already carries per-member
+      added/removed dates (the basis the masterplan §2.10 ex-ante receipt used), and
+      members_asof applies them WITHIN the resolved snapshot so a read between two
+      snapshots is correct rather than merely nearest-neighbour.
