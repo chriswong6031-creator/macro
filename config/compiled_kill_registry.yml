@@ -594,6 +594,20 @@ entries:
     section: 2
     section_name: killed_signal_families
 
+  - topic: 'Composite "regime reliability" monitor fusing 16 vol/dispersion/correlation/breadth/credit/curve/commodity/dollar/factor/short-interest/skew/dealer-positioning/leadership signals into a new regime engine'
+    key: KILL-COMPOSITE-REGIME-RELIABILITY-MONITOR
+    verdict: 'REJECT-REDUNDANT + FORBIDDEN fusion path — restates MSP-R2 on a wider input list; all 16 inputs already ship (`vol_regime`, `dispersion`, `contagion`, `live_breadth`, `bond_compass`, `bonds`, `active_commodity`, `forex_regime`, `equity_factors`, `crowding`, `options_desk`, `gex_state`, `theme_crowding`, `index_leadership`) and are already composed by risk_radar→market_state→regime_vector + `regime_one` decomposition; short-interest/skew/dealer-positioning are positioning keys, whose fusion into a regime score is Signal-Commons ILLEGAL'
+    source: 'RRC-R1, `REGIME_RELIABILITY_FACTOR_CROWDING_ADJUDICATION.md` §2 (2026-08-05)'
+    section: 2
+    section_name: killed_signal_families
+
+  - topic: 'Per-signal-family reliability table `R[s,t] = E[strategy performance \'
+    key: KILL-PER-SIGNAL-FAMILY-RELIABILITY
+    verdict: 'market regime]` graded on forward drawdown (the "momentum reliability 0.31 / breakout continuation 0.24" grid)'
+    source: 'KILLED (construction-scoped) — the claim requires a family×regime INTERACTION, and on the only multi-regime graded record (`track_record.parquet`, 57,642 matured signals, 763 months, 1962–2026) the interaction is **3.8× smaller than the family main effect** (3.59pp vs 0.95pp regime spread, month-FE demeaned to strip the shared-market tautology — `regime_at_entry` and `fwd_mdd_60` are both price functions); only 5/15 cells'' month-block bootstrap 95% CI excludes 0 (B=600); the two largest interactions sit in the two thinnest cells (n=48, n=41) with CIs spanning 0; era-split sign stability 8/13 = **62%, at coin-flip**. The richer axes the proposal names are UNESTIMABLE, not merely null: `quad_hard_label`/`vol_regime`/`fused_risk_label`/`rate_pressure`/`risk_radar_state` are stamped on **0.4% of the record inside one month**, with `vol_regime` and `rate_pressure` observed in a SINGLE state (conditional expectation undefined elsewhere); the board ledger''s 2,282 graded fires span 18 trading days, all in Q1/normalizing/pressure — zero contrast; PIT regime history gives only 128 post-2010 quad episodes, 14 of them ≥63d. Closes THIS construction only — regime conditioning as de-escalation context stays live (`dispersion.py`, `style_regime`, `regime_one` confidence decay), as does pre-registered H1. Re-open requires `engine.regime_conditioning_coverage.assess()` returning `estimable` for the target axis + a fresh prereg with the interaction as primary'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Ticker-cluster bootstrap CIs without time control'
     key: LAW-TIME-CLUSTERED-CI
     verdict: 'FORBIDDEN estimator — anti-conservative, effective N = months'
