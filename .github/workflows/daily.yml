@@ -448,6 +448,21 @@ jobs:
                                   # "restore failed -> store did not advance" warning — the
                                   # single loudest signal here — would never be emitted.
         run: python -m scripts.audit_massive_store
+      - name: audit stocks store freshness (per-name stale-tip tripwire — loud, never blocks the night)
+        # Own step for the same reason as "audit massive_stock_day store" above: this
+        # lane runs --exclude-group asia, so scripts/collect.py skips the WHOLE
+        # run_quality_audits gate as a partial run, leaving this audit zero nightly
+        # coverage without its own step. 2026-08-03 incident: a name that exits every
+        # sector SPDR's top-20 froze its data/stocks parquet forever — invisible to
+        # audit_prices (interior gaps only) and check_price_store_freshness (SPY in
+        # data/yahoo only). The module bare-prints a ::warning annotation and always
+        # exits 0 for data findings (flags-only law, never gates the night); the ||
+        # echo below only guards an unexpected crash. Writes
+        # data/quality/stocks_freshness_audit.json, picked up by "commit data" below.
+        continue-on-error: true
+        run: |
+          python -m scripts.audit_stocks_freshness \
+            || echo "::warning::audit_stocks_freshness crashed (non-fatal — per-name freshness disclosure absent this run)"
       - name: commit data (local checkpoint — no network ops in this step)
         # NAMED-STEPS GATE (2026-08-05). This step used to carry no `if:` at all, so it
         # inherited an implicit success() and ANY earlier red discarded the night's

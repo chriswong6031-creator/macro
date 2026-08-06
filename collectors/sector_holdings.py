@@ -16,12 +16,12 @@ from __future__ import annotations
 import io
 import logging
 import time
-from datetime import date
+from datetime import date, datetime
 
 import pandas as pd
 
 from collectors.base import Adapter
-from lib import config, store
+from lib import config, nyse_calendar, store
 
 log = logging.getLogger(__name__)
 
@@ -162,6 +162,56 @@ def latest_top10(fund: str) -> pd.DataFrame | None:
 
 _DEEP_MIN_ROWS = 250  # below this a "healthy" file is a throttled seed stub, not history
 
+# A period='1mo' refresh reaches ~30 calendar days back; a store frozen longer than
+# this has no window overlap left to bridge and would strand an interior hole rather
+# than heal it — route to period='max' instead. 21 gives the cheap window margin
+# under its own ~30-day reach (SATS class: 46 days frozen at the 2026-08-03
+# adjudication — see _fetch_universe below for the incident this pairs with).
+_MAX_WINDOW_BRIDGE_DAYS = 21
+
+
+def _dead_tickers() -> frozenset[str]:
+    """Ticker set from the dead-name price store (data/edgar/dead_name_prices.parquet,
+    long format — see engine/grading.py::load_dead_prices for the same shape/path).
+    Absent/unreadable/column-missing degrades to frozenset(): the dead-name registry is
+    a CI-collected side artifact, not always present in every checkout, and a name this
+    can't classify simply isn't excluded from anything — the retention union in
+    _fetch_universe fails safe toward FETCHING, never toward silently dropping a name."""
+    p = config.data_dir() / "edgar" / "dead_name_prices.parquet"
+    try:
+        # columns=["ticker"] alone (~100x cheaper than a full read — the store carries
+        # date/close/source too); a missing 'ticker' column raises here as well and
+        # lands in the same except, so the column-missing contract is unchanged.
+        df = pd.read_parquet(p, columns=["ticker"])
+    except Exception as e:  # noqa: BLE001 — absent/corrupt/column-missing must never block retention
+        log.debug("stocks: dead_name_prices unreadable (%s) — no names excluded", e)
+        return frozenset()
+    return frozenset(df["ticker"].astype(str))
+
+
+def _fetch_universe(current: list[str], stored: list[str], dead: frozenset[str]) -> list[str]:
+    """The retention fetch set: today's top-N union PLUS every ticker still on disk
+    under data/stocks, minus names confirmed dead.
+
+    2026-08-03 adjudication: top10_union() ALONE regressed a ticker's fetch the moment
+    it fell out of every sector SPDR's top-20 — and scripts/build_stock_library.py's
+    universe() keeps preferring the frozen deep store over fresher breadth caches, so
+    nothing downstream ever noticed the parquet stopped advancing. Measured receipts:
+    QCOM (XLK rank 20, exited 2026-07-09) froze at 2026-07-10; HOOD (XLF r20,
+    2026-07-09) froze at 07-10; MRVL (XLK r18, 2026-07-10) froze at 07-13; CVNA (XLY
+    r19, 2026-07-16) froze at 07-17; WDC (XLK r20, 2026-07-23) froze at 07-24; HON
+    (XLI, exited 06-26) froze at 07-17, that tip itself an artifact of the 07-19
+    one-shot basis heal (#3096) — 10 to 46 days frozen apiece, forever, with nothing
+    watching. A name must keep being fetched for as long as it is still on disk,
+    dead-registry names excepted.
+
+    A dead-registry name that is STILL in the current union is fetched anyway — the
+    union side always wins. Ticker symbols get reused across unrelated companies over
+    time, and refusing to fetch a live top-N holding because an unrelated past company
+    once traded under the same string would be a worse defect than the one this
+    function exists to fix."""
+    return sorted(set(current) | (set(stored) - dead))
+
 
 class StockPriceAdapter(Adapter):
     """Daily closes for the union of top-N holdings (cycle engine fuel)."""
@@ -173,20 +223,52 @@ class StockPriceAdapter(Adapter):
     def __init__(self) -> None:
         self.ycfg = config.load()["yahoo"]
 
-    def _needs_full(self, ticker: str) -> bool:
+    def stored_series(self) -> list[str]:
+        """Every ticker currently on disk under data/stocks — the retention side of
+        _fetch_universe (a name the union has dropped must keep appearing here for
+        its store to keep advancing; see _fetch_universe's docstring for the
+        incident). Do not hoist the leading-underscore filter into the base Adapter:
+        data/intl legitimately stores ^-sanitized stems (_N225, _FTSE) that
+        IntlPriceAdapter's base stored_series() must keep returning."""
+        d = config.data_dir() / self.group
+        if not d.exists():
+            return []
+        return sorted(p.stem for p in d.glob("*.parquet") if not p.stem.startswith("_"))
+
+    def _needs_full(self, ticker: str, today: pd.Timestamp | None = None) -> bool:
         """A ticker needs a full-history re-fetch when its stored file is missing
         volume for a meaningful share of rows (volume was added to this adapter
         after the price history was first seeded) OR is too shallow to be real
         history — a throttled period='max' seed pull can leave a ~40-row stub that
         a volume-share check alone calls healthy forever (CBRE/ISRG/KMI/MLM,
-        2026-05 class). Self-heals both; once deep with volume the ticker falls
-        back to the cheap daily window."""
+        2026-05 class) OR has a stored tip older than _MAX_WINDOW_BRIDGE_DAYS calendar
+        days — a name _fetch_universe kept in the fetch set after it dropped out of
+        top10_union() (or one that simply missed several nights) needs period='max',
+        not the cheap period='1mo' window, once the freeze is old enough that the
+        window can no longer reach back to the last stored bar (SATS class, 46 days
+        frozen at the 2026-08-03 adjudication). Self-heals all three; once deep,
+        volume-complete, and current the ticker falls back to the cheap daily window.
+        `today` is test-injected; defaults to the current ET calendar date (matches
+        scripts/audit_stocks_freshness.py's lag anchor). The tip is parsed
+        defensively (NaT / tz-aware index both degrade to True, never a raise) because
+        this is called from a bare list comprehension in fetch() with no per-ticker
+        try/except — one corrupt stored file must never kill the run for every other
+        ticker."""
         old = store.read("stocks", ticker)
         if old is None or old.empty or "volume" not in old.columns:
             return True
         if len(old) < _DEEP_MIN_ROWS:
             return True
-        return float(old["volume"].notna().mean()) < 0.95
+        if float(old["volume"].notna().mean()) < 0.95:
+            return True
+        today = (pd.Timestamp(today).normalize() if today is not None
+                 else pd.Timestamp(datetime.now(nyse_calendar.ET).date()))
+        tip = pd.Timestamp(old.index.max())
+        if pd.isna(tip):
+            return True
+        if tip.tzinfo is not None:
+            tip = tip.tz_localize(None)
+        return bool((today - tip.normalize()).days > _MAX_WINDOW_BRIDGE_DAYS)
 
     def _download(self, batch: list[str], period: str) -> pd.DataFrame:
         import yfinance as yf
@@ -233,18 +315,23 @@ class StockPriceAdapter(Adapter):
                 frames[t] = sub
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
-        tickers = top10_union()
-        if not tickers:
+        current = top10_union()
+        if not current:
             raise RuntimeError("no holdings stored yet — run sector_holdings first")
-        # daily runs fetch a short window, EXCEPT thin-volume/shallow tickers which
-        # get a full-history backfill so a bad seed can never silently persist.
+        # Retention: keep fetching every name still on disk even after it exits the
+        # top-N union (see _fetch_universe's docstring — the 2026-08-03 freeze
+        # incident). tickers is therefore always >= current, never fewer.
+        tickers = _fetch_universe(current, self.stored_series(), _dead_tickers())
+        # daily runs fetch a short window, EXCEPT thin-volume/shallow/stale-tip
+        # tickers which get a full-history backfill so a bad seed (or a frozen tip
+        # older than the window can bridge) can never silently persist.
         if full_history:
             groups = [("max", tickers)]
         else:
             heal = [t for t in tickers if self._needs_full(t)]
             groups = [("1mo", [t for t in tickers if t not in heal])]
             if heal:
-                log.info("stocks: full-history backfill for %d thin/shallow tickers", len(heal))
+                log.info("stocks: full-history backfill for %d thin/shallow/stale tickers", len(heal))
                 groups.append(("max", heal))
         frames: dict[str, pd.DataFrame] = {}
         rebase: list[str] = []

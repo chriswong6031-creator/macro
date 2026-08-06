@@ -56,6 +56,8 @@ _DEFAULTS = {
     "massive_manifest_ahead_bdays": 2,  # manifest latest_date this far ahead of anchor content = manifest lie (fail)
     "massive_min_files": 100,       # fewer parquets than this = store absent (CI checkout) -> universe skipped
     "massive_recent_window_bdays": 90,  # continuity is judged over the trailing N bdays only; a deeper gap flags (descriptive, not tonight's feed)
+    # --- per-name stock-store freshness (audit_stocks_freshness) ---
+    "stocks_stale_calendar_days": 7,  # per-name tip lag beyond this = stale FLAG — 2026-08-03 adjudication (QCOM/HOOD/MRVL/CVNA/HON/WDC top-N-exit freezes); 7 = worst structural NYSE closure 2000-2026 (mirrors #4441 ledger gate's _MAX_BAR_LAG_DAYS)
     "email_alerts": False,          # NEVER email — deterministic file + conspicuous log only
 }
 
