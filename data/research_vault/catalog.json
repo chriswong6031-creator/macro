@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T08:39:33.991824+00:00",
-  "count": 860,
+  "generated_at": "2026-08-06T08:54:39.983705+00:00",
+  "count": 861,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -386,6 +386,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hq3jqng81ud-cf27da",
+      "title": "Global Markets Daily HUF Stocktake — Energy Vol Now, Domestic Drivers Later",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:13Z",
+      "summary_points": [
+        "**HUF's Energy Deficit**: Net energy balance at -3.4% of GDP (vs -2.2% in 2025), driven by oil/gas price shifts; 4% GDP energy deficit amplifies vulnerability amid nuclear plant shutdown (supplying 50% of electricity) and current account deterioration.",
+        "**EU Funds as Fiscal Anchor**: Unblocked RRF funds (€10bn, 3% GDP) and Cohesion Funds (~8-9% of 2025 GDP) represent critical near-term support; disbursement limited to Q4 2024, offsetting energy price impacts.",
+        "**EUR/HUF Correlation Drivers**: Oil (10% rise → +0.8% EUR/HUF, R²=0.34) and gas (10% rise → +0.5% EUR/HUF, R²=0.24) explain 34%/24% of daily volatility since Iran conflict; energy prices key near-term HUF direction.",
+        "**Inflation Target & FX Risk**: Lowering MNB inflation target to 2% could narrow EUR/HUF differentials, but high FX pass-through (>3%) and energy price volatility create two-sided risks during Euro adoption (Oct/Nov)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
