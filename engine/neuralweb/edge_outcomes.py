@@ -1243,16 +1243,21 @@ def _make_row(
         "src_symbols": fire.get("src_symbols"),
         "src_direction_degenerate": fire.get("src_direction_degenerate"),
         "fire_session_ix": fire.get("fire_session_ix"),
-        # Can this verdict still change?  window_settled is the gate the
-        # scoreboard uses; primary_window_settled is disclosed alongside it
-        # because the H=21 verdict stops moving 42 sessions earlier than the
-        # H=63 column does.
+        # Settlement is PER-HORIZON: horizon H closes at fire + LINK_WINDOW + H.
+        # horizon_settled drives every rate; window_settled (all horizons closed)
+        # is kept as the ROW's terminal ladder state, so the state machine stays
+        # monotone and simple rather than growing a rung per horizon.
+        "horizon_settled": horizon_settled_map(
+            fire.get("fire_session_ix"), latest_session_ix),
         "window_settled": is_window_settled(
             fire.get("fire_session_ix"), latest_session_ix),
         "primary_window_settled": is_window_settled(
             fire.get("fire_session_ix"), latest_session_ix,
             PRIMARY_SETTLE_OFFSET_SESSIONS),
         "settle_offset_sessions": SETTLE_OFFSET_SESSIONS,
+        "settle_offset_by_horizon": {
+            str(h): settle_offset_for(h) for h in OUTCOME_HORIZONS
+        },
         "latest_session_ix_at_build": latest_session_ix,
         "claimed_sign": claimed,
         # Unconditional base rate for the dst — the control the agreement rate
@@ -1592,10 +1597,32 @@ STATE_GRADED = STATE_GRADED_PARTIAL
 #: longest horizon those rows are graded at.
 SETTLE_OFFSET_SESSIONS: int = LINK_WINDOW_SESSIONS + max(OUTCOME_HORIZONS)
 
-#: The same offset for the PRIMARY horizon only — when the H=21 verdict (the one
-#: the agreement rate is computed on) stops moving.  Disclosed, not used as the
-#: gate; SETTLE_OFFSET_SESSIONS is the gate.
+#: The same offset for the PRIMARY horizon only — when the H=21 verdict stops
+#: moving.  This is the gate the H=21 rate uses (see settle_offset_for).
 PRIMARY_SETTLE_OFFSET_SESSIONS: int = LINK_WINDOW_SESSIONS + PRIMARY_HORIZON
+
+
+def settle_offset_for(horizon: int) -> int:
+    """Sessions after a fire before horizon ``H``'s verdict can no longer move.
+
+    SETTLEMENT IS PER-HORIZON.  The defect being guarded is "a horizon-H
+    verdict printed from a link window that could still gain H-graded rows",
+    and that window closes at ``fire + LINK_WINDOW + H`` — not at the longest
+    horizon in the set.  Gating the H=21 rate on the H=63 window would delay it
+    42 sessions for zero correctness gain, because no row arriving in that
+    stretch can change an H=21 median.
+    """
+    return LINK_WINDOW_SESSIONS + int(horizon)
+
+
+def horizon_settled_map(fire_session_ix: int | None,
+                        latest_session_ix: int | None) -> dict[str, bool]:
+    """Per-horizon settlement flags for one fire."""
+    return {
+        str(h): is_window_settled(fire_session_ix, latest_session_ix,
+                                  settle_offset_for(h))
+        for h in OUTCOME_HORIZONS
+    }
 
 
 def is_window_settled(fire_session_ix: int | None, latest_session_ix: int | None,
@@ -1638,6 +1665,24 @@ def observation_state(row: dict) -> int:
     return STATE_STUB
 
 
+def settlement_progress(row: dict) -> tuple[int, int]:
+    """How far this row has advanced: (ladder rung, horizons settled).
+
+    The ladder alone is too coarse to express the upgrade that matters most.
+    A fire whose H=21 window has just closed is still ``graded_partial`` at the
+    row level — its H=63 window is open for another 42 sessions — so a
+    rung-only comparison skips it as "not strictly higher" and the H=21 rate
+    never sees the settled answer.  That is the original partial-window freeze
+    re-appearing one level down.
+
+    Both components only ever increase (a settled horizon never re-opens), so
+    the tuple is monotone and the state machine keeps exactly one ladder.
+    """
+    settled = row.get("horizon_settled") or {}
+    n_settled = sum(1 for v in settled.values() if v)
+    return observation_state(row), n_settled
+
+
 def resolve_ledger(rows: Sequence[dict]) -> list[dict]:
     """Collapse an append-only ledger to one row per key: the settled one.
 
@@ -1655,7 +1700,7 @@ def resolve_ledger(rows: Sequence[dict]) -> list[dict]:
         if cur is None:
             best[key] = r
             continue
-        new_rank, cur_rank = observation_state(r), observation_state(cur)
+        new_rank, cur_rank = settlement_progress(r), settlement_progress(cur)
         if new_rank > cur_rank:
             best[key] = r
         elif new_rank == cur_rank and (
@@ -1699,8 +1744,8 @@ def append_rows(path: Path, rows: Iterable[dict]) -> dict:
         if r.get("edge_id") is None:
             continue
         key = _ledger_key(r)
-        st = observation_state(r)
-        if st > best_state.get(key, -1):
+        st = settlement_progress(r)
+        if st > best_state.get(key, (-1, -1)):
             best_state[key] = st
 
     to_write: list[dict] = []
@@ -1713,7 +1758,7 @@ def append_rows(path: Path, rows: Iterable[dict]) -> dict:
         if rid in seen_hash:
             n_dupe_hash += 1
             continue
-        state = observation_state(r)
+        state = settlement_progress(r)
         prior = best_state.get(key)
         # A summary row is a running TALLY, not an observation on the state
         # ladder: its content legitimately changes every night while its state
@@ -1818,6 +1863,13 @@ def aggregate(rows: Sequence[dict], *, min_n: int = MIN_N, base_provider=None) -
             "lags": [],
             "graded_session_ix": [],
             "verdict_session_ix": [],
+            "by_horizon": {
+                str(h): {
+                    "n_verdicts": 0, "n_settled": 0, "n_unsettled": 0,
+                    "n_agree": 0, "settled_session_ix": [], "dst_sessions": set(),
+                }
+                for h in OUTCOME_HORIZONS
+            },
             "claimed_signs": [],
             "dst_sessions": set(),
             "base_rate": None,
@@ -1845,32 +1897,51 @@ def aggregate(rows: Sequence[dict], *, min_n: int = MIN_N, base_provider=None) -
             slot["reason_counts"][reason] = slot["reason_counts"].get(reason, 0) + 1
         if not r.get("graded"):
             continue
-        prim = (r.get("outcomes") or {}).get(str(PRIMARY_HORIZON)) or {}
+
+        outcomes = r.get("outcomes") or {}
+        settled_map = r.get("horizon_settled") or {}
+        six_any = r.get("fire_session_ix")
+
+        # ---- per-horizon accumulation -----------------------------------
+        # Horizon H admits ONLY fires settled at H.  H=21 can therefore print
+        # while H=63 on the same fires is still accruing — the H=63 window
+        # closing has no bearing on whether an H=21 median can still move.
+        for h in OUTCOME_HORIZONS:
+            obs = outcomes.get(str(h)) or {}
+            h_agree = obs.get("agree")
+            if h_agree is None:
+                continue
+            hslot = slot["by_horizon"][str(h)]
+            hslot["n_verdicts"] += 1
+            if settled_map.get(str(h)):
+                hslot["n_settled"] += 1
+                if h_agree:
+                    hslot["n_agree"] += 1
+                if six_any is not None:
+                    hslot["settled_session_ix"].append(int(six_any))
+                for s in (obs.get("dst_sessions") or []):
+                    hslot["dst_sessions"].add(str(s))
+            else:
+                hslot["n_unsettled"] += 1
+
+        # ---- primary horizon drives the top-level fields ------------------
+        prim = outcomes.get(str(PRIMARY_HORIZON)) or {}
         agree = prim.get("agree")
         if agree is None:
             continue
 
         # Every primary-horizon verdict, settled or not, defines the calendar
-        # the CONTROL is drawn from — the base rate is descriptive, so scoping
-        # it to settled verdicts only would leave an edge with no control at
-        # all rather than a control that is merely provisional.
-        six_any = r.get("fire_session_ix")
+        # the CONTROL falls back to when nothing has settled yet.
         if six_any is not None:
             slot["verdict_session_ix"].append(int(six_any))
-        # The claimed sign is what orients the control (an edge claiming DOWN
-        # is scored against 1-up_rate), so it belongs to the descriptive layer
-        # too — otherwise an all-unsettled edge gets a control it cannot point.
+        # The claimed sign orients the control (an edge claiming DOWN is scored
+        # against 1-up_rate), so it is collected for settled and unsettled
+        # alike — otherwise an all-unsettled edge gets a control it cannot point.
         if r.get("claimed_sign") is not None:
             slot["claimed_signs"].append(int(r["claimed_sign"]))
 
-        # SETTLED verdicts are final and are the only ones a RATE may be built
-        # from.  A verdict whose link window is still filling can still flip —
-        # measured at 49% disagreement against the settled retro — so it counts
-        # as accruing, is disclosed, and never reaches agreement_rate.
-        if not r.get("window_settled"):
+        if not settled_map.get(str(PRIMARY_HORIZON), r.get("primary_window_settled")):
             slot["n_graded_unsettled"] += 1
-            if r.get("primary_window_settled"):
-                slot["n_primary_settled"] += 1
             for s in (prim.get("dst_sessions") or []):
                 slot["dst_sessions"].add(str(s))
             continue
@@ -1879,10 +1950,8 @@ def aggregate(rows: Sequence[dict], *, min_n: int = MIN_N, base_provider=None) -
         slot["n_primary_settled"] += 1
         if agree:
             slot["n_agree"] += 1
-        six = r.get("fire_session_ix")
-        if six is not None:
-            slot["graded_session_ix"].append(int(six))
-        # claimed_sign is collected above, for settled and unsettled alike.
+        if six_any is not None:
+            slot["graded_session_ix"].append(int(six_any))
         for s in (prim.get("dst_sessions") or []):
             slot["dst_sessions"].add(str(s))
         lag = r.get("realized_lag_sessions")
@@ -1898,6 +1967,28 @@ def aggregate(rows: Sequence[dict], *, min_n: int = MIN_N, base_provider=None) -
         ci = wilson_interval(k, n) if above and n > 0 else None
         blocks = count_independent_blocks(slot["graded_session_ix"])
 
+        # Per-horizon scoreboard.  Each horizon floors on its OWN settled count.
+        by_h: dict[str, dict] = {}
+        for h in OUTCOME_HORIZONS:
+            hs = slot["by_horizon"][str(h)]
+            hn, hk = hs["n_settled"], hs["n_agree"]
+            h_above = hn >= min_n
+            h_ci = wilson_interval(hk, hn) if h_above and hn > 0 else None
+            by_h[str(h)] = {
+                "horizon": h,
+                "settle_offset_sessions": settle_offset_for(h),
+                "n_verdicts": hs["n_verdicts"],
+                "n_settled": hn,
+                "n_unsettled": hs["n_unsettled"],
+                "n_agree": hk,
+                "state": "measured" if h_above else "accruing",
+                "agreement_rate": (hk / hn) if h_above and hn > 0 else None,
+                "agreement_ci95": list(h_ci) if h_ci else None,
+                "rate_suppressed_reason": None if h_above else f"n_settled<{min_n}",
+                "n_independent_blocks": count_independent_blocks(hs["settled_session_ix"]),
+                "n_distinct_dst_sessions": len(hs["dst_sessions"]),
+            }
+
         # Base rate, recomputed from the spine over this edge's OWN fire span
         # under the numerator's estimator.  Never latched to a stamped value
         # when a provider is available: the span grows as the ledger accrues.
@@ -1906,10 +1997,17 @@ def aggregate(rows: Sequence[dict], *, min_n: int = MIN_N, base_provider=None) -
         up = slot["base_rate"]
         base_n = slot["base_rate_n"]
         if base_provider is not None:
-            span = slot["verdict_session_ix"] or slot["graded_session_ix"]
+            # The control's span is the convex hull of the SETTLED numerator's
+            # own evaluation points — the control follows the fires that
+            # actually produce the rate.  Only when nothing has settled does it
+            # fall back to all verdicts, and then it is a diagnostic, labelled.
+            settled_span = slot["graded_session_ix"]
+            span = settled_span or slot["verdict_session_ix"]
+            basis = ("matched_estimator_recomputed" if settled_span
+                     else "matched_estimator_unsettled_diagnostic")
             up_r, n_r, evaluated = base_provider(slot["dst_subject"], span)
             if up_r is not None:
-                up, base_n, base_basis = up_r, n_r, "matched_estimator_recomputed"
+                up, base_n, base_basis = up_r, n_r, basis
                 # NIT: control points and fire sessions come from the same
                 # stretch of calendar by construction, so they overlap heavily.
                 # Print the intersection instead of letting a reader assume
@@ -1947,7 +2045,9 @@ def aggregate(rows: Sequence[dict], *, min_n: int = MIN_N, base_provider=None) -
             # Settledness split: only settled verdicts reach agreement_rate.
             "n_graded_unsettled": slot["n_graded_unsettled"],
             "n_primary_horizon_settled": slot["n_primary_settled"],
-            "settle_offset_sessions": SETTLE_OFFSET_SESSIONS,
+            "settle_offset_sessions": settle_offset_for(PRIMARY_HORIZON),
+            "settle_offset_all_horizons": SETTLE_OFFSET_SESSIONS,
+            "by_horizon": by_h,
             "n_fires_claiming_up": n_pos,
             "n_fires_claiming_down": n_neg,
             "agreement_lift_vs_base": lift,

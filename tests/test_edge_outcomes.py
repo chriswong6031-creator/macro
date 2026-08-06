@@ -981,6 +981,10 @@ class TestNightlyAccrual:
                                        horizon=21.0, outcome_excess=val))
                 rows.append(_spine_row(engine="dst_eng", as_of=day,
                                        horizon=5.0, outcome_excess=-val))
+                # H=63 too, so the long horizon has verdicts of its own and
+                # can be observed still accruing while H=21 has settled.
+                rows.append(_spine_row(engine="dst_eng", as_of=day,
+                                       horizon=63.0, outcome_excess=val))
         _write_spine(nw, rows, dense_upto=n_visible - 1)
         _write_graph(nw, [_edge("engine:src_eng", "engine:dst_eng")])
         return _SESSIONS[:n_visible]
@@ -1046,6 +1050,82 @@ class TestNightlyAccrual:
             f"prospective verdicts disagree with the settled retro on "
             f"{len(mismatched)}/{len(shared)} fires: {mismatched}"
         )
+
+    def test_h21_settles_and_prints_while_h63_still_accrues(self, tmp_path, monkeypatch):
+        """Per-horizon settlement: H=21 may print while H=63 is still open.
+
+        Settlement closes at fire + LINK_WINDOW + H, so gating the H=21 rate on
+        the H=63 window would delay it 42 sessions for no correctness gain — no
+        row arriving in that stretch can move an H=21 median.
+        """
+        last_fire = max(self._FIRE_SESSIONS)
+        h21_closed = last_fire + eo.settle_offset_for(21)
+        h63_closed = last_fire + eo.settle_offset_for(63)
+        assert h21_closed < h63_closed, "fixture must separate the two windows"
+
+        nw = tmp_path / "data" / "neuralweb"
+        monkeypatch.setenv(runner.NIGHTLY_LANE_ENV, "nightly")
+        path = nw / runner.PROSPECTIVE_LEDGER
+
+        # Stop the clock after every H=21 window has closed but before any
+        # H=63 window has.
+        stop = h21_closed + 2
+        assert stop < h63_closed
+        for n_visible in range(self._FIRE_SESSIONS[0] + 1, stop + 1):
+            self._varying_spine(nw, n_visible)
+            assert runner.main(["--nightly", "--data-root", str(nw)]) == 0
+
+        spine, _ = eo.load_spine(nw, [])
+        board = eo.aggregate(eo.read_ledger(path), min_n=len(self._FIRE_SESSIONS),
+                             base_provider=eo.make_base_provider(spine))
+        e = board["edges"][0]
+        h21, h63 = e["by_horizon"]["21"], e["by_horizon"]["63"]
+
+        assert h21["n_settled"] == len(self._FIRE_SESSIONS) and h21["n_unsettled"] == 0
+        assert h21["state"] == "measured" and h21["agreement_rate"] is not None, \
+            "H=21 must be able to print once its own window has closed"
+        assert h63["n_unsettled"] >= 1 and h63["n_settled"] == 0
+        assert h63["state"] == "accruing" and h63["agreement_rate"] is None, \
+            "H=63 must NOT print before its own window closes"
+        assert h21["settle_offset_sessions"] == eo.LINK_WINDOW_SESSIONS + 21
+        assert h63["settle_offset_sessions"] == eo.LINK_WINDOW_SESSIONS + 63
+
+    def test_per_horizon_verdicts_converge_to_retro(self, tmp_path, monkeypatch):
+        """H=21 verdicts must equal the retro's, fire-for-fire, at t+26.
+
+        The equality must hold WHILE the same fires' H=63 windows are still
+        open — that is the whole point of per-horizon settlement.
+        """
+        nw = tmp_path / "data" / "neuralweb"
+        monkeypatch.setenv(runner.NIGHTLY_LANE_ENV, "nightly")
+        path = nw / runner.PROSPECTIVE_LEDGER
+
+        last_fire = max(self._FIRE_SESSIONS)
+        stop = last_fire + eo.settle_offset_for(21) + 2
+        assert stop < last_fire + eo.settle_offset_for(63)
+        for n_visible in range(self._FIRE_SESSIONS[0] + 1, stop + 1):
+            self._varying_spine(nw, n_visible)
+            assert runner.main(["--nightly", "--data-root", str(nw)]) == 0
+
+        prospective = eo.resolve_ledger(eo.read_ledger(path))
+        self._varying_spine(nw, self._N_SESSIONS)     # fully settled store
+        retro_rows, _, _ = _build(nw)
+
+        def h21(rows):
+            out = {}
+            for r in rows:
+                if not (r.get("fire_date") and r.get("graded")):
+                    continue
+                obs = (r.get("outcomes") or {}).get("21") or {}
+                if obs.get("agree") is not None:
+                    out[r["fire_date"]] = obs["agree"]
+            return out
+
+        p_v, r_v = h21(prospective), h21(retro_rows)
+        shared = set(p_v) & set(r_v)
+        assert shared, "the prospective lane must reach settled H=21 verdicts"
+        bad = {d: (p_v[d], r_v[d]) for d in shared if p_v[d] != r_v[d]}
+        assert not bad, f"H=21 disagrees with the settled retro on {len(bad)}: {bad}"
 
     def test_settled_rows_carry_the_settled_flag(self, tmp_path):
         nw = tmp_path / "data" / "neuralweb"

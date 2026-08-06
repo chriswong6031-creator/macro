@@ -52,47 +52,101 @@
     "display_only": true,
     "edges": [
       {
-        "agreement_ci95": null,
-        "agreement_lift_vs_base": null,
-        "agreement_rate": null,
+        "agreement_ci95": [
+          0.14164435051961052,
+          0.5559606813326594
+        ],
+        "agreement_lift_vs_base": -0.005681818181818177,
+        "agreement_rate": 0.3125,
         "authority": {
           "may_escalate": false,
           "may_gate": false,
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": [
+              0.14164435051961052,
+              0.5559606813326594
+            ],
+            "agreement_rate": 0.3125,
+            "horizon": 21,
+            "n_agree": 5,
+            "n_distinct_dst_sessions": 20,
+            "n_independent_blocks": 2,
+            "n_settled": 16,
+            "n_unsettled": 2,
+            "n_verdicts": 18,
+            "rate_suppressed_reason": null,
+            "settle_offset_sessions": 26,
+            "state": "measured"
+          },
+          "5": {
+            "agreement_ci95": [
+              0.3074295064970908,
+              0.6601467541378958
+            ],
+            "agreement_rate": 0.48148148148148145,
+            "horizon": 5,
+            "n_agree": 13,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 2,
+            "n_settled": 27,
+            "n_unsettled": 3,
+            "n_verdicts": 30,
+            "rate_suppressed_reason": null,
+            "settle_offset_sessions": 10,
+            "state": "measured"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
         "dst": "engine:radar",
         "dst_base_rate_basis": "matched_estimator_recomputed",
-        "dst_base_rate_matched": 0.28,
-        "dst_base_rate_n_sessions": 25,
-        "dst_base_rate_sessions_overlapping_fires": 18,
+        "dst_base_rate_matched": 0.3181818181818182,
+        "dst_base_rate_n_sessions": 22,
+        "dst_base_rate_sessions_overlapping_fires": 16,
         "edge_id": "confirms:576a607b1748",
         "edge_source": "confluence_graph",
         "edge_type": "confirms",
-        "lag_suppressed_reason": "n_graded<10",
+        "lag_suppressed_reason": null,
         "median_lag_sessions": null,
-        "n_agree": 0,
+        "n_agree": 5,
         "n_distinct_dst_sessions": 20,
         "n_fires": 35,
         "n_fires_claiming_down": 0,
         "n_fires_claiming_up": 18,
-        "n_graded": 0,
-        "n_graded_unsettled": 18,
-        "n_independent_blocks": 0,
+        "n_graded": 16,
+        "n_graded_unsettled": 2,
+        "n_independent_blocks": 2,
         "n_lag_observations": 0,
         "n_primary_horizon_settled": 16,
-        "overlap_warning": false,
+        "overlap_warning": true,
         "primary_horizon": 21,
-        "rate_suppressed_reason": "n_graded<10",
+        "rate_suppressed_reason": null,
         "reason_counts": {
           "no_overlapping_outcome_window": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "engine:altdata",
-        "state": "accruing",
+        "state": "measured",
         "thin_numerator_warning": false
       },
       {
@@ -106,93 +160,52 @@
           "may_size": false,
           "not_a_signal": true
         },
-        "ci_basis": "nominal_wilson_assumes_independent_fires",
-        "display_only": true,
-        "dst": "sector:xlb",
-        "dst_base_rate_basis": "matched_estimator_recomputed",
-        "dst_base_rate_matched": 0.5555555555555556,
-        "dst_base_rate_n_sessions": 9,
-        "dst_base_rate_sessions_overlapping_fires": 7,
-        "edge_id": "headwind:190d97e104a0",
-        "edge_source": "confluence_graph",
-        "edge_type": "headwind",
-        "lag_suppressed_reason": "n_graded<10",
-        "median_lag_sessions": null,
-        "n_agree": 0,
-        "n_distinct_dst_sessions": 6,
-        "n_fires": 24,
-        "n_fires_claiming_down": 7,
-        "n_fires_claiming_up": 0,
-        "n_graded": 0,
-        "n_graded_unsettled": 7,
-        "n_independent_blocks": 0,
-        "n_lag_observations": 0,
-        "n_primary_horizon_settled": 4,
-        "overlap_warning": false,
-        "primary_horizon": 21,
-        "rate_suppressed_reason": "n_graded<10",
-        "reason_counts": {
-          "no_overlapping_outcome_window": 1
-        },
-        "settle_offset_sessions": 68,
-        "src": "macro:rates_transmission",
-        "state": "accruing",
-        "thin_numerator_warning": false
-      },
-      {
-        "agreement_ci95": null,
-        "agreement_lift_vs_base": null,
-        "agreement_rate": null,
-        "authority": {
-          "may_escalate": false,
-          "may_gate": false,
-          "may_rank": false,
-          "may_size": false,
-          "not_a_signal": true
-        },
-        "ci_basis": "nominal_wilson_assumes_independent_fires",
-        "display_only": true,
-        "dst": "sector:xlk",
-        "dst_base_rate_basis": "matched_estimator_recomputed",
-        "dst_base_rate_matched": 1.0,
-        "dst_base_rate_n_sessions": 9,
-        "dst_base_rate_sessions_overlapping_fires": 7,
-        "edge_id": "headwind:e9e6da441bf2",
-        "edge_source": "confluence_graph",
-        "edge_type": "headwind",
-        "lag_suppressed_reason": "n_graded<10",
-        "median_lag_sessions": null,
-        "n_agree": 0,
-        "n_distinct_dst_sessions": 6,
-        "n_fires": 24,
-        "n_fires_claiming_down": 7,
-        "n_fires_claiming_up": 0,
-        "n_graded": 0,
-        "n_graded_unsettled": 7,
-        "n_independent_blocks": 0,
-        "n_lag_observations": 0,
-        "n_primary_horizon_settled": 4,
-        "overlap_warning": false,
-        "primary_horizon": 21,
-        "rate_suppressed_reason": "n_graded<10",
-        "reason_counts": {
-          "no_overlapping_outcome_window": 1
-        },
-        "settle_offset_sessions": 68,
-        "src": "macro:rates_transmission",
-        "state": "accruing",
-        "thin_numerator_warning": false
-      },
-      {
-        "agreement_ci95": null,
-        "agreement_lift_vs_base": null,
-        "agreement_rate": null,
-        "authority": {
-          "may_escalate": false,
-          "may_gate": false,
-          "may_rank": false,
-          "may_size": false,
-          "not_a_signal": true
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 1,
+            "n_independent_blocks": 1,
+            "n_settled": 6,
+            "n_unsettled": 0,
+            "n_verdicts": 6,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": [
+              0.13170208422866778,
+              0.4467893040261568
+            ],
+            "agreement_rate": 0.25925925925925924,
+            "horizon": 5,
+            "n_agree": 7,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 2,
+            "n_settled": 27,
+            "n_unsettled": 0,
+            "n_verdicts": 27,
+            "rate_suppressed_reason": null,
+            "settle_offset_sessions": 10,
+            "state": "measured"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -211,9 +224,9 @@
         "n_fires": 37,
         "n_fires_claiming_down": 0,
         "n_fires_claiming_up": 6,
-        "n_graded": 0,
-        "n_graded_unsettled": 6,
-        "n_independent_blocks": 0,
+        "n_graded": 6,
+        "n_graded_unsettled": 0,
+        "n_independent_blocks": 1,
         "n_lag_observations": 0,
         "n_primary_horizon_settled": 6,
         "overlap_warning": false,
@@ -222,8 +235,101 @@
         "reason_counts": {
           "no_overlapping_outcome_window": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "engine:radar",
+        "state": "accruing",
+        "thin_numerator_warning": true
+      },
+      {
+        "agreement_ci95": null,
+        "agreement_lift_vs_base": null,
+        "agreement_rate": null,
+        "authority": {
+          "may_escalate": false,
+          "may_gate": false,
+          "may_rank": false,
+          "may_size": false,
+          "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 2,
+            "n_distinct_dst_sessions": 6,
+            "n_independent_blocks": 1,
+            "n_settled": 4,
+            "n_unsettled": 3,
+            "n_verdicts": 7,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": [
+              0.013710066379696295,
+              0.3331453392824736
+            ],
+            "agreement_rate": 0.07692307692307693,
+            "horizon": 5,
+            "n_agree": 1,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 1,
+            "n_settled": 13,
+            "n_unsettled": 0,
+            "n_verdicts": 13,
+            "rate_suppressed_reason": null,
+            "settle_offset_sessions": 10,
+            "state": "measured"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
+        },
+        "ci_basis": "nominal_wilson_assumes_independent_fires",
+        "display_only": true,
+        "dst": "sector:xlb",
+        "dst_base_rate_basis": "matched_estimator_recomputed",
+        "dst_base_rate_matched": 0.6666666666666667,
+        "dst_base_rate_n_sessions": 6,
+        "dst_base_rate_sessions_overlapping_fires": 4,
+        "edge_id": "headwind:190d97e104a0",
+        "edge_source": "confluence_graph",
+        "edge_type": "headwind",
+        "lag_suppressed_reason": "n_graded<10",
+        "median_lag_sessions": null,
+        "n_agree": 2,
+        "n_distinct_dst_sessions": 6,
+        "n_fires": 24,
+        "n_fires_claiming_down": 7,
+        "n_fires_claiming_up": 0,
+        "n_graded": 4,
+        "n_graded_unsettled": 3,
+        "n_independent_blocks": 1,
+        "n_lag_observations": 0,
+        "n_primary_horizon_settled": 4,
+        "overlap_warning": false,
+        "primary_horizon": 21,
+        "rate_suppressed_reason": "n_graded<10",
+        "reason_counts": {
+          "no_overlapping_outcome_window": 1
+        },
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
+        "src": "macro:rates_transmission",
         "state": "accruing",
         "thin_numerator_warning": false
       },
@@ -238,13 +344,152 @@
           "may_size": false,
           "not_a_signal": true
         },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 4,
+            "n_distinct_dst_sessions": 6,
+            "n_independent_blocks": 1,
+            "n_settled": 4,
+            "n_unsettled": 3,
+            "n_verdicts": 7,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": [
+              0.3011663015105079,
+              0.7519077474025355
+            ],
+            "agreement_rate": 0.5333333333333333,
+            "horizon": 5,
+            "n_agree": 8,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 2,
+            "n_settled": 15,
+            "n_unsettled": 3,
+            "n_verdicts": 18,
+            "rate_suppressed_reason": null,
+            "settle_offset_sessions": 10,
+            "state": "measured"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
+        },
+        "ci_basis": "nominal_wilson_assumes_independent_fires",
+        "display_only": true,
+        "dst": "sector:xlk",
+        "dst_base_rate_basis": "matched_estimator_recomputed",
+        "dst_base_rate_matched": 1.0,
+        "dst_base_rate_n_sessions": 6,
+        "dst_base_rate_sessions_overlapping_fires": 4,
+        "edge_id": "headwind:e9e6da441bf2",
+        "edge_source": "confluence_graph",
+        "edge_type": "headwind",
+        "lag_suppressed_reason": "n_graded<10",
+        "median_lag_sessions": null,
+        "n_agree": 4,
+        "n_distinct_dst_sessions": 6,
+        "n_fires": 24,
+        "n_fires_claiming_down": 7,
+        "n_fires_claiming_up": 0,
+        "n_graded": 4,
+        "n_graded_unsettled": 3,
+        "n_independent_blocks": 1,
+        "n_lag_observations": 4,
+        "n_primary_horizon_settled": 4,
+        "overlap_warning": false,
+        "primary_horizon": 21,
+        "rate_suppressed_reason": "n_graded<10",
+        "reason_counts": {
+          "no_overlapping_outcome_window": 1
+        },
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
+        "src": "macro:rates_transmission",
+        "state": "accruing",
+        "thin_numerator_warning": false
+      },
+      {
+        "agreement_ci95": null,
+        "agreement_lift_vs_base": null,
+        "agreement_rate": null,
+        "authority": {
+          "may_escalate": false,
+          "may_gate": false,
+          "may_rank": false,
+          "may_size": false,
+          "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 4,
+            "n_independent_blocks": 1,
+            "n_settled": 4,
+            "n_unsettled": 2,
+            "n_verdicts": 6,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": [
+              0.0,
+              0.20388926630434784
+            ],
+            "agreement_rate": 0.0,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 1,
+            "n_settled": 15,
+            "n_unsettled": 3,
+            "n_verdicts": 18,
+            "rate_suppressed_reason": null,
+            "settle_offset_sessions": 10,
+            "state": "measured"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
+        },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
         "dst": "engine:intel_hub",
         "dst_base_rate_basis": "matched_estimator_recomputed",
         "dst_base_rate_matched": 0.0,
-        "dst_base_rate_n_sessions": 8,
-        "dst_base_rate_sessions_overlapping_fires": 6,
+        "dst_base_rate_n_sessions": 5,
+        "dst_base_rate_sessions_overlapping_fires": 4,
         "edge_id": "confirms:b6894f20a194",
         "edge_source": "confluence_graph",
         "edge_type": "confirms",
@@ -255,9 +500,9 @@
         "n_fires": 35,
         "n_fires_claiming_down": 0,
         "n_fires_claiming_up": 6,
-        "n_graded": 0,
-        "n_graded_unsettled": 6,
-        "n_independent_blocks": 0,
+        "n_graded": 4,
+        "n_graded_unsettled": 2,
+        "n_independent_blocks": 1,
         "n_lag_observations": 0,
         "n_primary_horizon_settled": 4,
         "overlap_warning": false,
@@ -266,7 +511,8 @@
         "reason_counts": {
           "no_overlapping_outcome_window": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "engine:altdata",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -281,6 +527,53 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 1,
+            "n_independent_blocks": 1,
+            "n_settled": 4,
+            "n_unsettled": 0,
+            "n_verdicts": 4,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": [
+              0.6212336384535001,
+              0.9149306422821174
+            ],
+            "agreement_rate": 0.8076923076923077,
+            "horizon": 5,
+            "n_agree": 21,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 2,
+            "n_settled": 26,
+            "n_unsettled": 0,
+            "n_verdicts": 26,
+            "rate_suppressed_reason": null,
+            "settle_offset_sessions": 10,
+            "state": "measured"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -299,9 +592,9 @@
         "n_fires": 35,
         "n_fires_claiming_down": 0,
         "n_fires_claiming_up": 4,
-        "n_graded": 0,
-        "n_graded_unsettled": 4,
-        "n_independent_blocks": 0,
+        "n_graded": 4,
+        "n_graded_unsettled": 0,
+        "n_independent_blocks": 1,
         "n_lag_observations": 0,
         "n_primary_horizon_settled": 4,
         "overlap_warning": false,
@@ -310,10 +603,11 @@
         "reason_counts": {
           "no_overlapping_outcome_window": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "engine:altdata",
         "state": "accruing",
-        "thin_numerator_warning": false
+        "thin_numerator_warning": true
       },
       {
         "agreement_ci95": null,
@@ -325,6 +619,53 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 1,
+            "n_independent_blocks": 1,
+            "n_settled": 4,
+            "n_unsettled": 0,
+            "n_verdicts": 4,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": [
+              0.6469050424507756,
+              0.9111057606383721
+            ],
+            "agreement_rate": 0.8125,
+            "horizon": 5,
+            "n_agree": 26,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 2,
+            "n_settled": 32,
+            "n_unsettled": 0,
+            "n_verdicts": 32,
+            "rate_suppressed_reason": null,
+            "settle_offset_sessions": 10,
+            "state": "measured"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -343,9 +684,9 @@
         "n_fires": 13074,
         "n_fires_claiming_down": 0,
         "n_fires_claiming_up": 4,
-        "n_graded": 0,
-        "n_graded_unsettled": 4,
-        "n_independent_blocks": 0,
+        "n_graded": 4,
+        "n_graded_unsettled": 0,
+        "n_independent_blocks": 1,
         "n_lag_observations": 0,
         "n_primary_horizon_settled": 4,
         "overlap_warning": false,
@@ -354,8 +695,98 @@
         "reason_counts": {
           "no_overlapping_outcome_window": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "engine:track_record",
+        "state": "accruing",
+        "thin_numerator_warning": true
+      },
+      {
+        "agreement_ci95": null,
+        "agreement_lift_vs_base": null,
+        "agreement_rate": null,
+        "authority": {
+          "may_escalate": false,
+          "may_gate": false,
+          "may_rank": false,
+          "may_size": false,
+          "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 1,
+            "n_distinct_dst_sessions": 19,
+            "n_independent_blocks": 2,
+            "n_settled": 4,
+            "n_unsettled": 0,
+            "n_verdicts": 4,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 3,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 2,
+            "n_settled": 6,
+            "n_unsettled": 0,
+            "n_verdicts": 6,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
+        },
+        "ci_basis": "nominal_wilson_assumes_independent_fires",
+        "display_only": true,
+        "dst": "engine:radar",
+        "dst_base_rate_basis": "matched_estimator_recomputed",
+        "dst_base_rate_matched": 0.30434782608695654,
+        "dst_base_rate_n_sessions": 23,
+        "dst_base_rate_sessions_overlapping_fires": 4,
+        "edge_id": "confirms:a026216b70be",
+        "edge_source": "confluence_graph",
+        "edge_type": "confirms",
+        "lag_suppressed_reason": "n_graded<10",
+        "median_lag_sessions": null,
+        "n_agree": 1,
+        "n_distinct_dst_sessions": 19,
+        "n_fires": 7,
+        "n_fires_claiming_down": 0,
+        "n_fires_claiming_up": 4,
+        "n_graded": 4,
+        "n_graded_unsettled": 0,
+        "n_independent_blocks": 2,
+        "n_lag_observations": 0,
+        "n_primary_horizon_settled": 4,
+        "overlap_warning": false,
+        "primary_horizon": 21,
+        "rate_suppressed_reason": "n_graded<10",
+        "reason_counts": {
+          "no_overlapping_outcome_window": 1
+        },
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
+        "src": "engine:policy",
         "state": "accruing",
         "thin_numerator_warning": false
       },
@@ -370,26 +801,73 @@
           "may_size": false,
           "not_a_signal": true
         },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 1,
+            "n_distinct_dst_sessions": 3,
+            "n_independent_blocks": 1,
+            "n_settled": 1,
+            "n_unsettled": 3,
+            "n_verdicts": 4,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": [
+              0.132797938655564,
+              0.5313353332621391
+            ],
+            "agreement_rate": 0.29411764705882354,
+            "horizon": 5,
+            "n_agree": 5,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 1,
+            "n_settled": 17,
+            "n_unsettled": 3,
+            "n_verdicts": 20,
+            "rate_suppressed_reason": null,
+            "settle_offset_sessions": 10,
+            "state": "measured"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
+        },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
         "dst": "engine:radar",
         "dst_base_rate_basis": "matched_estimator_recomputed",
         "dst_base_rate_matched": 1.0,
-        "dst_base_rate_n_sessions": 4,
-        "dst_base_rate_sessions_overlapping_fires": 4,
+        "dst_base_rate_n_sessions": 1,
+        "dst_base_rate_sessions_overlapping_fires": 1,
         "edge_id": "confirms:871aefcd7044",
         "edge_source": "confluence_graph",
         "edge_type": "confirms",
         "lag_suppressed_reason": "n_graded<10",
         "median_lag_sessions": null,
-        "n_agree": 0,
+        "n_agree": 1,
         "n_distinct_dst_sessions": 3,
         "n_fires": 27,
         "n_fires_claiming_down": 4,
         "n_fires_claiming_up": 0,
-        "n_graded": 0,
-        "n_graded_unsettled": 4,
-        "n_independent_blocks": 0,
+        "n_graded": 1,
+        "n_graded_unsettled": 3,
+        "n_independent_blocks": 1,
         "n_lag_observations": 0,
         "n_primary_horizon_settled": 1,
         "overlap_warning": false,
@@ -398,7 +876,8 @@
         "reason_counts": {
           "no_overlapping_outcome_window": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "engine:intel_hub",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -414,49 +893,49 @@
           "may_size": false,
           "not_a_signal": true
         },
-        "ci_basis": "nominal_wilson_assumes_independent_fires",
-        "display_only": true,
-        "dst": "engine:radar",
-        "dst_base_rate_basis": "matched_estimator_recomputed",
-        "dst_base_rate_matched": 0.30434782608695654,
-        "dst_base_rate_n_sessions": 23,
-        "dst_base_rate_sessions_overlapping_fires": 4,
-        "edge_id": "confirms:a026216b70be",
-        "edge_source": "confluence_graph",
-        "edge_type": "confirms",
-        "lag_suppressed_reason": "n_graded<10",
-        "median_lag_sessions": null,
-        "n_agree": 0,
-        "n_distinct_dst_sessions": 19,
-        "n_fires": 7,
-        "n_fires_claiming_down": 0,
-        "n_fires_claiming_up": 4,
-        "n_graded": 0,
-        "n_graded_unsettled": 4,
-        "n_independent_blocks": 0,
-        "n_lag_observations": 0,
-        "n_primary_horizon_settled": 4,
-        "overlap_warning": false,
-        "primary_horizon": 21,
-        "rate_suppressed_reason": "n_graded<10",
-        "reason_counts": {
-          "no_overlapping_outcome_window": 1
-        },
-        "settle_offset_sessions": 68,
-        "src": "engine:policy",
-        "state": "accruing",
-        "thin_numerator_warning": false
-      },
-      {
-        "agreement_ci95": null,
-        "agreement_lift_vs_base": null,
-        "agreement_rate": null,
-        "authority": {
-          "may_escalate": false,
-          "may_gate": false,
-          "may_rank": false,
-          "may_size": false,
-          "not_a_signal": true
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -486,7 +965,8 @@
         "reason_counts": {
           "dst_outcome_unsigned_mfe_proxy": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "engine:altdata",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -501,6 +981,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -530,7 +1054,8 @@
         "reason_counts": {
           "dst_outcome_unsigned_mfe_proxy": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "engine:radar",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -545,6 +1070,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -574,7 +1143,8 @@
         "reason_counts": {
           "dst_outcome_unsigned_mfe_proxy": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "engine:intel_hub",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -589,6 +1159,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -618,7 +1232,8 @@
         "reason_counts": {
           "src_unresolved": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "options.ivspread_positive_call_doi",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -633,6 +1248,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -662,7 +1321,8 @@
         "reason_counts": {
           "src_unresolved": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "options.skew_decel",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -677,6 +1337,53 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": [
+              0.04696414761482223,
+              0.44803635738467273
+            ],
+            "agreement_rate": 0.16666666666666666,
+            "horizon": 5,
+            "n_agree": 2,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 1,
+            "n_settled": 12,
+            "n_unsettled": 0,
+            "n_verdicts": 12,
+            "rate_suppressed_reason": null,
+            "settle_offset_sessions": 10,
+            "state": "measured"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -706,7 +1413,8 @@
         "reason_counts": {
           "no_overlapping_outcome_window": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "engine:intel_hub",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -721,6 +1429,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -750,7 +1502,8 @@
         "reason_counts": {
           "src_unresolved": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "options.skew_rising_or_call_wall_pin",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -765,6 +1518,53 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": [
+              0.2320575430148814,
+              0.7085656756816796
+            ],
+            "agreement_rate": 0.46153846153846156,
+            "horizon": 5,
+            "n_agree": 6,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 1,
+            "n_settled": 13,
+            "n_unsettled": 0,
+            "n_verdicts": 13,
+            "rate_suppressed_reason": null,
+            "settle_offset_sessions": 10,
+            "state": "measured"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -794,7 +1594,8 @@
         "reason_counts": {
           "no_overlapping_outcome_window": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "engine:altdata",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -809,6 +1610,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -838,7 +1683,8 @@
         "reason_counts": {
           "dst_unresolved": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "macro:rates_credit",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -853,6 +1699,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -882,7 +1772,8 @@
         "reason_counts": {
           "dst_unresolved": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "macro:fx_dollar",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -897,6 +1788,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -926,7 +1861,8 @@
         "reason_counts": {
           "src_unresolved": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "options.skew_rising",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -941,6 +1877,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -970,7 +1950,8 @@
         "reason_counts": {
           "src_unresolved": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "data/regime/latest.json:cross_asset_confirm (bonds/FX)",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -985,6 +1966,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1014,7 +2039,8 @@
         "reason_counts": {
           "src_unresolved": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "site/intelligence/by_ticker.json (demand/tape)",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1029,6 +2055,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1058,7 +2128,8 @@
         "reason_counts": {
           "src_unresolved": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "data/regime/latest.json:regime_vector",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1073,6 +2144,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1102,7 +2217,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "gex_history__spy",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1117,6 +2233,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1146,7 +2306,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "breadth__market_breadth",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1161,6 +2322,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1190,7 +2395,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "regime_v2_pit__growth_inflation",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1205,6 +2411,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1234,7 +2484,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "options_entry__state",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1249,6 +2500,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1278,7 +2573,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "fed_net_liquidity",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1293,6 +2589,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1322,7 +2662,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "options_entry__state",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1337,6 +2678,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1366,7 +2751,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "fed_net_liquidity",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1381,6 +2767,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1410,7 +2840,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "fed_net_liquidity",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1425,6 +2856,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1454,7 +2929,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "breadth__market_breadth",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1469,6 +2945,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1498,7 +3018,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "breadth__market_breadth",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1513,6 +3034,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1542,7 +3107,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "regime_v2_pit__growth_inflation",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1557,6 +3123,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1586,7 +3196,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "options_entry__state",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1601,6 +3212,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1630,7 +3285,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "fed_net_liquidity",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1645,6 +3301,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1674,7 +3374,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "options_entry__state",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1689,6 +3390,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1718,7 +3463,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "gex_history__spy",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1733,6 +3479,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1762,7 +3552,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "gex_history__spy",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1777,6 +3568,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1806,7 +3641,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "fed_net_liquidity",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1821,6 +3657,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1850,7 +3730,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "gex_history__spy",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1865,6 +3746,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1894,7 +3819,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "breadth__market_breadth",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1909,6 +3835,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1938,7 +3908,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "regime_v2_pit__growth_inflation",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1953,6 +3924,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -1982,7 +3997,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "breadth__market_breadth",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -1997,6 +4013,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -2026,7 +4086,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "gex_history__spy",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -2041,6 +4102,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -2070,7 +4175,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "options_entry__state",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -2085,6 +4191,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -2114,7 +4264,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "regime_v2_pit__growth_inflation",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -2129,6 +4280,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -2158,7 +4353,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "gex_history__spy",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -2173,6 +4369,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -2202,7 +4442,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "options_entry__state",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -2217,6 +4458,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -2246,7 +4531,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "breadth__market_breadth",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -2261,6 +4547,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -2290,7 +4620,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "regime_v2_pit__growth_inflation",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -2305,6 +4636,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -2334,7 +4709,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "fed_net_liquidity",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -2349,6 +4725,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -2378,7 +4798,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "regime_v2_pit__growth_inflation",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -2393,6 +4814,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -2422,7 +4887,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "breadth__market_breadth",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -2437,6 +4903,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -2466,7 +4976,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "regime_v2_pit__growth_inflation",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -2481,6 +4992,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -2510,7 +5065,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "fed_net_liquidity",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -2525,6 +5081,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -2554,7 +5154,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "options_entry__state",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -2569,6 +5170,50 @@
           "may_rank": false,
           "may_size": false,
           "not_a_signal": true
+        },
+        "by_horizon": {
+          "21": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 21,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 26,
+            "state": "accruing"
+          },
+          "5": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 5,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 10,
+            "state": "accruing"
+          },
+          "63": {
+            "agreement_ci95": null,
+            "agreement_rate": null,
+            "horizon": 63,
+            "n_agree": 0,
+            "n_distinct_dst_sessions": 0,
+            "n_independent_blocks": 0,
+            "n_settled": 0,
+            "n_unsettled": 0,
+            "n_verdicts": 0,
+            "rate_suppressed_reason": "n_settled<10",
+            "settle_offset_sessions": 68,
+            "state": "accruing"
+          }
         },
         "ci_basis": "nominal_wilson_assumes_independent_fires",
         "display_only": true,
@@ -2598,7 +5243,8 @@
         "reason_counts": {
           "chf_panel_subject_graded_elsewhere": 1
         },
-        "settle_offset_sessions": 68,
+        "settle_offset_all_horizons": 68,
+        "settle_offset_sessions": 26,
         "src": "gex_history__spy",
         "state": "accruing",
         "thin_numerator_warning": false
@@ -2606,8 +5252,8 @@
     ],
     "min_n": 10,
     "n_edges": 58,
-    "n_edges_accruing": 58,
-    "n_edges_measured": 0,
+    "n_edges_accruing": 57,
+    "n_edges_measured": 1,
     "primary_horizon": 21,
     "produced_by": "engine/neuralweb/edge_outcomes.py",
     "schema": "neuralweb.edge_outcomes_scoreboard.v1",

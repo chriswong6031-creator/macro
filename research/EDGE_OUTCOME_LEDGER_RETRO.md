@@ -20,26 +20,25 @@ never originates a fire and never grades an outcome. Every fire is read off
 already graded. It is a *join*, and its unit of record — the edge — is the
 object CHF-R15's Phase-3 clock (2027-01-15) will be asked to judge.
 
-**The headline is a coverage result, not a finding.** **No edge is measured.**
-Zero of 58 clear the floor, because no fire in this store is old enough for its
-outcome window to have closed. Nothing here supports or refutes any linkage.
-The deliverable is that the record now exists, its gaps are named, and the
-accrual clock has a defined stopping condition.
+**The headline is a coverage result, not a finding.** Exactly one edge of 58
+clears the floor, at H=21 on its 16 settled fires, and it lands
+**indistinguishable from its own base rate** (0.312 against 0.318, lift
+−0.006, on 2 independent blocks). H=63 accrues everywhere. Nothing here
+supports or refutes any linkage.
 
-**This document has been corrected twice under adversarial review**, and the
-headline moved each time — worth stating plainly, because both corrections ran
-against the result:
+**This document has been corrected three times under adversarial review**, and
+the headline moved each time — worth stating plainly, because every correction
+ran against the result:
 
-1. First cut: base 0.200, lift **+0.078** — a small positive edge. The control
-   used the wrong estimator over the wrong span.
-2. After the matched control: base 0.280, lift **−0.002** — no detectable
-   signal either way.
-3. After the settled-window gate: **no rate at all.** Every verdict feeding
-   that −0.002 sat on a link window still gaining rows; prematurely-graded
-   verdicts flipped 49% of the time against the settled answer in simulation.
+| | lift | what changed |
+|---|---|---|
+| first cut | **+0.078** | control used the wrong estimator over the wrong span |
+| matched control | **−0.002** | same estimator, same window, fires' own span |
+| settled H=21 (current) | **−0.006** | dropped 2 verdicts whose windows were still open |
 
-Five structural defects were fixed across the two rounds: the prospective lane
+Six structural defects were fixed across those rounds: the prospective lane
 could never reach a graded row; it then froze each verdict on a partial window;
+settlement was gated on the longest horizon rather than each horizon's own;
 the unsigned-outcome guard covered one of four affected ledgers; the base rate
 was unmatched and latched; and the prospective fire count inflated 13× by
 re-counting its own summaries. Details in §3, §4 and §8.
@@ -114,71 +113,75 @@ naming the ledger to add. `tests/test_edge_outcomes.py::TestUnsignedLedgerPinned
 
 ## §4 Per-edge scoreboard
 
-**Above the MIN_N=10 floor: 0 edges. Every edge is accruing.** No agreement
-rate prints anywhere in this retro, and that is the correct result.
+**Above the MIN_N=10 floor at H=21: 1 edge**, on its 16 settled fires. Every
+other edge accrues, and H=63 accrues everywhere.
 
-The reason is §4a. What the store *does* contain, as a provisional diagnostic:
+| Edge | fires | H=21 settled | H=21 unsettled | agreement | matched base | lift | CI95 | blocks |
+|---|---|---|---|---|---|---|---|---|
+| `confirms  engine:altdata → engine:radar` | 35 | **16** | 2 | 0.312 (5/16) | 0.318 (22 sessions) | **−0.006** | [0.142, 0.556] | **2** |
 
-| Edge | fires | settled verdicts | unsettled | H=21-settled | matched base | overlap w/ fires |
-|---|---|---|---|---|---|---|
-| `confirms  engine:altdata → engine:radar` | 35 | **0** | 18 | 16 | 0.280 (25 sessions) | 18 of 25 |
+Per-horizon for that edge — the settle clock runs separately for each:
 
-### §4a Why nothing is measured: the link window has not closed
+| Horizon | settles at | verdicts | settled | rate | state |
+|---|---|---|---|---|---|
+| H=5 | `t + 10` | 30 | 27 | 0.481 | measured |
+| **H=21** | `t + 26` | 18 | **16** | **0.312** | **measured** |
+| H=63 | `t + 68` | 0 | 0 | — | accruing |
+
+### §4a Settlement is per-horizon
 
 A fire at session `t` draws its outcome from dst rows in `[t, t+5]`, and each
-of those rows is itself graded forward. So the verdict cannot be final until
-`t + 5 + max(horizon) = t + 68` sessions have elapsed. **Zero of the 18 fires
-are that old**; the newest sessions in the store are 2026-08-05 and the fires
-run 2026-06-19 → 2026-07-13.
+of those rows is itself graded forward. So a horizon-`H` verdict is final only
+once `t + 5 + H` sessions have elapsed — **per horizon**, because no row
+arriving after `t + 26` can move an H=21 median. H=21 settles at `t + 26`,
+H=63 at `t + 68`, and gating the H=21 rate on the H=63 window would have
+delayed it 42 sessions for zero correctness gain.
 
 This was not a cosmetic gap. Grading a fire the moment its first dst row
 settled meant taking a median over **one** row where the settled answer takes a
 median over **six**. Measured over a 90-night simulation: 69 fires graded
 prospectively, and **34 of them (49%) carried the opposite verdict** from a
 retro over the identical settled store — agreement 0.507 against 1.000. The
-ledger now has a four-rung state ladder (`stub → partial → graded_partial →
-graded_settled`), only `graded_settled` reaches a rate, and a settled row
-supersedes the premature one it replaces.
+row-level ladder is `stub → partial → graded_partial → graded_settled`
+(terminal rung = all horizons closed, kept monotone and simple), and
+per-horizon settlement rides alongside it as fields rather than extra rungs. A
+fire's H=21 answer therefore supersedes its own premature version as soon as
+`t + 26` passes, without waiting on H=63.
 
-For the adjudicator: **16 of the 18** fires *are* settled at the primary
-horizon (`t + 5 + 21 = t + 26`, the point at which the H=21 verdict itself
-stops moving). The gate implemented here is the stricter all-horizon one
-(`t + 68`), as directed; `n_primary_horizon_settled` is stamped on every edge so
-relaxing the gate to the primary horizon is a one-line change with the evidence
-already on the record.
+### §4b The base rate, and the three readings it went through
 
-### §4b The base rate, and the two wrong readings it replaced
+The H=21 read on the settled 16: agreement **0.312** (5 of 16) against a
+matched base of **0.318**, a lift of **−0.006**. The control is recomputed over
+the convex hull of *those 16 fires'* evaluation points — the control follows
+the settled numerator, not the full fire set.
 
-The control is retained as a diagnostic even where no rate prints, because it
-is descriptive rather than a claim. For this edge the matched base is **0.280**
-over 25 sessions, against a provisional agreement of 0.278 across the 18
-unsettled verdicts.
+That number moved three times under review, each time against the result:
 
-Two naive readings of that pairing are both wrong, in opposite directions.
+| | agreement | base | lift | why it changed |
+|---|---|---|---|---|
+| first cut | 0.278 (18) | 0.200 | **+0.078** | control used the wrong estimator over the wrong span |
+| matched control | 0.278 (18) | 0.280 | **−0.002** | same estimator, same window, fires' own span |
+| **settled 16 at H=21** | **0.312 (16)** | **0.318** | **−0.006** | 2 verdicts dropped — their H=21 windows were still open |
 
-The first: 5 agreements in 18 fires looks like a 72% disagreement — evidence
-*against* the confirms edge. It is not. Radar's own rate of moving the claimed
-way over the same stretch is essentially identical.
+Two naive readings are both wrong, in opposite directions. The first: 5
+agreements in 16 fires looks like a 69% disagreement, evidence *against* the
+confirms edge. It is not — radar's own rate of moving the claimed way over the
+same stretch is essentially identical. The second was ours, the **+0.078** in
+the first cut: a base computed as a per-session median (no link window) across
+the dst's entire history (no span match), while the numerator is a pooled
+median over `[t, t+5]` at fire dates. A base rate that does not match its
+numerator is not a control; it is a second uncontrolled statistic.
 
-The second was in this document's first cut, and it was ours: it reported the
-base as 0.200 and the lift as **+0.078**, i.e. a small positive edge. That base
-used the *wrong estimator over the wrong span* — a per-session median (no link
-window) across the dst's entire history (no span match), while the numerator is
-a pooled median over `[t, t+5]` at fire dates. Recomputed with the numerator's
-own estimator over the fires' own span the base is **0.280**, putting the
-provisional lift at **−0.002**. A base rate that does not match its numerator is
-not a control; it is a second uncontrolled statistic.
+**The corrected reading: this edge is indistinguishable from its base rate.**
+Not confirmation, not refutation. And at 16 verdicts in **2 independent
+blocks**, that is what the evidence can currently support.
 
-And the honest third reading, which supersedes both: **even −0.002 is not a
-result yet**, because every verdict feeding it sits on an open window. It is
-recorded as a diagnostic, not a finding.
-
-**The control overlaps the fires by construction** — 18 of its 25 evaluation
-sessions *are* fire sessions (72%). That is deliberate: a control drawn from a
+**The control overlaps the fires by construction** — 16 of its 22 evaluation
+sessions *are* fire sessions (73%). That is deliberate: a control drawn from a
 different stretch of calendar would import a different market regime and stop
-being a control. But it means the base and the numerator are not independent
-samples, so the comparison measures "did these fires beat their own window",
-not "did this edge beat an unrelated baseline".
+being a control. But it means base and numerator are not independent samples,
+so the comparison measures "did these fires beat their own window", not "did
+this edge beat an unrelated baseline".
 `dst_base_rate_sessions_overlapping_fires` carries the intersection.
 
 Three further honesty notes, all stamped in the artifact:
@@ -199,19 +202,18 @@ Three further honesty notes, all stamped in the artifact:
 - **The numerator rests on 20 distinct dst sessions**, which is the one thin-ness
   check this edge passes. Others do not — see below.
 
-**All 58 edges are accruing.** The eight with any verdict at all (all
-unsettled; `n_graded` settled is 0 for every one):
+**The other 57 edges accrue.** The eight below the floor with any H=21 verdict:
 
-| Edge | fires | unsettled verdicts | distinct dst sessions |
-|---|---|---|---|
-| `headwind  macro:rates_transmission → sector:xlb` | 24 | 7 | 12 |
-| `headwind  macro:rates_transmission → sector:xlk` | 24 | 7 | 20 |
-| `confirms  engine:radar → engine:us_board` | 37 | 6 | **1** |
-| `confirms  engine:altdata → engine:intel_hub` | 35 | 6 | 4 |
-| `confirms  engine:altdata → engine:us_board` | 35 | 4 | **1** |
-| `confirms  engine:track_record → engine:us_board` | 13,074 | 4 | **1** |
-| `confirms  engine:intel_hub → engine:radar` | 27 | 4 | 20 |
-| `confirms  engine:policy → engine:radar` | 7 | 4 | 20 |
+| Edge | fires | H=21 settled | H=21 open | distinct dst sessions |
+|---|---|---|---|---|
+| `confirms  engine:radar → engine:us_board` | 37 | 6 | 0 | **1** |
+| `headwind  macro:rates_transmission → sector:xlb` | 24 | 4 | 3 | 6 |
+| `headwind  macro:rates_transmission → sector:xlk` | 24 | 4 | 3 | 6 |
+| `confirms  engine:altdata → engine:intel_hub` | 35 | 4 | 2 | 4 |
+| `confirms  engine:altdata → engine:us_board` | 35 | 4 | 0 | **1** |
+| `confirms  engine:track_record → engine:us_board` | 13,074 | 4 | 0 | **1** |
+| `confirms  engine:policy → engine:radar` | 7 | 4 | 0 | 19 |
+| `confirms  engine:intel_hub → engine:radar` | 27 | 1 | 3 | 3 |
 
 **The bolded rows are thinner than their `n_graded` suggests.** `us_board` has
 exactly **one** session graded at H=21, so all six of `radar → us_board`'s
@@ -272,13 +274,14 @@ outright rather than left available.
 
 Named plainly, in the order they bind:
 
-1. **68 sessions past the fires, then time.** Nothing can be measured until a
-   fire's window closes at `t + 68`; the leading edge has 18 verdicts waiting on
-   that clock and needs 10 *settled* ones to print a rate. Roughly a quarter
-   before the first rate is even eligible.
-2. **Independent windows, not just fires.** The leading edge's 18 verdicts sit
-   in 2 independent blocks. A rate worth reading needs ~10 non-overlapping
-   21-session windows — roughly a year of accrual at current fire density.
+1. **Independent windows, not just fires.** The one measured read rests on 16
+   verdicts sitting in **2 independent blocks** — that is the binding
+   constraint, not the raw count. A rate worth trusting needs ~10
+   non-overlapping 21-session windows, roughly a year of accrual at current
+   fire density.
+2. **H=63 has nothing at all yet**, and will not until `t + 68` passes on fires
+   that have not happened. The long horizon is the one most likely to carry a
+   propagation lag, so it is the one worth waiting for.
 3. **H=21 grading breadth on the targets.** `us_board` and `intel_hub` have 1
    and 4 sessions graded at H=21. Until targets are graded at the primary
    horizon across more sessions, both the numerators and the base rates rest on
@@ -323,13 +326,19 @@ Named plainly, in the order they bind:
   lane wrote an ungraded stub every night and keep-first dedup then blocked the
   only run that could ever grade it: 0 graded rows over a 60-night simulation,
   against 39 for a retro over the same store.
-- **A verdict is only final once its window closes**, and the ladder has a rung
-  for that: `stub → partial → graded_partial → graded_settled`, upward only.
-  Only `graded_settled` reaches a rate. Both failures are pinned by
-  `TestNightlyAccrual`, whose equality test compares the nightly ledger to the
-  retro fire-for-fire on a fixture where partial and full windows give
-  *opposite* verdicts — the test is red on the old two-rung shape (3/3 fires
-  disagreeing) and green on the current one.
+- **A verdict is only final once its own horizon's window closes** — `t + 5 + H`,
+  per horizon. The row ladder (`stub → partial → graded_partial →
+  graded_settled`, upward only) records the all-horizon terminal state, and
+  per-horizon settlement rides alongside as fields, so each horizon's rate
+  admits only fires settled at that horizon. Supersede compares
+  `(ladder rung, horizons settled)`, both monotone: without the second
+  component an H=21 upgrade sits at the same rung as the premature row it
+  should replace and gets skipped — the freeze re-appearing one level down.
+  Pinned by `TestNightlyAccrual`, whose equality test compares the nightly
+  ledger to the retro fire-for-fire on a fixture where partial and full windows
+  give *opposite* verdicts (red on the old two-rung shape, 3/3 fires
+  disagreeing), plus a per-horizon test asserting H=21 prints while H=63 is
+  still open.
 - **Summary rows carry a stable per-edge key.** Span-keying them let the
   nightly lookback re-mint one every night, and the aggregator summed them all:
   the prospective fire count read 351 against a truth of 27 in simulation. One
