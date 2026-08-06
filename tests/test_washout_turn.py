@@ -12,6 +12,12 @@ Covers:
 - compute() artifact shape, authority, disclosure, cohort/ticker agreement,
   skipped counting for a short-history symbol
 - base rates: n < 8 → reason "insufficient_events" with null stats
+- W2 history-deepening splice: prepend-only (an overlapping-date disagreement
+  never changes the evaluated series; the recent end is never extended),
+  boundary ratio-alignment, gap refusal, store-chain order (stocks then
+  yahoo), no-deeper-store byte-identity, and the deep/signal leg split
+  (depth + base rates read the deepened grid; state/since/indicator receipts
+  read the preferred store only)
 
 SYNTHETIC ONLY — no committed-data pins.  Every series is built from a weekly
 close path anchored to a FIXED constant date and expanded onto business days, so
@@ -33,6 +39,7 @@ from engine.washout_turn import (
     AUTHORITY,
     DEPTH_PCTILE_MAX,
     DISCLOSURE,
+    MAX_SPLICE_GAP_DAYS,
     MIN_HISTORY_EVENTS,
     MIN_WEEKLY_BARS,
     SCHEMA,
@@ -40,9 +47,11 @@ from engine.washout_turn import (
     STATE_WATCH,
     _base_rates,
     _completed_weekly,
+    _deepen_close,
     _evaluate,
     _has_consecutive_negative,
     _load_ledger,
+    _splice_prepend,
     _stamp_ledger,
     compute,
     compute_symbol_washout,
@@ -530,6 +539,154 @@ def test_base_rates_drop_immature_events_without_imputing():
     out = _base_rates(closes, events)
     assert out["n"] == len(events)
     assert out["med_26w"] is not None and out["med_26w"] > 0
+
+
+# ---------------------------------------------------------------------------
+# 10 — W2 history-deepening splice (prepend-only; depth/base-rate legs only)
+# ---------------------------------------------------------------------------
+
+def _bdate_series(start: str, periods: int, lo: float, hi: float) -> pd.Series:
+    idx = pd.bdate_range(start, periods=periods, freq="B")
+    return pd.Series(np.linspace(lo, hi, periods), index=idx, dtype=float)
+
+
+def _deep_store_for(tape: pd.Series) -> pd.Series:
+    """A deep-store double for the 1990-anchored tapes: ~7 years of ordinary
+    history ending 1989-12-29 (3 calendar days before the tape starts), then
+    the tape's own dates at a DIFFERENT adjustment level (×1.3) — a store that
+    both deepens the history and disagrees on every overlapping date.
+    """
+    prefix = _weekly_to_daily(_oscillating_head(365) * 3.0, start="1983-01-07")
+    assert (tape.index[0] - prefix.index[-1]).days <= MAX_SPLICE_GAP_DAYS
+    return pd.concat([prefix, tape * 1.3])
+
+
+def test_splice_is_prepend_only_and_never_extends_the_recent_end():
+    preferred = _bdate_series("2014-01-06", 500, 50.0, 80.0)
+    # Disagrees on EVERY overlapping date and runs PAST the preferred end —
+    # the data/yahoo/ shape (it trades a few sessions ahead of the ohlcv store).
+    deeper = _bdate_series("2010-01-04", 1700, 200.0, 260.0)
+    assert deeper.index[-1] > preferred.index[-1]
+
+    spliced = _splice_prepend(preferred, deeper)
+    d0 = preferred.index[0]
+
+    # Overlap: preferred values, byte-unchanged — the disagreement never leaks in.
+    assert spliced.loc[spliced.index >= d0].equals(preferred)
+    # Recent end: never extended.
+    assert spliced.index[-1] == preferred.index[-1]
+    # Old bars: present, ratio-aligned at the boundary.
+    assert spliced.index[0] == deeper.index[0]
+    factor = float(preferred.iloc[0]) / float(deeper.loc[d0])
+    old_mask = spliced.index < d0
+    assert np.allclose(spliced.loc[old_mask].to_numpy(),
+                       (deeper.loc[deeper.index < d0] * factor).to_numpy())
+    # The join preserves the deep store's own return into d0 (no fabricated jump).
+    last_old = spliced.index[spliced.index < d0][-1]
+    assert np.isclose(float(spliced.loc[d0]) / float(spliced.loc[last_old]),
+                      float(deeper.loc[d0]) / float(deeper.loc[last_old]))
+    # Idempotent: a second pass has nothing strictly before the spliced start.
+    assert _splice_prepend(spliced, deeper) is spliced
+    # A store that starts on the same date deepens nothing.
+    assert _splice_prepend(preferred, preferred.copy()) is preferred
+
+
+def test_splice_refuses_a_deep_store_that_never_reaches_the_boundary():
+    preferred = _bdate_series("2014-01-06", 500, 50.0, 80.0)
+    gapped = _bdate_series("2010-01-04", 900, 90.0, 120.0)   # ends mid-2013
+    assert (preferred.index[0] - gapped.index[-1]).days > MAX_SPLICE_GAP_DAYS
+    assert _splice_prepend(preferred, gapped) is preferred
+
+
+def test_deep_legs_read_the_deepened_series_and_signal_legs_do_not():
+    tape = _deep_washout_then_turn()
+    deep = _splice_prepend(tape, _deep_store_for(tape))
+    assert deep is not tape and deep.index[0].year == 1983
+
+    rp = _evaluate(tape)
+    rd = _evaluate(tape, deep)
+    assert rp["deepened"] is False and rd["deepened"] is True
+    p, q = rp["receipts"], rd["receipts"]
+
+    # SIGNAL legs — state machine and every last-bar indicator receipt — are
+    # byte-identical: the deepened series never touches the preferred store's
+    # recent values (which the ×1.3 overlap disagreement would have moved).
+    for key in ("state", "since", "weeks_since_cross", "line", "sig", "hist",
+                "stoch_k", "stoch_d", "weekly_cb", "drawdown_pct", "data_through"):
+        assert q[key] == p[key], key
+    assert q["state"] == STATE_TURN
+
+    # DEPTH + HISTORY legs read the deepened grid.
+    _wk_d, line_d, _sig_d = _weekly_line(deep)
+    assert q["history_weeks"] == len(line_d) > p["history_weeks"]
+    assert q["history_start"] == str(line_d.index[0].date())
+    # More history above the washout ⇒ the same cross sits DEEPER in its own
+    # distribution (the MCD 8.6→6.3 direction).
+    assert q["depth_pctile_at_cross"] < p["depth_pctile_at_cross"]
+    assert q["depth_pctile_at_cross"] <= DEPTH_PCTILE_MAX
+
+    # BASE RATES are the deep grid's qualifying-cross events, not the
+    # preferred grid's (the two event sets genuinely differ on this fixture).
+    _l0, _s0, qual_plain = _qualifying_crosses(tape)
+    _l1, _s1, qual_deep = _qualifying_crosses(deep)
+    assert len(qual_deep) != len(qual_plain)
+    assert p["history"]["n"] == len(qual_plain)
+    assert q["history"]["n"] == len(qual_deep)
+
+
+def test_no_deeper_store_is_byte_identical(tmp_path):
+    tape = _deep_washout_then_turn()
+    # Empty data_root: no stocks/, no yahoo/ — the deepener returns the SAME
+    # object, and the evaluation is exactly the pre-W2 evaluation.
+    out = _deepen_close("NOSTORE", tape, tmp_path)
+    assert out is tape
+    assert _evaluate(tape, out) == _evaluate(tape)
+
+
+def test_deepen_close_prefers_stocks_then_yahoo(tmp_path):
+    close = _bdate_series("2014-01-06", 700, 50.0, 80.0)
+    stocks = _bdate_series("2000-01-03", 4200, 30.0, 55.0)    # reaches past 2014
+    yahoo = _bdate_series("1995-01-02", 5600, 20.0, 60.0)     # deeper than stocks
+    for store, series in (("stocks", stocks), ("yahoo", yahoo)):
+        (tmp_path / store).mkdir()
+        pd.DataFrame({"close": series}).to_parquet(tmp_path / store / "SYM.parquet")
+
+    both = _deepen_close("SYM", close, tmp_path)
+    assert both.index[0] == stocks.index[0], "data/stocks wins even when yahoo is deeper"
+    assert both.loc[both.index >= close.index[0]].equals(close)
+
+    (tmp_path / "stocks" / "SYM.parquet").unlink()
+    only_yahoo = _deepen_close("SYM", close, tmp_path)
+    assert only_yahoo.index[0] == yahoo.index[0]
+
+
+def test_compute_deepens_from_the_store_chain(tmp_path, monkeypatch):
+    monkeypatch.delenv("COLLECT_LANE", raising=False)
+    tape = _deep_washout_then_turn()
+    universe = {"DEEP": ["b1"]}
+
+    def _run(root: Path) -> dict:
+        with patch("engine.washout_turn._build_universe", return_value=universe), \
+             patch("engine.washout_turn._load_close",
+                   side_effect=lambda s, r=None: tape):
+            return compute(data_root=root)
+
+    bare = tmp_path / "bare"
+    bare.mkdir()
+    out0 = _run(bare)
+    assert out0["deepened_n"] == 0
+
+    deep_root = tmp_path / "deep"
+    (deep_root / "stocks").mkdir(parents=True)
+    pd.DataFrame({"close": _deep_store_for(tape)}).to_parquet(
+        deep_root / "stocks" / "DEEP.parquet")
+    out1 = _run(deep_root)
+    assert out1["deepened_n"] == 1
+
+    r0, r1 = out0["tickers"]["DEEP"], out1["tickers"]["DEEP"]
+    assert (r1["state"], r1["since"]) == (r0["state"], r0["since"])
+    assert r1["history_weeks"] > r0["history_weeks"]
+    assert r1["history_start"] < r0["history_start"]
 
 
 # ---------------------------------------------------------------------------
