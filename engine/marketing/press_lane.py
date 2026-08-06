@@ -2304,18 +2304,19 @@ def run_press_tick(
                 wire_llm = None
 
         # Summarize-with-citation + build the outbox-shaped payload.
-        # THE CITATION RULING TRAVELS WITH THE ITEM. `decision` (step 4 above)
-        # already answered "whose name goes on this" for the POST BODY; the card
-        # used to re-derive its own answer from `source_name` and printed the
-        # masthead the body had refused to name. One ruling, both surfaces.
-        _citation = {
-            "credit": str(decision.get("attribution", "") or ""),
-            "tier": str(decision.get("citation_tier", "") or ""),
-            "reason": str(decision.get("citation_reason", "") or ""),
-        }
+        #
+        # THE CITATION RULING NO LONGER TRAVELS TO THE CARD, and the reason is
+        # that there is nothing left for it to rule on. It was threaded here so
+        # a "no credit" decision made for the POST BODY would bind the picture
+        # too — the card used to re-derive its own answer from `source_name` and
+        # print the masthead the body had refused to name. The chip now carries
+        # the TIER and never a name (chart_render._break_chip_label), so the only
+        # output a credit ruling could change is one that no longer exists.
+        # Mutation-verified before removal: deleting the branch it fed changed no
+        # test's answer. A kwarg kept "in case" is a dead field, and this repo
+        # has been bitten by those.
         payload = build_breaking_payload(
             s, cfg, root=root, _llm_override=llm_override, wire=wire_llm,
-            citation=_citation,
         )
 
         headline = payload.get("headline", "")

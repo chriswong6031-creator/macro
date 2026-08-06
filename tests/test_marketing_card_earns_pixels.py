@@ -1256,9 +1256,15 @@ def test_the_chip_label_takes_no_citation_and_no_name():
 
     assert not hasattr(chart_render, "_bc_own_desk_names")
     assert not hasattr(chart_render, "_BC_UNNAMED_CREDIT")
-    assert "citation" not in inspect.signature(_break_chip_label).parameters
-    assert "citation" not in inspect.signature(
-        chart_render.render_breaking_card).parameters
+    # THE WHOLE CHAIN, not just its last link: press_lane ->
+    # build_breaking_payload -> render_breaking_card -> _break_chip_label. A
+    # parameter left accepted-but-unread at any rung is a dead field wearing a
+    # docstring, which is the shape this repo keeps getting bitten by.
+    from engine.marketing.breaking_summary import build_breaking_payload
+
+    for fn in (_break_chip_label, chart_render.render_breaking_card,
+               build_breaking_payload):
+        assert "citation" not in inspect.signature(fn).parameters, fn.__name__
     # Every source_name, ours or theirs, resolves to the tier and nothing else.
     for name in ("Reuters", "CNBC", "mastermindx001", "@mastermindx001", ""):
         assert _break_chip_label(name, "WIRE SERVICE") == "WIRE SERVICE"
@@ -1387,23 +1393,34 @@ def test_caps_are_measured_wider_than_lowercase():
 # complaint was a doubled card and the delivered behaviour was no post at all.
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _kill_fixture(with_digit: bool = False) -> list[dict]:
+def _kill_fixture(proof: str = "none") -> list[dict]:
     """The repo's own press-copy fixture item (tests/test_marketing_press_copy).
 
-    `with_digit` reproduces the workaround round 1 shipped instead of the fix —
-    a figure inserted into the headline so the copy reaches `hard` proof on its
-    own. Both forms must emit; the point of the pair is that the no-digit form,
-    whose ONLY hard proof was the card, is the one that used to die silently.
+    `proof` names what ELSE the copy has to rest on, because value_gate reaches
+    `hard` by several rungs and only one of them is the card:
+
+      "digit"    — the workaround round 1 shipped instead of a fix: a figure
+                   inserted into the headline so the copy proves itself.
+      "url"      — the fixture's own source link, via the citation rung (dead on
+                   this lane until the `source_url` key fix).
+      "none"     — neither. THE CARD WAS THE ONLY HARD PROOF, which is the case
+                   that used to die silently and the one the withheld state
+                   exists for. A wire flash with no figure and an opaque source
+                   id is an ordinary item, not a contrived one.
+
+    All three must emit.
     """
     head = (
         "Trump orders a new 25% tariff and export controls on $AAPL and $NVDA"
-        if with_digit else
+        if proof == "digit" else
         "Trump orders new tariffs and export controls on $AAPL and $NVDA"
     )
     return [{
         "id": "trumpstruth:strong", "source": "trumpstruth",
         "source_name": "Truth Social (via trumpstruth.org)",
-        "source_tier": "mirror", "url": "https://trumpstruth.org/statuses/strong",
+        "source_tier": "mirror",
+        "url": ("https://trumpstruth.org/statuses/strong" if proof == "url"
+                else "trumpstruth:strong"),
         "published_at": "2026-07-27T13:59:00Z",
         "headline": head,
         "body_snippet": (
@@ -1432,8 +1449,8 @@ def _emitting_tick(items: list[dict]) -> dict:
     )
 
 
-@pytest.mark.parametrize("with_digit", [False, True])
-def test_a_withheld_card_ships_the_post_text_only(with_digit):
+@pytest.mark.parametrize("proof", ["none", "url", "digit"])
+def test_a_withheld_card_ships_the_post_text_only(proof):
     """BLOCKER 1 — the value gate must not read a withheld card as no evidence.
 
     Mechanism: value_gate.KIND_PROOF["breaking"] == "hard", and `_proof_tier`
@@ -1442,11 +1459,17 @@ def test_a_withheld_card_ships_the_post_text_only(with_digit):
     (config/marketing.yml enforce: true, breaking in enforce_kinds) and returned
     None. A wire flash with no digit in its copy therefore vanished.
 
+    PARAMETRISED OVER WHAT ELSE THE COPY HAS. `proof="none"` is the one that
+    isolates this fix: with a figure in the headline or a URL to cite, the post
+    proves itself and the withheld card changes nothing, so a single-fixture
+    version of this test passes with the fix reverted. Verified by mutation —
+    the "none" case is the one that goes back to `emitted == []`.
+
     MUTATION: pass `media_withheld=False` at press_lane._emit_outbox_item's
-    stamp_value_gate call (i.e. undo the fix) and the with_digit=False case goes
-    back to `emitted == []` with reason `outbox_refused`.
+    stamp_value_gate call (i.e. undo the fix) and `proof="none"` is refused with
+    `outbox_refused` again.
     """
-    res = _emitting_tick(_kill_fixture(with_digit))
+    res = _emitting_tick(_kill_fixture(proof))
     emitted = [e for e in res["emitted"] if e.get("kind") == "breaking"]
     assert emitted, (
         "the post did not ship at all: "
@@ -1483,7 +1506,7 @@ def test_the_publisher_does_not_quarantine_a_withheld_card_post():
     root = Path(__file__).resolve().parent.parent
     pub_cfg = (yaml.safe_load(
         (root / "config" / "marketing.yml").read_text()) or {}).get("publish") or {}
-    res = _emitting_tick(_kill_fixture(with_digit=True))
+    res = _emitting_tick(_kill_fixture("digit"))
     emitted = [e for e in res["emitted"] if e.get("kind") == "breaking"]
     assert emitted, "nothing emitted, so the publisher gate is untested"
     item = emitted[0]
@@ -1609,20 +1632,52 @@ def test_every_card_drawing_lane_consults_the_gate():
     STRUCTURAL, because that is the property that decays: any module that calls
     render_breaking_card must also consult the gate. A new lane added without
     one fails here rather than in production.
+
+    IT COUNTS CALLS, NOT SUBSTRINGS. A first version grepped the file text and
+    passed with the gate's import deleted, because the word survived in a
+    comment describing the call — the exact "guard that passes on broken code"
+    shape. The AST is the only reading that cannot be satisfied by prose.
     """
+    import ast
     from pathlib import Path
 
     root = Path(__file__).resolve().parent.parent
+
+    def _called_names(tree: ast.AST) -> set:
+        out = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                fn = node.func
+                if isinstance(fn, ast.Name):
+                    out.add(fn.id)
+                elif isinstance(fn, ast.Attribute):
+                    out.add(fn.attr)
+        return out
+
+    def _defined_names(tree: ast.AST) -> set:
+        return {n.name for n in ast.walk(tree)
+                if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+
     offenders = []
     for py in sorted((root / "engine").rglob("*.py")) + \
             sorted((root / "scripts").rglob("*.py")):
         if py.name == "chart_render.py":       # the renderer itself
             continue
-        text = py.read_text(encoding="utf-8", errors="replace")
-        if "render_breaking_card" not in text:
+        try:
+            tree = ast.parse(py.read_text(encoding="utf-8", errors="replace"))
+        except SyntaxError:                     # not ours to police
             continue
-        if "card_earns_attachment" not in text:
-            offenders.append(str(py.relative_to(root)))
+        calls = _called_names(tree)
+        if "render_breaking_card" not in calls:
+            continue
+        # breaking_summary DEFINES the gate and hands its payload to press_lane,
+        # which applies it (pinned by test_dispatch_actually_strips_the_card_...
+        # and test_dispatch_scores_the_hero_the_renderer_actually_draws). Every
+        # OTHER module that draws a card owns the decision itself.
+        if "card_earns_attachment" in calls or \
+                "card_earns_attachment" in _defined_names(tree):
+            continue
+        offenders.append(str(py.relative_to(root)))
     assert offenders == [], (
         f"these lanes draw a breaking card without consulting the card-value "
         f"gate: {offenders}"
@@ -1724,7 +1779,26 @@ def test_an_over_budget_summary_is_bounded_and_the_drop_is_counted():
     assert fit["summary_chars_dropped"] > 0
 
 
-def test_the_second_voice_cannot_dominate_the_hero():
+@pytest.mark.parametrize("long_summary", [
+    # MULTI-SENTENCE — the card-body budget trims it to whole sentences long
+    # before the fitter is asked, so stage (1) succeeds and the ladder never
+    # descends. This case pins the BUDGET.
+    ("Fed officials said the target range is unchanged and that supply, not "
+     "demand, remains the binding constraint on activity through the second "
+     "half of the year. They added that the committee will keep policy "
+     "restrictive until inflation returns durably to target, and that two "
+     "members dissented in favour of a cut."),
+    # ONE SENTENCE, over budget — there is no boundary to trim to, so the
+    # budget falls back to the whole clause and stage (2) is the loop that
+    # actually runs. This case pins the CAP. Measured with the cap removed:
+    # SEVEN 36px summary lines under a two-line hero.
+    ("Fed officials said the target range is unchanged and that supply not "
+     "demand remains the binding constraint on activity through the second "
+     "half of the year while the committee keeps policy restrictive until "
+     "inflation returns durably to target and two members dissent in favour "
+     "of an immediate reduction of twenty five basis points."),
+])
+def test_the_second_voice_cannot_dominate_the_hero(long_summary):
     """The 3-line cap was traded away by the very loop that follows it.
 
     _fit_second_voice stage (2) dropped the tidy block height entirely and took
@@ -1733,8 +1807,16 @@ def test_the_second_voice_cannot_dominate_the_hero():
     summary lines against TWO hero lines, inverting the card's hierarchy, and no
     assertion anywhere in tests/ looked at summary line count or block height.
 
-    MUTATION: drop `stage2_cap` from the stage-(2) `_try` call and this returns
-    to 7 lines.
+    A CAPPED STAGE 2 MAY DRAW NOTHING, and that is the intended trade, not a
+    void: the second voice is all-or-nothing per sentence (the no-clip law), so
+    one clause too long for the bounded box is a paragraph this card does not
+    have room for. card_earns_attachment upstream then judges the hero alone —
+    the same disposal route the fitter's docstring already describes.
+
+    MUTATION: drop `stage2_cap` from the stage-(2) `_try` call and the
+    single-sentence case returns to 7 lines. The multi-sentence case does NOT
+    move, which is why both are here: the budget and the cap fix different
+    halves and each needs a fixture that can see it.
     """
     from engine.marketing.chart_render import (
         _BC_SM_LINES_HARD,
@@ -1743,13 +1825,6 @@ def test_the_second_voice_cannot_dominate_the_hero():
         render_breaking_card,
     )
 
-    long_summary = (
-        "Fed officials said the target range is unchanged and that supply, not "
-        "demand, remains the binding constraint on activity through the second "
-        "half of the year. They added that the committee will keep policy "
-        "restrictive until inflation returns durably to target, and that two "
-        "members dissented in favour of a cut."
-    )
     svg = render_breaking_card("Fed holds", "Reuters", "wire",
                                "2026-07-19T14:32:00Z", summary=long_summary)
     hero_lines = _hero_line_count(svg)
@@ -1856,26 +1931,60 @@ def test_a_degraded_render_does_not_attach(monkeypatch, capsys):
 # THE RENDER BUDGET IS LAW HERE
 # ─────────────────────────────────────────────────────────────────────────────
 
+def test_the_width_estimator_is_memoised():
+    """A pure, deterministic, extremely hot leaf must not lose its cache.
+
+    The no-clip fitter turned `_bc_text_w` from a once-per-line call into an
+    inner loop: two layout passes x two ladder stages x every sentence-end
+    candidate x an O(words^2) greedy wrap. Pinned STRUCTURALLY as well as by the
+    benchmark below, because a cache is a property with no behaviour to observe
+    — removing it changes nothing a functional assertion can see, and the timing
+    tripwire alone is dominated by the budget fix (measured: without the cache
+    the same fixture is 0.22ms a card, comfortably inside any threshold a shared
+    runner can hold).
+    """
+    from engine.marketing.chart_render import _bc_em_w, _bc_text_w
+
+    assert hasattr(_bc_em_w, "cache_info"), "the width estimator lost its memo"
+    # Keyed WITHOUT the size — width scales linearly in it, so one entry has to
+    # serve every rung of the ladder, which is where the reuse actually is.
+    before = _bc_em_w.cache_info()
+    _bc_text_w("a probe string for the memo", 41.0, bold=False)
+    _bc_text_w("a probe string for the memo", 26.0, bold=False)
+    after = _bc_em_w.cache_info()
+    assert after.hits > before.hits, "a second size missed the cache"
+
+
 def test_card_render_cost_did_not_regress_500x():
-    """The no-clip fitter turned the width estimator into an inner loop.
+    """The render budget is law in this repo; a 55x card is not a rounding error.
 
-    Measured across the round-1 change: 50 renders of one hero plus a 592-char
-    summary went 0.008s -> 4.005s, ~80ms a card, with no benchmark or comment
-    acknowledging it in a repo whose render budget is law. `_bc_em_w` is now
-    memoised (pure, deterministic, keyed without the size because width scales
-    linearly in it, so one entry serves every rung of the ladder).
+    Measured across the round-1 change on a summary with eight sentence-end
+    candidates (the shape that drives the candidate walk):
 
-    Deliberately a LOOSE ceiling — a regression tripwire on a shared runner, not
-    a microbenchmark. 500x blows through it; a 2x drift will not fail the build.
+        round-1 shape (no card-body budget, no memo)   5.45 ms/card
+        memo only                                      0.77 ms/card
+        budget only                                    0.22 ms/card
+        both                                           0.10 ms/card
+
+    The dominant fix is the card-body budget: bounding the second voice to its
+    own box means the fitter is no longer handed a 320-char paragraph to walk.
+
+    WHAT THIS CEILING DOES AND DOES NOT DISCRIMINATE, stated rather than implied.
+    It is a LOOSE tripwire for the combined round-1 shape (5.45ms, ~55x), with
+    ~10x headroom over the current 0.09ms so a shared 4-core runner cannot flake
+    it. Reverting either fix ALONE stays under it, which is why neither rests on
+    this test: the budget is pinned behaviourally by
+    test_an_in_budget_summary_never_reaches_the_legibility_floor and the memo
+    structurally by test_the_width_estimator_is_memoised. A timing assertion
+    tight enough to separate 0.22ms from 0.09ms would be a flake, not a guard.
     """
     import time
 
     from engine.marketing.chart_render import render_breaking_card
 
-    summary = (
-        "The committee left the target range unchanged and said supply, not "
-        "demand, remains the binding constraint on activity through the second "
-        "half. Two members dissented."
+    summary = " ".join(
+        f"The committee said supply not demand remains the binding "
+        f"constraint number {i}." for i in range(8)
     )
     render_breaking_card(GOLD_HEAD, "Reuters", "wire", "2026-08-05T00:12:02Z",
                          summary=summary)                      # warm the caches
@@ -1884,4 +1993,4 @@ def test_card_render_cost_did_not_regress_500x():
         render_breaking_card(f"{GOLD_HEAD} {i}", "Reuters", "wire",
                              "2026-08-05T00:12:02Z", summary=summary)
     per_card = (time.perf_counter() - t0) / 20
-    assert per_card < 0.030, f"{per_card * 1000:.1f}ms a card"
+    assert per_card < 0.0010, f"{per_card * 1000:.2f}ms a card"

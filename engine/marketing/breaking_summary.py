@@ -1138,7 +1138,6 @@ def build_breaking_payload(
     root: Path | str | None = None,
     _llm_override: Any = None,
     wire: dict | None = None,   # B2-COPY: wire-voice tier/prompt config (optional)
-    citation: dict | None = None,  # source_authority.citation() for this item
 ) -> dict:
     """Build the full outbox-shaped breaking payload.
 
@@ -1170,15 +1169,14 @@ def build_breaking_payload(
         card_tickers: list[dict]  # enriched rows the card's tape strip drew
         provenance: {source_url: str, source: str, ingested_at: str}
 
-    `citation` is source_authority.citation()'s result when the caller already
-    has one (press_lane computes it for the POST BODY several steps earlier). It
-    is ACCEPTED AND NOT FORWARDED TO THE CARD. A first pass threaded it down to
-    the tier chip so a "no credit" ruling would bind the picture too; the chip
-    now prints the tier and NEVER a name (chart_render._break_chip_label), so
-    there is no credit left for a ruling to withhold. The kwarg stays because
-    press_lane passes it and a future card surface may earn one — it does not
-    stay wired into a decision it cannot change. (Mutation-verified before
-    removal: deleting the branch it fed changed no test's answer.)
+    THERE IS NO `citation` KWARG. One was threaded press_lane ->
+    build_breaking_payload -> render_breaking_card -> _break_chip_label so a
+    source_authority "no credit" ruling made for the POST BODY would bind the
+    picture too. The chip now carries the TIER and never a name
+    (chart_render._break_chip_label), so the only output that ruling could
+    change no longer exists — mutation-verified before removal: deleting the
+    branch it fed changed no test's answer. A kwarg kept "in case" is a dead
+    field, and this repo has been bitten by those.
     """
     summary_result = summarize_item(item, cfg, _llm_override=_llm_override, wire=wire)
 
