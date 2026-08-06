@@ -15542,14 +15542,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {%- endif %}
     <script type="application/json" id="plv-names">{{ _plv_nm | tojson }}</script>
     {% endif %}
-    {#- THEME TAPE (W2) — sits directly above the board because that is the reading
-        order the panel exists to create: here is what the market is heating, here is
-        what these picks do with it, here are the picks. It is deliberately NOT a
-        second "themes in favour" strip: that one lives inside the board below, is
-        driven by board names, and by design drops a theme with no names on it — the
-        exact silence this panel prints. Own guard, so the placement survives any
-        re-nesting of the block above. Renders nothing on a dead tape. -#}
-    {% if mode == 'stocks' %}{% include "_theme_tape.html.j2" %}{% endif %}
     {% if _su or action_board.notable %}
     <div class="panel span12 notable" id="us-standouts">
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
@@ -16343,6 +16335,20 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     })();
     </script>
     {% endif %}
+    {#- THEME TAPE (W2) — relocated BELOW the board (operator order 2026-08-04,
+        "it's obstructing this entire page"). It shipped above the board to build a
+        reading order — here is what the market is heating, here is what these picks
+        do with it, here are the picks — but at 692px it put the product two full
+        screens down to set up a panel that ranks, gates and sizes nothing. Context
+        that changes no decision reads AFTER the decision it contextualises; the
+        two-speed tape band below made the same move for the same reason
+        (operator order 2026-07-11).
+        It is still deliberately NOT a second "themes in favour" strip: that one
+        lives inside the board above, is driven by board names, and by design drops
+        a theme with no names on it — the exact silence this panel prints. Own
+        guard, so the placement survives any re-nesting of the block above. Renders
+        nothing on a dead tape. -#}
+    {% if mode == 'stocks' %}{% include "_theme_tape.html.j2" %}{% endif %}
     {# TS-U3: Two-speed tape band (mode=stocks only; client-side from live/basket_pulse.json).
        Self-labeling .dtp idiom; relocated BELOW the standout stocks panel
        (operator order 2026-07-11). Carries its own panel chrome; stays hidden
