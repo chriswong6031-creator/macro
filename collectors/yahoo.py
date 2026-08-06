@@ -27,6 +27,7 @@ import yfinance as yf
 
 from collectors.base import Adapter
 from lib import config, store
+from lib.ticker_aliases import fetch_symbol
 
 log = logging.getLogger(__name__)
 
@@ -73,7 +74,10 @@ class YahooAdapter(Adapter):
         bs = self.cfg["batch_size"]
         for i in range(0, len(tickers), bs):
             batch = tickers[i:i + bs]
-            df = self._download(batch, period)
+            # Renamed names are REQUESTED under the vendor's symbol and STORED under the
+            # config ticker (lib/ticker_aliases) — without this, Marsh (MMC->MRSH, 2026-01-14)
+            # 404s every run and never reaches the store.
+            df = self._download([fetch_symbol(t) for t in batch], period)
             for t in batch:
                 sub_out = self._extract(df, t, ohlc, no_adj_close)
                 if sub_out is not None:
@@ -96,9 +100,13 @@ class YahooAdapter(Adapter):
     def _extract(self, df: pd.DataFrame, t: str, ohlc: set[str],
                  no_adj_close: list[str]) -> pd.DataFrame | None:
         """Slice one ticker out of a (possibly MultiIndex) yf.download response and
-        rename to the store schema; None when yfinance returned nothing for it."""
+        rename to the store schema; None when yfinance returned nothing for it.
+
+        `t` is the CONFIG ticker throughout (store key, ohlc-group membership, log lines);
+        the response is keyed by the vendor symbol, which differs for renamed names."""
         try:
-            sub = df[t] if isinstance(df.columns, pd.MultiIndex) else df
+            sym = fetch_symbol(t)
+            sub = df[sym] if isinstance(df.columns, pd.MultiIndex) else df
             # W1.3 dual-basis rename:
             #   Adj Close -> close     (TR, byte-identical to old auto_adjust=True Close)
             #   Close     -> close_price (split-adj, div-UNadj — structure-math basis)
@@ -162,7 +170,7 @@ class YahooAdapter(Adapter):
         for i in range(0, len(shifted), bs):
             batch = shifted[i:i + bs]
             try:
-                df = self._download(batch, "max")
+                df = self._download([fetch_symbol(t) for t in batch], "max")
             except Exception as e:  # noqa: BLE001 — degrade: skip tonight, re-flag next run
                 log.warning("yahoo: basis refetch failed for %d name(s) (%s) — kept out "
                             "of this run; the guard retries next night", len(batch), e)

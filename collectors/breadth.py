@@ -220,14 +220,18 @@ class BreadthAdapter(Adapter):
     def _repair(self, members: pd.DataFrame) -> pd.DataFrame:
         """Clean a freshly-scraped constituents table before it becomes the universe.
 
-        Wikipedia is community-edited and intermittently ships a *plausible-looking*
-        but wrong symbol — vandalism (Marsh & McLennan shown as the non-existent
-        "MRSH") or a stale pre-rename ticker (Fiserv as "FISV", renamed "FI" in
-        2023) — plus the occasional non-ticker junk cell. Left unrepaired those
-        silently drop the real name from the searchable universe and can mint a
-        bogus page for the garbage symbol. This normalises symbols, drops
-        non-ticker junk, and applies the config ``ticker_fixups`` repair map
-        (bad -> real current ticker). Pure + logged; never raises."""
+        Wikipedia is community-edited and ships the occasional non-ticker junk cell,
+        which is dropped outright. It also ships symbols that are perfectly correct but
+        disagree with the key this repo stores a company under, because a TICKER RENAME
+        moved one side and not the other (Fiserv FISV->FI in 2023, where the page kept
+        the old symbol; Marsh McLennan MMC->MRSH on 2026-01-14, where the page took the
+        new one). Left unpinned those silently split one company across two universe
+        keys. This normalises symbols, drops junk, and applies the config
+        ``ticker_fixups`` map (scraped symbol -> the stored key).
+
+        ``ticker_fixups`` is a KEY PIN, not a claim about which symbol trades today —
+        see the config comment before changing a row; the price feed's own view of the
+        same renames lives in lib/ticker_aliases. Pure + logged; never raises."""
         df = members.copy()
         df["symbol"] = (df["symbol"].astype(str).str.strip().str.upper()
                         .str.replace(".", "-", regex=False))         # BRK.B -> BRK-B

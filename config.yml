@@ -2010,16 +2010,30 @@ breadth:
   lookback_days_live: 1100        # ~3y: 200DMA/NH-NL plus cycle analysis for stock search
   ma_windows: [50, 200]
   nhnl_window: 252
-  # Repair known-bad Wikipedia symbols before they reach the universe. The list is
-  # community-edited and intermittently ships a plausible-but-wrong ticker —
-  # vandalism (Marsh & McLennan as the non-existent "MRSH") or a stale pre-rename
-  # ticker (Fiserv as "FISV", renamed "FI" in 2023). Map bad -> real current
-  # ticker; pricing is best-effort (an unpriceable repaired symbol is skipped, no
-  # worse than the garbage it replaced, and it builds once the feed serves it).
+  # Pin the UNIVERSE KEY for names whose scraped symbol differs from the one this repo
+  # stores them under. Wikipedia is community-edited and intermittently ships junk, but
+  # both entries below are RENAMES, not vandalism: map scraped -> the key the rest of the
+  # stack already uses. Pricing is best-effort (an unpriceable repaired symbol is skipped,
+  # no worse than what it replaced, and it builds once the feed serves it).
+  #
+  # These rows are load-bearing, NOT cosmetic. They keep one join key per company across
+  # data/qledger claims, data/name_score, the stock library and data/baskets/membership.json.
+  # Do not "correct" a row to the current exchange symbol on its own: flipping the key
+  # splits a company's history across two symbols (open forward claims strand under the old
+  # key, and the breadth close-cache column for the new one carries a months-long hole that
+  # the 1mo nightly window can never backfill, silently voiding its 50/200DMA). That flip is
+  # a migration, not an edit — see research/ before attempting it.
+  #
+  # The VENDOR-side counterpart lives in lib/ticker_aliases (config ticker -> the symbol the
+  # price feed serves it under). Same fact, opposite direction; keep them consistent.
   # Extend as the "constituents churn" / "dropping non-ticker row" log surfaces more.
   ticker_fixups:
-    MRSH: MMC     # Marsh & McLennan — page vandalised to a non-existent symbol
-    FISV: FI      # Fiserv — page shows the pre-2023 ticker
+    MRSH: MMC     # Marsh McLennan renamed MMC->MRSH on the NYSE 2026-01-14 (real symbol
+                  # change; Yahoo followed, so lib/ticker_aliases fetches under MRSH). MMC
+                  # stays the stored key — 13 open qledger claims and the baskets membership
+                  # are keyed on it.
+    FISV: FI      # Fiserv renamed FISV->FI in 2023 — the page still shows the OLD symbol
+                  # (Yahoo does too, hence the inverse entry in lib/ticker_aliases)
 
 # Small-cap participation, computed exactly like S&P 500 breadth but over the
 # S&P SmallCap 600 — a free, well-defined small-cap universe (Wikipedia, same
@@ -2163,9 +2177,10 @@ stock_search:
     # library" and stock.html#<T> 404'd. All are liquid US lines > $100M mcap
     # (smallest enCore ~$320M). A handful (MMC, HEI, LNG, FI, DKNG, POOL) ARE
     # economically S&P 500 but don't resolve through the Wikipedia constituents
-    # table (garbled/aliased ticker, e.g. Marsh shows as "MRSH"), so they ride the
-    # extras hook here too. universe()'s `seen` set dedups, so this is a no-op for
-    # any name the index already resolves.
+    # table under the symbol stored here (a RENAME the page already followed — Marsh
+    # lists as "MRSH" since 2026-01-14; breadth.ticker_fixups pins it back to MMC), so
+    # they ride the extras hook here too. universe()'s `seen` set dedups, so this is a
+    # no-op for any name the index already resolves.
     # Uranium & nuclear fuel cycle
     - CCJ    # Cameco
     - UEC    # Uranium Energy
@@ -6742,6 +6757,7 @@ yahoo:
     extras: [SMH, IWM, RSP, SPY, QQQ, "^DJI", "^RUT", IJH,   # ^RUT = true Russell 2000 index level; IJH = S&P MidCap 400 (mid-cap leg of the size spectrum)
              SOXX, IGV, XBI, IBB, GDX, GDXJ, KRE, KBE, ITB, XHB, XME, XOP, OIH, XRT, TAN,  # deep-history thematic ETFs (directional model — narrow purer-driver exposures)
              MAGS,                # Roundhill Magnificent Seven ETF — mega-cap leadership concentration tracker (hk_context_chips em_dm_rs / HKRV-W4)
+             GLD,                 # SPDR Gold Shares — the gold leg of the GDX/GDXJ miners complex (miners-vs-metal RS) and the bullion tape scripts/research/hs2_event_reactions reads. Same failure as ^GSPC below: seeded once by a research pass (#2569, 2026-07-14), in NO group here, so it froze that day while GDX/GDXJ/GC=F stayed current
              "^KS11",             # KOSPI composite (Korea) — EM-Asia bellwether; hk_context_chips complement
              "^GSPC"]             # S&P 500 price index — intl_performance US-vs-world benchmark + cycle_proxies/equity_alloc/intl_claims/lab/live_overlay/signal_lab. Store was seeded once by scripts/spvector_baseline.py (2026-06-14) and froze at 2026-06-12 because the ticker was never in ANY group here; freshness now guarded by collectors.yahoo.check_yahoo_freshness
     style: [IWF, IWD]             # Russell 1000 Growth / Value — style-rotation read (growth vs value leadership)
