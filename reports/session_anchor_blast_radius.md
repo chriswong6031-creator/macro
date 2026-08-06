@@ -2,7 +2,7 @@
 
 Era `abs-session-2026-08-06` · ruling `research/SESSION_ANCHOR_ABSOLUTE_CALENDAR_ADJUDICATION_BY_FABLE.md`
 
-Generated 2026-08-06T10:21Z · store as-of dates are per-universe (read from the stores, never the wall clock).
+Generated 2026-08-06T11:06Z · store as-of dates are per-universe (read from the stores, never the wall clock).
 
 
 ## 1. Old → new, per production loader
@@ -13,7 +13,7 @@ Generated 2026-08-06T10:21Z · store as-of dates are per-universe (read from the
 | data/baskets/ohlcv | 2743 | 152 (5.54%) | 271 (9.88%) | 163 → 168 (+5) | 2026-08-05 |
 | data/stocks @345 bars | 238 | 9 (3.78%) | 16 (6.72%) | 10 → 9 (-1) | 2026-08-05 |
 | data/stocks @777 bars | 238 | 13 (5.46%) | 16 (6.72%) | 15 → 14 (-1) | 2026-08-05 |
-| massive_stock_day (scan tier) | — | — | — | — | **not measured** |
+| massive_stock_day (scan tier) | 3886 | 179 (4.61%) | 276 (7.1%) | 287 → 278 (-9) | 2026-08-05 |
 | CN china_search panel | 1765 | 59 (3.34%) | 87 (4.93%) | 111 → 146 (+35) | 2026-08-05 |
 | HK stores | 2 | 0 (0.0%) | 0 (0.0%) | 0 → 0 (+0) | 2026-08-05 |
 
@@ -26,7 +26,7 @@ Generated 2026-08-06T10:21Z · store as-of dates are per-universe (read from the
 
 - **data/stocks @777 bars** — stocks/ truncated to the trailing 777 bars (a production cache depth)
 
-- **massive_stock_day (scan tier)** — ABSENT: data/massive_stock_day holds 0 per-ticker parquets (R2-canonical; restored only in a lane that pulls it). The scan-tier delta is UNMEASURED here — run this script in a restored lane.
+- **massive_stock_day (scan tier)** — floor + listing rule from engine.us_scan_universe.resolve
 
 - **CN china_search panel** — old era = the market-BLIND business-day resample every market used to get; new era = the Shanghai reference calendar. That IS the shipped CN delta.
   - not graded: 29 ({'under MIN_HISTORY': 29})
@@ -43,6 +43,8 @@ Generated 2026-08-06T10:21Z · store as-of dates are per-universe (read from the
 **data/stocks @345 bars** — {'None->T2': 1, 'None->T4': 3, 'T2->None': 5}
 
 **data/stocks @777 bars** — {'None->T2': 3, 'None->T4': 2, 'T2->None': 6, 'T2->T4': 1, 'T4->T2': 1}
+
+**massive_stock_day (scan tier)** — {'None->T2': 63, 'None->T3': 4, 'None->T4': 8, 'T2->None': 67, 'T2->T3': 6, 'T2->T4': 6, 'T3->None': 14, 'T3->T2': 3, 'T3->T4': 3, 'T4->None': 3, 'T4->T2': 2}
 
 **CN china_search panel** — {'None->T2': 45, 'None->T3': 1, 'None->T4': 1, 'T2->None': 11, 'T3->None': 1}
 
