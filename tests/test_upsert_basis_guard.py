@@ -60,9 +60,16 @@ def data_dir(tmp_path, monkeypatch):
     return tmp_path
 
 
-def _seed(group: str, name: str, n: int = 400, cols=("close", "close_price")) -> pd.DataFrame:
-    """Write a stored parquet on the OLD basis; returns the frame."""
-    idx = pd.bdate_range(end="2026-06-30", periods=n)
+def _seed(group: str, name: str, n: int = 400, cols=("close", "close_price"),
+          end: str | pd.Timestamp = "2026-06-30") -> pd.DataFrame:
+    """Write a stored parquet on the OLD basis; returns the frame.
+
+    `end` matters only for the StockPriceAdapter tests: its _needs_full reads the
+    wall clock for the >21d stale-tip bridge (2026-08-03 freshness fix), so those
+    seeds must end near now() or every ticker re-routes to the period='max' heal
+    group. Every other adapter under test is date-blind — the fixed default keeps
+    their frames byte-stable."""
+    idx = pd.bdate_range(end=end, periods=n)
     close = np.linspace(100.0, 150.0, n)
     df = pd.DataFrame({c: close for c in cols}, index=idx)
     df["volume"] = 1e6
@@ -474,8 +481,9 @@ def _make_stocks_adapter(monkeypatch, tickers: list[str], responder, calls: list
 
 
 def test_stocks_shifted_name_repulls_max_and_clean_name_keeps_window(data_dir, monkeypatch):
-    spgi = _seed("stocks", "SPGI", cols=("close", "high", "low"))
-    aapl = _seed("stocks", "AAPL", cols=("close", "high", "low"))
+    tip = pd.Timestamp.now().normalize()  # inside the 21d stale-tip bridge, always
+    spgi = _seed("stocks", "SPGI", cols=("close", "high", "low"), end=tip)
+    aapl = _seed("stocks", "AAPL", cols=("close", "high", "low"), end=tip)
     calls: list = []
 
     def responder(batch, period):
@@ -497,7 +505,8 @@ def test_stocks_shifted_name_repulls_max_and_clean_name_keeps_window(data_dir, m
 
 
 def test_stocks_failed_repull_drops_the_name_instead_of_splicing(data_dir, monkeypatch):
-    seeds = {t: _seed("stocks", t, cols=("close", "high", "low"))
+    tip = pd.Timestamp.now().normalize()  # inside the 21d stale-tip bridge, always
+    seeds = {t: _seed("stocks", t, cols=("close", "high", "low"), end=tip)
              for t in ["SPGI", "AAPL", "MSFT", "NVDA"]}
     calls: list = []
 
