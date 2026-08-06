@@ -57,6 +57,10 @@ SECTION_NAMES = {
 START_MARKER = "# --- BEGIN GENERATED FROM DO_NOT_REBUILD.md (compile_loop_blocklists.py) ---"
 END_MARKER = "# --- END GENERATED FROM DO_NOT_REBUILD.md ---"
 
+# A structural table delimiter is a pipe that is NOT backslash-escaped; `\|`
+# inside a cell is GFM for a literal pipe and must not split the row.
+_UNESCAPED_PIPE = re.compile(r"(?<!\\)\|")
+
 
 # ---------------------------------------------------------------------------
 # Parser
@@ -69,6 +73,25 @@ def _slug(text: str) -> str:
     text = re.sub(r"[\s_]+", "-", text)
     text = re.sub(r"-+", "-", text)
     return text[:80].strip("-")
+
+
+def _split_row(line: str) -> list[str]:
+    """Split one GFM table row into cells, honoring ``\\|`` escapes.
+
+    A ruling that quotes a pipe — ``\\|ρ\\| 0.95`` (KILL-PM4-OVERHEAD-SUPPLY) or
+    ``E[perf \\| regime]`` (KILL-PER-SIGNAL-FAMILY-RELIABILITY) — is correct GFM,
+    but splitting on every ``|`` over-counts the cells and `dict(zip(...))` then
+    DROPS the overflow from the right: the verdict of PM4 compiled to the single
+    character ``\\`` and its `Ruling / source` vanished outright. Structural pipes
+    are the unescaped ones; peel exactly one delimiter off each end so a cell that
+    legitimately ends in ``\\|`` keeps its content.
+    """
+    row = line.strip()
+    if row.startswith("|"):
+        row = row[1:]
+    if row.endswith("|") and not row.endswith("\\|"):
+        row = row[:-1]
+    return [c.strip().replace("\\|", "|") for c in _UNESCAPED_PIPE.split(row)]
 
 
 def _parse_markdown_table(lines: list[str]) -> list[dict[str, str]]:
@@ -86,7 +109,7 @@ def _parse_markdown_table(lines: list[str]) -> list[dict[str, str]]:
             if headers:
                 break  # table ended
             continue
-        cells = [c.strip() for c in line.strip("|").split("|")]
+        cells = _split_row(line)
         if not headers:
             headers = cells
             continue
