@@ -28,7 +28,7 @@ vetoes wholesale — §2.5 measures that idea and it fails.
   DLB-class, PANW-class) reproduces that case in its PR body from the shipped artifact — not
   from prose.
 - **G0.4 (population fences).** `us_board_ledger` graded population changes ONLY via
-  operator-ratified adjudication (DNR §1 row 49 restated). Shadow lanes grade in their own
+  operator-ratified adjudication (DNR:KILL-PROPHET-POP-MERGE restated). Shadow lanes grade in their own
   ledgers; the live board's buy membership stays byte-identical until a flip is ratified.
 - **G0.5 (kills respected).** No wave re-ranks by 2D-freshness (#1513), re-blends
   conviction×timing (row 49), forces un-gauntleted directional calls to surfaces (row 117 /
@@ -283,7 +283,7 @@ Three surgical changes to `prophet_bridge`, each independently disclosed in the 
 3. **Index hygiene:** total-active-plan surface cap with age-tiered pruning of the DISPLAY
    index (plans keep grading; the page stops drowning in 93 rows) + "originated N days ago,
    thesis playing out / stalled" pulse line per plan (fixes PLTR invisibility).
-**Operator sign-off required (scored change), then default-arm.** DNR row 49 untouched: the
+**Operator sign-off required (scored change), then default-arm.** DNR:KILL-PROPHET-POP-MERGE untouched: the
 buy population is unchanged; only ordering among already-admitted candidates and display
 hygiene move. The 9-of-16-EXPIRED closed-plan pattern also feeds the standing exit-policy
 study (H=10 incumbent unbeaten in-sample, cap-63 family untested — PROPHET_LEARNING_LOOP):

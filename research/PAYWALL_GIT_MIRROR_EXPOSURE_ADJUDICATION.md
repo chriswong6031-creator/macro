@@ -5,7 +5,7 @@ implemented.
 **Opened:** 2026-07-30, during Prophet Live P0.
 **Builds on (do not re-litigate):** #3391 (operator ruling "don't show the real board free"
 → landing shows 2-week-delayed winners), #3393 (regwalled `/factordata/*` + `/labdata/*` at
-Caddy), CXI-R23 Amendment 2 (`research/DO_NOT_REBUILD.md` row 58, operator ruling 2026-07-20).
+Caddy), CXI-R23 Amendment 2 (DNR:KILL-PUBLIC-INTERNALS, operator ruling 2026-07-20).
 
 ---
 

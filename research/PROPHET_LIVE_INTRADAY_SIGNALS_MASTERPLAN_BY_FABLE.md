@@ -162,7 +162,7 @@ hot-tape events routed there are parked today.
 ## §3 Standing-law constraints this plan is built around
 
 1. **Nightly is the sole advancer of forward ledgers; intraday lanes discard `data/`
-   writes** (chronicle gate-5 row; DNR line 41). → spool-on-R2 + nightly reconciler.
+   writes** (chronicle gate-5 row; DNR:KILL-INTRADAY-CHRONICLE). → spool-on-R2 + nightly reconciler.
 2. **No trigger-lane merge into the graded board** (DNR §1, `PROPHET_TOPSETUPS…` §2) —
    provisional tier is presentation-only; grading population untouched (G0.4).
 3. **1-tick state flips are a killed class** (CSP-R2) → debounce/hysteresis (G0.5).

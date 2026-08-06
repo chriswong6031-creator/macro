@@ -4236,7 +4236,7 @@ def main() -> int:
         # It changes ORDER and adds FIELDS. It does not change MEMBERSHIP: the
         # confluence cascade gate above is still the only thing that decides who is
         # on the buy lane, and `featured` is a flag inside that lane, never an
-        # admission (DNR §1 row 49 fence). The old terminal sort was alpha-desc
+        # admission (DNR:KILL-PROPHET-POP-MERGE fence). The old terminal sort was alpha-desc
         # within lane (W8, forward ledger #1062) — alpha survives as the `edge` leg,
         # 25 of the 100 points and the only leg the measurement found positive-IC;
         # what changes is that a name you cannot act on today can no longer sit at

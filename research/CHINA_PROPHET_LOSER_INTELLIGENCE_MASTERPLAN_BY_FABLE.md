@@ -38,7 +38,7 @@ touches the US lanes.
   (`WATCH_DEFINITIONS` pattern — never the headline grade). Era discipline stands:
   prior_record is a closed book, never pooled, never edited.
 - **G0.5 (kills respected).** No wave rebuilds: subsector-state gating of A-share
-  reversal (DNR row 85 — FALSIFIED, hurts vs flat), rotation × cycle-position
+  reversal (DNR:KILL-ASHARE-SUBSECTOR-GATE — FALSIFIED, hurts vs flat), rotation × cycle-position
   entry-confluence (row 37 — DON'T-TEST), washout × turn seed (row 78 — KILLED),
   parallel rotation-schedule surfaces (row 54), LLM-originated signals (A7).
   §6 states how each new construction differs from its nearest kill.
@@ -377,7 +377,7 @@ in `build_china_library.py`; the W2-B order-invariance assertion is REPLACED by
 its inverse contract (a test pinning that theme_timing has exactly the bounded
 authority above and that `sector_turn`/raw heat still add zero) —
 `_ZERO_SCORE_AUTHORITY` updated to name the surviving zero-authority keys and
-the docstring/design-law comments updated in the same commit. DNR row 85
+the docstring/design-law comments updated in the same commit. DNR:KILL-ASHARE-SUBSECTOR-GATE
 differentiation: this is a bounded score tilt + admission prior on the standout
 board keyed to theme-basket cycle/timing states, not the falsified binary
 subsector-state gate on the reversal sleeve; rows 37/78 untouched (no
@@ -547,4 +547,4 @@ not from shrinking n. All targets grade in the forward ledger; none is a promise
 *Related: PROPHET_US_TREND_INTELLIGENCE (the mirror audit), PROPHET_LEARNING_LOOP
 (postmortem/exit machinery + era discipline), PROPHET_BOARD_PRIORITY_ENGINE
 (#4331 CN unified grid), CHINA_STANDOUT_DOUBLE_CONFLUENCE (the V1 detector
-family), TIERED_CASCADE.md (blend mechanics), DNR rows 37/54/78/85 (fences).*
+family), TIERED_CASCADE.md (blend mechanics), DNR:KILL-ROTATION-CYCLE-CONFLUENCE / DNR:KILL-ROTATION-SCHEDULE / DNR:KILL-WASHOUT-TURN / DNR:KILL-ASHARE-SUBSECTOR-GATE (fences).*

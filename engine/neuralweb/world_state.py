@@ -3544,7 +3544,7 @@ def _compose_transmission_chains(root: "Path | str | None" = None) -> dict:
     scalar, display_only=True + is_context_only=True ALWAYS (incl. the null fallback),
     absent artifact → honest-null block (caller appends NO gap).
 
-    Standing law (masterplan §4; DNR row 45 / TXI Article 1/2): a chain state is a WATCH
+    Standing law (masterplan §4; DNR:KILL-CAUSAL-DAG-ALPHA / TXI Article 1/2): a chain state is a WATCH
     item with (eventually) printed conditional base rates — it NEVER scores, ranks, sizes,
     or escalates. LLM consumers read this and may only de-escalate, never originate.
     """
