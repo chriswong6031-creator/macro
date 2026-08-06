@@ -303,7 +303,7 @@ def test_the_veto_fails_open_on_an_unknowable_leg_and_that_is_the_decision():
     # the two legs that ARE checked read constructive...
     ss3, sk3 = ct._tf_bars(c, 3)
     k3, d3 = ct._stoch_rsi_kd(ss3)
-    m3, s3 = ct._rsi_macd(ss3)
+    m3, _s3 = ct._rsi_macd(ss3)
     k3_d, d3_d = ct._to_daily(k3, sk3, c.index), ct._to_daily(d3, sk3, c.index)
     m3_d = ct._to_daily(m3, sk3, c.index)
     assert float(k3_d.iloc[-1]) < ct.OB and float(d3_d.iloc[-1]) < ct.OB   # not overbought

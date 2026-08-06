@@ -287,7 +287,7 @@ def universe_cn(workers: int) -> dict:
 # cross-store agreement + invariance + depth residual
 # --------------------------------------------------------------------------- #
 
-def store_agreement(workers: int) -> dict:
+def store_agreement() -> dict:
     """stocks/ vs baskets/ohlcv/ on the SHARED last date, BEFORE and AFTER. Target: 0 after."""
     a_dir, b_dir = ROOT / "data" / "stocks", ROOT / "data" / "baskets" / "ohlcv"
     shared = sorted({p.stem for p in _file_universe(a_dir)}
@@ -487,7 +487,7 @@ def main() -> int:
         "generated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
         "min_history": MIN_HISTORY,
         "universes": universes,
-        "store_agreement": store_agreement(w),
+        "store_agreement": store_agreement(),
         "new_anchor_invariance": new_anchor_invariance(w),
         "depth_residual": depth,
     }
