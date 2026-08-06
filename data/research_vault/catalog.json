@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T07:24:06.325505+00:00",
-  "count": 856,
+  "generated_at": "2026-08-06T07:31:19.877118+00:00",
+  "count": 857,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -344,6 +344,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fzyaaicyuzx-3bce7b",
+      "title": "Fluence Energy Inc. (FLNC) First Take Revenue miss and FY26 guidance cut disappointing, but record orders (incl. hyperscale...)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:01:44Z",
+      "summary_points": [
+        "**Demand Visibility**: Record orders (incl.",
+        "hyperscalers) offset revenue miss & FY26 guidance cut, driving strong demand visibility.",
+        "**Pipeline Momentum**: Data-center pipeline at 16GW (+35% seq.), energy storage/services/digital backlog expanded to 12.6GW/7.9GW/13.9GW (6/30/2026).",
+        "**Price Target Premium**: GS $22.00 target (54.6% upside) consistently exceeds closing price ($18.97), signaling persistent bullish sentiment/undervaluation.",
+        "**Key Risks**: Slower energy storage adoption, supply chain disruptions (battery/logistics), litigation, and hardware-to-software mix shift."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
