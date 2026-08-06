@@ -188,7 +188,31 @@ def test_the_frozen_count_is_reported():
 
 
 # --------------------------------------------------------------------------- #
-# 4. the stamp is actually emitted by the grader
+# 4. the freeze is WIRED, not merely importable
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("merger", ["_merge_into_store", "_merge_v2_into_store"])
+def test_both_merge_paths_call_the_freeze(merger):
+    """A correct function nobody calls is not a fix.
+
+    Mutation-checked: deleting the `_freeze_graded_prices(...)` line from either merger
+    leaves every test in sections 1–3 passing, because they exercise the function
+    directly. This is the test that notices. Both ledgers matter — the v2 lane shares
+    grade_boards' row builder and the same re-based caches."""
+    import ast
+
+    tree = ast.parse((ROOT / "scripts/grade_us_board.py").read_text())
+    fns = [n for n in ast.walk(tree)
+           if isinstance(n, ast.FunctionDef) and n.name == merger]
+    assert fns, f"{merger} not found"
+    called = {n.func.id for n in ast.walk(fns[0])
+              if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+    assert "_freeze_graded_prices" in called, (
+        f"{merger} does not call _freeze_graded_prices — the merge is keep-FRESH again "
+        "and a re-based cache will silently restate published rows")
+
+
+# --------------------------------------------------------------------------- #
+# 5. the stamp is actually emitted by the grader
 # --------------------------------------------------------------------------- #
 def test_frozen_price_cols_covers_what_grade_boards_computes_from_prices():
     """Guards the enumeration itself: every column the row builder derives from the close
