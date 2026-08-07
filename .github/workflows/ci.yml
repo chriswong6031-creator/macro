@@ -819,6 +819,10 @@ on:
       - "config/biocatalyst_sources.yml"
       - "config/biocatalyst_outcomes.yml"
       - "config/biocatalyst_launch_slo_manifest.yml"
+      # Closed-beta source manifest: tests/test_biocatalyst_f0_delta_and_closed_beta_manifest.py
+      # reads it by a __file__-rooted path join, so an edit to the manifest alone must be
+      # able to start the pack that runs its guard (ops.ci_trigger_closure, #4693).
+      - "config/biocatalyst_closed_beta_source_manifest.yml"
       # BC-D0a: finite design-reference corpus and non-authorizing product
       # acceptance contract. These paths must reach the same contracts pack even
       # when an edit changes only a PNG/hash/spec/test, otherwise a reference can
@@ -831,6 +835,9 @@ on:
       - "mockups/refs/biocatalyst/**"
       - "scripts/verify_biocatalyst_d0a_references.py"
       - "research/BIOCATALYST_D0A_IA_STATE_CONTENT_CONTRACT.md"
+      # Same idiom as the line above: tests/test_biocatalyst_acceptance_v2.py reads this
+      # adjudication by path literal, so an edit to it alone must start the contracts pack.
+      - "research/BIOCATALYST_D0A_DESIGN_ADJUDICATION_2026-08-06.md"
       - "templates/biocatalyst.*"
       - "templates/_navlinks.html.j2"
       - "templates/_site_nav.html.j2"
@@ -951,6 +958,11 @@ on:
       # the checker; this is its other half, per the same two-halves law the guard
       # enforces on everything else.
       - "tests/test_ci_trigger_closure.py"
+      # UNRUN-CENSUS discovery (job: workflow-yaml). scripts/*.py reaches
+      # audit_unrun_tests.py itself; this is the test half. The census owns suite
+      # discovery for all THREE darkness guards, so a regression here re-blinds
+      # every one of them at once — which is what tests/ scoping did until #4693.
+      - "tests/test_audit_unrun_tests.py"
       # ── the 31 subjects that guard found unreachable on its first run ──────
       # Each line is a file some suite in the packed legacy jobs actually reads
       # (import, whole-string path literal, or a __file__-rooted path join) and
@@ -2179,6 +2191,9 @@ on:
       # the derived one would be checked.
       - "data/press/published.jsonl"
       # ── UNRUN-SUITE CENSUS (2026-07-26) ──────────────────────────────────────
+      # Measured when the census was scoped to tests/; it now covers the whole tree
+      # (#4693, 2026-08-06), so re-run scripts/audit_unrun_tests.py for live counts
+      # rather than reading the historical figures below as current.
       # 1135 of 1491 tests/test_*.py suites were named by NO `run:` step in ANY of
       # the 51 workflows, and there is no broad `pytest tests/` anywhere — every
       # invocation carries an explicit file list, so an unnamed suite is genuinely
