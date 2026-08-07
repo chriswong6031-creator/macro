@@ -501,6 +501,35 @@ def main() -> int:
         # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
         print(f"::warning::basket_turn_watch hook failed: {_btw_exc}", flush=True)
 
+    # W1-D — US WASHOUT-LIFECYCLE organ (us_basket_turn.v1), the port of the CN
+    # engine/china_basket_turn.py machine that was the only detector in the estate
+    # to change state before the 2026-07 precious-metals low (masterplan G0.6,
+    # research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md).
+    # A SEPARATE organ from basket_turn_watch above — different construction
+    # (washout lifecycle, no K-of-N legs) — placed immediately after it because
+    # both read the same member tape and the freshness sentinel below audits both.
+    # DISPLAY TIER, ZERO SCORED AUTHORITY: writes a state artifact + forward ledger
+    # and nothing else; no lane, rank, or gate reads it.
+    # Own try/except — exit-0 always (additive, never fatal).
+    try:
+        from engine.us_basket_turn import run as _ubt_run
+        _ubt_result = _ubt_run()
+        _ubt_states: dict[str, int] = {}
+        for _ubt_row in _ubt_result.get("baskets", {}).values():
+            _ubt_s = _ubt_row.get("state", "NONE")
+            _ubt_states[_ubt_s] = _ubt_states.get(_ubt_s, 0) + 1
+        _ubt_cov = _ubt_result.get("coverage", {})
+        log.info(
+            "us_basket_turn: %d baskets, session=%s, members %s/%s — dist: %s",
+            len(_ubt_result.get("baskets", {})),
+            _ubt_result.get("data_session"),
+            _ubt_cov.get("members_read"), _ubt_cov.get("members_total"),
+            _ubt_states,
+        )
+    except Exception as _ubt_exc:  # noqa: BLE001 — additive, never fatal
+        # Bare print at line start, never a logger (see the note above).
+        print(f"::warning::us_basket_turn hook failed: {_ubt_exc}", flush=True)
+
     # TS-U2 — MTF UPTURN per-stock K-of-N confluence organ (mtf_upturn.v1).
     # Placed immediately after basket_turn_watch (U2 is the per-stock twin of that organ).
     # Own try/except — exit-0 always (additive, display-tier).
