@@ -112,8 +112,8 @@
       return;
     }
     host.innerHTML = te(
-      review + ' of ' + M + ' names in review or worse · ' + elevated + ' lanes elevated.',
-      M + '只中' + review + '只处于复查或更高级别 · ' + elevated + '条风险线升高。');
+      review + ' of ' + M + ' names in review or worse · ' + elevated + ' risk checks elevated.',
+      M + '只中' + review + '只处于复查或更高级别 · ' + elevated + '项风险检查升高。');
   }
 
   // ---- factor display metadata (hue class + bilingual label) --------------
@@ -620,8 +620,11 @@
     var eyebrow = multiBook()
       ? te('BOOK STRUCTURE — US &amp; CRYPTO', '组合结构——美股与加密')
       : te('BOOK RISK', '组合风险');
+    // the DATE stays atomic (.d is nowrap) while the label side may still wrap — at
+    // 390px this was breaking as "AS OF 2026-08-" / "06"
+    var asofD = '<span class="d">' + esc(asof) + '</span>';
     var html = '<div class="eyebrow"><span>' + eyebrow + '</span>' +
-      '<span class="asof">' + te('AS OF ' + esc(asof), '截至 ' + esc(asof)) + '</span></div>';
+      '<span class="asof">' + te('AS OF ' + asofD, '截至 ' + asofD) + '</span></div>';
 
     if (abstain) {
       html += '<div class="wri-verdict"><h2>' + te(
@@ -722,7 +725,32 @@
   // coheres with the ENB-driven state chip. The measured ENB also prints in
   // sub-card 1. The stress lens re-words the line (WRI-R7 / §4): calm shows the
   // calm count, and — when a stress lens exists — how it collapses in selloffs.
-  function betCount(b) { return Math.max(1, Math.round(b.enb)); }
+  /* ENB display clamp. The measure is a factor + per-name bucket composition, and on a
+     small book it can land ABOVE the number of names held — "your 3 names move as about
+     4 bets" is not something a reader can act on. Tier 1 caps the printed number at the
+     name count; the unclamped value is disclosed in the Tier-2 method tip rather than
+     hidden (nulls printed, not swallowed). PURE — exported for the node test. */
+  function enbClamp(raw, nNames) {
+    var n = Math.max(1, nNames || 0);
+    return {
+      raw: raw,
+      shown: Math.min(raw, n),                          // the 1dp footer figure
+      bets: Math.max(1, Math.min(Math.round(raw), n)),  // the whole-number verdict figure
+      clamped: raw > n + 1e-9
+    };
+  }
+  /* The one dynamic sentence the method tip gains when the clamp engages. Returns null
+     when it does not, so the tip is unchanged in the ordinary case. PURE. */
+  function enbTipSuffix(info) {
+    if (!info || !info.clamped) return null;
+    var raw = info.raw.toFixed(1);
+    return {
+      en: ' Factor + per-name bucket math can read above your name count; the display ' +
+          'caps at the count (raw tonight: ' + raw + ').',
+      zh: ' 因子与个股桶的计算可能高于名称数量；展示以名称数量为上限（今晚原始值：' + raw + '）。'
+    };
+  }
+  function betCount(b) { return enbClamp(b.enb, b.held.length).bets; }
   function verdictSentence(RR, active) {
     var n = active.held.length;
     var lens = active.lens;
@@ -796,13 +824,19 @@
       return frow(flabel(k), fhue(k), b.factorShare[k]);
     }).join('');
     rows += frow(isZh() ? '个股特有' : 'Stock-specific', 'var(--f-idio)', b.idioShareTotal);
-    var enb = (RR.hasStress ? RR.stress : RR.calm).enb;
-    var card1 = card('What drives your swings', '波动的来源',
-      'Share of your book\'s day-to-day variance attributed to each factor, from a 9-factor model of daily moves. Measurement, not a forecast.',
-      '各因子对组合日度波动方差的贡献，来自 9 因子日度模型。为测量而非预测。',
+    var enbRaw = (RR.hasStress ? RR.stress : RR.calm).enb;
+    var nNames = b.held.length;
+    var enbInfo = enbClamp(enbRaw, nNames);
+    var enbShown = enbInfo.shown.toFixed(1);
+    // Tier-2 receipt: when the clamp engages, the method tip carries the raw reading
+    var tip1En = 'Share of your book\'s day-to-day variance attributed to each factor, from a 9-factor model of daily moves. Measurement, not a forecast.';
+    var tip1Zh = '各因子对组合日度波动方差的贡献，来自 9 因子日度模型。为测量而非预测。';
+    var suffix = enbTipSuffix(enbInfo);
+    if (suffix) { tip1En += suffix.en; tip1Zh += suffix.zh; }
+    var card1 = card('What drives your swings', '波动的来源', tip1En, tip1Zh,
       rows +
-      '<div class="wri-enb">' + te('effective bets ≈ <b class="num">' + enb.toFixed(1) + '</b> of ' + b.held.length + ' names',
-        '有效押注数 ≈ <b class="num">' + enb.toFixed(1) + '</b>（共 ' + b.held.length + ' 只）') + '</div>' +
+      '<div class="wri-enb">' + te('effective bets ≈ <b class="num">' + enbShown + '</b> of ' + nNames + ' names',
+        '有效押注数 ≈ <b class="num">' + enbShown + '</b>（共 ' + nNames + ' 只）') + '</div>' +
       '<div id="wri_fxhome"></div>');   // absorbed FX panel drawer mounts here
 
     // 2) move as one — twin clusters (active lens) + stress-only joins
@@ -1584,7 +1618,8 @@
     module.exports = {
       chainIndex: chainIndex, furthestChain: furthestChain,
       railChainSentence: railChainSentence, chainDrawerRows: chainDrawerRows,
-      chainDriver: chainDriver
+      chainDriver: chainDriver,
+      enbClamp: enbClamp, enbTipSuffix: enbTipSuffix, betCount: betCount
     };
   }
 })();

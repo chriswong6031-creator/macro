@@ -292,8 +292,12 @@
     if (grade === 'steady') {
       return { en: 'Steady — ' + lineEn + '.', zh: '平稳——' + lineZh + '。' };
     }
-    return { en: 'In trend — ' + lineEn + ', not stretched.',
-             zh: '趋势内——' + lineZh + '，未过度拉伸。' };
+    // No trailing "not stretched": the entry-signal headline directly above is a
+    // DIFFERENT engine and may legitimately read "Extended — wait for a pullback" on
+    // the same card. The grade word already carries the read; two engines measuring
+    // different things must not textually contradict each other one line apart.
+    return { en: 'In trend — ' + lineEn + '.',
+             zh: '趋势内——' + lineZh + '。' };
   }
   function extGradeOf(t, j) {
     if (isModeled(t) && j && j.ext && j.ext.grade) return j.ext.grade;

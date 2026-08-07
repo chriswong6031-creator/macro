@@ -293,6 +293,9 @@
   .wri .eyebrow { display:flex; align-items:center; gap:8px; font-family:var(--wri-mono);
     font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
   .wri .eyebrow .asof { margin-left:auto; letter-spacing:.04em; }
+  /* the as-of DATE is atomic — at 390px it was breaking as "AS OF 2026-08-" / "06".
+     Only the date is pinned, so the label side can still wrap if it needs to. */
+  .wri .eyebrow .asof .d { white-space:nowrap; }
 
   /* aurora backdrop (mx5 idiom: fixed, blurred, whisper-alpha) */
   .wri-aurora { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
