@@ -17,7 +17,7 @@ thirty-minute lifetime.  No Cloudflare API is called to mint one.
 from __future__ import annotations
 
 import base64
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from hashlib import sha256
 import hmac
 import json
@@ -49,11 +49,19 @@ class R2TemporaryCredentialError(ValueError):
 
 @dataclass(frozen=True)
 class R2TemporaryCredentials:
-    """Short-lived R2 S3 credential derived without calling Cloudflare APIs."""
+    """Short-lived R2 S3 credential derived without calling Cloudflare APIs.
+
+    ``secret_access_key`` and ``session_token`` are excluded from ``repr``.  A
+    frozen dataclass renders every field by default, so one ``log.warning("%s",
+    creds)``, one pytest assertion diff, or one traceback frame holding this
+    object would print the derived child secret and the whole signed JWT.  The
+    access key ID and the expiry are safe and stay visible, because those are
+    what a diagnosis actually needs.
+    """
 
     access_key_id: str
-    secret_access_key: str
-    session_token: str
+    secret_access_key: str = field(repr=False)
+    session_token: str = field(repr=False)
     expires_at: int
 
 

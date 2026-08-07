@@ -374,7 +374,7 @@ class DedicatedAttestedHistoryStore:
     # production call sites read exactly that as "may this store write?":
     # source_sync.py:1018 and :1220, query_snapshots.py:1287,
     # attested_query_snapshots.py:2516 (the Wave 1 publication path), and
-    # seed_fundamental_forensics_attested_history.py:680 and :821.  Omission
+    # seed_fundamental_forensics_attested_history.py:682 and :823.  Omission
     # makes the type system itself refuse this store at those admission gates,
     # which is strictly stronger than a runtime raise after admission.  The
     # codebase already treats protocol non-membership as a meaningful refusal —

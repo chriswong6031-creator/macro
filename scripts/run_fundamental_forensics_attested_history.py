@@ -32,17 +32,13 @@ from typing import Any, Callable, Mapping, Sequence
 # at module scope here so every unqualified call below still resolves, a
 # monkeypatch of this module's ``mint_r2_temporary_credentials`` still affects
 # this module's callers, and callers/tests may keep importing them from here.
-from engine.fundamental_forensics.attested_history_credentials import (  # noqa: F401
-    R2_ATTESTED_HISTORY_PREFIX,
-    R2_TEMPORARY_CREDENTIAL_MAX_TTL_SECONDS,
+# Only the two names this module actually uses. The minting primitives moved to
+# the engine so the long-running API never imports scripts/; re-exporting the
+# other nine here would be dead surface with no consumer in the repo, and it
+# would imply a compatibility contract nothing is asking for. Import them from
+# engine.fundamental_forensics.attested_history_credentials directly.
+from engine.fundamental_forensics.attested_history_credentials import (
     R2TemporaryCredentialError,
-    R2TemporaryCredentials,
-    _base64url,
-    _canonical_r2_endpoint,
-    _R2_ACCESS_KEY_RE,
-    _R2_BUCKET_RE,
-    _R2_ENDPOINT_HOST_RE,
-    _R2_TEMPORARY_ACTIONS,
     mint_r2_temporary_credentials,
 )
 from engine.fundamental_forensics.attested_history_materializer import (

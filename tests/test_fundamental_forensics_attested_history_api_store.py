@@ -369,7 +369,7 @@ def test_reader_is_structurally_excluded_from_the_conditional_write_protocol() -
     ``isinstance`` return True.  Six production sites read that check as "may
     this store write?" — source_sync.py:1018/:1220, query_snapshots.py:1287,
     attested_query_snapshots.py:2516 (the Wave 1 publication path), and
-    seed_fundamental_forensics_attested_history.py:680/:821.  This test fails
+    seed_fundamental_forensics_attested_history.py:682/:823.  This test fails
     the moment someone re-adds one of the three as a convenience stub.
     """
     store = _store(minter=_explode, client_factory=_explode)
@@ -664,6 +664,30 @@ def test_a_zero_refresh_margin_is_refused() -> None:
         _store(refresh_margin_seconds=0)
 
 
+def test_minted_credentials_never_render_their_secret_or_token() -> None:
+    """A frozen dataclass renders every field by default.
+
+    One `log.warning("%s", creds)`, one pytest assertion diff, or one traceback
+    frame holding this object would otherwise print the derived child secret
+    and the entire signed JWT. The access key ID and expiry stay visible
+    because those are what a diagnosis needs.
+    """
+    creds = R2TemporaryCredentials(
+        access_key_id=FAKE_ACCESS_KEY_ID,
+        secret_access_key="child-secret-must-not-render",
+        session_token="jwt/signed-token-must-not-render",
+        expires_at=1_700_001_800,
+    )
+    for rendered in (repr(creds), str(creds), f"{creds}", "%s" % (creds,)):
+        assert "child-secret-must-not-render" not in rendered
+        assert "signed-token-must-not-render" not in rendered
+    assert FAKE_ACCESS_KEY_ID in repr(creds)
+    assert "1700001800" in repr(creds).replace("_", "")
+    # Excluded from repr, never from the object.
+    assert creds.secret_access_key == "child-secret-must-not-render"
+    assert creds.session_token == "jwt/signed-token-must-not-render"
+
+
 def test_a_none_client_from_the_factory_is_refused() -> None:
     """A factory returning None must fail closed, never inherit ambient creds.
 
@@ -760,6 +784,85 @@ def test_a_non_credential_mint_failure_still_raises_the_advertised_error() -> No
 
 def test_store_satisfies_the_strict_bounded_read_protocol() -> None:
     assert isinstance(_store(), StrictBoundedReadStore)
+
+
+class _S3OverBackingStore:
+    """Serve a populated store's objects through the S3 surface R2Store uses."""
+
+    def __init__(self, backing) -> None:
+        self.backing = backing
+        self.keys_read: list[str] = []
+
+    def _fetch(self, key: str) -> bytes | None:
+        # Read generously here; R2Store and the reader enforce the real bounds
+        # above this layer, and this fake must not become a second ceiling.
+        return self.backing.get_bytes_strict_bounded(key, 64 * 1024 * 1024)
+
+    def get_object(self, **kwargs):
+        key = kwargs["Key"]
+        self.keys_read.append(key)
+        payload = self._fetch(key)
+        if payload is None:
+            from botocore.exceptions import ClientError
+
+            raise ClientError({"Error": {"Code": "NoSuchKey"}}, "GetObject")
+        return {"ContentLength": len(payload), "ETag": '"e"', "Body": _FakeBody(payload)}
+
+    def head_object(self, **kwargs):
+        payload = self._fetch(kwargs["Key"])
+        if payload is None:
+            from botocore.exceptions import ClientError
+
+            raise ClientError({"Error": {"Code": "404"}}, "HeadObject")
+        return {"ContentLength": len(payload), "ETag": '"e"'}
+
+
+def test_the_real_receipt_reader_resolves_a_snapshot_through_this_adapter(
+    monkeypatch, tmp_path
+) -> None:
+    """End-to-end: the production read path, not just protocol admission.
+
+    Every other test in this file drives the adapter directly, and the route
+    tests exercise an ABSENT store. `isinstance(store, StrictBoundedReadStore)`
+    passing is NOT the same as the reader working: a signature mismatch, a
+    swapped bounded-read mode, or a None-vs-raise difference would satisfy the
+    protocol and still break serving. This publishes a real `ffqsv2_` snapshot
+    with the reader suite's own fixture and resolves it back through the
+    adapter.
+    """
+    pytest.importorskip("botocore")
+    import sys
+
+    from engine.fundamental_forensics.attested_query_snapshots import (
+        load_attested_query_receipt_index,
+    )
+
+    # Reuse the reader suite's publication fixture regardless of pytest's
+    # import mode, matching tests/test_dashboard_news_i18n.py's idiom.
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from test_fundamental_forensics_attested_history_reader import (  # noqa: E402
+        _published,
+    )
+
+    backing, snapshot = _published(monkeypatch, tmp_path)
+    s3 = _S3OverBackingStore(backing)
+    clock = _Clock(1_700_000_000)
+    store = _store(
+        clock=clock,
+        minter=_RecordingMinter(clock),
+        client_factory=lambda **_kwargs: s3,
+    )
+
+    index = load_attested_query_receipt_index(store)
+
+    assert index.snapshot_id == snapshot.snapshot_id
+    assert s3.keys_read, "the reader never reached storage through the adapter"
+
+    # R2Store's contract: None means ONLY an authoritative 404; anything else
+    # raises. If the adapter converted a raise into a None, a tampered or
+    # unreachable object would read as "receipt absent" — a silent failure of
+    # exactly the kind this receipt chain exists to prevent.
+    assert store.get_bytes_strict_bounded(f"{R2_ATTESTED_HISTORY_PREFIX}absent", 64) is None
 
 
 def test_the_production_client_factory_builds_against_the_dedicated_endpoint() -> None:
