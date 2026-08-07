@@ -63,7 +63,10 @@ def test_china_builder_scans_fire_only_for_eligible_coiled_names(monkeypatch):
     }
     calls = []
 
-    def fake_fire(close):
+    def fake_fire(close, market="US"):
+        # The CN builder must route the CN reference calendar (era coiled.ANCHOR_ERA):
+        # a CN name bucketed on NYSE sessions would be wrong invisibly.
+        assert market == "CN"
         calls.append(close.name)
         return {
             "fire": close.name == "eligible_fire",
@@ -108,7 +111,8 @@ def test_china_builder_fire_error_does_not_suppress_later_receipts(monkeypatch):
         "good": {"eligible": True},
     }
 
-    def fake_fire(close):
+    def fake_fire(close, market="US"):
+        assert market == "CN"
         if close.name == "bad":
             raise ValueError("malformed synthetic series")
         return {"fire": True, "ticks": 1, "src": "m1d"}
