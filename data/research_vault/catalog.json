@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T10:17:08.716865+00:00",
-  "count": 934,
+  "generated_at": "2026-08-07T10:32:09.489255+00:00",
+  "count": 935,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -280,6 +280,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-justhncua8p-f7c7f4",
+      "title": "European Economics Analyst The Potential Impact of Heatwaves and Wildfires on the Euro Area Economies",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:23Z",
+      "summary_points": [
+        "**Heatwave/Wildfire Economic Impact**: Combined 12mo impact: -0.1% GDP drag (vs model's -0.2% to -0.4%) and +0.1% to +0.3% inflation boost, driven by France/Germany wildfires (0.2% GDP drag) and regional tourism/retail demand shocks.",
+        "**Regional Divergence**: France/Italy/Spain show heatwave-driven GDP lift (0.02-0.04%) and tourism inflation, while Germany exhibits negative manufacturing/electricity responses (-0.02% GDP) and wildfire exposure (-0.2% GDP drag).",
+        "**Energy & Supply Chain Risk**: Wildfires trigger double pressure on energy prices (cooling demand + supply disruption), amplifying inflation in energy-intensive sectors and driving headline inflation via non-core food/energy (FAT component +0.2%-0.3%).",
+        "**Wildfire Intensity Data**: July 2026 EU wildfires burned 350k hectares (4x 2006-2025 avg), with France/Spain exceeding historical norms, quantifying cross-border supply shock risk for tourism/agriculture."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },
