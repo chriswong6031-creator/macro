@@ -1378,6 +1378,72 @@ checks:
       wrapper now annotates failures; this sentinel catches whatever class of
       freeze comes next, on every surface it audits.
 
+  - law_id: ops.tushare_plane_freshness
+    summary: >
+      The token-gated Tushare stores (flow_hist, moneyflow) must not be able to
+      go cold without anyone being told. collectors/tushare_client.py returns
+      None and never raises for every failure mode it has (no token, endpoint
+      error, access denied, credits short, empty response); its callers omit the
+      leg rather than write a fabricated zero; and asia-close's collect step is
+      explicitly "graceful degradation — never fails on one source". The union
+      of those three individually correct decisions is that the entire Tushare
+      plane can die with every signal staying green: the workflow succeeds, the
+      page rebuilds on schedule, and it prints a three-week-old as-of date in
+      exactly the same confident type as a live one (2026-07-24→08-06 incident:
+      data/tushare/flow_hist.parquet and moneyflow.parquet both froze at
+      2026-07-24 and were still rendered on flow_velocity.html on 2026-08-06 —
+      thirteen days — while china_lhb, filled by the SAME adapter list in the
+      SAME run, stayed current). The tripwire compares each store's newest trade
+      date against the exchange calendar's expected last session — deliberately
+      NOT against the store's own newest row or a sibling store, because a
+      frozen feed is perfectly self-consistent and reads "fresh" during a total
+      outage, while the calendar keeps advancing whether or not the collector
+      ever runs again.
+    source_ref:
+      - scripts/check_tushare_freshness.py
+      - collectors/tushare_client.py
+      - lib/hk_calendar.py
+      - tests/test_tushare_freshness_tripwire.py
+      - "PR #4811 (guard shipped)"
+      - "2026-07-24→08-06 freeze (flow_hist/moneyflow stale 13 days behind flow_velocity.html)"
+    severity: warn
+    check_script: scripts/check_tushare_freshness.py
+    ci_wiring:
+      - workflow: .github/workflows/asia-close.yml
+        job: asia
+        lane: scheduled
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        There is no mainland A-share calendar in lib/, so HKEX is used as the
+        closest proxy; it shares most holidays but diverges on mainland-only
+        closures — Golden Week (Oct 1-7) most notably, where HKEX trades and
+        Shanghai does not — and can therefore warn benignly for a few days each
+        October. Priced in on purpose, since this emits a warning and never a
+        failure: a benign October warning is a much cheaper error than silently
+        serving stale flow data for a fortnight.
+      - >-
+        Audits only the two token-gated stores it names
+        (tushare/flow_hist.parquet, tushare/moneyflow.parquet); other stores the
+        same adapter list fills (e.g. china_lhb) are not covered by this check.
+      - >-
+        The threshold is 3 sessions behind — sized to absorb a long weekend plus
+        one public holiday and the lane's own once-a-day gate — so a fresh
+        freeze stays silent for its first three sessions by design.
+    owner_program: engine-fix-masterplan
+    notes: >
+      Permanently advisory (the script always exits 0), not ratcheted to hard:
+      one cold gated source must not red an asia-close collection that landed
+      every other store. The teeth are the "::warning title=tushare plane cold"
+      annotation, which names the frozen store AND the collector that fills it,
+      plus the membership/积分 tier hint for the usual cause. Wired AFTER
+      `python -m scripts.collect --group asia` inside the same job so it grades
+      this run's stores rather than the previous night's — that ordering is
+      pinned by tests/test_tushare_freshness_tripwire.py, as is the line-start
+      flushed annotation shape.
+
   - law_id: ops.workflow_yaml_parses
     summary: >
       Every file under .github/workflows/ must load as YAML and carry an on:
