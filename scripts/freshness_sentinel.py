@@ -23,8 +23,15 @@ What it checks (the user-visible truth, not the pipeline's own claims):
     cadences (options ceilings, rotation tooltips) that stay fresh while the
     board freezes, which is why this anchors on the ONE string the delayed board
     emits and breaches when that self-reported lag exceeds its budget.
-    china.html emits no equivalent board stamp yet — its only ``as of`` is an FX
-    widget — so china runs bake-only until the template grows one (follow-up).
+    china.html emits the same disclosure from the same shape of engine input —
+    templates/china.html.j2 ``board_staleness.delayed``, computed by
+    scripts/build_china_library.compute_board_staleness against the A-share
+    session calendar in lib/cn_calendar.py. It is deliberately placed OUTSIDE
+    that template's macro/stocks mode split, because china.html renders no
+    setups board and a disclosure nested in the stocks-only half would leave
+    THIS surface silent during the very freeze it announces. Its budget is 12
+    days rather than 4 — see the SURFACES comment; mainland Golden Week and
+    Spring Festival are legitimately ~10 sessionless calendar days.
   * R2 publish time — ``Last-Modified`` of ``massive_stock_day/_manifest.json``
     on the public R2 base, the same anchor scripts/audit_r2.py + daily.yml
     already budget at 26h (the manifest is put unconditionally on every
@@ -117,7 +124,22 @@ BODY_CAP = 2_000_000
 # weekends and holidays never print it. 4 calendar days ≈ two missed sessions
 # past a long weekend; the Jul-31 freeze would have paged on Aug 4 while the
 # bake stamp stayed green the whole time. None = the page has no board stamp to
-# anchor on (china: follow-up is emitting one from the template, then arming).
+# anchor on.
+#
+# china is 12, not 4, and the difference is a calendar fact rather than a weaker
+# standard. The mainland exchanges close for Spring Festival and National Day
+# Golden Week, each of which runs ~9-10 CALENDAR days with no session at all — a
+# 4-day budget would page every October and every February on a board that is
+# behaving exactly as it should. 12 clears the longest legitimate closure with
+# two days to spare. It is also the budget that absorbs the deliberate
+# imprecision in lib/cn_calendar.py: that holiday table is minimal ON PURPOSE
+# (a missing entry reads as a false "stale", never a silently-wrong "fresh"), so
+# the china board may legitimately print its disclosure part-way through a long
+# holiday. Printing it is honest — the prices really are 10 days old — and the
+# budget is what decides whether that is a holiday or an outage.
+# Consequence to accept: a China board that dies the day Golden Week starts is
+# caught ~12 days later, not ~4. The bake-stamp check still covers that surface
+# at 26h; only the board-lag check waits.
 SURFACES: list[dict] = [
     {
         "id": "us_stocks",
@@ -131,7 +153,7 @@ SURFACES: list[dict] = [
         "kind": "page",
         "path": "/china.html",
         "bake_budget_hours": BAKE_BUDGET_HOURS,
-        "delay_budget_days": None,
+        "delay_budget_days": 12,
     },
     {
         "id": "hub",
@@ -149,10 +171,12 @@ SURFACES: list[dict] = [
     },
 ]
 
-# The two English renderings of the delayed-board marker
-# (templates/dashboard.html.j2:15199-15200): "dots reflect prices as of D" and
-# "Board is delayed — prices are as of D". Both bilingual spans ship in every
-# bake, so matching the English form is sufficient.
+# The English renderings of the delayed-board marker. us_stocks
+# (templates/dashboard.html.j2): "dots reflect prices as of D" and "Board is
+# delayed — prices are as of D". china (templates/china.html.j2): "BOARD
+# DELAYED — prices as of D". Both pages ship the l-en span in every bake
+# regardless of the reader's language, so matching the English form is
+# sufficient; the zh twin carries no ISO date in this phrase.
 _DELAY_RE = re.compile(r"prices (?:are )?as of (20\d{2}-\d{2}-\d{2})", re.IGNORECASE)
 
 
