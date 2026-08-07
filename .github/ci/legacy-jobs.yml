@@ -1168,7 +1168,9 @@ jobs:
           tests/test_seasonality_event_clock.py
           tests/test_seasonality_pit_spine.py
           tests/test_seasonality_prophet_overlay.py
-          tests/test_seasonality_event_study.py -q
+          tests/test_seasonality_event_study.py
+          tests/test_seasonality_model.py
+          tests/test_seasonality_calibration.py -q
 
   china-native-collectors:
     if: ${{ false }}
