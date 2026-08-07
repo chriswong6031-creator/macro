@@ -1,6 +1,12 @@
 # Government Revenue candidate grader — pre-registration (GRV-FA1)
 
-**Version 1.0.0. Registered 2026-08-06, before any observation exists.**
+**Version 2.0.0. Registered 2026-08-06, before any observation exists.**
+
+*Version 2.0.0 amends 1.0.0 on the same day, still before the first issuance row exists (the
+live log is 0 bytes — see §0). The amendments are §7's decision rule and power calculation,
+§6's clocks, and §8's correction allowlist; each is recorded in the amendment table in §10 with
+its reason. §9's amendment law is untouched: after the first issuance row exists, none of this
+may move without a new `family_id`.*
 
 Program: Government Revenue Foresight, Wave 9G
 (`research/GOVERNMENT_REVENUE_FORESIGHT_ACCOUNT_HANDOFF.md` §"Wave 9G — prospective grader
@@ -50,9 +56,13 @@ A candidate enters the family iff, from issuance-time fields only:
   discovery-name or fuzzy match;
 - `authority` is the display/context block, byte-identical to the candidate contract's;
 - `known_at` parses; and
-- `source_event.is_late_discovery` is **false**. A late-discovered action was already
-  public before this pipeline could see it, so grading it from our `known_at` would measure
-  stale news. Late discoveries abstain and are counted separately.
+- `source_event.is_late_discovery` is **exactly `false`** — fail-closed. A late-discovered
+  action was already public before this pipeline could see it, so grading it from our
+  `known_at` would measure stale news. Late discoveries abstain and are counted separately.
+  A **missing**, null, or non-boolean flag also abstains: an absence of evidence is not
+  evidence of a fresh discovery. Version 1.0.0 tested `bool(...)`, which admitted any payload
+  that simply omitted the key — the one admission test in the family that failed **open**,
+  guarding the one thing this clause exists to guard.
 
 Every refusal above is recorded in the same append-only log as an `abstention` row with its
 named reason, so the abstention rate is computable from the log alone and a filter cannot
@@ -64,12 +74,18 @@ be applied silently.
 and **refuses to run if it disagrees with the registered family in code**. The document and
 the instrument cannot drift apart in either direction.
 
+Every threshold that can change a verdict lives inside this block. Two of them used to sit in
+the module as bare constants (`_PLACEBO_FLOOR = 0.01` and a literal `lower > 0.5`), where §9's
+"no threshold may be changed after first issuance" was unenforceable because the drift guard
+compares only this declaration against the family object. A threshold the guard cannot see is
+not registered.
+
 ```json
 {
   "family_id": "grv-fa1",
   "title": "exact-issuer receipt-bound positive funded-action acceleration",
   "document": "research/GOVERNMENT_REVENUE_CANDIDATE_GRADER_PREREG.md",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "horizons": [
     {"name": "h5", "sessions": 5, "role": "disclosure"},
     {"name": "h21", "sessions": 21, "role": "supporting"},
@@ -87,23 +103,47 @@ the instrument cannot drift apart in either direction.
   "placebo_offset_sessions": -252,
   "calendar_id": "us_equity_sessions",
   "maturity_gate": {
-    "min_distinct_source_events": 40,
+    "min_distinct_source_events": 545,
     "min_distinct_issuers": 12,
     "min_distinct_event_months": 12,
+    "min_distinct_known_at_months": 12,
+    "min_distinct_entry_sessions": 120,
     "min_outcome_coverage": 0.7
   },
-  "accrual_expiry_date": "2027-08-06",
-  "kill_condition_id": "GRV-FA1-KILL-V1"
+  "decision_rule": {
+    "minimum_interesting_effect": 0.03,
+    "hit_rate_floor": 0.5,
+    "confidence_level": 0.95,
+    "bootstrap_resamples": 2000,
+    "bootstrap_seed": 20260806,
+    "min_verdict_outcome_coverage": 0.7
+  },
+  "power": {
+    "planning_sd_paired": 0.25,
+    "planning_alpha": 0.05,
+    "planning_power": 0.8,
+    "planning_n_required": 545
+  },
+  "accrual_expiry_date": "2029-08-06",
+  "kill_condition_id": "GRV-FA1-KILL-V2"
 }
 ```
 
 ## 2. Hypotheses (committed before any observation)
 
 - **GRV-FA1-H1 (PRIMARY).** Among GRV-FA1 candidates, the pooled **h63 market-relative
-  return** is positive and exceeds the registered placebo cohort's by at least **+1.0pp**.
-  This is the only hypothesis with kill power.
-- **GRV-FA1-H2 (supporting).** The pooled h63 hit rate (`market_relative_return > 0`)
-  exceeds 0.50, *and its lower bound over the fixed issuance cohort also exceeds 0.50*.
+  return** is positive and exceeds the registered placebo cohort's by at least the
+  **minimum interesting effect of +3.0pp**, measured as a **paired** difference (same
+  candidate, event window minus its own registered placebo window) with a bootstrap
+  interval. This is the only hypothesis with kill power.
+- **GRV-FA1-H2 (supporting).** The **conditional** h63 hit rate (`market_relative_return > 0`)
+  clears 0.50 with its own bootstrap interval, at or above the registered outcome-coverage
+  floor. *This replaces 1.0.0's requirement that the Manski lower bound over the fixed cohort
+  clear 0.50: at the registered 0.70 coverage floor that demanded a conditional hit rate above
+  71.4%, which no plausible equity signal at a one-quarter horizon delivers. A supporting
+  hypothesis no data can satisfy is a `SUPPORTED` branch no code path can reach, which is the
+  same defect as an unreachable kill, pointed the other way. The bounds are still computed and
+  still printed — they are disclosure of the coverage cost, not a decision threshold.*
 - **GRV-FA1-H3 (supporting).** Sector-relative (vs `ITA`) h63 return is positive — i.e. the
   effect is not the defense sector moving as a bloc.
 - **GRV-FA1-H4 (disclosure only, no verdict power).** The h5 return distribution is
@@ -158,7 +198,19 @@ Two mechanical protections:
 - **Placebo / naive baseline.** For every graded row, the same name and the same horizon
   shifted **−252 sessions** — a window lying entirely before issuance, so it cannot borrow
   the future. It answers the question a bare hit rate cannot: does this name drift up
-  anyway? The placebo is reported with its own coverage and is an input to H1.
+  anyway? The placebo is reported with its own coverage and is an input to H1. It carries the
+  **same refusals** as the event grade — foreign calendar, mismatched price basis — because a
+  baseline computed on a different calendar or a different adjustment than the cohort it is
+  subtracted from is not a baseline.
+- **The placebo delta is PAIRED, on `candidate_id`, over the intersection.** A candidate
+  graded on the event window but not on its placebo window (or the reverse) contributes to
+  neither side. A difference between a mean over one row set and a mean over a different row
+  set is not a difference, and this figure feeds the kill condition. The unpaired difference
+  is still printed, labelled, and carries no verdict power.
+- **Read-window hash is order-sensitive.** `read_window_sha256` covers the consumed
+  `(symbol, session, close)` triples **in read order**. A hash over the sorted set is
+  permutation-invariant, so inverting entry and exit — which flips the sign of every return —
+  would leave it byte-identical and the audit question unanswerable.
 
 ## 5. Denominators, ungraded states, and coverage
 
@@ -176,12 +228,21 @@ repository. They are not stylistic.
   list — `horizon_not_matured`, `entry_session_unavailable`, `price_missing`,
   `benchmark_missing`, `mapping_missing`, `source_outage`, `retracted`, `calendar_gap` — and
   is excluded from **both** the numerator and the denominator of the conditional rate.
-- **Bounds accompany every hit rate.** Over the fixed issuance cohort, the lower bound counts
-  every ungraded row as a miss and the upper bound counts every one as a hit. The gap between
-  them *is* the cost of incomplete resolution, made visible rather than assumed away.
-- **Coverage travels with every rate.** A rate cannot be constructed without a coverage
-  object, and the finished report is walked to fail closed on any bare `*_rate` value. A rate
-  over 30% of a cohort is not the cohort's rate.
+- **Bounds accompany every hit rate — and the kill-bearing mean.** Over the fixed issuance
+  cohort, the hit-rate lower bound counts every ungraded row as a miss and the upper bound
+  counts every one as a hit. The pooled market-relative **mean** now carries the same kind of
+  band (`market_relative_return_bounds`), imputing every unresolved row at the registered
+  support `[-1.0, +1.0]`. The gap between them *is* the cost of incomplete resolution, made
+  visible rather than assumed away. The band is **sensitivity, not the verdict input** — see
+  §7, which states why and what protects the verdict instead.
+- **Coverage travels with every rate — and with every cohort statistic.** A rate cannot be
+  constructed without a coverage object, and the finished report is walked to fail closed on
+  any bare `*_rate`, `*_ratio`, `*_mean`, `*_summary`, or `*_bound` value. A walker that knew
+  only about `*_rate` was structurally blind to the mean the verdict actually reads; aggregate
+  blocks therefore carry a `_summary` suffix so the walker can see them. A rate over 30% of a
+  cohort is not the cohort's rate, and neither is a mean.
+- **The supersession ratchet.** A superseding row may lower coverage; it may never delete a
+  grade its predecessor already earned. See §8.
 - **Median and pooled are reported together.** The median of a set of monthly binary rates can
   flip sign against the pooled rate, because a one-observation month weighs the same as a
   fifty-observation month. There is no code path that returns one without the other.
@@ -193,44 +254,147 @@ repository. They are not stylistic.
 
 ## 6. Maturity gate — and why it counts what it counts
 
-No verdict is available until **all four** hold:
+No verdict is available until **all six** hold:
 
-| Requirement | Threshold |
-|---|---|
-| Distinct source events | ≥ 40 |
-| Distinct issuers | ≥ 12 |
-| Distinct event months | ≥ 12 |
-| Outcome coverage at the primary horizon | ≥ 0.70 |
+| Requirement | Threshold | What it stops |
+|---|---|---|
+| Distinct source events | ≥ 545 | an N chosen for convenience (§7 power calculation) |
+| Distinct issuers | ≥ 12 | one issuer carrying the result |
+| Distinct **event** months (`effective_at`) | ≥ 12 | one budget cycle carrying the result |
+| Distinct **known_at** months | ≥ 12 | one backfill night carrying the result |
+| Distinct **entry sessions** | ≥ 120 | 545 rows that are one independent draw |
+| Outcome coverage at the primary horizon | ≥ 0.70 | a rate over a third of a cohort |
 
 The first counter is **distinct source events, not issuance rows**. An "≥ N observations"
 gate that counts rows can be satisfied by a change in issuance frequency rather than by the
 world supplying anything new — such a gate does not gate. Distinct issuers and distinct
 months prevent one issuer or one budget cycle from carrying the whole result.
 
-## 7. Decision thresholds and the kill condition
+**The event clock is not the entry clock, and version 1.0.0 conflated them.** It counted
+months off `effective_at`, falling back to `known_at`. That is satisfiable by a single
+backfill night: 40 rows, 40 distinct `event_id`, 12 issuers, `effective_at` spanning twelve
+historical months — and one shared `known_at`. Every row then has the **same entry session and
+the same market window**: 40 rows, one independent draw, gate `satisfied: true`, coverage 1.0.
+That is precisely the trap §6 claims to close, reintroduced through the wrong clock. Both
+clocks are now counted separately, and **distinct entry sessions** — the count of genuinely
+independent market windows the cohort contains — is counted alongside them.
 
-**GRV-FA1-KILL-V1.** At the first report where the §6 gate is satisfied, evaluate H1 once:
+Overlap between windows is *not* de-duplicated (the denominator is the issuance cohort by §5
+and that does not move) but it **is** disclosed: `window_independence` prints distinct tickers,
+distinct entry sessions, overlapping window pairs, the maximum overlap in sessions, and a
+greedy non-overlapping-window estimate beside `issued_n`. Two candidates on one ticker five
+sessions apart give two h63 windows sharing 58 of 63 sessions; they are two rows and roughly
+one draw, and the report must not let those look like the same thing.
 
-- **KILL** iff the pooled h63 market-relative mean is **≤ 0** *and* the placebo delta
-  (cohort mean − placebo mean) is **≤ 0**. The family predicts neither absolute
-  outperformance nor anything beyond the names' own prior drift. Consequence: append a
+## 7. Decision thresholds, the power calculation, and the kill condition
+
+### 7.1 The statistics every verdict input carries
+
+Every verdict input is emitted with `n`, `mean`, `median`, `min`, `max`, **`sd`**,
+**`standard_error`**, and a **percentile bootstrap interval** at `confidence_level = 0.95`
+(`bootstrap_resamples = 2000`, seeded from `bootstrap_seed` mixed with the statistic's label,
+so a report reproduces bit-for-bit). The bootstrap is nonparametric on purpose: single-name
+horizon returns are fat-tailed and skewed, and a normal-theory interval understates the tail
+exactly where a verdict is decided.
+
+**Each verdict region tests an INTERVAL against a registered threshold.** Version 1.0.0
+compared bare point estimates to 0, +1.0pp, and 0.50. At its gate floor (~40 graded h63 rows)
+with single-name 63-session market-relative SD of 15–25pp, the standard error of the delta is
+roughly 3.4–5.6pp: a preregistered KILL fired on noise roughly 25–40% of the time under a true
+null and roughly 15–25% of the time against a genuine +3pp edge. That is a coin flip wearing a
+preregistration, and it is the reason the registered N moved.
+
+### 7.2 The power calculation (why N = 545)
+
+- **Minimum interesting effect** δ\* = **+3.0pp** paired h63 market-relative. Below this the
+  family is not economically interesting for a one-quarter catalyst, so it is not worth
+  distinguishing from zero and the instrument does not pretend to.
+- **Planning SD** σ = **25pp** for the *paired* difference. Single-name h63 market-relative SD
+  is 15–25pp; the placebo window sits 252 sessions away and is effectively uncorrelated, so
+  the paired difference has SD ≈ σ·√2 and 25pp is the conservative planning value. The
+  *decision* uses the realized bootstrap spread, not this number; σ only sizes the gate.
+- **Requirement.** For KILL to fire with ≥ 80% probability under a true null — i.e. for
+  `P(observed δ + 1.96·SE < δ*) ≥ 0.80` — we need `δ* ≥ 2.80·SE`, so `SE ≤ 0.0107`, so
+  `N ≥ (σ/SE)² = (0.25/0.0107)² ≈ **545**`.
+- **What that buys.** At N = 545, SE ≈ 1.07pp. Under a true null KILL fires ~80% of the time;
+  against a genuine +3pp edge it fires ~2.5% of the time (down from 15–25%). SUPPORTED needs an
+  observed paired delta above ≈ +5.1pp, which a real effect of 6pp+ reaches.
+- **Consequence, stated plainly.** 545 distinct source events is a demanding gate for a lobe
+  whose ledger is currently 0 bytes with one reviewed issuer. The registered expiry moved to
+  **2029-08-06** so that the registered N is reachable *in principle* — a gate that cannot be
+  met inside its own window guarantees `expired_unmeasurable`, which is the same broken
+  instrument as one that only ever kills. If the events do not arrive, the honest answer is
+  "we could not measure this", and §7's EXPIRY clause files exactly that.
+
+### 7.3 GRV-FA1-KILL-V2 — three exhaustive regions
+
+At the first report where the §6 gate is satisfied *and* the verdict-basis coverage clears
+`min_verdict_outcome_coverage`, evaluate H1 **once**. Let `m` be the pooled h63 market-relative
+mean over the verdict basis with interval `[m_lo, m_hi]`, `d` the **paired** placebo delta with
+interval `[d_lo, d_hi]`, and `h` the conditional h63 hit rate with lower interval bound `h_lo`.
+
+- **KILL** iff `m_hi < δ*` **and** `d_hi < δ*`. The data rule the minimum interesting effect
+  out, both absolutely and against the family's own prior drift. Consequence: append a
   construction-scoped row to `research/DO_NOT_REBUILD.md` §1 with a minted key, closing
   "exact-issuer receipt-bound positive funded-action acceleration as a market-outcome
   signal". The evidence rails, candidate contract, dossiers, and display surfaces are **not**
   deleted — a null never deletes the layer, and a kill closes the construction tested, not
   the search space.
-- **TESTED-NULL** iff the mean is > 0 but either the placebo delta is < +1.0pp or the h63
-  hit-rate **lower bound** is ≤ 0.50. No kill, no promotion, no authority change; the result
-  is filed and the family stays display-tier context.
-- **SUPPORTED** iff the mean is > 0, the placebo delta is ≥ +1.0pp, and the h63 hit-rate
-  lower bound is > 0.50. This buys **nothing** by itself except eligibility to request the
-  Wave 12 gauntlet. It is not a promotion and must not be surfaced as one.
+- **SUPPORTED** iff `m_lo > 0` **and** `d_lo > δ*` **and** `h_lo > 0.50`. This buys **nothing**
+  by itself except eligibility to request the Wave 12 gauntlet. It is not a promotion and must
+  not be surfaced as one.
+- **TESTED-NULL** otherwise. Measured, and neither ruled out nor supported at the registered
+  power: the interval spans δ\*. Filed as a null, authority unchanged. *This label makes no
+  claim about the sign of the cohort mean — 1.0.0's `tested_null` prose said "positive but not
+  separable" and a mean ≤ 0 with a delta > 0 fell through to it, shipping a label that
+  contradicted its own printed numbers. The three regions above are exhaustive and none of them
+  narrates a sign.*
 - **EXPIRY — the gate cannot be an alibi.** If the §6 gate is not satisfied by
-  **2027-08-06**, GRV-FA1 is closed as **unmeasurable at this issuance rate** and filed as
+  **2029-08-06**, GRV-FA1 is closed as **unmeasurable at this issuance rate** and filed as
   such. "Still accruing" stops being an available answer on that date. Re-opening requires a
   new registration with a new `family_id`, not an extension of this one.
 
-These four states are **computed**, not narrated:
+**Both directional branches are reachable at the registered constants**, and
+`tests/test_government_revenue_candidate_grader.py::test_the_registered_family_still_carries_its_real_thresholds`
+asserts their **joint satisfiability** rather than merely asserting the constants exist. A
+`SUPPORTED` branch no plausible data can reach is the same defect as an unreachable kill,
+pointed the other way, and 1.0.0 shipped one.
+
+### 7.4 What protects the kill-bearing statistic (the B1 choice, stated)
+
+The kill-bearing statistic is a **mean**, and a mean over "the rows that resolved" is a
+resolution-conditioned statistic — the same defect §5 names for rates, applied to the number
+the verdict actually reads. Two protections were available: bound the statistic the way the hit
+rate is bounded, or refuse to fire below a registered coverage floor. **Both are registered,
+and the bound is deliberately not the verdict input.**
+
+1. **A registered verdict coverage floor.** `min_verdict_outcome_coverage = 0.70`. Below it no
+   verdict fires — not a softer one, *none*: the state is `accruing` with
+   `verdict_blocked_reason: verdict_basis_coverage_below_registered_floor`. A blocked verdict
+   is never a decided verdict, because "escaping into a softer state" is the same escape.
+2. **The supersession ratchet** (§8), which is what makes the verdict *not flip* rather than
+   merely refuse: a grade a superseded row already earned is retained for the verdict basis.
+3. **The Manski-style band is printed as sensitivity, not used as the threshold.** An
+   assumption-free support for a return is `[-1.0, +1.0]`; at the registered 0.70 coverage
+   floor, imputing 30% of the cohort at −100% would make every cohort kill and imputing at
+   +100% would make every kill impossible. A bound wide enough to be assumption-free is wide
+   enough to make every verdict indeterminate, so it is disclosed
+   (`market_relative_return_bounds`) and the verdict's protection is structural (1 and 2)
+   rather than statistical. **Residual risk, disclosed:** within the 30% the floor allows, a
+   non-discretionary resolution failure (a genuine price outage, a name that stops trading)
+   can still move the mean, and nothing here eliminates that. It is bounded by the floor,
+   printed in the band, and named in every report's limitations.
+
+### 7.5 One look, and it is latched
+
+§7 says H1 is evaluated **once**. That is now implemented rather than asserted:
+`evaluate_verdict` accepts the previously latched verdict, and once a decided state exists the
+report carries **that** state, with `latched: true` and tonight's `recomputed_state` printed
+beside it for drift — never in place of it. Recomputing every night and reporting the newest
+answer is optional stopping against a rule that promised one look, and it is a second way a
+losing cohort walks back a kill.
+
+These states are **computed**, not narrated:
 `engine/government_revenue/candidate_grader.py:evaluate_verdict` emits exactly one of
 `accruing`, `expired_unmeasurable`, `kill`, `tested_null`, `supported` on every report, and
 `tests/test_government_revenue_candidate_grader.py::test_the_kill_condition_is_reachable`
@@ -241,9 +405,10 @@ for the gauntlet, remains an operator act, and the authority block is unchanged 
 branch including `supported`.
 
 Multiplicity is controlled: exactly ONE kill-bearing hypothesis (H1), at ONE horizon (h63),
-on ONE statistic (pooled market-relative mean, against the registered placebo). Everything
-else in the report is labeled supporting or disclosure and carries no verdict power. No
-threshold in this document may be tuned on the held-forward window; see §9.
+on ONE statistic (pooled market-relative mean over the verdict basis, against the registered
+paired placebo). Everything else in the report is labeled supporting or disclosure and carries
+no verdict power. No threshold in this document may be tuned on the held-forward window; see
+§9.
 
 ## 8. Corrections and retractions policy (fixed before observation)
 
@@ -254,12 +419,44 @@ threshold in this document may be tuned on the held-forward window; see §9.
 - A **retraction** does not remove its target from the issuance cohort. It moves the row to
   `ungraded(retracted)`, which **lowers coverage and widens the hit-rate bounds**. You cannot
   retract your way out of a loss; you can only pay for it in coverage.
+- **A correction may change only `candidate_payload_sha256`, `evidence_generation`, and
+  `observation_id`.** This is an allowlist, and everything that defines the measurement is
+  refused by name: `known_at`, `ticker`, `horizons`, `entry_rule`, `effective_at`,
+  `source_event`, `issuer_company_id`, `prereg_document_sha256`, plus the identity fields
+  1.0.0 already blocked. Version 1.0.0 blocked six fields and accepted the rest, which meant a
+  plain `correction` could rewrite `known_at` **after the outcome was observable** — re-cutting
+  the entry session, which is post-issuance information reaching the grade and the exact leak
+  this module exists to prevent — or rewrite `ticker` onto a symbol the panel does not carry
+  and quietly ungrade a loser. An allowlist is used rather than a blocklist because a blocklist
+  admits every field a later schema adds. A correction that genuinely needs a different ticker,
+  event, or `known_at` is a **different candidate**, not a correction.
+- **`correction_reason` comes from a closed vocabulary**, validated on the row:
+  `source_record_corrected`, `source_receipt_binding_failed`, `evidence_artifact_regenerated`.
+  A **retraction** takes the narrower pair — `source_record_corrected`,
+  `source_receipt_binding_failed`. Free text let "we disagree with the outcome" wear the same
+  clothes as "the upstream official record changed"; §8 restricted retractions and left plain
+  corrections, which do identical damage, under no restriction at all.
+- **The supersession ratchet.** A superseding row that cannot be graded **does not delete the
+  grade its predecessor already earned.** The append-only log keeps every superseded row
+  byte-identical forever, so that grade is still computable, and the verdict basis retains it
+  (listed row by row in `verdict_basis.retained_from_superseded`). Coverage is deliberately
+  *not* repaired by the ratchet: a retraction still lowers coverage and still widens the
+  bounds, exactly as above. What supersession cannot do is make a losing **number** disappear
+  from the verdict. Without this, §8's promise held for the hit rate and was false for the
+  kill-bearing mean: on a two-row cohort (+1% winner, −40% loser) a supersession that ungraded
+  the loser moved the pooled mean from −19.5pp to +1.0pp and the verdict from `kill` to
+  `tested_null`, with `issued_n` unchanged at 2.
 - A retraction is valid only for a **source-evidence correction** — the upstream official
   record changed or the receipt binding failed. Disagreement with an outcome is never a valid
   reason. Every retraction states its reason in the row.
 - **Residual risk, disclosed:** a retraction issued after an outcome is observable is still a
   discretionary act. The mitigation is structural, not procedural — the row keeps its slot in
-  the denominator and `retracted_n` is printed in every report — but it is not eliminated.
+  the denominator, `retracted_n` is printed in every report, and the ratchet keeps its number
+  in the verdict basis — but it is not eliminated. The ratchet has its own cost, also
+  disclosed: when a supersession is *genuine* (the official record really did name a different
+  issuer), the verdict basis reads the superseded row's grade. Every such row is printed with
+  both identities, so the cost is legible rather than silent, and it is preferred to the
+  alternative, in which any unresolvable row is a discretionary exit from a loss.
 
 ## 9. Look-ahead controls, amendment law, and known contract gaps
 
@@ -301,4 +498,13 @@ originate or escalate a grade here.
 
 | Amendment | Date | Change | Reason |
 |---|---|---|---|
-| — | — | none | Registered 2026-08-06 with zero candidates in existence. |
+| 1.0.0 | 2026-08-06 | initial registration | Registered with zero candidates in existence. |
+| 2.0.0 §7 | 2026-08-06 | verdict regions test bootstrap **intervals** against registered thresholds; δ\* = +3.0pp registered; `_PLACEBO_FLOOR` and the literal `0.5` moved into the binding declaration | Point comparisons at the 1.0.0 gate floor fired KILL on noise ~25–40% under a true null and ~15–25% against a genuine +3pp edge. Two of three thresholds sat outside the declaration where §9's drift guard could not see them. |
+| 2.0.0 §7 | 2026-08-06 | `min_distinct_source_events` 40 → **545**; `accrual_expiry_date` 2027-08-06 → **2029-08-06** | 545 is what δ\* = 3.0pp needs at σ_paired = 25pp, α = 0.05, power = 0.80. The expiry moved so the registered N is reachable in principle; a gate unmeetable inside its own window guarantees `expired_unmeasurable`. |
+| 2.0.0 §2 | 2026-08-06 | H2 tests the **conditional** hit rate's interval, not the Manski lower bound over the fixed cohort | `lower = hits/issued = p·coverage`; at the 0.70 coverage floor `lower > 0.50` demanded a conditional hit rate above 71.4%, so `SUPPORTED` was unreachable by any plausible signal. Bounds remain printed as coverage disclosure. |
+| 2.0.0 §6 | 2026-08-06 | added `min_distinct_known_at_months` (12) and `min_distinct_entry_sessions` (120) | 1.0.0 counted months off `effective_at`, so one backfill night with 40 events across 12 historical months and **one** `known_at` satisfied the gate at coverage 1.0 — 40 rows, one independent draw. |
+| 2.0.0 §4 | 2026-08-06 | placebo delta is **paired** on `candidate_id`; placebo grading gains the calendar and price-basis refusals; `read_window_sha256` hashes in **read order** | The delta fed the kill condition as a difference of means over two different row sets. The placebo lacked `grade_row`'s two refusals. A sorted hash is permutation-invariant, so an entry/exit inversion left it unchanged. |
+| 2.0.0 §7 | 2026-08-06 | `min_verdict_outcome_coverage` (0.70) registered; `market_relative_return_bounds` emitted as sensitivity; the one-look verdict is **latched** | The kill-bearing mean was unbounded and resolution-conditioned; `evaluate_verdict` recomputed every run with no latch, which is optional stopping against a rule promising one look. |
+| 2.0.0 §8 | 2026-08-06 | correction field **allowlist**; closed `correction_reason` vocabulary; the **supersession ratchet** | A plain correction could rewrite `known_at` (re-cutting the entry session after the outcome was observable), `ticker`, `horizons`, or `entry_rule`; the reason was unvalidated free text; and ungrading a loser moved a two-row cohort from `kill` to `tested_null`. |
+| 2.0.0 §1 | 2026-08-06 | `is_late_discovery` admission is fail-**closed** | `bool(...)` admitted a payload that omitted the key — the only fail-open admission test in the family. |
+| 2.0.0 §5/§6 | 2026-08-06 | coverage walker covers `*_mean`/`*_summary`/`*_bound`; `window_independence` emitted | The walker was structurally blind to the mean the verdict reads; `issued_n` counted overlapping windows as independent draws with no disclosure. |

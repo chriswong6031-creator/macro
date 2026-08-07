@@ -58,7 +58,24 @@ prevents each one is named so a future edit cannot quietly remove it:
 7. **A track record built on incomplete history is an artifact.**  No rate can
    be emitted without its coverage: :class:`Rate` refuses construction without a
    :class:`Coverage`, and :func:`assert_rates_carry_coverage` walks the finished
-   payload and fails closed on any bare ``*_rate`` value.
+   payload and fails closed on any bare ``*_rate`` value — and on every
+   coverage-bearing SUMMARY (``*_summary``, ``*_mean``, ``*_bound``), because the
+   kill-bearing statistic is a mean, not a rate, and a walker that only knows
+   about rates is blind to the number the verdict actually reads.
+8. **A point comparison at the gate floor is a coin flip.**  Every verdict input
+   carries an SD, a standard error, and a bootstrap interval, and each verdict
+   region requires the INTERVAL to clear its registered threshold.  The
+   registered N is the N that threshold needs (§7 of the registration states the
+   power calculation); an N chosen for convenience makes a preregistered kill
+   fire on noise.
+9. **You cannot ungrade your way out of a loss.**  A correction may not rewrite
+   the fields that DEFINE the measurement (``known_at``, ``ticker``,
+   ``horizons``, ``entry_rule``, the source event, the issuer), the reason must
+   come from a closed vocabulary, and — the supersession ratchet — a grade a
+   superseded row already earned is RETAINED for the verdict statistic when its
+   superseding row cannot be graded.  Supersession may lower coverage; it may
+   never delete a number.  Below the registered verdict coverage floor no
+   verdict fires at all.
 
 THREE COVERAGES, NEVER ONE
 --------------------------
@@ -90,8 +107,10 @@ from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from hashlib import sha256
 import json
+import math
 from pathlib import Path
-from statistics import median as _median
+import random
+from statistics import median as _median, stdev as _stdev
 from typing import Any, Iterable, Mapping, Sequence
 
 ISSUANCE_CONTRACT = "government_revenue.candidate_issuance.v1"
@@ -131,6 +150,40 @@ ABSTENTION_REASONS = (
 )
 
 COVERAGE_KINDS = ("identity", "event", "outcome")
+
+#: Every reason a superseding row may state.  §8 of the registration restricts a
+#: supersession to a SOURCE-EVIDENCE correction; free text let "we disagree with
+#: the outcome" wear the same clothes as "the official record changed", so the
+#: vocabulary is closed and checked on the row.
+CORRECTION_REASONS = (
+    "source_record_corrected",
+    "source_receipt_binding_failed",
+    "evidence_artifact_regenerated",
+)
+
+#: A retraction is the strictest form and takes the narrower list: the upstream
+#: official record changed, or the receipt binding failed.  Disagreement with an
+#: outcome is not expressible.
+RETRACTION_REASONS = (
+    "source_record_corrected",
+    "source_receipt_binding_failed",
+)
+
+#: The ONLY fields a superseding row may change.  This is an ALLOWLIST, not a
+#: blocklist, and that is the whole point: a blocklist admits every field added
+#: later, and the fields that define the MEASUREMENT (``known_at``, ``ticker``,
+#: ``horizons``, ``entry_rule``, ``source_event``, ``issuer_company_id``,
+#: ``effective_at``, ``prereg_document_sha256``) are exactly the ones a
+#: post-outcome edit would reach for.  Rewriting ``known_at`` after the outcome
+#: is observable RE-CUTS the entry session — post-issuance information reaching
+#: the grade, which is the single leak this module exists to prevent.
+CORRECTABLE_ROW_FIELDS = frozenset(
+    {
+        "candidate_payload_sha256",
+        "evidence_generation",
+        "observation_id",
+    }
+)
 
 
 class GraderError(ValueError):
@@ -365,7 +418,27 @@ class PreregisteredFamily:
     min_distinct_source_events: int
     min_distinct_issuers: int
     min_distinct_event_months: int
+    # The event clock and the ENTRY clock are separate requirements.  A backfill
+    # night can hand 40 events spanning 12 historical months ONE `known_at`, and
+    # then every row shares one entry session and one market window: 40 rows, one
+    # independent draw.  `effective_at` months alone cannot see that.
+    min_distinct_known_at_months: int
+    min_distinct_entry_sessions: int
     min_outcome_coverage: float
+    # --- decision rule (registered here so the document/code drift guard sees
+    # every threshold; a constant living only in the module is a threshold §9
+    # cannot police) ---
+    minimum_interesting_effect: float
+    hit_rate_floor: float
+    confidence_level: float
+    bootstrap_resamples: int
+    bootstrap_seed: int
+    min_verdict_outcome_coverage: float
+    # --- power (the arithmetic behind the registered N) ---
+    planning_sd_paired: float
+    planning_alpha: float
+    planning_power: float
+    planning_n_required: int
     accrual_expiry_date: str
     kill_condition_id: str
 
@@ -396,7 +469,23 @@ class PreregisteredFamily:
                 "min_distinct_source_events": self.min_distinct_source_events,
                 "min_distinct_issuers": self.min_distinct_issuers,
                 "min_distinct_event_months": self.min_distinct_event_months,
+                "min_distinct_known_at_months": self.min_distinct_known_at_months,
+                "min_distinct_entry_sessions": self.min_distinct_entry_sessions,
                 "min_outcome_coverage": self.min_outcome_coverage,
+            },
+            "decision_rule": {
+                "minimum_interesting_effect": self.minimum_interesting_effect,
+                "hit_rate_floor": self.hit_rate_floor,
+                "confidence_level": self.confidence_level,
+                "bootstrap_resamples": self.bootstrap_resamples,
+                "bootstrap_seed": self.bootstrap_seed,
+                "min_verdict_outcome_coverage": self.min_verdict_outcome_coverage,
+            },
+            "power": {
+                "planning_sd_paired": self.planning_sd_paired,
+                "planning_alpha": self.planning_alpha,
+                "planning_power": self.planning_power,
+                "planning_n_required": self.planning_n_required,
             },
             "accrual_expiry_date": self.accrual_expiry_date,
             "kill_condition_id": self.kill_condition_id,
@@ -414,7 +503,7 @@ GRV_FA1 = PreregisteredFamily(
     family_id="grv-fa1",
     title="exact-issuer receipt-bound positive funded-action acceleration",
     document=PREREG_DOCUMENT,
-    version="1.0.0",
+    version="2.0.0",
     horizons=(
         Horizon(name="h5", sessions=5, role="disclosure"),
         Horizon(name="h21", sessions=21, role="supporting"),
@@ -431,12 +520,28 @@ GRV_FA1 = PreregisteredFamily(
     drawdown_definition="min over [entry_session, exit_session] of close/entry_close - 1",
     placebo_offset_sessions=-252,
     calendar_id="us_equity_sessions",
-    min_distinct_source_events=40,
+    # 545 is not a round number and is not a comfort number: it is what §7's
+    # power calculation requires to separate the registered minimum interesting
+    # effect (+3.0pp paired, h63) from a paired SD of 25pp at 80% power and
+    # alpha 0.05.  The prior 40 made every verdict a coin flip in a lab coat.
+    min_distinct_source_events=545,
     min_distinct_issuers=12,
     min_distinct_event_months=12,
+    min_distinct_known_at_months=12,
+    min_distinct_entry_sessions=120,
     min_outcome_coverage=0.70,
-    accrual_expiry_date="2027-08-06",
-    kill_condition_id="GRV-FA1-KILL-V1",
+    minimum_interesting_effect=0.03,
+    hit_rate_floor=0.50,
+    confidence_level=0.95,
+    bootstrap_resamples=2000,
+    bootstrap_seed=20260806,
+    min_verdict_outcome_coverage=0.70,
+    planning_sd_paired=0.25,
+    planning_alpha=0.05,
+    planning_power=0.80,
+    planning_n_required=545,
+    accrual_expiry_date="2029-08-06",
+    kill_condition_id="GRV-FA1-KILL-V2",
 )
 
 _FAMILY_REGISTRY = {GRV_FA1.family_id: GRV_FA1}
@@ -536,10 +641,17 @@ def admit(candidate: Mapping[str, Any], *, family: PreregisteredFamily) -> Admis
     coverage = candidate.get("coverage")
     if not isinstance(coverage, Mapping) or coverage.get("exact_link_status") != "exact_linked":
         return AdmissionDecision(False, "not_exact_linked")
-    if bool(source_event.get("is_late_discovery")):
+    if source_event.get("is_late_discovery") is not False:
         # A late-discovered action was public before our pipeline could see it.
         # Grading it as if `known_at` were the market's first knowledge would
         # measure stale news, so the family abstains and reports the count.
+        #
+        # FAIL-CLOSED, and this is the whole point of the phrasing.  `bool(...)`
+        # admitted a candidate whose payload simply OMITTED the key — the one
+        # admission test in this function that failed OPEN, guarding the one
+        # thing §1 says it guards.  A missing, null, or non-boolean flag is not
+        # evidence of a fresh discovery; it is an absence of evidence, and the
+        # family abstains on it.
         return AdmissionDecision(False, "late_discovery")
     return AdmissionDecision(True, None)
 
@@ -676,6 +788,18 @@ def validate_issuance_row(row: Mapping[str, Any], *, label: str = "issuance row"
     else:
         _require(_text(row.get("supersedes_row_id")) is not None, f"{label} {kind} must name the row it supersedes")
         _require(_text(row.get("correction_reason")) is not None, f"{label} {kind} must state its reason")
+        # §8 restricts a supersession to a source-evidence correction.  Free text
+        # let "we dislike the outcome" wear the same clothes as "the official
+        # record changed", so the reason comes from a closed vocabulary.
+        _require(
+            row.get("correction_reason") in CORRECTION_REASONS,
+            f"{label} correction_reason is not a registered correction reason",
+        )
+        if kind == "retraction":
+            _require(
+                row.get("correction_reason") in RETRACTION_REASONS,
+                f"{label} correction_reason is not a registered retraction reason",
+            )
 
 
 def build_issuance_row(
@@ -787,18 +911,38 @@ def build_correction_row(
     A retraction does NOT remove its target from the issuance cohort.  It moves
     the row to ``ungraded(retracted)``, which lowers coverage and widens the
     hit-rate bounds — you cannot retract your way out of a loss.
+
+    Nor can you CORRECT your way out of one.  A superseding row may change only
+    :data:`CORRECTABLE_ROW_FIELDS`; everything that defines the measurement is
+    refused.  Rewriting ``known_at`` after the outcome is observable re-cuts the
+    entry session and lets post-issuance information reach the grade; rewriting
+    ``ticker`` moves the row onto a symbol the panel does not carry and quietly
+    ungrades it; rewriting ``horizons`` or ``entry_rule`` re-cuts the window that
+    §3 froze at issuance.  The allowlist is deliberate — a blocklist would admit
+    every field a later schema adds.
     """
     validate_issuance_row(prior, label="superseded row")
     if prior.get("row_kind") == "abstention":
         raise GraderError("an abstention row has nothing to correct")
     if _text(reason) is None:
         raise GraderError("a correction must state its reason")
+    allowed = RETRACTION_REASONS if retract else CORRECTION_REASONS
+    if reason not in allowed:
+        raise GraderError(
+            f"correction_reason {reason!r} is not a registered "
+            f"{'retraction' if retract else 'correction'} reason; §8 admits only "
+            f"source-evidence corrections: {list(allowed)}"
+        )
     row = dict(prior)
     for key, value in (changes or {}).items():
         if key not in _ROW_FIELDS:
             raise GraderError(f"correction cannot introduce field {key!r}")
-        if key in {"row_id", "row_kind", "supersedes_row_id", "correction_reason", "candidate_id", "family_id"}:
-            raise GraderError(f"correction cannot rewrite {key!r}")
+        if key not in CORRECTABLE_ROW_FIELDS:
+            raise GraderError(
+                f"correction cannot rewrite {key!r}: it defines the measurement, "
+                "and a measurement rewritten after the outcome is observable is "
+                "post-issuance information reaching the grade"
+            )
         row[key] = value
     row["row_kind"] = "retraction" if retract else "correction"
     row["supersedes_row_id"] = prior["row_id"]
@@ -962,6 +1106,36 @@ def cohort_rows(log: IssuanceLog, *, family_id: str) -> tuple[dict[str, Any], ..
     return tuple(effective[candidate_id] for candidate_id in order)
 
 
+def superseded_ancestors(log: IssuanceLog, *, family_id: str) -> dict[str, tuple[dict[str, Any], ...]]:
+    """Every row a later row superseded, per ``candidate_id``, oldest first.
+
+    The append-only log keeps a superseded row byte-identical forever, so a grade
+    that row already earned is still computable.  :func:`build_cohort_report`
+    uses that for the SUPERSESSION RATCHET: a correction or retraction may lower
+    coverage, but it may never delete a number the prior row had already earned.
+    Without this, ``ungraded`` is a discretionary escape hatch from the
+    kill-bearing mean, and §8's promise ("you cannot retract your way out of a
+    loss") holds for the hit-rate bounds and is false for the verdict.
+    """
+    ancestors: dict[str, list[dict[str, Any]]] = {}
+    by_row_id = {
+        str(row["row_id"]): row
+        for row in log.rows
+        if row.get("family_id") == family_id and row.get("row_kind") != "abstention"
+    }
+    for row in log.rows:
+        if row.get("family_id") != family_id or row.get("row_kind") == "abstention":
+            continue
+        target_id = row.get("supersedes_row_id")
+        if target_id is None:
+            continue
+        target = by_row_id.get(str(target_id))
+        if target is None:
+            continue
+        ancestors.setdefault(str(row["candidate_id"]), []).append(target)
+    return {candidate_id: tuple(rows) for candidate_id, rows in ancestors.items()}
+
+
 def abstention_rows(log: IssuanceLog, *, family_id: str) -> tuple[dict[str, Any], ...]:
     return tuple(
         row
@@ -1053,8 +1227,20 @@ class Rate:
         }
 
 
+#: Key suffixes that make a value coverage-bearing.  ``_rate``/``_ratio`` were
+#: the original pair and they left the walker structurally blind to the numbers
+#: the VERDICT reads: the kill-bearing statistic is a pooled MEAN, and
+#: ``market_relative_return``, ``absolute_return``, ``max_drawdown`` and the
+#: placebo delta all sailed past a rate-only walker.  Aggregate blocks therefore
+#: carry a ``_summary`` suffix, means carry ``_mean``, and bounds carry
+#: ``_bound``, so the walker can see every one of them.  Per-row payloads
+#: deliberately use bare names (``market_relative_return``) because a single row
+#: is an observation, not a statistic over a cohort.
+COVERAGE_BEARING_SUFFIXES = ("_rate", "_ratio", "_mean", "_summary", "_bound")
+
+
 def assert_rates_carry_coverage(payload: Any, *, path: str = "$") -> None:
-    """Fail closed on any rate emitted without a coverage beside it.
+    """Fail closed on any cohort statistic emitted without a coverage beside it.
 
     Belt-and-braces over :class:`Rate`: a hand-built dict added to the report by
     a later edit is caught here rather than shipping a bare percentage.  A rate
@@ -1065,7 +1251,7 @@ def assert_rates_carry_coverage(payload: Any, *, path: str = "$") -> None:
     if isinstance(payload, Mapping):
         for key, value in payload.items():
             here = f"{path}.{key}"
-            if key.endswith("_rate") or key.endswith("_ratio"):
+            if key.endswith(COVERAGE_BEARING_SUFFIXES):
                 if isinstance(value, Mapping):
                     holder: Mapping[str, Any] = value
                 elif isinstance(value, (int, float)) and not isinstance(value, bool):
@@ -1076,11 +1262,11 @@ def assert_rates_carry_coverage(payload: Any, *, path: str = "$") -> None:
                     holder = {}
                 coverage = holder.get("coverage") if isinstance(holder, Mapping) else None
                 if not isinstance(coverage, Mapping):
-                    raise GraderError(f"{here} is a rate with no coverage beside it")
+                    raise GraderError(f"{here} is a cohort statistic with no coverage beside it")
                 if coverage.get("kind") != "outcome":
                     raise GraderError(
-                        f"{here} cites {coverage.get('kind')!r} coverage; a rate must cite its own "
-                        "outcome coverage, never identity or event coverage"
+                        f"{here} cites {coverage.get('kind')!r} coverage; a cohort statistic must cite "
+                        "its own outcome coverage, never identity or event coverage"
                     )
             assert_rates_carry_coverage(value, path=here)
     elif isinstance(payload, list):
@@ -1214,6 +1400,12 @@ def _read_window(
     It reads exactly the sessions handed to it and returns the consumed
     (symbol, session, close) triples so the caller can hash the window.  A grade
     whose ``read_window_sha256`` is unchanged provably consumed no other bar.
+
+    ORDER IS PART OF THE EVIDENCE.  The triples are returned in read order and
+    hashed in read order: hashing ``sorted(consumed)`` made the digest
+    permutation-invariant, so swapping the entry and exit bars — which inverts
+    the sign of every return — left the hash byte-identical and the audit
+    question "did this grade read the window the right way round?" unanswerable.
     """
     closes: list[float] = []
     consumed: list[tuple[str, str, float]] = []
@@ -1317,7 +1509,7 @@ def grade_row(
         hit=(absolute - market) > 0,
         max_drawdown=drawdown,
         read_window_sessions=len(window),
-        read_window_sha256=sha256(canonical_bytes(sorted(consumed))).hexdigest(),
+        read_window_sha256=sha256(canonical_bytes(consumed)).hexdigest(),
         price_basis=graded_basis,
     )
 
@@ -1335,10 +1527,23 @@ def grade_placebo_row(
     ``placebo_offset_sessions`` is negative and registered, so the placebo window
     lies entirely BEFORE issuance and cannot borrow the future.  It answers the
     only question a bare hit rate cannot: does this name drift up anyway?
+
+    It carries the SAME two refusals as :func:`grade_row` — foreign calendar and
+    mismatched price basis.  A baseline computed on a different calendar or a
+    different price adjustment than the cohort it is subtracted from is not a
+    baseline, and the placebo delta is a verdict input, so a refusal on one side
+    and silence on the other is a hole in the kill condition itself.
     """
     validate_issuance_row(row, label="placebo row")
     entry_rule = row.get("entry_rule") or {}
     basis = dict(entry_rule.get("price_basis") or {})
+    if entry_rule.get("calendar_id") != calendar.calendar_id:
+        raise GraderError("placebo calendar does not match the calendar frozen at issuance")
+    if basis.get("adjustment") != panel.basis.adjustment or basis.get("field") != panel.basis.field:
+        raise GraderError(
+            "placebo price panel basis differs from the basis pinned at issuance; "
+            "regrade against the registered basis or file the drift"
+        )
     if row["row_kind"] == "retraction":
         return _ungraded(row, horizon_name, "retracted", basis)
     frozen = {entry["name"]: entry for entry in row["horizons"]}
@@ -1382,7 +1587,7 @@ def grade_placebo_row(
         hit=(absolute - market) > 0,
         max_drawdown=min(close / closes[0] - 1.0 for close in closes),
         read_window_sessions=len(window),
-        read_window_sha256=sha256(canonical_bytes(sorted(consumed))).hexdigest(),
+        read_window_sha256=sha256(canonical_bytes(consumed)).hexdigest(),
         price_basis=panel.basis.to_payload(),
     )
 
@@ -1426,16 +1631,113 @@ def regrade_diff(
 # ---------------------------------------------------------------------------
 
 
-def _summary(values: Sequence[float]) -> dict[str, Any]:
+def _bootstrap_seed(family: PreregisteredFamily, label: str) -> int:
+    """A deterministic per-statistic seed, so a report reproduces exactly.
+
+    The seed is registered (``bootstrap_seed``) and mixed with the statistic's
+    label, so two different statistics do not share a resample stream and the
+    same statistic reproduces bit-for-bit on a re-run.  A bootstrap whose
+    interval moves between two runs of the same data is not evidence.
+    """
+    material = f"{family.family_id}:{family.bootstrap_seed}:{label}".encode("utf-8")
+    return int(sha256(material).hexdigest()[:12], 16)
+
+
+def _bootstrap_mean_ci(
+    values: Sequence[float],
+    *,
+    family: PreregisteredFamily,
+    label: str,
+) -> tuple[float | None, float | None]:
+    """Percentile bootstrap interval for a mean — the only interval emitted.
+
+    Nonparametric on purpose: single-name horizon returns are fat-tailed and
+    skewed, so a normal-theory interval understates the tail exactly where a
+    verdict would be decided.  ``n == 1`` returns a degenerate interval equal to
+    the point value rather than ``None``; that is honest (one observation has no
+    sampling spread to report) and it keeps the reachability fixtures from
+    silently skipping the interval requirement.
+    """
     if not values:
-        return {"n": 0, "mean": None, "median": None, "min": None, "max": None}
-    return {
+        return None, None
+    if len(values) == 1:
+        return float(values[0]), float(values[0])
+    resamples = int(family.bootstrap_resamples)
+    rng = random.Random(_bootstrap_seed(family, label))
+    n = len(values)
+    pool = list(values)
+    means = [sum(rng.choices(pool, k=n)) / n for _ in range(resamples)]
+    means.sort()
+    alpha = (1.0 - float(family.confidence_level)) / 2.0
+    low_index = min(resamples - 1, max(0, int(math.floor(alpha * resamples))))
+    high_index = min(resamples - 1, max(0, int(math.ceil((1.0 - alpha) * resamples)) - 1))
+    return means[low_index], means[high_index]
+
+
+def _summary(
+    values: Sequence[float],
+    *,
+    coverage: Coverage,
+    family: PreregisteredFamily,
+    label: str,
+) -> dict[str, Any]:
+    """n / mean / median / min / max — AND the spread the verdict needs.
+
+    The prior version emitted five numbers with no dispersion at all, and §7's
+    thresholds were compared against the bare mean.  At the old gate floor that
+    made a preregistered KILL fire on noise roughly a quarter to two-fifths of
+    the time under a true null, and roughly a sixth to a quarter of the time
+    against a genuine +3pp edge.  An interval is not decoration here; it is the
+    difference between a measurement and a coin flip.
+    """
+    payload: dict[str, Any] = {
         "n": len(values),
-        "mean": sum(values) / len(values),
-        "median": _median(values),
-        "min": min(values),
-        "max": max(values),
+        "mean": None,
+        "median": None,
+        "min": None,
+        "max": None,
+        "sd": None,
+        "standard_error": None,
+        "ci_lower": None,
+        "ci_upper": None,
+        "ci_level": float(family.confidence_level),
+        "ci_method": "percentile_bootstrap",
+        "ci_resamples": int(family.bootstrap_resamples),
+        "coverage": coverage.to_payload(),
     }
+    if not values:
+        return payload
+    ordered = [float(value) for value in values]
+    sd = _stdev(ordered) if len(ordered) > 1 else 0.0
+    lower, upper = _bootstrap_mean_ci(ordered, family=family, label=label)
+    payload.update(
+        {
+            "mean": sum(ordered) / len(ordered),
+            "median": _median(ordered),
+            "min": min(ordered),
+            "max": max(ordered),
+            "sd": sd,
+            "standard_error": sd / math.sqrt(len(ordered)),
+            "ci_lower": lower,
+            "ci_upper": upper,
+        }
+    )
+    return payload
+
+
+def _rate_ci(
+    hits: int,
+    graded: int,
+    *,
+    family: PreregisteredFamily,
+    label: str,
+) -> tuple[float | None, float | None]:
+    """Bootstrap interval for a conditional hit rate, same machinery as a mean."""
+    if graded <= 0:
+        return None, None
+    return _bootstrap_mean_ci(
+        [1.0] * hits + [0.0] * (graded - hits), family=family, label=label
+    )
 
 
 def maturity_gate(
@@ -1443,6 +1745,7 @@ def maturity_gate(
     *,
     family: PreregisteredFamily,
     outcome_coverage: Coverage,
+    calendar: SessionCalendar,
 ) -> dict[str, Any]:
     """The N-gate, counted on things a cadence change cannot manufacture.
 
@@ -1450,6 +1753,16 @@ def maturity_gate(
     it without a single new event.  Distinct source events, distinct issuers, and
     distinct event months are the counters that require the world to supply
     something new.
+
+    THE EVENT CLOCK IS NOT THE ENTRY CLOCK, and conflating them reopened the
+    exact trap this gate closes.  Counting months off ``effective_at`` (falling
+    back to ``known_at``) let ONE backfill night satisfy the gate: 40 rows, 40
+    distinct ``event_id``, 12 issuers, ``effective_at`` spanning 12 historical
+    months — and a single shared ``known_at``.  Every one of those rows then has
+    the same entry session and the same market window: 40 rows, ONE independent
+    draw.  The gate therefore counts BOTH clocks, plus the number of distinct
+    entry sessions, which is the count of genuinely independent market windows
+    the cohort actually contains.
     """
     events = {
         str((row.get("source_event") or {}).get("event_id"))
@@ -1457,23 +1770,36 @@ def maturity_gate(
         if isinstance(row.get("source_event"), Mapping)
     }
     issuers = {str(row.get("issuer_company_id") or row.get("ticker")) for row in rows}
-    months = set()
+    event_months: set[str] = set()
+    known_at_months: set[str] = set()
+    entry_sessions: set[date] = set()
     for row in rows:
-        moment = _instant(row.get("effective_at")) or _instant(row.get("known_at"))
-        if moment is not None:
-            months.add(_month_key(moment.date()))
+        effective = _instant(row.get("effective_at")) or _instant(row.get("known_at"))
+        if effective is not None:
+            event_months.add(_month_key(effective.date()))
+        known_at = _instant(row.get("known_at"))
+        if known_at is None:
+            continue
+        known_at_months.add(_month_key(known_at.date()))
+        entry_index = calendar.first_index_after(known_at.date())
+        if entry_index is not None:
+            entry_sessions.add(calendar.sessions[entry_index])
     coverage_fraction = outcome_coverage.fraction
     observed = {
         "issued": len(rows),
         "distinct_source_events": len(events),
         "distinct_issuers": len(issuers),
-        "distinct_event_months": len(months),
+        "distinct_event_months": len(event_months),
+        "distinct_known_at_months": len(known_at_months),
+        "distinct_entry_sessions": len(entry_sessions),
         "outcome_coverage_fraction": coverage_fraction,
     }
     satisfied = (
         len(events) >= family.min_distinct_source_events
         and len(issuers) >= family.min_distinct_issuers
-        and len(months) >= family.min_distinct_event_months
+        and len(event_months) >= family.min_distinct_event_months
+        and len(known_at_months) >= family.min_distinct_known_at_months
+        and len(entry_sessions) >= family.min_distinct_entry_sessions
         and coverage_fraction is not None
         and coverage_fraction >= family.min_outcome_coverage
     )
@@ -1483,22 +1809,31 @@ def maturity_gate(
             "min_distinct_source_events": family.min_distinct_source_events,
             "min_distinct_issuers": family.min_distinct_issuers,
             "min_distinct_event_months": family.min_distinct_event_months,
+            "min_distinct_known_at_months": family.min_distinct_known_at_months,
+            "min_distinct_entry_sessions": family.min_distinct_entry_sessions,
             "min_outcome_coverage": family.min_outcome_coverage,
         },
         "observed": observed,
         "note": (
             "issued counts DISTINCT source events, not issuance rows: a change in "
-            "issuance cadence must not be able to satisfy this gate"
+            "issuance cadence must not be able to satisfy this gate. The event clock "
+            "(effective_at) and the entry clock (known_at) are counted separately, and "
+            "distinct entry sessions is the count of independent market windows: one "
+            "backfill night can spread effective_at over a year while every row shares "
+            "one known_at, one entry session, and one draw"
         ),
     }
 
 
 VERDICT_STATES = ("accruing", "expired_unmeasurable", "kill", "tested_null", "supported")
 
-#: The economic floor the family must clear over its own placebo, registered in
-#: §7 before any observation.  A tilt smaller than this is not separable from the
-#: names' own drift.
-_PLACEBO_FLOOR = 0.01
+#: Named reasons a satisfied gate still produces no verdict.  A blocked verdict
+#: is ``accruing`` with the reason printed — never a softer decided state, which
+#: would be the escape hatch B1 describes.
+VERDICT_BLOCKED_REASONS = (
+    "verdict_basis_coverage_below_registered_floor",
+    "verdict_inputs_unavailable",
+)
 
 
 def evaluate_verdict(
@@ -1506,13 +1841,33 @@ def evaluate_verdict(
     *,
     family: PreregisteredFamily,
     as_of: datetime,
+    latched_verdict: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Apply the registered kill condition — the reason this instrument exists.
 
     A kill condition no code path can emit is a detector with an unsatisfiable
-    precondition: it returns a clean null forever and reads as working.  This
-    function is where GRV-FA1-KILL-V1 becomes reachable, and the suite proves a
-    KILL is actually produced by a losing cohort.
+    precondition: it returns a clean null forever and reads as working.  So is a
+    SUPPORTED condition no plausible signal can reach — the prior rule required
+    ``hits/issued > 0.50`` over the FIXED cohort, which at the registered 0.70
+    coverage floor demanded a conditional h63 hit rate above 71.4%.  Both
+    branches must be reachable or the instrument only has one answer.
+
+    Three exhaustive regions, each testing an INTERVAL against a registered
+    threshold rather than comparing a point estimate to zero:
+
+    * **KILL** — the interval rules the minimum interesting effect OUT, both
+      absolutely and against the family's own placebo.
+    * **SUPPORTED** — the interval rules it IN, and the hit rate clears its
+      floor with its own interval.
+    * **TESTED-NULL** — everything else: measured, and neither ruled out nor
+      supported at the registered power.  There is no fall-through region with a
+      label that contradicts its own numbers.
+
+    Two protections against optional stopping and post-hoc ungrading:
+    ``latched_verdict`` implements §7's "evaluate H1 ONCE" (a decided verdict is
+    reported forever, with any later recomputation printed beside it, never in
+    place of it), and the verdict refuses to fire at all when the verdict-basis
+    coverage is below the registered floor.
 
     It decides nothing.  The state is display context for an operator ruling and
     confers no authority in any branch, including ``supported``.
@@ -1521,45 +1876,96 @@ def evaluate_verdict(
     if not isinstance(block, Mapping):
         raise GraderError(f"the primary horizon {family.primary_horizon!r} was not graded")
     gate = block["gate"]
+    basis = block["verdict_basis"]
+    mean_block = basis["market_relative_return_summary"]
+    delta_block = basis["paired_placebo_delta_summary"]
+    hit_block = basis["conditional_hit_rate"]
     inputs = {
-        "pooled_market_relative_mean": block["market_relative_return"]["mean"],
-        "placebo_delta": block["placebo"]["delta_market_relative_mean"],
+        "pooled_market_relative_mean": mean_block["mean"],
+        "pooled_market_relative_mean_ci_lower": mean_block["ci_lower"],
+        "pooled_market_relative_mean_ci_upper": mean_block["ci_upper"],
+        "placebo_delta_market_relative_mean": delta_block["mean"],
+        "placebo_delta_market_relative_mean_ci_lower": delta_block["ci_lower"],
+        "placebo_delta_market_relative_mean_ci_upper": delta_block["ci_upper"],
+        "conditional_hit_rate": hit_block["value"],
+        "conditional_hit_rate_ci_lower": hit_block["ci_lower"],
         "hit_rate_lower_bound": block["hit_rate_bounds"]["lower_bound_hit_rate"]["value"],
+        "hit_rate_upper_bound": block["hit_rate_bounds"]["upper_bound_hit_rate"]["value"],
+        "verdict_basis_coverage_fraction": basis["coverage"]["fraction"],
         "coverage": block["coverage"],
     }
+    thresholds = {
+        "minimum_interesting_effect": family.minimum_interesting_effect,
+        "hit_rate_floor": family.hit_rate_floor,
+        "confidence_level": family.confidence_level,
+        "min_verdict_outcome_coverage": family.min_verdict_outcome_coverage,
+    }
     expiry = date.fromisoformat(family.accrual_expiry_date)
+
+    def finish(state: str, blocked: str | None = None) -> dict[str, Any]:
+        return _verdict(
+            state,
+            family,
+            gate,
+            inputs,
+            thresholds,
+            blocked_reason=blocked,
+            latched_verdict=latched_verdict,
+        )
+
     if not gate["satisfied"]:
         # The gate is not an alibi: past the registered expiry, an unmet gate is
         # itself the finding — the family cannot be measured at this issuance rate.
         state = "expired_unmeasurable" if as_of.astimezone(timezone.utc).date() > expiry else "accruing"
-        return _verdict(state, family, gate, inputs)
+        return finish(state)
 
-    mean = inputs["pooled_market_relative_mean"]
-    delta = inputs["placebo_delta"]
-    lower = inputs["hit_rate_lower_bound"]
-    if mean is None or delta is None:
-        return _verdict("accruing", family, gate, inputs)
-    if mean <= 0 and delta <= 0:
-        return _verdict("kill", family, gate, inputs)
-    if mean > 0 and delta >= _PLACEBO_FLOOR and lower is not None and lower > 0.5:
-        return _verdict("supported", family, gate, inputs)
-    return _verdict("tested_null", family, gate, inputs)
+    basis_coverage = inputs["verdict_basis_coverage_fraction"]
+    if basis_coverage is None or basis_coverage < family.min_verdict_outcome_coverage:
+        # B1's second protection.  Below the registered floor the kill-bearing
+        # mean is a resolution-conditioned statistic, and a resolution-conditioned
+        # statistic deletes whichever rows failed to resolve.  No verdict fires —
+        # not a softer one, none.
+        return finish("accruing", "verdict_basis_coverage_below_registered_floor")
+
+    mean_low = inputs["pooled_market_relative_mean_ci_lower"]
+    mean_high = inputs["pooled_market_relative_mean_ci_upper"]
+    delta_low = inputs["placebo_delta_market_relative_mean_ci_lower"]
+    delta_high = inputs["placebo_delta_market_relative_mean_ci_upper"]
+    hit_low = inputs["conditional_hit_rate_ci_lower"]
+    if None in (mean_low, mean_high, delta_low, delta_high):
+        return finish("accruing", "verdict_inputs_unavailable")
+
+    effect = family.minimum_interesting_effect
+    if mean_high < effect and delta_high < effect:
+        return finish("kill")
+    if (
+        mean_low > 0.0
+        and delta_low > effect
+        and hit_low is not None
+        and hit_low > family.hit_rate_floor
+    ):
+        return finish("supported")
+    return finish("tested_null")
 
 
 _VERDICT_MEANING = {
-    "accruing": "the maturity gate is not met; no verdict is available and none is implied",
+    "accruing": (
+        "no verdict is available and none is implied: either the maturity gate is not met, or "
+        "the verdict-basis coverage is below the registered floor"
+    ),
     "expired_unmeasurable": (
         "the registered accrual expiry passed with the gate unmet: the family is closed as "
         "unmeasurable at this issuance rate"
     ),
     "kill": (
-        "the family beat neither zero nor its own placebo; file a construction-scoped kill. "
-        "The evidence rails, contract, and display surfaces are not deleted — a null never "
-        "deletes the layer"
+        "the interval rules the registered minimum interesting effect OUT, both absolutely and "
+        "against the family's own placebo; file a construction-scoped kill. The evidence rails, "
+        "contract, and display surfaces are not deleted — a null never deletes the layer"
     ),
     "tested_null": (
-        "positive but not separable from the names' own drift, or the cohort-wide lower bound "
-        "does not clear a coin flip; filed as a null, authority unchanged"
+        "measured, and neither ruled out nor supported at the registered power: the interval "
+        "spans the registered minimum interesting effect. Filed as a null, authority unchanged. "
+        "This label makes no claim about the sign of the cohort mean — read the printed inputs"
     ),
     "supported": (
         "eligibility to REQUEST the existing gauntlet, and nothing else. This is not a "
@@ -1567,24 +1973,111 @@ _VERDICT_MEANING = {
     ),
 }
 
+_DECIDED_STATES = ("kill", "tested_null", "supported", "expired_unmeasurable")
+
 
 def _verdict(
     state: str,
     family: PreregisteredFamily,
     gate: Mapping[str, Any],
     inputs: Mapping[str, Any],
+    thresholds: Mapping[str, Any],
+    *,
+    blocked_reason: str | None = None,
+    latched_verdict: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     if state not in VERDICT_STATES:  # pragma: no cover - closed list
         raise GraderError(f"unknown verdict state {state!r}")
-    return {
+    if blocked_reason is not None and blocked_reason not in VERDICT_BLOCKED_REASONS:
+        raise GraderError(f"unnamed verdict blocked reason: {blocked_reason!r}")
+    payload = {
         "state": state,
+        "recomputed_state": state,
+        "latched": False,
+        "latched_at": None,
+        "verdict_blocked_reason": blocked_reason,
         "kill_condition_id": family.kill_condition_id,
         "primary_horizon": family.primary_horizon,
         "gate_satisfied": bool(gate["satisfied"]),
         "inputs": dict(inputs),
-        "placebo_floor": _PLACEBO_FLOOR,
+        "thresholds": dict(thresholds),
         "meaning": _VERDICT_MEANING[state],
         "authority_effect": "none in every branch; a ruling is an operator act",
+    }
+    if latched_verdict is None:
+        return payload
+    # §7 promises H1 is evaluated ONCE, at the first report where the gate is
+    # satisfied. Recomputing every night and reporting the newest answer is
+    # optional stopping against a rule that promised one look — and it is the
+    # other way a losing cohort walks back a kill. The latched state is the
+    # verdict; the live recomputation is printed beside it, never in place of it.
+    latched_state = latched_verdict.get("state")
+    if latched_state not in _DECIDED_STATES:
+        return payload
+    payload["state"] = str(latched_state)
+    payload["latched"] = True
+    payload["latched_at"] = latched_verdict.get("latched_at") or latched_verdict.get("evaluated_at")
+    payload["meaning"] = _VERDICT_MEANING[str(latched_state)]
+    payload["latch_note"] = (
+        "§7 evaluates H1 once, at the first report where the gate is satisfied. This is that "
+        "verdict; recomputed_state is tonight's recomputation, reported for drift, not for revision"
+    )
+    return payload
+
+
+def _window_independence(
+    grades: Sequence[RowGrade],
+    *,
+    calendar: SessionCalendar,
+    horizon_sessions: int,
+    coverage: Coverage,
+) -> dict[str, Any]:
+    """How many INDEPENDENT draws the cohort actually contains.
+
+    ``issued_n`` counts rows.  Two candidates on the same ticker five sessions
+    apart produce two h63 windows that overlap on 58 of 63 sessions and are
+    counted twice by every rate in this report; the second window carries almost
+    no new information about the family.  Nothing here de-duplicates them — the
+    denominator is the issuance cohort by §5 and that stays — but the overlap is
+    printed beside ``issued_n`` so a reader can see what N really is.
+    """
+    graded = [grade for grade in grades if grade.state == "graded" and grade.entry_session]
+    entries: dict[str, list[int]] = {}
+    for grade in graded:
+        index = calendar.index_of(grade.entry_session)  # type: ignore[arg-type]
+        if index is not None:
+            entries.setdefault(grade.ticker, []).append(index)
+    overlapping_pairs = 0
+    max_overlap = 0
+    for indices in entries.values():
+        ordered = sorted(indices)
+        for position, first in enumerate(ordered):
+            for second in ordered[position + 1 :]:
+                shared = horizon_sessions + 1 - (second - first)
+                if shared > 0:
+                    overlapping_pairs += 1
+                    max_overlap = max(max_overlap, shared)
+    # A conservative independent-draw estimate: greedily keep windows that do not
+    # overlap a window already kept, per ticker.
+    independent = 0
+    for indices in entries.values():
+        last_kept: int | None = None
+        for index in sorted(indices):
+            if last_kept is None or index - last_kept > horizon_sessions:
+                independent += 1
+                last_kept = index
+    return {
+        "graded_n": len(graded),
+        "distinct_tickers": len(entries),
+        "distinct_entry_sessions": len({index for indices in entries.values() for index in indices}),
+        "overlapping_window_pairs": overlapping_pairs,
+        "max_window_overlap_sessions": max_overlap,
+        "non_overlapping_window_estimate": independent,
+        "coverage": coverage.to_payload(),
+        "note": (
+            "issued_n counts rows, not independent draws; two windows on one ticker inside "
+            "one horizon share most of their sessions and are counted twice by every rate here"
+        ),
     }
 
 
@@ -1598,6 +2091,7 @@ def build_cohort_report(
     identity_coverage: Coverage,
     event_coverage: Coverage,
     generated_at: str,
+    latched_verdict: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Grade a cohort and emit the display-tier report.
 
@@ -1615,6 +2109,7 @@ def build_cohort_report(
         raise GraderError("price panel does not match the registered price basis for this family")
 
     rows = cohort_rows(log, family_id=family.family_id)
+    ancestors = superseded_ancestors(log, family_id=family.family_id)
     abstained = abstention_rows(log, family_id=family.family_id)
     considered = len(rows) + len(abstained)
     admission_coverage = Coverage(
@@ -1696,6 +2191,122 @@ def build_cohort_report(
         market_relative = [float(grade.market_relative_return) for grade in graded]
         placebo_relative = [float(grade.market_relative_return) for grade in placebo_graded]
 
+        # --- the supersession ratchet -------------------------------------
+        # A superseding row that cannot be graded does not delete the grade its
+        # predecessor already earned. The log keeps every superseded row
+        # byte-identical, so the earlier grade is still computable, and §8's
+        # promise — "you cannot retract your way out of a loss" — becomes true
+        # for the kill-bearing MEAN and not only for the hit-rate bounds.
+        # Coverage is deliberately NOT repaired by the ratchet: a retraction
+        # still lowers outcome coverage and still widens the bounds. What it
+        # cannot do is make a losing number disappear from the verdict.
+        retained: list[dict[str, Any]] = []
+        basis_real: dict[str, RowGrade] = {}
+        basis_placebo: dict[str, RowGrade] = {}
+        for row, grade, placebo_grade in zip(rows, grades, placebo):
+            candidate_id = str(row["candidate_id"])
+            if grade.state == "graded":
+                basis_real[candidate_id] = grade
+                if placebo_grade.state == "graded":
+                    basis_placebo[candidate_id] = placebo_grade
+                continue
+            for ancestor in reversed(ancestors.get(candidate_id, ())):
+                ancestor_grade = grade_row(
+                    ancestor, horizon.name, panel=panel, calendar=calendar, as_of=as_of
+                )
+                if ancestor_grade.state != "graded":
+                    continue
+                basis_real[candidate_id] = ancestor_grade
+                ancestor_placebo = grade_placebo_row(
+                    ancestor, horizon.name, panel=panel, calendar=calendar, family=family
+                )
+                if ancestor_placebo.state == "graded":
+                    basis_placebo[candidate_id] = ancestor_placebo
+                retained.append(
+                    {
+                        "candidate_id": candidate_id,
+                        "effective_row_id": grade.row_id,
+                        "effective_row_kind": str(row["row_kind"]),
+                        "effective_ungraded_reason": grade.ungraded_reason,
+                        "retained_row_id": ancestor_grade.row_id,
+                        "retained_ticker": ancestor_grade.ticker,
+                        "retained_market_relative_return": ancestor_grade.market_relative_return,
+                    }
+                )
+                break
+
+        verdict_basis_coverage = Coverage(
+            kind="outcome",
+            scope=(
+                f"verdict basis for {family.family_id} at {horizon.name}: graded rows plus "
+                "grades retained from superseded rows (the supersession ratchet)"
+            ),
+            observed=len(basis_real),
+            universe=len(rows),
+            status="complete" if len(basis_real) == len(rows) else "partial",
+        )
+        basis_values = [float(basis_real[key].market_relative_return) for key in sorted(basis_real)]
+        basis_hits = sum(1 for key in sorted(basis_real) if basis_real[key].hit)
+
+        # --- M1: the placebo delta is PAIRED ------------------------------
+        # The prior delta subtracted a mean over one row set from a mean over a
+        # different row set: rows that were `horizon_not_matured` on the real
+        # side were graded on the placebo side, so the difference was not a
+        # difference of anything. It fed the kill condition. The delta is now a
+        # mean of per-candidate differences over the INTERSECTION.
+        paired_ids = sorted(set(basis_real) & set(basis_placebo))
+        paired_differences = [
+            float(basis_real[key].market_relative_return)
+            - float(basis_placebo[key].market_relative_return)
+            for key in paired_ids
+        ]
+        paired_coverage = Coverage(
+            kind="outcome",
+            scope=(
+                "candidates graded on BOTH the event window and its registered placebo window; "
+                "an unpaired difference of means is a difference of different cohorts"
+            ),
+            observed=len(paired_ids),
+            universe=len(rows),
+            status="complete" if len(paired_ids) == len(rows) else "partial",
+        )
+
+        # --- B1: the kill-bearing mean carries its own coverage penalty ----
+        # The hit rate has had Manski bounds since day one; the mean the verdict
+        # actually reads had none, so a row that stopped resolving simply left
+        # the statistic. These bounds impute every unresolved row at the
+        # registered support and are printed as sensitivity, not as the verdict
+        # input: at the registered coverage floor an assumption-free support is
+        # wide enough to make every verdict indeterminate, which is its own
+        # broken instrument. §7 records that choice.
+        support_low, support_high = -1.0, 1.0
+        imputed_n = len(rows) - len(graded)
+        bounds_payload: dict[str, Any] = {
+            "issued_n": len(rows),
+            "graded_n": len(graded),
+            "imputed_n": imputed_n,
+            "imputation_support": [support_low, support_high],
+            "lower_bound_mean": None,
+            "upper_bound_mean": None,
+            "coverage": outcome_coverage.to_payload(),
+            "note": (
+                "sensitivity, not the verdict input: every unresolved row imputed at the "
+                "registered support. The width IS the cost of incomplete resolution. No row "
+                "is imputed to a neutral outcome anywhere in this instrument"
+            ),
+        }
+        if len(rows):
+            total = sum(market_relative)
+            bounds_payload["lower_bound_mean"] = (total + imputed_n * support_low) / len(rows)
+            bounds_payload["upper_bound_mean"] = (total + imputed_n * support_high) / len(rows)
+
+        basis_hit_low, _basis_hit_high = _rate_ci(
+            basis_hits,
+            len(basis_real),
+            family=family,
+            label=f"{horizon.name}.verdict_basis.hit_rate",
+        )
+
         per_horizon[horizon.name] = {
             "horizon": horizon.to_payload(),
             "cohort": {
@@ -1716,12 +2327,67 @@ def build_cohort_report(
                 ),
             },
             "hit_rate_by_month": monthly,
-            "market_relative_return": _summary(market_relative),
-            "sector_relative_return": _summary(
-                [float(grade.sector_relative_return) for grade in graded]
+            "market_relative_return_summary": _summary(
+                market_relative,
+                coverage=outcome_coverage,
+                family=family,
+                label=f"{horizon.name}.market_relative",
             ),
-            "absolute_return": _summary([float(grade.absolute_return) for grade in graded]),
-            "max_drawdown": _summary([float(grade.max_drawdown) for grade in graded]),
+            "market_relative_return_bounds": bounds_payload,
+            "sector_relative_return_summary": _summary(
+                [float(grade.sector_relative_return) for grade in graded],
+                coverage=outcome_coverage,
+                family=family,
+                label=f"{horizon.name}.sector_relative",
+            ),
+            "absolute_return_summary": _summary(
+                [float(grade.absolute_return) for grade in graded],
+                coverage=outcome_coverage,
+                family=family,
+                label=f"{horizon.name}.absolute",
+            ),
+            "max_drawdown_summary": _summary(
+                [float(grade.max_drawdown) for grade in graded],
+                coverage=outcome_coverage,
+                family=family,
+                label=f"{horizon.name}.max_drawdown",
+            ),
+            "window_independence": _window_independence(
+                grades,
+                calendar=calendar,
+                horizon_sessions=horizon.sessions,
+                coverage=outcome_coverage,
+            ),
+            # The block the verdict reads, and the only one it reads.
+            "verdict_basis": {
+                "n": len(basis_real),
+                "coverage": verdict_basis_coverage.to_payload(),
+                "market_relative_return_summary": _summary(
+                    basis_values,
+                    coverage=verdict_basis_coverage,
+                    family=family,
+                    label=f"{horizon.name}.verdict_basis.market_relative",
+                ),
+                "paired_placebo_delta_summary": _summary(
+                    paired_differences,
+                    coverage=paired_coverage,
+                    family=family,
+                    label=f"{horizon.name}.verdict_basis.paired_delta",
+                ),
+                "conditional_hit_rate": {
+                    "name": f"{family.family_id}.{horizon.name}.verdict_basis_hit_rate",
+                    "numerator": basis_hits,
+                    "denominator": len(basis_real),
+                    "value": (basis_hits / len(basis_real)) if basis_real else None,
+                    "ci_lower": basis_hit_low,
+                    "coverage": verdict_basis_coverage.to_payload(),
+                },
+                "retained_from_superseded": retained,
+                "note": (
+                    "supersession may lower coverage; it may never delete a grade a superseded "
+                    "row already earned. Retained grades are listed row by row above"
+                ),
+            },
             # Calibration, in the only form this contract supports.  A candidate
             # asserts a DIRECTION ("possible_positive"), never a probability, so
             # there is no reliability curve to draw and none is faked here.  What
@@ -1744,20 +2410,41 @@ def build_cohort_report(
                 ),
             },
             "placebo": {
-                "coverage": placebo_coverage.to_payload(),
-                "market_relative_return": _summary(placebo_relative),
-                "delta_market_relative_mean": (
+                "coverage": paired_coverage.to_payload(),
+                "placebo_coverage": placebo_coverage.to_payload(),
+                "market_relative_return_summary": _summary(
+                    placebo_relative,
+                    coverage=placebo_coverage,
+                    family=family,
+                    label=f"{horizon.name}.placebo_market_relative",
+                ),
+                "paired_n": len(paired_ids),
+                "paired_delta_market_relative_mean": (
+                    sum(paired_differences) / len(paired_differences)
+                )
+                if paired_differences
+                else None,
+                "unpaired_delta_market_relative_mean": (
                     (sum(market_relative) / len(market_relative))
                     - (sum(placebo_relative) / len(placebo_relative))
                 )
                 if market_relative and placebo_relative
                 else None,
+                "note": (
+                    "the delta is PAIRED on candidate_id over rows graded on both windows; the "
+                    "unpaired figure is printed for comparison only and carries no verdict power, "
+                    "because a difference of means over two different row sets is not a difference"
+                ),
             },
-            "gate": maturity_gate(rows, family=family, outcome_coverage=outcome_coverage),
+            "gate": maturity_gate(
+                rows, family=family, outcome_coverage=outcome_coverage, calendar=calendar
+            ),
             "rows": [grade.to_payload() for grade in grades],
         }
 
-    verdict = evaluate_verdict(per_horizon, family=family, as_of=as_of)
+    verdict = evaluate_verdict(
+        per_horizon, family=family, as_of=as_of, latched_verdict=latched_verdict
+    )
     report = {
         "contract": REPORT_CONTRACT,
         "schema_version": SCHEMA_VERSION,
@@ -1799,6 +2486,13 @@ def build_cohort_report(
             "An interim number here is not a promotion; promotion requires the existing gauntlet and an operator ruling.",
             "Every rate is reported beside its coverage; a rate over part of a cohort is not the cohort's rate.",
             "Ungraded rows are never imputed to a neutral outcome and never leave the denominator.",
+            "Every verdict input carries an SD, a standard error, and a bootstrap interval, and "
+            "each verdict region requires the interval to clear its registered threshold; a point "
+            "comparison at the gate floor is a coin flip.",
+            "A superseding row may lower coverage but may not delete a grade its predecessor "
+            "earned; retained grades are listed in verdict_basis.retained_from_superseded. The "
+            "residual risk is disclosed: a genuine source correction still has its old grade read.",
+            "issued_n counts rows, not independent draws; window_independence prints the overlap.",
             "known_at is when this pipeline could first know the action, not when the market first could; "
             "the source publishes on a lag and carries no public-first-disclosure clock.",
             "Grades are reproducible only against the recorded price vintage; upstream re-adjustment moves them.",

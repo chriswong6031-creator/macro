@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import copy
 from datetime import date, datetime, timedelta, timezone
+import inspect
 import json
 from pathlib import Path
 
@@ -200,6 +201,28 @@ def _report(calendar: SessionCalendar, log: grader.IssuanceLog, panel: PricePane
     return grader.build_cohort_report(log, **defaults)
 
 
+def _family_with(**overrides) -> grader.PreregisteredFamily:
+    """GRV-FA1 with fields overridden, tolerant of fields the family lacks.
+
+    Deliberately signature-tolerant: the red-before/green-after demonstrations
+    below have to be able to RUN against the pre-fix implementation, so that
+    their red is a real assertion about behavior rather than a ``TypeError``
+    from a keyword that did not exist yet. A test that goes red because the API
+    moved proves nothing about the defect it names.
+    """
+    fields = {field: getattr(GRV_FA1, field) for field in GRV_FA1.__dataclass_fields__}
+    fields.update({key: value for key, value in overrides.items() if key in fields})
+    return grader.PreregisteredFamily(**fields)
+
+
+def _gate(rows, *, family, coverage, calendar):
+    """Call ``maturity_gate`` with the calendar only if it takes one."""
+    kwargs = {"family": family, "outcome_coverage": coverage}
+    if "calendar" in inspect.signature(grader.maturity_gate).parameters:
+        kwargs["calendar"] = calendar
+    return grader.maturity_gate(rows, **kwargs)
+
+
 # ---------------------------------------------------------------------------
 # GATE 5 — the preregistration exists, is versioned, and declares the kill
 # condition before any observation
@@ -210,7 +233,7 @@ def test_preregistration_document_is_committed_and_binds_the_code():
     family, digest = grader.load_family_declaration(PREREG_PATH)
     assert family is GRV_FA1
     assert len(digest) == 64
-    assert family.version == "1.0.0"
+    assert family.version == "2.0.0"
 
 
 def test_preregistration_declares_kill_expiry_and_thresholds():
@@ -319,7 +342,7 @@ def test_correction_appends_and_the_prior_row_stays_byte_identical(tmp_path, cal
 
     correction = grader.build_correction_row(
         original,
-        reason="official source corrected the obligated amount",
+        reason="source_record_corrected",
         appended_at="2026-08-07T00:00:00+00:00",
         changes={"candidate_payload_sha256": "f" * 64},
     )
@@ -370,10 +393,93 @@ def test_correction_cannot_rewrite_identity(calendar):
     with pytest.raises(GraderError, match="cannot rewrite"):
         grader.build_correction_row(
             _row(calendar),
-            reason="attempted identity swap",
+            reason="source_record_corrected",
             appended_at=_APPENDED_AT,
             changes={"candidate_id": "grc1-000000000000000000000009"},
         )
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "known_at",
+        "ticker",
+        "horizons",
+        "entry_rule",
+        "effective_at",
+        "source_event",
+        "issuer_company_id",
+        "prereg_document_sha256",
+    ],
+)
+def test_correction_cannot_rewrite_the_fields_that_define_the_measurement(calendar, field):
+    """B2. A correction may not move the ruler it is being measured with.
+
+    Version 1.0.0 blocked six identity fields and accepted everything else, so a
+    plain ``correction`` — under no restriction at all, unlike a retraction —
+    could rewrite:
+
+    * ``known_at``, which RE-CUTS the entry session. Issued after the outcome is
+      observable, that is post-issuance information reaching the grade: the one
+      leak this module exists to prevent.
+    * ``ticker``, which moves the row onto a symbol the panel does not carry and
+      quietly ungrades it — the vector that walked a losing cohort out of a
+      ``kill`` (see the B1 test below).
+    * ``horizons`` and ``entry_rule``, which re-cut the window §3 froze at
+      issuance.
+
+    ``test_correction_cannot_rewrite_identity`` above probed only
+    ``candidate_id`` and could not see any of this.
+    """
+    original = _row(calendar)
+    replacement = {
+        "known_at": _known_at(calendar, _ENTRY_INDEX + 40),
+        "ticker": "NOPX",
+        "horizons": [{"name": "h5", "sessions": 40, "role": "primary"}],
+        "entry_rule": {**original["entry_rule"], "market_benchmark": "QQQ"},
+        "effective_at": "2026-01-01T00:00:00+00:00",
+        "source_event": {**original["source_event"], "event_id": "evt-swapped"},
+        "issuer_company_id": "company:someone-else",
+        "prereg_document_sha256": "9" * 64,
+    }[field]
+    with pytest.raises(GraderError, match="cannot rewrite"):
+        grader.build_correction_row(
+            original,
+            reason="source_record_corrected",
+            appended_at=_APPENDED_AT,
+            changes={field: replacement},
+        )
+
+
+def test_a_correction_reason_comes_from_a_closed_vocabulary(calendar):
+    """§8 restricted retractions and left plain corrections unrestricted."""
+    original = _row(calendar)
+    with pytest.raises(GraderError, match="not a registered correction reason"):
+        grader.build_correction_row(
+            original,
+            reason="the number looked wrong to me",
+            appended_at=_APPENDED_AT,
+            changes={"candidate_payload_sha256": "f" * 64},
+        )
+    # A retraction takes the narrower list: the record changed, or the receipt
+    # binding failed. "We regenerated an artifact" is not grounds to retract.
+    with pytest.raises(GraderError, match="not a registered retraction reason"):
+        grader.build_correction_row(
+            original,
+            reason="evidence_artifact_regenerated",
+            appended_at=_APPENDED_AT,
+            retract=True,
+        )
+    # ...and the allowed shape still works.
+    corrected = grader.build_correction_row(
+        original,
+        reason="evidence_artifact_regenerated",
+        appended_at=_APPENDED_AT,
+        changes={"candidate_payload_sha256": "f" * 64},
+    )
+    assert corrected["correction_reason"] in grader.CORRECTION_REASONS
+    assert corrected["known_at"] == original["known_at"]
+    assert corrected["ticker"] == original["ticker"]
 
 
 def test_retraction_keeps_its_slot_in_the_denominator(calendar):
@@ -381,7 +487,7 @@ def test_retraction_keeps_its_slot_in_the_denominator(calendar):
     loser = _row(calendar, candidate_id="grc1-000000000000000000000002", ticker="LOSR", event_id="evt-2")
     retraction = grader.build_correction_row(
         loser,
-        reason="source receipt binding was withdrawn upstream",
+        reason="source_receipt_binding_failed",
         appended_at="2026-08-07T00:00:00+00:00",
         retract=True,
     )
@@ -637,25 +743,85 @@ def test_a_rate_may_not_cite_identity_or_event_coverage():
         grader.assert_rates_carry_coverage({"hit_rate": 0.5, "coverage": identity})
 
 
-def test_every_rate_in_a_live_report_carries_its_coverage(calendar):
+@pytest.mark.parametrize(
+    "strip",
+    [
+        ("outcome_by_horizon", "h5", "market_relative_return_summary"),
+        ("outcome_by_horizon", "h5", "market_relative_return_bounds"),
+        ("outcome_by_horizon", "h5", "absolute_return_summary"),
+        ("outcome_by_horizon", "h5", "max_drawdown_summary"),
+        ("outcome_by_horizon", "h5", "placebo"),
+        ("outcome_by_horizon", "h5", "verdict_basis", "market_relative_return_summary"),
+        ("outcome_by_horizon", "h5", "verdict_basis", "paired_placebo_delta_summary"),
+        ("outcome_by_horizon", "h5", "verdict_basis", "conditional_hit_rate"),
+        ("outcome_by_horizon", "h5", "hit_rate"),
+    ],
+)
+def test_the_coverage_walker_sees_the_statistics_the_verdict_reads(calendar, strip):
+    """M9. The walker was blind to every number the verdict actually reads.
+
+    The prior version of this test asserted only that a list of ``*_rate`` paths
+    was non-empty: stub the walker to ``return`` and it still passed. And the
+    walker itself matched only keys ending ``_rate``/``_ratio``, so
+    ``market_relative_return``, ``absolute_return``, ``max_drawdown`` and the
+    placebo delta — the kill-bearing statistic among them — were structurally
+    invisible to it.
+
+    This version is non-vacuous by construction: it strips the coverage off one
+    real block per parameter and requires the walker to raise. Stubbing
+    ``assert_rates_carry_coverage`` to ``return`` turns every case red.
+    """
     log, panel = _mixed_cohort(calendar)
     report = _report(calendar, log, panel)
-    grader.assert_rates_carry_coverage(report)  # must not raise
+    grader.assert_rates_carry_coverage(report)  # the honest report must pass
 
-    found = []
+    broken = copy.deepcopy(report)
+    node = broken
+    for key in strip:
+        node = node[key]
+    assert "coverage" in node, f"{strip} must carry a coverage for this guard to bite"
+    del node["coverage"]
+    with pytest.raises(GraderError, match="no coverage beside it"):
+        grader.assert_rates_carry_coverage(broken)
 
-    def walk(node, path="$"):
+
+def test_the_walker_covers_every_statistic_suffix_the_report_emits(calendar):
+    """A key shaped like a cohort statistic must be one the walker inspects."""
+    log, panel = _mixed_cohort(calendar)
+    report = _report(calendar, log, panel)
+
+    emitted: set[str] = set()
+
+    def walk(node):
         if isinstance(node, dict):
             for key, value in node.items():
-                if key.endswith("_rate"):
-                    found.append(f"{path}.{key}")
-                walk(value, f"{path}.{key}")
+                emitted.add(key)
+                walk(value)
         elif isinstance(node, list):
-            for index, value in enumerate(node):
-                walk(value, f"{path}[{index}]")
+            for value in node:
+                walk(value)
 
     walk(report)
-    assert found, "the report must actually contain rates for this guard to mean anything"
+    # Every number the verdict reads must be emitted under a key the walker
+    # inspects. A cohort statistic under a bare name is one the walker cannot
+    # see, and "the walker passed" would then mean nothing about it.
+    verdict_inputs = {
+        "market_relative_return_summary",
+        "paired_placebo_delta_summary",
+        "paired_delta_market_relative_mean",
+        "lower_bound_mean",
+        "upper_bound_mean",
+        "conditional_hit_rate",
+    }
+    assert verdict_inputs <= emitted, verdict_inputs - emitted
+    for key in verdict_inputs:
+        assert key.endswith(grader.COVERAGE_BEARING_SUFFIXES), (
+            f"{key} is a cohort statistic under a name the coverage walker never inspects"
+        )
+    # The pre-fix pair alone would have missed most of them.
+    assert not {"market_relative_return_summary", "lower_bound_mean"} <= {
+        key for key in verdict_inputs if key.endswith(("_rate", "_ratio"))
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -711,7 +877,7 @@ def test_the_maturity_gate_counts_events_not_rows(calendar):
         for index in range(1, 31)
     ]
     coverage = Coverage(kind="outcome", scope="s", observed=30, universe=30, status="complete")
-    gate = grader.maturity_gate(rows, family=GRV_FA1, outcome_coverage=coverage)
+    gate = _gate(rows, family=GRV_FA1, coverage=coverage, calendar=calendar)
 
     assert gate["observed"]["issued"] == 30
     assert gate["observed"]["distinct_source_events"] == 1
@@ -722,8 +888,67 @@ def test_the_maturity_gate_counts_events_not_rows(calendar):
     )
     # The threshold must NAME what it counts. "min_issued" against a distinct-event
     # counter is a column-shifted row waiting to be misread.
-    assert gate["required"]["min_distinct_source_events"] == 40
+    assert gate["required"]["min_distinct_source_events"] == GRV_FA1.min_distinct_source_events
     assert "min_issued" not in gate["required"]
+
+
+def test_the_maturity_gate_is_not_satisfied_by_one_backfill_night(calendar):
+    """B3. 40 events, 12 issuers, 12 event months — and ONE ``known_at``.
+
+    Reproduces the reviewer's scenario exactly. Version 1.0.0 counted months off
+    ``effective_at`` (falling back to ``known_at``), so a single backfill night
+    could hand the gate forty distinct events spread over twelve historical
+    months while every row shared one ``known_at`` — and therefore one entry
+    session, one market window, one independent draw. The gate reported
+    ``satisfied: True`` at coverage 1.0. That is the trap §6 exists to close,
+    reintroduced through the wrong clock.
+
+    ``test_the_maturity_gate_counts_events_not_rows`` above cannot see this: it
+    repeats ONE candidate, so it varies neither clock independently.
+    """
+    shared_known_at = _known_at(calendar, _ENTRY_INDEX)
+    rows = []
+    for index in range(1, 41):
+        # Twelve distinct issuers, forty distinct source events, and an
+        # `effective_at` marching across twelve historical months.
+        issuer = f"TK{index % 12:02d}"
+        month = (index % 12) + 1
+        rows.append(
+            _row(
+                calendar,
+                ticker=issuer,
+                candidate_id=f"grc1-{index:024d}",
+                observation_id=f"gro1-{index:024d}",
+                event_id=f"evt-{index}",
+                effective_at=f"2025-{month:02d}-01T00:00:00+00:00",
+                known_at=shared_known_at,
+            )
+        )
+    coverage = Coverage(kind="outcome", scope="s", observed=40, universe=40, status="complete")
+    family = _family_with(
+        min_distinct_source_events=40,
+        min_distinct_issuers=12,
+        min_distinct_event_months=12,
+        min_distinct_known_at_months=12,
+        min_distinct_entry_sessions=12,
+        min_outcome_coverage=0.70,
+    )
+    gate = _gate(rows, family=family, coverage=coverage, calendar=calendar)
+
+    # The counters version 1.0.0 looked at are all satisfied.
+    assert gate["observed"]["distinct_source_events"] == 40
+    assert gate["observed"]["distinct_issuers"] == 12
+    assert gate["observed"]["distinct_event_months"] == 12
+    assert gate["observed"]["outcome_coverage_fraction"] == 1.0
+    assert gate["satisfied"] is False, (
+        "40 rows sharing one known_at are 40 rows and ONE independent draw; a gate "
+        "that reads the event clock and ignores the entry clock does not gate"
+    )
+    # ...because the counters that matter are not.
+    assert gate["observed"]["distinct_known_at_months"] == 1
+    assert gate["observed"]["distinct_entry_sessions"] == 1, (
+        "one known_at is one entry session is one market window"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -803,17 +1028,19 @@ def _reachable_family(**overrides) -> grader.PreregisteredFamily:
     whether the decision rule can emit each state at all. A kill condition no
     code path can produce is a detector with an unsatisfiable precondition.
     """
-    fields = {field: getattr(GRV_FA1, field) for field in GRV_FA1.__dataclass_fields__}
-    fields.update(
+    reachable = dict(
         horizons=(grader.Horizon(name="h5", sessions=5, role="primary"),),
         primary_horizon="h5",
         min_distinct_source_events=1,
         min_distinct_issuers=1,
         min_distinct_event_months=1,
+        min_distinct_known_at_months=1,
+        min_distinct_entry_sessions=1,
         min_outcome_coverage=0.5,
+        min_verdict_outcome_coverage=0.5,
     )
-    fields.update(overrides)
-    return grader.PreregisteredFamily(**fields)
+    reachable.update(overrides)
+    return _family_with(**reachable)
 
 
 def _placebo_aware_series(calendar, *, event_move: float, placebo_move: float) -> dict[date, float]:
@@ -831,10 +1058,10 @@ def test_the_kill_condition_is_reachable(calendar):
     report = _report(calendar, _log([_row(calendar)]), panel, family=_reachable_family())
 
     assert report["verdict_state"] == "kill"
-    assert report["verdict"]["kill_condition_id"] == "GRV-FA1-KILL-V1"
+    assert report["verdict"]["kill_condition_id"] == GRV_FA1.kill_condition_id
     assert report["verdict"]["gate_satisfied"] is True
     assert report["verdict"]["inputs"]["pooled_market_relative_mean"] < 0
-    assert report["verdict"]["inputs"]["placebo_delta"] <= 0
+    assert report["verdict"]["inputs"]["placebo_delta_market_relative_mean"] <= 0
     assert "never deletes the layer" in report["verdict"]["meaning"]
 
 
@@ -844,7 +1071,7 @@ def test_a_cohort_that_cannot_beat_its_own_placebo_is_a_null(calendar):
 
     assert report["verdict_state"] == "tested_null"
     assert report["verdict"]["inputs"]["pooled_market_relative_mean"] > 0
-    assert report["verdict"]["inputs"]["placebo_delta"] == pytest.approx(0.0)
+    assert report["verdict"]["inputs"]["placebo_delta_market_relative_mean"] == pytest.approx(0.0)
 
 
 def test_a_supported_verdict_buys_nothing(calendar):
@@ -879,13 +1106,325 @@ def test_an_unmet_gate_expires_instead_of_accruing_forever(calendar):
     assert after["verdict"]["gate_satisfied"] is False
 
 
+def _two_row_cohort(calendar):
+    """The reviewer's B1 fixture: a +1% winner and a −40% loser."""
+    winner = _row(calendar, candidate_id="grc1-000000000000000000000001", ticker="PLTR", event_id="evt-1")
+    loser = _row(
+        calendar,
+        candidate_id="grc1-000000000000000000000002",
+        observation_id="gro1-000000000000000000000002",
+        ticker="LOSR",
+        event_id="evt-2",
+    )
+    panel = _panel(
+        calendar,
+        {
+            "PLTR": _placebo_aware_series(calendar, event_move=0.01, placebo_move=0.0),
+            "LOSR": _placebo_aware_series(calendar, event_move=-0.40, placebo_move=0.0),
+        },
+    )
+    return winner, loser, panel
+
+
+def test_a_supersession_cannot_ungrade_its_way_out_of_a_kill(calendar):
+    """B1. The kill-bearing statistic must not be gameable by post-hoc ungrading.
+
+    §8 promises "you cannot retract your way out of a loss; you can only pay for
+    it in coverage". That was true for the hit rate — which has carried Manski
+    bounds since day one — and FALSE for the verdict, which read the pooled mean
+    over ``graded`` rows only, unbounded and with no sensitivity beside it.
+
+    On this two-row cohort (+1% winner, −40% loser) the reviewer moved the loser
+    to ``ungraded`` and watched the verdict walk from ``kill`` to
+    ``tested_null`` with ``issued_n`` unchanged at 2:
+
+        honest:      mean=-0.1950  delta=-0.1950  verdict=kill
+        after corr:  mean=+0.0100  delta=+0.0100  verdict=tested_null
+
+    The supersession ratchet closes it: the append-only log keeps the superseded
+    row byte-identical forever, so the grade it already earned is still
+    computable, and the verdict basis retains it. Coverage is deliberately NOT
+    repaired — the retraction still lowers coverage and still widens the bounds,
+    exactly as §8 says. What it cannot do is delete a number.
+    """
+    winner, loser, panel = _two_row_cohort(calendar)
+    family = _reachable_family()
+
+    honest = _report(calendar, _log([winner, loser]), panel, family=family)
+    assert honest["verdict_state"] == "kill"
+    honest_inputs = honest["verdict"]["inputs"]
+    assert honest_inputs["pooled_market_relative_mean"] == pytest.approx(-0.195)
+
+    # The discretionary act §8 explicitly permits: retract the loser.
+    retraction = grader.build_correction_row(
+        loser,
+        reason="source_receipt_binding_failed",
+        appended_at="2026-08-07T00:00:00+00:00",
+        retract=True,
+    )
+    after = _report(calendar, _log([winner, loser, retraction]), panel, family=family)
+    h5 = after["outcome_by_horizon"]["h5"]
+
+    # §8 is honoured on both sides: coverage falls and the bounds widen...
+    assert h5["cohort"]["issued_n"] == 2
+    assert h5["coverage"]["observed"] == 1 and h5["coverage"]["universe"] == 2
+    assert h5["hit_rate_bounds"]["lower_bound_hit_rate"]["value"] == 0.5
+    # ...and the verdict does not move.
+    assert after["verdict_state"] == "kill", (
+        "an ungraded loser must not be an exit from the kill-bearing statistic"
+    )
+    assert after["verdict"]["inputs"]["pooled_market_relative_mean"] == pytest.approx(-0.195)
+    retained = h5["verdict_basis"]["retained_from_superseded"]
+    assert [entry["retained_ticker"] for entry in retained] == ["LOSR"]
+    assert retained[0]["effective_ungraded_reason"] == "retracted"
+
+
+def test_the_verdict_refuses_to_fire_below_the_registered_coverage_floor(calendar):
+    """B1, second protection: a resolution failure the ratchet cannot repair.
+
+    A price outage is not a discretionary act, so the ratchet has no superseded
+    grade to retain — and the pooled mean over "the rows that resolved" is then
+    a resolution-conditioned statistic, the same defect §5 names for rates
+    applied to the number the verdict reads. Below the registered
+    ``min_verdict_outcome_coverage`` no verdict fires at all. Not a softer one:
+    ``accruing``, with the reason named. Escaping into a softer decided state is
+    the same escape.
+    """
+    winner, loser, _panel_unused = _two_row_cohort(calendar)
+    family = _reachable_family(min_verdict_outcome_coverage=0.70)
+
+    complete = _panel(
+        calendar,
+        {
+            "PLTR": _placebo_aware_series(calendar, event_move=0.01, placebo_move=0.0),
+            "LOSR": _placebo_aware_series(calendar, event_move=-0.40, placebo_move=0.0),
+        },
+    )
+    assert _report(calendar, _log([winner, loser]), complete, family=family)["verdict_state"] == "kill"
+
+    # The loser's prices go missing. Nothing superseded it, so there is no grade
+    # to retain: 1 of 2 rows resolves, and 0.5 is below the registered floor.
+    outage = _panel(
+        calendar, {"PLTR": _placebo_aware_series(calendar, event_move=0.01, placebo_move=0.0)}
+    )
+    blocked = _report(calendar, _log([winner, loser]), outage, family=family)
+
+    assert blocked["outcome_by_horizon"]["h5"]["cohort"]["ungraded_reasons"] == {"price_missing": 1}
+    assert blocked["verdict_state"] == "accruing"
+    assert (
+        blocked["verdict"]["verdict_blocked_reason"]
+        == "verdict_basis_coverage_below_registered_floor"
+    )
+    assert blocked["verdict"]["verdict_blocked_reason"] in grader.VERDICT_BLOCKED_REASONS
+
+
+def test_a_point_estimate_is_not_a_verdict(calendar):
+    """M2. Every verdict region tests an INTERVAL against its threshold.
+
+    Version 1.0.0 compared bare point estimates to 0, +1.0pp and 0.50. At its
+    gate floor (~40 graded h63 rows) with single-name 63-session market-relative
+    SD of 15–25pp, SE of the delta is ~3.4–5.6pp, so a preregistered KILL fired
+    on noise ~25–40% of the time under a true null and ~15–25% of the time
+    against a genuine +3pp edge.
+
+    This cohort is the small version of that: two hits, a large pooled delta,
+    and dispersion wide enough that the interval cannot separate it from the
+    registered minimum interesting effect. A point rule calls it ``supported``.
+    """
+    winner = _row(calendar, candidate_id="grc1-000000000000000000000001", ticker="PLTR", event_id="evt-1")
+    barely = _row(
+        calendar,
+        candidate_id="grc1-000000000000000000000002",
+        observation_id="gro1-000000000000000000000002",
+        ticker="TINY",
+        event_id="evt-2",
+    )
+    panel = _panel(
+        calendar,
+        {
+            "PLTR": _placebo_aware_series(calendar, event_move=0.60, placebo_move=0.0),
+            "TINY": _placebo_aware_series(calendar, event_move=0.005, placebo_move=0.0),
+        },
+    )
+    report = _report(calendar, _log([winner, barely]), panel, family=_reachable_family())
+    h5 = report["outcome_by_horizon"]["h5"]
+
+    # Both rows are hits and the pooled delta is enormous by any point rule.
+    assert h5["hit_rate"]["value"] == 1.0
+    assert report["verdict_state"] == "tested_null", (
+        "a mean this noisy is not separable from the registered minimum interesting "
+        "effect; a point comparison at the gate floor is a coin flip"
+    )
+
+    basis = h5["verdict_basis"]
+    assert basis["paired_placebo_delta_summary"]["mean"] == pytest.approx(0.3025)
+
+    # The spread is emitted, and the interval does not clear the threshold.
+    summary = basis["market_relative_return_summary"]
+    assert summary["sd"] > 0.4
+    assert summary["standard_error"] > 0.2
+    assert summary["ci_lower"] is not None and summary["ci_upper"] is not None
+    assert summary["ci_level"] == GRV_FA1.confidence_level
+    delta_ci_lower = basis["paired_placebo_delta_summary"]["ci_lower"]
+    assert delta_ci_lower <= GRV_FA1.minimum_interesting_effect
+
+
+def _synthetic_primary_block(
+    *,
+    family,
+    mean,
+    mean_ci,
+    delta,
+    delta_ci,
+    conditional_hit_rate,
+    hit_rate_ci_lower,
+    coverage_fraction,
+    issued_n=1000,
+):
+    """A primary-horizon block carrying BOTH the pre-fix and post-fix key shapes.
+
+    Both shapes on purpose: this test has to be readable by the implementation it
+    is indicting, or its red is a ``KeyError`` about renamed keys rather than a
+    statement about the decision rule.
+    """
+    graded_n = round(issued_n * coverage_fraction)
+    hits = round(graded_n * conditional_hit_rate)
+    coverage = Coverage(
+        kind="outcome", scope="synthetic", observed=graded_n, universe=issued_n, status="partial"
+    ).to_payload()
+    summary = lambda value, ci: {  # noqa: E731 - a fixture shape, not a code path
+        "n": graded_n,
+        "mean": value,
+        "median": value,
+        "min": value,
+        "max": value,
+        "sd": 0.25,
+        "standard_error": 0.25 / (graded_n ** 0.5),
+        "ci_lower": ci[0],
+        "ci_upper": ci[1],
+        # getattr defaults keep this fixture buildable against an implementation
+        # that has not registered these thresholds yet, so the red below is about
+        # the decision rule and not about a missing attribute.
+        "ci_level": getattr(family, "confidence_level", 0.95),
+        "ci_method": "percentile_bootstrap",
+        "ci_resamples": getattr(family, "bootstrap_resamples", 2000),
+        "coverage": coverage,
+    }
+    return {
+        "coverage": coverage,
+        "gate": {"satisfied": True, "required": {}, "observed": {}, "note": "synthetic"},
+        "hit_rate": {"value": conditional_hit_rate, "coverage": coverage},
+        "hit_rate_bounds": {
+            "lower_bound_hit_rate": {"value": hits / issued_n, "coverage": coverage},
+            "upper_bound_hit_rate": {
+                "value": (hits + issued_n - graded_n) / issued_n,
+                "coverage": coverage,
+            },
+        },
+        # pre-fix shape
+        "market_relative_return": {"mean": mean},
+        "placebo": {"delta_market_relative_mean": delta},
+        # post-fix shape
+        "verdict_basis": {
+            "n": graded_n,
+            "coverage": {**coverage, "fraction": coverage_fraction},
+            "market_relative_return_summary": summary(mean, mean_ci),
+            "paired_placebo_delta_summary": summary(delta, delta_ci),
+            "conditional_hit_rate": {
+                "value": conditional_hit_rate,
+                "ci_lower": hit_rate_ci_lower,
+                "coverage": coverage,
+            },
+            "retained_from_superseded": [],
+        },
+    }
+
+
 def test_the_registered_family_still_carries_its_real_thresholds():
-    """The reachable-family fixture must not be mistaken for the registration."""
-    assert GRV_FA1.min_distinct_source_events == 40
+    """The reachable-family fixture must not be mistaken for the registration.
+
+    M3: and the registered constants must be JOINTLY SATISFIABLE. Asserting that
+    each constant has the value it has proves nothing about whether any data
+    configuration can satisfy them together — version 1.0.0 passed that check
+    while shipping a ``SUPPORTED`` branch no plausible signal could reach,
+    because it tested ``hits/issued > 0.50`` over the FIXED cohort and
+    ``hits/issued = p·coverage``: at the registered 0.70 coverage floor that
+    demanded a conditional h63 hit rate above 71.4%.
+    """
     assert GRV_FA1.min_distinct_issuers == 12
     assert GRV_FA1.min_distinct_event_months == 12
     assert GRV_FA1.min_outcome_coverage == 0.70
     assert GRV_FA1.primary_horizon == "h63"
+
+    as_of = datetime(2027, 1, 1, tzinfo=timezone.utc)
+
+    # JOINT SATISFIABILITY, at the REGISTERED constants and at exactly the
+    # registered coverage floor. A conditional hit rate of 0.60 is a strong but
+    # plausible equity signal at a one-quarter horizon; 0.714 is not.
+    supported = _synthetic_primary_block(
+        family=GRV_FA1,
+        mean=0.05,
+        mean_ci=(0.02, 0.08),
+        delta=0.06,
+        delta_ci=(0.04, 0.08),
+        conditional_hit_rate=0.60,
+        hit_rate_ci_lower=0.55,
+        coverage_fraction=GRV_FA1.min_outcome_coverage,
+    )
+    verdict = grader.evaluate_verdict({"h63": supported}, family=GRV_FA1, as_of=as_of)
+    assert verdict["state"] == "supported", (
+        "SUPPORTED must be reachable at the registered thresholds by a plausible "
+        "signal; a branch no data can reach is an unsatisfiable precondition"
+    )
+
+    # ...and KILL is reachable at the same constants, so the instrument has two
+    # answers rather than one.
+    killed = _synthetic_primary_block(
+        family=GRV_FA1,
+        mean=-0.01,
+        mean_ci=(-0.04, 0.005),
+        delta=-0.005,
+        delta_ci=(-0.03, 0.02),
+        conditional_hit_rate=0.48,
+        hit_rate_ci_lower=0.43,
+        coverage_fraction=GRV_FA1.min_outcome_coverage,
+    )
+    assert grader.evaluate_verdict({"h63": killed}, family=GRV_FA1, as_of=as_of)["state"] == "kill"
+
+    # The registered N is the N the registered effect needs, not a round number:
+    # δ* = 3.0pp at σ_paired = 25pp, alpha 0.05, power 0.80 → N ≥ (0.25/0.0107)².
+    assert GRV_FA1.min_distinct_source_events == GRV_FA1.planning_n_required
+    assert GRV_FA1.planning_n_required >= (
+        GRV_FA1.planning_sd_paired / (GRV_FA1.minimum_interesting_effect / 2.80)
+    ) ** 2
+
+
+def test_the_verdict_is_evaluated_once_and_latched(calendar):
+    """§7 promises ONE look. Recomputing nightly is optional stopping."""
+    winner, loser, panel = _two_row_cohort(calendar)
+    family = _reachable_family()
+    first = _report(calendar, _log([winner, loser]), panel, family=family)
+    assert first["verdict_state"] == "kill"
+    assert first["verdict"]["latched"] is False
+
+    kinder = _panel(
+        calendar,
+        {
+            "PLTR": _placebo_aware_series(calendar, event_move=0.30, placebo_move=0.0),
+            "LOSR": _placebo_aware_series(calendar, event_move=0.30, placebo_move=0.0),
+        },
+    )
+    later = _report(
+        calendar,
+        _log([winner, loser]),
+        kinder,
+        family=family,
+        latched_verdict={**first["verdict"], "latched_at": "2026-08-06T12:00:00+00:00"},
+    )
+    assert later["verdict_state"] == "kill", "the latched verdict is the verdict"
+    assert later["verdict"]["latched"] is True
+    assert later["verdict"]["recomputed_state"] == "supported"
+    assert later["verdict"]["latched_at"] == "2026-08-06T12:00:00+00:00"
 
 
 # ---------------------------------------------------------------------------
@@ -1032,3 +1571,220 @@ def test_grading_refuses_a_foreign_calendar(calendar):
 
 def _as_of(calendar: SessionCalendar) -> datetime:
     return datetime.combine(calendar.sessions[-1], datetime.min.time(), tzinfo=timezone.utc)
+
+
+# ---------------------------------------------------------------------------
+# the remaining reviewer findings
+# ---------------------------------------------------------------------------
+
+
+def test_a_missing_late_discovery_flag_abstains(calendar):
+    """M6. The only fail-OPEN admission test in the family.
+
+    ``bool(source_event.get("is_late_discovery"))`` admitted any payload that
+    simply omitted the key. Every sibling check is fail-closed, and §1 makes this
+    the guard against measuring stale news.
+    """
+    payload = _candidate(calendar)
+    payload["source_event"] = {
+        key: value for key, value in payload["source_event"].items() if key != "is_late_discovery"
+    }
+    assert grader.admit(payload, family=GRV_FA1).reason == "late_discovery"
+
+    for value in (None, "false", 0, ""):
+        payload = _candidate(calendar)
+        payload["source_event"] = {**payload["source_event"], "is_late_discovery": value}
+        assert grader.admit(payload, family=GRV_FA1).reason == "late_discovery", (
+            f"{value!r} is not evidence of a fresh discovery"
+        )
+
+
+def test_the_placebo_delta_is_paired_over_identical_rows(calendar):
+    """M1. An unpaired difference of means is a difference of different cohorts.
+
+    On the suite's own ``_mixed_cohort`` the real side has n=2 and the placebo
+    side n=3: rows that are ``horizon_not_matured`` on the event window are
+    graded on the placebo window, 252 sessions earlier. The prior delta
+    subtracted one mean from the other and fed the result to the kill condition.
+    """
+    winner = _row(calendar, candidate_id="grc1-000000000000000000000001", ticker="AAA", event_id="evt-1")
+    loser = _row(
+        calendar,
+        candidate_id="grc1-000000000000000000000002",
+        observation_id="gro1-000000000000000000000002",
+        ticker="BBB",
+        event_id="evt-2",
+    )
+    # Matured on the placebo window, NOT matured on the event window: graded on
+    # one side of the subtraction and absent from the other.
+    unmatured = _row(
+        calendar,
+        candidate_id="grc1-000000000000000000000003",
+        observation_id="gro1-000000000000000000000003",
+        ticker="CCC",
+        event_id="evt-3",
+        entry_index=len(calendar.sessions) - 3,
+    )
+    ccc = _flat(calendar, 100.0)
+    placebo_entry = len(calendar.sessions) - 3 + GRV_FA1.placebo_offset_sessions
+    for offset in range(1, 6):
+        ccc[calendar.sessions[placebo_entry + offset]] = 140.0
+    panel = _panel(
+        calendar,
+        {
+            "AAA": _step(calendar, before=100.0, after=110.0, index=_ENTRY_INDEX),
+            "BBB": _step(calendar, before=100.0, after=50.0, index=_ENTRY_INDEX),
+            "CCC": ccc,
+        },
+    )
+    h5 = _report(calendar, _log([winner, loser, unmatured]), panel)["outcome_by_horizon"]["h5"]
+    placebo = h5["placebo"]
+
+    assert h5["coverage"]["observed"] == 2
+    assert placebo["placebo_coverage"]["observed"] == 3, (
+        "the two sides genuinely resolve different rows; that is the defect"
+    )
+    assert placebo["paired_n"] == 2
+    assert placebo["coverage"]["observed"] == placebo["paired_n"]
+    assert placebo["paired_delta_market_relative_mean"] != placebo[
+        "unpaired_delta_market_relative_mean"
+    ], "this fixture must be able to see the difference between paired and unpaired"
+
+    basis = h5["verdict_basis"]["paired_placebo_delta_summary"]
+    assert basis["n"] == placebo["paired_n"]
+
+
+def test_the_placebo_carries_the_same_refusals_as_the_grade(calendar):
+    """m7. A baseline on a foreign calendar or basis is not a baseline."""
+    row = _row(calendar)
+    other = SessionCalendar.from_dates(calendar.sessions, calendar_id="hk_equity_sessions")
+    with pytest.raises(GraderError, match="calendar frozen at issuance"):
+        grader.grade_placebo_row(
+            row, "h5", panel=_panel(calendar, {"PLTR": _flat(calendar, 100.0)}),
+            calendar=other, family=GRV_FA1,
+        )
+    with pytest.raises(GraderError, match="basis pinned at issuance"):
+        grader.grade_placebo_row(
+            row, "h5", panel=_panel(calendar, {"PLTR": _flat(calendar, 100.0)}, adjustment="raw"),
+            calendar=calendar, family=GRV_FA1,
+        )
+
+
+def test_the_read_window_hash_is_order_sensitive(calendar):
+    """m1. A sorted hash is permutation-invariant, so an inversion is invisible."""
+    closes = _flat(calendar, 100.0)
+    for offset in range(1, 6):
+        closes[calendar.sessions[_ENTRY_INDEX + offset]] = 100.0 + offset
+    panel = _panel(calendar, {"PLTR": closes})
+    honest = grader.grade_row(_row(calendar), "h5", panel=panel, calendar=calendar, as_of=_as_of(calendar))
+
+    real_read = grader._read_window
+
+    def inverted(panel_arg, symbol, sessions):
+        return real_read(panel_arg, symbol, tuple(reversed(tuple(sessions))))
+
+    original = grader._read_window
+    grader._read_window = inverted
+    try:
+        flipped = grader.grade_row(
+            _row(calendar), "h5", panel=panel, calendar=calendar, as_of=_as_of(calendar)
+        )
+    finally:
+        grader._read_window = original
+
+    assert flipped.absolute_return != honest.absolute_return, "the fixture must invert the sign"
+    assert flipped.read_window_sha256 != honest.read_window_sha256, (
+        "an entry/exit inversion flips every return; the window hash must be able to see it"
+    )
+
+
+def test_overlapping_windows_are_disclosed_beside_issued_n(calendar):
+    """M8. Two rows on one ticker five sessions apart are not two draws."""
+    first = _row(calendar, candidate_id="grc1-000000000000000000000001", event_id="evt-1")
+    second = _row(
+        calendar,
+        candidate_id="grc1-000000000000000000000002",
+        observation_id="gro1-000000000000000000000002",
+        event_id="evt-2",
+        entry_index=_ENTRY_INDEX + 5,
+    )
+    panel = _panel(calendar, {"PLTR": _flat(calendar, 100.0)})
+    h21 = _report(calendar, _log([first, second]), panel)["outcome_by_horizon"]["h21"]
+    independence = h21["window_independence"]
+
+    assert h21["cohort"]["issued_n"] == 2
+    assert independence["distinct_tickers"] == 1
+    assert independence["distinct_entry_sessions"] == 2
+    assert independence["overlapping_window_pairs"] == 1
+    assert independence["max_window_overlap_sessions"] == 17
+    assert independence["non_overlapping_window_estimate"] == 1, (
+        "two h21 windows five sessions apart are two rows and about one draw"
+    )
+
+
+def test_no_verdict_region_ships_a_label_that_contradicts_its_numbers():
+    """M4. ``mean <= 0 and delta > 0`` fell through to a 'positive but...' label."""
+    as_of = datetime(2027, 1, 1, tzinfo=timezone.utc)
+    block = _synthetic_primary_block(
+        family=GRV_FA1,
+        mean=-0.02,
+        mean_ci=(-0.06, 0.05),
+        delta=0.01,
+        delta_ci=(-0.02, 0.06),
+        conditional_hit_rate=0.49,
+        hit_rate_ci_lower=0.44,
+        coverage_fraction=GRV_FA1.min_outcome_coverage,
+    )
+    verdict = grader.evaluate_verdict({"h63": block}, family=GRV_FA1, as_of=as_of)
+    assert verdict["state"] == "tested_null"
+    assert "positive but" not in verdict["meaning"], (
+        "the cohort mean here is negative; the label must not assert a sign"
+    )
+    assert verdict["inputs"]["pooled_market_relative_mean"] < 0
+    assert "makes no claim about the sign" in verdict["meaning"]
+
+
+def test_every_decision_threshold_lives_in_the_binding_declaration():
+    """M5. Two of three verdict thresholds sat where the drift guard was blind."""
+    declaration = GRV_FA1.to_payload()
+    assert declaration["decision_rule"] == {
+        "minimum_interesting_effect": GRV_FA1.minimum_interesting_effect,
+        "hit_rate_floor": GRV_FA1.hit_rate_floor,
+        "confidence_level": GRV_FA1.confidence_level,
+        "bootstrap_resamples": GRV_FA1.bootstrap_resamples,
+        "bootstrap_seed": GRV_FA1.bootstrap_seed,
+        "min_verdict_outcome_coverage": GRV_FA1.min_verdict_outcome_coverage,
+    }
+    source = (ROOT / "engine" / "government_revenue" / "candidate_grader.py").read_text(encoding="utf-8")
+    assert "_PLACEBO_FLOOR" not in source, "a threshold in a module constant is not registered"
+    assert "lower > 0.5" not in source
+
+    # Mutation: moving a threshold moves the verdict, so the declaration is
+    # load-bearing rather than decorative.
+    as_of = datetime(2027, 1, 1, tzinfo=timezone.utc)
+    block = _synthetic_primary_block(
+        family=GRV_FA1,
+        mean=0.05,
+        mean_ci=(0.02, 0.08),
+        delta=0.06,
+        delta_ci=(0.04, 0.08),
+        conditional_hit_rate=0.60,
+        hit_rate_ci_lower=0.55,
+        coverage_fraction=GRV_FA1.min_outcome_coverage,
+    )
+    assert grader.evaluate_verdict({"h63": block}, family=GRV_FA1, as_of=as_of)["state"] == "supported"
+    stricter = _family_with(minimum_interesting_effect=0.05)
+    assert grader.evaluate_verdict({"h63": block}, family=stricter, as_of=as_of)["state"] == "tested_null"
+
+    # ...and the document/code drift guard actually reads the block.
+    family, _digest = grader.load_family_declaration(PREREG_PATH)
+    assert family.minimum_interesting_effect == GRV_FA1.minimum_interesting_effect
+    assert family.min_verdict_outcome_coverage == GRV_FA1.min_verdict_outcome_coverage
+
+
+def test_the_preregistration_states_its_power_calculation():
+    text = PREREG_PATH.read_text(encoding="utf-8")
+    assert "power calculation" in text.lower()
+    assert str(GRV_FA1.planning_n_required) in text
+    assert "minimum interesting effect" in text.lower()
+    assert GRV_FA1.accrual_expiry_date in text
