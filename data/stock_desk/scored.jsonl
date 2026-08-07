@@ -191,3 +191,4 @@
 {"id": "2026-07-31-KWR-20260806235557-3", "ticker": "KWR", "subject": "KWR", "lean": "neutral", "conviction": "low", "kind": "soft", "check_by": "2026-08-31", "outcome": "unscored", "scored_at": "2026-08-06T23:55:57.404895+00:00"}
 {"id": "2026-07-31-MDB-20260806235557-4", "ticker": "MDB", "subject": "MDB", "lean": "neutral", "conviction": "low", "kind": "soft", "check_by": "2026-08-31", "outcome": "unscored", "scored_at": "2026-08-06T23:55:57.404902+00:00"}
 {"id": "2026-07-31-PI-20260806235557-6", "ticker": "PI", "subject": "PI", "lean": "neutral", "conviction": "low", "kind": "soft", "check_by": "2026-08-31", "outcome": "unscored", "scored_at": "2026-08-06T23:55:57.404906+00:00"}
+{"id": "2026-07-31-ABNB-20260807084351-5", "ticker": "ABNB", "subject": "ABNB", "lean": "neutral", "conviction": "low", "kind": "soft", "check_by": "2026-08-28", "outcome": "unscored", "scored_at": "2026-08-07T08:43:51.765063+00:00"}
