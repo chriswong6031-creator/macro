@@ -5002,8 +5002,12 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      # test_factor_universe_hold.py (2026-08-06) — the DNR:HOLD-FACTOR-UNIVERSE-WIDENING
+      # tripwire. engine/equity_factors.py was strictly dark: no `run:` step named its
+      # suite and no ci.yml path named the module, so the board tiebreak's own source
+      # could not start CI. Needs only the deps already installed here.
       - name: commodities / forex / rates / news / policy panels and their calibration guards
-        run: python -m pytest tests/test_build_dispersion_regime.py tests/test_build_factor_panel.py tests/test_commodity_mtf_verdict_honesty.py tests/test_congress_score.py tests/test_context_risk.py tests/test_cross_asset_context.py tests/test_crossasset_flows.py tests/test_financial_news.py tests/test_forex.py tests/test_forex_context_bus.py tests/test_news_event_ledger.py tests/test_phase_buildout.py tests/test_policy_lever.py tests/test_rates_command.py tests/test_reflexivity_overlay.py tests/test_scorecard_incremental.py tests/test_us_sector_rotation_wiring.py tests/test_validation.py tests/test_whitehouse_build.py -q
+        run: python -m pytest tests/test_factor_universe_hold.py tests/test_build_dispersion_regime.py tests/test_build_factor_panel.py tests/test_commodity_mtf_verdict_honesty.py tests/test_congress_score.py tests/test_context_risk.py tests/test_cross_asset_context.py tests/test_crossasset_flows.py tests/test_financial_news.py tests/test_forex.py tests/test_forex_context_bus.py tests/test_news_event_ledger.py tests/test_phase_buildout.py tests/test_policy_lever.py tests/test_rates_command.py tests/test_reflexivity_overlay.py tests/test_scorecard_incremental.py tests/test_us_sector_rotation_wiring.py tests/test_validation.py tests/test_whitehouse_build.py -q
 
   unrun-market-plumbing:
     # live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes.
