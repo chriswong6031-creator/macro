@@ -51,6 +51,9 @@ EVENT SOURCES
     as (e)).  Dedup key: (kind="washout_turn", SYM, date).
     Cohort cap: the 8 DEEPEST entries are sent individually plus one summary
     line naming how many more entered — a disclosed cap, never a silent one.
+    Multi-grid alignment ("grids aligned k/2") is read at send time from the
+    SEA event library (engine/event_atlas) rather than from the washout_turn
+    payload — that organ is frozen this session — and is omitted when unknown.
     Fail-open: missing/malformed artifact never affects sources (a)–(g).
     Born from the MCD miss of 2026-08-05 (weekly cross at the 6th percentile
     of its own history since 1968; no surface said so).
@@ -443,20 +446,53 @@ def _mtf_upturn_mag7_message(sym: str, legs: dict, as_of: str) -> str:
     return msg
 
 
-def _washout_turn_message(sym: str, receipts: dict, as_of: str) -> str:
+def _event_align(sym: str) -> int | None:
+    """Multi-grid alignment for ``sym`` at send time (engine/event_atlas).
+
+    The count lives in the SEA event library, not in `washout_turn.json` — that
+    organ is frozen this session (#4663 in flight), so the notifier reads the
+    alignment itself instead of waiting for a payload field.  Fail-OPEN: any
+    missing library, unreadable part, or unknown symbol yields None and the
+    message ships without the suffix.
+    """
+    try:
+        from engine import event_atlas
+
+        state = event_atlas.live_state(sym)
+        wk = ((state or {}).get("grids") or {}).get("W") or {}
+        k = wk.get("align_class")
+        return int(k) if isinstance(k, (int, float)) else None
+    except Exception as exc:  # noqa: BLE001 — an absent receipt never blocks an alert
+        log.debug("notify_turn_events: event-atlas alignment for %s skipped (%s)", sym, exc)
+        return None
+
+
+def _washout_turn_message(
+    sym: str, receipts: dict, as_of: str, align: int | None = None
+) -> str:
     """Build the FT-R13-compliant weekly washout-turn entry message (source h).
 
     Plain words per doctrine Law 2 — no internal state names, no engine slugs,
     no falsifier/refutation language.  The depth percentile IS the point of the
     alert (it separates a washout turn from a mid-range wobble), so it is
     spelled out.  Stance is a window, not a certainty; no direction words.
+
+    ``align`` (0-2) is the count of the OTHER two grids reading the same way at
+    the event bar — the leg that separated the MCD class from a lone weekly
+    wobble.  Omitted entirely when it is unknown; never printed as "?".
     """
     depth = receipts.get("depth_pctile")
     depth_str = f"{float(depth):.1f}" if isinstance(depth, (int, float)) else "?"
+    align_part = (
+        f" · grids aligned {int(align)}/2"
+        if isinstance(align, (int, float)) and 0 <= int(align) <= 2
+        else ""
+    )
     msg = (
         f"{sym} — weekly momentum crossed up from a deep base "
         f"(bottom {depth_str}% of its own history)"
         f" · washout-turn watch"
+        f"{align_part}"
         f" · windows, not certainties"
         f" | as-of {as_of}"
         f" | {_HEADS_UP_COPY}"
@@ -803,7 +839,9 @@ def _detect_washout_turn(
 
     entrants.sort(key=lambda t: (t[0], t[1]))          # deepest first, then stable
     for _depth, sym, row in entrants[:_WASHOUT_MAX_PER_RUN]:
-        results.append((sym, _washout_turn_message(sym, row, as_of)))
+        results.append(
+            (sym, _washout_turn_message(sym, row, as_of, align=_event_align(sym)))
+        )
 
     n_more = len(entrants) - _WASHOUT_MAX_PER_RUN
     if n_more > 0 and not _already_fired(

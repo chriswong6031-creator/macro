@@ -401,6 +401,11 @@ def test_generated_data_is_not_accidentally_public():
         "/live/breadth.json",
         # Official agency publication lifecycle and verified factual outcomes.
         "/live/release_publications.json",
+        # Freshness-sentinel staleness state (masterplan W1 dead-man switch).
+        # Per-surface freshness verdicts and timestamps only — no ticker rows,
+        # scores, or board membership. Public by design: it feeds the on-site
+        # staleness banner, which anonymous visitors must see too.
+        "/live/staleness.json",
         "/prophet/showcase.json",
         "/seasonalitydata/methodology.json",
         # Stock seasonality calendar clock. Computed calendar statistics over

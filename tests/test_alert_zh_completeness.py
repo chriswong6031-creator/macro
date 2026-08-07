@@ -23,9 +23,17 @@ Three properties are pinned here:
      fully Chinese through the hub's resolution, because log_and_dedup keys on
      (date, rule, message) and the English message never changes — no corrected
      row will ever supersede them.
+
+`cycle_falsifier_fired:*` is the same defect one level up and is fenced in the
+final section. It quotes a market thesis the curator WROTE — free prose, not a
+finite label — so no vocabulary map can render it; the fix was a `claim_zh`
+column in data/cycle_ontology/falsifiers.json plus a `_CYCLE_ZH` map for the
+lowercase cycle slug the message also interpolates. The three properties above
+apply to it unchanged.
 """
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -44,10 +52,17 @@ from engine.alerts import (  # noqa: E402
     _RISK_STATE_ZH,
     _TS_PLAIN_ZH,
 )
+from engine.falsifier_tripwires import (  # noqa: E402
+    _CYCLE_ZH,
+    TripwireResult,
+    alert_bodies,
+)
 from engine.i18n import LEX as _LEX  # noqa: E402
 from scripts.build_vector import (  # noqa: E402
+    _ZH_HALF_TRANSLATED_PREFIXES,
     _ZH_HALF_TRANSLATED_RULES,
     _translate_macro_detail,
+    _zh_needs_rebuild,
 )
 
 # Latin that is a NAME keeps its letters by design: tickers (XLRE, PSA), funds,
@@ -287,3 +302,231 @@ def test_leaky_rule_set_matches_the_translator_coverage():
         zh = _translate_macro_detail(msg)
         assert zh, f"{rule}: translator has no branch, so the heal is a no-op"
         assert not _english_prose_in(zh), f"{rule}: heal output still English: {zh}"
+
+
+# --------------------------------------------------------------------------- #
+# cycle_falsifier_fired:* — the authored-prose half of the same defect.
+#
+#   ZH  周期改判条件触发 — long-bonds：'Long bonds have bottomed; 30yr yield peak
+#       and TLT recovery confirm duration is buyable'（与原判断相反）。
+#
+# Two English values reach the zh body: the curator's `claim` (free prose — only
+# a written `claim_zh` can render it) and the `cycle` slug, which is lowercase
+# English and so leaks even when the claim is Chinese.
+# --------------------------------------------------------------------------- #
+FALSIFIERS_JSON = ROOT / "data" / "cycle_ontology" / "falsifiers.json"
+
+
+def _registry() -> list[dict]:
+    if not FALSIFIERS_JSON.exists():
+        pytest.skip("falsifiers.json not present")
+    return json.loads(FALSIFIERS_JSON.read_text(encoding="utf-8"))
+
+
+def _as_fired(entry: dict) -> TripwireResult:
+    """A registry row as the FIRED result the emitter would be handed.
+
+    Built from the JSON rather than evaluate_all() so the fence runs without the
+    price tapes — and so a missing `claim_zh` reaches the emitter exactly as the
+    nightly would deliver it.
+    """
+    return TripwireResult(
+        id=entry["id"], cycle=entry["cycle"], version=entry.get("version", 1),
+        state="FIRED", fired_on="2026-08-06", latched=True, current_leg=True,
+        claim=entry.get("claim", ""), claim_zh=entry.get("claim_zh", ""),
+        direction=entry.get("direction", "refutes"),
+        coverage=entry.get("coverage", "none"), expires=entry.get("expires"),
+    )
+
+
+def test_every_registered_claim_carries_written_chinese():
+    """Property 1 at the source — the claim is prose, so the copy must exist."""
+    missing = [e["id"] for e in _registry() if not str(e.get("claim_zh") or "").strip()]
+    assert not missing, (
+        "falsifiers.json entries with no claim_zh — their alert body will quote "
+        f"the English thesis to a Chinese reader: {missing}")
+
+
+def test_registered_chinese_claims_carry_no_english_prose():
+    leaked = {e["id"]: (e["claim_zh"], _english_prose_in(e["claim_zh"]))
+              for e in _registry()
+              if _english_prose_in(str(e.get("claim_zh") or ""))}
+    assert not leaked, (
+        "authored claim_zh still carries English:\n"
+        + "\n".join(f"  {i}: {zh}\n      leaked: {w}" for i, (zh, w) in leaked.items()))
+
+
+def test_cycle_vocabulary_covers_the_registry():
+    """A new cycle must not fall through to its lowercase English slug."""
+    cycles = {e["cycle"] for e in _registry()}
+    assert cycles <= set(_CYCLE_ZH), (
+        f"cycles with no Chinese name: {sorted(cycles - set(_CYCLE_ZH))}")
+
+
+def test_cycle_read_change_emitter_zh_carries_no_english_prose():
+    """Property 1 — every registry row driven through the real emitter."""
+    leaked = {}
+    for entry in _registry():
+        _, zh = alert_bodies(_as_fired(entry))
+        words = _english_prose_in(zh)
+        if words:
+            leaked[entry["id"]] = (zh, words)
+    assert not leaked, (
+        "cycle read-change message_zh interpolates untranslated English:\n"
+        + "\n".join(f"  {i}: {zh}\n      leaked: {w}" for i, (zh, w) in leaked.items()))
+
+
+def test_cycle_read_change_emitter_agrees_with_backlog_translator():
+    """Property 2 — both translator lookup paths must match the emitter.
+
+    The translator resolves the zh claim by falsifier id when the caller passes
+    the rule, and by claim text when it does not; a disagreement on either path
+    means the hub can serve a different sentence than the dashboard.
+    """
+    drift = {}
+    for entry in _registry():
+        r = _as_fired(entry)
+        en, zh = alert_bodies(r)
+        for label, rebuilt in (
+            ("by id", _translate_macro_detail(en, f"cycle_falsifier_fired:{r.id}")),
+            ("by claim", _translate_macro_detail(en)),
+        ):
+            if rebuilt != zh:
+                drift[f"{r.id} ({label})"] = (zh, rebuilt)
+    assert not drift, (
+        "engine/falsifier_tripwires.alert_bodies and _translate_macro_detail "
+        "render the same alert differently:\n"
+        + "\n".join(f"  {k}\n    emitter   : {e}\n    translator: {t}"
+                    for k, (e, t) in drift.items()))
+
+
+def test_cycle_read_change_rule_ids_are_matched_by_prefix():
+    """The heal set is keyed by exact rule id; this rule's id is per-tripwire."""
+    rule = "cycle_falsifier_fired:long-bonds.bear_steepener.v1"
+    assert rule not in _ZH_HALF_TRANSLATED_RULES, (
+        "per-tripwire rule ids can never be enumerated in the exact-match set")
+    assert _zh_needs_rebuild(rule), (
+        "home_alert_feed would serve the stored half-translated zh for "
+        f"{rule} — _ZH_HALF_TRANSLATED_PREFIXES stopped covering it")
+    assert not _zh_needs_rebuild("gold_breakout"), (
+        "an unrelated rule must keep its stored zh — a prefix that matches "
+        "everything would silently downgrade richer emitter copy")
+    assert any(p.startswith("cycle_falsifier_fired") for p in _ZH_HALF_TRANSLATED_PREFIXES)
+
+
+def test_the_completeness_check_can_actually_see_a_leaked_claim():
+    """The assertions above are only real if the emitter keeps English visible.
+
+    _NAME_LIKE strips '...' spans before looking for English, so quoting the
+    claim in ASCII single quotes — the shape that shipped — hides the very leak
+    these tests exist to catch, and every cycle assertion in this file passes on
+    a body that is still half English. Drive the REAL emitter with English in
+    both interpolated slots and require the guard to see each one.
+    """
+    claim_en = "Long bonds have bottomed; 30yr yield peak and TLT recovery confirm"
+    entry = next(e for e in _registry() if e["id"] == "long-bonds.bear_steepener.v1")
+
+    untranslated_claim = _as_fired({**entry, "claim": claim_en, "claim_zh": ""})
+    _, zh = alert_bodies(untranslated_claim)
+    assert _english_prose_in(zh), (
+        "an English claim survives the completeness check inside the emitted "
+        f"body — the quote style exempts it from _NAME_LIKE:\n  {zh}")
+
+    unknown_cycle = _as_fired({**entry, "cycle": "long-bonds-v2"})
+    _, zh = alert_bodies(unknown_cycle)
+    assert _english_prose_in(zh), (
+        "a cycle slug with no _CYCLE_ZH entry is invisible to the check — a new "
+        f"cycle would ship its lowercase English name to zh readers:\n  {zh}")
+
+
+def test_direction_is_read_from_the_suffix_not_the_claim():
+    """Both directions round-trip, and a claim that quotes the direction phrase
+    does not flip it — the registry has only `refutes` rows today, so the
+    `confirms` half of the map is otherwise never exercised.
+    """
+    entry = next(e for e in _registry() if e["id"] == "gold.bull_intact.v1")
+    for direction, expect_zh in (("refutes", "与原判断相反"), ("confirms", "支持原判断")):
+        r = _as_fired({**entry, "direction": direction})
+        en, zh = alert_bodies(r)
+        assert expect_zh in zh, f"{direction} rendered as {zh}"
+        assert _translate_macro_detail(en, f"cycle_falsifier_fired:{r.id}") == zh
+
+    # A claim is free prose and may itself contain the direction phrase; only
+    # the metadata suffix decides. (The zh CLAIM here comes from the registry by
+    # id, not from this fixture — that re-worded-claim resilience is the point of
+    # the id lookup and is asserted below.)
+    trap = _as_fired({**entry, "claim": "Gold supports the read that real rates have peaked"})
+    en, _ = alert_bodies(trap)       # direction stays refutes
+    rebuilt = _translate_macro_detail(en, f"cycle_falsifier_fired:{trap.id}")
+    assert "与原判断相反" in rebuilt, (
+        f"the direction was read out of the claim prose, not the suffix: {rebuilt}")
+    assert entry["claim_zh"] in rebuilt, (
+        "a logged row whose claim text was later re-worded lost its Chinese — "
+        "the id lookup must outrank the claim-text match")
+    assert not _english_prose_in(rebuilt)
+
+
+def test_translator_reads_both_logged_message_shapes():
+    """The backlog rows predate the current emitter; neither shape may go dark.
+
+    The live shape quotes the claim and trails "(coverage: X, direction: Y).";
+    the older one trails ". Direction: X. Coverage: Y." unquoted. Both are in
+    the register-swept vocabulary, and #3821's "Cycle falsifier FIRED" prefix
+    still sits in the oldest rows.
+    """
+    entry = next(e for e in _registry() if e["id"] == "credit.spread_regime.v1")
+    shapes = [
+        (f"Cycle read-change condition HIT — credit: '{entry['claim']}' "
+         "(coverage: partial, direction: cuts against the read)."),
+        (f"Cycle read-change condition HIT — credit: {entry['claim']}. "
+         "Direction: cuts against the read. Coverage: partial."),
+        (f"Cycle falsifier FIRED — credit: '{entry['claim']}' "
+         "(coverage: partial, direction: cuts against the read)."),
+    ]
+    for msg in shapes:
+        zh = _translate_macro_detail(msg, f"cycle_falsifier_fired:{entry['id']}")
+        assert zh, f"translator lost a logged shape: {msg}"
+        assert entry["claim_zh"] in zh, f"claim not rendered for shape: {msg}"
+        assert not _english_prose_in(zh), f"{zh}\n  leaked: {_english_prose_in(zh)}"
+
+
+# The two shapes the log actually holds: rows written before the message_zh
+# column existed (healed by the translator alone) and the 2026-07-29 row that
+# persisted a zh body with the English thesis inside it (healed only if the
+# rebuild outranks the stored value). One row per case — every cycle read-change
+# row shares alert_view's generic plain_en, so the feed's concept-dedupe
+# collapses two of them into a single card.
+_BAKED_ROW_SHAPES = {
+    "stored-half-translated": ("long-bonds.bear_steepener.v1", True),
+    "pre-zh-column": ("bitcoin.cycle_position.v1", False),
+}
+
+
+@pytest.mark.parametrize("shape", sorted(_BAKED_ROW_SHAPES))
+def test_hub_feed_heals_baked_cycle_read_change_rows(monkeypatch, shape):
+    """Property 3, through the REAL home_alert_feed — not a re-implementation."""
+    import scripts.build_vector as bv
+
+    fid, has_stored_zh = _BAKED_ROW_SHAPES[shape]
+    entry = next(e for e in _registry() if e["id"] == fid)
+    en_msg = (
+        f"Cycle read-change condition HIT — {entry['cycle']}: "
+        f"'{entry['claim']}' (coverage: {entry['coverage']}, "
+        "direction: cuts against the read).")
+    stored_zh = (f"周期改判条件触发 — {entry['cycle']}：'{entry['claim']}'（与原判断相反）。"
+                 if has_stored_zh else "")
+    poisoned = pd.DataFrame([{
+        "date": "2026-07-29", "rule": f"cycle_falsifier_fired:{fid}",
+        "severity": "warn", "message": en_msg, "message_zh": stored_zh,
+    }])
+    monkeypatch.setattr(bv.pd, "read_parquet", lambda *a, **k: poisoned)
+
+    feed = [i for i in bv.home_alert_feed() if i["source"] == "macro"]
+    assert len(feed) == 1, "the poisoned row did not reach the feed"
+    detail_zh = feed[0]["detail_zh"]
+    assert not _english_prose_in(detail_zh), (
+        "home_alert_feed still serves English inside the Chinese wrapper for a "
+        f"cycle read-change row:\n  {detail_zh}\n"
+        f"      leaked: {_english_prose_in(detail_zh)}")
+    assert "周期改判条件触发" in detail_zh, "the sanctioned register wording was lost"
+    assert entry["claim_zh"] in detail_zh, "the authored zh claim is not the one served"

@@ -28,6 +28,11 @@ Pins (network-free — the download layer is stubbed; no wall-clock in any asser
    group, a >21d-stale stored ticker lands in the max group, a dead stored ticker is
    never requested at all, and the 0.7 completeness guard's denominator is the
    retention-expanded union (not the bare top10_union() count).
+6. _report_missing_symbols (2026-08-06): the requested-vs-returned reconciliation the
+   retention fetch shipped without — a bare line-start ::warning splitting the missing
+   set into in-union (live provider failure) vs retained-off-union (delisted/renamed
+   candidates, #4616/#4622), silent when nothing is missing, and actually REACHED by
+   fetch() on the run that then dies on the 0.7 floor.
 
 Run: .venv/bin/python -m pytest tests/test_stock_price_retention.py -q
 """
@@ -269,7 +274,7 @@ def _resp(stored: pd.DataFrame, tail: int) -> pd.DataFrame:
                          "Volume": 1e6}, index=base.index)
 
 
-def test_fetch_retention_heal_split_and_zero_point_seven_guard_use_the_union(data_dir, monkeypatch):
+def test_fetch_retention_heal_split_and_zero_point_seven_guard_use_the_union(data_dir, monkeypatch, capsys):
     today = pd.Timestamp.now().normalize()  # only used to seed "genuinely current"
     # fixtures below — no assertion anywhere depends on knowing what "now" is.
 
@@ -331,3 +336,79 @@ def test_fetch_retention_heal_split_and_zero_point_seven_guard_use_the_union(dat
     # top10_union() count (2) it would NOT (2 >= 1.4) — the message pins which
     # denominator actually fired.
     assert "2/4" in str(exc.value)
+
+    # The reconciliation must have ALREADY printed by the time the floor raised: a
+    # run that dies on the floor is exactly the run whose per-name detail is worth
+    # having. This is the call-site pin — deleting _report_missing_symbols' call in
+    # fetch() reds here, not just in the unit tests below (a unit-only pin would be
+    # vacuous about whether fetch() reaches it at all).
+    ann = [ln for ln in capsys.readouterr().out.splitlines()
+           if ln.startswith("::warning title=stocks collector missing symbols::")]
+    assert len(ann) == 1, "fetch() must emit exactly one reconciliation annotation"
+    # LIVE2 (in the union) and DROPPED_STALE (retained, off-union) both returned
+    # nothing — one from each class, so the split counts are not interchangeable.
+    assert "2 of 4 requested" in ann[0]
+    assert "1 in today's top-N union" in ann[0]
+    assert "1 retained off-union" in ann[0]
+    body = ann[0].split("candidates): ", 1)[1]
+    assert {t.strip() for t in body.split(",")} == {"DROPPED_STALE", "LIVE2"}
+
+
+# ---------------------------------------------------------------------------
+# 6. _report_missing_symbols — requested-vs-returned reconciliation (2026-08-06)
+# ---------------------------------------------------------------------------
+
+
+def test_report_missing_splits_union_and_retained(capsys):
+    missing = sh._report_missing_symbols(
+        ["AAPL", "QCOM", "SATS"], {"AAPL"}, ["AAPL", "QCOM"])
+    assert missing == ["QCOM", "SATS"]
+    line = [ln for ln in capsys.readouterr().out.splitlines() if ln.startswith("::")]
+    assert len(line) == 1
+    # Line-start bare print, per the annotation law (a logger-prefixed line is
+    # silently dropped by GitHub — the defect class tests/test_gh_annotation_line_start
+    # pins repo-wide).
+    assert line[0].startswith("::warning title=stocks collector missing symbols::")
+    assert "2 of 3 requested" in line[0]
+    assert "1 in today's top-N union" in line[0]      # QCOM
+    assert "1 retained off-union" in line[0]          # SATS
+
+
+def test_report_missing_silent_when_everything_returned(capsys):
+    assert sh._report_missing_symbols(["AAPL", "MSFT"], {"AAPL", "MSFT"}, ["AAPL"]) == []
+    assert not [ln for ln in capsys.readouterr().out.splitlines() if ln.startswith("::")]
+
+
+def test_report_missing_all_retained_reports_zero_union(capsys):
+    # The retention set's own class: nothing the desk currently holds is missing, but
+    # four names kept alive purely because they still have a store returned nothing —
+    # the delisted/renamed candidate signature, and the one the split exists to name.
+    missing = sh._report_missing_symbols(
+        ["AAPL", "QCOM", "HOOD", "MRVL", "SATS"], {"AAPL"}, ["AAPL"])
+    assert missing == ["QCOM", "HOOD", "MRVL", "SATS"]
+    line = [ln for ln in capsys.readouterr().out.splitlines() if ln.startswith("::")][0]
+    assert "0 in today's top-N union" in line
+    assert "4 retained off-union" in line
+
+
+def test_report_missing_preserves_requested_order_and_caps_display_at_15(capsys):
+    # T1/T10/T11... share a prefix, so a substring check would pass even if T1 were
+    # dropped from the shown set (it matches inside "T10"). Assert the exact token
+    # list, the same trap tests/test_collector_freshness_disclosure.py pins for the
+    # yahoo sibling.
+    requested = [f"T{i}" for i in range(20)]
+    missing = sh._report_missing_symbols(requested, set(), [])
+    assert missing == requested          # requested order, not set order
+    line = [ln for ln in capsys.readouterr().out.splitlines() if ln.startswith("::")][0]
+    assert "20 of 20 requested" in line
+    assert "+5 more" in line
+    body = line.split("candidates): ", 1)[1].split(", +", 1)[0]
+    assert [t.strip() for t in body.split(",")] == requested[:15]
+
+
+def test_report_missing_accepts_a_frames_dict_as_returned(capsys):
+    # fetch() passes the frames DICT itself, not a key set — set(dict) must be the
+    # keys. A regression to set(frames.values()) would make every ticker read missing.
+    frames = {"AAPL": pd.DataFrame({"close": [1.0]}), "MSFT": pd.DataFrame({"close": [2.0]})}
+    assert sh._report_missing_symbols(["AAPL", "MSFT"], frames, ["AAPL", "MSFT"]) == []
+    assert not [ln for ln in capsys.readouterr().out.splitlines() if ln.startswith("::")]

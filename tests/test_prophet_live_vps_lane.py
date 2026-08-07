@@ -664,11 +664,13 @@ def test_the_served_artifact_is_not_public_anywhere():
     assert POLICY["premium"]["default_tier"] == "essential"
 
 
-def test_the_public_live_exceptions_are_exactly_the_three_reviewed_files():
-    """A prefix would have swept prophet_live.json in with them. There is no prefix."""
+def test_the_public_live_exceptions_are_exactly_the_reviewed_files():
+    """A prefix would have swept prophet_live.json in with them. There is no
+    prefix — each entry is an individually reviewed file (staleness.json is the
+    W1 freshness-sentinel state: verdicts and timestamps, no signal rows)."""
     live_public = sorted(p for p in _caddy_public_exclusions() if p.startswith("/live/"))
     assert live_public == ["/live/breadth.json", "/live/quotes.json",
-                           "/live/release_publications.json"]
+                           "/live/release_publications.json", "/live/staleness.json"]
     assert not any(p.startswith("/live/") for p in POLICY["public"]["prefixes"])
 
 

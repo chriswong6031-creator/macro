@@ -458,7 +458,15 @@ class TestReoriginationBlock:
         stats: dict = {}
         originate_plans(path, "2026-07-15", set(), None,
                         active_keys={"ZZZ-BULL"}, intake_stats=stats)
-        assert stats == {"reorigination_blocked": 0, "reorigination_blocked_keys": []}
+        assert stats["reorigination_blocked"] == 0
+        assert stats["reorigination_blocked_keys"] == []
+        # P4 2026-08-06: the cap now bites SURVIVORS of the skips, so the intake
+        # disclosure must also carry the two counts that make the cap readable —
+        # how many were admitted, and how many survived to be counted against it.
+        assert stats["admitted"] == 1
+        assert stats["duplicate_id_blocked"] == 0
+        assert stats["eligible_after_skips"] == 1
+        assert stats["cap"] == N_CANDIDATES
 
 
 # ===========================================================================

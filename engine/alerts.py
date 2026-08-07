@@ -18,7 +18,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from lib import config, store
+from lib import config, nyse_calendar, store
 
 log = logging.getLogger(__name__)
 
@@ -279,9 +279,30 @@ def gex_flip_cross(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
         ng, sf = t.get("net_gex_bn"), t.get("spot_vs_flip_pct")
         ng_s = f"{ng:+.0f}bn" if pd.notna(ng) else "n/a"
         sf_s = f"{sf:+.1f}%" if pd.notna(sf) else "n/a"
+        # HOLE DISCLOSURE (2026-08-06). iloc[-2] vs iloc[-1] are two STORE ROWS, and
+        # this alert reads as an OVERNIGHT event — "the regime flipped last night".
+        # The cboe chain store has permanent session holes (collectors/cboe.py
+        # KNOWN_PERMANENT_GAPS: 07-27, 07-30, 08-03, 08-04), so those two rows were
+        # 07-31 and 08-05 — a four-session span in which spot could have crossed and
+        # re-crossed unobserved. Firing is still right (the endpoints did change sign);
+        # implying it happened overnight is not. House law: nulls printed, never hidden.
+        # The span is only computable from real session labels. The live store is
+        # date-indexed, but a positional index (synthetic frames) carries no session
+        # information at all — compute the gap only when both endpoints are date-like
+        # rather than inventing one from row numbers.
+        gap = (nyse_calendar.sessions_strictly_between(y.name.date(), t.name.date())
+               if hasattr(y.name, "date") and hasattr(t.name, "date") else [])
+        span_en = span_zh = ""
+        if gap:
+            missed = ", ".join(str(d) for d in gap)
+            span_en = (f" — measured across {len(gap) + 1} sessions, not overnight: "
+                       f"no chain snapshot exists for {missed}, so the crossing point "
+                       f"inside that span is unobserved")
+            span_zh = (f" — 该变化跨越 {len(gap) + 1} 个交易日，并非隔夜发生："
+                       f"{missed} 无期权链快照，其间的穿越时点无法观测")
         return Alert("gex_flip_cross", "warn",
-                     f"GEX: {what} (net {ng_s}, spot vs flip {sf_s})",
-                     message_zh=f"GEX：{_GEX_WHAT_ZH[what]}（净 {ng_s}，现价相对翻转点 {sf_s}）")
+                     f"GEX: {what} (net {ng_s}, spot vs flip {sf_s}){span_en}",
+                     message_zh=f"GEX：{_GEX_WHAT_ZH[what]}（净 {ng_s}，现价相对翻转点 {sf_s}）{span_zh}")
     return None
 
 

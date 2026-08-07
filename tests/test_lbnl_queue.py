@@ -206,15 +206,92 @@ def test_find_col_missing():
 # 7. ADAPTER: fetch() graceful failure when network is unavailable
 # ──────────────────────────────────────────────────────────────────────────────
 
-def test_lbnl_adapter_raises_when_network_dead(monkeypatch):
-    """When all URL attempts return None, fetch() raises RuntimeError (not swallows)."""
-    from collectors.lbnl_queue import LbnlQueueAdapter, _try_fetch_xlsx
+def test_lbnl_adapter_raises_when_network_dead(monkeypatch, tmp_path):
+    """When every URL attempt fails, fetch() raises RuntimeError (not swallows)."""
+    from collectors.lbnl_queue import LbnlQueueAdapter
     monkeypatch.setattr(
-        "collectors.lbnl_queue._try_fetch_xlsx", lambda year: None
+        "collectors.lbnl_queue._try_fetch_xlsx",
+        lambda year: (None, ["https://x/a.xlsx -> HTTP 404"]),
     )
+    monkeypatch.setattr("collectors.lbnl_queue.config.data_dir", lambda: tmp_path)
     adapter = LbnlQueueAdapter()
     with pytest.raises(RuntimeError, match="lbnl_queue"):
         adapter.fetch()
+
+
+def test_failure_message_carries_the_real_per_url_outcome(monkeypatch, tmp_path):
+    """The 26-night regression: every distinct failure collapsed into one hardcoded
+    'emp.lbl.gov unreachable (Cloudflare WAF) ... Re-run from a browser session'.
+    The host was reachable and answering 404. A collector that cannot say which wall
+    it hit sends its reader to the wrong fix, which is what happened for a month."""
+    from collectors.lbnl_queue import LbnlQueueAdapter
+    monkeypatch.setattr(
+        "collectors.lbnl_queue._try_fetch_xlsx",
+        lambda year: (None, ["https://emp.lbl.gov/a.xlsx -> HTTP 404",
+                             "https://emp.lbl.gov/b.xlsx -> HTTP 403"]),
+    )
+    monkeypatch.setattr("collectors.lbnl_queue.config.data_dir", lambda: tmp_path)
+    with pytest.raises(RuntimeError) as ei:
+        LbnlQueueAdapter().fetch()
+    msg = str(ei.value)
+    assert "HTTP 404" in msg and "HTTP 403" in msg, (
+        f"the per-URL outcomes must reach the operator verbatim; got {msg!r}")
+    assert "Cloudflare WAF" not in msg, (
+        "the hardcoded WAF diagnosis is exactly the false claim this replaced")
+
+
+def test_seed_present_degrades_to_blocked_not_a_nightly_hard_failure(monkeypatch, tmp_path):
+    """'Queued Up' is an ANNUAL publication read through a committed seed, so a night
+    that cannot reach it is the ordinary between-editions state — not an incident.
+    expected_failure => the runner reports 'blocked', which per collectors/base.py
+    update_breaker CLEARS the breaker instead of racking up a ×26 streak alarm."""
+    from collectors.lbnl_queue import LbnlQueueAdapter
+    monkeypatch.setattr(
+        "collectors.lbnl_queue._try_fetch_xlsx",
+        lambda year: (None, ["https://emp.lbl.gov/a.xlsx -> HTTP 404"]),
+    )
+    monkeypatch.setattr("collectors.lbnl_queue.config.data_dir", lambda: tmp_path)
+    (tmp_path / "eia").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "eia" / "interconnection_queue.json").write_text('{"total_gw_yoy": 26.3}')
+    adapter = LbnlQueueAdapter()
+    with pytest.raises(RuntimeError):
+        adapter.fetch()
+    assert adapter.expected_failure, "seed present => known limitation, not a failure"
+    assert "HTTP 404" in adapter.expected_failure
+    assert "LBNL_QUEUE_XLSX_URL" in adapter.expected_failure, (
+        "the reason must name the one operator action that re-arms the collector")
+
+
+def test_missing_seed_stays_a_hard_failure(monkeypatch, tmp_path):
+    """The other half, and the reason this is not just alarm-muting: with no seed the
+    power_scarcity queue_buildout leg is DARK, and that must stay loud."""
+    from collectors.lbnl_queue import LbnlQueueAdapter
+    monkeypatch.setattr(
+        "collectors.lbnl_queue._try_fetch_xlsx",
+        lambda year: (None, ["https://emp.lbl.gov/a.xlsx -> HTTP 404"]),
+    )
+    monkeypatch.setattr("collectors.lbnl_queue.config.data_dir", lambda: tmp_path)
+    adapter = LbnlQueueAdapter()
+    with pytest.raises(RuntimeError) as ei:
+        adapter.fetch()
+    assert not getattr(adapter, "expected_failure", None), (
+        "no seed => the leg is dark => must NOT be laundered into 'blocked'")
+    assert "DARK" in str(ei.value)
+
+
+def test_configured_override_url_is_tried_first(monkeypatch):
+    """The re-arm path: an operator who reads the current filename off the
+    WAF-challenged index sets LBNL_QUEUE_XLSX_URL and needs no code change."""
+    import collectors.lbnl_queue as lq
+    seen: list[str] = []
+    monkeypatch.setattr(lq.config, "secret",
+                        lambda k: "https://emp.lbl.gov/sites/default/files/2026-06/real.xlsx"
+                        if k == "LBNL_QUEUE_XLSX_URL" else None)
+    monkeypatch.setattr(lq, "_try_url",
+                        lambda url, timeout=90: (seen.append(url), (None, "HTTP 404"))[1])
+    lq._try_fetch_xlsx(2026)
+    assert seen[0].endswith("2026-06/real.xlsx"), (
+        f"override must be attempt #1, ahead of the legacy patterns; order was {seen}")
 
 
 # ──────────────────────────────────────────────────────────────────────────────

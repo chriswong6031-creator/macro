@@ -1,0 +1,113 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "XEL-2026-06-30-buy",
+  "ticker": "XEL",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "XEL",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "XEL",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "mixed",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Utilities",
+    "excess_spy": -0.020523564790481452,
+    "excess_sector": -0.009439251564977824,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "DEAD_MONEY",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "XEL underperformed SPY and ended DEAD_MONEY under a mixed attribution. The clean process makes this a candidate for Utilities regime and rotation conditioning, with no basis for gate tightening.",
+    "root_cause": "XEL underperformed SPY and ended DEAD_MONEY under a mixed attribution. The clean process makes this a candidate for Utilities regime and rotation conditioning, with no basis for gate tightening.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The outcome book preserved a clean-process miss, while macro, Utilities-rotation, catalyst, and relative-momentum books did not identify the adverse condition.",
+    "engines_credit": "The process taxonomy is the role model; the rate-regime, rotation, alpha, catalyst, and path organs are attribution laggards.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "macro_regime",
+        "factor": "",
+        "mechanism": "An unfavorable rate-sensitive or risk-preference regime may have pressured XEL.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Strong Utilities performance under the same macro conditions would weaken the regime explanation.",
+        "evidence_refs": [
+          "sector=Utilities",
+          "outcome_cause=mixed"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "market_rotation",
+        "factor": "",
+        "mechanism": "Rotation away from Utilities may have compounded relative underperformance.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "If Utilities breadth remained strong, XEL-specific weakness would become more likely.",
+        "evidence_refs": [
+          "sector=Utilities"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "Relative weakness persisted into a DEAD_MONEY terminal state.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "A durable recovery within the intended window would weaken the terminal-path explanation.",
+        "evidence_refs": [
+          "excess_spy negative",
+          "terminal_state=DEAD_MONEY",
+          "process_fault=clean"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "XEL-specific regulatory or operating developments may have driven the outcome.",
+      "SPY leadership concentration may have produced relative weakness without a Utilities breakdown.",
+      "A post-entry event may have affected the path and would be hindsight absent prior visibility."
+    ],
+    "missing_evidence": [
+      "Utilities breadth and peer-relative returns",
+      "Rate and volatility state at entry",
+      "XEL regulatory and company-event chronology",
+      "Entry-date accumulation and relative momentum",
+      "Intraperiod path data"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "utility_relative_momentum_regime",
+        "feature": "Utility relative-momentum regime",
+        "measurement": "Measure sector and peer-relative momentum jointly with entry-date rate trend and breadth.",
+        "expected_direction": "Improving relative momentum in a supportive regime should correspond to better matured outcomes.",
+        "falsifier": "Joint regime and momentum states do not differentiate XEL-like outcomes.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-07",
+  "asof": "2026-08-07",
+  "ts": "2026-08-07T08:35:36+00:00"
+}

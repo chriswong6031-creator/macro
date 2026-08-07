@@ -57,10 +57,6 @@ SECTION_NAMES = {
 START_MARKER = "# --- BEGIN GENERATED FROM DO_NOT_REBUILD.md (compile_loop_blocklists.py) ---"
 END_MARKER = "# --- END GENERATED FROM DO_NOT_REBUILD.md ---"
 
-# A structural table delimiter is a pipe that is NOT backslash-escaped; `\|`
-# inside a cell is GFM for a literal pipe and must not split the row.
-_UNESCAPED_PIPE = re.compile(r"(?<!\\)\|")
-
 
 # ---------------------------------------------------------------------------
 # Parser
@@ -75,23 +71,26 @@ def _slug(text: str) -> str:
     return text[:80].strip("-")
 
 
-def _split_row(line: str) -> list[str]:
-    """Split one GFM table row into cells, honoring ``\\|`` escapes.
+# A GFM cell boundary is an UNESCAPED pipe.  `\|` is the documented way to put a
+# literal bar inside a cell, and this registry uses it for absolute-value bars
+# (`\|ρ\|`) and conditional-expectation notation (`E[… \| market regime]`).  A plain
+# `.split("|")` treats those as boundaries, which does not merely mangle one cell:
+# the row gains cells, `zip(headers, cells)` below keeps only the first len(headers),
+# and every column shifts one place left while the LAST one is dropped in silence.
+# Two rows shipped that way (KILL-PM4-OVERHEAD-SUPPLY compiled to
+# verdict: 'REDUNDANT — \' / source: 'ρ\'; KILL-PER-SIGNAL-FAMILY-RELIABILITY lost
+# its ruling entirely) — see tests/test_dnr_registry_keys.py, which was dark.
+_CELL_BOUNDARY_RE = re.compile(r"(?<!\\)\|")
 
-    A ruling that quotes a pipe — ``\\|ρ\\| 0.95`` (KILL-PM4-OVERHEAD-SUPPLY) or
-    ``E[perf \\| regime]`` (KILL-PER-SIGNAL-FAMILY-RELIABILITY) — is correct GFM,
-    but splitting on every ``|`` over-counts the cells and `dict(zip(...))` then
-    DROPS the overflow from the right: the verdict of PM4 compiled to the single
-    character ``\\`` and its `Ruling / source` vanished outright. Structural pipes
-    are the unescaped ones; peel exactly one delimiter off each end so a cell that
-    legitimately ends in ``\\|`` keeps its content.
-    """
-    row = line.strip()
-    if row.startswith("|"):
-        row = row[1:]
-    if row.endswith("|") and not row.endswith("\\|"):
-        row = row[:-1]
-    return [c.strip().replace("\\|", "|") for c in _UNESCAPED_PIPE.split(row)]
+
+def _split_row(line: str) -> list[str]:
+    """Split one GFM pipe row on unescaped `|`, then unescape the cells."""
+    inner = line.strip()
+    if inner.startswith("|"):
+        inner = inner[1:]
+    if inner.endswith("|") and not inner.endswith("\\|"):
+        inner = inner[:-1]
+    return [c.strip().replace("\\|", "|") for c in _CELL_BOUNDARY_RE.split(inner)]
 
 
 def _parse_markdown_table(lines: list[str]) -> list[dict[str, str]]:
