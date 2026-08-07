@@ -24,6 +24,22 @@ THE LAW, applied at every marker write (one merge with the previously rendered f
 All divergence is disclosed in the payload's `pit` dict (cumulative across nights) —
 the merged file may drift from tonight's pure recompute, and that is the point: the
 file is the record of what was shown, not of what tonight's data revision implies.
+
+THE ONE EXCEPTION — AN ADJUDICATED ERA CHANGE (R-SQ7). The law above exists to stop
+UNEXPLAINED nightly mutation. It cannot be allowed to absorb an EXPLAINED one: when the
+marker engine's bucketing grid is deliberately re-anchored, every historical marker
+legitimately re-dates at once. Under the same-era law that re-draw would be swallowed —
+re-dated markers inside TOL_DAYS keep their old rendered date forever, re-phased ones
+beyond it are DROPPED (`drift_deep_new`) or ghost-RETAINED (`drift_lost`) — so the
+rendered chart would keep the OLD grid while every live `gate()` consumer (boards, the
+HK/CN lanes) moved to the new one the same night: a permanent split-brain, plus a
+one-time drift-counter burst burying real future drift. So `merge_payload` compares the
+payload's `anchor_era`, and on a MISMATCH it yields exactly once — tonight's recompute
+replaces the marker history WHOLESALE, `pit["era_cutover"]` records the crossing forever,
+and the append-only law resumes under the new era on the next night. That is the same
+doctrine as `regen_hk_g1_fixture --force`: an engine-change PR knows itself. Unexplained
+re-datings stay blocked exactly as before.
+
 Pure functions; no I/O.
 """
 from __future__ import annotations
@@ -104,9 +120,35 @@ def merge_markers(prev: list[dict] | None, new: list[dict] | None,
 
 def merge_payload(prev: dict | None, new: dict) -> dict:
     """Full signal-file merge: tonight's live fields (asof/state/trail_stop/…) pass
-    through; `markers` obey the law; `pit` accumulates drift counts across nights."""
+    through; `markers` obey the law; `pit` accumulates drift counts across nights.
+
+    THE ERA GATE (R-SQ7) runs first. When the payload's ``anchor_era`` differs from the
+    rendered file's — including the pre-era case where the stored file carries none —
+    tonight's marker history is taken WHOLESALE, with no matching pass at all, and the
+    crossing is stamped into ``pit["era_cutover"]``. The cumulative drift counters carry
+    over untouched: they measure the same-era law's history and must not be reset by a
+    change that is not drift. Callers need no edit — ``build_signal_quality`` and
+    ``build_subsector_confluence`` both merge through here, so the cutover happens once,
+    in one place, on the night the era moves.
+    """
     out = dict(new)
     prev_markers = (prev or {}).get("markers")
+    prev_era = (prev or {}).get("anchor_era")
+    new_era = new.get("anchor_era")
+    if prev and prev_era != new_era:
+        out["markers"] = list(new.get("markers") or [])
+        cum = dict((prev or {}).get("pit") or {})
+        cum.pop("last_night", None)
+        # A cutover is NOT drift: the counters keep their meaning across the seam, and the
+        # night itself is recorded as its own shape so no reader mistakes a wholesale
+        # replacement for `appended` markers.
+        cutover = {"from": prev_era, "to": new_era, "at_asof": new.get("asof"),
+                   "prev_markers": len(prev_markers or [])}
+        cum["last_night"] = {"era_cutover": cutover}
+        cum["era_cutover"] = cutover
+        cum["prev_asof"] = (prev or {}).get("asof")
+        out["pit"] = cum
+        return out
     merged, stats = merge_markers(prev_markers, new.get("markers"),
                                   (prev or {}).get("asof"))
     out["markers"] = merged

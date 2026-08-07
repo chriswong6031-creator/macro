@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_f0_delta_reconciliation_receipt.v1.schema.json",
+  "title": "BioCatalyst BC-F0-delta shared-plane reconciliation receipt v1",
+  "description": "An immutable record of one shared-plane eligibility re-audit: which plane was checked, which repo files were inspected, the verdict, and the exact blocker that survived. It records evidence only. It grants no plane availability, opens no adapter, and cannot authorize activation, arming, rights, or authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema_version",
+    "receipt_id",
+    "state",
+    "owner",
+    "reconciled_at",
+    "baseline_commit",
+    "ownership_registry_ref",
+    "ownership_registry_sha256",
+    "ownership_registry_reconciled_against_commit",
+    "adapter_fixture_ref",
+    "adapter_fixture_sha256",
+    "adapter_fixture_baseline_commit",
+    "eligibility_rule",
+    "planes",
+    "authority",
+    "hash_scope",
+    "content_sha256"
+  ],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_f0_delta_reconciliation_receipt.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "receipt_id": {
+      "type": "string",
+      "pattern": "^biocatalyst_f0_delta_[a-f0-9]{24}$"
+    },
+    "state": {
+      "enum": [
+        "reconciled_no_eligibility_change",
+        "reconciled_with_eligibility_change"
+      ]
+    },
+    "owner": {"const": "biocatalyst"},
+    "reconciled_at": {"$ref": "#/$defs/utcTimestamp"},
+    "baseline_commit": {"$ref": "#/$defs/commit"},
+    "ownership_registry_ref": {"const": "config/sector_intelligence_ownership.yml"},
+    "ownership_registry_sha256": {"$ref": "#/$defs/sha256"},
+    "ownership_registry_reconciled_against_commit": {"$ref": "#/$defs/commit"},
+    "adapter_fixture_ref": {
+      "const": "data/biocatalyst/fixtures/shared_plane_read_adapters.v1.json"
+    },
+    "adapter_fixture_sha256": {"$ref": "#/$defs/sha256"},
+    "adapter_fixture_baseline_commit": {"$ref": "#/$defs/commit"},
+    "eligibility_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requires_executable_contract",
+        "requires_versioned_contract",
+        "requires_point_in_time_scope",
+        "requires_defined_ambiguity_behavior",
+        "requires_defined_unavailable_behavior",
+        "requires_compatible_fixture",
+        "plane_existence_is_sufficient",
+        "importable_module_is_sufficient"
+      ],
+      "properties": {
+        "requires_executable_contract": {"const": true},
+        "requires_versioned_contract": {"const": true},
+        "requires_point_in_time_scope": {"const": true},
+        "requires_defined_ambiguity_behavior": {"const": true},
+        "requires_defined_unavailable_behavior": {"const": true},
+        "requires_compatible_fixture": {"const": true},
+        "plane_existence_is_sufficient": {"const": false},
+        "importable_module_is_sufficient": {"const": false}
+      }
+    },
+    "planes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/planeAudit"}
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authorizes_adapter_promotion",
+        "authorizes_source_activation",
+        "authorizes_operator_arming",
+        "authorizes_rights_change",
+        "authorizes_entitlement_change",
+        "authorizes_model_promotion",
+        "authorizes_neural_web_authority",
+        "authorizes_prophet_behavior",
+        "constitutes_rights_review",
+        "constitutes_soak_evidence",
+        "originates_signals_scores_or_ranking"
+      ],
+      "properties": {
+        "authorizes_adapter_promotion": {"const": false},
+        "authorizes_source_activation": {"const": false},
+        "authorizes_operator_arming": {"const": false},
+        "authorizes_rights_change": {"const": false},
+        "authorizes_entitlement_change": {"const": false},
+        "authorizes_model_promotion": {"const": false},
+        "authorizes_neural_web_authority": {"const": false},
+        "authorizes_prophet_behavior": {"const": false},
+        "constitutes_rights_review": {"const": false},
+        "constitutes_soak_evidence": {"const": false},
+        "originates_signals_scores_or_ranking": {"const": false}
+      }
+    },
+    "hash_scope": {
+      "const": "canonical_payload_excluding_receipt_id_and_content_sha256"
+    },
+    "content_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"state": {"const": "reconciled_no_eligibility_change"}},
+        "required": ["state"]
+      },
+      "then": {
+        "properties": {
+          "planes": {
+            "items": {
+              "properties": {"eligibility_changed": {"const": false}}
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "commit": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "utcTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]+)?Z$"
+    },
+    "repoPath": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_][A-Za-z0-9_./-]{0,239}$"
+    },
+    "planeAudit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "plane",
+        "adapter_id",
+        "owning_registration",
+        "verdict",
+        "prior_biocatalyst_eligible",
+        "reconciled_biocatalyst_eligible",
+        "eligibility_changed",
+        "blocker",
+        "inspected_paths",
+        "evidence"
+      ],
+      "properties": {
+        "plane": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,95}$"},
+        "adapter_id": {
+          "anyOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,95}\\.v1$"}
+          ]
+        },
+        "owning_registration": {
+          "anyOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,95}$"}
+          ]
+        },
+        "verdict": {
+          "enum": ["eligible", "still_blocked", "no_read_adapter_slot"]
+        },
+        "prior_biocatalyst_eligible": {"type": ["boolean", "null"]},
+        "reconciled_biocatalyst_eligible": {"type": ["boolean", "null"]},
+        "eligibility_changed": {"type": "boolean"},
+        "blocker": {
+          "anyOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,159}$"}
+          ]
+        },
+        "inspected_paths": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/repoPath"}
+        },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 16, "maxLength": 400}
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"verdict": {"const": "still_blocked"}},
+            "required": ["verdict"]
+          },
+          "then": {
+            "properties": {
+              "adapter_id": {"type": "string"},
+              "reconciled_biocatalyst_eligible": {"const": false},
+              "blocker": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {"verdict": {"const": "eligible"}},
+            "required": ["verdict"]
+          },
+          "then": {
+            "properties": {
+              "adapter_id": {"type": "string"},
+              "reconciled_biocatalyst_eligible": {"const": true},
+              "blocker": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {"verdict": {"const": "no_read_adapter_slot"}},
+            "required": ["verdict"]
+          },
+          "then": {
+            "properties": {
+              "adapter_id": {"type": "null"},
+              "prior_biocatalyst_eligible": {"type": "null"},
+              "reconciled_biocatalyst_eligible": {"type": "null"},
+              "blocker": {"type": "null"},
+              "eligibility_changed": {"const": false}
+            }
+          }
+        }
+      ]
+    }
+  }
+}

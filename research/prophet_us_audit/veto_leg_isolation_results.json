@@ -1,0 +1,3108 @@
+{
+ "instrument": "W5.1 per-leg not-topped veto isolation (frozen-frame)",
+ "charter": "research/prophet_us_audit/MACD_BEAR_RATIFICATION_PACKET.md",
+ "scope": "MEASUREMENT ONLY \u2014 no gate/board/engine/config change follows from this file; the W5 change stays sequenced behind G0.2 (five green nightly miss-audits) AND operator ratification",
+ "repro_asof": "2026-07-31",
+ "loser_def_pp": -3.0,
+ "horizons": [
+  10,
+  21,
+  63
+ ],
+ "trial_ledger_family_status": "FIRST LOOK \u2014 data/trial_ledger.jsonl carries no prior veto-leg sweep family (1,366 rows checked)",
+ "section_0_provenance": {
+  "universe": {
+   "cache_names": 1540,
+   "universe_after_min_history": 1493,
+   "min_history_sessions": 260,
+   "names_deepened_from_yahoo": 324,
+   "splice_scope": "deep_probe ONLY \u2014 every graded leg is computed on the unspliced production cache series so its resample phase matches the gate",
+   "frame": [
+    "2023-06-27",
+    "2026-07-31"
+   ],
+   "sessions": 777
+  },
+  "leg_diagnostics": {
+   "in_range_name_days": 939611,
+   "fire_counts_name_days": {
+    "stoch_ob": 244829,
+    "stoch_bear": 387619,
+    "macd_bear": 292254,
+    "tier_reachable": 154585,
+    "eligible": 70972,
+    "t1_fresh": 90730,
+    "t2_active": 58125,
+    "t3_active": 7580,
+    "t4_active": 16842
+   },
+   "fire_rate_pct_of_in_range": {
+    "stoch_ob": 26.06,
+    "stoch_bear": 41.25,
+    "macd_bear": 31.1,
+    "tier_reachable": 16.45,
+    "eligible": 7.55,
+    "t1_fresh": 9.66,
+    "t2_active": 6.19,
+    "t3_active": 0.81,
+    "t4_active": 1.79
+   },
+   "names_firing_at_least_once": {
+    "stoch_ob": 1493,
+    "stoch_bear": 1493,
+    "macd_bear": 1493,
+    "tier_reachable": 1493,
+    "eligible": 1491,
+    "t1_fresh": 1489,
+    "t2_active": 1488,
+    "t3_active": 1273,
+    "t4_active": 1307
+   },
+   "dead_legs": [],
+   "universe_names": 1493,
+   "sessions": 777,
+   "equality_gate": {
+    "basis": "inline legs vs engine.confluence_tiers.tier_stream, every name, every in-range cell",
+    "names_compared": 1493,
+    "names_tier_stream_empty": 0,
+    "cells": 939611,
+    "not_topped_mismatches": 0,
+    "eligible_mismatches": 0,
+    "status": "PASS",
+    "why_it_matters": "the sole-blocker predicate rests on eligible == not_topped & tier_reachable; a mismatch here voids every cohort below"
+   }
+  },
+  "sector_map_names": 2841,
+  "cross_instrument_agreement": {
+   "against": "research/prophet_us_audit/label_grading_battery_results.json (#4547)",
+   "this_file": {
+    "stoch_ob": 244829,
+    "stoch_bear": 387619,
+    "macd_bear": 292254
+   },
+   "that_file": {
+    "stoch_ob": 244829,
+    "stoch_bear": 387619,
+    "macd_bear": 292254
+   },
+   "deltas": {
+    "stoch_ob": 0,
+    "stoch_bear": 0,
+    "macd_bear": 0
+   },
+   "in_range_name_days_delta": 0,
+   "universe_names_delta": 0,
+   "status": "AGREE"
+  }
+ },
+ "section_1_per_leg_isolation": {
+  "question": "for each not-topped leg separately, what does the cohort blocked SOLELY by that leg do forward, against the cohort the gate admitted?",
+  "predicate": "SOLE[L] = L & ~sibling_a & ~sibling_b & tier_reachable \u2014 blocked, blocked by L alone, and admitted the moment L is removed",
+  "windows": {
+   "full_frame": "every name-day in the frozen frame carrying h forward sessions (primary \u2014 the horizon ladder needs the depth)",
+   "battery_window": "the last 126 sessions with full H=10 forward coverage \u2014 #4547 section_2's own window, replayed here so the two instruments can be read cell against cell"
+  },
+  "by_window": {
+   "full_frame": {
+    "H10": {
+     "window": [
+      "2023-06-27",
+      "2026-07-17"
+     ],
+     "cells": {
+      "CONTROL:admitted": {
+       "n": 69783,
+       "names": 1491,
+       "loser_rate_pct": 31.7,
+       "win_rate_pct": 47.7,
+       "median_excess_spy_pp": -0.35,
+       "median_excess_dm_pp": 0.01,
+       "per_name_first_median_pp": -0.27,
+       "mean_excess_spy_pp": 0.07,
+       "p25_pp": -4.2,
+       "p75_pp": 3.9,
+       "cohort_cells_in_window": 69836,
+       "sector_mix": {
+        "coverage_pct": 98.8,
+        "top_sectors_pct": {
+         "Financials": 19.1,
+         "Industrials": 17.1,
+         "Consumer Discretionary": 14.1,
+         "Information Technology": 11.2
+        },
+        "max_single_sector_pct": 19.1
+       },
+       "half_split": {
+        "split_at": "2025-06-05",
+        "distinct_dates": 616,
+        "first_half": {
+         "n": 34906,
+         "names": 987,
+         "loser_rate_pct": 31.9,
+         "win_rate_pct": 46.2,
+         "median_excess_spy_pp": -0.53,
+         "median_excess_dm_pp": -0.0,
+         "per_name_first_median_pp": -0.39,
+         "mean_excess_spy_pp": 0.0,
+         "p25_pp": -4.2,
+         "p75_pp": 3.5
+        },
+        "second_half": {
+         "n": 34877,
+         "names": 1491,
+         "loser_rate_pct": 31.4,
+         "win_rate_pct": 49.2,
+         "median_excess_spy_pp": -0.14,
+         "median_excess_dm_pp": 0.03,
+         "per_name_first_median_pp": -0.1,
+         "mean_excess_spy_pp": 0.13,
+         "p25_pp": -4.2,
+         "p75_pp": 4.2
+        },
+        "sign_flip_across_halves": false,
+        "per_name_median_gap_pp": 0.29
+       },
+       "onset_only": {
+        "n": 13205,
+        "names": 1491,
+        "loser_rate_pct": 32.0,
+        "win_rate_pct": 47.7,
+        "median_excess_spy_pp": -0.4,
+        "median_excess_dm_pp": -0.08,
+        "per_name_first_median_pp": -0.24,
+        "mean_excess_spy_pp": -0.02,
+        "p25_pp": -4.2,
+        "p75_pp": 3.8
+       }
+      },
+      "CONTROL:admitted_macd3_evaluated": {
+       "n": 58630,
+       "names": 1476,
+       "loser_rate_pct": 31.8,
+       "win_rate_pct": 48.3,
+       "median_excess_spy_pp": -0.27,
+       "median_excess_dm_pp": 0.06,
+       "per_name_first_median_pp": -0.19,
+       "mean_excess_spy_pp": 0.1,
+       "p25_pp": -4.3,
+       "p75_pp": 4.1,
+       "cohort_cells_in_window": 58683,
+       "sector_mix": {
+        "coverage_pct": 98.8,
+        "top_sectors_pct": {
+         "Financials": 18.8,
+         "Industrials": 17.7,
+         "Consumer Discretionary": 14.1,
+         "Information Technology": 10.9
+        },
+        "max_single_sector_pct": 18.8
+       },
+       "half_split": {
+        "split_at": "2025-07-29",
+        "distinct_dates": 536,
+        "first_half": {
+         "n": 29370,
+         "names": 985,
+         "loser_rate_pct": 31.8,
+         "win_rate_pct": 47.3,
+         "median_excess_spy_pp": -0.4,
+         "median_excess_dm_pp": 0.04,
+         "per_name_first_median_pp": -0.19,
+         "mean_excess_spy_pp": 0.06,
+         "p25_pp": -4.2,
+         "p75_pp": 3.8
+        },
+        "second_half": {
+         "n": 29260,
+         "names": 1476,
+         "loser_rate_pct": 31.9,
+         "win_rate_pct": 49.3,
+         "median_excess_spy_pp": -0.12,
+         "median_excess_dm_pp": 0.08,
+         "per_name_first_median_pp": -0.05,
+         "mean_excess_spy_pp": 0.15,
+         "p25_pp": -4.3,
+         "p75_pp": 4.4
+        },
+        "sign_flip_across_halves": false,
+        "per_name_median_gap_pp": 0.14
+       },
+       "onset_only": {
+        "n": 10946,
+        "names": 1476,
+        "loser_rate_pct": 32.0,
+        "win_rate_pct": 48.1,
+        "median_excess_spy_pp": -0.33,
+        "median_excess_dm_pp": 0.0,
+        "per_name_first_median_pp": -0.22,
+        "mean_excess_spy_pp": 0.01,
+        "p25_pp": -4.3,
+        "p75_pp": 4.0
+       }
+      },
+      "CONTROL:admitted_macd3_FAILOPEN": {
+       "n": 11153,
+       "names": 1268,
+       "loser_rate_pct": 30.9,
+       "win_rate_pct": 44.5,
+       "median_excess_spy_pp": -0.65,
+       "median_excess_dm_pp": -0.23,
+       "per_name_first_median_pp": -0.53,
+       "mean_excess_spy_pp": -0.11,
+       "p25_pp": -3.9,
+       "p75_pp": 2.7,
+       "cohort_cells_in_window": 11153,
+       "sector_mix": {
+        "coverage_pct": 98.9,
+        "top_sectors_pct": {
+         "Financials": 20.1,
+         "Industrials": 14.1,
+         "Consumer Discretionary": 13.9,
+         "Information Technology": 12.6
+        },
+        "max_single_sector_pct": 20.1
+       },
+       "half_split": {
+        "split_at": "2024-05-03",
+        "distinct_dates": 222,
+        "first_half": {
+         "n": 5755,
+         "names": 767,
+         "loser_rate_pct": 30.6,
+         "win_rate_pct": 44.2,
+         "median_excess_spy_pp": -0.64,
+         "median_excess_dm_pp": -0.28,
+         "per_name_first_median_pp": -0.7,
+         "mean_excess_spy_pp": -0.18,
+         "p25_pp": -3.8,
+         "p75_pp": 2.5
+        },
+        "second_half": {
+         "n": 5398,
+         "names": 855,
+         "loser_rate_pct": 31.1,
+         "win_rate_pct": 44.9,
+         "median_excess_spy_pp": -0.68,
+         "median_excess_dm_pp": -0.13,
+         "per_name_first_median_pp": -0.88,
+         "mean_excess_spy_pp": -0.03,
+         "p25_pp": -3.9,
+         "p75_pp": 3.0
+        },
+        "sign_flip_across_halves": false,
+        "per_name_median_gap_pp": 0.18
+       },
+       "onset_only": {
+        "n": 2314,
+        "names": 1268,
+        "loser_rate_pct": 31.8,
+        "win_rate_pct": 45.7,
+        "median_excess_spy_pp": -0.64,
+        "median_excess_dm_pp": -0.3,
+        "per_name_first_median_pp": -0.15,
+        "mean_excess_spy_pp": -0.16,
+        "p25_pp": -4.1,
+        "p75_pp": 3.0
+       }
+      },
+      "SOLE:stoch_ob": {
+       "n": 22168,
+       "names": 1340,
+       "loser_rate_pct": 31.6,
+       "win_rate_pct": 47.5,
+       "median_excess_spy_pp": -0.34,
+       "median_excess_dm_pp": 0.01,
+       "per_name_first_median_pp": -0.34,
+       "mean_excess_spy_pp": 0.03,
+       "p25_pp": -4.2,
+       "p75_pp": 3.9,
+       "cohort_cells_in_window": 22185,
+       "sector_mix": {
+        "coverage_pct": 98.6,
+        "top_sectors_pct": {
+         "Financials": 17.6,
+         "Industrials": 17.0,
+         "Consumer Discretionary": 13.7,
+         "Information Technology": 11.9
+        },
+        "max_single_sector_pct": 17.6
+       },
+       "half_split": {
+        "split_at": "2025-08-26",
+        "distinct_dates": 573,
+        "first_half": {
+         "n": 11120,
+         "names": 968,
+         "loser_rate_pct": 31.2,
+         "win_rate_pct": 46.3,
+         "median_excess_spy_pp": -0.49,
+         "median_excess_dm_pp": -0.06,
+         "per_name_first_median_pp": -0.43,
+         "mean_excess_spy_pp": -0.13,
+         "p25_pp": -4.0,
+         "p75_pp": 3.4
+        },
+        "second_half": {
+         "n": 11048,
+         "names": 1303,
+         "loser_rate_pct": 32.0,
+         "win_rate_pct": 48.8,
+         "median_excess_spy_pp": -0.18,
+         "median_excess_dm_pp": 0.1,
+         "per_name_first_median_pp": -0.08,
+         "mean_excess_spy_pp": 0.19,
+         "p25_pp": -4.3,
+         "p75_pp": 4.3
+        },
+        "sign_flip_across_halves": false,
+        "per_name_median_gap_pp": 0.35
+       },
+       "onset_only": {
+        "n": 5744,
+        "names": 1340,
+        "loser_rate_pct": 30.8,
+        "win_rate_pct": 48.9,
+        "median_excess_spy_pp": -0.16,
+        "median_excess_dm_pp": 0.0,
+        "per_name_first_median_pp": -0.11,
+        "mean_excess_spy_pp": 0.06,
+        "p25_pp": -4.1,
+        "p75_pp": 3.9
+       },
+       "vs_control_per_name_pp": -0.07,
+       "vs_control_median_spy_pp": 0.01,
+       "vs_control_loser_pp": -0.1
+      },
+      "SOLE:stoch_bear": {
+       "n": 5323,
+       "names": 981,
+       "loser_rate_pct": 29.7,
+       "win_rate_pct": 50.5,
+       "median_excess_spy_pp": 0.08,
+       "median_excess_dm_pp": 0.05,
+       "per_name_first_median_pp": -0.07,
+       "mean_excess_spy_pp": 0.43,
+       "p25_pp": -3.8,
+       "p75_pp": 4.1,
+       "cohort_cells_in_window": 5332,
+       "sector_mix": {
+        "coverage_pct": 99.4,
+        "top_sectors_pct": {
+         "Financials": 20.5,
+         "Industrials": 18.3,
+         "Consumer Discretionary": 14.1,
+         "Information Technology": 11.1
+        },
+        "max_single_sector_pct": 20.5
+       },
+       "half_split": {
+        "split_at": "2025-07-17",
+        "distinct_dates": 587,
+        "first_half": {
+         "n": 2664,
+         "names": 628,
+         "loser_rate_pct": 30.9,
+         "win_rate_pct": 47.1,
+         "median_excess_spy_pp": -0.39,
+         "median_excess_dm_pp": -0.04,
+         "per_name_first_median_pp": -0.17,
+         "mean_excess_spy_pp": -0.1,
+         "p25_pp": -4.0,
+         "p75_pp": 3.4
+        },
+        "second_half": {
+         "n": 2659,
+         "names": 715,
+         "loser_rate_pct": 28.5,
+         "win_rate_pct": 53.9,
+         "median_excess_spy_pp": 0.67,
+         "median_excess_dm_pp": 0.14,
+         "per_name_first_median_pp": 0.48,
+         "mean_excess_spy_pp": 0.95,
+         "p25_pp": -3.7,
+         "p75_pp": 4.9
+        },
+        "sign_flip_across_halves": true,
+        "per_name_median_gap_pp": 0.65
+       },
+       "onset_only": {
+        "n": 1984,
+        "names": 981,
+        "loser_rate_pct": 29.6,
+        "win_rate_pct": 51.2,
+        "median_excess_spy_pp": 0.16,
+        "median_excess_dm_pp": -0.03,
+        "per_name_first_median_pp": 0.15,
+        "mean_excess_spy_pp": 0.39,
+        "p25_pp": -3.8,
+        "p75_pp": 4.0
+       },
+       "vs_control_per_name_pp": 0.2,
+       "vs_control_median_spy_pp": 0.43,
+       "vs_control_loser_pp": -2.0
+      },
+      "SOLE:macd_bear": {
+       "n": 44395,
+       "names": 1477,
+       "loser_rate_pct": 32.9,
+       "win_rate_pct": 47.1,
+       "median_excess_spy_pp": -0.43,
+       "median_excess_dm_pp": -0.06,
+       "per_name_first_median_pp": -0.53,
+       "mean_excess_spy_pp": -0.12,
+       "p25_pp": -4.4,
+       "p75_pp": 3.8,
+       "cohort_cells_in_window": 44419,
+       "sector_mix": {
+        "coverage_pct": 98.8,
+        "top_sectors_pct": {
+         "Financials": 18.5,
+         "Industrials": 17.2,
+         "Consumer Discretionary": 14.2,
+         "Information Technology": 10.8
+        },
+        "max_single_sector_pct": 18.5
+       },
+       "half_split": {
+        "split_at": "2025-08-13",
+        "distinct_dates": 542,
+        "first_half": {
+         "n": 22235,
+         "names": 986,
+         "loser_rate_pct": 33.1,
+         "win_rate_pct": 45.7,
+         "median_excess_spy_pp": -0.6,
+         "median_excess_dm_pp": -0.13,
+         "per_name_first_median_pp": -0.65,
+         "mean_excess_spy_pp": -0.29,
+         "p25_pp": -4.5,
+         "p75_pp": 3.5
+        },
+        "second_half": {
+         "n": 22160,
+         "names": 1477,
+         "loser_rate_pct": 32.8,
+         "win_rate_pct": 48.4,
+         "median_excess_spy_pp": -0.24,
+         "median_excess_dm_pp": 0.0,
+         "per_name_first_median_pp": -0.19,
+         "mean_excess_spy_pp": 0.05,
+         "p25_pp": -4.4,
+         "p75_pp": 4.1
+        },
+        "sign_flip_across_halves": false,
+        "per_name_median_gap_pp": 0.46
+       },
+       "onset_only": {
+        "n": 10604,
+        "names": 1477,
+        "loser_rate_pct": 32.2,
+        "win_rate_pct": 47.1,
+        "median_excess_spy_pp": -0.41,
+        "median_excess_dm_pp": -0.15,
+        "per_name_first_median_pp": -0.35,
+        "mean_excess_spy_pp": -0.09,
+        "p25_pp": -4.3,
+        "p75_pp": 3.7
+       },
+       "vs_control_per_name_pp": -0.26,
+       "vs_control_median_spy_pp": -0.08,
+       "vs_control_loser_pp": 1.2
+      },
+      "SOLE:macd_bear_macd3_evaluated": {
+       "n": 44066,
+       "names": 1477,
+       "loser_rate_pct": 32.9,
+       "win_rate_pct": 47.2,
+       "median_excess_spy_pp": -0.41,
+       "median_excess_dm_pp": -0.05,
+       "per_name_first_median_pp": -0.5,
+       "mean_excess_spy_pp": -0.1,
+       "p25_pp": -4.4,
+       "p75_pp": 3.8,
+       "cohort_cells_in_window": 44090,
+       "sector_mix": {
+        "coverage_pct": 98.8,
+        "top_sectors_pct": {
+         "Financials": 18.5,
+         "Industrials": 17.2,
+         "Consumer Discretionary": 14.2,
+         "Information Technology": 10.8
+        },
+        "max_single_sector_pct": 18.5
+       },
+       "half_split": {
+        "split_at": "2025-08-14",
+        "distinct_dates": 536,
+        "first_half": {
+         "n": 22106,
+         "names": 986,
+         "loser_rate_pct": 32.8,
+         "win_rate_pct": 46.1,
+         "median_excess_spy_pp": -0.56,
+         "median_excess_dm_pp": -0.11,
+         "per_name_first_median_pp": -0.62,
+         "mean_excess_spy_pp": -0.24,
+         "p25_pp": -4.4,
+         "p75_pp": 3.6
+        },
+        "second_half": {
+         "n": 21960,
+         "names": 1477,
+         "loser_rate_pct": 32.9,
+         "win_rate_pct": 48.3,
+         "median_excess_spy_pp": -0.25,
+         "median_excess_dm_pp": 0.0,
+         "per_name_first_median_pp": -0.19,
+         "mean_excess_spy_pp": 0.04,
+         "p25_pp": -4.4,
+         "p75_pp": 4.1
+        },
+        "sign_flip_across_halves": false,
+        "per_name_median_gap_pp": 0.43
+       },
+       "onset_only": {
+        "n": 10514,
+        "names": 1477,
+        "loser_rate_pct": 32.2,
+        "win_rate_pct": 47.2,
+        "median_excess_spy_pp": -0.41,
+        "median_excess_dm_pp": -0.14,
+        "per_name_first_median_pp": -0.29,
+        "mean_excess_spy_pp": -0.09,
+        "p25_pp": -4.3,
+        "p75_pp": 3.8
+       },
+       "vs_control_per_name_pp": -0.23,
+       "vs_control_median_spy_pp": -0.06,
+       "vs_control_loser_pp": 1.2
+      },
+      "BLOCKED:any_leg_reachable": {
+       "n": 82074,
+       "names": 1491,
+       "loser_rate_pct": 32.0,
+       "win_rate_pct": 47.8,
+       "median_excess_spy_pp": -0.32,
+       "median_excess_dm_pp": -0.02,
+       "per_name_first_median_pp": -0.35,
+       "mean_excess_spy_pp": -0.01,
+       "p25_pp": -4.3,
+       "p75_pp": 3.9,
+       "cohort_cells_in_window": 82127,
+       "sector_mix": {
+        "coverage_pct": 98.8,
+        "top_sectors_pct": {
+         "Financials": 18.5,
+         "Industrials": 17.4,
+         "Consumer Discretionary": 14.0,
+         "Information Technology": 11.1
+        },
+        "max_single_sector_pct": 18.5
+       },
+       "half_split": {
+        "split_at": "2025-08-15",
+        "distinct_dates": 604,
+        "first_half": {
+         "n": 41167,
+         "names": 987,
+         "loser_rate_pct": 32.1,
+         "win_rate_pct": 46.3,
+         "median_excess_spy_pp": -0.51,
+         "median_excess_dm_pp": -0.11,
+         "per_name_first_median_pp": -0.49,
+         "mean_excess_spy_pp": -0.22,
+         "p25_pp": -4.3,
+         "p75_pp": 3.5
+        },
+        "second_half": {
+         "n": 40907,
+         "names": 1491,
+         "loser_rate_pct": 31.8,
+         "win_rate_pct": 49.3,
+         "median_excess_spy_pp": -0.11,
+         "median_excess_dm_pp": 0.07,
+         "per_name_first_median_pp": -0.15,
+         "mean_excess_spy_pp": 0.2,
+         "p25_pp": -4.2,
+         "p75_pp": 4.2
+        },
+        "sign_flip_across_halves": false,
+        "per_name_median_gap_pp": 0.34
+       },
+       "onset_only": {
+        "n": 20100,
+        "names": 1491,
+        "loser_rate_pct": 31.4,
+        "win_rate_pct": 48.3,
+        "median_excess_spy_pp": -0.24,
+        "median_excess_dm_pp": -0.07,
+        "per_name_first_median_pp": -0.29,
+        "mean_excess_spy_pp": -0.01,
+        "p25_pp": -4.1,
+        "p75_pp": 3.8
+       },
+       "vs_control_per_name_pp": -0.08,
+       "vs_control_median_spy_pp": 0.03,
+       "vs_control_loser_pp": 0.3
+      },
+      "UNION:board_without_macd_bear": {
+       "n": 114178,
+       "names": 1492,
+       "loser_rate_pct": 32.2,
+       "win_rate_pct": 47.4,
+       "median_excess_spy_pp": -0.38,
+       "median_excess_dm_pp": -0.01,
+       "per_name_first_median_pp": -0.34,
+       "mean_excess_spy_pp": -0.01,
+       "p25_pp": -4.3,
+       "p75_pp": 3.8,
+       "cohort_cells_in_window": 114255,
+       "sector_mix": {
+        "coverage_pct": 98.8,
+        "top_sectors_pct": {
+         "Financials": 18.8,
+         "Industrials": 17.1,
+         "Consumer Discretionary": 14.1,
+         "Information Technology": 11.0
+        },
+        "max_single_sector_pct": 18.8
+       },
+       "half_split": {
+        "split_at": "2025-07-02",
+        "distinct_dates": 616,
+        "first_half": {
+         "n": 57209,
+         "names": 987,
+         "loser_rate_pct": 32.5,
+         "win_rate_pct": 45.8,
+         "median_excess_spy_pp": -0.57,
+         "median_excess_dm_pp": -0.04,
+         "per_name_first_median_pp": -0.57,
+         "mean_excess_spy_pp": -0.12,
+         "p25_pp": -4.3,
+         "p75_pp": 3.5
+        },
+        "second_half": {
+         "n": 56969,
+         "names": 1492,
+         "loser_rate_pct": 31.8,
+         "win_rate_pct": 49.1,
+         "median_excess_spy_pp": -0.16,
+         "median_excess_dm_pp": 0.02,
+         "per_name_first_median_pp": -0.07,
+         "mean_excess_spy_pp": 0.11,
+         "p25_pp": -4.3,
+         "p75_pp": 4.2
+        },
+        "sign_flip_across_halves": false,
+        "per_name_median_gap_pp": 0.5
+       },
+       "onset_only": {
+        "n": 19396,
+        "names": 1492,
+        "loser_rate_pct": 32.0,
+        "win_rate_pct": 47.4,
+        "median_excess_spy_pp": -0.4,
+        "median_excess_dm_pp": -0.1,
+        "per_name_first_median_pp": -0.44,
+        "mean_excess_spy_pp": -0.04,
+        "p25_pp": -4.2,
+        "p75_pp": 3.8
+       },
+       "vs_control_per_name_pp": -0.07,
+       "vs_control_median_spy_pp": -0.03,
+       "vs_control_loser_pp": 0.5
+      }
+     }
+    },
+    "H21": {
+     "window": [
+      "2023-06-27",
+      "2026-07-01"
+     ],
+     "cells": {
+      "CONTROL:admitted": {
+       "n": 68120,
+       "names": 1486,
+       "loser_rate_pct": 41.8,
+       "win_rate_pct": 44.4,
+       "median_excess_spy_pp": -1.25,
+       "median_excess_dm_pp": -0.08,
+       "per_name_first_median_pp": -0.94,
+       "mean_excess_spy_pp": -0.56,
+       "p25_pp": -7.0,
+       "p75_pp": 5.1,
+       "cohort_cells_in_window": 68203,
+       "sector_mix": {
+        "coverage_pct": 98.8,
+        "top_sectors_pct": {
+         "Financials": 19.1,
+         "Industrials": 17.1,
+         "Consumer Discretionary": 14.2,
+         "Information Technology": 11.0
+        },
+        "max_single_sector_pct": 19.1
+       },
+       "onset_only": {
+        "n": 12891,
+        "names": 1486,
+        "loser_rate_pct": 41.5,
+        "win_rate_pct": 44.9,
+        "median_excess_spy_pp": -1.14,
+        "median_excess_dm_pp": -0.09,
+        "per_name_first_median_pp": -0.83,
+        "mean_excess_spy_pp": -0.5,
+        "p25_pp": -7.0,
+        "p75_pp": 5.2
+       }
+      },
+      "CONTROL:admitted_macd3_evaluated": {
+       "n": 56967,
+       "names": 1459,
+       "loser_rate_pct": 41.5,
+       "win_rate_pct": 45.2,
+       "median_excess_spy_pp": -1.1,
+       "median_excess_dm_pp": -0.08,
+       "per_name_first_median_pp": -0.97,
+       "mean_excess_spy_pp": -0.48,
+       "p25_pp": -7.1,
+       "p75_pp": 5.5,
+       "cohort_cells_in_window": 57050,
+       "sector_mix": {
+        "coverage_pct": 98.7,
+        "top_sectors_pct": {
+         "Financials": 19.0,
+         "Industrials": 17.7,
+         "Consumer Discretionary": 14.2,
+         "Information Technology": 10.8
+        },
+        "max_single_sector_pct": 19.0
+       },
+       "onset_only": {
+        "n": 10632,
+        "names": 1459,
+        "loser_rate_pct": 41.3,
+        "win_rate_pct": 45.7,
+        "median_excess_spy_pp": -0.96,
+        "median_excess_dm_pp": -0.03,
+        "per_name_first_median_pp": -1.0,
+        "mean_excess_spy_pp": -0.44,
+        "p25_pp": -7.1,
+        "p75_pp": 5.5
+       }
+      },
+      "CONTROL:admitted_macd3_FAILOPEN": {
+       "n": 11153,
+       "names": 1268,
+       "loser_rate_pct": 43.5,
+       "win_rate_pct": 40.0,
+       "median_excess_spy_pp": -1.83,
+       "median_excess_dm_pp": -0.11,
+       "per_name_first_median_pp": -1.42,
+       "mean_excess_spy_pp": -0.97,
+       "p25_pp": -6.5,
+       "p75_pp": 3.5,
+       "cohort_cells_in_window": 11153,
+       "sector_mix": {
+        "coverage_pct": 98.9,
+        "top_sectors_pct": {
+         "Financials": 20.1,
+         "Industrials": 14.1,
+         "Consumer Discretionary": 13.9,
+         "Information Technology": 12.6
+        },
+        "max_single_sector_pct": 20.1
+       },
+       "onset_only": {
+        "n": 2314,
+        "names": 1268,
+        "loser_rate_pct": 42.4,
+        "win_rate_pct": 41.0,
+        "median_excess_spy_pp": -1.6,
+        "median_excess_dm_pp": -0.22,
+        "per_name_first_median_pp": -0.92,
+        "mean_excess_spy_pp": -0.83,
+        "p25_pp": -6.2,
+        "p75_pp": 3.7
+       }
+      },
+      "SOLE:stoch_ob": {
+       "n": 21288,
+       "names": 1303,
+       "loser_rate_pct": 41.8,
+       "win_rate_pct": 44.4,
+       "median_excess_spy_pp": -1.28,
+       "median_excess_dm_pp": -0.03,
+       "per_name_first_median_pp": -1.25,
+       "mean_excess_spy_pp": -0.4,
+       "p25_pp": -6.9,
+       "p75_pp": 5.1,
+       "cohort_cells_in_window": 21306,
+       "sector_mix": {
+        "coverage_pct": 98.6,
+        "top_sectors_pct": {
+         "Financials": 17.6,
+         "Industrials": 17.2,
+         "Consumer Discretionary": 13.8,
+         "Information Technology": 12.2
+        },
+        "max_single_sector_pct": 17.6
+       },
+       "onset_only": {
+        "n": 5524,
+        "names": 1303,
+        "loser_rate_pct": 42.2,
+        "win_rate_pct": 44.3,
+        "median_excess_spy_pp": -1.35,
+        "median_excess_dm_pp": -0.26,
+        "per_name_first_median_pp": -1.19,
+        "mean_excess_spy_pp": -0.58,
+        "p25_pp": -7.0,
+        "p75_pp": 5.0
+       },
+       "vs_control_per_name_pp": -0.31,
+       "vs_control_median_spy_pp": -0.03,
+       "vs_control_loser_pp": 0.0
+      },
+      "SOLE:stoch_bear": {
+       "n": 5209,
+       "names": 967,
+       "loser_rate_pct": 36.8,
+       "win_rate_pct": 49.7,
+       "median_excess_spy_pp": -0.06,
+       "median_excess_dm_pp": 0.25,
+       "per_name_first_median_pp": -0.27,
+       "mean_excess_spy_pp": 0.69,
+       "p25_pp": -5.9,
+       "p75_pp": 6.5,
+       "cohort_cells_in_window": 5221,
+       "sector_mix": {
+        "coverage_pct": 99.3,
+        "top_sectors_pct": {
+         "Financials": 20.2,
+         "Industrials": 18.5,
+         "Consumer Discretionary": 14.0,
+         "Information Technology": 11.2
+        },
+        "max_single_sector_pct": 20.2
+       },
+       "onset_only": {
+        "n": 1934,
+        "names": 967,
+        "loser_rate_pct": 37.3,
+        "win_rate_pct": 49.0,
+        "median_excess_spy_pp": -0.17,
+        "median_excess_dm_pp": 0.1,
+        "per_name_first_median_pp": -0.09,
+        "mean_excess_spy_pp": 0.59,
+        "p25_pp": -6.0,
+        "p75_pp": 6.9
+       },
+       "vs_control_per_name_pp": 0.67,
+       "vs_control_median_spy_pp": 1.19,
+       "vs_control_loser_pp": -5.0
+      },
+      "SOLE:macd_bear": {
+       "n": 43353,
+       "names": 1466,
+       "loser_rate_pct": 42.6,
+       "win_rate_pct": 44.2,
+       "median_excess_spy_pp": -1.33,
+       "median_excess_dm_pp": -0.1,
+       "per_name_first_median_pp": -1.51,
+       "mean_excess_spy_pp": -0.56,
+       "p25_pp": -7.3,
+       "p75_pp": 5.2,
+       "cohort_cells_in_window": 43394,
+       "sector_mix": {
+        "coverage_pct": 98.8,
+        "top_sectors_pct": {
+         "Financials": 18.6,
+         "Industrials": 17.4,
+         "Consumer Discretionary": 14.3,
+         "Information Technology": 10.8
+        },
+        "max_single_sector_pct": 18.6
+       },
+       "onset_only": {
+        "n": 10355,
+        "names": 1466,
+        "loser_rate_pct": 42.1,
+        "win_rate_pct": 44.2,
+        "median_excess_spy_pp": -1.25,
+        "median_excess_dm_pp": -0.27,
+        "per_name_first_median_pp": -1.43,
+        "mean_excess_spy_pp": -0.44,
+        "p25_pp": -7.2,
+        "p75_pp": 5.2
+       },
+       "vs_control_per_name_pp": -0.57,
+       "vs_control_median_spy_pp": -0.08,
+       "vs_control_loser_pp": 0.8
+      },
+      "SOLE:macd_bear_macd3_evaluated": {
+       "n": 43024,
+       "names": 1464,
+       "loser_rate_pct": 42.4,
+       "win_rate_pct": 44.4,
+       "median_excess_spy_pp": -1.28,
+       "median_excess_dm_pp": -0.09,
+       "per_name_first_median_pp": -1.47,
+       "mean_excess_spy_pp": -0.52,
+       "p25_pp": -7.3,
+       "p75_pp": 5.2,
+       "cohort_cells_in_window": 43065,
+       "sector_mix": {
+        "coverage_pct": 98.8,
+        "top_sectors_pct": {
+         "Financials": 18.7,
+         "Industrials": 17.5,
+         "Consumer Discretionary": 14.3,
+         "Information Technology": 10.8
+        },
+        "max_single_sector_pct": 18.7
+       },
+       "onset_only": {
+        "n": 10265,
+        "names": 1464,
+        "loser_rate_pct": 41.8,
+        "win_rate_pct": 44.5,
+        "median_excess_spy_pp": -1.21,
+        "median_excess_dm_pp": -0.26,
+        "per_name_first_median_pp": -1.36,
+        "mean_excess_spy_pp": -0.39,
+        "p25_pp": -7.1,
+        "p75_pp": 5.3
+       },
+       "vs_control_per_name_pp": -0.53,
+       "vs_control_median_spy_pp": -0.03,
+       "vs_control_loser_pp": 0.6
+      },
+      "BLOCKED:any_leg_reachable": {
+       "n": 79815,
+       "names": 1490,
+       "loser_rate_pct": 41.2,
+       "win_rate_pct": 45.4,
+       "median_excess_spy_pp": -1.05,
+       "median_excess_dm_pp": 0.0,
+       "per_name_first_median_pp": -1.22,
+       "mean_excess_spy_pp": -0.25,
+       "p25_pp": -6.9,
+       "p75_pp": 5.5,
+       "cohort_cells_in_window": 79900,
+       "sector_mix": {
+        "coverage_pct": 98.8,
+        "top_sectors_pct": {
+         "Financials": 18.6,
+         "Industrials": 17.5,
+         "Consumer Discretionary": 14.1,
+         "Information Technology": 11.1
+        },
+        "max_single_sector_pct": 18.6
+       },
+       "onset_only": {
+        "n": 19545,
+        "names": 1490,
+        "loser_rate_pct": 41.2,
+        "win_rate_pct": 45.4,
+        "median_excess_spy_pp": -1.07,
+        "median_excess_dm_pp": -0.21,
+        "per_name_first_median_pp": -1.14,
+        "mean_excess_spy_pp": -0.28,
+        "p25_pp": -7.0,
+        "p75_pp": 5.4
+       },
+       "vs_control_per_name_pp": -0.28,
+       "vs_control_median_spy_pp": 0.2,
+       "vs_control_loser_pp": -0.6
+      },
+      "UNION:board_without_macd_bear": {
+       "n": 111473,
+       "names": 1491,
+       "loser_rate_pct": 42.1,
+       "win_rate_pct": 44.3,
+       "median_excess_spy_pp": -1.28,
+       "median_excess_dm_pp": -0.09,
+       "per_name_first_median_pp": -1.27,
+       "mean_excess_spy_pp": -0.56,
+       "p25_pp": -7.1,
+       "p75_pp": 5.2,
+       "cohort_cells_in_window": 111597,
+       "sector_mix": {
+        "coverage_pct": 98.8,
+        "top_sectors_pct": {
+         "Financials": 19.0,
+         "Industrials": 17.2,
+         "Consumer Discretionary": 14.2,
+         "Information Technology": 11.0
+        },
+        "max_single_sector_pct": 19.0
+       },
+       "onset_only": {
+        "n": 18959,
+        "names": 1491,
+        "loser_rate_pct": 41.0,
+        "win_rate_pct": 45.1,
+        "median_excess_spy_pp": -1.07,
+        "median_excess_dm_pp": -0.15,
+        "per_name_first_median_pp": -0.94,
+        "mean_excess_spy_pp": -0.37,
+        "p25_pp": -6.9,
+        "p75_pp": 5.3
+       },
+       "vs_control_per_name_pp": -0.33,
+       "vs_control_median_spy_pp": -0.03,
+       "vs_control_loser_pp": 0.3
+      }
+     }
+    },
+    "H63": {
+     "window": [
+      "2023-06-27",
+      "2026-04-30"
+     ],
+     "cells": {
+      "CONTROL:admitted": {
+       "n": 62127,
+       "names": 1462,
+       "loser_rate_pct": 48.4,
+       "win_rate_pct": 44.0,
+       "median_excess_spy_pp": -2.36,
+       "median_excess_dm_pp": 0.02,
+       "per_name_first_median_pp": -2.02,
+       "mean_excess_spy_pp": -0.77,
+       "p25_pp": -12.7,
+       "p75_pp": 8.8,
+       "cohort_cells_in_window": 62268,
+       "sector_mix": {
+        "coverage_pct": 98.7,
+        "top_sectors_pct": {
+         "Financials": 19.1,
+         "Industrials": 16.8,
+         "Consumer Discretionary": 14.1,
+         "Information Technology": 11.4
+        },
+        "max_single_sector_pct": 19.1
+       },
+       "onset_only": {
+        "n": 11700,
+        "names": 1462,
+        "loser_rate_pct": 48.1,
+        "win_rate_pct": 44.1,
+        "median_excess_spy_pp": -2.24,
+        "median_excess_dm_pp": 0.09,
+        "per_name_first_median_pp": -1.67,
+        "mean_excess_spy_pp": -0.67,
+        "p25_pp": -12.6,
+        "p75_pp": 8.9
+       }
+      },
+      "CONTROL:admitted_macd3_evaluated": {
+       "n": 50974,
+       "names": 1356,
+       "loser_rate_pct": 48.8,
+       "win_rate_pct": 43.7,
+       "median_excess_spy_pp": -2.51,
+       "median_excess_dm_pp": -0.01,
+       "per_name_first_median_pp": -2.43,
+       "mean_excess_spy_pp": -0.92,
+       "p25_pp": -13.0,
+       "p75_pp": 8.7,
+       "cohort_cells_in_window": 51115,
+       "sector_mix": {
+        "coverage_pct": 98.7,
+        "top_sectors_pct": {
+         "Financials": 18.9,
+         "Industrials": 17.4,
+         "Consumer Discretionary": 14.1,
+         "Information Technology": 11.1
+        },
+        "max_single_sector_pct": 18.9
+       },
+       "onset_only": {
+        "n": 9441,
+        "names": 1356,
+        "loser_rate_pct": 48.5,
+        "win_rate_pct": 43.8,
+        "median_excess_spy_pp": -2.39,
+        "median_excess_dm_pp": 0.15,
+        "per_name_first_median_pp": -2.51,
+        "mean_excess_spy_pp": -0.77,
+        "p25_pp": -13.0,
+        "p75_pp": 8.8
+       }
+      },
+      "CONTROL:admitted_macd3_FAILOPEN": {
+       "n": 11153,
+       "names": 1268,
+       "loser_rate_pct": 46.6,
+       "win_rate_pct": 45.6,
+       "median_excess_spy_pp": -1.73,
+       "median_excess_dm_pp": 0.2,
+       "per_name_first_median_pp": -1.38,
+       "mean_excess_spy_pp": -0.06,
+       "p25_pp": -11.3,
+       "p75_pp": 9.5,
+       "cohort_cells_in_window": 11153,
+       "sector_mix": {
+        "coverage_pct": 98.9,
+        "top_sectors_pct": {
+         "Financials": 20.1,
+         "Industrials": 14.1,
+         "Consumer Discretionary": 13.9,
+         "Information Technology": 12.6
+        },
+        "max_single_sector_pct": 20.1
+       },
+       "onset_only": {
+        "n": 2314,
+        "names": 1268,
+        "loser_rate_pct": 46.5,
+        "win_rate_pct": 44.9,
+        "median_excess_spy_pp": -1.76,
+        "median_excess_dm_pp": -0.08,
+        "per_name_first_median_pp": -1.04,
+        "mean_excess_spy_pp": -0.22,
+        "p25_pp": -11.2,
+        "p75_pp": 9.4
+       }
+      },
+      "SOLE:stoch_ob": {
+       "n": 19510,
+       "names": 1202,
+       "loser_rate_pct": 48.9,
+       "win_rate_pct": 43.6,
+       "median_excess_spy_pp": -2.57,
+       "median_excess_dm_pp": 0.13,
+       "per_name_first_median_pp": -2.65,
+       "mean_excess_spy_pp": -0.63,
+       "p25_pp": -12.7,
+       "p75_pp": 8.7,
+       "cohort_cells_in_window": 19553,
+       "sector_mix": {
+        "coverage_pct": 98.6,
+        "top_sectors_pct": {
+         "Financials": 18.1,
+         "Industrials": 16.6,
+         "Consumer Discretionary": 13.8,
+         "Information Technology": 12.4
+        },
+        "max_single_sector_pct": 18.1
+       },
+       "onset_only": {
+        "n": 5024,
+        "names": 1202,
+        "loser_rate_pct": 49.4,
+        "win_rate_pct": 43.2,
+        "median_excess_spy_pp": -2.77,
+        "median_excess_dm_pp": -0.06,
+        "per_name_first_median_pp": -2.62,
+        "mean_excess_spy_pp": -0.84,
+        "p25_pp": -12.8,
+        "p75_pp": 8.6
+       },
+       "vs_control_per_name_pp": -0.63,
+       "vs_control_median_spy_pp": -0.21,
+       "vs_control_loser_pp": 0.5
+      },
+      "SOLE:stoch_bear": {
+       "n": 4422,
+       "names": 886,
+       "loser_rate_pct": 48.2,
+       "win_rate_pct": 45.4,
+       "median_excess_spy_pp": -2.11,
+       "median_excess_dm_pp": 0.06,
+       "per_name_first_median_pp": -2.35,
+       "mean_excess_spy_pp": -0.28,
+       "p25_pp": -12.5,
+       "p75_pp": 9.7,
+       "cohort_cells_in_window": 4422,
+       "sector_mix": {
+        "coverage_pct": 99.2,
+        "top_sectors_pct": {
+         "Industrials": 18.8,
+         "Financials": 18.8,
+         "Consumer Discretionary": 14.1,
+         "Information Technology": 12.0
+        },
+        "max_single_sector_pct": 18.8
+       },
+       "onset_only": {
+        "n": 1648,
+        "names": 886,
+        "loser_rate_pct": 48.1,
+        "win_rate_pct": 45.3,
+        "median_excess_spy_pp": -2.18,
+        "median_excess_dm_pp": 0.09,
+        "per_name_first_median_pp": -1.92,
+        "mean_excess_spy_pp": -0.49,
+        "p25_pp": -12.7,
+        "p75_pp": 9.5
+       },
+       "vs_control_per_name_pp": -0.33,
+       "vs_control_median_spy_pp": 0.25,
+       "vs_control_loser_pp": -0.2
+      },
+      "SOLE:macd_bear": {
+       "n": 39760,
+       "names": 1406,
+       "loser_rate_pct": 47.2,
+       "win_rate_pct": 45.1,
+       "median_excess_spy_pp": -1.93,
+       "median_excess_dm_pp": 0.61,
+       "per_name_first_median_pp": -2.54,
+       "mean_excess_spy_pp": -0.05,
+       "p25_pp": -12.5,
+       "p75_pp": 9.5,
+       "cohort_cells_in_window": 39860,
+       "sector_mix": {
+        "coverage_pct": 98.8,
+        "top_sectors_pct": {
+         "Financials": 19.3,
+         "Industrials": 17.4,
+         "Consumer Discretionary": 14.6,
+         "Information Technology": 11.2
+        },
+        "max_single_sector_pct": 19.3
+       },
+       "onset_only": {
+        "n": 9446,
+        "names": 1406,
+        "loser_rate_pct": 47.8,
+        "win_rate_pct": 44.8,
+        "median_excess_spy_pp": -2.07,
+        "median_excess_dm_pp": 0.43,
+        "per_name_first_median_pp": -2.54,
+        "mean_excess_spy_pp": -0.11,
+        "p25_pp": -12.9,
+        "p75_pp": 9.4
+       },
+       "vs_control_per_name_pp": -0.52,
+       "vs_control_median_spy_pp": 0.43,
+       "vs_control_loser_pp": -1.2
+      },
+      "SOLE:macd_bear_macd3_evaluated": {
+       "n": 39431,
+       "names": 1402,
+       "loser_rate_pct": 47.0,
+       "win_rate_pct": 45.4,
+       "median_excess_spy_pp": -1.85,
+       "median_excess_dm_pp": 0.7,
+       "per_name_first_median_pp": -2.46,
+       "mean_excess_spy_pp": 0.03,
+       "p25_pp": -12.4,
+       "p75_pp": 9.5,
+       "cohort_cells_in_window": 39531,
+       "sector_mix": {
+        "coverage_pct": 98.8,
+        "top_sectors_pct": {
+         "Financials": 19.3,
+         "Industrials": 17.5,
+         "Consumer Discretionary": 14.6,
+         "Information Technology": 11.2
+        },
+        "max_single_sector_pct": 19.3
+       },
+       "onset_only": {
+        "n": 9356,
+        "names": 1402,
+        "loser_rate_pct": 47.6,
+        "win_rate_pct": 45.0,
+        "median_excess_spy_pp": -1.96,
+        "median_excess_dm_pp": 0.5,
+        "per_name_first_median_pp": -2.45,
+        "mean_excess_spy_pp": -0.01,
+        "p25_pp": -12.8,
+        "p75_pp": 9.5
+       },
+       "vs_control_per_name_pp": -0.44,
+       "vs_control_median_spy_pp": 0.51,
+       "vs_control_loser_pp": -1.4
+      },
+      "BLOCKED:any_leg_reachable": {
+       "n": 72382,
+       "names": 1449,
+       "loser_rate_pct": 47.3,
+       "win_rate_pct": 45.2,
+       "median_excess_spy_pp": -1.93,
+       "median_excess_dm_pp": 0.56,
+       "per_name_first_median_pp": -2.68,
+       "mean_excess_spy_pp": -0.01,
+       "p25_pp": -12.4,
+       "p75_pp": 9.5,
+       "cohort_cells_in_window": 72535,
+       "sector_mix": {
+        "coverage_pct": 98.8,
+        "top_sectors_pct": {
+         "Financials": 18.8,
+         "Industrials": 17.4,
+         "Consumer Discretionary": 14.4,
+         "Information Technology": 11.6
+        },
+        "max_single_sector_pct": 18.8
+       },
+       "onset_only": {
+        "n": 17614,
+        "names": 1449,
+        "loser_rate_pct": 48.0,
+        "win_rate_pct": 44.6,
+        "median_excess_spy_pp": -2.15,
+        "median_excess_dm_pp": 0.27,
+        "per_name_first_median_pp": -2.76,
+        "mean_excess_spy_pp": -0.28,
+        "p25_pp": -12.7,
+        "p75_pp": 9.1
+       },
+       "vs_control_per_name_pp": -0.66,
+       "vs_control_median_spy_pp": 0.43,
+       "vs_control_loser_pp": -1.1
+      },
+      "UNION:board_without_macd_bear": {
+       "n": 101887,
+       "names": 1486,
+       "loser_rate_pct": 47.9,
+       "win_rate_pct": 44.5,
+       "median_excess_spy_pp": -2.2,
+       "median_excess_dm_pp": 0.24,
+       "per_name_first_median_pp": -2.04,
+       "mean_excess_spy_pp": -0.49,
+       "p25_pp": -12.6,
+       "p75_pp": 9.1,
+       "cohort_cells_in_window": 102128,
+       "sector_mix": {
+        "coverage_pct": 98.8,
+        "top_sectors_pct": {
+         "Financials": 19.2,
+         "Industrials": 17.1,
+         "Consumer Discretionary": 14.3,
+         "Information Technology": 11.3
+        },
+        "max_single_sector_pct": 19.2
+       },
+       "onset_only": {
+        "n": 17214,
+        "names": 1486,
+        "loser_rate_pct": 47.6,
+        "win_rate_pct": 44.6,
+        "median_excess_spy_pp": -2.02,
+        "median_excess_dm_pp": 0.27,
+        "per_name_first_median_pp": -1.93,
+        "mean_excess_spy_pp": -0.29,
+        "p25_pp": -12.6,
+        "p75_pp": 9.3
+       },
+       "vs_control_per_name_pp": -0.02,
+       "vs_control_median_spy_pp": 0.16,
+       "vs_control_loser_pp": -0.5
+      }
+     }
+    }
+   },
+   "battery_window": {
+    "H10": {
+     "window": [
+      "2026-01-15",
+      "2026-07-17"
+     ],
+     "cells": {
+      "CONTROL:admitted": {
+       "n": 18625,
+       "names": 1474,
+       "loser_rate_pct": 33.7,
+       "win_rate_pct": 48.7,
+       "median_excess_spy_pp": -0.26,
+       "median_excess_dm_pp": 0.08,
+       "per_name_first_median_pp": 0.13,
+       "mean_excess_spy_pp": 0.1,
+       "p25_pp": -4.8,
+       "p75_pp": 4.7,
+       "cohort_cells_in_window": 18678,
+       "sector_mix": {
+        "coverage_pct": 99.3,
+        "top_sectors_pct": {
+         "Financials": 19.7,
+         "Industrials": 17.4,
+         "Consumer Discretionary": 14.0,
+         "Information Technology": 12.3
+        },
+        "max_single_sector_pct": 19.7
+       },
+       "half_split": {
+        "split_at": "2026-04-22",
+        "distinct_dates": 126,
+        "first_half": {
+         "n": 9698,
+         "names": 1277,
+         "loser_rate_pct": 37.9,
+         "win_rate_pct": 42.3,
+         "median_excess_spy_pp": -1.27,
+         "median_excess_dm_pp": -0.09,
+         "per_name_first_median_pp": -1.07,
+         "mean_excess_spy_pp": -0.61,
+         "p25_pp": -5.2,
+         "p75_pp": 3.4
+        },
+        "second_half": {
+         "n": 8927,
+         "names": 1188,
+         "loser_rate_pct": 29.2,
+         "win_rate_pct": 55.7,
+         "median_excess_spy_pp": 1.06,
+         "median_excess_dm_pp": 0.31,
+         "per_name_first_median_pp": 1.33,
+         "mean_excess_spy_pp": 0.87,
+         "p25_pp": -4.0,
+         "p75_pp": 5.8
+        },
+        "sign_flip_across_halves": true,
+        "per_name_median_gap_pp": 2.4
+       },
+       "onset_only": {
+        "n": 3595,
+        "names": 1474,
+        "loser_rate_pct": 35.1,
+        "win_rate_pct": 47.6,
+        "median_excess_spy_pp": -0.52,
+        "median_excess_dm_pp": -0.11,
+        "per_name_first_median_pp": -0.28,
+        "mean_excess_spy_pp": -0.21,
+        "p25_pp": -4.9,
+        "p75_pp": 4.2
+       }
+      },
+      "CONTROL:admitted_macd3_evaluated": {
+       "n": 18002,
+       "names": 1466,
+       "loser_rate_pct": 34.0,
+       "win_rate_pct": 48.4,
+       "median_excess_spy_pp": -0.32,
+       "median_excess_dm_pp": 0.08,
+       "per_name_first_median_pp": 0.09,
+       "mean_excess_spy_pp": 0.03,
+       "p25_pp": -4.8,
+       "p75_pp": 4.6,
+       "cohort_cells_in_window": 18055,
+       "sector_mix": {
+        "coverage_pct": 99.3,
+        "top_sectors_pct": {
+         "Financials": 19.8,
+         "Industrials": 17.7,
+         "Consumer Discretionary": 14.2,
+         "Information Technology": 12.0
+        },
+        "max_single_sector_pct": 19.8
+       },
+       "half_split": {
+        "split_at": "2026-04-22",
+        "distinct_dates": 126,
+        "first_half": {
+         "n": 9075,
+         "names": 1223,
+         "loser_rate_pct": 38.8,
+         "win_rate_pct": 41.2,
+         "median_excess_spy_pp": -1.43,
+         "median_excess_dm_pp": -0.11,
+         "per_name_first_median_pp": -1.38,
+         "mean_excess_spy_pp": -0.79,
+         "p25_pp": -5.3,
+         "p75_pp": 3.2
+        },
+        "second_half": {
+         "n": 8927,
+         "names": 1188,
+         "loser_rate_pct": 29.2,
+         "win_rate_pct": 55.7,
+         "median_excess_spy_pp": 1.06,
+         "median_excess_dm_pp": 0.31,
+         "per_name_first_median_pp": 1.33,
+         "mean_excess_spy_pp": 0.87,
+         "p25_pp": -4.0,
+         "p75_pp": 5.8
+        },
+        "sign_flip_across_halves": true,
+        "per_name_median_gap_pp": 2.71
+       },
+       "onset_only": {
+        "n": 3457,
+        "names": 1466,
+        "loser_rate_pct": 35.6,
+        "win_rate_pct": 47.0,
+        "median_excess_spy_pp": -0.64,
+        "median_excess_dm_pp": -0.16,
+        "per_name_first_median_pp": -0.28,
+        "mean_excess_spy_pp": -0.3,
+        "p25_pp": -5.0,
+        "p75_pp": 4.2
+       }
+      },
+      "CONTROL:admitted_macd3_FAILOPEN": {
+       "n": 623,
+       "names": 146,
+       "loser_rate_pct": 25.5,
+       "win_rate_pct": 57.8,
+       "median_excess_spy_pp": 0.95,
+       "median_excess_dm_pp": 0.21,
+       "per_name_first_median_pp": 0.47,
+       "mean_excess_spy_pp": 2.08,
+       "p25_pp": -3.0,
+       "p75_pp": 6.2,
+       "cohort_cells_in_window": 623,
+       "sector_mix": {
+        "coverage_pct": 100.0,
+        "top_sectors_pct": {
+         "Information Technology": 21.7,
+         "Financials": 18.3,
+         "Health Care": 13.6,
+         "Utilities": 11.6
+        },
+        "max_single_sector_pct": 21.7
+       },
+       "half_split": {
+        "split_at": "2026-02-03",
+        "distinct_dates": 32,
+        "first_half": {
+         "n": 342,
+         "names": 99,
+         "loser_rate_pct": 14.9,
+         "win_rate_pct": 71.1,
+         "median_excess_spy_pp": 3.55,
+         "median_excess_dm_pp": 1.36,
+         "per_name_first_median_pp": 1.71,
+         "mean_excess_spy_pp": 4.35,
+         "p25_pp": -0.7,
+         "p75_pp": 8.2
+        },
+        "second_half": {
+         "n": 281,
+         "names": 83,
+         "loser_rate_pct": 38.4,
+         "win_rate_pct": 41.6,
+         "median_excess_spy_pp": -1.42,
+         "median_excess_dm_pp": -1.54,
+         "per_name_first_median_pp": -1.37,
+         "mean_excess_spy_pp": -0.69,
+         "p25_pp": -5.3,
+         "p75_pp": 2.7
+        },
+        "sign_flip_across_halves": true,
+        "per_name_median_gap_pp": 3.08
+       },
+       "onset_only": {
+        "n": 166,
+        "names": 146,
+        "loser_rate_pct": 24.7,
+        "win_rate_pct": 60.2,
+        "median_excess_spy_pp": 0.94,
+        "median_excess_dm_pp": 0.99,
+        "per_name_first_median_pp": 0.96,
+        "mean_excess_spy_pp": 1.74,
+        "p25_pp": -2.9,
+        "p75_pp": 6.2
+       }
+      },
+      "SOLE:stoch_ob": {
+       "n": 6639,
+       "names": 1187,
+       "loser_rate_pct": 33.1,
+       "win_rate_pct": 49.5,
+       "median_excess_spy_pp": -0.08,
+       "median_excess_dm_pp": 0.24,
+       "per_name_first_median_pp": -0.1,
+       "mean_excess_spy_pp": 0.35,
+       "p25_pp": -4.6,
+       "p75_pp": 4.7,
+       "cohort_cells_in_window": 6656,
+       "sector_mix": {
+        "coverage_pct": 98.6,
+        "top_sectors_pct": {
+         "Financials": 18.5,
+         "Industrials": 17.1,
+         "Consumer Discretionary": 12.4,
+         "Information Technology": 11.9
+        },
+        "max_single_sector_pct": 18.5
+       },
+       "half_split": {
+        "split_at": "2026-04-22",
+        "distinct_dates": 126,
+        "first_half": {
+         "n": 3350,
+         "names": 788,
+         "loser_rate_pct": 36.9,
+         "win_rate_pct": 44.0,
+         "median_excess_spy_pp": -0.91,
+         "median_excess_dm_pp": 0.14,
+         "per_name_first_median_pp": -1.11,
+         "mean_excess_spy_pp": -0.12,
+         "p25_pp": -5.1,
+         "p75_pp": 3.6
+        },
+        "second_half": {
+         "n": 3289,
+         "names": 793,
+         "loser_rate_pct": 29.1,
+         "win_rate_pct": 55.0,
+         "median_excess_spy_pp": 0.74,
+         "median_excess_dm_pp": 0.35,
+         "per_name_first_median_pp": 0.91,
+         "mean_excess_spy_pp": 0.83,
+         "p25_pp": -4.0,
+         "p75_pp": 5.6
+        },
+        "sign_flip_across_halves": true,
+        "per_name_median_gap_pp": 2.02
+       },
+       "onset_only": {
+        "n": 1794,
+        "names": 1187,
+        "loser_rate_pct": 35.0,
+        "win_rate_pct": 46.9,
+        "median_excess_spy_pp": -0.52,
+        "median_excess_dm_pp": -0.1,
+        "per_name_first_median_pp": -0.48,
+        "mean_excess_spy_pp": -0.3,
+        "p25_pp": -4.9,
+        "p75_pp": 3.9
+       },
+       "vs_control_per_name_pp": -0.23,
+       "vs_control_median_spy_pp": 0.18,
+       "vs_control_loser_pp": -0.6
+      },
+      "SOLE:stoch_bear": {
+       "n": 1618,
+       "names": 476,
+       "loser_rate_pct": 26.8,
+       "win_rate_pct": 56.6,
+       "median_excess_spy_pp": 1.21,
+       "median_excess_dm_pp": 0.14,
+       "per_name_first_median_pp": 1.02,
+       "mean_excess_spy_pp": 1.41,
+       "p25_pp": -3.4,
+       "p75_pp": 5.8,
+       "cohort_cells_in_window": 1627,
+       "sector_mix": {
+        "coverage_pct": 99.8,
+        "top_sectors_pct": {
+         "Financials": 23.8,
+         "Industrials": 17.3,
+         "Consumer Discretionary": 14.8,
+         "Information Technology": 10.2
+        },
+        "max_single_sector_pct": 23.8
+       },
+       "half_split": {
+        "split_at": "2026-05-20",
+        "distinct_dates": 123,
+        "first_half": {
+         "n": 810,
+         "names": 267,
+         "loser_rate_pct": 35.6,
+         "win_rate_pct": 46.7,
+         "median_excess_spy_pp": -0.58,
+         "median_excess_dm_pp": -0.59,
+         "per_name_first_median_pp": -0.33,
+         "mean_excess_spy_pp": -0.05,
+         "p25_pp": -5.0,
+         "p75_pp": 4.2
+        },
+        "second_half": {
+         "n": 808,
+         "names": 268,
+         "loser_rate_pct": 18.1,
+         "win_rate_pct": 66.6,
+         "median_excess_spy_pp": 2.49,
+         "median_excess_dm_pp": 0.72,
+         "per_name_first_median_pp": 2.35,
+         "mean_excess_spy_pp": 2.88,
+         "p25_pp": -1.6,
+         "p75_pp": 6.8
+        },
+        "sign_flip_across_halves": true,
+        "per_name_median_gap_pp": 2.68
+       },
+       "onset_only": {
+        "n": 605,
+        "names": 476,
+        "loser_rate_pct": 26.1,
+        "win_rate_pct": 59.2,
+        "median_excess_spy_pp": 1.41,
+        "median_excess_dm_pp": 0.0,
+        "per_name_first_median_pp": 1.45,
+        "mean_excess_spy_pp": 1.32,
+        "p25_pp": -3.1,
+        "p75_pp": 5.4
+       },
+       "vs_control_per_name_pp": 0.89,
+       "vs_control_median_spy_pp": 1.47,
+       "vs_control_loser_pp": -6.9
+      },
+      "SOLE:macd_bear": {
+       "n": 13386,
+       "names": 1442,
+       "loser_rate_pct": 34.8,
+       "win_rate_pct": 46.0,
+       "median_excess_spy_pp": -0.58,
+       "median_excess_dm_pp": -0.04,
+       "per_name_first_median_pp": -0.48,
+       "mean_excess_spy_pp": -0.12,
+       "p25_pp": -4.8,
+       "p75_pp": 3.9,
+       "cohort_cells_in_window": 13410,
+       "sector_mix": {
+        "coverage_pct": 99.2,
+        "top_sectors_pct": {
+         "Industrials": 17.3,
+         "Financials": 16.5,
+         "Consumer Discretionary": 12.8,
+         "Health Care": 11.6
+        },
+        "max_single_sector_pct": 17.3
+       },
+       "half_split": {
+        "split_at": "2026-04-10",
+        "distinct_dates": 126,
+        "first_half": {
+         "n": 6703,
+         "names": 1222,
+         "loser_rate_pct": 36.4,
+         "win_rate_pct": 42.4,
+         "median_excess_spy_pp": -1.05,
+         "median_excess_dm_pp": 0.34,
+         "per_name_first_median_pp": -1.08,
+         "mean_excess_spy_pp": -0.31,
+         "p25_pp": -4.8,
+         "p75_pp": 3.3
+        },
+        "second_half": {
+         "n": 6683,
+         "names": 1022,
+         "loser_rate_pct": 33.2,
+         "win_rate_pct": 49.7,
+         "median_excess_spy_pp": -0.06,
+         "median_excess_dm_pp": -0.4,
+         "per_name_first_median_pp": 0.26,
+         "mean_excess_spy_pp": 0.07,
+         "p25_pp": -4.7,
+         "p75_pp": 4.5
+        },
+        "sign_flip_across_halves": true,
+        "per_name_median_gap_pp": 1.34
+       },
+       "onset_only": {
+        "n": 3165,
+        "names": 1442,
+        "loser_rate_pct": 34.6,
+        "win_rate_pct": 46.5,
+        "median_excess_spy_pp": -0.53,
+        "median_excess_dm_pp": -0.13,
+        "per_name_first_median_pp": -0.51,
+        "mean_excess_spy_pp": -0.11,
+        "p25_pp": -4.8,
+        "p75_pp": 3.9
+       },
+       "vs_control_per_name_pp": -0.61,
+       "vs_control_median_spy_pp": -0.32,
+       "vs_control_loser_pp": 1.1
+      },
+      "SOLE:macd_bear_macd3_evaluated": {
+       "n": 13291,
+       "names": 1442,
+       "loser_rate_pct": 34.8,
+       "win_rate_pct": 46.0,
+       "median_excess_spy_pp": -0.58,
+       "median_excess_dm_pp": -0.04,
+       "per_name_first_median_pp": -0.48,
+       "mean_excess_spy_pp": -0.12,
+       "p25_pp": -4.8,
+       "p75_pp": 3.9,
+       "cohort_cells_in_window": 13315,
+       "sector_mix": {
+        "coverage_pct": 99.2,
+        "top_sectors_pct": {
+         "Industrials": 17.4,
+         "Financials": 16.5,
+         "Consumer Discretionary": 12.7,
+         "Health Care": 11.5
+        },
+        "max_single_sector_pct": 17.4
+       },
+       "half_split": {
+        "split_at": "2026-04-13",
+        "distinct_dates": 126,
+        "first_half": {
+         "n": 7024,
+         "names": 1247,
+         "loser_rate_pct": 37.3,
+         "win_rate_pct": 41.5,
+         "median_excess_spy_pp": -1.19,
+         "median_excess_dm_pp": 0.28,
+         "per_name_first_median_pp": -1.18,
+         "mean_excess_spy_pp": -0.45,
+         "p25_pp": -4.9,
+         "p75_pp": 3.1
+        },
+        "second_half": {
+         "n": 6267,
+         "names": 1022,
+         "loser_rate_pct": 31.9,
+         "win_rate_pct": 51.2,
+         "median_excess_spy_pp": 0.19,
+         "median_excess_dm_pp": -0.4,
+         "per_name_first_median_pp": 0.49,
+         "mean_excess_spy_pp": 0.24,
+         "p25_pp": -4.6,
+         "p75_pp": 4.7
+        },
+        "sign_flip_across_halves": true,
+        "per_name_median_gap_pp": 1.67
+       },
+       "onset_only": {
+        "n": 3142,
+        "names": 1442,
+        "loser_rate_pct": 34.6,
+        "win_rate_pct": 46.5,
+        "median_excess_spy_pp": -0.53,
+        "median_excess_dm_pp": -0.13,
+        "per_name_first_median_pp": -0.49,
+        "mean_excess_spy_pp": -0.11,
+        "p25_pp": -4.8,
+        "p75_pp": 3.9
+       },
+       "vs_control_per_name_pp": -0.61,
+       "vs_control_median_spy_pp": -0.32,
+       "vs_control_loser_pp": 1.1
+      },
+      "BLOCKED:any_leg_reachable": {
+       "n": 24626,
+       "names": 1485,
+       "loser_rate_pct": 32.9,
+       "win_rate_pct": 48.9,
+       "median_excess_spy_pp": -0.16,
+       "median_excess_dm_pp": 0.07,
+       "per_name_first_median_pp": -0.21,
+       "mean_excess_spy_pp": 0.23,
+       "p25_pp": -4.5,
+       "p75_pp": 4.4,
+       "cohort_cells_in_window": 24679,
+       "sector_mix": {
+        "coverage_pct": 99.0,
+        "top_sectors_pct": {
+         "Financials": 17.9,
+         "Industrials": 17.0,
+         "Consumer Discretionary": 12.6,
+         "Health Care": 10.7
+        },
+        "max_single_sector_pct": 17.9
+       },
+       "half_split": {
+        "split_at": "2026-04-16",
+        "distinct_dates": 126,
+        "first_half": {
+         "n": 12487,
+         "names": 1380,
+         "loser_rate_pct": 35.8,
+         "win_rate_pct": 43.5,
+         "median_excess_spy_pp": -0.88,
+         "median_excess_dm_pp": 0.09,
+         "per_name_first_median_pp": -0.98,
+         "mean_excess_spy_pp": -0.24,
+         "p25_pp": -4.8,
+         "p75_pp": 3.5
+        },
+        "second_half": {
+         "n": 12139,
+         "names": 1358,
+         "loser_rate_pct": 29.9,
+         "win_rate_pct": 54.5,
+         "median_excess_spy_pp": 0.73,
+         "median_excess_dm_pp": 0.05,
+         "per_name_first_median_pp": 0.98,
+         "mean_excess_spy_pp": 0.7,
+         "p25_pp": -4.1,
+         "p75_pp": 5.2
+        },
+        "sign_flip_across_halves": true,
+        "per_name_median_gap_pp": 1.96
+       },
+       "onset_only": {
+        "n": 6106,
+        "names": 1485,
+        "loser_rate_pct": 33.1,
+        "win_rate_pct": 48.7,
+        "median_excess_spy_pp": -0.18,
+        "median_excess_dm_pp": -0.08,
+        "per_name_first_median_pp": -0.23,
+        "mean_excess_spy_pp": 0.0,
+        "p25_pp": -4.6,
+        "p75_pp": 4.1
+       },
+       "vs_control_per_name_pp": -0.34,
+       "vs_control_median_spy_pp": 0.1,
+       "vs_control_loser_pp": -0.8
+      },
+      "UNION:board_without_macd_bear": {
+       "n": 32011,
+       "names": 1490,
+       "loser_rate_pct": 34.2,
+       "win_rate_pct": 47.6,
+       "median_excess_spy_pp": -0.4,
+       "median_excess_dm_pp": 0.03,
+       "per_name_first_median_pp": -0.4,
+       "mean_excess_spy_pp": 0.01,
+       "p25_pp": -4.8,
+       "p75_pp": 4.3,
+       "cohort_cells_in_window": 32088,
+       "sector_mix": {
+        "coverage_pct": 99.3,
+        "top_sectors_pct": {
+         "Financials": 18.4,
+         "Industrials": 17.4,
+         "Consumer Discretionary": 13.5,
+         "Information Technology": 11.0
+        },
+        "max_single_sector_pct": 18.4
+       },
+       "half_split": {
+        "split_at": "2026-04-16",
+        "distinct_dates": 126,
+        "first_half": {
+         "n": 16099,
+         "names": 1417,
+         "loser_rate_pct": 36.3,
+         "win_rate_pct": 42.7,
+         "median_excess_spy_pp": -1.06,
+         "median_excess_dm_pp": 0.08,
+         "per_name_first_median_pp": -1.22,
+         "mean_excess_spy_pp": -0.32,
+         "p25_pp": -4.8,
+         "p75_pp": 3.4
+        },
+        "second_half": {
+         "n": 15912,
+         "names": 1388,
+         "loser_rate_pct": 32.0,
+         "win_rate_pct": 52.5,
+         "median_excess_spy_pp": 0.48,
+         "median_excess_dm_pp": -0.02,
+         "per_name_first_median_pp": 0.89,
+         "mean_excess_spy_pp": 0.34,
+         "p25_pp": -4.6,
+         "p75_pp": 5.2
+        },
+        "sign_flip_across_halves": true,
+        "per_name_median_gap_pp": 2.11
+       },
+       "onset_only": {
+        "n": 5495,
+        "names": 1490,
+        "loser_rate_pct": 34.8,
+        "win_rate_pct": 47.5,
+        "median_excess_spy_pp": -0.43,
+        "median_excess_dm_pp": -0.13,
+        "per_name_first_median_pp": -0.28,
+        "mean_excess_spy_pp": -0.17,
+        "p25_pp": -4.9,
+        "p75_pp": 4.0
+       },
+       "vs_control_per_name_pp": -0.53,
+       "vs_control_median_spy_pp": -0.14,
+       "vs_control_loser_pp": 0.5
+      }
+     }
+    },
+    "H21": {
+     "window": [
+      "2026-01-15",
+      "2026-07-01"
+     ],
+     "cells": {
+      "CONTROL:admitted": {
+       "n": 16962,
+       "names": 1455,
+       "loser_rate_pct": 44.2,
+       "win_rate_pct": 45.2,
+       "median_excess_spy_pp": -1.38,
+       "median_excess_dm_pp": 0.11,
+       "per_name_first_median_pp": -1.22,
+       "mean_excess_spy_pp": -0.64,
+       "p25_pp": -8.5,
+       "p75_pp": 6.2,
+       "cohort_cells_in_window": 17045,
+       "sector_mix": {
+        "coverage_pct": 99.3,
+        "top_sectors_pct": {
+         "Financials": 20.2,
+         "Industrials": 17.5,
+         "Consumer Discretionary": 14.4,
+         "Information Technology": 12.0
+        },
+        "max_single_sector_pct": 20.2
+       },
+       "onset_only": {
+        "n": 3281,
+        "names": 1455,
+        "loser_rate_pct": 43.1,
+        "win_rate_pct": 46.8,
+        "median_excess_spy_pp": -0.97,
+        "median_excess_dm_pp": 0.04,
+        "per_name_first_median_pp": -0.77,
+        "mean_excess_spy_pp": -0.34,
+        "p25_pp": -8.4,
+        "p75_pp": 6.8
+       }
+      },
+      "CONTROL:admitted_macd3_evaluated": {
+       "n": 16339,
+       "names": 1440,
+       "loser_rate_pct": 44.8,
+       "win_rate_pct": 44.7,
+       "median_excess_spy_pp": -1.51,
+       "median_excess_dm_pp": 0.03,
+       "per_name_first_median_pp": -1.34,
+       "mean_excess_spy_pp": -0.77,
+       "p25_pp": -8.6,
+       "p75_pp": 6.1,
+       "cohort_cells_in_window": 16422,
+       "sector_mix": {
+        "coverage_pct": 99.3,
+        "top_sectors_pct": {
+         "Financials": 20.3,
+         "Industrials": 17.8,
+         "Consumer Discretionary": 14.7,
+         "Information Technology": 11.6
+        },
+        "max_single_sector_pct": 20.3
+       },
+       "onset_only": {
+        "n": 3143,
+        "names": 1440,
+        "loser_rate_pct": 43.7,
+        "win_rate_pct": 46.1,
+        "median_excess_spy_pp": -1.14,
+        "median_excess_dm_pp": -0.0,
+        "per_name_first_median_pp": -0.9,
+        "mean_excess_spy_pp": -0.56,
+        "p25_pp": -8.6,
+        "p75_pp": 6.5
+       }
+      },
+      "CONTROL:admitted_macd3_FAILOPEN": {
+       "n": 623,
+       "names": 146,
+       "loser_rate_pct": 29.9,
+       "win_rate_pct": 57.6,
+       "median_excess_spy_pp": 2.1,
+       "median_excess_dm_pp": 2.12,
+       "per_name_first_median_pp": 1.76,
+       "mean_excess_spy_pp": 2.95,
+       "p25_pp": -4.3,
+       "p75_pp": 8.9,
+       "cohort_cells_in_window": 623,
+       "sector_mix": {
+        "coverage_pct": 100.0,
+        "top_sectors_pct": {
+         "Information Technology": 21.7,
+         "Financials": 18.3,
+         "Health Care": 13.6,
+         "Utilities": 11.6
+        },
+        "max_single_sector_pct": 21.7
+       },
+       "onset_only": {
+        "n": 166,
+        "names": 146,
+        "loser_rate_pct": 28.3,
+        "win_rate_pct": 60.2,
+        "median_excess_spy_pp": 2.74,
+        "median_excess_dm_pp": 2.16,
+        "per_name_first_median_pp": 2.78,
+        "mean_excess_spy_pp": 3.57,
+        "p25_pp": -4.3,
+        "p75_pp": 9.4
+       }
+      },
+      "SOLE:stoch_ob": {
+       "n": 5759,
+       "names": 1116,
+       "loser_rate_pct": 43.7,
+       "win_rate_pct": 46.0,
+       "median_excess_spy_pp": -1.14,
+       "median_excess_dm_pp": 0.14,
+       "per_name_first_median_pp": -1.19,
+       "mean_excess_spy_pp": -0.31,
+       "p25_pp": -8.6,
+       "p75_pp": 6.0,
+       "cohort_cells_in_window": 5777,
+       "sector_mix": {
+        "coverage_pct": 98.5,
+        "top_sectors_pct": {
+         "Financials": 18.4,
+         "Industrials": 17.9,
+         "Information Technology": 12.9,
+         "Consumer Discretionary": 12.5
+        },
+        "max_single_sector_pct": 18.4
+       },
+       "onset_only": {
+        "n": 1574,
+        "names": 1116,
+        "loser_rate_pct": 44.5,
+        "win_rate_pct": 46.1,
+        "median_excess_spy_pp": -1.2,
+        "median_excess_dm_pp": -0.4,
+        "per_name_first_median_pp": -0.84,
+        "mean_excess_spy_pp": -0.53,
+        "p25_pp": -9.0,
+        "p75_pp": 6.4
+       },
+       "vs_control_per_name_pp": 0.03,
+       "vs_control_median_spy_pp": 0.24,
+       "vs_control_loser_pp": -0.5
+      },
+      "SOLE:stoch_bear": {
+       "n": 1504,
+       "names": 444,
+       "loser_rate_pct": 31.8,
+       "win_rate_pct": 57.6,
+       "median_excess_spy_pp": 2.25,
+       "median_excess_dm_pp": 1.04,
+       "per_name_first_median_pp": 2.6,
+       "mean_excess_spy_pp": 2.53,
+       "p25_pp": -4.9,
+       "p75_pp": 9.1,
+       "cohort_cells_in_window": 1516,
+       "sector_mix": {
+        "coverage_pct": 99.8,
+        "top_sectors_pct": {
+         "Financials": 23.3,
+         "Industrials": 17.8,
+         "Consumer Discretionary": 14.5,
+         "Information Technology": 10.2
+        },
+        "max_single_sector_pct": 23.3
+       },
+       "onset_only": {
+        "n": 555,
+        "names": 444,
+        "loser_rate_pct": 31.0,
+        "win_rate_pct": 57.7,
+        "median_excess_spy_pp": 2.78,
+        "median_excess_dm_pp": 1.4,
+        "per_name_first_median_pp": 2.96,
+        "mean_excess_spy_pp": 2.86,
+        "p25_pp": -4.5,
+        "p75_pp": 9.6
+       },
+       "vs_control_per_name_pp": 3.82,
+       "vs_control_median_spy_pp": 3.63,
+       "vs_control_loser_pp": -12.4
+      },
+      "SOLE:macd_bear": {
+       "n": 12344,
+       "names": 1419,
+       "loser_rate_pct": 48.3,
+       "win_rate_pct": 40.7,
+       "median_excess_spy_pp": -2.58,
+       "median_excess_dm_pp": -0.22,
+       "per_name_first_median_pp": -2.49,
+       "mean_excess_spy_pp": -1.52,
+       "p25_pp": -9.3,
+       "p75_pp": 4.8,
+       "cohort_cells_in_window": 12385,
+       "sector_mix": {
+        "coverage_pct": 99.3,
+        "top_sectors_pct": {
+         "Industrials": 18.1,
+         "Financials": 17.0,
+         "Consumer Discretionary": 13.0,
+         "Health Care": 12.3
+        },
+        "max_single_sector_pct": 18.1
+       },
+       "onset_only": {
+        "n": 2916,
+        "names": 1419,
+        "loser_rate_pct": 45.5,
+        "win_rate_pct": 43.4,
+        "median_excess_spy_pp": -1.77,
+        "median_excess_dm_pp": -0.14,
+        "per_name_first_median_pp": -1.63,
+        "mean_excess_spy_pp": -0.71,
+        "p25_pp": -8.7,
+        "p75_pp": 5.5
+       },
+       "vs_control_per_name_pp": -1.27,
+       "vs_control_median_spy_pp": -1.2,
+       "vs_control_loser_pp": 4.1
+      },
+      "SOLE:macd_bear_macd3_evaluated": {
+       "n": 12249,
+       "names": 1417,
+       "loser_rate_pct": 48.3,
+       "win_rate_pct": 40.7,
+       "median_excess_spy_pp": -2.57,
+       "median_excess_dm_pp": -0.24,
+       "per_name_first_median_pp": -2.56,
+       "mean_excess_spy_pp": -1.51,
+       "p25_pp": -9.3,
+       "p75_pp": 4.8,
+       "cohort_cells_in_window": 12290,
+       "sector_mix": {
+        "coverage_pct": 99.3,
+        "top_sectors_pct": {
+         "Industrials": 18.2,
+         "Financials": 17.0,
+         "Consumer Discretionary": 13.0,
+         "Health Care": 12.2
+        },
+        "max_single_sector_pct": 18.2
+       },
+       "onset_only": {
+        "n": 2893,
+        "names": 1417,
+        "loser_rate_pct": 45.5,
+        "win_rate_pct": 43.4,
+        "median_excess_spy_pp": -1.74,
+        "median_excess_dm_pp": -0.14,
+        "per_name_first_median_pp": -1.62,
+        "mean_excess_spy_pp": -0.69,
+        "p25_pp": -8.7,
+        "p75_pp": 5.5
+       },
+       "vs_control_per_name_pp": -1.34,
+       "vs_control_median_spy_pp": -1.19,
+       "vs_control_loser_pp": 4.1
+      },
+      "BLOCKED:any_leg_reachable": {
+       "n": 22367,
+       "names": 1480,
+       "loser_rate_pct": 43.9,
+       "win_rate_pct": 45.4,
+       "median_excess_spy_pp": -1.29,
+       "median_excess_dm_pp": 0.13,
+       "per_name_first_median_pp": -1.45,
+       "mean_excess_spy_pp": -0.47,
+       "p25_pp": -8.4,
+       "p75_pp": 6.1,
+       "cohort_cells_in_window": 22452,
+       "sector_mix": {
+        "coverage_pct": 99.0,
+        "top_sectors_pct": {
+         "Financials": 18.2,
+         "Industrials": 17.7,
+         "Consumer Discretionary": 12.8,
+         "Health Care": 11.1
+        },
+        "max_single_sector_pct": 18.2
+       },
+       "onset_only": {
+        "n": 5551,
+        "names": 1480,
+        "loser_rate_pct": 42.3,
+        "win_rate_pct": 47.2,
+        "median_excess_spy_pp": -0.83,
+        "median_excess_dm_pp": 0.04,
+        "per_name_first_median_pp": -0.62,
+        "mean_excess_spy_pp": -0.06,
+        "p25_pp": -8.3,
+        "p75_pp": 6.7
+       },
+       "vs_control_per_name_pp": -0.23,
+       "vs_control_median_spy_pp": 0.09,
+       "vs_control_loser_pp": -0.3
+      },
+      "UNION:board_without_macd_bear": {
+       "n": 29306,
+       "names": 1484,
+       "loser_rate_pct": 46.0,
+       "win_rate_pct": 43.3,
+       "median_excess_spy_pp": -1.89,
+       "median_excess_dm_pp": -0.03,
+       "per_name_first_median_pp": -1.76,
+       "mean_excess_spy_pp": -1.01,
+       "p25_pp": -8.8,
+       "p75_pp": 5.7,
+       "cohort_cells_in_window": 29430,
+       "sector_mix": {
+        "coverage_pct": 99.3,
+        "top_sectors_pct": {
+         "Financials": 18.8,
+         "Industrials": 17.8,
+         "Consumer Discretionary": 13.8,
+         "Health Care": 11.2
+        },
+        "max_single_sector_pct": 18.8
+       },
+       "onset_only": {
+        "n": 5058,
+        "names": 1484,
+        "loser_rate_pct": 43.6,
+        "win_rate_pct": 45.7,
+        "median_excess_spy_pp": -1.23,
+        "median_excess_dm_pp": -0.14,
+        "per_name_first_median_pp": -0.85,
+        "mean_excess_spy_pp": -0.47,
+        "p25_pp": -8.5,
+        "p75_pp": 6.5
+       },
+       "vs_control_per_name_pp": -0.54,
+       "vs_control_median_spy_pp": -0.51,
+       "vs_control_loser_pp": 1.8
+      }
+     }
+    },
+    "H63": {
+     "window": [
+      "2026-01-15",
+      "2026-04-30"
+     ],
+     "cells": {
+      "CONTROL:admitted": {
+       "n": 10969,
+       "names": 1310,
+       "loser_rate_pct": 45.9,
+       "win_rate_pct": 46.8,
+       "median_excess_spy_pp": -1.24,
+       "median_excess_dm_pp": 1.35,
+       "per_name_first_median_pp": -0.53,
+       "mean_excess_spy_pp": 0.48,
+       "p25_pp": -13.2,
+       "p75_pp": 10.1,
+       "cohort_cells_in_window": 11110,
+       "sector_mix": {
+        "coverage_pct": 99.3,
+        "top_sectors_pct": {
+         "Financials": 20.7,
+         "Industrials": 16.0,
+         "Information Technology": 14.5,
+         "Consumer Discretionary": 14.0
+        },
+        "max_single_sector_pct": 20.7
+       },
+       "onset_only": {
+        "n": 2090,
+        "names": 1310,
+        "loser_rate_pct": 47.3,
+        "win_rate_pct": 45.6,
+        "median_excess_spy_pp": -1.92,
+        "median_excess_dm_pp": 1.52,
+        "per_name_first_median_pp": -1.18,
+        "mean_excess_spy_pp": 0.06,
+        "p25_pp": -13.7,
+        "p75_pp": 9.7
+       }
+      },
+      "CONTROL:admitted_macd3_evaluated": {
+       "n": 10346,
+       "names": 1260,
+       "loser_rate_pct": 45.4,
+       "win_rate_pct": 47.3,
+       "median_excess_spy_pp": -1.08,
+       "median_excess_dm_pp": 1.38,
+       "per_name_first_median_pp": -0.53,
+       "mean_excess_spy_pp": 0.56,
+       "p25_pp": -13.2,
+       "p75_pp": 10.4,
+       "cohort_cells_in_window": 10487,
+       "sector_mix": {
+        "coverage_pct": 99.3,
+        "top_sectors_pct": {
+         "Financials": 20.9,
+         "Industrials": 16.5,
+         "Consumer Discretionary": 14.4,
+         "Information Technology": 14.0
+        },
+        "max_single_sector_pct": 20.9
+       },
+       "onset_only": {
+        "n": 1952,
+        "names": 1260,
+        "loser_rate_pct": 47.3,
+        "win_rate_pct": 45.7,
+        "median_excess_spy_pp": -1.93,
+        "median_excess_dm_pp": 1.82,
+        "per_name_first_median_pp": -1.41,
+        "mean_excess_spy_pp": 0.14,
+        "p25_pp": -13.6,
+        "p75_pp": 10.3
+       }
+      },
+      "CONTROL:admitted_macd3_FAILOPEN": {
+       "n": 623,
+       "names": 146,
+       "loser_rate_pct": 53.0,
+       "win_rate_pct": 38.7,
+       "median_excess_spy_pp": -3.73,
+       "median_excess_dm_pp": 1.04,
+       "per_name_first_median_pp": -3.9,
+       "mean_excess_spy_pp": -0.88,
+       "p25_pp": -13.2,
+       "p75_pp": 5.1,
+       "cohort_cells_in_window": 623,
+       "sector_mix": {
+        "coverage_pct": 100.0,
+        "top_sectors_pct": {
+         "Information Technology": 21.7,
+         "Financials": 18.3,
+         "Health Care": 13.6,
+         "Utilities": 11.6
+        },
+        "max_single_sector_pct": 21.7
+       },
+       "onset_only": {
+        "n": 166,
+        "names": 146,
+        "loser_rate_pct": 48.8,
+        "win_rate_pct": 42.2,
+        "median_excess_spy_pp": -2.16,
+        "median_excess_dm_pp": 0.93,
+        "per_name_first_median_pp": -2.99,
+        "mean_excess_spy_pp": -1.37,
+        "p25_pp": -13.6,
+        "p75_pp": 6.5
+       }
+      },
+      "SOLE:stoch_ob": {
+       "n": 3981,
+       "names": 893,
+       "loser_rate_pct": 45.2,
+       "win_rate_pct": 47.3,
+       "median_excess_spy_pp": -1.12,
+       "median_excess_dm_pp": 1.36,
+       "per_name_first_median_pp": -0.95,
+       "mean_excess_spy_pp": 1.21,
+       "p25_pp": -11.8,
+       "p75_pp": 10.9,
+       "cohort_cells_in_window": 4024,
+       "sector_mix": {
+        "coverage_pct": 98.5,
+        "top_sectors_pct": {
+         "Financials": 21.2,
+         "Industrials": 15.3,
+         "Information Technology": 14.4,
+         "Consumer Discretionary": 12.1
+        },
+        "max_single_sector_pct": 21.2
+       },
+       "onset_only": {
+        "n": 1074,
+        "names": 893,
+        "loser_rate_pct": 46.2,
+        "win_rate_pct": 47.7,
+        "median_excess_spy_pp": -1.14,
+        "median_excess_dm_pp": 1.36,
+        "per_name_first_median_pp": -1.17,
+        "mean_excess_spy_pp": 0.77,
+        "p25_pp": -12.5,
+        "p75_pp": 10.8
+       },
+       "vs_control_per_name_pp": -0.42,
+       "vs_control_median_spy_pp": 0.12,
+       "vs_control_loser_pp": -0.7
+      },
+      "SOLE:stoch_bear": {
+       "n": 717,
+       "names": 238,
+       "loser_rate_pct": 47.7,
+       "win_rate_pct": 47.7,
+       "median_excess_spy_pp": -1.24,
+       "median_excess_dm_pp": 2.0,
+       "per_name_first_median_pp": -1.4,
+       "mean_excess_spy_pp": 0.53,
+       "p25_pp": -15.6,
+       "p75_pp": 11.2,
+       "cohort_cells_in_window": 717,
+       "sector_mix": {
+        "coverage_pct": 99.6,
+        "top_sectors_pct": {
+         "Industrials": 19.2,
+         "Financials": 17.6,
+         "Consumer Discretionary": 15.6,
+         "Information Technology": 14.1
+        },
+        "max_single_sector_pct": 19.2
+       },
+       "onset_only": {
+        "n": 269,
+        "names": 238,
+        "loser_rate_pct": 46.5,
+        "win_rate_pct": 48.0,
+        "median_excess_spy_pp": -1.1,
+        "median_excess_dm_pp": 1.88,
+        "per_name_first_median_pp": -1.38,
+        "mean_excess_spy_pp": 1.08,
+        "p25_pp": -14.7,
+        "p75_pp": 10.6
+       },
+       "vs_control_per_name_pp": -0.87,
+       "vs_control_median_spy_pp": 0.0,
+       "vs_control_loser_pp": 1.8
+      },
+      "SOLE:macd_bear": {
+       "n": 8751,
+       "names": 1300,
+       "loser_rate_pct": 49.5,
+       "win_rate_pct": 43.0,
+       "median_excess_spy_pp": -2.74,
+       "median_excess_dm_pp": 1.03,
+       "per_name_first_median_pp": -2.57,
+       "mean_excess_spy_pp": -0.4,
+       "p25_pp": -13.9,
+       "p75_pp": 8.7,
+       "cohort_cells_in_window": 8851,
+       "sector_mix": {
+        "coverage_pct": 99.5,
+        "top_sectors_pct": {
+         "Financials": 19.1,
+         "Industrials": 18.4,
+         "Consumer Discretionary": 13.7,
+         "Health Care": 12.8
+        },
+        "max_single_sector_pct": 19.1
+       },
+       "onset_only": {
+        "n": 2007,
+        "names": 1300,
+        "loser_rate_pct": 49.2,
+        "win_rate_pct": 44.1,
+        "median_excess_spy_pp": -2.47,
+        "median_excess_dm_pp": 1.31,
+        "per_name_first_median_pp": -2.07,
+        "mean_excess_spy_pp": 0.49,
+        "p25_pp": -14.3,
+        "p75_pp": 9.0
+       },
+       "vs_control_per_name_pp": -2.04,
+       "vs_control_median_spy_pp": -1.5,
+       "vs_control_loser_pp": 3.6
+      },
+      "SOLE:macd_bear_macd3_evaluated": {
+       "n": 8656,
+       "names": 1296,
+       "loser_rate_pct": 49.2,
+       "win_rate_pct": 43.3,
+       "median_excess_spy_pp": -2.65,
+       "median_excess_dm_pp": 1.1,
+       "per_name_first_median_pp": -2.54,
+       "mean_excess_spy_pp": -0.29,
+       "p25_pp": -13.7,
+       "p75_pp": 8.8,
+       "cohort_cells_in_window": 8756,
+       "sector_mix": {
+        "coverage_pct": 99.5,
+        "top_sectors_pct": {
+         "Financials": 19.2,
+         "Industrials": 18.5,
+         "Consumer Discretionary": 13.7,
+         "Health Care": 12.7
+        },
+        "max_single_sector_pct": 19.2
+       },
+       "onset_only": {
+        "n": 1984,
+        "names": 1296,
+        "loser_rate_pct": 48.7,
+        "win_rate_pct": 44.6,
+        "median_excess_spy_pp": -2.26,
+        "median_excess_dm_pp": 1.44,
+        "per_name_first_median_pp": -1.94,
+        "mean_excess_spy_pp": 0.62,
+        "p25_pp": -14.2,
+        "p75_pp": 9.1
+       },
+       "vs_control_per_name_pp": -2.01,
+       "vs_control_median_spy_pp": -1.41,
+       "vs_control_loser_pp": 3.3
+      },
+      "BLOCKED:any_leg_reachable": {
+       "n": 14934,
+       "names": 1412,
+       "loser_rate_pct": 47.9,
+       "win_rate_pct": 44.7,
+       "median_excess_spy_pp": -2.13,
+       "median_excess_dm_pp": 1.24,
+       "per_name_first_median_pp": -2.48,
+       "mean_excess_spy_pp": 0.4,
+       "p25_pp": -13.2,
+       "p75_pp": 9.6,
+       "cohort_cells_in_window": 15087,
+       "sector_mix": {
+        "coverage_pct": 99.2,
+        "top_sectors_pct": {
+         "Financials": 19.3,
+         "Industrials": 17.2,
+         "Consumer Discretionary": 13.5,
+         "Information Technology": 11.9
+        },
+        "max_single_sector_pct": 19.3
+       },
+       "onset_only": {
+        "n": 3620,
+        "names": 1412,
+        "loser_rate_pct": 47.7,
+        "win_rate_pct": 45.5,
+        "median_excess_spy_pp": -1.93,
+        "median_excess_dm_pp": 1.4,
+        "per_name_first_median_pp": -2.87,
+        "mean_excess_spy_pp": 0.68,
+        "p25_pp": -13.8,
+        "p75_pp": 9.6
+       },
+       "vs_control_per_name_pp": -1.95,
+       "vs_control_median_spy_pp": -0.89,
+       "vs_control_loser_pp": 2.0
+      },
+      "UNION:board_without_macd_bear": {
+       "n": 19720,
+       "names": 1442,
+       "loser_rate_pct": 47.5,
+       "win_rate_pct": 45.1,
+       "median_excess_spy_pp": -1.97,
+       "median_excess_dm_pp": 1.21,
+       "per_name_first_median_pp": -1.92,
+       "mean_excess_spy_pp": 0.09,
+       "p25_pp": -13.5,
+       "p75_pp": 9.5,
+       "cohort_cells_in_window": 19961,
+       "sector_mix": {
+        "coverage_pct": 99.4,
+        "top_sectors_pct": {
+         "Financials": 20.0,
+         "Industrials": 17.1,
+         "Consumer Discretionary": 13.9,
+         "Information Technology": 12.6
+        },
+        "max_single_sector_pct": 20.0
+       },
+       "onset_only": {
+        "n": 3313,
+        "names": 1442,
+        "loser_rate_pct": 48.4,
+        "win_rate_pct": 44.4,
+        "median_excess_spy_pp": -2.16,
+        "median_excess_dm_pp": 1.44,
+        "per_name_first_median_pp": -2.04,
+        "mean_excess_spy_pp": 0.24,
+        "p25_pp": -14.2,
+        "p75_pp": 9.4
+       },
+       "vs_control_per_name_pp": -1.39,
+       "vs_control_median_spy_pp": -0.73,
+       "vs_control_loser_pp": 1.6
+      }
+     }
+    }
+   }
+  }
+ },
+ "section_2_failopen_and_contamination": {
+  "question": "the 3D RSI-MACD needs 232 daily bars and `macd_bear = m3n < s3n` reads False on NaN \u2014 how many name-days ran with that leg unevaluated, and is any measurement of the leg taken on a biased subset because of it?",
+  "engine_constants": {
+   "macd3_warmup_bars": 232,
+   "MIN_HISTORY_now": 159,
+   "MIN_HISTORY_pre_4558": 200,
+   "source": "engine/confluence_tiers.py l.87-103 (LEG_WARMUP_BARS, GATING_LEGS, YOUNG_HISTORY_BARS) \u2014 read from the engine, not restated"
+  },
+  "direction_note": "the fail-open cannot make the leg FIRE \u2014 below 232 bars both operands are NaN, so `macd_bear` is False. It therefore cannot contaminate the SOLE:macd_bear cohort. What it contaminates is the ADMITTED control: rows let through on two evaluated legs plus one that never ran.",
+  "band_census": {
+   "in_range_name_days": 939611,
+   "band_current_floor_159_to_231": {
+    "name_days": 108989,
+    "pct_of_in_range": 11.6,
+    "names_touching_band": 1493
+   },
+   "band_pre_4558_floor_200_to_231": {
+    "name_days": 47776,
+    "pct_of_in_range": 5.08,
+    "names_touching_band": 1493
+   }
+  },
+  "admissions_in_band": {
+   "admitted_name_days_total": 70972,
+   "admitted_inside_band_current": 10823,
+   "admitted_inside_band_current_pct_of_admissions": 15.25,
+   "admitted_inside_band_pre_4558": 5125,
+   "admitted_inside_band_pre_4558_pct_of_admissions": 7.22,
+   "names_with_any_band_admission": 1260
+  },
+  "sole_blocker_cohort_purity": {
+   "sole_macd_bear_cells": 45115,
+   "of_which_below_warmup": 0,
+   "note": "must be 0 \u2014 a leg that reads False on NaN cannot fire below its warm-up. A non-zero here is an instrument defect."
+  },
+  "prereg_study_contamination": {
+   "study": "research/signal_engine/veto_leg_audit.py (the VETO_LEG_AUDIT prereg)",
+   "verdict": "NOT CONTAMINATED",
+   "evidence": "l.150-153 skips any fire whose k3/d3/m3/s3 are not all finite (`if not all(np.isfinite(x) ...): continue`) BEFORE the dedup anchor is advanced, so every graded fire had the 3D RSI-MACD computable. The keep-rule failure was measured where the leg actually evaluates."
+  },
+  "deep_probe": {
+   "question": "on the admitted rows inside the fail-open band, what does the 3D RSI-MACD read once the name is given adequate history?",
+   "method": "recompute macd_bear on the yahoo-spliced series and read it on the same calendar dates, restricted to rows where the leg is computable on the deep series and NOT on the production cache series",
+   "caveat": "_tf_bars resamples on 3B buckets anchored on the series' FIRST index date, so the spliced series' bucket boundaries differ from production's. This probe answers 'would an adequately-warmed name have read bearish here', not 'production's own leg would have read X'.",
+   "admitted_band_rows_probed": 1928,
+   "names_probed": 249,
+   "max_single_name_share_pct": 1.2,
+   "would_have_vetoed": 1468,
+   "would_have_vetoed_pct": 76.1,
+   "positive_control_warm_rows": {
+    "basis": "bars >= 232, stoch legs clean, tier reachable \u2014 the same row shape, where the leg genuinely evaluates",
+    "denominator": 104605,
+    "macd_bear_fires": 44786,
+    "fire_rate_pct": 42.8
+   },
+   "date_matched_control": {
+    "basis": "the same warm rows, restricted to the SESSIONS the probe drew from \u2014 removes the band's calendar concentration from the comparison",
+    "sessions": 140,
+    "denominator": 13182,
+    "macd_bear_fires": 5672,
+    "fire_rate_pct": 43.0,
+    "probe_minus_date_matched_pp": 33.11
+   },
+   "conservative_floor_band_admissions_that_would_have_been_vetoed": 4657,
+   "read": "the DIRECTION is what this probe supports \u2014 a large share of band admissions carried a 3D RSI-MACD that was in fact bearish. The exact share is not transferable: the phase caveat above and the band's calendar concentration both push on the level, which is why the date-matched control and a conservative floor are printed beside it.",
+   "status": "RUN"
+  }
+ },
+ "section_3_forfeiture_pricing": {
+  "question": "if macd_bear were removed, what does the board ADMIT that it does not today \u2014 how many, and how does that added cohort grade?",
+  "identity": "the added cohort is exactly SOLE:macd_bear \u2014 removing L admits L & ~siblings & tier_reachable and nothing else",
+  "volume": {
+   "admitted_name_days_now": 70972,
+   "added_name_days": 45115,
+   "widening_pct": 63.6,
+   "admitted_per_session_mean_now": 91.34,
+   "added_per_session_mean": 58.06,
+   "sessions": 777,
+   "names_added_at_least_once": 1480,
+   "names_admitted_at_least_once": 1491
+  },
+  "grade_of_added_cohort": {
+   "H10": {
+    "n": 44395,
+    "names": 1477,
+    "loser_rate_pct": 32.9,
+    "win_rate_pct": 47.1,
+    "median_excess_spy_pp": -0.43,
+    "median_excess_dm_pp": -0.06,
+    "per_name_first_median_pp": -0.53,
+    "vs_control_per_name_pp": -0.26,
+    "vs_control_loser_pp": 1.2
+   },
+   "H21": {
+    "n": 43353,
+    "names": 1466,
+    "loser_rate_pct": 42.6,
+    "win_rate_pct": 44.2,
+    "median_excess_spy_pp": -1.33,
+    "median_excess_dm_pp": -0.1,
+    "per_name_first_median_pp": -1.51,
+    "vs_control_per_name_pp": -0.57,
+    "vs_control_loser_pp": 0.8
+   },
+   "H63": {
+    "n": 39760,
+    "names": 1406,
+    "loser_rate_pct": 47.2,
+    "win_rate_pct": 45.1,
+    "median_excess_spy_pp": -1.93,
+    "median_excess_dm_pp": 0.61,
+    "per_name_first_median_pp": -2.54,
+    "vs_control_per_name_pp": -0.52,
+    "vs_control_loser_pp": -1.2
+   }
+  },
+  "grade_of_union_board": {
+   "H10": {
+    "union": {
+     "n": 114178,
+     "names": 1492,
+     "loser_rate_pct": 32.2,
+     "median_excess_spy_pp": -0.38,
+     "per_name_first_median_pp": -0.34
+    },
+    "control_today": {
+     "n": 69783,
+     "names": 1491,
+     "loser_rate_pct": 31.7,
+     "median_excess_spy_pp": -0.35,
+     "per_name_first_median_pp": -0.27
+    },
+    "delta_union_minus_control": {
+     "loser_rate_pp": 0.5,
+     "per_name_first_median_pp": -0.07
+    }
+   },
+   "H21": {
+    "union": {
+     "n": 111473,
+     "names": 1491,
+     "loser_rate_pct": 42.1,
+     "median_excess_spy_pp": -1.28,
+     "per_name_first_median_pp": -1.27
+    },
+    "control_today": {
+     "n": 68120,
+     "names": 1486,
+     "loser_rate_pct": 41.8,
+     "median_excess_spy_pp": -1.25,
+     "per_name_first_median_pp": -0.94
+    },
+    "delta_union_minus_control": {
+     "loser_rate_pp": 0.3,
+     "per_name_first_median_pp": -0.33
+    }
+   },
+   "H63": {
+    "union": {
+     "n": 101887,
+     "names": 1486,
+     "loser_rate_pct": 47.9,
+     "median_excess_spy_pp": -2.2,
+     "per_name_first_median_pp": -2.04
+    },
+    "control_today": {
+     "n": 62127,
+     "names": 1462,
+     "loser_rate_pct": 48.4,
+     "median_excess_spy_pp": -2.36,
+     "per_name_first_median_pp": -2.02
+    },
+    "delta_union_minus_control": {
+     "loser_rate_pp": -0.5,
+     "per_name_first_median_pp": -0.02
+    }
+   }
+  },
+  "read": {}
+ },
+ "section_4_case_receipts": {
+  "status": "ILLUSTRATION ONLY \u2014 two names cannot carry a verdict and are not used in any cohort statistic in this file",
+  "receipt_source": "research/prophet_us_audit/why_not_receipts_2026-08-05.json (#4554); that file's `blocking_leg` is the FIRST failing gate in engine evaluation order, which is NOT the same claim as 'this name would be admitted if the leg were removed'. The counterfactual is computed here rather than assumed.",
+  "asof_dates": {
+   "frozen_frame": "2026-07-31",
+   "receipt_frame": "2026-08-03",
+   "why_two": "the frozen frame is the graded universe's pin; the receipt frame is the operator exhibit's own last close, so the exhibit is answered on its own date"
+  },
+  "names": {
+   "RKLB": {
+    "at_frozen_frame": {
+     "asof": "2026-07-31",
+     "bars": 1426,
+     "macd3_evaluated": true,
+     "stoch_ob": false,
+     "stoch_bear": false,
+     "macd_bear": true,
+     "not_topped": false,
+     "tier_reachable": false,
+     "eligible_today": false,
+     "t1_fresh": false,
+     "t2_active": false,
+     "t3_active": false,
+     "t4_active": false,
+     "sole_blocked_by_macd_bear": false,
+     "blocked_but_no_tier_reachable": true,
+     "days_in_SOLE_macd_bear_last_252": 22,
+     "days_blocked_by_macd_bear_alone_last_252": 63
+    },
+    "at_receipt_frame": {
+     "asof": "2026-08-03",
+     "bars": 1427,
+     "macd3_evaluated": true,
+     "stoch_ob": false,
+     "stoch_bear": false,
+     "macd_bear": true,
+     "not_topped": false,
+     "tier_reachable": false,
+     "eligible_today": false,
+     "t1_fresh": false,
+     "t2_active": false,
+     "t3_active": false,
+     "t4_active": false,
+     "sole_blocked_by_macd_bear": false,
+     "blocked_but_no_tier_reachable": true,
+     "days_in_SOLE_macd_bear_last_252": 22,
+     "days_blocked_by_macd_bear_alone_last_252": 64
+    },
+    "note": "computed on data/yahoo \u2014 these names are curated extras outside the three closes caches, so they are NOT in the graded universe above"
+   },
+   "ASTS": {
+    "at_frozen_frame": {
+     "asof": "2026-07-31",
+     "bars": 1694,
+     "macd3_evaluated": true,
+     "stoch_ob": false,
+     "stoch_bear": false,
+     "macd_bear": true,
+     "not_topped": false,
+     "tier_reachable": false,
+     "eligible_today": false,
+     "t1_fresh": false,
+     "t2_active": false,
+     "t3_active": false,
+     "t4_active": false,
+     "sole_blocked_by_macd_bear": false,
+     "blocked_but_no_tier_reachable": true,
+     "days_in_SOLE_macd_bear_last_252": 32,
+     "days_blocked_by_macd_bear_alone_last_252": 68
+    },
+    "at_receipt_frame": {
+     "asof": "2026-08-03",
+     "bars": 1695,
+     "macd3_evaluated": true,
+     "stoch_ob": false,
+     "stoch_bear": false,
+     "macd_bear": true,
+     "not_topped": false,
+     "tier_reachable": false,
+     "eligible_today": false,
+     "t1_fresh": false,
+     "t2_active": false,
+     "t3_active": false,
+     "t4_active": false,
+     "sole_blocked_by_macd_bear": false,
+     "blocked_but_no_tier_reachable": true,
+     "days_in_SOLE_macd_bear_last_252": 32,
+     "days_blocked_by_macd_bear_alone_last_252": 69
+    },
+    "note": "computed on data/yahoo \u2014 these names are curated extras outside the three closes caches, so they are NOT in the graded universe above"
+   }
+  }
+ },
+ "readout": {
+  "note": "derived from the tables above; no value is hand-entered",
+  "per_leg_vs_control": {
+   "H10": {
+    "SOLE:stoch_ob": {
+     "n": 22168,
+     "names": 1340,
+     "per_name_first_median_pp": -0.34,
+     "vs_control_per_name_pp": -0.07,
+     "vs_control_loser_pp": -0.1,
+     "thin": false
+    },
+    "SOLE:stoch_bear": {
+     "n": 5323,
+     "names": 981,
+     "per_name_first_median_pp": -0.07,
+     "vs_control_per_name_pp": 0.2,
+     "vs_control_loser_pp": -2.0,
+     "thin": false
+    },
+    "SOLE:macd_bear": {
+     "n": 44395,
+     "names": 1477,
+     "per_name_first_median_pp": -0.53,
+     "vs_control_per_name_pp": -0.26,
+     "vs_control_loser_pp": 1.2,
+     "thin": false
+    },
+    "CONTROL:admitted": {
+     "n": 69783,
+     "per_name_first_median_pp": -0.27,
+     "loser_rate_pct": 31.7
+    }
+   },
+   "H21": {
+    "SOLE:stoch_ob": {
+     "n": 21288,
+     "names": 1303,
+     "per_name_first_median_pp": -1.25,
+     "vs_control_per_name_pp": -0.31,
+     "vs_control_loser_pp": 0.0,
+     "thin": false
+    },
+    "SOLE:stoch_bear": {
+     "n": 5209,
+     "names": 967,
+     "per_name_first_median_pp": -0.27,
+     "vs_control_per_name_pp": 0.67,
+     "vs_control_loser_pp": -5.0,
+     "thin": false
+    },
+    "SOLE:macd_bear": {
+     "n": 43353,
+     "names": 1466,
+     "per_name_first_median_pp": -1.51,
+     "vs_control_per_name_pp": -0.57,
+     "vs_control_loser_pp": 0.8,
+     "thin": false
+    },
+    "CONTROL:admitted": {
+     "n": 68120,
+     "per_name_first_median_pp": -0.94,
+     "loser_rate_pct": 41.8
+    }
+   },
+   "H63": {
+    "SOLE:stoch_ob": {
+     "n": 19510,
+     "names": 1202,
+     "per_name_first_median_pp": -2.65,
+     "vs_control_per_name_pp": -0.63,
+     "vs_control_loser_pp": 0.5,
+     "thin": false
+    },
+    "SOLE:stoch_bear": {
+     "n": 4422,
+     "names": 886,
+     "per_name_first_median_pp": -2.35,
+     "vs_control_per_name_pp": -0.33,
+     "vs_control_loser_pp": -0.2,
+     "thin": false
+    },
+    "SOLE:macd_bear": {
+     "n": 39760,
+     "names": 1406,
+     "per_name_first_median_pp": -2.54,
+     "vs_control_per_name_pp": -0.52,
+     "vs_control_loser_pp": -1.2,
+     "thin": false
+    },
+    "CONTROL:admitted": {
+     "n": 62127,
+     "per_name_first_median_pp": -2.02,
+     "loser_rate_pct": 48.4
+    }
+   }
+  },
+  "separates_on_H10_per_name": {
+   "SOLE:stoch_ob": true,
+   "SOLE:stoch_bear": false,
+   "SOLE:macd_bear": true
+  },
+  "sign_stable_across_horizons": {
+   "SOLE:stoch_ob": true,
+   "SOLE:stoch_bear": false,
+   "SOLE:macd_bear": true
+  },
+  "macd_bear_half_split_sign_flip": false,
+  "failopen": {
+   "admitted_rows_in_band_pct": 15.25,
+   "sole_cohort_polluted_rows": 0,
+   "deep_probe_would_have_vetoed_pct": 76.1,
+   "prereg_study_contaminated": false
+  },
+  "failopen_corrected_read_H10": {
+   "sole_macd_bear_per_name_pp": -0.53,
+   "vs_control_all_pp": -0.26,
+   "vs_control_macd3_evaluated_pp": -0.34,
+   "control_all_n": 69783,
+   "control_macd3_evaluated_n": 58630,
+   "control_shift_pp": 0.08
+  },
+  "forfeiture_H10": {
+   "n": 44395,
+   "names": 1477,
+   "loser_rate_pct": 32.9,
+   "win_rate_pct": 47.1,
+   "median_excess_spy_pp": -0.43,
+   "median_excess_dm_pp": -0.06,
+   "per_name_first_median_pp": -0.53,
+   "vs_control_per_name_pp": -0.26,
+   "vs_control_loser_pp": 1.2
+  },
+  "widening_pct": 63.6,
+  "equality_gate": "PASS",
+  "dead_legs": []
+ }
+}

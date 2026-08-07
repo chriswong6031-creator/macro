@@ -30,8 +30,15 @@ import numpy as np
 import pandas as pd
 
 from lib import config, store
+from lib.closes_panel import disclose_merge, merge_close_caches
 
 log = logging.getLogger(__name__)
+
+# Freshness metadata from the most recent _closes() merge (tip / per-column lag /
+# rescued migrants). Module-level because compute_factors() needs the staleness read
+# for the price gate below but _closes() is also called directly by residual_alpha
+# and grade_us_board, whose signatures must not change.
+_LAST_MERGE_META: dict = {}
 
 FACTOR_LABELS = {
     "value": "Value", "profitability": "Profitability", "quality": "Quality",
@@ -344,15 +351,22 @@ def _closes(universe: str = "broad") -> pd.DataFrame:
             return base
         out = pd.concat([base, dead], axis=1)            # dead names are new columns
         return out.loc[:, ~out.columns.duplicated()].sort_index()
-    frames = []
-    for grp in _UNIVERSE_GROUPS.get(universe, _UNIVERSE_GROUPS["broad"]):
-        p = config.data_dir() / grp / "_closes_cache.parquet"
-        if p.exists():
-            frames.append(pd.read_parquet(p))
-    if not frames:
-        return pd.DataFrame()
-    out = pd.concat(frames, axis=1)
-    return out.loc[:, ~out.columns.duplicated()].sort_index()
+    # Freshest column per ticker, NOT first-tier-wins. The caches are union-forever
+    # archives (#4643 R4), so an index migrant keeps a column in the tier it LEFT —
+    # frozen on its exit date — while the tier it JOINED carries a live one. The old
+    # `concat(...).duplicated()` kept the first, i.e. the DEAD column, and discarded a
+    # live one from the same concat (measured 2026-07-31: CAG CPB POOL SANM SMTC VIAV
+    # here, which is how VIAV reached alpha.json as sector-leader #9/221 on a column
+    # that had stopped 23 days earlier). Whole columns only — never spliced, since two
+    # tiers can sit on different adjustment bases (#2120 seam class). Column coverage
+    # is unchanged, so no admission lane loses its price source
+    # (tests/test_us_board_ledger_continuity.py Section 1).
+    panel, meta = merge_close_caches(
+        _UNIVERSE_GROUPS.get(universe, _UNIVERSE_GROUPS["broad"]))
+    _LAST_MERGE_META.clear()
+    _LAST_MERGE_META.update(meta)
+    disclose_merge(meta, "equity_factors")
+    return panel
 
 
 def _names_sectors(universe: str = "broad") -> dict[str, tuple[str, str]]:
@@ -369,6 +383,58 @@ def _names_sectors(universe: str = "broad") -> dict[str, tuple[str, str]]:
             for t, row in meta.iterrows():
                 out.setdefault(str(t), (str(row.get("name", t)), str(row.get("sector", "—"))))
     return out
+
+
+# R2 circuit breaker, mirroring build_stock_library._FEED_DEMOTION_BREAKER: if this
+# much of the priced universe reads stale, that is a collector outage rather than
+# per-name death, and blanking the factor page would itself be fail-dark (CSP-R1).
+_STALE_PRICE_BREAKER = 0.20
+
+
+def _stale_price_columns(px: pd.DataFrame) -> set[str]:
+    """Tickers in `px` whose own last bar lags the PANEL tip by more than the canonical
+    7 calendar days (`engine.name_score_grader._MAX_BAR_LAG_DAYS` — one staleness law,
+    imported rather than restated). Self-relative to the panel's own tip, exactly like
+    the scan-admission gate (ADJUDICATION_20260803 R1), so there is no wall-clock or
+    calendar dependency: a build that legitimately runs on a stale panel does not mass-
+    demote, and a TOTAL freeze is invisible here BY DESIGN (build_stock_library's
+    wall-clock disclosure is the backstop for that case).
+
+    Fail-open in every ambiguous direction (CSP-R1): an empty panel, an unparseable
+    tip, or a breaker trip returns an EMPTY set, so the caller keeps the pre-existing
+    ffill behaviour and prints rather than blanks. Never mutates `px`."""
+    from engine.name_score_grader import _MAX_BAR_LAG_DAYS
+
+    if px.empty or not len(px.columns):
+        return set()
+    tip = px.index.max()
+    if pd.isna(tip):
+        return set()
+    lv = px.apply(lambda s: s.last_valid_index())
+    behind = (tip - lv).dt.days
+    # A never-populated column (all-NaN, e.g. the in-constituents FI/MMC holes) has a
+    # NaT last-valid and so a NaN lag; it carries no price to resurrect either way, and
+    # ffill leaves it NaN, so it is not counted as a demotion.
+    stale = {str(t) for t, d in behind.items() if pd.notna(d) and d > _MAX_BAR_LAG_DAYS}
+    if not stale:
+        return set()
+    assessable = int(behind.notna().sum())
+    if assessable and (len(stale) / assessable) > _STALE_PRICE_BREAKER:
+        print(f"::warning title=equity_factors price-freshness gate disarmed::"
+              f"{len(stale)}/{assessable} ({len(stale) / assessable:.0%}) of priced names "
+              f"lag the panel tip {pd.Timestamp(tip).date()} by >{_MAX_BAR_LAG_DAYS}d, "
+              f"over the {_STALE_PRICE_BREAKER:.0%} breaker — that reads as a collector "
+              "outage, not per-name death; gate DISARMED for this run (prices kept as-is)",
+              flush=True)
+        return set()
+    worst = sorted(stale, key=lambda t: -int(behind[t]))[:12]
+    print(f"::warning title=equity_factors stale price feeds::{len(stale)}/{assessable} "
+          f"name(s) lag the panel tip {pd.Timestamp(tip).date()} by "
+          f">{_MAX_BAR_LAG_DAYS}d and are dropped from price-derived factors (mktcap, "
+          "value yields, leadership) — fundamentals-only legs still publish: "
+          + ", ".join(f"{t}({int(behind[t])}d)" for t in worst)
+          + ("" if len(stale) <= 12 else f" (+{len(stale) - 12} more)"), flush=True)
+    return stale
 
 
 def _winsor_z(s: pd.Series, cap: float) -> pd.Series:
@@ -486,7 +552,17 @@ def compute_factors(asof=None, universe: str = "broad") -> dict | None:
 
     # latest price + trailing return stats, aligned to fundamentals universe
     px = closes.reindex(columns=[t for t in fund.index if t in closes.columns])
+    # `ffill()` is what lets a frozen column impersonate a live quote: it carries a
+    # dead feed's last close forward to the panel tip, and that price then becomes
+    # `d["price"]` -> mktcap -> every value yield and the composite rank. Names with a
+    # live column in another tier are already healed by the freshest-wins merge in
+    # _closes(); what remains here is a genuinely dead feed, which must not carry live
+    # pricing authority (ADJUDICATION_20260803 R1). Measured at the 2026-07-31 vintage:
+    # FLEX ffilled to 147.61 against a true close of 113.75 (+29.8%).
+    _stale_px = _stale_price_columns(px)
     last_px = px.ffill().iloc[-1]
+    if _stale_px:
+        last_px[list(_stale_px)] = np.nan
     rets = px.pct_change(fill_method=None)
     win = cfg["low_vol_window_d"]
     minp = cfg["min_price_history_d"]
@@ -608,7 +684,13 @@ def compute_factors(asof=None, universe: str = "broad") -> dict | None:
 
     # leadership: top-quintile minus bottom-quintile trailing return per factor
     lw = config.load()["engine_equity_factors"]["leadership_window_d"]
+    # Same resurrection hazard as `last_px`, one step worse: BOTH endpoints are ffilled,
+    # so a feed dead for longer than the window returns exactly 0.0 — a fabricated
+    # "flat" that is then averaged into the quintile spreads below. Stale names are
+    # excluded outright (NaN), and the spread means already skip NaN.
     trailing = (px.ffill().iloc[-1] / px.ffill().iloc[-min(lw, len(px) - 1)] - 1.0)
+    if _stale_px:
+        trailing[list(_stale_px)] = np.nan
     leadership = []
     for c in all_factors:
         z = fac[c].dropna()
