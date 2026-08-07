@@ -2761,6 +2761,13 @@ on:
       - "tests/test_us_context_vector.py"
       - "tests/test_prophet_miss_audit.py"
       - "scripts/grade_us_prophet_candidates.py"
+      # Archetype coverage pipeline (2026-08): the candidates-stamp heal script and
+      # the suite pinning fac-less classification + store freshness + fill-null-only
+      # heal semantics. The store subjects (engine/stock_fundamentals.py,
+      # data/archetypes/) ride the engine/** and data/us_prophet_rank/** entries.
+      - "scripts/heal_candidates_archetype.py"
+      - "tests/test_heal_candidates_archetype.py"
+      - "data/archetypes/**"
       # The nightly-wiring half of the same pack job (2026-08-06): the four modules moved
       # off the engine job's critical path into daily.yml's us_prophet_ledgers lane. Its
       # subjects (.github/workflows/daily.yml, config/dag.yml) already reach CI via

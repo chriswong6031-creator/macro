@@ -5210,7 +5210,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: US context vector + full-population grades + miss-audit scorecards
-        run: python -m pytest tests/test_us_prophet_grades.py tests/test_us_context_vector.py tests/test_prophet_miss_audit.py -q
+        run: python -m pytest tests/test_us_prophet_grades.py tests/test_us_context_vector.py tests/test_prophet_miss_audit.py tests/test_heal_candidates_archetype.py -q
       # The same three modules' NIGHTLY WIRING (2026-08-06): they moved out of the engine
       # job into daily.yml's us_prophet_ledgers lane, so where they run, what they wait on,
       # and whether COLLECT_LANE still arms their forward advance are now facts a workflow
