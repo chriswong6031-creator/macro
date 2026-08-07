@@ -1,10 +1,17 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-07T18:01:40.819355+00:00",
-  "posts_seen": 17,
-  "seen_total": 97,
-  "evaluated": 0,
+  "as_of": "2026-08-07T19:14:48.660227+00:00",
+  "posts_seen": 16,
+  "seen_total": 98,
+  "evaluated": 1,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": []
+  "gate_scores": [
+    {
+      "id": "wh-2026-08-07-icymi-statement-from-president-donald-j-trump",
+      "importance": 0,
+      "activated": false,
+      "degraded_reason": "served_by:deepseek"
+    }
+  ]
 }
