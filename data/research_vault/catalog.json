@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T06:04:04.896108+00:00",
-  "count": 922,
+  "generated_at": "2026-08-07T06:45:31.091195+00:00",
+  "count": 924,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -1696,6 +1696,48 @@
         "**Pipeline Momentum**: Data-center pipeline at 16GW (+35% seq.), energy storage/services/digital backlog expanded to 12.6GW/7.9GW/13.9GW (6/30/2026).",
         "**Price Target Premium**: GS $22.00 target (54.6% upside) consistently exceeds closing price ($18.97), signaling persistent bullish sentiment/undervaluation.",
         "**Key Risks**: Slower energy storage adoption, supply chain disruptions (battery/logistics), litigation, and hardware-to-software mix shift."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ona6alnfny9-b93e96",
+      "title": "Capri Holdings (CPRI) F1Q27 Earnings Review Michael Kors recovery still in focus as EMEA softens",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:01:43Z",
+      "summary_points": [
+        "**Q1 Results & Guidance**: FY27 revenue guidance reduced to $3.4bn (vs.",
+        "$3.525bn) due to EMEA softness (-$50mn), inventory delays (-$50mn), and FX headwinds (-$35mn); Q1 EPS beat ($0.67 vs.",
+        "$0.41) but gross margins missed.",
+        "**Brand Performance & Risks**: Jimmy Choo drove 10.5% Y/Y revenue growth (exceeding expectations), while Michael Kors faces outlet channel softness and inventory delays; sustained outlet growth remains a key debate.",
+        "**Valuation & Key Risks**: Price target cut to $18 (from $21) with P/E 13.4 below forward 15.7; downside risks include delayed sales, margin compression, and balance sheet/FCF deterioration."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bd8pms0hcv4-d57085",
+      "title": "Uber Technologies Inc. (UBER) Q2'26 Earnings First Take",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:01:30Z",
+      "summary_points": [
+        "**Earnings & Growth Drivers**: Gross Bookings ($58.02bn) and Adj.",
+        "EBITDA ($2.82bn) beat estimates; Mobility (40% YoY) and Delivery ($15bn annualized run rate) growth are core strategic priorities, with AV expansion to 15 cities by year-end.",
+        "**Guidance & Key Risks**: Q3 bookings guidance ($58.25-60.25bn) slightly above Street ($59.33bn); critical risks include slower Mobility growth, regulatory hurdles (driver classification, merchant caps), and competitive pressures.",
+        "**Valuation Upside & Fundamentals**: $115 target (59.7% upside from $71.99), driven by 43% revenue/87% EBITDA growth (12/25-12/28E), P/E compression (17.9→11.7), and strong EBITDA margin expansion.",
+        "**Target Price Momentum**: Sustained upward trajectory in target prices (e.g., $115 as of May 2026 vs."
       ],
       "tags": [],
       "tickers": [],
