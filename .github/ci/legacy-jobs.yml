@@ -5493,3 +5493,32 @@ jobs:
         run: python -m pytest tests/test_subsector_turn.py tests/test_subsector_rotation.py tests/test_subsector_rotation_alerts.py tests/test_subsector_scan.py tests/test_subsector_confluence.py -q
       - name: themes heatmap + Theme Tracker page (full suite; portfolio-ctx keeps its subset)
         run: python -m pytest tests/test_themes_heatmap.py tests/test_state_of_themes.py -q
+
+  unrun-government-revenue-grader:
+    # Wave 9G prospective candidate grader — the instrument that is allowed to
+    # tell us the Government Revenue lobe has no predictive value.  It ships as
+    # its OWN job rather than as a step inside unrun-government-revenue for two
+    # reasons: PR #4776 is concurrently rewriting that job's step list (the
+    # nineteen-suite darkness backfill), and this suite needs none of that job's
+    # extra wheels — the grader imports stdlib only, on purpose, so a cohort can
+    # be graded in a minimal environment.  The install line below is repeated
+    # BYTE-FOR-BYTE from the shared unrun-* set, which is what keeps this job
+    # inside that set's single venv instead of buying another one.
+    #
+    # Every assertion in the suite is paired with a mutation that proves it can
+    # see the defect it guards (widened read window, resolution-conditioned
+    # denominator, correction-by-rewrite, coverage-free rate).  A grader whose
+    # own tests are dark is worse than no grader, which is the whole reason this
+    # job exists on the day the module lands rather than in a later backfill.
+    if: ${{ false }}
+    timeout-minutes: 3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: prospective candidate grader — issuance log, no-leakage, denominators, coverage
+        run: python -m pytest tests/test_government_revenue_candidate_grader.py -q
