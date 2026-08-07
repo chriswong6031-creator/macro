@@ -1012,7 +1012,8 @@ jobs:
         run: >
           python -m pytest
           tests/test_biopharma_seasonality_foundation.py
-          tests/test_stock_seasonality_engine.py -q
+          tests/test_stock_seasonality_engine.py
+          tests/test_seasonality_pit_spine.py -q
 
   china-native-collectors:
     if: ${{ false }}

@@ -12,6 +12,11 @@ thin CI runners with no pandas/numpy installed, and eagerly importing
 ``import engine.seasonality`` require the scientific stack.  Import those three
 by module path (``from engine.seasonality import panel``) instead of adding them
 below.
+
+``universe`` is re-exported here because it keeps the same bargain: its module
+scope is pure stdlib and it defers ``pandas``/``yaml`` into the functions that
+actually read a parquet snapshot or the ownership registry, so importing this
+package still costs nothing on a thin runner.
 """
 
 from .contracts import (
@@ -29,16 +34,38 @@ from .multiplicity import (
     benjamini_yekutieli,
     max_t_adjusted_p_values,
 )
+from .universe import (
+    UNRESOLVED_BLOCKER,
+    UniverseRead,
+    corporate_actions_asof,
+    coverage_report,
+    earliest_snapshot,
+    latest_snapshot,
+    membership_asof,
+    price_adjustment_vintage,
+    resolve_security_asof,
+    snapshot_dates,
+)
 
 __all__ = [
+    "UNRESOLVED_BLOCKER",
     "BIOTEMPORAL_EVENT_SCHEMA",
     "NEURALWEB_STATE_SCHEMA",
     "PROPHET_OVERLAY_SCHEMA",
     "ContractError",
+    "UniverseRead",
     "benjamini_yekutieli",
     "build_neuralweb_state",
     "build_prophet_overlay",
+    "corporate_actions_asof",
+    "coverage_report",
+    "earliest_snapshot",
+    "latest_snapshot",
     "max_t_adjusted_p_values",
+    "membership_asof",
+    "price_adjustment_vintage",
+    "resolve_security_asof",
+    "snapshot_dates",
     "validate_bitemporal_event",
     "validate_neuralweb_state",
     "validate_prophet_overlay",
