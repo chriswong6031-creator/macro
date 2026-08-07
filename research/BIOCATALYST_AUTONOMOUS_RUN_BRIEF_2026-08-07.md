@@ -96,6 +96,30 @@ Also open and worth doing if time allows: the Change Tape API cannot serve `befo
 `engine/biocatalyst/change_tape.py`, the read-model contract, and `app/biocatalyst.py` together,
 remembering the tape is served from a **pre-published artifact**, so the publication path changes too.
 
+## 2a — You are NOT alone on this machine. Plan for contention.
+
+A sibling autonomous run, `govrev-autonomous-buildout` (Government Revenue Foresight), fires
+**four minutes before you** on the same host. Other sessions run too. This matters concretely,
+and the previous session lost time to exactly this:
+
+- **The self-hosted GitHub Actions runners share this host.** Heavy local fan-out slows the whole
+  fleet's CI, which slows your own merges. Measured on 2026-08-06: load average **76–87 on 24
+  cores**, ~30 concurrent pytest processes, and **104 queued workflow runs**.
+- **Do not run the full suite repeatedly, and never hand it to N parallel builders.**
+  `pytest tests/ -k "biocatalyst or clinicaltrials"` takes **766 s solo** and inflates far past
+  that under contention. Measure the baseline **once yourself**, hand builders the number as a
+  constant, scope each builder to the narrowest gate that can see its own regression, and run the
+  full suite **once** at integration time. The known-good baseline is **844 passed**.
+- **Quiet agents are not stuck agents.** Silence under a long mandated command looks identical to
+  a hang. Before diagnosing a stall, check `ps aux | grep -c "[p]ytest"` and `uptime`, and read
+  the tail of the agent transcript for a blocked Bash call. A previous session nearly killed six
+  healthy builders on this mistake.
+- **A contended run can produce a bogus baseline.** One builder reported `109 failed, 735 passed`
+  on a tree where three independent measurements found 844–850 passed and zero failures. If a
+  regression count looks alarming, re-measure on a quiet machine before believing it.
+- **Never cancel or re-run someone else's in-flight `render`, `engine-render` or `daily`** to
+  unblock yourself. A long job inside its timeout is not a wedged job.
+
 ## 3 — Hard fences (violating any of these fails the work)
 
 - A0/A1 authority. Nothing may originate probabilities, rankings, signals, scores, sizing or
