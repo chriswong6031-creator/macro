@@ -113,10 +113,19 @@ def test_3d_close_equals_signal_frames_own_grid():
             f"n={n} closes diverged"
 
 
-def test_3d_buckets_match_a_first_principles_derivation():
+@pytest.mark.parametrize("phase", [0, 1, 2])
+def test_3d_buckets_match_a_first_principles_derivation(phase):
     """The pin above compares two implementations; this one derives the answer
-    INDEPENDENTLY from the reference calendar, so neither can drift into the other."""
-    df = _session_ohlc(n=60)
+    INDEPENDENTLY from the reference calendar, so neither can drift into the other.
+
+    Run at all THREE fixture phases on purpose — each ``phase`` starts the window one
+    session earlier, so the fixture's first row sits at a different position mod 3. A
+    start-anchored grid agrees with the absolute one exactly when that offset is 0, so a
+    single-phase fixture is a 1-in-3 coin flip that this test pins anything at all — the
+    same phase lottery that let ``floor(i/3)`` look correct on the night it was eyeballed.
+    Verified by mutation: reverting to ordinal bins reddens two of these three phases.
+    """
+    df = _session_ohlc(n=60 + phase)
     out = bd.derive_3d_ohlcv(df)
     ref = pd.DatetimeIndex(pd.to_datetime(
         nyse_calendar.sessions_between(date(1950, 1, 3), date(2026, 8, 4))))
@@ -144,14 +153,19 @@ def test_a_holiday_week_buckets_by_sessions_not_business_days():
     week = df.loc["2026-06-15":"2026-06-26"].index
     assert pd.Timestamp("2026-06-19") not in week                # closed: it never trades
 
-    ids = bd.bucket_ids(df.index)
-    members: dict[int, list] = {}
-    for d, b in zip(df.index, ids):
-        members.setdefault(int(b), []).append(d)
-    spanning = [m for m in members.values()
-                if m[0] <= pd.Timestamp("2026-06-22") <= m[-1]]
-    assert spanning and len(spanning[0]) == 3, "the holiday must not shrink a bucket"
-    assert pd.Timestamp("2026-06-19") not in spanning[0]
+    # Through the SHIPPED deriver, at every window phase: the candle covering 06-22 is
+    # built from the three sessions 06-17/18/22 — volume is the tell (the fixture's volume
+    # is a running count, so a 2-session candle cannot fake a 3-session sum).
+    want = [pd.Timestamp(d) for d in ("2026-06-17", "2026-06-18", "2026-06-22")]
+    for phase in (0, 1, 2):
+        src = _session_ohlc(n=400 + phase)          # same end, start one session earlier
+        out = bd.derive_3d_ohlcv(src)
+        opens = [b for b in out.index if b <= pd.Timestamp("2026-06-22")]
+        row = out.loc[opens[-1]]
+        assert opens[-1] == want[0], f"phase {phase}: bucket opened at {opens[-1].date()}"
+        assert row["volume"] == src.loc[want, "volume"].sum(), \
+            f"phase {phase}: candle is not built from all three sessions"
+        assert row["high"] == src.loc[want, "high"].max()
 
     # the business-day grid, over the same sessions, DOES lose one to the holiday
     wk = pd.Series(range(len(week)), index=week)
