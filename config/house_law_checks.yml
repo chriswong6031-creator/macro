@@ -1462,6 +1462,53 @@ checks:
       (test_marketing_content, test_marketing_live_verify, test_publish_r2,
       test_research_vault), all repaired in the PR that added the guard.
 
+  - law_id: ops.ci_trigger_closure
+    summary: >
+      A guarded suite's TRIGGER PATHS must cover the modules the suite measures.
+      The fourth darkness class, and the reverse direction of the three censuses
+      beside it: audit_unrun_tests.py asks "can ANY edit start this job" — an
+      any() over the closure, satisfied by the test file itself — so a suite
+      stays "triggerable" while the ONE module it exists to guard is matched by
+      no path entry, and an edit to exactly that module ships without ever
+      running the guard that measures it. Static, depth-1 (direct reads only):
+      per PR-triggered workflow resolve the tests its run: steps name, resolve
+      each suite's first-party reads (imports, import_module, repo-relative path
+      literals, ROOT / "a" / "b.py" joins), and fail when a module in that
+      closure is reachable by no gate that runs it. The lesson had been written
+      as prose four times (#3488, #4559, the "both halves listed on purpose"
+      notes in ci.yml) and never enforced.
+    source_ref:
+      - scripts/check_ci_trigger_closure.py
+      - "PR #4649 (guard origin)"
+      - "PR #3488 (first statement of the lesson, as a comment)"
+    severity: hard
+    check_script: scripts/check_ci_trigger_closure.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: workflow-yaml
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        Depth-1 (direct reads) only. --depth N widens the REPORT to transitive
+        reads and is deliberately not gated: past depth 1 the path-literal
+        heuristic starts resolving placeholder strings out of docstrings, and a
+        guard that cries wolf gets ignored — the exact failure mode this file
+        exists to end.
+      - >-
+        Reachability is evaluated under GitHub's paths glob semantics (exact,
+        fnmatch, prefix/**). A workflow with no paths: key starts on every PR,
+        so everything it runs counts as covered unconditionally.
+    owner_program: null
+    notes: >
+      Sits in the same workflow-yaml job as ops.no_skip_only_suites and
+      ops.workflow_yaml_parses, completing the darkness-census family: UNRUN and
+      UNTRIGGERABLE (audit_unrun_tests.py), SKIP-ONLY (check_skip_only_suites.py),
+      TRIGGER GAP (this guard). Registered here by the pack-2 drain after the
+      guard landed in #4649 unregistered — the meta-guard's census caught it.
+
   # ── Meta-guard ─────────────────────────────────────────────────────────────
 
   - law_id: meta.house_law_registry
