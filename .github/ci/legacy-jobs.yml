@@ -5636,6 +5636,37 @@ jobs:
       - name: themes heatmap + Theme Tracker page (full suite; portfolio-ctx keeps its subset)
         run: python -m pytest tests/test_themes_heatmap.py tests/test_state_of_themes.py -q
 
+  ohlc-basis-coherence:
+    # The breadth OHLC caches must share ONE yfinance adjustment basis across
+    # _closes_cache / _high_cache / _low_cache. 2026-08-06 incident: the extras
+    # drifted ~30% below closes (REZI close/high 1.29-1.44 on 773 of 773 bars)
+    # and NOTHING saw it — both repair paths (BreadthAdapter._merge_refreshed and
+    # scripts/heal_breadth_split_seams.py) scan seam_suspects over the CLOSES
+    # matrix alone, so a split confined to high/low is invisible by construction.
+    # Close-only consumers are unaffected, which is what kept it silent; ATR's
+    # true range is dominated by the basis gap.
+    #
+    # This lane tests the GUARD (synthetic frames, offline) plus a reader-level
+    # pin over the live committed caches. The DATA verdict is carried nightly by
+    # daily.yml's collect job, which is where a split is actually born — a PR
+    # pack cannot see a break that arrives on a straight-to-main data push.
+    # pyarrow is not optional: every fixture round-trips through parquet, which
+    # is the only way the test can see a dtype/schema regression in the reader.
+    if: ${{ false }}
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow
+      - name: OHLC basis coherence — split vs isolated-bad-bar tiers, annotations, exit codes
+        run: python -m pytest tests/test_check_ohlc_basis_coherence.py -q
+      - name: guard selftest
+        run: python scripts/check_ohlc_basis_coherence.py --selftest
+
   unrun-government-revenue-grader:
     # Wave 9G prospective candidate grader — the instrument that is allowed to
     # tell us the Government Revenue lobe has no predictive value.  It ships as

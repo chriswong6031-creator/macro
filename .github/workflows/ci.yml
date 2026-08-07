@@ -3190,6 +3190,21 @@ on:
       - "scripts/stripe_bootstrap.py"
       - "tests/test_stripe_bootstrap_offers.py"
       - "tests/test_stripe_bootstrap_products.py"
+      # ── Breadth OHLC basis coherence (2026-08-06 split-basis incident) ──────
+      # BOTH halves plus BOTH repair paths listed on purpose. The guard's whole
+      # subject is that _high/_low can drift onto a different yfinance
+      # adjustment basis than _closes while every existing scanner looks only at
+      # the closes matrix — so an edit to either writer is exactly the edit that
+      # must start this lane. collectors/breadth.py owns _merge_refreshed's
+      # extras graft (the `t in w.columns` filter that can heal closes and leave
+      # the extras poisoned); heal_breadth_split_seams.py rewrites the extras
+      # only for closes-flagged tickers. Neither reaches this workflow by any
+      # other pattern, and a trigger gap here is the same shape as the hole the
+      # guard exists to close (check_ci_trigger_closure).
+      - "scripts/check_ohlc_basis_coherence.py"
+      - "tests/test_check_ohlc_basis_coherence.py"
+      - "collectors/breadth.py"
+      - "scripts/heal_breadth_split_seams.py"
       # ── Government Revenue Wave 9G prospective grader (2026-08-06) ──────────
       # Job: unrun-government-revenue-grader (.github/ci/legacy-jobs.yml, tail).
       # Deliberately a separate block from the Government Revenue cluster near
