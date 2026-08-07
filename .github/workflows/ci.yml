@@ -775,6 +775,16 @@ on:
       - "templates/fundamental_forensics.js"
       - "tests/fixtures/fundamental_forensics/**"
       - "tests/test_fundamental_forensics_*.py"
+      # Cross-pin for the four detector ids that exist in THREE implementations:
+      # scripts/build_fundamental_forensics.py (inline fraction literals),
+      # engine/moat_falsifiers.py (pp module constants, ships to production ticker
+      # pages), and config/fundamental_forensics.yml (registry data). All three
+      # subjects already ride triggers above ("engine/**",
+      # "scripts/build_fundamental_forensics.py", "config/fundamental_forensics.yml"),
+      # but the suite name does NOT match the broad
+      # "tests/test_fundamental_forensics_*.py" glob, so a test-only edit to the
+      # cross-pin itself needs this explicit entry to re-run it.
+      - "tests/test_forensic_detector_crosspin.py"
       # Wave 3B-B4A/B4B/B4D-A/B4F: the broad fundamental-forensics glob also
       # matches these suites, but the explicit names document the sealed-history
       # reader, bounded serving, pinned-source materializer, one-shot seed, and
