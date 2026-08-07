@@ -578,6 +578,10 @@ on:
       - "tests/test_government_revenue_ui.py"
       - "tests/test_government_revenue_dossier_ui.py"
       - "tests/test_government_revenue_briefcase_ui.py"
+      # The prophet↔govrev context bridge, wired into unrun-government-revenue by
+      # the same PR that added this line. It was named by nothing in .github/ at
+      # all, so it was inert AND untriggerable — the strictly-dark shape.
+      - "tests/test_prophet_government_revenue_context.py"
       - "tests/test_sam_gov_opportunities.py"
       # quota-aware radar-leg collector (2026-08-05 SAM key integration): the
       # batch/rotation/429-stop/merge disciplines that fit the shared ~10/day key.
@@ -912,6 +916,19 @@ on:
       - "config/reflexes.yml"
       - "config/trade_flow_codes.yml"
       - "config/ux_simplicity_rules.yml"
+      # engine/government_revenue/workspace.py loads four of these schemas at
+      # RUNTIME (procurement_event.v2, procurement_workspace.v2,
+      # entity_coverage.v1, recipient_resolution_coverage.v1) and its validator
+      # fails CLOSED without them, so a schema edit that flips every payload to
+      # invalid must be able to start the job that validates against it. Only 3 of
+      # the 17 files here were named before, and check_ci_trigger_closure.py could
+      # not catch the rest: it resolves what a TEST FILE reads (depth 1), and these
+      # are read one layer deeper, inside the engine module the test imports. The
+      # subtree glob closes the whole directory instead of re-deriving the list by
+      # hand on every contract added. The explicit entries below are kept
+      # deliberately — this list's own header says not to delete a line without
+      # deleting the read that needs it.
+      - "contracts/government_revenue/**"
       - "contracts/government_revenue/government_revenue_candidate.v1.schema.json"
       - "contracts/government_revenue/government_revenue_candidate_queue.v1.schema.json"
       - "contracts/government_revenue/government_revenue_dossiers.v1.schema.json"

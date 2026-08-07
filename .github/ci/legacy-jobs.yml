@@ -4566,6 +4566,16 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi
       - name: builder envelope + publication fence + dossier/subaward rails
         run: python -m pytest tests/test_build_government_revenue.py tests/test_check_government_revenue_projection.py tests/test_government_revenue_dossiers.py tests/test_government_revenue_subaward_api.py -q
+      # The prophet↔government-revenue context bridge. Named by NOTHING in
+      # .github/ before this line — not this manifest, not any workflow, and not
+      # even a ci.yml trigger path — so the one suite proving the Prophet side
+      # reads the published govrev artifacts correctly had never executed in CI.
+      # It belongs in THIS job rather than alongside test_prophet_bridge.py in
+      # unrun-market-plumbing because it reads the v2 procurement contract, and
+      # only this job installs jsonschema; without it workspace.py's validator
+      # fails CLOSED and every payload reads invalid (the 2026-08-03 staging pass).
+      - name: prophet ↔ government-revenue context bridge
+        run: python -m pytest tests/test_prophet_government_revenue_context.py -q
       - name: workspace / dossier / briefcase UI contracts
         run: python -m pytest tests/test_government_revenue_ui.py tests/test_government_revenue_dossier_ui.py tests/test_government_revenue_briefcase_ui.py -q
       - name: federal-award collectors — SAM.gov, USAspending awards + subawards, Census trade
