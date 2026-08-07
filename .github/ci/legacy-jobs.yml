@@ -4665,6 +4665,17 @@ jobs:
       # degraded branch, so test_status_with_pat_is_configured now pins the shipped one.
       - name: every admin/*.py imports + the read-only status()/panel() surfaces
         run: python -m pytest tests/test_admin_modules_smoke.py -q
+      # Wired 2026-08-06: enumerated by NO job before this step, and there is no broad
+      # `pytest tests/` anywhere in this repo, so the file was dark in both CI lenses.
+      # It went red on main when #4612 added the "key_alerts" rail to _summary_payload()
+      # and the payload-key assertion here never learned it — a real assertion failure
+      # that nothing ran for weeks.  The smoke suite above only pins that admin/*.py
+      # IMPORTS; this one pins admin.server's HTTP behavior (host forgery, body cap,
+      # dispatch-ref fence, unmanaged-toggle refusal) and the landing payload contract.
+      # requests is load-bearing on this job's install line for the same reason called
+      # out above — the suite imports admin.server.
+      - name: admin server HTTP surface + landing summary payload contract
+        run: python -m pytest tests/test_admin_server.py -q
       - name: brain SSE keepalive + tape decode
         run: python -m pytest tests/test_brain_sse_keepalive.py tests/test_tape_decode.py -q
 
