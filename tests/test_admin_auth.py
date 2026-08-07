@@ -151,7 +151,10 @@ def test_client_id_ignores_spoofable_forwarding_headers():
 # a range is worse than shipping none).
 EDGE_PEER = "43.175.104.236"
 EDGE_RANGE = "43.175.104.0/24"
-NOT_EDGE_RANGE = "192.0.2.0/24"      # TEST-NET-1: never an edge address
+NOT_EDGE_RANGE = "8.8.8.0/24"        # public, loads for real, and never an edge address.
+#   NOT a TEST-NET (192.0.2.0/24 etc): Python reports those is_private, so
+#   _safe_network drops them and the "allowlist misses this peer" tests below would
+#   silently degrade into re-testing the empty-allowlist path.
 
 
 def _cid_for(headers, peer=("127.0.0.1", 1)):
@@ -328,31 +331,129 @@ def test_blanket_range_from_a_poisoned_source_cannot_open_the_door():
 def test_a_real_narrow_range_still_loads():
     """The floor must not be so aggressive that a genuine origin-pull list is unusable:
     the observed peers sit in /24s, and a plausible authoritative list is made of blocks
-    that size."""
+    that size. The v6 entry is a /48, not the /32 RIR allocation — a /32 is 2^96
+    addresses and is refused by design (see the predicate test above)."""
+    import ipaddress
+
     from admin import edge_trust
 
-    old = _set_env(ADMIN_EDGE_ORIGIN_CIDRS="43.175.104.0/24, 101.33.21.0/24, 2402:4e00::/32")
+    old = _set_env(ADMIN_EDGE_ORIGIN_CIDRS="43.175.104.0/24, 101.33.21.0/24, 2402:4e00:1::/48")
     try:
-        nets = edge_trust.edge_origin_networks()
-        assert len(nets) == 3, nets
+        assert len(edge_trust.edge_origin_networks()) == 3
+    finally:
+        _restore(old)
+    # A mixed list keeps the good entries and drops only the over-broad one, so an
+    # operator who summarises their /24s up to a /16 loses the summary, not the list.
+    old = _set_env(ADMIN_EDGE_ORIGIN_CIDRS="43.175.104.0/24, 43.175.0.0/16")
+    try:
+        assert edge_trust.edge_origin_networks() == (ipaddress.ip_network("43.175.104.0/24"),)
     finally:
         _restore(old)
 
 
-def test_shipped_edge_ranges_are_never_a_blanket_trust():
-    """The shipped allowlist is empty today. If it is ever populated, it must not contain
-    a default route or a private/loopback block: over-trusting is the one failure mode
-    that costs the throttle (under-trusting merely degrades to peer keying)."""
+def _msg(raw: str):
+    """A REAL http.client HTTPMessage, so duplicate headers and header casing behave the
+    way they do on the wire. A dict cannot express either, so dict-only tests cannot see
+    the first-vs-last-occurrence bug below."""
+    from email.parser import Parser
+
+    from http.client import HTTPMessage
+    return Parser(_class=HTTPMessage).parsestr(raw)
+
+
+def test_appended_edge_header_cannot_hand_the_bucket_to_the_attacker():
+    """SECURITY: `HTTPMessage.get()` returns the FIRST occurrence, and a comma-list's
+    element 0 is likewise the earliest hop — both the attacker's copy if the edge ever
+    APPENDS rather than replaces. Measured today it replaces, but Tencent documents that
+    nowhere and documents the sibling X-Forwarded-For as append-only, so reading the
+    first value would be one upstream behaviour change away from unlimited bucket
+    rotation. The edge's value is the LAST one under both behaviours."""
+    old = _set_env(ADMIN_DEPLOYED="1", ADMIN_EDGE_ORIGIN_CIDRS=EDGE_RANGE,
+                   ADMIN_EDGE_SECRET=None)
+    try:
+        # duplicate header lines: attacker's first, edge's appended after
+        dup = _msg(f"X-Admin-Client-IP: {EDGE_PEER}\r\n"
+                   "EO-Connecting-IP: 203.0.113.77\r\n"
+                   "EO-Connecting-IP: 104.36.50.44\r\n\r\n")
+        assert _cid_for(dup) == "104.36.50.44"
+        # comma-list form of the same attack
+        lst = _msg(f"X-Admin-Client-IP: {EDGE_PEER}\r\n"
+                   "EO-Connecting-IP: 203.0.113.77, 104.36.50.44\r\n\r\n")
+        assert _cid_for(lst) == "104.36.50.44"
+        # header CASE is not a way in either (HTTPMessage is case-insensitive)
+        cased = _msg(f"x-admin-client-ip: {EDGE_PEER}\r\n"
+                     "eo-connecting-ip: 104.36.50.44\r\n\r\n")
+        assert _cid_for(cased) == "104.36.50.44"
+    finally:
+        _restore(old)
+
+
+def test_junk_copy_cannot_switch_off_the_secret_attestation():
+    """An attacker who prepends a junk X-MM-Edge-Auth must not be able to DISABLE
+    attestation and force everyone back into the shared bucket — every copy is checked,
+    which is safe because a match still requires the secret."""
+    old = _set_env(ADMIN_DEPLOYED="1", ADMIN_EDGE_ORIGIN_CIDRS=NOT_EDGE_RANGE,
+                   ADMIN_EDGE_SECRET="s3kr1t-edge")
+    try:
+        m = _msg(f"X-Admin-Client-IP: {EDGE_PEER}\r\n"
+                 "X-MM-Edge-Auth: junk-prepended-by-attacker\r\n"
+                 "X-MM-Edge-Auth: s3kr1t-edge\r\n"
+                 "EO-Connecting-IP: 104.36.50.44\r\n\r\n")
+        assert _cid_for(m) == "104.36.50.44"
+        # …and a set of copies that are ALL wrong still does not attest
+        bad = _msg(f"X-Admin-Client-IP: {EDGE_PEER}\r\n"
+                   "X-MM-Edge-Auth: nope\r\n"
+                   "X-MM-Edge-Auth: also-nope\r\n"
+                   "EO-Connecting-IP: 104.36.50.44\r\n\r\n")
+        assert _cid_for(bad) == EDGE_PEER
+    finally:
+        _restore(old)
+
+
+def test_non_ascii_secret_disables_attestation_instead_of_failing_silently():
+    """http.server decodes headers as latin-1, so a non-ASCII ADMIN_EDGE_SECRET can never
+    match what arrives on the wire. That must be a refusal (and a warning), not a
+    permanently, silently inert attestation that looks configured."""
+    old = _set_env(ADMIN_DEPLOYED="1", ADMIN_EDGE_ORIGIN_CIDRS=NOT_EDGE_RANGE,
+                   ADMIN_EDGE_SECRET="sécret-with-non-ascii")
+    try:
+        m = _msg(f"X-Admin-Client-IP: {EDGE_PEER}\r\n"
+                 "X-MM-Edge-Auth: sécret-with-non-ascii\r\n"
+                 "EO-Connecting-IP: 104.36.50.44\r\n\r\n")
+        assert _cid_for(m) == EDGE_PEER
+    finally:
+        _restore(old)
+
+
+def test_safe_network_refuses_the_rentable_neighbour_shape():
+    """The floor must be TIGHTER than the aggregates this edge is observed in. The
+    origin-pull peers sit in /24s, but the /16s they roll up to also carry rentable
+    Tencent Cloud instances — so a /16 is exactly the shape that would let an attacker
+    rent a VM next door, satisfy the peer check, and forge identity at will. Asserted
+    directly on the predicate so it cannot go vacuous when the shipped list is empty."""
     import ipaddress
 
+    from admin import edge_trust
+
+    for bad in ("0.0.0.0/0", "::/0", "43.175.0.0/16", "43.174.0.0/16", "101.33.0.0/16",
+                "43.0.0.0/8", "10.0.0.0/8", "127.0.0.0/8", "192.168.0.0/16",
+                "2402:4e00::/32", "224.0.0.0/4"):
+        assert not edge_trust._safe_network(ipaddress.ip_network(bad)), f"{bad} accepted"
+    for ok in ("43.175.104.0/24", "101.33.21.0/24", "8.8.8.8/32", "43.175.96.0/20",
+               "2402:4e00:1::/48"):
+        assert edge_trust._safe_network(ipaddress.ip_network(ok)), f"{ok} refused"
+
+
+def test_shipped_edge_ranges_are_never_a_blanket_trust():
+    """Whatever the shipped file holds must survive the floor above. Vacuous while the
+    list is empty (that is the shipped state) — the predicate test above is the one that
+    pins the rule; this one guards the DATA if a future operator populates it."""
     from admin import edge_trust
 
     old = _set_env(ADMIN_EDGE_ORIGIN_CIDRS=None)
     try:
         for net in edge_trust.edge_origin_networks():
-            assert net.prefixlen >= 16, f"{net} is broader than /16 — refuse blanket trust"
-            assert not net.is_private and not net.is_loopback, f"{net} is not a public edge range"
-            assert net != ipaddress.ip_network("0.0.0.0/0")
+            assert edge_trust._safe_network(net), f"{net} should not have loaded"
     finally:
         _restore(old)
 
