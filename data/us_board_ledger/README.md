@@ -12,6 +12,36 @@ rediscovers "dead" columns that are actually young, gated, or maturing. Measured
 risen since; the start dates and mechanisms below are the durable part. Re-measure before
 relying on any number here.
 
+## Price-basis era — boundary 2026-08-06
+
+Two eras live in this parquet, separated by the `price_basis` column. **Rows are never
+re-graded across the boundary**, so the stamp is the only way to tell them apart.
+
+| `price_basis` | Era | What it means |
+|---|---|---|
+| `unverified_pre_20260806` | 1 | Graded before the boundary. The name leg came from the RAW breadth close caches while the benchmark leg (SPY / sector ETF) came from the back-adjusted `data/yahoo`, so `excess_spy` and `excess_sector` could book a name's own dividend as underperformance. 2,277 rows at the boundary. |
+| `adjusted` | 2 | Name and benchmark legs share the back-adjusted basis (`engine.price_ladder`). |
+| `unadjusted` | 2 | The name has **no** adjusted counterpart in any store, so it is still priced from the raw cache — kept and disclosed rather than dropped. ~20.6% of freshly-graded rows (154 of 855 admitted tickers). Closing this needs a collector change, not a grader change. |
+
+`price_source` names the exact store (`baskets_ohlcv` / `yahoo` / `data_stocks` /
+`baskets_extras` / `closes_cache_UNADJUSTED`); it is null on era-1 rows because nothing
+recorded it at the time.
+
+**Era 1 is unverified, not presumed wrong.** Measured at the boundary, 2,277 of 2,287
+shipped rows already agreed with the adjusted basis to <0.01pp — the caches happened to
+have been re-based shortly before those rows were graded. Only 33 rows sat on a window
+where the two bases genuinely differ, and on all 33 the stored value matches the adjusted
+one.
+
+**Why the rows were frozen instead of corrected.** The breadth caches are re-based *in
+place*, so the same `(ticker, date)` reads differently on different days (`PNC`
+2026-06-22: `234.71` on 2026-07-01, `232.85` on 2026-08-06). The merge used to be
+keep-FRESH, which meant every run silently rewrote history: re-running the grader on
+2026-08-06 would have moved **75 already-published rows, 19 of them materially** (worst
+−1.94pp, `LPG` 2026-06-18 H5). Price-derived columns are now write-once
+(`grade_us_board._FROZEN_PRICE_COLS`); annotations (regime stamp, archetype,
+`board_tenure_days`, new spine columns) still accrue onto historical rows as before.
+
 ## Structural facts that bound every column
 
 * **Grading lag:** a fire is graded only when its horizon matures. The shortest horizon is
