@@ -134,134 +134,198 @@ class TestComputeBoardStaleness:
     _NOW = datetime(2026, 7, 17, 3, 0, tzinfo=timezone.utc)
     _EXPECTED_SESSION = date(2026, 7, 16)
 
-    def test_fresh_store(self, tmp_path):
-        """Store priced through 2026-07-16 (the expected session): not delayed."""
+    @staticmethod
+    def _panel(through: str, majority: str | None = None, at_through: int = 1,
+               total: int = 1) -> dict:
+        maj = majority or through
+        return {"through": through, "majority_through": maj,
+                "members_at_through": at_through, "members_total": total,
+                "mixed_vintage": maj != through}
+
+    def test_fresh_board(self, tmp_path):
+        """Cross-section priced through 2026-07-16 (the expected session): not delayed."""
         ohlcv_dir = _make_ohlcv_store(tmp_path, {"AAPL": date(2026, 7, 16)})
-        result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=self._NOW)
+        result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=self._NOW,
+                                          panel_reach=self._panel("2026-07-16"),
+                                          board_asof="2026-07-16")
         assert result["price_through"] == "2026-07-16"
         assert result["age_days"] == 0
+        assert result["sessions_behind"] == 0
         assert result["delayed"] is False
+        assert result["unknown"] is False
 
     def test_one_session_behind(self, tmp_path):
-        """Store priced through 2026-07-15 (1 session behind 07-15→07-16):
+        """Priced through 2026-07-15 (1 session behind 07-15→07-16):
         NOT delayed (threshold = 2)."""
         ohlcv_dir = _make_ohlcv_store(tmp_path, {"AAPL": date(2026, 7, 15)})
-        result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=self._NOW)
+        result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=self._NOW,
+                                          panel_reach=self._panel("2026-07-15"),
+                                          board_asof="2026-07-15")
         assert result["price_through"] == "2026-07-15"
+        assert result["sessions_behind"] == 1
         assert result["delayed"] is False
 
     def test_two_sessions_behind_is_delayed(self, tmp_path):
-        """Store priced through 2026-07-14 (2 sessions behind: 07-14→07-15, 07-15→07-16):
+        """Priced through 2026-07-14 (2 sessions behind: 07-14→07-15, 07-15→07-16):
         delayed = True."""
         ohlcv_dir = _make_ohlcv_store(tmp_path, {"AAPL": date(2026, 7, 14)})
-        result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=self._NOW)
+        result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=self._NOW,
+                                          panel_reach=self._panel("2026-07-14"),
+                                          board_asof="2026-07-14")
         assert result["price_through"] == "2026-07-14"
+        assert result["sessions_behind"] == 2
         assert result["delayed"] is True
 
-    def test_stale_multiple_tickers_uses_max(self, tmp_path):
-        """With mixed dates, price_through is the MAX, not the min."""
-        ohlcv_dir = _make_ohlcv_store(tmp_path, {
-            "AAPL": date(2026, 7, 16),
-            "MSFT": date(2026, 7, 14),
-        })
-        result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=self._NOW)
-        assert result["price_through"] == "2026-07-16"
-        assert result["delayed"] is False
+    def test_basis_is_the_older_of_majority_and_board_asof(self, tmp_path):
+        """Fail closed on disagreement — in BOTH directions."""
+        ohlcv_dir = _make_ohlcv_store(tmp_path, {"AAPL": date(2026, 7, 16)})
+        stale_panel = _compute_board_staleness(
+            ohlcv_dir=ohlcv_dir, now=self._NOW,
+            panel_reach=self._panel("2026-07-14"), board_asof="2026-07-16")
+        assert stale_panel["price_through"] == "2026-07-14"
+        assert stale_panel["basis"] == "panel_majority"
+        assert stale_panel["delayed"] is True
 
-    def test_missing_directory_returns_sentinel(self, tmp_path):
-        """Non-existent directory: returns the fail-soft sentinel."""
+        stale_asof = _compute_board_staleness(
+            ohlcv_dir=ohlcv_dir, now=self._NOW,
+            panel_reach=self._panel("2026-07-16"), board_asof="2026-07-14")
+        assert stale_asof["price_through"] == "2026-07-14"
+        assert stale_asof["basis"] == "board_asof"
+        assert stale_asof["delayed"] is True
+
+    def test_max_over_members_never_clears_the_badge(self, tmp_path):
+        """G0.2 — the 2026-08-06 fail-open, reproduced from the committed artifact.
+
+        us_standouts.json that night: ``as_of 2026-07-31`` beside ``staleness
+        {price_through: 2026-08-06, age_days: 0, delayed: false}`` with
+        ``panel.majority_through 2026-07-31`` and 423 of 3,028 members reaching 08-06.
+        The board self-reported FRESH at maximum staleness because the basis was a
+        max() over member reach.  A minority of members advancing is not the board
+        advancing, and this shape must be impossible by construction.
+        """
+        ohlcv_dir = _make_ohlcv_store(tmp_path, {"AAPL": date(2026, 7, 16)})
+        result = _compute_board_staleness(
+            ohlcv_dir=ohlcv_dir, now=self._NOW,
+            panel_reach=self._panel("2026-07-16", majority="2026-07-14",
+                                    at_through=423, total=3028),
+            board_asof="2026-07-14")
+        assert result["delayed"] is True, "a minority reaching the expected session cleared the badge"
+        assert result["price_through"] == "2026-07-14"
+        # the old (lying) number is kept as disclosure, not as the answer
+        assert result["max_through"] == "2026-07-16"
+        assert result["inputs"]["panel"]["mixed_vintage"] is True
+
+    def test_no_basis_fails_closed(self, tmp_path):
+        """A readable ohlcv store is NOT a basis: it is a side store, and its max is
+        the same one-member-clears-it quantity.  With no panel majority and no board
+        as_of there is nothing to date the board with — which is a delayed board."""
+        ohlcv_dir = _make_ohlcv_store(tmp_path, {"AAPL": date(2026, 7, 16)})
+        result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=self._NOW)
+        assert result["price_through"] is None
+        assert result["age_days"] is None
+        assert result["delayed"] is True
+        assert result["unknown"] is True
+        assert result["basis"] == "unknown"
+
+    def test_missing_directory_fails_closed(self, tmp_path):
+        """Non-existent directory and no other input: delayed, not silently fresh."""
         result = _compute_board_staleness(ohlcv_dir=tmp_path / "nonexistent", now=self._NOW)
         assert result["price_through"] is None
         assert result["age_days"] is None
-        assert result["delayed"] is False
+        assert result["delayed"] is True
+        assert result["unknown"] is True
 
-    def test_empty_directory_returns_sentinel(self, tmp_path):
-        """Empty directory (no parquets): returns the fail-soft sentinel."""
+    def test_empty_directory_fails_closed(self, tmp_path):
+        """Empty directory (no parquets) and no other input: delayed."""
         empty = tmp_path / "empty"
         empty.mkdir()
         result = _compute_board_staleness(ohlcv_dir=empty, now=self._NOW)
         assert result["price_through"] is None
+        assert result["delayed"] is True
 
     def test_weekend_reference_uses_prior_session(self, tmp_path):
         """Reference on Saturday 2026-07-18: expected session = 2026-07-17 (Fri).
-        Store priced through that Friday = not delayed."""
+        Priced through that Friday = not delayed."""
         # 2026-07-18 is Saturday; expected_last_session returns 2026-07-17 (Fri)
         now_sat = datetime(2026, 7, 18, 14, 0, tzinfo=timezone.utc)  # 14:00 UTC Saturday
         ohlcv_dir = _make_ohlcv_store(tmp_path, {"SPY": date(2026, 7, 17)})
-        result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=now_sat)
+        result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=now_sat,
+                                          panel_reach=self._panel("2026-07-17"),
+                                          board_asof="2026-07-17")
         assert result["price_through"] == "2026-07-17"
         assert result["delayed"] is False
 
 
-class TestStalenessPanelReachUnion:
-    """CSP-W5b: price_through must be the freshest close ANY input contributed.
+class TestStalenessDisclosureBlock:
+    """The block still carries every input's reach — as DISCLOSURE, never as the basis.
 
-    2026-08-03→05 regression: the ohlcv scan sat at 07-31 while --heal lanes
-    ranked yahoo closes through 08-03/04 — 22 consecutive builds claimed
-    price_through=2026-07-31 while the buy lane swung 55↔76 names. A build
-    that read fresher data must not under-claim its reach.
+    2026-08-03→05 regression this disclosure was built for: the ohlcv scan sat at 07-31
+    while --heal lanes ranked yahoo closes through 08-03/04, and 22 consecutive builds
+    claimed identical reach while the buy lane swung 55↔76 names.  Publishing every
+    input's reach is right; ANSWERING "how fresh is this board" with the max over them
+    is what 2026-08-06 disproved.
     """
 
     _NOW = TestComputeBoardStaleness._NOW  # expected session = 2026-07-16
+    _panel = staticmethod(TestComputeBoardStaleness._panel)
 
-    def test_panel_fresher_than_store_wins(self, tmp_path):
-        """Store at 07-14 (2 sessions behind → delayed) but panel ranked closes
-        through 07-16: price_through = 07-16 and the badge clears — the build
-        genuinely had the expected session's data."""
-        ohlcv_dir = _make_ohlcv_store(tmp_path, {"AAPL": date(2026, 7, 14)})
-        reach = {"through": "2026-07-16", "majority_through": "2026-07-14",
-                 "members_at_through": 150, "members_total": 1500,
-                 "mixed_vintage": True}
-        result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=self._NOW,
-                                          panel_reach=reach)
-        assert result["price_through"] == "2026-07-16"
-        assert result["delayed"] is False
-        assert result["inputs"]["baskets_ohlcv_through"] == "2026-07-14"
-        assert result["inputs"]["panel"]["mixed_vintage"] is True
-        assert result["inputs"]["panel"]["majority_through"] == "2026-07-14"
-
-    def test_store_fresher_than_panel_wins(self, tmp_path):
-        """Max is symmetric: a fresher ohlcv store still wins over a stale panel."""
+    def test_ohlcv_scan_is_disclosure_only(self, tmp_path):
+        """A fresh side store cannot clear a badge the cross-section has not earned."""
         ohlcv_dir = _make_ohlcv_store(tmp_path, {"AAPL": date(2026, 7, 16)})
-        reach = {"through": "2026-07-14", "majority_through": "2026-07-14",
-                 "members_at_through": 1500, "members_total": 1500,
-                 "mixed_vintage": False}
         result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=self._NOW,
-                                          panel_reach=reach)
-        assert result["price_through"] == "2026-07-16"
-        assert result["inputs"]["panel"]["through"] == "2026-07-14"
+                                          panel_reach=self._panel("2026-07-14"),
+                                          board_asof="2026-07-14")
+        assert result["price_through"] == "2026-07-14"
+        assert result["delayed"] is True
+        assert result["inputs"]["baskets_ohlcv_through"] == "2026-07-16"
+        assert result["max_through"] == "2026-07-16"
 
-    def test_missing_store_with_panel_is_not_sentinel(self, tmp_path):
-        """Absent ohlcv store no longer suppresses the badge when the panel
-        reach is known — the board WAS priced from something."""
-        result = _compute_board_staleness(ohlcv_dir=tmp_path / "nonexistent",
-                                          now=self._NOW,
-                                          panel_reach={"through": "2026-07-15"})
+    def test_missing_store_with_panel_still_dates_the_board(self, tmp_path):
+        """Absent ohlcv store never suppresses the badge when the panel reach is
+        known — the board WAS priced from something."""
+        result = _compute_board_staleness(
+            ohlcv_dir=tmp_path / "nonexistent", now=self._NOW,
+            panel_reach=self._panel("2026-07-15"), board_asof="2026-07-15")
         assert result["price_through"] == "2026-07-15"
         assert result["delayed"] is False
         assert result["inputs"]["baskets_ohlcv_through"] is None
 
-    def test_malformed_panel_date_is_ignored(self, tmp_path):
-        """A garbage panel date never breaks the badge — the store scan wins."""
+    def test_malformed_panel_date_falls_back_to_board_asof(self, tmp_path):
+        """A garbage panel date never breaks the badge — and never invents freshness."""
         ohlcv_dir = _make_ohlcv_store(tmp_path, {"AAPL": date(2026, 7, 16)})
-        result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=self._NOW,
-                                          panel_reach={"through": "not-a-date"})
+        result = _compute_board_staleness(
+            ohlcv_dir=ohlcv_dir, now=self._NOW,
+            panel_reach={"through": "not-a-date", "majority_through": "not-a-date"},
+            board_asof="2026-07-16")
         assert result["price_through"] == "2026-07-16"
+        assert result["basis"] == "board_asof"
 
-    def test_malformed_panel_and_missing_store_is_sentinel(self, tmp_path):
+    def test_malformed_panel_and_no_asof_fails_closed(self, tmp_path):
         result = _compute_board_staleness(ohlcv_dir=tmp_path / "nonexistent",
                                           now=self._NOW,
                                           panel_reach={"through": "not-a-date"})
         assert result["price_through"] is None
-        assert result["delayed"] is False
+        assert result["delayed"] is True
+        assert result["unknown"] is True
 
     def test_no_panel_keeps_inputs_block(self, tmp_path):
         """Without panel_reach the result still carries the disclosure block
         (panel None) so consumers get a stable shape."""
         ohlcv_dir = _make_ohlcv_store(tmp_path, {"AAPL": date(2026, 7, 16)})
-        result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=self._NOW)
+        result = _compute_board_staleness(ohlcv_dir=ohlcv_dir, now=self._NOW,
+                                          board_asof="2026-07-16")
         assert result["inputs"]["panel"] is None
         assert result["inputs"]["baskets_ohlcv_through"] == "2026-07-16"
+        assert result["inputs"]["board_asof"] == "2026-07-16"
+
+    def test_unknown_block_keeps_the_shape(self, tmp_path):
+        """The fail-closed sentinel is a full block, not a stub: a consumer reading
+        `inputs` must not have to special-case the one path where it matters most."""
+        result = _compute_board_staleness(ohlcv_dir=tmp_path / "nonexistent",
+                                          now=self._NOW)
+        assert set(result["inputs"]) == {"baskets_ohlcv_through", "panel", "board_asof"}
+        assert result["max_through"] is None
+        assert result["unknown_reason"]
 
 
 class TestPanelPriceReach:

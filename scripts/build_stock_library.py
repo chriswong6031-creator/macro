@@ -698,10 +698,67 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     return rec
 
 
+# Per-group population accounting for the LAST universe() call, so the ARTIFACT can
+# disclose a source that dropped out. A ::warning alone is invisible to every consumer
+# of us_standouts.json: when data/russell_breadth/_closes_cache.parquet is absent (it is
+# gitignored, so any lane that does not restore the cache loses it) the universe silently
+# shrinks by ~1,400 small caps — GOLD, SSRM and UUUU among them — and the board publishes
+# a normal-looking cross-section over a population that is a third smaller, with the
+# name-score ledger's keep-FIRST PIT stamp making the hole permanent. The reader must be
+# able to see the population moved.
+_UNIVERSE_SOURCES: "list[dict]" = []
+
+_UNIVERSE_GROUP_LABELS = {
+    "stocks_deep": ("deep-history holdings", "深度历史持仓"),
+    "breadth": ("S&P 500", "标普500"),
+    "smallcap_breadth": ("S&P 600 small caps", "标普600小盘股"),
+    "midcap_breadth": ("S&P 400 mid caps", "标普400中盘股"),
+    "russell_breadth": ("Russell 2000 small caps", "罗素2000小盘股"),
+    "curated_extras": ("curated extras & ETFs", "精选个股与ETF"),
+}
+
+
+def universe_sources() -> dict:
+    """Population disclosure for the last :func:`universe` call — artifact-tier.
+
+    ``complete`` is False the moment ANY group failed to load, and ``missing`` names
+    the groups so a consumer never has to infer a shrunken population from a count it
+    has nothing to compare against. Display-only: it changes no ranking, gate or score.
+    """
+    groups = [dict(g) for g in _UNIVERSE_SOURCES]
+    missing = [g["id"] for g in groups if g.get("status") != "ok"]
+    return {
+        "total": sum(int(g.get("members") or 0) for g in groups),
+        "complete": not missing,
+        "missing": missing,
+        "groups": groups,
+    }
+
+
+def _note_source(group: str, status: str, members: int = 0,
+                 detail: "str | None" = None) -> None:
+    """Record one universe source group's outcome (see :data:`_UNIVERSE_SOURCES`)."""
+    en, zh = _UNIVERSE_GROUP_LABELS.get(group, (group, group))
+    row = {"id": group, "label_en": en, "label_zh": zh,
+           "status": status, "members": int(members)}
+    if status != "ok":
+        row["note_en"] = (f"{en} could not be loaded for this build — those names are "
+                          "not on the board.")
+        row["note_zh"] = f"本次构建未能载入{zh}，这些个股不在榜单中。"
+        if detail:
+            row["detail"] = detail
+    _UNIVERSE_SOURCES.append(row)
+
+
 def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
-    """(ticker, close, high|None, name, sector) for everything analyzable."""
+    """(ticker, close, high|None, name, sector) for everything analyzable.
+
+    Side effect: rebuilds :data:`_UNIVERSE_SOURCES` so :func:`universe_sources` can put
+    the per-group population — and any group that dropped out — into the artifact.
+    """
     out: list[tuple] = []
     seen: set[str] = set()
+    _UNIVERSE_SOURCES.clear()
 
     # deep-history holdings stocks (preferred over breadth's 3y window)
     d = config.data_dir() / "stocks"
@@ -738,6 +795,7 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
             nm, sec = names.get(t, (t, ""))
             out.append((t, df["close"], df.get("high"), nm, sec))
             seen.add(t)
+    _note_source("stocks_deep", "ok" if d.exists() else "missing", len(seen))
 
     # Index constituents from the breadth close caches (~3y window each). The
     # S&P 500 + 400 + 600 together form the S&P Composite 1500 — ~1500 unique
@@ -755,11 +813,14 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
             # hole is permanent (2026-07-25: the weekly lane, which restored no russell
             # cache, stamped 1,704 US names between 2,966-name nightly stamps). Loud
             # line-start annotation, never a logger call: GitHub drops logger-prefixed
-            # ::warning lines silently (repo annotation law).
+            # ::warning lines silently (repo annotation law). The ARTIFACT carries the
+            # same fact via universe_sources() — an annotation nobody downstream can
+            # read is not a disclosure.
             print(f"::warning title=stock-library universe source missing::{grp} close "
                   "cache/constituents absent — its constituents are missing from this "
                   "build's universe (and from any name-score stamp this lane writes)",
                   flush=True)
+            _note_source(grp, "missing", 0, "close cache/constituents absent")
             continue
         try:
             closes = pd.read_parquet(cache)
@@ -769,6 +830,7 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
                   f"cache unreadable ({e}) — its constituents are missing from this "
                   "build's universe (and from any name-score stamp this lane writes)",
                   flush=True)
+            _note_source(grp, "unreadable", 0, f"{type(e).__name__}")
             continue
         added = 0
         for t in closes.columns:
@@ -779,6 +841,7 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
             seen.add(t)
             added += 1
         log.info("stock library universe: +%d from %s", added, grp)
+        _note_source(grp, "ok", added)
 
     # ETFs / commodities / crypto from the yahoo store, then the searchable
     # single-stock extras (foreign ADRs + recent IPOs outside the S&P 1500).
@@ -792,6 +855,7 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     # basket-only deep close cache is an honest fallback for curated searchable names,
     # so a newly added basket can ship complete stock profiles on its first render.
     basket_extra = None
+    _extras_before = len(seen)
     _bep = config.data_dir() / "baskets" / "extras.parquet"
     if _bep.exists():
         try:
@@ -816,6 +880,7 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
         else:    # an ETF / macro proxy
             out.append((t, close, None, ETF_LABELS.get(t, t), "ETF / macro"))
         seen.add(t)
+    _note_source("curated_extras", "ok", len(seen) - _extras_before)
     return out
 
 
@@ -1319,33 +1384,51 @@ def _enforce_blocked_buy_invariant(buy_rows: list[dict]) -> int:
 
 
 def _compute_board_staleness(ohlcv_dir: "Path | None" = None, now: "datetime | None" = None,
-                             panel_reach: "dict | None" = None) -> dict:
-    """CSP-W5: compute staleness metadata for the US standout board.
+                             panel_reach: "dict | None" = None,
+                             board_asof: "str | None" = None) -> dict:
+    """Staleness metadata for the US standout board — MAJORITY-based, FAIL-CLOSED.
 
-    Scans data/baskets/ohlcv/*.parquet (the store the cascade gate reads) AND —
-    when the caller passes panel_reach from _panel_price_reach() — the ranked
-    universe panel's actual last-close distribution. price_through is the MAX
-    across both: the freshest close any input actually contributed to this
-    build. The ohlcv scan alone is a side store that can sit sessions behind
-    the panel (2026-08-03→05: 22 consecutive builds all stamped price_through=
-    2026-07-31 off this scan while half of them ranked yahoo-store closes
-    through 08-03/04 — the buy lane oscillated 55↔76 names with the artifact
-    claiming identical data reach throughout).
+    THE BASIS IS THE VINTAGE THE BOARD ACTUALLY RANKED ON, not the freshest close any
+    input could reach.  Until 2026-08-07 this took ``max()`` over the ohlcv side-store
+    scan and the panel's freshest member, which made the badge fail OPEN at exactly the
+    moment it was needed: on the 2026-08-06 render 423 of 3,028 panel members reached
+    08-06 while ``panel.majority_through`` — where the BULK of the cross-section ends —
+    stayed 2026-07-31, so the artifact published ``as_of 2026-07-31`` beside
+    ``staleness {price_through: 2026-08-06, age_days: 0, delayed: false}``.  The board
+    self-reported FRESH at maximum staleness, and WD (Walker & Dunlop) published
+    "primed 88 @ 49.69" — the 07-31 close — straight through its −13.9% session on 08-06.
+    A max() over member reach answers "did ANY input advance"; the reader is asking "what
+    tape was I shown", and one member in seven hundred must never answer it.
 
-    Returns:
+    Basis resolution, in order, taking the OLDER of what is known (fail closed):
+
+      * ``panel_reach["majority_through"]`` — the modal last-close of the ranked panel;
+      * ``board_asof`` — the date the artifact itself claims (``us_standouts.as_of``).
+
+    Neither derivable ⇒ ``delayed: True`` with ``unknown: True``.  An UNKNOWN vintage is
+    not a fresh one: the old sentinel returned ``delayed: False`` and silently suppressed
+    the badge, which is the same fail-open in its degenerate form.
+
+    Returns::
+
         {
-          "price_through": "2026-07-15",  # ISO date of freshest close actually used
-          "age_days":      0,             # calendar days since price_through (int)
-          "delayed":       False,         # True when >= 2 trading sessions behind expected
+          "price_through": "2026-07-31",  # the MAJORITY vintage the board ranked on
+          "age_days":      6,             # calendar days from price_through to expected
+          "sessions_behind": 4,           # NYSE sessions strictly after price_through
+          "delayed":       True,          # >= 2 sessions behind expected, or unknown
+          "unknown":       False,         # True ⇒ no basis derivable; delayed fails closed
+          "basis":         "panel_majority" | "board_asof" | "unknown",
+          "max_through":   "2026-08-06",  # freshest close ANY input reached (disclosure
+                                          # only — this is the number that used to lie)
           "inputs": {                     # per-input reach disclosure (display-only)
-            "baskets_ohlcv_through": "2026-07-15",  # the cascade-gate store scan (or None)
+            "baskets_ohlcv_through": "2026-08-06",  # the cascade-gate store scan (or None)
             "panel": {...} | None,                   # _panel_price_reach() summary (or None)
+            "board_asof": "2026-07-31" | None,
           },
         }
 
-    Fail-soft: if no input is readable, returns
-        {"price_through": None, "age_days": None, "delayed": False}
-    so the badge is silently suppressed — never crashes a build.
+    Never crashes a build: an unexpected failure returns the fail-CLOSED sentinel
+    (``delayed: True``, ``unknown: True``) rather than a silent all-clear.
 
     Calendar: uses lib.nyse_calendar.expected_last_session and is_session — the
     same pure-rule calendar used across the freshness infrastructure.
@@ -1353,7 +1436,19 @@ def _compute_board_staleness(ohlcv_dir: "Path | None" = None, now: "datetime | N
     from datetime import datetime as _dt, timezone as _tz
     from lib import nyse_calendar as _nyse
 
-    _sentinel = {"price_through": None, "age_days": None, "delayed": False}
+    def _unknown(reason: str, extra: "dict | None" = None) -> dict:
+        # FAIL CLOSED.  "We could not date this board" is a delayed board, not a fresh
+        # one — the reader gets the plain-word "updating" disclosure instead of a badge
+        # that quietly vanishes.
+        out = {"price_through": None, "age_days": None, "sessions_behind": None,
+               "delayed": True, "unknown": True, "basis": "unknown",
+               "unknown_reason": reason, "max_through": None,
+               "inputs": {"baskets_ohlcv_through": None, "panel": panel_reach or None,
+                          "board_asof": (str(board_asof) if board_asof else None)}}
+        if extra:
+            out["inputs"].update(extra)
+        return out
+
     try:
         _root = ohlcv_dir or (config.data_dir() / "baskets" / "ohlcv")
         _root = _root if isinstance(_root, Path) else Path(_root)
@@ -1372,28 +1467,43 @@ def _compute_board_staleness(ohlcv_dir: "Path | None" = None, now: "datetime | N
                         _ohlcv_through = _last
                 except Exception:  # noqa: BLE001 — per-file failure is non-fatal
                     continue
-        # Union with the ranked panel's actual reach (CSP-W5b disclosure): a build
-        # that ranked on fresher closes than the ohlcv scan must not under-claim.
-        _panel_through: "date | None" = None
-        if panel_reach and panel_reach.get("through"):
+        def _iso(value: "object | None") -> "date | None":
+            if not value:
+                return None
             try:
-                _panel_through = _dt.strptime(str(panel_reach["through"]), "%Y-%m-%d").date()
-            except Exception:  # noqa: BLE001 — malformed reach never breaks the badge
-                _panel_through = None
-        _candidates = [d for d in (_ohlcv_through, _panel_through) if d is not None]
-        if not _candidates:
-            return _sentinel
-        _max_date = max(_candidates)
+                return _dt.strptime(str(value), "%Y-%m-%d").date()
+            except Exception:  # noqa: BLE001 — a malformed stamp never breaks the badge
+                return None
+
+        _panel_through = _iso((panel_reach or {}).get("through"))
+        _panel_majority = _iso((panel_reach or {}).get("majority_through"))
+        _board_date = _iso(board_asof)
+
+        # Disclosure only: the freshest close ANY input reached. This is the number the
+        # badge used to be computed from, kept visible so a reader can see the spread
+        # between "one member advanced" and "the cross-section advanced".
+        _reach = [d for d in (_ohlcv_through, _panel_through) if d is not None]
+        _max_through = max(_reach) if _reach else None
+
+        # THE BASIS: the older of what we actually know about the ranked cross-section.
+        _basis_by = [(_panel_majority, "panel_majority"), (_board_date, "board_asof")]
+        _known = [(d, tag) for d, tag in _basis_by if d is not None]
+        if not _known:
+            return _unknown(
+                "no panel majority and no board as_of",
+                {"baskets_ohlcv_through": (str(_ohlcv_through) if _ohlcv_through else None)},
+            )
+        _basis_date, _basis_tag = min(_known, key=lambda kv: kv[0])
 
         _now = now or _dt.now(_tz.utc)
         _expected = _nyse.expected_last_session(_now)
 
         # age_days: calendar days between price_through and expected session
-        _age_days = (_expected - _max_date).days
+        _age_days = (_expected - _basis_date).days
 
         # delayed: count trading sessions between price_through and expected session
         # (strictly after price_through, up to and including expected)
-        _d = _max_date
+        _d = _basis_date
         _sessions_behind = 0
         while _d < _expected:
             _d = _d + timedelta(days=1)
@@ -1403,22 +1513,29 @@ def _compute_board_staleness(ohlcv_dir: "Path | None" = None, now: "datetime | N
         _delayed = _sessions_behind >= 2
 
         log.debug(
-            "board staleness: price_through=%s expected=%s age_days=%d "
-            "sessions_behind=%d delayed=%s",
-            _max_date, _expected, _age_days, _sessions_behind, _delayed,
+            "board staleness: price_through=%s (basis=%s) max_through=%s expected=%s "
+            "age_days=%d sessions_behind=%d delayed=%s",
+            _basis_date, _basis_tag, _max_through, _expected, _age_days,
+            _sessions_behind, _delayed,
         )
         return {
-            "price_through": str(_max_date),
+            "price_through": str(_basis_date),
             "age_days": _age_days,
+            "sessions_behind": _sessions_behind,
             "delayed": _delayed,
+            "unknown": False,
+            "basis": _basis_tag,
+            "max_through": (str(_max_through) if _max_through else None),
             "inputs": {
                 "baskets_ohlcv_through": (str(_ohlcv_through) if _ohlcv_through else None),
                 "panel": panel_reach or None,
+                "board_asof": (str(_board_date) if _board_date else None),
             },
         }
     except Exception as _e:  # noqa: BLE001 — never crashes a build
-        log.warning("_compute_board_staleness: failed (%s) — suppressing badge", _e)
-        return _sentinel
+        # Fail CLOSED: a badge that cannot be computed is not evidence of freshness.
+        log.warning("_compute_board_staleness: failed (%s) — reporting DELAYED (unknown)", _e)
+        return _unknown(f"error:{type(_e).__name__}")
 
 
 def _panel_price_reach(uni: "list | None",
@@ -3818,6 +3935,22 @@ def main() -> int:
             continue
         # score_edge = the honest edge-percentile (overwritten by potential below)
         _c["score_edge"] = _c.get("score")
+        if _pot.get("score") is None:
+            # name_score refused to score this record (LIMITED sentinel / unreadable cycle
+            # state). PUBLISH THE NULL. Until 2026-08-07 the refusal was invisible: the
+            # sentinel inherited a 0.4 mid-band trigger and shipped as `score 14 · no_setup
+            # · "No setup" / 暂无买点` — nine gold/silver miners carried exactly that on
+            # every stamp 08-01→08-06 while AEM ran +13.9%. A null is not a low score.
+            _c["score_timing"] = None
+            _c["rank_pctile"] = _c.get("score")
+            _c["score"] = None
+            _c["band"], _c["band_en"], _c["band_zh"] = (
+                _pot["band"], _pot["band_en"], _pot["band_zh"])
+            _c["not_scored"] = True
+            _c["not_scored_reason"] = _pot.get("not_scored_reason")
+            _c["not_scored_note_en"] = _pot.get("note_en")
+            _c["not_scored_note_zh"] = _pot.get("note_zh")
+            continue
         # score_timing = the buy-readiness blend (legacy "score" for continuity)
         _c["score_timing"] = _pot["score"]
         # The PRIMARY displayed number is score_timing (buy-readiness), kept in "score"
@@ -5253,20 +5386,21 @@ def main() -> int:
 
         # CSP-W5 — Board staleness block + pending-buy expiry (display-tier, demotion-only)
         # ────────────────────────────────────────────────────────────────────────────────
-        # (1) Staleness: compute price_through / age_days / delayed from the UNION of
-        #     the data/baskets/ohlcv scan (the store the cascade gate reads) and the
-        #     ranked panel's actual reach (_panel_price_reach(uni): data/stocks +
-        #     breadth caches + yahoo extras). CSP-W5b honesty fix — 2026-08-03→05
-        #     the ohlcv scan sat at 07-31 while --heal lanes ranked yahoo closes
-        #     through 08-03/04, so 22 builds claimed identical price_through while
-        #     the buy lane swung 55↔76 names. staleness.inputs now discloses each
-        #     input's reach + the panel majority/mix.  Emit into wide["staleness"]
-        #     so the template can render the BOARD DELAYED badge.
+        # (1) Staleness: price_through / age_days / delayed off the MAJORITY vintage of
+        #     the ranked panel (_panel_price_reach(uni): data/stocks + breadth caches +
+        #     yahoo extras) and the board's own as_of, whichever is OLDER — never the
+        #     max() over member reach that let 423 of 3,028 members clear the badge on
+        #     2026-08-06 while the cross-section (and `as_of`) sat at 07-31. The ohlcv
+        #     scan and the freshest-member reach stay in the block as `max_through` /
+        #     `inputs` disclosure. staleness.inputs still discloses each input's reach +
+        #     the panel majority/mix. Emit into wide["staleness"] so the template can
+        #     render the BOARD DELAYED badge. Fail-CLOSED: unknown ⇒ delayed.
         # (2) Expiry: move any pending buy that is > 3 trading sessions old and still
         #     unconfirmed from buy to watch.  Demotion-only: adds nothing to the buy side.
         # Both are fail-soft: any exception leaves the artifact unchanged.
         try:
-            _staleness = _compute_board_staleness(panel_reach=_panel_price_reach(uni))
+            _staleness = _compute_board_staleness(panel_reach=_panel_price_reach(uni),
+                                                  board_asof=wide.get("as_of"))
             wide["staleness"] = _staleness
             _st_panel = ((_staleness.get("inputs") or {}).get("panel") or {})
             log.info(
@@ -5282,6 +5416,22 @@ def main() -> int:
             )
         except Exception as _stale_e:  # noqa: BLE001
             log.warning("CSP-W5 staleness: failed (%s) — block absent from artifact", _stale_e)
+
+        # (1b) Universe-source disclosure. A group that failed to load already prints a
+        #      line-start ::warning inside universe(), but a CI annotation reaches no
+        #      consumer of this artifact — the board would publish a cross-section over a
+        #      population ~1,400 names smaller with nothing on record. Display-only.
+        try:
+            _uni_src = universe_sources()
+            wide["universe_sources"] = _uni_src
+            if not _uni_src.get("complete"):
+                print("::warning title=stock-library universe incomplete::board built over "
+                      f"{_uni_src.get('total')} names with source group(s) missing: "
+                      f"{', '.join(_uni_src.get('missing') or [])} — us_standouts."
+                      "universe_sources carries the disclosure",
+                      flush=True)
+        except Exception as _uni_e:  # noqa: BLE001 — disclosure is additive, never fatal
+            log.warning("universe_sources: failed (%s) — block absent from artifact", _uni_e)
 
         try:
             _buy_after, _watch_passthrough, _n_expired = _expire_pending_buys(
