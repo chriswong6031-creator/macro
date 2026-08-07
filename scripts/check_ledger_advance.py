@@ -103,6 +103,31 @@ _LEDGER_MANIFEST: list[dict[str, str]] = [
         # alerts across long weekends.  Silently skipped until first nightly stamp.
     },
     # ── Add new ledgers below this line ────────────────────────────────────
+    {
+        "path": "data/basket_turn/ledger.jsonl",
+        "label": "basket_turn",
+        # NOTE: WATCH/IGNITION event ledger (engine/basket_turn_watch.py) —
+        # rows append only on sessions where a basket is in WATCH/IGNITION
+        # (plus downgrades), so most nights legitimately show no advance;
+        # same "advances only near X" cadence as opex_windows above.  asof
+        # resolves via the 'date' fallback (rows spell their stamp 'as_of',
+        # which is not an _ASOF_FIELDS candidate).
+    },
+    {
+        "path": "data/china_basket_turn/ledger.jsonl",
+        "label": "china_basket_turn",
+        # NOTE: one row per basket per CN session (engine/china_basket_turn.py,
+        # asia lane) — plain heartbeat semantics; asof resolves via 'date'.
+        # CN holiday stretches (Golden Week, CNY) legitimately freeze it
+        # across US republish nights.
+    },
+    {
+        "path": "data/us_basket_turn/ledger.jsonl",
+        "label": "us_basket_turn",
+        # NOTE: one row per basket per US session (engine/us_basket_turn.py,
+        # #4924) — plain heartbeat semantics; asof resolves via 'date'.
+        # Silently skipped until the first nightly stamp lands.
+    },
 ]
 
 # State file location (mirrors data/ci/ convention from #2738).
