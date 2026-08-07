@@ -2560,6 +2560,15 @@ on:
       # cannot trigger (#3488 shape).
       - "tests/fixtures/exit_policy_vintage/**"
       - "scripts/build_exit_policy_vintage_fixture.py"
+      # Same shape, same reason, different study (2026-08-06): the G1 loser cohort in
+      # test_prophet_postmortem.py is the 2026-07-31 track record's worst rows, and FIVE
+      # of its eleven names are still IN-FLIGHT on that date — their `loser` verdict is a
+      # mark-to-market, so it moves every session the tape advances. FN regraded
+      # loser -> neutral on 08-06 with nobody's diff to blame. The cohort is reconstructed
+      # over a frozen slice at a coupled vintage; slice and regenerator are inputs to the
+      # suite's claims exactly as the module under test is.
+      - "tests/fixtures/prophet_postmortem_vintage/**"
+      - "scripts/build_prophet_postmortem_vintage_fixture.py"
       # The COMMITTED CN board store + china_stocks price panel are the input grid
       # of test_cn_prophet_audit.py's frozen reproduction (REPRO_ASOF-truncated),
       # so a hand rewrite of either store — a re-adjustment sweep, an era edit —

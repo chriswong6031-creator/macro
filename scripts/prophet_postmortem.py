@@ -128,6 +128,18 @@ CLOSE_CACHE_GROUPS = ("breadth", "smallcap_breadth", "midcap_breadth", "russell_
 BASKET_OHLCV_REL = Path("data/baskets/ohlcv")      # per-ticker OHLCV, deep (2014+)
 BASKET_EXTRAS_REL = Path("data/baskets/extras.parquet")   # wide off-index closes (~3y)
 
+#: A FROZEN ARCHAEOLOGY SNAPSHOT, written only by
+#: `scripts/build_prophet_postmortem_vintage_fixture.py` into a pinned test slice.
+#: `basket_history` prefers it when present because a fixture root is NOT a git
+#: checkout of this repo's basket history: `git log` run there reports the one commit
+#: that added the fixture, which would blank every entry-time theme reading in the
+#: reconstruction and leave `sector_headwind` evaluating against nothing.
+#:
+#: It is NOT a production cache and must never become one. No live `data/` tree carries
+#: this file — `tests/test_prophet_postmortem.py::TestArchaeologySnapshotIsFixtureOnly`
+#: pins that — so the nightly run always walks git and always fails LOUD when git fails.
+BASKET_HISTORY_SNAPSHOT_REL = Path("data/baskets/_history_snapshot.json")
+
 #: The rung each episode's price path came from, for the coverage receipt.
 SOURCE_CACHE = "breadth_caches"
 SOURCE_BASKET_OHLCV = "baskets_ohlcv"
@@ -332,7 +344,14 @@ def basket_history(root: Path) -> list[tuple[str, dict[str, dict]]]:
     LOUD on git failure. Silently returning [] would blank every theme reading in the
     artifact and leave the `sector_headwind` label evaluating against nothing — the
     same wrong-and-silent degradation that truncated the US ledger on 2026-07-26.
+
+    A FROZEN SLICE carries `data/baskets/_history_snapshot.json` and is served from it
+    instead (see BASKET_HISTORY_SNAPSHOT_REL). The live tree never carries that file, so
+    the nightly run always walks git.
     """
+    snapshot = root / BASKET_HISTORY_SNAPSHOT_REL
+    if snapshot.exists():
+        return _basket_history_from_snapshot(snapshot)
     proc = subprocess.run(
         ["git", "log", "--format=%H", "--", str(BASKETS_REL)],
         cwd=root, capture_output=True, text=True, check=False,
@@ -365,6 +384,45 @@ def basket_history(root: Path) -> list[tuple[str, dict[str, dict]]]:
         }
         if themes:
             by_asof[asof] = themes
+    return sorted(by_asof.items())
+
+
+def _basket_history_from_snapshot(path: Path) -> list[tuple[str, dict[str, dict]]]:
+    """Read a frozen archaeology snapshot, in the SHAPE `basket_history` returns.
+
+    LOUD on a malformed or empty file for exactly the reason the git path is: a history
+    that degrades to [] blanks every theme reading and every `sector_headwind` decision
+    without changing a single assertion about them, so the failure has to be the loud
+    kind. A snapshot that exists but cannot be read is a broken fixture, never a licence
+    to fall back to git — falling back would silently reconstruct against TODAY's basket
+    history inside a run whose whole purpose is a frozen vintage.
+    """
+    try:
+        doc = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(
+            f"{path} is unreadable ({exc}) — refusing to emit a postmortem whose "
+            "entry-time theme context would be silently empty."
+        ) from exc
+    revisions = doc.get("revisions") if isinstance(doc, dict) else None
+    if not isinstance(revisions, list) or not revisions:
+        raise RuntimeError(
+            f"{path} carries no basket revisions — refusing to emit a postmortem whose "
+            "entry-time theme context would be silently empty."
+        )
+    by_asof: dict[str, dict[str, dict]] = {}
+    for rev in revisions:
+        if not isinstance(rev, dict):
+            continue
+        asof = str(rev.get("as_of") or "")
+        themes = rev.get("themes")
+        if asof and isinstance(themes, dict) and themes:
+            by_asof[asof] = themes
+    if not by_asof:
+        raise RuntimeError(
+            f"{path} carries {len(revisions)} revisions but none with themes — refusing "
+            "to emit a postmortem whose entry-time theme context would be silently empty."
+        )
     return sorted(by_asof.items())
 
 

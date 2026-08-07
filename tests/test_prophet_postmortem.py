@@ -15,6 +15,7 @@ Two halves, and they check different things:
 from __future__ import annotations
 
 import copy
+import json
 import sys
 from pathlib import Path
 
@@ -959,11 +960,32 @@ class TestPriorEpisodeScan:
 
 
 # ===========================================================================
-# 11. GATE G1 — the operator's loser cohort, over the COMMITTED ledgers
+# 11. GATE G1 — the operator's loser cohort, over a FROZEN 2026-07-31 VINTAGE
 # ===========================================================================
 #: The 2026-07-31 track-record worst rows (masterplan §0 G1). Dates are the BOARD log
 #: dates; the episode's entry_date is matched with a one-session tolerance because a
 #: name can be re-admitted on the adjacent night.
+#:
+#: RUN AGAINST A FROZEN INPUT SLICE, NOT THE LIVE `data/` TREE (2026-08-06).
+#: ---------------------------------------------------------------------------------
+#: This list is the loser book AS OF ONE TAPE DATE, and five of its eleven names —
+#: OLN, AMKR, FN, UNIT, BG — were still IN-FLIGHT on 2026-07-31. An in-flight episode's
+#: cohort is a MARK-TO-MARKET (`outcome = pnl if matured else mark`), so it moves every
+#: session by construction. Against the live tree this gate is therefore a SCHEDULED
+#: red, and it fired on 2026-08-06 with nobody's diff to blame: `collect` kept
+#: committing prices while the grading lane was dark, FN's ten-session window closed at
+#: 08-05, and a -15.24% mark became a +1.66% matured outcome — loser -> neutral, a 17pp
+#: swing in four sessions.
+#:
+#: Re-pinning the list to whatever grades as a loser today is the trap, not the fix: it
+#: would drop FN from the operator's own §0 G1 list — weakening the gate to match the
+#: tape — and go red again at the next resolution (BG@2026-07-17 is nearest, with
+#: 3.84pp of margin to the -8% gate). A date clip does not work either, because three
+#: inputs move behind it: the price FRONTIER, the historical-close VINTAGE (`collect`
+#: re-adjusts closes in place on every ex-date), and the LEDGER (`retro_grades.parquet`
+#: is rewritten nightly; `snapshots.jsonl` resumes appending when the grading lane
+#: restores). So the whole INPUT SET is frozen instead — see
+#: `scripts/build_prophet_postmortem_vintage_fixture.py`.
 LOSER_COHORT = [
     ("OLN", "2026-07-21"), ("AMKR", "2026-07-17"), ("IPGP", "2026-07-15"),
     ("STAA", "2026-07-15"), ("PSKY", "2026-07-01"), ("FN", "2026-07-21"),
@@ -971,11 +993,17 @@ LOSER_COHORT = [
     ("HL", "2026-07-01"), ("BG", "2026-07-17"),
 ]
 
+#: The frozen slice this gate reconstructs over: the coupled vintage at
+#: d29e4dd44daa, where the board snapshots, the retro ledger, the baskets and the price
+#: caches were all written by ONE nightly run. Root-shaped, so `build_rows` and every
+#: loader under it run exactly as they do in production.
+VINTAGE_ROOT = ROOT / "tests" / "fixtures" / "prophet_postmortem_vintage"
+
 
 @pytest.fixture(scope="module")
 def artifact():
-    """One real run over the committed ledgers (~5s, git archaeology included)."""
-    return ppm.build_rows(ROOT)
+    """One real run over the FROZEN vintage slice (~5s), through the real loaders."""
+    return ppm.build_rows(VINTAGE_ROOT)
 
 
 def _match(doc, ticker, board_date):
@@ -1143,7 +1171,7 @@ class TestLoserCohortFixture:
              if any(n["reason"] == "no_price_path" for n in r["labels_null"])])
 
     def test_the_run_is_deterministic(self, artifact):
-        again = ppm.build_rows(ROOT)
+        again = ppm.build_rows(VINTAGE_ROOT)
         assert again["summary"] == artifact["summary"]
         assert [r["ticker"] for r in again["episodes"]] == \
             [r["ticker"] for r in artifact["episodes"]]
@@ -1328,9 +1356,15 @@ class TestLadderOnTheCommittedLedgers:
     def test_coverage_separates_a_missing_name_from_a_stale_store(self, artifact):
         """`U` resolves to a real series whose store stops before its fill bar. That
         is a stale STORE, not a missing NAME, and merging the two would have the
-        coverage receipt claim we hold no prices for a ticker we do hold."""
+        coverage receipt claim we hold no prices for a ticker we do hold.
+
+        Resolved against the SAME root the artifact was built from. Reading the live
+        caches here while `artifact` came from the frozen slice would compare two
+        different tapes and pass for the wrong reason — the root leak #4763 closed in
+        the exit-policy study's own fixture run.
+        """
         cov = artifact["coverage"]
-        resolve = ppm.close_resolver(ROOT, ppm.load_closes(ROOT))
+        resolve = ppm.close_resolver(VINTAGE_ROOT, ppm.load_closes(VINTAGE_ROOT))
         assert set(cov["tickers_no_price_series"]) <= set(cov["tickers_no_price_path"])
         assert cov["n_tickers_no_price_series"] == len(cov["tickers_no_price_series"])
         for ticker in cov["tickers_no_price_series"]:
@@ -1353,3 +1387,112 @@ class TestLadderOnTheCommittedLedgers:
         and `tickers_no_price_path` should be re-read, not the test relaxed."""
         assert artifact["coverage"]["price_path_sources"].get(
             ppm.SOURCE_BASKET_OHLCV, 0) > 0
+
+
+# ===========================================================================
+# 12. The freeze itself — that it is real, that it is doing work, and that it
+#     stays out of production
+# ===========================================================================
+class TestTheVintageFreezeIsLoadBearing:
+    """A frozen fixture that silently reconstructs today's tape proves nothing.
+
+    These are the anti-vacuity pins for §11: they say the slice EXISTS, that the gate
+    reads IT rather than the live `data/` tree, and that the two are genuinely
+    different — because if the live tape ever equalled the frozen one, every assertion
+    above would be passing for a reason that has nothing to do with the freeze.
+    """
+
+    def test_the_slice_is_pinned_at_the_2026_07_31_vintage(self, artifact):
+        manifest = json.loads(
+            (VINTAGE_ROOT / "MANIFEST.json").read_text(encoding="utf-8"))
+        assert manifest["vintage_as_of"] == "2026-07-31"
+        assert manifest["priced_through"] == "2026-07-31"
+        assert artifact["as_of"] == "2026-07-31"
+        assert str(ppm.load_closes(VINTAGE_ROOT).index.max().date()) == "2026-07-31"
+
+    def test_the_live_tape_has_moved_past_the_frozen_one(self):
+        """The freeze is only load-bearing while the live tree disagrees with it.
+
+        Monotone once true — `collect` only ever extends the caches — so this pins the
+        gate to the slice without pinning anything to today's prices. If it ever goes
+        red, the fixture is being served from the live tree and §11 is vacuous.
+        """
+        frozen = ppm.load_closes(VINTAGE_ROOT).index.max()
+        live = ppm.load_closes(ROOT).index.max()
+        assert live > frozen, (
+            f"live caches end {live.date()}, frozen slice ends {frozen.date()} — the "
+            "G1 cohort gate is reading the live tape, not the frozen vintage")
+
+    def test_the_cohort_check_can_see_a_regrade(self, artifact):
+        """Mutation pin: the §11 assertion must OBSERVE the reconstruction.
+
+        FN is the name that actually moved on 2026-08-06 (loser -> neutral). Flip it
+        back by hand and the check has to notice; a check that stayed green here would
+        be asserting nothing about any cohort at all.
+        """
+        mutated = copy.deepcopy(artifact)
+        _match(mutated, "FN", "2026-07-21")["cohort"] = "neutral"
+        not_losers = [
+            f"{t}@{d} -> {(_match(mutated, t, d) or {}).get('cohort')}"
+            for t, d in LOSER_COHORT
+            if (_match(mutated, t, d) or {}).get("cohort") != "loser"
+        ]
+        assert not_losers == ["FN@2026-07-21 -> neutral"]
+
+    def test_all_five_in_flight_cohort_names_are_marks_not_outcomes(self, artifact):
+        """WHY this gate had to be frozen rather than date-clipped, pinned as a fact.
+
+        These five carry no resolved P&L at the vintage — their `loser` verdict is a
+        mark against the last close. That is what makes the cohort a statement about
+        one tape date, and any future reader wondering whether the freeze is overkill
+        should read this list first.
+        """
+        in_flight = {r["ticker"] for r in artifact["episodes"]
+                     if r["cohort"] == "loser" and r["maturity"] == "in_flight"}
+        assert {"OLN", "AMKR", "FN", "UNIT", "BG"} <= in_flight
+
+
+class TestArchaeologySnapshotIsFixtureOnly:
+    """The frozen-history escape hatch may never become a production cache.
+
+    `basket_history` prefers `data/baskets/_history_snapshot.json` when it exists, so a
+    copy of that file landing under the live `data/` tree would silently pin the
+    nightly run's entry-time theme context to whatever vintage it was written at — and
+    nothing else in the suite would notice, because every theme reading would still be
+    populated. Fail-closed here instead.
+    """
+
+    def test_the_live_data_tree_carries_no_history_snapshot(self):
+        live = ROOT / ppm.BASKET_HISTORY_SNAPSHOT_REL
+        assert not live.exists(), (
+            f"{ppm.BASKET_HISTORY_SNAPSHOT_REL} exists under the live data tree — the "
+            "nightly postmortem would reconstruct entry-time themes from a frozen "
+            "snapshot instead of git. It belongs only in tests/fixtures/.")
+
+    def test_the_frozen_slice_carries_one(self):
+        assert (VINTAGE_ROOT / ppm.BASKET_HISTORY_SNAPSHOT_REL).exists()
+
+    def test_the_live_root_still_reconstructs_history_from_git(self):
+        """The production path stays exercised. With the fixture serving §11 from a
+        snapshot, the git walk would otherwise have no caller in the suite at all."""
+        history = ppm.basket_history(ROOT)
+        assert history, "git archaeology returned no basket revisions on the live root"
+        asof, themes = history[-1]
+        assert isinstance(asof, str) and asof and isinstance(themes, dict) and themes
+        assert [a for a, _ in history] == sorted(a for a, _ in history)
+
+    def test_a_malformed_snapshot_is_loud_rather_than_empty(self, tmp_path):
+        """A history that degrades to [] blanks every theme reading without changing a
+        single assertion about them — so it has to raise, never fall back to git."""
+        snap = tmp_path / ppm.BASKET_HISTORY_SNAPSHOT_REL
+        snap.parent.mkdir(parents=True, exist_ok=True)
+        snap.write_text("{not json", encoding="utf-8")
+        with pytest.raises(RuntimeError, match="unreadable"):
+            ppm.basket_history(tmp_path)
+        snap.write_text(json.dumps({"revisions": []}), encoding="utf-8")
+        with pytest.raises(RuntimeError, match="no basket revisions"):
+            ppm.basket_history(tmp_path)
+        snap.write_text(json.dumps({"revisions": [{"as_of": "2026-07-31", "themes": {}}]}),
+                        encoding="utf-8")
+        with pytest.raises(RuntimeError, match="none with themes"):
+            ppm.basket_history(tmp_path)

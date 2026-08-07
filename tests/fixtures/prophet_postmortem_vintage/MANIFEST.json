@@ -1,0 +1,33 @@
+{
+ "artifact_as_of": "2026-07-31",
+ "basket_revisions": 25,
+ "board_dates": 24,
+ "closes_columns": {
+  "breadth": 241,
+  "midcap_breadth": 102,
+  "smallcap_breadth": 259
+ },
+ "extras_fallback": [],
+ "n_episodes": 808,
+ "n_losers": 109,
+ "n_matured": 526,
+ "n_tickers": 612,
+ "n_winners": 79,
+ "ohlcv_fallback": [
+  "ASTS",
+  "CRDO",
+  "NET",
+  "NVO",
+  "NXE",
+  "TEAM",
+  "U",
+  "UROY"
+ ],
+ "priced_through": "2026-07-31",
+ "regenerate_with": "python3 scripts/build_prophet_postmortem_vintage_fixture.py",
+ "snapshot_lane_rows": 1513,
+ "source_ref": "d29e4dd44daa212da89e24541f45e2aa0fb582e3",
+ "source_ref_short": "d29e4dd44daa",
+ "vintage_as_of": "2026-07-31",
+ "why": "Five of the eleven G1 cohort names are IN-FLIGHT at 2026-07-31, so their `loser` status is a mark-to-market \u2014 a statement about one tape date. Any pin that lets prices advance re-rots by construction (FN did: -15.24% mark -> +1.66% matured in four sessions). Frozen at a COUPLED commit where snapshots, retro ledger, baskets and caches were all written by one nightly run. See the regenerator's module docstring."
+}
