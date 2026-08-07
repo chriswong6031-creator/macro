@@ -832,6 +832,11 @@ def main() -> int:
         try:
             from scripts.build_polygon_gex import accrue as accrue_polygon_gex
             log.info("=== accruing Polygon options OI (GEX foundation) ===")
+            # Passing an INSTANT (not a date) is load-bearing: accrue() reads a datetime
+            # as "snapshot now" and files the result under the SESSION that snapshot
+            # describes (nyse_calendar.expected_last_session), never under the UTC run
+            # date. A 01:24 UTC run therefore stores the prior ET session it actually
+            # holds, and a Friday-evening ET run is no longer refused as "Saturday".
             _polygon_gex_status = accrue_polygon_gex(datetime.now(timezone.utc))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             _polygon_gex_status = {"status": "failed", "error": str(e)}

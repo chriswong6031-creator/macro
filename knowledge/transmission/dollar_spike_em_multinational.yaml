@@ -99,7 +99,7 @@ exposure_screens:            # W2 — structured mini-form; geo_revenue channels
     # rev 1). What rev 2 adds is the other leg, MEASURED: majority-foreign revenue. High
     # leverage + majority non-US revenue ≈ servicing dollar debt against non-dollar cash flows.
     note: {en: "leveraged names (top-third debt_to_assets) whose revenue is majority non-US (>=50%, 10-K geographic note) — dollar-debt service against non-dollar cash flows. Assumes US filers' debt is USD-denominated (stated assumption; no currency-of-debt field exists).",
-           zh: "高杠杆（debt_to_assets前三分之一）且营收过半来自美国以外（≥50%，10-K地区披露）的名字——以非美元现金流偿付美元债务。假设美国申报者的债务以美元计价（明示假设；无债务币种字段）。"}
+           zh: "高杠杆（debt_to_assets前三分之一）且营收过半来自美国以外（≥50%，10-K地区披露）的名字——以非美元现金流偿付美元债务。假设美国披露人的债务以美元计价（明示假设；无债务币种字段）。"}
     all:
       - {path: geo_revenue.foreign_pct, op: ">=", value: 50}            # PERCENT 0-100
       - {path: financials.debt_to_assets, op: pctile_gte, value: 0.67}  # top-third leverage of evaluable universe

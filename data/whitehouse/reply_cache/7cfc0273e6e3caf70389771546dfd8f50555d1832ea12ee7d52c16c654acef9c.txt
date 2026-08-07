@@ -1,0 +1,56 @@
+{
+  "activate": true,
+  "importance": 65,
+  "banner_days": 5,
+  "tone": "mixed",
+  "banner_title": "Trump imposes polysilicon tariff & minimum price — domestic producers shielded, solar & semi supply chains face margin squeeze",
+  "banner_title_zh": "特朗普对多晶硅实施关税和最低限价——本土生产商受保护，太阳能与半导体供应链利润承压",
+  "summary": "The White House announced a minimum import price program and a 15% tariff on downstream derivatives for polysilicon, aiming to revive U.S. production from historic lows. The action shields domestic manufacturers but raises input costs for solar wafer, cell, and module makers reliant on imported material.",
+  "summary_zh": "白宫宣布对多晶硅实施最低进口限价计划并对下游衍生产品征收15%关税，旨在重振跌至历史低位的美国产能。此举保护了本土制造商，但提高了依赖进口材料的太阳能硅片、电池及组件厂商的投入成本。",
+  "analysis": "The Proclamation imposes a minimum import price on polysilicon and polysilicon derivatives, effectively a floor price mechanism, alongside a 15% ad valorem tariff on goods downstream from polysilicon. The goal is to reverse a decades-long decline that shrunk U.S. global polysilicon capacity share from 50% to under 2%, by making dumped imports uncompetitive and incentivizing domestic onshoring of both polysilicon production and derivative manufacturing.\n\nFor markets, this directly benefits remaining U.S. polysilicon producers by reducing price competition from imports, while the derivative tariff aims to force solar cell and module manufacturing back onshore. However, near-term, it raises costs for domestic solar panel assemblers and other downstream users who rely on imported polysilicon wafers and cells, squeezing their margins unless they can rapidly switch to or invest in domestic supply chains.\n\nThe transmission mechanism is a classic trade-policy shock: elevated input costs for downstream industries versus a protected profit window for upstream domestic producers. The 120-day implementation delay creates a pre-buying window that could distort near-term inventory and pricing. The authorized Commerce Department incentive program adds a fiscal tailwind for capacity expansion but introduces uncertainty around scale and speed of execution.\n\nKey uncertainty is whether the minimum price truly re-establishes commercially viable U.S. polysilicon capacity at scale, or simply raises costs throughout the solar supply chain without a competitive domestic alternative, potentially slowing U.S. solar deployment and benefiting foreign module makers not subject to the downstream tariff.",
+  "sectors": [
+    {
+      "name": "Polysilicon Producers (U.S.)",
+      "impact": "tailwind",
+      "rationale": "Minimum import price directly protects them from foreign dumping, improving pricing power and margins."
+    },
+    {
+      "name": "Solar Equipment Manufacturers (U.S., import-dependent)",
+      "impact": "headwind",
+      "rationale": "Higher costs for imported wafers and cells before domestic derivative production ramps; margin compression likely."
+    },
+    {
+      "name": "Semiconductor Equipment & Materials",
+      "impact": "mixed",
+      "rationale": "Polysilicon is a key input; tariffs may raise costs for non-vertically integrated chipmakers but benefit domestic materials suppliers."
+    },
+    {
+      "name": "Industrial Gas & Chemicals (polysilicon-related)",
+      "impact": "tailwind",
+      "rationale": "Domestic production ramp-up increases demand for related chemicals and gases used in polysilicon manufacturing."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "RECSI",
+      "direction": "benefit",
+      "rationale": "One of the few remaining U.S.-based polysilicon producers; minimum price directly improves its competitive position against imports."
+    },
+    {
+      "symbol": "ENPH",
+      "direction": "hurt",
+      "rationale": "Sources microinverters and components globally; higher polysilicon derivative costs could raise overall solar system input prices, pressuring margins."
+    },
+    {
+      "symbol": "FSLR",
+      "direction": "benefit",
+      "rationale": "Uses cadmium telluride thin-film technology rather than crystalline silicon, avoiding polysilicon input cost increases while potentially benefiting from a protected domestic solar manufacturing environment."
+    },
+    {
+      "symbol": "AMAT",
+      "direction": "mixed",
+      "rationale": "Supplies equipment to both polysilicon producers and downstream manufacturers; near-term demand pull for domestic capacity expansion offsets risk of higher customer costs."
+    }
+  ],
+  "confidence": "medium"
+}

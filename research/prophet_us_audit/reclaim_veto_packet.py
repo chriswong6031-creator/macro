@@ -76,9 +76,20 @@ import pandas as pd
 
 REPO = str(Path(__file__).resolve().parents[2])
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, "reclaim_veto_packet_results_2026-08-05.json")
 os.chdir(REPO)
 sys.path.insert(0, REPO)
+sys.path.insert(0, HERE)
+
+# PRICE-ADJUSTMENT AUDIT (2026-08-06) — see PRICE_ADJUSTMENT_AUDIT_2026-08-06.md.
+import price_ladder  # noqa: E402
+
+PRICE_BASIS = os.environ.get("PRICE_BASIS", "cache").strip().lower()
+if PRICE_BASIS not in ("cache", "adjusted"):
+    raise SystemExit(f"PRICE_BASIS must be 'cache' or 'adjusted', got {PRICE_BASIS!r}")
+OUT = os.path.join(HERE, "reclaim_veto_packet_results_2026-08-05.json"
+                   if PRICE_BASIS == "cache"
+                   else "reclaim_veto_packet_adjusted_rerun.json")
+PANEL_PROVENANCE: dict = {}
 
 from engine import signal_quality as sq  # noqa: E402
 
@@ -111,7 +122,24 @@ def load_panel() -> pd.DataFrame:
         frames.append(pd.read_parquet(f"data/{grp}/_closes_cache.parquet"))
     idx = frames[1].index
     wide = pd.concat([f.reindex(idx) for f in frames], axis=1)
-    return wide.loc[:, ~wide.columns.duplicated()]
+    wide = wide.loc[:, ~wide.columns.duplicated()]
+
+    # PRICE-ADJUSTMENT AUDIT (2026-08-06): this packet's 126-session window sits inside
+    # the exposed tail, where the caches carry raw closes and the yahoo SPY benchmark is
+    # back-adjusted. PRICE_BASIS=adjusted re-prices the SAME names, on the SAME calendar,
+    # in the SAME observed cells so a delta is attributable to the basis alone.
+    PANEL_PROVENANCE.clear()
+    PANEL_PROVENANCE["basis"] = PRICE_BASIS
+    if PRICE_BASIS == "adjusted":
+        adj, prov = price_ladder.close_panel(
+            list(wide.columns), asof=str(idx.max().date()), start=str(idx.min().date()))
+        adj = adj.reindex(index=wide.index, columns=wide.columns)
+        prov["basis"] = "adjusted"
+        prov["cells_observed"] = int(wide.notna().to_numpy().sum())
+        prov.pop("price_source", None)
+        wide = adj.where(wide.notna())
+        PANEL_PROVENANCE.update(prov)
+    return wide
 
 
 def load_benchmark(idx: pd.DatetimeIndex) -> pd.Series:
@@ -404,6 +432,8 @@ def main() -> int:
         "instrument": "W-F US reclaim-veto decision packet",
         "tier": "research — decision input; NO code-path change, reclaim_veto stays True",
         "generated": "2026-08-05",
+        "price_basis": PRICE_BASIS,
+        "price_ladder": dict(PANEL_PROVENANCE),
         "panel": {
             "source": ["data/breadth/_closes_cache.parquet",
                        "data/midcap_breadth/_closes_cache.parquet",

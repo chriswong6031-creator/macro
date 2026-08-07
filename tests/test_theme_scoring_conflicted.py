@@ -525,29 +525,40 @@ class TestBasketTemplateParses:
 
     # ── MLC-W2b pins (#4241 shape, retargeted at the act board's post-#4642 home) ─
     #
-    # #4642 ("transplant the V2 five-lane action board onto US Sector Intelligence")
-    # replaced sector_central's client-rendered act board with the shared, SERVER-
-    # rendered templates/_us_act_now_board.html.j2, and deleted the client renderer
-    # by name. Quoting that commit: "sector_central.html.j2 drops the dead client
-    # renderer (renderActBoard/actRow/actLane/botRow/renderStanceChips) and its
-    # boot()/langchange calls". That deletion was deliberate and adjudicated, so the
-    # three pins that named the client renderer's internals — id="actnow-footnote",
-    # renderStanceChips(), and the sector_central-side stance_matrix.json fetch —
-    # became pins of a SUPERSEDED design rather than evidence of a regression. They
-    # are retargeted here, not relaxed: what they existed to guard still ships.
+    # #4642 replaced sector_central's client-rendered act board with the shared,
+    # SERVER-rendered templates/_us_act_now_board.html.j2 and deleted the client
+    # renderer by name — "sector_central.html.j2 drops the dead client renderer
+    # (renderActBoard/actRow/actLane/botRow/renderStanceChips)". The three pins that
+    # named that renderer's internals (id="actnow-footnote", renderStanceChips(), and
+    # sector_central's own stance_matrix.json fetch) became pins of a SUPERSEDED
+    # design. They are retargeted here, not relaxed: what they existed to guard —
+    # a theme demoted out of the buy lanes still discloses the disagreement — is
+    # asserted against the RENDERED board, which a substring check cannot fake.
+    # The stance-matrix fetch itself is still live on allocation.html.j2, pinned by
+    # TestAllocationTemplate.test_allocation_has_stance_matrix_fetch.
     #
-    # The guarded behaviour is unchanged — a theme demoted out of the buy lanes
-    # still discloses the disagreement — but it is now assembled server-side
-    # (scripts/build_site.py writes conflict_chip_en/conflict_chip_zh/
-    # conflict_reason_en) and rendered by the shared board. The stance-matrix fetch
-    # itself is still live on allocation.html.j2, pinned by TestAllocationTemplate.
+    # (The bottoming lane, deleted by the SAME commit, was a genuine display loss
+    # rather than a move; it is restored as templates/_us_bottoming_watch.html.j2 and
+    # fenced by tests/test_us_act_now.py.)
 
     ACT_BOARD = "_us_act_now_board.html.j2"
 
-    def _board(self) -> str:
-        return (TEMPLATE_DIR / self.ACT_BOARD).read_text(encoding="utf-8")
+    def _render_board(self, **over):
+        """Render the shared act board over a minimal, realistic action_board."""
+        item = {"kind": "theme", "name": "Gold Miners", "name_zh": "黄金矿业",
+                "slug": "gold_miners", "ticker": "gold_miners",
+                "href": "basket/gold_miners.html", "score": 31,
+                "reco": "avoid", "conflict_chip_en": "conflicted",
+                "conflict_chip_zh": "观点冲突",
+                "conflict_reason_en": "sector view says reduce"}
+        item.update(over)
+        board = {"buy_now": [], "buy_soon": [], "on_the_run": [],
+                 "take_profits": [], "hold": [], "avoid": [item], "more": {}}
+        env = _jinja_env()
+        env.globals.update(tr=lambda en: en, td=lambda en: en)
+        return env.get_template(self.ACT_BOARD).render(action_board=board)
 
-    def test_act_board_is_the_merged_pages_action_surface(self):
+    def test_merged_page_hosts_the_shared_act_board(self):
         """The retarget is only honest while the merged page actually hosts it."""
         src = (TEMPLATE_DIR / "sector_central.html.j2").read_text(encoding="utf-8")
         assert self.ACT_BOARD in src, (
@@ -555,36 +566,19 @@ class TestBasketTemplateParses:
             "point at a surface the merged page has stopped rendering"
         )
 
-    def test_act_board_discloses_the_conflicted_reason(self):
-        """Successor to the actnow-footnote element: the demotion reason ships per
-        row, so the reader sees WHY a name was folded out of the buy lanes."""
-        src = self._board()
-        assert "conflict_reason_en" in src, (
-            "conflicted disclosure lost from the act board"
+    def test_act_board_renders_the_conflicted_chip(self):
+        """Successor to the actnow-footnote / renderStanceChips pins, keeping their
+        #3282 lesson: the disclosure must be RENDERED on a row, not merely defined.
+        A macro nobody calls is exactly the dead-surface shape those pins were
+        written against — so this asserts on output, not on source."""
+        html = self._render_board()
+        assert "conflicted" in html and "观点冲突" in html, (
+            "a demoted theme rendered no conflicted disclosure"
         )
-
-    def test_act_board_renders_the_conflict_chip_not_merely_defines_it(self):
-        """Successor to the renderStanceChips pin, keeping its #3282 lesson: the
-        chip must be INVOKED on a row, not merely defined. A macro nobody calls is
-        exactly the dead-surface shape the original assertion was written against."""
-        src = self._board()
-        assert "{%- macro ab_chip(chip_en, chip_zh, chip_tone) -%}" in src, (
-            "the chip macro was renamed or removed"
-        )
-        assert (
-            "ab_chip(x.conflict_chip_en, x.get('conflict_chip_zh', x.conflict_chip_en), 'warn')"
-            in src
-        ), "the conflict chip is defined but never rendered on a theme row"
-        assert (
-            "ab_chip(x.get('conflict_chip_en',''), x.get('conflict_chip_zh', x.get('conflict_chip_en','')), 'warn')"
-            in src
-        ), "the conflict chip is defined but never rendered on a sector row"
-
-    def test_act_board_conflict_chip_falls_back_to_english(self):
-        """Bilingual law: an absent zh chip renders the English copy, never blank."""
-        src = self._board()
-        assert "x.get('conflict_chip_zh', x.conflict_chip_en)" in src
-        assert "x.get('conflict_chip_zh', x.get('conflict_chip_en',''))" in src
+        # …and a row WITHOUT the key must not fabricate an empty chip.
+        clean = self._render_board(conflict_chip_en=None, conflict_chip_zh=None,
+                                   conflict_reason_en=None)
+        assert "观点冲突" not in clean
 
     def test_conflict_chip_is_written_by_the_builder(self):
         """The chip is inert markup unless the builder actually writes the key."""

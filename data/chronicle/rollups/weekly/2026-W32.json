@@ -11,10 +11,26 @@
     {
       "clusters": [
         {
-          "n_events": 184,
+          "n_events": 240,
+          "source": "earnings_call",
+          "theme": "earnings",
+          "top_events": []
+        },
+        {
+          "n_events": 239,
           "source": "research_vault",
           "theme": null,
           "top_events": [
+            {
+              "date": "2026-08-06",
+              "id": "cev-research_vault-2fe6ddd4e3c8",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-eglyaiphi8v-4403b5",
+              "tickers": [],
+              "title": "Goldman Sachs: Expedia Group (EXPE) Q2'26 Earnings Review Strong Execution and B2B Momentum Drive Beat and Raise Quarter",
+              "weight_hint": 3
+            },
             {
               "date": "2026-08-05",
               "id": "cev-research_vault-3dd0e2f4cf3d",
@@ -54,23 +70,13 @@
               "tickers": [],
               "title": "UBS: Daily US",
               "weight_hint": 3
-            },
-            {
-              "date": "2026-08-04",
-              "id": "cev-research_vault-e2fa00b042dc",
-              "kind": "report",
-              "source": "research_vault",
-              "source_ref": "marketdesk-w1tihsut8gt-a94dcf",
-              "tickers": [],
-              "title": "J.P. Morgan: JPM JPM US Market Intell",
-              "weight_hint": 3
             }
           ]
         },
         {
-          "n_events": 112,
-          "source": "earnings_call",
-          "theme": "earnings",
+          "n_events": 6,
+          "source": "prophet_ledger",
+          "theme": null,
           "top_events": []
         },
         {
@@ -264,14 +270,14 @@
         },
         {
           "n_events": 2,
-          "source": "risk_band",
-          "theme": "risk",
+          "source": "earnings",
+          "theme": "earnings",
           "top_events": []
         },
         {
-          "n_events": 1,
-          "source": "earnings",
-          "theme": "earnings",
+          "n_events": 2,
+          "source": "risk_band",
+          "theme": "risk",
           "top_events": []
         },
         {
@@ -327,7 +333,7 @@
     {
       "clusters": [
         {
-          "n_events": 2,
+          "n_events": 3,
           "source": "prophet_ledger",
           "theme": null,
           "top_events": []
@@ -350,7 +356,7 @@
     {
       "clusters": [
         {
-          "n_events": 3,
+          "n_events": 5,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -367,7 +373,7 @@
     {
       "clusters": [
         {
-          "n_events": 3,
+          "n_events": 10,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -378,7 +384,7 @@
     {
       "clusters": [
         {
-          "n_events": 1,
+          "n_events": 5,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -389,7 +395,7 @@
     {
       "clusters": [
         {
-          "n_events": 9,
+          "n_events": 12,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -400,7 +406,7 @@
     {
       "clusters": [
         {
-          "n_events": 15,
+          "n_events": 29,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -411,7 +417,7 @@
     {
       "clusters": [
         {
-          "n_events": 25,
+          "n_events": 44,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -422,7 +428,7 @@
     {
       "clusters": [
         {
-          "n_events": 20,
+          "n_events": 33,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -439,7 +445,7 @@
     {
       "clusters": [
         {
-          "n_events": 62,
+          "n_events": 111,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -462,10 +468,22 @@
     {
       "clusters": [
         {
-          "n_events": 81,
+          "n_events": 157,
           "source": "earnings",
           "theme": "earnings",
           "top_events": [
+            {
+              "date": "2026-05-07",
+              "id": "cev-earnings-0608a6aa9d38",
+              "kind": "earnings",
+              "source": "earnings",
+              "source_ref": "CWEN#2026-05-07",
+              "tickers": [
+                "CWEN"
+              ],
+              "title": "Earnings: CWEN actual vs est",
+              "weight_hint": 2
+            },
             {
               "date": "2026-05-07",
               "id": "cev-earnings-06e260fd5abe",
@@ -476,30 +494,6 @@
                 "ELVN"
               ],
               "title": "Earnings: ELVN actual vs est",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-05-07",
-              "id": "cev-earnings-07a317bc3848",
-              "kind": "earnings",
-              "source": "earnings",
-              "source_ref": "COLD#2026-05-07",
-              "tickers": [
-                "COLD"
-              ],
-              "title": "Earnings: COLD actual vs est",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-05-07",
-              "id": "cev-earnings-0960bfd504b0",
-              "kind": "earnings",
-              "source": "earnings",
-              "source_ref": "FROG#2026-05-07",
-              "tickers": [
-                "FROG"
-              ],
-              "title": "Earnings: FROG actual vs est",
               "weight_hint": 2
             }
           ]

@@ -709,7 +709,7 @@
     <div class="panel" id="panel_fin" style="display:none">
       <h2>📊 {{ t('Financials & growth', '财务与增长') }}
         {{ help('Latest fiscal year from SEC EDGAR XBRL; multi-year trends, growth (CAGR) and the Piotroski-F / Altman-Z health scores from SEC companyfacts. All lagged to the filing date. Diluted EPS is as-reported — not split-adjusted across years.',
-          '最新财年来自SEC EDGAR XBRL；多年趋势、增长（CAGR）与 Piotroski-F／Altman-Z 健康分数来自SEC companyfacts。均滞后至申报日。摊薄EPS为申报口径，未跨年做拆股调整。') }}</h2>
+          '最新财年来自SEC EDGAR XBRL；多年趋势、增长（CAGR）与 Piotroski-F／Altman-Z 健康分数来自SEC companyfacts。均滞后至披露日。摊薄EPS为披露口径，未跨年做拆股调整。') }}</h2>
       <div id="r_multiyear" style="margin-bottom:8px"></div>
       <div id="r_finrows"></div>
       <details><summary>{{ t('more metrics & financial health', '更多指标与财务健康') }}</summary>
@@ -720,7 +720,7 @@
     <div class="panel" id="panel_aq" style="display:none">
       <h2>🧾 {{ t('Accounting quality', '会计质量') }}
         {{ help('A plain-language read on whether the accounting is deteriorating — composed from this name\'s accruals (are earnings backed by cash?), working-capital trends (inventory & receivables vs sales), gross profitability, capital discipline (asset growth / dilution) and balance-sheet safety, using the same SEC-derived factor ranks shown below plus multi-year SEC companyfacts trends where they exist. DISPLAY-ONLY context: it is NOT part of any score, ranking or trading signal, and it deliberately does NOT change the technical / alpha call above — it is a fundamental cross-check for you to weigh. Lagged to the filing date; annual data, sparse for some filers.',
-          '用通俗语言判断会计质量是否在恶化——综合该标的的应计利润（盈利是否有现金支撑）、营运资本趋势（存货与应收对销售）、毛利能力、资本纪律（资产增长／股本稀释）与资产负债表安全性，即下方相同的 SEC 因子排名，并在可得时叠加 SEC companyfacts 多年趋势。仅作背景展示：不计入任何评分、排名或交易信号，且刻意不改变上方的技术／阿尔法判断——它只是供你权衡的基本面交叉验证。滞后至申报日；年度数据，对部分公司不全。') }}</h2>
+          '用通俗语言判断会计质量是否在恶化——综合该标的的应计利润（盈利是否有现金支撑）、营运资本趋势（存货与应收对销售）、毛利能力、资本纪律（资产增长／股本稀释）与资产负债表安全性，即下方相同的 SEC 因子排名，并在可得时叠加 SEC companyfacts 多年趋势。仅作背景展示：不计入任何评分、排名或交易信号，且刻意不改变上方的技术／阿尔法判断——它只是供你权衡的基本面交叉验证。滞后至披露日；年度数据，对部分公司不全。') }}</h2>
       <div id="r_aq"></div>
     </div>
 
@@ -736,7 +736,7 @@
     <div class="panel" id="panel_evwin" style="display:none">
       <h2>🗓 {{ t('Event windows', '事件窗口') }}
         {{ help('Upcoming event-calendar context for this name: next earnings date (calendar days away), next FOMC meeting (calendar days away), and the most recent EDGAR balance-sheet debt snapshot (current debt due within ~12 months, long-term debt, cash, net debt). DISPLAY-ONLY context — descriptive facts only, does not affect any score, rank, or entry decision. Debt figures in USD as reported; lagged to the most recent SEC filing date shown.',
-          '当前标的即将到来的事件日历背景：下次财报日期（距今日历天数）、下次FOMC会议（距今日历天数），以及最新EDGAR资产负债表债务快照（约12个月内到期的流动债务、长期债务、现金、净债务）。仅供展示——纯描述性事实，不影响任何评分、排名或入场决策。债务数据为美元报告值，滞后至所示最新SEC申报日期。') }}</h2>
+          '当前标的即将到来的事件日历背景：下次财报日期（距今日历天数）、下次FOMC会议（距今日历天数），以及最新EDGAR资产负债表债务快照（约12个月内到期的流动债务、长期债务、现金、净债务）。仅供展示——纯描述性事实，不影响任何评分、排名或入场决策。债务数据为美元报告值，滞后至所示最新SEC披露日期。') }}</h2>
       <div id="r_evwin"></div>
     </div>
 
@@ -785,7 +785,7 @@
     <div class="panel" id="panel_pos" style="display:none">
       <h2>🩳 {{ t('Positioning', '持仓与做空') }}
         {{ help('Short interest from FINRA (bi-monthly, ~2-week lag). Insider net open-market buying/selling from SEC Form-4 filings, shown as a % of market cap (size-normalised so small/mid-cap conviction is not drowned by megacap dollars) with the count of distinct insiders — a cluster of independent buyers is the higher-conviction signal. Heavy or rising short interest with insider selling is a caution.',
-          '做空数据来自FINRA（每半月，约两周滞后）。内部人净公开市场买卖来自SEC Form-4申报，按占市值%显示（经规模标准化，避免小/中盘信念被大盘美元金额淹没），并附不同内部人人数——多名独立买家形成的集群信号确信度更高。高或上升的做空＋内部人卖出为警示。') }}</h2>
+          '做空数据来自FINRA（每半月，约两周滞后）。内部人净公开市场买卖来自SEC Form-4披露，按占市值%显示（经规模标准化，避免小/中盘信念被大盘美元金额淹没），并附不同内部人人数——多名独立买家形成的集群信号确信度更高。高或上升的做空＋内部人卖出为警示。') }}</h2>
       <div id="r_pos" class="twocol"></div>
     </div>
 
@@ -797,7 +797,7 @@
     <div class="panel" id="panel_flow" style="display:none">
       <h2>🐳 {{ t('Thematic-fund flow — curated ETF baskets', '主题基金流 — 精选ETF篮子') }}
         {{ help("Which curated thematic/industry funds (SPDR sector, Global X) and actively managed funds (ARK) have been accumulating or trimming this stock, with mechanical creation/redemption flow and price moves stripped out. Conviction = the percentage POINTS of the fund's weight the manager actually committed. A real add from a sector specialist is a meaningful vote of confidence; pair it with the analyst & filings panels above. From the 🐳 Real fund moves board.",
-          "哪些精选的主题／行业基金（SPDR 板块、Global X）与主动管理基金（ARK）一直在增持或减持该股，已剔除机械性的申购／赎回资金流与价格变动。信念 = 经理人实际投入的基金权重百分点。来自板块专业基金的真实增持是有意义的信心投票；请与上方的分析师与申报面板结合参考。数据来自 🐳 基金真实动作 看板。") }}</h2>
+          "哪些精选的主题／行业基金（SPDR 板块、Global X）与主动管理基金（ARK）一直在增持或减持该股，已剔除机械性的申购／赎回资金流与价格变动。信念 = 经理人实际投入的基金权重百分点。来自板块专业基金的真实增持是有意义的信心投票；请与上方的分析师与披露面板结合参考。数据来自 🐳 基金真实动作 看板。") }}</h2>
       <div id="r_flow"></div>
     </div>
 
@@ -811,7 +811,7 @@
     <div class="panel" id="panel_smartmoney" style="display:none">
       <h2>🏦 {{ t('Super-investors — 13F holders', '超级投资者 — 13F 持仓') }}
         {{ help("Which curated super-investor funds (Berkshire, Pershing Square, Scion, Baupost, Viking, Tiger Global, etc.) reported holding this stock in their latest SEC Form 13F, and whether they initiated / added / trimmed / exited vs the prior quarter. Conviction = the position's share of that fund's reported US-equity book. 13F is QUARTERLY with a ~45-day lag — long-only US equity >= $100M only (no shorts, options detail, or non-US positions); CUSIPs are name-matched to tickers so some lines are hidden. CONTEXT on who holds it, NOT a buy list or a real-time signal.",
-          "哪些精选的超级投资者基金（伯克希尔、潘兴广场、Scion、Baupost、Viking、老虎环球等）在最新的 SEC 13F 表中报告持有该股，以及相对上一季度是新建仓／加仓／减持／清仓。信念 = 该持仓在该基金所报美股组合中的占比。13F 为季度申报，约有 45 天滞后 —— 仅含美股多头持仓（≥1亿美元），不含空头、期权细节或非美持仓；CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。") }}</h2>
+          "哪些精选的超级投资者基金（伯克希尔、潘兴广场、Scion、Baupost、Viking、老虎环球等）在最新的 SEC 13F 表中报告持有该股，以及相对上一季度是新建仓／加仓／减持／清仓。信念 = 该持仓在该基金所报美股组合中的占比。13F 为季度披露，约有 45 天滞后 —— 仅含美股多头持仓（≥1亿美元），不含空头、期权细节或非美持仓；CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。") }}</h2>
       <div id="r_smartmoney"></div>
     </div>
     </details>
@@ -1139,7 +1139,7 @@
       'Recipient→ticker matching is curated (fuzzy string) — subsidiary contracts may be missed (R9a). ' +
       'Market-cap denominator is price-live while awards are lagged (R9e). ' +
       'Annual XBRL evidence; display-only; score cap 60.';
-    var tipZh = 'TTM联邦主合同+补贴奖励÷当前市值。奖励滞后1–2个月（USAspending申报延迟）。' +
+    var tipZh = 'TTM联邦主合同+补贴奖励÷当前市值。奖励滞后1–2个月（USAspending报送延迟）。' +
       '受益方→股票代码匹配为人工维护（模糊字符串）—子公司合同可能遗漏（R9a）。' +
       '市值分母为实时价格而奖励数据有滞后（R9e）。年度XBRL数据；仅展示；评分上限60。';
     box.innerHTML =
@@ -1867,7 +1867,7 @@
         dfields.push((isZh ? '净债务: ' : 'Net debt: ') + '<b class="' + ndSign + '">' + esc(fmtUSD(debt.net_debt)) + '</b>');
       }
       if (dfields.length) {
-        var filedNote = debt.filed ? (isZh ? ' · 申报日: ' : ' · filed ') + esc(debt.filed) : '';
+        var filedNote = debt.filed ? (isZh ? ' · 披露日: ' : ' · filed ') + esc(debt.filed) : '';
         rows.push('<div class="evwin-row evwin-debt"><span class="evwin-label">' +
           esc(isZh ? 'EDGAR债务快照' : 'EDGAR debt snapshot') + '</span>' +
           '<span class="evwin-val">' + dfields.join(' · ') + '</span>' +
@@ -2622,14 +2622,14 @@
       var sfCol = sf.ret_pct == null ? 'muted' : sf.ret_pct >= 0 ? 'pos' : 'neg';
       var sfExCol = sf.ex_spy_pct == null ? 'muted' : sf.ex_spy_pct >= 0 ? 'pos' : 'neg';
       sinceFilingLine = '<p class="srcline sm-asof" style="margin:-2px 0 10px">' +
-        lz('Stock since filing public', '申报公开后股价走势') + ' (' + esc(sf.available_on) + ', ' + (sf.days || '?') + lz('d', '个交易日') + '): ' +
+        lz('Stock since filing public', '披露后股价走势') + ' (' + esc(sf.available_on) + ', ' + (sf.days || '?') + lz('d', '个交易日') + '): ' +
         '<b class="' + sfCol + '">' + sfRet + '</b>' +
         ' · ' + lz('vs SPY', '相对标普') + ': <b class="' + sfExCol + '">' + sfEx + '</b></p>';
     }
     el('r_smartmoney').innerHTML = head + vipline + trendLine + sinceFilingLine + '<table>' + th + rows + '</table>' +
       '<p class="srcline">' + lz(
         '13F filed quarterly, ~45-day lag — long-only US stakes ≥ $100M only (no shorts/options/non-US). Context on who holds it, not a real-time signal.',
-        '13F 季度申报、约45天滞后 —— 仅美股多头持仓（≥1亿美元，不含空头／期权／非美）。仅作「谁持有」背景，非实时信号。') + '</p>';
+        '13F 季度披露、约45天滞后 —— 仅美股多头持仓（≥1亿美元，不含空头／期权／非美）。仅作「谁持有」背景，非实时信号。') + '</p>';
     show('panel_smartmoney', true);
   }
 

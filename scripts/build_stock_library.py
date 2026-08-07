@@ -2294,13 +2294,14 @@ def main() -> int:
     # confirmer we can build for $0 — no trade tape / NBBO signing needed). Computed once over
     # the freshest per-strike chain snapshot; graceful {} when the GEX chain store is absent.
     # DISPLAY-ONLY context until scripts/validate_options_ivspread earns a verdict.
+    from lib import nyse_calendar          # adjacency test for the ivspread delta below
     try:
-        _ivs_chain = options_ivspread._latest_chain()
+        _ivs_chain, _ivs_asof = options_ivspread._latest_chain_dated()
         ivspread_map = options_ivspread.ivspread_map(_ivs_chain) if _ivs_chain is not None else {}
         ivspread_prior = options_ivspread.prior_spread_map() if ivspread_map else {}
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.debug("ivspread map skipped: %s", e)
-        ivspread_map, ivspread_prior = {}, {}
+        ivspread_map, ivspread_prior, _ivs_asof = {}, {}, None
     if ivspread_map:
         log.info("IV-spread confirmer: %d optionable names", len(ivspread_map))
     # contrarian crowding/fragility flags (DISPLAY-ONLY, gated OUT of the score by
@@ -3037,10 +3038,20 @@ def main() -> int:
         _ivs = ivspread_map.get(ticker)
         if _ivs:
             rec["iv_spread"] = _ivs
-            _prior = ivspread_prior.get(ticker.upper())
+            # GAP DISCIPLINE — COMPARE (lib/nyse_calendar, 2026-08-06). `assess` narrates
+            # this delta as richness "building/fading vs the prior session", so it is only
+            # honest when the stored reading IS the immediately-prior session. The chain
+            # store gaps (07-31 -> 08-06 is four sessions), and the old code could not even
+            # ask — prior_spread_map discarded the date. No adjacency, no delta: `assess`
+            # then renders the level alone, which is the honest reading.
+            _pr = ivspread_prior.get(ticker.upper())
+            _prior = _pr.get("ivspread") if isinstance(_pr, dict) else None
+            _prior_d = _pr.get("date") if isinstance(_pr, dict) else None
             _cur = _ivs.get("ivspread")
+            _adjacent = (_ivs_asof is not None and _prior_d is not None
+                         and nyse_calendar.is_prior_session(_prior_d, _ivs_asof))
             _chg = (round(float(_cur) - _prior, 5)
-                    if _prior is not None and _cur is not None else None)
+                    if _adjacent and _prior is not None and _cur is not None else None)
             _ic = options_ivspread.assess(_ivs, chg=_chg)
             if _ic:
                 rec["iv_spread_confirm"] = _ic
@@ -3400,6 +3411,10 @@ def main() -> int:
                 # the record can forever separate the pre/post-change populations.
                 "young_history": bool(_sv.get("young_history", False)),
                 "history_bars": _sv.get("history_bars"),
+                # Bucketing-era cohort label (abs-session-2026-08-06, adjudication R5):
+                # travels exactly like young_history so the board-row record can forever
+                # separate pre/post-anchor populations.
+                "anchor_era": _sv.get("anchor_era"),
                 "asof": _sv.get("asof"),
             }
         except Exception:  # noqa: BLE001 — additive; never fatal
@@ -3407,6 +3422,8 @@ def main() -> int:
                                  "bars_to_cross": None, "provisional": False,
                                  "not_topped": True, "htf_s1": False, "htf_s2": False,
                                  "young_history": False, "history_bars": None,
+                                 # a blank persisted post-era is still a post-era row (R5)
+                                 "anchor_era": signal_gate.confluence_tiers.ANCHOR_ERA,
                                  "asof": None}
         # ---- sniper pre-compute (frozen Terminal contract, 2026-07-06) -----------
         # Compute w2_washout/w2_stoch_d + days_since_63d_low here (close is in scope).
@@ -5360,7 +5377,7 @@ def main() -> int:
                 import pandas as _plab_pd
                 _plab_d12_df = _plab_pd.DataFrame()  # empty fallback
                 try:
-                    _plab_d12_df = _plab_s1d.compute_grids(_ext_closes)
+                    _plab_d12_df = _plab_s1d.compute_grids(_ext_closes, market="US")
                 except Exception as _plab_d12_e:
                     log.warning("pick_lab: 1D/2D grid skipped (%s)", _plab_d12_e)
 
@@ -5369,9 +5386,14 @@ def main() -> int:
                 # macd/k/d scalars in its return; re-run close-only (no I/O).
                 _plab_d3: dict[str, dict] = {}
                 _OS3, _OB3, _CONF_W3 = 20, 80, 8
+                from engine import session_anchor as _plab_sa
                 for _plab_t3, _plab_c3 in _ext_closes.items():
                     try:
-                        _sf3 = _plab_sf(_plab_c3.dropna())
+                        # 3D buckets anchored to the ticker's own market calendar (R-SQ1);
+                        # this library is US, so market_for_ticker returns "US" for every
+                        # name here — inferring it keeps that a FACT rather than a guess.
+                        _sf3 = _plab_sf(_plab_c3.dropna(),
+                                        market=_plab_sa.market_for_ticker(_plab_t3))
                         if _sf3.empty or len(_sf3) < 2:
                             continue
                         _last3 = _sf3.iloc[-1]

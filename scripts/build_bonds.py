@@ -325,7 +325,7 @@ _THEME_TIPS: dict[str, tuple[str, str]] = {
         "extra yield +0.80% vs matched Treasuries (par-weighted, yield-to-maturity basis); "
         "prices are fund-reported estimates.",
         "追踪MSFT/AMZN/META/GOOGL/ORCL共158只债券、面值8.11亿美元；平均期限7.6年；"
-        "相对同期限国债额外收益+0.80%（面值加权、到期收益率口径）；价格为基金申报估值。",
+        "相对同期限国债额外收益+0.80%（面值加权、到期收益率口径）；价格为基金披露估值。",
     ),
     "neocloud_credit": (
         "4 bonds, $116M par; junk-rated (B+); the highest borrowing cost of any theme we track; "
