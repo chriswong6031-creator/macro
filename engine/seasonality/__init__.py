@@ -36,17 +36,23 @@ from .multiplicity import (
     benjamini_yekutieli,
     max_t_adjusted_p_values,
 )
+from .prophet_bridge import (
+    OVERLAY_SET_SCHEMA,
+    build_overlays_for_plans,
+)
 
 __all__ = [
     "BIOTEMPORAL_EVENT_SCHEMA",
     "EVENT_CLOCK_READ_SCHEMA",
     "EXPECTED_PROJECTION_CONTRACT",
     "NEURALWEB_STATE_SCHEMA",
+    "OVERLAY_SET_SCHEMA",
     "PROPHET_OVERLAY_SCHEMA",
     "QUARANTINE_REASON_CODES",
     "ContractError",
     "benjamini_yekutieli",
     "build_neuralweb_state",
+    "build_overlays_for_plans",
     "build_prophet_overlay",
     "max_t_adjusted_p_values",
     "read_event_projection",
