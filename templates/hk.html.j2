@@ -3563,6 +3563,12 @@
   {%- set _hk_def = setups.get('board_definition') or setups.get('rank_by') -%}
   {%- set _hsg = namespace(any=(_hk_def or '').startswith('hk_prophet_v')) -%}
   {%- set _hk_ran = (setups.get('ran') or []) if _hsg.any else [] -%}
+  {# Ripening shelf (CN W8-R1 port, 2026-08-07): non-eligible names whose weekly
+     setups are live. Fail-soft — pre-shelf artifacts carry no `ripening` key and
+     render exactly as before. #}
+  {%- set _hk_rip = (setups.get('ripening') or []) if _hsg.any else [] -%}
+  {%- set _hk_rip_ready  = (_hk_rip | selectattr('zone', 'equalto', 'READY')  | list) if _hk_rip else [] -%}
+  {%- set _hk_rip_basing = (_hk_rip | selectattr('zone', 'equalto', 'BASING') | list) if _hk_rip else [] -%}
   {%- set _hk_ldrs = (setups.get('leaders') or []) if _hsg.any else [] -%}
   {%- set _hk_veto = (setups.get('vetoed') or []) if _hsg.any else [] -%}
   {# ── STANCE, PRINTED ONCE ──────────────────────────────────────────────────
@@ -3695,6 +3701,10 @@
        of what its own filter reveals would be the defect this counts-from-rendered
        -rows rule exists to prevent. #}
     {%- set _ = _sc.update({'blocked': _sc['blocked'] + (_hk_veto|length)}) -%}
+    {# the ripening shelf lives INSIDE the setting-up bucket, by the same rule: it
+       is the "not there yet — get ready" story, so the Setting up chip counts it
+       and filtering to Setting up reveals the shelf with the setting-up cards. #}
+    {%- set _ = _sc.update({'setting_up': _sc['setting_up'] + (_hk_rip|length)}) -%}
   {%- endif -%}
   <div class="panel span12" id="standouts">
     <h2>⚡ {{ t('Prophet — HK stock signals', '先知 — 港股信号') }}
@@ -3732,7 +3742,7 @@
          HK's table-mode toggle hides it with the grid it filters. #}
     {% if _hsg.any %}
     <div class="pbf-bar" id="hk-stage-filter" role="group" aria-label="Filter the board by entry stage">
-      <button type="button" data-stagepick="all" aria-pressed="true"><span class="l-en">All</span><span class="l-zh">全部</span><span class="pbf-n">{{ _hkb|length + _hk_ran|length + _hk_veto|length }}</span></button>
+      <button type="button" data-stagepick="all" aria-pressed="true"><span class="l-en">All</span><span class="l-zh">全部</span><span class="pbf-n">{{ _hkb|length + _hk_ran|length + _hk_veto|length + _hk_rip|length }}</span></button>
       {%- for _sk in _stage_order %}{% if _sc[_sk] %}
       <button type="button" data-stagepick="{{ _sk }}" aria-pressed="false" data-tip-en="{{ _stage_tip_en[_sk] }}" data-tip-zh="{{ _stage_tip_zh[_sk] }}"><span class="l-en">{{ _stage_en[_sk] }}</span><span class="l-zh">{{ _stage_zh[_sk] }}</span><span class="pbf-n">{{ _sc[_sk] }}</span></button>
       {% endif %}{% endfor %}
@@ -3927,6 +3937,125 @@
     {% endfor %}
     </div>
     </div>{# /nb-grid-section #}
+    {# ═══ RIPENING SHELF (CN W8-R1 port, 2026-08-07) — the bench between crosses.
+         Measured 2026-08-06: 158 names, THREE cascade-eligible, a two-card board —
+         and no shelf for "the setup is forming; get ready", which is exactly what
+         China Prophet ships as its ripening shelf. Same engine (setup_tier zones),
+         same theme.css card system (.rip-*), same watch-words law: NOT entry
+         signals, no BUY-family language anywhere inside.
+         It lives INSIDE the setting-up bucket (data-stage="setting_up"), so the
+         Setting up chip counts it and filtering reveals it with the setting-up
+         cards — the vetoed-inside-blocked precedent.
+         Fail-soft: no `ripening` array (every pre-shelf artifact) → nothing renders. #}
+    {% macro _hk_rip_card(r, ready) %}
+        {%- set _r_ticker = r.get('ticker','') -%}
+        {%- set _r_hist = r.get('macd_hist_d') -%}
+        {%- set _r_slope = r.get('macd_hist_slope', 0) -%}
+        {%- set _r_stoch = r.get('w2_stoch') -%}
+        {%- set _r_arrow = r.get('w2_stoch_arrow', 0) -%}
+        {%- set _r_bars = r.get('w1_cross_bars_since') -%}
+        {%- set _r_d = r.get('w1_d_at_cross') -%}
+        {%- set _r_diw = r.get('days_in_washout') -%}
+        {%- set _r_rng = r.get('spot_pct_in_range') -%}
+        {%- set _r_ret = r.get('ret_5d') -%}
+        {%- set _r_price = r.get('price') -%}
+        {%- set _r_imm = r.get('imminence') -%}
+        {%- set _r_nm = r.get('name') if (r.get('name') and r.get('name') != _r_ticker) else none -%}
+        <a href="hk_lookup.html#{{ _r_ticker }}" class="rip-card" style="text-decoration:none;color:inherit{% if not ready %};opacity:.88{% endif %}">
+          <div class="rip-card-stripe"></div>
+          <div class="rip-card-body">
+            <div class="rip-card-id">
+              <div>
+                <div class="rip-card-tk">{{ _r_ticker }}</div>
+                {% if _r_nm %}<div class="rip-card-nm">{{ t(_r_nm, r.get('name_zh') or _r_nm) }}</div>{% endif %}
+                {% if r.get('sector') %}<div class="rip-card-sec">{{ t(r.get('sector'), r.get('sector_zh') or r.get('sector')) }}</div>{% endif %}
+              </div>
+              {% if _r_price is not none %}
+              <div style="text-align:right">
+                <div class="rip-card-px">{{ '%.2f'|format(_r_price) }}</div>
+                {% if _r_ret is not none %}<div style="font-size:10px;color:{{ 'var(--up)' if _r_ret >= 0 else 'var(--down)' }}">{{ '%+.1f'|format(_r_ret * 100) }}%</div>{% endif %}
+              </div>
+              {% endif %}
+            </div>
+            {% if r.get('spark_svg') %}<div class="rip-card-spark">{{ r.get('spark_svg') | safe }}</div>{% endif %}
+            <div class="rip-metrics">
+              <div class="rip-metric" data-tip-en="Oversold gauge — the 2-week StochRSI. 35 and below = washout zone, 20 and below = deeply oversold; the arrow is its direction." data-tip-zh="超卖量表 — 双周随机RSI。≤35＝洗盘区，≤20＝深度超卖；箭头为其方向。">
+                <div class="rip-metric-lbl"><span class="l-en">Oversold gauge</span><span class="l-zh">超卖程度</span></div>
+                <div class="rip-metric-val {% if ready and _r_stoch is not none and _r_stoch <= 20 %}pos{% else %}mut{% endif %}">
+                  {% if _r_stoch is not none %}{{ '%.1f'|format(_r_stoch) }}{% else %}—{% endif %}
+                  {% if _r_arrow == 1 %}<span class="rip-arrow up">↑</span>{% elif _r_arrow == -1 %}<span class="rip-arrow dn">↓</span>{% else %}<span class="rip-arrow fl">→</span>{% endif %}
+                </div>
+              </div>
+              <div class="rip-metric" data-tip-en="Daily momentum — the daily MACD histogram. Above zero = short-term momentum has turned up; the small arrow is its recent slope." data-tip-zh="日线动能 — 日MACD柱。高于零＝短线动能转正；小箭头为近期斜率。">
+                <div class="rip-metric-lbl"><span class="l-en">Daily momentum</span><span class="l-zh">日线动能</span></div>
+                <div class="rip-metric-val {% if _r_hist is not none and _r_hist >= 0 %}pos{% elif _r_hist is not none %}neg{% endif %}">
+                  {% if _r_hist is not none %}{{ '%+.3f'|format(_r_hist) }}{% else %}—{% endif %}
+                  {%- if _r_slope == 1 %}<span style="font-size:9px">↑</span>{%- elif _r_slope == -1 %}<span style="font-size:9px">↓</span>{%- endif %}
+                </div>
+              </div>
+              <div class="rip-metric" data-tip-en="How oversold the weekly gauge was when it turned up (weekly StochRSI %D at the cross, 0–100 scale). Below 25 = turned up from a true washout; lower = deeper reset." data-tip-zh="周线量表转向时的超卖深度（周随机RSI %D，0–100）。低于25＝从真正的洗盘区转向；越低洗盘越深。">
+                <div class="rip-metric-lbl"><span class="l-en">Washout depth</span><span class="l-zh">超卖深度</span></div>
+                <div class="rip-metric-val mut">{% if _r_d is not none %}{{ '%.1f'|format(_r_d) }}{% else %}—{% endif %}</div>
+              </div>
+              <div class="rip-metric" data-tip-en="Where the price sits inside its 2-year range — 0% = at the low, 100% = at the high." data-tip-zh="价格在两年区间中的位置 — 0%＝区间底部，100%＝区间顶部。">
+                <div class="rip-metric-lbl"><span class="l-en">Range position</span><span class="l-zh">区间位置</span></div>
+                <div class="rip-metric-val mut">{% if _r_rng is not none %}{{ '%.0f'|format(_r_rng) }}%{% else %}—{% endif %}</div>
+              </div>
+              <div class="rip-metric" data-tip-en="How many trading days this name has spent in the washout zone so far." data-tip-zh="该股迄今处于洗盘（超卖）状态的交易日数。">
+                <div class="rip-metric-lbl"><span class="l-en">Days in washout</span><span class="l-zh">超卖天数</span></div>
+                <div class="rip-metric-val mut">{% if _r_diw %}~{{ _r_diw }}d{% else %}—{% endif %}</div>
+              </div>
+              <div class="rip-metric" data-tip-en="Time to turn — estimated weeks until the 2-week MACD crosses upward at its current pace (the ripening clock). An estimate, not a promise." data-tip-zh="距转向 — 按当前速度估算双周MACD上穿还需的周数（成熟时钟）。仅为估算，非承诺。">
+                <div class="rip-metric-lbl"><span class="l-en">Time to turn</span><span class="l-zh">距转向</span></div>
+                <div class="rip-metric-val mut">{% if _r_imm is not none %}~{{ '%.1f'|format(_r_imm) }}{{ t('W','周') }}{% else %}—{% endif %}</div>
+              </div>
+            </div>
+            {# Evidence chips — plain words at rest, engine receipt demoted to hover (doctrine Law 2) #}
+            <div class="rip-chips">
+              {% set _evd = r.get('evidence_display') or [] %}
+              {% for ev in _evd %}
+                <span class="rip-chip {{ 'cp-ready' if ready else 'cp-neutral' }}" data-tip-en="Technical: {{ ev.get('receipt','') }}" data-tip-zh="技术依据：{{ ev.get('receipt','') }}"><span class="l-en">{{ ev.get('en','') }}</span><span class="l-zh">{{ ev.get('zh') or ev.get('en','') }}</span></span>
+              {% endfor %}
+              {% if _r_bars is not none and '1W cross' not in ((r.get('evidence') or []) | join(' ')) %}
+                <span class="rip-chip cp-cross"><span class="l-en">weekly gauge crossed up {% if _r_bars == 0 %}this week{% elif _r_bars == 1 %}1 wk ago{% else %}{{ _r_bars }} wks ago{% endif %}</span><span class="l-zh">周线{% if _r_bars == 0 %}本周{% else %}{{ _r_bars }}周前{% endif %}上穿</span></span>
+              {% endif %}
+            </div>
+          </div>
+        </a>
+    {% endmacro %}
+    {% if _hsg.any and _hk_rip %}
+    <div class="rip-shelf" data-stage="setting_up" style="margin-top:16px">
+      <div class="rip-shelf-hdr">
+        <span class="rip-shelf-title"><span class="l-en">RIPENING SHELF</span><span class="l-zh">筑底观察区</span></span>
+        <span class="rip-shelf-sub"><span class="l-en">setup forming — NOT an entry signal. Watch, don’t chase.</span><span class="l-zh">形态形成中 — 非入场信号。观察，勿追高。</span></span>
+        {% if setups.get('as_of') %}<span class="rip-shelf-asof"><span class="l-en">as of {{ setups.get('as_of','') }}</span><span class="l-zh">截至 {{ setups.get('as_of','') }}</span></span>{% endif %}
+      </div>
+      {% if _hk_rip_ready %}
+      <div class="rip-zone rz-ready">
+        <div class="rip-zone-hdr">
+          <span class="rip-zone-label"><span class="l-en">READY</span><span class="l-zh">共振形成中</span></span>
+          <span class="rip-zone-count">{{ _hk_rip_ready|length }}</span>
+          <span class="rip-zone-defn"><span class="l-en">confluence forming — nearest to entry</span><span class="l-zh">接近入场条件</span></span>
+        </div>
+        <div class="rip-grid">
+        {% for r in _hk_rip_ready %}{{ _hk_rip_card(r, true) }}{% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% if _hk_rip_basing %}
+      <div class="rip-zone rz-basing">
+        <div class="rip-zone-hdr">
+          <span class="rip-zone-label"><span class="l-en">BASING</span><span class="l-zh">筑底中</span></span>
+          <span class="rip-zone-count">{{ _hk_rip_basing|length }}</span>
+          <span class="rip-zone-defn"><span class="l-en">washout in progress — waiting for a turn</span><span class="l-zh">超卖持续中 — 等待转向信号</span></span>
+        </div>
+        <div class="rip-grid">
+        {% for r in _hk_rip_basing %}{{ _hk_rip_card(r, false) }}{% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
     {# ═══ RAN LANE — names whose signal fired several sessions ago with the trend
          still intact. Before this a name VANISHED the day its cross went stale, so
          the leader cohort could run for weeks with nothing on the board to show for

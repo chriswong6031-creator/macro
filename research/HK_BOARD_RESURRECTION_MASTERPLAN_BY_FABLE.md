@@ -231,3 +231,75 @@ has a lane that can show it.
   graded buy lane.
 - Era/ledger continuity discipline (CN G5 pattern) applies if any board definition stamp
   changes.
+
+## §4 The thin-board diagnosis (2026-08-07) — why a healthy board printed two cards
+
+Operator, 2026-08-07 (screenshot of the live board): "HK board only shows two picks, a
+ridiculous thing. Need to assess why … and look to upgrade Hong Kong Prophet by learning
+from China Prophet."
+
+**The funnel, recomputed on the 2026-08-06 runner panel** (`data/hk_stocks/*.HK.parquet`,
+158 names, `signal_gate.gate(..., reclaim_veto=False)` — the shipped hk_prophet_v2
+admission):
+
+| bucket | names | share |
+|---|---:|---:|
+| ELIGIBLE (T2 fresh cross ×2, eligible-no-tier ×1) | 3 | 1.9% |
+| held take, aged past FRESH_TICKS or topped ("the rally is weeks old") | 79 | 50% |
+| buy fired, blocked on the next-bar hold | 61 | 39% |
+| flat (last marker sell/cut) | 12 | 7.6% |
+| bearish-divergence veto | 2 | 1.3% |
+| insufficient history | 1 | — |
+
+Cross-market, same night: CN 204 eligible of 1,665 (12.3%), US 114 of 1,576 (7.2%,
+07-31 artifact), HK 3 of 156 (1.9%). The two-card board is the product of TWO
+multiplicative facts — a 156-name universe (10× smaller than CN's) and a
+fresh-cross-only admission on a tape whose washout leg ran in late June. Neither is a
+defect in the v2 gate: 142 of the 155 non-eligible names' last marker IS a buy — the
+board did not miss the wave, the wave is simply five weeks old and the page had nothing
+to say about "what is setting up next".
+
+**What China Prophet does about the identical situation, and what transfers:**
+
+1. **The W8-R1 ripening shelf** (SHIPPED HERE, 2026-08-07): CN keeps a lifecycle shelf
+   of NON-eligible names whose weekly setups are live (2W washout / fresh 1W washout
+   cross / imminent 2W MACD), zoned READY / BASING by
+   `engine.setup_tier.assign_ripening_zone`, watch-words only. Ported as
+   `hk_board_rank.build_ripening_rows` + the `ripening` array + the shelf section in
+   `templates/hk.html.j2` (same `theme.css` `.rip-*` card system → visual parity for
+   free). HK caps: READY 6 / total 12 (CN 16/32, ~10× universe); CN's FALLING sink is
+   deliberately NOT ported (the laggards strip already owns "weakest — avoid" here).
+   Same-night measurement: the shelf holds 12 real rows (6 READY / 6 BASING) on the
+   panel where the buy lane holds 2 — the board's actionable-or-watch surface goes
+   2 → 14 cards with zero admission change, zero ledger writes, zero score authority.
+   It lives INSIDE the setting-up filter bucket (the vetoed-inside-blocked precedent).
+
+2. **CN's lossless lanes over the eligible set** (`partition_board_rows`:
+   featured / more_actionable / late_or_unfillable / forming): NOT needed at HK's
+   scale — 3 eligible names cannot be "lost", and the HK stage buckets already group
+   them. Revisit only if HK eligibility breadth ever approaches CN's.
+
+3. **Nightly self-grading audit** (`engine/cn_prophet_audit.py` — loser/miss telemetry,
+   rank-effectiveness): the HK forward book (`hk_track_ledger`, first read ~2026-08-24)
+   is the prerequisite. OPEN — charter an `hk_prophet_audit` once n_matured > 0; until
+   then there is nothing to audit and a report over zero matured rows would be theater.
+
+4. **Theme tape** ("top sector — where are the picks", `engine/cn_theme_tape.py`): HK
+   has no THS-concept equivalent; the nearest organ is `hk_leadership` (cohort) +
+   sector strips. OPEN as a design question, not a port — do not force CN's basket
+   grammar onto a market without basket data.
+
+5. **Prime-window entry ordering (CN v3 R1) and relay guard (R3)**: CN-era MEASUREMENTS
+   (407 matured episodes; n=7,816 chase events). They do NOT travel as facts — HK gets
+   them only via its own matured cohort + a fresh prereg. FORBIDDEN to copy the
+   `_ENTRY_VALUE` reordering onto HK on CN evidence.
+
+6. **The cheapest HK-native breadth lever stays the bearish-divergence veto prereg**
+   (§0 G6 note: 1,148 blocked signals, measured null on return AND drawdown) — that is
+   an admission change and runs through prereg, not through this display-tier program.
+
+**Fences reaffirmed for the shelf:** display-tier only (`DISPLAY_TIER_LANES` names it);
+no entry claim, no priority score, no graded-ledger writes (`graded_board_rows` is
+buy+watch only, pinned by `TestLedgerIsTheGradedBoardOnly`); buy-lane membership
+byte-identical. The shelf is context accrual — any promotion (rank/size/gate authority)
+requires its own pre-registered gauntlet per house epistemics.
