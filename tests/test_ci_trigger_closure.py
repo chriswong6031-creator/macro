@@ -21,6 +21,12 @@ guard produced three near-misses that a green suite would not have caught:
   * A JOIN'S BASE DECIDES WHAT IT NAMES.  `tmp_path / "config" / "brain.yml"` has the
     same segments as `ROOT / "config" / "brain.yml"` and is a file the suite WRITES.
 
+A fourth joined in #4733's wake: A PATH LITERAL IS NOT ALWAYS A READ.  A suite whose
+SUBJECT MATTER is path filtering carries file NAMES as fixture data, and the heuristic
+cannot tell those from inputs.  `# ci-trigger-closure: data` is the author's explicit
+"this is a name" — section 5 below pins it in both directions, because an exemption
+that only ever suppresses is indistinguishable from a detector that stopped working.
+
 Run: python3 -m pytest tests/test_ci_trigger_closure.py -q
 """
 from __future__ import annotations
@@ -249,6 +255,148 @@ def test_both_halves_of_this_guard_can_start_ci() -> None:
     paths = _ci_paths()
     assert GUARD.matched("scripts/check_ci_trigger_closure.py", paths)
     assert GUARD.matched("tests/test_ci_trigger_closure.py", paths)
+
+
+# ── 5. `# ci-trigger-closure: data` — a NAME is not a read (#4733) ───────────
+
+_MARKED = '''
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[1]
+
+# ci-trigger-closure: data — own-line marker covers the statement below it
+TOUCHED_BY_A_PAST_COMMIT = [
+    "config/causal_priors.yml",
+    "scripts/build_site.py",
+]
+
+# The same SHAPE, unmarked. A list of path strings is data only when an author says
+# so; if it were data by shape, PRESS_MUST_RESTART's real subjects would go dark.
+STILL_SUBJECTS = [
+    "config/marketing.yml",
+    "scripts/build_news.py",
+]
+
+SURGICAL = [
+    "config/press_sources.yml",   # ci-trigger-closure: data — this entry only
+    "scripts/build_signal_quality.py",
+]
+
+MARKED_JOIN = REPO / "research" / "DO_NOT_REBUILD.md"  # ci-trigger-closure: data
+
+# ci-trigger-closure: data
+import engine.signal_quality  # noqa: E402  — an import is a read regardless
+'''
+
+
+@pytest.fixture(scope="module")
+def marked_reads(tmp_path_factory) -> tuple[dict[str, str], dict[str, str]]:
+    suite = tmp_path_factory.mktemp("marked") / "test_marked.py"
+    suite.write_text(_MARKED)
+    excused: dict[str, str] = {}
+    return GUARD.direct_reads(suite, collect_data=excused), excused
+
+
+@pytest.mark.parametrize(
+    "segments,why",
+    [
+        (("config", "causal_priors.yml"), "own-line marker covers the next statement"),
+        (("scripts", "build_site.py"), "the marker covers the WHOLE marked statement"),
+        (("config", "press_sources.yml"), "a same-line marker covers that entry"),
+        (("research", "DO_NOT_REBUILD.md"), "a marker covers a __file__-rooted join"),
+    ],
+)
+def test_a_marked_literal_is_data_not_a_subject(marked_reads, segments, why) -> None:
+    reads, excused = marked_reads
+    rel = "/".join(segments)                       # segments, per the note at §2
+    assert (ROOT / rel).is_file(), f"{rel} must exist, or the shape it models cannot"
+    assert rel not in reads, why
+    assert rel in excused, (
+        f"{rel} was suppressed but not reported — an exemption nobody can see is "
+        "how a guard rots; --report and the summary line must name it"
+    )
+
+
+@pytest.mark.parametrize(
+    "segments,why",
+    [
+        (("config", "marketing.yml"), "an UNMARKED list is still a read"),
+        (("scripts", "build_news.py"), "an UNMARKED list is still a read"),
+        (("scripts", "build_signal_quality.py"), "a same-line marker covers ONE line"),
+        (("engine", "signal_quality.py"), "an import is a read no comment can excuse"),
+    ],
+)
+def test_the_marker_narrows_and_does_not_blind(marked_reads, segments, why) -> None:
+    """The other direction, and the reason this section is not one test.
+
+    A detector that simply stopped resolving literals would satisfy every assertion
+    above. These are the literals a marker must NOT reach.
+    """
+    reads, _ = marked_reads
+    assert "/".join(segments) in reads, why
+
+
+def test_stripping_the_marker_brings_the_finding_back(tmp_path) -> None:
+    """MUTATION. Proves the marker is what is doing the work in the fixture above."""
+    suite = tmp_path / "test_stripped.py"
+    suite.write_text(GUARD._DATA_MARKER.sub("#", _MARKED))
+    reads = GUARD.direct_reads(suite)
+    for segments in (
+        ("config", "causal_priors.yml"),
+        ("scripts", "build_site.py"),
+        ("config", "press_sources.yml"),
+        ("research", "DO_NOT_REBUILD.md"),
+    ):
+        assert "/".join(segments) in reads, (
+            f"{'/'.join(segments)} stayed hidden with the marker stripped — the "
+            "fixture proves nothing about the marker"
+        )
+
+
+# The two literals below are the #4733 artifacts themselves, so this file would
+# demand a trigger entry for each. Dogfooding: the assertion needs the very feature
+# it asserts about, and if the marker breaks, the guard reds on THIS file first.
+# ci-trigger-closure: data — the packet artifacts named as data, exactly as pinned
+RECLAIM_PACKET_ARTIFACTS = [
+    "research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md",
+    "research/prophet_us_audit/reclaim_veto_packet_results_2026-08-05.json",
+]
+
+
+def test_the_merge_on_green_fixture_lists_are_data_not_subjects() -> None:
+    """#4733's finding was a false positive, and this is why.
+
+    `tests/test_merge_on_green.py` reconstructs which files two commits touched and
+    hands the lists to a fake GitHub API. It never opens one of them. The suite's
+    subject matter IS path filtering, so the heuristic and the domain collide by
+    construction — every merge-on-green / ci-trigger / paths-filter suite will keep
+    tripping this guard, and a paths entry per collision is the wrong currency.
+    """
+    reads = GUARD.direct_reads(ROOT / "tests" / "test_merge_on_green.py")
+    for rel in RECLAIM_PACKET_ARTIFACTS:
+        assert rel not in reads, (
+            f"{rel} is a member of INCIDENT_4607_FILES, a list of file NAMES passed "
+            "to a fake API — not a file the suite reads"
+        )
+    # Not a blanket exemption: the suite's real reads survive the marker.
+    assert "scripts/merge_on_green.py" in reads
+
+
+def test_the_false_dependency_is_not_re_encoded_in_ci_yml() -> None:
+    """#4733 turned the guard green by adding these two to ci.yml's paths.
+
+    That armed the full 4-pack run on every edit to two decision-packet files no
+    test reads. Reverted with the marker fix; this keeps the next author who sees
+    the finding from reaching for the same lever, since the guard's error message
+    still offers it as the first option.
+    """
+    paths = _ci_paths()
+    for rel in RECLAIM_PACKET_ARTIFACTS:
+        assert rel not in paths, (
+            f"{rel} is back in ci.yml's on.pull_request.paths. No suite reads it; "
+            "mark the fixture `# ci-trigger-closure: data` instead of paying a "
+            "4-pack CI run for every edit to it"
+        )
 
 
 def test_annotations_start_the_line_and_flush() -> None:

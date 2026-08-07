@@ -798,6 +798,16 @@ def test_a_missing_repository_is_a_real_failure(monkeypatch, capsys):
 # and not a paraphrase of it:
 #   9aca28d248c  #4583  changed engine/signal_quality.py's CT_* constants
 #   a10f126b4dc  #4607  added the guard that pins a copy of them, 2h44m later
+#
+# Both lists are file NAMES. They go to the fake API as `main_commits=` and
+# `pr_files=` and are matched against ci.yml's path patterns; nothing here is ever
+# opened, and editing any of these files cannot change what this suite asserts.
+# check_ci_trigger_closure.py resolves path literals, so without the marker below it
+# reads them as this suite's subjects and demands a trigger entry for each — which
+# #4733 supplied for two of them, arming the full 4-pack CI run on every edit to a
+# decision packet no test reads. This suite's subject matter IS path filtering, so
+# the collision is permanent, not a one-off.
+# ci-trigger-closure: data
 INCIDENT_4583_FILES = [
     "engine/china_board_rank.py",
     "engine/china_prophet_shadow.py",
@@ -813,6 +823,7 @@ INCIDENT_4583_FILES = [
     "tests/test_hk_v2_reason_copy_and_ran_lane.py",
     "tests/test_validate_signals.py",
 ]
+# ci-trigger-closure: data — same as above: names of what #4607 touched, never read
 INCIDENT_4607_FILES = [
     ".github/ci/legacy-jobs.yml",
     ".github/workflows/ci.yml",

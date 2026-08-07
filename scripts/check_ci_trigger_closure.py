@@ -50,6 +50,35 @@ heuristic starts resolving placeholder strings (`config/foo.yml` is reached at
 depth 3 from a docstring example), and a guard that cries wolf gets ignored, which
 is the failure mode this file exists to end.
 
+DATA, NOT AN INPUT (`# ci-trigger-closure: data`).  A path literal is evidence of a
+read, not proof of one: a suite whose SUBJECT MATTER is path filtering carries file
+NAMES as fixture data.  `tests/test_merge_on_green.py` reconstructs which files two
+past commits touched and hands the lists to a fake GitHub API; it never opens one of
+them.  The heuristic and that domain collide by construction, so every merge-on-green
+/ ci-trigger / paths-filter suite will keep tripping this guard forever (#4733 "fixed"
+one such finding by adding two `research/**` artifacts to ci.yml, which encoded a
+dependency that does not exist and re-armed the full 4-pack run on every edit to two
+decision-packet files).  Marking the statement opts it out:
+
+    # ci-trigger-closure: data — file NAMES fed to a fake API, never opened
+    INCIDENT_4607_FILES = [...]
+
+    "research/prophet_us_audit/PACKET.md",   # ci-trigger-closure: data
+
+The marker covers the line it sits on when that line carries a path literal, and
+otherwise the statement it opens or the one directly below it.  It applies ONLY to
+string literals and `__file__`-rooted joins — an `import` is a read unconditionally
+and can never be marked away.  Suppressions are counted in the summary and listed by
+`--report`, because an exemption nobody can see is how a guard rots.
+
+WHY A MARKER AND NOT INFERENCE.  The obvious alternative — "a literal that never
+reaches an `open`/`read_text`/`Path(...)` call is data" — was prototyped and measured
+against this census: it drops 787 of 3,824 subjects across 132 suites.  It cannot see
+`PRESS_MUST_RESTART` in `tests/test_deploy_update_self_heal.py`, whose 15 entries reach
+`(ROOT / path).exists()` through `@pytest.mark.parametrize` — real subjects, silently
+blinded.  Trading a fifth of the census for two false positives is the wrong trade, and
+it fails INVISIBLY.  The marker fails the other way: no marker, still detected.
+
 Usage:
     python3 scripts/check_ci_trigger_closure.py             # gate (exit 1 on findings)
     python3 scripts/check_ci_trigger_closure.py --report    # full census, exit 0
@@ -60,10 +89,11 @@ from __future__ import annotations
 
 import argparse
 import ast
-
+import io
 import json
 import re
 import sys
+import tokenize
 from pathlib import Path
 
 import yaml
@@ -126,7 +156,14 @@ the hard way in this repo:
     base provably derived from `__file__` can point into the checkout, so that is
     the only base accepted — under-reporting on an exotic spelling is the right
     way to be wrong for something that gates a merge.
+
+The ONE deliberate exception is `_DATA_MARKER` below, and it proves the rule: the
+author's "this string is a NAME, not a file I open" can only live in a comment, so
+it is read from COMMENT tokens.  Being a token and not a substring is what keeps it
+honest — the same words inside a string constant (this file's own selftest fixture,
+for one) are inert.
 """
+_DATA_MARKER = re.compile(r"#\s*ci-trigger-closure:\s*data\b")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -336,6 +373,64 @@ def _docstring_ids(tree: ast.Module) -> set[int]:
     return out
 
 
+def _data_lines(source: str, tree: ast.Module) -> set[int]:
+    """Source lines a `# ci-trigger-closure: data` comment opts out of the closure.
+
+    Two branches, chosen so both the surgical and the whole-fixture spelling read the
+    way an author would expect:
+
+      * the marker line ITSELF carries a path literal → it marks that one line, so a
+        single entry can be excused out of a list whose other entries are real;
+      * otherwise → it marks the statement it opens (`FILES = [  # marker`) or, when
+        it sits on its own line between statements, the next statement to start.
+
+    Deliberately coarse in the second branch: a marker anywhere inside a multi-line
+    fixture excuses the whole fixture.  That is the shape these lists actually have —
+    a manifest of names is data end to end — and a rule an author can predict without
+    reading this function beats a precise one they cannot.
+    """
+    try:
+        comments = [
+            token.start[0]
+            for token in tokenize.generate_tokens(io.StringIO(source).readline)
+            if token.type == tokenize.COMMENT and _DATA_MARKER.search(token.string)
+        ]
+    except (tokenize.TokenError, IndentationError, SyntaxError):
+        return set()          # unparsable comments cannot excuse anything
+    if not comments:
+        return set()
+
+    literal_lines = {
+        node.lineno
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Constant)
+        and isinstance(node.value, str)
+        and _PATH_LITERAL.fullmatch(node.value.strip())
+    }
+    statements = [node for node in ast.walk(tree) if isinstance(node, ast.stmt)]
+
+    def span(node: ast.stmt) -> range:
+        return range(node.lineno, (node.end_lineno or node.lineno) + 1)
+
+    covered: set[int] = set()
+    for line in comments:
+        if line in literal_lines:
+            covered.add(line)
+            continue
+        enclosing = [node for node in statements if line in span(node)]
+        target = min(
+            enclosing,
+            key=lambda node: (node.end_lineno or node.lineno) - node.lineno,
+            default=None,
+        )
+        if target is None:
+            following = [node for node in statements if node.lineno > line]
+            target = min(following, key=lambda node: node.lineno, default=None)
+        if target is not None:
+            covered |= set(span(target))
+    return covered
+
+
 def _resolve(module: str) -> list[str]:
     """Repo-relative files a dotted module name can denote — existing ones only."""
     base = module.replace(".", "/")
@@ -346,7 +441,9 @@ def _resolve(module: str) -> list[str]:
     ]
 
 
-def direct_reads(path: Path) -> dict[str, str]:
+def direct_reads(
+    path: Path, *, collect_data: dict[str, str] | None = None
+) -> dict[str, str]:
     """``{repo-relative file: "kind at line N"}`` for what ``path`` reads directly.
 
     Every returned path exists in the tree.  A path that does not exist cannot be
@@ -356,19 +453,30 @@ def direct_reads(path: Path) -> dict[str, str]:
     The provenance is not decoration: a finding says "add a path entry for a file
     you did not know this suite read", and the reviewer's first question is always
     "where?".  Without the line, verifying one finding costs a grep per finding.
+
+    Pass ``collect_data`` to receive what a `# ci-trigger-closure: data` marker
+    excused, same ``{rel: provenance}`` shape.  Nothing suppressed is silent: the
+    summary counts it and `--report` names it.
     """
     files: dict[str, str] = {}
 
     def record(rel: str, kind: str, line: int) -> None:
         files.setdefault(rel, f"{kind} at line {line}")
 
+    def excused(rel: str, kind: str, line: int) -> None:
+        if collect_data is not None:
+            collect_data.setdefault(rel, f"{kind} at line {line}")
+
     try:
-        tree = ast.parse(path.read_text(errors="ignore"))
+        source = path.read_text(errors="ignore")
+        tree = ast.parse(source)
     except SyntaxError:
         return files
 
     bases = _checkout_bases(tree)
     docstrings = _docstring_ids(tree)
+    # Literals and joins only. An `import` is a read no comment can talk out of.
+    data_lines = _data_lines(source, tree)
 
     for node in ast.walk(tree):
         # a) imports
@@ -409,7 +517,11 @@ def direct_reads(path: Path) -> dict[str, str]:
         ):
             match = _PATH_LITERAL.fullmatch(node.value.strip())
             if match and (ROOT / match.group(0).split("#")[0]).is_file():
-                record(match.group(0).split("#")[0], "path literal", node.lineno)
+                rel = match.group(0).split("#")[0]
+                if node.lineno in data_lines:
+                    excused(rel, "path literal", node.lineno)
+                else:
+                    record(rel, "path literal", node.lineno)
 
         # d) ROOT / "a" / "b.py" — only off a base derived from __file__
         if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div):
@@ -425,19 +537,37 @@ def direct_reads(path: Path) -> dict[str, str]:
                     and joined.split("/")[0] in LITERAL_DIRS
                     and (ROOT / joined).is_file()
                 ):
-                    record(joined, "path join", node.lineno)
+                    if node.lineno in data_lines:
+                        excused(joined, "path join", node.lineno)
+                    else:
+                        record(joined, "path join", node.lineno)
 
     # An __init__.py is a package marker, not a subject: flagging it would demand a
     # path entry for every package a suite imports through.
-    return {rel: why for rel, why in files.items() if not rel.endswith("__init__.py")}
+    kept = {rel: why for rel, why in files.items() if not rel.endswith("__init__.py")}
+    if collect_data is not None:
+        # A file the suite also IMPORTS was never suppressed — reporting it as
+        # excused would overstate what the marker does.
+        for rel in list(collect_data):
+            if rel in kept or rel.endswith("__init__.py"):
+                del collect_data[rel]
+    return kept
 
 
-def closure(start: Path, depth: int, cache: dict[str, dict[str, str]]) -> dict[str, str]:
+def closure(
+    start: Path,
+    depth: int,
+    cache: dict[str, dict[str, str]],
+    data_cache: dict[str, dict[str, str]] | None = None,
+) -> dict[str, str]:
     """``{file: provenance}`` reachable from ``start`` in at most ``depth`` hops."""
     def reads(path: Path) -> dict[str, str]:
         key = path.as_posix()
         if key not in cache:
-            cache[key] = direct_reads(path)
+            excused: dict[str, str] = {}
+            cache[key] = direct_reads(path, collect_data=excused)
+            if data_cache is not None:
+                data_cache[key] = excused
         return cache[key]
 
     seen: dict[str, str] = {}
@@ -461,6 +591,7 @@ def census(depth: int = 1) -> list[dict]:
     gates = pr_gates()
     named = suites_by_source()
     cache: dict[str, dict[str, str]] = {}
+    data_cache: dict[str, dict[str, str]] = {}
 
     # A suite may be run by several PR gates; it is reachable if ANY of them starts.
     runners: dict[str, list[tuple[dict, str, set[str]]]] = {}
@@ -474,7 +605,7 @@ def census(depth: int = 1) -> list[dict]:
         path = ROOT / suite
         if not path.is_file():
             continue          # tests/test_ci_pack.py already fails on a stale path
-        reads = closure(path, depth, cache)
+        reads = closure(path, depth, cache, data_cache)
         subjects = sorted(reads)
         gaps = [
             rel for rel in subjects
@@ -496,6 +627,7 @@ def census(depth: int = 1) -> list[dict]:
             self_reachable=any(
                 matched(suite, g["patterns"]) for g, _, _ in runners[suite]
             ),
+            data_marked=dict(sorted((data_cache.get(path.as_posix()) or {}).items())),
             status="GAP" if gaps else "OK",
         ))
     return rows
@@ -507,7 +639,11 @@ def _fix_hint(row: dict, rel: str) -> str:
         f'{row["test"]} reads {rel} ({row["why"].get(rel, "?")}), but no '
         f'`on.pull_request.paths` entry in {where} matches it — a PR touching only '
         f'{rel} never starts {row["run_by"][0]}, the job that runs the suite. '
-        f'Fix: add - "{rel}" to that paths list.'
+        f'Fix: add - "{rel}" to that paths list. If the literal is DATA — a file '
+        f'NAME the suite compares, lists, or hands to a fake API and never opens — '
+        f'do NOT add the entry (that encodes a dependency which does not exist and '
+        f'arms CI on an unrelated file): mark the statement '
+        f'`# ci-trigger-closure: data`.'
     )
 
 
@@ -539,13 +675,24 @@ def main(argv: list[str] | None = None) -> int:
 
     bad = [r for r in rows if r["status"] == "GAP"]
     unreachable_self = [r for r in rows if not r["self_reachable"]]
+    marked = [r for r in rows if r["data_marked"]]
+    marked_count = sum(len(r["data_marked"]) for r in marked)
 
     print(f"suites run by a path-filtered PR gate : {len(rows)}")
     print(f"  closure fully reachable             : {len(rows) - len(bad)}")
     print(f"  TRIGGER GAP                         : {len(bad)}")
     print(f"  (test half unreachable, not gated)  : {len(unreachable_self)}")
+    print(f"  marked `data`, excluded from closure: {marked_count} "
+          f"in {len(marked)} suite(s)")
 
     if args.report:
+        print(f"\n=== marked `# ci-trigger-closure: data` ({marked_count}) ===")
+        print("  Author-declared file NAMES, not files the suite opens. Every one is")
+        print("  a claim a reviewer can check against the line it cites.")
+        for row in marked:
+            print(f"  {row['test']}")
+            for rel, why in row["data_marked"].items():
+                print(f"      excused: {rel}  ({why})")
         print(f"\n=== TRIGGER GAP ({len(bad)}) ===")
         for row in bad:
             print(f"  {row['test']}  run by {', '.join(row['run_by'][:2])}")
@@ -605,6 +752,27 @@ NOTE = "see config/seasonality_universe.yml for the roster, not a read"
 
 # A comment naming config/trade_flow_codes.yml is not wiring either.
 
+# The name-list-as-data shape (#4733): file NAMES handed to a fake API, never opened.
+# ci-trigger-closure: data — own-line marker, covers the statement below it
+TOUCHED_BY_A_PAST_COMMIT = [
+    "config/causal_priors.yml",
+    "scripts/build_site.py",
+]
+
+# The SAME shape one line down, unmarked. If the detector ever starts inferring
+# "list of strings = data", these go quiet too and the guard blinds itself.
+STILL_SUBJECTS = [
+    "config/marketing.yml",
+    "scripts/build_news.py",
+]
+
+SURGICAL = [
+    "config/press_sources.yml",   # ci-trigger-closure: data — this entry only
+    "scripts/build_signal_quality.py",
+]
+
+MARKED_JOIN = REPO / "research" / "DO_NOT_REBUILD.md"  # ci-trigger-closure: data
+
 
 def test_writes_a_lookalike(tmp_path, root):
     """Docstring naming config/clinical_modalities.yml is a claim, not a read."""
@@ -622,16 +790,52 @@ def _selftest() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         suite = Path(tmp) / "test_fixture_reads.py"
         suite.write_text(_FIXTURE_SUITE)
-        reads = direct_reads(suite)
+        excused: dict[str, str] = {}
+        reads = direct_reads(suite, collect_data=excused)
+
+        # MUTATION, in the guard's own selftest: strip every marker and the same
+        # fixture must go back to reporting all of it. Without this the block below
+        # passes for the wrong reason — a detector that stopped resolving literals
+        # entirely would satisfy "marked paths are absent" perfectly.
+        unmarked = Path(tmp) / "test_fixture_unmarked.py"
+        unmarked.write_text(_DATA_MARKER.sub("#", _FIXTURE_SUITE))
+        reads_unmarked = direct_reads(unmarked)
+
     for want in (
         "engine/market_state.py",                                   # from-import
         "lib/config.py",                                            # from-import
         "research/prophet_us_audit/reclaim_veto_packet.py",         # Path segment join
         "scripts/audit_unrun_tests.py",                             # bare literal
         "collectors/fred.py",                                       # import_module()
+        # The unmarked twin of the marked list, and the unmarked sibling line of the
+        # surgical mark. A list of path strings is NOT data by shape — only by an
+        # author saying so — or `PRESS_MUST_RESTART`'s 15 real subjects (reached
+        # through @pytest.mark.parametrize) would go dark with it.
+        "config/marketing.yml",
+        "scripts/build_news.py",
+        "scripts/build_signal_quality.py",
     ):
         if want not in reads:
             failures.append(f"direct_reads missed {want}")
+
+    # The name-list-as-data shape (#4733), both spellings and both directions.
+    for wrong, why in (
+        ("config/causal_priors.yml", "own-line marker must excuse the list below it"),
+        ("scripts/build_site.py", "the marker covers the WHOLE marked statement"),
+        ("config/press_sources.yml", "a same-line marker must excuse that entry"),
+        ("research/DO_NOT_REBUILD.md", "a marker must excuse a __file__-rooted join"),
+    ):
+        if wrong in reads:
+            failures.append(f"direct_reads flagged marked-data {wrong}: {why}")
+        if wrong not in excused:
+            failures.append(f"collect_data lost {wrong}: a suppression must be visible")
+        if wrong not in reads_unmarked:
+            failures.append(
+                f"MUTATION: {wrong} stayed hidden with the marker stripped — the "
+                "detector is blind to it for another reason, so this fixture proves "
+                "nothing about the marker"
+            )
+
     if any("does_not_exist_anywhere" in r for r in reads):
         failures.append("direct_reads returned a path that is not in the tree")
     if any(r.endswith("__init__.py") for r in reads):
@@ -680,7 +884,8 @@ def _selftest() -> int:
         for failure in failures:
             print(f"::error title=ci-trigger-closure-selftest::{failure}", flush=True)
         return 1
-    print("SELFTEST OK — reads resolved, glob semantics hold, seeded defect flagged.")
+    print("SELFTEST OK — reads resolved, glob semantics hold, seeded defect flagged, "
+          "marked data excused and re-found when the marker is stripped.")
     return 0
 
 

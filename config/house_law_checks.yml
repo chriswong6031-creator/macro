@@ -1483,6 +1483,7 @@ checks:
       - "PR #4649 (guard shipped)"
       - "PR #3488 (a guard whose own edit cannot start the workflow is half wired)"
       - "PR #4559 (fixture-only heal — same class)"
+      - "PR #4733 (false positive, healed the wrong way — see allowlist)"
     severity: hard
     check_script: scripts/check_ci_trigger_closure.py
     ci_wiring:
@@ -1490,9 +1491,24 @@ checks:
         job: workflow-yaml
         lane: pr_ci
     selftest: true
-    allowlist: null
+    allowlist: "inline (`# ci-trigger-closure: data` comment at the fixture site)"
     ratchet: null
     known_limits:
+      - >-
+        A path literal is evidence of a read, not proof of one. A suite whose
+        SUBJECT MATTER is path filtering (merge-on-green, ci-trigger, paths-filter)
+        carries file NAMES as fixture data, so the heuristic and the domain collide
+        by construction. #4733 healed one such finding by adding two `research/**`
+        artifacts to ci.yml's paths — encoding a dependency that does not exist and
+        arming the full 4-pack run on every edit to two decision-packet files. The
+        author-declared `# ci-trigger-closure: data` marker is the sanctioned form;
+        it covers the line it sits on when that line carries a path literal, and
+        otherwise the statement it opens or the one directly below. It reaches only
+        literals and joins — an import is a read no comment can excuse — and every
+        suppression is counted in the summary and named by `--report`. Inference was
+        prototyped and rejected: "a literal that never reaches an open/read_text/Path
+        call is data" drops 787 of 3,824 subjects across 132 suites, including
+        PRESS_MUST_RESTART's 15 real ones (reached through @pytest.mark.parametrize).
       - >-
         The gate is DIRECT reads only (depth 1). `--depth N` widens the report to
         transitive reads and is deliberately NOT gated: past depth 1 the
