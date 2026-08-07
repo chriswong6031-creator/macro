@@ -898,7 +898,10 @@ jobs:
           tests/test_engine_run_no_regress.py
           tests/test_cycles.py
           tests/test_opex_risk.py
-          tests/test_seo_meta_rollout.py -q
+          tests/test_seo_meta_rollout.py
+          tests/test_session_anchor_invariance.py
+          tests/test_sq_anchor_invariance.py
+          tests/test_cycles_anchor_invariance.py -q
       # house-law registry census (post-#2297 fix): run the statement-tape schema
       # guard itself against the committed registry, not just its pytest coverage.
       - name: statement-tape schema guard (FL-E / FC-R9)

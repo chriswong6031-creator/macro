@@ -110,8 +110,11 @@ whose `(asset, state)` already has a row within **4 calendar days** (mirroring
 `TOL_DAYS`) **when the eras differ** (stored era null/different vs incoming) — scoped to
 its premise exactly as R-SQ8's floor was: after cutover every stored row carries the era,
 the guard goes dormant, and a genuine same-era whipsaw (A→B→A inside 4 days) still
-appends. Skips are counted and returned (`era_rekey_skips`), logged by the batch writer,
-never a silent continue.
+appends. Skips are counted and logged by the batch writer, never a silent continue.
+Write surface (censused): `scripts/build_stock_library.py` is the ONLY producer of ladder
+rows — the CN/HK/CA/intl libraries compute ladders but log none — so the seam is a
+US-only, single-batch, once-per-night event, and `ladder_history_events` (the one reader,
+via `build_feed`) is what a phantom row would have rendered on a ticker page forever.
 
 **R-CY6 — `calibrate_ladder` and `signal_age` heal structurally; the healing is
 asserted, not assumed.** Once buckets are absolute, `position // n` is
@@ -168,10 +171,17 @@ precedent, chartered as a follow-up chip with this document as the census record
    `reports/cycles_anchor_blast_radius.md` + `.json`. Old-vs-new per production loader
    (data/stocks deep, baskets/ohlcv 2014-start, breadth-cache depth views as available,
    CN/HK/CA stores): `mtf_alignment` tier/admission flips (the board SELECTION surface),
-   ladder state flips, `signal_date` re-key counts (the phantom-row surface, i.e. the
-   cutover's one-time ladder-log insertion bound), `calibrate_ladder` old-vs-new
-   per-state table drift on the recalibrate panel shape, fixed-vs-slid agreement
-   old-vs-new (R-CY6b), and a NEW-anchor start-invariance re-run (must be 0 movers).
+   ladder state flips, `signal_date` re-key counts (the phantom-row surface), the
+   ladder-log cutover ingested TWICE — seam guard on and off — so the phantom rows the
+   guard prevents are measured rather than asserted, `calibrate_ladder` old-vs-new
+   per-state table drift on a bounded deep panel (identical panel through both passes),
+   fixed-vs-slid agreement old-vs-new (R-CY6b), and a NEW-anchor start-invariance re-run
+   (must be 0 movers). **Cross-loader agreement is computed on AS-OF-ALIGNED reads** —
+   both sides truncated to each name's shared last date. That is not cosmetic: the rolling
+   breadth cache refreshes on its own schedule and was measured ending 2026-07-31 beside a
+   deep store through 08-06, and an unaligned first pass reported that 4-session lag as
+   143 loader "disagreements". Depth differences remain and are reported as depth, never
+   folded into a tolerance.
 2. Era stamp per R-CY4.
 3. `tests/test_cycles_anchor_invariance.py` mirroring the confluence battery:
    grid invariance k=1..6 (exact) on real-NYSE fixtures incl. holiday spans and halts;

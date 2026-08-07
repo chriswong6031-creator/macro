@@ -219,15 +219,47 @@ def _load_index_store(root: Path, sub: str, market: str) -> list[tuple]:
     return tasks
 
 
-def _cross(rows_a: list[dict], rows_b: list[dict]) -> dict:
-    """Same-name agreement between two loaders, old vs new, on state + tier."""
-    a = {r["name"]: r for r in rows_a if r and "old" in r}
-    b = {r["name"]: r for r in rows_b if r and "old" in r}
-    shared = sorted(set(a) & set(b))
-    out = {"shared": len(shared)}
+def _aligned_pair(task: tuple) -> dict | None:
+    """Worker: one name read from TWO loaders, both truncated to their SHARED last date,
+    under OLD and NEW.
+
+    As-of alignment is mandatory, not cosmetic: the rolling breadth cache is rebuilt on
+    its own schedule and routinely ends SESSIONS BEHIND the deep store (measured
+    2026-08-06: cache through 07-31, deep through 08-06). Comparing each store's own last
+    row would then compare two different DATES and report the lag as loader disagreement —
+    which is what an unaligned first pass did (143 'disagreements' that were a 4-session
+    lag). This is the same alignment the §7 sibling report applies.
+    """
+    name, ca, cb, market = task
+    ca, cb = ca.dropna(), cb.dropna()
+    if ca.empty or cb.empty:
+        return None
+    end = min(ca.index.max(), cb.index.max())
+    ca, cb = ca[ca.index <= end], cb[cb.index <= end]
+    if len(ca) < 300 or len(cb) < 300:
+        return None
+    out = {"name": name, "asof": str(end.date()), "depth": [len(ca), len(cb)]}
+    real = cycles._anchor_bars
+    for era, bars in (("old", _old_bars), ("new", real)):
+        cycles._anchor_bars = bars
+        try:
+            out[era] = {"a": _summary(ca, None, "equity", market),
+                        "b": _summary(cb, None, "equity", market)}
+        except Exception as e:  # noqa: BLE001
+            return {"name": name, "error": str(e)[:120]}
+        finally:
+            cycles._anchor_bars = real
+    return out
+
+
+def _cross(rows: list[dict]) -> dict:
+    """Old-vs-new cross-loader agreement on as-of-aligned reads (see _aligned_pair)."""
+    ok = [r for r in rows if r and "old" in r]
+    out = {"shared": len(ok),
+           "lagging_pairs": sum(1 for r in ok if r["depth"][0] != r["depth"][1])}
     for era in ("old", "new"):
-        dis_state = [t for t in shared if a[t][era]["state"] != b[t][era]["state"]]
-        dis_tier = [t for t in shared if a[t][era]["tier"] != b[t][era]["tier"]]
+        dis_state = [r["name"] for r in ok if r[era]["a"]["state"] != r[era]["b"]["state"]]
+        dis_tier = [r["name"] for r in ok if r[era]["a"]["tier"] != r[era]["b"]["tier"]]
         out[era] = {"state_disagreements": len(dis_state),
                     "tier_disagreements": len(dis_tier),
                     "state_examples": dis_state[:10]}
@@ -328,13 +360,22 @@ def main() -> int:
                   f"{stats[name]['state_flips']} state flips, "
                   f"{stats[name]['admission_flips']} admission flips", flush=True)
 
-        # cross-loader same-night agreement (deep vs ohlcv, deep vs breadth cache)
+        # cross-loader agreement on AS-OF-ALIGNED reads (deep vs ohlcv, deep vs cache)
         cross = {}
         deep_key = "data/stocks (deep US)"
+        deep_series = {t: c for (t, c, _h, _k, _m) in universes[deep_key]}
         for other in ("data/baskets/ohlcv (2014-start US)",
                       "breadth _closes_cache (~345-bar rolling)"):
-            if results.get(deep_key) and results.get(other):
-                cross[f"deep ∩ {other}"] = _cross(results[deep_key], results[other])
+            if not universes.get(other):
+                continue
+            other_series = {t: c for (t, c, _h, _k, _m) in universes[other]}
+            pair_tasks = [(t, deep_series[t], other_series[t], "US")
+                          for t in sorted(set(deep_series) & set(other_series))]
+            if pair_tasks:
+                cross[f"deep ∩ {other}"] = _cross(
+                    list(ex.map(_aligned_pair, pair_tasks, chunksize=8)))
+                print(f"[measure] cross deep∩{other}: {cross[f'deep ∩ {other}']['shared']} "
+                      f"aligned pairs", flush=True)
 
         # NEW-anchor start-invariance re-run — must be 0 movers
         inv_rows = list(ex.map(_invariance, universes[deep_key], chunksize=8))
@@ -353,8 +394,15 @@ def main() -> int:
         fv[era] = {"agree": agree, "total": total,
                    "pct": round(100 * agree / max(total, 1), 2)}
 
-    # calibrate_ladder old-vs-new table drift on a bounded deep panel
-    deep_panel = {t: c for (t, c, _h, k, _m) in universes[deep_key]
+    # calibrate_ladder old-vs-new table drift on a BOUNDED deep panel: 40 names x their
+    # trailing CALIB_BARS sessions. The bound is a runtime cap on a walk-forward that
+    # re-evaluates the whole ladder every 5 bars (the full 1962-start panel is ~154k
+    # evaluations per pass); both passes see the IDENTICAL panel, which is what makes the
+    # old-vs-new drift readable. This table is a DRIFT comparison, not a shipping
+    # calibration — the shipped artifacts are re-baked by recalibrate.py on their own
+    # schedule (R-CY4).
+    CALIB_BARS = 4000
+    deep_panel = {t: c.dropna().iloc[-CALIB_BARS:] for (t, c, _h, k, _m) in universes[deep_key]
                   if k == "equity" and len(c.dropna()) >= 1500}
     panel = dict(sorted(deep_panel.items())[::max(1, len(deep_panel) // 40)][:40])
     cal = _calibrate_pair(panel, "US")
@@ -397,11 +445,18 @@ def main() -> int:
             L.append(f"- **{name}** admission-flip examples: " + "; ".join(
                 f"{e['name']} {e['old'] or '—'}→{e['new'] or '—'}"
                 for e in s["admission_flip_examples"]))
-    L += ["", "## 2. Cross-loader same-night agreement — the live symptom", "",
-          "| pair | shared | state disagreements BEFORE | AFTER | tier disagreements "
-          "BEFORE | AFTER |", "|---|---:|---:|---:|---:|---:|"]
+    L += ["", "## 2. Cross-loader agreement on AS-OF-ALIGNED reads — the live symptom", "",
+          "Both sides of each pair are truncated to that name's SHARED last date before "
+          "reading. That alignment is load-bearing: the rolling breadth cache is rebuilt "
+          "on its own schedule and was measured ending 2026-07-31 while the deep store "
+          "ran through 08-06, so an unaligned comparison reports a 4-session LAG as "
+          "loader disagreement (a first pass of this script did exactly that — 143 "
+          "phantom 'disagreements'). Depth still differs by design and is reported.", "",
+          "| pair | aligned names | depth differs | state disagreements BEFORE | AFTER | "
+          "tier disagreements BEFORE | AFTER |", "|---|---:|---:|---:|---:|---:|---:|"]
     for pair, c in cross.items():
-        L.append(f"| {pair} | {c['shared']} | {c['old']['state_disagreements']} | "
+        L.append(f"| {pair} | {c['shared']} | {c['lagging_pairs']} | "
+                 f"{c['old']['state_disagreements']} | "
                  f"{c['new']['state_disagreements']} | {c['old']['tier_disagreements']} | "
                  f"{c['new']['tier_disagreements']} |")
     L += ["",
@@ -420,7 +475,9 @@ def main() -> int:
           f"**NEW {fv['new']['pct']}%** ({fv['new']['agree']}/{fv['new']['total']}). "
           "The residual under NEW is daily-indicator EWM warm-up (window-length "
           "sensitivity, pre-existing and unchanged), not bin phase.", "",
-          f"Per-state table drift, {len(panel)}-name deep panel (old → new):", "",
+          f"Per-state table drift — {len(panel)} deep names × their trailing "
+          f"{CALIB_BARS} sessions, the IDENTICAL panel through both passes (old → new). "
+          "A drift comparison, not a shipping calibration:", "",
           "| state | n | hit_pct | avg_fwd_pct | dd_med_pct |", "|---|---|---|---|---|"]
     for st, d in cal_drift.items():
         def _p(v):
