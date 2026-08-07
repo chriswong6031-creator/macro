@@ -47,6 +47,10 @@ from .multiplicity import (
     benjamini_yekutieli,
     max_t_adjusted_p_values,
 )
+from .prophet_bridge import (
+    OVERLAY_SET_SCHEMA,
+    build_overlays_for_plans,
+)
 from .universe import (
     UNRESOLVED_BLOCKER,
     UniverseRead,
@@ -67,6 +71,7 @@ __all__ = [
     "EXPECTED_PROJECTION_CONTRACT",
     "NEURALWEB_STATE_SCHEMA",
     "NEURALWEB_STATE_V2_SCHEMA",
+    "OVERLAY_SET_SCHEMA",
     "PROPHET_OVERLAY_SCHEMA",
     "QUARANTINE_REASON_CODES",
     "SEASONALITY_BLOCK_KEYS",
@@ -75,6 +80,7 @@ __all__ = [
     "benjamini_yekutieli",
     "build_neuralweb_state",
     "build_neuralweb_state_v2",
+    "build_overlays_for_plans",
     "build_prophet_overlay",
     "corporate_actions_asof",
     "coverage_report",

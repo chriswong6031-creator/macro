@@ -1,7 +1,7 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-08-07",
-  "generated_utc": "2026-08-07T05:40:14.623377+00:00",
+  "generated_utc": "2026-08-07T08:01:56.616621+00:00",
   "n_tickers": 2599,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
@@ -2765,6 +2765,18 @@
       "trump_linked": false,
       "affiliated": false
     },
+    "OSCR": {
+      "ticker": "OSCR",
+      "channels": [
+        "unusual_options"
+      ],
+      "weighted_score": 0.65,
+      "opt_vol_oi": 0.235,
+      "opt_put_call": 1.17,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
     "FOUR": {
       "ticker": "FOUR",
       "channels": [
@@ -2777,6 +2789,18 @@
       "days_to_cover": 13.4,
       "si_change_pct": -0.5,
       "convergence_score": 2,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "TEAM": {
+      "ticker": "TEAM",
+      "channels": [
+        "unusual_options"
+      ],
+      "weighted_score": 0.65,
+      "opt_vol_oi": 0.381,
+      "opt_put_call": 0.19,
+      "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
     },
@@ -2834,14 +2858,14 @@
       "trump_linked": false,
       "affiliated": false
     },
-    "OSCR": {
-      "ticker": "OSCR",
+    "WYNN": {
+      "ticker": "WYNN",
       "channels": [
         "unusual_options"
       ],
       "weighted_score": 0.65,
-      "opt_vol_oi": 0.235,
-      "opt_put_call": 1.17,
+      "opt_vol_oi": 0.157,
+      "opt_put_call": 0.37,
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
@@ -2873,15 +2897,25 @@
       "trump_linked": false,
       "affiliated": false
     },
-    "WYNN": {
-      "ticker": "WYNN",
+    "KVYO": {
+      "ticker": "KVYO",
       "channels": [
         "unusual_options"
       ],
       "weighted_score": 0.65,
-      "opt_vol_oi": 0.157,
-      "opt_put_call": 0.37,
+      "opt_vol_oi": 0.139,
+      "opt_put_call": 0.86,
       "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "WH": {
+      "ticker": "WH",
+      "channels": [],
+      "weighted_score": 0,
+      "opt_vol_oi": 0.104,
+      "opt_put_call": 7.43,
+      "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
     },
@@ -2899,36 +2933,6 @@
       "trump_linked": false,
       "affiliated": false
     },
-    "WH": {
-      "ticker": "WH",
-      "channels": [],
-      "weighted_score": 0,
-      "opt_vol_oi": 0.104,
-      "opt_put_call": 7.43,
-      "convergence_score": 0,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "TEAM": {
-      "ticker": "TEAM",
-      "channels": [],
-      "weighted_score": 0,
-      "opt_vol_oi": 0.381,
-      "opt_put_call": 0.19,
-      "convergence_score": 0,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "KVYO": {
-      "ticker": "KVYO",
-      "channels": [],
-      "weighted_score": 0,
-      "opt_vol_oi": 0.139,
-      "opt_put_call": 0.86,
-      "convergence_score": 0,
-      "trump_linked": false,
-      "affiliated": false
-    },
     "ETN": {
       "ticker": "ETN",
       "channels": [
@@ -2938,6 +2942,16 @@
       "opt_vol_oi": 0.204,
       "opt_put_call": 4.14,
       "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "CGNX": {
+      "ticker": "CGNX",
+      "channels": [],
+      "weighted_score": 0,
+      "opt_vol_oi": 0.112,
+      "opt_put_call": 1.27,
+      "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
     },
@@ -2954,22 +2968,12 @@
       "trump_linked": false,
       "affiliated": false
     },
-    "ABNB": {
-      "ticker": "ABNB",
+    "DKNG": {
+      "ticker": "DKNG",
       "channels": [],
       "weighted_score": 0,
-      "opt_vol_oi": 0.155,
-      "opt_put_call": 0.75,
-      "convergence_score": 0,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "SGML": {
-      "ticker": "SGML",
-      "channels": [],
-      "weighted_score": 0,
-      "opt_vol_oi": 0.139,
-      "opt_put_call": 0.96,
+      "opt_vol_oi": 0.168,
+      "opt_put_call": 0.63,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false

@@ -10,9 +10,58 @@
      are three pairs of magic numbers that drift the moment one is touched. */
   body.page-stocks #theme-tape{padding:15px 18px 14px;
     --tt-col:72px;--tt-quiet:76px;--tt-gk:74px}
-  body.page-stocks .tt-hd{display:flex;align-items:baseline;gap:6px 12px;flex-wrap:wrap;margin:0 0 4px}
+  body.page-stocks .tt-hd{display:flex;align-items:baseline;gap:6px 12px;flex-wrap:wrap;margin:0}
   body.page-stocks .tt-eyebrow{margin:0;font-size:11px;font-weight:800;letter-spacing:.18em;
     text-transform:uppercase;color:var(--muted);line-height:1.2}
+
+  /* ── THE PANEL IS ONE CLOSED DISCLOSURE (2026-08-06) ──────────────────────
+     Third operator complaint about this panel's footprint, and the first two
+     fixes both bounced. #4553 cut it 692px → 498px and moved it below the
+     board; #4605 merged ONE MINUTE later and added the washout-turn group and
+     a second shelf group, putting it back to 680px desktop / 1004px phone —
+     measured against tonight's real artifacts, not a fixture. A panel that
+     ranks, gates and sizes nothing had grown back to a full screen of scroll,
+     and trimming it row by row is what already failed twice.
+     So the whole accounting now folds behind ONE line, and that line is the
+     panel: hottest theme, whether anything is live on this board, how much
+     sits off the heat list, and the stance. 680px → ~52px closed.
+
+     WHY THIS IS NOT THE SILENCE THE PANEL EXISTS TO FIX. The charter's rule is
+     that the engine must never detect something and say nothing — it is why a
+     hot theme with zero board names still gets a line, and why the shelf was
+     built always-visible rather than folded. That rule is about NARRATION, not
+     about enumeration: the gist states every one of those facts in words on
+     the glance tier, including the shelf's ("N more off the heat list"), so a
+     reader who never opens this still learns what the engine found. What folds
+     is the per-name roster, which is study-tier by the panel's own doctrine.
+     Do NOT "restore" any section to always-visible to satisfy that rule — the
+     gist is how it is satisfied now, and an unfolded section is what the
+     operator has now rejected three times. Add a fact to the gist instead. */
+  body.page-stocks .tt-all-s{list-style:none;cursor:pointer;display:block}
+  body.page-stocks .tt-all-s::-webkit-details-marker{display:none}
+  body.page-stocks .tt-all-s:focus-visible{outline:2px solid var(--ink-link,var(--link,var(--text)));
+    outline-offset:3px;border-radius:4px}
+  /* The caret carries its own tracking: the eyebrow is set at .18em and a glyph
+     inheriting that hangs a visible gap between itself and the word. */
+  body.page-stocks .tt-eyebrow::before{content:"▸";letter-spacing:0;margin-right:7px;
+    display:inline-block;vertical-align:1px;font-size:10px}
+  body.page-stocks .tt-all[open] .tt-eyebrow::before{content:"▾"}
+  /* THE GIST — the panel's whole glance tier. Body face, not mono: it is a
+     sentence with figures in it, and the house rule puts mono on figures only
+     (`.tt-gf` below), never on the words around them. */
+  body.page-stocks .tt-gist{display:block;font-size:12.5px;line-height:1.5;
+    color:var(--text);margin:5px 0 0;max-width:88ch}
+  body.page-stocks .tt-gist .tt-gf{font-family:var(--font-mono,monospace);
+    font-variant-numeric:tabular-nums;font-weight:700}
+  /* The one coloured glyph on the closed panel, under the same rule the ladder
+     follows: only a non-zero `live` count takes --ink-up, because it is the only
+     figure here that means "there is something to do today". */
+  body.page-stocks .tt-gist .tt-gf.is-live{color:var(--ink-up,var(--up))}
+  body.page-stocks .tt-gist .tt-lead{font-weight:700}
+  /* The stance is held whole for the reason the shelf's is: broken across a line
+     "— not what to buy" reads as a fragment rather than an instruction. */
+  body.page-stocks .tt-gist .tt-nb{white-space:nowrap}
+  body.page-stocks .tt-body{padding-top:11px}
   /* zh Hanzi read wrong under Latin display tracking — theme.css makes the same
      call for headings; the eyebrow keeps its rhythm from weight and colour. */
   html[data-lang="zh"] body.page-stocks .tt-eyebrow{letter-spacing:.06em}
