@@ -5104,6 +5104,9 @@ jobs:
           done
           push_lost
           echo "::warning::could not push prophet ledger artifacts after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 60
 
   # AI stock-research briefs = ~30 DeepSeek calls (~20 min) — the heaviest single
   # step in the build, and what pushed the engine job past its timeout. build_site
@@ -5112,9 +5115,6 @@ jobs:
   # fetches site/stockbrief/<T>.json client-side, so the briefs land on main for
   # the next run (<=1-run stale is fine) and the LLM never gates the daily deploy.
   # `publish` needs ONLY engine, so a slow/failed briefs job can't block go-live.
-      - name: timings ledger + 85% budget tripwire (W2)
-        if: always()
-        run: bash scripts/ci/nightly_timings_finish.sh 60
   stock_briefs:
     needs: engine
     if: always()
