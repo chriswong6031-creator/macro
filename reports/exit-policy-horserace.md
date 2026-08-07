@@ -1,6 +1,6 @@
 # Exit-policy horse race — US buy-lane episodes
 
-**Study date:** 2026-08-03T04:08Z · **Script:** `scripts/exit_policy_study.py` · **Charter:** `research/PROPHET_LEARNING_LOOP_MASTERPLAN_BY_FABLE.md` §0 G3/G4, §1
+**Study date:** 2026-08-07T02:12Z · **Script:** `scripts/exit_policy_study.py` · **Charter:** `research/PROPHET_LEARNING_LOOP_MASTERPLAN_BY_FABLE.md` §0 G3/G4, §1
 
 **Tier: measurement / display. Nothing here promotes anything.** The public track record keeps the incumbent rule. Every verdict below is descriptive — what this sample shows, on this cohort, at this size. A policy that eventually replaces the incumbent has to be pre-registered first; see *Promotion path* at the end.
 
@@ -51,7 +51,7 @@ The record starts 2026-06-30 and prices end 2026-07-31. Of the 173 episodes, **1
 
 So the 21- and 63-bar caps mostly cannot be reached. A position still open when the data ends is **marked at the last available close and flagged `data_end`** — it is not dropped, because dropping it would delete precisely the trades that were still running, and a denominator conditioned on how a trade ended is the single artefact `engine/track_scoring.py` exists to forbid. Every policy row prints its `data_end` count. **A `data_end` row is a mark, not a realised exit, and its hold length is a lower bound.** Read the cap-63 rows as *what these rules were still holding on 2026-07-31*, not as *what these rules returned*.
 
-**And the marks are not spread across the sample: every one of them lands on the same session, `2026-07-31`** — all 535 of them, counting each policy's rows separately. One day's tape prices every unresolved position in this report. How much that one day is carrying is measured under *Does anything separate from the incumbent?*.
+**And the marks are not spread across the sample: every one of them lands on the same session, `2026-07-31`** — all 536 of them, counting each policy's rows separately. One day's tape prices every unresolved position in this report. How much that one day is carrying is measured under *Does anything separate from the incumbent?*.
 
 ## Method — the conventions that decide the numbers
 
@@ -63,11 +63,11 @@ Each of these is a CHOICE. A reader should see them, not infer them from a table
 
 **Every stop here is close-only, and that is not free.** No walker looks at an intraday low: a stop fires when the SESSION'S CLOSE is through the level, and the fill is that close. A real stop order triggers intraday and fills near the level. Measured on this study's own rows — the 865 rows of the 5 stop-carrying policies (P0, P2 k=2, P2 k=3, P3, P4):
 
-* **268** of those rows exited on a stop under the close-only rule. Their fills landed a mean **1.72%** of entry BELOW the level that triggered them (median 0.95%, p90 4.14%, worst 10.61%). That slip is a cost this study charges every stop-carrying policy and does not charge the fixed-horizon ones.
-* **93 of the 268 stop exits (34.7%)** had a session LOW through the resting stop on an EARLIER bar — a true intraday stop would have exited them sooner, and at a different price.
-* A further **81 rows (9.4% of the 865)** never stopped on a close at all but did trade through the level intraday. The close-only rule kept those positions; a real stop would not have.
+* **267** of those rows exited on a stop under the close-only rule. Their fills landed a mean **1.73%** of entry BELOW the level that triggered them (median 0.95%, p90 4.15%, worst 10.61%). That slip is a cost this study charges every stop-carrying policy and does not charge the fixed-horizon ones.
+* **93 of the 267 stop exits (34.8%)** had a session LOW through the resting stop on an EARLIER bar — a true intraday stop would have exited them sooner, and at a different price.
+* A further **82 rows (9.5% of the 865)** never stopped on a close at all but did trade through the level intraday. The close-only rule kept those positions; a real stop would not have.
 
-Together, **174 of 865 stop-carrying rows (20.1%) would have resolved differently under a true intraday stop.** The counterfactual tests each session's low against the stop that was RESTING before that session opened, never against a band the session's own close raised — the reverse would manufacture breaks on up-then-down days. It is a diagnostic only: it never changes an exit, a P&L or an interval anywhere in this report.
+Together, **175 of 865 stop-carrying rows (20.2%) would have resolved differently under a true intraday stop.** The counterfactual tests each session's low against the stop that was RESTING before that session opened, never against a band the session's own close raised — the reverse would manufacture breaks on up-then-down days. It is a diagnostic only: it never changes an exit, a P&L or an interval anywhere in this report.
 
 **The rest of the pinned conventions** — ATR14 fixed at the fill bar, the running-max trailing anchor, stop-before-target on a same-bar tie, and which comparisons are strict (`<` on the synthetic ATR bands) versus inclusive (`<=`/`>=` on the desk's published levels) — are documented at the top of `scripts/exit_policy_study.py` and pinned in both directions by `tests/test_exit_policy_study.py`.
 
@@ -105,7 +105,7 @@ All 173 episodes, all policies, identical entries. Win = return > 0 (no dead ban
 | P0 · incumbent as shipped (H=10 + StochRSI target + trough stop) | 173 | **1.19%** | 1.72% | 63.6 | 4.54 | -4.67 | 1.70 | 9 | 10 | 1.00 | -1.59 | 0 |
 | P0f · pure fixed H=10 | 173 | **0.93%** | 1.88% | 60.7 | 5.07 | -5.46 | 1.43 | 10 | 10 | 0.58 | -2.14 | 0 |
 | P1 · pure fixed H=21 | 173 | **0.53%** | 0.83% | 53.2 | 6.19 | -5.89 | 1.19 | 18 | 21 | 0.18 | -3.17 | 139 |
-| P2 · ATR trail k=2 (cap 63) | 173 | **-0.59%** | 0.07% | 42.8 | 5.65 | -5.25 | 0.80 | 13 | 21 | -0.13 | -2.64 | 66 |
+| P2 · ATR trail k=2 (cap 63) | 173 | **-0.58%** | 0.07% | 42.8 | 5.66 | -5.25 | 0.81 | 13 | 21 | -0.13 | -2.64 | 67 |
 | P2 · ATR trail k=3 (cap 63) | 173 | **0.28%** | 0.76% | 51.4 | 6.31 | -6.10 | 1.10 | 15 | 21 | 0.16 | -3.17 | 126 |
 | P3 · plan target/stop, +3R (cap 21) | 173 | **0.41%** | 0.80% | 52.0 | 6.26 | -5.94 | 1.14 | 15 | 21 | 0.18 | -3.17 | 112 |
 | P4 · breakeven at +1 ATR then trail k=3 (cap 63) | 173 | **-0.36%** | 0.29% | 39.9 | 6.38 | -4.84 | 0.87 | 14 | 21 | -0.11 | -2.41 | 92 |
@@ -119,7 +119,7 @@ Date-blocked 95% intervals (whole board days resampled, seeded — 8 blocks):
 | P0 · incumbent as shipped (H=10 + StochRSI target + trough stop) | 0.21 … 1.98 | 55.6 … 69.8 | 1.00 … 2.59 |
 | P0f · pure fixed H=10 | -0.75 … 2.09 | 47.8 … 70.7 | 0.43 … 3.44 |
 | P1 · pure fixed H=21 | -1.09 … 1.80 | 43.9 … 62.1 | -0.60 … 1.97 |
-| P2 · ATR trail k=2 (cap 63) | -1.81 … 0.36 | 34.2 … 50.9 | -0.93 … 0.85 |
+| P2 · ATR trail k=2 (cap 63) | -1.81 … 0.36 | 34.2 … 50.9 | -0.93 … 0.86 |
 | P2 · ATR trail k=3 (cap 63) | -1.19 … 1.44 | 42.3 … 59.8 | -0.42 … 1.79 |
 | P3 · plan target/stop, +3R (cap 21) | -1.05 … 1.56 | 43.5 … 60.7 | -0.49 … 1.79 |
 | P4 · breakeven at +1 ATR then trail k=3 (cap 63) | -1.63 … 0.64 | 33.8 … 45.6 | -0.73 … 1.26 |
@@ -131,7 +131,7 @@ Exit-reason mix (how each rule actually ended):
 | P0 · incumbent as shipped (H=10 + StochRSI target + trough stop) | 77 | 0 | 0 | 0 | 1 | 95 | 0 |
 | P0f · pure fixed H=10 | 173 | 0 | 0 | 0 | 0 | 0 | 0 |
 | P1 · pure fixed H=21 | 34 | 0 | 0 | 0 | 0 | 0 | 139 |
-| P2 · ATR trail k=2 (cap 63) | 0 | 107 | 0 | 0 | 0 | 0 | 66 |
+| P2 · ATR trail k=2 (cap 63) | 0 | 106 | 0 | 0 | 0 | 0 | 67 |
 | P2 · ATR trail k=3 (cap 63) | 0 | 47 | 0 | 0 | 0 | 0 | 126 |
 | P3 · plan target/stop, +3R (cap 21) | 27 | 0 | 32 | 2 | 0 | 0 | 112 |
 | P4 · breakeven at +1 ATR then trail k=3 (cap 63) | 0 | 81 | 0 | 0 | 0 | 0 | 92 |
@@ -147,7 +147,7 @@ Paired per-episode deltas: same entry, same window, so the difference isolates t
 | P0 · incumbent as shipped (H=10 + StochRSI target + trough stop) | 0 (0%) | — | — | — | +0.26 pp | -0.36 … 1.14 | no |
 | P0f · pure fixed H=10 | 0 (0%) | -0.26 pp | -1.14 … 0.36 | no | — | — | — |
 | P1 · pure fixed H=21 | 139 (80%) | -0.65 pp | -1.56 … 0.15 | no | -0.40 pp | -1.25 … 0.63 | no |
-| P2 · ATR trail k=2 (cap 63) | 66 (38%) | -1.78 pp | -2.60 … -1.11 | **yes** | -1.52 pp | -2.35 … -0.67 | **yes** |
+| P2 · ATR trail k=2 (cap 63) | 67 (39%) | -1.77 pp | -2.60 … -1.11 | **yes** | -1.52 pp | -2.35 … -0.67 | **yes** |
 | P2 · ATR trail k=3 (cap 63) | 126 (73%) | -0.90 pp | -1.75 … -0.16 | **yes** | -0.65 pp | -1.49 … 0.29 | no |
 | P3 · plan target/stop, +3R (cap 21) | 112 (65%) | -0.78 pp | -1.79 … 0.11 | no | -0.53 pp | -1.52 … 0.48 | no |
 | P4 · breakeven at +1 ATR then trail k=3 (cap 63) | 92 (53%) | -1.55 pp | -2.30 … -1.04 | **yes** | -1.30 pp | -2.18 … -0.25 | **yes** |
@@ -156,7 +156,7 @@ Paired per-episode deltas: same entry, same window, so the difference isolates t
 
 **Read every bolded "excludes 0" with this attached: the blocks overlap.** Neighbouring board days hold the same tape — a median **90%** of each other's 10 forward sessions (range 70–90%) — and at most **2 of the 8 board days** have windows that share no session at all. The bootstrap resamples the 8 days as if they were 8 independent bets; they are closer to 2. Every interval here is therefore **too narrow**, and an interval that excludes zero is a weaker statement than it looks.
 
-**Those marks are not spread across the sample: every one of them lands on the same session, `2026-07-31`.** All 535 of them (counting each policy's rows separately) are priced off that one session's close, so a single day's tape sets the exit price for every unresolved position in this report at once — one draw of the terminal day, not 8. Marking one session earlier instead moves the policy deltas by at most **0.33 pp**, which is that dependency's measured size — not a small number against deltas this size.
+**Those marks are not spread across the sample: every one of them lands on the same session, `2026-07-31`.** All 536 of them (counting each policy's rows separately) are priced off that one session's close, so a single day's tape sets the exit price for every unresolved position in this report at once — one draw of the terminal day, not 8. Marking one session earlier instead moves the policy deltas by at most **0.33 pp**, which is that dependency's measured size — not a small number against deltas this size.
 
 **One-session-back sensitivity.** The same horse race, re-run on a panel that ends one session earlier (173 of 173 episodes survive the maturity gate). P0 itself does not move at all — its window closes before the data edge — so every shift below belongs to the marked policies. This is the size of the one-day dependency, measured rather than asserted.
 
@@ -164,7 +164,7 @@ Paired per-episode deltas: same entry, same window, so the difference isolates t
 |---|---:|---:|---:|---:|
 | P0f · pure fixed H=10 | -0.26 pp | -0.26 pp | **+0.00 pp** | 0 → 0 |
 | P1 · pure fixed H=21 | -0.65 pp | -0.33 pp | **+0.33 pp** | 139 → 173 |
-| P2 · ATR trail k=2 (cap 63) | -1.78 pp | -1.62 pp | **+0.16 pp** | 66 → 78 |
+| P2 · ATR trail k=2 (cap 63) | -1.77 pp | -1.61 pp | **+0.16 pp** | 67 → 79 |
 | P2 · ATR trail k=3 (cap 63) | -0.90 pp | -0.74 pp | **+0.17 pp** | 126 → 133 |
 | P3 · plan target/stop, +3R (cap 21) | -0.78 pp | -0.52 pp | **+0.26 pp** | 112 → 143 |
 | P4 · breakeven at +1 ATR then trail k=3 (cap 63) | -1.55 pp | -1.31 pp | **+0.24 pp** | 92 → 100 |
@@ -179,7 +179,7 @@ The operator's question, decomposed. Anchor = **P0f, a hard exit at bar 10**, so
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | P0 · incumbent as shipped (H=10 + StochRSI target + trough stop) | 0 (0%) | +0.00 pp<br><sub>n=0</sub> | +0.00 pp<br><sub>n=0</sub> | **+0.00 pp** | +0.77 pp<br><sub>n=27</sub> | -0.51 pp<br><sub>n=63</sub> | **+0.26 pp** | +0.00 pp<br><sub>n=83</sub> | **+0.26 pp** |
 | P1 · pure fixed H=21 | 139 (80%) | -0.36 pp<br><sub>n=105</sub> | -0.04 pp<br><sub>n=68</sub> | **-0.40 pp** | +0.00 pp<br><sub>n=0</sub> | +0.00 pp<br><sub>n=0</sub> | **+0.00 pp** | +0.00 pp<br><sub>n=0</sub> | **-0.40 pp** |
-| P2 · ATR trail k=2 (cap 63) | 66 (38%) | -0.98 pp<br><sub>n=97</sub> | -0.20 pp<br><sub>n=34</sub> | **-1.18 pp** | +0.12 pp<br><sub>n=31</sub> | -0.46 pp<br><sub>n=8</sub> | **-0.34 pp** | +0.00 pp<br><sub>n=3</sub> | **-1.52 pp** |
+| P2 · ATR trail k=2 (cap 63) | 67 (39%) | -0.98 pp<br><sub>n=97</sub> | -0.20 pp<br><sub>n=34</sub> | **-1.18 pp** | +0.12 pp<br><sub>n=31</sub> | -0.46 pp<br><sub>n=8</sub> | **-0.34 pp** | +0.00 pp<br><sub>n=3</sub> | **-1.52 pp** |
 | P2 · ATR trail k=3 (cap 63) | 126 (73%) | -0.46 pp<br><sub>n=105</sub> | -0.20 pp<br><sub>n=52</sub> | **-0.66 pp** | +0.01 pp<br><sub>n=13</sub> | +0.00 pp<br><sub>n=0</sub> | **+0.01 pp** | +0.00 pp<br><sub>n=3</sub> | **-0.65 pp** |
 | P3 · plan target/stop, +3R (cap 21) | 112 (65%) | -0.45 pp<br><sub>n=104</sub> | -0.15 pp<br><sub>n=53</sub> | **-0.60 pp** | +0.02 pp<br><sub>n=12</sub> | +0.05 pp<br><sub>n=1</sub> | **+0.07 pp** | +0.00 pp<br><sub>n=3</sub> | **-0.53 pp** |
 | P4 · breakeven at +1 ATR then trail k=3 (cap 63) | 92 (53%) | -0.78 pp<br><sub>n=96</sub> | -0.27 pp<br><sub>n=48</sub> | **-1.05 pp** | +0.09 pp<br><sub>n=14</sub> | -0.34 pp<br><sub>n=9</sub> | **-0.25 pp** | +0.00 pp<br><sub>n=6</sub> | **-1.30 pp** |
@@ -203,7 +203,7 @@ The **21-bar sub-cohort** (34 episodes, 1 board day) is the only slice where the
 | P0 · incumbent as shipped (H=10 + StochRSI target + trough stop) | 34 | 2.08% | 73.5 | 10 | 0 |
 | P0f · pure fixed H=10 | 34 | 2.82% | 73.5 | 10 | 0 |
 | P1 · pure fixed H=21 | 34 | 1.62% | 50.0 | 21 | 0 |
-| P2 · ATR trail k=2 (cap 63) | 34 | 0.19% | 41.2 | 17 | 8 |
+| P2 · ATR trail k=2 (cap 63) | 34 | 0.21% | 41.2 | 18 | 9 |
 | P2 · ATR trail k=3 (cap 63) | 34 | 1.16% | 47.1 | 21 | 26 |
 | P3 · plan target/stop, +3R (cap 21) | 34 | 1.02% | 47.1 | 21 | 0 |
 | P4 · breakeven at +1 ATR then trail k=3 (cap 63) | 34 | 0.60% | 35.3 | 19 | 14 |
@@ -212,7 +212,7 @@ The **21-bar sub-cohort** (34 episodes, 1 board day) is the only slice where the
 
 ## Note on P3's geometry
 
-P3's stop is the board row's own published invalidation level where present (72 episodes; 101 fell back to entry − 2×ATR14). That level is a break of the setup's 90-session trough × 0.97 — a **thesis** invalidation, not a risk stop. Its median distance below entry in this cohort is **7.79%** (p10 4.18%, p90 18.80%), which puts the +3R target a median **23.38%** above entry.
+P3's stop is the board row's own published invalidation level where present (72 episodes; 101 fell back to entry − 2×ATR14). That level is a break of the setup's 90-session trough × 0.97 — a **thesis** invalidation, not a risk stop. Its median distance below entry in this cohort is **7.79%** (p10 4.18%, p90 19.20%), which puts the +3R target a median **23.38%** above entry.
 
 A target that far away is essentially unreachable inside 21 sessions, so **P3 as specified degenerates toward a fixed H=21 with a rarely-touched stop** — which is what its exit-reason mix above shows. That is a finding about the plan geometry, not a bug in the walker: the desk publishes an invalidation level, not a stop-loss, and the two are not interchangeable. Sizing a stop off that level is a separate question this study does not answer.
 
@@ -221,8 +221,8 @@ A target that far away is essentially unreachable inside 21 sessions, so **P3 as
 Five, in the order they damage the numbers:
 
 1. **The blocks overlap.** 8 board days, but their 10-session windows share a median 90% of their tape and at most 2 of them are mutually disjoint. Every interval here is too narrow and the effective sample is materially below 8. Not corrected — disclosed.
-2. **The terminal marks are one day.** 535 `data_end` marks across the policies, and every one of them lands on the same session, `2026-07-31`. Moving the mark back one session shifts the policy deltas by up to 0.33 pp — the deltas are worth about that much precision, not their second decimal.
-3. **Stops are close-only.** A stop fires on the SESSION'S CLOSE and fills at it: the 268 stop exits here filled a mean 1.72% of entry below their trigger level, 34.7% of them would have fired earlier under a true intraday stop, and another 81 rows (9.4% of 865) traded through their level intraday without ever stopping on a close. The stop-carrying policies here are therefore NOT the policies a desk would actually run — they are their close-only cousins.
+2. **The terminal marks are one day.** 536 `data_end` marks across the policies, and every one of them lands on the same session, `2026-07-31`. Moving the mark back one session shifts the policy deltas by up to 0.33 pp — the deltas are worth about that much precision, not their second decimal.
+3. **Stops are close-only.** A stop fires on the SESSION'S CLOSE and fills at it: the 267 stop exits here filled a mean 1.73% of entry below their trigger level, 34.8% of them would have fired earlier under a true intraday stop, and another 82 rows (9.5% of 865) traded through their level intraday without ever stopping on a close. The stop-carrying policies here are therefore NOT the policies a desk would actually run — they are their close-only cousins.
 4. **MFE/MAE are close-path.** The caches carry no intraday path for the walk, so both excursions understate the real ones, and `capture` — built on MFE over the policy's own held window — flatters any rule that exits on strength. It is a diagnostic, not a score.
 5. **The record is too young for the long-horizon policies.** The longest forward path in existence is 21 sessions, so the cap-63 family has never been allowed to reach its cap and its rows are mostly marks. Time is the only fix; the study re-runs unchanged.
 
