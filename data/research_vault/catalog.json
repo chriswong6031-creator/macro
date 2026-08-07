@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T09:52:04.017242+00:00",
-  "count": 933,
+  "generated_at": "2026-08-07T10:17:08.716865+00:00",
+  "count": 934,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -254,6 +254,27 @@
         "**Key Risk Factor**: Regulatory environment deterioration noted as critical risk, threatening rate base growth and cost management efficacy.",
         "**Price Target Upside**: $82.00 target vs.",
         "$72.06 current price (13.8% upside), driven by revenue growth (13.5B→15.0B) and EPS growth (4.76→5.35) per Goldman Sachs forecast."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-d3vt2oiw70r-2d7665",
+      "title": "ConocoPhillips (COP) First Take Strong EPS and Production",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:24Z",
+      "summary_points": [
+        "**EPS/Production Beat**: Q2 2026 adjusted EPS ($3.24 vs.",
+        "$2.92 est) and production (2,248 MBOE/d vs.",
+        "2,200 est) exceeded consensus, driven by U.S.",
+        "and Lower 48 segments, with $7.2bn cash flow vs.",
+        "$6.6bn est."
       ],
       "tags": [],
       "tickers": [],
