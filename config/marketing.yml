@@ -617,6 +617,20 @@ publish:
   fact_cooldown_days:
     macro: 7
     default: 5
+
+  # ── How much of last week may ride behind a new headline ─────────────────
+  # The cooldown keys the post's LEAD fact, so that "GDPNow 5.9%, up from 5.0%
+  # last week" ships: reciting a prior print to frame a new one is what an
+  # analyst writes. On its own that rule let a post whose lead REFRESHES DAILY
+  # carry an unlimited stale body — a breadth ratio moves nearly every session,
+  # so "4 of 11 sectors green today" in front of the whole 203k / 5.0% / 2.1%
+  # paragraph would key only the ratio and walk the same recital through the
+  # 7-day window every night, on every account. The 203k defect wearing a hat.
+  #
+  # So: at most this many already-owned SUPPORTING facts may accompany a new
+  # lead. One is framing. Two or more is a recital with a fresh headline, and
+  # the post is refused. Set negative for unbounded (turns the bound off).
+  fact_ride_along_max: 1
   # Operator decision 2026-07-24 ("auto-approve flagship signals"): the runner
   # auto-advances queued→approved for EVERY item clearing all publish gates
   # (validate_postable, a channel id configured for its account, under the daily

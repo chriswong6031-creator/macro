@@ -347,6 +347,53 @@ class TestD3Abstention:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# m6 — `missed the <noun>` needs the first-person subject its siblings require
+#
+# Round-1 finding 8's second half, re-raised in round 2. Every other branch of
+# `_ABSTENTION_PATTERNS` requires `(?:i|we)\s+`; this alternation did not, so
+# copy whose subject is the MARKET was terminally quarantined as abstention.
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestM6MissedTheNounNeedsAFirstPerson:
+    """MUTATION CHECK: in `copywriter._ABSTENTION_PATTERNS`, drop the
+    `(?:i|we)\\s+(?:\\w+\\s+){0,2}` prefix from the `missed the (...)`
+    alternation — every survives-case here fails. Same edit at the second copy
+    in `_COST_FAMILIES` — `test_the_cost_family_copy_carries_the_same_guard`
+    fails. Restore IN PLACE."""
+
+    #: The subject is the market, not the desk. Each was refused; two of them
+    #: were live D3 refusals on the 2026-08-06 sweep.
+    NOT_ABSTENTION = (
+        "Everyone missed the move; the tape did not wait.",
+        "The Street missed the run in semis entirely.",
+        "Nobody missed the bounce off 127.",
+    )
+
+    @pytest.mark.parametrize("text", NOT_ABSTENTION)
+    def test_copy_about_the_market_is_not_an_abstention(self, text):
+        assert cw.abstention_violations(text) == [], text
+
+    @pytest.mark.parametrize("text", [
+        "I missed the move entirely.",
+        "We missed the run in semis.",
+        "I completely missed the bounce off 127.",
+        "We very nearly missed the turn.",
+    ])
+    def test_the_desks_own_admission_is_still_refused(self, text):
+        """THE GUARD IS NOT AN OFF SWITCH. The `{0,2}` window is what keeps an
+        adverb between the subject and the verb from voiding the refusal."""
+        assert cw.abstention_violations(text), text
+
+    def test_the_cost_family_copy_carries_the_same_guard(self):
+        """`_COST_FAMILIES` defines "outside-the-move" as the admission of being
+        outside the move, so a sentence whose subject is the market was never a
+        member — counting it inflated the share the monoculture guard measures.
+        """
+        assert cw.cost_family("Everyone missed the move; the tape did not wait.") == ""
+        assert cw.cost_family("I missed the move entirely.") == "outside-the-move"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # D4 — one numeric fact, one post, network-wide
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -566,26 +613,51 @@ class TestR1LeadFact:
         for text, keys in zip(CLAIMS_FAMILY, leads):
             assert "macro:claims:203k" in keys, (text[:60], keys)
 
-    def test_a_headline_carrying_no_number_has_no_lead_fact(self):
-        """ob-2026-08-06-33dbf95911 verbatim. Its subject is narrow leadership;
-        the 5% GDPNow print underneath is framing, and keying it took the post
-        down on a number that is not what it is about."""
+    def test_a_headline_carrying_no_number_falls_back_to_the_body(self):
+        """ob-2026-08-06-33dbf95911 verbatim, RE-RULED BY CORRECTION C1.
+
+        This test previously asserted `frozenset()` — an unkeyable first line
+        meant the post was exempt from the cooldown entirely. That is the hole
+        the operator closed: the lead SPAN is a preference, not a gate, so a
+        post whose headline carries no number is judged on the earliest keyable
+        claim in its body. Measured cost of the re-ruling: this post is refused
+        on 2026-08-06 because ob-2026-08-05-992347d9c7 led on the same 5%
+        GDPNow print the day before, and founder's own 08-05 item
+        (ob-2026-08-05-ff004046f5) is the same copy again. That is the defect,
+        not collateral.
+        """
         text = ("AI and chip stocks are doing almost all the lifting today\n\n"
                 "The Atlanta Fed has the economy growing at 5% this quarter, "
                 "but stock leadership is still narrow.")
-        assert mc.lead_fact_keys(text, "event") == frozenset()
-        assert "macro:gdpnow:5pct" in mc.fact_anchor_keys(text, "event")
+        assert mc.lead_fact_keys(text, "event") == frozenset({"macro:gdpnow:5pct"})
 
-    def test_the_lead_span_is_the_first_non_empty_line(self):
-        assert mc.lead_segment("") == (0, 0)
-        body = "\n\n  \nlead line\nsecond"
-        lo, hi = mc.lead_segment(body)
-        assert body[lo:hi] == "lead line", (lo, hi)
+    def test_a_number_in_the_headline_beats_one_in_the_body(self):
+        """The headline preference, asserted as BEHAVIOUR rather than through
+        the `lead_segment` helper that used to express it.
 
-    def test_the_publisher_refuses_the_second_carrier_and_ships_the_first(self):
+        That helper is gone: filtering to the first non-empty line before taking
+        the earliest claim could never change the answer, because that line is
+        by definition the lowest offset in the text. It was dead code, so the
+        rule it described is pinned here instead — where a mutation to
+        `lead_fact_keys` can actually reach it.
+        """
+        body = "\n\n  \n4 of 11 sectors green\nGDPNow has growth at 5.9%."
+        assert mc.lead_fact_keys(body, "macro") == frozenset(
+            {"ratio:4of11:sector"}), mc.lead_fact_keys(body, "macro")
+
+    def test_the_owner_map_gives_the_new_print_to_one_carrier(self):
         """Two desks reach for the same NEW print in one night. Exactly one
-        carries it — first-claim by rank then id — and the other is refused.
-        Zero carriers is the failure this whole ruling exists to undo."""
+        carries it — first-claim by rank then id.
+
+        RENAMED TO WHAT IT CHECKS (round-2 review, m7). Its old name promised
+        "refuses the second carrier and ships the first", but the body asserts
+        two entries of the OWNERS MAP and never drives `main()`'s per-item
+        refusal, so a regression that broke the `for _akey in _my_keys: ...
+        break` loop while leaving ownership intact kept it green. That refusal
+        now has its own end-to-end test against the live publisher:
+        tests/test_marketing_market_clock.py::
+        test_the_publisher_quarantines_the_second_carrier_of_one_lead_fact.
+        """
         import scripts.marketing_publisher as pub
 
         state = {
@@ -610,6 +682,390 @@ class TestR1LeadFact:
             windows={"macro": 7})
         assert owners["macro:gdpnow:5.9pct"] == "ob-2026-08-06-96202a0efb", owners
         assert owners["macro:claims:203k"] == "ob-2026-08-02-25d1738564", owners
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C1 — an empty lead-key set means "look further", never "exempt"
+#
+# The round-2 hole, built and verified live by the reviewer: `lead_fact_keys`
+# returned frozenset() whenever the FIRST LINE carried no keyable number, and
+# both callers read an empty set as "cannot judge, let it through". A post
+# opening on prose and then reciting 203k was exempt from the cooldown
+# ENTIRELY — 40 of the 180 corpus items carrying a whole-body key carried none.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: The reviewer's synthetic, verbatim. Under the round-2 branch this keyed
+#: NOTHING while `fact_anchor_keys` saw both prints.
+PROSE_LEAD_RECITAL = (
+    "Here is what the labor market looks like right now\n\n"
+    "Jobless claims 203k a week, 8.6% below a year ago. The Atlanta Fed has "
+    "growth at 5.0% this quarter.")
+
+#: ob-2026-08-04-45e4653200 verbatim — the operator's OWN 203k defect. Its lead
+#: IS the 203k print and it shipped on 08-04 against an 08-02 owner.
+LIVE_UNKEYED_LEAD = (
+    "203 thousand a week this month, 8.6% below a year ago.\n"
+    "GDPNow just ticked up to 5.0%.\n"
+    "We're staring at firming growth and still-warm inflation prints. Not a "
+    "mix that quiets the room.")
+
+
+class TestC1LeadFallback:
+    """MUTATION CHECKS, each edited IN PLACE and restored (a `git checkout`
+    restores HEAD, not your fix):
+
+      c1_exempt   — in `market_clock.lead_fact_keys`, restore the round-2
+                    behaviour: narrow `hits` to the first non-empty line and
+                    `return frozenset()` when that comes up empty. RED (3):
+                    test_a_prose_first_line_falls_back_to_the_body,
+                    test_the_live_unkeyed_lead_is_keyed_on_its_own_print,
+                    TestR1LeadFact::
+                    test_a_headline_carrying_no_number_falls_back_to_the_body.
+      c1_alias    — delete `+ _CLAIMS_PER_WEEK` from the `claims` entry of
+                    `_MACRO_NAME_ALIASES`. RED (2):
+                    test_the_live_unkeyed_lead_is_keyed_on_its_own_print,
+                    TestMacroNameAssignment::
+                    test_a_count_never_takes_a_rate_indicator.
+    """
+
+    def test_a_prose_first_line_falls_back_to_the_body(self):
+        """THE HOLE. An opening line with no number is not a licence."""
+        keys = mc.lead_fact_keys(PROSE_LEAD_RECITAL, "macro")
+        assert keys == frozenset({"macro:claims:203k"}), keys
+
+    def test_the_live_unkeyed_lead_is_keyed_on_its_own_print(self):
+        """ob-2026-08-04-45e4653200, AND the key is the right one.
+
+        Falling back to "earliest keyable claim anywhere" is only honest if the
+        earliest claim can actually BE keyed. This post names no indicator in
+        its first line — "203 thousand a week this month" — so before the
+        per-week claims idiom the fallback reached past it and keyed the post on
+        the 5.0% GDPNow print sitting on line TWO as framing. That mis-key
+        propagated: the post then owned `macro:gdpnow:5pct` for seven days and
+        took down three unrelated 08-06 posts, and `event` went 1/2 -> 0/2 on
+        today's plan.
+        """
+        keys = mc.lead_fact_keys(LIVE_UNKEYED_LEAD, "event")
+        assert keys == frozenset({"macro:claims:203k"}), keys
+
+    def test_a_claim_inside_the_first_line_still_wins(self):
+        """C1 MUST NOT BECOME "REFUSE ON ANY SHARED NUMBER". The ruling's
+        protection is that the number the post LEADS on decides, and everything
+        below it is context — which is the whole reason "GDPNow 5.9%, up from
+        5.0% last week" ships. Whole-body keying is the round-1 blocker."""
+        text = ("GDPNow 5.9% this quarter\n\n"
+                "Jobless claims are still 203k a week and median CPI is 2.1%.")
+        assert mc.lead_fact_keys(text, "macro") == frozenset(
+            {"macro:gdpnow:5.9pct"}), mc.lead_fact_keys(text, "macro")
+
+    def test_only_a_post_with_no_keyable_number_yields_nothing(self):
+        """The honest empty set: nothing to judge, not "judged and excused"."""
+        assert mc.lead_fact_keys(
+            "Leadership is narrow and I am waiting.", "macro") == frozenset()
+        assert mc.lead_fact_keys("", "macro") == frozenset()
+
+    def test_the_per_week_idiom_needs_a_count_not_a_percent(self):
+        """The claims idiom is scoped by a lookbehind on the VALUE's unit, so
+        ordinary copy that happens to say "a week" is not a claims print."""
+        assert mc.macro_fact_keys("The group is up 2% a week and holding.") == (
+            frozenset())
+        assert "macro:claims:203k" in mc.macro_fact_keys(
+            "Claims are running 203 thousand a week.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C2 — one owned supporting fact may ride along, not a paragraph of last week
+#
+# The other half of the round-2 hole. Keying the cooldown on the lead alone let
+# a post whose lead REFRESHES DAILY carry an unlimited stale body: a breadth
+# ratio moves nearly every session, so the same weekly macro recital walked
+# through the 7-day window every night behind a fresh headline.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: The reviewer's SHAPE B, verbatim.
+BREADTH_LEAD_RECITAL = (
+    "4 of 11 sectors green today\n\n"
+    "203k jobless claims a week this month, 8.6% below a year ago. The Atlanta "
+    "Fed is printing 5.0% growth and median CPI is 2.1%. Same story as Monday.")
+
+
+def _owned(*keys: str) -> dict[str, str]:
+    return {k: f"ob-owner-{n}" for n, k in enumerate(keys)}
+
+
+def _recital_refused(text: str, kind: str, owners: dict[str, str],
+                     iid: str = "ob-candidate",
+                     ride_max: int | None = None) -> list[str]:
+    """The owned NON-LEAD keys, as the publisher and the outbox both count them.
+
+    Returns the list the bound is applied to — not a second copy of the bound.
+    """
+    cap = mc.fact_ride_along_max(ride_max)
+    owned = [k for k in sorted(mc.ride_along_keys(text, kind))
+             if owners.get(k) and owners.get(k) != iid]
+    return owned if len(owned) > cap else []
+
+
+class TestC2RideAlongBound:
+    """MUTATION CHECKS, edited in place and restored:
+
+      c2_unbounded  — in `scripts/marketing_publisher`, delete the
+                      `if len(_owned_ride) > _ride_max:` branch (always claim).
+                      RED: tests/test_marketing_market_clock.py::
+                      test_the_publisher_refuses_a_recital_behind_a_fresh_lead.
+      c2_outbox     — in `engine/marketing/outbox._rejection_reason`, delete the
+                      `return "fact_recital"` branch. RED:
+                      TestM1EnqueueGateWiring::
+                      test_the_refusal_check_bounds_the_ride_along.
+      c2_default    — set `FACT_RIDE_ALONG_MAX_DEFAULT = 99`. RED:
+                      test_the_reviewers_breadth_lead_recital_is_refused,
+                      test_the_bound_is_config_driven_and_typo_safe, and both
+                      wiring tests above.
+      c2_whole      — make `ride_along_keys` return `fact_anchor_keys(...)`
+                      without subtracting the lead. RED:
+                      test_the_lead_fact_is_never_counted_as_its_own_ride_along.
+    """
+
+    def test_the_reviewers_breadth_lead_recital_is_refused(self):
+        """SHAPE B. The lead is new every session; the body is last week."""
+        owners = _owned("macro:claims:203k", "macro:cpi:2.1pct",
+                        "macro:gdpnow:5pct")
+        assert _recital_refused(BREADTH_LEAD_RECITAL, "macro", owners) == [
+            "macro:claims:203k", "macro:cpi:2.1pct", "macro:gdpnow:5pct"]
+
+    def test_the_rulings_framing_example_is_not_caught(self):
+        """A3. "GDPNow 5.9%, up from 5.0% last week" recites exactly ONE owned
+        number, which is what an analyst writes. The bound is 1 for this."""
+        text = "GDPNow 5.9%, up from 5.0% last week."
+        owners = _owned("macro:gdpnow:5pct")
+        assert mc.lead_fact_keys(text, "macro") == frozenset(
+            {"macro:gdpnow:5.9pct"})
+        assert _recital_refused(text, "macro", owners) == []
+
+    def test_an_unowned_supporting_fact_is_free(self):
+        """The bound counts OWNED facts, not numbers. A post may carry as many
+        prints as it likes as long as no live sibling already leads on them."""
+        assert _recital_refused(BREADTH_LEAD_RECITAL, "macro", {}) == []
+
+    def test_the_lead_fact_is_never_counted_as_its_own_ride_along(self):
+        text = "GDPNow 5.9% this quarter and claims at 203k a week."
+        lead = mc.lead_fact_keys(text, "macro")
+        assert lead == frozenset({"macro:gdpnow:5.9pct"}), lead
+        assert lead & mc.ride_along_keys(text, "macro") == frozenset()
+
+    def test_the_bound_is_config_driven_and_typo_safe(self):
+        assert mc.fact_ride_along_max(None) == 1
+        assert mc.fact_ride_along_max(2) == 2
+        assert mc.fact_ride_along_max("two") == 1
+        assert mc.fact_ride_along_max([]) == 1
+        assert mc.fact_ride_along_max(-1) == -1
+
+    def test_config_carries_the_bound(self):
+        import yaml
+
+        cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text(
+            encoding="utf-8"))
+        assert int((cfg.get("publish") or {}).get("fact_ride_along_max")) == 1
+
+    def test_the_new_gdpnow_print_still_ships_against_the_live_corpus(self):
+        """A4. ob-2026-08-06-96202a0efb carries the 5.9% lead plus a 203k
+        recital. On the live 08-06 state exactly ONE of its supporting facts is
+        owned, so the bound does not catch it and the new number reaches the
+        network — which is the outage this whole ruling exists to undo."""
+        import scripts.marketing_publisher as pub
+
+        state = {
+            "items": {
+                "ob-2026-08-02-25d1738564": {
+                    "as_of": "2026-08-02", "kind": "macro",
+                    "text": CLAIMS_FAMILY[0]},
+                "ob-2026-08-06-96202a0efb": {
+                    "as_of": "2026-08-06", "kind": "macro",
+                    "text": NEW_PRINT_MACRO},
+            },
+            "status": {"ob-2026-08-02-25d1738564": "posted",
+                       "ob-2026-08-06-96202a0efb": "queued"},
+            "held": set(),
+        }
+        owners = pub._fact_anchor_owners(
+            state, datetime(2026, 8, 6, 18, 0, tzinfo=timezone.utc),
+            windows={"macro": 7})
+        assert _recital_refused(NEW_PRINT_MACRO, "macro", owners,
+                                iid="ob-2026-08-06-96202a0efb") == []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# M1 — the outbox enqueue gate is wired to the same unit, and it is PINNED
+#
+# The round-2 builder rewired three enqueue sites to `lead_fact_keys` as a
+# deliberate extension and the reviewer reverted all three to
+# `fact_anchor_keys`: 6542 marketing tests stayed green. An untested extension
+# beyond the measured defect is how the next silent hole gets in.
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestM1EnqueueGateWiring:
+    """MUTATION CHECKS — one per call site, each swapped back to
+    `_clock.fact_anchor_keys(` and restored IN PLACE:
+
+      m1_reject  — `engine/marketing/outbox._rejection_reason`. RED:
+                   test_the_refusal_check_reads_the_lead_fact_only.
+      m1_ctx     — `engine/marketing/outbox._enqueue_ctx`. RED:
+                   test_the_ownership_corpus_claims_the_lead_fact_only.
+      m1_batch   — `engine/marketing/outbox.enqueue`'s in-batch claim. RED:
+                   test_a_recital_in_this_batch_does_not_claim_the_anchor.
+    """
+
+    def test_the_refusal_check_reads_the_lead_fact_only(self):
+        """SITE 1. A new lead ships although line three quotes an owned print;
+        the same post led by that print does not."""
+        from engine.marketing.outbox import _rejection_reason
+
+        ctx = {
+            "ids": set(), "day_counts": {}, "recent_texts_by_account": {},
+            "fact_anchors": {("2026-08-06", "macro:claims:203k"): "ob-older"},
+        }
+        assert _rejection_reason(
+            item_id="ob-new", account="sophia", as_of="2026-08-06",
+            text=NEW_PRINT_MACRO, ctx=ctx, cap=-1, kind="macro") is None
+
+        assert _rejection_reason(
+            item_id="ob-recital", account="kelly", as_of="2026-08-06",
+            text=CLAIMS_FAMILY[2], ctx=ctx, cap=-1, kind="macro"
+        ) == "fact_fanout"
+
+    def test_the_refusal_check_bounds_the_ride_along(self):
+        """SITE 1, correction C2. Same gate, same bound as the publisher."""
+        from engine.marketing.outbox import _rejection_reason
+
+        ctx = {
+            "ids": set(), "day_counts": {}, "recent_texts_by_account": {},
+            "fact_anchors": {
+                ("2026-08-06", "macro:claims:203k"): "ob-a",
+                ("2026-08-06", "macro:cpi:2.1pct"): "ob-b",
+                ("2026-08-06", "macro:gdpnow:5pct"): "ob-c",
+            },
+        }
+        assert _rejection_reason(
+            item_id="ob-breadth", account="kelly", as_of="2026-08-06",
+            text=BREADTH_LEAD_RECITAL, ctx=ctx, cap=-1, kind="macro"
+        ) == "fact_recital"
+
+    def test_the_ownership_corpus_claims_the_lead_fact_only(self, tmp_path):
+        """SITE 2. `_enqueue_ctx` builds the (as_of, key) -> owner map that
+        SITE 1 reads. If it claims on the whole body, the post that merely
+        recites 203k starves the post whose lead that number is."""
+        from engine.marketing import outbox
+
+        item = outbox.make_item(
+            account="sophia", kind="macro", text=NEW_PRINT_MACRO,
+            as_of="2026-08-06", provenance="fixture",
+            now=datetime(2026, 8, 6, 12, 0, tzinfo=timezone.utc))
+        assert outbox.append_jsonl(outbox._items_path(tmp_path), item)
+
+        ctx = outbox._enqueue_ctx(tmp_path, "2026-08-06", None)
+        anchors = ctx["fact_anchors"]
+        assert anchors.get(("2026-08-06", "macro:gdpnow:5.9pct")) == item["id"]
+        assert ("2026-08-06", "macro:claims:203k") not in anchors, anchors
+
+    def test_a_recital_in_this_batch_does_not_claim_the_anchor(self, tmp_path):
+        """SITE 3, and it needs the SHARED ctx to be reached at all.
+
+        `emit_from_content_plan` threads ONE `_ctx` through every enqueue in a
+        run (outbox.py, `enqueue(item, root, ..., _ctx=ctx)`), and that is the
+        only path where the in-batch claim decides anything — a bare `enqueue`
+        rebuilds the corpus from disk through `_enqueue_ctx`, which is site 2. A
+        first cut of this test called `enqueue` twice without a shared ctx and
+        went GREEN under the site-3 mutation, i.e. it pinned nothing.
+
+        Three of the six posts in the 2026-08-01 family were emitted in a single
+        run, so this is the live shape.
+        """
+        from engine.marketing import outbox
+
+        now = datetime(2026, 8, 6, 12, 0, tzinfo=timezone.utc)
+        ctx = outbox._enqueue_ctx(tmp_path, "2026-08-06", None)
+
+        first = outbox.make_item(
+            account="sophia", kind="macro", text=NEW_PRINT_MACRO,
+            as_of="2026-08-06", provenance="fixture", now=now)
+        assert outbox.enqueue(first, tmp_path, max_per_account_day=-1,
+                              _ctx=ctx) == "queued"
+        # The recital in its third line claimed nothing…
+        assert ("2026-08-06", "macro:claims:203k") not in ctx["fact_anchors"], (
+            ctx["fact_anchors"])
+
+        # …so the post whose LEAD that number is can still queue behind it.
+        second = outbox.make_item(
+            account="kelly", kind="macro",
+            text="Jobless claims are averaging 203k a week this month.",
+            as_of="2026-08-06", provenance="fixture", now=now)
+        assert outbox.enqueue(second, tmp_path, max_per_account_day=-1,
+                              _ctx=ctx) == "queued"
+
+        # And the claim IS made once it is a lead: a third post leading on the
+        # same 203k in the SAME batch is refused, so this is not a dead gate.
+        third = outbox.make_item(
+            account="meagan", kind="macro",
+            text="203k jobless claims a week, and that is the whole story.",
+            as_of="2026-08-06", provenance="fixture", now=now)
+        assert outbox.enqueue(third, tmp_path, max_per_account_day=-1,
+                              _ctx=ctx) == "fact_fanout"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# m2 — "earliest claim only" is a choice, and it is pinned
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_the_lead_is_the_earliest_claim_not_every_claim_in_the_line():
+    """MUTATION m2_all_claims: in `market_clock.lead_fact_keys`, return
+    `frozenset(key for _pos, key in hits)` (drop the `pos == first` filter).
+    RED here, and in 14 other places — dropping the filter is whole-body keying,
+    which is the round-1 blocker.
+
+    The two behaviours differ in production: keying every claim in the lead line
+    would let this post claim BOTH the breadth ratio and the GDPNow print, so a
+    second desk leading on 5.9% would be refused by a post whose subject is
+    breadth.
+    """
+    text = ("4 of 11 sectors green and GDPNow at 5.9%\n\n"
+            "Narrow tape, firm economy.")
+    assert mc.lead_fact_keys(text, "macro") == frozenset(
+        {"ratio:4of11:sector"}), mc.lead_fact_keys(text, "macro")
+    assert "macro:gdpnow:5.9pct" in mc.fact_anchor_keys(text, "macro")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# m3 — the scan window comes from the MERGED table, not the override
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_overriding_only_the_default_does_not_truncate_the_macro_window():
+    """MUTATION: in `scripts/marketing_publisher._fact_anchor_owners`, change the
+    scan back to `for fam in (windows or _clock.FACT_COOLDOWN_DAYS_DEFAULT)`.
+    RED here.
+
+    `fact_cooldown_days` always starts from the shipped defaults, so macro stays
+    at 7 even when the config never mentions it. Iterating only the config keys
+    made the scan max(5, 3) = 5 and dropped the 6-day-old owner from `rows`
+    before the per-key filter could see it — a macro cooldown silently cut to
+    five days, with no warning.
+    """
+    import scripts.marketing_publisher as pub
+
+    state = {
+        "items": {
+            "ob-a": {"as_of": "2026-08-01", "kind": "macro",
+                     "text": CLAIMS_FAMILY[0]},
+            "ob-b": {"as_of": "2026-08-07", "kind": "macro",
+                     "text": CLAIMS_FAMILY[2]},
+        },
+        "status": {"ob-a": "posted", "ob-b": "queued"},
+        "held": set(),
+    }
+    now = datetime(2026, 8, 7, 18, 0, tzinfo=timezone.utc)
+    owners = pub._fact_anchor_owners(state, now, windows={"default": 3})
+    assert owners.get("macro:claims:203k") == "ob-a", (
+        "the 6-day-old macro owner fell out of the scan; overriding `default` "
+        f"truncated a window it never mentions: {owners}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -662,6 +1118,94 @@ class TestR2KindExclusion:
         assert mc.stale_session_violations(
             "Western Digital falls -4.03% right now to $522.86.",
             now=WED_MORNING, fact_asof="2026-08-04", kind="breaking") == []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# m4 — the kind exclusion is leg ONE's, not leg TWO's
+#
+# `stale_session_violations` returned [] the moment `market_action_claim` was
+# empty, so an excluded kind skipped BOTH legs. R2 was about PERISHABILITY (a
+# weekly print is not a tape read); leg 2 is a FALSITY check about the copy's
+# own words and is not what R2 was arguing about.
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestM4LegTwoRunsForEveryKind:
+    """MUTATION CHECK: in `market_clock.stale_session_violations`, restore the
+    early return (`why = market_action_claim(...)` followed by `if not why:
+    return []`) — every test in this class fails. Restore IN PLACE."""
+
+    #: The reviewer's string: it REPORTS A PRIOR SESSION'S TAPE in its own words.
+    PAST_TAPE = ("The tape ripped on Tuesday, every sector closed green and "
+                 "the S&P rallied 1.9%.")
+
+    @pytest.mark.parametrize("kind", sorted(mc.NON_ACTION_KINDS))
+    def test_an_excluded_kind_is_still_caught_naming_a_past_session(self, kind):
+        """A macro post that says "on Tuesday" on Wednesday is false in the
+        words on the page, whatever clock its KIND perishes on."""
+        out = mc.stale_session_violations(
+            self.PAST_TAPE, now=WED_MORNING, fact_asof="2026-08-04", kind=kind)
+        assert out == ["stale_session_claim:2026-08-04!=2026-08-05 "
+                       "(copy names Tuesday's tape)"], (kind, out)
+
+    @pytest.mark.parametrize("kind", sorted(mc.NON_ACTION_KINDS))
+    def test_leg_one_is_still_excluded_for_those_kinds(self, kind):
+        """R2 IS NOT RE-OPENED. The perishability leg stays off: a weekly print
+        one session old, whose copy names no session, still ships."""
+        assert mc.stale_session_violations(
+            TestR2KindExclusion.LOUD, now=WED_MORNING,
+            fact_asof="2026-08-04", kind=kind) == []
+
+    def test_the_self_contradiction_receipt_still_switches(self):
+        """A post claiming today AND a past session gets the other receipt."""
+        out = mc.stale_session_violations(
+            "Sectors are green today. The tape ripped on Tuesday.",
+            now=WED_MORNING, fact_asof="2026-08-05", kind="macro")
+        assert out == ["stale_session_claim:2026-08-04!=2026-08-05 "
+                       "(copy claims today AND Tuesday's tape)"], out
+
+    def test_a_cited_date_is_still_suppressed_for_an_excluded_kind(self):
+        """Leg 2 running for every kind must not turn every historical citation
+        into a refusal — `_claim_is_cited` is the whole reason leg 2 is safe to
+        open up."""
+        assert mc.stale_session_violations(
+            "Jobless claims are near the all-time low set on Tuesday.",
+            now=WED_MORNING, fact_asof="2026-08-05", kind="macro") == []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# m5 — a sign-off is a forward reference, not a claim about Monday's tape
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestM5SignOffCues:
+    """MUTATION CHECK: delete the sign-off block from `market_clock._FUTURE_CUES`
+    ("see you", "come back", "back on", "more on", "recap", "tune in", "catch
+    you", "join me", "join us", "post the", "posting the") — every survives-case
+    in this class fails. Restore IN PLACE."""
+
+    THU = datetime(2026, 8, 6, 18, 0, tzinfo=timezone.utc)   # Thu 14:00 ET
+
+    @pytest.mark.parametrize("text", [
+        "Names surged 2.2%. See you Monday.",
+        "The theme ripped 1.7%. Come back Sunday for the weekly recap.",
+        "Cloud names rallied 2%. I post the recap Sunday.",
+        "The group ran 3.1%. Payrolls land Friday.",
+    ])
+    def test_a_forward_reference_is_not_a_stale_session_claim(self, text):
+        """Each of these was a TERMINAL quarantine whose receipt named a defect
+        the copy does not have. The today-word amnesty used to absorb most of
+        this shape; removing it (round-1 finding 2) exposed the cue list."""
+        assert mc.stale_session_violations(
+            text, now=self.THU, fact_asof="2026-08-06",
+            kind="theme_list") == [], text
+
+    def test_the_defect_this_leg_exists_for_still_refuses(self):
+        """THE CUE LIST IS NOT AN OFF SWITCH. The live theme_list defect names a
+        past session with no forward frame at all and is still caught."""
+        assert mc.stale_session_violations(
+            "Cloud Computing ripping, +1.7% avg on Tuesday",
+            now=self.THU, fact_asof="2026-08-06", kind="theme_list") == [
+                "stale_session_claim:2026-08-04!=2026-08-06 "
+                "(copy names Tuesday's tape)"]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -809,13 +1353,22 @@ class TestMacroNameAssignment:
 
     def test_a_count_never_takes_a_rate_indicator(self):
         """ob-2026-08-04-45e4653200 emitted `macro:gdpnow:203k`. GDPNow is an
-        annualised rate; 203 thousand is a headcount. No key is the honest
-        answer, and it is the permissive one."""
+        annualised rate; 203 thousand is a headcount, so that key is not a
+        near-miss but an impossibility.
+
+        THE RIGHT KEY, NOT MERELY THE ABSENCE OF THE WRONG ONE (correction C1).
+        Round one settled for "no key is the honest answer, and it is the
+        permissive one" — true while an unkeyed lead meant the post was exempt.
+        Once C1 made the cooldown fall back to the earliest keyable claim
+        anywhere in the body, "no key here" stopped being permissive and became
+        a MIS-key: the fallback reached past the 203k to the framing 5.0% on
+        line two. The per-week claims idiom gives the count its own name.
+        """
         keys = mc.macro_fact_keys(
             "203 thousand a week this month, 8.6% below a year ago.\n"
             "GDPNow just ticked up to 5.0%.")
         assert "macro:gdpnow:203k" not in keys, keys
-        assert keys == frozenset({"macro:gdpnow:5pct"}), keys
+        assert keys == frozenset({"macro:claims:203k", "macro:gdpnow:5pct"}), keys
 
     def test_the_unit_decides_when_BOTH_names_are_attached(self):
         """The case attachment alone cannot reach: "Payroll growth of 203

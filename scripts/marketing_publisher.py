@@ -577,9 +577,17 @@ def _fact_anchor_owners(state: dict, now: datetime,
     key family; the scan runs over the LONGEST of them and each key is then held
     to its own, so widening the macro window cannot silently widen the tape one.
     """
+    # THE MERGED TABLE, NOT THE OVERRIDE (round-2 review, m3). Iterating only
+    # the families PRESENT IN THE CONFIG truncated the scan for any family the
+    # config never mentions: `fact_cooldown_days` always starts from
+    # FACT_COOLDOWN_DAYS_DEFAULT, so `{default: 3}` left macro's own window at 7
+    # while the scan ran to max(5, 3) = 5 — rows six and seven days old were
+    # dropped from `rows` before the per-key filter ever saw them, and the macro
+    # cooldown silently became five days. The scan must cover the longest window
+    # any key can RESOLVE to, which is a property of the merged table.
     scan_days = max([days] + [
         _clock.fact_cooldown_days(f"{fam}:x", windows)
-        for fam in (windows or _clock.FACT_COOLDOWN_DAYS_DEFAULT)])
+        for fam in (set(_clock.FACT_COOLDOWN_DAYS_DEFAULT) | set(windows or {}))])
     today = _clock.et_date(now)
     cutoff = today - timedelta(days=scan_days)
     statuses = state.get("status") or {}
@@ -2035,6 +2043,9 @@ def main(argv: list[str] | None = None) -> int:
         log.warning("publish.fact_cooldown_days is %r, not a mapping — using the "
                     "shipped defaults", type(_fact_cooldowns).__name__)
         _fact_cooldowns = {}
+    # CORRECTION C2's bound, from the same config block as the windows so the
+    # two knobs that decide "is this the same fact again?" sit together.
+    _ride_max = _clock.fact_ride_along_max(pub_cfg.get("fact_ride_along_max"))
     _fact_owners = _fact_anchor_owners(state, now, windows=_fact_cooldowns)
     quarantined_clock = 0
     quarantined_fact_fanout = 0
@@ -2389,6 +2400,7 @@ def main(argv: list[str] | None = None) -> int:
         # sibling inherits (pinned by
         # test_a_quarantined_owner_hands_the_fact_to_the_next_sweep).
         _anchor_hit = None
+        _ride_hit: list[str] | None = None
         try:
             # THE LEAD FACT ONLY (ruling R1, 2026-08-06). Reading every number
             # in the body and breaking on the first one a sibling owned refused
@@ -2408,13 +2420,56 @@ def main(argv: list[str] | None = None) -> int:
                     _anchor_hit = (_owner, _akey)
                     break
             if _anchor_hit is None:
-                # Anchors nothing has claimed yet (a publish-time-generated item
-                # is not in the folded snapshot) belong to this post.
-                for _akey in _my_keys:
-                    _fact_owners.setdefault(_akey, iid)
+                # CORRECTION C2: BOUND THE STALE RIDE-ALONG. A new lead is a
+                # licence to quote a prior print for FRAMING, not a licence to
+                # carry last week's whole paragraph. A post whose lead fact
+                # refreshes daily (a breadth ratio moves nearly every session)
+                # otherwise walks the same 203k/5.0%/2.1% recital through the
+                # 7-day window every night, on every account. One owned
+                # supporting fact is framing; two is a recital with a fresh
+                # headline.
+                #
+                # A NEGATIVE BOUND IS "UNBOUNDED", the documented off switch
+                # (config/marketing.yml, `fact_ride_along_max`). Without the
+                # `>= 0` guard `len(...) > -1` is true for EVERY post, so the
+                # setting that turns the correction off would refuse the entire
+                # queue instead — the outbox copy of this check carries the same
+                # guard and the two must not disagree.
+                _owned_ride = [
+                    _rk for _rk in sorted(_clock.ride_along_keys(
+                        text, str(it.get("kind") or "")))
+                    if _fact_owners.get(_rk) and _fact_owners.get(_rk) != iid]
+                if _ride_max >= 0 and len(_owned_ride) > _ride_max:
+                    _ride_hit = _owned_ride
+                else:
+                    # Anchors nothing has claimed yet (a publish-time-generated
+                    # item is not in the folded snapshot) belong to this post.
+                    for _akey in _my_keys:
+                        _fact_owners.setdefault(_akey, iid)
         except Exception as _fa_exc:  # noqa: BLE001
             log.warning("fact-anchor gate unavailable for %s (%s) — passing",
                         iid, _fa_exc)
+        if _ride_hit is not None:
+            # The receipt NAMES the owned facts. The operator reads these, and
+            # "too many stale numbers" without the numbers is not a receipt.
+            reason = ("fact recital: " + str(len(_ride_hit)) + " supporting "
+                      "facts are already owned by live siblings (" +
+                      ", ".join(f"{_rk}->{_fact_owners.get(_rk)}"
+                                for _rk in _ride_hit) +
+                      f"); at most {_ride_max} may ride along with a new lead")
+            print(f"::warning title=marketing-fact-recital::item {iid} "
+                  f"({account}/{it.get('kind')}) quarantined — {len(_ride_hit)} "
+                  f"already-owned supporting facts ride behind a new lead "
+                  f"({', '.join(_ride_hit)}); the bound is {_ride_max}",
+                  flush=True)
+            log.warning("item %s (%s) QUARANTINED by fact recital bound: %s",
+                        iid, account, reason)
+            if live:
+                _outbox.transition(iid, "quarantined", actor="publisher",
+                                   root=root, note=reason)
+            quarantined += 1
+            quarantined_fact_fanout += 1
+            continue
         if _anchor_hit is not None:
             _oid, _akey = _anchor_hit
             # THE KEY'S OWN WINDOW, not the module constant. A macro key is held

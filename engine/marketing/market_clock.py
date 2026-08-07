@@ -707,10 +707,21 @@ _CITATION_CUES: tuple[str, ...] = (
     "spike", "before", "after", "between", "through", "until", "til",
     "dated", "reported", "filed", "announced", "posted on", "of its",
 )
+#
+# THE SIGN-OFF SHAPE (round-2 review, m5). The list below started as the ways a
+# desk points at a scheduled PRINT ("payrolls land Friday"), and it missed the
+# ordinary ways a desk points at its own next post: "See you Monday", "Come back
+# Sunday for the weekly recap", "I post the recap Sunday". Those were absorbed
+# by the today-word early return until that amnesty was removed, and each one
+# then read as a claim about Monday's tape — a TERMINAL quarantine whose receipt
+# names a defect the copy does not have.
 _FUTURE_CUES: tuple[str, ...] = (
     "due", "due out", "ahead of", "expected", "coming", "upcoming", "next",
     "scheduled", "slated", "lands", "land", "on deck", "watch for", "eyes on",
     "will", "reports",
+    # sign-offs and forward pointers to our own next post
+    "see you", "come back", "back on", "more on", "recap", "tune in",
+    "catch you", "join me", "join us", "post the", "posting the",
 )
 
 #: How much text before a date token is inspected for a cue. One clause: "now
@@ -891,21 +902,30 @@ def stale_session_violations(text: str, *, now: datetime, fact_asof: object,
         Friday-stamped post published on Saturday is current all weekend and
         dies on Monday's open. That is the honest reading of "the next session
         kills it".
-      * A POST THAT CLAIMS NO MARKET ACTION IS NOT JUDGED. An education post or
-        a filing summary has no session to be stale about — and neither is any
-        kind in :data:`NON_ACTION_KINDS`, whatever numbers its copy carries.
+      * A POST THAT CLAIMS NO MARKET ACTION IS NOT JUDGED **BY LEG ONE**. An
+        education post or a filing summary has no session to be stale about —
+        and neither is any kind in :data:`NON_ACTION_KINDS`, whatever numbers
+        its copy carries. LEG TWO STILL RUNS FOR EVERY KIND: it fires only when
+        the copy NAMES a past session, which is a falsity in the words on the
+        page rather than a statement about how that kind perishes.
     """
     body = str(text or "")
     if not body.strip():
         return []
+    # THE TWO LEGS RUN INDEPENDENTLY (round-2 review, m4). Returning early on an
+    # empty action claim disarmed BOTH legs for the six excluded kinds, and only
+    # leg 1 was ever what ruling R2 was about. Leg 1 asks a PERISHABILITY
+    # question — has this post's session been overtaken — and a weekly print or a
+    # wire flash perishes on its own clock, so the kind exclusion belongs there.
+    # Leg 2 asks a FALSITY question about the copy's own words: a post that says
+    # "today" and then reports Tuesday's tape contradicts ITSELF, and that is
+    # wrong for a macro post exactly as it is wrong for a chart.
     why = market_action_claim(body, kind)
-    if not why:
-        return []
 
     live = live_session(now)
     out: list[str] = []
 
-    fact_day = _as_date(fact_asof)
+    fact_day = _as_date(fact_asof) if why else None
     fact_session = session_of(fact_day) if fact_day is not None else None
     if fact_session is not None and fact_session != live:
         # A fact session AHEAD of the live one is a forward-booked row, not a
@@ -994,8 +1014,28 @@ def _stem(noun: str) -> str:
 #: slug because the desks genuinely rotate through them: "GDPNow", "the Atlanta
 #: Fed", and a bare "Growth:" label are three names for one number, and keying
 #: them apart is how three phrasings of one print all read as fresh.
+#: THE PER-WEEK COUNT IDIOM (correction C1, 2026-08-06). A desk does not always
+#: write the indicator's name: ob-2026-08-04-45e4653200 opens "203 thousand a
+#: week this month, 8.6% below a year ago." and names no indicator at all in its
+#: first line. That cost nothing while an unkeyed lead meant "exempt", and it
+#: became the whole defect the moment C1 made the cooldown fall back to the
+#: earliest keyable claim ANYWHERE in the body: the fallback then keyed the post
+#: on the 5.0% GDPNow print sitting on line TWO as framing, and that mis-key
+#: propagated — the post owned ``macro:gdpnow:5pct`` for seven days and took
+#: down three unrelated 08-06 posts, including ob-2026-08-06-33dbf95911, whose
+#: subject is narrow leadership and which quotes 5% only to frame it. Measured:
+#: `event` went 1/2 -> 0/2 on today's plan, a lane at zero, on a number no post
+#: involved was actually about.
+#:
+#: A COUNT IN THOUSANDS QUOTED PER WEEK IS THE WEEKLY CLAIMS PRINT. Nothing else
+#: in this domain is published that way, which is why the idiom can carry the
+#: indicator's name on its own. The lookbehind is what keeps it that narrow: the
+#: phrase only counts as a name when it directly follows a `k`/`thousand` value,
+#: so an ordinary "up 2% a week" never becomes a claims print.
+_CLAIMS_PER_WEEK = r"(?:(?<=k)|(?<=thousand))\s+a\s+week"
+
 _MACRO_NAME_ALIASES: tuple[tuple[str, str], ...] = (
-    ("claims", r"claims"),
+    ("claims", r"claims|" + _CLAIMS_PER_WEEK),
     ("gdpnow", r"gdpnow|gdp\s*now|gdp\s*track\w*|atlanta\s*fed|\bgrowth\b|\bgdp\b"),
     ("cpi", r"\bcpi\b|inflation|cleveland"),
     ("payrolls", r"payrolls?|nonfarm|\bnfp\b|jobs report"),
@@ -1233,31 +1273,16 @@ def _fact_anchor_hits(text: str, kind: str = "") -> list[tuple[int, str]]:
     return hits
 
 
-def lead_segment(text: str) -> tuple[int, int]:
-    """The span of `text` the LEAD fact may live in: the FIRST NON-EMPTY LINE.
-
-    A post here is a single text field, so its headline and its first line are
-    the same span — "the first numeric claim in the headline, or failing that in
-    the first line" names one place to look, not two.
-
-    DELIBERATELY NOT EXTENDED to the line under a non-numeric headline. That was
-    the first cut and it re-refused the class the ruling protects: "AI and chip
-    stocks are doing almost all the lifting today / The Atlanta Fed has the
-    economy growing at 5% this quarter, but leadership is still narrow"
-    (ob-2026-08-06-33dbf95911) took the 5% GDPNow print as its lead and died on a
-    number that is FRAMING for a post about narrow leadership. A post whose
-    headline carries no number has no lead fact, the cooldown has nothing to say
-    about it, and it ships — the permissive direction, which is the one this gate
-    has to fail in.
-    """
-    body = str(text or "")
-    pos = 0
-    for raw in body.split("\n"):
-        start, end = pos, pos + len(raw)
-        pos = end + 1
-        if raw.strip():
-            return (start, end)
-    return (0, len(body))
+# `lead_segment` (the span of the first non-empty line) lived here until
+# correction C1. It was the round-2 cut's way of saying "look in the headline
+# first", and once C1 replaced "empty lead == exempt" with "fall back to the
+# earliest claim in the body" it stopped being able to change any answer: the
+# first non-empty line is by definition the lowest offset in the text, so
+# filtering to it before taking the minimum is the same function. It was
+# verified dead by mutation — swapping the filtered scope for the whole body
+# left every marketing test green — and dead code that documents a gate it no
+# longer gates is worse than no code. The rule now lives once, in
+# `lead_fact_keys`.
 
 
 def lead_fact_keys(text: str, kind: str = "") -> frozenset[str]:
@@ -1274,7 +1299,7 @@ def lead_fact_keys(text: str, kind: str = "") -> frozenset[str]:
     the fingerprint was built to serve ("a NEW number is news and ships").
 
     THE RULE. The cooldown keys the LEAD fact — the first numeric claim in the
-    headline, or failing that in the first line (:func:`lead_segment`).
+    post, which is the one in the headline when the headline carries one.
     Supporting numbers later in the body are CONTEXT: they neither trigger the
     cooldown nor claim an anchor of their own. "GDPNow 5.9%, up from 5.0% last
     week" is what a human analyst writes and it ships; a post whose LEAD is the
@@ -1285,16 +1310,86 @@ def lead_fact_keys(text: str, kind: str = "") -> frozenset[str]:
     SYMMETRIC BY CONSTRUCTION. Ownership is claimed on the same keys refusal is
     tested against, so a post that merely cites 203k in its third line cannot
     quietly claim that anchor and starve the post whose lead it actually is.
+
+    CORRECTION C1 (operator 2026-08-06, after the round-2 review): AN EMPTY LEAD
+    LINE MEANS "LOOK FURTHER", NEVER "EXEMPT". The first cut of this function
+    returned ``frozenset()`` whenever the first non-empty line carried no keyable
+    number, and both callers read an empty set as "cannot judge, let it through"
+    — so a post whose opening line is prose was exempt from the cooldown
+    ENTIRELY. The reviewer built and verified it: "Here is what the labor market
+    looks like right now / Jobless claims 203k a week, 8.6% below a year ago.
+    The Atlanta Fed has growth at 5.0% this quarter." keyed NOTHING and shipped
+    against any number of siblings, and 40 of the 180 corpus items carrying a
+    whole-body key carried none. Live, it was the operator's own defect walking
+    through the gate: ob-2026-08-04-45e4653200 leads on the 203k print itself.
+
+    So the lead FACT is the EARLIEST keyable claim in the body. A post with
+    numbers is always judged on some claim; only a post with no keyable number
+    at all yields an empty set, and that is the honest "nothing to judge".
+
+    AND THAT IS ONE RULE, NOT TWO. The first cut of this correction kept a
+    `lead_segment` filter (the first non-empty line) and fell back to the whole
+    body only when that came up empty. That span is by definition the LOWEST
+    offset in the text, so "prefer the lead line, else look further" and "take
+    the earliest claim in the body" agree on every possible input — the filter
+    was dead code no mutation could reach (verified: swapping the filtered scope
+    for the whole body left every marketing test green). The rule is therefore
+    stated once, where a mutation can pin it. The ruling's protection is
+    unharmed: "GDPNow 5.9%, up from 5.0% last week" still keys the 5.9% alone,
+    because the 5.9% comes first.
     """
     hits = _fact_anchor_hits(text, kind)
     if not hits:
         return frozenset()
-    lo, hi = lead_segment(text)
-    in_lead = [(pos, key) for pos, key in hits if lo <= pos < hi]
-    if not in_lead:
-        return frozenset()
-    first = min(pos for pos, _k in in_lead)
-    return frozenset(key for pos, key in in_lead if pos == first)
+    first = min(pos for pos, _k in hits)
+    return frozenset(key for pos, key in hits if pos == first)
+
+
+def ride_along_keys(text: str, kind: str = "") -> frozenset[str]:
+    """The keys this post carries that are NOT its lead fact. Its RECITAL.
+
+    The other half of the cooldown's unit. :func:`lead_fact_keys` says what the
+    post is ABOUT; this says what it is quoting on the way past. Kept as its own
+    function because the two callers must count the same set — a bound applied
+    to two different notions of "supporting number" is not a bound.
+    """
+    return fact_anchor_keys(text, kind) - lead_fact_keys(text, kind)
+
+
+#: How many ALREADY-OWNED supporting facts may ride along behind a new lead.
+#:
+#: CORRECTION C2 (operator 2026-08-06, after the round-2 review). Keying the
+#: cooldown on the lead fact alone let a post whose lead refreshes daily carry an
+#: unlimited stale body — the 203k defect wearing a hat. The reviewer built it:
+#: "4 of 11 sectors green today / 203k jobless claims a week this month, 8.6%
+#: below a year ago. The Atlanta Fed is printing 5.0% growth and median CPI is
+#: 2.1%." keys only ``ratio:4of11:sector``, and the breadth count moves nearly
+#: every session, so the whole weekly macro paragraph rides through the 7-day
+#: window every night on every account.
+#:
+#: ONE is the bound because ONE is what the ruling's own worked example needs.
+#: "GDPNow 5.9%, up from 5.0% last week" recites exactly one owned number, and
+#: reciting a prior print to frame a new one is what an analyst writes. Two or
+#: more owned non-lead facts is not framing, it is a recital with a fresh
+#: headline, and the post is refused. Config: ``publish.fact_ride_along_max``.
+FACT_RIDE_ALONG_MAX_DEFAULT: int = 1
+
+
+def fact_ride_along_max(value: object = None) -> int:
+    """The configured ride-along bound, with the shipped floor. Typo-safe.
+
+    Same fail direction as :func:`fact_cooldown_days`: a malformed entry falls
+    back to the default rather than raising, because this figure decides whether
+    a post ships and a YAML typo must not become an unbounded — or zero — bound.
+    A negative value is read as "unbounded", which is the only way to turn the
+    correction off deliberately rather than by accident.
+    """
+    if value is None:
+        return FACT_RIDE_ALONG_MAX_DEFAULT
+    try:
+        return int(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return FACT_RIDE_ALONG_MAX_DEFAULT
 
 
 #: Kinds the numeric-fact cooldown does NOT apply to. A relayed wire flash is a

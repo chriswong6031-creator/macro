@@ -2611,10 +2611,19 @@ _ABSTENTION_PATTERNS: tuple[tuple[str, str], ...] = (
     ("passed on it",
      r"\b(?:i|we)\s+(?:just\s+)?(?:passed|skipped(?: it| this)?|stayed out|"
      r"sat (?:it |this )?out|stood aside|took a pass)\b"),
+    # The `missed the <noun>` alternation carries the SAME first-person guard as
+    # every sibling branch (round-1 finding 8, second half; round-2 m6). Without
+    # it the subject could be the market rather than the desk — "Everyone missed
+    # the move; the tape did not wait", "The Street missed the run in semis
+    # entirely", "Nobody missed the bounce off 127" — and each was a TERMINAL
+    # quarantine of copy carrying no abstention at all. The `(?:\w+\s+){0,2}`
+    # window is what lets "I completely missed the move" and "we very nearly
+    # missed the turn" still refuse.
     ("missed it",
      r"\b(?:i|we)\s+(?:missed|didn'?t catch|got there late|was late|were late|"
      r"didn'?t buy|didn'?t take|talked myself out of)\b"
-     r"|\bmissed the (?:move|run|bounce|turn|start|trade|streak|entry|easy part)\b"
+     r"|\b(?:i|we)\s+(?:\w+\s+){0,2}"
+     r"missed the (?:move|run|bounce|turn|start|trade|streak|entry|easy part)\b"
      r"|\b(?:went|ran|left|gone) (?:past me|without me|before i)\b"
      r"|\bi'?m (?:still )?(?:outside|past it|out of position)\b"),
     ("won't chase",
@@ -3024,7 +3033,12 @@ _COST_FAMILIES: tuple[tuple[str, str], ...] = (
     ("outside-the-move",
      r"\b(?:i|we)\s+(?:missed|was late|were late|didn'?t catch|got there late|"
      r"passed|didn'?t buy|didn'?t take|talked myself out of|sat (?:this |it )?out)\b"
-     r"|\bmissed the (?:move|run|bounce|turn|start|trade|streak)\b"
+     # Same first-person guard as the refusal copy of this alternation in
+     # `_ABSTENTION_PATTERNS`. The family is defined as "the admission of being
+     # outside the move", so a sentence whose subject is the market was never a
+     # member — counting it inflated the share this monoculture guard measures.
+     r"|\b(?:i|we)\s+(?:\w+\s+){0,2}"
+     r"missed the (?:move|run|bounce|turn|start|trade|streak)\b"
      r"|\bwithout me\b|\btoo clever\b"
      r"|\b(?:been|was|am)\s+early\b"
      r"|\b(?:not|never)\s+(?:in|fishing|chasing)\s+(?:it|this)\b"
