@@ -31,23 +31,55 @@ from lib import config
 SUPABASE_TOKEN = "/*__SUPABASE_CFG__*/null"
 
 
+def project_ref(url: str) -> str:
+    """The Supabase project ref — the first label of the project hostname.
+
+    This is the identity of the PROJECT, never of the host the browser happens to
+    talk to. It keys the session cookie (``sb-<ref>-auth-token``, written by
+    theme.js COOKIE_STORAGE and read server-side by ``app.main._sb_storage_key``),
+    so it must be derived from the project URL even when the browser is pointed at
+    a proxy origin — see :func:`supabase_cfg_json`.
+    """
+    try:
+        return url.split("://", 1)[-1].split(".", 1)[0]
+    except Exception:  # noqa: BLE001
+        return ""
+
+
 def supabase_cfg_json() -> str:
     """Single source of truth for the inline Supabase config injected into pages.
 
-    Returns the ``{"url", "anonKey"}`` config as a JSON object literal, or the
-    string ``"null"`` when Supabase is not configured (so the placeholder still
+    Returns the ``{"url", "anonKey", "ref"}`` config as a JSON object literal, or
+    the string ``"null"`` when Supabase is not configured (so the placeholder still
     resolves to a valid ``window.SUPABASE_CFG = ... || null`` expression and the
     account system cleanly reports itself disabled).
+
+    ``url`` is the origin the BROWSER calls: ``watchlist.supabase.browser_url`` when
+    set (the GFW proxy — see config.yml), else the project URL itself.
+
+    ``ref`` is ALWAYS the project ref, and is the reason this function exists rather
+    than a dict literal at each call site. Both browser SDK clients derive their
+    session storage key from the URL they were handed
+    (``theme.js._storageKey``; supabase-js's own default in ``account.js``). Point
+    them at ``https://www.mastermind-x.com`` without pinning the key and the browser
+    starts writing ``sb-www-auth-token`` while ``app.main`` keeps reading
+    ``sb-fsldfzlxyavsuwqbceod-auth-token`` — every existing session orphaned (every
+    user silently logged out) and the server never sees a session again. Shipping
+    ``ref`` lets both clients pin the key to the PROJECT, so the browser-facing
+    origin becomes a routing detail instead of an identity change.
 
     Used by :func:`bake_theme_js` (for ``theme.js``) and directly by the
     watchlist and committee page builders in ``scripts/build_site.py``.
     """
     sup = (config.load().get("watchlist", {}).get("supabase") or {})
-    cfg = (
-        {"url": sup["url"], "anonKey": sup["anon_key"]}
-        if sup.get("url") and sup.get("anon_key")
-        else None
-    )
+    if not (sup.get("url") and sup.get("anon_key")):
+        return json.dumps(None)
+    browser_url = str(sup.get("browser_url") or "").strip().rstrip("/")
+    cfg = {
+        "url": browser_url or sup["url"],
+        "anonKey": sup["anon_key"],
+        "ref": project_ref(sup["url"]),      # the PROJECT, never the proxy host
+    }
     return json.dumps(cfg)
 
 

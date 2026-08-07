@@ -464,6 +464,195 @@ class TestStampFunnelDropsWeekendRows:
         )
 
 
+# ══════════════════ GAP: a session-true snapshot list is still not a DENSE one ══
+#
+# Session-filtering guarantees every snapshot IS a session.  It cannot guarantee every
+# session HAS a snapshot, and polygon_gex is chronically gappy — four interior holes in the
+# 31 committed chain dates, the largest being the 2026-08-03..08-05 collection outage.  The
+# snapshot API is current-only, so no backfill is possible, ever.
+#
+# Positional slicing then lies a SECOND way, independent of the weekend-row class above:
+# `usable[-6:]` still returns six rows but they span NINE sessions at as_of 2026-08-06, and
+# `usable[-2]` is FOUR sessions back rather than one.  These tests pin the two different
+# honest answers — re-weight the fit, refuse the two-snapshot comparisons — against the real
+# outage geometry.
+
+_GAP_WINDOW = [date(2026, 7, 27), date(2026, 7, 28), date(2026, 7, 29),
+               date(2026, 7, 30), date(2026, 7, 31), date(2026, 8, 6)]
+_DENSE_WINDOW = [date(2026, 7, 23), date(2026, 7, 24), date(2026, 7, 27),
+                 date(2026, 7, 28), date(2026, 7, 29), date(2026, 7, 30)]
+
+# A series whose positional and session-ordinal fits have OPPOSITE SIGNS: five sessions of
+# steady accumulation, then a slump on the far side of the hole.  Positional charges that
+# slump one step and still reads "accumulating"; the session fit gives it the four steps it
+# actually took and reads "distributing".  S-DOI buckets on slope > 0, so the two disagree
+# about which bucket the fire lands in.
+_OI_SERIES = [100.0, 110.0, 120.0, 130.0, 140.0, 90.0]
+_POSITIONAL_SLOPE = 0.012422    # (25/17.5)/115 — x = [0,1,2,3,4,5]
+_SESSION_SLOPE = -0.010870      # (-50/40)/115  — x = [0,1,2,3,4,8]
+
+
+def _sessions_from(start: date, n: int) -> list[date]:
+    """`n` consecutive NYSE sessions starting at/after `start`."""
+    from datetime import timedelta
+    out: list[date] = []
+    d = start
+    while len(out) < n:
+        if nyse_calendar.is_session(d):
+            out.append(d)
+        d += timedelta(days=1)
+    return out
+
+
+def _gap_chain_frame(ticker: str, *, call_oi: float, expiries: list[date],
+                     volume: float = 5.0, spot: float = 100.0):
+    """One chain snapshot carrying every column the three chain readers require.
+
+    `expiries` are FIXED across the snapshots of a window, as real contracts are: the
+    prior-OI lookup keys on (expiry, K, is_call), so an expiry that drifts with the
+    snapshot date matches nothing and silently nulls the charm share. One expiry sits
+    inside the ≤7-calendar-day front bucket and one well outside, so `_ovc_from_chain`
+    has a real share to compute rather than a degenerate 0/0.
+    """
+    rows = []
+    for expiry in expiries:
+        for k in (95.0, 100.0, 105.0):
+            for is_call in (True, False):
+                rows.append({
+                    "underlying": ticker, "K": k, "is_call": is_call,
+                    "oi": call_oi if is_call else 0.8 * call_oi,
+                    "volume": volume, "spot": spot,
+                    "expiry": pd.Timestamp(expiry), "T": 0.05, "iv": 0.30,
+                })
+    return pd.DataFrame(rows)
+
+
+def _stamp_over(window: list[date], series: list[float], ticker: str = "FOO") -> dict:
+    """Stamp the last date of `window`, feeding `series[i]` as day i's near-money call OI."""
+    from datetime import timedelta
+
+    from engine.options_stamp import stamp_options_state
+    by_date = dict(zip(window, series))
+    # dated off the snapshot being stamped, so one expiry is always inside the front bucket
+    expiries = [window[-1] + timedelta(days=3), window[-1] + timedelta(days=45)]
+    return stamp_options_state(
+        window[-1].isoformat(), ticker,
+        read_summary=lambda t: None,
+        chain_dates=list(window),
+        read_chain=lambda d: (_gap_chain_frame(ticker, call_oi=by_date[d], expiries=expiries)
+                              if d in by_date else None),
+    )
+
+
+class TestChainGapsAreNotSessionSpacing:
+    """engine/options_stamp — the three chain readers vs a store the collector skipped."""
+
+    def test_the_outage_geometry_is_what_this_file_claims(self):
+        """Guard the guard: if the calendar or the fixture drifts, every test below is
+        vacuous — a 'gap' window that is secretly dense proves nothing."""
+        span = nyse_calendar.sessions_between(_GAP_WINDOW[0], _GAP_WINDOW[-1])
+        assert len(span) == 9, f"the fixture window spans {len(span)} sessions, not 9"
+        assert len(_GAP_WINDOW) == 6
+        missing = [d for d in span if d not in set(_GAP_WINDOW)]
+        assert missing == [date(2026, 8, 3), date(2026, 8, 4), date(2026, 8, 5)], (
+            f"the missing sessions are {missing}, not the 08-03..08-05 outage"
+        )
+        assert all(nyse_calendar.is_session(d) for d in _GAP_WINDOW), (
+            "a fixture snapshot date is not a session — this file's OTHER defect class"
+        )
+        # and the control really is dense
+        dense_span = nyse_calendar.sessions_between(_DENSE_WINDOW[0], _DENSE_WINDOW[-1])
+        assert len(dense_span) == len(_DENSE_WINDOW) == 6
+
+    def test_session_ordinals_count_the_hole_as_elapsed_time(self):
+        from engine.options_stamp import _session_ordinals
+        assert _session_ordinals(_GAP_WINDOW) == [0.0, 1.0, 2.0, 3.0, 4.0, 8.0]
+        assert _session_ordinals(_DENSE_WINDOW) == [0.0, 1.0, 2.0, 3.0, 4.0, 5.0], (
+            "a dense window must reproduce np.arange exactly, or the fix moved values "
+            "it had no business moving"
+        )
+        # fabricated / unusable inputs degrade to null, never to a silent mis-fit
+        assert _session_ordinals([date(2026, 7, 25)]) is None, "Saturday is not a session"
+        assert _session_ordinals([_GAP_WINDOW[1], _GAP_WINDOW[0]]) is None, "not ascending"
+        assert _session_ordinals([_GAP_WINDOW[0], _GAP_WINDOW[0]]) is None, "duplicate date"
+        assert _session_ordinals([]) is None
+
+    def test_the_doi_slope_is_fitted_against_sessions_not_positions(self):
+        """THE DEFECT. Six snapshots spanning nine sessions: the positional fit charges the
+        07-31 -> 08-06 move to a single step and reports accumulation; the session fit gives
+        it the four sessions it took and reports distribution."""
+        got = _stamp_over(_GAP_WINDOW, _OI_SERIES)["opt_doi_slope_5d"]
+        assert got == pytest.approx(_SESSION_SLOPE, abs=1e-6), (
+            f"opt_doi_slope_5d = {got}; the session-true fit is {_SESSION_SLOPE} and the "
+            f"positional fit is {_POSITIONAL_SLOPE}"
+        )
+        assert got < 0 < _POSITIONAL_SLOPE, (
+            "premise failed: the fixture no longer separates the two fits by SIGN, so this "
+            "test would pass on the positional code it exists to fail"
+        )
+
+    def test_a_dense_window_is_unchanged_by_the_ordinal_fit(self):
+        """The other half of the contract: wherever the collector ran every session the
+        ordinals ARE np.arange, so no already-stamped dense value may move."""
+        got = _stamp_over(_DENSE_WINDOW, _OI_SERIES)["opt_doi_slope_5d"]
+        assert got == pytest.approx(_POSITIONAL_SLOPE, abs=1e-6), (
+            f"a dense window stamped {got}, not the unchanged {_POSITIONAL_SLOPE}"
+        )
+
+    def test_the_slope_refuses_a_window_that_is_more_gap_than_observation(self):
+        """`_DOI_MAX_SPAN`: at most as many sessions missing as the fit has steps. Re-
+        weighting keeps the UNITS honest, not the word '5d' — past the cap there is no
+        reading left to publish, so the stat nulls."""
+        from engine.options_stamp import _DOI_MAX_SPAN
+        assert _DOI_MAX_SPAN == 11
+
+        base = _sessions_from(date(2026, 6, 1), 14)
+        # five consecutive sessions + a sixth far enough out to hit the cap exactly
+        at_cap = base[:5] + [base[10]]
+        beyond = base[:5] + [base[11]]
+        assert len(nyse_calendar.sessions_between(at_cap[0], at_cap[-1])) == 11
+        assert len(nyse_calendar.sessions_between(beyond[0], beyond[-1])) == 12
+
+        assert _stamp_over(at_cap, _OI_SERIES)["opt_doi_slope_5d"] is not None, (
+            "premise failed: the boundary window must still stamp, or the cap test below "
+            "is passing for the wrong reason"
+        )
+        assert _stamp_over(beyond, _OI_SERIES)["opt_doi_slope_5d"] is None, (
+            "a window spanning 12 sessions for 6 rows was published as a 5-day slope"
+        )
+
+    def test_the_voi_flag_refuses_an_oi_book_that_is_not_yesterdays(self):
+        """`vol > YESTERDAY's OI` is the whole construction. Across the outage the baseline
+        is four sessions of accrual old — a systematically lower bar — and a boolean has no
+        re-weighting escape, so it nulls."""
+        assert _stamp_over(_GAP_WINDOW, _OI_SERIES)["opt_voi_flag"] is None, (
+            "the fresh-positioning flag was computed against a four-session-stale OI book"
+        )
+        dense = _stamp_over(_DENSE_WINDOW, _OI_SERIES)["opt_voi_flag"]
+        assert dense in (True, False), (
+            f"premise failed: the same fixture must still stamp on adjacent sessions "
+            f"(got {dense}), or the test above proves nothing about the GAP"
+        )
+
+    def test_front7_charm_share_refuses_a_stale_book_but_keeps_root_class(self):
+        """`_ovc_from_chain`'s PIT certification rests on the study's shift(1) prior-session
+        OI; across the gap it is a shift(4). root_class is taxonomy from the ticker alone and
+        must survive — it has a display twin and a 100%-null tripwire."""
+        gapped = _stamp_over(_GAP_WINDOW, _OI_SERIES)
+        assert gapped["opt_front7_charm_share"] is None, (
+            "the charm share was weighted by an OI book four sessions stale"
+        )
+        assert gapped["opt_root_class"] == "single_name", (
+            f"root_class needs no chain at all and must not go null with the share "
+            f"(got {gapped['opt_root_class']!r})"
+        )
+        dense = _stamp_over(_DENSE_WINDOW, _OI_SERIES)["opt_front7_charm_share"]
+        assert dense is not None, (
+            "premise failed: this fixture must produce a real share on adjacent sessions, "
+            "else the gap assertion above is indistinguishable from a missing column"
+        )
+
+
 class TestLedgerPathReadersDropWeekendRows:
     """The two ledger-writing call paths in scripts/stamp_options_state.py bypass the
     funnel and call engine.options_stamp._default_read_summary DIRECTLY (:199 vanna,

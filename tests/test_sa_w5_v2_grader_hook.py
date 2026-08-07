@@ -206,8 +206,13 @@ def test_merge_v2_does_not_touch_main_parquet(tmp_path):
     assert len(result) == len(fresh)
 
 
-def test_merge_v2_keep_first_on_dedup(tmp_path):
-    """_merge_v2_into_store keep-first: stored rows win on (as_of, ticker, lane, horizon)."""
+def test_merge_v2_freezes_a_graded_price_on_dedup(tmp_path):
+    """_merge_v2_into_store dedups to one row per key and does NOT restate its price.
+
+    INVERTED 2026-08-06. The v2 lane shares grade_boards' row builder and the same
+    re-based breadth caches, so it inherits the same law as the main ledger: a graded row
+    is a point-in-time claim (see grade_us_board._FROZEN_PRICE_COLS). Previously the
+    second batch overwrote the first's excess_spy."""
     v2_parquet = tmp_path / "retro_grades_v2.parquet"
 
     first = _minimal_grade_df_v2(as_of="2026-07-13", n=2, horizon=5)
@@ -225,10 +230,9 @@ def test_merge_v2_keep_first_on_dedup(tmp_path):
 
         merged = _merge_v2_into_store(second)
 
-    # Fresh rows replace stored rows (keep-fresh convention: second batch wins)
-    assert len(merged) == 2
-    # After second merge, the fresh rows (excess_spy=0.01) overwrite stored (0.99)
-    assert all(abs(merged["excess_spy"] - 0.01) < 0.001)
+    assert len(merged) == 2, "dedup must still collapse to one row per key"
+    assert all(abs(merged["excess_spy"] - 0.99) < 0.001), (
+        "the first grade is the claim of record; a re-run must not restate it")
 
 
 def test_merge_v2_empty_fresh_returns_stored(tmp_path):

@@ -32,15 +32,37 @@ import pandas as pd
 
 from engine import cycles
 
+#: Absolute fortnight phase origin — 1970-01-02 is a Friday. pandas ``"2W-FRI"`` keeps
+#: W-FRI's calendar-absolute WEEKS but phases the PAIRING of weeks into fortnights to the
+#: series' first timestamp, so the 2W chip depended on how much leading history the
+#: caller loaded — the R6 defect, repaired for confluence_tiers with this same epoch id.
+#: Ruling: research/CYCLES_SESSION_ANCHOR_ADJUDICATION_BY_FABLE.md R-CY8
+#: (era ``cycles.ANCHOR_ERA``).
+_EPOCH_FRIDAY = pd.Timestamp("1970-01-02")
+
+
+def _fortnight_last(daily: pd.Series) -> pd.Series:
+    """Last close per ABSOLUTE fortnight: W-FRI weekly bars grouped by
+    ``(week_friday − 1970-01-02).days // 14``. Live-tail semantics match the old
+    resample (the in-progress fortnight is included); only the phase is now fixed."""
+    w = daily.resample("W-FRI").last().dropna()
+    if w.empty:
+        return w
+    fid = (w.index - _EPOCH_FRIDAY).days // 14
+    g = pd.DataFrame({"v": w.to_numpy(), "d": w.index.to_numpy()}).groupby(
+        np.asarray(fid), sort=True).last()
+    return pd.Series(g["v"].to_numpy(), index=pd.DatetimeIndex(g["d"]))
+
 
 def _long_timeframes(daily: pd.Series) -> dict:
     """Biweekly + monthly indicator states, identical shape to cycles._tf_state
     (so one UI loop renders all five). Friday-anchored 2W to match the equity
-    W-FRI weekly bar. Needs >=600 daily bars for 2W (~40 biweekly bars), >=1200
-    for ME (~57 monthly bars) so _tf_state's 40-bar floor is cleared."""
+    W-FRI weekly bar, paired on the absolute fortnight grid (R-CY8). Needs >=600
+    daily bars for 2W (~40 biweekly bars), >=1200 for ME (~57 monthly bars) so
+    _tf_state's 40-bar floor is cleared."""
     out = {}
     if len(daily) > 600:
-        out["2W"] = cycles._tf_state(daily.resample("2W-FRI").last().dropna())
+        out["2W"] = cycles._tf_state(_fortnight_last(daily))
     if len(daily) > 1200:
         out["ME"] = cycles._tf_state(daily.resample("ME").last().dropna())
     return out

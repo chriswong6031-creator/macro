@@ -18,6 +18,14 @@ WHY THE HREF PARITY TEST IS SET-BASED AND BIDIRECTIONAL: the failure had both
 shapes at once. A one-way check ("every link on the page is real") would have
 passed the 12 missing pages, and the other one-way check would have passed the
 17 dead ones. Only the symmetric difference sees both.
+
+WHY THE STAMP TESTS ARE ABOUT --fix AND NOT ABOUT THE COMPARATOR (#4774): the
+guard normalizes ``?v=`` stamps and ``defer`` away before comparing, correctly —
+they are scripts/optimize_assets.py's to own. But ``--fix`` spliced in the RAW
+canonical block, which wears neither, so the documented remedy for a nav drift
+also stripped every stamp and every defer from both copies of the pair. Nothing
+caught it: it rewrote the two copies identically, so check_template_site_sync saw
+no divergence, and the selftest only ever proved the CHECK tolerates a stamp.
 """
 from __future__ import annotations
 
@@ -28,7 +36,16 @@ import pytest
 from jinja2 import Environment, FileSystemLoader
 from markupsafe import Markup, escape
 
-from scripts.sync_chat_nav import check, extract_nav, render_canonical, selftest
+from scripts.sync_chat_nav import (
+    check,
+    decorations,
+    extract_nav,
+    lost_decorations,
+    normalize,
+    redecorate,
+    render_canonical,
+    selftest,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = ROOT / "templates"
@@ -148,6 +165,87 @@ def test_the_data_base_shim_survives_the_splice(page: Path) -> None:
         f"{page.parent.name}/{page.name} should carry exactly one data-base shim "
         f"tag, found {text.count('data-dbase')}"
     )
+
+
+def test_every_decoration_on_the_shipped_header_survives_a_re_splice() -> None:
+    """--fix must carry the optimizer's stamps and defer onto the new block.
+
+    Asserted against the REAL committed header rather than a fixture, because the
+    2026-08-06 measurement is what makes this concrete: re-splicing chat.html
+    dropped 5 ``?v=`` stamps and 4 ``defer`` attributes, live.js and live_config.js
+    among them — and app/deploy/Caddyfile's ``@public_versioned`` matcher requires
+    BOTH the path and a ``?v=`` query, so a stripped stamp silently demotes the
+    asset from ``immutable, max-age=1y`` to a 300s revalidate on every navigation.
+    """
+    current = extract_nav(PAGES[0].read_text(encoding="utf-8"), "templates/chat.html")
+    stamps, deferred = decorations(current)
+    assert stamps and deferred, (
+        f"templates/chat.html's header carries {len(stamps)} stamp(s) and "
+        f"{len(deferred)} defer(s) — with neither, this test asserts nothing. "
+        "Either the page shipped un-optimized or decorations() stopped reading it."
+    )
+
+    spliced = redecorate(render_canonical(TEMPLATES), current)
+    assert not lost_decorations(current, spliced), lost_decorations(current, spliced)
+
+    after_stamps, after_defer = decorations(spliced)
+    assert {u: h for u, h in stamps.items() if u in after_stamps} == after_stamps
+    assert deferred <= after_defer
+
+
+def test_the_re_splice_adds_only_stamps_and_defer() -> None:
+    """Re-decorating may not change the markup the comparator actually compares.
+
+    Otherwise --fix writes a page the very next check calls drifted — the "not a
+    fixed point" failure the selftest's second assertion has always guarded, now
+    reachable through the decoration pass rather than through the splice.
+    """
+    current = extract_nav(PAGES[0].read_text(encoding="utf-8"), "templates/chat.html")
+    canonical = render_canonical(TEMPLATES)
+    assert normalize(redecorate(canonical, current)) == normalize(canonical)
+
+
+def test_lost_decorations_reports_a_stripped_stamp_and_a_stripped_defer() -> None:
+    """Guard the guard: the fail-closed audit must SEE the pre-#4774 write.
+
+    ``lost_decorations`` is the only thing standing between a future
+    ``redecorate`` regression and a silent re-strip, so pin it on the exact shape
+    it exists to refuse — the raw canonical block, spliced in undecorated.
+    """
+    current = ('<nav class="site-nav">'
+               '<link rel="stylesheet" href="navigation-refresh.css?v=95f6bacd">'
+               '<script src="live.js?v=e19f6af3" defer></script></nav>')
+    raw = ('<nav class="site-nav">'
+           '<link rel="stylesheet" href="navigation-refresh.css">'
+           '<script src="live.js"></script></nav>')
+
+    lost = lost_decorations(current, raw)
+    assert any("navigation-refresh.css" in m and "95f6bacd" in m for m in lost), lost
+    assert any("live.js" in m and "defer" in m for m in lost), lost
+
+    # ...and an asset the partial REMOVED is not a loss — its ref left with it.
+    assert lost_decorations(current, '<nav class="site-nav"></nav>') == []
+
+
+def test_redecorate_keys_on_the_asset_not_the_line() -> None:
+    """The carry must survive the very edits --fix exists to make.
+
+    A menu link landing above the script block, or the partial reordering its own
+    header, moves every decorated line. Keying on position would drop the stamps
+    exactly when a real nav edit is being applied — the case that produced #4774.
+    """
+    current = ('<nav class="site-nav">'
+               '<script src="live.js?v=e19f6af3" defer></script>'
+               '<link rel="stylesheet" href="navigation-refresh.css?v=95f6bacd"></nav>')
+    reordered = ('<nav class="site-nav"><a href="new_page.html">New</a>'
+                 '<link rel="stylesheet" href="navigation-refresh.css">'
+                 '<script src="live.js"></script></nav>')
+
+    out = redecorate(reordered, current)
+    assert 'href="navigation-refresh.css?v=95f6bacd"' in out
+    assert 'src="live.js?v=e19f6af3"' in out and "defer" in out
+    assert 'href="new_page.html"' in out, "the real nav edit must still land"
+    assert not lost_decorations(current, out)
 
 
 def test_rendered_header_is_bilingual() -> None:

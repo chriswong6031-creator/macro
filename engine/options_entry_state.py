@@ -565,11 +565,19 @@ def _load_skew_snapshots(root: Path) -> dict[str, dict]:
         latest = grp_sorted.iloc[-1]
         latest_skew = _safe_float(latest.get("skew"))
         asof_val = str(latest.get("asof") or latest.get("date") or "")[:10]
-        # 5d change: need at least LOOKBACK_TRADING_DAYS+1 rows
+        # 5d change: GAP DISCIPLINE — TWO-ENDPOINT (lib/nyse_calendar, 2026-08-06).
+        # The far endpoint is resolved by CALENDAR, not by position. This is the DISPLAY
+        # twin of the ledger column fixed in #4809, so until now the same "5d" number was
+        # right in one store and wrong in another. Measured over the committed
+        # options_skew store, the positional -6 picked the wrong session for 370 of 375
+        # names (98.7%) at its latest date; refusing costs 4.0% of names there, and 5 of
+        # 23 as_of dates lose the column entirely (date-wide, as every name reads the
+        # same store on the same schedule).
         skew_5d_chg = None
         if len(grp_sorted) >= LOOKBACK_TRADING_DAYS + 1:
-            old_row = grp_sorted.iloc[-(LOOKBACK_TRADING_DAYS + 1)]
-            old_skew = _safe_float(old_row.get("skew"))
+            old_row = nyse_calendar.row_n_sessions_back(
+                grp_sorted, LOOKBACK_TRADING_DAYS, date_col="date")
+            old_skew = _safe_float(old_row.get("skew")) if old_row is not None else None
             if latest_skew is not None and old_skew is not None:
                 skew_5d_chg = _clean(latest_skew - old_skew)
         out[str(ticker)] = {
@@ -608,10 +616,15 @@ def _load_ivspread_snapshots(root: Path) -> dict[str, dict]:
         latest = grp_sorted.iloc[-1]
         latest_val = _safe_float(latest.get("ivspread_rel"))
         asof_val = str(latest.get("asof") or latest.get("date") or "")[:10]
+        # GAP DISCIPLINE — TWO-ENDPOINT, same repair and same reason as the skew loader
+        # above. Measured over the committed options_ivspread store the positional -6
+        # picked the wrong session for 367 of 367 names (100%); refusing costs 13.9%
+        # there, with 5 of 18 as_of dates losing the column date-wide.
         ivspread_5d_chg = None
         if len(grp_sorted) >= LOOKBACK_TRADING_DAYS + 1:
-            old_row = grp_sorted.iloc[-(LOOKBACK_TRADING_DAYS + 1)]
-            old_val = _safe_float(old_row.get("ivspread_rel"))
+            old_row = nyse_calendar.row_n_sessions_back(
+                grp_sorted, LOOKBACK_TRADING_DAYS, date_col="date")
+            old_val = _safe_float(old_row.get("ivspread_rel")) if old_row is not None else None
             if latest_val is not None and old_val is not None:
                 ivspread_5d_chg = _clean(latest_val - old_val)
         out[str(ticker)] = {

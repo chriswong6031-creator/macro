@@ -1,5 +1,19 @@
 """Deterministic Chronicle earnings-call derivative for the X outbox.
 
+NOT WIRED TO ANYTHING TODAY (stated plainly, 2026-08-06). Nothing in
+``engine/``, ``scripts/``, ``app/`` or ``.github/`` calls :func:`enqueue_event`
+or :func:`run_ledger`; the only callers are under ``tests/``, and the two
+mentions elsewhere are inert (a comment in ``config/marketing.yml`` and an
+artifact row in ``config/synapse.yml``). Read that before spending review budget
+here, and before treating a green test in this module as evidence about the live
+timeline: three rounds of card-gate review hardened this lane, and
+``tests/test_marketing_card_earns_pixels.py::test_dispatch_does_not_blanket_drop_every_card``
+— the suite's only demonstration that a real emission can still KEEP its card —
+proves it through this lane and not through the press wire. Wiring it or
+deleting it is an open operator decision, not a builder's call; until one is
+made, the module is kept correct rather than left to rot, because a dormant lane
+that is wrong is worse than one that is right.
+
 This is a projection, not another research engine.  Its only input is the
 committed :mod:`engine.chronicle.earnings_calls` ``earnings.call_event.v1``
 ledger.  The qualitative model has already done its work upstream; this module
@@ -283,22 +297,34 @@ def build_outbox_item(
     media: list[dict[str, Any]],
     cfg: dict | None = None,
     article_url: str = "",
+    card_withheld: bool = False,
 ) -> dict[str, Any]:
-    """Build one canonical outbox row and apply the shared value gate."""
+    """Build one canonical outbox row and apply the shared value gate.
+
+    ``card_withheld`` says the card was drawn and deliberately not printed
+    because it restated the post. It is the ONLY way past the hosted-card
+    requirement below, and it is not a way past a failed upload — see
+    press_lane._emit_outbox_item for why the two must never read alike.
+    """
 
     from engine.marketing import outbox
 
     now = _utc(now)
-    if not media or not any(_http_url(entry.get("media_url")) for entry in media):
+    if not card_withheld and (
+        not media or not any(_http_url(entry.get("media_url")) for entry in media)
+    ):
         raise ValueError("earnings-call ticker posts require a hosted card")
     composed = compose_event(event, account=account, as_of=now.date().isoformat())
     source = _provenance(event, composed, article_url=article_url)
+    if card_withheld:
+        source["card_withheld_for_value"] = True
     would_abstain = outbox.stamp_value_gate(
         source,
         headline=str(composed["headline"]),
         body=str(composed["body"]),
         kind="earnings",
         has_media=bool(media),
+        media_withheld=bool(card_withheld),
         numbers_whitelist=composed["numbers_whitelist"],
         citation=source["citation_url"],
         cfg=cfg,
@@ -394,8 +420,28 @@ def _media_for_event(
     now: datetime,
     cfg: dict | None,
 ) -> tuple[list[dict[str, Any]], str]:
-    """Render through the existing card family and require a hosted image."""
+    """Render through the existing card family and require a hosted image.
 
+    Returns ``([], reason)`` on refusal. ``reason`` distinguishes three things:
+    ``media_unhosted`` (the upload failed, or the renderer fell through its
+    fail-soft — transient, the post cannot ship) from
+    ``card_withheld_for_value`` (the card was drawn and is a restatement — the
+    post ships text-only). The caller must not treat them alike.
+
+    RENDER FIRST, THEN JUDGE (2026-08-06 review, M4/M12). The gate used to run
+    BEFORE the render, on `_short_clause(summary, 190)` — 190 characters scored
+    against a box whose measured capacity is chart_render.card_summary_budget_chars()
+    == 129. So the body veto was computed over a tail the card does not print: a
+    summary whose drawn head restates the post while its undrawn tail is
+    additive attached a restating card, which is the defect the gate exists for.
+    It also falsified the premise the publisher's exemption rests on
+    (scripts/marketing_publisher._card_withheld_for_value: "nothing sets this
+    flag except a gate that has SEEN a rendered card"). Both are now true: the
+    render happens first, and the gate scores `fit["headline_drawn"]` /
+    `fit["summary_drawn"]` — the same two fields press_lane scores.
+    """
+
+    from engine.marketing.breaking_summary import card_earns_attachment
     from engine.marketing.chart_render import chart_cta_enabled, render_breaking_card
     from engine.marketing.media_publish import publish_card
 
@@ -404,19 +450,56 @@ def _media_for_event(
         f"earnings-call-{ticker.lower()}-{str(event['quarter']).lower()}-"
         f"{int(event['year'])}-{str(event['source_sha256'])[:12]}"
     )
+    card_headline = str(composed["headline"])
+    card_summary = _short_clause(event.get("summary"), 190) or None
+    fit: dict = {}
     svg = render_breaking_card(
-        headline=str(composed["headline"]),
+        headline=card_headline,
         source_name="Earnings call transcript",
-        source_tier="aggregator",
+        # A COMPANY'S OWN TRANSCRIPT IS A PRIMARY SOURCE, not a relay. It sat on
+        # `aggregator` — the most cautious tier, which is the right default for
+        # an UNKNOWN provenance and the wrong grade for an artefact the issuer
+        # published itself.
+        source_tier="official",
         published_at=str(event.get("scored_at") or event["call_date"]),
         tickers=None,
         suppress_cta=False,
-        summary=_short_clause(event.get("summary"), 190) or None,
+        summary=card_summary,
         event_class=None,
         eyebrow="EARNINGS CALL",
         logo_root=root,
         cta=chart_cta_enabled(cfg),
+        fit=fit,
     )
+    if "headline_drawn" not in fit:
+        # The renderer's outer fail-soft returned a blank fallback and populated
+        # no fit report. There is nothing to judge and nothing worth printing —
+        # same reading as press_lane's, and an earnings post names a ticker, so
+        # it does not ship bare.
+        print("::warning title=earnings-call-card-render-degraded::"
+              f"{ticker} {event['quarter']} FY{event['year']}: the renderer "
+              "returned a card with no fit report (fail-soft fallback)",
+              flush=True)
+        return [], "media_unhosted"
+    # THE CARD-VALUE LAW IS NOT PRESS-LANE-LOCAL (2026-08-06). This lane drew a
+    # `breaking`-family card whose hero is `composed["headline"]` — the post's
+    # own first line, verbatim — and never consulted the gate, so the exact
+    # defect the gate was built for (one fact, two surfaces, the tweet in poster
+    # type) kept shipping from here while press_lane was fixed. Every lane that
+    # draws this card asks the same question, with the same post text it is
+    # about to publish, over WHAT THE CARD DREW. Pinned structurally by
+    # tests/test_marketing_card_earns_pixels.py::test_every_card_drawing_lane_consults_the_gate.
+    attach, why = card_earns_attachment(
+        str(composed["text"]),
+        str(fit.get("headline_drawn") or card_headline),
+        str(fit.get("summary_drawn") or ""),
+        [],
+    )
+    if not attach:
+        print("::notice title=earnings-call-card-dropped::"
+              f"{ticker} {event['quarter']} FY{event['year']}: {why}; "
+              "posting text-only", flush=True)
+        return [], "card_withheld_for_value"
     published = publish_card(
         svg,
         chart_id=card_id,
@@ -516,6 +599,7 @@ def enqueue_event(
     if preflight != "ok":
         return {"status": preflight, "reason": "outbox_preflight", "item": None}
 
+    card_withheld = False
     if dry_run:
         media = [{
             "kind": "chart_svg",
@@ -528,7 +612,12 @@ def enqueue_event(
         media, media_reason = _media_for_event(
             event, composed, root=repo, now=now_utc, cfg=cfg,
         )
-        if not media:
+        if not media and media_reason == "card_withheld_for_value":
+            # TEXT-ONLY, NOT NO POST. A card refused for restating the copy is
+            # the card law working; killing the post here would answer a
+            # doubled-card complaint with silence.
+            card_withheld = True
+        elif not media:
             return {"status": "media_unhosted", "reason": media_reason, "item": None}
 
     try:
@@ -539,6 +628,7 @@ def enqueue_event(
             media=media,
             cfg=cfg,
             article_url=article_url,
+            card_withheld=card_withheld,
         )
     except Exception as exc:
         return {"status": "refused", "reason": str(exc), "item": None}
