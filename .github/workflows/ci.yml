@@ -191,6 +191,25 @@ on:
       # nothing matched — the #3488/#4559 lesson that a guard whose own edit
       # cannot start the workflow is only half wired.
       - "tests/test_signal_quality_no_leak.py"
+      # Absolute session-calendar anchor invariance (job session-anchor-era): the
+      # confluence buckets' era abs-session-2026-08-06 (#4732). Its subjects —
+      # engine/session_anchor.py, engine/confluence_tiers.py, engine/signal_gate.py —
+      # all ride the "engine/**" trigger above, so this entry is the OTHER half: a PR
+      # editing ONLY the suite (a new fixture shape, a widened k) must still start the
+      # pack that executes it. The suite was UNRUN (audit_unrun_tests.py tier P5 —
+      # named by no run step in any workflow or the legacy manifest) while scoring
+      # triggerable=True off those same subjects, so neither census flagged it: an era
+      # stamp shipped resting on a start-invariance guarantee that CI had never once
+      # executed. The suite file matched no path entry either — the #4559 "test half
+      # unreachable" shape this line closes.
+      #
+      # The §7 marker-engine anchor suite (era sq-abs-session-2026-08-06) is the same
+      # hole and belongs here too, but it arrives with #4738, which is still in review.
+      # A path entry naming a file the tree does not have fails
+      # test_every_workflow_test_path_exists in the ci-pack suite — which matches on
+      # raw workflow TEXT, so the filename cannot be written in this comment either.
+      # It is added when the file is, together with the run step in session-anchor-era.
+      - "tests/test_session_anchor_invariance.py"
       # W-F reclaim-veto decision packet (2026-08-05). Both halves per #3488: the suite AND
       # the module it measures, so an edit to either can trigger the job that proves the
       # flip-isolation construction still isolates exactly one leg.

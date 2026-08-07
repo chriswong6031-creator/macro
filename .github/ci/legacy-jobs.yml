@@ -381,6 +381,53 @@ jobs:
           tests/test_fundamental_forensics_detectors.py
           tests/test_fundamental_forensics_contract.py -q
 
+  session-anchor-era:
+    # Absolute session-calendar anchor for the confluence 2D/3D + fortnight buckets
+    # (era abs-session-2026-08-06, ruling research/SESSION_ANCHOR_ABSOLUTE_CALENDAR_
+    # ADJUDICATION_BY_FABLE.md, #4732). The suite shipped named by NO run step in any
+    # workflow, so the START-INVARIANCE guarantee the era rests on — the whole claim of
+    # the repair — was never executed in CI (the 2026-07-26 census: every invocation
+    # here carries an explicit file list, so an unnamed suite is genuinely never run).
+    # audit_unrun_tests.py did list it, at tier P5: it scores triggerable=True off
+    # subjects that ride engine/**, and it writes no ledger, so the ranking that
+    # surfaces darkness sorted the guarantee under a PUBLISHED era stamp below 100-odd
+    # quieter holes. Enumerating beats ranking. It pins k=1..6 leading-session drops on
+    # fixtures built from REAL NYSE sessions (holiday spans, a 3-session halt,
+    # shallow-depth caches) and the era stamps on the payloads. Self-contained — the
+    # fixtures are generated from lib/nyse_calendar.py, nothing is read off disk — so
+    # there is no skip path and no data dependency. 71 tests, ~4s locally; the budget
+    # below is headroom for a hosted 2-vCPU pack.
+    #
+    # SECOND HALF PENDING #4738. The §7 marker-engine anchor suite (era
+    # sq-abs-session-2026-08-06) is the same shape of hole and belongs in THIS job —
+    # 168 further tests, same deps, same fixtures, measured together at 239 tests /
+    # 25.8s. It is not listed yet because a run step naming a file the tree does not
+    # have aborts the ENTIRE pytest invocation, taking this suite down with it
+    # (test_every_workflow_test_path_exists in the ci-pack suite pins exactly that).
+    # #4738 carries the file and is in review, not merged. NOTE: that guard matches on
+    # raw workflow TEXT, so the filename cannot even be written in this comment — it is
+    # deliberately described, not named. When #4738 lands, add the path to this job's
+    # run step and to ci.yml's filter, and raise timeout-minutes back to 8.
+    #
+    # Placed beside signal-contract, which owns engine/signal_quality.py's §7 contract
+    # one layer up, rather than beside the washout-turn organ: #4756 (coiled-mtf-anchor-
+    # era, the sibling anchor-era job this one mirrors) is in flight and appends at
+    # exactly that seam, and two jobs landing in one gap is a merge conflict for
+    # whichever ships second. Venv sharing is by BYTE-IDENTICAL install command, not by
+    # adjacency, so position costs nothing: the pip line below is the 32-job group's.
+    if: ${{ false }}
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: session anchor invariance (k=1..6 start drops, bucket parity, era stamps)
+        run: python -m pytest tests/test_session_anchor_invariance.py -q
+
   trial-budgets:
     if: ${{ false }}
     # W1d (audit #21): every multiple-testing harness must REGISTER its trial budget, or the
