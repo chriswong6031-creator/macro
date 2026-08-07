@@ -88,6 +88,8 @@ import hmac
 import ipaddress
 import json
 import os
+import sys
+import threading
 from pathlib import Path
 
 # The ranges file ships WITH THE CODE, so resolve it against the package's repo and
@@ -97,13 +99,30 @@ _RANGES_FILE = Path(__file__).resolve().parent.parent / "config" / "edgeone_orig
 EDGE_SECRET_HEADER = "X-MM-Edge-Auth"
 EDGE_CLIENT_HEADER = "EO-Connecting-IP"
 
-# Widest range that may ever be trusted as "the edge". A real origin-pull list is made
-# of small blocks (the observed peers sit in 42 distinct /24s), so these floors admit
-# any plausible authoritative list while refusing the shapes that would hand trust to
-# the whole internet — including the literal 0.0.0.0/0 + ::/0 that the deprecated
-# api.edgeone.ai/ips endpoint now serves. Deliberately NOT env-tunable: a security
-# floor that a config file can lower is not a floor.
-_MIN_PREFIX = {4: 16, 6: 32}
+# Widest range that may ever be trusted as "the edge". Deliberately TIGHTER than the
+# aggregates this edge is observed in: the origin-pull peers sit in 42 distinct /24s,
+# but the /16s those roll up to (43.175.0.0/16, 43.174.0.0/16, 101.33.0.0/16 …) also
+# carry rentable Tencent Cloud instances, so accepting a /16 would let anyone who rents
+# a VM in one satisfy the peer check and forge their own identity — the exact hazard
+# this module's header argues against. A /16 floor would have accepted precisely that
+# shape, which is why these are /20 and /40 instead. They still admit any plausible
+# authoritative list, whose entries are small blocks.
+#
+# If a published range is genuinely broader than this, split it into the sub-blocks
+# actually used for origin-pull rather than lowering the floor. Deliberately NOT
+# env-tunable: a security floor that a config file can lower is not a floor.
+_MIN_PREFIX = {4: 20, 6: 40}
+
+_RANGES_CACHE_LOCK = threading.Lock()
+_ranges_cache: tuple = ()          # (mtime, size, parsed) or ()
+
+
+def _warn(msg: str) -> None:
+    """Refusals must be visible. A silently dropped range is an allowlist that quietly
+    does nothing, and this module is the one place where 'nothing' looks like 'fine'.
+    Plain stderr, not a ::warning annotation — this never runs inside an Actions step.
+    """
+    print(f"admin.edge_trust: {msg}", file=sys.stderr, flush=True)
 
 
 def _env(name: str) -> str:
@@ -128,6 +147,7 @@ def _parse_networks(values) -> tuple:
 
     A bad entry must never take the console down and must never widen trust: an
     unparseable or over-broad range is simply absent, which fails safe to peer keying.
+    Every drop is announced, so a list that silently attests nothing is diagnosable.
     """
     nets = []
     for raw in values:
@@ -137,44 +157,73 @@ def _parse_networks(values) -> tuple:
         try:
             net = ipaddress.ip_network(text, strict=False)
         except ValueError:
+            _warn(f"REFUSED unparseable edge range {text!r}")
             continue
         if _safe_network(net):
             nets.append(net)
+        else:
+            _warn(f"REFUSED unsafe edge range {net} — blanket, private or broader than "
+                  f"/{_MIN_PREFIX.get(net.version)}; it attests nothing")
     return tuple(nets)
 
 
 def _file_ranges() -> tuple:
+    """Ranges from the checked-in file, re-parsed only when the file actually changes.
+
+    Cached on (mtime, size) rather than read per request: this sits on the pre-auth
+    login path. The operator still needs no restart to widen the list — editing the
+    file changes its stat and the next request re-reads it.
+    """
+    global _ranges_cache
     try:
-        blob = json.loads(_RANGES_FILE.read_text())
-    except Exception:  # noqa: BLE001 — a missing/broken list means "no attestation"
+        st = _RANGES_FILE.stat()
+        stamp = (st.st_mtime_ns, st.st_size)
+    except OSError:
+        return ()
+    with _RANGES_CACHE_LOCK:
+        if _ranges_cache and _ranges_cache[0] == stamp:
+            return _ranges_cache[1]
+    try:
+        blob = json.loads(_RANGES_FILE.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001 — a broken list means "no attestation"
+        _warn(f"could not read {_RANGES_FILE.name} ({exc}); no ranges will attest")
         return ()
     if isinstance(blob, dict):
         blob = blob.get("ranges") or []
-    if not isinstance(blob, list):
-        return ()
-    return _parse_networks(blob)
+    parsed = _parse_networks(blob) if isinstance(blob, list) else ()
+    with _RANGES_CACHE_LOCK:
+        _ranges_cache = (stamp, parsed)
+    return parsed
 
 
 def edge_origin_networks() -> tuple:
-    """Configured EdgeOne origin-pull ranges. Env wins; empty tuple means unconfigured.
-
-    Read on every call rather than cached: the admin service is a single low-traffic
-    process, and a cache would make the operator restart it to widen the list after
-    pasting fresh ranges out of the EdgeOne console.
-    """
+    """Configured EdgeOne origin-pull ranges. Env wins; empty tuple means unconfigured."""
     raw = _env("ADMIN_EDGE_ORIGIN_CIDRS")
     if raw:
         return _parse_networks(raw.replace(";", ",").split(","))
     return _file_ranges()
 
 
-def _header(headers, name: str) -> str:
-    """Case-insensitive header read that works for both a real HTTPMessage and a dict."""
+def _header_values(headers, name: str) -> list:
+    """EVERY value sent for a header, in wire order.
+
+    Duplicates matter here. `HTTPMessage.get()` returns the FIRST occurrence, which is
+    the attacker's copy whenever an upstream appends rather than replaces — the same
+    first-hop trap `_verified_peer` already avoids for X-Forwarded-For. Callers below
+    pick deliberately; nothing reads element 0 by accident.
+    """
     if headers is None:
-        return ""
+        return []
+    get_all = getattr(headers, "get_all", None)
+    if callable(get_all):
+        try:
+            vals = get_all(name)
+        except Exception:  # noqa: BLE001
+            vals = None
+        return [str(v).strip() for v in (vals or [])]
     getter = getattr(headers, "get", None)
     if getter is None:
-        return ""
+        return []
     val = getter(name)
     if val is None:  # plain dicts are case-SENSITIVE; HTTPMessage is not
         lowered = name.lower()
@@ -182,18 +231,29 @@ def _header(headers, name: str) -> str:
             if str(k).lower() == lowered:
                 val = v
                 break
-    return (val or "").strip()
+    return [str(val).strip()] if val is not None else []
 
 
 def _secret_ok(headers) -> bool:
+    """Constant-time match against ANY copy of the header the caller sent.
+
+    Checking every occurrence rather than the first is safe — a match still requires
+    knowing the secret — and it stops an attacker from DISABLING attestation by
+    prepending a junk copy, which would silently drop us back to the shared bucket.
+    """
     secret = _env("ADMIN_EDGE_SECRET")
     if not secret:
         return False
-    # Compare as BYTES: hmac.compare_digest raises TypeError on a str containing any
-    # non-ASCII codepoint, and the header is caller-supplied — a 500 on the login route
-    # would be a remotely triggerable outage, not a rejection.
-    return hmac.compare_digest(_header(headers, EDGE_SECRET_HEADER).encode("utf-8", "replace"),
-                               secret.encode("utf-8", "replace"))
+    # http.server decodes headers as latin-1, so a non-ASCII secret can never match what
+    # arrives on the wire. Refuse loudly instead of failing shut forever in silence.
+    try:
+        want = secret.encode("ascii")
+    except UnicodeEncodeError:
+        _warn("ADMIN_EDGE_SECRET is not ASCII; it can never match a wire header — "
+              "attestation is DISABLED until it is replaced with an ASCII token")
+        return False
+    return any(hmac.compare_digest(v.encode("latin-1", "replace"), want)
+               for v in _header_values(headers, EDGE_SECRET_HEADER))
 
 
 def _peer_in_ranges(peer: str) -> bool:
@@ -225,18 +285,28 @@ def edge_client_ip(headers) -> str | None:
     Only meaningful once ``from_edge`` has said yes. Anything that is not a
     syntactically valid IP is discarded, so a junk header degrades to peer keying
     rather than minting an attacker-chosen bucket name.
+
+    TAKE THE LAST VALUE, AND ITS LAST ELEMENT. Probing the live edge on 2026-08-07
+    showed it REPLACES this header (a forged copy did not survive; exactly one
+    EO-Connecting-IP reached the origin, carrying the true client), under which last
+    and first are the same thing. But Tencent documents the replace behaviour nowhere,
+    and documents the sibling X-Forwarded-For as APPEND-only — so if this header ever
+    behaves the same way, the edge's value is the LAST one and the attacker's is
+    first. Last is correct under both behaviours; first is correct under only one and
+    hands out unlimited bucket rotation under the other.
     """
-    raw = _header(headers, EDGE_CLIENT_HEADER)
-    if not raw:
-        return None
-    # EdgeOne sends a single address, but tolerate a list form and take the FIRST
-    # element: unlike X-Forwarded-For this header is written by the edge, not
-    # appended to by each hop, so element 0 is the edge's own value.
-    candidate = raw.split(",")[0].strip()
-    try:
-        return str(ipaddress.ip_address(candidate))
-    except ValueError:
-        return None
+    values = _header_values(headers, EDGE_CLIENT_HEADER)
+    for raw in reversed(values):
+        for part in reversed(raw.split(",")):
+            part = part.strip()
+            if not part:
+                continue
+            try:
+                return str(ipaddress.ip_address(part))
+            except ValueError:
+                return None      # a malformed trailing value is not a licence to
+                                 # fall back to an earlier, attacker-supplied one
+    return None
 
 
 def resolve_client_id(peer: str, headers) -> str:

@@ -234,21 +234,32 @@ is the intended mechanism**. Details and evidence: `config/edgeone_origin_ranges
 
 **The step.** Give the edge a secret to prove itself with:
 
-1. Read the secret already generated on the box (do NOT commit it anywhere):
+1. Read the secret (do NOT commit it anywhere). `setup-admin.sh` provisions it — on
+   both a fresh box and an existing one — so this should already print a 48-char hex
+   value; if it prints nothing, re-run `admin/deploy/setup-admin.sh`:
    ```
    ssh root@146.190.142.17 'grep ADMIN_EDGE_SECRET /etc/macro-admin.env'
    ```
-   To rotate instead, replace the value there and `systemctl restart admin`.
+   To rotate, replace the value there, `systemctl restart admin`, then update the
+   console rule in step 2 — in that order, since the old secret keeps working until
+   the restart.
 2. EdgeOne console → the `mastermind-x.com` site → **Rules Engine** → new rule:
    * **IF** HOST equals `admin.mastermind-x.com`
    * **THEN** *Modify origin-pull request header* → **Set** header `X-MM-Edge-Auth`
      to that value.
-3. Confirm it took effect — this must print the visitor's own public IP, not a
-   `43.x` edge address:
+3. Confirm it took effect. **Log in to the console first** — the probe is an
+   authenticated route, because it is the only one that reports the resolved identity:
    ```
-   curl -s https://admin.mastermind-x.com/api/session -o /dev/null -w '%{http_code}\n'
-   ssh root@146.190.142.17 'journalctl -u admin --since -2min | tail -5'
+   curl -s https://admin.mastermind-x.com/api/site_gate \
+        -H "Cookie: admin_session=<your session cookie>" | python3 -m json.tool | grep your_ip
    ```
+   `your_ip` must be **your own public IP**. A `43.x` address means the rule did not
+   take effect and the console is still on the shared bucket.
+
+   Do **not** try to confirm this from `journalctl -u admin` or from `/api/session`:
+   the handler sets `log_message` to a no-op so there is no per-request log line, and
+   `/api/session` never resolves a client identity. Both would look "fine" for a rule
+   that silently failed.
 
 **Second thing this fixes.** `_real_client_ip()` feeds `site_gate.save_rules()`, which
 auto-allows the operator's IP so a gate edit cannot lock them out. Unresolved, that entry
