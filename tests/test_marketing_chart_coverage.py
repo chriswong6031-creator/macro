@@ -259,8 +259,17 @@ def test_price_search_order_matches_prophet():
     )
     assert "data/stocks" in _PRICE_SUBDIRS
 
-    prophet = (ROOT / "scripts" / "build_prophet.py").read_text(encoding="utf-8")
-    assert '["data/baskets/ohlcv", "data/stocks"]' in prophet, (
+    # Compare the VALUE Prophet actually walks, not build_prophet.py's SOURCE TEXT.
+    # This used to grep that file for the literal ["data/baskets/ohlcv", "data/stocks"].
+    # The literal has since moved into engine/prophet_bridge.py as _PLAN_PRICE_DIRS, which
+    # build_prophet imports (scripts/build_prophet.py:74) and iterates (:1137) — so the
+    # grep could never match again however correct the code was. It went red fleet-wide
+    # on 2026-08-07 while the contract below was intact the whole time. Asserting on the
+    # imported value pins the real contract and survives the next refactor; it is also
+    # what tests/test_prophet_plan_clock.py already does with the same symbol.
+    from engine.prophet_bridge import _PLAN_PRICE_DIRS
+
+    assert tuple(_PLAN_PRICE_DIRS[:2]) == tuple(_PRICE_SUBDIRS[:2]), (
         "build_prophet's search order moved — chart_render._PRICE_SUBDIRS must "
         "move with it or marketing goes blind on the tickers Prophet chooses"
     )
