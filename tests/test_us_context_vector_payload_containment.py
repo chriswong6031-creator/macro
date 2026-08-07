@@ -27,6 +27,7 @@ import pytest
 pytest.importorskip("pandas")
 pytest.importorskip("pyarrow")
 
+import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -38,6 +39,19 @@ from engine.us_context_vector import (  # noqa: E402
 )
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def _is_nonscalar(value: object) -> bool:
+    """True for a container-valued cell, however pandas materialised it.
+
+    ``numpy.ndarray`` is the load-bearing member. A parquet round-trip turns a
+    list column into an ndarray, NOT a list, so an ``isinstance(v, (list, dict))``
+    predicate silently sees nothing on disk and the sweep below passes
+    unconditionally — it would not even flag `spine__records`, which is on the
+    reviewed list precisely because it IS non-scalar. In-memory frames keep
+    their lists, so a test built only in memory never exposes the hole.
+    """
+    return isinstance(value, (list, dict, set, tuple, np.ndarray))
 
 
 def _fake_context_frame(monkeypatch, columns: dict) -> None:
@@ -118,7 +132,7 @@ def test_an_unclassified_payload_column_is_a_hard_failure(monkeypatch) -> None:
         series = frame[column].dropna()
         if not len(series):
             continue
-        if isinstance(series.iloc[0], (list, dict)):
+        if _is_nonscalar(series.iloc[0]):
             if (
                 column not in STAMP_FORBIDDEN_COLUMNS
                 and column not in STAMP_REVIEWED_NONSCALAR_COLUMNS
@@ -154,7 +168,7 @@ def test_the_committed_store_is_swept_for_unclassified_payloads() -> None:
             series = frame[column].dropna()
             if not len(series):
                 continue
-            if isinstance(series.iloc[0], (list, dict)):
+            if _is_nonscalar(series.iloc[0]):
                 if (
                     column not in STAMP_FORBIDDEN_COLUMNS
                     and column not in STAMP_REVIEWED_NONSCALAR_COLUMNS
