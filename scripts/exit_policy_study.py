@@ -146,6 +146,10 @@ this sample cannot support; the overlap is DISCLOSED instead.
 
 Run:  python -m scripts.exit_policy_study                 # writes reports/exit-policy-horserace.md
       python -m scripts.exit_policy_study --json out.json # also dump the raw result dict
+      python -m scripts.exit_policy_study --live --out /tmp/today.md   # today's caches
+
+The committed report renders from the PINNED VINTAGE, not from the live caches — see
+``VINTAGE_FIXTURE`` and ``main`` below for why the default had to move.
 """
 from __future__ import annotations
 
@@ -181,6 +185,10 @@ from scripts.grade_us_board import (  # noqa: E402
 )
 
 REPORT_PATH = ROOT / "reports" / "exit-policy-horserace.md"
+
+# The frozen input slice the committed report is rendered at. Same slice the calibration
+# is pinned to (see ``calibrate``); built by scripts/build_exit_policy_vintage_fixture.py.
+VINTAGE_FIXTURE = ROOT / "tests" / "fixtures" / "exit_policy_vintage"
 
 # Close panel = engine.equity_factors._closes("broad") — breadth (S&P 500) + smallcap +
 # midcap, first-hit-wins — so the price basis is byte-identical to the grader's. Russell
@@ -2103,20 +2111,57 @@ def _read_paragraphs(res: Mapping[str, Any]) -> str:
 
 # --------------------------------------------------------------------------- #
 def main(argv: Sequence[str] | None = None) -> int:
+    """Write the report. The COMMITTED one renders at the pinned vintage, not from live.
+
+    The default used to be ``run_study()`` over the live caches, and that is what put main
+    red on 2026-08-06. Two PRs 53 minutes apart defined this one file two incompatible
+    ways: #4827 regenerated it from the caches as they stood that evening, and #4763
+    re-pointed its guard at the frozen slice (sliced at the ledger's own commit, a day
+    earlier). In between, `collect` re-adjusted historical closes on a new ex-date — the
+    routine total-return re-adjustment #4763 measured — and flipped ONE P2 k=2 episode
+    from a stop exit to a `data_end` mark. 536 marks on disk, 535 at the pin.
+
+    Nothing was wrong with either artifact; the writer and the guard simply read different
+    inputs. A committed artifact and its guard have to be rendered from the SAME inputs or
+    the pair is only green while one run wrote both — the same coupling-wearing-fidelity's-
+    name defect #4763 closed on the calibration, still open on the report. So the writer
+    moves to the pin too, and `--live` (the ad-hoc "what do today's caches say" run, and
+    the only mode where the lane-coupling warning means anything) may not overwrite the
+    committed path.
+    """
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--out", default=str(REPORT_PATH), help="markdown report path")
+    ap.add_argument("--out", default=None,
+                    help=f"markdown report path (default: {REPORT_PATH.name} at the pin)")
+    ap.add_argument("--live", action="store_true",
+                    help="run against the LIVE price caches instead of the pinned vintage; "
+                         "requires an explicit --out")
     ap.add_argument("--json", default=None, help="also dump the raw result dict here")
     ap.add_argument("--quiet", action="store_true")
     args = ap.parse_args(argv)
 
-    res = run_study()
+    out = Path(args.out) if args.out else REPORT_PATH
+    root = None if args.live else VINTAGE_FIXTURE
+    if args.live and out.resolve() == REPORT_PATH.resolve():
+        raise SystemExit(
+            f"refusing to overwrite {REPORT_PATH.relative_to(ROOT)} from the live caches. "
+            "It is a DATED artifact pinned to tests/fixtures/exit_policy_vintage, and its "
+            "guard (tests/test_exit_policy_study.py::TestCommittedReportIsCurrent) renders "
+            "at that pin — a live render re-opens the 2026-08-06 mismatch the moment "
+            "collect re-adjusts a close. Drop --live to refresh it, or pass --out to write "
+            "the live render somewhere else.")
+    if root is not None and not root.exists():
+        raise SystemExit(
+            f"{root.relative_to(ROOT)} is missing — regenerate with "
+            "python3 scripts/build_exit_policy_vintage_fixture.py, or pass --live --out "
+            "<path> to render from the live caches.")
+
+    res = run_study(root)
     # BARE print, line-start, flush=True — repo annotation law. Routing this through a
     # logger prefixes the line and GitHub drops the annotation silently.
     _warn = coupling_warning(res["calibration"])
     if _warn:
         print(_warn, flush=True)
     md = render_report(res)
-    out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(md)
     if args.json:
@@ -2129,7 +2174,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         Path(args.json).write_text(json.dumps(res, indent=1, default=_plain))
     if not args.quiet:
         coh = res["cohort"]
-        print(f"[exit_policy_study] {coh['n_episodes']} episodes / "
+        print(f"[exit_policy_study] {'LIVE caches' if args.live else 'pinned vintage'} "
+              f"(prices through {res['price_asof']}) · {coh['n_episodes']} episodes / "
               f"{coh['n_board_days']} board days · "
               f"calibration exact={res['calibration']['exact_match']} → {out}")
     return 0

@@ -2560,6 +2560,13 @@ on:
       # cannot trigger (#3488 shape).
       - "tests/fixtures/exit_policy_vintage/**"
       - "scripts/build_exit_policy_vintage_fixture.py"
+      # And the ARTIFACT the suite asserts about. #4827 rewrote this report and touched
+      # nothing else, so the pack that checks it never started: the PR merged green having
+      # never run its own guard, and main went red an hour later when #4763 pinned the
+      # guard to a slice the freshly-rewritten report no longer matched. A committed
+      # artifact under a committed-artifact guard is an input to the suite's claims exactly
+      # as the module under test is (#3488 shape, same as the slice above).
+      - "reports/exit-policy-horserace.md"
       # The COMMITTED CN board store + china_stocks price panel are the input grid
       # of test_cn_prophet_audit.py's frozen reproduction (REPRO_ASOF-truncated),
       # so a hand rewrite of either store — a re-adjustment sweep, an era edit —
