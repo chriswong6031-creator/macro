@@ -1838,6 +1838,21 @@ class TestLedgerIsTheGradedBoardOnly:
         for call in calls:
             assert call.get("board_definition") == hbr.BOARD_DEFINITION, call
 
+    def test_the_bucketing_eras_thread_off_the_row_verdict(self):
+        """R5 + R-SQ3: the verdict's own anchor_era/sq_anchor_era reach the ledger
+        row; a verdict without them (pre-era shape, no-signal blank) yields None so
+        the row reads as the pre-fence cohort, never a defaulted era."""
+        from scripts.build_hk_library import _board_ledger_calls
+        buys, watch = self._rows()
+        buys[0]["signal"] = {"tier": "T2",
+                             "anchor_era": "abs-session-2026-08-06",
+                             "sq_anchor_era": "sq-abs-session-2026-08-06"}
+        rows = _board_ledger_calls(buys, watch)
+        assert rows[0]["anchor_era"] == "abs-session-2026-08-06"
+        assert rows[0]["sq_anchor_era"] == "sq-abs-session-2026-08-06"
+        assert rows[1]["anchor_era"] is None
+        assert rows[1]["sq_anchor_era"] is None
+
     def test_watch_rows_keep_their_group_and_their_stamps(self):
         """On-lane behaviour for the cohorts that DO get logged is unchanged."""
         calls = self._calls()

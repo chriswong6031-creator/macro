@@ -49,9 +49,6 @@ SURFACERS of imminent base3d buys on the 110 held-out US names. (a) dominated (b
 """
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 import pandas as pd
 
 from engine.signal_quality import analyze
@@ -414,15 +411,3 @@ def buy_signal(v: dict | None) -> dict:
         return {"eligible": False, "tier_cascade": None, "htf_s1": False, "htf_s2": False,
                 "young_history": False, "anchor_era": confluence_tiers.ANCHOR_ERA}
     return {k: v.get(k) for k in _BUY_KEYS}
-
-
-def write_signal_file(out_dir, ticker: str, result: dict | None) -> bool:
-    """Write the §7 site/signals/<T>.json marker file (the chart contract). Returns True
-    if written; skips None (thin history). Same shape/asof as analyze() so the chart and
-    the grid gate are guaranteed consistent."""
-    if not result:
-        return False
-    out_dir = Path(out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / f"{ticker}.json").write_text(json.dumps(result, separators=(",", ":")))
-    return True
