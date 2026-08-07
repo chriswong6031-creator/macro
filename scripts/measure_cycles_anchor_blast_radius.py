@@ -235,41 +235,52 @@ def _cross(rows_a: list[dict], rows_b: list[dict]) -> dict:
 
 
 def _ladder_cutover(deep_rows: list[dict]) -> dict:
-    """R-CY5, empirically: seed a temp log with the REAL store's rows (a copy — the real
-    file is never written), append tonight's post-era rows, count what the seam guard
-    suppressed vs appended. Falls back to a synthetic pre-era seed built from the OLD
-    summaries when the real store is absent."""
+    """R-CY5, empirically, with the guard's OWN counterfactual.
+
+    Seeds a temp log from a COPY of the REAL store (never written), then ingests
+    tonight's post-era batch TWICE: once with the seam guard live, once with it disabled
+    (tolerance -1). The difference is precisely the PHANTOM ROWS the guard prevented —
+    same asset, same standing state, `signal_date` moved with the grid — which is the
+    number the charter asked for, separated from the fresh transitions a nightly build
+    would have appended under any era."""
     real_log = config.data_dir() / "ticker_alerts" / "ladder_log.parquet"
     ok = [r for r in deep_rows if r and "old" in r and r["new"]["state"]]
-    with tempfile.TemporaryDirectory() as td:
-        tmp = Path(td) / "ladder_log.parquet"
-        if real_log.exists():
-            pd.read_parquet(real_log).to_parquet(tmp)
-            seed = "real_store_copy"
-        else:
-            pd.DataFrame([
-                {"asset": r["name"], "signal_date": r["old"]["signal_date"] or r["asof"],
-                 "state": r["old"]["state"], "prev_state": "", "action": "", "label": "",
-                 "urgency": "", "score": 0, "dir": "neutral", "asof": r["asof"]}
-                for r in ok if r["old"]["state"]]).to_parquet(tmp)
-            seed = "synthetic_old_rows"
-        orig = ticker_alerts._ladder_path
-        ticker_alerts._ladder_path = lambda: tmp
-        try:
-            before = len(pd.read_parquet(tmp))
-            rows = [ticker_alerts.ladder_row(
-                r["name"],
-                {"state": r["new"]["state"], "signal_date": r["new"]["signal_date"],
-                 "anchor_era": cycles.ANCHOR_ERA, "score": r["new"]["score"] or 0},
-                r["asof"]) for r in ok]
-            added = ticker_alerts.write_ladder_log_batch(rows)
-            after = len(pd.read_parquet(tmp))
-        finally:
-            ticker_alerts._ladder_path = orig
+    seed_rows = None
+    if real_log.exists():
+        seed_rows, seed = pd.read_parquet(real_log), "real_store_copy"
+    else:
+        seed_rows, seed = pd.DataFrame([
+            {"asset": r["name"], "signal_date": r["old"]["signal_date"] or r["asof"],
+             "state": r["old"]["state"], "prev_state": "", "action": "", "label": "",
+             "urgency": "", "score": 0, "dir": "neutral", "asof": r["asof"]}
+            for r in ok if r["old"]["state"]]), "synthetic_old_rows"
+    rows = [ticker_alerts.ladder_row(
+        r["name"],
+        {"state": r["new"]["state"], "signal_date": r["new"]["signal_date"],
+         "anchor_era": cycles.ANCHOR_ERA, "score": r["new"]["score"] or 0},
+        r["asof"]) for r in ok]
     candidates = len([r for r in rows if r])
-    return {"seed": seed, "candidate_rows": candidates, "appended": added,
-            "suppressed_or_duplicate": candidates - added,
-            "log_rows_before": before, "log_rows_after": after}
+
+    def _ingest(tol: int) -> tuple[int, int]:
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td) / "ladder_log.parquet"
+            seed_rows.to_parquet(tmp)
+            orig_path, orig_tol = ticker_alerts._ladder_path, ticker_alerts.ERA_REKEY_TOL_DAYS
+            ticker_alerts._ladder_path = lambda: tmp
+            ticker_alerts.ERA_REKEY_TOL_DAYS = tol
+            try:
+                before = len(pd.read_parquet(tmp))
+                return before, ticker_alerts.write_ladder_log_batch(list(rows))
+            finally:
+                ticker_alerts._ladder_path = orig_path
+                ticker_alerts.ERA_REKEY_TOL_DAYS = orig_tol
+
+    before, guarded = _ingest(ticker_alerts.ERA_REKEY_TOL_DAYS)
+    _b, unguarded = _ingest(-1)          # tolerance -1 = the guard can never match
+    return {"seed": seed, "log_rows_before": before, "candidate_rows": candidates,
+            "appended_with_guard": guarded, "appended_without_guard": unguarded,
+            "phantom_rows_prevented": unguarded - guarded,
+            "exact_duplicates": candidates - unguarded}
 
 
 def _fmt_universe_table(stats: dict[str, dict]) -> list[str]:
@@ -394,10 +405,14 @@ def main() -> int:
                  f"{c['new']['state_disagreements']} | {c['old']['tier_disagreements']} | "
                  f"{c['new']['tier_disagreements']} |")
     L += ["",
-          "A residual AFTER is a cross-store PRICE difference or a genuine DEPTH effect "
-          "(the deep store sees decades the cache cannot), never a grid one — the anchor "
-          "guarantees one grid per name; it cannot make two stores agree about what a "
-          "close was.", "",
+          "A residual AFTER is never a GRID disagreement: the anchor guarantees one grid "
+          "per name, but it cannot make two stores agree about what a close WAS, and it "
+          "does not touch the parts of the ladder that legitimately read depth. The "
+          "breadth-cache pair keeps the larger residual for that second reason — at ~345 "
+          "bars `cycle_state`'s trough history and `signal_age`'s 600-bar walk-back are "
+          "genuinely truncated, so a state can differ from the deep store's on the same "
+          "night without any bin-phase involvement (a DEPTH effect, disclosed, not "
+          "silently 'fixed' here — the R8/R-CY9 precedent).", "",
           "## 3. calibrate_ladder — intra-run re-anchoring healed (R-CY6)", "",
           f"Fixed-vs-slid window ladder-state agreement over {fv['names']} deep names "
           f"(600- vs 590-bar windows at 50-bar eval steps): "
@@ -419,17 +434,39 @@ def main() -> int:
           "which grid measured them (R-CY4).", "",
           "## 4. The ladder-log cutover (R-CY5), simulated on a store copy", "",
           f"Seed: {cutover['seed']} ({cutover['log_rows_before']} rows). Tonight's "
-          f"post-era batch: {cutover['candidate_rows']} candidate rows → "
-          f"**{cutover['appended']} appended** (genuine re-draws + fresh transitions), "
-          f"**{cutover['suppressed_or_duplicate']} suppressed** (exact duplicates + "
-          "era re-key images inside the 4-day seam tolerance). The real store was read "
-          "from a copy and never written.", "",
+          f"post-era batch: {cutover['candidate_rows']} candidate rows. Ingested twice "
+          "— once with the seam guard live, once with it disabled — so the guard's own "
+          "contribution is measured, not asserted:", "",
+          f"* **{cutover['phantom_rows_prevented']} phantom rows prevented** — same "
+          "asset, same standing state, `signal_date` moved with the grid. Without the "
+          "guard each would have rendered as a second 'Signal: X' card days after the "
+          "first, forever, and dedup on `(asset, signal_date, state)` cannot suppress "
+          "it.",
+          f"* {cutover['appended_with_guard']} appended (genuine state re-draws + the "
+          "fresh transitions any nightly build appends under any era),",
+          f"* {cutover['exact_duplicates']} already-present exact keys (skipped "
+          "pre-era too).", "",
+          "The real store was read from a copy and never written.", "",
           "## 5. Start-invariance under the NEW anchor (must be 0)", "",
           f"{inv['movers']} / {inv['names']} deep US names move ANY of (state, "
           "signal_date, tier, aligned, score) on a 1-3 leading-bar drop."]
     if inv["movers"]:
         L.append(f"MOVERS (regression!): {inv['mover_names']}")
-    L += ["", "Universes measured in this checkout; an absent universe is announced with "
+    L += ["",
+          "## 6. Repaired in the same era, evidenced by the battery rather than here", "",
+          "Two surfaces ride this era but are not re-measured across the loaders above, "
+          "because neither reaches an admission gate or an accruing ledger — synthetic "
+          "start-invariance is the proportionate evidence, and "
+          "`tests/test_cycles_anchor_invariance.py` carries it:", "",
+          "* `leader_lifecycle.tf_state_2d` (2B → absolute) — the leader-radar oscillator "
+          "chip, rebuilt nightly with no marker key. The sibling triage measured it at "
+          "93/99 deep US names flipping on one dropped leading bar (mod-2 fingerprint); "
+          "it now reads the same absolute grid as everything else.",
+          "* `commodity_mtf._long_timeframes`' 2W chip (R-CY8) — W-FRI weeks are "
+          "calendar-absolute but their PAIRING into fortnights phased to the series "
+          "start, the same defect the R6 ruling repaired for the cascade's HTF badges.",
+          "",
+          "Universes measured in this checkout; an absent universe is announced with "
           "a `::warning`, never silently skipped (the A5 precedent).", ""]
 
     REPORT_MD.parent.mkdir(parents=True, exist_ok=True)

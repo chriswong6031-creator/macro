@@ -2557,10 +2557,13 @@ def analyze(close: pd.Series, high: pd.Series | None = None,
             if sma200:
                 ext_pct = (float(cc.iloc[-1]) / sma200 - 1.0) * 100.0
         lad["alignment"] = mtf_alignment(mtf, cyc, lad, wo=wo, ext_pct=ext_pct)
-    # era fence (R-CY4) at the payload root; NOT inside `mtf` — several builders dump
-    # a["mtf"] wholesale into mtf_json payloads whose clients iterate timeframe keys.
+    # era fence (R-CY4) at the payload root, named DISTINCTLY: the libraries spread this
+    # dict into their record (`**res`) beside a `confluence` block that carries the
+    # cascade's own `anchor_era`, and a record must be able to place a row against BOTH
+    # bucketing eras. NOT inside `mtf` — several builders dump a["mtf"] wholesale into
+    # mtf_json payloads whose clients iterate timeframe keys.
     return {"cycle": cyc, "mtf": mtf, "early": early, "ladder": lad,
-            "anchor_era": ANCHOR_ERA}
+            "cycle_anchor_era": ANCHOR_ERA}
 
 
 # ------------------------------------------------------------- calibration ----

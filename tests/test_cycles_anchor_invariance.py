@@ -361,7 +361,11 @@ def test_commodity_fortnight_grid_geometry():
 
 def test_anchor_era_is_on_the_analyze_root_and_the_ladder_payload():
     a = cycles.analyze(_uptrend())
-    assert a["anchor_era"] == ANCHOR_ERA
+    # the ROOT key is named distinctly: the libraries spread this dict into a record that
+    # also carries the CASCADE's `anchor_era` (confluence block), and a graded row must be
+    # placeable against both eras
+    assert a["cycle_anchor_era"] == ANCHOR_ERA
+    assert "anchor_era" not in a
     assert a["ladder"]["anchor_era"] == ANCHOR_ERA
     # deliberately NOT inside the mtf dict — builders JSON-dump a["mtf"] wholesale into
     # mtf_json payloads whose clients iterate timeframe keys (R-CY4)

@@ -80,7 +80,10 @@ the same approximation class the old `"3B"` bins applied everywhere, now fixed i
 of floating. The intl library keeps the US reference (R1, disclosed).
 
 **R-CY4 — Era stamp.** `cycles.ANCHOR_ERA = "cyc-abs-session-2026-08-06"`, emitted as
-`anchor_era` on (a) every `analyze()` return (top level), (b) every `ladder_state()`
+(a) `cycle_anchor_era` on every `analyze()` return (top level — named distinctly because
+the libraries spread that dict into a record (`**res`) whose `confluence` block carries
+the CASCADE's own `anchor_era`, and a graded row must be placeable against BOTH eras,
+the R-SQ3 doctrine), and as `anchor_era` on (b) every `ladder_state()`
 payload — the dict the libraries persist and the ladder log ingests, (c) every ladder-log
 row (`ticker_alerts.ladder_row` copies it; the parquet gains the column, pre-era rows
 read null — the cohort fence), (d) `calibrate_ladder()`'s per-state cells (`anchor_era`
