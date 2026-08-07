@@ -191,14 +191,32 @@ def _validate_observation_lineage(
             raise ValueError(f"output document-term {index} has detached source evidence")
         if (source_document.get("document_role") or "") != "complete_submission":
             raise ValueError(f"output document-term {index} source is not a complete submission")
-        needs_source_bytes = bool(document.get("child_document_type")) or any(
-            str((span or {}).get("locator_type") or "") != "document"
-            for span in evidence.get("spans") or []
-        )
-        if needs_source_bytes and manifest_id not in source_cache:
+        # Every row is bound against its exact retained bytes, with no shape
+        # exempted. ``validate_observation_source_binding`` re-derives the
+        # manifest identity from the submission envelope before it looks at a
+        # single span, so it requires the bytes UNCONDITIONALLY -- a row whose
+        # only span is the document root is not a row that needs less proof, it
+        # is a row that has less to prove.
+        #
+        # This used to read the bytes only when a span was narrower than the
+        # whole document (`child_document_type`, or a table/text_range locator),
+        # and hand `None` in otherwise. That is the 2026-08-06 nightly abort:
+        # the four deferral branches in ``_records_for_manifest_v1_1_0``
+        # (manifest_corruption_not_clean, manifest_parser_not_eligible,
+        # eligible_document_not_found, and multi-document fee_table_not_detected)
+        # all emit root-span-only rows with no child document, so the binder was
+        # handed `None` and raised ManifestIdentityError("retained source bytes
+        # are required") from inside a validator this caller believed tolerated
+        # absence.
+        #
+        # Reading unconditionally costs nothing: ``compile_document_term_records``
+        # has already run the sealed source-authority pass over these same rows,
+        # which loads every referenced manifest through this same memoized
+        # reader. By the time this loop runs the bytes are a dict hit, not I/O.
+        if manifest_id not in source_cache:
             source_cache[manifest_id] = source_reader(manifest)
-        source_bytes = source_cache.get(manifest_id)
-        if needs_source_bytes and source_bytes is None:
+        source_bytes = source_cache[manifest_id]
+        if source_bytes is None:
             raise ValueError(f"output document-term {index} source bytes are unavailable")
         validate_observation_source_binding(observation, manifest, source_bytes)
     validate_document_term_history(observations)
