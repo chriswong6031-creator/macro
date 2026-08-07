@@ -456,17 +456,149 @@ def test_the_glance_row_is_one_line_and_the_stance_is_the_exception():
         "stance for every non-live row belong in the expanded row")
 
 
-def test_the_footnote_is_one_sentence_and_points_at_the_board_above():
-    """Law 4 (one footnote, never stacked) and the panel's move below the board.
+def _gist(tape):
+    """The closed tier's one line, sliced out of the rendered panel."""
+    return _render(tape).split('class="tt-gist"')[1].split("</span>\n      </summary>")[0]
 
-    The overlap fact used to ride here as a second sentence; it explains something
-    only visible with the rows open and the `?` tip already states it. "the picks
-    below" was the one piece of copy with a direction baked into it.
+
+def _with_off_list(tape):
+    """Give a tape the two groups that fold into the gist's off-list figure.
+
+    The base fixture has neither, which is a legitimate night — and it is exactly
+    why the off-list clause has to be tested against a tape that HAS them: an
+    assertion written against the bare fixture passes on a template that never
+    emits the clause at all.
+    """
+    tape = dict(tape)
+    tape["washout_turns"] = [{
+        "name": "Space Tech", "name_zh": "太空科技", "rank": 28,
+        "turn_1w": 2.03, "turn_1m": -14.17, "n_members": 12, "n_on_board": 1,
+        "counts": {"live": 0, "setting_up": 1, "ran": 0, "leading": 0,
+                   "watching": 0, "quiet": 11},
+        "members": {}, "quiet_sample": [],
+    }]
+    tape["foresight_shelf"] = [
+        {"label_en": "loading up", "label_zh": "蓄势",
+         "names_en": ["Medical Devices", "Nuclear & SMR Power"],
+         "names_zh": ["医疗器械", "核能与小型模块堆"], "more": 1},
+        {"label_en": "re-rating", "label_zh": "重估",
+         "names_en": ["AI Semiconductors"], "names_zh": ["AI 半导体"], "more": 0},
+    ]
+    return tape
+
+
+def test_the_whole_panel_is_one_closed_disclosure():
+    """Operator, 2026-08-06: "way smaller in height."
+
+    680px desktop / 1004px phone against the real artifacts, after two separate
+    compaction passes. The closed height is now the budget, so the structure that
+    delivers it is pinned: ONE <details> with no `open` attribute wrapping
+    everything except the eyebrow and the gist. A future section added outside
+    `.tt-body` is the re-inflation this guard exists to catch.
     """
     src = (TMPL / "_theme_tape.html.j2").read_text()
+    assert '<details class="tt-all">' in src, "the panel is one disclosure"
+    assert '<details class="tt-all" open' not in src and \
+           '<details open class="tt-all"' not in src, "it ships CLOSED"
+
+    head, body = src.split('<div class="tt-body">', 1)
+    summary = head.split('<summary class="tt-all-s">')[1]
+    # everything heavy lives behind the fold
+    for heavy in ('class="tt-cols"', 'class="tt-i"', 'class="tt-turn"',
+                  'class="tt-shelf"', 'class="tt-foot"'):
+        assert heavy not in summary, f"{heavy} must sit inside .tt-body, not the summary"
+        assert heavy in body, f"{heavy} went missing from the disclosure body"
+    # the summary is the eyebrow + the gist, and nothing else
+    assert 'class="tt-eyebrow"' in summary and 'class="tt-gist"' in summary
+    assert 'class="tt-sub"' not in src, (
+        "the standing subtitle described the panel instead of reading it; the gist "
+        "replaced it")
+
+
+def test_the_gist_carries_every_folded_section_in_words():
+    """The charter's rule is NARRATION, not enumeration — and folding must not
+    reintroduce the detection-without-narration defect the panel exists to close.
+
+    A reader who never opens the panel must still be told: what is hottest, whether
+    anything is live on this board, and that there is more off the heat list (the
+    turn group + the shelf, which were the always-visible sections before the
+    fold). Plus the stance, because closed is the default state and Law 1 is
+    answered on the tier the reader is actually on.
+    """
+    gist = _gist(_with_off_list(_build()))
+
+    assert "Software" in gist and "软件" in gist, "the hottest theme is named"
+    assert "live name" in gist and "可操作" in gist, "the board's live count"
+    assert "off the heat list" in gist and "不在热度榜上" in gist, (
+        "the turn group and the shelf both fold — the gist is where a reader is "
+        "told they exist")
+    for stance in ("where to look, not what to buy", "而非买入对象"):
+        assert stance in gist, f"Law 1 stance missing from the closed tier: {stance}"
+
+    # …and stays silent about it on a night with neither (honest null, not "0 more")
+    bare = _gist(_build())
+    assert "off the heat list" not in bare and "不在热度榜上" not in bare
+
+
+def test_the_gist_counts_agree_with_the_ladder_it_folds():
+    """One source, two renderings. The closed line and the open ladder are the same
+    figures, so a fixture where they can disagree is the bug this pins."""
+    tape = _with_off_list(_build())
+    gist = _gist(tape)
+
+    live = sum((r.get("counts") or {}).get("live") or 0 for r in tape["rows"])
+    off = sum(len(g["names_en"]) + (g.get("more") or 0)
+              for g in (tape.get("foresight_shelf") or []))
+    off += len(tape.get("washout_turns") or [])
+    assert live and off, "fixture must exercise both clauses, not skip them"
+
+    assert f'is-live">{live}<' in gist, f"live total {live} not printed"
+    assert f'"tt-gf">{off}<' in gist, f"off-list total {off} not printed"
+
+    # the shelf's `more` overflow counts — it is names the shelf did not print,
+    # and dropping it would under-report the very thing the gist is standing in for
+    assert off == 2 + 1 + 1 + 1, "3 loading-up + 1 re-rating + 1 turn row"
+
+
+def test_a_zero_live_night_still_says_so_on_the_closed_tier():
+    """Law 5 — printed absence is this panel's whole argument, and the closed line
+    is the only tier most readers see. A gist that simply omitted the live clause
+    would read as 'nothing to report' on exactly the night it matters."""
+    tape = _build()
+    for r in tape["rows"]:
+        r["counts"]["live"] = 0
+    gist = _render(tape).split('class="tt-gist"')[1].split("</span>\n      </summary>")[0]
+    assert "nothing live on the board today" in gist
+    assert "本榜今日无可操作" in gist
+    assert "is-live" not in gist, "no colour on a night with nothing live"
+
+
+def test_no_user_facing_copy_bakes_in_a_page_direction():
+    """Law 4 (one footnote) + direction-proof copy.
+
+    This panel has moved twice — above the board, below the board, and now last on
+    the page — and BOTH times the move left copy behind that still pointed the old
+    way. #4553 caught the footnote ("the picks below") and fixed it to "above";
+    that word went stale again on 2026-08-06 when the panel moved to the bottom,
+    and three more strings were still saying "below" that #4553 never touched: the
+    `?` tip ("the board below is unchanged by it") and the two per-row hovers
+    ("this changes no ranking below"), en and zh.
+    So the guard is no longer "says above, not below" — it is that NO user-facing
+    string on this panel names a direction at all. A relative word is a claim about
+    where the panel sits, and this panel does not sit still. Say "on this page".
+    """
+    src = (TMPL / "_theme_tape.html.j2").read_text()
+    # strip {# … #} comments: they discuss placement history on purpose
+    body = re.sub(r"\{#.*?#\}", "", src, flags=re.S)
+    for word in ("picks below", "picks above", "board below", "board above",
+                 "ranking below", "ranking above",
+                 "下方选股", "上方选股", "下方看板", "上方看板",
+                 "不改变下方", "不改变上方"):
+        assert word not in body, (
+            f"{word!r} bakes a page position into user-facing copy — the panel has "
+            f"already moved twice and this is the third time it went stale")
     foot = src.split('<p class="tt-foot">')[1].split("</p>")[0]
-    assert "picks above" in foot and "上方选股" in foot
-    assert "picks below" not in foot and "下方选股" not in foot
+    assert "picks on this page" in foot and "本页选股" in foot
     assert "more than one line" not in foot, (
         "duplicated from the ? tip — a second copy on the always-visible tier is "
         "the stacked footnote Law 4 forbids")
@@ -491,32 +623,45 @@ def test_mobile_break_matches_the_board_and_hides_the_header_row():
     assert ".tt-c.is-zero-cell{display:none}" in block.replace(" ", "")
 
 
-def test_the_page_includes_the_partial_below_the_board():
-    """Operator order 2026-08-04: "it's obstructing this entire page."
+def test_the_page_includes_the_partial_last_of_all():
+    """Operator order 2026-08-06: "move it down to bottom of the page."
 
-    The panel shipped ABOVE the board to build a reading order (heat → what the
-    picks do with it → the picks). Measured on the real page it was 692px — 20.7%
-    of us_stocks — and it put #us-standouts nearly two full screens down to set up
-    a panel that, by its own footnote, changes no ranking below it. Context that
-    changes no decision reads after the decision it contextualises.
+    Third complaint about this panel's footprint. It shipped ABOVE the board;
+    #4553 moved it below the board and cut it 692px → 498px; #4605 merged one
+    minute later, added the washout-turn group and a second shelf group, and it
+    measured 680px desktop / 1004px phone against the real artifacts — bigger than
+    the state that drew the first complaint. Trimming it in place failed twice, so
+    it leaves the reading order: after every board panel, and folded shut.
+
+    Pinned against `id="holdings"` — the last panel us_stocks renders (the data
+    health strip after it is `mode != 'stocks'`) — not merely against the board,
+    which is what the previous version of this guard checked and which the panel
+    satisfied while still sitting six panels above the bottom.
     """
     dash = (TMPL / "dashboard.html.j2").read_text()
     assert '{% include "_theme_tape.html.j2" %}' in dash
-    assert dash.index("_theme_tape.html.j2") > dash.index('id="us-standouts"')
+    inc = dash.index("_theme_tape.html.j2")
+    for anchor in ('id="us-standouts"', 'id="equity-scoreboard"', 'id="sectors"',
+                   'id="accumulation"', 'id="holdings"'):
+        assert inc > dash.index(anchor), f"the tape must render after {anchor}"
 
 
 def test_full_page_renders_the_panel_on_stocks_and_never_on_macro():
     """Integration: the real dashboard template, both modes, one shared view-model.
 
     A partial can parse perfectly and still never reach the page — this is the
-    assertion that the include actually fires, in the right mode, below the board.
+    assertion that the include actually fires, in the right mode, and renders
+    after every other panel. Source order is what the template guard above pins;
+    this one pins the RENDERED order, which is what a reader scrolls.
     """
     from tests.test_dashboard_template_render import _base_vm, _env
     vm = dict(_base_vm(), theme_tape=_build())
 
     stocks = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
     assert 'id="theme-tape"' in stocks
-    assert stocks.index('id="theme-tape"') > stocks.index('id="us-standouts"')
+    at = stocks.index('id="theme-tape"')
+    for anchor in ('id="us-standouts"', 'id="holdings"'):
+        assert at > stocks.index(anchor), f"rendered tape must follow {anchor}"
     assert STANCES["act"][0] in stocks
 
     macro = _env().get_template("dashboard.html.j2").render(**vm, mode="macro")

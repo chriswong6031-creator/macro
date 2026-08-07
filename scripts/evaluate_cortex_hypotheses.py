@@ -22,6 +22,16 @@ PRE-COMMITTED GATE ONLY:
   post-hoc; the evaluator reads pre_committed_gate.metric and uses that field
   name exclusively.
 
+OUTCOME BASIS FILTER (PATH A):
+  hit_rate / excess_mean are only meaningful against a SIGNED excess return.
+  Path A therefore keeps only spine rows with outcome_basis == 'signed_excess'
+  (engine.neuralweb.query.OUTCOME_BASIS_FOR_LEDGER); rows from the four
+  unsigned-MFE ledgers — track_record, board_hk, board_ca, board_cn — are
+  dropped and the count is recorded as result_detail.unsigned_excluded_rows.
+  Without it, a hypothesis whose spine_query happens to match track_record
+  rows is scored against an ~87% "MFE > 0 at least once" base rate and clears
+  any gate for free.  cf. PR #4673 dst_outcome_unsigned_mfe_proxy.
+
 FDR FAMILY:
   All evaluations use family='cortex' so walk_forward and qledger account for
   shared multiple-testing budget.
@@ -240,6 +250,52 @@ def _evaluate_path_a(
                 )
                 filtered = filtered[~self_mask].reset_index(drop=True)
                 result_detail["self_excluded_rows"] = n_self_excluded
+
+        # OUTCOME BASIS — keep only rows whose outcome_excess is a genuinely
+        # SIGNED excess return.  Four ledgers (track_record, board_hk,
+        # board_ca, board_cn) fill it from a non-negative forward-MFE proxy
+        # with direction pinned to +1, so the hit_rate computed below would be
+        # scored against an ~87% base rate that has nothing to do with the
+        # hypothesis: any gate would pass trivially.
+        #
+        # NOT a zero-negatives probe.  #4673's empirical probe operates on a
+        # LEDGER POPULATION, where an all-wins outcome column is evidence the
+        # column is unsigned.  Here the unit is a hypothesis SAMPLE, and an
+        # all-wins signed sample is exactly what a good hypothesis looks like —
+        # probing for it would refute the very thing being tested.  The
+        # structural label is the only correct instrument at this altitude.
+        # cf. PR #4673 edge_outcomes.py dst_outcome_unsigned_mfe_proxy.
+        if not filtered.empty:
+            try:
+                from engine.neuralweb.query import (  # noqa: PLC0415
+                    OUTCOME_BASIS_SIGNED,
+                    stamp_outcome_basis,
+                )
+                # Backfill for a legacy parquet written before the column.
+                filtered = stamp_outcome_basis(filtered)
+                signed_mask = (
+                    filtered["outcome_basis"].astype("object").map(
+                        lambda v: v is not None and str(v) == OUTCOME_BASIS_SIGNED
+                    ).astype(bool)
+                )
+                n_unsigned = int((~signed_mask).sum())
+                if n_unsigned:
+                    log.info(
+                        "evaluator: outcome basis — excluded %d rows whose "
+                        "outcome_excess is not a signed excess (unsigned mfe "
+                        "proxy / unlabelled) from hypothesis %s",
+                        n_unsigned, hyp.get("id"),
+                    )
+                    filtered = filtered[signed_mask].reset_index(drop=True)
+                    result_detail["unsigned_excluded_rows"] = n_unsigned
+            except Exception as exc:  # noqa: BLE001
+                # Degrade-never-raise, but record it: a silent pass-through
+                # would score the hypothesis on unsigned rows.
+                log.warning(
+                    "evaluator: outcome_basis filter failed for %s (%s)",
+                    hyp.get("id"), exc,
+                )
+                result_detail["unsigned_filter_error"] = str(exc)
 
         # Strict post-registration filter
         rows_dicts = filtered.to_dict(orient="records") if not filtered.empty else []

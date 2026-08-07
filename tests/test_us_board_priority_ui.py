@@ -762,11 +762,31 @@ def test_leaders_table_gains_a_theme_column_only_when_rows_carry_themes():
 # G0.7 — honest framing wherever the score surfaces
 # --------------------------------------------------------------------------- #
 
-def test_priority_score_replaces_the_edge_slot_with_the_no_forecast_tooltip():
+def test_priority_score_replaces_the_edge_slot_with_the_no_forecast_framing():
+    """The Priority slot kept its label but LOST its hover card (operator 2026-08-05 —
+    the per-card popovers covered the neighbouring cards).  The framing it carried is
+    honesty copy, so it may not vanish with it: it now sits in the board footnote,
+    stated once instead of on all 40 cards."""
     html = _priority_html()
     assert '<span class="l-en">Priority</span><span class="l-zh">优先级</span>' in html
-    assert "not a win probability or return forecast." in html
-    assert "不是胜率，也不是收益预测。" in html
+    assert "not a win probability or return forecast." in _footnote(html)
+    assert "不是胜率，也不是收益预测。" in _footnote(html)
+
+
+def test_the_card_chips_carry_no_hover_cards():
+    """The removal itself, pinned.  Verb / Priority / ★ Featured / NEW are read at a
+    glance and each restated what the card already shows; their popovers overhung the
+    card and covered its neighbour.  A tooltip re-added to any of them is a regression,
+    so this asserts the ABSENCE at the one place all four are rendered."""
+    card = _card_markup(_priority_html(), "AAPL")
+    for probe in ('class="pv-chip" data-tip-en',
+                  'class="pv-edge" data-tip-en',
+                  'pv-mk-feat" data-tip-en',
+                  'pv-mk-new" data-tip-en'):
+        assert probe not in card, f"{probe} — the chip grew a hover card back"
+    # the ⚠ caution popover is the ONE the operator kept: it carries per-name detail
+    # that appears nowhere else on the card.
+    assert "pv-cau" in _priority_html()
 
 
 def test_legacy_rows_keep_the_edge_label_untouched():
@@ -779,7 +799,10 @@ def test_board_carries_the_priority_formula_footnote_once():
     html = _priority_html()
     assert html.count('<p class="pb-fn">') == 1
     assert "Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%." in html
-    assert "并非胜率" in html
+    # the ZH half must still disclaim a win probability. The wording widened when the
+    # per-card tooltips folded into this footnote ("并非胜率" → "不是胜率，也不是收益预测"),
+    # so this pins the claim, not the old phrasing.
+    assert "不是胜率" in html
 
 
 def test_stage_heading_tips_disclose_priority_order_not_a_forecast():
@@ -823,18 +846,13 @@ def _footnote(html: str) -> str:
     return html[start:html.find("</p>", start)]
 
 
-def _priority_tip(html: str, ticker: str) -> str:
-    """The Priority slot's tooltip on one card — the second of the two places."""
-    card = _card_markup(html, ticker)
-    idx = card.find('data-tip-en="US Prophet priority')
-    assert idx != -1, f"{ticker} carries no Priority tooltip"
-    return card[idx:card.find("</div>", idx)]
-
-
-def test_dead_runway_leg_is_disclosed_in_the_footnote_and_the_card_tooltip():
-    """Both places, both languages, with the count read off the artifact."""
+def test_dead_runway_leg_is_disclosed_in_the_footnote():
+    """Both languages, with the count read off the artifact.  This used to be pinned in
+    TWO places — the footnote and the per-card Priority tooltip.  The tooltip is gone
+    (operator 2026-08-05), which leaves the footnote as the single home; a board-wide
+    constant repeated on every card was a doctrine Law 4 violation anyway."""
     html = _render(_coverage_vm({"nonzero": 0, "n": 71}))
-    for place in (_footnote(html), _priority_tip(html, "AAPL")):
+    for place in (_footnote(html),):
         assert _RW_EN + "all 71 names" in place
         assert _RW_TAIL_EN in place
         assert _RW_ZH + "全部 71 只股票" in place
@@ -849,7 +867,7 @@ def test_runway_disclosure_reads_the_artifact_and_stops_when_the_leg_scores():
     non-zero count, and the note must disappear from BOTH places rather than
     outliving the null.  Without this half the disclosure is a hardcoded sentence."""
     html = _render(_coverage_vm({"nonzero": 12, "n": 71}))
-    for place in (_footnote(html), _priority_tip(html, "AAPL")):
+    for place in (_footnote(html),):
         assert _RW_EN not in place
         assert _RW_ZH not in place
         assert _RW_TAIL_ZH not in place
@@ -862,7 +880,7 @@ def test_runway_disclosure_without_the_coverage_key_claims_no_count():
     """Every artifact predating the coverage key IS the measured state, so the note
     stays on — but it may not print a count it never read."""
     html = _render(_coverage_vm(None))
-    for place in (_footnote(html), _priority_tip(html, "AAPL")):
+    for place in (_footnote(html),):
         assert _RW_EN + "every name" in place
         assert _RW_ZH + "每一只股票" in place
         assert "71" not in place.split(_RW_EN)[1].split(".")[0]
@@ -878,11 +896,15 @@ def test_runway_disclosure_never_reaches_the_legacy_board():
 # m5 — the featured edge gate is an absolute floor, not a rank
 # --------------------------------------------------------------------------- #
 
-def test_featured_tip_calls_the_edge_gate_an_absolute_floor():
+def test_featured_gate_is_called_an_absolute_floor():
     """engine ranking_block featured_requirements: "residual alpha at or above zero".
     The old copy ("above the board's midpoint") described a cross-sectional test the
-    engine never runs — on a weak board it promised the opposite of the real gate."""
+    engine never runs — on a weak board it promised the opposite of the real gate.
+    The ★ Featured hover card that carried this was removed (operator 2026-08-05), so
+    the sentence moved to the board footnote rather than off the page: the wording is
+    the guard, not the surface it sits on."""
     html = _priority_html()
+    assert "edge above zero (an absolute floor)" in _footnote(html)
     assert "edge above zero (an absolute floor)" in html
     assert "优势为正（绝对下限，而非同榜排名）" in html
     assert "above the board’s midpoint" not in html

@@ -87,6 +87,48 @@ def test_create_translates_anthropic_text_and_image(monkeypatch):
     assert response.usage.output_tokens == 4
 
 
+def test_num_ctx_is_a_floor_and_never_a_cap(monkeypatch):
+    """A configured window above 4096 must reach the wire unchanged.
+
+    ``_Messages`` clamps with ``max(4096, num_ctx)``. Read as a CAP — which is
+    how it was read once the host's OLLAMA_CONTEXT_LENGTH moved off its 4,096
+    default — that line looks like a 4,096-token pin on every lane using this
+    provider. It is a floor: it raises a nonsense request and lowers nothing.
+
+    Both halves are pinned here because both are load-bearing. Lose the floor
+    and a lane whose config key is missing sends num_ctx 0; turn it into a cap
+    and every lane is silently truncated to 4,096 tokens no matter what its
+    config says, which surfaces as prose where JSON was expected rather than as
+    an error.
+    """
+    from engine import ollama_provider as op
+
+    seen: list[int] = []
+
+    def fake_urlopen(req, timeout):
+        seen.append(json.loads(req.data)["options"]["num_ctx"])
+        return _Response({"message": {"content": "ok"}, "done_reason": "stop"})
+
+    monkeypatch.setattr(op.request, "urlopen", fake_urlopen)
+
+    cases = [
+        (0, 4096),        # absent config key resolved to a falsy window
+        (512, 4096),      # below the floor — raised
+        (4096, 4096),     # cold_read's shipped window
+        (8192, 8192),     # breaking_summary's shipped window
+        (32768, 32768),   # the host's configured OLLAMA_CONTEXT_LENGTH
+        (65536, 65536),   # ABOVE the host default — still not clamped
+    ]
+    for requested, expected in cases:
+        client = op.OllamaClient(
+            base_url="http://127.0.0.1:11434", num_ctx=requested,
+        )
+        client.messages.create(model="qwen3.5:9b", messages=[])
+        assert seen[-1] == expected, (
+            f"num_ctx={requested} reached the wire as {seen[-1]}, expected {expected}"
+        )
+
+
 def test_stream_compatibility_returns_final_message(monkeypatch):
     from engine import ollama_provider as op
 

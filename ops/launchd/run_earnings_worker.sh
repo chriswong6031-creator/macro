@@ -260,6 +260,69 @@ if ! /usr/bin/git -C "$OPS_ROOT" check-ignore -q -- "$STATE_PATH"; then
   exit 1
 fi
 
+# Name — in the scheduler log, before a single call is billed — exactly why the
+# local Qwen rung is or is not usable. A model id the server does not serve 404s
+# every openai_compat call, and the harness then completes on DeepSeek, writing a
+# row indistinguishable from a healthy local run (741 rows read model=deepseek
+# while the estate reported itself local-first; see the plist comment).
+#
+# This is DIAGNOSTIC ONLY. It never aborts the run and never edits
+# PROVIDER_ORDER: DeepSeek stays the automatic fallback, because removing
+# resilience to prove a cost point is a worse failure than paying for a night of
+# fallback. --connect-timeout/--max-time bound the probe so a hung endpoint
+# cannot stall a scheduled window.
+preflight_local_llm() {
+  local url="${LOCAL_LLM_BASE_URL%/}/models"
+  local timeout="${EARNINGS_LLM_PREFLIGHT_TIMEOUT:-6}"
+  local body="" curl_status=0 served="" parse_status=0
+
+  body="$(/usr/bin/curl -sS --connect-timeout "$timeout" --max-time "$timeout" "$url" 2>/dev/null)" \
+    || curl_status=$?
+  if [ "$curl_status" -ne 0 ]; then
+    echo "[$(ts)] local-llm preflight UNREACHABLE url=$url curl_exit=$curl_status model=$LOCAL_LLM_MODEL provider_order=$PROVIDER_ORDER"
+    return 0
+  fi
+
+  served="$(printf '%s' "$body" | /usr/bin/python3 -c '
+import json, sys
+try:
+    payload = json.load(sys.stdin)
+except Exception:
+    sys.exit(3)
+data = payload.get("data") if isinstance(payload, dict) else None
+if not isinstance(data, list):
+    sys.exit(3)
+ids = [
+    str(entry.get("id") or "").strip()
+    for entry in data
+    if isinstance(entry, dict)
+]
+print(",".join(i for i in ids if i))
+' 2>/dev/null)" || parse_status=$?
+  if [ "$parse_status" -ne 0 ]; then
+    echo "[$(ts)] local-llm preflight UNREADABLE_RESPONSE url=$url model=$LOCAL_LLM_MODEL provider_order=$PROVIDER_ORDER"
+    return 0
+  fi
+
+  # The quoted expansion keeps a model id with glob-significant characters from
+  # being read as a pattern.
+  case ",$served," in
+    *,"$LOCAL_LLM_MODEL",*)
+      echo "[$(ts)] local-llm preflight OK url=$url model=$LOCAL_LLM_MODEL served=$served"
+      ;;
+    *)
+      # Print the served ids: the drift is only legible when the log shows what
+      # the endpoint actually offers next to what was configured.
+      echo "[$(ts)] local-llm preflight MODEL_NOT_SERVED url=$url model=$LOCAL_LLM_MODEL served=${served:-<none>} provider_order=$PROVIDER_ORDER"
+      ;;
+  esac
+  return 0
+}
+
+if [ -n "$LOCAL_LLM_BASE_URL" ] && [ -n "$LOCAL_LLM_MODEL" ]; then
+  preflight_local_llm
+fi
+
 args=(
   "$OPS_ROOT/tools/earnings_worker/run_worker.py"
   --terminal-auto

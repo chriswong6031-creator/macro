@@ -5,8 +5,9 @@ Processes a batch of raw earnings events through the full pipeline:
 
 Public API:
     run_tick(events, *, root, now, universe=None) -> TickResult
+    summarize_tick(TickResult) -> attributable end-of-pass counts
 
-TickResult is a dict with three keys:
+TickResult is a dict with three outcome lists:
     {
         "emitted":     list[dict],   # events that produced an outbox item
         "skipped":     list[dict],   # events not processed (dedupe / ineligible)
@@ -15,6 +16,14 @@ TickResult is a dict with three keys:
 
 Each entry in emitted / skipped / quarantined is a dict with at least:
     {"id": str, "ticker": str, "reason": str | None}
+
+plus the attribution block a zero-emission pass needs to name its own cause:
+    {
+        "events_in":   int,          # candidates that entered the pass
+        "universe":    {"available": bool, "size": int, "source": str},
+        "summary":     summarize_tick(result),
+    }
+Three zeroes are not one fact — see summarize_tick.
 
 Outbox contract (D02 → XG-W2):
     This emitter used to hand-roll `data/marketing/outbox/<id>.json` with its own
@@ -194,6 +203,19 @@ def _append_quarantine(
 # Universe loader
 # ─────────────────────────────────────────────────────────────────────────────
 
+#: Where the eligibility universe is read from, relative to the repo root.
+#:
+#: PUBLIC BECAUSE THE CHECKOUT HAS TO CARRY IT. The earnings workflow checks out
+#: SPARSELY, and a cone that omits this directory does not degrade the lane — it
+#: switches the whole lane off: _load_universe returns None, run_tick fails
+#: closed, every candidate is skipped "universe unavailable", and the pass still
+#: exits 0 reporting nothing queued. That is exactly what ran 36 times a day
+#: until 2026-08-06 (run 31113734214). The cone is pinned against THIS constant
+#: in tests/test_marketing_fastlane.py::TestTheEarningsLaneIsActuallyArmed, so
+#: moving the read path without moving the cone entry turns that test red.
+UNIVERSE_PATH = Path("site") / "marketdata" / "sp500_heatmap.json"
+
+
 def _load_universe(root: Path) -> set[str] | None:
     """Derive eligible tickers cheaply from site/marketdata/sp500_heatmap.json.
 
@@ -202,7 +224,7 @@ def _load_universe(root: Path) -> set[str] | None:
     universe is *unavailable* (as opposed to genuinely empty).  Callers must
     treat None fail-closed — skip all events when the universe cannot be loaded.
     """
-    path = root / "site" / "marketdata" / "sp500_heatmap.json"
+    path = root / UNIVERSE_PATH
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
         tiles: list[dict] = data.get("tiles") or []
@@ -210,6 +232,93 @@ def _load_universe(root: Path) -> set[str] | None:
     except Exception as exc:  # noqa: BLE001
         logger.warning("[fastlane] universe load from sp500_heatmap failed: %s", exc)
         return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Attribution: what a zero-emission pass actually means
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _reason_bucket(reason: object) -> str:
+    """Stable grouping key for a skip/quarantine reason.
+
+    `outbox_write_error: <exception text>` carries the exception message, which
+    is unbounded — grouping on the raw string would produce a breakdown with one
+    bucket per failure and nothing a test or an operator could read. Everything
+    before the first colon is the reason NAME; the detail stays on the record.
+    """
+    text = str(reason or "").strip()
+    if not text:
+        return "unspecified"
+    return text.split(":", 1)[0].strip() or "unspecified"
+
+
+def summarize_tick(result: object) -> dict[str, Any]:
+    """Attributable end-of-pass counts for one earnings tick.
+
+    ZERO IS NOT ONE FACT. `emitted=0 skipped=0 quarantined=0` is what a quiet
+    reporting window looks like AND what a lane whose universe file is missing
+    looks like, because the fail-closed skip only exists once there is an event
+    to skip: with no candidates in the window, the broken universe leaves no
+    trace at all. Run 31113734214 (2026-08-06) logged exactly those three zeroes
+    while `site/marketdata` was coned out of the checkout, and the pass read as
+    a healthy no-op for as long as nobody diffed the workflow.
+
+    So the summary reports THREE independent things:
+      * how many candidates entered the pass (`events_in`) — "nobody reported"
+      * what happened to them, BY REASON — real eligibility/extraction outcomes
+      * whether the universe could be read at all, independent of both
+
+    Total by construction: this feeds the daemon's per-pass log line, which runs
+    before `_touch_heartbeat`, so a raise here would present as a dead daemon.
+    Any shape of input returns a well-formed dict.
+    """
+    res = result if isinstance(result, dict) else {}
+
+    def _records(key: str) -> list[dict[str, Any]]:
+        raw = res.get(key)
+        if not isinstance(raw, list):
+            return []
+        return [r for r in raw if isinstance(r, dict)]
+
+    def _by_reason(records: list[dict[str, Any]]) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for rec in records:
+            key = _reason_bucket(rec.get("reason"))
+            counts[key] = counts.get(key, 0) + 1
+        return dict(sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])))
+
+    emitted = _records("emitted")
+    skipped = _records("skipped")
+    quarantined = _records("quarantined")
+
+    universe = res.get("universe")
+    universe = universe if isinstance(universe, dict) else {}
+    if "available" in universe:
+        available = bool(universe.get("available"))
+    else:
+        # A caller that predates the universe block (a test stub, a queued
+        # legacy result) still tells us the answer when it has records: the
+        # fail-closed skip reason IS the signal. Absent both, assume available
+        # rather than raising a false alarm on every pass.
+        available = not any(
+            _reason_bucket(r.get("reason")) == "universe unavailable" for r in skipped
+        )
+
+    events_in = res.get("events_in")
+    if not isinstance(events_in, int):
+        events_in = len(emitted) + len(skipped) + len(quarantined)
+
+    return {
+        "events_in": events_in,
+        "emitted": len(emitted),
+        "skipped": len(skipped),
+        "quarantined": len(quarantined),
+        "skipped_by_reason": _by_reason(skipped),
+        "quarantined_by_reason": _by_reason(quarantined),
+        "universe_available": available,
+        "universe_size": int(universe.get("size") or 0),
+        "universe_source": str(universe.get("source") or UNIVERSE_PATH.as_posix()),
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -572,6 +681,10 @@ def run_tick(
             "emitted":     list of emitted outbox items (full dicts),
             "skipped":     list of {id, ticker, reason} skip records,
             "quarantined": list of {id, ticker, reason, violations} records,
+            "events_in":   how many candidates entered the pass,
+            "universe":    {"available": bool, "size": int, "source": str},
+            "summary":     summarize_tick() of the above — the attributable
+                           end-of-pass counts the daemon logs.
         }
     """
     from engine.marketing.copywriter import validate_copy
@@ -591,7 +704,12 @@ def run_tick(
     # distinct from an empty set (genuinely no tickers).  When None, we must
     # fail-closed: skip ALL events until the universe is available.
     _universe_unavailable: bool = False
+    # Which universe the pass actually ran against, reported in the result so a
+    # zero-emission pass can name its cause. "caller" is not the same fact as
+    # the on-disk read: an injected universe cannot be broken by a checkout cone.
+    _universe_source: str = "caller"
     if universe is None:
+        _universe_source = UNIVERSE_PATH.as_posix()
         loaded = _load_universe(root)
         if loaded is None:
             _universe_unavailable = True
@@ -730,8 +848,22 @@ def run_tick(
             "[fastlane] emitted %s | %s | %s", event_id, ticker, headline[:60]
         )
 
-    return {
+    tick_result: dict[str, Any] = {
         "emitted": emitted,
         "skipped": skipped,
         "quarantined": quarantined_out,
+        # ── Attribution (R0-B) ────────────────────────────────────────────────
+        # The universe state is reported UNCONDITIONALLY, not only via the
+        # per-event skip records: with zero candidates in the window a broken
+        # universe produces no skip record at all, and the pass is then
+        # indistinguishable from a quiet reporting hour. That ambiguity is what
+        # let the checkout-cone defect run silently (run 31113734214).
+        "events_in": len(events),
+        "universe": {
+            "available": not _universe_unavailable,
+            "size": len(universe),
+            "source": _universe_source,
+        },
     }
+    tick_result["summary"] = summarize_tick(tick_result)
+    return tick_result
