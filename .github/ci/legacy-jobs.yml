@@ -4455,6 +4455,16 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps plus the schema/API wheels
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi
+      # Wave 9D: the admissibility fences on issuer graph expansion — exact
+      # identifier + verbatim Exhibit 21 name only, no discovery_query_ticker, no
+      # similarity, no LLM assertion; PIT; the proposed-edge-cannot-become-a-
+      # candidate boundary driven through engine/government_revenue/candidates.py
+      # itself; and the four EDGAR collector regressions found by running the
+      # collector against live filings. The suite opens no socket (module-wide
+      # socket fence) and reads only tests/fixtures/issuer_evidence/, so it needs
+      # nothing beyond this job's existing install line.
+      - name: wave 9D — exact-identifier issuer graph expansion fences
+        run: python -m pytest tests/test_government_revenue_issuer_graph_expansion.py -q
       - name: builder envelope + publication fence + dossier/subaward rails
         run: python -m pytest tests/test_build_government_revenue.py tests/test_check_government_revenue_projection.py tests/test_government_revenue_dossiers.py tests/test_government_revenue_subaward_api.py -q
       - name: workspace / dossier / briefcase UI contracts

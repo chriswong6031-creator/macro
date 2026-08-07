@@ -545,6 +545,14 @@ on:
       # the one subject file no broad glob matches — engine/government_revenue/**
       # and collectors/** are covered, app/ is enumerated per-file.
       - "app/government_revenue.py"
+      # Wave 9D issuer graph expansion. The suite's subject modules are already
+      # reachable through engine/** and collectors/**, so what has to be named
+      # here is the suite itself and its committed EDGAR fixtures — the fixtures
+      # ARE the subject for four of its regression tests (index-headers parsing,
+      # character references, spacer cells, run-together cells), and an edit to a
+      # fixture alone must be able to start the job that reads it.
+      - "tests/test_government_revenue_issuer_graph_expansion.py"
+      - "tests/fixtures/issuer_evidence/**"
       - "tests/test_build_government_revenue.py"
       - "tests/test_check_government_revenue_projection.py"
       - "tests/test_government_revenue_dossiers.py"
