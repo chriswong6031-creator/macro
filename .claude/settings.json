@@ -44,6 +44,12 @@
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/blocklist_regen_guard.py\"",
             "timeout": 30,
             "statusMessage": "Recompiling kill-registry blocklists"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/chat_nav_regen_guard.py\"",
+            "timeout": 30,
+            "statusMessage": "Regenerating chat.html nav from _site_nav.html.j2"
           }
         ]
       }

@@ -63,6 +63,15 @@ SOURCES = {
         "publisher": "Fintel", "date": "accessed 2026-08-05",
         "url": "https://fintel.io/qvm", "why": "Vendor landing page. Cloudflare-gated.",
     },
+    "chatgpt_regime_reliability": {
+        "title": "Regime reliability and factor-crowding engine (proposal)",
+        "publisher": "External proposal via ChatGPT, relayed by the operator",
+        "date": "2026-08-05",
+        "url": None,                      # a relayed proposal, not a published document
+        "why": ("The proposal this method card adjudicates. No public URL: it reached us as "
+                "operator-relayed text, quoted verbatim in `proposal_says` so the claim we "
+                "tested is on the record next to what we measured."),
+    },
     "fintel_quant_models": {
         "title": "Beat the Market With Advanced Quantitative Models",
         "publisher": "Fintel", "date": "accessed 2026-08-05",
@@ -544,6 +553,90 @@ MODELS: dict[str, dict] = {
         ],
     },
 }
+
+
+# =======================================================================================
+# METHODS — external quant proposals that are NOT per-name rankers.
+# =======================================================================================
+# The MODELS registry above scores names: legs -> percentile -> composite -> rank-IC. Some
+# published methods make a claim of a different SHAPE — about when a strategy works, not
+# about which name to hold — and they cannot flow through legs.py/score.py/study.py at all.
+# Forcing one into that pipeline would invent a per-name score the method never had.
+#
+# So a method gets a spec here (what was proposed, by whom, and why it is not a ranker) and
+# its MEASUREMENTS come from a committed result artifact under data/quant_lab/methods/,
+# written by the method's own harness. NUMBERS ARE NEVER TYPED INTO THIS FILE: a hand-copied
+# statistic outlives the recompute that would have corrected it, and this registry has no way
+# to know it went stale. `page.py` reads the artifact; if it is missing the card still renders
+# and says the measurement is unavailable.
+# =======================================================================================
+METHODS: dict[str, dict] = {
+
+    "regime_reliability": {
+        "name": "Regime-reliability engine",
+        "name_zh": "市场状态可靠度引擎",
+        "source_kind": "proposal",
+        "proposer": "External proposal (ChatGPT), 2026-08-05",
+        "one_line": "Score how reliable each signal family is in the regime we are in now.",
+        "shape": "conditional-reliability table",
+        "proposal_says": (
+            "Monitor sixteen signals — realized vol, vol-of-vol, cross-sectional dispersion, "
+            "average pairwise correlation, breadth, credit spreads, yield-curve movement, "
+            "commodity vol, dollar regime, momentum/reversal/size factor returns, "
+            "short-interest regime, options skew, dealer positioning, sector leadership "
+            "concentration — then publish R[s,t] = E[future strategy performance | current "
+            "regime] per signal family, so the product can say: this is a technically bullish "
+            "breakout, but breakout continuation has poor reliability in the present regime."
+        ),
+        "proposal_says_zh": (
+            "监测十六项市场指标，再按信号家族发布「在当前状态下的预期表现」，"
+            "使产品能说明：形态看涨，但在当前状态下该家族的历史可靠度偏低。"
+        ),
+        # Why it cannot use the MODELS pipeline. Stated so a later session does not try.
+        "not_a_ranker_because": (
+            "It emits no per-name score. Its output is one number per signal FAMILY per "
+            "regime, so there is no cross-section to rank, no leg to percentile, and no "
+            "rank-IC to compute. Its substrate is the fired-signal track record, not the "
+            "fundamentals panel every MODELS leg reads."
+        ),
+        # What we did about it. The verdict text lives in the artifact; this is the method.
+        "our_test": (
+            "Rebuilt the claim as an INTERACTION test on the only multi-regime graded signal "
+            "record in the repo, with month fixed effects absorbing the shared market "
+            "condition — because the regime label and the forward drawdown are both functions "
+            "of the same price series, so raw cell means are partly tautological."
+        ),
+        "result_artifact": "regime_reliability.json",
+        "harness": "scripts/regime_reliability_phase0.py",
+        "gate_module": "engine/regime_conditioning_coverage.py",
+        "provenance": ["chatgpt_regime_reliability"],
+        "house_rulings": [
+            {"row": "RRC-R1", "verdict": "REJECT-REDUNDANT + FORBIDDEN fusion path",
+             "what": "the sixteen-signal composite monitor",
+             "why": ("all sixteen inputs already ship and are already composed by "
+                     "risk_radar -> market_state -> regime_vector; four of them are "
+                     "positioning keys, whose fusion into a regime score is ILLEGAL")},
+            {"row": "RRC-R2", "verdict": "KILLED (construction-scoped)",
+             "what": "the per-family reliability table itself",
+             "why": "measured null — see the result artifact"},
+        ],
+        "still_live": (
+            "Regime conditioning as de-escalation CONTEXT is untouched and still ships: "
+            "dispersion.py's selection dial, the style_regime coordinate, and regime_one's "
+            "confidence decay at inflections."
+        ),
+        "reopen_when": (
+            "engine.regime_conditioning_coverage.assess() returns 'estimable' for the axis to "
+            "be conditioned on, plus a fresh pre-registration naming the interaction (not the "
+            "raw cell means) as the primary quantity."
+        ),
+    },
+}
+
+
+def method(key: str) -> dict:
+    """One method spec. KeyError is intentional — a typo'd key must not return {}."""
+    return METHODS[key]
 
 
 # =======================================================================================

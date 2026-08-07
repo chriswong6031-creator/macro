@@ -58,9 +58,10 @@ from engine import earnings_blackout as _eb  # noqa: E402  — W1.5 earnings-bla
 from engine import earnings_catalyst as _ecat  # noqa: E402  — W4 display-tier catalyst fields
 from engine import us_board_rank  # noqa: E402  — us_prophet_v1 priority score / stages / ran lane
 from engine import washout_turn  # noqa: E402  — WTN-W1 weekly washout-turn watch (display-tier)
+from engine import event_atlas  # noqa: E402  — SEA-W3 matching-episode receipts (display-tier)
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
-from lib import config, store  # noqa: E402
+from lib import config, delisted_symbols, store  # noqa: E402
 from lib.ticker_popularity import attach_latest_volume, latest_volume_map  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -430,9 +431,18 @@ def _feed_freshness(recs) -> tuple[str | None, dict[str, int], int]:
     full = [r for r in recs if r and not r.get("limited")]
     parsed: dict[str, pd.Timestamp] = {}
     n_dark = 0
+    _dead = delisted_symbols.tickers()
     for r in full:
         tk = r.get("ticker")
         if not tk:
+            continue
+        if tk in _dead:
+            # A finished tape is neither fresh nor stale (#4616), so a delisted name
+            # is not assessable here at all: it never enters `parsed`, so it neither
+            # earns a lag-based demotion (it gets an unconditional one downstream,
+            # with truthful copy) nor pads the R2 circuit-breaker denominator. Left
+            # in, two permanently-frozen names would drift the breaker's reading of
+            # how much of the LIVE universe is actually frozen.
             continue
         ts = None
         try:
@@ -508,7 +518,15 @@ def _authority_admits(ticker: str, demote_map: dict) -> bool:
     """B1: True iff `ticker` may enter a SCORING-AUTHORITY collection this run — a
     board/rank/setups/ran-lane admission set, as opposed to a display-only chip map
     (disp_map, coil/donor/hold state, W3 evidence, …, which stay unguarded — see the
-    call-site comments in main()). A demoted ticker (frozen feed, R1) is excluded.
+    call-site comments in main()). A demoted ticker (frozen feed, R1) is excluded,
+    and so is a DELISTED one.
+
+    The delisted check is deliberately independent of `demote_map` rather than
+    relying on a dead name landing in it. `demote_map` is emptied wholesale whenever
+    the R2 circuit breaker trips (a mass-freeze run), which would hand scoring
+    authority back to a security that stopped existing on exactly the run where
+    everything else is already suspect. A delisting is not a lag measurement and
+    must not be gated by one.
 
     Guards `sig_verdict` (site/factordata/signal_gate.json — the discovery board's
     PRIMARY buy gate — AND us_board_rank.build_ran_rows' own admission set, since it
@@ -517,7 +535,7 @@ def _authority_admits(ticker: str, demote_map: dict) -> bool:
     earlier in the per-ticker loop than the profiles/entry_sig/risk_sig demotion
     branch — populating either one before checking this predicate would leak scoring
     authority through a path the later guard never touches."""
-    return ticker not in demote_map
+    return ticker not in demote_map and not delisted_symbols.is_delisted(ticker)
 
 
 def _apply_feed_demotion(rec: dict, behind_days: int, lib_asof: str) -> None:
@@ -540,6 +558,34 @@ def _apply_feed_demotion(rec: dict, behind_days: int, lib_asof: str) -> None:
     engine/stock_view.py's score_view() to suppress both the gauge and its
     rank_note tooltip (see the stock_view.py / stockview.js changes)."""
     rec["feed_stale"] = {"behind_days": int(behind_days), "lib_asof": lib_asof}
+    conv = rec.get("conviction")
+    if isinstance(conv, dict):
+        conv.pop("potential", None)
+        conv["score"] = None
+
+
+def _apply_delisting(rec: dict, disclosure: dict) -> None:
+    """Strip scoring authority from a rec whose SECURITY STOPPED EXISTING, and say
+    what actually happened (config/delisted_symbols.yml, lib/delisted_symbols).
+
+    Same authority strip as `_apply_feed_demotion` — the page, the search entry and
+    the deep links all survive (CSP-R1), the score does not. Two differences, and
+    both are the point:
+
+      * `delisted` is written and `feed_stale` is NOT. They are mutually exclusive
+        claims about the same silence, and shipping both would have the page say
+        "no new data for 91 days" beside "stopped trading 7 May" — one of which is
+        the cause and the other of which denies knowing it. #4616's law, "delisted
+        is not stale", is a statement about the copy as much as the census.
+      * It is unconditional. `_apply_feed_demotion` fires off a lag measurement
+        that a mass-freeze run can disarm (R2); this fires off a resolved fact and
+        cannot be disarmed by anything the collector does tonight.
+
+    The disclosure is the small, user-facing subset (date, acquirer, EN + ZH) —
+    the accession numbers behind it stay in the YAML for the next engineer, not on
+    a stock page."""
+    rec["delisted"] = dict(disclosure)
+    rec.pop("feed_stale", None)
     conv = rec.get("conviction")
     if isinstance(conv, dict):
         conv.pop("potential", None)
@@ -3160,6 +3206,19 @@ def main() -> int:
                 rec["washout_turn"] = wt
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("washout-turn for %s failed (%s)", ticker, e)
+        # ---- Matching past episodes (engine/event_atlas) — the SO-WHAT --------
+        # The chip above says the name IS in a washout turn. This says what the
+        # matching historical episodes of the SAME CLASS did — on this name, and
+        # on its archetype cohort, blended by event count so a name with n=3 shows
+        # its 3 episodes AND inherits the cohort curve with the weight printed.
+        # No per-name indicator selection (DNR §2 row 69) — one frozen construction.
+        # `close` is already in scope: passing it avoids re-loading the series.
+        try:
+            ea = event_atlas.live_state(ticker, close=close)
+            if ea:
+                rec["event_atlas"] = ea
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("event-atlas for %s failed (%s)", ticker, e)
         # ---- Confluence cascade verdict (T1->T4) on the per-stock JSON ---------
         # The owner's MACD-2D x StochRSI-3D gate (already computed above as sig_verdict),
         # persisted per name so the theme/basket-detail Holdings table can surface a fresh
@@ -3203,8 +3262,14 @@ def main() -> int:
         # defense. LIMITED recs are never in _demote_map (I4, _feed_freshness excludes
         # them). The JSON write below still happens for every rec (I1) — search + deep
         # links stay alive (CSP-R1), now carrying an honest `feed_stale` disclosure.
+        # A resolved delisting outranks the lag read: the name never reaches
+        # _demote_map (_feed_freshness skips it), and it is demoted here regardless
+        # of how far behind the tape is or whether the R2 breaker disarmed the gate.
+        _delisted_note = delisted_symbols.disclosure(ticker)
         _demoted_days = _demote_map.get(ticker)
-        if _demoted_days is not None:
+        if _delisted_note is not None:
+            _apply_delisting(rec, _delisted_note)
+        elif _demoted_days is not None:
             _apply_feed_demotion(rec, _demoted_days, _lib_asof)
         else:
             profiles[ticker] = prof

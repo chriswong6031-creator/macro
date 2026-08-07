@@ -701,9 +701,15 @@
                '</div>';
       }
 
+      /* The claim is authored prose, so its Chinese is written (falsifiers.json
+         claim_zh) rather than glossed.  An older cycle_engine.js payload carries
+         no claim_zh; fall back to the English rather than blanking the row. */
       return '<div class="tw-focus-row">' +
         '<div class="tw-focus-head">' + tag +
-          '<span class="tw-claim">' + esc(tw.claim) + '</span></div>' +
+          '<span class="tw-claim">' +
+            '<span class="l-en">' + esc(tw.claim) + '</span>' +
+            '<span class="l-zh">' + esc(tw.claim_zh || tw.claim) + '</span>' +
+          '</span></div>' +
         note +
       '</div>';
     }).join("");

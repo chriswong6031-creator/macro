@@ -652,20 +652,20 @@ class TestSignalAgeBasis:
 
 class TestFeatured:
     def test_a_clean_live_row_qualifies(self):
-        assert ubr.featured_shortfalls(_row("A")) == []
+        assert ubr.featured_shortfalls(_row("A", ext_z=0.0)) == []
 
     def test_ticks_zero_qualifies(self):
         """REGRESSION: `(v.get("ticks") or 99) <= 2` treats a same-day cross — the
         freshest and best signal there is — as missing, and un-features exactly the
         rows the board most wants to feature."""
-        assert ubr.featured_shortfalls(_row("A", ticks=0)) == []
+        assert ubr.featured_shortfalls(_row("A", ticks=0, ext_z=0.0)) == []
 
     def test_ticks_none_does_not_qualify(self):
         assert "ticks_unknown" in ubr.featured_shortfalls(_row("A", ticks=None))
 
     def test_ticks_three_is_stale(self):
         assert "ticks_stale" in ubr.featured_shortfalls(_row("A", ticks=3))
-        assert ubr.featured_shortfalls(_row("A", ticks=2)) == []
+        assert ubr.featured_shortfalls(_row("A", ticks=2, ext_z=0.0)) == []
 
     def test_buy_soon_is_live_but_not_featured(self):
         reasons = ubr.featured_shortfalls(_row("A", status="buy_soon"))
@@ -681,7 +681,7 @@ class TestFeatured:
 
     def test_negative_alpha_is_out_and_zero_is_in(self):
         assert "alpha_below_floor" in ubr.featured_shortfalls(_row("A", alpha=-0.01))
-        assert ubr.featured_shortfalls(_row("A", alpha=0.0)) == []
+        assert ubr.featured_shortfalls(_row("A", alpha=0.0, ext_z=0.0)) == []
 
     def test_unknown_alpha_is_out(self):
         assert "alpha_unknown" in ubr.featured_shortfalls(_row("A", alpha=None))
@@ -689,6 +689,8 @@ class TestFeatured:
     def test_extension_and_antichase_block(self):
         assert "extended" in ubr.featured_shortfalls(_row("A", ext_z=2.5))
         assert ubr.featured_shortfalls(_row("A", ext_z=2.0)) == []   # not > 2
+        # B3: an UNKNOWN reading is not "at the line" — the veto fires on absence.
+        assert "ext_z_unknown" in ubr.featured_shortfalls(_row("A"))
         assert "antichase_blocked" in ubr.featured_shortfalls(
             _row("A", antichase_shadow_blocked=True))
 
@@ -700,7 +702,8 @@ class TestFeatured:
 
     def test_board_cap(self):
         # every alpha non-negative, so the cap is the only thing that can bind
-        rows = [_row(f"T{i:02d}", sector=f"S{i}", alpha=20.0 - i) for i in range(20)]
+        rows = [_row(f"T{i:02d}", sector=f"S{i}", alpha=20.0 - i, ext_z=0.0)
+                for i in range(20)]
         scored = ubr.score_rows(rows, board_asof="2026-07-31")
         featured = [r for r in scored if r["featured"]]
         assert len(featured) == ubr.FEATURED_CAP
@@ -708,7 +711,8 @@ class TestFeatured:
             r.get("featured_blocked_by") for r in scored if not r["featured"]]
 
     def test_sector_cap(self):
-        rows = [_row(f"T{i:02d}", sector="Utilities", alpha=8.0 - i) for i in range(8)]
+        rows = [_row(f"T{i:02d}", sector="Utilities", alpha=8.0 - i, ext_z=0.0)
+                for i in range(8)]
         scored = ubr.score_rows(rows, board_asof="2026-07-31")
         featured = [r for r in scored if r["featured"]]
         assert len(featured) == ubr.SECTOR_CAP
@@ -716,7 +720,8 @@ class TestFeatured:
             r.get("featured_blocked_by") for r in scored if not r["featured"]]
 
     def test_featured_is_taken_by_score_desc(self):
-        rows = [_row("LOW", alpha=0.1, sector="A"), _row("HIGH", alpha=5.0, sector="B")]
+        rows = [_row("LOW", alpha=0.1, sector="A", ext_z=0.0),
+                _row("HIGH", alpha=5.0, sector="B", ext_z=0.0)]
         scored = ubr.score_rows(rows, board_asof="2026-07-31",
                                 featured_cap=1, sector_cap=4)
         featured = [r["ticker"] for r in scored if r["featured"]]
@@ -836,7 +841,9 @@ class TestScoreRows:
 
 class TestRankingBlock:
     def test_block_discloses_the_formula_and_the_scoreless_inputs(self):
-        scored = ubr.score_rows([_row("A")], board_asof="2026-07-31")
+        # ext_z=0.0: a row must carry a KNOWN extension reading to be featurable (B3),
+        # and this test asserts featured_count == 1.
+        scored = ubr.score_rows([_row("A", ext_z=0.0)], board_asof="2026-07-31")
         block = ubr.ranking_block(scored)
         assert block["definition"] == "us_prophet_v1"
         assert block["score_kind"] == ubr.SCORE_KIND
@@ -1831,11 +1838,32 @@ class TestCommittedArtifactIntegration:
              ("watch", "leaders", "laggards", "ran")}, sort_keys=True) == lanes_before
 
     def test_featured_respects_both_caps(self, scored):
+        """ERA-INDEPENDENT: the caps bind, and an EMPTY featured set is a legitimate
+        answer, not a failure.
+
+        This used to assert ``0 < len(featured)``, which pinned a property of ONE
+        era's data rather than the contract.  From B3 (2026-08-06) a row with no
+        ``ext_z`` reading cannot be featured, and the committed 07-31 artifact carries
+        no ext_z on any of its 59 buy rows (a builder wiring defect the module
+        docstring documents), so the honest featured count on that artifact is zero.
+        The number the artifact must always keep true is the one below: never more
+        than the caps allow, and whatever it is, the block says WHY it is that.
+        """
         from collections import Counter
-        _board, rows = scored
+        board, rows = scored
         featured = [r for r in rows if r["featured"]]
-        assert 0 < len(featured) <= ubr.FEATURED_CAP
-        assert max(Counter(r["sector"] for r in featured).values()) <= ubr.SECTOR_CAP
+        assert len(featured) <= ubr.FEATURED_CAP
+        if featured:
+            assert max(
+                Counter(r["sector"] for r in featured).values()) <= ubr.SECTOR_CAP
+        # Whatever the count, it must be EXPLAINED: every non-featured row carries a
+        # reason, and the block's own disclosure must match the rows it describes.
+        assert all(r.get("featured_blocked_by") for r in rows if not r["featured"])
+        block = ubr.ranking_block(rows)
+        assert block["featured_count"] == len(featured)
+        assert block["featured_blocked_unknown_extension"] == sum(
+            1 for r in rows
+            if "ext_z_unknown" in (r.get("featured_blocked_by") or ()))
 
     def test_every_featured_row_is_actionable_today(self, scored):
         _board, rows = scored
@@ -1848,12 +1876,23 @@ class TestCommittedArtifactIntegration:
 
     def test_a_same_day_cross_is_featurable_on_real_data(self, scored):
         """The ticks==0 trap, pinned against production rows: the 07-31 board carries
-        same-day crosses, and truthiness testing would silently drop every one."""
+        same-day crosses, and truthiness testing would silently drop every one.
+
+        Stated as a SHORTFALL test rather than a featured-count test so it survives
+        the B3 era: on the committed artifact every row is blocked by
+        ``ext_z_unknown``, so no row is featured at all and an ``any(featured)``
+        assertion would go red for a reason that has nothing to do with ticks.  What
+        must never come back is ``ticks_unknown``/``ticks_stale`` on a same-day cross.
+        """
         _board, rows = scored
         zero_tick = [r for r in rows if (r.get("signal") or {}).get("ticks") == 0]
         assert zero_tick, "fixture must contain a same-day cross"
-        assert any(r["featured"] for r in zero_tick), (
-            "no ticks==0 row was featured — check for `(ticks or 99) <= 2`")
+        for r in zero_tick:
+            reasons = r.get("featured_blocked_by") or []
+            assert "ticks_unknown" not in reasons, (
+                f"{r['ticker']}: a same-day cross read as a MISSING tick count — "
+                "check for `(ticks or 99) <= 2`")
+            assert "ticks_stale" not in reasons, r["ticker"]
 
     def test_every_row_carries_the_display_contract(self, scored):
         _board, rows = scored
