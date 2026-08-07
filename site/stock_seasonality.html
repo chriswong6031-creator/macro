@@ -54,7 +54,13 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}
+/* Mode is page state, so it lives in the URL query exactly as the symbol does.
+   Applied HERE, in the head, for the same reason theme and language are: the
+   page body ships in calendar mode, and a deep link resolved only once
+   stock_seasonality.js runs at the end of <body> would paint the calendar
+   first and swap it away. */
+try{if(new URL(location.href).searchParams.get('mode')==='catalyst')document.documentElement.setAttribute('data-sx-mode','catalyst');}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=79f699db">
 <link rel="stylesheet" href="stock_seasonality.css?v=e7c85310">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
@@ -216,6 +222,8 @@
               <a class="mega-item nm-feat" href="intelligence_hub.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 12 24 3l18 9v23l-18 10L6 35Z"/><path d="m24 9 12 7v15l-12 7-12-7V16Z"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 20V9M28 24h8M24 28v10M20 24h-8M21 21l-6-5M27 21l6-5M21 27l-6 5M27 27l6 5"/><circle cx="24" cy="9" r="1.5"/><circle cx="36" cy="24" r="1.5"/><circle cx="24" cy="38" r="1.5"/><circle cx="12" cy="24" r="1.5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="item-desc d"><span class="l-en">Your complete market command center</span><span class="l-zh">你的完整市场指挥中心</span></span></span></a>
               
               <a class="mega-item nm-feat" href="watchlist.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M25 7a17 17 0 0 1 16 16"/><circle cx="21" cy="26" r="14"/><circle class="ghost" cx="21" cy="26" r="6"/><path class="accent" d="M21 12a14 14 0 0 1 12.1 7L21 26Z"/><path d="M21 12v14l12.1-7"/><circle class="soft-fill" cx="21" cy="26" r="3.2"/><path class="accent" d="M39 41v-9M44 41v-15"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Mastermind Portfolio</span><span class="l-zh">Mastermind 组合</span></span><span class="item-desc d"><span class="l-en">Your holdings with tonight’s signals</span><span class="l-zh">你的持仓与今晚信号</span></span></span></a>
+              
+              <a class="mega-item nm-feat" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M17 11V6M24 11V6M31 11V6M17 37v5M24 37v5M31 37v5M11 17H6M11 24H6M11 31H6M37 17h5M37 24h5M37 31h5"/><rect x="11" y="11" width="26" height="26" rx="5"/><path class="accent" d="m15 29 4-4 3.5 2.5 3.5-5.5"/><circle class="soft-fill" cx="26" cy="22" r="2.4"/><path class="ghost" d="m28 20.5 6-5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Mastermind Bot</span><span class="l-zh">Mastermind 交易机器人</span><span class="nm-tier">PRO</span></span><span class="item-desc d"><span class="l-en">The AI’s own paper account — every trade explained</span><span class="l-zh">AI 自己的模拟账户，每笔交易都附理由</span></span></span></a>
               <a class="mega-item nm-feat" href="reports.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="item-desc d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
               <a class="mega-item nm-feat" href="research_vault.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="item-desc d"><span class="l-en">Search every published research note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
               <a class="mega-item nm-feat" data-nav-file="earnings_wire" href="stocks/earnings/index.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 7h25l7 7v27H8z"/><path d="M6 5h25l7 7v27H6zM31 5v8h7"/><path class="accent" d="M12 29h5l3-7 5 12 4-9 3 4h3"/><path d="M12 16h14M12 20h9"/><circle class="soft-fill" cx="34" cy="29" r="3"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Earnings Wire</span><span class="l-zh">财报情报线</span></span><span class="item-desc d"><span class="l-en">Verified calls, weekly intelligence and company context</span><span class="l-zh">已核验电话会、每周情报与公司语境</span></span></span></a>
@@ -305,8 +313,18 @@
 
   <header class="sx-mast">
     <div class="sx-mast-id">
-      <p class="sx-eyebrow"><span class="l-en">Calendar Clock</span><span class="l-zh">日历时钟</span></p>
+      
+      <div class="sx-modebar">
+        <span class="sx-sr" id="sx-mode-lab"><span class="l-en">Page mode</span><span class="l-zh">页面模式</span></span>
+        <span class="sx-seg sx-mode" id="sx-mode" role="group" aria-labelledby="sx-mode-lab">
+          <button type="button" class="gbtn gbtn-sm" data-v="calendar" aria-pressed="true"><span class="l-en">Calendar clock</span><span class="l-zh">日历时钟</span></button>
+          <button type="button" class="gbtn gbtn-sm" data-v="catalyst" aria-pressed="false"><span class="l-en">Catalyst</span><span class="l-zh">催化剂</span></button>
+        </span>
+        <script>try{if(document.documentElement.getAttribute('data-sx-mode')==='catalyst'){var _g=document.getElementById('sx-mode'),_b=_g&&_g.getElementsByTagName('button');if(_b){_b[0].setAttribute('aria-pressed','false');_b[1].setAttribute('aria-pressed','true');}}}catch(e){}</script>
+        <span class="sx-help" tabindex="0" role="note">?<span class="sx-tip"><span class="l-en">Calendar clock is this symbol’s own recurring calendar structure, drawn from complete years. Catalyst is the event side — clinical, regulatory and financing dates. No event source is connected yet, and that mode says exactly what is missing and what the calendar can answer instead.</span><span class="l-zh">日历时钟：该标的自身的年内重复结构，基于完整年份绘制。催化剂：事件侧——临床、监管与融资日期。目前尚未接入任何事件数据源，该模式会明确说明缺少什么、以及日历时钟能替代回答什么。</span></span></span>
+      </div>
       <h1 class="sx-h1"><span class="sx-tick" id="sx-sym">SPY</span> <span class="sx-name" id="sx-name">SPDR S&amp;P 500 ETF Trust</span></h1>
+      <p class="sx-sr" id="sx-mode-live" role="status" aria-live="polite"></p>
     </div>
     <div class="sx-pick">
       
@@ -328,12 +346,12 @@
   </header>
 
   
-  <p class="sx-verdict" id="sx-verdict">
+  <p class="sx-verdict sx-cal" id="sx-verdict">
     
     <span class="l-en">Year-end strength here holds up after counting every window tried. Get ready.</span><span class="l-zh">年末走强，在计入所有测试窗口后依然成立。做好准备。</span>
   </p>
 
-  <ul class="sx-chips" id="sx-chips">
+  <ul class="sx-chips sx-cal" id="sx-chips">
     <li class="sx-chip" style="animation-delay:300ms"><span class="n"><span class="l-en">Oct 11 → Dec 10</span><span class="l-zh">10月11日 → 12月10日</span></span></li>
     <li class="sx-chip sx-chip-expl" id="sx-expl" hidden><span class="l-en">Your window · exploratory</span><span class="l-zh">自选窗口 · 探索性</span><span class="sx-help" tabindex="0" role="note">?<span class="sx-tip"><span class="l-en">A window you chose after seeing the chart spends testing budget that is not counted here. Presets are counted.</span><span class="l-zh">你在看过图之后自己选的窗口，会消耗这里没有计入的测试预算。预设窗口是计入的。</span></span></span></li>
     <li class="sx-chip" style="animation-delay:340ms"><span class="n"><span class="l-en">25 years</span><span class="l-zh">25 年</span></span></li>
@@ -346,11 +364,109 @@
   </ul>
 
   
-  <p class="sx-note" id="sx-err"><span class="l-en">Seasonality data didn’t load. Reload the page.</span><span class="l-zh">季节性数据未能加载，请重新载入页面。</span></p>
-  <p class="sx-note" id="sx-nocov"><span class="l-en">We don’t cover that symbol yet.</span><span class="l-zh">暂未覆盖该代码。</span> <a href="methodology.html"><span class="l-en">See what we cover →</span><span class="l-zh">查看覆盖范围 →</span></a></p>
+  
+  <p class="sx-note sx-cal" id="sx-err"><span class="l-en">Seasonality data didn’t load. Reload the page.</span><span class="l-zh">季节性数据未能加载，请重新载入页面。</span></p>
+  <p class="sx-note sx-cal" id="sx-nocov"><span class="l-en">We don’t cover that symbol yet.</span><span class="l-zh">暂未覆盖该代码。</span> <a href="methodology.html"><span class="l-en">See what we cover →</span><span class="l-zh">查看覆盖范围 →</span></a></p>
 
   
-  <section class="sx-card sx-fieldcard">
+  
+  <div class="sx-cat" id="sx-catalyst">
+    <p class="sx-verdict"><span class="l-en">Catalyst coverage is not connected. Nothing here reads a trial or a decision date.</span><span class="l-zh">催化剂数据尚未接入。本页不读取任何临床试验或审批日期。</span>
+    </p>
+    
+    <p class="sx-cat-act"><span class="l-en">Read the calendar clock instead — connected, and rebuilt nightly.</span><span class="l-zh">改用日历时钟：已接入，每晚重建。</span>
+    </p>
+
+    <ul class="sx-chips">
+      <li class="sx-chip sx-chip-ink"><span class="n"><span class="l-en">2 connected</span><span class="l-zh">已接入 2 项</span></span></li>
+      <li class="sx-chip sx-chip-thin"><span class="n"><span class="l-en">1 not connected</span><span class="l-zh">未接入 1 项</span></span></li>
+      <li class="sx-chip sx-chip-muted"><span class="l-en">Same for every symbol</span><span class="l-zh">所有标的均相同</span><span class="sx-help" tabindex="0" role="note">?<span class="sx-tip"><span class="l-en">Coverage is a property of the sources we have connected, not of the symbol on screen. Switching symbols does not change any line in this mode.</span><span class="l-zh">覆盖情况取决于我们接入了哪些数据源，与当前标的无关。切换代码不会改变本模式中的任何一行。</span></span></span></li>
+      
+      <li class="sx-chip sx-chip-muted"><span class="n"><span class="l-en">Method as of Aug 6, 2026</span><span class="l-zh">方法更新于 2026年8月6日</span></span></li>
+    </ul>
+
+    <section class="sx-card sx-ledcard">
+      <h2><span class="l-en">Where the evidence stops</span><span class="l-zh">证据的边界在哪里</span></h2>
+      <ul class="sx-led">
+        <li class="sx-led-row is-on">
+          <i class="sx-rail" aria-hidden="true"></i>
+          <div class="sx-led-body">
+            <span class="sx-led-name"><span class="l-en">Calendar clock</span><span class="l-zh">日历时钟</span></span>
+            <span class="sx-led-why"><span class="l-en">Every complete year drawn from adjusted closing prices.</span><span class="l-zh">以复权收盘价绘制每一个完整年份。</span></span>
+          </div>
+          <span class="sx-led-state"><span class="l-en">Connected</span><span class="l-zh">已接入</span></span>
+        </li>
+        <li class="sx-led-row is-on">
+          <i class="sx-rail" aria-hidden="true"></i>
+          <div class="sx-led-body">
+            <span class="sx-led-name"><span class="l-en">Search accounting</span><span class="l-zh">搜索校正</span></span>
+            <span class="sx-led-why"><span class="l-en">Counts every window tried before calling one of them strong.</span><span class="l-zh">在判定某个窗口是否强势前，计入所有测试过的窗口。</span></span>
+          </div>
+          <span class="sx-led-state"><span class="l-en">Connected</span><span class="l-zh">已接入</span></span>
+        </li>
+      </ul>
+      <p class="sx-led-break"><span><span class="l-en">The evidence stops here</span><span class="l-zh">证据到此为止</span></span></p>
+      <ul class="sx-led">
+        <li class="sx-led-row is-off">
+          <i class="sx-rail" aria-hidden="true"></i>
+          <div class="sx-led-body">
+            <span class="sx-led-name"><span class="l-en">Event calendar</span><span class="l-zh">事件日历</span></span>
+            <span class="sx-led-why"><span class="l-en">No feed is connected for regulatory decisions, trial readouts, medical conferences, financing, or product launches.</span><span class="l-zh">监管决定、试验结果公布、医学会议、融资、产品上市，均无数据源接入。</span></span>
+          </div>
+          <span class="sx-led-state"><span class="l-en">Not connected</span><span class="l-zh">未接入</span></span>
+        </li>
+      </ul>
+      
+      <p class="sx-led-route"><span class="l-en">Trial and approval dates live on </span><span class="l-zh">临床试验与审批日期在</span><a href="biocatalyst.html"><span class="l-en">BioCatalyst Intelligence</span><span class="l-zh">「生物医药催化剂智能」</span></a><span class="l-en">. Nothing there is checked against past years.</span><span class="l-zh">页面；那里的内容不与过往年份对照检验。</span></p>
+      
+      <h3 class="sx-led-h3"><span class="l-en">Chosen, not missing</span><span class="l-zh">刻意不做，并非缺失</span></h3>
+      <ul class="sx-led sx-led-never">
+        <li class="sx-led-row is-never">
+          <div class="sx-led-body">
+            <span class="sx-led-name"><span class="l-en">Forecasts</span><span class="l-zh">预测</span></span>
+            <span class="sx-led-why"><span class="l-en">This page reports what past years did. It predicts nothing.</span><span class="l-zh">本页只记录过往年份的表现，不做任何预测。</span></span>
+          </div>
+          <span class="sx-led-state"><span class="l-en">Not offered</span><span class="l-zh">不提供</span></span>
+        </li>
+        <li class="sx-led-row is-never">
+          <div class="sx-led-body">
+            <span class="sx-led-name"><span class="l-en">Symbol screening</span><span class="l-zh">跨标的筛选</span></span>
+            <span class="sx-led-why"><span class="l-en">One symbol at a time. No list here puts names in order.</span><span class="l-zh">这里每次只看一个标的，不提供任何排序名单。</span></span>
+          </div>
+          <span class="sx-led-state"><span class="l-en">Not offered</span><span class="l-zh">不提供</span></span>
+        </li>
+      </ul>
+    </section>
+
+    <div class="sx-two">
+      <section class="sx-card">
+        <h2><span class="l-en">What the calendar clock answers</span><span class="l-zh">日历时钟能回答什么</span></h2>
+        <ul class="sx-list">
+          <li><span class="l-en">When in the year this name has been strong or weak.</span><span class="l-zh">这只标的在一年中的哪些时段偏强或偏弱。</span></li>
+          
+          <li><span class="l-en">How often that repeated — one complete year at a time.</span><span class="l-zh">这种表现重复过多少次：以完整年份为单位计数。</span></li>
+          <li><span class="l-en">Whether it still stands once every window tried is counted.</span><span class="l-zh">在计入所有测试过的窗口后，它是否依然成立。</span></li>
+        </ul>
+        <button type="button" class="sx-cta" id="sx-to-cal"><span class="l-en">Open the calendar clock →</span><span class="l-zh">打开日历时钟 →</span></button>
+      </section>
+
+      <section class="sx-card">
+        <h2><span class="l-en">What we’re watching</span><span class="l-zh">我们在关注什么</span></h2>
+        <p class="sx-cat-lead"><span class="l-en">Conditions we watch — not a schedule.</span><span class="l-zh">这些是我们关注的条件，而不是时间表。</span></p>
+        <ul class="sx-list">
+          <li><span class="l-en">A decision-date source we can check against past years.</span><span class="l-zh">一个能与过往年份对照检验的审批日期数据源。</span></li>
+          <li><span class="l-en">Enough past events per name to count, not just to list.</span><span class="l-zh">每只标的有足够多的历史事件可供计数，而不只是罗列。</span></li>
+          <li><span class="l-en">The same search accounting the calendar clock already carries.</span><span class="l-zh">与日历时钟同一套搜索校正。</span></li>
+        </ul>
+        
+        <p class="sx-cat-close"><span class="l-en">Until those hold, this mode stays empty on purpose.</span><span class="l-zh">在这些条件满足之前，本模式会刻意保持空白。</span></p>
+        <p class="sx-smcap"><a href="seasonalitydata/methodology.json"><span class="l-en">Full method (JSON) →</span><span class="l-zh">完整方法（JSON）→</span></a></p>
+      </section>
+    </div>
+  </div>
+
+  
+  <section class="sx-card sx-fieldcard sx-cal">
     <div class="sx-fieldwrap">
       <svg class="sxf" id="sxf" viewBox="0 0 960 372" preserveAspectRatio="none"
            role="img" aria-label="Seasonal year strands with a selected window">
@@ -421,7 +537,7 @@
   </section>
 
   
-  <div class="sx-two">
+  <div class="sx-two sx-cal">
     <section class="sx-card">
       <h2><span class="l-en">This window</span><span class="l-zh">这个窗口</span></h2>
       <div class="sx-fig up" id="sx-fig">+5.3%</div>
@@ -598,7 +714,7 @@
   </div>
 
   
-  <details class="sx-card sx-sect" id="sx-more" open>
+  <details class="sx-card sx-sect sx-cal" id="sx-more" open>
     <summary><h2 style="display:inline"><span class="l-en">More views</span><span class="l-zh">更多视角</span></h2></summary>
     <div class="sx-sm">
       
@@ -771,7 +887,7 @@
   </details>
 
   
-  <section class="sx-card sx-honesty">
+  <section class="sx-card sx-honesty sx-cal">
     <h2><span class="l-en">How this is computed</span><span class="l-zh">计算方式</span></h2>
     <dl>
       <div>
@@ -799,7 +915,7 @@
         <dd><span class="l-en">Presets are counted in the search budget. A window you draw after seeing the chart is not — it’s marked exploratory.</span><span class="l-zh">预设窗口已计入搜索预算。你在看过图之后自己拖出的窗口没有计入 — 会标记为探索性。</span></dd>
       </div>
     </dl>
-    <p class="sx-smcap"><a href="seasonalitydata/methodology.json"><span class="l-en">Full method (JSON) →</span><span class="l-zh">完整方法（JSON）→</span></a> · <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span class="sx-num">2026-08-07 08:38 UTC</span></p>
+    <p class="sx-smcap"><a href="seasonalitydata/methodology.json"><span class="l-en">Full method (JSON) →</span><span class="l-zh">完整方法（JSON）→</span></a> · <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span class="sx-num">2026-08-07 10:08 UTC</span></p>
   </section>
 </main>
 
