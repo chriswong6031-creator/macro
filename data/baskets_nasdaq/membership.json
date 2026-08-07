@@ -56,12 +56,12 @@
      "name": "Monolithic Power System Inc"
     },
     {
-     "ticker": "NXPI",
-     "name": "NXP Semiconductors NV"
-    },
-    {
      "ticker": "ALAB",
      "name": "Astera Labs Inc"
+    },
+    {
+     "ticker": "NXPI",
+     "name": "NXP Semiconductors NV"
     },
     {
      "ticker": "MCHP",
@@ -102,12 +102,12 @@
      "name": "Autodesk Inc"
     },
     {
-     "ticker": "PAYX",
-     "name": "Paychex Inc"
-    },
-    {
      "ticker": "WDAY",
      "name": "Workday Inc"
+    },
+    {
+     "ticker": "PAYX",
+     "name": "Paychex Inc"
     },
     {
      "ticker": "ROP",
@@ -410,12 +410,12 @@
      "name": "Monolithic Power System Inc"
     },
     {
-     "ticker": "NXPI",
-     "name": "NXP Semiconductors NV"
-    },
-    {
      "ticker": "ALAB",
      "name": "Astera Labs Inc"
+    },
+    {
+     "ticker": "NXPI",
+     "name": "NXP Semiconductors NV"
     },
     {
      "ticker": "MCHP",
@@ -544,12 +544,12 @@
      "name": "Autodesk Inc"
     },
     {
-     "ticker": "PAYX",
-     "name": "Paychex Inc"
-    },
-    {
      "ticker": "WDAY",
      "name": "Workday Inc"
+    },
+    {
+     "ticker": "PAYX",
+     "name": "Paychex Inc"
     },
     {
      "ticker": "ROP",
