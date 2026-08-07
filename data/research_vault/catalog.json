@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T00:59:25.534417+00:00",
-  "count": 908,
+  "generated_at": "2026-08-07T02:01:52.213935+00:00",
+  "count": 909,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -1308,6 +1308,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hlmkk2yr774-d2645d",
+      "title": "Uber Technologies Inc. (UBER) Q2'26 Earnings Review Revenue Noise Shouldn’t Distract from Long Term Narratives Building in ...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:20Z",
+      "summary_points": [
+        "**AV Scaling & Revenue Momentum**: Uber's AV operations scaling to 15 cities by year-end (from 7) and $15bn global cross-platform run-rate (Grocery/Retail) drive GS' $110 price target (61.3% upside), emphasizing revenue/FCF growth over short-term noise.",
+        "**Financial Trajectory**: GS forecasts revenue rising from $52.017m (12/25) to $75.397m (12/27E), EPS from $4.74 to $6.21, with Brazil supply softness deemed transient and AV scaling critical to growth.",
+        "**Profitability & Cash Flow**: EBIT margin expanding to 16.9% (12/28E), FCF/share rising to $8.36, and gross margin stabilizing at 44.8% signal strong operational efficiency and cash generation.",
+        "**Gross Bookings Momentum**: Q2’26 Gross Bookings +22% YoY (fourth consecutive quarter >20%), exceeding estimates due to broad business line/geography strength and US Mobility momentum.",
+        "**Technical Outperformance**: UBER outperformed S&P 500 (12-month, Oct-25–Jul-26) with P/E declining from 17.9 to 11.0 (12/25–12/28E), indicating valuation compression but robust relative performance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
