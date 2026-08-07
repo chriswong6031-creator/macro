@@ -2365,6 +2365,19 @@ jobs:
         run: python -m pytest tests/test_metabolism_propose_adjudicate.py -q
       - name: metabolism v4 W3 suite (mission self-model + kill registry)
         run: python -m pytest tests/test_metabolism_v4_w3_mission.py -q
+      # Registry ROW/KEY shape, checked before the drift check below: drift only
+      # proves the compiled artifact matches the markdown, never that the markdown
+      # is well-formed. This suite was strictly dark until 2026-08-06 — named by no
+      # `run:` step in any workflow — and three malformed rows shipped to main
+      # underneath it: a §4 row keyed `KILL-` (the #4607 reclaim-veto ruling, a §2
+      # kill misfiled as a §4 hold), and two rows whose extra cell shifted every
+      # column left so `dict(zip(headers, cells))` DROPPED `Ruling / source`
+      # (KILL-PM4-OVERHEAD-SUPPLY compiled to verdict "\" with no source, and the
+      # LSR row's generated matcher became `kill.{0,30}liquidity.{0,30}shock` —
+      # a blocklist pattern matching its own key text instead of the topic it is
+      # supposed to block). A registry guard nothing executes is not a guard.
+      - name: DO_NOT_REBUILD registry keys + row shape (cite-by-key contract)
+        run: python -m pytest tests/test_dnr_registry_keys.py -q
       - name: blocklist drift check (compiled registry must match DO_NOT_REBUILD.md)
         run: python3 scripts/check_blocklist_drift.py
       # Wired 2026-08-06: named by NO run: step since it landed, and untriggerable

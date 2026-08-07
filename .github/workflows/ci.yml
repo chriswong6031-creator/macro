@@ -1303,6 +1303,10 @@ on:
       - "scripts/check_blocklist_drift.py"
       - "tests/test_metabolism_v4_w3_mission.py"
       - "research/DO_NOT_REBUILD.md"
+      # Registry key/row-shape guard (wired 2026-08-06 — it had never run in CI;
+      # DO_NOT_REBUILD.md and the compiler above already trigger this job, so this
+      # entry only covers edits to the guard itself).
+      - "tests/test_dnr_registry_keys.py"
       # FL-C live-flow ops (FC-R6/R7/R8 + Task 3): two-tier cadence, pinned publish,
       # daily summary writer, baselines extension.  Pure-code changes; no network.
       - "scripts/live_flow_poller.py"
