@@ -13,7 +13,7 @@ and turns the hits into at most three plain bilingual lines::
 
     {"kind": "congress", "line_en": "Congress: 2 buy filings on NVDA in the "
                                     "past 45 days",
-     "line_zh": "国会：过去 45 天 NVDA 有 2 笔买入申报",
+     "line_zh": "国会：过去 45 天 NVDA 有 2 笔买入披露",
      "as_of": "2026-07-27"}
 
 **NO LLM ANYWHERE IN THIS MODULE.** These are engine facts. They are counted
@@ -199,15 +199,15 @@ def congress_line(rows: Iterable[dict], ticker: str, *, now: datetime,
     if buys and sells:
         line_en = (f"Congress: {buys} buy and {sells} sell filings "
                    f"on {want} {window}")
-        line_zh = f"国会：{window_zh} {want} 有 {buys} 笔买入、{sells} 笔卖出申报"
+        line_zh = f"国会：{window_zh} {want} 有 {buys} 笔买入、{sells} 笔卖出披露"
     elif buys:
         line_en = (f"Congress: {buys} buy "
                    f"{_plural(buys, 'filing', 'filings')} on {want} {window}")
-        line_zh = f"国会：{window_zh} {want} 有 {buys} 笔买入申报"
+        line_zh = f"国会：{window_zh} {want} 有 {buys} 笔买入披露"
     else:
         line_en = (f"Congress: {sells} sell "
                    f"{_plural(sells, 'filing', 'filings')} on {want} {window}")
-        line_zh = f"国会：{window_zh} {want} 有 {sells} 笔卖出申报"
+        line_zh = f"国会：{window_zh} {want} 有 {sells} 笔卖出披露"
     return _row("congress", line_en, line_zh, newest)
 
 
