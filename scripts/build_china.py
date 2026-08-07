@@ -27,6 +27,20 @@ import plotly.graph_objects as go  # noqa: E402
 from lib import config, illus, site_assets, store  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
+# The board definition the ENGINE is producing RIGHT NOW — imported, never copied.
+# A local copy of this string ("cn_prophet_v2", added by #4029) went stale when #4509
+# moved the board to cn_prophet_v3 on 2026-08-05: _is_current_prophet_artifact then
+# rejected the live board AND the persisted fallback alike, so china_stocks.html
+# served a "data coverage degraded — board incomplete today" outage shell on top of a
+# complete, same-day board (24 featured / 204 eligible, as_of 2026-08-06). The reject
+# is meant to catch a SUPERSEDED artifact, so it has to read the current definition
+# from its producer or it re-breaks on every version bump.
+#
+# Module scope on purpose: main() wraps the whole vm assembly in a catch-all that only
+# logs and returns 0, so an engine that cannot be imported has to fail HERE, loudly,
+# rather than inside that handler where it would silently freeze both china pages.
+from engine.china_board_rank import BOARD_DEFINITION as _CN_PROPHET_DEFINITION  # noqa: E402
+
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_china")
 
@@ -74,10 +88,13 @@ def _load_json(path: Path) -> dict | None:
     return None
 
 
-_CN_PROPHET_DEFINITION = "cn_prophet_v2"
-
-
 def _is_current_prophet_artifact(doc: dict | None) -> bool:
+    """True when `doc` is a board the CURRENT engine definition produced.
+
+    Both halves are deliberate: the schema pin catches a shape the template cannot
+    render, the definition pin catches a board from a SUPERSEDED ranking. Neither
+    may be a copy that drifts from its producer — see the import note up top.
+    """
     return bool(
         isinstance(doc, dict)
         and doc.get("schema_version") == "2.0.0"
@@ -85,8 +102,41 @@ def _is_current_prophet_artifact(doc: dict | None) -> bool:
     )
 
 
-def _prophet_outage_shell(reason: str) -> dict:
-    """Never render a legacy board beneath the Prophet v2 heading."""
+#: What this path tells the reader. It carries its OWN headline rather than
+#: inheriting the W0.7 buy-count-collapse banner's, because that headline —
+#: "data coverage degraded — board incomplete today" — is affirmatively FALSE
+#: here and is the sentence that cost two days: on 2026-08-06 the data was
+#: complete and current (24 names, as_of today) and the renderer simply refused
+#: it, so the page reported a China FEED outage and that is what got chased.
+#: "Incomplete" also understates the shell, which is empty, not partial.
+#:
+#: The wording asserts nothing about internals, because one `else` covers four
+#: causes and each sentence has to be true on all of them: the live build may
+#: have crashed OR built fine and been refused on a stamp, and the stored board
+#: may be superseded, absent, or (after an engine rollback) NEWER. "Isn't
+#: available" and "we won't show one from a different ranking" hold in every
+#: case; "could not be built" and "an older board was withheld" did not. The
+#: diagnosis belongs in the log line at the call site, not on the page.
+#:
+#: Version-free on purpose: the old copy named "v2" outright, so the moment the
+#: engine moved to v3 the banner asserted a version that no longer existed —
+#: and raw internal slugs are banned from glance-tier copy regardless. The
+#: closing clause is the stance DESIGN_DOCTRINE requires, since on this path
+#: the banner IS the whole panel.
+_PROPHET_OUTAGE_HEADLINE = "no Prophet board today"
+_PROPHET_OUTAGE_HEADLINE_ZH = "今日暂无先知榜单"
+_PROPHET_OUTAGE_REASON = (
+    "Today's board isn't available, and we won't show one from a different "
+    "ranking in its place. Nothing to act on here today."
+)
+_PROPHET_OUTAGE_REASON_ZH = (
+    "今日榜单暂不可用，我们不会用另一套排序的榜单顶替。今日此处无可操作标的。"
+)
+
+
+def _prophet_outage_shell(reason: str = _PROPHET_OUTAGE_REASON,
+                          reason_zh: str = _PROPHET_OUTAGE_REASON_ZH) -> dict:
+    """Never render a superseded board beneath the current Prophet heading."""
     return {
         "schema_version": "2.0.0",
         "as_of": None,
@@ -126,8 +176,10 @@ def _prophet_outage_shell(reason: str) -> dict:
         "ran": [],
         "data_outage": {
             "flag": True,
+            "headline": _PROPHET_OUTAGE_HEADLINE,
+            "headline_zh": _PROPHET_OUTAGE_HEADLINE_ZH,
             "reason": reason,
-            "reason_zh": "中国先知v2构建失败；旧版榜单已被阻止，避免误标为新版结果。",
+            "reason_zh": reason_zh,
         },
     }
 
@@ -468,7 +520,7 @@ def _build_sector_pages(env) -> int:
         if len(close) < 60:
             continue
         try:
-            a = analyze(close)
+            a = analyze(close, market="CN")
         except Exception as e:  # noqa: BLE001
             log.warning("china sector page %s analyze failed: %s", fund, e)
             continue
@@ -577,7 +629,7 @@ def _sector_cards(latest: dict) -> list[dict]:
         if len(close) < 60:
             continue
         try:
-            a = analyze(close)
+            a = analyze(close, market="CN")
         except Exception as e:  # noqa: BLE001
             log.warning("china sector analyze failed for %s: %s", t, e)
             continue
@@ -741,7 +793,7 @@ def _benchmark_card() -> dict | None:
     if df is None or "close" not in df.columns:
         return None
     close = df["close"].dropna()
-    a = analyze(close)
+    a = analyze(close, market="CN")
     return {"name": "Shanghai Composite", "ticker": mi,
             "mtf_json": json.dumps(a["mtf"]),
             "state": a["ladder"].get("state"), "label": a["ladder"].get("label"),
@@ -1241,12 +1293,12 @@ def main() -> int:
                     len(fallback.get("buy") or []),
                 )
             else:
-                vm["setups"] = _prophet_outage_shell(
-                    "China Prophet v2 build unavailable. A persisted legacy "
-                    "board was rejected rather than mislabeled as the new system."
-                )
+                vm["setups"] = _prophet_outage_shell()
                 log.error(
-                    "China Prophet v2 unavailable; rejected non-v2 persisted fallback"
+                    "China Prophet board unavailable; rejected persisted fallback "
+                    "stamped %r (current definition is %r)",
+                    (fallback or {}).get("board_definition"),
+                    _CN_PROPHET_DEFINITION,
                 )
         if not ((vm.get("scoreboard") or {}).get("modes")):
             fallback = _load_json(factordata / "china_scoreboard.json")

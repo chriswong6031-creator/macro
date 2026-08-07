@@ -22,6 +22,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine import bar_derive  # noqa: E402 — display-grid anchor era + b3 boundaries (DG-R3/R6)
 from engine import i18n  # noqa: E402
 from engine import stock_score  # noqa: E402
 from engine import name_score  # noqa: E402  — per-name POTENTIAL (buy-readiness) score
@@ -260,14 +261,31 @@ def _consensus_z_map(records: dict[str, dict]) -> dict[str, float]:
     return {t: float(max(-3.0, min(3.0, (v - mu) / sd))) for t, v in ups.items()}
 
 
-def chart_series(close: pd.Series, n: int = 504) -> dict:
+def chart_series(close: pd.Series, n: int = 504, market: str = "HK") -> dict:
     """Compact columnar close history for the client-side chart (the last ~2y of
     daily closes). TradingView's free embed gates HKEX data behind a login, so the
     HK pages draw the chart from OUR stored prices via TradingView Lightweight
-    Charts (open-source) instead — same 'repo is the database' philosophy."""
-    c = close.dropna().tail(n)
-    return {"t": [str(d.date()) for d in c.index],
-            "c": [round(float(v), 3) for v in c.values]}
+    Charts (open-source) instead — same 'repo is the database' philosophy.
+
+    Carries the display-grid ``anchor`` block (DG-R3/R6, ruling
+    ``research/DISPLAY_GRID_ALIGNMENT_ADJUDICATION_BY_FABLE.md``): hk_lookup mounts THIS
+    series inline (``StockChart.mount(..., {data})`` short-circuits the ``hkohlc/`` fetch),
+    so without it the HK chart would be the one surface still grouping 3D candles by
+    ``floor(i/3)`` over a window that slides one session per night. ``b3`` is cut on the HK
+    reference session calendar (the HSI index store) and the ``tail(n)`` window START is
+    trimmed forward (<=2 rows) so the first candle is complete — the DG-R4 stabiliser.
+    """
+    c = close.dropna()
+    c = c[~c.index.duplicated(keep="last")].sort_index()
+    win = c.tail(n)
+    if len(win) and len(c) > len(win):
+        cut = bar_derive.trim_rows_to_bucket_open(
+            win.index, c.index[len(c) - len(win) - 1], market)
+        if cut:
+            win = win.iloc[cut:]
+    return {"t": [str(d.date()) for d in win.index],
+            "c": [round(float(v), 3) for v in win.values],
+            "anchor": bar_derive.chart_anchor(win.index, market)}
 
 
 def _safe(ticker: str) -> str:
@@ -359,7 +377,7 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     # the search universe IS the heatmap universe.
     if len(c) < min_days:
         return _limited_rec(ticker, c, name, sector) if allow_limited else None
-    res = analyze(c, high, kind="equity", liquidity=liquidity)
+    res = analyze(c, high, kind="equity", liquidity=liquidity, market="HK")
     if not res.get("ladder"):
         return _limited_rec(ticker, c, name, sector) if allow_limited else None
     month = int(c.index.max().month)
@@ -859,6 +877,12 @@ def _board_ledger_calls(buys: list[dict], watch: list[dict], *,
             # ONE selection instrument instead of pooling three; rows written before
             # each stamp read as legacy and keep their own pool.
             "board_definition": hk_board_rank.BOARD_DEFINITION,
+            # BUCKETING-ERA fences (cascade R5 + §7 R-SQ3): the verdict's own era
+            # stamps, so the graded row places against BOTH grids that produced
+            # its tier fields. compact() carries both post-era; a pre-era or
+            # missing verdict yields None and the row pools as pre-fence.
+            "anchor_era": sig.get("anchor_era"),
+            "sq_anchor_era": sig.get("sq_anchor_era"),
         })
     return calls
 
@@ -2075,7 +2099,7 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         _osc_d3_map: dict[str, float | None] = {}
         if closes is not None and not closes.empty:
             try:
-                _osc_df = _compute_grids(closes)
+                _osc_df = _compute_grids(closes, market="HK")
                 # Rename kd_xup_bars → stoch_xup_bars for hk.py compatibility before storing
                 for _t in _osc_df.index:
                     _od: dict = {}
@@ -2084,13 +2108,21 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                                      "kd_xup_bars", "from_os", "ob"):
                             _od[f"{_g}_{_sfx}"] = _osc_df.at[_t, f"{_g}_{_sfx}"] \
                                 if f"{_g}_{_sfx}" in _osc_df.columns else None
+                    # Bucket-geometry era stamp (covers this row's d2 AND d3 grids —
+                    # both bucket on the HK session anchor below).
+                    if "pl_anchor_era" in _osc_df.columns:
+                        _od["pl_anchor_era"] = _osc_df.at[_t, "pl_anchor_era"]
                     _osc_d12_map[_t] = _od
-                # 3D MACD: resample to 3B bars and compute MACD cross
+                # 3D MACD: 3-session buckets on the HK session anchor (same absolute
+                # calendar as the d2 grid above; replaces resample("3B"), whose bins
+                # phased to the cache's rolling start — and this field IS a live gate
+                # input: hklab_1d_blastoff requires d3_macd_xup_bars null).
                 try:
                     from engine.pick_lab.signals_1d import (
-                        _rsi_macd as _rm, _xup as _xu, _since as _sn, XBAR_WIN as _XW
+                        _rsi_macd as _rm, _xup as _xu, _since as _sn, XBAR_WIN as _XW,
+                        session_bucket_last as _sbl,
                     )
-                    _p3 = closes.resample("3B").last()
+                    _p3 = _sbl(closes, 3, market="HK")
                     for _t in closes.columns:
                         try:
                             _c3 = _p3[_t].dropna()

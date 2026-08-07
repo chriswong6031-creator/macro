@@ -1,0 +1,27 @@
+<!-- Exhibit 21 shapes that actually occur in EDGAR HTML, each pinned by a test:
+
+     row 1  header row, rejected.
+     row 2  a leading spacer cell built only from &#8203; (zero-width space).
+            EDGAR's typesetting emits these constantly. The leading-cell scan
+            stops at the first NON-EMPTY cell, so a spacer that survives
+            cleaning ends the scan and drops the legal name beside it.
+     rows 3-4  legal names whose accents arrive as character references. The
+            recipient record spells them with the real characters, so leaving
+            &#224; / &ccedil; in the "verbatim" name refuses an exact match
+            between two spellings of one entity.
+     row 5  many subsidiaries collapsed into ONE cell -- AeroVironment's live
+            2026 exhibit does exactly this with 23 names. The parser must
+            refuse the whole cell rather than split it: splitting invents
+            boundaries, and an honest partial is the contract.
+-->
+<html><head><title>Exhibit 21.1</title></head><body>
+<p>EXHIBIT 21.1</p>
+<p>SUBSIDIARIES OF THE REGISTRANT</p>
+<table>
+<tr><td>Name</td><td>Jurisdiction of Incorporation</td></tr>
+<tr><td>&#8203;</td><td>Vanguard Defense Systems, Inc.</td><td>Delaware</td></tr>
+<tr><td>Vanguard Technologies Geneva S&#224;rl</td><td>Switzerland</td></tr>
+<tr><td>Vanguard Comunica&ccedil;&otilde;es do Brasil, Ltda.</td><td>Brazil</td></tr>
+<tr><td>Vanguard Robotics, Inc. Vanguard Labs, LLC Vanguard Maritime, LLC Vanguard Federal Holdings, LLC Vanguard International B.V.</td><td>Delaware Delaware Delaware Delaware Netherlands</td></tr>
+</table>
+</body></html>

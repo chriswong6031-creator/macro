@@ -350,7 +350,7 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     # China net-liquidity is a single market-wide regime applying to every A-share
     # name (mirrors the US build); the CN regime carries no macro_risk/VIX leg, so
     # liquidity is the only macro conviction modifier threaded into the ladder.
-    res = analyze(c, high, kind="equity", liquidity=liquidity)
+    res = analyze(c, high, kind="equity", liquidity=liquidity, market="CN")
     if not res.get("ladder"):
         return _limited_rec(ticker, c, name, sector) if allow_limited else None
     month = int(c.index.max().month)
@@ -990,16 +990,44 @@ def _cn_era_label(date_from: str | None, date_to: str | None) -> tuple[str, str]
     return (f"previous board definition · {en_span}", f"上一版选股口径 · {zh_span}")
 
 
-# Stamps ADJUDICATED as known labelled cohorts — measurement shelves that share the
-# standout-track store under their own board_definition so their forward grades accrue
-# separately from both era records. Shelf rows still publish through `extra_records`
-# (labelled, never pooled — same path as an unknown stamp); membership here only
-# silences the unknown-stamp Actions alarm, which would otherwise fire every night for
-# an expected state and rot into noise. A stamp NOT in this set still warns and still
-# fails the era-partition test — that tripwire is how this set gets its next entry.
-_CN_ADJUDICATED_SHELF_STAMPS = frozenset({
-    "cn_reversal_watch_v1",   # washout reversal_watch shelf (#4393), first rows 2026-08-04
-})
+#: Closed FORMER headline board definitions, OLDEST FIRST. Each one once selected the
+#: live board, so each is an ERA — not a shelf. A shelf is a parallel measurement cohort
+#: that never was the board; filing a superseded board under "shelf" mislabels the
+#: desk's own history in the artifact the reader sees.
+#:
+#: These literals are HISTORICAL FACTS, not copies of a live constant: nothing in engine/
+#: names 'cn_prophet_v2' as a board any more (china_board_rank.V2_SHADOW_DEFINITION is a
+#: DIFFERENT string, 'cn_prophet_v2_shadow'), so there is no producer to read them from.
+#: A BOARD_DEFINITION bump must append the displaced stamp here in the SAME PR — the
+#: era-partition tripwire in tests/test_cn_track_ledger_eras.py is what enforces that,
+#: and #4509 shipped without it, which is how 72 v2 rows fell out of every cohort.
+_CN_SUPERSEDED_ERA_STAMPS: tuple[str, ...] = (
+    "cn_prophet_v2",   # #4509: live 2026-07-30 → 2026-08-05, displaced by cn_prophet_v3
+)
+
+
+def _cn_known_cohort_stamps() -> frozenset[str]:
+    """Every board_definition this build holds an adjudication for.
+
+    READ FROM THE PRODUCERS at call time, never copied: the live stamp from
+    engine.china_board_rank, the parallel watch/measurement cohorts from
+    engine.china_standout_track.WATCH_DEFINITIONS. This set used to be a hand-listed
+    frozenset holding one of the three WATCH_DEFINITIONS entries, and #4509 shipped an
+    incomplete cutover precisely because consumers kept private copies of a live stamp.
+
+    The live stamp is unioned in EXPLICITLY rather than taken from the caller's
+    `board_definition` argument: emit_cn_track_ledger also runs for the reversal-watch
+    cohort with board_definition='cn_reversal_watch_v1', and in THAT call the live
+    Prophet rows are orphans — keying on the argument alone leaves a nightly alarm
+    naming cn_prophet_v3 forever.
+
+    A stamp OUTSIDE this set is unadjudicated: it still gets its own labelled
+    `extra_records` block (never pooled), it still fires the nightly ::warning, and it
+    still fails the era-partition test. That is how this registry gets its next entry.
+    """
+    return (frozenset({china_board_rank.BOARD_DEFINITION})
+            | frozenset(_CN_SUPERSEDED_ERA_STAMPS)
+            | frozenset(china_standout_track.WATCH_DEFINITIONS))
 
 
 def _cn_unknown_era_label(stamp, date_from: str | None,
@@ -1438,12 +1466,15 @@ def emit_cn_track_ledger(
                 # pooled — plus a line-start Actions annotation naming it.
                 orphan = bdf_all[~(live_mask | prior_mask)]
                 if not orphan.empty:
+                    # Resolved ONCE per call, outside the loop: it reads two producer
+                    # modules and the answer cannot change between groups.
+                    _known = _cn_known_cohort_stamps()
                     for _stamp, _grp in orphan.groupby(
                             orphan["board_definition"].astype(str), sort=True):
                         _stamp = str(_stamp)
                         unknown_slices[_stamp] = _grp.copy()
-                        if _stamp in _CN_ADJUDICATED_SHELF_STAMPS:
-                            continue   # known shelf: labelled block, no alarm
+                        if _stamp in _known:
+                            continue   # adjudicated cohort: labelled block, no alarm
                         # Bare print, NOT log.* — a logger prefixes the line and
                         # GitHub only parses '::' at column 0 (CLAUDE.md). The opening
                         # literal stays on the `print(` line on purpose: the repo guard
@@ -4353,11 +4384,14 @@ def main(alpha: dict | None = None) -> dict | None:
                             <= pd.Timestamp(_cnpl_asof_date)
                         )
                     ]
-                    _cnpl_osc_df = _cnpl_grids(_cnpl_panel)
+                    _cnpl_osc_df = _cnpl_grids(_cnpl_panel, market="CN")
                     for _cpl_t, _cpl_row in _cnpl_osc_df.iterrows():
                         _cnpl_osc_by[str(_cpl_t)] = _cpl_row.to_dict()
             except Exception as _cnpl_osc_e:  # noqa: BLE001 — additive, never fatal
-                log.debug("china pick_lab: 1D/2D grid skipped (%s)", _cnpl_osc_e)
+                # warning, not debug: since the d2 buckets anchor on the CN session
+                # reference (data/china/000001.SS.parquet), a missing/broken reference
+                # nulls every osc column for the night — that absence must be loud.
+                log.warning("china pick_lab: 1D/2D grid skipped (%s)", _cnpl_osc_e)
 
             # ── 4. Collect tech (rsi5/rsi10 etc) from per-stock JSON files ────
             _cnpl_tech_by: dict[str, dict] = {}

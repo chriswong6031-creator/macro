@@ -1,0 +1,114 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "MRP-2026-06-30-watch",
+  "ticker": "MRP",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "MRP",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "MRP",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_break",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Real Estate",
+    "excess_spy": -0.03329716209703226,
+    "excess_sector": -0.051739023165780496,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 1.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "DEAD_MONEY",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "MRP underperformed SPY and ended DEAD_MONEY, with an idiosyncratic break recorded and a clean process classification. Its one-day watch tenure establishes observation timing but does not reveal whether the break was visible before entry.",
+    "root_cause": "MRP underperformed SPY and ended DEAD_MONEY, with an idiosyncratic break recorded and a clean process classification. Its one-day watch tenure establishes observation timing but does not reveal whether the break was visible before entry.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The company-break and Real Estate books failed to distinguish this weak setup, while no timing, margin, or data process defect is evidenced.",
+    "engines_credit": "The process engine remains clean; company-alpha, Real Estate rotation, and catalyst-visibility organs are the attribution laggards.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "An idiosyncratic break is the supplied primary cause of underperformance.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Absent the company-specific break, the dead-money outcome would require a sector or macro explanation.",
+        "evidence_refs": [
+          "outcome_cause=idio_break",
+          "excess_spy=-0.03329716209703226"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "entry_timing",
+        "factor": "",
+        "mechanism": "The name remained in watch after one day on the board, but no evidence shows that timing caused the failure.",
+        "evidence_status": "corroborated",
+        "timing_status": "known_at_entry",
+        "counterfactual": "Different watch timing might have changed exposure, but the clean process label and missing path prevent that conclusion.",
+        "evidence_refs": [
+          "lane=watch",
+          "board_tenure_days=1.0",
+          "process_fault=clean"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The company break persisted without sufficient relative recovery and matured into DEAD_MONEY.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "A recovery in residual momentum could have prevented the terminal classification.",
+        "evidence_refs": [
+          "terminal_state=DEAD_MONEY"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Real Estate sector weakness",
+      "Adverse rate or credit conditions",
+      "A post-entry external event",
+      "A failed cycle or fake breakout visible at entry"
+    ],
+    "missing_evidence": [
+      "Security identity and company fundamentals",
+      "Entry-date watch rationale",
+      "Real Estate peer and industry returns",
+      "Dated news and catalyst history",
+      "Price-volume path and regime snapshot"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "watch_break_persistence",
+        "feature": "Persistence of residual deterioration in newly watched Real Estate names",
+        "measurement": "Measure timestamp-safe residual trend persistence from board admission while controlling for sector and industry movement.",
+        "expected_direction": "Persistent residual deterioration should associate with dead-money outcomes.",
+        "falsifier": "The measure cannot distinguish dead money from later recovery.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T23:44:21+00:00"
+}

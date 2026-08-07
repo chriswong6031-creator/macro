@@ -53,9 +53,16 @@ def _tf_row(tf: dict | None) -> dict:
     }
 
 
-def basket_mtf(candle: pd.DataFrame | None) -> dict:
+def basket_mtf(candle: pd.DataFrame | None, market: str = "US") -> dict:
     """Full D/3D/W/M technical read + confluence verdict + a bounded momentum score for one
-    basket candle (columns close[,high]). {} on short history or any failure (additive caller)."""
+    basket candle (columns close[,high]). {} on short history or any failure (additive caller).
+
+    ``market`` picks the reference session calendar the 3D bucket grid is measured against
+    (``engine.session_anchor``, ruling R-CY3). A CN/HK/CA basket's composite trades its own
+    market's sessions, so its caller passes that market; the default keeps every US caller
+    unchanged. Bucket membership is start-invariant under ANY fixed reference — the market
+    only decides where the bucket EDGES fall.
+    """
     if candle is None or candle.empty or "close" not in candle:
         return {}
     try:
@@ -63,7 +70,7 @@ def basket_mtf(candle: pd.DataFrame | None) -> dict:
         if len(close) < 60:
             return {}
         high = candle["high"].reindex(close.index).astype(float) if "high" in candle else None
-        a = cycles.analyze(close, high, kind="equity")
+        a = cycles.analyze(close, high, kind="equity", market=market)
         if not a:
             return {}
         conf = btc_mtf.confluence_verdict(a)

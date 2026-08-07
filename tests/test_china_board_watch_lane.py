@@ -90,7 +90,17 @@ def test_zero_universe_publishes_outage_instead_of_reusing_stale_board():
     assert "allow_nan=False" in source
 
 
-def test_renderer_rejects_legacy_fallback_under_prophet_v2_heading():
+def test_renderer_rejects_a_superseded_fallback_under_the_current_heading():
+    """Was `..._under_prophet_v2_heading`, and spelled "cn_prophet_v2" three times.
+
+    That made it a MIRROR of the renderer's own hardcoded pin: it re-asserted the
+    copy instead of the producer, so when #4509 moved the engine to cn_prophet_v3
+    the test stayed green while the renderer rejected every real board and
+    china_stocks.html served a "data coverage degraded" shell over a complete
+    24-name board.  Reading BOARD_DEFINITION from the engine is what gives this
+    test the power to fail on the next cutover.
+    """
+    from engine.china_board_rank import BOARD_DEFINITION
     from scripts.build_china import (
         _is_current_prophet_artifact,
         _prophet_outage_shell,
@@ -99,10 +109,17 @@ def test_renderer_rejects_legacy_fallback_under_prophet_v2_heading():
     assert not _is_current_prophet_artifact({"buy": [{"ticker": "OLD"}]})
     assert _is_current_prophet_artifact({
         "schema_version": "2.0.0",
-        "board_definition": "cn_prophet_v2",
+        "board_definition": BOARD_DEFINITION,
+        "buy": [],
+    })
+    # a board from the PREVIOUS era must still be refused, not quietly relabelled
+    assert not _is_current_prophet_artifact({
+        "schema_version": "2.0.0",
+        "board_definition": "cn_prophet_v2" if BOARD_DEFINITION != "cn_prophet_v2"
+                            else "cn_prophet_v1",
         "buy": [],
     })
     shell = _prophet_outage_shell("test failure")
-    assert shell["board_definition"] == "cn_prophet_v2"
+    assert shell["board_definition"] == BOARD_DEFINITION
     assert shell["buy"] == []
     assert shell["data_outage"]["flag"] is True

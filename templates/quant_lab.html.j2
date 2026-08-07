@@ -387,7 +387,7 @@
 
 {# ==================== EVIDENCE: universe gap ==================== #}
 <div class="panel">
-  <h2>{{ t('Why their winners are mostly invisible to us','为何他们的优选股在我们这里大多看不到') }}</h2>
+  <h2>{{ t('How many of their winners we can even see','其优选股我们能看到多少') }}</h2>
   <div class="chips" style="margin-top:0">
     <span class="chip">{{ t('Their screened universe','其筛选股票池') }} <b class="mono">{{ '{:,}'.format(universe_gap.fintel_screened) }}</b></span>
     <span class="chip">{{ t('Our price coverage','我们的行情覆盖') }} <b class="mono">{{ '{:,}'.format(universe_gap.our_price_universe) }}</b></span>
@@ -396,8 +396,11 @@
       <b class="mono">{{ universe_gap.published_leaders_in_our_fundamentals_panel }}/{{ universe_gap.published_leaders_tested }}</b></span>
   </div>
   <p class="foot">
-    {{ t('This is the finding that matters most. The model is built to find small, overlooked companies, and it is measured against a small-cap index. Our prices reach that far down, but our filings data does not — so most of the companies the model exists to surface are ones we cannot score at all. Closing this needs wider filings coverage, not a better formula.',
-          '这是最关键的发现。该模型的用途是挖掘被忽视的小公司，其业绩也对标小盘指数。我们的行情能覆盖到那个层级，财报数据却不能－因此该模型真正要挖掘的公司，我们大多根本无法评分。要弥补这一点，需要的是更广的财报覆盖，而非更好的公式。') }}
+    {{ t('The model is built to find small, overlooked companies and is measured against a small-cap index — the size band where our filings data used to run out. It no longer does: our filings coverage now follows our prices down into the Russell 2000, and names we once could not score at all are covered.',
+          '该模型的用途是挖掘被忽视的小公司，其业绩也对标小盘指数－而这正是我们财报数据过去覆盖不到的层级。现在不同了：财报覆盖已随行情下探至罗素2000，过去根本无法评分的公司如今已被纳入。') }}
+    <br>
+    {{ t('The measurement below is not that read. It ran on the narrower panel, before the widening — so it judged this small-cap model mostly on names that are not small caps. Re-running it on the wider panel is the test that will actually settle the question, and it has not run yet.',
+          '但下方的测算并非基于新覆盖。它跑在扩容之前的较窄样本上－也就是说，用于评判这个小盘模型的股票大多并非小盘股。在更广样本上重跑，才是真正能定论的检验，而该检验尚未进行。') }}
   </p>
 </div>
 
