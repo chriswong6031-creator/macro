@@ -796,6 +796,7 @@ jobs:
           tests/test_winner_autopsy.py tests/test_admin_long_hold.py
           tests/test_falsifier_packet.py
           tests/test_board_ledger.py tests/test_grade_us_board.py
+          tests/test_ob_mask_start_invariance.py
           tests/test_board_ledger_lane_gates.py
           tests/test_prophet_governor.py
           tests/test_prophet_showcase.py

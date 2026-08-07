@@ -1947,8 +1947,40 @@ def _ob_mask(close: pd.Series) -> pd.Series | None:
     The desk's OWN cycle-top read — engine/hold.py's LAUNCHED leg, pre-registered in
     research/entry_timing/WAVE6_PREREG.md §3 ("oversold → overbought"). Reused here as
     the episode's TARGET exit so the track record measures the system's own sell
-    discipline instead of an arbitrary calendar date. Known-date mapped (causal — a 3D
-    bucket is only readable once complete), so it can never peek.
+    discipline instead of an arbitrary calendar date.
+
+    CAUSAL, BUT NOT STABLE — these are different properties and this docstring used to
+    claim only the first.
+
+    * CAUSAL (holds): known-date mapped, so a 3D bucket is only readable once complete
+      and this can never peek. Truncating TRAILING bars leaves every past flag
+      unchanged — pinned by tests/test_ob_mask_start_invariance.py.
+    * NOT STABLE (defect): `_tf_bars` resamples on `3B`, whose bin edges anchor to the
+      SERIES' FIRST TIMESTAMP. `emit_ledger` calls this on the full rolling close cache,
+      and the smallcap/midcap `data/*/_closes_cache.parquet` stores are a ROLLING window
+      (first date moved 2023-06-27 -> 2023-07-03 across three sessions in early Aug 2026).
+      Move the start and every 3D bucket in the WHOLE history re-phases, so overbought
+      flags from weeks ago flip and the exit bar of an episode that closed long ago moves.
+
+    Measured (reports/ob_mask_track_record_blast_radius.md, regenerate with
+    scripts/measure_ob_mask_track_record_blast_radius.py). Dropping 4 leading sessions with
+    the end date and every retained price held IDENTICAL moved 126 of 359 already-matured
+    episodes (35.1%), max 28.9 pp, and the PUBLISHED headline expectancy 0.94% -> 1.29% —
+    on zero new information. The phase depends on (leading bars dropped) mod 3, so a
+    re-phase is not even monotone in how much history rolls off.
+
+    So `site/factordata/us_track_ledger.json` — the Track-record dialog plus the hero
+    win-rate/expectancy on the Track-record page — is not stable under re-grading.
+
+    THE FIX IS IN FLIGHT, NOT SHIPPED. PR #4732 (era `abs-session-2026-08-06`) migrates
+    `_tf_bars` to an absolute session anchor in place; because this function imports it
+    directly, the repair reaches here for free and drives the controlled movement above to
+    0 of 359 (verified against that branch). That is also the hazard: merging #4732 changes
+    every published historical number here SILENTLY — `scripts/grade_us_board.py` is not in
+    that PR's file list, its blast-radius report never measures this consumer, and R5's era
+    stamp rides `cascade`/`tier_stream`/`signal_gate`, none of which this path touches. That
+    is a graded-population change and needs its own era boundary:
+    research/US_TRACK_RECORD_ERA_BREAK_PROPOSAL.md.
     """
     try:
         c = close.dropna()
