@@ -165,6 +165,18 @@ html[data-lang="zh"] .sb-tx b{letter-spacing:0}
 .ha-when{font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap}
 .ha-detail{padding:0 0 12px 22px;font-size:12.5px;color:var(--text);line-height:1.55}
 .ha-detail a{font-weight:700;color:var(--link)}
+/* the opened row leads with WHAT IT MEANS (the alert's own plain-word copy), then the
+   conviction/null line, and only then the raw measurement. Mirrors the macro page's
+   ms-sig-what / ms-sig-edge stack; ordered explanation-first because on the hub this
+   row is the only place the signal is ever explained. */
+.ha-what{font-size:12.5px;color:var(--text);line-height:1.55}
+.ha-edge{font-size:12px;color:var(--muted);line-height:1.45;margin-top:6px}
+.ha-edge b{color:var(--text);font-weight:700}
+/* the measurement is a receipt, not the explanation — demote it to a mono readout,
+   but ONLY when plain words sit above it (some feeds carry no `what`, and there the
+   measurement is all the row has, so it must stay body text). */
+.ha-what ~ .ha-foot,.ha-edge ~ .ha-foot{margin-top:9px;padding-top:8px;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.ha-what ~ .ha-foot .ha-read,.ha-edge ~ .ha-foot .ha-read{font-family:var(--font-mono);font-size:11.5px;color:var(--muted)}
 .al-more{display:block;text-align:center;padding:11px 0 6px;font-size:12.5px;font-weight:700;color:var(--link);text-decoration:none}
 .al-more:hover{text-decoration:underline}
 .ha-toggle{display:block;width:100%;background:none;border:none;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);padding:9px 0;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--link);cursor:pointer;text-align:center}

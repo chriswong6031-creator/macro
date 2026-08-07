@@ -29,8 +29,8 @@
   "capture": null,
   "n_logged": 44,
   "n_locked_excluded": 0,
-  "n_skipped_awaiting_t1": 10,
-  "n_skipped_total": 10,
+  "n_skipped_awaiting_t1": 15,
+  "n_skipped_total": 15,
   "board_definition": "cn_reversal_watch_v1"
  },
  "rows": [
@@ -834,8 +834,8 @@
   "survivorship": {
    "n_locked_excluded": 0,
    "n_skipped_no_price": 0,
-   "n_skipped_awaiting_t1": 10,
-   "n_skipped_total": 10,
+   "n_skipped_awaiting_t1": 15,
+   "n_skipped_total": 15,
    "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats; n_skipped_no_price counts store misses only, awaiting-T+1 episodes are in flight"
   },
   "board_definition": "cn_reversal_watch_v1",

@@ -812,8 +812,14 @@
       box.innerHTML = '<p class="muted" style="font-size:13px">' + L('nochart') + '</p>';
       return;
     }
+    // `anchor` carries the ABSOLUTE 3-session bucket boundaries the engine cuts its 3D
+    // grid on (build_hk_library.chart_series, era display-grid-abs-session-2026-08-06).
+    // Passing it through is what keeps this inline path on the same grid as every fetched
+    // payload — without it chart.js falls back to floor(i/3), which re-phases whenever the
+    // ~2y window slides a session.
     var data = { t: d.ticker, o: 0, src: 'hk',
-      bars: ch.t.map(function (x, i) { return [x, ch.c[i], null]; }) };
+      bars: ch.t.map(function (x, i) { return [x, ch.c[i], null]; }),
+      anchor: ch.anchor || null };
     try { window.StockChart.mount(box, d.ticker, {name: d.name, data: data}); }
     catch (e) { /* chart is garnish — analysis above stands alone */ }
   }
@@ -843,7 +849,7 @@
     else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
   });
 </script>
-<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-07 06:25 UTC UTC · <span class="l-en">charts drawn from our own stored EOD prices with TradingView Lightweight Charts · curated HK universe, not exhaustive</span><span class="l-zh">图表由我方存储的日线数据经 TradingView Lightweight Charts 绘制 · 精选港股范围，非全市场</span></p>
+<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-07 08:38 UTC UTC · <span class="l-en">charts drawn from our own stored EOD prices with TradingView Lightweight Charts · curated HK universe, not exhaustive</span><span class="l-zh">图表由我方存储的日线数据经 TradingView Lightweight Charts 绘制 · 精选港股范围，非全市场</span></p>
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>

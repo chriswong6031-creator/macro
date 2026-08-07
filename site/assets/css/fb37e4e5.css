@@ -488,6 +488,14 @@
 }
 
 
+  /* help-tip-framework:BEGIN — legacy help() "?" hover framework. Byte-identical
+     twin in templates/dashboard.html.j2 AND templates/_us_act_now_board.html.j2
+     (the shared board include ships it to hosts that have no page-level copy —
+     sector_central leaked the whole tip sentence inline without it, 2026-08-06).
+     Deliberately NOT in theme.css: editing theme.css re-stamps ~176 pages, and
+     its span.help glyph metrics must keep outranking these bare-.help rules.
+     Keep both copies in step — pinned by
+     tests/test_us_act_now.py::test_help_tip_framework_is_byte_identical_in_both_copies. */
   .help { display: inline-flex; align-items: center; justify-content: center;
           width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
           color: var(--muted); font-size: 10px; font-weight: 600; cursor: help;
@@ -516,6 +524,7 @@
   @media (max-width: 640px) {
     .help .tip.tip-wide { width: calc(100vw - 28px); font-size: 11.5px; line-height: 1.45; }
   }
+  /* help-tip-framework:END */
   .tip-map { width: 360px !important; }
   .tip-seas { width: 350px !important; box-sizing: border-box; padding: 11px 14px; }
   .tip.tip-seas table { table-layout: fixed; width: 100%; margin: 0; }

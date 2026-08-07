@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-07T05:40:06.118144+00:00",
+  "generated_utc": "2026-08-07T08:01:47.390737+00:00",
   "as_of": "2026-08-07",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -24489,7 +24489,7 @@
       {
         "ticker": "FBIN",
         "vol_oi": 0.638,
-        "mult": 4.46,
+        "mult": 4.72,
         "put_call": 9.12,
         "lean": "put-skew",
         "hot": true
@@ -24503,6 +24503,14 @@
         "hot": true
       },
       {
+        "ticker": "OSCR",
+        "vol_oi": 0.235,
+        "mult": 4.36,
+        "put_call": 1.17,
+        "lean": "balanced",
+        "hot": true
+      },
+      {
         "ticker": "FOUR",
         "vol_oi": 0.242,
         "mult": 4.25,
@@ -24511,9 +24519,17 @@
         "hot": true
       },
       {
+        "ticker": "TEAM",
+        "vol_oi": 0.381,
+        "mult": 4.16,
+        "put_call": 0.19,
+        "lean": "call-skew",
+        "hot": true
+      },
+      {
         "ticker": "VST",
         "vol_oi": 0.319,
-        "mult": 3.87,
+        "mult": 3.89,
         "put_call": 0.23,
         "lean": "call-skew",
         "hot": true
@@ -24543,11 +24559,11 @@
         "hot": true
       },
       {
-        "ticker": "OSCR",
-        "vol_oi": 0.235,
-        "mult": 3.58,
-        "put_call": 1.17,
-        "lean": "balanced",
+        "ticker": "WYNN",
+        "vol_oi": 0.157,
+        "mult": 3.48,
+        "put_call": 0.37,
+        "lean": "call-skew",
         "hot": true
       },
       {
@@ -24567,12 +24583,20 @@
         "hot": true
       },
       {
-        "ticker": "WYNN",
-        "vol_oi": 0.157,
-        "mult": 3.1,
-        "put_call": 0.37,
-        "lean": "call-skew",
+        "ticker": "KVYO",
+        "vol_oi": 0.139,
+        "mult": 3.03,
+        "put_call": 0.86,
+        "lean": "balanced",
         "hot": true
+      },
+      {
+        "ticker": "WH",
+        "vol_oi": 0.104,
+        "mult": 2.96,
+        "put_call": 7.43,
+        "lean": "put-skew",
+        "hot": false
       },
       {
         "ticker": "DDOG",
@@ -24580,30 +24604,6 @@
         "mult": 2.87,
         "put_call": 1.5,
         "lean": "put-skew",
-        "hot": false
-      },
-      {
-        "ticker": "WH",
-        "vol_oi": 0.104,
-        "mult": 2.81,
-        "put_call": 7.43,
-        "lean": "put-skew",
-        "hot": false
-      },
-      {
-        "ticker": "TEAM",
-        "vol_oi": 0.381,
-        "mult": 2.75,
-        "put_call": 0.19,
-        "lean": "call-skew",
-        "hot": false
-      },
-      {
-        "ticker": "KVYO",
-        "vol_oi": 0.139,
-        "mult": 2.73,
-        "put_call": 0.86,
-        "lean": "balanced",
         "hot": false
       },
       {
@@ -24615,27 +24615,27 @@
         "hot": false
       },
       {
+        "ticker": "CGNX",
+        "vol_oi": 0.112,
+        "mult": 2.24,
+        "put_call": 1.27,
+        "lean": "balanced",
+        "hot": false
+      },
+      {
         "ticker": "NET",
         "vol_oi": 0.204,
-        "mult": 2.05,
+        "mult": 2.14,
         "put_call": 0.75,
         "lean": "balanced",
         "hot": false
       },
       {
-        "ticker": "ABNB",
-        "vol_oi": 0.155,
-        "mult": 1.98,
-        "put_call": 0.75,
-        "lean": "balanced",
-        "hot": false
-      },
-      {
-        "ticker": "SGML",
-        "vol_oi": 0.139,
-        "mult": 1.98,
-        "put_call": 0.96,
-        "lean": "balanced",
+        "ticker": "DKNG",
+        "vol_oi": 0.168,
+        "mult": 2.12,
+        "put_call": 0.63,
+        "lean": "call-skew",
         "hot": false
       }
     ],
@@ -29570,7 +29570,7 @@
           "special_situation",
           "unusual_options"
         ],
-        "why": "news_sentiment: 0.9 bullish news (50 art) \u00b7 special_situation: Spin-Offs \u00b7 unusual_options: 3.87\u00d7 vol/OI, call-skew"
+        "why": "news_sentiment: 0.9 bullish news (50 art) \u00b7 special_situation: Spin-Offs \u00b7 unusual_options: 3.89\u00d7 vol/OI, call-skew"
       },
       {
         "ticker": "HCA",
