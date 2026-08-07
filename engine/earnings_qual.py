@@ -140,10 +140,9 @@ _DEFAULT_CFG: dict[str, Any] = {
         "api_key_env": "LOCAL_LLM_API_KEY",
         "timeout_s": 120,
         "max_tokens": 1200,
-        # Per-rung transcript bound.  The local endpoint serves a 4,096-token
-        # context window; the cloud rungs do not.  See _rung_text_bounds.
-        "max_chars": 8000,
-        "tail_chars": 3000,
+        # No per-rung transcript bound: this rung inherits the global
+        # max_chars/tail_chars below.  A per-rung override is still supported —
+        # see _rung_text_bounds and the comment in config/earnings_qual.yml.
     },
     "opus_model": "claude-haiku-4-5",
     "deepseek_model": "deepseek-v4-flash",
@@ -254,8 +253,12 @@ def _qwen3_no_think_user_prompt(model: str, user: str) -> str:
 # prompt's size.  No natural-language text reaches 12 characters per token
 # (English runs ~4, CJK ~1-2, i.e. always FEWER chars per token), so a count
 # below that floor is arithmetic proof the server never read the whole prompt —
-# not a tuned heuristic.  Measured 2026-08-06 on qwen3.5:9b @ 4,096 tokens:
-# a 25,600-char prompt reported 2,050 prompt_tokens (12.5 chars/token).
+# not a tuned heuristic.  Measured 2026-08-06 on qwen3.5:9b while the host was
+# still on Ollama's 4,096-token default: a 25,600-char prompt reported 2,050
+# prompt_tokens (12.5 chars/token).  On the same endpoint after
+# OLLAMA_CONTEXT_LENGTH=32768, a 24,168-char prompt reports 8,797 tokens (2.7
+# chars/token) and 14,156 token-dense (1.7), both far below the floor — the
+# detector stays quiet on a healthy server and fires on a re-shrunk one.
 _TRUNCATION_CHARS_PER_TOKEN = 12.0
 
 
@@ -644,7 +647,16 @@ def score_text(
         negative_highlights, tags, summary, source_sha256, scored_at,
         source_record_id, source_updated_at, source_url,
         source_revision_sha256, prompt_version,
-        analysis_schema_version, is_context_only, degraded_reason }
+        analysis_schema_version, is_context_only, degraded_reason,
+        provider_fallback_reason }
+
+    ``provider_fallback_reason`` is observability metadata, never a signal: it
+    carries ``"<provider>:<reason>"`` for the FIRST rung that failed to deliver
+    a usable score, whether or not a later rung recovered.  Without it a local
+    Qwen 404 followed by a DeepSeek success produced a row byte-identical to a
+    clean local run, so a mis-set model id could bill the cloud fallback for
+    hundreds of rows while the estate reported itself local-first.  It is
+    ``None`` when the first configured rung answered.
     """
     cfg = cfg if cfg is not None else load_config()
     provider_cfg = provider_cfg or {}
@@ -677,6 +689,9 @@ def score_text(
         "summary": None,           # SGA W5: call_summary from the model (optional)
         "is_context_only": True,   # SGA-R5 — ALWAYS context-only
         "degraded_reason": None,
+        # Observability only.  A scored row is NOT degraded merely because an
+        # earlier rung failed; degraded_reason keeps its exact prior meaning.
+        "provider_fallback_reason": None,
     }
 
     if not text or not str(text).strip():
@@ -703,6 +718,10 @@ def score_text(
     provider_used: str | None = None
     last_reason: str | None = None
     last_shape_reason: str | None = None
+    # First rung that failed to deliver a usable score, as "<provider>:<reason>".
+    # Recorded on EVERY exit path, so a successful fallback is no longer
+    # indistinguishable from a clean run on the primary provider.
+    first_failed_rung: str | None = None
     for provider_name in [str(name) for name in order if str(name).strip()]:
         rung_cfg = dict(provider_cfg)
         rung_cfg["provider_order"] = [provider_name]
@@ -735,6 +754,8 @@ def score_text(
         )
         last_reason = reason or last_reason
         if reply is None:
+            if first_failed_rung is None:
+                first_failed_rung = f"{provider_name}:{reason or 'no_reply'}"
             continue
         provider_used = used or provider_name
         candidate = _extract_json(reply)
@@ -768,6 +789,13 @@ def score_text(
             obj = candidate
             break
         last_shape_reason = shape_reason
+        # A rung that answered with unusable JSON even after its bounded retry
+        # is a failed rung too — the next provider is about to be charged for
+        # the same call.
+        if first_failed_rung is None:
+            first_failed_rung = f"{provider_name}:{shape_reason}"
+
+    base_row["provider_fallback_reason"] = first_failed_rung
 
     if obj is None:
         base_row["degraded_reason"] = (
@@ -813,21 +841,27 @@ def _rung_text_bounds(
 ) -> tuple[int, int]:
     """Resolve the transcript character bound for ONE provider rung.
 
-    The rungs do not share a context window, so they cannot share a prompt.
-    The local ``openai_compat`` endpoint serves a 4,096-token window; the cloud
-    rungs read the full global budget comfortably.  Sending a cloud-sized
-    prompt to the local server does NOT error — it silently drops the overflow
-    and answers from what fit, usually with a markdown summary instead of the
-    JSON object, which reads downstream as ``invalid_json`` and burns the
-    bounded retry before falling through to a metered provider (measured
-    2026-08-06: 9,000 user-prompt chars returned usable JSON, 10,000 did not,
-    and at 11,000+ the reported ``prompt_tokens`` collapsed to a constant).
-
+    The rungs need not share a context window, so they need not share a prompt.
     A provider's config block may carry its own ``max_chars`` / ``tail_chars``;
     absent that, the global values apply.  Bounds stay config-driven per rung —
     nothing here is keyed to a specific provider name.  ``provider_cfg`` (the
     worker's per-run overrides) wins over the config file, matching how
     ``_dispatch`` merges the endpoint block.
+
+    This is the lever for an endpoint whose window is smaller than the global
+    transcript budget.  Such a server does NOT error over its window — it
+    silently drops the overflow and answers from what fit, usually with a
+    markdown summary instead of the JSON object, which reads downstream as
+    ``invalid_json`` and burns the bounded retry before falling through to a
+    metered provider (``_log_prompt_truncation`` names that symptom from the
+    server's own ``prompt_tokens``).  Configuring the rung is then a config
+    change, not a code change.
+
+    No rung ships with a per-rung bound today: as of 2026-08-06 the local
+    ``openai_compat`` endpoint serves a 32,768-token window
+    (``OLLAMA_CONTEXT_LENGTH`` set on the host) and reads the full 24,000-char
+    global budget — measured at 8,797 prompt_tokens on prose and 14,156 on
+    token-dense numeric text, both ``finish_reason`` stop with usable JSON.
     """
     global_max = _int_or(cfg.get("max_chars"), 24000)
     global_tail = _int_or(cfg.get("tail_chars"), 8000)
@@ -917,6 +951,11 @@ _STORE_COLUMNS = [
     "analysis_schema_version",
     "summary",   # SGA W5: model call_summary (str, nullable); live scorer fills if present
     "is_context_only", "degraded_reason",
+    # R0-A: which rung failed first, as "<provider>:<reason>" (str, nullable).
+    # APPENDED, never inserted — _load_scores_unvalidated() and
+    # merge_score_store_frame() backfill a missing column with None, so a
+    # parquet written before this field still loads and still merges.
+    "provider_fallback_reason",
 ]
 # JSON-encoded columns (stored as strings in parquet for portability).
 _JSON_COLUMNS = ("positive_highlights", "negative_highlights", "tags")

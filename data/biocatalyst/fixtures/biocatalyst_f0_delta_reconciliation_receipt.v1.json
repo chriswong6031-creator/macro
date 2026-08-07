@@ -1,0 +1,211 @@
+{
+  "contract_id": "biocatalyst_f0_delta_reconciliation_receipt.v1",
+  "schema_version": "1.0.0",
+  "state": "reconciled_no_eligibility_change",
+  "owner": "biocatalyst",
+  "reconciled_at": "2026-08-06T00:00:00Z",
+  "baseline_commit": "cbee4e0e7ff38167d00acad1925aae3849cb52c0",
+  "ownership_registry_ref": "config/sector_intelligence_ownership.yml",
+  "ownership_registry_sha256": "a2036e75f6db6ee7d2df4fa908966fa39dd2bbf2aa7431678367ae2bd60c74c6",
+  "ownership_registry_reconciled_against_commit": "e124f4ed2edcf77a82295c78f4feabc6c3e7bc90",
+  "adapter_fixture_ref": "data/biocatalyst/fixtures/shared_plane_read_adapters.v1.json",
+  "adapter_fixture_sha256": "53202cee9cd055549c327ebb81743c2daa194235777f96f931b614e47c04d710",
+  "adapter_fixture_baseline_commit": "e124f4ed2edcf77a82295c78f4feabc6c3e7bc90",
+  "eligibility_rule": {
+    "requires_executable_contract": true,
+    "requires_versioned_contract": true,
+    "requires_point_in_time_scope": true,
+    "requires_defined_ambiguity_behavior": true,
+    "requires_defined_unavailable_behavior": true,
+    "requires_compatible_fixture": true,
+    "plane_existence_is_sufficient": false,
+    "importable_module_is_sufficient": false
+  },
+  "planes": [
+    {
+      "plane": "biocatalyst",
+      "adapter_id": "biocatalyst_trial_read_api.v1",
+      "owning_registration": "biocatalyst_read_projection",
+      "verdict": "eligible",
+      "prior_biocatalyst_eligible": true,
+      "reconciled_biocatalyst_eligible": true,
+      "eligibility_changed": false,
+      "blocker": null,
+      "inspected_paths": [
+        "app/biocatalyst.py",
+        "config/sector_intelligence_ownership.yml",
+        "data/biocatalyst/fixtures/shared_plane_read_adapters.v1.json"
+      ],
+      "evidence": [
+        "The mounted app.biocatalyst router still exposes exactly the ten declared /api/biocatalyst/v1 paths; the fixture route list is unchanged.",
+        "All eight declared output_contracts resolve inside ContractRegistry, so the adapter remains an executable versioned contract.",
+        "point_in_time_scope stays committed_current_public_generation: current-record facts only, no issuer or security identity."
+      ]
+    },
+    {
+      "plane": "earnings_narrative",
+      "adapter_id": "biocatalyst_earnings_transcript_span_adapter.v1",
+      "owning_registration": null,
+      "verdict": "eligible",
+      "prior_biocatalyst_eligible": true,
+      "reconciled_biocatalyst_eligible": true,
+      "eligibility_changed": false,
+      "blocker": null,
+      "inspected_paths": [
+        "engine/earnings_narrative/biocatalyst_transcript_adapter.py",
+        "contracts/biocatalyst/biocatalyst_transcript_context_bundle.v1.schema.json",
+        "config/sector_intelligence_ownership.yml"
+      ],
+      "evidence": [
+        "read_earnings_transcript_context_bundle is still declared in the adapter module and the module still declares no APIRouter and no @router decorator.",
+        "biocatalyst_transcript_context_bundle.v1 remains a registered contract; the transcript-only limitation list is unchanged.",
+        "Scope stays private in-process transcript context with no issuer, security, sponsor, or trial linkage."
+      ]
+    },
+    {
+      "plane": "corporate_intelligence",
+      "adapter_id": "biocatalyst_company_identity_pit_adapter.v1",
+      "owning_registration": "generic_company_identity",
+      "verdict": "still_blocked",
+      "prior_biocatalyst_eligible": false,
+      "reconciled_biocatalyst_eligible": false,
+      "eligibility_changed": false,
+      "blocker": "reviewed_point_in_time_company_identity_contract",
+      "inspected_paths": [
+        "engine/neuralweb/company_intelligence_reader.py",
+        "engine/company_intelligence/contracts.py",
+        "config/sector_intelligence_ownership.yml"
+      ],
+      "evidence": [
+        "read_company_intelligence accepts only ticker, limit, and event_id: there is no as_of or knowledge-time parameter, so the reader cannot answer a point-in-time question.",
+        "company_intelligence_context.v1 is not a registered ContractRegistry contract id, so the declared output has no executable versioned schema BioCatalyst can validate against.",
+        "The reader is documented as ticker-keyed context only, explicitly not identity or asset ownership; a private-company identity remains out of reach.",
+        "The registration generic_company_identity still carries writer null and implementation_state partial_ticker_context_reader_not_pit_identity."
+      ]
+    },
+    {
+      "plane": "market_data_security_master",
+      "adapter_id": "biocatalyst_security_identity_pit_adapter.v1",
+      "owning_registration": "security_identity_and_corporate_actions",
+      "verdict": "still_blocked",
+      "prior_biocatalyst_eligible": false,
+      "reconciled_biocatalyst_eligible": false,
+      "eligibility_changed": false,
+      "blocker": "complete_point_in_time_security_and_corporate_actions_contract",
+      "inspected_paths": [
+        "collectors/symbol_directory.py",
+        "config/sector_intelligence_ownership.yml"
+      ],
+      "evidence": [
+        "collectors.symbol_directory still exposes only SymbolDirectoryAdapter over Nasdaq and SEC roster files; it declares no BioCatalyst-facing read callable.",
+        "symbol_directory_snapshot.v1 is not a registered ContractRegistry contract id, so the snapshot has no executable versioned schema.",
+        "The registration keeps its four limitations including incomplete_corporate_action_history and no_global_security_master, so corporate actions are not point-in-time resolvable."
+      ]
+    },
+    {
+      "plane": "corporate_documents_and_spans",
+      "adapter_id": "biocatalyst_corporate_document_span_adapter.v1",
+      "owning_registration": "corporate_documents_and_spans",
+      "verdict": "still_blocked",
+      "prior_biocatalyst_eligible": false,
+      "reconciled_biocatalyst_eligible": false,
+      "eligibility_changed": false,
+      "blocker": "versioned_document_and_exact_span_read_contract",
+      "inspected_paths": [
+        "engine/fundamental_forensics/sec_document_spine.py",
+        "config/sector_intelligence_ownership.yml"
+      ],
+      "evidence": [
+        "sec_document_spine declares fundamental_forensics.sec_filing_manifest/v1 and fundamental_forensics.sec_archive_receipt/v1, neither of which is a registered ContractRegistry contract id.",
+        "The module exposes archive_index_document and build_filing_manifests as owner-internal substrate helpers; there is no cross-domain span read callable for BioCatalyst.",
+        "The registration still has writer null and implementation_state owner_substrates_exist_no_biocatalyst_read_contract."
+      ]
+    },
+    {
+      "plane": "capital_structure",
+      "adapter_id": "biocatalyst_capital_structure_pit_adapter.v1",
+      "owning_registration": "capital_structure_projection",
+      "verdict": "still_blocked",
+      "prior_biocatalyst_eligible": false,
+      "reconciled_biocatalyst_eligible": false,
+      "eligibility_changed": false,
+      "blocker": "versioned_internal_pit_adapter_with_unavailable_state_semantics",
+      "inspected_paths": [
+        "app/capital_structure.py",
+        "engine/capital_structure/projection.py",
+        "config/sector_intelligence_ownership.yml"
+      ],
+      "evidence": [
+        "None of the five capital-structure routes accepts an as_of parameter; the only as_of in app/capital_structure.py is the single current bundle stamp, so the plane serves a current projection twin and not a point-in-time read.",
+        "capital_structure.projection_bundle.v1 is not a registered ContractRegistry contract id, so BioCatalyst has no schema it can validate a borrowed bundle against.",
+        "UNAVAILABLE_CAPABILITIES still lists cash_runway, fully_diluted_shares, instruments, and financing_probability, so the unavailable-state semantics BioCatalyst needs are not expressed as a contract.",
+        "Open unmerged PR 4740 rewrites the capital-structure document-term lineage pass and open unmerged PR 4746 moves the capital-structure chain into its own daily job; pinning this adapter now would freeze a lineage two open PRs still own."
+      ]
+    },
+    {
+      "plane": "terminal_supabase",
+      "adapter_id": null,
+      "owning_registration": "saved_queries_watchlists_and_assignments",
+      "verdict": "no_read_adapter_slot",
+      "prior_biocatalyst_eligible": null,
+      "reconciled_biocatalyst_eligible": null,
+      "eligibility_changed": false,
+      "blocker": null,
+      "inspected_paths": [
+        "config/sector_intelligence_ownership.yml"
+      ],
+      "evidence": [
+        "User state stays an active_external_plane owned by terminal_supabase with no BioCatalyst read-adapter slot; this audit did not open one.",
+        "Its prohibited_biocatalyst_fallbacks still forbid a local user database and browser-owned canonical state."
+      ]
+    },
+    {
+      "plane": "neural_web",
+      "adapter_id": null,
+      "owning_registration": "cross_sector_read_federation",
+      "verdict": "no_read_adapter_slot",
+      "prior_biocatalyst_eligible": null,
+      "reconciled_biocatalyst_eligible": null,
+      "eligibility_changed": false,
+      "blocker": null,
+      "inspected_paths": [
+        "config/sector_intelligence_ownership.yml"
+      ],
+      "evidence": [
+        "Neural Web remains interface_only with domain_truth_writes, source_record_mutation, and prediction_origination prohibited; no BioCatalyst read-adapter slot exists or was added."
+      ]
+    },
+    {
+      "plane": "prophet",
+      "adapter_id": null,
+      "owning_registration": "final_technical_selection",
+      "verdict": "no_read_adapter_slot",
+      "prior_biocatalyst_eligible": null,
+      "reconciled_biocatalyst_eligible": null,
+      "eligibility_changed": false,
+      "blocker": null,
+      "inspected_paths": [
+        "config/sector_intelligence_ownership.yml"
+      ],
+      "evidence": [
+        "Prophet remains an active_external_plane whose prohibited_biocatalyst_fallbacks still cover candidate_origination, candidate_reordering, gating, and sizing; no adapter slot was created."
+      ]
+    }
+  ],
+  "authority": {
+    "authorizes_adapter_promotion": false,
+    "authorizes_source_activation": false,
+    "authorizes_operator_arming": false,
+    "authorizes_rights_change": false,
+    "authorizes_entitlement_change": false,
+    "authorizes_model_promotion": false,
+    "authorizes_neural_web_authority": false,
+    "authorizes_prophet_behavior": false,
+    "constitutes_rights_review": false,
+    "constitutes_soak_evidence": false,
+    "originates_signals_scores_or_ranking": false
+  },
+  "hash_scope": "canonical_payload_excluding_receipt_id_and_content_sha256",
+  "receipt_id": "biocatalyst_f0_delta_c421aafb2fd1c612417decc3",
+  "content_sha256": "c421aafb2fd1c612417decc38f5b814fb92532800dab721e16e46bc8995e8e01"
+}

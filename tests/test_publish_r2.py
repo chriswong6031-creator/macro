@@ -5,6 +5,8 @@ replace the full one. Pure-helper tests — no boto3/creds needed."""
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -12,6 +14,69 @@ from scripts.publish_r2 import _data_dir_syncable, _manifest_doc, _manifest_ok, 
 
 
 _ROOT = Path(__file__).resolve().parents[1]
+
+
+def _subproc_repo(tmp_path: Path) -> Path:
+    """Copy the real modules into a tmp repo root so a fresh interpreter
+    exercises the SHIPPED import order against a controlled ROOT/.env
+    (lib.config resolves ROOT from its own file location, so an in-process
+    test could never point it at a tmp .env without faking the very load
+    order under test)."""
+    root = tmp_path / "repo"
+    (root / "scripts").mkdir(parents=True)
+    (root / "lib").mkdir()
+    for rel in ("scripts/publish_r2.py", "scripts/fetch_r2.py", "lib/config.py"):
+        (root / rel).write_text((_ROOT / rel).read_text())
+    (root / "lib" / "__init__.py").write_text("")  # scripts/ is a namespace pkg
+    return root
+
+
+def _run_clean(code: str, root: Path) -> subprocess.CompletedProcess:
+    """Run `code` in a fresh interpreter with every R2_* var stripped and
+    cwd at the tmp repo root; PYTHONPATH is dropped so the real checkout can
+    never shadow the tmp copies."""
+    env = {k: v for k, v in os.environ.items()
+           if not k.startswith("R2_") and k != "PYTHONPATH"}
+    return subprocess.run([sys.executable, "-c", code], cwd=root, env=env,
+                          capture_output=True, text=True, timeout=120)
+
+
+def test_module_import_loads_dotenv_before_client_reads_creds(tmp_path):
+    """Regression (2026-08-06): _client() read os.environ before lib.config's
+    import-time _load_dotenv() had run (the import sat inside publish(), after
+    the creds check), so a local run with a fully-keyed ROOT/.env still took
+    the "no R2 creds — skip" exit-0 path. Importing the module must be enough
+    to surface .env creds to _client."""
+    root = _subproc_repo(tmp_path)
+    (root / ".env").write_text(
+        "R2_ENDPOINT=https://env-order.example\n"
+        "R2_ACCESS_KEY_ID=env-order-ak\n"
+        "R2_SECRET_ACCESS_KEY=env-order-sk\n"
+        "R2_BUCKET=env-order-bucket\n")
+    proc = _run_clean(
+        "import json, os\n"
+        "import scripts.publish_r2\n"
+        "print(json.dumps([os.environ.get(k) for k in ("
+        "'R2_ENDPOINT', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET')]))\n",
+        root)
+    assert proc.returncode == 0, proc.stderr
+    assert json.loads(proc.stdout.strip().splitlines()[-1]) == [
+        "https://env-order.example", "env-order-ak", "env-order-sk",
+        "env-order-bucket"]
+
+
+def test_no_dotenv_no_creds_still_graceful_noop(tmp_path):
+    """The .env hoist must not break the other half of the contract: with no
+    .env and no env vars, publish() still no-ops at exit 0 through the REAL
+    _client (no boto3 import, no traceback)."""
+    root = _subproc_repo(tmp_path)
+    proc = _run_clean(
+        "import sys\n"
+        "from scripts.publish_r2 import publish\n"
+        "sys.exit(publish(['stockdata']))\n",
+        root)
+    assert proc.returncode == 0, proc.stderr
+    assert "no R2 creds" in proc.stderr
 
 
 def test_no_remote_manifest_allows_put():

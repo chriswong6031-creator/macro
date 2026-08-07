@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T23:29:01.735096+00:00",
-  "count": 903,
+  "generated_at": "2026-08-07T07:16:31.528078+00:00",
+  "count": 926,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -24,6 +24,7 @@
     "Ing Econ",
     "J.P. Morgan",
     "Jefferies",
+    "LSEG",
     "MUFG",
     "Mizuho",
     "Morgan Stanley",
@@ -57,6 +58,253 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-bcjktsbzuwe-b4ec6e",
+      "title": "Global Markets Comment A Few Follow Up Questions on Yen Intervention",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:41Z",
+      "summary_points": [
+        "**Dollar Reserve Appeal Unaffected**: Goldman Sachs confirms Japan's Treasury sales via FIMA reinforce dollar's reserve role, not undermine it; recent Treasury weakness stems from temporary factors (oil, FOMC), not structural dollar fragility.",
+        "**FIMA Strategic Advantage for Japan**: Japan leverages FIMA for smooth large-scale sales, capital market depth, and liquidity during stress—unique to USD reserves, contrasting with alternatives like Turkey's diversification hurdles.",
+        "**BoJ Rate Hike Tension**: Japan's FX intervention (funded by Treasury sales) may delay BoJ rate hikes (e.g., September), creating market tension between current Yen value and BoJ meeting expectations.",
+        "**FIMA's Structural Impact**: FIMA usage (e.g., Japan's $85bn 2-day sale) has modest USD funding impact ($50–100bn reserves) but underscores dollar's structural dominance over alternatives, with proposed facility upsizing to ease constraints."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7asch3vfxl9-900e62",
+      "title": "PAR Technology Corp. (PAR) 2Q26 Takeaways Topline beat with cost discipline driving better than expected profitability",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:40Z",
+      "summary_points": [
+        "**Q2 Results & Guidance**: Revenue $133m (beat $125m consensus), 17% ARR growth (12% organic), Adjusted EBITDA $14.3m (beat $10.5m); FY26 revenue guidance $516m-$523m (+2% vs consensus) driven by hardware refreshes and Burger King/Papa Johns rollouts.",
+        "**Profitability & Risks**: Cost discipline exceeded EBITDA estimates, but less mature profitability profile remains a key risk; competitive positioning strong in T1/T2 QSR/Retail, though ARR growth trajectory lacks clarity.",
+        "**Valuation Target & Deterioration**: $20.50 target maintained (4x EV/GP), but Goldman Sachs target fell 65% from $75.00 to $20.50, signaling severe bearish sentiment and deteriorating fundamentals.",
+        "**Market Pricing Divergence**: Closing price ($16.74) consistently below target ($20.50), indicating market pricing in lower expectations and reinforcing negative positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-q59jxbzxbfx-a7a25f",
+      "title": "Kodiak Gas Services Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:39Z",
+      "summary_points": [
+        "**Strong Q2 Performance & Revised Guidance**: FY26 EBITDA guidance raised to $830-860m (vs.",
+        "consensus $843m), driven by lower compression costs and Q2 adj.",
+        "EBITDA of $217m beating consensus.",
+        "**Compression Margin Expansion**: Compression margin at 70.0% (vs.",
+        "0% expected), with pricing exceeding consensus (end-of-period revenue per HP $23.80 vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xtcqlmh1hhx-71ad64",
+      "title": "The 720 Lasertec, DBS, Nintendo, Furukawa, SUMCO, Resonac, JX Advanced Materials, NYPCB, Winway, Kakao Corp",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:37Z",
+      "summary_points": [
+        "**AI Infrastructure Demand Surge**: Resonac, SUMCO, JX Advanced Metals report Q2/Q1 profit beats driven by AI server demand (Resonac core profit JPY 55.1bn vs.",
+        "JPY 44bn forecast; JX FY3/27 guidance raised 22% to JPY 232bn), with NYPCB's NT$46.8bn CAPEX signaling sustained ASP growth.",
+        "**Capacity Constraints & Price Hikes**: SUMCO and JX highlight capacity shortages driving negotiated price increases (SUMCO), with JX expecting hikes; Resonac's HD media benefits from early price rises, supporting margin expansion but posing near-term volatility risk.",
+        "**TSMC Margin & Supply Dynamics**: TSMC margin jumped 8.9 ppt QoQ, revenue grew 27% QoQ in 2026, with supply shortages accelerating margin outperformance and earnings revised 2%-23% higher.",
+        "**AI-Driven Data Center Power Demand**: US/global data center power demand (AI + non-AI) accelerates exponentially post-2025E, signaling structural energy market shifts and critical infrastructure investment themes."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mrfz42sxb6j-90d1db",
+      "title": "Suncor Energy Inc. (SU) Updating Estimates Following Solid 2Q Results and Key Management Changes Including Incoming CEO",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:35Z",
+      "summary_points": [
+        "**Management Transition & Governance**: Zebedee appointed President/CEO effective Sept 2026, replacing Kruger as Executive Vice Chair (April 2027), critical for strategic continuity amid in-situ capital shift.",
+        "**Fundamental Catalysts**: 2026E EPS growth at 122.8% (vs 16.1% prior), EBITDA growth 50.9% (vs 9.6%), supported by robust free cash flow per share (C$10.71) and undervalued metrics (P/E 8.5, EV/EBITDA 4.4).",
+        "**Key Risk Factor**: Medium-term capital spend (~C$6bn) for in-situ shift, posing significant long-term execution risk despite strong Q2 results.",
+        "**Valuation & Momentum**: $75 price target (22.2% upside from current), with persistent target-closing price gap ($75 vs $65.80) signaling institutional bullishness and undervaluation.",
+        "**Operational Execution**: Integrated operations driving elevated margins, with management confirming significant free cash flow across cycles despite neutral rating."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-b5e1vltymir-e4fb82",
+      "title": "Loar Holdings (LOAR) 2Q26 First Take beat & raise",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:33Z",
+      "summary_points": [
+        "**Guidance Expansion**: Q2 revenue ($171.6m, +5% vs consensus) and EBITDA ($69.4m, +7%) beat estimates, with 2026 guidance raised: revenue +3%, EBITDA +3%, EPS +5% (revenue forecast $665-675m vs prior $645-655m).",
+        "**Commercial Aerospace Driver**: Commercial OEM organic revenue growth +25.7% and aftermarket +8.6% underpin guidance, with FY2026 EBITDA forecast raised to $265-270m (vs prior $257-262m), signaling sector strength.",
+        "**Coverage & Valuation Risk**: Goldman Sachs price target fell from $102 to $91 despite beat, with \"not covered\" status as of Nov 25, 2025, indicating liquidity risk and deteriorating analyst support.",
+        "**Margin Quality**: 40.5% adjusted EBITDA margin (Q2) highlights operational efficiency, supporting growth trajectory (revenue/EBITDA forecasted to grow 62.5%/74.5% in Aerospace & Defense)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ixptt7ifbvp-d3bd90",
+      "title": "Occidental Petroleum Corp. (OXY) Raising Target Following Strong Multi Year Cash Flow Improvement Plan",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:33Z",
+      "summary_points": [
+        "**Cash Flow & Debt Target**: OXY targets $4.0bn cash flow improvement by 2030 (50% achieved by 2027) via debt reduction ($1.9bn reduced in 2026), operational efficiencies, and preferred equity redemption (Aug 2029), with principal debt target <$10bn.",
+        "**Valuation Mispricing Signal**: P/E and EV/EBITDA fell to 9.9x and 4.4x (12/26E) vs prior year (19.9x, 5.8x), while EPS growth spiked 154.8% (12/26E) before declining, indicating potential one-time earnings or valuation disconnect.",
+        "**Capital Allocation Constraints**: Debt reduction to $10.0bn principal (current $11.8bn) is priority before shifting to preferred equity redemption; dividend increased 8% but shareholder returns constrained post-debt target.",
+        "**Technical Underperformance**: Price target ($64.00, May 2026) exceeds closing price ($58.87), with target line consistently above stock price since May 2026 (S&P 500 benchmark), signaling widening downside pressure or mispricing risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-8oiln7iftk4-7a081f",
+      "title": "What We Are Monitoring in US Credit",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:21Z",
+      "summary_points": [
+        "**CDX HY Spread Expansion & NAV Basis Widening**: CDX HY spread at 302.3 (+4.0 bps 1m), NAV Basis at -9.5 (+7.2 bps 1d), signaling acute high-yield credit stress.",
+        "**IG vs HY Spread Divergence**: CDX IG spread (51.1, +1.4 bps 1m) vs CDX HY spread (302.3, +4.0 bps 1m); HY 1y Pctl 11% (worse) vs IG 1y Pctl 43% (relatively better).",
+        "**Relative HY Stress Severity**: HY spread widening (4.0 bps 1m) significantly outpaces IG (1.4 bps 1m), with HY at 11th percentile (worse) versus IG at 43rd percentile (better).",
+        "**NAV Basis Pressure**: Negative NAV Basis widening (-9.5, +7.2 bps 1d) indicates deteriorating liquidity and pricing dislocation in HY assets."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-j2hd6edol6n-2cd226",
+      "title": "IC STORIES",
+      "institution": "LSEG",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T01:53:22Z",
+      "summary_points": [
+        "**BP Profit Surge & Oil Price Volatility**: $5.73B Q2 profit (doubled) from U.S.-Iran conflict-driven energy prices; strategic oil/gas pivot (renewables write-down $4.1B) amid 2% share drop on U.S.-Iran deal hopes.",
+        "**Russian Oil Export Collapse**: Seaborne exports down 33% m/m (3.9M tons), fuel exports plummet 60% (diesel/gasoline) and 35% (naphtha) due to Ukraine attacks, export bans, and EU sanctions.",
+        "**ADM Earnings & Biofuels Surge**: 2026 adjusted earnings raised to $5.15–$5.60/share (vs.",
+        "$4.15–$4.70), fueled by Iran war-driven grain prices, 129% ag services jump, and U.S.",
+        "mandates."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mati58szsof-636f60",
+      "title": "Market Update US, Europe & Asia",
+      "institution": "Safra",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T01:52:19Z",
+      "summary_points": [
+        "**Geopolitical Volatility**: Russia's missile strikes in Kyiv (17 killed) and EU condemnation heighten market volatility; Middle East concerns persist amid S&P 500 earnings beat rate at 86%.",
+        "**US Macro Data Shift**: July ISM services at 54.1 (below 54.5 forecast) with employment contraction; Treasury’s Q3 refunding unchanged signals cautious fiscal stance.",
+        "**Earnings Quality & Risks**: S&P 500 earnings beat rate at 86% (top-line strong), but CVS and Middle East risks offset gains; sector-specific declines driven by U.S.",
+        "solar softness (SEDG) and tariffs (MDLN).",
+        "**Sector-Specific Threats**: Cyber disruption (CPNG -4.7%) and regulatory headwinds (CDW -9.0%) critical; U.S."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-alnraqdv0az-2f1bf5",
+      "title": "JPM US Weekly Prospects",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T01:42:43Z",
+      "summary_points": [
+        "**FOMC Policy Tensions & Rate Hike Timing**: Three regional Fed dissenters (Hammack, Kashkari, Logan) signal inflation concerns; Fed credibility erosion may accelerate rate hikes to 75bp by year-end, with September possible if CPI moderates.",
+        "**PCE Inflation Trajectory**: Core PCE remains elevated at 3.3% (Q4), above target, with new pressures from goods prices and ex-housing services inflation threatening sustained above-target readings.",
+        "**Labor Market Softening & Unemployment Risk**: Payroll growth slowed (June), temporary unemployment rose to 4.3%; robust indicators (jobless claims, Conference Board) suggest limited near-term impact but upward drift risk.",
+        "**Nonresidential Construction Decline**: Nonresidential construction fell 5.0% q/q (10th straight decline), driven by commercial/healthcare vacancies and mortgage rates, offset only partially by data center growth (18% yoy).",
+        "**Global GDP Resilience & Geopolitical Risks**: 1H26 global GDP at 2.5% (non-tech lift), but Middle East conflict spiking input/output prices (62.2/58.9) threatens inflation recovery despite World Cup stimulus."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 24,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-yb5vivh1hy7-a32c74",
+      "title": "JPM Oil Markets Weekly M",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T01:42:42Z",
+      "summary_points": [
+        "**Non-OPEC supply growth exceeds expectations**: H1 2026 non-OPEC supply surged 2.44 mbd (decade high), led by US (0.9 mbd), Brazil (0.8 mbd), Guyana (0.3 mbd), and Canada (0.2 mbd), suppressing inventory impacts and altering price dynamics.",
+        "**Brent forward curve bears structural shift**: 2027 Brent forecast revised downward to $63 (vs.",
+        "$77), signaling sustained bearish market sentiment and long-term price pressure.",
+        "**Supply-demand surplus widens structurally**: 2027F shows supply (109.4–111.7 mb/d) exceeding demand (104.9–107.5 mb/d) by 4.5–4.2 mb/d, driving inventory buildup (+4.5 to +3.5 mb/d) and downward price pressure.",
+        "**OPEC+ overproduction risks amplified**: Persistent overproduction (e.g., Angola +67k bpd Jan 2025) and excluded major producers (Libya, Iran, Venezuela) create unmonitored geopolitical supply gaps and volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 31,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-ykidyjd5ywx-2c1595",
       "title": "JPM US Market Intelligence Macro Week Ahead CPI, PPI and Retail Sales Next Week",
@@ -359,6 +607,46 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vbe1v4j1wgw-0faf20",
+      "title": "Aug 06 2026 JefferiesLLC StrongTractionwithNBMsbutEarningsMomentumSlows",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:51:49Z",
+      "summary_points": [
+        "**NAND Revenue Guidance Downgrade**: Management lowered NAND revenue growth to soft y/y due to inventory builds, contrasting June’s strong beat, with NBM momentum showing 8 customers signed and >50% F27/F28 bit commitments.",
+        "**eSSD Growth Catalyst**: eSSD business could reach 7%+ revenue share by 2027 ($2.5B revenue, $2B+ EPS benefit), driven by sustained bit growth and declining ASP degradation from capital intensity subsidies.",
+        "**Valuation Premium Risk**: Forward P/E (F2Y) trades at premium (near +1 St Dev), signaling overvaluation and significant downside risk if earnings miss, especially amid elevated market expectations.",
+        "**Geographic Concentration Risk**: 72% of revenue from Americas (declining US share from 39%→28% FY22-FY25), with Asia growth (China 14%→17%, RoA 18%→20%) offering diversification but exposing portfolio to US disruption vulnerability.",
+        "**Data Center Dominance**: Datacenter drives 50-60% of revenue (accelerating toward 2026), with C26 revenue target at 300B and C27 at 500B, aligning with AI/cloud infrastructure trends as core growth engine."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-au9bsni3jek-6addbe",
+      "title": "eBay Inc. (EBAY) Q2'26 Earnings Review",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:51:44Z",
+      "summary_points": [
+        "**Strategic Shift & Guidance Upgrade**: Q2 beat on GMV/revenue/operating income; C2C/ReCommerce >70% GMV; raised FY26 GMV guidance to 11.5-12.5% YoY (vs 7-7.5%) and Non-GAAP Op Income to 10-12% YoY; $1.4bn Depop acquisition to accelerate fashion growth.",
+        "**Valuation & Margin Strength**: P/E declining (18.2→14.6) signals potential undervaluation; EBITDA growth accelerating (10.6→14.0→8.5) and stable gross margins (72.4→73.6) indicate pricing power and growth momentum.",
+        "**Depop Integration Risk**: Expected to cut near-term operating income growth by 3-4 points due to competitive dynamics; management’s execution on AI/LLMs and category focus critical for sustained growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
@@ -1169,6 +1457,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-liog0n7af9m-e9ff44",
+      "title": "Big Oils 2Q26 wrap up Strong FCF and degearing in 2Q",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:35Z",
+      "summary_points": [
+        "**FCF & Debt Dynamics**: EU Big Oils generated $39.6bn FCF (+26% vs est), reducing net debt by $19.9bn (gearing 32%→29% qoq), driven by +14% OCF, -4% capex, and $4.1bn working capital release.",
+        "**Refining Margin Upside**: Middle East disruptions (1.3-1.4 mb/d capacity impaired) drive +3% refining margin upside in H2 2026 vs 2026, with Repsol/Galp having highest OCF sensitivity (4.3%/3.4%).",
+        "**Windfall Tax Divergence**: Repsol faces ~12% profit exposure to windfall tax (vs Galp/ENI at 2.4% each), creating material earnings risk under EU policy scenarios.",
+        "**Capex-Oil Price Disconnect**: Structural decoupling (R²=0.884) as EU Big Oils' capex per barrel no longer correlates with Brent, breaking historical investment thesis.",
+        "**LNG Capacity Acceleration**: 220 mtpa LNG capacity to come online 2025-30 (US/Qatar-led), driving lower gas prices 2028-30 and discouraging new FIDs beyond 2028."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 28,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-gz0ejqpeavf-bf9471",
       "title": "Cushman & Wakefield Ltd. (CWK) 2Q26 First Take Top line beat and guidance raised, but Cap Markets softer",
       "institution": "Goldman Sachs",
@@ -1209,6 +1518,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-gjg98c64ble-4304f3",
+      "title": "What's Top of Mind in Macro Research Yen intervention, tech rebound but leadership rotation, US jobs report",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:25Z",
+      "summary_points": [
+        "**Yen Intervention Efficacy Fade**: Muted USD/JPY response to interventions (e.g., -13.7 bp on 11-Jul-24) signals persistent weakness; structural capital flow reversal (Japanese investors returning home) critical for sustainable strength amid trade-off risks.",
+        "**US Jobs & Middle East Oil Risk**: July nonfarm payrolls estimated +75k (unemployment to 4.3%), Middle East conflict tightening physical oil market despite price retreat; US-Iran deal pivotal for oil stability.",
+        "**AI Investment Surge Drives Tech Rotation**: $600bn US/$1tn global AI investment (vs.",
+        "$250bn/$490bn 2025), fueling North Asia tech export surpluses and structural leadership rotation from mega-cap tech to value sectors (energy, infrastructure, defense).",
+        "**China-Euro Area Growth Divergence**: China CAI 2026/27 GDP at 4.6%/4.7% vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-9i52qkqjtoq-b14f58",
       "title": "Western Digital Corp. (WDC) Solid guidance falls short of high expectations given technology transition",
       "institution": "Goldman Sachs",
@@ -1230,6 +1560,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-hlmkk2yr774-d2645d",
+      "title": "Uber Technologies Inc. (UBER) Q2'26 Earnings Review Revenue Noise Shouldn’t Distract from Long Term Narratives Building in ...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:20Z",
+      "summary_points": [
+        "**AV Scaling & Revenue Momentum**: Uber's AV operations scaling to 15 cities by year-end (from 7) and $15bn global cross-platform run-rate (Grocery/Retail) drive GS' $110 price target (61.3% upside), emphasizing revenue/FCF growth over short-term noise.",
+        "**Financial Trajectory**: GS forecasts revenue rising from $52.017m (12/25) to $75.397m (12/27E), EPS from $4.74 to $6.21, with Brazil supply softness deemed transient and AV scaling critical to growth.",
+        "**Profitability & Cash Flow**: EBIT margin expanding to 16.9% (12/28E), FCF/share rising to $8.36, and gross margin stabilizing at 44.8% signal strong operational efficiency and cash generation.",
+        "**Gross Bookings Momentum**: Q2’26 Gross Bookings +22% YoY (fourth consecutive quarter >20%), exceeding estimates due to broad business line/geography strength and US Mobility momentum.",
+        "**Technical Outperformance**: UBER outperformed S&P 500 (12-month, Oct-25–Jul-26) with P/E declining from 17.9 to 11.0 (12/25–12/28E), indicating valuation compression but robust relative performance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-hq3jqng81ud-cf27da",
       "title": "Global Markets Daily HUF Stocktake — Energy Vol Now, Domestic Drivers Later",
       "institution": "Goldman Sachs",
@@ -1241,6 +1592,27 @@
         "**EU Funds as Fiscal Anchor**: Unblocked RRF funds (€10bn, 3% GDP) and Cohesion Funds (~8-9% of 2025 GDP) represent critical near-term support; disbursement limited to Q4 2024, offsetting energy price impacts.",
         "**EUR/HUF Correlation Drivers**: Oil (10% rise → +0.8% EUR/HUF, R²=0.34) and gas (10% rise → +0.5% EUR/HUF, R²=0.24) explain 34%/24% of daily volatility since Iran conflict; energy prices key near-term HUF direction.",
         "**Inflation Target & FX Risk**: Lowering MNB inflation target to 2% could narrow EUR/HUF differentials, but high FX pass-through (>3%) and energy price volatility create two-sided risks during Euro adoption (Oct/Nov)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jkaisdii5gi-7e75c8",
+      "title": "Americas Brokers & Crypto Key takeaways post earnings CRCL & GLXY",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:01Z",
+      "summary_points": [
+        "**CRCL Earnings & Guidance**: Q2 EPS beat ($184 vs $174) but guidance lowered 6% due to $27.5mn Arc token gain reversal, signaling near-term margin pressure.",
+        "**Hyperliquid Partnership Revenue Impact**: 90% USDC migration to CRCL platform reduced net revenue by $68.5m (9% of 2027E adjusted profit), a critical revenue stream risk.",
+        "**USDC Resilience vs Crypto Downturn**: USDC market cap up 12% YoY vs crypto market down 42% YoY; 70% stablecoin transaction share (June), driven by non-crypto adoption.",
+        "**Revenue & EPS Revisions**: 2026E/27E net revenue revised +12%/-2% and EPS +27%/-8% due to Arc token impact and expense increases, reflecting fundamental adjustment.",
+        "**Valuation & Target**: 12-month price target cut to $71 (from $82) with Neutral rating, P/E reduced to 29.5x, reflecting revised earnings and Hyperliquid revenue risk."
       ],
       "tags": [],
       "tickers": [],
@@ -1291,6 +1663,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-5p1dipehbli-939757",
+      "title": "Hon Hai (2317)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:01:46Z",
+      "summary_points": [
+        "**Hon Hai Revenue Momentum**: Jul rev +54% YoY (vs.",
+        "est), Aug rev +73% YoY / +11% MoM (NT$1.05T), 3Q26E rev +48% YoY / +22% QoQ (NT$3.1T) driven by AI server market share gains and smartphone form factor shifts.",
+        "**Dual Growth Catalysts**: AI server demand (market share expansion) and smartphone form factor changes (2026E) underpin near-term revenue growth; Foxtron (EV subsidiary) launched self-branded \"Bria\" vehicle and secured Mitsubishi Motors partnership for passenger cars/zero-emission buses.",
+        "**Valuation Gap & Upside**: Goldman Sachs 12m TP at NT$400 (54.7% upside from NT$258.50), reflecting 120%+ revenue/EBITDA growth (2025–2028E) and 2027E P/E of 18.9x, with current price significantly below target.",
+        "**Key Downside Risks**: Slower AI server ramp-up, weaker EV solution performance (assembly/design/software), and intensified competition in consumer electronics EMS."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-fzyaaicyuzx-3bce7b",
       "title": "Fluence Energy Inc. (FLNC) First Take Revenue miss and FY26 guidance cut disappointing, but record orders (incl. hyperscale...)",
       "institution": "Goldman Sachs",
@@ -1308,6 +1701,69 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ona6alnfny9-b93e96",
+      "title": "Capri Holdings (CPRI) F1Q27 Earnings Review Michael Kors recovery still in focus as EMEA softens",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:01:43Z",
+      "summary_points": [
+        "**Q1 Results & Guidance**: FY27 revenue guidance reduced to $3.4bn (vs.",
+        "$3.525bn) due to EMEA softness (-$50mn), inventory delays (-$50mn), and FX headwinds (-$35mn); Q1 EPS beat ($0.67 vs.",
+        "$0.41) but gross margins missed.",
+        "**Brand Performance & Risks**: Jimmy Choo drove 10.5% Y/Y revenue growth (exceeding expectations), while Michael Kors faces outlet channel softness and inventory delays; sustained outlet growth remains a key debate.",
+        "**Valuation & Key Risks**: Price target cut to $18 (from $21) with P/E 13.4 below forward 15.7; downside risks include delayed sales, margin compression, and balance sheet/FCF deterioration."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bd8pms0hcv4-d57085",
+      "title": "Uber Technologies Inc. (UBER) Q2'26 Earnings First Take",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:01:30Z",
+      "summary_points": [
+        "**Earnings & Growth Drivers**: Gross Bookings ($58.02bn) and Adj.",
+        "EBITDA ($2.82bn) beat estimates; Mobility (40% YoY) and Delivery ($15bn annualized run rate) growth are core strategic priorities, with AV expansion to 15 cities by year-end.",
+        "**Guidance & Key Risks**: Q3 bookings guidance ($58.25-60.25bn) slightly above Street ($59.33bn); critical risks include slower Mobility growth, regulatory hurdles (driver classification, merchant caps), and competitive pressures.",
+        "**Valuation Upside & Fundamentals**: $115 target (59.7% upside from $71.99), driven by 43% revenue/87% EBITDA growth (12/25-12/28E), P/E compression (17.9→11.7), and strong EBITDA margin expansion.",
+        "**Target Price Momentum**: Sustained upward trajectory in target prices (e.g., $115 as of May 2026 vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jefo4v6bgcr-46475e",
+      "title": "Q2 2026 Earnings Review",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-06T03:39:23Z",
+      "summary_points": [
+        "**US Earnings: AI Infrastructure Dominance** AI infrastructure stocks drive ~60% of S&P 500 earnings growth (semiconductors alone ~50%), with market pricing in strong results but demanding robust guidance and broader momentum.",
+        "**S&P 500 Record Growth Metrics** Q2 2026 EPS growth (44.6%) and sales growth (24.1%) hit highest since 2021, with beat ratios above historical averages signaling resilient top-line delivery despite mature profit cycle.",
+        "**Amazon/Alphabet Distortion in EPS Surprises** Aggregate EPS beats driven by outsized contributions from Amazon/Alphabet, creating upward bias; markets now prioritize quality of surprise (guidance, margin sustainability) beyond AI-linked giants.",
+        "**Europe: Energy/Tech Growth vs.",
+        "Sector Divergence** Energy (36.64% sales growth) and IT lead Stoxx 600 growth (21% blended), while automotive pressured by Chinese competition; sales beats outperform EPS beats in Europe."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },
@@ -1370,6 +1826,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lk5qwwzmtg8-b8ed5f",
+      "title": "DOUBLING DOWN ON GILTS",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-05T16:17:57Z",
+      "summary_points": [
+        "**UK macro divergence**: BoE rate cuts next year (negative output gap, decelerating wage growth) create yield advantage for 10y Gilts vs JGBs/Bunds/USTs.",
+        "**Middle East hostilities**: Geopolitical risk threatening energy-driven inflation surge, critical factor for bullish Gilt view.",
+        "**ECB Rate Hike Outlook**: Two more hikes (2026) driven by strong euro area labor market (wage growth 2.5–3%), limiting Bund yield downside.",
+        "**BoJ Hawkish Shift**: Wage growth trajectory implies sticky services inflation, pressuring JGB yields despite economy resilience.",
+        "**Risk-Adjusted Performance Gap**: Portfolio Sharpe ratio (0.95) lags BB Macro HF Index (1.82), signaling critical underperformance risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },

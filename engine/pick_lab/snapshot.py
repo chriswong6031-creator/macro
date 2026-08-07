@@ -55,7 +55,15 @@ _SCORE_COLS = [
 # Oscillators per grid g ∈ {d1, d2, d3}:
 _OSC_GRIDS = ("d1", "d2", "d3")
 _OSC_SUFFIXES = ("macd", "sig", "macd_xup_bars", "k", "d", "kd_xup_bars", "from_os", "ob")
-_OSCILLATOR_COLS = [f"{g}_{s}" for g in _OSC_GRIDS for s in _OSC_SUFFIXES] + ["weekly_bull"]
+_OSCILLATOR_COLS = [f"{g}_{s}" for g in _OSC_GRIDS for s in _OSC_SUFFIXES] + [
+    "weekly_bull",
+    # Session-anchor era of the resampled oscillator grids on this row (d2_* here;
+    # signals_1d.ANCHOR_ERA = "pl-abs-session-2026-08-06"). Null = row logged under
+    # the pre-era loader-phased resample("2B") bins, or oscillators not computed that
+    # night. Rows are keep-first and never retro-edited — this column is the cohort
+    # fence, not a heal.
+    "pl_anchor_era",
+]
 # Gate:
 _GATE_COLS = ["tier", "t_ticks", "gate_state"]
 # Context:

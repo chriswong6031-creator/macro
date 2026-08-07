@@ -5,6 +5,11 @@ NOT alpha, NOT a standalone strategy. See research/signal_engine/CHARTER.md for 
 framing and the marker contract (§7). The buy-filter (reclaim-and-hold + bearish-
 divergence veto + 200-day-MA as a confidence bar-raiser) cut average max drawdown
 -23.7% -> -15.5% across 110 held-out US names (84% improved) — it is a drawdown tool.
+That citation is a PRE-ERA measurement (start-anchored bins, 110 names). Re-run on the
+238-name panel with everything held fixed except the bucket phase, the same construction
+reads -24.7 -> -15.3, shallower on 82% (research/SIGNAL_QUALITY_SESSION_ANCHOR_ADJUDICATION_
+BY_FABLE.md §Re-validation): the claim REPRODUCES under the absolute anchor. Both numbers
+are quoted, neither is silently re-baked.
 
 Faithful to the owner's `MACD STOCH RSI CONFLUENCE SIGNAL.pine`, run on the 3D:
   RSI-MACD : macd = EMA(RSI14,14) - EMA(RSI14,60); signal = EMA(macd,5)   (NOT price MACD)
@@ -28,10 +33,27 @@ a high/low Chandelier ATR.
 """
 from __future__ import annotations
 
+from typing import NamedTuple
+
 import numpy as np
 import pandas as pd
 
+from engine import session_anchor   # the ONE absolute session calendar (R-SQ1)
 from engine.technicals import rsi   # Wilder RSI, matches Pine ta.rsi
+
+#: The bucketing era every §7 marker below was drawn under (R-SQ3). The 2D/3D grids are
+#: anchored to an ABSOLUTE session calendar (``engine/session_anchor``), never to the
+#: caller's slice: ``bucket(d) = session_positions(d, market) // n``, labelled by the
+#: bucket's OPEN date. Before 2026-08-06 these were pandas ``2B``/``3B`` bins phased to
+#: the SERIES' FIRST timestamp, so the four production history depths that reach ``gate()``
+#: each read a DIFFERENT marker stream for the same name (measured on the 2026-08-06 tape:
+#: one dropped leading bar moved 238/238 data/stocks last-marker dates, changed 91 marker
+#: IDENTITIES, flipped 95 tick counts, 11 gate eligibilities and 3 final buy verdicts).
+#: Ruling: research/SIGNAL_QUALITY_SESSION_ANCHOR_ADJUDICATION_BY_FABLE.md; measured
+#: blast radius: reports/sq_anchor_blast_radius.md. It is a SEPARATE era from the
+#: cascade's ``confluence_tiers.ANCHOR_ERA`` — a verdict is jointly produced by two
+#: bucketing grids and a graded row must be able to place itself against BOTH.
+ANCHOR_ERA = "sq-abs-session-2026-08-06"
 
 RSI_LEN, FAST_LEN, BASE_LEN, SIG_LEN = 14, 14, 60, 5
 STOCH_LEN, SMOOTH_K, SMOOTH_D = 14, 3, 3
@@ -73,18 +95,84 @@ def _since(cond):
     return pd.Series(pos, index=cond.index) - last
 
 
+class _Grid(NamedTuple):
+    """One n-session timeframe grid cut on the ABSOLUTE session calendar (R-SQ1/R-SQ2)."""
+    close: pd.Series          #: bucket close (its LAST finite close), indexed by the OPEN-date label
+    last_session: pd.Series   #: the bucket's last session that carried a close, same index
+    bucket: pd.Series         #: per-daily-row bucket id, indexed by the working daily index
+    label: pd.Series          #: bucket id -> OPEN-date label (buckets with a finite close only)
+    index: pd.DatetimeIndex   #: the working daily index (sorted, de-duplicated)
+
+
+def _tf_grid(daily: pd.Series, n: int, market: str = "US") -> _Grid:
+    """The n-session grid every §7 timeframe is cut on, anchored ABSOLUTELY (R-SQ1/R-SQ2).
+
+    ``bucket(d) = session_anchor.session_positions(d, market) // n`` — a function of
+    ``(reference calendar, date)`` alone, so the grid is IDENTICAL no matter how much
+    leading history the caller handed in. That is the whole repair: the retired pandas
+    ``3B`` resample anchored its bin edges to the SERIES' FIRST timestamp, so the four
+    production history
+    depths that reach ``gate()`` each read a different §7 marker stream for the same name,
+    and the business-day bins additionally MIS-SPLIT every bucket spanning a market holiday
+    (the defect ``engine/canon.py::resample_sessions`` records as relocating ~80% of NVDA
+    signal dates). Ruling: research/SIGNAL_QUALITY_SESSION_ANCHOR_ADJUDICATION_BY_FABLE.md.
+
+    LABELS ARE OPEN DATES (R-SQ2): a bucket is stamped with the FIRST session in it that
+    carried a close, so a §7 marker date is always a real traded bar of THIS series. The
+    old bin labels were pandas' synthetic left edges and could land on a holiday, which is
+    why the charter's "Dates are 3D bar dates" was only approximately true. Known-date
+    labels (the ``confluence_tiers._tf_bars`` internal convention) were REJECTED here: §7
+    labels are the PUBLIC contract, and moving them would silently age every take by a tick.
+
+    Returns the bucket ``close`` and ``last_session`` indexed by that label, PLUS the
+    per-row ``bucket`` ids and the ``label`` map — so a caller aggregating a SECOND series
+    (the high/low band) cuts it on exactly these buckets instead of re-deriving a grid that
+    could disagree. One vectorized groupby; no Python-per-bucket loop on the hot path.
+    """
+    s = daily
+    if not s.index.is_monotonic_increasing:
+        s = s.sort_index()                       # resample used to sort; keep that contract
+    s = s[~s.index.duplicated(keep="last")]
+    idx = s.index if isinstance(s.index, pd.DatetimeIndex) else pd.DatetimeIndex(
+        pd.to_datetime(s.index))
+    empty_v = pd.Series(dtype="float64")
+    empty_d = pd.Series(dtype="datetime64[ns]")
+    if len(idx) == 0:
+        return _Grid(empty_v, empty_d, pd.Series(dtype="int64"), empty_d, idx)
+    b = pd.Series(session_anchor.session_positions(idx, market) // n, index=idx)
+    # ``.dropna()`` on the old resample result dropped ALL-NaN buckets and nothing else,
+    # and ``.last()`` skipped NaN within a bucket — both preserved by filtering here.
+    ok = s.notna().to_numpy()
+    if not ok.any():
+        return _Grid(empty_v, empty_d, b, empty_d, idx)
+    agg = (pd.DataFrame({"v": s.to_numpy()[ok], "d": idx.to_numpy()[ok]})
+           .groupby(b.to_numpy()[ok], sort=True)
+           .agg(close=("v", "last"), open_date=("d", "first"), last_session=("d", "last")))
+    labels = pd.DatetimeIndex(agg["open_date"])
+    return _Grid(pd.Series(agg["close"].to_numpy(), index=labels),
+                 pd.Series(pd.DatetimeIndex(agg["last_session"]), index=labels),
+                 b, pd.Series(labels, index=agg.index), idx)
+
+
 def signal_frame(daily_close: pd.Series, daily_high: pd.Series | None = None,
-                 daily_low: pd.Series | None = None) -> pd.DataFrame:
+                 daily_low: pd.Series | None = None, *,
+                 market: str = "US") -> pd.DataFrame:
     """3D confluence signals (CB/CS/revBuy/revSell) + regime gates, leak-free.
 
     Every confluence value stays CLOSE-driven (faithful to the owner's Pine source).
     If a daily ``high``/``low`` is supplied — true OHLC for US deep names, or a
     conservative reconstruction for close-only names (engine.ohlc_reconstruct) — it
-    is resampled onto the 3D grid (high=max, low=min over each bucket) and exposed
+    is bucketed onto the 3D grid (high=max, low=min over each bucket) and exposed
     as ``high``/``low`` so swing-high & bearish-divergence can read intrabar extremes.
     With NO high/low given, ``high``/``low`` collapse to ``close`` — i.e. the original
-    close-only behaviour is preserved EXACTLY (the validated buy-filter default)."""
-    s3 = daily_close.resample("3B").last().dropna()
+    close-only behaviour is preserved EXACTLY (the validated buy-filter default).
+
+    ``market`` picks the reference session calendar the 2D/3D buckets are anchored to
+    (:func:`_tf_grid`, R-SQ1). US default; :func:`analyze` infers it from its own ticker
+    and ``hk_board_rank`` passes HK, so no board caller needs an edit. The W-FRI weekly
+    leg is calendar-absolute already and is deliberately untouched (R-SQ6)."""
+    grid3 = _tf_grid(daily_close, 3, market)
+    s3 = grid3.close
     if len(s3) < 90:
         return pd.DataFrame()
     macd, sig = _rsi_macd(s3)
@@ -112,19 +200,25 @@ def signal_frame(daily_close: pd.Series, daily_high: pd.Series | None = None,
     # entry quality — deeper drawdown, the §5b guard avenue could not fix it), so it is surfaced
     # ONLY as a display-only advance-warning, NEVER scored, NEVER auto-traded, NEVER a buy
     # `quality`. Leak-free: 2D histogram uses the prior CLOSED 2D bar (.shift(1), no repaint).
-    s2 = daily_close.resample("2B").last().dropna()
+    s2 = _tf_grid(daily_close, 2, market).close
     m2, sg2 = _rsi_macd(s2)
     hist2 = m2 - sg2
     rising2 = ((hist2 > hist2.shift(1)) & (hist2.shift(1) > hist2.shift(2))).shift(1)
     rising2_on3 = rising2.reindex(s3.index, method="ffill").fillna(False).astype(bool)
     early = (sb & b1os & rising2_on3 & (wbull | b1os) & (r14 < BUY_RSI_MAX)).fillna(False)
     if daily_high is not None and daily_low is not None:
-        # align high/low onto the close's daily index FIRST so the 3B resample shares
-        # s3's bucket anchor; otherwise a leading-NaN/short high|low would resample on
-        # a different anchor and silently collapse the band back to close.
-        hl = pd.DataFrame({"high": daily_high, "low": daily_low}).reindex(daily_close.index)
-        h3 = hl["high"].resample("3B").max().reindex(s3.index)
-        l3 = hl["low"].resample("3B").min().reindex(s3.index)
+        # The band is cut on grid3's OWN bucket ids — the same session positions that made
+        # the close — so an anchor mismatch between the band and the close is now
+        # STRUCTURALLY impossible. The old code aligned high/low onto the close's daily
+        # index first and re-resampled, a precaution against a leading-NaN/short high|low
+        # phasing its own "3B" bins differently and silently collapsing the band back to
+        # close; the reindex stays (the inputs may still carry a different index), the
+        # second bucketing is gone.
+        hl = pd.DataFrame({"high": daily_high, "low": daily_low}).reindex(grid3.index)
+        band = (hl.groupby(grid3.bucket.to_numpy(), sort=True)
+                .agg({"high": "max", "low": "min"}).reindex(grid3.label.index))
+        h3 = pd.Series(band["high"].to_numpy(), index=s3.index)
+        l3 = pd.Series(band["low"].to_numpy(), index=s3.index)
         h3 = pd.concat([h3, s3], axis=1).max(axis=1)   # 3D high never below its close
         l3 = pd.concat([l3, s3], axis=1).min(axis=1)   # 3D low never above its close
     else:
@@ -136,21 +230,27 @@ def signal_frame(daily_close: pd.Series, daily_high: pd.Series | None = None,
                          "early": early})
 
 
-def fresh_breach_mask(daily_close: pd.Series) -> pd.Series:
-    """Return a boolean Series (3B-indexed) of fresh EMA8 breaches.
+def fresh_breach_mask(daily_close: pd.Series, *, market: str = "US") -> pd.Series:
+    """Return a boolean Series (3D-bucket-indexed) of fresh EMA8 breaches.
 
-    A 'fresh breach' fires on the 3B bar where:
+    A 'fresh breach' fires on the 3D bar where:
       (1) close < ema_trail  (below)
-      (2) previous 3B bar was NOT below (first time under)
+      (2) previous 3D bar was NOT below (first time under)
       (3) ema_trail was rising into the breach (slope: bar-1 > bar-3)
 
-    The result index is the 3B-resample end-dates.  Reindex to a daily
-    index with method='ffill' to map breach dates back to daily bars.
+    The result index is :func:`_tf_grid`'s OPEN-date labels — the first TRADED session of
+    each bucket, so every breach date IS a daily bar of this series and a membership test
+    against the daily index always resolves.  (Pre-``sq-abs-session-2026-08-06`` it was the
+    retired ``3B`` bin's synthetic LEFT edge, which could be a holiday and belonged to
+    no series at all.)  Reindex to a daily index with method='ffill' to carry a breach
+    forward across the bucket.
+
+    ``market`` picks the reference session calendar (R-SQ1); see :func:`signal_frame`.
 
     This is the canonical single source of truth for the fresh_breach
     construction used by both analyze() and dump_breakdown_events.py.
     """
-    sf = signal_frame(daily_close)
+    sf = signal_frame(daily_close, market=market)
     if sf.empty:
         return pd.Series(dtype=bool)
     trail = sf["ema_trail"]
@@ -322,28 +422,37 @@ def _buy_filter(i, sig, bear, n, *, reclaim_veto: bool = True):
 CONFIRM_BARS = 2
 
 
-def _bucket_last_session(daily_close: pd.Series) -> pd.Series:
-    """3B bucket label -> the last DAILY session in it that carried a close.
+def _bucket_last_session(daily_close: pd.Series, *, market: str = "US") -> pd.Series:
+    """3D bucket label (its OPEN date) -> the last DAILY session in it that carried a close.
 
-    Resampled on ``daily_close``'s OWN index, exactly as :func:`signal_frame` does.
-    ``3B`` bins are anchored on the first index date, so re-deriving them from a
-    differently-trimmed copy of the series silently shifts EVERY boundary (measured:
-    dropping one leading row moves every label by a day).  Both halves of a
-    confirmation read therefore have to come from one series object.
+    The SAME :func:`_tf_grid` call :func:`signal_frame` cuts its 3D close on — one grid,
+    one set of buckets, one set of labels — so the two halves of a confirmation read can no
+    longer disagree by construction.
+
+    Under the pre-``sq-abs-session-2026-08-06`` ``3B`` resample this function carried a
+    caveat instead of a guarantee: bins anchored on the series' FIRST index date, so
+    re-deriving them from a differently-trimmed copy shifted EVERY boundary (measured:
+    dropping one leading row moved every label), and both halves of a read had to come from
+    one series object.  The absolute anchor retires that caveat — the grid is a function of
+    ``(reference calendar, date)`` alone, so any two windows of the same name agree.
     """
-    stamps = pd.Series(daily_close.index, index=daily_close.index)
-    return stamps.where(daily_close.notna()).resample("3B").last().dropna()
+    return _tf_grid(daily_close, 3, market).last_session
 
 
-def confirmation_date(daily_close: pd.Series, marker_date) -> pd.Timestamp | None:
+def confirmation_date(daily_close: pd.Series, marker_date, *,
+                      market: str = "US") -> pd.Timestamp | None:
     """First daily close at which a marker's ``_buy_filter`` label was KNOWABLE.
 
     THE ONLY LEGAL ANCHOR for a forward return off a §7 marker — see the warning on
     :func:`_buy_filter`, which forbids grading from ``marker['date']``.  Two separate
     look-aheads sit between the two dates and this function closes both:
 
-    1. ``marker['date']`` is the 3B bucket's LEFT EDGE (``resample("3B")`` labels left,
-       aggregates ``.last()``), so it precedes even its OWN close by up to two sessions;
+    1. ``marker['date']`` is the 3D bucket's OPEN date (:func:`_tf_grid` labels a bucket
+       with its first TRADED session, R-SQ2), so it precedes even its OWN close by up to
+       two sessions.  Pre-``sq-abs-session-2026-08-06`` it was the retired ``3B`` bin's
+       synthetic LEFT EDGE, which could be a holiday belonging to no series at all; the
+       gap it opens is the same size and the same direction, and closing it is still this
+       function's job;
     2. the label at bar ``i`` reads forward to bar ``i + 2`` (:data:`CONFIRM_BARS`).
 
     Together that is ~8 daily sessions, and the marker date sits at the trough that
@@ -363,6 +472,10 @@ def confirmation_date(daily_close: pd.Series, marker_date) -> pd.Timestamp | Non
     or bar ``i + 2`` not printed yet.  That last one is the live-edge case: a marker
     inside its own confirmation window has no knowable-yet close, and the caller owes
     the reader a disclosed null rather than a number measured from the wrong bar.
+
+    ``market`` must be the calendar the marker was LABELLED on (R-SQ1) — pass the same
+    value ``analyze`` used, or the lookup lands on a grid the marker never sat on and
+    returns the disclosed ``None``.  ``hk_board_rank`` passes HK.
     """
     if daily_close is None or marker_date is None or len(daily_close) == 0:
         return None
@@ -372,7 +485,7 @@ def confirmation_date(daily_close: pd.Series, marker_date) -> pd.Timestamp | Non
         return None
     if pd.isna(stamp):
         return None
-    sig = signal_frame(daily_close)
+    sig = signal_frame(daily_close, market=market)
     if sig.empty:
         return None
     # analyze()'s own prefix, verbatim — the frame this walks must be the frame the
@@ -386,7 +499,8 @@ def confirmation_date(daily_close: pd.Series, marker_date) -> pd.Timestamp | Non
         return None                      # not a bucket label of this series
     if position + CONFIRM_BARS >= len(index):
         return None                      # _buy_filter's own "pending confirmation"
-    session = _bucket_last_session(daily_close).get(index[position + CONFIRM_BARS])
+    session = _bucket_last_session(
+        daily_close, market=market).get(index[position + CONFIRM_BARS])
     if session is None or pd.isna(session):
         return None
     return pd.Timestamp(session)
@@ -401,8 +515,14 @@ def analyze(ticker: str, daily_close: pd.Series, daily_high: pd.Series | None = 
     names — see engine.ohlc_reconstruct). Omit them for the close-only default.
 
     ``reclaim_veto`` is passed straight through to :func:`_buy_filter` (default True =
-    the validated US/CN policy, unchanged). See that docstring for why HK passes False."""
-    sig = signal_frame(daily_close, daily_high, daily_low)
+    the validated US/CN policy, unchanged). See that docstring for why HK passes False.
+
+    The 2D/3D grids are anchored to the reference session calendar of the market inferred
+    from ``ticker`` (``session_anchor.market_for_ticker``, R-SQ1) — so no caller needs an
+    edit to get the right calendar — and every payload carries ``anchor_era`` naming the
+    bucketing era it was drawn under (R-SQ3)."""
+    market = session_anchor.market_for_ticker(ticker)
+    sig = signal_frame(daily_close, daily_high, daily_low, market=market)
     if sig.empty:
         return None
     sig = sig.dropna(subset=["macd", "sig", "k", "d", "rsi14"])
@@ -457,7 +577,11 @@ def analyze(ticker: str, daily_close: pd.Series, daily_high: pd.Series | None = 
     state = ("long-bias" if (last["k"] >= last["d"] and last["macd"] >= last["sig"])
              else "short-bias" if (last["k"] < last["d"] and last["macd"] < last["sig"]) else "mixed")
     t_last = float(trail.iloc[-1])
-    return {"ticker": ticker, "asof": str(idx[-1].date()), "tf": "3D", "state": state,
+    return {"ticker": ticker, "asof": str(idx[-1].date()), "tf": "3D",
+            # the bucketing era this marker stream was drawn under (R-SQ3). It rides ON the
+            # payload so site/signals/<T>.json, the brain leaves, marker_integrity's cutover
+            # and the track-record ledger can all place a row in the right cohort forever.
+            "anchor_era": ANCHOR_ERA, "state": state,
             "above200": bool(last["above200"]), "weekly_bull": bool(last["w_bull"]),
             "trail_stop": round(t_last, 4) if pd.notna(t_last) else None,
             "trail_breach": bool(pd.notna(t_last) and last["close"] < t_last),

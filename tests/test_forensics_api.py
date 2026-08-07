@@ -1,6 +1,7 @@
 """Authenticated API tests for the private Filing Forensics state route."""
 from __future__ import annotations
 
+import ast
 import gzip
 import importlib.util
 import json
@@ -753,7 +754,9 @@ def test_attested_history_missing_or_corrupt_private_reader_maps_to_private_503(
 
 
 def test_private_store_factory_is_singleton_until_explicit_test_reset(monkeypatch) -> None:
-    from engine.research_vault import r2_store
+    # The receipt API builds the DEDICATED attested-history reader, never the
+    # generic Research Vault store: the sealed receipts live in their own bucket.
+    from engine.fundamental_forensics import attested_history_store
 
     calls: list[object] = []
     first = object()
@@ -764,7 +767,7 @@ def test_private_store_factory_is_singleton_until_explicit_test_reset(monkeypatc
         return first if len(calls) == 1 else second
 
     forensics_api._reset_store_cache()
-    monkeypatch.setattr(r2_store, "build_store", build_once)
+    monkeypatch.setattr(attested_history_store, "build_attested_history_store", build_once)
     assert forensics_api._build_store() is first
     assert forensics_api._build_store() is first
     assert len(calls) == 1
@@ -774,9 +777,40 @@ def test_private_store_factory_is_singleton_until_explicit_test_reset(monkeypatc
     forensics_api._reset_store_cache()
 
 
+def test_absent_and_failing_dedicated_store_are_both_cached_until_reset(monkeypatch) -> None:
+    """A 503 must stay bounded: neither None nor a raise may retry per request."""
+    from engine.fundamental_forensics import attested_history_store
+
+    calls: list[str] = []
+
+    def build_none():
+        calls.append("none")
+        return None
+
+    def build_raises():
+        calls.append("raise")
+        raise attested_history_store.AttestedHistoryStoreError("misconfigured bucket")
+
+    forensics_api._reset_store_cache()
+    monkeypatch.setattr(attested_history_store, "build_attested_history_store", build_none)
+    assert forensics_api._build_store() is None
+    assert forensics_api._build_store() is None
+    assert calls == ["none"]
+
+    forensics_api._reset_store_cache()
+    monkeypatch.setattr(attested_history_store, "build_attested_history_store", build_raises)
+    # The factory's exception is absorbed into the same bounded absent-store
+    # state rather than escaping as a 500.
+    assert forensics_api._build_store() is None
+    assert forensics_api._build_store() is None
+    assert calls == ["none", "raise"]
+    forensics_api._reset_store_cache()
+
+
 def test_attested_history_auth_and_entitlement_denial_happen_before_store(monkeypatch) -> None:
     import app.main as main_mod
     import app.paywall as paywall_mod
+    from engine.fundamental_forensics import attested_history_store
 
     reads: list[object] = []
     monkeypatch.setattr(main_mod, "require_user", lambda _authorization: {"id": "free-user"})
@@ -785,19 +819,58 @@ def test_attested_history_auth_and_entitlement_denial_happen_before_store(monkey
         assert always is True
         raise HTTPException(402, "site_full required")
 
+    def factory_must_not_run():
+        raise AssertionError("entitlement denial must precede store construction")
+
     monkeypatch.setattr(paywall_mod, "enforce_site_full", deny)
     monkeypatch.setattr(forensics_api, "_build_store", lambda: reads.append(object()))
+    # Belt and braces: even the dedicated factory beneath _build_store must be
+    # unreachable, so a future refactor cannot open the private bucket first.
+    monkeypatch.setattr(
+        attested_history_store, "build_attested_history_store", factory_must_not_run
+    )
+    forensics_api._reset_store_cache()
     app = FastAPI()
     app.include_router(forensics_api.router)
-    with TestClient(app) as client:
-        response = client.get(
-            "/api/forensics/v1/attested-history/latest",
-            headers={"Authorization": "Bearer signed-in-free-user"},
-        )
+    try:
+        with TestClient(app) as client:
+            response = client.get(
+                "/api/forensics/v1/attested-history/latest",
+                headers={"Authorization": "Bearer signed-in-free-user"},
+            )
+    finally:
+        forensics_api._reset_store_cache()
     assert response.status_code == 402
     assert response.json() == {"detail": "site_full required"}
     _assert_private_headers(response)
     assert reads == []
+
+
+def test_attested_history_unauthenticated_request_never_constructs_the_store(monkeypatch) -> None:
+    import app.main as main_mod
+    from engine.fundamental_forensics import attested_history_store
+
+    def deny_auth(_authorization):
+        raise HTTPException(401, "missing bearer token")
+
+    def factory_must_not_run():
+        raise AssertionError("authentication denial must precede store construction")
+
+    monkeypatch.setattr(main_mod, "require_user", deny_auth)
+    monkeypatch.setattr(
+        attested_history_store, "build_attested_history_store", factory_must_not_run
+    )
+    forensics_api._reset_store_cache()
+    app = FastAPI()
+    app.include_router(forensics_api.router)
+    try:
+        with TestClient(app) as client:
+            response = client.get("/api/forensics/v1/attested-history/latest")
+    finally:
+        forensics_api._reset_store_cache()
+    assert response.status_code == 401
+    assert response.json() == {"detail": "missing bearer token"}
+    _assert_private_headers(response)
 
 
 def test_authentication_error_cannot_weaken_route_private_headers(monkeypatch) -> None:
@@ -865,6 +938,77 @@ def test_production_openapi_mounts_every_attested_history_route() -> None:
     import app.main as main_mod
 
     paths = main_mod.app.openapi().get("paths", {})
+    assert "/api/forensics/state" in paths
     assert "/api/forensics/v1/attested-history/latest" in paths
     assert "/api/forensics/v1/attested-history/snapshots/{snapshot_id}/roots" in paths
     assert "/api/forensics/v1/attested-history/snapshots/{snapshot_id}/roots/{root_cell_id}" in paths
+
+
+# Every paid route this router owns, in the form a client actually requests.
+# The private catch-all is deliberately include_in_schema=False, so the OpenAPI
+# assertion above can never see it: only a real request proves it is mounted.
+_MOUNTED_PAID_PATHS = (
+    "/api/forensics/state",
+    "/api/forensics/v1/attested-history/latest",
+    f"/api/forensics/v1/attested-history/snapshots/{SNAPSHOT_ID}/roots",
+    f"/api/forensics/v1/attested-history/snapshots/{SNAPSHOT_ID}/roots/{ROOT_ALL}",
+    "/api/forensics/v1/attested-history/malformed/extra/segments",
+)
+
+
+def test_every_paid_route_is_mounted_on_the_assembled_production_app() -> None:
+    """A dropped router presents only as a 404 on a paid endpoint, never as an error.
+
+    Mounting used to be wrapped in ``except ImportError: pass``, so a renamed
+    dependency or a package missing on the VPS deleted all five entitled routes
+    with no startup failure and no log line.  Assert what production proves:
+    unauthenticated requests reach the entitlement boundary (401) instead of
+    falling through to the router's 404.
+    """
+    import app.main as main_mod
+
+    # No context manager on purpose: mounting is import-time state, and running
+    # the app's lifespan here would start its background warm threads.
+    client = TestClient(main_mod.app, raise_server_exceptions=False)
+    statuses = {path: client.get(path).status_code for path in _MOUNTED_PAID_PATHS}
+    assert statuses == dict.fromkeys(_MOUNTED_PAID_PATHS, 401)
+
+    # Control: 404 must still be reachable on this prefix, or the assertion
+    # above would pass for a reason that has nothing to do with mounting.
+    assert client.get("/api/forensics/not-a-route").status_code == 404
+
+
+def test_router_wiring_fails_startup_loudly_instead_of_swallowing_importerror() -> None:
+    """Pin the wiring shape, not just today's happy import.
+
+    The route test above only fails once the import is genuinely broken.  This
+    one fails the moment the mount is put back inside a ``try``: paid product
+    contracts fail startup loudly here, exactly as the BioCatalyst block does.
+    """
+    module = ast.parse((ROOT / "app" / "main.py").read_text(encoding="utf-8"))
+
+    top_level_import = [
+        node
+        for node in module.body
+        if isinstance(node, ast.ImportFrom) and node.module == "app.forensics"
+    ]
+    top_level_include = [
+        node
+        for node in module.body
+        if isinstance(node, ast.Expr)
+        and isinstance(node.value, ast.Call)
+        and isinstance(node.value.func, ast.Attribute)
+        and node.value.func.attr == "include_router"
+        and any(
+            isinstance(arg, ast.Name) and arg.id == "forensics_router"
+            for arg in node.value.args
+        )
+    ]
+    assert top_level_import, (
+        "app/main.py must import app.forensics at module level; an import nested "
+        "in a try/except can be swallowed into a silent 404 on a paid route"
+    )
+    assert top_level_include, (
+        "app/main.py must call app.include_router(forensics_router) at module "
+        "level so a wiring error fails startup instead of dropping five paid routes"
+    )

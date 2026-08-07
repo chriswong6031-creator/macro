@@ -1,0 +1,7820 @@
+{
+  "anchor_era": "abs-session-2026-08-06",
+  "generated_utc": "2026-08-06T10:21Z",
+  "min_history": 159,
+  "universes": [
+    {
+      "universe": "data/stocks",
+      "note": "the deep US loader (1960s-2000s starts)",
+      "n_read": 238,
+      "n_graded": 238,
+      "n_skipped": 0,
+      "skip_reasons": {},
+      "asof_store": "2026-08-05",
+      "tier_flips": 13,
+      "tier_flip_pct": 5.46,
+      "veto_flips": 19,
+      "veto_flip_pct": 7.98,
+      "eligible_old": 13,
+      "eligible_new": 14,
+      "eligible_delta": 1,
+      "transitions": {
+        "None->T2": 4,
+        "None->T4": 2,
+        "T2->None": 5,
+        "T2->T4": 1,
+        "T4->T2": 1
+      },
+      "flipped_names": [
+        {
+          "ticker": "ABNB",
+          "bars": 1418,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "AMT",
+          "bars": 7153,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "AVGO",
+          "bars": 4275,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "CL",
+          "bars": 13428,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "DD",
+          "bars": 13657,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ECL",
+          "bars": 13477,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ETN",
+          "bars": 13657,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "EXR",
+          "bars": 5528,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "F",
+          "bars": 13657,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "GOOG",
+          "bars": 5525,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "GOOGL",
+          "bars": 5525,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "HD",
+          "bars": 11308,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "IFF",
+          "bars": 13016,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "JCI",
+          "bars": 9787,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "KO",
+          "bars": 16256,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "NEM",
+          "bars": 11691,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "NWSA",
+          "bars": 3302,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PLTR",
+          "bars": 1468,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SBUX",
+          "bars": 8586,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "V",
+          "bars": 4624,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "VICI",
+          "bars": 2159,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "WBD",
+          "bars": 5302,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "WFC",
+          "bars": 13657,
+          "old": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        }
+      ]
+    },
+    {
+      "universe": "data/baskets/ohlcv",
+      "note": "the 2014-start US loader",
+      "n_read": 2775,
+      "n_graded": 2743,
+      "n_skipped": 32,
+      "skip_reasons": {
+        "under MIN_HISTORY": 32
+      },
+      "asof_store": "2026-08-05",
+      "tier_flips": 152,
+      "tier_flip_pct": 5.54,
+      "veto_flips": 271,
+      "veto_flip_pct": 9.88,
+      "eligible_old": 163,
+      "eligible_new": 168,
+      "eligible_delta": 5,
+      "transitions": {
+        "None->T2": 57,
+        "None->T3": 6,
+        "None->T4": 11,
+        "T2->None": 59,
+        "T2->T3": 1,
+        "T2->T4": 5,
+        "T3->None": 8,
+        "T3->T2": 1,
+        "T3->T4": 1,
+        "T4->None": 2,
+        "T4->T3": 1
+      },
+      "flipped_names": [
+        {
+          "ticker": "A",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "AAMI",
+          "bars": 2972,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "AAP",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ABNB",
+          "bars": 1418,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ABR",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ACCO",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ACHV",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ADPT",
+          "bars": 1786,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "AEO",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "AG",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "AGYS",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "AIG",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "AIT",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "ALLO",
+          "bars": 1963,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "ALTG",
+          "bars": 1830,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "ALTI",
+          "bars": 1325,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "AMPL",
+          "bars": 1218,
+          "old": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "AMRC",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "AMT",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ANGO",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ANIK",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ANRO",
+          "bars": 628,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ANTX",
+          "bars": 1094,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "APA",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "APOG",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "AREN",
+          "bars": 3148,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ASB",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ASH",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ASO",
+          "bars": 1466,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ASTS",
+          "bars": 1697,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "ASUR",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ATLC",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ATNI",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "AVAV",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "AVPT",
+          "bars": 1695,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "AXGN",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "AXON",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "BA",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "BDC",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "BDTX",
+          "bars": 1636,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "BEEP",
+          "bars": 719,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "BETA",
+          "bars": 188,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "BLDR",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "BLMN",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "BMBL",
+          "bars": 1376,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "BNAI",
+          "bars": 1324,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "BOC",
+          "bars": 2299,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "BOOT",
+          "bars": 2957,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "BOW",
+          "bars": 551,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "BRSL",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "BTMD",
+          "bars": 1306,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "BWIN",
+          "bars": 1703,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "BY",
+          "bars": 2286,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CAH",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "CAL",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CALX",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CAMP",
+          "bars": 454,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CATX",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "CBFV",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CBNA",
+          "bars": 459,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CCOI",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CDE",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CDW",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CFG",
+          "bars": 2983,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CIX",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CL",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "CLB",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CLDX",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CLX",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CMG",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CNO",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "COMP",
+          "bars": 1342,
+          "old": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "COST",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CRD-A",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CRK",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CRMT",
+          "bars": 3148,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "CRTO",
+          "bars": 3140,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "CRVS",
+          "bars": 2607,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "CRWV",
+          "bars": 340,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "CSR",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CSW",
+          "bars": 2727,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CTGO",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CTMX",
+          "bars": 2721,
+          "old": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CTNM",
+          "bars": 585,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "CVBF",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CWH",
+          "bars": 2469,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CWK",
+          "bars": 2012,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "DAL",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "DCO",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "DCOM",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "DD",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "DDD",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "DIN",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "DJCO",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "DLTR",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "DMRA",
+          "bars": 1447,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "DNA",
+          "bars": 1331,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "DRI",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "DSGN",
+          "bars": 1345,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "DUOL",
+          "bars": 1261,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "DV",
+          "bars": 1329,
+          "old": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "DXCM",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "EBMT",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "ECL",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "EFX",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "EGO",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "EHTH",
+          "bars": 3148,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ENTA",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "EQBK",
+          "bars": 2697,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ERII",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ESP",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ETN",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "EVI",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "EXR",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "F",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "FAST",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "FBNC",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "FDBC",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "FELE",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "FERG",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "FFIN",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "FHN",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "FINW",
+          "bars": 1180,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "FISI",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "FOXF",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "FSM",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "FUBO",
+          "bars": 1850,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "FWDI",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "GE",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "GEN",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "GERN",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "GFF",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "GIII",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "GILD",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "GOLD",
+          "bars": 3116,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "GOOG",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "GOOGL",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "GOSS",
+          "bars": 1871,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "GPRO",
+          "bars": 3045,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "GRAL",
+          "bars": 538,
+          "old": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "GRNT",
+          "bars": 1441,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "HAE",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "HCC",
+          "bars": 2340,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "HD",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "HEI",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "HIFS",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "HMY",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "HRI",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "HRMY",
+          "bars": 1497,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "HST",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "HSY",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "HTB",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "HVT",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "HWBK",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "HY",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "IAG",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "IBTA",
+          "bars": 575,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "IFF",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "INVX",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "IPI",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "IRD",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "IRT",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "ISBA",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ISPR",
+          "bars": 819,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "JANX",
+          "bars": 1293,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "JOE",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "KIDS",
+          "bars": 2213,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "KINS",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "KLTR",
+          "bars": 1266,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "KRMD",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "KRNY",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "KTOS",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "KVHI",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "LCTX",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "LEN",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "LGN",
+          "bars": 225,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "LIND",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "LKFN",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "LMNR",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "LNZA",
+          "bars": 1220,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "LRMR",
+          "bars": 3050,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "LTBR",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "LYEL",
+          "bars": 1289,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "MBC",
+          "bars": 915,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "MBIN",
+          "bars": 2203,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "MCD",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "MFIN",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "MNKD",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "MNTN",
+          "bars": 302,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "MRDN",
+          "bars": 3148,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "MSEX",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "MTW",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "MTX",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "MUX",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "MVBF",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "MWA",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "NCMI",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "NEOG",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "NEXN",
+          "bars": 1288,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "NKE",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "NKTR",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "NP",
+          "bars": 212,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "NSIT",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "NTAP",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "NUAI",
+          "bars": 1148,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "NWS",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "NWSA",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "NXE",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "OBK",
+          "bars": 2072,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "OC",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "OFLX",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "OPRT",
+          "bars": 1723,
+          "old": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "OVID",
+          "bars": 2325,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "OXM",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PALI",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PAR",
+          "bars": 3166,
+          "old": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PATK",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PD",
+          "bars": 1839,
+          "old": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "PEBK",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "PEP",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PHM",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "PIPR",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PJT",
+          "bars": 2733,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PKBK",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PKE",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "PLAB",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PLAY",
+          "bars": 2971,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PLPC",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "PLTR",
+          "bars": 1468,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PLX",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PNBK",
+          "bars": 3148,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "POOL",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PPIH",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PPTA",
+          "bars": 1372,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "PRAX",
+          "bars": 1456,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PRGO",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PRLB",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PROK",
+          "bars": 1280,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "PTLO",
+          "bars": 1201,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PWP",
+          "bars": 1429,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "Q",
+          "bars": 194,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "QBTS",
+          "bars": 1417,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "QDEL",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "QLYS",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "QTRX",
+          "bars": 2175,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "QUAD",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "RAPP",
+          "bars": 541,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "RCAT",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "RCKT",
+          "bars": 2883,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "REAL",
+          "bars": 1785,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "RELL",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "RES",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "RF",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "RGP",
+          "bars": 3148,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "RH",
+          "bars": 3166,
+          "old": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "RHLD",
+          "bars": 364,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "RJET",
+          "bars": 2006,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "RNGR",
+          "bars": 2257,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "RNST",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ROAD",
+          "bars": 2074,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "RPT",
+          "bars": 2867,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "RVTY",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "RYTM",
+          "bars": 2217,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SABR",
+          "bars": 3093,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "SANA",
+          "bars": 1381,
+          "old": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SBGI",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SBUX",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "SERV",
+          "bars": 604,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SGHT",
+          "bars": 1270,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SHOE",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SHOO",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SJM",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SMC",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SMRT",
+          "bars": 1241,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SNA",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SOUN",
+          "bars": 1071,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SPFI",
+          "bars": 1820,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SPT",
+          "bars": 1668,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SRBK",
+          "bars": 721,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SSRM",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "STNE",
+          "bars": 1953,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "STOK",
+          "bars": 1792,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "STRA",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SW",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SYF",
+          "bars": 3021,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SYRE",
+          "bars": 2597,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SYY",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "TARS",
+          "bars": 1456,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "TBCH",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "TCX",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "TFC",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "TGT",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "TILE",
+          "bars": 3166,
+          "old": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "TK",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "TOL",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "TR",
+          "bars": 3155,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "TSN",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "TVRD",
+          "bars": 3135,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "U",
+          "bars": 1450,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "UAL",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "UAMY",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "UCB",
+          "bars": 3166,
+          "old": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "UEC",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "UFPT",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ULH",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "UPB",
+          "bars": 454,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "URBN",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "USAU",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "UTMD",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "VGZ",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "VICI",
+          "bars": 2159,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "VSEC",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "VYX",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "WAT",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "WAY",
+          "bars": 541,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "WBD",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "WBS",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "WD",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "WEN",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "WEYS",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "WFC",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "WLDN",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "WLTH",
+          "bars": 160,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "WOLF",
+          "bars": 214,
+          "old": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "WRBY",
+          "bars": 1217,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "WSHP",
+          "bars": 180,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "WSM",
+          "bars": 3166,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "WVE",
+          "bars": 2697,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "WY",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "XFOR",
+          "bars": 2189,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "XPRO",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "XYL",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "YELP",
+          "bars": 3166,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ZVIA",
+          "bars": 1247,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        }
+      ]
+    },
+    {
+      "universe": "data/stocks @345 bars",
+      "note": "stocks/ truncated to the trailing 345 bars (a production cache depth)",
+      "n_read": 238,
+      "n_graded": 238,
+      "n_skipped": 0,
+      "skip_reasons": {},
+      "asof_store": "2026-08-05",
+      "tier_flips": 9,
+      "tier_flip_pct": 3.78,
+      "veto_flips": 16,
+      "veto_flip_pct": 6.72,
+      "eligible_old": 10,
+      "eligible_new": 9,
+      "eligible_delta": -1,
+      "transitions": {
+        "None->T2": 1,
+        "None->T4": 3,
+        "T2->None": 5
+      },
+      "flipped_names": [
+        {
+          "ticker": "ABNB",
+          "bars": 345,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "APH",
+          "bars": 345,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CL",
+          "bars": 345,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "COST",
+          "bars": 345,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "DD",
+          "bars": 345,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "DIS",
+          "bars": 345,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ECL",
+          "bars": 345,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ETN",
+          "bars": 345,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "EXR",
+          "bars": 345,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "F",
+          "bars": 345,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "HD",
+          "bars": 345,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "IFF",
+          "bars": 345,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ISRG",
+          "bars": 345,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "KO",
+          "bars": 345,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "KR",
+          "bars": 345,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "NWSA",
+          "bars": 345,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "OMC",
+          "bars": 345,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PLTR",
+          "bars": 345,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SBUX",
+          "bars": 345,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "SW",
+          "bars": 345,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "V",
+          "bars": 345,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        }
+      ]
+    },
+    {
+      "universe": "data/stocks @777 bars",
+      "note": "stocks/ truncated to the trailing 777 bars (a production cache depth)",
+      "n_read": 238,
+      "n_graded": 238,
+      "n_skipped": 0,
+      "skip_reasons": {},
+      "asof_store": "2026-08-05",
+      "tier_flips": 13,
+      "tier_flip_pct": 5.46,
+      "veto_flips": 16,
+      "veto_flip_pct": 6.72,
+      "eligible_old": 15,
+      "eligible_new": 14,
+      "eligible_delta": -1,
+      "transitions": {
+        "None->T2": 3,
+        "None->T4": 2,
+        "T2->None": 6,
+        "T2->T4": 1,
+        "T4->T2": 1
+      },
+      "flipped_names": [
+        {
+          "ticker": "ABNB",
+          "bars": 777,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "CL",
+          "bars": 777,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "COST",
+          "bars": 777,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "DD",
+          "bars": 777,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "DIS",
+          "bars": 777,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ECL",
+          "bars": 777,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ETN",
+          "bars": 777,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "EXR",
+          "bars": 777,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "F",
+          "bars": 777,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "GE",
+          "bars": 777,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "HD",
+          "bars": 777,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "IFF",
+          "bars": 777,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "ISRG",
+          "bars": 777,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "KO",
+          "bars": 777,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "KR",
+          "bars": 777,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "NWSA",
+          "bars": 777,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "OMC",
+          "bars": 777,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "PLTR",
+          "bars": 777,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "SBUX",
+          "bars": 777,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "SW",
+          "bars": 777,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "V",
+          "bars": 777,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "WFC",
+          "bars": 777,
+          "old": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        }
+      ]
+    },
+    {
+      "universe": "massive_stock_day (scan tier)",
+      "unavailable": true,
+      "n_read": 0,
+      "n_graded": 0,
+      "note": "ABSENT: data/massive_stock_day holds 0 per-ticker parquets (R2-canonical; restored only in a lane that pulls it). The scan-tier delta is UNMEASURED here \u2014 run this script in a restored lane."
+    },
+    {
+      "universe": "CN china_search panel",
+      "note": "old era = the market-BLIND business-day resample every market used to get; new era = the Shanghai reference calendar. That IS the shipped CN delta.",
+      "n_read": 1794,
+      "n_graded": 1765,
+      "n_skipped": 29,
+      "skip_reasons": {
+        "under MIN_HISTORY": 29
+      },
+      "asof_store": "2026-08-05",
+      "tier_flips": 59,
+      "tier_flip_pct": 3.34,
+      "veto_flips": 87,
+      "veto_flip_pct": 4.93,
+      "eligible_old": 111,
+      "eligible_new": 146,
+      "eligible_delta": 35,
+      "transitions": {
+        "None->T2": 45,
+        "None->T3": 1,
+        "None->T4": 1,
+        "T2->None": 11,
+        "T3->None": 1
+      },
+      "flipped_names": [
+        {
+          "ticker": "000065.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "000155.SZ",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "000534.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "000543.SZ",
+          "bars": 1248,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "000567.SZ",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "000600.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "000682.SZ",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "000686.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "000728.SZ",
+          "bars": 1248,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "000737.SZ",
+          "bars": 1223,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "000758.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "000762.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "000795.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "000801.SZ",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "000813.SZ",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "000878.SZ",
+          "bars": 1248,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "000880.SZ",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "000887.SZ",
+          "bars": 1229,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "000901.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "000950.SZ",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "000951.SZ",
+          "bars": 1226,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "001280.SZ",
+          "bars": 163,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "001301.SZ",
+          "bars": 872,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "001979.SZ",
+          "bars": 1248,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "002015.SZ",
+          "bars": 1248,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "002123.SZ",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "002194.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "002287.SZ",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "002434.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "002460.SZ",
+          "bars": 1248,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "002487.SZ",
+          "bars": 1248,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "002488.SZ",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "002497.SZ",
+          "bars": 1232,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "002550.SZ",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "002597.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "002625.SZ",
+          "bars": 1248,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "002755.SZ",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T3",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "002841.SZ",
+          "bars": 1232,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "002928.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "003816.SZ",
+          "bars": 1248,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "300012.SZ",
+          "bars": 1215,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "300061.SZ",
+          "bars": 1248,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "300101.SZ",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "300130.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "300134.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "300170.SZ",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "300182.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "300244.SZ",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T4",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "300296.SZ",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "300341.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "300363.SZ",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "300409.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "300457.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "300482.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "300496.SZ",
+          "bars": 1248,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "300624.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "300685.SZ",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "300702.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "300725.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "300768.SZ",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "301047.SZ",
+          "bars": 1204,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "301171.SZ",
+          "bars": 959,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "301291.SZ",
+          "bars": 752,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "301345.SZ",
+          "bars": 819,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "301665.SZ",
+          "bars": 321,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "600113.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "600163.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "600166.SS",
+          "bars": 1223,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "600172.SS",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "600208.SS",
+          "bars": 1224,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "600268.SS",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "600338.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "600391.SS",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "600420.SS",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "600508.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "600521.SS",
+          "bars": 1228,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "600531.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "600546.SS",
+          "bars": 1225,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "600776.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "600816.SS",
+          "bars": 1223,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "600821.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "600933.SS",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "600971.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "600995.SS",
+          "bars": 1248,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "600996.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "601222.SS",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "601233.SS",
+          "bars": 1248,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "601698.SS",
+          "bars": 1248,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "601702.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "601778.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "601881.SS",
+          "bars": 1248,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "601882.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "603057.SS",
+          "bars": 934,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "603166.SS",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "603220.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "603225.SS",
+          "bars": 1248,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "603268.SS",
+          "bars": 1248,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "603305.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "603376.SS",
+          "bars": 182,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "603477.SS",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "603596.SS",
+          "bars": 1214,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "603605.SS",
+          "bars": 1215,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "603693.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "603979.SS",
+          "bars": 1248,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "603993.SS",
+          "bars": 1248,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "603997.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "605011.SS",
+          "bars": 1237,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "605090.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "605099.SS",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "605118.SS",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "605333.SS",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "688005.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "688049.SS",
+          "bars": 1136,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "688063.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "688091.SS",
+          "bars": 1186,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "688100.SS",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "688297.SS",
+          "bars": 996,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "688327.SS",
+          "bars": 1018,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "688336.SS",
+          "bars": 1248,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "688443.SS",
+          "bars": 758,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "688522.SS",
+          "bars": 833,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "688523.SS",
+          "bars": 770,
+          "old": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "688586.SS",
+          "bars": 1245,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "688631.SS",
+          "bars": 754,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "688726.SS",
+          "bars": 431,
+          "old": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "new": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        {
+          "ticker": "688779.SS",
+          "bars": 1207,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        },
+        {
+          "ticker": "688789.SS",
+          "bars": 1211,
+          "old": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "new": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        }
+      ]
+    },
+    {
+      "universe": "HK stores",
+      "note": "data/hk/*.HK.parquet, market=HK",
+      "n_read": 2,
+      "n_graded": 2,
+      "n_skipped": 0,
+      "skip_reasons": {},
+      "asof_store": "2026-08-05",
+      "tier_flips": 0,
+      "tier_flip_pct": 0.0,
+      "veto_flips": 0,
+      "veto_flip_pct": 0.0,
+      "eligible_old": 0,
+      "eligible_new": 0,
+      "eligible_delta": 0,
+      "transitions": {},
+      "flipped_names": []
+    }
+  ],
+  "store_agreement": {
+    "n_shared_names": 237,
+    "disagreements_old": {
+      "tier": 4,
+      "not_topped": 18,
+      "eligible": 4
+    },
+    "disagreements_new": {},
+    "quintet": [
+      {
+        "ticker": "NUE",
+        "last": "2026-08-05",
+        "bars_stocks": 11691,
+        "bars_ohlcv": 3166,
+        "old": {
+          "stocks": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "ohlcv": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        "new": {
+          "stocks": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "ohlcv": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        }
+      },
+      {
+        "ticker": "PEP",
+        "last": "2026-08-05",
+        "bars_stocks": 13657,
+        "bars_ohlcv": 3166,
+        "old": {
+          "stocks": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "ohlcv": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        "new": {
+          "stocks": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "ohlcv": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        }
+      },
+      {
+        "ticker": "ECL",
+        "last": "2026-08-05",
+        "bars_stocks": 13477,
+        "bars_ohlcv": 3166,
+        "old": {
+          "stocks": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "ohlcv": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          }
+        },
+        "new": {
+          "stocks": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "ohlcv": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        }
+      },
+      {
+        "ticker": "SW",
+        "last": "2026-08-05",
+        "bars_stocks": 4562,
+        "bars_ohlcv": 3166,
+        "old": {
+          "stocks": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "ohlcv": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        "new": {
+          "stocks": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          },
+          "ohlcv": {
+            "tier": null,
+            "not_topped": false,
+            "eligible": false
+          }
+        }
+      },
+      {
+        "ticker": "WMT",
+        "last": "2026-08-05",
+        "bars_stocks": 13597,
+        "bars_ohlcv": 3166,
+        "old": {
+          "stocks": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "ohlcv": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        },
+        "new": {
+          "stocks": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "ohlcv": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          }
+        }
+      }
+    ],
+    "asof_store": "2026-08-05"
+  },
+  "new_anchor_invariance": {
+    "k_bars_dropped": 3,
+    "n_names": 238,
+    "tier_flips": 0,
+    "veto_flips": 0,
+    "eligible_flips": 0,
+    "flipped": []
+  },
+  "depth_residual": [
+    {
+      "tail_bars": 345,
+      "n_differing": 5,
+      "by_reason": {
+        "wbull-arm (weekly confirm not yet knowable)": 5
+      },
+      "names": [
+        {
+          "ticker": "ANET",
+          "full": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "short": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "reason": "wbull-arm (weekly confirm not yet knowable)",
+          "null_legs": [
+            "htf_2w",
+            "wbull"
+          ]
+        },
+        {
+          "ticker": "APH",
+          "full": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "short": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "reason": "wbull-arm (weekly confirm not yet knowable)",
+          "null_legs": [
+            "htf_2w",
+            "wbull"
+          ]
+        },
+        {
+          "ticker": "EXR",
+          "full": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "short": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "reason": "wbull-arm (weekly confirm not yet knowable)",
+          "null_legs": [
+            "htf_2w",
+            "wbull"
+          ]
+        },
+        {
+          "ticker": "GE",
+          "full": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "short": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "reason": "wbull-arm (weekly confirm not yet knowable)",
+          "null_legs": [
+            "htf_2w",
+            "wbull"
+          ]
+        },
+        {
+          "ticker": "WFC",
+          "full": {
+            "tier": "T2",
+            "not_topped": true,
+            "eligible": true
+          },
+          "short": {
+            "tier": null,
+            "not_topped": true,
+            "eligible": false
+          },
+          "reason": "wbull-arm (weekly confirm not yet knowable)",
+          "null_legs": [
+            "htf_2w",
+            "wbull"
+          ]
+        }
+      ]
+    },
+    {
+      "tail_bars": 777,
+      "n_differing": 0,
+      "by_reason": {},
+      "names": []
+    }
+  ]
+}

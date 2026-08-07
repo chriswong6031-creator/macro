@@ -1,5 +1,5 @@
 {
-"applied": "2026-07-30T02:05:01.344315+00:00",
+"applied": "2026-08-06T21:04:46.017126+00:00",
 "rows_flagged": 13,
 "tickers_flagged": 7,
 "by_flag": {
@@ -791,13 +791,6 @@
 "statements": 2736000000.0
 },
 {
-"ticker": "GHC",
-"fy": 2025,
-"col": "debt_lt",
-"panel": 307026000.0,
-"statements": 705618000.0
-},
-{
 "ticker": "GOOGL",
 "fy": 2020,
 "col": "debt_lt",
@@ -1304,11 +1297,39 @@
 "med": 71000.0
 },
 {
+"ticker": "SKYT",
+"fy_lo": 2020,
+"fy_hi": 2020,
+"col": "equity",
+"med": -16000.0
+},
+{
+"ticker": "SKYT",
+"fy_lo": 2021,
+"fy_hi": 2025,
+"col": "equity",
+"med": 55644000.0
+},
+{
 "ticker": "SNEX",
 "fy_lo": 2010,
 "fy_hi": 2017,
 "col": "assets",
 "med": 3033400000.0
+},
+{
+"ticker": "TOI",
+"fy_lo": 2019,
+"fy_hi": 2019,
+"col": "assets",
+"med": 50000.0
+},
+{
+"ticker": "TOI",
+"fy_lo": 2020,
+"fy_hi": 2025,
+"col": "assets",
+"med": 188078000.0
 },
 {
 "ticker": "UNF",

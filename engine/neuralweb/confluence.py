@@ -18,7 +18,9 @@ build_graph(root) constructs the confluence graph over the signal bus:
     leads       — Oracle graph_m.json leadlag records (include honest nulls)
     contradicts — from detect_contradictions() output
     confirms    — co-firing lift from spine_index (same symbol+as_of+direction+horizon
-                  across different engines; MIN_N=10; below floor → edge with n + lift=null)
+                  across different engines; MIN_N=10; below floor → edge with n + lift=null;
+                  either engine's outcome_basis != signed_excess → edge with n + lift=null,
+                  because differencing an unsigned MFE magnitude is meaningless)
 
 HARD LAW — encoded in every docstring and in the artifact output:
     Confluence NEVER gates, NEVER ranks, NEVER raises a priority.  Every edge carries
@@ -891,6 +893,16 @@ def _build_confirms_edges(
 
     Same (symbol, as_of, direction, horizon) across different engine values.
     MIN_N_COFIRING=10 floor: below floor → edge with n printed and lift=null.
+
+    OUTCOME BASIS floor (second lift=null condition): lift is a difference of
+    outcome_excess means, so it is only meaningful when BOTH engines' outcomes
+    are the same, signed quantity.  Four ledgers (track_record, board_hk,
+    board_ca, board_cn) fill outcome_excess from an unsigned forward-MFE proxy;
+    differencing an MFE magnitude against a signed excess — or against another
+    MFE whose scale is set by realised volatility rather than by being right —
+    produces a number with no interpretation.  Such a pair keeps its edge and
+    its n (the co-firing COUNT is a real fact) but lift=null.
+    cf. PR #4673 edge_outcomes.py dst_outcome_unsigned_mfe_proxy.
     """
     edges: list[dict] = []
     if spine_df is None:
@@ -901,6 +913,11 @@ def _build_confirms_edges(
         import pandas as pd  # noqa: PLC0415
         import numpy as np  # noqa: PLC0415
 
+        from engine.neuralweb.query import (  # noqa: PLC0415
+            OUTCOME_BASIS_SIGNED,
+            stamp_outcome_basis,
+        )
+
         graded = spine_df[
             spine_df["outcome_excess"].notna() &
             (spine_df["direction"] != 0)
@@ -910,6 +927,21 @@ def _build_confirms_edges(
             gaps.append("confirms edges: no graded rows in spine_index")
             return edges
 
+        # build_graph reads the parquet with a bare pd.read_parquet (not the
+        # query layer), so a legacy parquet arrives here with no outcome_basis
+        # column at all. Backfill from the ledger before reading it.
+        graded = stamp_outcome_basis(graded)
+
+        # Per-engine basis = mode over that engine's graded rows.
+        engine_basis: dict[str, str | None] = {}
+        for eng_name, eng_rows in graded.groupby("engine"):
+            vals = eng_rows["outcome_basis"].dropna().astype(str)
+            vals = vals[~vals.isin(("", "nan", "None"))]
+            engine_basis[str(eng_name)] = (
+                str(vals.value_counts().idxmax()) if not vals.empty else None
+            )
+
+        n_unsigned_pairs = 0
         engines = sorted(graded["engine"].unique().tolist())
 
         # For each engine pair, compute co-firing lift
@@ -926,6 +958,35 @@ def _build_confirms_edges(
                 n_cofiring = len(merged)
 
                 if n_cofiring == 0:
+                    continue
+
+                # BASIS GATE (checked before the n floor — an unsigned pair is
+                # undefined at ANY n, so sample size cannot rescue it).
+                b1 = engine_basis.get(e1)
+                b2 = engine_basis.get(e2)
+                if b1 != OUTCOME_BASIS_SIGNED or b2 != OUTCOME_BASIS_SIGNED:
+                    n_unsigned_pairs += 1
+                    unsigned_names = ", ".join(
+                        f"{name}={basis or 'unlabelled'}"
+                        for name, basis in ((e1, b1), (e2, b2))
+                        if basis != OUTCOME_BASIS_SIGNED
+                    )
+                    edges.append({
+                        "src": f"engine:{e1}",
+                        "dst": f"engine:{e2}",
+                        "edge_type": "confirms",
+                        "n": n_cofiring,
+                        "lift": None,
+                        "stable": None,
+                        "display_only": True,
+                        "regime": None,
+                        "note": (
+                            f"n={n_cofiring} — outcome basis not signed "
+                            f"({unsigned_names}; unsigned mfe proxy) — "
+                            "co-firing lift undefined; "
+                            "cf. PR #4673 dst_outcome_unsigned_mfe_proxy"
+                        ),
+                    })
                     continue
 
                 # Compute lift: mean(outcome_excess | both) - mean(outcome_excess | either)
@@ -962,6 +1023,12 @@ def _build_confirms_edges(
                     "regime": None,
                     "note": note_str,
                 })
+
+        if n_unsigned_pairs:
+            gaps.append(
+                f"confirms edges: {n_unsigned_pairs} pairs lift=null "
+                f"(unsigned outcome basis)"
+            )
 
     except Exception as exc:  # noqa: BLE001
         log.warning("confluence: confirms edges failed — %s", exc)
