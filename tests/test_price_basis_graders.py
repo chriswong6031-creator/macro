@@ -98,7 +98,13 @@ KNOWN_UNMIGRATED = {
     "engine/us_sector_rotation.py":           "VERIFIED: fast-RS = raw member closes / adjusted ETF closes",
     "engine/narrative_rotation.py":           "VERIFIED: market residuals vs adjusted SPY",
     "engine/baskets.py":                      "VERIFIED: vs-SPY relative return per horizon",
-    "engine/manager_trades.py":               "VERIFIED: ClosePanel falls back to the raw breadth panel",
+    # ---- reads both stores, but performs NO name-vs-benchmark arithmetic ------------
+    "engine/prophet_doors.py": (
+        "NO PAIRING: reads breadth closes for door state and baskets/ohlcv for the W8 "
+        "coil/thrust features, but computes zero benchmark-relative returns "
+        "(excess_spy|vs_spy|benchmark all absent). The features are booleans and "
+        "percentiles; the excess arithmetic lives in scripts/grade_prophet_doors.py, "
+        "which prices a single basis."),
     "engine/factor_exposure.py":              "VERIFIED: regresses raw stock closes on adjusted ETFs",
     "engine/residual_momentum.py":            "VERIFIED: orthogonalises raw closes against adjusted SPY",
     "engine/residual_alpha.py":               "VERIFIED: orthogonalises raw closes against adjusted SPY",
