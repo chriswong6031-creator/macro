@@ -1,0 +1,66 @@
+{
+  "activate": true,
+  "importance": 75,
+  "banner_days": 5,
+  "tone": "mixed",
+  "banner_title": "Trump restricts birthright citizenship for terrorists, foreign officials & 'birth tourism' — immigration, healthcare, fertility sectors rattled",
+  "banner_title_zh": "特朗普限制恐怖分子、外国官员及“生育旅游”者的出生公民权——移民、医疗、辅助生殖板块震荡",
+  "summary": "A new executive order directs federal agencies to deny citizenship documents to children born in the U.S. if either parent is a designated terrorist, foreign government employee, or engaged in 'birth tourism' or commercial surrogacy. The order injects legal uncertainty for hospitals, fertility clinics, and sectors reliant on immigrant labor or international clientele.",
+  "summary_zh": "一项新的行政命令指示联邦机构，若新生儿的父母一方为指定的恐怖分子、外国政府雇员，或从事“生育旅游”及商业代孕，则拒绝向其发放公民身份文件。该命令给医院、生育诊所及依赖移民劳动力或国际客户的行业带来了法律不确定性。",
+  "analysis": "This executive order codifies a narrow but significant reinterpretation of the 14th Amendment's birthright citizenship clause, citing the Supreme Court's recent Trump v. Barbara decision. It directs the State Department, DHS, and Social Security Administration to withhold citizenship documentation from children whose parents fall into four categories: alien enemies (FTOs/SDGTs), foreign government employees, those engaged in 'birth tourism' commercial transactions, and those born in territories without statutory citizenship.\n\nThe market impact is multidimensional. It directly targets the 'birth tourism' industry and commercial surrogacy arrangements, creating headwinds for fertility clinics, maternity tourism operators, and hospitals serving international maternity patients—particularly in states like California and Florida. The 'alien enemy' and foreign government employee provisions add layers of compliance for employers and financial institutions verifying identity and work authorization.\n\nThe broader transmission mechanism runs through labor markets and immigration-sensitive sectors. By reinforcing a restrictive stance on citizenship, the order signals continued tightness in the low-to-middle-skilled labor pool, affecting agriculture, construction, hospitality, and healthcare support. However, companies specializing in domestic workforce solutions or compliance/identity-verification services may see increased demand.\n\nKey uncertainty: The order relies on agency rulemaking and public guidance within 30 days, leaving immediate enforcement scope unclear. Legal challenges are likely, given the ambiguity in applying 'commercial transaction' tests to surrogacy or determining 'alien enemy' status at birth. Market reaction will hinge on how aggressively agencies implement the order and whether it signals further immigration restrictions ahead of the midterms.",
+  "sectors": [
+    {
+      "name": "Fertility & Reproductive Health Services",
+      "impact": "headwind",
+      "rationale": "Explicit targeting of commercial surrogacy and 'birth tourism' reduces the international client pool for U.S.-based fertility clinics and surrogacy agencies."
+    },
+    {
+      "name": "Hospital & Healthcare Facilities",
+      "impact": "headwind",
+      "rationale": "Hospitals in border states and major metros face new compliance burdens verifying parental status, plus lost revenue from international maternity patients."
+    },
+    {
+      "name": "Immigration-Dependent Industries (Agriculture, Construction, Hospitality)",
+      "impact": "headwind",
+      "rationale": "A restrictive citizenship stance tightens labor supply by discouraging immigrant workers' family formation and signaling a hostile enforcement climate."
+    },
+    {
+      "name": "Identity Verification & Biometrics",
+      "impact": "tailwind",
+      "rationale": "Expanded citizenship documentation rules increase demand for government and private-sector identity proofing, compliance, and fraud detection tools."
+    },
+    {
+      "name": "Domestic Staffing & Workforce Solutions",
+      "impact": "tailwind",
+      "rationale": "Tighter immigration policy increases demand for firms providing legally compliant domestic workforce management and E-Verify services."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "PGNY",
+      "direction": "hurt",
+      "rationale": "Leading fertility benefits manager; reduced access to U.S. citizenship for children of international surrogacy clients could dampen cross-border surrogacy demand."
+    },
+    {
+      "symbol": "HCA",
+      "direction": "hurt",
+      "rationale": "Major hospital operator with significant maternity services in Florida and Texas, states with high international maternity tourism exposure."
+    },
+    {
+      "symbol": "TDOC",
+      "direction": "hurt",
+      "rationale": "Telehealth provider with global fertility and surrogacy support services; could see reduced international patient flows from citizenship restrictions."
+    },
+    {
+      "symbol": "IDCC",
+      "direction": "benefit",
+      "rationale": "Identity and security solutions firm; stricter citizenship verification mandates may increase government and enterprise demand for identity-proofing technologies."
+    },
+    {
+      "symbol": "ADP",
+      "direction": "benefit",
+      "rationale": "Payroll and HR compliance giant; E-Verify and work authorization verification services likely see increased adoption amid tighter immigration enforcement."
+    }
+  ],
+  "confidence": "medium"
+}

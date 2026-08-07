@@ -1,0 +1,113 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "FAF-2026-06-30-buy",
+  "ticker": "FAF",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "FAF",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "FAF",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "mixed",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Financials",
+    "excess_spy": 0.06258879336926948,
+    "excess_sector": 0.02486133311254024,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CLEAN_LIFTOFF",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "FAF outperformed SPY and reached CLEAN_LIFTOFF under a mixed recorded cause, so both company-specific and contextual mechanisms remain plausible. No supplied evidence separates those components.",
+    "root_cause": "FAF outperformed SPY and reached CLEAN_LIFTOFF under a mixed recorded cause, so both company-specific and contextual mechanisms remain plausible. No supplied evidence separates those components.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The selection stack surfaced the winner, but the company-alpha and rotation books did not leave enough attribution evidence to divide credit.",
+    "engines_credit": "The combined selection process is the role model; company-alpha, Financials rotation, catalyst, and macro organs remain attribution laggards because their contemporaneous traces are absent.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "A company-specific component is one part of the recorded mixed explanation.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Without company-specific strength, contextual tailwinds alone may not have produced the same relative outcome.",
+        "evidence_refs": [
+          "outcome_cause=mixed",
+          "excess_spy=0.06258879336926948"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "sector",
+        "factor": "",
+        "mechanism": "Financials strength may have amplified the company component.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "If Financials were weak over the holding path, company alpha would need to explain more of the result.",
+        "evidence_refs": [
+          "sector=Financials"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "entry_timing",
+        "factor": "",
+        "mechanism": "Buy-lane placement with no recorded process fault may have captured the move efficiently.",
+        "evidence_status": "claimed",
+        "timing_status": "known_at_entry",
+        "counterfactual": "Delayed placement might have reduced participation, although the path is not supplied.",
+        "evidence_refs": [
+          "lane=buy",
+          "board_tenure_days=0.0",
+          "process_fault=clean",
+          "terminal_state=CLEAN_LIFTOFF"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Financials rotation dominated the outcome",
+      "Company-specific re-rating dominated the outcome",
+      "A post-entry external event produced the liftoff"
+    ],
+    "missing_evidence": [
+      "Decomposition of mixed outcome cause",
+      "Financials and industry-relative performance",
+      "Entry-date factor and price-volume snapshot",
+      "Dated catalyst and news record"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "mixed_alpha_rotation_confluence",
+        "feature": "Confluence between residual company strength and sector rotation",
+        "measurement": "Interact entry-date residual momentum with contemporaneous Financials relative breadth.",
+        "expected_direction": "Positive confluence should associate with clean liftoff more strongly than either component alone.",
+        "falsifier": "The interaction adds no stable explanatory value out of sample.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T23:44:21+00:00"
+}
