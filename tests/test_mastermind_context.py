@@ -2046,6 +2046,93 @@ def _seasonality_state(
     return state
 
 
+def _seasonality_state_v2(
+    ticker: str = "FIXTURE_BUY",
+    *,
+    asof: str = "2026-07-03",
+    available_at: str = "2026-07-05T00:00:00Z",
+    expires_at: str = "2026-07-07T00:00:00Z",
+    abstain: bool = False,
+    calibrated_estimate: dict | None = None,
+) -> dict:
+    """The SAME numbers as :func:`_seasonality_state`, under the v2 names.
+
+    Deliberately written out rather than derived from the v1 payload: a
+    transform would make the equivalence test compare a projection with its own
+    input, and the claim under test is that two INDEPENDENTLY assembled
+    payloads reach the same consumer block.
+    """
+    from engine.seasonality.contracts import build_neuralweb_state_v2  # noqa: PLC0415
+
+    return build_neuralweb_state_v2(
+        artifact_id="data-neuralweb-biopharma-seasonality-state",
+        entity={"type": "issuer", "id": f"ticker:{ticker}", "ticker": ticker},
+        asof=asof,
+        available_at=available_at,
+        expires_at=expires_at,
+        clocks=[
+            {
+                "type": "calendar",
+                "phase": "pre_window",
+                "pattern_id": f"cal:{ticker}:284-344",
+                "window": {
+                    "start_doy": 284,
+                    "end_doy": 344,
+                    "occurrence_end_date": "2026-12-10",
+                    "days_to_window_end": 158,
+                    "window_source": "symbol_best",
+                },
+                "evidence": {"n_years": 25, "horizon_td": 160},
+            }
+        ],
+        historical_up_share={
+            "target": "default_window_return_gt_0",
+            "horizon_td": 160,
+            "p": 0.72,
+            "p_baseline": 0.61,
+            "edge": 0.11,
+            "ci90": [0.55, 0.85],
+            # The two intervals are different objects and each says which:
+            # ci90 bounds the SHARE, the quantiles describe one window's return.
+            "ci90_kind": "parameter_ci",
+            "n_years": 25,
+            "quantiles": {"q05": -0.04, "q50": 0.03, "q95": 0.11},
+            "quantiles_kind": "outcome_quantiles",
+            "basis": "same_length_all_starts_mean",
+        },
+        calibrated_estimate=calibrated_estimate,
+        contradiction={
+            "present": False,
+            "between": ["calendar_clock", "event_clock"],
+            "reason_code": "event_timing_probability_absent",
+            "detail": "no authorized event-timing probability exists",
+        },
+        overlap={
+            "measured": False,
+            "measured_against": [],
+            "redundancy": None,
+            "reason_code": "spine_artifact_unavailable",
+            "detail": "covariance spine not read in this fixture",
+            "measured_by": "data/neuralweb/covariance_spine.json",
+        },
+        evidence={
+            "n_independent": 25,
+            "n_issuers": 1,
+            "n_date_clusters": 25,
+            "live_n": 0,
+            "q_by": None,
+            "p_max_t": 0.03,
+            "spa_p": None,
+        },
+        uncertainty={"abstain": abstain, "flags": ["forward_sample_thin"]},
+        provenance={
+            "model_version": "seasonality-calendar-v1",
+            "pattern_spec_hash": "sha256:" + "a" * 64,
+            "data_snapshot": "sha256:" + "b" * 64,
+        },
+    )
+
+
 def _minimal_seasonality_states(tmp_path: Path, states: dict[str, dict]) -> Path:
     (tmp_path / "data" / "neuralweb").mkdir(parents=True, exist_ok=True)
     p = tmp_path / "data" / "neuralweb" / "biopharma_seasonality_state.json"
@@ -2156,6 +2243,141 @@ class TestSeasonalityShadowLobe:
             "data/neuralweb/biopharma_seasonality_state.json"
             in payload["source_artifacts"]
         )
+
+    # --- W5 dual read: v1 and v2 states through the same consumer ----------
+
+    def test_a_v2_state_attaches_the_same_block_a_v1_state_does(self, tmp_path):
+        """The acceptance gate of the v1 -> v2 migration.
+
+        ``forecast`` became ``historical_up_share`` because the number was
+        always a historical positive-year share and never a forecast.  If that
+        is a rename, the block a candidate row carries is byte-identical; if a
+        number were reinterpreted anywhere on the way through, this is where it
+        shows up.
+        """
+        blocks = {}
+        for label, state in (
+            ("v1", _seasonality_state("FIXTURE_BUY")),
+            ("v2", _seasonality_state_v2("FIXTURE_BUY")),
+        ):
+            root = tmp_path / label
+            root.mkdir()
+            _build_minimal_tree(root)
+            _minimal_seasonality_states(root, {"FIXTURE_BUY": state})
+            payload = build_context(root=root, now=_NOW)
+            blocks[label] = payload["candidate_context"]["FIXTURE_BUY"]["seasonality"]
+
+        assert blocks["v1"] == blocks["v2"], blocks
+        assert blocks["v2"]["p"] == 0.72 and blocks["v2"]["p_baseline"] == 0.61
+        assert blocks["v2"]["edge"] == 0.11
+        assert blocks["v2"]["flags"] == ["forward_sample_thin"]
+        assert blocks["v2"]["allowed_behavior"] == "annotate_only"
+
+    def test_a_v2_calibrated_estimate_never_reaches_the_block(self, tmp_path):
+        """A calibrated number surfacing is a promotion decision, not a read.
+
+        v2 keeps it in a separate typed slot precisely so that a consumer
+        cannot pick it up as a side effect — the block still carries the
+        historical share under ``p``.
+        """
+        _build_minimal_tree(tmp_path)
+        _minimal_seasonality_states(
+            tmp_path,
+            {
+                "FIXTURE_BUY": _seasonality_state_v2(
+                    "FIXTURE_BUY",
+                    calibrated_estimate={
+                        "kind": "probability",
+                        "value": 0.99,
+                        "calibration_version": "isotonic-2026-08",
+                        "model_version": "seasonality-calibrated-v1",
+                        "data_cutoff": "2026-06-30",
+                    },
+                )
+            },
+        )
+        payload = build_context(root=tmp_path, now=_NOW)
+        block = payload["candidate_context"]["FIXTURE_BUY"]["seasonality"]
+        assert block["p"] == 0.72
+        assert "calibrated_estimate" not in block
+        assert 0.99 not in block.values()
+
+    def test_a_v2_state_that_breaks_the_ceiling_is_skipped_with_a_gap_note(self, tmp_path):
+        """Dual-read is not a weaker read: v2 goes through its own contract."""
+        broken = _seasonality_state_v2("FIXTURE_BUY")
+        broken["authority"]["may_size"] = True
+        _build_minimal_tree(tmp_path)
+        _minimal_seasonality_states(tmp_path, {"FIXTURE_BUY": broken})
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert "seasonality" not in payload["candidate_context"]["FIXTURE_BUY"]
+        assert any(
+            "failed the context contract" in note for note in payload["gap_notes"]
+        ), payload["gap_notes"]
+
+    def test_an_expired_v2_state_is_dropped_too(self, tmp_path):
+        _build_minimal_tree(tmp_path)
+        _minimal_seasonality_states(
+            tmp_path,
+            {
+                "FIXTURE_BUY": _seasonality_state_v2(
+                    "FIXTURE_BUY",
+                    # Built 2026-07-01 from data as of 2026-06-30 (a build may
+                    # never precede its own data) and dead 48h later, well
+                    # before _NOW.
+                    asof="2026-06-30",
+                    available_at="2026-07-01T00:00:00Z",
+                    expires_at="2026-07-03T00:00:00Z",  # before _NOW
+                )
+            },
+        )
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert "seasonality" not in payload["candidate_context"]["FIXTURE_BUY"]
+        assert any("expired state(s) skipped" in n for n in payload["gap_notes"])
+
+    def test_an_abstaining_v2_state_is_not_context(self, tmp_path):
+        _build_minimal_tree(tmp_path)
+        _minimal_seasonality_states(
+            tmp_path, {"FIXTURE_BUY": _seasonality_state_v2("FIXTURE_BUY", abstain=True)}
+        )
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert "seasonality" not in payload["candidate_context"]["FIXTURE_BUY"]
+
+    def test_a_v2_state_never_adds_a_name_to_the_candidate_universe(self, tmp_path):
+        """The constitutional line does not relax with the schema bump."""
+        _build_minimal_tree(tmp_path)
+        _minimal_seasonality_states(
+            tmp_path,
+            {
+                "FIXTURE_BUY": _seasonality_state_v2("FIXTURE_BUY"),
+                "NOT_ON_THE_BOARD": _seasonality_state_v2("NOT_ON_THE_BOARD"),
+            },
+        )
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert "FIXTURE_BUY" in payload["candidate_context"]
+        assert "NOT_ON_THE_BOARD" not in payload["candidate_context"]
+
+    def test_a_mixed_file_reads_both_states(self, tmp_path):
+        """The nightly writes v2 over a file whose prior states were v1.
+
+        A reader that dispatched once per FILE rather than once per STATE would
+        drop half of a mid-migration artifact silently.
+        """
+        _build_minimal_tree(tmp_path)
+        _minimal_seasonality_states(
+            tmp_path,
+            {
+                "FIXTURE_BUY": _seasonality_state("FIXTURE_BUY"),
+                "FIXTURE_WATCH": _seasonality_state_v2("FIXTURE_WATCH"),
+            },
+        )
+        payload = build_context(root=tmp_path, now=_NOW)
+        attached = {
+            ticker: row["seasonality"]
+            for ticker, row in payload["candidate_context"].items()
+            if "seasonality" in row
+        }
+        assert set(attached) == {"FIXTURE_BUY", "FIXTURE_WATCH"}, attached
+        assert attached["FIXTURE_BUY"] == attached["FIXTURE_WATCH"]
 
     def test_malformed_states_map_does_not_take_the_bridge_down(self, tmp_path):
         """_build_candidate_context is not try/except-wrapped by build_context."""
