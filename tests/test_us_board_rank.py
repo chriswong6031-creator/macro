@@ -1767,6 +1767,19 @@ class TestCommittedArtifactIntegration:
             raw[-1].update({"state": "BOTTOM WATCH", "label": "NEARING A LOW",
                             "dir": "down"})
             raw[-1].pop("label_zh", None)
+            # FINISH the injection: stage_for consults the ENTRY STATUS first, and a
+            # blocked/exit/avoid verdict returns before the BOTTOM WATCH clause is
+            # ever reached (deliberately — an explicit per-name verdict outranks the
+            # cycle read).  Relabelling only the ladder state therefore leaves the
+            # witness routed by its old status, which makes the opt-in look dead.
+            # The board is nightly-regenerated, so whether the LAST buy row happens
+            # to be entry-blocked is a property of tonight's tape, not of the engine:
+            # on 2026-07-31 it was ORA, the single blocked row among 62, and this
+            # test went red without a line of engine code changing.
+            status = ubr._status_of(raw[-1].get("entry_signal"))
+            if status in ubr._BLOCKED_STATUSES:
+                raw[-1]["entry_signal"] = {**(raw[-1].get("entry_signal") or {}),
+                                           "status": "bounce_wait"}
             return raw, raw[-1]["ticker"]
 
         lanes_before = json.dumps(
@@ -1783,6 +1796,13 @@ class TestCommittedArtifactIntegration:
 
         by_before = {r["ticker"]: r for r in before}
         by_after = {r["ticker"]: r for r in after}
+        # The control has to be blocked BY THE BOTTOM WATCH DEFAULT, not by an entry
+        # status that would have blocked it whatever the ladder said — otherwise it
+        # passes while proving nothing about the shelf.
+        assert ubr._status_of(
+            next(r for r in raw_before if r["ticker"] == witness).get("entry_signal")
+        ) not in ubr._BLOCKED_STATUSES, (
+            "witness is entry-blocked, so its stage says nothing about BOTTOM WATCH")
         assert by_before[witness]["stage"] == "blocked", (
             "witness must be blocked without the opt-in or this proves nothing")
         assert by_after[witness]["stage"] == "basing"
