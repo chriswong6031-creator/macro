@@ -3251,7 +3251,16 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install pytest fastapi
+        # pyyaml joined the line when the Earnings Wire router stopped being
+        # mounted inside `except ImportError: pass`. app.main now imports
+        # app.earnings unconditionally (a paid contract must fail startup
+        # loudly), and that pulls engine/earnings_narrative/__init__.py ->
+        # promotion.py -> yaml. Under the swallow this job never noticed the
+        # dependency because the failed import was silently discarded — the
+        # same silence that hid the dropped paid routes. This job is the only
+        # one of the 13 that import app.main whose line lacked pyyaml;
+        # verified by blocking yaml and collecting the suite.
+        run: pip install pytest fastapi pyyaml
       - name: identity capture unit tests
         run: python -m pytest tests/test_collect_identity.py -v
 
