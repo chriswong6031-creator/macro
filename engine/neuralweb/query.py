@@ -58,7 +58,7 @@ Every row in the materialized index carries::
 
     signal_id, engine, family, ledger, as_of, symbol, scope_type,
     universe, horizon, direction, size_binding, fill_basis, score,
-    outcome_excess, outcome_graded, graded_at,
+    outcome_excess, outcome_graded, graded_at, outcome_basis,
     terminal_state_clean15_126, terminal_state_clean8_21,
     fwd_mfe_5, fwd_mfe_10, fwd_mfe_21, fwd_mfe_63, fwd_mfe_126,
     rate_pressure, quad_hard_label, fused_risk_label, vol_regime,
@@ -73,6 +73,47 @@ US/HK/CA post Stage B-e, "asof_legacy" for older qledger rows).
 ``scope_type`` domain: 'entity' | 'basket' are produced by current data;
   'sector' | 'macro' are reserved for future adapters — no current qledger
   rows produce them.
+
+OUTCOME BASIS — what ``outcome_excess`` ACTUALLY measures per ledger
+--------------------------------------------------------------------
+``outcome_excess`` is NOT one quantity.  Four ledgers fill it from a forward
+MAXIMUM-FAVORABLE-EXCURSION column (``fwd_mfe_<h>``), which is unsigned BY
+CONSTRUCTION — an MFE cannot be negative, so "excess > 0" on those rows means
+"the name traded above entry at least once in the window", not "the call was
+directionally right".  Those adapters also pin ``direction=1``, so every
+sign-based statistic over them is a tautology.
+
+``outcome_basis`` is the structural cure: a per-row label naming the semantic
+of that row's ``outcome_excess``.
+
+  ``signed_excess``       real signed excess return; sign carries information.
+                          Ledgers: spine, qledger.
+  ``unsigned_mfe_proxy``  forward MFE used as an outcome proxy — magnitude only,
+                          never negative, sign tests VACUOUS.
+                          Ledgers: track_record, board_hk, board_ca, board_cn.
+  ``synthetic_sign_stub`` ±0.01 SIGN PLACEHOLDER: the sign is real (directional
+                          hit/miss), the magnitude is fabricated and must never
+                          feed a return or volatility calculation.
+                          Ledger: cortex_attention.
+  ``None``                ledger carries no outcome (outcome_excess is always
+                          null): cycles_*, reflexes, options_entry, tech_signals,
+                          macro_context, personality_context — and any ledger
+                          not explicitly mapped (fail-closed).
+
+Measured on the committed index 2026-08-05: track_record 288,884 graded rows,
+min 0.0, 0.0% negative, 13.2% exactly zero; board_hk 509 rows 0.0% negative;
+board_ca 330 rows 0.0% negative; board_cn 0 graded rows today but structurally
+identical (same fwd_mfe proxy).  By contrast qledger 12,770 rows are 52.8%
+negative and spine 2,436 rows are 41.7% negative — genuinely signed.
+
+CONSUMER RULE (the whole point of the column): treat ONLY
+``outcome_basis == 'signed_excess'`` as a signed excess return.  Anything else
+— including ``None`` and any unknown value — is NOT sign-safe: direction
+agreement, hit rates, Wilson CIs on directional accuracy, and co-firing lift
+are all undefined against it.  Magnitude statistics (means, variances, decay
+curves) remain defined for ``unsigned_mfe_proxy`` provided they are LABELLED
+as magnitudes, never described as edge or accuracy.
+cf. PR #4673 engine/neuralweb/edge_outcomes.py ``dst_outcome_unsigned_mfe_proxy``.
 
 ADAPTERS (one per source — all fail-open)
 -----------------------------------------
@@ -115,6 +156,12 @@ log = logging.getLogger(__name__)
 __all__ = [
     "COLUMNS",
     "LEDGER_ENUM",
+    "OUTCOME_BASIS_SIGNED",
+    "OUTCOME_BASIS_UNSIGNED_MFE",
+    "OUTCOME_BASIS_SYNTHETIC_SIGN",
+    "UNSIGNED_OUTCOME_LEDGERS",
+    "OUTCOME_BASIS_FOR_LEDGER",
+    "stamp_outcome_basis",
     "adapt_reflexes",
     "adapt_cortex_attention",
     "adapt_options_entry",
@@ -151,6 +198,9 @@ COLUMNS: list[str] = [
     "outcome_excess",
     "outcome_graded",
     "graded_at",
+    "outcome_basis",   # what outcome_excess MEANS — see OUTCOME BASIS in the
+                       # module docstring and OUTCOME_BASIS_FOR_LEDGER below.
+                       # Only 'signed_excess' is sign-safe for consumers.
     # terminal-state (from engine.grading vocabulary)
     "terminal_state_clean15_126",
     "terminal_state_clean8_21",
@@ -247,6 +297,107 @@ LEDGER_ENUM: tuple[str, ...] = (
 )
 
 # ---------------------------------------------------------------------------
+# OUTCOME BASIS — the semantic of outcome_excess, per ledger
+# ---------------------------------------------------------------------------
+# See the OUTCOME BASIS section of the module docstring for the full statement
+# and the measured sign statistics.  The short version: outcome_excess is four
+# different quantities wearing one column name, and only one of them is signed.
+
+#: Real signed excess return — the sign carries information.
+OUTCOME_BASIS_SIGNED: str = "signed_excess"
+
+#: Forward maximum-favorable-excursion used as an outcome proxy.  Unsigned BY
+#: CONSTRUCTION (an MFE is never negative), so every sign/direction statistic
+#: over these rows is vacuous.  Magnitude statistics remain defined.
+OUTCOME_BASIS_UNSIGNED_MFE: str = "unsigned_mfe_proxy"
+
+#: ±0.01 sign placeholder: sign real, magnitude fabricated (cortex_attention).
+OUTCOME_BASIS_SYNTHETIC_SIGN: str = "synthetic_sign_stub"
+
+#: Ledgers whose outcome_excess is an unsigned fwd_mfe proxy.
+#:
+#: This SUPERSEDES the single-entry ``UNSIGNED_OUTCOME_LEDGERS`` in PR #4673's
+#: engine/neuralweb/edge_outcomes.py (``frozenset({"track_record"})``): the
+#: three board ledgers are structurally identical (same fwd_mfe_<h> proxy,
+#: same direction=1 pin) and were covered there only by that module's
+#: empirical zero-negatives probe — which is silent whenever a board's graded
+#: population is small or (board_cn today) empty.  After #4673 merges it can
+#: import this set rather than keeping its own.
+UNSIGNED_OUTCOME_LEDGERS: frozenset[str] = frozenset({
+    "track_record",
+    "board_hk",
+    "board_ca",
+    "board_cn",
+})
+
+#: ledger → outcome_basis.  Ledgers with no outcome at all map to None; any
+#: ledger absent from this map also resolves to None.  That is FAIL-CLOSED by
+#: design: only an explicit ``signed_excess`` is ever treated as signed, so a
+#: future adapter that forgets to register here degrades to "not sign-safe"
+#: rather than silently inheriting the signed reading.
+OUTCOME_BASIS_FOR_LEDGER: dict[str, str | None] = {
+    "spine":                OUTCOME_BASIS_SIGNED,
+    "qledger":              OUTCOME_BASIS_SIGNED,
+    "track_record":         OUTCOME_BASIS_UNSIGNED_MFE,
+    "board_hk":             OUTCOME_BASIS_UNSIGNED_MFE,
+    "board_ca":             OUTCOME_BASIS_UNSIGNED_MFE,
+    "board_cn":             OUTCOME_BASIS_UNSIGNED_MFE,
+    "cortex_attention":     OUTCOME_BASIS_SYNTHETIC_SIGN,
+    # No outcome column at all — outcome_excess is always None on these.
+    "cycles_us":            None,
+    "cycles_china":         None,
+    "cycles_country":       None,
+    "reflexes":             None,
+    "options_entry":        None,
+    "tech_signals":         None,
+    "macro_context":        None,
+    "personality_context":  None,
+}
+
+
+def stamp_outcome_basis(df: pd.DataFrame) -> pd.DataFrame:
+    """Fill the ``outcome_basis`` column from the row's ledger.
+
+    Adds the column when absent (legacy parquets written before the column
+    existed) and fills ONLY null entries — a non-null value set by an adapter
+    always wins, so a future per-row basis is never clobbered by the map.
+
+    Fail-open by construction: safe on an empty frame, on a frame with no
+    ``ledger`` column (nothing to key on → column added as all-null), and on
+    an unknown ledger value (→ None, which every consumer must read as "not
+    sign-safe").  Never raises; never mutates the caller's frame in place.
+    """
+    if df is None:
+        return df
+    out = df
+    if "outcome_basis" not in out.columns:
+        out = out.copy()
+        out["outcome_basis"] = None
+    if out.empty or "ledger" not in out.columns:
+        return out
+
+    try:
+        derived = out["ledger"].map(
+            lambda v: OUTCOME_BASIS_FOR_LEDGER.get(str(v)) if v is not None else None
+        )
+        missing = out["outcome_basis"].isna()
+        if bool(missing.any()):
+            if out is df:
+                out = out.copy()
+            # A column materialised as all-NaN reads as float64; assigning str
+            # labels into it warns (and in a future pandas raises) unless the
+            # column is object first.
+            if out["outcome_basis"].dtype != object:
+                out["outcome_basis"] = out["outcome_basis"].astype(object)
+            out.loc[missing, "outcome_basis"] = derived[missing]
+    except Exception as e:  # noqa: BLE001
+        # Degrade-never-raise: an unstamped column reads as None, i.e. "not
+        # sign-safe", which is the conservative direction.
+        log.warning("stamp_outcome_basis: stamp failed (%s) — leaving column null", e)
+    return out
+
+
+# ---------------------------------------------------------------------------
 # Double-count prevention: event-matched altdata_conv exclusion
 # ---------------------------------------------------------------------------
 # altdata_conv rows in data/spine/predictions.parquet are excluded from
@@ -311,10 +462,15 @@ def _ensure_columns(df: pd.DataFrame) -> pd.DataFrame:
     falsifier defaults None, half_life defaults NaN.
     R5: macro_context_id, macro_context_asof, market, own_market_quad, regime_stamp_basis
     default to None for read-time compatibility with existing parquets.
+    OUTCOME BASIS: every frame that passes through here — every adapter return
+    (standalone calls included) and load_index() on a legacy parquet — is
+    stamped with outcome_basis from its ledger.  Adapter-set values win; only
+    nulls are filled.  This is the single choke point that makes the column a
+    structural guarantee rather than a per-adapter convention.
     """
     for c in COLUMNS:
         if c not in df.columns:
-            if c in _R5_NEW_COLS or c in _CI_NEW_COLS:
+            if c in _R5_NEW_COLS or c in _CI_NEW_COLS or c == "outcome_basis":
                 df[c] = None
             else:
                 # Use conservative default for flag cols; NaN for everything else
@@ -325,6 +481,7 @@ def _ensure_columns(df: pd.DataFrame) -> pd.DataFrame:
     for flag, default_val in _FLAG_DEFAULTS.items():
         if flag in df.columns:
             df[flag] = df[flag].fillna(default_val)
+    df = stamp_outcome_basis(df)
     return df
 
 
@@ -569,7 +726,15 @@ def adapt_track_record(root: Path | str | None = None) -> tuple[pd.DataFrame, li
                 col = f"fwd_mfe_{hh}"
                 if col in r.index:
                     row[col] = _safe_float(r.get(col))
-            # outcome_excess: use fwd_mfe for this horizon as proxy if present
+            # outcome_excess: use fwd_mfe for this horizon as proxy if present.
+            # THIS IS AN UNSIGNED MFE PROXY, NOT A SIGNED EXCESS RETURN — an
+            # MFE is non-negative by construction (measured 2026-08-05: 288,884
+            # graded track_record rows, min 0.0, 0.0% negative), and direction
+            # is pinned to 1 above, so any sign/direction statistic over these
+            # rows is a tautology.  The row is labelled 'unsigned_mfe_proxy' via
+            # OUTCOME_BASIS_FOR_LEDGER (stamped in _ensure_columns below); every
+            # consumer must gate on outcome_basis == 'signed_excess'.
+            # cf. PR #4673 edge_outcomes.py dst_outcome_unsigned_mfe_proxy.
             row["outcome_excess"] = _safe_float(r.get(mfe_col))
             row["outcome_graded"] = row["outcome_excess"] is not None
             row["graded_at"]      = _str_date(r.get("graded_at"))
@@ -654,6 +819,13 @@ def adapt_board(
             row["size_binding"]   = _safe_bool(r.get("size_binding"))
             row["fill_basis"]     = "next_bar"
             row["score"]          = _safe_float(r.get("composite_z") or r.get("score") or r.get("level"))
+            # UNSIGNED MFE PROXY (same trap as track_record): fwd_mfe_<h> is
+            # non-negative by construction and direction is pinned to 1 above,
+            # so sign tests over board_hk/board_ca rows are vacuous (measured
+            # 2026-08-05: board_hk 509 graded rows 0.0% negative; board_ca 330
+            # rows 0.0% negative).  Basis 'unsigned_mfe_proxy' is stamped via
+            # OUTCOME_BASIS_FOR_LEDGER; consumers gate on 'signed_excess'.
+            # cf. PR #4673 edge_outcomes.py dst_outcome_unsigned_mfe_proxy.
             row["outcome_excess"] = _safe_float(r.get(mfe_col))
             row["outcome_graded"] = row["outcome_excess"] is not None
             row["graded_at"]      = _str_date(r.get("graded_at"))
@@ -739,6 +911,13 @@ def adapt_china_board(root: Path | str | None = None) -> tuple[pd.DataFrame, lis
             row["size_binding"]   = _safe_bool(r.get("size_binding"))
             row["fill_basis"]     = fill_basis
             row["score"]          = _safe_float(r.get("score") or r.get("board_rank"))
+            # UNSIGNED MFE PROXY (same trap as track_record / hk+ca boards):
+            # fwd_mfe_<h> is non-negative by construction, direction is pinned
+            # to 1 above.  board_cn had 0 graded rows on 2026-08-05, so an
+            # empirical zero-negatives probe cannot see it — the STRUCTURAL
+            # label is the only cover.  Basis 'unsigned_mfe_proxy' via
+            # OUTCOME_BASIS_FOR_LEDGER; consumers gate on 'signed_excess'.
+            # cf. PR #4673 edge_outcomes.py dst_outcome_unsigned_mfe_proxy.
             row["outcome_excess"] = _safe_float(r.get(mfe_col))
             row["outcome_graded"] = row["outcome_excess"] is not None
             row["graded_at"]      = _str_date(r.get("graded_at"))

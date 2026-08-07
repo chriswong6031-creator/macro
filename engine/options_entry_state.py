@@ -424,14 +424,17 @@ def _compute_chain_ovc_from_sub(
 def _compute_vanna_hedge_5d(root: Path, ticker: str) -> float | None:
     """Compute vanna_hedge_5d = −net_vex × iv30_5d_chg from summary_{ticker}.parquet.
 
-    iv30_5d_chg = latest iv30 minus iv30 from 5 rows earlier in the summary.
-    Returns None when < 6 summary rows exist, net_vex is absent, or any required
-    value is non-finite.
+    iv30_5d_chg = latest iv30 minus iv30 at the session exactly 5 SESSIONS earlier,
+    resolved by CALENDAR (engine.options_stamp._row_n_sessions_back, 2026-08-06).
+    Returns None when < 6 summary rows exist, the 5-back session has no row,
+    net_vex is absent, or any required value is non-finite.
 
     SOURCE: data/polygon_gex/summary_{ticker}.parquet (net_vex + iv30 columns).
     This does NOT use the chain file — net_vex is the signed vanna-dollar aggregate
     already computed nightly by engine/gex_engine.py and written to the summary store.
     """
+    from engine.options_stamp import _row_n_sessions_back
+
     summary_path = root / "data" / "polygon_gex" / f"summary_{ticker}.parquet"
     if not summary_path.exists():
         return None
@@ -441,18 +444,21 @@ def _compute_vanna_hedge_5d(root: Path, ticker: str) -> float | None:
         return None
     # SESSION GUARD (#3721 class, OIP E8 2026-07-29): the summary store accrues rows on
     # non-session days (~11 of 39 dates), and those rows RECOMPUTE iv30/net_vex off a
-    # stale carried-forward spot. The positional -6 lookback below is documented as
-    # "5 rows earlier" but is USED as a 5-trading-day change, so weekend rows silently
-    # shorten the window (a Sat+Sun pair turns "5 sessions" into 3). Filter first so
-    # position and session agree. Fail-open (see lib.nyse_calendar.session_rows).
+    # stale carried-forward spot. Filter them out so the ≥6-row floor counts sessions.
+    # Fail-open (see lib.nyse_calendar.session_rows).
     sdf = nyse_calendar.session_rows(sdf, label=f"polygon_gex/summary_{ticker}")
     if sdf.empty or len(sdf) < 6:
         return None
     if "net_vex" not in sdf.columns or "iv30" not in sdf.columns:
         return None
-    # Latest SESSION row and the row 5 sessions earlier (positional, post-filter)
+    # Latest SESSION row, and the row exactly 5 SESSIONS earlier resolved by CALENDAR:
+    # after a collection outage the filtered store is session-GAPPED, so a positional
+    # -6 widens the basis (the 2026-08-03..08-05 outage made it a 9-session change
+    # labelled "5d"). Absent target session → None, never a mislabeled basis.
     latest = sdf.iloc[-1]
-    prior = sdf.iloc[-6]  # index -6 gives the row 5 steps before -1
+    prior = _row_n_sessions_back(sdf, 5)
+    if prior is None:
+        return None
 
     def _f(v) -> float | None:
         try:
@@ -565,11 +571,19 @@ def _load_skew_snapshots(root: Path) -> dict[str, dict]:
         latest = grp_sorted.iloc[-1]
         latest_skew = _safe_float(latest.get("skew"))
         asof_val = str(latest.get("asof") or latest.get("date") or "")[:10]
-        # 5d change: need at least LOOKBACK_TRADING_DAYS+1 rows
+        # 5d change: GAP DISCIPLINE — TWO-ENDPOINT (lib/nyse_calendar, 2026-08-06).
+        # The far endpoint is resolved by CALENDAR, not by position. This is the DISPLAY
+        # twin of the ledger column fixed in #4809, so until now the same "5d" number was
+        # right in one store and wrong in another. Measured over the committed
+        # options_skew store, the positional -6 picked the wrong session for 370 of 375
+        # names (98.7%) at its latest date; refusing costs 4.0% of names there, and 5 of
+        # 23 as_of dates lose the column entirely (date-wide, as every name reads the
+        # same store on the same schedule).
         skew_5d_chg = None
         if len(grp_sorted) >= LOOKBACK_TRADING_DAYS + 1:
-            old_row = grp_sorted.iloc[-(LOOKBACK_TRADING_DAYS + 1)]
-            old_skew = _safe_float(old_row.get("skew"))
+            old_row = nyse_calendar.row_n_sessions_back(
+                grp_sorted, LOOKBACK_TRADING_DAYS, date_col="date")
+            old_skew = _safe_float(old_row.get("skew")) if old_row is not None else None
             if latest_skew is not None and old_skew is not None:
                 skew_5d_chg = _clean(latest_skew - old_skew)
         out[str(ticker)] = {
@@ -608,10 +622,15 @@ def _load_ivspread_snapshots(root: Path) -> dict[str, dict]:
         latest = grp_sorted.iloc[-1]
         latest_val = _safe_float(latest.get("ivspread_rel"))
         asof_val = str(latest.get("asof") or latest.get("date") or "")[:10]
+        # GAP DISCIPLINE — TWO-ENDPOINT, same repair and same reason as the skew loader
+        # above. Measured over the committed options_ivspread store the positional -6
+        # picked the wrong session for 367 of 367 names (100%); refusing costs 13.9%
+        # there, with 5 of 18 as_of dates losing the column date-wide.
         ivspread_5d_chg = None
         if len(grp_sorted) >= LOOKBACK_TRADING_DAYS + 1:
-            old_row = grp_sorted.iloc[-(LOOKBACK_TRADING_DAYS + 1)]
-            old_val = _safe_float(old_row.get("ivspread_rel"))
+            old_row = nyse_calendar.row_n_sessions_back(
+                grp_sorted, LOOKBACK_TRADING_DAYS, date_col="date")
+            old_val = _safe_float(old_row.get("ivspread_rel")) if old_row is not None else None
             if latest_val is not None and old_val is not None:
                 ivspread_5d_chg = _clean(latest_val - old_val)
         out[str(ticker)] = {

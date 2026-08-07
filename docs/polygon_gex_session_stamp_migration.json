@@ -1,0 +1,1070 @@
+{
+  "generated_utc": "2026-08-07T00:23:16+00:00",
+  "applied": true,
+  "what": "polygon_gex re-stamped from UTC run-date to NYSE session date (scripts/migrate_polygon_gex_session_stamps.py)",
+  "session_resolver": "lib.nyse_calendar.expected_last_session (17:00 ET settle buffer)",
+  "provenance": "accrual instants recovered from `git log -1 --format=%cI -- <path>` BEFORE this migration rewrote the history of those paths \u2014 they are not recoverable from git afterwards, which is why they are frozen here",
+  "verification": "cross-section: per underlying with a local price series (data/yahoo/<S>.parquet close, fallback data/stocks/<S>.parquet), abs(close(session) - spot) / spot",
+  "classification_rule": {
+    "clean_iff": "median_abs_err_pct < 0.05 AND within_0.5pct_rate >= 90.0"
+  },
+  "collision_rule": "prefer CLEAN, then lowest median error, then widest underlying count, then earliest stamp",
+  "recovery": "nothing is destroyed: `git show <recovery_sha>:<original_path>` returns any removed blob",
+  "totals": {
+    "files": 42,
+    "sessions": 29,
+    "clean": 33,
+    "mixed": 9,
+    "kept": 24,
+    "dropped": 13,
+    "quarantined": 5
+  },
+  "files": [
+    {
+      "original_stamp": "2026-06-15",
+      "original_path": "data/polygon_gex/chains/2026-06-15.parquet",
+      "accrual_instant_utc": "2026-06-15T23:12:50+00:00",
+      "accrual_instant_et": "2026-06-15T19:12:50-04:00",
+      "resolved_session": "2026-06-15",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 10,
+        "checkable": 9,
+        "unverifiable": 1,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 100.0,
+        "exact_to_the_cent_rate": 77.7778,
+        "worst_abs_err_pct": 0.256963
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-06-15.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-06-15 -> 2026-06-15",
+      "recovery_sha": "34fb7b32623d144b7becc7d1fe96f57cb324561b",
+      "collision_group": [
+        "2026-06-15",
+        "2026-06-16"
+      ]
+    },
+    {
+      "original_stamp": "2026-06-16",
+      "original_path": "data/polygon_gex/chains/2026-06-16.parquet",
+      "accrual_instant_utc": "2026-06-16T05:49:14+00:00",
+      "accrual_instant_et": "2026-06-16T01:49:14-04:00",
+      "resolved_session": "2026-06-15",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 10,
+        "checkable": 9,
+        "unverifiable": 1,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 100.0,
+        "exact_to_the_cent_rate": 77.7778,
+        "worst_abs_err_pct": 0.256963
+      },
+      "disposition": "drop",
+      "new_path": null,
+      "reason": "collision loser for session 2026-06-15 \u2014 duplicate of 2026-06-15 (a closed-market re-snapshot of the same session state)",
+      "recovery_sha": "d5ecb8d13e60a6f872555938cf69f7c12b4761c3",
+      "collision_group": [
+        "2026-06-15",
+        "2026-06-16"
+      ]
+    },
+    {
+      "original_stamp": "2026-06-17",
+      "original_path": "data/polygon_gex/chains/2026-06-17.parquet",
+      "accrual_instant_utc": "2026-06-17T23:08:49+00:00",
+      "accrual_instant_et": "2026-06-17T19:08:49-04:00",
+      "resolved_session": "2026-06-17",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 10,
+        "checkable": 9,
+        "unverifiable": 1,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 100.0,
+        "exact_to_the_cent_rate": 77.7778,
+        "worst_abs_err_pct": 0.256963
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-06-17.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-06-17 -> 2026-06-17",
+      "recovery_sha": "3752ca8d247025bbd511be3dd733b94dbe903404",
+      "collision_group": [
+        "2026-06-17",
+        "2026-06-18"
+      ]
+    },
+    {
+      "original_stamp": "2026-06-18",
+      "original_path": "data/polygon_gex/chains/2026-06-18.parquet",
+      "accrual_instant_utc": "2026-06-18T08:52:18+00:00",
+      "accrual_instant_et": "2026-06-18T04:52:18-04:00",
+      "resolved_session": "2026-06-17",
+      "classification": "MIXED",
+      "metrics": {
+        "underlyings": 10,
+        "checkable": 9,
+        "unverifiable": 1,
+        "median_abs_err_pct": 1.027693,
+        "within_0_5pct_rate": 0.0,
+        "exact_to_the_cent_rate": 0.0,
+        "worst_abs_err_pct": 2.751528
+      },
+      "disposition": "drop",
+      "new_path": null,
+      "reason": "collision loser for session 2026-06-17 \u2014 duplicate of 2026-06-17 (a closed-market re-snapshot of the same session state)",
+      "recovery_sha": "d251484daea4dd576f13191ccc8b6c6c1617b444",
+      "collision_group": [
+        "2026-06-17",
+        "2026-06-18"
+      ]
+    },
+    {
+      "original_stamp": "2026-06-19",
+      "original_path": "data/polygon_gex/chains/2026-06-19.parquet",
+      "accrual_instant_utc": "2026-06-19T22:27:11+00:00",
+      "accrual_instant_et": "2026-06-19T18:27:11-04:00",
+      "resolved_session": "2026-06-18",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 10,
+        "checkable": 9,
+        "unverifiable": 1,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 100.0,
+        "exact_to_the_cent_rate": 88.8889,
+        "worst_abs_err_pct": 0.109771
+      },
+      "disposition": "drop",
+      "new_path": null,
+      "reason": "collision loser for session 2026-06-18 \u2014 duplicate of 2026-06-21 (a closed-market re-snapshot of the same session state)",
+      "recovery_sha": "1c39b131004d8ee98c493362fd199f361ab63a50",
+      "collision_group": [
+        "2026-06-19",
+        "2026-06-20",
+        "2026-06-21",
+        "2026-06-22"
+      ]
+    },
+    {
+      "original_stamp": "2026-06-20",
+      "original_path": "data/polygon_gex/chains/2026-06-20.parquet",
+      "accrual_instant_utc": "2026-06-20T10:44:33+00:00",
+      "accrual_instant_et": "2026-06-20T06:44:33-04:00",
+      "resolved_session": "2026-06-18",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 10,
+        "checkable": 9,
+        "unverifiable": 1,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 100.0,
+        "exact_to_the_cent_rate": 88.8889,
+        "worst_abs_err_pct": 0.109771
+      },
+      "disposition": "drop",
+      "new_path": null,
+      "reason": "collision loser for session 2026-06-18 \u2014 duplicate of 2026-06-21 (a closed-market re-snapshot of the same session state)",
+      "recovery_sha": "ae12a01ad57048aa5a402b7040f11b74ecbe9daf",
+      "collision_group": [
+        "2026-06-19",
+        "2026-06-20",
+        "2026-06-21",
+        "2026-06-22"
+      ]
+    },
+    {
+      "original_stamp": "2026-06-21",
+      "original_path": "data/polygon_gex/chains/2026-06-21.parquet",
+      "accrual_instant_utc": "2026-06-21T15:31:58+00:00",
+      "accrual_instant_et": "2026-06-21T11:31:58-04:00",
+      "resolved_session": "2026-06-18",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 345,
+        "checkable": 282,
+        "unverifiable": 63,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 92.9078,
+        "exact_to_the_cent_rate": 81.9149,
+        "worst_abs_err_pct": 75.0
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-06-18.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-06-21 -> 2026-06-18",
+      "recovery_sha": "1bd9defc2e50baf2d82b595b97304fc9cdf37a18",
+      "collision_group": [
+        "2026-06-19",
+        "2026-06-20",
+        "2026-06-21",
+        "2026-06-22"
+      ]
+    },
+    {
+      "original_stamp": "2026-06-22",
+      "original_path": "data/polygon_gex/chains/2026-06-22.parquet",
+      "accrual_instant_utc": "2026-06-22T19:43:27+00:00",
+      "accrual_instant_et": "2026-06-22T15:43:27-04:00",
+      "resolved_session": "2026-06-18",
+      "classification": "MIXED",
+      "metrics": {
+        "underlyings": 356,
+        "checkable": 273,
+        "unverifiable": 83,
+        "median_abs_err_pct": 1.885771,
+        "within_0_5pct_rate": 11.3553,
+        "exact_to_the_cent_rate": 0.3663,
+        "worst_abs_err_pct": 74.661562
+      },
+      "disposition": "drop",
+      "new_path": null,
+      "reason": "collision loser for session 2026-06-18 \u2014 duplicate of 2026-06-21 (a closed-market re-snapshot of the same session state)",
+      "recovery_sha": "d97bcb05a39f97c328285ce0d0b108a22475df0a",
+      "collision_group": [
+        "2026-06-19",
+        "2026-06-20",
+        "2026-06-21",
+        "2026-06-22"
+      ]
+    },
+    {
+      "original_stamp": "2026-06-23",
+      "original_path": "data/polygon_gex/chains/2026-06-23.parquet",
+      "accrual_instant_utc": "2026-06-23T11:21:17+00:00",
+      "accrual_instant_et": "2026-06-23T07:21:17-04:00",
+      "resolved_session": "2026-06-22",
+      "classification": "MIXED",
+      "metrics": {
+        "underlyings": 356,
+        "checkable": 273,
+        "unverifiable": 83,
+        "median_abs_err_pct": 1.336838,
+        "within_0_5pct_rate": 27.8388,
+        "exact_to_the_cent_rate": 10.6227,
+        "worst_abs_err_pct": 74.890706
+      },
+      "disposition": "quarantine",
+      "new_path": null,
+      "reason": "MIXED survivor for session 2026-06-22 \u2014 spot is a live intraday/pre-market tape, so every spot-derived GEX field (net_gex_bn, gamma_flip, dist_to_flip_pct, magnet_up/down, max_pain) was computed off a price that is not the session close; OI provenance is also ambiguous. Session 2026-06-22 becomes an honest gap.",
+      "recovery_sha": "558344f99fc3760e48725ac4605ad4104dca1a9d",
+      "collision_group": [
+        "2026-06-23"
+      ]
+    },
+    {
+      "original_stamp": "2026-06-24",
+      "original_path": "data/polygon_gex/chains/2026-06-24.parquet",
+      "accrual_instant_utc": "2026-06-24T23:06:15+00:00",
+      "accrual_instant_et": "2026-06-24T19:06:15-04:00",
+      "resolved_session": "2026-06-24",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 356,
+        "checkable": 273,
+        "unverifiable": 83,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 92.674,
+        "exact_to_the_cent_rate": 83.5165,
+        "worst_abs_err_pct": 75.0
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-06-24.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-06-24 -> 2026-06-24",
+      "recovery_sha": "40c604b499327d1af4c14698b5ff0178afd7360a",
+      "collision_group": [
+        "2026-06-24",
+        "2026-06-25"
+      ]
+    },
+    {
+      "original_stamp": "2026-06-25",
+      "original_path": "data/polygon_gex/chains/2026-06-25.parquet",
+      "accrual_instant_utc": "2026-06-25T12:10:58+00:00",
+      "accrual_instant_et": "2026-06-25T08:10:58-04:00",
+      "resolved_session": "2026-06-24",
+      "classification": "MIXED",
+      "metrics": {
+        "underlyings": 356,
+        "checkable": 273,
+        "unverifiable": 83,
+        "median_abs_err_pct": 0.806617,
+        "within_0_5pct_rate": 35.1648,
+        "exact_to_the_cent_rate": 10.2564,
+        "worst_abs_err_pct": 75.146971
+      },
+      "disposition": "drop",
+      "new_path": null,
+      "reason": "collision loser for session 2026-06-24 \u2014 duplicate of 2026-06-24 (a closed-market re-snapshot of the same session state)",
+      "recovery_sha": "a4688fb80209bff136557f923963e5d598512601",
+      "collision_group": [
+        "2026-06-24",
+        "2026-06-25"
+      ]
+    },
+    {
+      "original_stamp": "2026-06-26",
+      "original_path": "data/polygon_gex/chains/2026-06-26.parquet",
+      "accrual_instant_utc": "2026-06-26T11:58:35+00:00",
+      "accrual_instant_et": "2026-06-26T07:58:35-04:00",
+      "resolved_session": "2026-06-25",
+      "classification": "MIXED",
+      "metrics": {
+        "underlyings": 356,
+        "checkable": 273,
+        "unverifiable": 83,
+        "median_abs_err_pct": 0.786135,
+        "within_0_5pct_rate": 35.8974,
+        "exact_to_the_cent_rate": 13.5531,
+        "worst_abs_err_pct": 74.902368
+      },
+      "disposition": "quarantine",
+      "new_path": null,
+      "reason": "MIXED survivor for session 2026-06-25 \u2014 spot is a live intraday/pre-market tape, so every spot-derived GEX field (net_gex_bn, gamma_flip, dist_to_flip_pct, magnet_up/down, max_pain) was computed off a price that is not the session close; OI provenance is also ambiguous. Session 2026-06-25 becomes an honest gap.",
+      "recovery_sha": "b71270284c0057bbe11596fd2c24c74c146e8e7d",
+      "collision_group": [
+        "2026-06-26"
+      ]
+    },
+    {
+      "original_stamp": "2026-06-27",
+      "original_path": "data/polygon_gex/chains/2026-06-27.parquet",
+      "accrual_instant_utc": "2026-06-27T23:27:51+00:00",
+      "accrual_instant_et": "2026-06-27T19:27:51-04:00",
+      "resolved_session": "2026-06-26",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 356,
+        "checkable": 273,
+        "unverifiable": 83,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 93.7729,
+        "exact_to_the_cent_rate": 84.6154,
+        "worst_abs_err_pct": 75.0
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-06-26.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-06-27 -> 2026-06-26",
+      "recovery_sha": "8949e84c8cabae5aa229d628e0489e4874e2b0cc",
+      "collision_group": [
+        "2026-06-27",
+        "2026-06-28",
+        "2026-06-29"
+      ]
+    },
+    {
+      "original_stamp": "2026-06-28",
+      "original_path": "data/polygon_gex/chains/2026-06-28.parquet",
+      "accrual_instant_utc": "2026-06-28T23:47:36+00:00",
+      "accrual_instant_et": "2026-06-28T19:47:36-04:00",
+      "resolved_session": "2026-06-26",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 356,
+        "checkable": 273,
+        "unverifiable": 83,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 93.7729,
+        "exact_to_the_cent_rate": 84.6154,
+        "worst_abs_err_pct": 75.0
+      },
+      "disposition": "drop",
+      "new_path": null,
+      "reason": "collision loser for session 2026-06-26 \u2014 duplicate of 2026-06-27 (a closed-market re-snapshot of the same session state)",
+      "recovery_sha": "8ceaaad5e27b3d3b63cf43b2ff40d2d9a6afdecc",
+      "collision_group": [
+        "2026-06-27",
+        "2026-06-28",
+        "2026-06-29"
+      ]
+    },
+    {
+      "original_stamp": "2026-06-29",
+      "original_path": "data/polygon_gex/chains/2026-06-29.parquet",
+      "accrual_instant_utc": "2026-06-29T01:51:32+00:00",
+      "accrual_instant_et": "2026-06-28T21:51:32-04:00",
+      "resolved_session": "2026-06-26",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 356,
+        "checkable": 273,
+        "unverifiable": 83,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 93.7729,
+        "exact_to_the_cent_rate": 84.6154,
+        "worst_abs_err_pct": 75.0
+      },
+      "disposition": "drop",
+      "new_path": null,
+      "reason": "collision loser for session 2026-06-26 \u2014 duplicate of 2026-06-27 (a closed-market re-snapshot of the same session state)",
+      "recovery_sha": "9ced78c1ef584e271a9d8515af4e48ad0e982cfe",
+      "collision_group": [
+        "2026-06-27",
+        "2026-06-28",
+        "2026-06-29"
+      ]
+    },
+    {
+      "original_stamp": "2026-06-30",
+      "original_path": "data/polygon_gex/chains/2026-06-30.parquet",
+      "accrual_instant_utc": "2026-06-30T13:08:54+00:00",
+      "accrual_instant_et": "2026-06-30T09:08:54-04:00",
+      "resolved_session": "2026-06-29",
+      "classification": "MIXED",
+      "metrics": {
+        "underlyings": 356,
+        "checkable": 273,
+        "unverifiable": 83,
+        "median_abs_err_pct": 0.407713,
+        "within_0_5pct_rate": 55.6777,
+        "exact_to_the_cent_rate": 11.7216,
+        "worst_abs_err_pct": 74.835378
+      },
+      "disposition": "quarantine",
+      "new_path": null,
+      "reason": "MIXED survivor for session 2026-06-29 \u2014 spot is a live intraday/pre-market tape, so every spot-derived GEX field (net_gex_bn, gamma_flip, dist_to_flip_pct, magnet_up/down, max_pain) was computed off a price that is not the session close; OI provenance is also ambiguous. Session 2026-06-29 becomes an honest gap.",
+      "recovery_sha": "43134bb44cda5b9ef99d3a3d6c61458676dd8934",
+      "collision_group": [
+        "2026-06-30"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-01",
+      "original_path": "data/polygon_gex/chains/2026-07-01.parquet",
+      "accrual_instant_utc": "2026-07-01T03:20:57+00:00",
+      "accrual_instant_et": "2026-06-30T23:20:57-04:00",
+      "resolved_session": "2026-06-30",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 356,
+        "checkable": 273,
+        "unverifiable": 83,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 95.2381,
+        "exact_to_the_cent_rate": 86.8132,
+        "worst_abs_err_pct": 75.0
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-06-30.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-07-01 -> 2026-06-30",
+      "recovery_sha": "d0409d28559caaea3750d624a1fdffea5f40fe53",
+      "collision_group": [
+        "2026-07-01"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-02",
+      "original_path": "data/polygon_gex/chains/2026-07-02.parquet",
+      "accrual_instant_utc": "2026-07-02T06:37:00+00:00",
+      "accrual_instant_et": "2026-07-02T02:37:00-04:00",
+      "resolved_session": "2026-07-01",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 355,
+        "checkable": 273,
+        "unverifiable": 82,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 95.2381,
+        "exact_to_the_cent_rate": 87.5458,
+        "worst_abs_err_pct": 75.0
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-07-01.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-07-02 -> 2026-07-01",
+      "recovery_sha": "a130bcbf0aff9ad180999c7e8d873c2f82bfab38",
+      "collision_group": [
+        "2026-07-02"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-05",
+      "original_path": "data/polygon_gex/chains/2026-07-05.parquet",
+      "accrual_instant_utc": "2026-07-05T06:50:58+00:00",
+      "accrual_instant_et": "2026-07-05T02:50:58-04:00",
+      "resolved_session": "2026-07-02",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 354,
+        "checkable": 271,
+        "unverifiable": 83,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 95.572,
+        "exact_to_the_cent_rate": 88.5609,
+        "worst_abs_err_pct": 1.719312
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-07-02.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-07-05 -> 2026-07-02",
+      "recovery_sha": "b35bac058e9d33e8ef90a59cc9a7060c0ccd8a95",
+      "collision_group": [
+        "2026-07-05"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-07",
+      "original_path": "data/polygon_gex/chains/2026-07-07.parquet",
+      "accrual_instant_utc": "2026-07-07T12:34:05+00:00",
+      "accrual_instant_et": "2026-07-07T08:34:05-04:00",
+      "resolved_session": "2026-07-06",
+      "classification": "MIXED",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.824276,
+        "within_0_5pct_rate": 35.3147,
+        "exact_to_the_cent_rate": 10.8392,
+        "worst_abs_err_pct": 7.879986
+      },
+      "disposition": "quarantine",
+      "new_path": null,
+      "reason": "MIXED survivor for session 2026-07-06 \u2014 spot is a live intraday/pre-market tape, so every spot-derived GEX field (net_gex_bn, gamma_flip, dist_to_flip_pct, magnet_up/down, max_pain) was computed off a price that is not the session close; OI provenance is also ambiguous. Session 2026-07-06 becomes an honest gap.",
+      "recovery_sha": "38dc031b11ea2fbc26017d7425273f3591c51933",
+      "collision_group": [
+        "2026-07-07"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-08",
+      "original_path": "data/polygon_gex/chains/2026-07-08.parquet",
+      "accrual_instant_utc": "2026-07-08T06:24:31+00:00",
+      "accrual_instant_et": "2026-07-08T02:24:31-04:00",
+      "resolved_session": "2026-07-07",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 96.1538,
+        "exact_to_the_cent_rate": 90.5594,
+        "worst_abs_err_pct": 1.719316
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-07-07.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-07-08 -> 2026-07-07",
+      "recovery_sha": "3773a5bf802c87d2dbd666833391d86c681a89b9",
+      "collision_group": [
+        "2026-07-08"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-09",
+      "original_path": "data/polygon_gex/chains/2026-07-09.parquet",
+      "accrual_instant_utc": "2026-07-09T07:01:48+00:00",
+      "accrual_instant_et": "2026-07-09T03:01:48-04:00",
+      "resolved_session": "2026-07-08",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 96.1538,
+        "exact_to_the_cent_rate": 90.5594,
+        "worst_abs_err_pct": 1.71931
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-07-08.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-07-09 -> 2026-07-08",
+      "recovery_sha": "4f68f8d950302c199a7a0e84d3111bc608c55874",
+      "collision_group": [
+        "2026-07-09"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-10",
+      "original_path": "data/polygon_gex/chains/2026-07-10.parquet",
+      "accrual_instant_utc": "2026-07-10T07:01:08+00:00",
+      "accrual_instant_et": "2026-07-10T03:01:08-04:00",
+      "resolved_session": "2026-07-09",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 96.1538,
+        "exact_to_the_cent_rate": 91.2587,
+        "worst_abs_err_pct": 1.719312
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-07-09.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-07-10 -> 2026-07-09",
+      "recovery_sha": "807cfc5b5c8bb0550c525a52ea26efb97b0c6477",
+      "collision_group": [
+        "2026-07-10"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-12",
+      "original_path": "data/polygon_gex/chains/2026-07-12.parquet",
+      "accrual_instant_utc": "2026-07-12T11:53:31+00:00",
+      "accrual_instant_et": "2026-07-12T07:53:31-04:00",
+      "resolved_session": "2026-07-10",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 96.1538,
+        "exact_to_the_cent_rate": 91.958,
+        "worst_abs_err_pct": 1.719313
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-07-10.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-07-12 -> 2026-07-10",
+      "recovery_sha": "e8ca2326ac4b5b4d523f5c73d82bd2b59a48249e",
+      "collision_group": [
+        "2026-07-12",
+        "2026-07-13"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-13",
+      "original_path": "data/polygon_gex/chains/2026-07-13.parquet",
+      "accrual_instant_utc": "2026-07-13T13:12:38+00:00",
+      "accrual_instant_et": "2026-07-13T09:12:38-04:00",
+      "resolved_session": "2026-07-10",
+      "classification": "MIXED",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.619137,
+        "within_0_5pct_rate": 45.1049,
+        "exact_to_the_cent_rate": 16.7832,
+        "worst_abs_err_pct": 5.193731
+      },
+      "disposition": "drop",
+      "new_path": null,
+      "reason": "collision loser for session 2026-07-10 \u2014 duplicate of 2026-07-12 (a closed-market re-snapshot of the same session state)",
+      "recovery_sha": "33edacc9f315d10d044c5c3773fc178246153f83",
+      "collision_group": [
+        "2026-07-12",
+        "2026-07-13"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-14",
+      "original_path": "data/polygon_gex/chains/2026-07-14.parquet",
+      "accrual_instant_utc": "2026-07-14T07:44:24+00:00",
+      "accrual_instant_et": "2026-07-14T03:44:24-04:00",
+      "resolved_session": "2026-07-13",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 96.1538,
+        "exact_to_the_cent_rate": 91.958,
+        "worst_abs_err_pct": 1.719317
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-07-13.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-07-14 -> 2026-07-13",
+      "recovery_sha": "cec0fd2ce8f83b94413b2dae75477eb8f986ed49",
+      "collision_group": [
+        "2026-07-14"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-16",
+      "original_path": "data/polygon_gex/chains/2026-07-16.parquet",
+      "accrual_instant_utc": "2026-07-16T05:38:33+00:00",
+      "accrual_instant_et": "2026-07-16T01:38:33-04:00",
+      "resolved_session": "2026-07-15",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 96.1538,
+        "exact_to_the_cent_rate": 92.3077,
+        "worst_abs_err_pct": 1.719311
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-07-15.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-07-16 -> 2026-07-15",
+      "recovery_sha": "668fb4acb72313decb9d98063c8b90e0833053a7",
+      "collision_group": [
+        "2026-07-16"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-18",
+      "original_path": "data/polygon_gex/chains/2026-07-18.parquet",
+      "accrual_instant_utc": "2026-07-18T01:01:08+00:00",
+      "accrual_instant_et": "2026-07-17T21:01:08-04:00",
+      "resolved_session": "2026-07-17",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 96.5035,
+        "exact_to_the_cent_rate": 92.6573,
+        "worst_abs_err_pct": 1.719317
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-07-17.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-07-18 -> 2026-07-17",
+      "recovery_sha": "09f3bacf19a1c07894c7244b2c096ed2d062f744",
+      "collision_group": [
+        "2026-07-18",
+        "2026-07-19",
+        "2026-07-20"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-19",
+      "original_path": "data/polygon_gex/chains/2026-07-19.parquet",
+      "accrual_instant_utc": "2026-07-19T00:51:54+00:00",
+      "accrual_instant_et": "2026-07-18T20:51:54-04:00",
+      "resolved_session": "2026-07-17",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 96.5035,
+        "exact_to_the_cent_rate": 92.6573,
+        "worst_abs_err_pct": 1.719317
+      },
+      "disposition": "drop",
+      "new_path": null,
+      "reason": "collision loser for session 2026-07-17 \u2014 duplicate of 2026-07-18 (a closed-market re-snapshot of the same session state)",
+      "recovery_sha": "26a7839ae0acbd474be09823e9abdeeb83194852",
+      "collision_group": [
+        "2026-07-18",
+        "2026-07-19",
+        "2026-07-20"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-20",
+      "original_path": "data/polygon_gex/chains/2026-07-20.parquet",
+      "accrual_instant_utc": "2026-07-20T03:09:42+00:00",
+      "accrual_instant_et": "2026-07-19T23:09:42-04:00",
+      "resolved_session": "2026-07-17",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 96.5035,
+        "exact_to_the_cent_rate": 92.6573,
+        "worst_abs_err_pct": 1.719317
+      },
+      "disposition": "drop",
+      "new_path": null,
+      "reason": "collision loser for session 2026-07-17 \u2014 duplicate of 2026-07-18 (a closed-market re-snapshot of the same session state)",
+      "recovery_sha": "46e6293de6153b1aa77efb2adef5c1e93a3f3677",
+      "collision_group": [
+        "2026-07-18",
+        "2026-07-19",
+        "2026-07-20"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-21",
+      "original_path": "data/polygon_gex/chains/2026-07-21.parquet",
+      "accrual_instant_utc": "2026-07-21T00:58:49+00:00",
+      "accrual_instant_et": "2026-07-20T20:58:49-04:00",
+      "resolved_session": "2026-07-20",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 97.5524,
+        "exact_to_the_cent_rate": 94.0559,
+        "worst_abs_err_pct": 1.719311
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-07-20.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-07-21 -> 2026-07-20",
+      "recovery_sha": "eb2d2506b9ec1f45177b145baf706123fc030881",
+      "collision_group": [
+        "2026-07-21"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-22",
+      "original_path": "data/polygon_gex/chains/2026-07-22.parquet",
+      "accrual_instant_utc": "2026-07-22T01:08:14+00:00",
+      "accrual_instant_et": "2026-07-21T21:08:14-04:00",
+      "resolved_session": "2026-07-21",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 97.5524,
+        "exact_to_the_cent_rate": 94.7552,
+        "worst_abs_err_pct": 1.719313
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-07-21.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-07-22 -> 2026-07-21",
+      "recovery_sha": "8f6296706bc3be3ac94754c012f2de195e026d44",
+      "collision_group": [
+        "2026-07-22"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-23",
+      "original_path": "data/polygon_gex/chains/2026-07-23.parquet",
+      "accrual_instant_utc": "2026-07-23T01:06:26+00:00",
+      "accrual_instant_et": "2026-07-22T21:06:26-04:00",
+      "resolved_session": "2026-07-22",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 97.9021,
+        "exact_to_the_cent_rate": 95.1049,
+        "worst_abs_err_pct": 1.719311
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-07-22.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-07-23 -> 2026-07-22",
+      "recovery_sha": "a13271944f6b32aa2655b8f34f0a46de1dfbf7cd",
+      "collision_group": [
+        "2026-07-23"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-24",
+      "original_path": "data/polygon_gex/chains/2026-07-24.parquet",
+      "accrual_instant_utc": "2026-07-24T00:59:38+00:00",
+      "accrual_instant_et": "2026-07-23T20:59:38-04:00",
+      "resolved_session": "2026-07-23",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 98.2517,
+        "exact_to_the_cent_rate": 95.4545,
+        "worst_abs_err_pct": 1.719313
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-07-23.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-07-24 -> 2026-07-23",
+      "recovery_sha": "9c8f525667eaff0baef5fef9096314320abbfb11",
+      "collision_group": [
+        "2026-07-24"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-25",
+      "original_path": "data/polygon_gex/chains/2026-07-25.parquet",
+      "accrual_instant_utc": "2026-07-25T00:52:15+00:00",
+      "accrual_instant_et": "2026-07-24T20:52:15-04:00",
+      "resolved_session": "2026-07-24",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 98.951,
+        "exact_to_the_cent_rate": 96.8531,
+        "worst_abs_err_pct": 1.178281
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-07-24.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-07-25 -> 2026-07-24",
+      "recovery_sha": "b442ef92ed554be4473afa8ddeeae40b1a465e0f",
+      "collision_group": [
+        "2026-07-25",
+        "2026-07-26",
+        "2026-07-27"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-26",
+      "original_path": "data/polygon_gex/chains/2026-07-26.parquet",
+      "accrual_instant_utc": "2026-07-26T07:39:54+00:00",
+      "accrual_instant_et": "2026-07-26T03:39:54-04:00",
+      "resolved_session": "2026-07-24",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 98.951,
+        "exact_to_the_cent_rate": 96.8531,
+        "worst_abs_err_pct": 1.178281
+      },
+      "disposition": "drop",
+      "new_path": null,
+      "reason": "collision loser for session 2026-07-24 \u2014 duplicate of 2026-07-25 (a closed-market re-snapshot of the same session state)",
+      "recovery_sha": "2b49f769c68ef5def738d368d04eb60adf55c99b",
+      "collision_group": [
+        "2026-07-25",
+        "2026-07-26",
+        "2026-07-27"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-27",
+      "original_path": "data/polygon_gex/chains/2026-07-27.parquet",
+      "accrual_instant_utc": "2026-07-27T00:55:50+00:00",
+      "accrual_instant_et": "2026-07-26T20:55:50-04:00",
+      "resolved_session": "2026-07-24",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 98.951,
+        "exact_to_the_cent_rate": 96.8531,
+        "worst_abs_err_pct": 1.178281
+      },
+      "disposition": "drop",
+      "new_path": null,
+      "reason": "collision loser for session 2026-07-24 \u2014 duplicate of 2026-07-25 (a closed-market re-snapshot of the same session state)",
+      "recovery_sha": "1c0727981a5d381f2bbfa4e19dee3b13b72a68ec",
+      "collision_group": [
+        "2026-07-25",
+        "2026-07-26",
+        "2026-07-27"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-28",
+      "original_path": "data/polygon_gex/chains/2026-07-28.parquet",
+      "accrual_instant_utc": "2026-07-28T00:58:35+00:00",
+      "accrual_instant_et": "2026-07-27T20:58:35-04:00",
+      "resolved_session": "2026-07-27",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 98.951,
+        "exact_to_the_cent_rate": 96.8531,
+        "worst_abs_err_pct": 1.178283
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-07-27.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-07-28 -> 2026-07-27",
+      "recovery_sha": "bc75c17b6b01cbe6930fab9fc9b7af56a71ded4e",
+      "collision_group": [
+        "2026-07-28"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-29",
+      "original_path": "data/polygon_gex/chains/2026-07-29.parquet",
+      "accrual_instant_utc": "2026-07-29T01:08:54+00:00",
+      "accrual_instant_et": "2026-07-28T21:08:54-04:00",
+      "resolved_session": "2026-07-28",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 98.951,
+        "exact_to_the_cent_rate": 96.8531,
+        "worst_abs_err_pct": 1.178286
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-07-28.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-07-29 -> 2026-07-28",
+      "recovery_sha": "2a58a07e12dc3986d228d8760ccd3de97fee3976",
+      "collision_group": [
+        "2026-07-29"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-30",
+      "original_path": "data/polygon_gex/chains/2026-07-30.parquet",
+      "accrual_instant_utc": "2026-07-30T01:20:36+00:00",
+      "accrual_instant_et": "2026-07-29T21:20:36-04:00",
+      "resolved_session": "2026-07-29",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 98.951,
+        "exact_to_the_cent_rate": 97.2028,
+        "worst_abs_err_pct": 1.178284
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-07-29.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-07-30 -> 2026-07-29",
+      "recovery_sha": "07ce0889bfa562e0945dfc2f574ea6ac8c51543b",
+      "collision_group": [
+        "2026-07-30"
+      ]
+    },
+    {
+      "original_stamp": "2026-07-31",
+      "original_path": "data/polygon_gex/chains/2026-07-31.parquet",
+      "accrual_instant_utc": "2026-07-31T01:24:27+00:00",
+      "accrual_instant_et": "2026-07-30T21:24:27-04:00",
+      "resolved_session": "2026-07-30",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 370,
+        "checkable": 286,
+        "unverifiable": 84,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 98.951,
+        "exact_to_the_cent_rate": 97.2028,
+        "worst_abs_err_pct": 1.178286
+      },
+      "disposition": "keep",
+      "new_path": "data/polygon_gex/chains/2026-07-30.parquet",
+      "reason": "CLEAN survivor \u2014 re-dated 2026-07-31 -> 2026-07-30",
+      "recovery_sha": "f437c3d69f738e9591cb321ced9286d1e9193cd3",
+      "collision_group": [
+        "2026-07-31"
+      ]
+    },
+    {
+      "original_stamp": "2026-08-06",
+      "original_path": "data/polygon_gex/chains/2026-08-06.parquet",
+      "accrual_instant_utc": "2026-08-06T09:57:38+00:00",
+      "accrual_instant_et": "2026-08-06T05:57:38-04:00",
+      "resolved_session": "2026-08-05",
+      "classification": "MIXED",
+      "metrics": {
+        "underlyings": 371,
+        "checkable": 284,
+        "unverifiable": 87,
+        "median_abs_err_pct": 0.14171,
+        "within_0_5pct_rate": 65.1408,
+        "exact_to_the_cent_rate": 40.493,
+        "worst_abs_err_pct": 32.393248
+      },
+      "disposition": "quarantine",
+      "new_path": null,
+      "reason": "MIXED survivor for session 2026-08-05 \u2014 spot is a live intraday/pre-market tape, so every spot-derived GEX field (net_gex_bn, gamma_flip, dist_to_flip_pct, magnet_up/down, max_pain) was computed off a price that is not the session close; OI provenance is also ambiguous. Session 2026-08-05 becomes an honest gap.",
+      "recovery_sha": "361136284f2ff160c3aff7baebe28eceb635e3c9",
+      "collision_group": [
+        "2026-08-06"
+      ]
+    }
+  ]
+}

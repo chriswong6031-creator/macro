@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T06:45:31.091195+00:00",
-  "count": 924,
+  "generated_at": "2026-08-07T07:46:07.057529+00:00",
+  "count": 927,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -1747,6 +1747,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-jefo4v6bgcr-46475e",
+      "title": "Q2 2026 Earnings Review",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-06T03:39:23Z",
+      "summary_points": [
+        "**US Earnings: AI Infrastructure Dominance** AI infrastructure stocks drive ~60% of S&P 500 earnings growth (semiconductors alone ~50%), with market pricing in strong results but demanding robust guidance and broader momentum.",
+        "**S&P 500 Record Growth Metrics** Q2 2026 EPS growth (44.6%) and sales growth (24.1%) hit highest since 2021, with beat ratios above historical averages signaling resilient top-line delivery despite mature profit cycle.",
+        "**Amazon/Alphabet Distortion in EPS Surprises** Aggregate EPS beats driven by outsized contributions from Amazon/Alphabet, creating upward bias; markets now prioritize quality of surprise (guidance, margin sustainability) beyond AI-linked giants.",
+        "**Europe: Energy/Tech Growth vs.",
+        "Sector Divergence** Energy (36.64% sales growth) and IT lead Stoxx 600 growth (21% blended), while automotive pressured by Chinese competition; sales beats outperform EPS beats in Europe."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-chdex07zpkt-56c6a3",
       "title": "Invesco uncommon truths should we be worried about inflation august 2026",
       "institution": "Other",
@@ -1805,6 +1826,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lk5qwwzmtg8-b8ed5f",
+      "title": "DOUBLING DOWN ON GILTS",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-05T16:17:57Z",
+      "summary_points": [
+        "**UK macro divergence**: BoE rate cuts next year (negative output gap, decelerating wage growth) create yield advantage for 10y Gilts vs JGBs/Bunds/USTs.",
+        "**Middle East hostilities**: Geopolitical risk threatening energy-driven inflation surge, critical factor for bullish Gilt view.",
+        "**ECB Rate Hike Outlook**: Two more hikes (2026) driven by strong euro area labor market (wage growth 2.5–3%), limiting Bund yield downside.",
+        "**BoJ Hawkish Shift**: Wage growth trajectory implies sticky services inflation, pressuring JGB yields despite economy resilience.",
+        "**Risk-Adjusted Performance Gap**: Portfolio Sharpe ratio (0.95) lags BB Macro HF Index (1.82), signaling critical underperformance risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
@@ -1987,6 +2029,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vr55d5yck4i-f6a11c",
+      "title": "Space Exploration Technologies Corp. (SPCX) Q2'26 Review Inaugural Earnings Report Reinforces Multiple Large Addressable Ma...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T11:07:25Z",
+      "summary_points": [
+        "**Earnings Beat & Segment Momentum**: Q2 revenue +17% (vs 15% est), GAAP operating income +92% (vs 91% est); Starlink subscribers exceeded forecasts, AI segment revenue/operating income beat, Starship launches driving reusability cadence.",
+        "**Valuation Upside Catalysts**: $220 price target (75.5% upside), $1T market cap; SOTP model shows 146% base-case upside (Connectivity/AI: 50.0x/47.0x EV/EBIT; Space: 15.0x EV/Sales).",
+        "**Core Growth Drivers**: Starship launch cadence (14th launch imminent), Starlink market penetration, AI compute scaling via hyperscaler partnerships; $100bn ARR target by Dec 2026.",
+        "**Critical Risks**: Governance concentration (founder control), execution risk in unproven tech (AI/orbital compute), regulatory delays, supply chain reliance (NVIDIA GPUs), high capital burn.",
+        "**Institutional Flow Support**: 65% Buy rating in banking relationships vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },

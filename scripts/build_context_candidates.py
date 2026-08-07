@@ -698,6 +698,10 @@ def _run_t2(root: Path, dry_run: bool) -> dict[str, Any]:
         "candidates": 0,
         "null_draws_used": _NULL_DRAWS,
         "pit_labels_rows": 0,
+        # Rows dropped because outcome_excess is not a signed excess return
+        # (unsigned MFE proxy or unlabelled ledger) — the "hit" test below is
+        # directional and undefined against them. Printed, never hidden.
+        "unsigned_rows_excluded": 0,
     }
     candidates: list[dict] = []
 
@@ -757,6 +761,52 @@ def _run_t2(root: Path, dry_run: bool) -> dict[str, Any]:
 
     if "outcome_excess" not in pit_graded.columns:
         log.info("T2: outcome_excess absent — skipping")
+        return {"counts": counts, "candidates": candidates}
+
+    # OUTCOME BASIS — "hit" below is a DIRECTIONAL claim (outcome_excess > 0),
+    # so it is only defined where outcome_excess is a signed excess return.
+    # Four ledgers (track_record, board_hk, board_ca, board_cn) fill it from a
+    # non-negative forward-MFE proxy with direction pinned to +1: on those rows
+    # "hit" means "the name traded above entry at least once", which is true
+    # ~87% of the time regardless of the archetype × quad cell being tested.
+    #
+    # This file reads spine_index.parquet directly, so the column may be absent
+    # on a legacy parquet — stamp from the ledger first, then drop non-signed
+    # rows. Most pit_labels rows today ARE track_record, so T2 thins sharply.
+    # That is the correct outcome: a thin honest T2 beats a thick vacuous one.
+    # cf. PR #4673 edge_outcomes.py dst_outcome_unsigned_mfe_proxy.
+    try:
+        from engine.neuralweb.query import (  # noqa: PLC0415
+            OUTCOME_BASIS_SIGNED,
+            stamp_outcome_basis,
+        )
+        pit_graded = stamp_outcome_basis(pit_graded)
+        signed_mask = pit_graded["outcome_basis"].astype("object").map(
+            lambda v: v is not None and str(v) == OUTCOME_BASIS_SIGNED
+        ).astype(bool)
+        n_unsigned = int((~signed_mask).sum())
+        if n_unsigned:
+            counts["unsigned_rows_excluded"] = n_unsigned
+            log.info(
+                "T2: excluded %d rows whose outcome_excess is not a signed "
+                "excess (unsigned mfe proxy / unlabelled) — directional hit "
+                "rate undefined against them; %d signed rows remain",
+                n_unsigned, int(signed_mask.sum()),
+            )
+            pit_graded = pit_graded[signed_mask].reset_index(drop=True)
+            counts["pit_labels_rows"] = len(pit_graded)
+    except Exception as exc:  # noqa: BLE001
+        # Degrade-never-raise, but do not silently score unsigned rows either:
+        # record the failure so the honest-null report shows it.
+        log.warning("T2: outcome_basis filter failed (%s) — T2 skipped", exc)
+        counts["unsigned_filter_error"] = 1
+        return {"counts": counts, "candidates": candidates}
+
+    if pit_graded.empty:
+        log.info(
+            "T2: no signed-excess rows after the outcome_basis filter — "
+            "all cells insufficient_n (honest null)"
+        )
         return {"counts": counts, "candidates": candidates}
 
     # Compute engine-level marginal hit rate (positive excess return = hit)

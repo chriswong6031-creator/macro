@@ -18,11 +18,18 @@ WHY THE HREF PARITY TEST IS SET-BASED AND BIDIRECTIONAL: the failure had both
 shapes at once. A one-way check ("every link on the page is real") would have
 passed the 12 missing pages, and the other one-way check would have passed the
 17 dead ones. Only the symmetric difference sees both.
+
+WHY THE STAMP TESTS ARE ABOUT --fix AND NOT ABOUT THE COMPARATOR (#4774): the
+guard normalizes ``?v=`` stamps and ``defer`` away before comparing, correctly —
+they are scripts/optimize_assets.py's to own. But ``--fix`` spliced in the RAW
+canonical block, which wears neither, so the documented remedy for a nav drift
+also stripped every stamp and every defer from both copies of the pair. Nothing
+caught it: it rewrote the two copies identically, so check_template_site_sync saw
+no divergence, and the selftest only ever proved the CHECK tolerates a stamp.
 """
 from __future__ import annotations
 
 import re
-import shutil
 from pathlib import Path
 
 import pytest
@@ -30,10 +37,12 @@ from jinja2 import Environment, FileSystemLoader
 from markupsafe import Markup, escape
 
 from scripts.sync_chat_nav import (
-    PAGE,
     check,
+    decorations,
     extract_nav,
-    harvest_decorations,
+    lost_decorations,
+    normalize,
+    redecorate,
     render_canonical,
     selftest,
 )
@@ -77,79 +86,6 @@ def test_the_gate_fires_on_drift() -> None:
     The selftest hand-edits a link into a fixture copy and requires a red.
     """
     assert selftest() == 0
-
-
-def test_fix_applies_drift_without_stripping_optimizer_decorations(tmp_path: Path) -> None:
-    """--fix must carry ``?v=``/``defer`` across the splice, not just heal links.
-
-    The splice re-renders _site_nav.html.j2, and a fresh render is UNDECORATED:
-    scripts/optimize_assets.py stamps ``?v=<8hex>`` and adds ``defer`` after the
-    fact. A --fix that simply pasted the render in would drop both — and
-    normalize() deliberately ignores exactly those two decorations, so the gate
-    reads GREEN over the damage instead of failing.
-
-    That is a live bug on this page specifically, not a cosmetic one. chat.html
-    is a plain-copy page with no render lane to re-stamp it, and its nav assets
-    (navigation-refresh.css, live.js, …) are on the Caddyfile `immutable,
-    max-age=1y` list — a dropped stamp pins every warm browser to the old bytes
-    for a year, and the dropped defers make four scripts render-blocking.
-
-    So: drift the page the way it drifts in the wild (a menu href gone stale),
-    run --fix, and require BOTH halves — the link healed AND every decoration
-    that was there still there, with the same hash.
-    """
-    root = tmp_path / "repo"
-    shutil.copytree(TEMPLATES, root / "templates")
-    (root / "site").mkdir(parents=True)
-    shutil.copy2(ROOT / "site" / PAGE, root / "site" / PAGE)
-    page = root / "templates" / PAGE
-
-    before_nav = extract_nav(page.read_text(encoding="utf-8"), "fixture")
-    before_stamps, before_defers = harvest_decorations(before_nav)
-    # Guard against a vacuous pass: if the committed header carried no stamps or
-    # no defers, every assertion below would hold for a splice that strips them.
-    assert before_stamps, (
-        "fixture header carries no ?v= stamps — this test cannot prove they "
-        "survive --fix. Has templates/chat.html been shipped unstamped?"
-    )
-    assert before_defers, (
-        "fixture header carries no deferred scripts — this test cannot prove "
-        "defer survives --fix"
-    )
-
-    # Reproduce the drift shape that reddened main three times: a menu link
-    # pointing at a page the partial no longer routes to. Chosen from the page
-    # itself rather than hard-coded, so this does not rot with the nav roster.
-    live_href = re.search(r'<a href="([a-z_]+\.html[^"]*)"', before_nav).group(1)
-    stale = "__retired_page__.html"
-    page.write_text(
-        page.read_text(encoding="utf-8").replace(f'<a href="{live_href}"',
-                                                 f'<a href="{stale}"', 1),
-        encoding="utf-8",
-    )
-    assert not check(root), "the synthetic drift did not trip the gate"
-
-    assert check(root, fix=True), "--fix failed on the drifted fixture"
-    healed = page.read_text(encoding="utf-8")
-    healed_nav = extract_nav(healed, "fixture")
-
-    assert stale not in healed_nav, "--fix left the stale menu link in the header"
-    assert f'<a href="{live_href}"' in healed_nav, (
-        f"--fix did not restore the canonical link {live_href!r}"
-    )
-
-    after_stamps, after_defers = harvest_decorations(healed_nav)
-    assert {k: after_stamps.get(k) for k in before_stamps} == before_stamps, (
-        "--fix changed or dropped ?v= stamps in the header. Those assets are "
-        "served `immutable, max-age=1y` and this page has no render lane to "
-        "re-stamp them — every warm browser would keep the old bytes."
-    )
-    assert before_defers <= after_defers, (
-        f"--fix stripped defer from {sorted(before_defers - after_defers)}; "
-        "those scripts become render-blocking on a live page"
-    )
-    # The mirrored site copy is what actually ships — decorations and all.
-    assert (root / "site" / PAGE).read_text(encoding="utf-8") == healed
 
 
 @pytest.mark.parametrize("page", PAGES, ids=lambda p: f"{p.parent.name}/{p.name}")
@@ -229,6 +165,87 @@ def test_the_data_base_shim_survives_the_splice(page: Path) -> None:
         f"{page.parent.name}/{page.name} should carry exactly one data-base shim "
         f"tag, found {text.count('data-dbase')}"
     )
+
+
+def test_every_decoration_on_the_shipped_header_survives_a_re_splice() -> None:
+    """--fix must carry the optimizer's stamps and defer onto the new block.
+
+    Asserted against the REAL committed header rather than a fixture, because the
+    2026-08-06 measurement is what makes this concrete: re-splicing chat.html
+    dropped 5 ``?v=`` stamps and 4 ``defer`` attributes, live.js and live_config.js
+    among them — and app/deploy/Caddyfile's ``@public_versioned`` matcher requires
+    BOTH the path and a ``?v=`` query, so a stripped stamp silently demotes the
+    asset from ``immutable, max-age=1y`` to a 300s revalidate on every navigation.
+    """
+    current = extract_nav(PAGES[0].read_text(encoding="utf-8"), "templates/chat.html")
+    stamps, deferred = decorations(current)
+    assert stamps and deferred, (
+        f"templates/chat.html's header carries {len(stamps)} stamp(s) and "
+        f"{len(deferred)} defer(s) — with neither, this test asserts nothing. "
+        "Either the page shipped un-optimized or decorations() stopped reading it."
+    )
+
+    spliced = redecorate(render_canonical(TEMPLATES), current)
+    assert not lost_decorations(current, spliced), lost_decorations(current, spliced)
+
+    after_stamps, after_defer = decorations(spliced)
+    assert {u: h for u, h in stamps.items() if u in after_stamps} == after_stamps
+    assert deferred <= after_defer
+
+
+def test_the_re_splice_adds_only_stamps_and_defer() -> None:
+    """Re-decorating may not change the markup the comparator actually compares.
+
+    Otherwise --fix writes a page the very next check calls drifted — the "not a
+    fixed point" failure the selftest's second assertion has always guarded, now
+    reachable through the decoration pass rather than through the splice.
+    """
+    current = extract_nav(PAGES[0].read_text(encoding="utf-8"), "templates/chat.html")
+    canonical = render_canonical(TEMPLATES)
+    assert normalize(redecorate(canonical, current)) == normalize(canonical)
+
+
+def test_lost_decorations_reports_a_stripped_stamp_and_a_stripped_defer() -> None:
+    """Guard the guard: the fail-closed audit must SEE the pre-#4774 write.
+
+    ``lost_decorations`` is the only thing standing between a future
+    ``redecorate`` regression and a silent re-strip, so pin it on the exact shape
+    it exists to refuse — the raw canonical block, spliced in undecorated.
+    """
+    current = ('<nav class="site-nav">'
+               '<link rel="stylesheet" href="navigation-refresh.css?v=95f6bacd">'
+               '<script src="live.js?v=e19f6af3" defer></script></nav>')
+    raw = ('<nav class="site-nav">'
+           '<link rel="stylesheet" href="navigation-refresh.css">'
+           '<script src="live.js"></script></nav>')
+
+    lost = lost_decorations(current, raw)
+    assert any("navigation-refresh.css" in m and "95f6bacd" in m for m in lost), lost
+    assert any("live.js" in m and "defer" in m for m in lost), lost
+
+    # ...and an asset the partial REMOVED is not a loss — its ref left with it.
+    assert lost_decorations(current, '<nav class="site-nav"></nav>') == []
+
+
+def test_redecorate_keys_on_the_asset_not_the_line() -> None:
+    """The carry must survive the very edits --fix exists to make.
+
+    A menu link landing above the script block, or the partial reordering its own
+    header, moves every decorated line. Keying on position would drop the stamps
+    exactly when a real nav edit is being applied — the case that produced #4774.
+    """
+    current = ('<nav class="site-nav">'
+               '<script src="live.js?v=e19f6af3" defer></script>'
+               '<link rel="stylesheet" href="navigation-refresh.css?v=95f6bacd"></nav>')
+    reordered = ('<nav class="site-nav"><a href="new_page.html">New</a>'
+                 '<link rel="stylesheet" href="navigation-refresh.css">'
+                 '<script src="live.js"></script></nav>')
+
+    out = redecorate(reordered, current)
+    assert 'href="navigation-refresh.css?v=95f6bacd"' in out
+    assert 'src="live.js?v=e19f6af3"' in out and "defer" in out
+    assert 'href="new_page.html"' in out, "the real nav edit must still land"
+    assert not lost_decorations(current, out)
 
 
 def test_rendered_header_is_bilingual() -> None:
