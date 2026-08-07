@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T00:51:41.659074+00:00",
-  "count": 907,
+  "generated_at": "2026-08-07T00:59:25.534417+00:00",
+  "count": 908,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -1266,6 +1266,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gjg98c64ble-4304f3",
+      "title": "What's Top of Mind in Macro Research Yen intervention, tech rebound but leadership rotation, US jobs report",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:25Z",
+      "summary_points": [
+        "**Yen Intervention Efficacy Fade**: Muted USD/JPY response to interventions (e.g., -13.7 bp on 11-Jul-24) signals persistent weakness; structural capital flow reversal (Japanese investors returning home) critical for sustainable strength amid trade-off risks.",
+        "**US Jobs & Middle East Oil Risk**: July nonfarm payrolls estimated +75k (unemployment to 4.3%), Middle East conflict tightening physical oil market despite price retreat; US-Iran deal pivotal for oil stability.",
+        "**AI Investment Surge Drives Tech Rotation**: $600bn US/$1tn global AI investment (vs.",
+        "$250bn/$490bn 2025), fueling North Asia tech export surpluses and structural leadership rotation from mega-cap tech to value sectors (energy, infrastructure, defense).",
+        "**China-Euro Area Growth Divergence**: China CAI 2026/27 GDP at 4.6%/4.7% vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
