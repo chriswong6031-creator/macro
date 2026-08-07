@@ -1,12 +1,12 @@
 {
   "schema": "ledger_heartbeat_state.v1",
-  "updated_utc": "2026-08-07T09:57:26Z",
+  "updated_utc": "2026-08-07T17:59:50Z",
   "last_check_date": "2026-08-07",
   "ledgers": {
     "data/opex_windows/forward_log.jsonl": {
       "asof": "2026-08-01",
       "last_check_date": "2026-08-07",
-      "stalled_since": "2026-08-06"
+      "stalled_since": null
     },
     "data/risk_radar/forward_log.jsonl": {
       "asof": "2026-08-05",
@@ -31,7 +31,7 @@
     "data/deterioration_cascade/forward_log.jsonl": {
       "asof": "2026-07-31",
       "last_check_date": "2026-08-07",
-      "stalled_since": "2026-08-06"
+      "stalled_since": null
     },
     "data/event_windows/forward_log.jsonl": {
       "asof": null,
