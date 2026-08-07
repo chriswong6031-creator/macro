@@ -31,6 +31,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from engine import i18n, impulse
 from lib import config
+from lib.closes_panel import disclose_merge, merge_close_caches
 from lib.pages import write_page
 
 log = logging.getLogger("build_impulse")
@@ -46,27 +47,19 @@ _CAPS = {"buy": 60, "igniting": 24, "extended": 18, "coiling": 18, "fading": 12}
 # --------------------------------------------------------------------------- #
 def _load_panel(kind: str) -> pd.DataFrame:
     """Merge the per-tier wide caches into one panel. ``kind`` ∈ {_closes_cache,
-    _volume_cache}. Priority = tier order (a ticker is taken from the first cache
-    that carries it). Duplicate columns dropped."""
-    frame: pd.DataFrame | None = None
-    for tier in _TIERS:
-        p = config.data_dir() / tier / f"{kind}.parquet"
-        if not p.exists():
-            continue
-        try:
-            d = pd.read_parquet(p)
-        except Exception as e:  # noqa: BLE001 — one corrupt cache must not kill the page
-            log.warning("%s/%s unreadable (%s) — skipped", tier, kind, e)
-            continue
-        d = d.loc[:, ~d.columns.duplicated()]
-        if frame is None:
-            frame = d
-        else:
-            new = [c for c in d.columns if c not in frame.columns]
-            frame = frame.join(d[new], how="outer")
-    if frame is None:
-        return pd.DataFrame()
-    return frame.sort_index().loc[:, lambda x: ~x.columns.duplicated()]
+    _volume_cache}. Freshest column per ticker; tier order only breaks ties.
+
+    Was priority = tier order ("first cache that carries it"), which for an index
+    migrant is the tier it LEFT — a column frozen on its exit date, while the tier it
+    JOINED carries a live one in the same merge. The engine pairs panels positionally
+    at ``iloc[-1]``, so a dead-picked column is NaN at the tip and the name is dropped
+    from scoring entirely: measured 2026-07-31, 9 names (BLKB CAG CNXC COTY GT POOL …)
+    went unscored while live columns for them sat in the same caches.
+    See lib/closes_panel.py."""
+    panel, meta = merge_close_caches(_TIERS, kind)
+    if kind == "_closes_cache":
+        disclose_merge(meta, "impulse")
+    return panel
 
 
 def _align_vintage(closes: pd.DataFrame, volumes: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:

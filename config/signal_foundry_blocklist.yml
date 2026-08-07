@@ -1344,6 +1344,17 @@ entries:
   - id: BL-G111
     match:
       any_of:
+        - 'pooled.{0,30}widening.{0,30}factor'
+    reason: >
+      HELD — pre-registration required (charter §11), NOT a config
+      bump. `composite_rank` is the **board TIEBREAK**
+      (`build_stock_library.py:2188`, `build_site.py:3797`) so this is
+      rank AUTHORITY, not displ
+    source: 'FUW charter `research/FACTOR_UNIVERSE_WIDENING_CHARTER.md` §3–§11; harness `scripts/factor_universe_widening_phase0.py`; tripwire `tests/test_factor_universe_hold.py` (2026-08-06)'
+
+  - id: BL-G112
+    match:
+      any_of:
         - 'provisional.{0,30}quality.{0,30}hold'
     reason: >
       **PROMOTION CLOCK FROZEN — de-escalation only, 2026-08-06.** The

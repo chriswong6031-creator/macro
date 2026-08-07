@@ -1,0 +1,937 @@
+{
+ "family": "pick_forward_dist_phase1_har",
+ "program": "advanced-quant-methods-w1.5",
+ "tier": "diagnostic \u2014 wave-1.5 discriminator; promotes nothing",
+ "prereg": "frozen in the module docstring of scripts/pick_forward_dist_phase1_har.py",
+ "generated_utc": "2026-08-06T04:58:07.917076+00:00",
+ "runtime_sec": 216.1,
+ "verdict": "VOL_FORECAST_CORRECTION",
+ "verdict_reason": "the edge collapses under the HAR scale (38% retained) and D-1 fails \u2014 the wave-1 gain was the scale, not the state",
+ "D1_survival": {
+  "scheme": "S3_vol",
+  "baseline": "B0_pooled",
+  "horizon": 21,
+  "standardizer": "HAR-style equal-weight blend, lags (2,5,22,66) (wave-1.5)",
+  "pass": false,
+  "n_dates": 856,
+  "mean_delta": 0.001254,
+  "pct_of_baseline": 0.421,
+  "ci": [
+   -0.000236,
+   0.001224,
+   0.002882
+  ],
+  "excludes_zero": false,
+  "gt0_prob": 0.9458,
+  "sharpe_ci": [
+   -0.54,
+   2.84,
+   6.31
+  ],
+  "sharpe_ci_excludes_zero": false,
+  "frac_dates_positive": 0.6262,
+  "block": 21
+ },
+ "D2_shrinkage": {
+  "band": 0.5,
+  "ratio_relative_primary": 0.3848,
+  "ratio_raw_units_secondary": 0.4474,
+  "har_pct_of_baseline": 0.421,
+  "trail20_pct_of_baseline": 1.094,
+  "har_mean_delta": 0.001254,
+  "trail20_mean_delta": 0.002803,
+  "trailing20_replicated_wave1": true,
+  "paired_block_bootstrap_ci_descriptive": {
+   "ci": [
+    -0.1612,
+    0.3783,
+    0.5726
+   ],
+   "undefined_frac": 0.0,
+   "block": 21,
+   "B": 5000,
+   "seed": 7,
+   "n_dates": 856
+  }
+ },
+ "reproduction_control_AM_H6": {
+  "source": "committed phase-0 artifact (exact field equality)",
+  "source_path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a3c56593fccaeb052/research/pick_forward_dist_phase0_results.json",
+  "phase0_S3_vs_B0": {
+   "mean_delta": 0.002803,
+   "ci": [
+    0.001257,
+    0.002768,
+    0.004441
+   ],
+   "pct_of_baseline": 1.094,
+   "excludes_zero": true,
+   "n_dates": 856,
+   "gt0_prob": 1.0,
+   "frac_dates_positive": 0.7336,
+   "block": 21
+  },
+  "this_run_trail20_S3_vs_B0": {
+   "mean_delta": 0.002803,
+   "ci": [
+    0.001257,
+    0.002768,
+    0.004441
+   ],
+   "pct_of_baseline": 1.094,
+   "excludes_zero": true,
+   "n_dates": 856,
+   "gt0_prob": 1.0,
+   "frac_dates_positive": 0.7336,
+   "block": 21
+  },
+  "fields_compared": [
+   "mean_delta",
+   "ci",
+   "pct_of_baseline",
+   "excludes_zero",
+   "n_dates",
+   "gt0_prob",
+   "frac_dates_positive",
+   "block"
+  ],
+  "exact_match": true,
+  "mismatches": null
+ },
+ "forecast_quality_X4": {
+  "trail20": {
+   "n": 3307737,
+   "corr_log_pred_vs_log_realized": 0.7815,
+   "mean_realized_over_pred": 1.1635,
+   "median_realized_over_pred": 0.9428,
+   "sd_log_ratio": 0.5184,
+   "mean_abs_log_ratio": 0.3792
+  },
+  "har": {
+   "n": 3307737,
+   "corr_log_pred_vs_log_realized": 0.7582,
+   "mean_realized_over_pred": 1.3844,
+   "median_realized_over_pred": 1.1017,
+   "sd_log_ratio": 0.5424,
+   "mean_abs_log_ratio": 0.3905
+  },
+  "har_is_better_on": [],
+  "har_is_better_on_all_three": false
+ },
+ "state_conditional_bias_X5": {
+  "provenance": "X-5 IS NOT PART OF THE FROZEN PRE-REGISTRATION. It was written after a 1,500-file SMOKE run (not the study) returned a NULL on the pre-registered X-4 \u2014 the HAR blend was not the better forward-vol forecast on any of X-4's three measures \u2014 which left the pre-registered readouts hard to read: an edge shrinking under a scale that is not better overall proves nothing on its own. X-5 measures the SPECIFIC confound wave-1's caveat named, which X-4's aggregate measures cannot see. It is DESCRIPTIVE, it gates nothing, and neither D-1 nor D-2 reads it \u2014 both are computed by code frozen before any data was touched. It is recorded here, OUTSIDE the frozen header, rather than backdated into it. BAND CONSTRUCTION IS FULL-SPAN, NOT POINT-IN-TIME: the four rvol_z bands are equal-frequency cuts of the WHOLE evaluated span, not the walk-forward's per-refit embargoed edges, so they carry a hindsight whisker. That is acceptable only because nothing downstream reads X-5 and no gate depends on it \u2014 but X-5 does feed the headline MECHANISM claim, so the size of the bias-spread reduction it reports is suggestive rather than a point-in-time measurement.",
+  "n": 3307737,
+  "k_bands": 4,
+  "band_edges_rvol_z": [
+   -5.1041,
+   -0.8181,
+   -0.3159,
+   0.4062,
+   172.2458
+  ],
+  "band_meaning": "band 0 = lowest rvol_z (vol trough), band 3 = highest (vol spike)",
+  "arms": {
+   "trail20": {
+    "bands": {
+     "band0": {
+      "n": 826935,
+      "mean_log_realized_over_pred": 0.1301
+     },
+     "band1": {
+      "n": 826934,
+      "mean_log_realized_over_pred": 0.0155
+     },
+     "band2": {
+      "n": 826934,
+      "mean_log_realized_over_pred": -0.1263
+     },
+     "band3": {
+      "n": 826934,
+      "mean_log_realized_over_pred": -0.378
+     }
+    },
+    "spread_max_minus_min": 0.5081,
+    "overall_mean_log_ratio": -0.0897
+   },
+   "har": {
+    "bands": {
+     "band0": {
+      "n": 826935,
+      "mean_log_realized_over_pred": 0.1938
+     },
+     "band1": {
+      "n": 826934,
+      "mean_log_realized_over_pred": 0.1175
+     },
+     "band2": {
+      "n": 826934,
+      "mean_log_realized_over_pred": 0.0354
+     },
+     "band3": {
+      "n": 826934,
+      "mean_log_realized_over_pred": -0.1205
+     }
+    },
+    "spread_max_minus_min": 0.3143,
+    "overall_mean_log_ratio": 0.0566
+   }
+  },
+  "har_state_bias_spread_lower": true,
+  "spread_reduction_frac": 0.3814
+ },
+ "arms": {
+  "trail20": {
+   "schemes": {
+    "S1_trend": {
+     "coverage_80": 0.789,
+     "mean_pinball_within_arm": 0.256626,
+     "honest_frac": 1.0,
+     "cells_seen": 4,
+     "delta_vs_B0": {
+      "n_dates": 856,
+      "mean_delta": -0.00052,
+      "pct_of_baseline": -0.203,
+      "ci": [
+       -0.001873,
+       -0.00056,
+       0.001015
+      ],
+      "excludes_zero": false,
+      "gt0_prob": 0.229,
+      "sharpe_ci": [
+       -5.85,
+       -1.47,
+       2.21
+      ],
+      "sharpe_ci_excludes_zero": false,
+      "frac_dates_positive": 0.3855,
+      "block": 21
+     },
+     "delta_vs_B1": {
+      "n_dates": 856,
+      "mean_delta": 0.000789,
+      "pct_of_baseline": 0.306,
+      "ci": [
+       -0.001212,
+       0.000756,
+       0.00291
+      ],
+      "excludes_zero": false,
+      "gt0_prob": 0.759,
+      "sharpe_ci": [
+       -2.32,
+       1.34,
+       4.96
+      ],
+      "sharpe_ci_excludes_zero": false,
+      "frac_dates_positive": 0.4813,
+      "block": 21
+     },
+     "era_split_vs_B0": {
+      "era_2023_24": {
+       "n_dates": 502,
+       "mean_delta": -0.000605
+      },
+      "era_2025_26": {
+       "n_dates": 354,
+       "mean_delta": -0.000399
+      },
+      "sign_stable": true
+     },
+     "mae_p05_tail_hit": 0.0562
+    },
+    "S2_extension": {
+     "coverage_80": 0.7877,
+     "mean_pinball_within_arm": 0.256391,
+     "honest_frac": 1.0,
+     "cells_seen": 4,
+     "delta_vs_B0": {
+      "n_dates": 856,
+      "mean_delta": -0.000285,
+      "pct_of_baseline": -0.111,
+      "ci": [
+       -0.001169,
+       -0.000272,
+       0.00055
+      ],
+      "excludes_zero": false,
+      "gt0_prob": 0.2652,
+      "sharpe_ci": [
+       -4.86,
+       -1.25,
+       2.72
+      ],
+      "sharpe_ci_excludes_zero": false,
+      "frac_dates_positive": 0.5409,
+      "block": 21
+     },
+     "delta_vs_B1": {
+      "n_dates": 856,
+      "mean_delta": 0.001024,
+      "pct_of_baseline": 0.398,
+      "ci": [
+       -0.000691,
+       0.001017,
+       0.002715
+      ],
+      "excludes_zero": false,
+      "gt0_prob": 0.8816,
+      "sharpe_ci": [
+       -1.56,
+       2.34,
+       6.12
+      ],
+      "sharpe_ci_excludes_zero": false,
+      "frac_dates_positive": 0.5467,
+      "block": 21
+     },
+     "era_split_vs_B0": {
+      "era_2023_24": {
+       "n_dates": 502,
+       "mean_delta": -0.000766
+      },
+      "era_2025_26": {
+       "n_dates": 354,
+       "mean_delta": 0.000396
+      },
+      "sign_stable": false
+     },
+     "mae_p05_tail_hit": 0.0562
+    },
+    "S3_vol": {
+     "coverage_80": 0.7905,
+     "mean_pinball_within_arm": 0.253303,
+     "honest_frac": 1.0,
+     "cells_seen": 4,
+     "delta_vs_B0": {
+      "n_dates": 856,
+      "mean_delta": 0.002803,
+      "pct_of_baseline": 1.094,
+      "ci": [
+       0.001257,
+       0.002768,
+       0.004441
+      ],
+      "excludes_zero": true,
+      "gt0_prob": 1.0,
+      "sharpe_ci": [
+       2.65,
+       6.39,
+       10.09
+      ],
+      "sharpe_ci_excludes_zero": true,
+      "frac_dates_positive": 0.7336,
+      "block": 21
+     },
+     "delta_vs_B1": {
+      "n_dates": 856,
+      "mean_delta": 0.004112,
+      "pct_of_baseline": 1.597,
+      "ci": [
+       0.00238,
+       0.004077,
+       0.005992
+      ],
+      "excludes_zero": true,
+      "gt0_prob": 1.0,
+      "sharpe_ci": [
+       4.75,
+       7.87,
+       10.94
+      ],
+      "sharpe_ci_excludes_zero": true,
+      "frac_dates_positive": 0.6764,
+      "block": 21
+     },
+     "era_split_vs_B0": {
+      "era_2023_24": {
+       "n_dates": 502,
+       "mean_delta": 0.003539
+      },
+      "era_2025_26": {
+       "n_dates": 354,
+       "mean_delta": 0.001758
+      },
+      "sign_stable": true
+     },
+     "mae_p05_tail_hit": 0.0615
+    },
+    "S4_coil": {
+     "coverage_80": 0.7898,
+     "mean_pinball_within_arm": 0.255198,
+     "honest_frac": 1.0,
+     "cells_seen": 4,
+     "delta_vs_B0": {
+      "n_dates": 856,
+      "mean_delta": 0.000908,
+      "pct_of_baseline": 0.355,
+      "ci": [
+       -4.6e-05,
+       0.000897,
+       0.00191
+      ],
+      "excludes_zero": false,
+      "gt0_prob": 0.969,
+      "sharpe_ci": [
+       -0.17,
+       3.23,
+       6.55
+      ],
+      "sharpe_ci_excludes_zero": false,
+      "frac_dates_positive": 0.5794,
+      "block": 21
+     },
+     "delta_vs_B1": {
+      "n_dates": 856,
+      "mean_delta": 0.002217,
+      "pct_of_baseline": 0.861,
+      "ci": [
+       0.000789,
+       0.002197,
+       0.003735
+      ],
+      "excludes_zero": true,
+      "gt0_prob": 0.9998,
+      "sharpe_ci": [
+       2.1,
+       5.27,
+       8.39
+      ],
+      "sharpe_ci_excludes_zero": true,
+      "frac_dates_positive": 0.6005,
+      "block": 21
+     },
+     "era_split_vs_B0": {
+      "era_2023_24": {
+       "n_dates": 502,
+       "mean_delta": 0.001437
+      },
+      "era_2025_26": {
+       "n_dates": 354,
+       "mean_delta": 0.000159
+      },
+      "sign_stable": true
+     },
+     "mae_p05_tail_hit": 0.0591
+    },
+    "S5_trend_vol": {
+     "coverage_80": 0.784,
+     "mean_pinball_within_arm": 0.253913,
+     "honest_frac": 1.0,
+     "cells_seen": 6,
+     "delta_vs_B0": {
+      "n_dates": 856,
+      "mean_delta": 0.002193,
+      "pct_of_baseline": 0.856,
+      "ci": [
+       0.000428,
+       0.002158,
+       0.004172
+      ],
+      "excludes_zero": true,
+      "gt0_prob": 0.9926,
+      "sharpe_ci": [
+       0.9,
+       4.29,
+       7.58
+      ],
+      "sharpe_ci_excludes_zero": true,
+      "frac_dates_positive": 0.6659,
+      "block": 21
+     },
+     "delta_vs_B1": {
+      "n_dates": 856,
+      "mean_delta": 0.003502,
+      "pct_of_baseline": 1.36,
+      "ci": [
+       0.001394,
+       0.003459,
+       0.005818
+      ],
+      "excludes_zero": true,
+      "gt0_prob": 0.9996,
+      "sharpe_ci": [
+       2.52,
+       5.71,
+       8.97
+      ],
+      "sharpe_ci_excludes_zero": true,
+      "frac_dates_positive": 0.6121,
+      "block": 21
+     },
+     "era_split_vs_B0": {
+      "era_2023_24": {
+       "n_dates": 502,
+       "mean_delta": 0.0026
+      },
+      "era_2025_26": {
+       "n_dates": 354,
+       "mean_delta": 0.001616
+      },
+      "sign_stable": true
+     },
+     "mae_p05_tail_hit": 0.0623
+    }
+   },
+   "baselines": {
+    "B0_pooled": {
+     "coverage_80": 0.7945,
+     "mean_pinball_within_arm": 0.256106,
+     "honest_frac": 0.0,
+     "breach_run": {
+      "n_dates": 856,
+      "lag1_autocorr": 0.8777,
+      "max_run_above_nominal": 31,
+      "frac_dates_above_nominal": 0.4159,
+      "nominal": 0.2
+     }
+    },
+    "B1_ownname": {
+     "coverage_80": 0.7863,
+     "mean_pinball_within_arm": 0.257415,
+     "honest_frac": 0.6008,
+     "breach_run": {
+      "n_dates": 856,
+      "lag1_autocorr": 0.8804,
+      "max_run_above_nominal": 32,
+      "frac_dates_above_nominal": 0.4591,
+      "nominal": 0.2
+     }
+    }
+   },
+   "n_dates": 856,
+   "n_name_days": 3307737,
+   "n_names": 6617,
+   "n_refits": 14,
+   "first_eval": "2023-01-03",
+   "last_eval": "2026-06-02"
+  },
+  "har": {
+   "schemes": {
+    "S1_trend": {
+     "coverage_80": 0.7897,
+     "mean_pinball_within_arm": 0.298556,
+     "honest_frac": 1.0,
+     "cells_seen": 4,
+     "delta_vs_B0": {
+      "n_dates": 856,
+      "mean_delta": -0.000485,
+      "pct_of_baseline": -0.163,
+      "ci": [
+       -0.002112,
+       -0.000533,
+       0.001385
+      ],
+      "excludes_zero": false,
+      "gt0_prob": 0.2792,
+      "sharpe_ci": [
+       -5.74,
+       -1.16,
+       2.46
+      ],
+      "sharpe_ci_excludes_zero": false,
+      "frac_dates_positive": 0.4054,
+      "block": 21
+     },
+     "delta_vs_B1": {
+      "n_dates": 856,
+      "mean_delta": 0.000741,
+      "pct_of_baseline": 0.248,
+      "ci": [
+       -0.00162,
+       0.000697,
+       0.003245
+      ],
+      "excludes_zero": false,
+      "gt0_prob": 0.7132,
+      "sharpe_ci": [
+       -2.68,
+       1.06,
+       4.59
+      ],
+      "sharpe_ci_excludes_zero": false,
+      "frac_dates_positive": 0.4568,
+      "block": 21
+     },
+     "era_split_vs_B0": {
+      "era_2023_24": {
+       "n_dates": 502,
+       "mean_delta": -0.000498
+      },
+      "era_2025_26": {
+       "n_dates": 354,
+       "mean_delta": -0.000466
+      },
+      "sign_stable": true
+     },
+     "mae_p05_tail_hit": 0.0568
+    },
+    "S2_extension": {
+     "coverage_80": 0.7882,
+     "mean_pinball_within_arm": 0.298338,
+     "honest_frac": 1.0,
+     "cells_seen": 4,
+     "delta_vs_B0": {
+      "n_dates": 856,
+      "mean_delta": -0.000267,
+      "pct_of_baseline": -0.09,
+      "ci": [
+       -0.001315,
+       -0.000251,
+       0.000707
+      ],
+      "excludes_zero": false,
+      "gt0_prob": 0.3114,
+      "sharpe_ci": [
+       -4.48,
+       -0.97,
+       3.03
+      ],
+      "sharpe_ci_excludes_zero": false,
+      "frac_dates_positive": 0.5561,
+      "block": 21
+     },
+     "delta_vs_B1": {
+      "n_dates": 856,
+      "mean_delta": 0.000959,
+      "pct_of_baseline": 0.32,
+      "ci": [
+       -0.000979,
+       0.000957,
+       0.002869
+      ],
+      "excludes_zero": false,
+      "gt0_prob": 0.832,
+      "sharpe_ci": [
+       -1.96,
+       1.9,
+       5.65
+      ],
+      "sharpe_ci_excludes_zero": false,
+      "frac_dates_positive": 0.5397,
+      "block": 21
+     },
+     "era_split_vs_B0": {
+      "era_2023_24": {
+       "n_dates": 502,
+       "mean_delta": -0.000859
+      },
+      "era_2025_26": {
+       "n_dates": 354,
+       "mean_delta": 0.000572
+      },
+      "sign_stable": false
+     },
+     "mae_p05_tail_hit": 0.0567
+    },
+    "S3_vol": {
+     "coverage_80": 0.7924,
+     "mean_pinball_within_arm": 0.296817,
+     "honest_frac": 1.0,
+     "cells_seen": 4,
+     "delta_vs_B0": {
+      "n_dates": 856,
+      "mean_delta": 0.001254,
+      "pct_of_baseline": 0.421,
+      "ci": [
+       -0.000236,
+       0.001224,
+       0.002882
+      ],
+      "excludes_zero": false,
+      "gt0_prob": 0.9458,
+      "sharpe_ci": [
+       -0.54,
+       2.84,
+       6.31
+      ],
+      "sharpe_ci_excludes_zero": false,
+      "frac_dates_positive": 0.6262,
+      "block": 21
+     },
+     "delta_vs_B1": {
+      "n_dates": 856,
+      "mean_delta": 0.00248,
+      "pct_of_baseline": 0.829,
+      "ci": [
+       0.000741,
+       0.002431,
+       0.004389
+      ],
+      "excludes_zero": true,
+      "gt0_prob": 0.999,
+      "sharpe_ci": [
+       1.47,
+       4.6,
+       7.66
+      ],
+      "sharpe_ci_excludes_zero": true,
+      "frac_dates_positive": 0.5923,
+      "block": 21
+     },
+     "era_split_vs_B0": {
+      "era_2023_24": {
+       "n_dates": 502,
+       "mean_delta": 0.001941
+      },
+      "era_2025_26": {
+       "n_dates": 354,
+       "mean_delta": 0.000279
+      },
+      "sign_stable": true
+     },
+     "mae_p05_tail_hit": 0.0605
+    },
+    "S4_coil": {
+     "coverage_80": 0.7917,
+     "mean_pinball_within_arm": 0.297821,
+     "honest_frac": 1.0,
+     "cells_seen": 4,
+     "delta_vs_B0": {
+      "n_dates": 856,
+      "mean_delta": 0.000251,
+      "pct_of_baseline": 0.084,
+      "ci": [
+       -0.000717,
+       0.000232,
+       0.001294
+      ],
+      "excludes_zero": false,
+      "gt0_prob": 0.6824,
+      "sharpe_ci": [
+       -2.72,
+       0.84,
+       4.22
+      ],
+      "sharpe_ci_excludes_zero": false,
+      "frac_dates_positive": 0.4848,
+      "block": 21
+     },
+     "delta_vs_B1": {
+      "n_dates": 856,
+      "mean_delta": 0.001477,
+      "pct_of_baseline": 0.493,
+      "ci": [
+       -6.1e-05,
+       0.001437,
+       0.003144
+      ],
+      "excludes_zero": false,
+      "gt0_prob": 0.9702,
+      "sharpe_ci": [
+       -0.15,
+       3.19,
+       6.44
+      ],
+      "sharpe_ci_excludes_zero": false,
+      "frac_dates_positive": 0.5374,
+      "block": 21
+     },
+     "era_split_vs_B0": {
+      "era_2023_24": {
+       "n_dates": 502,
+       "mean_delta": 0.000673
+      },
+      "era_2025_26": {
+       "n_dates": 354,
+       "mean_delta": -0.000349
+      },
+      "sign_stable": false
+     },
+     "mae_p05_tail_hit": 0.0589
+    },
+    "S5_trend_vol": {
+     "coverage_80": 0.7868,
+     "mean_pinball_within_arm": 0.297379,
+     "honest_frac": 1.0,
+     "cells_seen": 6,
+     "delta_vs_B0": {
+      "n_dates": 856,
+      "mean_delta": 0.000693,
+      "pct_of_baseline": 0.232,
+      "ci": [
+       -0.001161,
+       0.000652,
+       0.002798
+      ],
+      "excludes_zero": false,
+      "gt0_prob": 0.741,
+      "sharpe_ci": [
+       -2.47,
+       1.22,
+       4.47
+      ],
+      "sharpe_ci_excludes_zero": false,
+      "frac_dates_positive": 0.5467,
+      "block": 21
+     },
+     "delta_vs_B1": {
+      "n_dates": 856,
+      "mean_delta": 0.001919,
+      "pct_of_baseline": 0.641,
+      "ci": [
+       -0.000312,
+       0.001871,
+       0.004379
+      ],
+      "excludes_zero": false,
+      "gt0_prob": 0.949,
+      "sharpe_ci": [
+       -0.51,
+       2.88,
+       6.18
+      ],
+      "sharpe_ci_excludes_zero": false,
+      "frac_dates_positive": 0.5491,
+      "block": 21
+     },
+     "era_split_vs_B0": {
+      "era_2023_24": {
+       "n_dates": 502,
+       "mean_delta": 0.001024
+      },
+      "era_2025_26": {
+       "n_dates": 354,
+       "mean_delta": 0.000223
+      },
+      "sign_stable": true
+     },
+     "mae_p05_tail_hit": 0.0611
+    }
+   },
+   "baselines": {
+    "B0_pooled": {
+     "coverage_80": 0.7951,
+     "mean_pinball_within_arm": 0.298071,
+     "honest_frac": 0.0,
+     "breach_run": {
+      "n_dates": 856,
+      "lag1_autocorr": 0.8537,
+      "max_run_above_nominal": 26,
+      "frac_dates_above_nominal": 0.4241,
+      "nominal": 0.2
+     }
+    },
+    "B1_ownname": {
+     "coverage_80": 0.7876,
+     "mean_pinball_within_arm": 0.299298,
+     "honest_frac": 0.6008,
+     "breach_run": {
+      "n_dates": 856,
+      "lag1_autocorr": 0.8583,
+      "max_run_above_nominal": 32,
+      "frac_dates_above_nominal": 0.4486,
+      "nominal": 0.2
+     }
+    }
+   },
+   "n_dates": 856,
+   "n_name_days": 3307737,
+   "n_names": 6617,
+   "n_refits": 14,
+   "first_eval": "2023-01-03",
+   "last_eval": "2026-06-02"
+  }
+ },
+ "standardizers": {
+  "trail20": "trailing 20d realized vol (wave-1)",
+  "har": "HAR-style equal-weight blend, lags (2,5,22,66) (wave-1.5)"
+ },
+ "config": {
+  "horizon": 21,
+  "frame": "vol_standardized",
+  "taus": [
+   0.05,
+   0.1,
+   0.25,
+   0.5,
+   0.75,
+   0.9,
+   0.95
+  ],
+  "window_sessions": 504,
+  "min_cell_n": 400,
+  "min_own_n": 252,
+  "vol_floor_daily": 0.005,
+  "har_lags": [
+   2,
+   5,
+   22,
+   66
+  ],
+  "oos_start": "2023-01-01",
+  "min_cross_section": 50,
+  "refit": "quarterly",
+  "eval_cadence": "every session",
+  "bootstrap": {
+   "B": 5000,
+   "seed": 7,
+   "block": 21
+  },
+  "import_surface_pinned": [
+   "phase0.resolve_data_root(arg: 'str | None') -> 'Path | None'",
+   "phase0.load_frames(store: 'Path', max_names: 'int | None' = None) -> 'tuple[dict, dict]'",
+   "phase0.walk_forward(panel: 'pd.DataFrame', cal: 'pd.DatetimeIndex', h: 'int', *, frame: 'str' = 'std') -> 'dict'",
+   "phase0.delta_stats(wf: 'dict', scheme: 'str', baseline: 'str', block: 'int') -> 'dict'",
+   "phase0.era_split(wf: 'dict', scheme: 'str', baseline: 'str') -> 'dict'",
+   "phase0.PRIMARY_H=21",
+   "phase0.WINDOW=504",
+   "phase0.MIN_CELL_N=400",
+   "phase0.MIN_OWN_N=252",
+   "phase0.TAUS=(0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95)",
+   "phase0.OOS_START='2023-01-01'",
+   "phase0.MIN_XSEC=50",
+   "phase0.ERA_SPLIT='2025-01-01'",
+   "phase0.BOOT_B=5000",
+   "phase0.BOOT_SEED=7",
+   "phase0.COV_LO=0.72",
+   "phase0.COV_HI=0.88",
+   "phase0.SCHEMES=('S1_trend', 'S2_extension', 'S3_vol', 'S4_coil', 'S5_trend_vol')",
+   "phase0.BASELINES=('B0_pooled', 'B1_ownname')",
+   "pfd.VOL_FLOOR=0.005",
+   "pfd.PRICE_MIN=5.0",
+   "pfd.DVOL_MIN=2000000.0",
+   "pfd.MIN_BARS=300",
+   "pfd.TAUS=(0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95)",
+   "pfd.MAE_TAUS=(0.05, 0.25, 0.5)",
+   "pfd.VOL_WIN=20",
+   "pfd.VOL_MINP=15",
+   "pfd.REF_WIN=252",
+   "pfd.REF_MINP=126",
+   "pfd.SCHEMES[S1_trend]=(('above_200dma', 'bool', 2), ('slope50_up', 'bool', 2))",
+   "pfd.SCHEMES[S2_extension]=(('ext_pct', 'q', 4),)",
+   "pfd.SCHEMES[S3_vol]=(('rvol_z', 'q', 4),)",
+   "pfd.SCHEMES[S4_coil]=(('coil', 'q', 4),)",
+   "pfd.SCHEMES[S5_trend_vol]=(('above_200dma', 'bool', 2), ('rvol_z', 'q', 3))",
+   "vf.HAR_LAGS=(2, 5, 22, 66)"
+  ]
+ },
+ "data": {
+  "store": "/Users/chriswong/Documents/Cluade/Macro Dashboard/data/massive_stock_day",
+  "files_seen": 20476,
+  "files_read": 20476,
+  "prefilter_pass": 12078,
+  "split_repaired_names": 2015,
+  "split_bars_stamped": 7554,
+  "calendar_first": "2021-07-06",
+  "calendar_last": "2026-07-02",
+  "calendar_sessions": 1254,
+  "panel_rows_wave1_universe": 3692601,
+  "panel_rows_both_scales_finite": 3692601,
+  "rows_dropped_by_scale_intersection_AM_H4": 0,
+  "panel_names": 6852,
+  "names_mapped": 6852,
+  "names_missing_from_frames": 0,
+  "prices": "unadjusted; splits repaired via replay_standout_pipeline.split_adjust; dividends NOT adjusted (price return)"
+ },
+ "caveats": [
+  "WAVE-1'S CAVEATS ALL STILL APPLY, UNCHANGED: survivorship (store begins 2021-07-06), single era (one macro regime block, no out-of-era replication), price-return not total-return, ~8-10 unrepaired spinoffs, instrument mix (ETFs/ADRs/preferreds clear the liquidity filter), overlapping forward windows, ratio-neutral back-adjustment, and the structurally weak G1/G4 gates. This study changes the STANDARDIZER; it does not repair a single one of those. Read research/PICK_FORWARD_DIST_PHASE0.md sections 3 and 3b alongside this file.",
+  "MEAN PINBALL IS NOT COMPARABLE ACROSS THE TWO ARMS. Each arm scores a DIFFERENT standardized outcome, so its losses live in its own units. Only WITHIN-arm deltas and unit-free rates (coverage, honest_frac, tail hit) cross the arm boundary. Every pinball level below is labelled 'within_arm' for exactly this reason, and D-2's primary ratio is built from percent-of-baseline deltas so the units divide out (AM-H2).",
+  "THE HAR BLEND IS NOT A FITTED HAR. It is the shipped house equal-weight multi-scale realized-vol blend over lags (2, 5, 22, 66). A fitted HAR-RV regression would weight the components; this does not. If the verdict is VOL_FORECAST_CORRECTION, the honest read is 'a better SCALE beats the cells', not 'Corsi's HAR is the answer' \u2014 the fitted version was never tested here.",
+  "THE SHORT LAGS DRAG THE LEVEL DOWN (AM-H2): the blend's 2- and 5-bar components use ddof=0 on tiny samples, which biases them low, so the blend sits at ~0.85 of a 20d realized vol. This is a LEVEL effect and it cancels out of coverage and out of the percent-of-baseline ratio; it does NOT cancel out of the raw-unit ratio, which is why that one is secondary.",
+  "ONE HORIZON, ONE FRAME (AM-H1). H=10, H=63 and the raw-percent frame are not run in either arm. They were descriptive rows in wave-1 that could not become a headline, and no readout here reads them. A reader who wants the horizon ladder has wave-1's, on wave-1's scale.",
+  "THE STATE DEFINITION IS UNCHANGED. Cells are still cut on `rvol_z` (20d realized vol z-scored against its own trailing 252d reference), exactly as wave-1 cut them. This study does not ask whether a HAR-based STATE would condition better \u2014 only whether the wave-1 edge survives a better SCALE. A HAR-based state axis is a different, later question.",
+  "NO COVERAGE TEST STATISTIC. The coverage numbers are pooled hit rates at OVERLAPPING origins, as in wave-1; the review's non-overlapping-origin coverage test (Kupiec/Christoffersen at independent origins) is NOT built here and remains open. The X-2 comparison is therefore descriptive: it says which arm's realized coverage is closer to nominal on the same dates, not that the difference is significant.",
+  "DIAGNOSTIC TIER. Nothing here promotes, ranks, sizes, gates or escalates. No fused composite is formed. No site, template, dag, synapse or registry file is touched by this lane."
+ ]
+}

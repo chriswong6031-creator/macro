@@ -359,10 +359,20 @@ def _emitting_items() -> list[dict]:
         # keywords -> salience clears the flagship floor (base 45 + kw 10 + ticker
         # 20 = 75 in market hours); corroboration_decision = instant (single
         # primary OK for a mirror-verified own post).
+        # THE HEADLINE CARRIES A FIGURE ON PURPOSE (2026-08-05). value_gate
+        # requires `hard` proof for a `breaking` post, and a cashtag alone only
+        # reaches `instrument`. This fixture used to rest its hard proof on
+        # HAVING A CARD (`_proof_tier(has_media=True) -> "hard"`), which stopped
+        # being reliable when card_earns_attachment gained the power to refuse a
+        # card that restates the post — and in short form the post IS the
+        # headline, so the card's hero restates it by construction. The five
+        # tests that share this fixture are about voice, language and the X
+        # clamp; none of them is about proof, and none should be able to go
+        # vacuous because a picture was correctly dropped somewhere else.
         {"id": "trumpstruth:strong", "source": "trumpstruth",
          "source_name": "Truth Social (via trumpstruth.org)", "source_tier": "mirror",
          "url": "u1", "published_at": "2026-07-27T13:59:00Z",
-         "headline": "Trump orders new tariff and export controls on $AAPL and $NVDA",
+         "headline": "Trump orders a new 25% tariff and export controls on $AAPL and $NVDA",
          "body_snippet": "The president said tariffs and export controls on $AAPL and $NVDA rise.",
          "truth_status_id": "strong", "corroboration_class": "direct-quote"},
         # Weak macro item -> below the post floor but above the rail floor.
@@ -744,8 +754,11 @@ class TestB1LanguageLaw:
         press_cfg = yaml.safe_load((ROOT / "config" / "press_sources.yml").read_text())
         marketing_cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text())
         items = _emitting_items()
+        # Keeps the fixture's figure (see _emitting_items) so the item reaches
+        # the LANGUAGE gate rather than being turned away earlier for want of
+        # proof — the em dash is what this test is about.
         items[0]["headline"] = (
-            "Trump orders new tariff — and export controls on $AAPL and $NVDA")
+            "Trump orders a new 25% tariff — and export controls on $AAPL and $NVDA")
         result = run_press_tick(items, root=str(ROOT), now=now,
                                 cfg=marketing_cfg, press_cfg=press_cfg, state={},
                                 seen_ids=set(), dry_run=True)
@@ -1284,7 +1297,10 @@ class TestTransientRefusalsRetry:
             result = _refusing_tick(monkeypatch, "media_unhosted",
                                     state=state, seen=seen)
             seen = set(result["_seen"])
-        assert state["transient_refusals"]["truth:strong"] == _TRANSIENT_ALARM_AT
+        # Keyed by (story, reason) since 2026-08-06 — see
+        # test_the_give_up_bound_counts_one_fault_not_the_story below.
+        assert state["transient_refusals"][
+            "truth:strong\x1fmedia_unhosted"] == _TRANSIENT_ALARM_AT
         lines = [ln for ln in capsys.readouterr().out.splitlines()
                  if "press-lane-transient-refusal-stuck" in ln]
         assert lines, "three consecutive environment refusals must alarm"
@@ -1314,11 +1330,50 @@ class TestTransientRefusalsRetry:
         seen: set = set()
         result = _refusing_tick(monkeypatch, "media_unhosted",
                                 state=state, seen=seen)
-        assert state["transient_refusals"]["truth:strong"] == 1
+        assert state["transient_refusals"]["truth:strong\x1fmedia_unhosted"] == 1
         result = _refusing_tick(monkeypatch, "banned_language",
                                 state=state, seen=set(result["_seen"]))
-        assert "truth:strong" not in state["transient_refusals"]
+        assert not [k for k in state["transient_refusals"]
+                    if k.startswith("truth:strong\x1f")]
         assert press_lane._TRANSIENT_RETRY_ALARM_AT >= 2
+
+    def test_the_give_up_bound_counts_one_fault_not_the_story(self, monkeypatch):
+        """A host outage must not spend the RENDERER's give-up budget.
+
+        THE DEFECT (fourth adversarial review, 2026-08-06). The streak was keyed
+        by the emission key ALONE, but the bound it feeds covers ONE fault.
+        `media_unhosted` retries without bound on purpose - during a real R2
+        outage a give-up would be a mass kill - so a story that had been
+        retrying through a host outage reached its FIRST `card_render_degraded`
+        with the counter already past `_TRANSIENT_GIVE_UP_AT`, and was marked
+        seen on attempt one. A renderer hiccup killed a story because the HOST
+        had been down earlier.
+
+        Mutation check: key the counter by `_ekey` again and this fails - the
+        story is marked seen on its first render failure.
+        """
+        from engine.marketing import press_lane
+
+        bound = press_lane._TRANSIENT_GIVE_UP_AT["card_render_degraded"]
+        state: dict = {}
+        seen: set = set()
+        # Ride out a host outage well past the RENDERER's bound.
+        for _ in range(bound + 2):
+            result = _refusing_tick(monkeypatch, "media_unhosted",
+                                    state=state, seen=seen)
+            seen = set(result["_seen"])
+        assert state["transient_refusals"][
+            "truth:strong\x1fmedia_unhosted"] >= bound + 1, \
+            "media_unhosted must retry unbounded - it is a host fault"
+
+        # Now the FIRST render failure. It must retry, not give up.
+        result = _refusing_tick(monkeypatch, "card_render_degraded",
+                                state=state, seen=seen)
+        assert state["transient_refusals"][
+            "truth:strong\x1fcard_render_degraded"] == 1
+        assert "truth:strong" not in set(result["_seen"]), \
+            "a first render failure must not be marked seen because the HOST " \
+            "was down earlier - the two faults have different streaks"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
