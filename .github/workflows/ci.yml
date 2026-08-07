@@ -2286,6 +2286,17 @@ on:
       - "tests/test_committee_template.py"
       - "tests/test_confluence_screener_page.py"
       - "tests/test_contagion_card_render.py"
+      # Dark-pool desk (backfill 2026-08-06). The subject rides the "scripts/*.py"
+      # catch-all below, so an edit to the builder DID start this workflow — it just
+      # ran nothing that touched the builder, which is the worse half: a green ci.yml
+      # read as proof. tests/** is deliberately not broad, so the test half matched no
+      # pattern at all. #4704 is the measured cost: the suite overwrote three tracked
+      # artifacts on every run (site/darkpool.html, site/darkpool_eod.json,
+      # data/darkpool/context/latest.json). conftest.py's repo-wide MM_DATA_GUARD
+      # tripwire detects exactly that class and forces exit 1 — but it never ran here,
+      # so only a local invocation could ever find it. Both halves listed per the
+      # census convention ("a guard the guarded change cannot trigger is not a guard").
+      - "tests/test_darkpool_desk.py"
       - "tests/test_options_estate_redirect_stubs.py"
       - "tests/test_macro_signals_render.py"
       - "tests/test_movers_page.py"
@@ -2325,6 +2336,7 @@ on:
       - "scripts/build_ai_desk_page.py"
       - "scripts/build_chart_data.py"
       - "scripts/build_confluence_screener.py"
+      - "scripts/build_darkpool_desk.py"
       - "scripts/build_movers_page.py"
       - "scripts/build_odds.py"
       - "scripts/build_sector_map.py"
