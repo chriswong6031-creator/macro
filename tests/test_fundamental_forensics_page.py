@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
 
 from scripts.build_fundamental_forensics import (
+    PUBLIC_SUMMARY_MAX_AGE_DAYS,
     PUBLIC_SUMMARY_RELATIVE,
+    PUBLIC_SUMMARY_SCHEMA as SCHEMA_PUBLIC,
     SCHEMA,
     _write_public_summary,
     _write_state_atomic,
@@ -217,7 +220,41 @@ def test_build_site_compat_hook_prints_the_same_counts_as_the_forensics_build(tm
 def test_unreadable_or_foreign_public_summary_degrades_to_no_fact(tmp_path: Path):
     path = tmp_path / PUBLIC_SUMMARY_RELATIVE
     path.parent.mkdir(parents=True, exist_ok=True)
-    for payload in ("{ not json", json.dumps({"companies": 5, "findings": 5}), json.dumps({"schema": "other/v9"})):
+    unusable = (
+        "{ not json",
+        json.dumps({"companies": 5, "findings": 5}),           # no schema
+        json.dumps({"schema": "other/v9"}),                     # foreign schema
+        json.dumps({"schema": SCHEMA_PUBLIC, "companies": 5, "findings": 5}),  # unstamped
+    )
+    for payload in unusable:
         path.write_text(payload, encoding="utf-8")
         assert read_public_summary(tmp_path) == {}
     assert read_public_summary(tmp_path / "nowhere") == {}
+
+
+def test_public_summary_stops_being_published_once_it_outlives_its_build(tmp_path: Path):
+    """daily.yml's run_py annotates a failed builder but does NOT exit non-zero,
+    so a broken forensics build leaves the nightly green while build_site keeps
+    re-rendering this page from the last good file. Without a bound the counts
+    would freeze and stay published forever — the exact stale-stat defect the
+    preview shipped without totals to avoid."""
+    built = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    _write_public_summary(tmp_path, {"companies": 1240, "findings": 3417}, generated_at=built.isoformat())
+
+    fresh = built + timedelta(days=PUBLIC_SUMMARY_MAX_AGE_DAYS)
+    assert read_public_summary(tmp_path, now=fresh) == {"companies": 1240, "findings": 3417}
+
+    stale = built + timedelta(days=PUBLIC_SUMMARY_MAX_AGE_DAYS + 1)
+    assert read_public_summary(tmp_path, now=stale) == {}
+
+    # ...and the page omits the fact whole rather than printing frozen counts.
+    (tmp_path / "templates").symlink_to(Path(__file__).resolve().parents[1] / "templates")
+    import scripts.build_fundamental_forensics as bff
+    real_read = bff.read_public_summary
+    try:
+        bff.read_public_summary = lambda root, **kw: real_read(root, now=stale)
+        html = bff.render_shell(tmp_path).read_text(encoding="utf-8")
+    finally:
+        bff.read_public_summary = real_read
+    assert "companies read" not in html
+    assert "1,240" not in html
