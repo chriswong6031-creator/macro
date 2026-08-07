@@ -47,6 +47,7 @@ from scripts.exit_policy_study import (  # noqa: E402
     R_PLAN_STOP,
     R_PLAN_TARGET,
     R_TRAIL,
+    _MFE_FLOOR,
     _coupling,
     _plan_geometry,
     build_cohort,
@@ -571,12 +572,27 @@ class TestCaptureGuard:
     def _row_with(self, mfe, pnl):
         return _row("A", "d1", pnl, 10, mfe=mfe, mae=min(mfe, pnl) - 1.0)
 
+    @staticmethod
+    def _naive_capture(rows):
+        """What the ORIGINAL ``abs(mfe) > 1e-9`` filter would print for these rows.
+
+        The witness used to be ``ts.summarize`` itself, because it still carried the
+        defect. #4684 ported this study's floor upstream into ``track_scoring.summarize``
+        (its G5 leg — "a -11.4% loser scored 2.51"), so the two now AGREE and summarize
+        can no longer stand in for the broken behaviour: the assertion went red reading
+        ``None == 1.67``. The witness lives here instead. It is the same anti-vacuity
+        job — show the flattering number the floor suppresses, so a null capture cannot
+        pass for the wrong reason — without pinning a second module to a defect we want
+        fixed everywhere. Cross-module AGREEMENT is pinned separately, below.
+        """
+        caps = [r["pnl"] / r["mfe"] for r in rows if abs(r["mfe"]) > 1e-9]
+        return float(np.median(caps)) if caps else None
+
     def test_a_negative_mfe_row_yields_a_null_capture_not_a_flattering_ratio(self):
         rows = [self._row_with(mfe=-3.0, pnl=-5.0)]
-        # The defect being fixed: summarize's own filter is abs(mfe) > 1e-9, so it divides
-        # two negatives and reports a HEALTHY-LOOKING +1.67 for a position that never once
-        # traded above its entry.
-        assert ts.summarize(rows, metric="pnl")["capture"] == pytest.approx(1.67, abs=0.01)
+        # The defect being guarded: the old filter divides two negatives and reports a
+        # HEALTHY-LOOKING +1.67 for a position that never once traded above its entry.
+        assert self._naive_capture(rows) == pytest.approx(1.67, abs=0.01)
         m = policy_metrics(rows)
         assert m["capture"] is None
         assert (m["n_capture"], m["n_capture_undefined"]) == (0, 1)
@@ -593,8 +609,36 @@ class TestCaptureGuard:
         m = policy_metrics(rows)
         assert m["capture"] == pytest.approx(0.38)      # median(0.50, 0.25), rounded
         assert (m["n_capture"], m["n_capture_undefined"]) == (2, 1)
-        # Keeping the undefined row would make the meaningless +1.67 the MEDIAN.
-        assert ts.summarize(rows, metric="pnl")["capture"] == pytest.approx(0.50)
+        # Keeping the undefined row drags the median off 0.38 — the meaningless +1.67
+        # outranks both real rows, so the median lands on 0.50 instead.
+        assert self._naive_capture(rows) == pytest.approx(0.50)
+
+    def test_summarize_applies_THE_SAME_floor_and_the_two_must_stay_equal(self):
+        """The contract #4684 created, pinned on VALUES rather than on a source grep.
+
+        ``policy_metrics`` used to be a deliberate DEPARTURE from
+        ``track_scoring.summarize``; #4684 ported the floor upstream so the study and the
+        shipped track record report the same quantity under one column name. Agreement is
+        now the invariant, and it is the reason the witness above had to move: if either
+        side moves its floor, `capture` silently means two things again. The sibling pin
+        in tests/test_us_board_grader_honesty.py greps the study's SOURCE for the literal;
+        this one compares the numbers both functions actually return.
+        """
+        assert _MFE_FLOOR == ts.MFE_FLOOR
+        rows = [self._row_with(mfe=10.0, pnl=5.0),      # defined, 0.50
+                self._row_with(mfe=4.0, pnl=1.0),       # defined, 0.25
+                self._row_with(mfe=-3.0, pnl=-5.0),     # undefined — negative excursion
+                self._row_with(mfe=0.0, pnl=-2.0)]      # undefined — no excursion at all
+        study = policy_metrics(rows)
+        record = ts.summarize(rows, metric="pnl")
+        for key in ("capture", "n_capture", "n_capture_undefined",
+                    "capture_undefined_pct"):
+            assert study[key] == record[key], (
+                f"`{key}` disagrees: study {study[key]!r} vs track record "
+                f"{record[key]!r} — one side's capture floor has drifted")
+        # Anti-vacuity: the rows must actually exercise the floor, or the loop above
+        # would pass on two functions that both had nothing to drop.
+        assert (study["n_capture"], study["n_capture_undefined"]) == (2, 2)
 
 
 # --------------------------------------------------------------------------- #
