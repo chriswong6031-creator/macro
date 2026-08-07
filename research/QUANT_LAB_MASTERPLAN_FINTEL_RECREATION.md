@@ -233,14 +233,44 @@ QV recreation here is structurally testing the model on the wrong population.
 ```
 engine/quant_lab/
   specs.py    vendor registry — disclosure provenance, per-leg fidelity, distortions
+              + METHODS registry (non-ranker proposals; see §6.1)
   legs.py     PIT leg computation (the two PIT stores only)
   score.py    percentile scoring; the three combination rules; the vendor-rule fit
   study.py    IC / decile / FDR harness reusing engine.validation
-  page.py     cheap payload assembler (reads the precomputed study)
+  page.py     cheap payload assembler (reads the precomputed study + method artifacts)
 scripts/build_quant_lab.py     the EXPENSIVE study — off the render path
 templates/quant_lab.html.j2    the surface
 tests/test_quant_lab.py        the honesty contract
+data/quant_lab/methods/*.json  per-method result artifacts (§6.1)
 ```
+
+### §6.1 The second shelf — methods that are not name-rankers
+
+The MODELS pipeline scores names: `legs → percentile → composite → rank-IC`. Some published
+methods make a claim of a different SHAPE — about *when* a strategy works, not *which* name to
+hold. They emit no per-name score, so there is no cross-section to rank and no rank-IC to
+compute; pushing one through this pipeline would invent a score the method never had.
+
+Those live in `specs.METHODS` and render as their own cards. Two rules make the shelf honest:
+
+1. **The spec holds the CLAIM; the artifact holds every NUMBER.** A method's measurements come
+   from `data/quant_lab/methods/<key>.json`, written by that method's own harness. A statistic
+   hand-typed into the registry outlives the recompute that would have corrected it, and the
+   registry cannot tell it went stale — so `test_method_specs_carry_no_numbers` fails the build
+   on any numeric literal in a METHODS spec.
+2. **A missing artifact claims nothing.** The card renders and says the measurement is absent
+   rather than letting the spec's prose imply a measurement that was never made.
+
+**Wave 1 entry — the regime-reliability engine** (external proposal, 2026-08-05). Rebuilt as an
+interaction test on the signal track record; NULL. Rulings RRC-R1 (the 16-signal composite
+monitor: REJECT-REDUNDANT + FORBIDDEN fusion path) and RRC-R2 (the reliability table: KILLED,
+construction-scoped) are in `research/DO_NOT_REBUILD.md`. Full adjudication:
+`research/REGIME_RELIABILITY_FACTOR_CROWDING_ADJUDICATION.md`; measurement:
+`reports/regime-reliability-phase0.md`.
+
+That card also carries the reusable half of the work — `engine/regime_conditioning_coverage.py`,
+which reports, per market-state measure, whether the record contains enough *separate months of
+each state* to support a conditional claim at all. It is the gate W2-C needs (§7).
 
 Render-budget placement: the study (12 rebalances × a full leg cross-section) runs in
 `scripts/build_quant_lab.py` and lands in `data/quant_lab/study.json`. `build_site.py`
@@ -293,7 +323,13 @@ reads that artifact and computes one live cross-section only.
    stop depending on a ~49% debt column.
 3. **W2-C · Deep price history.** The in-tree close caches cap the study at 12 rebalances.
    The IC scorecard already reaches 2011 on an offline deep panel; point the Quant Lab at
-   the same cache to get a real regime sample.
+   the same cache to get a real regime sample. **Gate it, do not eyeball it:**
+   `engine.regime_conditioning_coverage.assess()` (§6.1) answers "is this a real regime
+   sample yet?" per market-state measure — coverage, states actually observed, and separate
+   months per state, because same-month rebalances share one market and are not independent
+   evidence. Today it passes on exactly one axis. Twelve rebalances inside one regime is the
+   §4 "one market mood" limitation restated; this is the instrument that says when that has
+   stopped being true.
 4. **W2-D · Full 13F aggregate** — the only route to a real QVO. Until then the model stays
    graded `absent`.
 5. **W2-E · Delisting-recovered prices.** `dead_name_panel` / `dead_name_prices` exist
