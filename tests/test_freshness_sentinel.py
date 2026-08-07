@@ -466,6 +466,31 @@ def test_caddy_serves_staleness_state_publicly_with_no_store():
     assert 'header Cache-Control "no-store"' in fallback
 
 
+def test_naive_clock_override_is_utc_not_local(tmp_path, monkeypatch):
+    """The runbook drill types a bare `--now 2026-08-08T05:00:00`. Treating that
+    as LOCAL time shifts the whole comparison by the operator's UTC offset and
+    reads as a budget bug rather than a clock one."""
+    for var in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "DISCORD_WEBHOOK_URL",
+                "DISCORD_WEBHOOK_WATCHLIST", "MAIL_SENTINEL_TO", "MAIL_SUPPORT_TO"):
+        monkeypatch.delenv(var, raising=False)
+    seen: list[datetime] = []
+
+    def spy(now, **kw):
+        seen.append(now)
+        return 0
+
+    monkeypatch.setattr(fs, "run", spy)
+    fs.main(["--now", "2026-08-08T05:00:00",
+             "--public-dir", str(tmp_path / "p"), "--state-dir", str(tmp_path / "s")])
+    assert seen[0] == datetime(2026, 8, 8, 5, 0, tzinfo=timezone.utc)
+
+    # An explicit offset is still honoured and normalised to UTC.
+    seen.clear()
+    fs.main(["--now", "2026-08-08T05:00:00+02:00",
+             "--public-dir", str(tmp_path / "p"), "--state-dir", str(tmp_path / "s")])
+    assert seen[0] == datetime(2026, 8, 8, 3, 0, tzinfo=timezone.utc)
+
+
 def test_sentinel_is_stdlib_only():
     """The observer of last resort must not import the engine tree, lib.config,
     or any third-party package at module load — a broken venv or repo half-pull

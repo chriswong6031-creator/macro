@@ -617,11 +617,16 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
 
-    now = (
-        datetime.fromisoformat(args.now).astimezone(timezone.utc)
-        if args.now
-        else datetime.now(timezone.utc)
-    )
+    if args.now:
+        now = datetime.fromisoformat(args.now)
+        # Naive stamps are UTC BY CONTRACT here (the repo-wide #2463 convention),
+        # not local time. Without this, `--now 2026-08-08T05:00:00` from the
+        # runbook silently means 05:00 in whatever zone the operator's shell is
+        # in — an hours-wide shift in the very drill that is supposed to prove
+        # the budgets, and it would read as a budget bug rather than a clock one.
+        now = now.replace(tzinfo=timezone.utc) if now.tzinfo is None else now.astimezone(timezone.utc)
+    else:
+        now = datetime.now(timezone.utc)
     return run(
         now=now,
         base=args.base,
