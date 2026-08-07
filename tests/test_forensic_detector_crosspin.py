@@ -388,17 +388,43 @@ def test_script_and_moat_agree_on_the_strictly_positive_domain():
     asserted equal — see that test for why.
     """
     disagreements: dict[str, list[tuple[dict, dict, bool, bool]]] = {}
+    compared: dict[str, int] = {d: 0 for d in SHARED_DETECTOR_IDS}
+    fired_true: dict[str, int] = {d: 0 for d in SHARED_DETECTOR_IDS}
     for current, prior in _positive_domain_pairs(2000, seed=20260807):
         fired = _script_fired(current, prior)
         for detector_id in SHARED_DETECTOR_IDS:
             moat = _moat_verdict(current, prior, detector_id)
             if moat is None:
                 continue  # not-evaluable on the moat side is not a disagreement
+            compared[detector_id] += 1
+            if moat:
+                fired_true[detector_id] += 1
             script = detector_id in fired
             if moat != script:
                 disagreements.setdefault(detector_id, []).append(
                     (current, prior, script, moat)
                 )
+
+    # Non-vacuity floor. Without it this test passes having compared NOTHING:
+    # the loop `continue`s whenever the moat side returns None, so a future
+    # moat-side gate that made these sensors not-evaluable across the sampled
+    # domain would turn the whole differential green while proving nothing.
+    # Measured 2026-08-07 over this exact seed: every detector compared on
+    # every pair (moat_none == 0), and each fired on a healthy fraction, so
+    # these floors are far below today's values and are a regression alarm,
+    # not a tuning knob.
+    for detector_id in SHARED_DETECTOR_IDS:
+        assert compared[detector_id] >= 500, (
+            f"{detector_id}: only {compared[detector_id]} of 2000 pairs were "
+            "actually compared — the moat side returned not-evaluable for the "
+            "rest, so this differential is close to vacuous. Investigate the "
+            "moat-side gate before trusting a green run here."
+        )
+        assert fired_true[detector_id] > 0, (
+            f"{detector_id}: the moat sensor never fired across 2000 positive "
+            "pairs, so agreement here is agreement on an all-False answer and "
+            "proves nothing about the rule."
+        )
 
     if disagreements:
         lines = []
@@ -550,10 +576,38 @@ def test_the_pinned_divergences_are_real_disagreements():
 
     Without this, a future edit could quietly relax a row to (False, False) and
     the table would still pass while asserting nothing.
+
+    The disjunction this once used — ``moat is None or moat != script`` — could
+    not catch the relaxation it existed to prevent: ANY row pinned with
+    ``moat=None`` satisfied it regardless of ``script_fires``, so relaxing a row
+    to ``(False, None)`` was just as uninformative as ``(False, False)`` and
+    passed. Each row is now classified explicitly instead.
     """
+    observable = 0
+    evaluability_only = 0
     for case_id, _did, _cur, _pri, script_fires, moat_verdict, _note in KNOWN_DIVERGENCES:
-        assert moat_verdict is None or moat_verdict != script_fires, (
+        if moat_verdict is None:
+            # Not-evaluable on the moat side. This is a real difference in
+            # REASONING, but it publishes nothing on either surface unless the
+            # script fires, so it is counted separately rather than being waved
+            # through by a short-circuit.
+            if script_fires:
+                observable += 1
+            else:
+                evaluability_only += 1
+            continue
+        assert moat_verdict != script_fires, (
             f"KNOWN_DIVERGENCES row {case_id!r} pins script={script_fires} and "
             f"moat={moat_verdict}, which agree. A row that agrees belongs in the "
             f"positive-domain differential, not in the divergence table."
         )
+        observable += 1
+
+    # The table's whole point is the OBSERVABLE disagreements. If a future edit
+    # relaxed every one of them to evaluability-only, the rows above would each
+    # pass individually and the table would assert nothing collectively.
+    assert observable >= 5, (
+        f"only {observable} row(s) still pin an observable output difference "
+        f"({evaluability_only} are evaluability-only). The divergence table has "
+        f"been relaxed past the point where it documents a shipping defect."
+    )
