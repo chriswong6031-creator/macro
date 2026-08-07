@@ -42,6 +42,38 @@ keep-FRESH, which meant every run silently rewrote history: re-running the grade
 (`grade_us_board._FROZEN_PRICE_COLS`); annotations (regime stamp, archetype,
 `board_tenure_days`, new spine columns) still accrue onto historical rows as before.
 
+## Options chain-derived era — boundary 2026-08-07
+
+`opt_doi_slope_5d`, `opt_voi_flag` and `opt_front7_charm_share` are computed from a
+POSITIONAL window over `data/polygon_gex/chains/`. #4807 and #4883 re-stamped that store
+onto the SESSION each snapshot describes rather than its UTC run date, which removed 20
+fabricated non-session chain files (45 → 25) and 11 summary files (419 → 408). Every
+value computed before that ran was fitted over a window containing files that do not
+correspond to a trading session.
+
+**Values committed before 2026-08-07 are not comparable to values after it.** The
+boundary is a commit boundary, not an `as_of` boundary — there is no column to filter on.
+
+| column | rows | corrected at the boundary | direction |
+|---|---|---|---|
+| `opt_doi_slope_5d` | 217 | 180 | 97 up / 83 down, median \|Δ\| 0.027 |
+| `opt_front7_charm_share` | 243 | 119 | 63 up / 56 down, median \|Δ\| 0.073 |
+| `opt_voi_flag` | 263 | 20 | 12 False→True / 8 True→False |
+
+Affected `as_of` span 2026-07-01 .. 2026-07-28 (194 rows, 12 dates, 56 tickers). The
+corrections are two-sided in every column, so this is a re-measurement, not a re-label.
+
+**215 cells could not be re-measured and still carry their pre-boundary value**
+(`opt_doi_slope_5d` 37, `opt_voi_flag` 99, `opt_front7_charm_share` 79). The repair purged
+the fabricated files those windows were drawn from, so the current store has no session
+coverage for that `(as_of, ticker)` and the recompute returns null. The restamp is
+non-destructive by contract, so the old value is kept rather than blanked — these are the
+cells where "before the boundary" is still true. They are counted and printed by
+`--restamp-cols`, never silently kept.
+
+**Summary-derived `opt_*` columns are stale against the same store rewrite and were NOT
+repaired here** — see the ERA BREAK section of the PR that set this boundary.
+
 ## Structural facts that bound every column
 
 * **Grading lag:** a fire is graded only when its horizon matures. The shortest horizon is
