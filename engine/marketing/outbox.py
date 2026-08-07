@@ -1967,6 +1967,17 @@ def expire_stale_planned(
     weekend_levels manage their own retirement, and quarantining another lane's
     items from the nightly emit path would be this lane reaching into theirs.
 
+    PROVENANCE IS THE WHOLE SCOPE — there is no kind filter (2026-08-06). There
+    used to be one (`kind in planned_kinds()`), and it silently exempted the two
+    kinds content_studio emits that are not planned kinds: `mover` and
+    `theme_list`. Those were also missing from `approval_desk.kinds` and are
+    skipped by `_auto_approve_pass` (which demands provenance
+    `publisher_live_movers`), so nothing decided them and nothing retired them.
+    Measured before the fix: two nightly theme_list items sat `queued` SIXTY
+    hours past their slot, still offering the operator an Approve button on a
+    two-day-old tape. A reaper whose scope is "this lane's items" must not carry
+    a second, narrower scope that quietly disagrees with it.
+
     Uses the canonical writer (`transition`) on a single pre-folded snapshot, the
     same batch pattern supersede_lane uses — never a hand-appended ledger row.
     Never raises: expiry failing must not stop tonight's emission.
@@ -1975,12 +1986,9 @@ def expire_stale_planned(
     try:
         ts_now = now if now is not None else datetime.now(timezone.utc)
         cutoff = ts_now - timedelta(hours=max(int(max_age_hours), 0))
-        kinds = planned_kinds()
         state = fold_state(root)
         for iid, it in (state.get("items") or {}).items():
             if str(state["status"].get(iid) or "") not in ("queued", "approved"):
-                continue
-            if str(it.get("kind") or "") not in kinds:
                 continue
             if str(it.get("provenance") or "") != "content_studio":
                 continue
