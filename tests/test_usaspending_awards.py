@@ -1796,17 +1796,20 @@ def test_b2_baseline_generation_tear_is_refused_exactly_like_a_live_one(
         pd.read_parquet(data_dir / "award_action_versions.parquet"),
     )
 
-    original_atomic_parquet = usaspending_awards._atomic_parquet
+    last_good_actions = (data_dir / "award_action_versions.parquet").read_bytes()
+    last_good_state = state_path.read_bytes()
 
-    def fail_after_snapshot_replace(frame, path):
-        if path.name == "award_action_versions.parquet":
-            raise OSError("simulated action-version replace failure")
-        return original_atomic_parquet(frame, path)
-
-    monkeypatch.setattr(usaspending_awards, "_atomic_parquet", fail_after_snapshot_replace)
+    # Hand-tear the triad rather than injecting a write failure: the tear is
+    # what the guard must react to, and constructing it directly keeps this
+    # test independent of the order in which persist() replaces the three
+    # files.  A second healthy run advances all three; restoring the previous
+    # action ledger and state leaves snapshots at generation N+1 with actions
+    # and a baseline state still bound to N — exactly what an interrupted
+    # write leaves behind.
     clock[0] = "2026-08-01T12:00:00+00:00"
     collect(_EventSession(current_amount=150.0, action_obligation=25.0))
-    monkeypatch.setattr(usaspending_awards, "_atomic_parquet", original_atomic_parquet)
+    (data_dir / "award_action_versions.parquet").write_bytes(last_good_actions)
+    state_path.write_bytes(last_good_state)
 
     torn_snapshots = pd.read_parquet(data_dir / "award_event_snapshots.parquet")
     torn_actions = pd.read_parquet(data_dir / "award_action_versions.parquet")
@@ -1823,10 +1826,10 @@ def test_b2_baseline_generation_tear_is_refused_exactly_like_a_live_one(
     action_bytes = (data_dir / "award_action_versions.parquet").read_bytes()
     state_bytes = state_path.read_bytes()
 
-    # The later run offers a genuinely newer observation (150.0 / 25.0).  It
+    # The later run offers a genuinely newer observation (175.0 / 30.0).  It
     # must still refuse: the last-good triad stays byte-identical...
     clock[0] = "2026-08-01T14:00:00+00:00"
-    collect(_EventSession(current_amount=150.0, action_obligation=25.0))
+    collect(_EventSession(current_amount=175.0, action_obligation=30.0))
     assert (data_dir / "award_event_snapshots.parquet").read_bytes() == snapshot_bytes
     assert (data_dir / "award_action_versions.parquet").read_bytes() == action_bytes
     assert state_path.read_bytes() == state_bytes
