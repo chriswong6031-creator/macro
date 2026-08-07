@@ -121,3 +121,46 @@ keep-FRESH, which meant every run silently rewrote history: re-running the grade
 * Nightly coverage per column is printed by `scripts/stamp_options_state.py`; a stamp
   column that is 0% while its display twin populates trips the `_twin_silent_null_guard`
   ::warning (W-OVC class defect tripwire).
+
+## Disclosed null eras — holes that must NOT be repaired by backfilling
+
+`snapshots.jsonl` has **no rows for 2026-08-03..08-06**. That looks like an outage
+someone should fix. The obvious fix — backfill the dates — is the **wrong action**, and
+the machine-readable record of why is `disclosed_gaps.json`
+(id `us-board-frozen-alpha-2026-08`).
+
+**The board published every one of those days. It just ranked on frozen factors.** A GHA
+cache regression had the `engine` job restoring `data/breadth/_closes_cache.parquet` from
+a prefix-matched cache over the fresh panel `collect` had committed hours earlier, then
+committing the stale copy back (`git add data/` + push_retry's `-X theirs`). Since the
+board's ranking key **is** alpha — `build_stock_library.py:3850`,
+`rank_setups(cand, as_of=alpha_asof, rank_by="alpha", ...)` — and alpha is stamped
+`as_of = R.index.max()` off that panel (`engine/residual_alpha.py:277`), every board in
+the window ordered its names by **2026-07-31 factors while pricing entry zones off current
+data**. Measured: every `alpha.json` revision from 2026-07-31T20:35Z to 2026-08-06T16:36Z
+carries one `as_of` value, while the buy lane moved 71 → 76 → 73 → 55 → 59 → 62. Different
+boards, one stamp. The snapshotter keys on `as_of`, so it saw the same date nightly and
+appended nothing.
+
+**Why the hole rather than the rows.** Backfilling with corrected dates fixes the *dates*
+and leaves the *rankings* wrong — Prophet would learn from orderings computed on six-day
+stale factors at six-day newer prices. That is the corruption the exercise set out to
+prevent. Operator adjudication 2026-08-07: record as a disclosed null era, no graded
+entries, six days of learning signal forfeited so the substrate stays clean.
+
+**This is enforced, not just documented.** `tests/test_grade_us_board.py` asserts the
+window stays empty (`test_no_graded_rows_were_backfilled_into_a_disclosed_null_era`), so
+filling it turns a test red instead of quietly widening a denominator. If a reconstruction
+is ever wanted it needs a **new `board_definition` era stamp** — a re-ranked board is a
+different admission rule from the one that actually published — plus a point-in-time
+replay harness that does not exist today (`build_stock_library.py` has no argparse and no
+as-of clamp; `as_of` is derived from whatever panel is on disk).
+
+The cause is fixed (#4798) and verified in production: `data: daily collection 2026-08-07`
+wrote `max_date=2026-08-06` (349×510), the first advance since 07-31. The guard against
+recurrence is
+`tests/test_daily_collect_commit_path.py::test_no_job_restores_a_stale_cache_over_data_it_will_commit`.
+
+**The alarm was never the gap.** `build_stock_library._board_continuity_warning` printed
+*"22 builds all claiming as_of=2026-07-31"* every night throughout, and is marked
+`Display-only: never a gate`. Detection worked; escalation did not.
