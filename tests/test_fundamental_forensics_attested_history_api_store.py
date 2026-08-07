@@ -664,6 +664,84 @@ def test_a_zero_refresh_margin_is_refused() -> None:
         _store(refresh_margin_seconds=0)
 
 
+def test_a_none_client_from_the_factory_is_refused() -> None:
+    """A factory returning None must fail closed, never inherit ambient creds.
+
+    `R2Store.__init__` (r2_store.py:257) is
+    `self._s3 = client if client is not None else _r2_client()`, and
+    `_r2_client()` reads R2_RESEARCH_* / generic R2_*.  So handing R2Store a
+    None client silently reopens the exact Research Vault fallback this whole
+    module exists to make impossible.
+    """
+    store = _store(client_factory=lambda **_kwargs: None)
+    with pytest.raises(AttestedHistoryStoreError, match="returned no client"):
+        store.get_bytes_strict_bounded("k", 64)
+
+
+def test_configuration_failures_are_distinguishable_in_the_log(monkeypatch, caplog) -> None:
+    """Five different misconfigurations must not collapse into one line.
+
+    The store is cached as absent, so the route 503s until the process
+    restarts.  If every cause logs identically the operator cannot tell which
+    of the four delivered values is wrong.
+    """
+    import logging
+
+    seen = {}
+    for name, bad in (
+        ("FF_ATTESTED_R2_READONLY_ENDPOINT", "https://not-an-r2-host.example.com"),
+        ("FF_ATTESTED_R2_READONLY_BUCKET", "Not_A_Valid_Bucket"),
+        ("FF_ATTESTED_R2_READONLY_ACCESS_KEY_ID", "!!invalid!!"),
+    ):
+        for env_name, value in FAKE_ENV.items():
+            monkeypatch.setenv(env_name, value)
+        monkeypatch.setenv(name, bad)
+        forensics_api._reset_store_cache()
+        caplog.clear()
+        with caplog.at_level(logging.WARNING, logger="fundamental_forensics.api"):
+            assert forensics_api._build_store() is None
+        seen[name] = " ".join(r.getMessage() for r in caplog.records)
+        forensics_api._reset_store_cache()
+
+    assert len(set(seen.values())) == 3, f"causes are indistinguishable: {seen}"
+    for name, message in seen.items():
+        assert "unavailable:" in message, f"{name} logged no cause: {message}"
+        # A cause may be named, but never a delivered VALUE.
+        assert FAKE_SECRET_ACCESS_KEY not in message
+        assert FAKE_ACCESS_KEY_ID not in message
+
+
+def test_absent_configuration_logs_the_missing_names_and_never_a_value(
+    monkeypatch, caplog
+) -> None:
+    """A half-delivered credential set must name what is missing.
+
+    The deploy workflow strips all four FF_ATTESTED_R2_READONLY_* lines and
+    re-adds only the non-empty ones, so one dispatch mid-rotation can leave a
+    partial set behind and a permanently 503-ing route.
+    """
+    import logging
+
+    for env_name, value in FAKE_ENV.items():
+        monkeypatch.setenv(env_name, value)
+    monkeypatch.delenv("FF_ATTESTED_R2_READONLY_SECRET_ACCESS_KEY", raising=False)
+    forensics_api._reset_store_cache()
+    caplog.clear()
+    try:
+        with caplog.at_level(logging.WARNING, logger="fundamental_forensics.api"):
+            assert forensics_api._build_store() is None
+        message = " ".join(r.getMessage() for r in caplog.records)
+        assert "FF_ATTESTED_R2_READONLY_SECRET_ACCESS_KEY" in message
+        assert "not configured" in message
+        # Names only. The three values that ARE present must not be echoed.
+        assert FAKE_SECRET_ACCESS_KEY not in message
+        assert FAKE_ACCESS_KEY_ID not in message
+        assert FAKE_BUCKET not in message
+        assert FAKE_ENDPOINT not in message
+    finally:
+        forensics_api._reset_store_cache()
+
+
 def test_a_non_credential_mint_failure_still_raises_the_advertised_error() -> None:
     """The class advertises one error type; every mint path must honour it."""
 

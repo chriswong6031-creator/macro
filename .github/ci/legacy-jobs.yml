@@ -734,6 +734,21 @@ jobs:
         run: >-
           python -m pytest
           tests/test_fundamental_forensics_attested_history_operator.py -q
+      # Wave 0A: the production receipt API's DEDICATED reader. This suite is the
+      # only proof that the API addresses the dedicated attested-history bucket
+      # rather than the generic Research Vault one, that the read-only store is
+      # structurally excluded from every StrictConditionalWriteStore write gate,
+      # that the renewal lock is not held across the network GET, and that the
+      # VPS delivery workflow carries the read-only half and never a seed writer.
+      # It is named explicitly and placed ahead of the broad sweep for the same
+      # reason as the boundaries above: an unrelated red guard must not be able
+      # to leave the serving boundary unexecuted. deploy-api-secrets.yml's own
+      # comment cites this suite as the protection on its credential contract,
+      # so that citation must stay true.
+      - name: Wave 0A dedicated attested-history serving boundary
+        run: >-
+          python -m pytest
+          tests/test_fundamental_forensics_attested_history_api_store.py -q
       # B4F is deliberately run before the large render-contract sweep. The
       # initial issuer seed is allowed to construct only a governed base and
       # a redacted review-only receipt; these tests pin the no-network selection,

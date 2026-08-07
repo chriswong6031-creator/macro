@@ -678,6 +678,7 @@ on:
       - "tests/test_fundamental_forensics_companyfacts_pinned_loader.py"
       - "tests/test_fundamental_forensics_attested_history_materializer.py"
       - "tests/test_fundamental_forensics_attested_history_operator.py"
+      - "tests/test_fundamental_forensics_attested_history_api_store.py"
       - "tests/test_fundamental_forensics_attested_history_pilot.py"
       - "tests/test_fundamental_forensics_attested_history_seed.py"
       - "tests/test_fundamental_forensics_attested_occurrence_governance.py"

@@ -168,14 +168,36 @@ def _build_store():
         store = None
         try:
             from engine.fundamental_forensics.attested_history_store import (  # noqa: PLC0415
+                ATTESTED_HISTORY_ENV_NAMES,
+                AttestedHistoryStoreError,
                 build_attested_history_store,
             )
 
             store = build_attested_history_store()
+            if store is None:
+                # An absent store is cached below and becomes a permanent 503,
+                # so a silent None would leave the operator nothing to act on.
+                # NAMES only -- never a value.  A half-delivered credential set
+                # is the realistic case: the deploy workflow strips all four
+                # FF_ATTESTED_R2_READONLY_* lines and re-adds only the non-empty
+                # ones, so one dispatch mid-rotation can leave a partial set.
+                absent = [n for n in ATTESTED_HISTORY_ENV_NAMES if not os.environ.get(n)]
+                log.warning(
+                    "attested history store not configured (absent: %s)",
+                    ",".join(absent) or "none - values present but rejected",
+                )
+        except AttestedHistoryStoreError as exc:
+            # This class's messages are fixed literals that never interpolate a
+            # configuration value, so the message itself is safe to log -- and
+            # it is the only thing that distinguishes a bad endpoint from a bad
+            # bucket, key, TTL, or refresh margin. Without it all five collapse
+            # into one indistinguishable line behind a permanent 503.
+            log.warning("attested history store unavailable: %s", exc)
+            store = None
         except Exception as exc:  # noqa: BLE001 - fail closed, never leak the cause
-            # Only the exception TYPE is recorded.  A boto/botocore message can
-            # quote configuration values, and this bucket's credentials must
-            # never reach a log line.
+            # Everything else (boto/botocore especially) records the TYPE only:
+            # those messages can quote configuration values, and this bucket's
+            # credentials must never reach a log line.
             log.warning("attested history store unavailable (%s)", type(exc).__name__)
             store = None
         _STORE_CACHE = store

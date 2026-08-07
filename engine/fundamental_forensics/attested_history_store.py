@@ -314,6 +314,15 @@ class DedicatedAttestedHistoryStore:
                 raise AttestedHistoryStoreError(
                     "dedicated attested-history reader client could not be built"
                 ) from exc
+            if client is None:
+                # R2Store treats a None client as "build one from the ambient
+                # environment" (r2_store.py:257 -> _r2_client()), which reads
+                # R2_RESEARCH_* / generic R2_* and would silently reopen the
+                # exact fallback this module exists to make impossible.  A
+                # factory that returns None must fail closed, not inherit.
+                raise AttestedHistoryStoreError(
+                    "dedicated attested-history client factory returned no client"
+                )
             backing = R2Store(self.bucket, client=client)
             if not isinstance(backing, StrictBoundedReadStore):  # defensive contract guard
                 raise AttestedHistoryStoreError(
