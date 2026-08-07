@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T08:46:37.499313+00:00",
-  "count": 930,
+  "generated_at": "2026-08-07T09:01:44.787836+00:00",
+  "count": 931,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -199,6 +199,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-k6z2ylp7amo-dac91c",
+      "title": "Infineon (IFXGn)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:32Z",
+      "summary_points": [
+        "**Infineon FY26 Revenue & CRAs**: €16.3bn (11% yoy) forecast with multi-year CRAs securing AI data center revenue (HSD billions cumulative commitments), offsetting Q3 EBIT 2% below consensus.",
+        "**Backlog-Driven FY27 Visibility**: €30bn order backlog (June), ~2/3 converting to revenue in 12m, supporting FY27 revenue (Vara Consensus: €19.2bn).",
+        "**Pricing & Margin Expansion**: Two price increases implemented (July), Q4 segment margin guided at c.23%, incremental margin flow-through >50% in Q4.",
+        "**Goldman Sachs Buy Rating**: **Buy** with €91.00 target (50.9% upside from €60.32), based on 15x EV/EBITDA applied to updated EBITDA estimates."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
