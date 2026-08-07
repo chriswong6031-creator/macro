@@ -4960,8 +4960,16 @@ jobs:
       # dispatch-ref fence, unmanaged-toggle refusal) and the landing payload contract.
       # requests is load-bearing on this job's install line for the same reason called
       # out above — the suite imports admin.server.
+      # test_admin_program_watch.py joins this step (not a new job) because it pins the
+      # same two surfaces: admin.server's GET route (/api/program_watch, and its 401 when
+      # auth is on) and the landing payload key app.js reads (s.program_watch). It also
+      # runs the reader against the COMMITTED data/seasonality/program_watch.json — for
+      # its DIALECT only (schema accepted, every state known, fired block first, every row
+      # carrying a prompt to copy), never for which tripwire is currently fired: that
+      # artifact is rebuilt and committed nightly, so a content assertion would turn this
+      # step red the day the operator does the work the panel exists to prompt.
       - name: admin server HTTP surface + landing summary payload contract
-        run: python -m pytest tests/test_admin_server.py -q
+        run: python -m pytest tests/test_admin_server.py tests/test_admin_program_watch.py -q
       - name: brain SSE keepalive + tape decode
         run: python -m pytest tests/test_brain_sse_keepalive.py tests/test_tape_decode.py -q
 

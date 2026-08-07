@@ -48,6 +48,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_
                orchestrator_chat,
                personas,
                press,
+               program_watch,
                prophet,
                revenue,
                services, settings, site_gate,
@@ -375,6 +376,7 @@ def _summary_payload() -> dict:
         "services": _safe(services.status),
         "experiments": _safe(experiments.alert_summary),
         "key_alerts": _safe(key_alerts.panel),
+        "program_watch": _safe(program_watch.panel),
     }
     if isinstance(result["health"], dict) and "error" not in result["health"]:
         result["health"] = {
@@ -950,6 +952,12 @@ class Handler(BaseHTTPRequestHandler):
                 # Operator capture feed (RUL-8: authed only, no public write endpoint).
                 limit = _int_param(q, "limit", 60, 1, 1000)
                 return self._json(_alerts_mod.panel(limit=limit))
+            if path == "/api/program_watch":
+                # Seasonality program watch (RUL-8: authed only, GET-only reader).
+                # Underscore, like every other multiword GET here (/api/live_runs,
+                # /api/site_gate); the panel's "Recheck now" button fetches it with
+                # ?force=1 so a re-read is a real re-read, not the 15s cache.
+                return self._json(program_watch.panel())
             if path == "/api/codex":
                 return self._json(codex_panel.panel())
             if path == "/api/live_runs":
