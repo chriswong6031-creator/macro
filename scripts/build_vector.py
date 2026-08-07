@@ -1692,6 +1692,25 @@ MACRO_SEV = {"act": "high", "warn": "medium", "info": "info"}
 # ---------------------------------------------------------------------------
 import re as _re
 
+# Rules whose emitter interpolated an untranslated English token into message_zh
+# before that was fixed in engine/alerts.py. Their rows are ALREADY baked into
+# data/alerts/alerts_log.parquet with e.g. "GEX：net GEX changed sign（净 +79bn…）",
+# and log_and_dedup keys on (date, rule, message) — the English message never
+# changes, so no corrected row will ever supersede them. For these rules the
+# translator below (which rebuilds zh from the canonical English) outranks the
+# stored value. Shrink this set only when the affected rows have aged out of the
+# feed; a rule that never leaked must NOT be listed, so a future emitter with
+# richer zh copy than the translator is not silently downgraded.
+_ZH_HALF_TRANSLATED_RULES = frozenset({
+    "gex_flip_cross",
+    "transition_state_change",
+    "conditions_recession_state_change",
+    "risk_state_elevated",
+    "holdings_active_change",
+    "sector_holdings_accumulation",
+})
+
+
 def _translate_macro_detail(msg_en: str) -> str:
     """Attempt to translate a baked English macro alert message to Chinese.
     Returns the Chinese string if the pattern matches, or empty string to
@@ -1755,7 +1774,11 @@ def _translate_macro_detail(msg_en: str) -> str:
     # EN: "Transition state STABLE -> TRANSITIONING (3 flags active)"
     m = _re.match(r"Transition state (\w+) -> (\w+) \((\d+) flags active\)", msg_en)
     if m:
-        _ts_zh = {"STABLE": "稳定", "TRANSITIONING": "转换中", "TURBULENT": "动荡"}
+        # Read the state vocabulary from the emitter rather than re-declaring it: the
+        # local copy had drifted to {STABLE, TRANSITIONING, TURBULENT} while the engine
+        # emits {STABLE, WEAKENING, TRANSITIONING, NEW_REGIME}, so TURBULENT was dead
+        # and WEAKENING/NEW_REGIME fell through to English.
+        from engine.alerts import _TS_PLAIN_ZH as _ts_zh
         return (f"转换状态 {_ts_zh.get(m.group(1), m.group(1))} -> {_ts_zh.get(m.group(2), m.group(2))}"
                 f"（{m.group(3)} 个预警激活）")
 
@@ -1850,9 +1873,12 @@ def _translate_macro_detail(msg_en: str) -> str:
             m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6), m.group(7) or "")
         verb_zh = "增持" if verb_en == "accumulating" else "减持"
         flow_zh = f"（≈{flow} 估算再平衡资金流）" if flow else ""
-        # "— cycle BUY ZONE·BUY" → " — 周期 BUY ZONE·BUY"
+        # "— cycle BUY ZONE·BUY" → " — 周期 买入区·买入" (label·action, both finite-vocab)
         cyc_m = _re.search(r" — cycle (.+)$", rest)
-        cyc_zh = f" — 周期 {cyc_m.group(1)}" if cyc_m else ""
+        cyc_zh = ""
+        if cyc_m:
+            from engine.i18n import tr as _tr_term
+            cyc_zh = " — 周期 " + "·".join(_tr_term(p) for p in cyc_m.group(1).split("·", 1))
         return (f"{fund}：{ticker} 权重较价格多变动 {change}"
                 f"{flow_zh}（{verb_zh}），{dates}{cyc_zh}")
 
@@ -1896,9 +1922,12 @@ def home_alert_feed() -> list[dict]:
             # after the zh column landed in the parquet schema), then try the
             # template-prefix translation map for backlog entries that predate the
             # column (returns "" on no-match, falling back to English).
+            # EXCEPT for _ZH_HALF_TRANSLATED_RULES, whose persisted zh is known to
+            # carry raw English inside the Chinese wrapper — there the translator's
+            # rebuild-from-canonical-English wins over the stored value.
             stored_zh = str(r.get("message_zh", "") or "").strip()
-            if not stored_zh:
-                stored_zh = _translate_macro_detail(r["message"])
+            if not stored_zh or r["rule"] in _ZH_HALF_TRANSLATED_RULES:
+                stored_zh = _translate_macro_detail(r["message"]) or stored_zh
             detail_zh = stored_zh or r["message"]
             out.append({
                 "source": "macro", "source_label": h["macro_label"],
