@@ -1197,6 +1197,8 @@ jobs:
         run: python -m pytest tests/test_edgar_8k_items.py -q
       - name: LHB-R6 quarterly-store enrichment tag tests (no network)
         run: python -m pytest tests/test_edgar_quarterly_tags.py -q
+      - name: edgar fundamentals universe widening (W2-A — R2000 via committed constituents)
+        run: python -m pytest tests/test_edgar_universe_widening.py -q
       - name: symbol-directory archival collector tests (LHB-W2c / LHB-R8)
         run: python -m pytest tests/test_symbol_directory.py -q
       - name: winner autopsy B-family feature column tests (LHB-W3)
