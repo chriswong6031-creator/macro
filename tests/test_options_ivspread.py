@@ -102,7 +102,12 @@ def test_snapshot_idempotent_and_prior_map(monkeypatch, tmp_path):
     led = S.load_history()
     assert led is not None and len(led) == 1
     pm = S.prior_spread_map()
-    assert abs(pm["AAA"] - 0.04) < 1e-6
+    # GAP DISCIPLINE — COMPARE: the map now carries the row's DATE alongside the value.
+    # Discarding it is what let a multi-session drift be narrated "vs the prior session";
+    # the adjacency test lives in the caller, which is the only party that knows the
+    # current reading's own session (see test_options_gap_discipline.py).
+    assert abs(pm["AAA"]["ivspread"] - 0.04) < 1e-6
+    assert pm["AAA"]["date"] is not None
 
 
 def test_build_snapshot_is_context_only():

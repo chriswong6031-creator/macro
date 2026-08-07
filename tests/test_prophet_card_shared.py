@@ -259,12 +259,31 @@ def test_the_verb_chip_has_no_data_tip():
 
 
 def test_the_trigger_and_caution_disclosures_survived_the_removal():
-    """Guard the removal's blast radius: only the verb chip lost its tip."""
+    """Guard the removal's blast radius — which GREW by a second operator order.
+
+    2026-08-03 took the tip off the verb chip only, and this guard pinned
+    .pv-edge as a survivor. 2026-08-05 extended the same call to .pv-edge and to
+    the feat/new marks: all three are badges whose whole job is to be read at a
+    glance, and their explainers were the longest cards on the board.
+
+    So the radius is re-pinned, not relaxed. What must SURVIVE is unchanged and
+    still asserted — the ⚡ trigger tip and the ⚠N caution popover carry facts
+    that appear nowhere else on the card. What went is now asserted GONE, so a
+    tip creeping back onto a badge fails here rather than passing quietly.
+    """
     trg = re.search(r'<span class="pv-trg[^>]*>', MARKUP)
     assert trg and "data-tip-en" in trg.group(0), "the ⚡ trigger tip was removed too"
     assert 'class="pv-cau-pop"' in MARKUP, "the ⚠ caution popover was removed too"
-    assert re.search(r'<span class="pv-edge"[^>]*data-tip-en', MARKUP), (
-        "the Edge/Priority score tip was removed too"
+
+    edge = re.search(r'<span class="pv-edge"[^>]*>', MARKUP)
+    assert edge, "the Edge slot markup is gone — this guard has gone vacuous"
+    assert "data-tip" not in edge.group(0), (
+        "the Edge/Priority badge regained a hover tip (removed 2026-08-05): "
+        + edge.group(0)
+    )
+    assert "_MK_NOTIP" in MARKUP, (
+        "the feat/new mark tip suppression is gone — the 2026-08-05 removal "
+        "covered those badges too"
     )
 
 

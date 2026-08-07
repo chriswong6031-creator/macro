@@ -71,22 +71,66 @@ R = _load_replay()
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. the reproduction gate
 # ─────────────────────────────────────────────────────────────────────────────
+#: What the cross-age table rebuilds to under the ABSOLUTE SESSION ANCHOR (era
+#: ``abs-session-2026-08-06``, ruling
+#: research/SESSION_ANCHOR_ABSOLUTE_CALENDAR_ADJUDICATION_BY_FABLE.md).
+#:
+#: S-B's frozen table was measured when the 2D/3D buckets were phased to each series' FIRST
+#: timestamp. The anchor repair re-phases them, so a cross that was "0 ticks old" on the old
+#: grid can be 1 tick old on the absolute one — and the table redistributes ACROSS tick
+#: buckets while the population barely moves (109 -> 107 events). Measured:
+#:
+#:   ticks | frozen n -> rebuilt n | frozen loser% -> rebuilt loser%
+#:      0  |    53    ->    43     |    20.8       ->   16.3
+#:      1  |    30    ->    39     |    10.0       ->    7.7
+#:      2  |    26    ->    25     |    11.5       ->    8.0
+#:
+#: The packet's DIRECTIONAL finding survives (loser rate still falls from tick 0 to tick 1
+#: and stays low at 2; median excess still rises with cross age), but every CELL moved.
+#: Per adjudication R5, a pre-era measurement is cited as pre-era and QUEUED for
+#: re-measurement — never silently re-baked — so the frozen JSON is left untouched and this
+#: gate now pins the post-era reproduction instead.
+SB_POST_ERA = {
+    0: {"n": 43, "loser_rate_pct": 16.3, "median_excess_dm_pp": 0.26},
+    1: {"n": 39, "loser_rate_pct": 7.7, "median_excess_dm_pp": 1.5},
+    2: {"n": 25, "loser_rate_pct": 8.0, "median_excess_dm_pp": 2.66},
+}
+
+
 @needs_stores
-def test_reproduces_sb_cross_age_table_exactly():
-    """S-B's by_cross_age_ticks must rebuild cell-for-cell from the committed stores."""
+def test_reproduces_sb_cross_age_table_under_the_current_anchor():
+    """The reproduction gate, re-pinned at the anchor era boundary.
+
+    The gate's PURPOSE is unchanged and undiluted: the cross-age table must rebuild
+    cell-for-cell from the committed stores, so that any further store drift or engine change
+    reds here rather than silently re-anchoring every number in the replay. What changed is
+    WHICH cells: the absolute session anchor moved them once, deliberately and measurably (see
+    SB_POST_ERA), and that one movement is recorded rather than absorbed.
+
+    NOT re-baked: ``superintelligence_standins_results.json`` still holds the PRE-era table
+    and is asserted below to be untouched. The W5.2 packet's verdicts were read against those
+    numbers and are QUEUED for a re-read at a fresh ``REPRO_ASOF`` (adjudication R5) — that
+    re-read is a research decision, not something this suite may make by editing a frozen
+    file. Do NOT widen this comparison to make a future drift pass.
+    """
     gate = R.reproduce_sb(R.load_panel())
-    assert gate["cell_diffs"] == [], (
-        "S-B's frozen cross-age table no longer reproduces from the current stores. "
-        "Do NOT widen this comparison: re-pin the frame at a fresh REPRO_ASOF, re-run "
-        f"the replay, and re-read every verdict against the new anchor. Diffs: {gate['cell_diffs']}")
-    assert gate["status"].startswith("PASS")
-    # the anchor itself, pinned inline so a silently-rewritten frozen JSON is also caught
     rebuilt = {r["ticks"]: r for r in gate["rebuilt"]}
-    assert (rebuilt[0]["n"], rebuilt[1]["n"], rebuilt[2]["n"]) == (53, 30, 26)
-    assert (rebuilt[0]["loser_rate_pct"], rebuilt[1]["loser_rate_pct"],
-            rebuilt[2]["loser_rate_pct"]) == (20.8, 10.0, 11.5)
-    assert (rebuilt[0]["median_excess_dm_pp"], rebuilt[1]["median_excess_dm_pp"],
-            rebuilt[2]["median_excess_dm_pp"]) == (0.1, 0.92, 3.04)
+    for ticks, want in SB_POST_ERA.items():
+        for field, value in want.items():
+            assert rebuilt[ticks][field] == value, (
+                f"cross-age cell (ticks={ticks}, {field}) is {rebuilt[ticks][field]}, "
+                f"expected {value}. The stores or the engine moved AGAIN, on top of the "
+                f"abs-session-2026-08-06 re-phase. Re-pin the frame at a fresh REPRO_ASOF and "
+                f"re-read every verdict — do not widen this comparison.")
+    # the FROZEN pre-era table must still be on disk unmodified: the era boundary is only
+    # meaningful while both sides of it are readable.
+    frozen = json.loads(SB_FROZEN.read_text())["S_B_confirmation"]["by_cross_age_ticks"]
+    pre = {r["ticks"]: r for r in frozen}
+    assert (pre[0]["n"], pre[1]["n"], pre[2]["n"]) == (53, 30, 26), (
+        "the PRE-era frozen table was rewritten — a pre-era measurement is cited as pre-era "
+        "and re-measured under a new REPRO_ASOF, never edited in place (R5)")
+    assert (pre[0]["loser_rate_pct"], pre[1]["loser_rate_pct"],
+            pre[2]["loser_rate_pct"]) == (20.8, 10.0, 11.5)
 
 
 @needs_stores

@@ -50,7 +50,7 @@ CAT_ZH = {
 STAGE_ZH = {
     "initiated": "启动", "escalation": "升级", "live": "进行中", "announced": "已宣布",
     "vote-scheduled": "已定投票", "registered": "已登记", "terminated": "已终止",
-    "filed": "已申报", "notice": "通知", "completed": "已完成", "change": "变动",
+    "filed": "已披露", "notice": "通知", "completed": "已完成", "change": "变动",
     "proxy-fight": "代理权之争", "target-response": "标的回应",
     "closed": "已成交", "de-SPAC": "去SPAC",
 }

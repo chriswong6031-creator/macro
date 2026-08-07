@@ -904,3 +904,69 @@ def test_null_entry_coerces_empty_reason():
     assert entry["reason_null"] == "unspecified"
     entry2 = _null_entry("radar", reason="edge_non_decaying")
     assert entry2["reason_null"] == "edge_non_decaying"
+
+
+# ---------------------------------------------------------------------------
+# (17) [OUTCOME BASIS] the board engines resolve to a magnitude outcome_unit
+# ---------------------------------------------------------------------------
+# _OUTCOME_UNIT_MAP carried track_record but NOT the three boards, even though
+# all four fill outcome_excess from the same non-negative fwd_mfe_<h> proxy with
+# direction pinned to +1 (measured 2026-08-05: board_hk 509 graded rows 0.0%
+# negative, board_ca 330 rows 0.0% negative, board_cn 0 graded rows — no
+# empirical probe can see that one, so the structural label is the only cover).
+# These tests FAIL pre-fix: the boards defaulted to 'signed_excess'.
+# cf. PR #4673 edge_outcomes.py dst_outcome_unsigned_mfe_proxy.
+
+
+@pytest.mark.parametrize("engine", ["hk_board", "ca_board", "cn_board"])
+def test_board_engines_map_to_magnitude_outcome_unit(engine):
+    """[OUTCOME BASIS] hk/ca/cn boards resolve to outcome_unit 'magnitude'."""
+    from engine.neuralweb.half_life import _OUTCOME_UNIT_MAP, _outcome_unit_for
+    assert _OUTCOME_UNIT_MAP.get(engine) == "magnitude", (
+        f"{engine} is missing from _OUTCOME_UNIT_MAP — it would silently "
+        f"default to signed_excess despite using an unsigned fwd_mfe proxy"
+    )
+    assert _outcome_unit_for(engine) == "magnitude"
+
+
+def test_track_record_still_magnitude_and_radar_still_signed():
+    """[OUTCOME BASIS] the pre-existing map entries are unchanged."""
+    from engine.neuralweb.half_life import _outcome_unit_for
+    assert _outcome_unit_for("track_record") == "magnitude"
+    assert _outcome_unit_for("radar") == "signed_excess"
+    assert _outcome_unit_for("an_engine_nobody_registered") == "signed_excess"
+
+
+def test_outcome_unit_prefers_structural_basis_over_the_map():
+    """[OUTCOME BASIS] the rows' ledger outranks the hand-maintained map.
+
+    'radar' is mapped to signed_excess. Rows arriving from an unsigned ledger
+    make it a magnitude regardless — the map is the FALLBACK, not the truth.
+    """
+    from engine.neuralweb.half_life import _outcome_unit_for
+
+    unsigned_rows = pd.DataFrame({
+        "engine": ["radar"] * 3,
+        "outcome_basis": ["unsigned_mfe_proxy"] * 3,
+    })
+    assert _outcome_unit_for("radar", unsigned_rows) == "magnitude"
+
+    signed_rows = pd.DataFrame({
+        "engine": ["track_record"] * 3,
+        "outcome_basis": ["signed_excess"] * 3,
+    })
+    assert _outcome_unit_for("track_record", signed_rows) == "signed_excess"
+
+
+def test_outcome_unit_falls_back_when_basis_absent_or_null():
+    """[OUTCOME BASIS] no column / empty frame / all-null → engine map."""
+    from engine.neuralweb.half_life import _outcome_unit_for
+
+    assert _outcome_unit_for("hk_board", None) == "magnitude"
+    assert _outcome_unit_for("hk_board", pd.DataFrame()) == "magnitude"
+    # Legacy frame with no outcome_basis column at all.
+    legacy = pd.DataFrame({"engine": ["hk_board"], "outcome_excess": [0.02]})
+    assert _outcome_unit_for("hk_board", legacy) == "magnitude"
+    # Column present but all-null.
+    all_null = pd.DataFrame({"engine": ["radar"], "outcome_basis": [None]})
+    assert _outcome_unit_for("radar", all_null) == "signed_excess"
