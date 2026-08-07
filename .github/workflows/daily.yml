@@ -2641,7 +2641,22 @@ jobs:
         # data/us_board_ledger/retro_grades.parquet + site/factordata/us_board_track.json.
         # Context-only (never feeds a score); the ledger accrues forward from here. The commit
         # step below (git add data/ site/) lands both artifacts. Idempotent per as_of. Resilient.
-        run: python -m scripts.grade_us_board --nightly || true
+        #
+        # WAS `|| true`, which cannot fail AND cannot report — ran-clean-no-op, crashed, and
+        # worked-fine all concluded `success` identically. That is how the 2026-07-31..08-06
+        # zero-accrual outage stayed invisible for nine days (the step was in fact innocent:
+        # the breadth close caches were frozen, so nothing could mature). NON-FATAL IS KEPT
+        # DELIBERATELY — this step sits deep in the engine job with NON-always() steps after
+        # it whose ledgers the nightly is also the sole forward advancer of, so a raise here
+        # would silently freeze several unrelated forward ledgers for the night. Same blast
+        # radius as before (the deploy still cannot go red), strictly more information — the
+        # rc is named in the Actions summary, and the module now annotates a zero-accrual
+        # night and a history-truncated checkout on its own. Same idiom as risk_radar_review.
+        run: |
+          set +e
+          python -m scripts.grade_us_board --nightly; rc=$?
+          if [ "$rc" -ne 0 ]; then echo "::warning title=grade_us_board::rc=$rc (non-fatal)"; fi
+          exit 0
       # NOTE (2026-08-06): the Prophet US program's four post-board modules used to sit
       # HERE — emit_prophet_doors, grade_prophet_doors, grade_us_prophet_candidates and
       # run_prophet_miss_audit. They now run in the `us_prophet_ledgers` job (below,
