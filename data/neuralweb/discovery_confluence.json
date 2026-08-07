@@ -1,7 +1,7 @@
 {
   "schema": "discovery_confluence.v1",
   "as_of": "2026-08-07",
-  "generated_at": "2026-08-07T14:13:04.627425+00:00",
+  "generated_at": "2026-08-07T22:11:21.662225+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -166,8 +166,8 @@
       "adoption_positive": true,
       "top_phrases": [],
       "basket_z_scores": {
-        "ai_semiconductors": 2.397,
-        "ai_infra": 2.397
+        "ai_semiconductors": 2.858,
+        "ai_infra": 2.858
       },
       "confidence": "adoption_only"
     },
@@ -180,7 +180,7 @@
       "adoption_positive": true,
       "top_phrases": [],
       "basket_z_scores": {
-        "cybersecurity": 2.589
+        "cybersecurity": 2.721
       },
       "confidence": "adoption_only"
     }
