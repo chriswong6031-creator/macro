@@ -1,25 +1,55 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-07-31",
-  "generated_at": "2026-08-07T08:43:51.448754+00:00",
+  "generated_at": "2026-08-07T17:41:21.054999+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-07-31-GE-20260807084351-1",
+      "id": "2026-07-31-GPCR-20260807174121-1",
+      "ticker": "GPCR",
+      "name": null,
+      "lean": "constructive",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Residual momentum and a favorable entry after a deep drawdown support a base-building scenario, though the deteriorating GLP-1 basket limits conviction.",
+      "evidence": [
+        "Verdict: Constructive \u2014 building a base",
+        "Selection axis: residual momentum (alpha z=0.92)",
+        "Entry axis: favorable (off-high -43.9%, not blocked)",
+        "Board state: FRESH BUY"
+      ],
+      "dissent": "The GLP-1 & Obesity basket deterioration could undermine the thesis if momentum fades and the base fails to hold.",
+      "falsifier": {
+        "text": "Price closes below the base's swing low or residual momentum z-score turns negative.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "GPCR",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-08-28",
+      "engine_verdict": "Constructive \u2014 building a base"
+    },
+    {
+      "id": "2026-07-31-GE-20260807174121-2",
       "ticker": "GE",
       "name": null,
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "GE is building a base with constructive selection axes (revisions, momentum) and a positive entry pullback, though the deteriorating Industrials basket and slightly negative SUE suggest limited upside.",
+      "thesis": "Earnings/revisions/insider confluence and a building base signal constructive potential, tempered by the Industrials basket caution and a turn signal.",
       "evidence": [
-        "revision z=1.01",
-        "entry z=0.68 with off-high and RSI support",
-        "constructive verdict"
+        "Verdict: Constructive \u2014 building a base",
+        "Selection axis: earnings\u00b7insider\u00b7revisions (revision z=1.01, momentum z=0.58)",
+        "Entry axis: favorable (z=0.68, off-high -1.7%)",
+        "Board state: TURN SIGNALED"
       ],
-      "dissent": "SUE z is slightly negative and the Industrials basket headwind could prevent the base from holding, leading to underperformance.",
+      "dissent": "The turn signal and deteriorating Industrials basket could indicate a topping pattern that outweighs the base-building narrative.",
       "falsifier": {
-        "text": "GE breaks below its current base range and the Industrials basket deteriorates further.",
+        "text": "Price breaks below the turn signal's pivot low or the revision momentum reverses sharply.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "GE",
@@ -33,21 +63,22 @@
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
-      "id": "2026-07-31-APH-20260807084351-2",
+      "id": "2026-07-31-APH-20260807174121-3",
       "ticker": "APH",
       "name": null,
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Strong selection signals (fresh SUE, high revisions) and constructive entry support a constructive lean, but the AI Infrastructure basket headwind and cautionary board state keep conviction low.",
+      "thesis": "High-confluence leader with fresh SUE and strong revisions, off its high but not extended; the AI basket caution and turn signal warrant modest conviction.",
       "evidence": [
-        "SUE z=1.11 (fresh 6 days)",
-        "revision z=1.9",
-        "entry z=0.88 with pullback"
+        "Verdict: High-confluence leader (context)",
+        "Selection axis: SUE z=1.11 (fresh 6 days, validated), revisions z=1.9",
+        "Entry axis: favorable (z=0.88, off-high -3.2%)",
+        "Board state: TURN SIGNALED"
       ],
-      "dissent": "The AI Infrastructure basket weakening could signal a theme rotation that overrides positive stock-specific signals, causing relative underperformance.",
+      "dissent": "Deterioration in the AI Infrastructure basket may cap upside, and the turn signal could precede a pullback that erodes the post-earnings drift.",
       "falsifier": {
-        "text": "APH's SUE loses momentum (z < 0.5) and it breaks below its 50-day moving average amid sector rotation.",
+        "text": "AEPS revision momentum decelerates or the stock fails to hold its post-earnings gap.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "APH",
@@ -61,49 +92,51 @@
       "engine_verdict": "High-confluence leader (context)"
     },
     {
-      "id": "2026-07-31-SHOO-20260807084351-3",
+      "id": "2026-07-31-SHOO-20260807174121-4",
       "ticker": "SHOO",
       "name": null,
       "lean": "constructive",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Strong momentum (alpha z=1.33) and a fresh buy board signal support a constructive lean, but accounting watch warrants caution; treat as a lower-conviction constructive play.",
+      "horizon_d": 30,
+      "thesis": "Leader with strong momentum and earnings/revision support, but the accounting watch demands confirmation before adding, keeping conviction low.",
       "evidence": [
-        "alpha z=1.33",
-        "fresh buy state",
-        "revision z=1.01"
+        "Verdict: Leader \u00b7 accounting watch \u2014 confirm before adding",
+        "Selection axis: momentum z=1.33, revisions z=1.01",
+        "Entry axis: favorable (FRESH BUY, urgency now)",
+        "Quality axis: accounting watch flag"
       ],
-      "dissent": "The accounting watch flag could signal hidden issues that impair fundamentals, and the stale SUE (68 days) reduces the earnings surprise edge.",
+      "dissent": "Any negative accounting development could trigger a sharp repricing, undermining the otherwise constructive setup.",
       "falsifier": {
-        "text": "SHOO closes below its recent base breakout level and accounting quality flags intensify.",
+        "text": "A restatement, auditor opinion, or other accounting-red-flag disclosure surfaces, or momentum z-score turns negative.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "SHOO",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 20
+          "horizon_d": 30
         }
       },
-      "check_by": "2026-08-28",
+      "check_by": "2026-09-11",
       "engine_verdict": "Leader \u00b7 accounting watch \u2014 confirm before adding"
     },
     {
-      "id": "2026-07-31-FCX-20260807084351-4",
+      "id": "2026-07-31-FCX-20260807174121-5",
       "ticker": "FCX",
       "name": null,
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Positive entry signals (urgency, off-high, RSI) and quality factors support the base-building verdict in FCX, though the stale SUE and Materials basket deterioration merit only low conviction.",
+      "thesis": "Building a base with favorable entry and quality scores, but stale SUE and Materials basket deterioration limit the upside case.",
       "evidence": [
-        "entry z=0.91 with off-high and urgency",
-        "quality factors z=0.54 and accounting clean",
-        "constructive verdict"
+        "Verdict: Constructive \u2014 building a base",
+        "Selection axis: SUE z=0.73 (stale 90 days), revisions z=0.6",
+        "Entry axis: favorable (z=0.91, off-high -4.9%)",
+        "Quality axis: clean accounting, z=0.54"
       ],
-      "dissent": "SUE is stale and the Materials basket headwind could cause the base to fail, leading to a breakdown.",
+      "dissent": "The Materials basket headwind and a turn signal could overwhelm the modest fundamentals, leading to a breakdown instead of a base.",
       "falsifier": {
-        "text": "FCX breaks below recent support and the Materials basket continues to decline.",
+        "text": "Price closes below the recent swing low or the SUE effect completely fades from the trailing window.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "FCX",
@@ -117,56 +150,29 @@
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
-      "id": "2026-07-31-ABNB-20260807084351-5",
-      "ticker": "ABNB",
+      "id": "2026-07-31-GRAB-20260807174121-6",
+      "ticker": "GRAB",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Selection drivers remain positive (revisions, momentum) and quality is high, but the board's EXTENDED state and entry extension flag make entry unfavorable; neutral is appropriate, not a short.",
+      "thesis": "No clear edge: the only driver is entry, while residual momentum is deeply negative (z=-1.24); the name lacks a validated directional signal.",
       "evidence": [
-        "board state: HOLD - EXTENDED",
-        "entry present: extension",
-        "quality z=1.55"
+        "Verdict: Neutral \u2014 no clear edge",
+        "Selection axis: only residual momentum (negative)",
+        "Entry axis: favorable (off-high -43.1%, but urgency caution)",
+        "No quality or tailwind support"
       ],
-      "dissent": "The extension could resolve via time or mild pullback without breaking trend; a neutral lean misses potential continued outperformance if the base-building holds.",
+      "dissent": "A deep-value bounce from extremely oversold levels could outperform in the short term, defying the absence of momentum.",
       "falsifier": {
-        "text": "ABNB moves above its recent high and sustains the uptrend without a significant pullback.",
+        "text": "Residual momentum z-score crosses above zero or a new fundamental catalyst (SUE, revision) emerges.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
       "check_by": "2026-08-28",
-      "engine_verdict": "Constructive \u2014 building a base"
-    },
-    {
-      "id": "2026-07-31-PLTR-20260807084351-6",
-      "ticker": "PLTR",
-      "name": null,
-      "lean": "cautious",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Despite a very high SUE (2.81), negative momentum (alpha -1.28) and a risky entry (lottery-spike, vol-squeeze) combined with an accounting warning create a bearish setup that likely underperforms.",
-      "evidence": [
-        "alpha z=-1.28",
-        "entry z=-1.49 with lottery-spike",
-        "accounting warn"
-      ],
-      "dissent": "The SUE of 2.81 is a powerful earnings surprise, and the board's fresh buy signal could mark a turning point; if momentum reverses, the cautious lean would be wrong.",
-      "falsifier": {
-        "text": "PLTR's momentum turns positive (e.g., 20-day alpha > 0) and it closes above its 50-day moving average.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "PLTR",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-08-28",
-      "engine_verdict": "Leader \u00b7 accounting warning \u2014 verify before buying"
+      "engine_verdict": "Neutral \u2014 no clear edge"
     }
   ],
   "disclaimer": "Accountable AI judgment on the deterministic top picks. The cross-sectional rank has no validated forward edge; these leans are fallible, falsifiable conditionals graded against reality \u2014 never position sizes. See the track record."
