@@ -143,6 +143,59 @@ def test_drawer_rows_copy_and_tips(subset):
     assert out["empty"] == ""                      # no armed chain -> no rows
 
 
+# ---------------------------------------------------------------------------
+# ENB display clamp — tier 1 never prints more bets than names
+# ---------------------------------------------------------------------------
+@needs_node
+def test_enb_clamps_to_the_name_count_and_discloses_the_raw_value():
+    """The estimator is a factor + per-name bucket composition and can land ABOVE the
+    number of names held (measured live: 3 names, raw 4.06). "Your 3 names move as about
+    4 bets" is not actionable, so tier 1 caps at the count — and the raw reading is
+    DISCLOSED in the Tier-2 method tip rather than quietly dropped."""
+    out = _run(
+        "var i = WRI.enbClamp(4.1, 3); var tip = WRI.enbTipSuffix(i); "
+        "OUT({bets:i.bets, shown:i.shown.toFixed(1), raw:i.raw, clamped:i.clamped, "
+        "verdict:WRI.betCount({enb:4.1, held:['A','B','C']}), "
+        "tipEn:tip&&tip.en, tipZh:tip&&tip.zh});"
+    )
+    assert out["bets"] == 3                    # verdict h2 prints 3, not 4
+    assert out["shown"] == "3.0"               # footer reads "≈ 3.0 of 3 names"
+    assert out["verdict"] == 3
+    assert out["clamped"] is True
+    # the raw value survives into the Tier-2 receipt, in both languages
+    assert "4.1" in out["tipEn"] and "4.1" in out["tipZh"]
+    assert "caps at the count" in out["tipEn"]
+    assert "上限" in out["tipZh"]
+
+
+@needs_node
+def test_enb_below_the_name_count_is_untouched_and_adds_no_tip():
+    """The clamp must be invisible in the ordinary case — otherwise every book grows a
+    disclosure sentence it does not need."""
+    out = _run(
+        "var i = WRI.enbClamp(2.4, 5); "
+        "OUT({bets:i.bets, shown:i.shown.toFixed(1), clamped:i.clamped, "
+        "tip:WRI.enbTipSuffix(i), "
+        "verdict:WRI.betCount({enb:2.4, held:['A','B','C','D','E']})});"
+    )
+    assert out["bets"] == 2 and out["shown"] == "2.4"
+    assert out["clamped"] is False
+    assert out["tip"] is None                  # no dynamic sentence appended
+    assert out["verdict"] == 2
+
+
+@needs_node
+def test_enb_clamp_never_returns_zero_bets():
+    """A one-name book still holds one bet; rounding 0.4 down to 0 would print
+    "moves as about 0 bets"."""
+    out = _run(
+        "OUT({tiny:WRI.enbClamp(0.4, 1).bets, one:WRI.enbClamp(1.0, 1).bets, "
+        "emptyN:WRI.enbClamp(2.0, 0).bets});"
+    )
+    assert out["tiny"] == 1 and out["one"] == 1
+    assert out["emptyN"] == 1
+
+
 @needs_node
 def test_chain_driver_plain_words(subset):
     out = _run(

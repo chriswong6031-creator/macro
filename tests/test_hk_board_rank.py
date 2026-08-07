@@ -524,8 +524,15 @@ class TestFeaturedTurnover:
 
 
 class TestScoreRows:
-    def _row(self, ticker, *, edge_z, status="buy_now", adv=None):
-        row = {"ticker": ticker, "sector": "Tech", "edge_z": edge_z,
+    def _row(self, ticker, *, edge_z, status="buy_now", adv=None, ext_z=0.0):
+        # `ext_z` defaults to a READING, not to absence: since #4684 (B3, 2026-08-06)
+        # `us_board_rank._featured_shortfalls` blocks featured on `ext_z_unknown`, so a
+        # row without one can never be featured and every featured assertion below would
+        # pass for the wrong reason. 0.0 is un-extended and well inside EXT_Z_FULL.
+        # THE REAL HK BOARD SUPPLIES NO ext_z AT ALL — that is a live defect, pinned in
+        # `test_hk_board_ui.py::test_the_hk_board_can_no_longer_feature_anything`, not
+        # something this helper is papering over.
+        row = {"ticker": ticker, "sector": "Tech", "edge_z": edge_z, "ext_z": ext_z,
                "entry_signal": {"status": status},
                "signal": {"tier_cascade": "T2", "ticks": 1, "asof": BOARD_ASOF}}
         if adv is not None:

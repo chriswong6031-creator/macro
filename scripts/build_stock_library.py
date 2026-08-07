@@ -3532,6 +3532,7 @@ def main() -> int:
         elif _zh_alias:
             idx["za"] = _zh_alias       # search-only; theme.js matches, never renders
         attach_latest_volume(idx, ticker, latest_volumes)
+        stock_technicals.attach_chg_1d(idx, rec.get("tech"))   # `c1` — mirrors tech.chg_1d
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
         index.append(idx)

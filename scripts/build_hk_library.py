@@ -2553,6 +2553,7 @@ def main(betas: dict | None = None) -> dict | None:
             ticker, name, sector, rec["ladder"]["state"], name_zh=_HK_NAMES_ZH.get(ticker),
         )
         attach_latest_volume(idx, ticker, latest_volumes)
+        stock_technicals.attach_chg_1d(idx, rec.get("tech"))   # `c1` — mirrors tech.chg_1d
         if rec.get("global_beta", {}).get("beta") is not None:
             idx["gb"] = rec["global_beta"]["beta"]
         index.append(idx)

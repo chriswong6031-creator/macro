@@ -54,10 +54,13 @@ RULING_REF = "research/BIOCATALYST_D0A_DESIGN_ADJUDICATION_2026-08-06.md"
 VERIFIER_REF = "scripts/biocatalyst_browser_verifier.py"
 
 # The pending codes the committed instance is EXPECTED to carry on this base.
-# ``design_adjudication_pending_base`` heals by itself once the named ruling lands on
-# main; ``trusted_browser_capture_pending`` heals only when the verifier has run.
+# ``design_adjudication_pending_base`` has now HEALED: the named ruling landed on main
+# in #4796, so the bound path exists and its bytes hash to the recorded digest, and the
+# validator no longer raises it. Dropping it here is that heal being collected — the
+# assertion below is strictly stronger for it, because a ruling that went missing or
+# drifted a byte would re-raise a code this set no longer tolerates.
+# ``trusted_browser_capture_pending`` heals only when the verifier has actually run.
 COMMITTED_PENDING_CODES = {
-    "product_acceptance_v2.design_adjudication_pending_base",
     "product_acceptance_v2.trusted_browser_capture_pending",
 }
 

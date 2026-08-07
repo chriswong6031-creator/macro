@@ -1,0 +1,58 @@
+{
+  "_schema": "zh_filing_term_allowlist.v1",
+  "_doc": [
+    "Exemptions for scripts/check_zh_filing_term.py.",
+    "",
+    "The law: 申报 is banned from user-facing Chinese copy. A native reader hears a",
+    "TAX or CUSTOMS declaration (申报纳税, 海关申报) — a self-report filed under legal",
+    "compulsion. An SEC 10-K, a 13F, a congressional STOCK Act report is a 披露, a",
+    "disclosure published to the market. Swept by hand twice before this gate existed:",
+    "PR #4830 (Filing Forensics) and PR #4855 (SEC / 13F / congress copy, site-wide).",
+    "",
+    "`allow` licenses an EXACT PHRASE on an EXACT FILE — never a whole file. An",
+    "occurrence is exempt only when it falls inside a licensed phrase's span in a",
+    "licensed file; a bare 申报 elsewhere on the same line still fails, and the same",
+    "phrase in another file still fails. Both invariants are pinned by --selftest.",
+    "",
+    "`pending` is the temporary half: a file whose 申报 is already being removed by an",
+    "open PR. `max_occurrences` freezes today's count as a ratchet — MORE fails hard,",
+    "fewer prints a ::notice asking for the entry to be tightened or dropped. Never",
+    "add a pending entry without an open PR that provably removes the term."
+  ],
+
+  "allow": [
+    {
+      "phrase": "申报失业金",
+      "files": ["engine/release_quirks.py"],
+      "why": "Jobless CLAIMS, not a securities filing. 申报失业金 is 'to file for unemployment benefits' — the citizen-to-state declaration sense, which is precisely correct for the BLS initial-claims holiday-week quirk this string describes. 披露 would be wrong here.",
+      "site": "release quirk `claims_holiday_week`, zh copy for the BLS initial-claims holiday-week adjustment (DOL ETA 5159)"
+    },
+    {
+      "phrase": "买入申报",
+      "files": ["scripts/collect_hk_connect_roster.py"],
+      "why": "SSE/HKEX order-entry term of art ('buy order entry'), not a disclosure. It appears in TITLE_EXCLUDE, the scraper's negative filter for exchange announcements about trading mechanics — upstream exchange vocabulary this platform matches on, never copy it authors.",
+      "site": "TITLE_EXCLUDE tuple, alongside 波动调节 / 竞价 / 额度 / 风险提示"
+    }
+  ],
+
+  "pending": [
+    {
+      "file": "templates/index.html",
+      "pr": 4765,
+      "max_occurrences": 9,
+      "why": "The landing page's filings copy (盯紧申报, 打开申报台席, 申报即录, ...). Open PR #4765 rewrites all 9 to native-Chinese phrasing and its head carries 0 — verified 2026-08-07 against refs/pull/4765/head. Fixing it here instead would collide with that PR on a plain-copy PAIRED asset (templates/index.html must byte-match site/index.html), which is the two-partial-heals deadlock the house law warns about. Drop this entry once #4765 lands."
+    },
+    {
+      "file": "templates/fundamental_forensics.html.j2",
+      "pr": 4830,
+      "max_occurrences": 5,
+      "why": "Filing Forensics zh copy (申报轨迹, 申报表格, 申报日期). Open PR #4830 removes all of it — its head carries 0, verified 2026-08-07 against refs/pull/4830/head. Drop this entry once #4830 lands."
+    },
+    {
+      "file": "templates/fundamental_forensics.js",
+      "pr": 4830,
+      "max_occurrences": 12,
+      "why": "Same surface, client half (申报前言, 申报索引, 申报于, 期间 / 申报日, ...). Open PR #4830 removes all of it — its head carries 0, verified 2026-08-07 against refs/pull/4830/head. Drop this entry once #4830 lands."
+    }
+  ]
+}

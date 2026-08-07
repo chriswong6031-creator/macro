@@ -5012,6 +5012,8 @@ jobs:
       COLLECT_LANE: nightly   # job-level sentinel — see the note above; the forward-ledger
                               # advance gate for three of the four steps below.
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -5115,6 +5117,9 @@ jobs:
           done
           push_lost
           echo "::warning::could not push prophet ledger artifacts after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 60
 
   # AI stock-research briefs = ~30 DeepSeek calls (~20 min) — the heaviest single
   # step in the build, and what pushed the engine job past its timeout. build_site
