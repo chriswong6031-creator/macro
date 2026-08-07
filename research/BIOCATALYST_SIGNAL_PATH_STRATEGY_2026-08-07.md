@@ -79,6 +79,45 @@ The kill is construction-scoped, and two doors are explicitly left open:
 
 ## 4. The four moves, ranked
 
+### CORRECTION (2026-08-07, from the built evidence) — Move 1 IS blocked, on a SOURCE
+
+This section originally said Move 1 was "not blocked", reasoning that trial outcome families
+are NCT-keyed and therefore need no ticker. **The identity half was right and the conclusion
+was wrong.** The `BC-O1b` build (PR #4944) evaluated every family's entry gate against the real
+registry and found that **no family clock can open today**, for a reason I had not checked:
+
+- Every trial family's gate names **`clinicaltrials_gov_record_history`**, which carries
+  `production_ingest_allowed: false` and `rights_state: operator_review_required_before_enable`.
+- `timing_slip` and `enrollment_site_change` require **only** that source.
+  `trial_progression_termination` and `endpoint_readout` require it alongside `clinicaltrials_gov_v2`.
+- Measured on `origin/main`: **exactly 1 of 8** registered BioCatalyst sources is
+  production-ingest-allowed.
+
+I checked the identity gate, found it clear, and stopped — naming the first gate I checked
+rather than the one that actually binds. The corrected statement is:
+
+> **Forward accrual is blocked on a SOURCE ACTIVATION decision, not on identity.** The clock
+> cannot start until an operator completes a rights review and enables Record History ingest.
+
+**One operator act unblocks three families.** Flipping `production_ingest_allowed: true` on
+`clinicaltrials_gov_record_history` opens `trial_progression_termination`, `timing_slip` and
+`enrollment_site_change` on the next evaluation **with no code change**. That is pinned by
+`tests/test_biocatalyst_m0a_clock_activation.py::test_the_trial_families_would_open_once_their_source_is_eligible`,
+which runs the evaluator against a widened registry and asserts `clock_state == opened` with
+zero blockers. `endpoint_readout` stays closed even then, on a second declared blocker
+(`endpoint_alignment_review_queue_not_drained`).
+
+**Why nothing was opened anyway.** Opening a clock over an un-ingestable source would accrue
+nothing while later reading as "accruing since 2026-08-07" — precisely the fabrication this
+program exists to prevent. The machinery is built, tested, and inert; the receipt is the
+authority, not the config file, so no edit can claim an open clock.
+
+**Consequence for the ranking below:** Move 1 remains the highest-value move and its *code* is
+now done, but its clock is an **operator decision**, and that decision is the single highest-value
+action available to this program. Everything downstream — calibration, promotion, any clinical
+signal at all — is gated behind it, and every day it waits is a day of forward evidence never
+recorded.
+
 ### Move 1 — START THE FORWARD CLOCK (`BC-O1b` + `M0a` family activation). Do this first.
 
 Highest time-value and **not blocked**. Trial-level outcome families — progression/termination,
