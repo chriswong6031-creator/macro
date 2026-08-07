@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T23:59:15.758090+00:00",
-  "count": 905,
+  "generated_at": "2026-08-07T00:29:18.793535+00:00",
+  "count": 906,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -380,6 +380,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-au9bsni3jek-6addbe",
+      "title": "eBay Inc. (EBAY) Q2'26 Earnings Review",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:51:44Z",
+      "summary_points": [
+        "**Strategic Shift & Guidance Upgrade**: Q2 beat on GMV/revenue/operating income; C2C/ReCommerce >70% GMV; raised FY26 GMV guidance to 11.5-12.5% YoY (vs 7-7.5%) and Non-GAAP Op Income to 10-12% YoY; $1.4bn Depop acquisition to accelerate fashion growth.",
+        "**Valuation & Margin Strength**: P/E declining (18.2→14.6) signals potential undervaluation; EBITDA growth accelerating (10.6→14.0→8.5) and stable gross margins (72.4→73.6) indicate pricing power and growth momentum.",
+        "**Depop Integration Risk**: Expected to cut near-term operating income growth by 3-4 points due to competitive dynamics; management’s execution on AI/LLMs and category focus critical for sustained growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
