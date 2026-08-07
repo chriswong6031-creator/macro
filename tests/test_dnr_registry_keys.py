@@ -12,6 +12,14 @@ anchor. These tests keep that contract enforceable:
   2. Compiler — a Key column round-trips into config/compiled_kill_registry.yml,
      duplicate keys hard-fail, and keyless tables (fixtures, older forks) still
      compile.
+  3. Column ARITY — a row with more cells than its header is silently truncated by
+     ``_parse_markdown_table``'s ``zip(headers, cells)``, which shifts every column
+     one place left and drops the last one entirely. That is invisible to (1): the
+     shifted Key still matches the key regex and the section prefix, so a malformed
+     row reads as a well-formed one. #4625 shipped exactly this — the key was pasted
+     twice, so the compiled registry carried ``topic: 'KILL-LIQUIDITY-SHOCK-REVERSAL-
+     CLASSIFIER'`` (a key as a topic), the topic as the verdict, the verdict as the
+     source, and the real source nowhere at all.
 """
 from __future__ import annotations
 
@@ -36,6 +44,53 @@ def _load_compiler():
 
 _SECTION_PREFIX = {1: "KILL-", 2: "KILL-", 3: "LAW-", 4: "HOLD-"}
 _KEY_RE = re.compile(r"^(KILL|LAW|HOLD)-[A-Z0-9][A-Z0-9-]+$")
+_SECTION_RE = re.compile(r"^##\s+(\d+)\.")
+_SEPARATOR_RE = re.compile(r"^[-:]+$")
+
+
+_CELL_BOUNDARY_RE = re.compile(r"(?<!\\)\|")
+
+
+def _cells(line: str) -> list[str]:
+    """Split a GFM pipe row on UNESCAPED boundaries.
+
+    Written out here rather than imported from the compiler on purpose: this is the
+    reference the arity test measures the file against, and importing the splitter
+    under test would make the guard agree with whatever the compiler currently does.
+    """
+    inner = line.strip()
+    if inner.startswith("|"):
+        inner = inner[1:]
+    if inner.endswith("|") and not inner.endswith("\\|"):
+        inner = inner[:-1]
+    return [c.strip().replace("\\|", "|") for c in _CELL_BOUNDARY_RE.split(inner)]
+
+
+def _real_table_rows():
+    """Yield ``(section, header_cells, line_number, row_cells)`` for sections 1-4.
+
+    Deliberately re-derived here rather than reused from the compiler: the compiler
+    is what loses the overflow cell, so a guard that asks the compiler how many cells
+    a row had can only ever get the truncated answer back.
+    """
+    md = (_repo_root() / "research" / "DO_NOT_REBUILD.md").read_text(encoding="utf-8")
+    section, header = None, None
+    for lineno, line in enumerate(md.splitlines(), 1):
+        m = _SECTION_RE.match(line)
+        if m:
+            section, header = int(m.group(1)), None
+            continue
+        if section not in _SECTION_PREFIX:
+            continue
+        if not line.strip().startswith("|"):
+            continue
+        cells = _cells(line)
+        if header is None:
+            header = cells
+            continue
+        if all(_SEPARATOR_RE.match(c.replace(" ", "")) for c in cells if c):
+            continue
+        yield section, header, lineno, cells
 
 
 # ---------------------------------------------------------------------------
@@ -70,6 +125,27 @@ class TestRealRegistryKeys:
         keys = [e["key"] for e in self._entries()]
         dupes = sorted({k for k in keys if keys.count(k) > 1})
         assert not dupes, f"duplicate registry keys (citations would be ambiguous): {dupes}"
+
+    def test_every_row_has_exactly_its_header_arity(self):
+        """The defect the three tests above cannot see.
+
+        ``_parse_markdown_table`` pads a SHORT row but truncates a LONG one through
+        ``zip(headers, cells)``. A row with one extra cell therefore parses cleanly
+        with every column shifted one place — key-shaped Key, topic-shaped Verdict —
+        and the final column silently dropped. Arity is the only place that shows.
+        """
+        bad = []
+        for section, header, row, cells in _real_table_rows():
+            if len(cells) != len(header):
+                bad.append(
+                    f"§{section} row {row}: {len(cells)} cells vs {len(header)}-column "
+                    f"header — starts {cells[0][:48]!r}"
+                )
+        assert not bad, (
+            "DO_NOT_REBUILD.md rows whose cell count does not match their header. "
+            "zip() truncates the overflow and shifts every column left, so this ships "
+            f"as a well-formed-looking entry: {bad}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -113,6 +189,54 @@ class TestCompilerKeyHandling:
         compiler = _load_compiler()
         dup = _KEYED_MD.replace("KILL-BETA", "KILL-ALPHA")
         assert compiler.compile_blocklists(_setup(tmp_path, dup)) == 1
+
+    def test_an_escaped_pipe_is_a_literal_bar_not_a_cell_boundary(self, tmp_path: Path):
+        """Pins the COMPILER's splitter, which the arity test above cannot reach.
+
+        The arity test re-derives its own escape-aware split on purpose, so it stays
+        green no matter what the compiler does — reverting `_split_row` to a plain
+        `.split("|")` does not fail it. This is the assertion that fails instead.
+
+        Two rows shipped mis-split by exactly that: `\\|ρ\\|` in KILL-PM4-OVERHEAD-SUPPLY
+        compiled to verdict `'REDUNDANT — \\'` / source `'ρ\\'`, and the conditional-
+        expectation bar in KILL-PER-SIGNAL-FAMILY-RELIABILITY pushed its ruling out of
+        the row entirely. Both are cells that legitimately contain a bar.
+        """
+        compiler = _load_compiler()
+        md = _KEYED_MD.replace(
+            "| KILL-ALPHA | Alpha topic | FORBIDDEN | R-1 |",
+            r"| KILL-ALPHA | Alpha topic | REDUNDANT — \|ρ\| 0.95 vs ext_atr | R-1 |",
+        )
+        entries = compiler.parse_do_not_rebuild(md)
+        alpha = next(e for e in entries if e.get("key") == "KILL-ALPHA")
+        assert alpha["topic"] == "Alpha topic"
+        assert alpha["verdict"] == "REDUNDANT — |ρ| 0.95 vs ext_atr"   # unescaped
+        assert alpha["source"] == "R-1"                                # not shifted away
+
+    def test_an_extra_cell_shifts_every_column_and_drops_the_last(self, tmp_path: Path):
+        """Pins the MECHANISM behind #4625, not just the row it produced.
+
+        A doubled Key gives the row five cells against a four-column header. The
+        parser's ``zip()`` keeps the first four, so `topic` becomes the real key,
+        `verdict` becomes the topic, and the source vanishes — with no error. The
+        arity test above is the only thing that can see it, so this proves the
+        arity test is guarding a real failure and not a hypothetical one.
+        """
+        compiler = _load_compiler()
+        doubled = _KEYED_MD.replace(
+            "| KILL-ALPHA | Alpha topic | FORBIDDEN | R-1 |",
+            "| KILL-ALPHA | KILL-REAL-KEY | Alpha topic | FORBIDDEN | R-1 |",
+        )
+        entries = compiler.parse_do_not_rebuild(doubled)
+        shifted = next(e for e in entries if e.get("key") == "KILL-ALPHA")
+        assert shifted["topic"] == "KILL-REAL-KEY"   # a key parsed as a topic
+        assert shifted["verdict"] == "Alpha topic"   # the topic parsed as a verdict
+        assert shifted["source"] == "FORBIDDEN"      # the verdict parsed as a source
+        assert "R-1" not in str(shifted)             # the real source: gone
+
+        # ... and the arity check is what turns that silence into a failure.
+        header = ["Key", "Topic", "Verdict", "Ruling / source"]
+        assert len(_cells("| KILL-ALPHA | KILL-REAL-KEY | Alpha topic | FORBIDDEN | R-1 |")) != len(header)
 
     def test_keyless_tables_still_compile(self, tmp_path: Path):
         """Backward compat: 3-column fixtures (and any older fork) stay green."""

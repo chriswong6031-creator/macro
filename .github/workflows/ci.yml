@@ -215,6 +215,16 @@ on:
       # flip-isolation construction still isolates exactly one leg.
       - "research/prophet_us_audit/reclaim_veto_packet.py"
       - "tests/test_us_reclaim_veto_packet.py"
+      # Versioned FROZEN research price panel (research-price-panel job). Both halves per
+      # #3488: the suite AND every module it measures. The writer/reader own the write-once
+      # and never-fall-back properties; price_ladder.py is the adjusted-first resolver they
+      # reuse from #4698 (vendored byte-identical — a drifted copy is a silent basis change);
+      # relay_position_standin.py is the worked migration whose pinned version the suite's
+      # contract documents. An edit to any of them must be able to start the job.
+      - "research/research_panels/price_panel.py"
+      - "research/prophet_us_audit/price_ladder.py"
+      - "research/prophet_us_audit/relay_position_standin.py"
+      - "tests/test_research_price_panel.py"
       # The two evidence files the SAME suite reads by path literal. #4652 taught
       # tests/test_merge_on_green.py to read the reclaim-veto packet's write-up and its
       # frozen results as a worked example, and scripts/check_ci_trigger_closure.py has
@@ -650,6 +660,18 @@ on:
       - "tests/test_government_revenue_wave8_api.py"
       - "tests/test_government_revenue_workspace.py"
       - "tests/test_usaspending_idv_graph.py"
+      # Recipient->issuer attribution (job: unrun-government-revenue, wired
+      # 2026-08-06). engine/** already covers entity_resolution.py and
+      # scripts/*.py the proposal tool, but both halves are listed on purpose:
+      # a test-only edit, or a re-pinned EX-21 fixture, must re-run the suite
+      # that measures it. The fixtures are two VERBATIM SEC exhibits pinned by
+      # sha256 — swapping one for a synthetic is exactly the edit that has to
+      # retrigger. (test_government_revenue_recipient_graph.py and
+      # test_government_revenue_entity_resolution.py are already named in the
+      # darkness-backfill list directly above.)
+      - "scripts/propose_government_revenue_recipient_graph.py"
+      - "tests/test_propose_government_revenue_recipient_graph.py"
+      - "tests/fixtures/govrev_issuer_evidence/**"
       # W3 CNH part B: the five native flash wires + the forward calendar organ.
       # engine/** is NOT a blanket trigger here, so each of these must be named or a
       # parser/aggregator edit merges with the suite unrun. test_cn_newswires.py was
@@ -1298,6 +1320,14 @@ on:
       - "tests/test_codex_provider.py"
       - "tests/test_key_pool.py"
       - "tests/test_key_pool_economy.py"
+      # The local rung of that same waterfall + the usage ledger it writes to.
+      # Untriggered until 2026-08-07: a PR touching only lib/ai_costs.py or the
+      # ollama provider scheduled no ci.yml at all, so the mis-attribution that
+      # billed free local calls to the Claude subscription lane had no gate.
+      - "engine/ollama_provider.py"
+      - "tests/test_ollama_provider.py"
+      - "lib/ai_costs.py"
+      - "tests/test_ai_costs.py"
       - "scripts/metabolism_build.py"
       - "scripts/metabolism_dispatch.py"
       # V7 PR Audit gate (R-V7-1..6): audit engine, CLI, merge gate, workflow, test.
@@ -2206,6 +2236,7 @@ on:
       - "tests/test_us_board_ledger_continuity.py"
       - "tests/test_us_board_outcomes.py"
       - "tests/test_us_board_outcomes_strip.py"
+      - "tests/test_us_board_zero_accrual_alarm.py"
       - "scripts/audit_claim_accountability.py"
       - "scripts/grade_us_board.py"
       # unrun-intl-libraries — China / HK / Canada library writers behind the international surfaces
@@ -3170,6 +3201,25 @@ on:
       # needs an entry.
       # billing-offers
       - "tests/test_billing_offers.py"
+      # ── RED-on-arrival sweep, batch D: the P4/P5 re-drain (2026-08-06) ──────
+      # A fresh census re-ran all 959 currently-unrun suites one process each. 951
+      # pass; 8 are genuinely red on main, and these three are the cheap unclaimed
+      # ones. Every subject rides a catch-all above — engine/** for levels_engine
+      # and cycle_pattern, research/DO_NOT_REBUILD.md + scripts/*.py for the kill
+      # registry and its compiler — so only the test halves need entries, and
+      # tests/** is deliberately NOT broad.
+      #
+      # The registry pair is why the test half matters most here: the DNR guard's
+      # subject is a MARKDOWN FILE that agents append to, and an append is precisely
+      # the edit that must run it. That half was already listed (the compiled-registry
+      # cluster above); this adds the guard's own half so a fix to the GUARD is
+      # covered too — the "both halves on purpose" rule this list keeps re-learning.
+      # capability-broker
+      - "tests/test_dnr_registry_keys.py"
+      # unrun-market-plumbing
+      - "tests/test_levels_engine.py"
+      # unrun-neuralweb-cortex
+      - "tests/test_cycle_pattern_lake.py"
       # ── Stripe object bootstrap (tier rename, Phase 2) ──────────────────────
       # scripts/stripe_bootstrap.py reaches this workflow by NO other path, and
       # its renamed-product adoption is the step that decides whether a live
@@ -3177,6 +3227,21 @@ on:
       - "scripts/stripe_bootstrap.py"
       - "tests/test_stripe_bootstrap_offers.py"
       - "tests/test_stripe_bootstrap_products.py"
+      # ── Breadth OHLC basis coherence (2026-08-06 split-basis incident) ──────
+      # BOTH halves plus BOTH repair paths listed on purpose. The guard's whole
+      # subject is that _high/_low can drift onto a different yfinance
+      # adjustment basis than _closes while every existing scanner looks only at
+      # the closes matrix — so an edit to either writer is exactly the edit that
+      # must start this lane. collectors/breadth.py owns _merge_refreshed's
+      # extras graft (the `t in w.columns` filter that can heal closes and leave
+      # the extras poisoned); heal_breadth_split_seams.py rewrites the extras
+      # only for closes-flagged tickers. Neither reaches this workflow by any
+      # other pattern, and a trigger gap here is the same shape as the hole the
+      # guard exists to close (check_ci_trigger_closure).
+      - "scripts/check_ohlc_basis_coherence.py"
+      - "tests/test_check_ohlc_basis_coherence.py"
+      - "collectors/breadth.py"
+      - "scripts/heal_breadth_split_seams.py"
       # ── Government Revenue Wave 9G prospective grader (2026-08-06) ──────────
       # Job: unrun-government-revenue-grader (.github/ci/legacy-jobs.yml, tail).
       # Deliberately a separate block from the Government Revenue cluster near

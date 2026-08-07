@@ -1116,7 +1116,8 @@ jobs:
           python -m pytest
           tests/test_biopharma_seasonality_foundation.py
           tests/test_stock_seasonality_engine.py
-          tests/test_seasonality_event_clock.py -q
+          tests/test_seasonality_event_clock.py
+          tests/test_seasonality_pit_spine.py -q
 
   china-native-collectors:
     if: ${{ false }}
@@ -2330,6 +2331,18 @@ jobs:
         run: python -m pytest tests/test_metabolism_v4_w3_mission.py -q
       - name: blocklist drift check (compiled registry must match DO_NOT_REBUILD.md)
         run: python3 scripts/check_blocklist_drift.py
+      # Wired 2026-08-06: named by NO run: step since it landed, and untriggerable
+      # (P3, strictly dark) — so the registry every session is told to read before
+      # proposing work had no executing guard at all. It was red on main, and while
+      # dark it also let two more defects ship that no other check can see: a row
+      # whose Key was pasted twice (#4625) and a `\ |` typo for `\|`, both of which
+      # overflow the 4-column header. `zip(headers, cells)` truncates the overflow
+      # and shifts every column left, so the compiled registry carried a key as a
+      # topic, a topic as a verdict, and lost the ruling entirely — while the key
+      # still looked well-formed. Sits with the drift check above because it guards
+      # the same two files, and needs nothing the install line does not already have.
+      - name: DO_NOT_REBUILD key contract — section prefixes, uniqueness, column arity
+        run: python -m pytest tests/test_dnr_registry_keys.py -q
       - name: metabolism v4 w1 suite (real BUILD dispatch — R-V4-2)
         run: python -m pytest tests/test_metabolism_v4_w1_dispatch.py tests/test_metabolism_buildlane.py -q
       # tests/test_ollama_provider.py joins its siblings 2026-08-06. It was DARK
@@ -2338,8 +2351,12 @@ jobs:
       # executed by CI. It rides here rather than in a marketing pack because
       # the module it covers is a PROVIDER: llm_auth (already on this line) is
       # what constructs OllamaClient, and this job's deps already carry it.
-      - name: llm auth waterfall + multi-key failover suite
-        run: python -m pytest tests/test_codex_provider.py tests/test_llm_auth.py tests/test_key_pool.py tests/test_ollama_provider.py -q
+      - name: llm auth waterfall + multi-key failover + usage-ledger attribution suite
+        # tests/test_ai_costs.py joins it 2026-08-07: the ledger the local rung
+        # writes to was dark too, which is how _capture_usage could bill free
+        # Ollama calls to the Claude subscription lane unnoticed.  It guards the
+        # same waterfall as the files beside it — keep it in this step.
+        run: python -m pytest tests/test_codex_provider.py tests/test_llm_auth.py tests/test_key_pool.py tests/test_ollama_provider.py tests/test_ai_costs.py -q
       - name: V10 key economy suite (enabled-set, header capture, usage snapshot)
         run: python -m pytest tests/test_key_pool_economy.py -q
       - name: cortex provider routing + tool loop suite
@@ -3501,6 +3518,8 @@ jobs:
           tests/test_biocatalyst_discovery.py
           tests/test_biocatalyst_fixed_cohort.py
           tests/test_biocatalyst_f0_delta_and_closed_beta_manifest.py
+          tests/test_biocatalyst_packet_producer.py
+          tests/test_biocatalyst_packet_reader.py
           tests/test_sector_intelligence_ownership.py -q
       - name: BioCatalyst D0a finite reference integrity
         run: python scripts/verify_biocatalyst_d0a_references.py --reference-integrity
@@ -3557,29 +3576,29 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        # numpy/pandas/pyarrow are NOT optional here despite this being a "pure
-        # publisher" job: tests/test_marketing_publish_time_content.py's
-        # _write_proxy_bars helper builds correlated OHLCV bars with
-        # numpy.random.default_rng + pandas.bdate_range and lands them via
-        # DataFrame.to_parquet (pyarrow). The declaration was never widened when
-        # that helper landed, so the job passed only while its venv happened to
-        # carry them — `run_ci_pack.py` shares an environment across legacy jobs
-        # whose install commands are byte-identical, which makes the gap depend on
-        # pack composition rather than on anything in this job. It surfaced as
-        # `ModuleNotFoundError: No module named 'numpy'` (9 failures, run
-        # 31127503582) the moment an unrelated PR re-balanced the packs. Declare
-        # what the suites import; never rely on a neighbour's environment.
+        # numpy + pandas + pyarrow joined 2026-08-06. #4646 ("tag the theme's own
+        # ticker, and name the most-watched member") added nine theme-proxy tests
+        # to test_marketing_publish_time_content whose fixture builds correlated
+        # bars — `rng.normal` + `pd.DataFrame(...).to_parquet(...)` under the tree
+        # theme_proxy.cohesion reads — so this lane is NOT pandas-free any more.
+        # The pack runner gives each dependency group a CLEAN `python -m venv`, so
+        # the closure has to be complete or the red just moves: measured on main,
+        # `pytest pyyaml` → 9 red on numpy, +numpy → 9 red on pandas, +pandas → 23
+        # red because the 14 test_marketing_weekend_levels tests that used to
+        # importorskip now WAKE UP and want pyarrow, +pyarrow → 450 pass, 0 skip.
+        # Do not trim this back to numpy alone, and do not importorskip the nine —
+        # this pack is the only job that runs #4646's guard suite.
         run: pip install pytest pyyaml numpy pandas pyarrow
       - name: social publisher + outbox + wiring-layer unit tests
         # test_marketing_live_verify is co-run: the post-time tape gate ships
-        # inside the publisher loop (pandas-free here — its earnings guard is
-        # fail-soft and the one pandas-dependent test importorskips).
+        # inside the publisher loop (its earnings guard is fail-soft).
         # test_marketing_metrics_poll: the per-post metrics poller + admin join +
-        # publisher media-attach gate — stdlib+pyyaml only (Buffer transport mocked).
+        # publisher media-attach gate (Buffer transport mocked).
         # test_marketing_weekend_levels joins (2026-07-27): it was named by NO
         # run step anywhere (unrun-suite rot) while its lane shipped the $AVGO
         # "POC held" post. Covers the cited-level chart contract + the floor
-        # copy's language bar; its one pandas test importorskips here.
+        # copy's language bar; its pandas tests used to importorskip here and now
+        # run for real on the deps above.
         # test_marketing_publish_time_read joins 2026-07-28 (XG-W1). It was named
         # by NO job — an unrun suite guarding the daily-read lane's account
         # eligibility. XG-W1 changed exactly that code path (per-call lanes now
@@ -3587,7 +3606,7 @@ jobs:
         # allowlist), and the suite went red locally on the first run: two of its
         # multi-account tests were asserting behaviour the fix deliberately
         # narrows. Unrun, that would have been a silent rot. Same deps as the
-        # rest of this lane (pytest + pyyaml), verified green.
+        # rest of this lane, verified green.
         run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py tests/test_marketing_publish_time_read.py tests/test_marketing_outbox_garbage.py tests/test_marketing_metrics_poll.py tests/test_marketing_weekend_levels.py -q
 
   marketing-media-pipeline:
@@ -4579,6 +4598,12 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: grade_us_board outcome ledgers + tenure stamp + the strip it renders
         run: python -m pytest tests/test_board_tenure_stamp.py tests/test_us_board_outcomes.py tests/test_us_board_outcomes_strip.py -q
+      - name: grade_us_board zero-accrual + truncated-history alarms
+        # The nightly recorded nothing for nine days (2026-07-31..08-06) while the step
+        # concluded `success`; these pin that the alarms fire, name the cause, and stay
+        # quiet on a healthy night. An unrun guard is not a guard — this suite is named
+        # here because ci.yml has no broad `pytest tests/`.
+        run: python -m pytest tests/test_us_board_zero_accrual_alarm.py -q
       - name: claim accountability + track-record dialog + onboarding compare matrix
         run: python -m pytest tests/test_claim_accountability.py tests/test_track_record_dlg.py tests/test_onboard_compare_matrix.py -q
       # Board continuity — both suites shipped 2026-08-05 (#4554, #4557) named by
@@ -4706,6 +4731,17 @@ jobs:
       # this job's exact dependency set: 270 passed in 19s.
       - name: award-event spine, candidate/projection, entity + workspace contracts
         run: python -m pytest tests/test_government_revenue.py tests/test_government_revenue_award_events.py tests/test_government_revenue_award_spine.py tests/test_government_revenue_api.py tests/test_government_revenue_budget_graph.py tests/test_government_revenue_candidate_api.py tests/test_government_revenue_candidate_projection.py tests/test_government_revenue_candidates.py tests/test_government_revenue_contracts.py tests/test_government_revenue_entity_resolution.py tests/test_government_revenue_freshness.py tests/test_government_revenue_idv_dossiers.py tests/test_government_revenue_neuralweb.py tests/test_government_revenue_opportunities.py tests/test_government_revenue_recipient_graph.py tests/test_government_revenue_subaward_dossiers.py tests/test_government_revenue_wave8_api.py tests/test_government_revenue_workspace.py tests/test_usaspending_idv_graph.py -q
+      # Recipient->issuer attribution: the Wave 9D discovery tool that proposes
+      # candidates for the reviewed graph. Named by NO run: step until 2026-08-06 —
+      # the proposal tool's 60 tests could not go red on main, which is the same
+      # shape as a guard that does not exist. jsonschema (installed above) is the
+      # suite's only extra import. Its two siblings — the graph runtime
+      # (test_government_revenue_recipient_graph.py) and the resolver
+      # (test_government_revenue_entity_resolution.py) — are already enumerated by
+      # the darkness-backfill step directly above, in this same job with this same
+      # dependency set, so they are not repeated here.
+      - name: recipient entity graph — the Wave 9D proposal tool
+        run: python -m pytest tests/test_propose_government_revenue_recipient_graph.py -q
 
   unrun-factor-research:
     # factor registry + measurement disclosure + the study lanes behind them.
@@ -5003,6 +5039,17 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: neural-web cortex world-state consumers + the factor-contradiction plane
         run: python -m pytest tests/test_build_active_build_map.py tests/test_build_cycle_pattern_state.py tests/test_factor_contradictions.py tests/test_nw_consumers_w3.py tests/test_nw_health_escalation.py tests/test_options_nw_wiring.py tests/test_til_nw_citizenship.py tests/test_world_state_special_sits.py tests/test_world_state_stage_analysis.py -q
+      # Wired 2026-08-06: the CPI substrate that test_build_cycle_pattern_state.py (in
+      # the step above) builds ON, dark since it landed and red on main. Its family
+      # cardinalities were frozen literals over stores the nightly grows — the code
+      # comment said 46 us_baskets, the literal said 47, data/baskets/membership.json
+      # had reached 48 — so the suite could only ever rot. Retargeted to assert the
+      # registry MIRRORS each source artifact by native id (drops and duplicates both
+      # fail; a legitimately widened universe does not). Separate step, not appended
+      # to the run line above: ~32 s serial against a 4-minute cap that the existing
+      # step uses ~14 s of, and a separate step names the failure when it is this one.
+      - name: cycle-pattern substrate — entity registry mirrors its artifacts + monthly state lake
+        run: python -m pytest tests/test_cycle_pattern_lake.py -q
 
   unrun-vector-baskets:
     # vector allocation surfaces + the calibration ledger and basket pulse they read.
@@ -5295,6 +5342,17 @@ jobs:
       # WP-C1 grader suites that were never CI-named (the named-test-files trap).
       - name: Level Report Card — grade-summary publisher (Wilson CI vs null, coverage honesty)
         run: python -m pytest tests/test_level_grades_summary.py tests/test_levels_grade_nulls.py tests/test_levels_grade.py tests/test_levels_track_record_rebase.py -q
+      # Wired 2026-08-06: the ENGINE the four grader suites above grade, and the only
+      # one of the family named by no run: step. Red on main — three tests still
+      # asserted the pre-retirement contract where an absent gamma_flip was
+      # interpolated out of by_strike. `_flip_from_rows` is retired (a flip is the
+      # spot at which the RE-PRICED book has zero net dealer gamma, which the ladder
+      # cannot express — charting-app gamma-flip-defect-rca.md), so the engine renders
+      # an honest null. Nothing went red because nothing ran it. Retargeted to pin the
+      # retirement, which is what keeps a fabricated flip from coming back.
+      # Same import closure as the step above (engine/levels_engine.py, pytest only).
+      - name: Levels engine — anchor/walls/clusters and the retired gamma-flip reconstruction
+        run: python -m pytest tests/test_levels_engine.py -q
       # MSC R3.2/R3.3 (2026-08-02): the cross-root gex_state _index.json aggregator
       # (lib/gex_state_index.py, called from build_gex_board). Wired at birth — pure
       # stdlib json/pathlib, no new wheels.
@@ -5637,6 +5695,37 @@ jobs:
       - name: themes heatmap + Theme Tracker page (full suite; portfolio-ctx keeps its subset)
         run: python -m pytest tests/test_themes_heatmap.py tests/test_state_of_themes.py -q
 
+  ohlc-basis-coherence:
+    # The breadth OHLC caches must share ONE yfinance adjustment basis across
+    # _closes_cache / _high_cache / _low_cache. 2026-08-06 incident: the extras
+    # drifted ~30% below closes (REZI close/high 1.29-1.44 on 773 of 773 bars)
+    # and NOTHING saw it — both repair paths (BreadthAdapter._merge_refreshed and
+    # scripts/heal_breadth_split_seams.py) scan seam_suspects over the CLOSES
+    # matrix alone, so a split confined to high/low is invisible by construction.
+    # Close-only consumers are unaffected, which is what kept it silent; ATR's
+    # true range is dominated by the basis gap.
+    #
+    # This lane tests the GUARD (synthetic frames, offline) plus a reader-level
+    # pin over the live committed caches. The DATA verdict is carried nightly by
+    # daily.yml's collect job, which is where a split is actually born — a PR
+    # pack cannot see a break that arrives on a straight-to-main data push.
+    # pyarrow is not optional: every fixture round-trips through parquet, which
+    # is the only way the test can see a dtype/schema regression in the reader.
+    if: ${{ false }}
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow
+      - name: OHLC basis coherence — split vs isolated-bad-bar tiers, annotations, exit codes
+        run: python -m pytest tests/test_check_ohlc_basis_coherence.py -q
+      - name: guard selftest
+        run: python scripts/check_ohlc_basis_coherence.py --selftest
+
   unrun-government-revenue-grader:
     # Wave 9G prospective candidate grader — the instrument that is allowed to
     # tell us the Government Revenue lobe has no predictive value.  It ships as
@@ -5665,3 +5754,43 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: prospective candidate grader — issuance log, no-leakage, denominators, coverage
         run: python -m pytest tests/test_government_revenue_candidate_grader.py -q
+
+  research-price-panel:
+    if: ${{ false }}
+    # The versioned FROZEN research price panel (data/research_panels/).  Two audits
+    # measured that our evidence base is not reproducible: the breadth close caches are
+    # re-based at a full rebuild and accrue RAW closes after it, so PNC's 2026-06-22 close
+    # read 234.71 on 2026-07-01 and 232.8536 on 2026-08-06 with nothing recording the
+    # change.  Frozen->cache-today drift moves a decision statistic up to 0.24pp against
+    # 0.26-0.98pp decision boundaries, so the infrastructure noise is now the LARGER term.
+    #
+    # This lane pins the two properties the artifact exists for, both of which are silent
+    # failures — a broken freeze looks exactly like a working one until someone re-derives
+    # a published number a year later:
+    #   1. an existing version is byte-stable across a rebuild whose underlying store MOVED
+    #   2. a reader given an unknown version raises instead of quietly resolving elsewhere
+    # Every case runs against a synthetic store built in tmp_path (adjusted per-name files
+    # shadowing a wide close cache, cache-only names, and a name no source carries), so the
+    # job checks out no data fixtures and cannot touch the real data/ tree.
+    #
+    # Both halves are wired in ci.yml per #3488 — the suite AND the modules it measures
+    # (price_panel.py, the vendored price_ladder.py, and the migrated instrument) — so an
+    # edit to either can start the job that proves the freeze still holds.
+    #
+    # Deps: pyarrow is load-bearing (the artifact IS a parquet; a fixture cannot stand in
+    # for the bytes under test).  The install string is byte-identical to the
+    # trial-budgets/outcome-spine family so the pack runner shares their venv rather than
+    # provisioning another.  Measured with exactly this line: 27 passed in ~1.9s, zero
+    # skips.  The #4698-ref comparison SKIPS rather than passes when that ref is
+    # unfetchable, so a checkout that cannot see the PR branch reads 26 passed / 1 skipped
+    # — an unverifiable pin must not report itself green.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: frozen price panel — write-once bytes + a reader that never falls back
+        run: python -m pytest tests/test_research_price_panel.py -q
