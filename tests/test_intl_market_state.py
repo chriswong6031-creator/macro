@@ -440,17 +440,51 @@ class TestKOSPIReplay:
         assert 10.0 <= rsi_at_high <= 100.0, f"rsi_at_high out of range: {rsi_at_high}"
 
     def test_events_are_readable(self):
-        """Events list should be a manageable size (not hundreds of duplicates)."""
+        """Events list should be a manageable size (not hundreds of duplicates).
+
+        WHY THIS RULE IS SESSION-ADJACENCY AND NOT LIST-ADJACENCY (2026-08-06)
+        ---------------------------------------------------------------------
+        This test used to assert that a code never appears at two consecutive
+        POSITIONS IN THE EVENT LIST.  That is stricter than anything the emitter
+        promises, and the KOSPI replay outgrew it honestly rather than breaking:
+
+            2026-07-13  ret20 = -20.35  → crosses below -15%, crash_20d fires
+            ...         (condition holds, correctly silent)
+            2026-07-31  ret20 = -13.76  → condition RESETS to False
+            2026-08-03  ret20 = -22.64  → crosses again, crash_20d fires again
+
+        Two distinct crash episodes 14 sessions apart, with no other event in
+        between to separate them in the list.  The emitter's first-crossing
+        discipline worked exactly as documented; the reader's rule was wrong.
+
+        The property that discipline actually guarantees is about SESSIONS: a
+        binary condition fires only on its False→True transition, so a re-fire
+        requires an intervening session on which the condition was False, and two
+        firings of the same code are therefore always >= 2 sessions apart.  A
+        broken discipline — firing while the condition merely HOLDS, i.e. dropping
+        `& (~*_prev_full)` from any of the crossing signals in
+        engine.intl_market_state._build_events — puts the same code on ADJACENT
+        sessions, which is what this now pins.  (Mutation-checked: reverting
+        crash_enter_full to the bare condition reds this test.)
+        """
         events = self.kr["events"]
         assert len(events) <= 60, (
             f"event list too long ({len(events)}): first-crossing discipline not enforced"
         )
-        # No event code should repeat consecutively
-        codes = [e["code"] for e in events if not e["code"].startswith("state:")]
-        for i in range(len(codes) - 1):
-            assert codes[i] != codes[i + 1], (
-                f"same event code on consecutive entries: {codes[i]} at positions {i}, {i+1}"
+        session = {d.strftime("%Y-%m-%d"): i for i, d in enumerate(self.states.index)}
+        last_fired: dict[str, tuple[int, str]] = {}
+        for e in sorted(events, key=lambda x: x["date"]):
+            code = e["code"]
+            if code.startswith("state:"):
+                continue
+            assert e["date"] in session, f"{code} dated off the state series: {e['date']}"
+            i = session[e["date"]]
+            prev = last_fired.get(code)
+            assert prev is None or i - prev[0] > 1, (
+                f"{code} fired on adjacent sessions {prev[1]} and {e['date']}: "
+                f"first-crossing discipline not enforced"
             )
+            last_fired[code] = (i, e["date"])
 
     def test_events_newest_first(self):
         """Events should be sorted newest first."""
@@ -477,12 +511,41 @@ class TestHSIRepairReplay:
         self.frame = frame
 
     def test_latest_state_has_repaired(self):
-        """The rebound may progress from recovery into a healthy uptrend."""
+        """The rebound may progress from recovery into a healthy uptrend.
+
+        `since` IS AN INVARIANT, NOT A CALENDAR CONSTANT (2026-08-06)
+        ------------------------------------------------------------
+        The recovery branch used to assert `since == "2026-07-20"`, which silently
+        assumed the run that began at the repair would still be the CURRENT run.
+        HSI outgrew that: it repaired to recovery on 2026-07-20, strengthened to
+        uptrend on 07-29 when it took back its 200-day, then slipped back under it
+        on 08-06 and resolved to recovery again.  `since` correctly reported
+        2026-08-04's successor run, because _find_since is documented as "first
+        date of the current uninterrupted state run" — the date moved because the
+        run moved, which is the field working.
+
+        Pinning the field against the state series instead keeps a real contract
+        (a `since` that disagrees with the resolved states is a bug, and that is
+        still caught) without freezing one session's answer into the suite.  The
+        claim this class exists for — that crash memory does not swallow the
+        repair — is asserted directly below, over the whole repair window.
+        """
         assert self.result["state"] in {"recovery", "uptrend"}
         assert self.states.loc["2026-07-20"] == "recovery"
-        if self.result["state"] == "recovery":
-            assert self.result["since"] == "2026-07-20"
-        else:
+        # The repair window must never be re-swallowed by crash memory.
+        window = self.states.loc["2026-07-20":"2026-07-28"]
+        assert not (window == "crash").any(), (
+            f"crash memory swallowed the repair window: {dict(window)}"
+        )
+        # `since` must be the first session of the CURRENT uninterrupted run.
+        i = len(self.states) - 1
+        while i > 0 and self.states.iloc[i - 1] == self.result["state"]:
+            i -= 1
+        assert self.result["since"] == self.states.index[i].strftime("%Y-%m-%d"), (
+            f"since={self.result['since']} disagrees with the state series, whose "
+            f"current {self.result['state']} run starts {self.states.index[i].date()}"
+        )
+        if self.result["state"] == "uptrend":
             assert self.result["above_ma200"] is True
 
     def test_recovery_survives_off_high_boundary_wobble(self):
