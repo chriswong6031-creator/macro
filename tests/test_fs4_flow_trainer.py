@@ -923,46 +923,49 @@ class TestLazyImport:
     def test_module_imports_without_sklearn(self):
         """lib.flow_score must import successfully even when sklearn is absent.
 
-        Simulate sklearn absence by patching sys.modules to raise ImportError
-        for sklearn, then reimport the module.
+        Run in a SUBPROCESS, deliberately. The claim under test — "a fresh
+        interpreter can import this module with sklearn unavailable" — is a
+        cold-import property, and the in-process version of this test could not
+        express it without wrecking the session:
+
+        * It ``del``'d ``lib.flow_score`` and re-imported it twice (once under the
+          fake sklearn, once to "restore" it). A re-import BINDS A NEW MODULE
+          OBJECT, so the name ended up pointing at a different object than the one
+          every already-imported consumer holds — the original was gone. The
+          session module guard correctly calls that poisoning and forces a non-zero
+          exit even though all 79 assertions pass, which is what reddened
+          ``flow-signal-cohorts`` in CI while the suite reported success.
+        * Restoring the original object via ``monkeypatch.setitem`` fixes the
+          identity violation but not the rest: importing the module under a stubbed
+          sklearn also caches everything IT imports in that degraded state, and
+          those entries are not restored. Measured — it left
+          ``TestBlockerRegressions``'s two split/embargo tests failing, both of
+          which pass in isolation.
+
+        A subprocess has neither problem: the probe interpreter is discarded whole,
+        so nothing leaks, and the property is tested exactly as production would hit
+        it. Cost is one interpreter start.
         """
-        import importlib
-        import lib.flow_score as fs_module
+        import subprocess
 
-        # Create a mock module that raises ImportError on import
-        class FailModule(types.ModuleType):
-            def __getattr__(self, name):
-                raise ImportError(f"Simulated: sklearn is not installed")
-
-        # Patch sklearn in sys.modules to simulate absence
-        original_sklearn = sys.modules.get("sklearn")
-        original_sklearn_ensemble = sys.modules.get("sklearn.ensemble")
-        try:
-            sys.modules["sklearn"] = FailModule("sklearn")
-            sys.modules["sklearn.ensemble"] = FailModule("sklearn.ensemble")
-            sys.modules["sklearn.isotonic"] = FailModule("sklearn.isotonic")
-            sys.modules["sklearn.calibration"] = FailModule("sklearn.calibration")
-            sys.modules["sklearn.metrics"] = FailModule("sklearn.metrics")
-
-            # Reimporting the module should NOT raise (lazy import law)
-            if "lib.flow_score" in sys.modules:
-                del sys.modules["lib.flow_score"]
-            importlib.import_module("lib.flow_score")
-            # If we get here, the module imported successfully without sklearn
-        finally:
-            # Restore original sys.modules
-            for key in ("sklearn", "sklearn.ensemble", "sklearn.isotonic",
-                        "sklearn.calibration", "sklearn.metrics"):
-                if key in sys.modules:
-                    del sys.modules[key]
-            if original_sklearn is not None:
-                sys.modules["sklearn"] = original_sklearn
-            if original_sklearn_ensemble is not None:
-                sys.modules["sklearn.ensemble"] = original_sklearn_ensemble
-            # Force reimport with real sklearn restored
-            if "lib.flow_score" in sys.modules:
-                del sys.modules["lib.flow_score"]
-            importlib.import_module("lib.flow_score")
+        root = str(Path(__file__).resolve().parent.parent)
+        probe = (
+            "import sys, types, importlib\n"
+            "class Fail(types.ModuleType):\n"
+            "    def __getattr__(self, name):\n"
+            "        raise ImportError('Simulated: sklearn is not installed')\n"
+            "for key in ('sklearn', 'sklearn.ensemble', 'sklearn.isotonic',\n"
+            "            'sklearn.calibration', 'sklearn.metrics'):\n"
+            "    sys.modules[key] = Fail(key)\n"
+            "importlib.import_module('lib.flow_score')\n"
+            "print('IMPORTED_WITHOUT_SKLEARN')\n"
+        )
+        res = subprocess.run([sys.executable, "-c", probe], cwd=root,
+                             capture_output=True, text=True, timeout=300)
+        assert res.returncode == 0, (
+            "lib.flow_score failed to import with sklearn absent (lazy-import law):\n"
+            + res.stderr[-2000:])
+        assert "IMPORTED_WITHOUT_SKLEARN" in res.stdout
 
     def test_non_sklearn_functions_work_without_sklearn(self):
         """ECE, Brier, map_model_bucket work without sklearn."""
