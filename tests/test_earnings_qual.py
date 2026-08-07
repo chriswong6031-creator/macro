@@ -543,13 +543,22 @@ def test_bounded_transcript_keeps_head_and_qa_tail():
 # --------------------------------------------------------------------------- #
 # 5b. Per-rung prompt bounds (R0-A2)
 #
-# The rungs do not share a context window.  The local openai_compat endpoint
-# serves 4,096 tokens; over that it returns HTTP 200 with prose instead of JSON
-# (measured 2026-08-06: 9,000 user-prompt chars scored, 10,000 did not).  A
-# prompt built ONCE before the waterfall therefore falls through to a metered
-# cloud provider on every real transcript.  The cloud rungs read the full
-# 24,000 characters and must NOT be degraded to the smallest window on the
-# ladder.
+# The rungs need not share a context window, so the prompt is built PER RUNG.
+# A rung whose provider block carries its own max_chars/tail_chars gets that
+# bound; every other rung inherits the global 24,000/8,000 and must NOT be
+# degraded to the smallest window on the ladder.  This is the lever for an
+# endpoint configured below the global transcript budget: such a server answers
+# HTTP 200 with prose instead of JSON rather than erroring, so a prompt built
+# ONCE before the waterfall falls through to a metered cloud provider on every
+# real transcript.
+#
+# NO rung ships with a per-rung bound.  #4784 capped openai_compat at 8,000
+# chars while the host ran Ollama's 4,096-token default; OLLAMA_CONTEXT_LENGTH
+# is now 32,768 there and the local rung reads the full global budget (measured
+# 2026-08-06: 24,000 chars -> 8,797 prompt_tokens on prose / 14,156 token-dense,
+# finish_reason stop, usable JSON).  The tests below therefore configure the
+# per-rung bound EXPLICITLY to exercise the mechanism, and pin separately that
+# the shipped config restates no local default.
 # --------------------------------------------------------------------------- #
 _PROMPT_ENVELOPE = len(eq._build_user_prompt("NVDA", "Q3", 2026, "transcript", ""))
 
@@ -570,11 +579,27 @@ def _long_transcript() -> str:
     return text
 
 
+def _cfg_with_local_bound(max_chars: int, tail_chars: int) -> dict:
+    """Shipped config + an EXPLICIT per-rung bound on openai_compat.
+
+    The shipped config carries no local bound (the endpoint reads the full
+    global budget), so a test of the per-rung mechanism must configure one
+    itself rather than lean on a default that is no longer there.
+    """
+    cfg = eq.load_config()
+    cfg["openai_compat"] = {
+        **cfg["openai_compat"],
+        "max_chars": max_chars,
+        "tail_chars": tail_chars,
+    }
+    return cfg
+
+
 def _capture_rung_prompts(monkeypatch) -> list[tuple[str, str]]:
     """Record (provider, user prompt) for every rung dispatch of a scoring call.
 
-    The local rung answers the way the 4k-window server actually does over its
-    limit: HTTP 200, finish_reason "stop", a markdown summary and no JSON.
+    The local rung answers the way an under-configured server does over its
+    window: HTTP 200, finish_reason "stop", a markdown summary and no JSON.
     """
     seen: list[tuple[str, str]] = []
 
@@ -593,17 +618,18 @@ def _capture_rung_prompts(monkeypatch) -> list[tuple[str, str]]:
     return seen
 
 
-def test_local_rung_prompt_is_bounded_while_cloud_rung_keeps_full_text(monkeypatch):
-    """THE contract: one scoring call, two prompt sizes, chosen per rung."""
+def test_configured_rung_bound_applies_while_cloud_rung_keeps_full_text(monkeypatch):
+    """THE contract: one scoring call, two prompt sizes, chosen per rung.
+
+    The bound is configured HERE, not inherited from a shipped local default —
+    that default is gone, but the mechanism it used must still work, because it
+    is what makes a future server misconfiguration a config change.
+    """
     seen = _capture_rung_prompts(monkeypatch)
-    cfg = eq.load_config()
+    cfg = _cfg_with_local_bound(8000, 3000)
     local_max = int(cfg["openai_compat"]["max_chars"])
     global_max = int(cfg["max_chars"])
-
-    # The shipped local bound must stay clear of the measured failure point;
-    # 10,000 chars returned prose, so anything at or above that is not safe.
     assert local_max < global_max
-    assert local_max <= 9000
 
     row = eq.score_text(
         _long_transcript(),
@@ -635,10 +661,10 @@ def test_local_rung_prompt_is_bounded_while_cloud_rung_keeps_full_text(monkeypat
     assert row["degraded_reason"] is None
 
 
-def test_local_bound_preserves_the_qa_tail(monkeypatch):
-    """An 8,000-char bound must still carry the Q&A tail — that is its point."""
+def test_configured_rung_bound_preserves_the_qa_tail(monkeypatch):
+    """A narrowed rung bound must still carry the Q&A tail — that is its point."""
     seen = _capture_rung_prompts(monkeypatch)
-    cfg = eq.load_config()
+    cfg = _cfg_with_local_bound(8000, 3000)
     local_max = int(cfg["openai_compat"]["max_chars"])
     local_tail = int(cfg["openai_compat"]["tail_chars"])
     # tail_chars must not be silently clamped by _bounded_transcript_text's
@@ -689,14 +715,61 @@ def test_rung_text_bounds_are_config_driven_with_global_fallback():
     ) == (24000, 8000)
 
 
-def test_shipped_config_bounds_the_local_rung_only():
-    """The repo config must carry the local bound and leave the global alone."""
+def test_shipped_config_lets_the_local_rung_inherit_the_global_bound():
+    """No rung ships narrowed — the local endpoint reads the full budget.
+
+    #4784 capped openai_compat at 8,000 chars for a 4,096-token Ollama default.
+    The host now sets OLLAMA_CONTEXT_LENGTH=32768 and serves 24,000 chars at
+    finish_reason "stop" with usable JSON (8,797 prompt_tokens on prose, 14,156
+    token-dense), so a local cap would truncate transcripts for no reason.
+    Re-introducing one — in the YAML or in _DEFAULT_CFG — fails here.
+    """
     cfg = eq.load_config()
     assert int(cfg["max_chars"]) == 24000
     assert int(cfg["tail_chars"]) == 8000
-    assert eq._rung_text_bounds(cfg, {}, "openai_compat")[0] <= 9000
+    assert eq._rung_text_bounds(cfg, {}, "openai_compat") == (24000, 8000)
     for cloud in ("deepseek", "kimi", "anthropic", "codex"):
         assert eq._rung_text_bounds(cfg, {}, cloud) == (24000, 8000)
+
+    # ...and the bound must be INHERITED, not restated at the global value:
+    # a restated copy silently drifts the next time the global moves.
+    import yaml
+
+    raw = yaml.safe_load(
+        (eq._REPO_ROOT / "config" / "earnings_qual.yml").read_text(encoding="utf-8")
+    )
+    for source, block in (
+        ("config/earnings_qual.yml", raw.get("openai_compat") or {}),
+        ("engine.earnings_qual._DEFAULT_CFG", eq._DEFAULT_CFG["openai_compat"]),
+    ):
+        for key in ("max_chars", "tail_chars"):
+            assert key not in block, f"{source} restates openai_compat.{key}"
+
+
+def test_shipped_config_sends_the_full_global_budget_to_the_local_rung(monkeypatch):
+    """End-to-end proof, on the SHIPPED config: no silent local truncation.
+
+    The unit assertion above resolves bounds; this one checks the prompt that
+    actually reaches the local endpoint, so a bound re-introduced anywhere on
+    the resolution path is caught by the bytes on the wire.
+    """
+    seen = _capture_rung_prompts(monkeypatch)
+    cfg = eq.load_config()
+
+    eq.score_text(
+        _long_transcript(),
+        "NVDA",
+        "Q3",
+        2026,
+        cfg=cfg,
+        provider_cfg={"provider_order": ["openai_compat", "deepseek"]},
+    )
+
+    local_prompts = [u for name, u in seen if name == "openai_compat"]
+    cloud_prompts = [u for name, u in seen if name == "deepseek"]
+    assert local_prompts and cloud_prompts
+    for prompt in local_prompts + cloud_prompts:
+        assert _prompt_body_chars(prompt) == int(cfg["max_chars"]) == 24000
 
 
 def test_server_side_prompt_truncation_is_logged(caplog):
