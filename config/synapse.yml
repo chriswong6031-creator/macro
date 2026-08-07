@@ -317,6 +317,7 @@ artifacts:
       - engine/sector_pulse.py
       - engine/spotlight.py
       - engine/theme_catalyst_binder.py
+      - engine/us_basket_turn.py
       - scripts/basket_coherence_audit.py
       - scripts/build_baskets.py
       - scripts/build_demand.py
@@ -3214,6 +3215,74 @@ artifacts:
       Gated on CN_LANE=asia (house law: nightly is sole advancer of data/).
       Grading unit = catalyst-day cohort (DT-R14). Expected-NULL forward
       meter (FT-R9); promotion question earliest 2027.
+
+  # W1-D — US basket washout-lifecycle organ (port of china_basket_turn; display-tier)
+  us-basket-turn:
+    path: site/basketdata/us_basket_turn.json
+    format: json
+    producer: engine/us_basket_turn.py
+    known_extra_writers: []
+    owner_program: prophet
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: us_basket_turn.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    may_rank: false
+    consumers:
+      - scripts/build_baskets.py
+    external_consumers: []
+    notes: >
+      W1-D (research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md G0.6). Port of
+      engine/china_basket_turn.py to the US basket universe: per-basket
+      washout-lifecycle state machine FALLING / WASHED_OUT / BASING / TURNING /
+      CONFIRMED / NONE over a PIT equal-weight member level series. Hard-precedence
+      cascade with FALLING vetoing all others. Thresholds ported VERBATIM from the CN
+      module and frozen descriptively (FT-R9); the CN module is untouched and remains
+      the control. A SEPARATE organ from site-basket-turn-watch (that one is a K-of-N
+      confluence construction; this one is a lifecycle machine — neither feeds the
+      other). DISCLOSURE: sector-level standalone washout-to-turn triggers printed
+      NULL (Oracle P8 P-W1/S-W3; DNR:KILL-WASHOUT-TURN, which closed the 2W
+      operator-seed SCORED entry trigger) — this is a different construction shipped
+      display-tier as an expected-NULL forward meter. A TURNING print is a state
+      disclosure, never a bottom call. Member coverage (members_read/members_total)
+      is carried per basket and a hole under 60% prints a ::warning (W-B law).
+      may_rank/gate/size/escalate=false.
+
+  # W1-D — US basket turn forward ledger (PIT, append-only, nightly-lane gated)
+  us-basket-turn-ledger:
+    path: data/us_basket_turn/ledger.jsonl
+    format: jsonl
+    producer: engine/us_basket_turn.py
+    known_extra_writers: []
+    owner_program: prophet
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: us_basket_turn.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    may_rank: false
+    consumers: []
+    external_consumers: []
+    notes: >
+      W1-D. PIT forward ledger for US basket washout-lifecycle states — one row per
+      (date, basket_id) per session, carrying state, dd_252, hist_d, slope_20d,
+      ret_5d, evidence, days_in_state and the member-coverage counts. Append-only,
+      keep-first on re-runs. Gated on COLLECT_LANE=nightly (house law: nightly is the
+      sole advancer of data/ ledgers). The `date` stamp is derived from the DATA
+      PLANE — the newest member bar the organ actually read — not the wall clock, so
+      a run against a frozen store re-derives the session it already logged instead
+      of re-describing old tape under a fresh calendar date (#4568 pattern).
+      Starts at ship date; any earlier state is descriptive replay, never ledger
+      evidence. Expected-NULL forward meter (FT-R9).
 
   # --- W2 native funding / risk-appetite planes (research/china_native_data) ---
   # One entry per store DIRECTORY family: the collector's primary artifact is the
