@@ -1220,7 +1220,21 @@ def test_no_module_outside_the_runner_imports_the_audit():
                # imports ARTIFACT_REL/FORWARD_LOG_REL so the commit step's `git add` list
                # is DERIVED from the writer rather than copied out of the workflow. Same
                # scoping as above: one named test file, no authority path.
-               "tests/test_prophet_off_engine_lane.py"}
+               "tests/test_prophet_off_engine_lane.py",
+               # 2026-08-07: the price-basis census (#4715) carries this module as a ROW
+               # in its KNOWN_UNMIGRATED registry — "engine/prophet_miss_audit.py":
+               # "INHERITS: reads excess_spy from a ledger, does not compute it". That
+               # suite never imports the audit; it parses every module off disk with
+               # `ast`, so the string is census DATA naming a path, not a dependency, and
+               # deleting it would fail that suite's opposite-direction rot check.
+               #
+               # NOTE the scan below matches any MENTION, not an import, despite this
+               # test's name. That is deliberate and load-bearing: a module that reached
+               # the audit's ARTIFACT by path string without importing it would otherwise
+               # walk straight through the fence. So the fix for a naming-but-not-
+               # importing file is this allowlist, not an `ast`-import narrowing, and not
+               # a blanket tests/* exemption — a widened fence stops being a fence.
+               "tests/test_price_basis_graders.py"}
     offenders = []
     for d in ("engine", "scripts", "app", "admin", "collectors", "lib", "tools", "tests"):
         for p in (root / d).rglob("*.py"):
