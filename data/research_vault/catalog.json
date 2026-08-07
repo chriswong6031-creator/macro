@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T00:29:18.793535+00:00",
-  "count": 906,
+  "generated_at": "2026-08-07T00:51:41.659074+00:00",
+  "count": 907,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -1205,6 +1205,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-liog0n7af9m-e9ff44",
+      "title": "Big Oils 2Q26 wrap up Strong FCF and degearing in 2Q",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:35Z",
+      "summary_points": [
+        "**FCF & Debt Dynamics**: EU Big Oils generated $39.6bn FCF (+26% vs est), reducing net debt by $19.9bn (gearing 32%→29% qoq), driven by +14% OCF, -4% capex, and $4.1bn working capital release.",
+        "**Refining Margin Upside**: Middle East disruptions (1.3-1.4 mb/d capacity impaired) drive +3% refining margin upside in H2 2026 vs 2026, with Repsol/Galp having highest OCF sensitivity (4.3%/3.4%).",
+        "**Windfall Tax Divergence**: Repsol faces ~12% profit exposure to windfall tax (vs Galp/ENI at 2.4% each), creating material earnings risk under EU policy scenarios.",
+        "**Capex-Oil Price Disconnect**: Structural decoupling (R²=0.884) as EU Big Oils' capex per barrel no longer correlates with Brent, breaking historical investment thesis.",
+        "**LNG Capacity Acceleration**: 220 mtpa LNG capacity to come online 2025-30 (US/Qatar-led), driving lower gas prices 2028-30 and discouraging new FIDs beyond 2028."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 28,
       "language": "en",
       "needs_metadata": false
     },
