@@ -287,6 +287,156 @@ def test_incomplete_local_reply_falls_through_to_deepseek(monkeypatch):
     assert row["model"] == "deepseek"
     assert row["degraded_reason"] is None
     assert row["performance"] == pytest.approx(8.5)
+    # The rung that answered with unusable JSON is a failed rung: the row is
+    # healthy, but it was NOT produced locally.
+    assert row["provider_fallback_reason"] == "openai_compat:incomplete_schema"
+
+
+# --------------------------------------------------------------------------- #
+# R0-A: a successful fallback must not look like a healthy primary-rung run.
+#
+# The live defect: the launchd plist exported EARNINGS_LLM_MODEL=qwen3:14b while
+# http://127.0.0.1:11435/v1 served only qwen3.5:9b, so every openai_compat call
+# 404'd and DeepSeek quietly answered instead.  Because the earlier rung's reason
+# was dropped the moment a later rung succeeded, 741 rows recorded
+# model=deepseek and were byte-identical to a clean run.
+# --------------------------------------------------------------------------- #
+def test_transport_failure_then_success_records_the_first_failing_rung(monkeypatch):
+    calls: list[str] = []
+
+    def fake_dispatch(system, user, cfg, provider_cfg, *, max_tokens):
+        provider = provider_cfg["provider_order"][0]
+        calls.append(provider)
+        if provider == "openai_compat":
+            # Exactly what a served-model mismatch produces upstream.
+            return None, "openai_compat_http_404", None
+        return json.dumps(_GOOD_JSON), None, provider
+
+    monkeypatch.setattr(eq, "_dispatch", fake_dispatch)
+    row = eq.score_text(
+        "txt",
+        "AAPL",
+        "Q3",
+        2026,
+        provider_cfg={"provider_order": ["openai_compat", "deepseek"]},
+    )
+
+    assert calls == ["openai_compat", "deepseek"]
+    # The row scored, so it is NOT degraded — degraded_reason keeps its meaning.
+    assert row["degraded_reason"] is None
+    assert row["sentiment"] == pytest.approx(0.7)
+    # ...but the receipt now names the rung that failed AND why, next to the
+    # rung that actually answered.
+    assert row["provider_fallback_reason"] == "openai_compat:openai_compat_http_404"
+    assert row["model"] == "deepseek"
+
+
+def test_first_rung_success_records_no_fallback_reason(monkeypatch):
+    _mock_reply(monkeypatch, _GOOD_JSON)
+    row = eq.score_text(
+        "txt",
+        "AAPL",
+        "Q3",
+        2026,
+        provider_cfg={"provider_order": ["openai_compat", "deepseek"]},
+    )
+    # No false alarm: nothing fell back, so the field stays empty.
+    assert row["provider_fallback_reason"] is None
+    assert row["model"] == "openai_compat"
+    assert row["degraded_reason"] is None
+
+
+def test_only_the_first_failing_rung_is_recorded(monkeypatch):
+    """Two failures before a success still name the FIRST one."""
+
+    def fake_dispatch(system, user, cfg, provider_cfg, *, max_tokens):
+        provider = provider_cfg["provider_order"][0]
+        if provider == "openai_compat":
+            return None, "openai_compat_http_404", None
+        if provider == "kimi":
+            return None, "kimi_http_401", None
+        return json.dumps(_GOOD_JSON), None, provider
+
+    monkeypatch.setattr(eq, "_dispatch", fake_dispatch)
+    row = eq.score_text(
+        "txt",
+        "AAPL",
+        "Q3",
+        2026,
+        provider_cfg={"provider_order": ["openai_compat", "kimi", "deepseek"]},
+    )
+    assert row["provider_fallback_reason"] == "openai_compat:openai_compat_http_404"
+    assert row["model"] == "deepseek"
+    assert row["degraded_reason"] is None
+
+
+def test_all_rungs_failed_keeps_prior_degraded_semantics(monkeypatch):
+    """The all-failed path is unchanged; the receipt is purely additive."""
+
+    def fake_dispatch(system, user, cfg, provider_cfg, *, max_tokens):
+        provider = provider_cfg["provider_order"][0]
+        return None, f"{provider}_http_404", None
+
+    monkeypatch.setattr(eq, "_dispatch", fake_dispatch)
+    row = eq.score_text(
+        "txt",
+        "AAPL",
+        "Q3",
+        2026,
+        provider_cfg={"provider_order": ["openai_compat", "deepseek"]},
+    )
+    # Same contract as before R0-A: last reason wins, no model, no scores.
+    assert row["degraded_reason"] == "deepseek_http_404"
+    assert row["model"] is None
+    assert row["sentiment"] is None
+    assert row["provider_fallback_reason"] == "openai_compat:openai_compat_http_404"
+
+
+def test_fallback_reason_is_stored_and_absent_column_still_loads(tmp_path):
+    """Additive column: a pre-R0-A parquet must still load, merge and upsert."""
+
+    import pandas as pd
+
+    assert "provider_fallback_reason" in eq._STORE_COLUMNS
+
+    legacy_columns = [
+        c for c in eq._STORE_COLUMNS if c != "provider_fallback_reason"
+    ]
+    legacy = {
+        "ticker": "MSFT", "quarter": "Q3", "year": 2026,
+        "call_date": "2026-07-30", "source": "transcript", "model": "qwen",
+        "sentiment": 0.4, "performance": 7.0, "confidence": 0.8,
+        "tone_word": "steady", "positive_highlights": "[]",
+        "negative_highlights": "[]", "tags": "[]",
+        "source_sha256": "legacy-sha", "scored_at": "2026-08-01T00:00:00Z",
+        "source_record_id": "defeatbeta:MSFT:2026Q3",
+        "is_context_only": True, "degraded_reason": None,
+    }
+    store = eq.store_path(tmp_path)
+    store.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(
+        [{c: legacy.get(c) for c in legacy_columns}], columns=legacy_columns
+    ).to_parquet(store, index=False)
+
+    fresh = {
+        "ticker": "AAPL", "quarter": "Q3", "year": 2026,
+        "call_date": "2026-07-30", "source": "transcript", "model": "deepseek",
+        "sentiment": 0.4, "performance": 7.0, "confidence": 0.8,
+        "tone_word": "steady", "positive_highlights": [],
+        "negative_highlights": [], "tags": [], "source_sha256": "fresh-sha",
+        "scored_at": "2026-08-02T00:00:00Z",
+        "source_record_id": "defeatbeta:AAPL:2026Q3",
+        "is_context_only": True, "degraded_reason": None,
+        "provider_fallback_reason": "openai_compat:openai_compat_http_404",
+    }
+    assert eq.upsert_scores([fresh], root=tmp_path) == 1
+
+    stored = eq.load_scores(tmp_path)
+    assert set(stored["ticker"]) == {"MSFT", "AAPL"}
+    by_ticker = stored.set_index("ticker")["provider_fallback_reason"]
+    assert by_ticker["AAPL"] == "openai_compat:openai_compat_http_404"
+    # The legacy row backfills to null rather than failing the read.
+    assert pd.isna(by_ticker["MSFT"]) or by_ticker["MSFT"] is None
 
 
 def test_llm_auth_rung_disables_implicit_codex(monkeypatch):

@@ -863,6 +863,13 @@ on:
       - "tests/test_admin_research_tools.py"
       - "tests/test_earnings_worker_terminal.py"
       - "tests/test_earnings_worker_launchd.py"
+      # test_earnings_worker_launchd.py pins the plist's EARNINGS_LLM_MODEL to
+      # this file's openai_compat.model, because the plist env var OVERRIDES it
+      # and a drift 404s every local call while the run completes on the paid
+      # fallback (R0-A, 2026-08-06). ops/** starts the pack for the plist side;
+      # without this line an edit to the CONFIG side could not start the pack
+      # that runs the guard over it — the #3488 shape.
+      - "config/earnings_qual.yml"
       - "tests/test_china_board_watch_lane.py"
       - "tests/test_risk_state_live_session_floor.py"
       # Hosted-runner packing contract: changes to the orchestrator or its
