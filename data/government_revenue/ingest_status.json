@@ -2,10 +2,10 @@
   "action_awards_attempted": 160,
   "action_awards_succeeded": 160,
   "action_page_size": 5000,
-  "actions_seen": 34208,
+  "actions_seen": 34225,
   "actions_total": 34181,
   "award_event_spine": {
-    "action_versions_seen": 34208,
+    "action_versions_seen": 34225,
     "action_versions_total": 0,
     "activation_state": "baseline",
     "award_action_versions_row_count": null,
@@ -39,10 +39,10 @@
     "new_receipts_this_run": 360,
     "path": "collection_receipts.jsonl",
     "raw_response_bodies_persisted": false,
-    "receipt_payloads_sha256": "fd077e482ecada15478241ab33d798c521fa53c49ba723f2d88bd84cc915dd94",
+    "receipt_payloads_sha256": "bd4b0dae066ad9c6a90fde065d6e7405928f98fd2a78512d780b5e74156fe4ac",
     "receipts_total": 720,
     "response_receipts_this_run": 360,
-    "run_id": "usaspending-b36d1cb311b27ddd56101960",
+    "run_id": "usaspending-50537a3f715407d854575fcc",
     "schema_version": "government_revenue.collection_receipt.v1"
   },
   "coverage_scope": "bounded recipient-query award data plus bounded award-detail/action sample; not full USAspending coverage",
@@ -184,7 +184,7 @@
   "lookback_days": 1826,
   "max_action_pages_per_award": 100,
   "max_pages_per_entity": 2,
-  "observed_at": "2026-08-07T00:38:57.464629+00:00",
+  "observed_at": "2026-08-07T10:33:51.425528+00:00",
   "page_size": 50,
   "partial": true,
   "rails": {
@@ -220,10 +220,10 @@
         "unresolved_has_next_awards": 0
       },
       "records": {
-        "accepted": 34208,
+        "accepted": 34225,
         "ledger_total": 34181,
-        "normalized": 34208,
-        "raw": 34208
+        "normalized": 34225,
+        "raw": 34225
       },
       "response_receipts": 160,
       "state": "failed"
