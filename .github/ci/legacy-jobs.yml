@@ -382,32 +382,41 @@ jobs:
           tests/test_fundamental_forensics_contract.py -q
 
   session-anchor-era:
-    # Absolute session-calendar anchor for the confluence 2D/3D + fortnight buckets
-    # (era abs-session-2026-08-06, ruling research/SESSION_ANCHOR_ABSOLUTE_CALENDAR_
-    # ADJUDICATION_BY_FABLE.md, #4732). The suite shipped named by NO run step in any
-    # workflow, so the START-INVARIANCE guarantee the era rests on — the whole claim of
-    # the repair — was never executed in CI (the 2026-07-26 census: every invocation
-    # here carries an explicit file list, so an unnamed suite is genuinely never run).
-    # audit_unrun_tests.py did list it, at tier P5: it scores triggerable=True off
-    # subjects that ride engine/**, and it writes no ledger, so the ranking that
+    # Absolute session-calendar anchor, both eras. The confluence 2D/3D + fortnight
+    # buckets (era abs-session-2026-08-06, ruling research/SESSION_ANCHOR_ABSOLUTE_
+    # CALENDAR_ADJUDICATION_BY_FABLE.md, #4732) and the §7 marker engine (era
+    # sq-abs-session-2026-08-06, research/SIGNAL_QUALITY_SESSION_ANCHOR_ADJUDICATION_
+    # BY_FABLE.md, #4738). Both suites shipped named by NO run step in any workflow, so
+    # the START-INVARIANCE guarantee each era rests on — the whole claim of the repair —
+    # was never executed in CI (the 2026-07-26 census: every invocation here carries an
+    # explicit file list, so an unnamed suite is genuinely never run).
+    # audit_unrun_tests.py did list them, at tier P5: they score triggerable=True off
+    # subjects that ride engine/**, and they write no ledger, so the ranking that
     # surfaces darkness sorted the guarantee under a PUBLISHED era stamp below 100-odd
-    # quieter holes. Enumerating beats ranking. It pins k=1..6 leading-session drops on
+    # quieter holes. Enumerating beats ranking. They pin k=1..6 leading-session drops on
     # fixtures built from REAL NYSE sessions (holiday spans, a 3-session halt,
-    # shallow-depth caches) and the era stamps on the payloads. Self-contained — the
+    # shallow-depth caches), the era stamps on the payloads, and for the §7 suite the
+    # marker stream dict-for-dict end-to-end through gate(). Self-contained — the
     # fixtures are generated from lib/nyse_calendar.py, nothing is read off disk — so
-    # there is no skip path and no data dependency. 71 tests, ~4s locally; the budget
+    # there is no skip path and no data dependency. 239 tests, ~26s locally; the budget
     # below is headroom for a hosted 2-vCPU pack.
     #
-    # SECOND HALF PENDING #4738. The §7 marker-engine anchor suite (era
-    # sq-abs-session-2026-08-06) is the same shape of hole and belongs in THIS job —
-    # 168 further tests, same deps, same fixtures, measured together at 239 tests /
-    # 25.8s. It is not listed yet because a run step naming a file the tree does not
-    # have aborts the ENTIRE pytest invocation, taking this suite down with it
-    # (test_every_workflow_test_path_exists in the ci-pack suite pins exactly that).
-    # #4738 carries the file and is in review, not merged. NOTE: that guard matches on
-    # raw workflow TEXT, so the filename cannot even be written in this comment — it is
-    # deliberately described, not named. When #4738 lands, add the path to this job's
-    # run step and to ci.yml's filter, and raise timeout-minutes back to 8.
+    # The §7 half arrives here one PR late, and the reason is worth keeping: #4800 wired
+    # the confluence suite while #4738 was still in review, and a run step naming a file
+    # the tree does not have aborts the ENTIRE pytest invocation — listing it early would
+    # have taken the landed suite down with it, which is exactly what
+    # test_every_workflow_test_path_exists pins. That guard matches on raw workflow TEXT,
+    # so while #4738 was open the filename could not appear even in this comment.
+    #
+    # THIS JOB IS THE SINGLE OWNER of the confluence suite. #4833 (cycles anchor era,
+    # merged 2026-08-07) independently appended it to engine-render-guards' pytest tail
+    # alongside tests/test_cycles_anchor_invariance.py, so main briefly ran it in TWO
+    # jobs; that duplicate line is removed in the same PR that adds the §7 half here.
+    # A dedicated job is deliberate (the shape #4756 set for coiled-mtf-anchor-era): an
+    # anchor regression should red a check named for the anchor, not one named
+    # "engine-render-guards" with 60-odd unrelated suites in it. The cycles battery is
+    # left where #4833 put it — consolidating all three era batteries here is a sensible
+    # follow-up, but it belongs to the cycles lane, not to this PR.
     #
     # Placed beside signal-contract, which owns engine/signal_quality.py's §7 contract
     # one layer up, rather than beside the washout-turn organ: #4756 (coiled-mtf-anchor-
@@ -416,7 +425,7 @@ jobs:
     # whichever ships second. Venv sharing is by BYTE-IDENTICAL install command, not by
     # adjacency, so position costs nothing: the pip line below is the 32-job group's.
     if: ${{ false }}
-    timeout-minutes: 5
+    timeout-minutes: 8
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -425,8 +434,8 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
-      - name: session anchor invariance (k=1..6 start drops, bucket parity, era stamps)
-        run: python -m pytest tests/test_session_anchor_invariance.py -q
+      - name: session + §7 anchor invariance (k=1..6 start drops, bucket/marker parity, era stamps)
+        run: python -m pytest tests/test_session_anchor_invariance.py tests/test_sq_anchor_invariance.py -q
 
   trial-budgets:
     if: ${{ false }}
@@ -985,7 +994,6 @@ jobs:
           tests/test_cycles.py
           tests/test_opex_risk.py
           tests/test_seo_meta_rollout.py
-          tests/test_session_anchor_invariance.py
           tests/test_cycles_anchor_invariance.py -q
       # house-law registry census (post-#2297 fix): run the statement-tape schema
       # guard itself against the committed registry, not just its pytest coverage.
