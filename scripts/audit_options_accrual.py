@@ -2,8 +2,13 @@
 
 OI is point-in-time only — every missed snapshot day is permanently lost. This
 audit is the circuit-breaker visibility layer described in the Options Alpha
-masterplan §W0.4: if the chains/ directory hasn't been updated within 1 trading
-day, emit a ::warning:: so the CI run surfaces the gap.
+masterplan §W0.4: if the chains/ directory hasn't been updated within 1 NYSE
+session, emit a ::warning:: so the CI run surfaces the gap.
+
+Staleness is measured in SESSIONS against the last COMPLETED session, using
+lib.nyse_calendar — never in calendar days against today's UTC date. See
+_last_trading_day for the three defects that cost (the short version: this
+tripwire had the same UTC-run-date bug as the accrual it watches).
 
 Also checks that the options-flow S3 creds are present (MASSIVE_S3_ACCESS_KEY_ID),
 since a missing-creds failure in build_options_flow is otherwise a silent no-op.
@@ -11,7 +16,7 @@ since a missing-creds failure in build_options_flow is otherwise a silent no-op.
 Writes data/quality/options_accrual_audit.json (observability; read-only over stores).
 Stdlib + pandas only — no heavy deps.
 
-Usage: python -m scripts.audit_options_accrual [--strict] [--max-age-days 1]
+Usage: python -m scripts.audit_options_accrual [--strict] [--max-age-sessions 1]
        --strict: exit 1 on stale (default: warn + exit 0)
 """
 from __future__ import annotations
@@ -26,33 +31,46 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib import config  # noqa: E402
+from lib import config, nyse_calendar  # noqa: E402
 
-DEFAULT_MAX_AGE_DAYS = 1   # chains/ latest file must be ≤ 1 trading day old
-
-
-def _is_trading_day(d: date) -> bool:
-    """Rough US trading-day check: Mon–Fri, excluding a small set of fixed holidays.
-    Sufficient for the 'stale by 1 day' tripwire; does not need to be exhaustive."""
-    if d.weekday() >= 5:  # Saturday or Sunday
-        return False
-    # Fixed-date US market holidays (no need for exact exhaustive list — just the
-    # major ones that could cause false alarms)
-    year = d.year
-    fixed = {
-        date(year, 1, 1),   # New Year's Day
-        date(year, 7, 4),   # Independence Day
-        date(year, 12, 25), # Christmas
-    }
-    return d not in fixed
+DEFAULT_MAX_AGE_SESSIONS = 1   # chains/ latest file must be ≤ 1 NYSE session behind
 
 
 def _last_trading_day(ref: date | None = None) -> date:
-    """Most recent trading day on or before ref (default: today UTC)."""
-    d = ref or datetime.now(timezone.utc).date()
-    while not _is_trading_day(d):
-        d -= timedelta(days=1)
-    return d
+    """Most recent NYSE session on or before `ref`; `ref=None` means "right now".
+
+    THE REFERENCE IS A SESSION, NOT A UTC CALENDAR DATE (2026-08-06 repair). This
+    tripwire used to roll back from ``datetime.now(timezone.utc).date()`` over a
+    hand-rolled Mon–Fri-minus-three-holidays calendar. Three defects, measured:
+
+      * The same UTC-midnight bug this tripwire exists to catch. Evaluated at 00:38Z
+        on 2026-08-07 — i.e. 20:38 ET on 08-06 — it returned **2026-08-07**, a session
+        that had not started, and reported the store 8 sessions behind when the honest
+        figure was 5. The watchman ran the same broken clock as the thing it watched.
+      * The holiday set held only New Year / July 4 / Christmas, so MLK, Presidents Day,
+        Good Friday, Memorial Day, **Juneteenth**, Labor Day and Thanksgiving each read
+        as trading days and raised a false STALE. 2026-06-19 (Juneteenth) and 2026-07-03
+        (Independence Day observed) both sit inside this very store's window.
+      * The age it fed was ``(last_td - latest).days`` — CALENDAR days, printed and
+        thresholded as "trading day(s)", so a plain Friday→Monday gap of one session
+        read as three.
+
+    ``expected_last_session`` carries a 17:00 ET settle buffer, so between the 16:00 ET
+    close and that night's accrual the store is legitimately one session behind — which
+    is why the default threshold tolerates exactly 1 and only fails at 2.
+    """
+    if ref is None:
+        return nyse_calendar.expected_last_session()
+    return nyse_calendar.last_session_on_or_before(ref)
+
+
+def _sessions_behind(latest: date, last_td: date) -> int:
+    """NYSE sessions strictly after `latest`, up to and including `last_td`.
+
+    Mirrors ``nyse_calendar.sessions_behind`` but takes the reference explicitly, so the
+    ``_last_trading_day`` seam the tests monkeypatch still governs the comparison. A
+    store somehow ahead of the calendar clamps to 0 rather than going negative."""
+    return len(nyse_calendar.sessions_between(latest + timedelta(days=1), last_td))
 
 
 def _latest_chain_date(chains_dir: Path) -> date | None:
@@ -67,12 +85,15 @@ def _latest_chain_date(chains_dir: Path) -> date | None:
         return None
 
 
-def audit(max_age_days: int = DEFAULT_MAX_AGE_DAYS) -> dict:
+def audit(max_age_sessions: int = DEFAULT_MAX_AGE_SESSIONS) -> dict:
     """Return {ok, fail_reasons, warnings, detail}."""
     data_root = config.data_dir()
     chains_dir = data_root / "polygon_gex" / "chains"
     today_utc = datetime.now(timezone.utc).date()
-    last_td = _last_trading_day(today_utc)
+    # No argument: the reference is the last COMPLETED session, never today's UTC date
+    # (see _last_trading_day — passing today_utc here is what returned an unstarted
+    # session and inflated the reported gap).
+    last_td = _last_trading_day()
 
     fail: list[str] = []
     warn: list[str] = []
@@ -91,19 +112,20 @@ def audit(max_age_days: int = DEFAULT_MAX_AGE_DAYS) -> dict:
         fail.append("CHAINS DARK: data/polygon_gex/chains/ has no parquet files — "
                     "polygon_gex collector has never run or the store is missing")
     else:
-        age = (last_td - latest).days
-        detail["chains_age_trading_days"] = age
-        if age > max_age_days:
+        age = _sessions_behind(latest, last_td)
+        detail["chains_age_sessions"] = age
+        if age > max_age_sessions:
             fail.append(
                 f"CHAINS STALE: latest chain file is {latest} "
-                f"({age} trading day(s) behind last_td={last_td}); "
-                f"threshold={max_age_days}d — OI snapshot may have been missed"
+                f"({age} NYSE session(s) behind last_session={last_td}); "
+                f"threshold={max_age_sessions} — OI snapshot may have been missed"
             )
-        elif age == max_age_days:
+        elif age == max_age_sessions:
             warn.append(
                 f"CHAINS AT LIMIT: latest chain file is {latest} "
-                f"(exactly {age} trading day(s) behind last_td={last_td}) — "
-                "OK today but will trip if tomorrow's accrual is missed"
+                f"(exactly {age} NYSE session(s) behind last_session={last_td}) — "
+                "expected between the close and that night's accrual, but will trip "
+                "if tonight's accrual is missed"
             )
 
     # ── options-flow S3 creds ────────────────────────────────────────────────
@@ -137,11 +159,15 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--strict", action="store_true",
                     help="exit 1 on any STALE/DARK finding (default: report-only)")
-    ap.add_argument("--max-age-days", type=int, default=DEFAULT_MAX_AGE_DAYS,
-                    help=f"max trading days behind last_td before STALE (default: {DEFAULT_MAX_AGE_DAYS})")
+    ap.add_argument("--max-age-sessions", "--max-age-days", type=int,
+                    dest="max_age_sessions", default=DEFAULT_MAX_AGE_SESSIONS,
+                    help="max NYSE sessions behind the last completed session before "
+                         f"STALE (default: {DEFAULT_MAX_AGE_SESSIONS}). --max-age-days "
+                         "is a back-compat alias; the unit was always meant to be "
+                         "sessions and the old code counted calendar days.")
     args = ap.parse_args()
 
-    report = audit(max_age_days=args.max_age_days)
+    report = audit(max_age_sessions=args.max_age_sessions)
 
     # Write observability artifact (non-fatal if it fails)
     try:
