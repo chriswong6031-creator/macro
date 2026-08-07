@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T22:58:55.664778+00:00",
-  "count": 902,
+  "generated_at": "2026-08-07T00:59:25.534417+00:00",
+  "count": 908,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -359,6 +359,46 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vbe1v4j1wgw-0faf20",
+      "title": "Aug 06 2026 JefferiesLLC StrongTractionwithNBMsbutEarningsMomentumSlows",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:51:49Z",
+      "summary_points": [
+        "**NAND Revenue Guidance Downgrade**: Management lowered NAND revenue growth to soft y/y due to inventory builds, contrasting June’s strong beat, with NBM momentum showing 8 customers signed and >50% F27/F28 bit commitments.",
+        "**eSSD Growth Catalyst**: eSSD business could reach 7%+ revenue share by 2027 ($2.5B revenue, $2B+ EPS benefit), driven by sustained bit growth and declining ASP degradation from capital intensity subsidies.",
+        "**Valuation Premium Risk**: Forward P/E (F2Y) trades at premium (near +1 St Dev), signaling overvaluation and significant downside risk if earnings miss, especially amid elevated market expectations.",
+        "**Geographic Concentration Risk**: 72% of revenue from Americas (declining US share from 39%→28% FY22-FY25), with Asia growth (China 14%→17%, RoA 18%→20%) offering diversification but exposing portfolio to US disruption vulnerability.",
+        "**Data Center Dominance**: Datacenter drives 50-60% of revenue (accelerating toward 2026), with C26 revenue target at 300B and C27 at 500B, aligning with AI/cloud infrastructure trends as core growth engine."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-au9bsni3jek-6addbe",
+      "title": "eBay Inc. (EBAY) Q2'26 Earnings Review",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:51:44Z",
+      "summary_points": [
+        "**Strategic Shift & Guidance Upgrade**: Q2 beat on GMV/revenue/operating income; C2C/ReCommerce >70% GMV; raised FY26 GMV guidance to 11.5-12.5% YoY (vs 7-7.5%) and Non-GAAP Op Income to 10-12% YoY; $1.4bn Depop acquisition to accelerate fashion growth.",
+        "**Valuation & Margin Strength**: P/E declining (18.2→14.6) signals potential undervaluation; EBITDA growth accelerating (10.6→14.0→8.5) and stable gross margins (72.4→73.6) indicate pricing power and growth momentum.",
+        "**Depop Integration Risk**: Expected to cut near-term operating income growth by 3-4 points due to competitive dynamics; management’s execution on AI/LLMs and category focus critical for sustained growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
@@ -819,6 +859,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-qdagrcawfke-5f344d",
+      "title": "JPM Retail Radar",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T09:24:55Z",
+      "summary_points": [
+        "**Hyperscaler Earnings & Retail Flow Divergence**: S&P 500 hit new highs on hyperscaler earnings, but retail sold single stocks (MSFT, PLTR, AMZN) while favoring ETFs; record software outflows ($4.2B net selling) vs.",
+        "healthy ETF inflows signal AI trade re-engagement via Memory/Semis and Tech ETFs.",
+        "**Retail ETF Dominance & Sector Shift**: Retail flows ($3.5B, below 12-mo avg) heavily favor ETFs over single stocks; concentrated buying in AI datacenters (JPAMAIDE), electrification, and US firms with high China revenue exposure, driving Tech ETF (SOXX, SMH) inflows amid software outflows.",
+        "**Short Squeeze Risk Catalysts**: BBAI (32% short interest, $400M net retail buys), DFNS (22% short interest), and SES show retail-driven momentum amid elevated short interest; rising cumulative retail imbalance (e.g., DFNS, SES) signals heightened squeeze risk.",
+        "**AMZN AWS Growth & AI Investment Catalyst**: AWS growth +37% (fastest in 18 quarters), backlog up 2.5x to $496B on AI/core demand; management cites strong ROIC on AI investments, with capex raised to ~$220B."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 24,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-7l6zqifah1l-f2af3c",
       "title": "Mizuho EMEA Multi Asset Strategy Daily",
       "institution": "Mizuho",
@@ -1148,6 +1209,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-liog0n7af9m-e9ff44",
+      "title": "Big Oils 2Q26 wrap up Strong FCF and degearing in 2Q",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:35Z",
+      "summary_points": [
+        "**FCF & Debt Dynamics**: EU Big Oils generated $39.6bn FCF (+26% vs est), reducing net debt by $19.9bn (gearing 32%→29% qoq), driven by +14% OCF, -4% capex, and $4.1bn working capital release.",
+        "**Refining Margin Upside**: Middle East disruptions (1.3-1.4 mb/d capacity impaired) drive +3% refining margin upside in H2 2026 vs 2026, with Repsol/Galp having highest OCF sensitivity (4.3%/3.4%).",
+        "**Windfall Tax Divergence**: Repsol faces ~12% profit exposure to windfall tax (vs Galp/ENI at 2.4% each), creating material earnings risk under EU policy scenarios.",
+        "**Capex-Oil Price Disconnect**: Structural decoupling (R²=0.884) as EU Big Oils' capex per barrel no longer correlates with Brent, breaking historical investment thesis.",
+        "**LNG Capacity Acceleration**: 220 mtpa LNG capacity to come online 2025-30 (US/Qatar-led), driving lower gas prices 2028-30 and discouraging new FIDs beyond 2028."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 28,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-gz0ejqpeavf-bf9471",
       "title": "Cushman & Wakefield Ltd. (CWK) 2Q26 First Take Top line beat and guidance raised, but Cap Markets softer",
       "institution": "Goldman Sachs",
@@ -1184,6 +1266,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gjg98c64ble-4304f3",
+      "title": "What's Top of Mind in Macro Research Yen intervention, tech rebound but leadership rotation, US jobs report",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:25Z",
+      "summary_points": [
+        "**Yen Intervention Efficacy Fade**: Muted USD/JPY response to interventions (e.g., -13.7 bp on 11-Jul-24) signals persistent weakness; structural capital flow reversal (Japanese investors returning home) critical for sustainable strength amid trade-off risks.",
+        "**US Jobs & Middle East Oil Risk**: July nonfarm payrolls estimated +75k (unemployment to 4.3%), Middle East conflict tightening physical oil market despite price retreat; US-Iran deal pivotal for oil stability.",
+        "**AI Investment Surge Drives Tech Rotation**: $600bn US/$1tn global AI investment (vs.",
+        "$250bn/$490bn 2025), fueling North Asia tech export surpluses and structural leadership rotation from mega-cap tech to value sectors (energy, infrastructure, defense).",
+        "**China-Euro Area Growth Divergence**: China CAI 2026/27 GDP at 4.6%/4.7% vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
@@ -1266,6 +1369,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-5p1dipehbli-939757",
+      "title": "Hon Hai (2317)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:01:46Z",
+      "summary_points": [
+        "**Hon Hai Revenue Momentum**: Jul rev +54% YoY (vs.",
+        "est), Aug rev +73% YoY / +11% MoM (NT$1.05T), 3Q26E rev +48% YoY / +22% QoQ (NT$3.1T) driven by AI server market share gains and smartphone form factor shifts.",
+        "**Dual Growth Catalysts**: AI server demand (market share expansion) and smartphone form factor changes (2026E) underpin near-term revenue growth; Foxtron (EV subsidiary) launched self-branded \"Bria\" vehicle and secured Mitsubishi Motors partnership for passenger cars/zero-emission buses.",
+        "**Valuation Gap & Upside**: Goldman Sachs 12m TP at NT$400 (54.7% upside from NT$258.50), reflecting 120%+ revenue/EBITDA growth (2025–2028E) and 2027E P/E of 18.9x, with current price significantly below target.",
+        "**Key Downside Risks**: Slower AI server ramp-up, weaker EV solution performance (assembly/design/software), and intensified competition in consumer electronics EMS."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
