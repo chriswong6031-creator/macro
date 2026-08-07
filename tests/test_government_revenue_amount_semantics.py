@@ -699,6 +699,91 @@ def test_no_function_local_survives_into_module_scope(leaked):
     assert scanner._scopes[0].classes.get(leaked) is None
 
 
+def _functions_holding_amount_state(rel: str, source: str) -> dict[str, list[str]]:
+    """Functions whose OWN locals the scanner proved a class for, by scanning the source.
+
+    The scanner discards a scope when it pops, so the census re-implements the pop and
+    reads the scope on the way out.  Nothing about the rule is re-stated here — it is the
+    real ``_PythonScanner`` doing the real traversal.
+    """
+    import ast
+
+    class _Census(guard._PythonScanner):
+        def __init__(self, path, readers):
+            super().__init__(path, readers)
+            self.owners: dict[str, list[str]] = {}
+            self._stack: list[str] = []
+
+        def _scoped(self, kind, node):
+            self._scopes.append(guard._Scope(kind))
+            try:
+                self.generic_visit(node)
+                classed = sorted(n for n, c in self._scopes[-1].classes.items() if c is not None)
+                if classed and kind == "function" and self._stack:
+                    self.owners.setdefault(self._stack[-1], []).extend(classed)
+            finally:
+                self._scopes.pop()
+
+        def _enter(self, node):
+            self._stack.append(node.name)
+            try:
+                self._scoped("function", node)
+            finally:
+                self._stack.pop()
+
+        def visit_FunctionDef(self, node):
+            self._enter(node)
+
+        def visit_AsyncFunctionDef(self, node):
+            self._enter(node)
+
+    tree = ast.parse(source)
+    census = _Census(rel, guard._first_wins_readers(tree))
+    census.visit(tree)
+    return census.owners
+
+
+def test_the_scoping_rule_bites_in_three_modules_not_one():
+    """Where per-function amount state actually lives, measured rather than remembered.
+
+    A build report for the scoping round counted FOUR functions in ``metrics.py`` and ONE
+    in ``award_events.py`` and stopped there.  ``workspace._recompete_workspace_event``
+    proves a class for ``obligated`` and ``ratio`` as well, so the rule bites in SIX
+    functions across THREE modules — which is the difference between "scoping matters in
+    one file" and "scoping matters wherever this lobe does arithmetic".
+
+    Asserted as a floor, not an equality: the census may GROW when the lobe grows an
+    amount local, and pinning the exact set would turn every such edit into a red.  What
+    it may not do is shrink to nothing — a scoping rule with no per-function state left to
+    scope would leave every test in this section passing while testing nothing.
+    """
+    measured: dict[str, dict[str, list[str]]] = {}
+    for module in (
+        "engine/government_revenue/metrics.py",
+        "engine/government_revenue/award_events.py",
+        "engine/government_revenue/workspace.py",
+    ):
+        source = (ROOT / module).read_text(encoding="utf-8")
+        measured[module] = _functions_holding_amount_state(module, source)
+
+    for module, function in (
+        ("engine/government_revenue/metrics.py", "_backlog"),
+        ("engine/government_revenue/metrics.py", "_catalysts"),
+        ("engine/government_revenue/metrics.py", "_concentration"),
+        ("engine/government_revenue/metrics.py", "_modification_metrics"),
+        ("engine/government_revenue/award_events.py", "_action_classification"),
+        ("engine/government_revenue/workspace.py", "_recompete_workspace_event"),
+    ):
+        assert function in measured[module], (
+            f"{module}:{function} no longer holds per-function amount state — the scoping "
+            f"tests above may now be vacuous.  Measured: "
+            f"{ {m: sorted(f) for m, f in measured.items()} }"
+        )
+    assert {"obligated", "ratio"} <= set(
+        measured["engine/government_revenue/workspace.py"]["_recompete_workspace_event"]
+    )
+
+
 def test_an_inner_scope_reads_an_enclosing_binding():
     """Scoping narrows WRITES, not reads — a closure really does see the outer name."""
     source = (
@@ -842,6 +927,157 @@ def test_a_total_over_a_container_still_reads_inside_it():
     """Non-vacuity: refusing to class the CONTAINER never stops a rule that folds it."""
     source = 'exposure = sum([row["total_obligated"], row["potential_award_amount"]])\n'
     assert _rules(guard.scan_python(PY, source)) == {"mixed_class_sum"}
+
+
+# --------------------------- the container-member rule, pinned in BOTH directions
+#
+# THE RULE: a name bound to a collection of amounts is not itself a figure, but it IS a
+# collection of figures — so the members' classes are kept against the name and recovered
+# wherever the collection is folded back into one number (a total, an element read).
+#
+# Before this, a container binding was classed ``frozenset()`` and only an ALL-STRING
+# container was recoverable, so the members survived exactly as long as the collection was
+# a LITERAL AT THE CALL SITE.  The differential below is one source shape written four
+# ways: the version written inside ``sum()`` went red and the three where the same list
+# was hoisted to a name — by hand, or by a comprehension, or read back by index — all
+# scanned clean.  A blind spot a reader closes by hoisting one line is not a rule.
+#
+# The precision half is the round-2 lesson applied to containers: BUILDING a list of an
+# obligation and a ceiling is legal (it is how the dossier renders them side by side), so
+# nothing is reported at the binding; a container of non-amounts stays unclassed under the
+# value-position rule; and an element read out of a MIXED container carries NO class,
+# because which member an index picks is not knowable here — the same coin-flip refusal
+# the loop-variable and reader-result rules make.
+
+
+@pytest.mark.parametrize(
+    "shape, source",
+    [
+        (
+            "R1 a list literal hoisted out of the sum()",
+            'vals = [row["total_obligated"], row["total_obligation"]]\n'
+            'total = sum(vals) + row["total_outlays"]\n',
+        ),
+        (
+            "R2 CONTROL — the same list written INSIDE the sum()",
+            'total = sum([row["total_obligated"], row["total_obligation"]]) + row["total_outlays"]\n',
+        ),
+        (
+            "R3 the same collection built by a comprehension",
+            'vals = [r["total_obligated"] for r in rows]\n'
+            'total = sum(vals) + rows[0]["total_outlays"]\n',
+        ),
+        (
+            "R4 the collection read back by index instead of totalled",
+            'pair = (row["total_obligated"], row["total_obligation"])\n'
+            'total = pair[0] + row["total_outlays"]\n',
+        ),
+    ],
+)
+def test_obligations_plus_an_outlay_is_seen_however_the_collection_is_carried(shape, source):
+    """One mix, four carriers.  All four must go red, or hoisting is a bypass."""
+    findings = guard.scan_python(PY, source)
+    assert _rules(findings) == {"mixed_class_sum"}, f"{shape}: {[str(f) for f in findings]}"
+    assert "outlay" in findings[0].detail and "award_cumulative" in findings[0].detail
+
+
+def test_building_a_container_of_two_classes_is_not_a_finding():
+    """Obligated / Current value / Potential ceiling is the honest presentation.
+
+    The report belongs where the collection becomes ONE number, not where it is built —
+    otherwise the rule reads as "never put two classes in a list", which is not the claim
+    and would fire on the dossier's own value row.
+    """
+    assert guard.scan_python(PY, 'both = [row["total_obligated"], row["potential_award_amount"]]\n') == []
+
+
+def test_totalling_that_same_container_IS_the_finding():
+    """Non-vacuity for the test above: silence at the binding is not a dead tracker."""
+    source = (
+        'both = [row["total_obligated"], row["potential_award_amount"]]\n'
+        "exposure = sum(both)\n"
+    )
+    assert _rules(guard.scan_python(PY, source)) == {"mixed_class_sum"}
+
+
+def test_an_element_of_a_MIXED_container_carries_no_class():
+    """Which member an index picks is not knowable here; guessing invents a measurement."""
+    source = (
+        'both = [row["total_obligated"], row["potential_award_amount"]]\n'
+        'total = both[0] + row["total_outlays"]\n'
+    )
+    assert guard.scan_python(PY, source) == []
+
+
+@pytest.mark.parametrize(
+    "why, source",
+    [
+        (
+            "a container of string labels holds no dollar figure",
+            'labels = ["deobligation", "positive contract action"]\n'
+            'total = labels[0] + row["total_obligated"]\n',
+        ),
+        (
+            "members are read from the ELEMENT, never from the iteration domain",
+            'value_items = [by_name[n] for n in ("current_award_amount", "potential_award_amount")]\n'
+            'total = sum(value_items) + row["total_obligated"]\n',
+        ),
+        (
+            "a comprehension target shadows an enclosing name of the same word",
+            'obligated = row["total_obligated"]\n'
+            "vals = [obligated for obligated in raw]\n"
+            'total = sum(vals) + row["total_outlays"]\n',
+        ),
+        (
+            "a dict is a RECORD keyed by name, not a collection of like figures",
+            'fact = {"id": "total_obligated", "value": v, "currency": "USD", "semantic": "obligated"}\n'
+            'total = fact["currency"] + row["total_outlays"]\n',
+        ),
+        (
+            "a container this file never saw bound carries nothing",
+            'def f(vals):\n    return sum(vals) + row["total_outlays"]\n',
+        ),
+    ],
+)
+def test_a_container_of_non_amounts_stays_unclassed(why, source):
+    assert guard.scan_python(PY, source) == [], why
+
+
+def test_mutation_a_hoisted_container_total_is_seen_in_the_real_source():
+    """The N1 shape written at a real site in the real ``metrics.py`` must go RED.
+
+    The synthetic cases above prove the rule; this proves it survives contact with the
+    file it exists to police — the same anchor the ``_concentration`` control uses, so a
+    move breaks both loudly instead of leaving either vacuous.
+    """
+    source = _metrics_source()
+    assert guard.scan_python(METRICS, source) == [], "shipped metrics.py is not clean"
+    mutated = _mutate(
+        source,
+        "    total = float(weights.sum())\n",
+        '    _hoisted = [frame["total_obligated"], frame["total_obligation"]]\n'
+        "    total = float(sum(_hoisted)) + "
+        'float(pd.to_numeric(frame["total_outlays"], errors="coerce").sum())\n',
+    )
+    findings = guard.scan_python(METRICS, mutated)
+    assert _rules(findings) == {"mixed_class_sum"}, [str(f) for f in findings]
+    detail = " ".join(f.detail for f in findings)
+    assert "outlay" in detail and "award_cumulative" in detail, detail
+
+
+def test_the_container_rule_reports_nothing_on_the_tree_as_it_stands():
+    """Measured price of the rule: 0 of the tree's container bindings acquire a class.
+
+    Injecting ``sum(<name>) + row["total_outlay"]`` and ``<name>[0] + row["total_outlay"]``
+    after every one of the 450 container bindings in the 33 subjects reported ZERO sites —
+    no member of any of them is a declared amount field, so the rule adds no
+    false-positive surface here.  It is prospective, which is the point: the shape it
+    refuses is one line of hoisting away, and until now that line was a bypass.
+
+    Pinned as the gate itself rather than as a count, because a count of container
+    bindings would fail on every unrelated edit to the lobe.
+    """
+    assert guard.scan_tree() == []
 
 
 def test_provenance_still_travels_through_a_numeric_coercion():

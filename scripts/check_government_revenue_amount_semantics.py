@@ -59,7 +59,10 @@ WHAT IS DELIBERATELY *NOT* A VIOLATION
   action"`` is a WORD that a delta merely chose.  A class is read only from an
   expression's VALUE positions (``_PythonScanner._value_fields``) — never from the
   condition that picks the value, and never past a call whose result is a different KIND
-  of thing.
+  of thing.  A container's own NAME is likewise not a figure — but its members' classes
+  are kept against that name (``_member_fields``) and recovered the moment the collection
+  is folded back into one number, by a total or by an element read, so hoisting a list out
+  of ``sum(...)`` no longer hides the mix.
 
   Two figures of different classes rendered SIDE BY SIDE.  The dossier's
   Obligated / Current value / Potential ceiling row is the honest presentation, not the
@@ -176,11 +179,19 @@ class _Scope:
     ``classes`` maps a name to its class, or to ``None`` meaning "bound HERE and carrying
     no class" — an explicit shadow, so a local that re-measures or loses the class does
     not fall through to an enclosing binding of the same name.
+
+    ``ladders`` holds a name bound to an all-string collection (a FIELD-NAME ladder);
+    ``containers`` holds a name bound to a collection of amount VALUES, as the declared
+    fields its members came from.  Both are properties of the collection, not of one
+    figure, which is why neither is a class: they are read where the collection is folded
+    into a number (a total, an element read, a first-present-wins rung), never where the
+    collection's own name is used.
     """
 
     kind: str
     classes: dict[str, AmountClass | None] = field(default_factory=dict)
     ladders: dict[str, list[str] | None] = field(default_factory=dict)
+    containers: dict[str, list[str] | None] = field(default_factory=dict)
     global_names: set[str] = field(default_factory=set)
     nonlocal_names: set[str] = field(default_factory=set)
 
@@ -234,11 +245,14 @@ class _PythonScanner(ast.NodeVisitor):
     Local names are tracked when an assignment's right-hand side mentions exactly ONE
     declared amount field (``obligated = pd.to_numeric(active.get("total_obligated"))``);
     all-string collections are tracked by their member list so a ladder hoisted to a
-    constant is still resolved at its call site.  Three shapes that hid real mixes from the
-    first draft are tracked as well, each stated as a rule where it is implemented:
-    a class-neutral RE-BIND does not clobber a class the name already proved
-    (``_bind_class``), a LOOP VARIABLE walking a known field ladder carries that ladder's
-    class (``visit_For``), and every binding is SCOPED to the function that made it
+    constant is still resolved at its call site, and a collection of amount VALUES is
+    tracked by the fields its members measure (``_member_fields``) so a list hoisted out
+    of ``sum(...)`` is resolved at ITS call site too.  Four shapes that hid real mixes are
+    tracked as well, each stated as a rule where it is implemented: a class-neutral
+    RE-BIND does not clobber a class the name already proved (``_bind_class``), a LOOP
+    VARIABLE walking a known field ladder carries that ladder's class (``visit_For``), an
+    ELEMENT taken out of a single-class container carries its members' class
+    (``_value_fields``), and every binding is SCOPED to the function that made it
     (``_Scope``/``_binding_scope``) so a name proved inside one function does not stay
     classed for the rest of the module.
 
@@ -282,6 +296,14 @@ class _PythonScanner(ast.NodeVisitor):
     # is the known limit and it is stated rather than papered over: this file does no
     # interprocedural analysis, so a PARAMETER carries no class, and recovering those
     # three would mean restoring exactly the leak that produced the false positives.
+    #
+    # WHERE THE RULE BITES, counted rather than remembered: SIX functions across THREE
+    # modules hold per-function amount state — ``metrics._backlog``, ``_catalysts``,
+    # ``_concentration`` and ``_modification_metrics``; ``award_events._action_classification``;
+    # and ``workspace._recompete_workspace_event`` (``obligated``/``ratio``), which a build
+    # report for this round left out of the count.  Pinned by
+    # ``test_the_scoping_rule_bites_in_three_modules_not_one`` so it cannot drift back into
+    # prose.
     def _visible_scopes(self) -> Iterator[_Scope]:
         """Scopes a name READ may reach, innermost first.
 
@@ -316,6 +338,12 @@ class _PythonScanner(ast.NodeVisitor):
         for scope in self._visible_scopes():
             if name in scope.ladders:
                 return scope.ladders[name]
+        return None
+
+    def _lookup_container(self, name: str) -> list[str] | None:
+        for scope in self._visible_scopes():
+            if name in scope.containers:
+                return scope.containers[name]
         return None
 
     def _scoped(self, kind: str, node: ast.AST) -> None:
@@ -417,10 +445,15 @@ class _PythonScanner(ast.NodeVisitor):
             if name in _KIND_CHANGING_CALLS:
                 return found
             if name in _TOTALLING_CALLS:
-                # A total over a collection IS one figure built from every member, so
-                # this one call reads INSIDE the container it is handed.  ``series.sum()``
-                # takes no argument at all — its collection is the RECEIVER, which is how
-                # ``float(weights.sum())`` reaches the class ``weights`` carries.
+                # A total over a collection IS one figure built from every member, so this
+                # one call reads INSIDE the container it is handed — whether that container
+                # is a LITERAL (``sum([a, b])``) or a NAME bound to one (``vals = [a, b]``
+                # … ``sum(vals)``), which ``_collection_fields`` resolves through
+                # ``_lookup_container``/``_lookup_ladder``.  Reading only the literal is
+                # what made hoisting the list out of the call site a blind spot.
+                # ``series.sum()`` takes no argument at all — its collection is the
+                # RECEIVER, which is how ``float(weights.sum())`` reaches the class
+                # ``weights`` carries.
                 found = [f for child in node.args for f in self._collection_fields(child)]
                 if isinstance(node.func, ast.Attribute):
                     found.extend(self._value_fields(node.func.value))
@@ -445,23 +478,47 @@ class _PythonScanner(ast.NodeVisitor):
             for argument in (*node.args, *(kw.value for kw in node.keywords)):
                 found.extend(self._value_fields(argument))
             return found
+        if isinstance(node, ast.Subscript):
+            # AN ELEMENT TAKEN OUT of a tracked container IS one of its members, so it
+            # carries the members' class — ``pair = (a, b)`` … ``pair[0]``.  Stated on
+            # exactly the terms of the loop-variable and reader-result rules: a
+            # single-class container yields that class; a container spanning classes
+            # yields NONE, because which member an index picks is not knowable here and
+            # attributing one of the two would be a coin-flip dressed as knowledge (the
+            # mix such a container makes is reported where it is TOTALLED, not here).
+            found.extend(self._value_fields(node.slice))
+            if isinstance(node.value, ast.Name):
+                members = classes_of(self._lookup_container(node.value.id) or ())
+                if len(members) == 1:
+                    found.append(_REPRESENTATIVE_FIELD[next(iter(members))])
+            found.extend(self._value_fields(node.value))
+            return found
         for child in ast.iter_child_nodes(node):
             found.extend(self._value_fields(child))
         return found
 
     def _collection_fields(self, node: ast.AST) -> list[str]:
-        """Every declared field in a subtree — the reading for a container being TOTALLED."""
-        return [
-            child.value
-            for child in ast.walk(node)
-            if isinstance(child, ast.Constant)
-            and isinstance(child.value, str)
-            and classify(child.value) is not None
-        ] + [
-            _REPRESENTATIVE_FIELD[self._lookup_class(child.id)]
-            for child in ast.walk(node)
-            if isinstance(child, ast.Name) and self._lookup_class(child.id) is not None
-        ]
+        """Every declared field in a subtree — the reading for a container being TOTALLED.
+
+        A NAME is resolved three ways, in order: its own class, the field-name ladder it
+        is bound to (``sum(frame[c] for c in COLS)``), and the amount container it is
+        bound to (``vals = [...]`` … ``sum(vals)``).  Only a totalling call reads this,
+        which is what keeps a container's own name from behaving like a dollar figure.
+        """
+        found: list[str] = []
+        for child in ast.walk(node):
+            if isinstance(child, ast.Constant):
+                if isinstance(child.value, str) and classify(child.value) is not None:
+                    found.append(child.value)
+            elif isinstance(child, ast.Name):
+                cls = self._lookup_class(child.id)
+                if cls is not None:
+                    found.append(_REPRESENTATIVE_FIELD[cls])
+                    continue
+                members = self._lookup_ladder(child.id) or self._lookup_container(child.id)
+                if members:
+                    found.extend(members)
+        return found
 
     def _fields(self, node: ast.AST) -> list[str]:
         return self._value_fields(node)
@@ -495,6 +552,51 @@ class _PythonScanner(ast.NodeVisitor):
         if isinstance(node, ast.Name):
             return self._lookup_ladder(node.id)
         return None
+
+    def _member_fields(self, node: ast.AST) -> list[str]:
+        """Declared fields the MEMBERS of a sequence literal are measurements of.
+
+        THE CONTAINER-MEMBER RULE, stated once:
+
+          A name bound to a collection of amounts is not itself a figure, but it is a
+          collection OF figures — so the members' classes are kept against the name and
+          recovered wherever the collection is folded back into one number.
+
+        Read from the MEMBER positions only — a list's elements, a comprehension's
+        element expression — never from the iteration domain, so
+        ``[by_name[n] for n in ("current_award_amount", "potential_award_amount")]``
+        stays a list of unknown things rather than borrowing a class from the names it
+        looks up by.  Each member is read through ``_value_fields``, so the
+        value-position rule applies inside a container exactly as it does outside one:
+        a list of string labels or of counts carries nothing.
+
+        A DICT is deliberately not tracked.  It is a RECORD keyed by name and
+        heterogeneous by design — an amount fact is itself ``{"id": …, "value": …,
+        "currency": …}`` — so a union over its values would put a class on
+        ``fact["currency"]``.  Per-key modelling is analysis this file does not do, and
+        the rule that cannot invent a mix wins.
+        """
+        if isinstance(node, (ast.List, ast.Tuple, ast.Set)):
+            return [f for element in node.elts for f in self._value_fields(element)]
+        if isinstance(node, (ast.ListComp, ast.SetComp, ast.GeneratorExp, ast.DictComp)):
+            # The element expression is evaluated in the comprehension's OWN scope, so its
+            # targets are pushed as explicit shadows before it is read: in
+            # ``[obligated for obligated in raw]`` the element is the comprehension's
+            # ``obligated``, not an enclosing local that happens to share the word.
+            shadow = _Scope("comprehension")
+            for generator in node.generators:
+                for name in ast.walk(generator.target):
+                    if isinstance(name, ast.Name):
+                        shadow.classes[name.id] = None
+                        shadow.ladders[name.id] = None
+                        shadow.containers[name.id] = None
+            self._scopes.append(shadow)
+            try:
+                element = node.value if isinstance(node, ast.DictComp) else node.elt
+                return self._value_fields(element)
+            finally:
+                self._scopes.pop()
+        return []
 
     # -- name tracking ----------------------------------------------------------
     def _bind_class(self, name: str, classes: frozenset[AmountClass]) -> None:
@@ -560,20 +662,37 @@ class _PythonScanner(ast.NodeVisitor):
         # ("current_award_amount", "potential_award_amount") if n in by_name]`` is a LIST
         # of facts, and ``impacts = {i["ticker"]: i for i in ...}`` is a dict; classing
         # either says a collection is a dollar amount.  The members' classes are still
-        # read wherever the collection is TOTALLED or used as a ladder — those rules look
-        # inside a collection on purpose — so nothing is lost by refusing to put a class
-        # on the container's own name.
+        # read wherever the collection is TOTALLED, INDEXED, or used as a ladder — those
+        # rules look inside a collection on purpose — so nothing is lost by refusing to
+        # put a class on the container's own name.
+        #
+        # What WAS lost, until the members were kept against the name, is every one of
+        # those rules the moment the container stopped being a literal at the call site::
+        #
+        #     vals = [row["total_obligated"], row["total_obligation"]]
+        #     return sum(vals) + row["total_outlays"]        # obligations + an OUTLAY
+        #
+        # scanned clean while the identical list written INSIDE ``sum()`` went red.  A
+        # blind spot a reader closes by hoisting one line is not a rule.  ``containers``
+        # holds the members' fields (``_member_fields``); nothing is reported HERE, not
+        # even for a container spanning classes — building a list of an obligation and a
+        # ceiling is how the dossier renders them side by side, which is the honest
+        # presentation.  It is TOTALLING one that mixes, and that is reported where it
+        # happens.
         container = isinstance(node.value, (
             ast.Dict, ast.List, ast.Tuple, ast.Set,
             ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp,
         ))
         classes = frozenset() if container else self._classes(node.value)
         members = self._string_members(node.value)
+        contents = self._member_fields(node.value) or None
         for target in node.targets:
             if not isinstance(target, ast.Name):
                 continue
             self._bind_class(target.id, classes)
-            self._binding_scope(target.id).ladders[target.id] = members
+            scope = self._binding_scope(target.id)
+            scope.ladders[target.id] = members
+            scope.containers[target.id] = contents
         self.generic_visit(node)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
@@ -581,6 +700,9 @@ class _PythonScanner(ast.NodeVisitor):
             members = self._string_members(node.value)
             if members is not None:
                 self._binding_scope(node.target.id).ladders[node.target.id] = members
+            contents = self._member_fields(node.value)
+            if contents:
+                self._binding_scope(node.target.id).containers[node.target.id] = contents
         self.generic_visit(node)
 
     # -- rules ------------------------------------------------------------------
@@ -632,6 +754,11 @@ class _PythonScanner(ast.NodeVisitor):
             argument = node.args[0]
             if isinstance(argument, (ast.List, ast.Tuple, ast.Set, ast.GeneratorExp)):
                 self._report(node, "mixed_class_sum", self._fields(argument))
+            elif isinstance(argument, ast.Name):
+                # The same rule where the collection was hoisted to a name — the members
+                # are read from the binding rather than from the call site.  A name with
+                # no tracked members resolves to nothing and reports nothing.
+                self._report(node, "mixed_class_sum", self._collection_fields(argument))
         if name == "get" and len(node.args) == 2:
             key, default = self._classes(node.args[0]), self._classes(node.args[1])
             if len(key) == 1 and len(default) == 1 and key != default:
@@ -999,6 +1126,47 @@ _SELFTEST_CASES: tuple[tuple[str, bool, str, str], ...] = (
         "        weights = frame[col]\n"
         "        break\n"
         'total = float(weights.sum()) + float(frame["total_outlays"].sum())\n',
+    ),
+    (
+        "a list hoisted out of sum() is still totalled",
+        True,
+        "engine/government_revenue/_selftest.py",
+        'vals = [row["total_obligated"], row["total_obligation"]]\n'
+        'total = sum(vals) + row["total_outlays"]\n',
+    ),
+    (
+        "a comprehension bound to a name is a collection of amounts",
+        True,
+        "engine/government_revenue/_selftest.py",
+        'vals = [r["total_obligated"] for r in rows]\n'
+        'total = sum(vals) + rows[0]["total_outlays"]\n',
+    ),
+    (
+        "an element taken out of a single-class container carries its class",
+        True,
+        "engine/government_revenue/_selftest.py",
+        'pair = (row["total_obligated"], row["total_obligation"])\n'
+        'total = pair[0] + row["total_outlays"]\n',
+    ),
+    (
+        "BUILDING a container of two classes is the side-by-side presentation",
+        False,
+        "engine/government_revenue/_selftest.py",
+        'both = [row["total_obligated"], row["potential_award_amount"]]\n',
+    ),
+    (
+        "an element read from a MIXED container is a coin flip, so it carries no class",
+        False,
+        "engine/government_revenue/_selftest.py",
+        'both = [row["total_obligated"], row["potential_award_amount"]]\n'
+        'total = both[0] + row["total_outlays"]\n',
+    ),
+    (
+        "a container of non-amounts stays unclassed",
+        False,
+        "engine/government_revenue/_selftest.py",
+        'labels = ["deobligation", "positive contract action"]\n'
+        'total = labels[0] + row["total_obligated"]\n',
     ),
     (
         "a loop over an unknowable domain binds nothing",
