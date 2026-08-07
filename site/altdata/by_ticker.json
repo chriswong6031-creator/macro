@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-08-06",
-  "generated_utc": "2026-08-06T23:09:04.339000+00:00",
-  "n_tickers": 2609,
+  "generated_utc": "2026-08-06T23:40:40.501105+00:00",
+  "n_tickers": 2621,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
     "HUBB": {
@@ -73,12 +73,13 @@
     "BWXT": {
       "ticker": "BWXT",
       "channels": [
+        "activist_13d",
         "congress_buy"
       ],
-      "weighted_score": 0.45,
+      "weighted_score": 0.65,
       "congress_net": 10,
       "congress_members": 1,
-      "convergence_score": 1,
+      "convergence_score": 2,
       "trump_linked": false,
       "affiliated": false
     },
@@ -1166,12 +1167,13 @@
       "channels": [
         "13f_add"
       ],
-      "weighted_score": 0.4,
+      "weighted_score": 0.75,
+      "analyst_bull_ratio": 0.87,
       "days_to_earnings": 20,
       "next_earnings": "2026-08-26",
       "earnings_surprise_pct": 33.3,
       "congress_position_usd": 54268500.0,
-      "convergence_score": 1,
+      "convergence_score": 2,
       "trump_linked": false,
       "affiliated": false
     },
@@ -2422,13 +2424,14 @@
       "ticker": "ETSY",
       "channels": [
         "analyst_upgrade_cluster",
-        "app_demand"
+        "app_demand",
+        "special_situation"
       ],
-      "weighted_score": 0.75,
+      "weighted_score": 0.95,
       "app_rating": 4.92,
       "app_reviews": 7270606,
       "analyst_bull_ratio": 0.92,
-      "convergence_score": 2,
+      "convergence_score": 3,
       "trump_linked": false,
       "affiliated": false
     },
@@ -2745,13 +2748,15 @@
     "CRM": {
       "ticker": "CRM",
       "channels": [
+        "analyst_upgrade_cluster",
         "hf_model_momentum"
       ],
-      "weighted_score": 0.35,
+      "weighted_score": 0.7,
       "hf_downloads_30d": 5632550.0,
+      "analyst_bull_ratio": 0.85,
       "github_stars": 11263,
       "congress_position_usd": 123571500.0,
-      "convergence_score": 1,
+      "convergence_score": 2,
       "trump_linked": false,
       "affiliated": false
     },
@@ -3098,6 +3103,10 @@
       ],
       "weighted_score": 0.35,
       "analyst_bull_ratio": 1.0,
+      "days_to_earnings": 6,
+      "next_earnings": "2026-08-12",
+      "earnings_surprise_pct": 4.7,
+      "congress_position_usd": 44616000.0,
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
@@ -3164,6 +3173,17 @@
       "trump_linked": false,
       "affiliated": false
     },
+    "CIEN": {
+      "ticker": "CIEN",
+      "channels": [
+        "analyst_upgrade_cluster"
+      ],
+      "weighted_score": 0.35,
+      "analyst_bull_ratio": 1.0,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
     "HPE": {
       "ticker": "HPE",
       "channels": [
@@ -3192,40 +3212,6 @@
     },
     "TREX": {
       "ticker": "TREX",
-      "channels": [
-        "analyst_upgrade_cluster"
-      ],
-      "weighted_score": 0.35,
-      "analyst_bull_ratio": 1.0,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "CIEN": {
-      "ticker": "CIEN",
-      "channels": [
-        "analyst_upgrade_cluster"
-      ],
-      "weighted_score": 0.35,
-      "analyst_bull_ratio": 1.0,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "RTX": {
-      "ticker": "RTX",
-      "channels": [
-        "analyst_upgrade_cluster"
-      ],
-      "weighted_score": 0.35,
-      "analyst_bull_ratio": 0.95,
-      "congress_position_usd": 37810500.0,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "MAS": {
-      "ticker": "MAS",
       "channels": [
         "analyst_upgrade_cluster"
       ],
@@ -3791,18 +3777,6 @@
       "days_to_earnings": 5,
       "next_earnings": "2026-08-11",
       "earnings_surprise_pct": -17.9,
-      "convergence_score": 0,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "CSCO": {
-      "ticker": "CSCO",
-      "channels": [],
-      "weighted_score": 0,
-      "days_to_earnings": 6,
-      "next_earnings": "2026-08-12",
-      "earnings_surprise_pct": 4.7,
-      "congress_position_usd": 44616000.0,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
@@ -4814,6 +4788,15 @@
       "channels": [],
       "weighted_score": 0,
       "congress_position_usd": 39312000.0,
+      "convergence_score": 0,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "RTX": {
+      "ticker": "RTX",
+      "channels": [],
+      "weighted_score": 0,
+      "congress_position_usd": 37810500.0,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
