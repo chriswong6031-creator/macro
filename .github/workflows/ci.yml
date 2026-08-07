@@ -1244,6 +1244,13 @@ on:
       # The engine-source scan's own suite (#3765 → #3790 latency). engine/** already
       # triggers the lane for copy changes; name the suite so a test-only edit does too.
       - "tests/test_validated_claims_engine.py"
+      # zh diction gate (ui.zh_filing_term): 申报 must never reach user-facing
+      # Chinese copy — it reads as a TAX/CUSTOMS declaration, not a 披露. Name the
+      # guard, its allowlist and its suite so an edit to ANY one of the three
+      # re-proves the gate, not just an edit to the copy it polices.
+      - "scripts/check_zh_filing_term.py"
+      - "config/zh_filing_term_allowlist.json"
+      - "tests/test_zh_filing_term.py"
       # The `surfaces`-enforcement + zh-token suite (2026-07-29 dislocation-panel audit):
       # a phrase justified for one page must not license another, and 经验证/经过验证 are
       # gated. Named so a test-only edit still triggers the lane that runs it.
