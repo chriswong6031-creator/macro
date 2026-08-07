@@ -55,6 +55,13 @@ from engine.us_act_now import (
 #: replaced "4-lane", but the deleted code ran FIVE actLane() calls including
 #: `bottom`. The lane is restored here as a server-rendered strip under the board.
 #: These fences therefore point at the partial, NOT at sector_central.html.j2.
+#: #4758 added `test_help_tip_framework_is_byte_identical_in_both_copies` referencing a
+#: `TEMPLATES` constant this module never defined, so that guard raised NameError before
+#: reaching its assertion — dark since it landed, and reddening ci-pack-0's
+#: `engine-render-guards` for every PR. Defining it here revives the guard as written; the
+#: contract it checks HOLDS (both fenced slices are byte-identical at 2601 bytes), so this
+#: is a repair of the guard, not a relaxation of it.
+TEMPLATES = ROOT / "templates"
 BOTTOMING_LANE = ROOT / "templates" / "_us_bottoming_watch.html.j2"
 #: The board that hosts the strip and carries the graduation-gap chip on its own rows.
 ACT_BOARD = ROOT / "templates" / "_us_act_now_board.html.j2"
