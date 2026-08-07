@@ -4,8 +4,10 @@ from __future__ import annotations
 import json
 
 import pandas as pd
+import pytest
 
 import collectors.usaspending_awards as usaspending_awards
+import engine.government_revenue.award_events as award_events
 from engine.government_revenue.award_events import build_award_change_events
 from scripts.ci.validate_government_revenue_award_event_bundle import validate_bundle
 from collectors.usaspending_awards import (
@@ -1569,3 +1571,292 @@ def test_collect_registry_exposes_usaspending_awards_adapter():
 
     registry = all_adapters()
     assert registry["usaspending_awards"] is UsaspendingAwardsAdapter
+
+
+# ---------------------------------------------------------------------------
+# Wave 9C collector defects B1/B2/B3 — wrong-candidate-class regressions.
+# ---------------------------------------------------------------------------
+
+
+def _detail_receipt(receipt_id: str, response_sha: str) -> dict:
+    return {
+        "receipt_id": receipt_id,
+        "rail": "award_detail",
+        "endpoint": AWARD_DETAIL_URL.format(award_id="CONT_AWD_N0001"),
+        "response_sha256": response_sha,
+    }
+
+
+def _unclocked_detail(ceiling: float) -> dict:
+    """An award-detail body that never asserts a modification clock."""
+    return {
+        "generated_unique_award_id": "CONT_AWD_N0001",
+        "piid": "N0001",
+        "base_exercised_options": 100_000_000.0,
+        "base_and_all_options": ceiling,
+        "base_obligation_date": "2020-01-15",
+        "period_of_performance": {"start_date": "2020-02-01", "end_date": "2027-01-01"},
+    }
+
+
+def test_b1_absent_source_modification_clock_is_absent_not_substituted():
+    """An omitted ``last_modified_date`` must never borrow another official date.
+
+    ``base_obligation_date`` and ``start_date`` are separate official facts, not
+    a modification clock.  Substituting one stamps a change observed today with
+    a years-old ``effective_at`` the source never asserted, and publishes it as
+    an ``official`` date fact.
+    """
+    award = normalize_award(_raw_award(), "LMT", OBSERVED)
+
+    unclocked = normalize_award_event_snapshot(
+        _unclocked_detail(500_000_000.0),
+        award,
+        _detail_receipt("receipt-detail-unclocked", "a" * 64),
+        "2026-08-05T12:00:00+00:00",
+        event_eligible=True,
+    )
+    assert unclocked["effective_at"] is None
+    assert "effective_at" not in json.loads(unclocked["source_field_presence"])
+    # The separate official dates are still persisted under their own names, so
+    # nothing the source did assert is lost by refusing the substitution.
+    assert unclocked["base_obligation_date"] == "2020-01-15"
+    assert unclocked["start_date"] == "2020-02-01"
+
+    clocked = normalize_award_event_snapshot(
+        {
+            **_unclocked_detail(500_000_000.0),
+            "period_of_performance": {
+                "start_date": "2020-02-01",
+                "end_date": "2027-01-01",
+                "last_modified_date": "2026-08-05",
+            },
+        },
+        award,
+        _detail_receipt("receipt-detail-clocked", "b" * 64),
+        "2026-08-05T12:00:00+00:00",
+        event_eligible=True,
+    )
+    # A clock the source did assert is carried AND declared in the manifest, so
+    # a reader can tell an asserted clock from an absent one.
+    assert clocked["effective_at"] == "2026-08-05"
+    assert "effective_at" in json.loads(clocked["source_field_presence"])
+
+
+def _project_ceiling_move(second_detail: dict) -> list[dict]:
+    """Project a 100M -> 500M ceiling move observed four days after baseline."""
+    award = normalize_award(_raw_award(), "LMT", OBSERVED)
+    first = normalize_award_event_snapshot(
+        {
+            **_unclocked_detail(100_000_000.0),
+            "period_of_performance": {
+                "start_date": "2020-02-01",
+                "end_date": "2027-01-01",
+                "last_modified_date": "2026-08-01",
+            },
+        },
+        award,
+        _detail_receipt("receipt-detail-baseline", "c" * 64),
+        "2026-08-01T12:00:00+00:00",
+        event_eligible=True,
+    )
+    second = normalize_award_event_snapshot(
+        second_detail,
+        award,
+        _detail_receipt("receipt-detail-move", "d" * 64),
+        "2026-08-05T12:00:00+00:00",
+        event_eligible=True,
+    )
+    return build_award_change_events(
+        pd.DataFrame([first, second], columns=AWARD_EVENT_SNAPSHOT_COLUMNS),
+        pd.DataFrame(columns=AWARD_ACTION_VERSION_COLUMNS),
+        as_of="2026-08-05",
+    )
+
+
+def test_b1_unclocked_ceiling_move_never_publishes_a_borrowed_official_date():
+    """No published fact may carry a clock the award-detail response omitted."""
+    borrowed_events = _project_ceiling_move(_unclocked_detail(500_000_000.0))
+
+    assert [
+        event["change"]["effective_at"]
+        for event in borrowed_events
+        if str(event["change"]["effective_at"]).startswith("2020")
+    ] == []
+    assert [
+        fact
+        for event in borrowed_events
+        for fact in event["dates"]
+        if fact["id"] == "effective_at" and str(fact["value"]).startswith("2020")
+    ] == []
+    assert [
+        fact["as_of"]
+        for event in borrowed_events
+        for fact in event["amounts"]
+        if str(fact.get("as_of")).startswith("2020")
+    ] == []
+
+    # Control: the identical move WITH the source's own clock still projects, so
+    # the assertions above are not passing merely because nothing was emitted.
+    clocked_events = _project_ceiling_move({
+        **_unclocked_detail(500_000_000.0),
+        "period_of_performance": {
+            "start_date": "2020-02-01",
+            "end_date": "2027-01-01",
+            "last_modified_date": "2026-08-05",
+        },
+    })
+    ceiling_moves = [
+        event for event in clocked_events if event["change"]["type"] == "ceiling_changed"
+    ]
+    assert len(ceiling_moves) == 1
+    assert ceiling_moves[0]["change"]["effective_at"].startswith("2026-08-05")
+    assert all(event["change"]["effective_at"] for event in clocked_events)
+
+
+def test_b1_absent_effective_clock_defaults_in_neither_the_sort_nor_late_discovery():
+    """The two downstream consumers of the clock must not substitute a default."""
+    borrowed_only = {
+        "known_at": "2026-08-05T12:00:00+00:00",
+        "base_obligation_date": "2020-01-15",
+        "start_date": "2020-02-01",
+        "end_date": "2027-01-01",
+        "source_receipt_id": "receipt-detail-unclocked",
+        "source_response_sha256": "a" * 64,
+        "source_url": AWARD_DETAIL_URL.format(award_id="CONT_AWD_N0001"),
+        "receipt_verified": True,
+    }
+
+    # 1. The shared clock reader refuses to coalesce a different official date.
+    assert award_events._effective_at(borrowed_only) is None
+    assert award_events._effective_at({"effective_at": "2026-08-05"}) == "2026-08-05T00:00:00+00:00"
+    assert award_events._effective_at({"action_date": "2026-08-05"}) == "2026-08-05T00:00:00+00:00"
+
+    # 2. Late discovery cannot be decided from a borrowed date.  With the
+    #    substitution in place this row reads as a ~2,400-day lag and is typed
+    #    a fresh award; with no source clock it refuses to assert freshness.
+    assert award_events._is_late_discovery(borrowed_only, late_discovery_days=3650) is True
+
+    # 3. The feed sort keys on ``change.effective_at or ""``.  That fallback is
+    #    unreachable for a published event: no receipt forms without a
+    #    source-asserted clock, and no event forms without a receipt.
+    assert award_events._receipt(borrowed_only, mode="snapshot") is None
+    assert award_events._receipt(
+        {**borrowed_only, "effective_at": "2026-08-05"}, mode="snapshot"
+    ) is not None
+
+
+def test_b2_baseline_generation_tear_is_refused_exactly_like_a_live_one(
+    tmp_path,
+    monkeypatch,
+):
+    """A torn triad is not re-blessed merely because activation is baseline.
+
+    ``activation_state`` short-circuited the refusal, so during the whole
+    baseline period an interrupted write was accepted, merged, and rebound to a
+    fresh generation that every downstream verifier then reported as matching.
+    """
+    data_dir = _write_entities(tmp_path)
+    entities = json.loads((data_dir / "entities.json").read_text())
+    entities["entities"]["NOC"] = {
+        "name": "Northrop Grumman",
+        "recipient_search_text": "NORTHROP GRUMMAN",
+    }
+    (data_dir / "entities.json").write_text(json.dumps(entities))
+    clock = ["2026-08-01T10:00:00+00:00"]
+    monkeypatch.setattr(
+        "collectors.usaspending_awards._utc_iso",
+        lambda value=None: clock[0] if value is None else str(value),
+    )
+
+    def collect(session):
+        return UsaspendingAwardsCollector(
+            root=tmp_path,
+            session=session,
+            max_pages=1,
+            max_action_awards_per_entity=1,
+            request_pacing_seconds=0,
+        ).collect(["LMT"], as_of="2026-08-01", lookback_days=30)
+
+    # A single-ticker run of a two-entity universe can never claim the full
+    # configured universe, so the spine stays in its baseline period.
+    assert collect(_EventSession(current_amount=100.0, action_obligation=12.0))["status"] == "partial"
+    state_path = data_dir / AWARD_EVENT_PROJECTION_STATE_FILENAME
+    state = json.loads(state_path.read_text())
+    assert state["activation_state"] == "baseline"
+    assert state["last_run_was_full_receipt_bound_baseline"] is False
+
+    original_atomic_parquet = usaspending_awards._atomic_parquet
+
+    def fail_after_snapshot_replace(frame, path):
+        if path.name == "award_action_versions.parquet":
+            raise OSError("simulated action-version replace failure")
+        return original_atomic_parquet(frame, path)
+
+    monkeypatch.setattr(usaspending_awards, "_atomic_parquet", fail_after_snapshot_replace)
+    clock[0] = "2026-08-01T12:00:00+00:00"
+    assert collect(_EventSession(current_amount=150.0, action_obligation=25.0))["status"] == "failed"
+    monkeypatch.setattr(usaspending_awards, "_atomic_parquet", original_atomic_parquet)
+
+    torn_snapshots = pd.read_parquet(data_dir / "award_event_snapshots.parquet")
+    torn_actions = pd.read_parquet(data_dir / "award_action_versions.parquet")
+    torn_state = json.loads(state_path.read_text())
+    assert torn_state == state
+    assert torn_state["activation_state"] == "baseline"
+    assert not award_event_projection_generation_matches(
+        torn_state,
+        torn_snapshots,
+        torn_actions,
+    )
+
+    snapshot_bytes = (data_dir / "award_event_snapshots.parquet").read_bytes()
+    action_bytes = (data_dir / "award_action_versions.parquet").read_bytes()
+    state_bytes = state_path.read_bytes()
+
+    clock[0] = "2026-08-01T14:00:00+00:00"
+    later = collect(_EventSession(current_amount=150.0, action_obligation=25.0))
+    assert later["status"] == "failed"
+    assert any(
+        error.get("reason") == "ledger_write_failed" for error in later["errors"]
+    )
+    assert (data_dir / "award_event_snapshots.parquet").read_bytes() == snapshot_bytes
+    assert (data_dir / "award_action_versions.parquet").read_bytes() == action_bytes
+    assert state_path.read_bytes() == state_bytes
+
+
+def test_b3_absent_projection_state_beside_populated_ledgers_fails_closed(tmp_path):
+    """An absent state file must not cold-start a spine that already has rows.
+
+    ``_read_json`` returns ``{}`` for a missing path, so a loader documented as
+    failing closed on corruption failed OPEN on absence: a live spine regressed
+    to baseline and stamped ``event_eligible`` False on every row observed
+    during the regressed run, permanently, in an append-only ledger.
+    """
+    data_dir = tmp_path / "data" / "government_revenue"
+    data_dir.mkdir(parents=True)
+    state_path = data_dir / AWARD_EVENT_PROJECTION_STATE_FILENAME
+    snapshot_path = data_dir / "award_event_snapshots.parquet"
+    action_path = data_dir / "award_action_versions.parquet"
+
+    # A genuine first deployment has no ledgers to contradict, and still starts.
+    cold = usaspending_awards._load_award_event_projection_state(state_path)
+    assert cold["activation_state"] == "baseline"
+    assert cold["baseline_completed_at"] is None
+
+    # Empty ledgers are equally uncontradicted.
+    pd.DataFrame(columns=AWARD_EVENT_SNAPSHOT_COLUMNS).to_parquet(snapshot_path, index=False)
+    pd.DataFrame(columns=AWARD_ACTION_VERSION_COLUMNS).to_parquet(action_path, index=False)
+    assert usaspending_awards._load_award_event_projection_state(state_path)["activation_state"] == "baseline"
+
+    # Populated ledgers with no state are the workflow's `present == 0 &&
+    # tracked != 0` shape: an external deletion, not a first deployment.
+    snapshot_row = {column: None for column in AWARD_EVENT_SNAPSHOT_COLUMNS}
+    snapshot_row.update({"award_key": "LMT|CONT_AWD_N0001", "known_at": OBSERVED})
+    action_row = {column: None for column in AWARD_ACTION_VERSION_COLUMNS}
+    action_row.update({"award_key": "LMT|CONT_AWD_N0001", "action_id": "TX1", "known_at": OBSERVED})
+    pd.DataFrame([snapshot_row], columns=AWARD_EVENT_SNAPSHOT_COLUMNS).to_parquet(snapshot_path, index=False)
+    pd.DataFrame([action_row], columns=AWARD_ACTION_VERSION_COLUMNS).to_parquet(action_path, index=False)
+    assert not state_path.exists()
+
+    with pytest.raises(RuntimeError, match="cold-start"):
+        usaspending_awards._load_award_event_projection_state(state_path)

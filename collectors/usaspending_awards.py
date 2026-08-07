@@ -64,6 +64,10 @@ COLLECTION_RECEIPT_SCHEMA = "government_revenue.collection_receipt.v1"
 COLLECTION_RECEIPTS_FILENAME = "collection_receipts.jsonl"
 AWARD_EVENT_PROJECTION_STATE_SCHEMA = "government_revenue.award_event_projection_state.v1"
 AWARD_EVENT_PROJECTION_STATE_FILENAME = "award_event_projection_state.json"
+# The activation state and the two accrued ledgers it binds are one triad; the
+# loader cross-checks the ledgers, so their names cannot live as loose literals.
+AWARD_EVENT_SNAPSHOTS_FILENAME = "award_event_snapshots.parquet"
+AWARD_ACTION_VERSIONS_FILENAME = "award_action_versions.parquet"
 AWARD_EVENT_COVERAGE_MANIFEST_SCHEMA = "government_revenue.award_event_coverage_manifest.v1"
 AWARD_EVENT_PROJECTION_GENERATION_SCHEMA = (
     "government_revenue.award_event_projection_generation.v1"
@@ -856,11 +860,16 @@ def normalize_award_event_snapshot(
     award_id = _text(row.get("award_id")) or _text(row.get("piid"))
     row["award_key"] = _award_key(generated, award_id) or row.get("award_key")
     row["known_at"] = observed_at
-    row["effective_at"] = (
-        row.get("last_modified_date")
-        or row.get("base_obligation_date")
-        or row.get("start_date")
-    )
+    # ``effective_at`` is the source's own modification clock for this award
+    # state, and nothing else.  ``base_obligation_date`` and ``start_date`` are
+    # separate official facts: substituting one stamps a change observed today
+    # with a years-old effective date the response never asserted, and the
+    # projector then publishes it as an ``official`` date fact.  An absent
+    # source clock is absent.  Both halves are declared in the presence
+    # manifest, exactly as ``normalize_award_event_action`` declares its own.
+    row["effective_at"] = row.get("last_modified_date")
+    if "last_modified_date" in present:
+        present.add("effective_at")
     row["first_seen_at"] = observed_at
     row["source_url"] = endpoint
     row["source_receipt_id"] = receipt_id
@@ -1516,10 +1525,51 @@ def _validate_event_receipt_rows(
             raise ValueError("award event row receipt binding did not match its exact source page")
 
 
-def _load_award_event_projection_state(path: Path) -> dict[str, Any]:
-    """Read the forward-only activation state, failing closed on corruption."""
+def _award_event_ledger_is_populated(path: Path) -> bool:
+    """Whether an accrued forward ledger holds rows, failing closed if unreadable."""
+    if not path.exists():
+        return False
+    try:
+        return not pd.read_parquet(path).empty
+    except Exception as exc:  # noqa: BLE001 - an unreadable ledger is not an absent one
+        raise RuntimeError(
+            f"refusing to read award event activation state beside an unreadable ledger: {path}: {exc}"
+        ) from exc
+
+
+def _load_award_event_projection_state(
+    path: Path,
+    *,
+    event_snapshot_path: Path | None = None,
+    action_version_path: Path | None = None,
+) -> dict[str, Any]:
+    """Read the forward-only activation state, failing closed on corruption.
+
+    ``_read_json`` returns ``{}`` for a missing path, so absence used to
+    cold-start silently: ``coverage_changed`` became True, ``was_live`` False, a
+    live spine regressed to baseline, ``baseline_completed_at`` was cleared, and
+    every row observed during the regressed run was stamped ``event_eligible``
+    False — permanently, in an append-only ledger — while the reader reported an
+    honest-looking ``warming``.  The two accrued ledgers are the cross-check the
+    workflow already applies (``present == 0 && tracked != 0`` is a hard error in
+    ``.github/workflows/government-revenue-live.yml``); populated ledgers with no
+    state mean an external deletion, never a first deployment.
+    """
     payload = _read_json(path)
     if not payload:
+        populated = sorted(
+            str(ledger)
+            for ledger in (
+                event_snapshot_path or path.parent / AWARD_EVENT_SNAPSHOTS_FILENAME,
+                action_version_path or path.parent / AWARD_ACTION_VERSIONS_FILENAME,
+            )
+            if _award_event_ledger_is_populated(ledger)
+        )
+        if populated:
+            raise RuntimeError(
+                "refusing to cold-start award event activation while populated forward "
+                f"ledgers exist: {', '.join(populated)}"
+            )
         return {
             "schema_version": AWARD_EVENT_PROJECTION_STATE_SCHEMA,
             "activation_state": "baseline",
@@ -2874,8 +2924,8 @@ class UsaspendingAwardsCollector:
         award_path = data_dir / "awards.parquet"
         action_path = data_dir / "award_actions.parquet"
         snapshot_path = data_dir / "award_snapshots.parquet"
-        event_snapshot_path = data_dir / "award_event_snapshots.parquet"
-        action_version_path = data_dir / "award_action_versions.parquet"
+        event_snapshot_path = data_dir / AWARD_EVENT_SNAPSHOTS_FILENAME
+        action_version_path = data_dir / AWARD_ACTION_VERSIONS_FILENAME
         event_state_path = data_dir / AWARD_EVENT_PROJECTION_STATE_FILENAME
         existing_awards = _read_existing(award_path, AWARD_COLUMNS)
         existing_actions = _read_existing(action_path, ACTION_COLUMNS)
@@ -2926,8 +2976,21 @@ class UsaspendingAwardsCollector:
             # prior interrupted write.  A full receipt-bound reconciliation may
             # repair the pair; anything weaker leaves the last good generation
             # in force for readers and fails this write before any ledger moves.
+            #
+            # The trigger is a PRIOR generation binding that no longer describes
+            # what is on disk — not the activation state.  Keying this on
+            # ``activation_state == "live"`` short-circuited the whole refusal
+            # for the entire baseline period: a torn triad was accepted, merged,
+            # and rebound at a fresh generation below, after which every
+            # downstream verifier recomputed against the rewritten binding and
+            # reported a match.  A state carrying no binding at all is a genuine
+            # first write with nothing to tear.
+            existing_generation_bound = any(
+                existing_event_state.get(field) is not None
+                for field in AWARD_EVENT_PROJECTION_GENERATION_FIELDS
+            )
             if (
-                existing_event_state.get("activation_state") == "live"
+                existing_generation_bound
                 and not award_event_projection_generation_matches(
                     existing_event_state,
                     existing_event_snapshots,
