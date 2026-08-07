@@ -3883,7 +3883,26 @@ jobs:
         # claim-window refusal, the forming-bar exclusion, the in-frame caption
         # gate and the long-tail annotation — and a gate that runs nowhere is
         # not a gate.
-        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py tests/test_marketing_weekend_levels.py tests/test_marketing_chart_coverage.py tests/test_marketing_hot_tape_pack.py tests/test_marketing_filing_lanes.py tests/test_chart_facts.py tests/test_marketing_bare_cashtag.py tests/test_confluence_honesty.py tests/test_tech_confluence.py tests/test_news_translate_en.py tests/test_marketing_supply_feeds.py tests/test_movers_source.py tests/test_marketing_radar.py tests/test_chart_director.py -q -rs
+        #
+        # test_marketing_publish_time_content.py joins 2026-08-06, same class as
+        # live_verify / weekend_levels / chart_coverage / filing_lanes above —
+        # but caught the OTHER way round, and that difference is the lesson. The
+        # four of them were found by check_skip_only_suites.py as silent skips.
+        # This one had no gate at all: #4646 added the theme-proxy wiring tests
+        # with a bare `import numpy` / `import pandas` / `.to_parquet()` inside
+        # the _write_proxy_bars fixture, while the ONLY job naming the file is
+        # marketing-social-publisher (pytest+pyyaml). A bare import does not skip
+        # — it ERRORS — so instead of running nowhere and reading green, the nine
+        # proxy tests turned main RED and pinned every unrelated PR behind them.
+        # The fixture is now importorskip-gated like its four predecessors, which
+        # would have made it skip-only in that one thin lane, so it is named here
+        # in the same commit. What it needs — numpy, pandas, a parquet engine —
+        # is exactly what theme_proxy.cohesion itself needs (both LAZY inside the
+        # module, so the thin lane's collection-time canary is untouched: a
+        # top-level pandas import in publish_time_content still turns it red).
+        # This lane already installs all three, so it provisions NO new
+        # environment. The thin lane keeps the file for its 106 stdlib tests.
+        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py tests/test_marketing_weekend_levels.py tests/test_marketing_chart_coverage.py tests/test_marketing_hot_tape_pack.py tests/test_marketing_filing_lanes.py tests/test_chart_facts.py tests/test_marketing_bare_cashtag.py tests/test_confluence_honesty.py tests/test_tech_confluence.py tests/test_news_translate_en.py tests/test_marketing_supply_feeds.py tests/test_movers_source.py tests/test_marketing_radar.py tests/test_chart_director.py tests/test_marketing_publish_time_content.py -q -rs
 
   publish-r2-client:
     if: ${{ false }}

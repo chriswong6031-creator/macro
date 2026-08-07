@@ -1,0 +1,57 @@
+{
+ "as_of": "2026-07-31",
+ "summary": {
+  "metric": "pnl",
+  "horizon": 10,
+  "n_matured": 173,
+  "n_inflight": 281,
+  "n_skipped_no_price": 0,
+  "n_board_days": 8,
+  "win_pct": 63.6,
+  "expectancy_pct": 1.19,
+  "median_pct": 1.74,
+  "avg_win_pct": 4.54,
+  "avg_loss_pct": -4.67,
+  "profit_factor": 1.7,
+  "ci_lo_pct": 55.6,
+  "ci_hi_pct": 69.8,
+  "exp_lo_pct": 0.21,
+  "exp_hi_pct": 1.98,
+  "median_hold": 9,
+  "capture": 0.71,
+  "mfe_median_pct": 3.44,
+  "mae_median_pct": -2.14,
+  "mae_p10_pct": -8.81
+ },
+ "meta": {
+  "n_total": 454,
+  "truncated": 0,
+  "grain": "episode",
+  "survivorship": {
+   "n_skipped_no_price": 0,
+   "tickers_skipped": [],
+   "unscored_rows_published": true
+  },
+  "exit_rule": "3D StochRSI >= 80 target \u00b7 90d-trough x0.97 stop \u00b7 10-session forced verdict",
+  "history": {
+   "first_board": "2026-06-30",
+   "last_board": "2026-07-31",
+   "n_boards": 17,
+   "scored_from": "2026-06-25",
+   "n_boards_before_current_definition": 0
+  },
+  "continuity": {
+   "last_snapshot": "2026-07-31",
+   "last_session": "2026-08-04",
+   "n_stale_sessions": 2,
+   "stale_sessions": [
+    "2026-08-03",
+    "2026-08-04"
+   ],
+   "clock": "SPY close",
+   "note_en": "No board was recorded for the 2 sessions after 2026-07-31 (2026-08-03\u20132026-08-04). Those days are left blank in the record \u2014 nothing is filled in after the fact.",
+   "note_zh": "2026-07-31 \u4e4b\u540e\u6709 2 \u4e2a\u4ea4\u6613\u65e5\u6ca1\u6709\u8bb0\u5f55\u699c\u5355\uff082026-08-03\u20132026-08-04\uff09\u3002\u8fd9\u4e9b\u65e5\u5b50\u5728\u8bb0\u5f55\u4e2d\u7559\u767d\uff0c\u4e8b\u540e\u4e0d\u505a\u8865\u5199\u3002"
+  },
+  "priced_through": "2026-07-31"
+ }
+}
