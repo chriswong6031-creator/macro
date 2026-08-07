@@ -98,6 +98,8 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
+from engine.earnings_release.binding import normalize_acceptance
+
 SOURCE_ID = "edgar_8k_202"
 
 # EDGAR's real-time "latest filings" feed. type=8-K narrows it at the server.
@@ -701,6 +703,10 @@ def build_event(
     source_url: str = "",
     revenue_scale: float = 1e6,
     quarter: str | None = None,
+    cik: int | None = None,
+    acceptance_datetime: str = "",
+    filing_date: str = "",
+    form: str = "",
 ) -> dict[str, Any]:
     """Assemble an ``earnings_feed``-schema event.
 
@@ -711,13 +717,27 @@ def build_event(
     ``revenue_scale`` converts the statement's units to dollars. These tables are
     stated in millions ("Dollars in millions, except per share data") and the
     caller passes the scale it detected; the default is the near-universal case.
+
+    TWO CLOCKS, AND THEY ARE NOT INTERCHANGEABLE (Wave 1B, contract freeze Q2).
+    ``when`` is this process's wall clock at the moment it read the filing — it
+    is what the downstream feed orders and dedupes on, so it keeps that meaning
+    and ``when_semantics`` now says so out loud.  ``acceptance_datetime`` is the
+    SEC's own acceptance timestamp for the filing, carried through unchanged.
+    Only the second can support "no consumer outran the source"; before this
+    wave the event carried only the first, and nothing recorded the difference.
+
+    ``cik`` completes the canonical filing key.  Without it these events shared
+    exactly ``ticker`` with the 8-K store — an alias with a validity window, not
+    a durable key — and the two EDGAR planes could not be joined at all.
     """
     reported = figures.comparison_eps
     estimate = exp.eps_forecast if exp.eps_forecast is not None else reported
+    resolved_cik = int(cik) if cik is not None else (int(exp.cik) if exp.cik else None)
     return {
         "id": f"{exp.ticker}-{accession}",
         "ticker": exp.ticker,
         "when": when.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"),
+        "when_semantics": "processing_wall_clock",
         "eps_actual": float(reported),
         "eps_est": float(estimate),
         "rev_actual": float(figures.revenue) * revenue_scale,
@@ -725,7 +745,18 @@ def build_event(
         "quarter": quarter or _quarter_label(None, when),
         "source": SOURCE_ID,
         # Provenance — the filing is the receipt for every figure above.
+        # (cik, accession) is the canonical filing key; the acceptance
+        # timestamp and filing date are the SOURCE's, read from the same
+        # submissions payload that confirmed Item 2.02.
+        "cik": resolved_cik,
         "accession": accession,
+        "filing_key": (
+            f"{resolved_cik:010d}:{accession}" if resolved_cik is not None else ""
+        ),
+        "form": form,
+        "filing_date": filing_date,
+        "acceptance_datetime": acceptance_datetime,
+        "acceptance_datetime_source": "sec_submissions.acceptanceDateTime",
         "source_url": source_url,
         "_session": exp.session,
         "_revenue_label": figures.revenue_label,
@@ -880,13 +911,37 @@ def load_cik_map(*, root: Path, fetch: Fetcher | None = None) -> dict[str, int]:
     return out
 
 
-def confirm_earnings_item(
+@dataclass(frozen=True)
+class SubmissionRecord:
+    """What the SOURCE says about one filing.
+
+    Every field here is EDGAR's own value.  ``acceptance_datetime`` in
+    particular is the SEC's acceptance clock, not this process's — the two are
+    hours to days apart on any real filing, and only the source's can support
+    the claim that no consumer outran the source.
+    """
+
+    confirmed_earnings: bool = False
+    period_end: str = ""
+    form: str = ""
+    filing_date: str = ""
+    acceptance_datetime: str = ""
+    found: bool = False
+
+
+def submission_record(
     cik: int, accession: str, *, fetch: Fetcher | None = None
-) -> tuple[bool, str]:
-    """Is this 8-K an Item 2.02 earnings release, and what period does it cover?
+) -> SubmissionRecord:
+    """Read the source's own record of one filing from the submissions JSON.
 
     Item membership is matched on EXACT comma-separated tokens: the field reads
     "2.02,9.01", and substring matching would also accept "12.02".
+
+    The acceptance timestamp and filing date are read here, from the SAME
+    request that already confirmed Item 2.02 — so carrying the source clock
+    downstream costs nothing.  Before Wave 1B this function read the payload,
+    threw those two fields away, and the wire stamped events with
+    ``datetime.now()`` instead (contract freeze Q2).
     """
     getter = fetch or http_get
     try:
@@ -894,19 +949,47 @@ def confirm_earnings_item(
     except Exception as exc:
         _warn("edgar-earnings-submissions",
               f"CIK {cik}: submissions unreadable ({exc}) — cannot confirm Item 2.02")
-        return False, ""
+        return SubmissionRecord()
     recent = (payload.get("filings") or {}).get("recent") or {}
     numbers = recent.get("accessionNumber") or []
     items = recent.get("items") or []
     reports = recent.get("reportDate") or []
+    forms = recent.get("form") or []
+    filed = recent.get("filingDate") or []
+    accepted = recent.get("acceptanceDateTime") or []
+
+    def _at(values: Any, index: int) -> str:
+        try:
+            return str(values[index]) if index < len(values) else ""
+        except TypeError:
+            return ""
+
     for index, number in enumerate(numbers):
         if number != accession:
             continue
-        raw = items[index] if index < len(items) else ""
-        tokens = [t.strip() for t in str(raw).split(",")]
-        period = str(reports[index]) if index < len(reports) else ""
-        return (ITEM_EARNINGS in tokens), period
-    return False, ""
+        raw = _at(items, index)
+        tokens = [t.strip() for t in raw.split(",")]
+        return SubmissionRecord(
+            confirmed_earnings=ITEM_EARNINGS in tokens,
+            period_end=_at(reports, index),
+            form=_at(forms, index),
+            filing_date=_at(filed, index),
+            acceptance_datetime=normalize_acceptance(_at(accepted, index)),
+            found=True,
+        )
+    return SubmissionRecord()
+
+
+def confirm_earnings_item(
+    cik: int, accession: str, *, fetch: Fetcher | None = None
+) -> tuple[bool, str]:
+    """Back-compat shim over ``submission_record``.
+
+    Kept because callers and tests hold this two-tuple shape; new code should
+    read the record, which carries the source's clocks as well.
+    """
+    record = submission_record(cik, accession, fetch=fetch)
+    return record.confirmed_earnings, record.period_end
 
 
 _DOC_HREF_RE = re.compile(r'href="[^"]*/([^"/]+\.html?)"', re.I)
@@ -1058,12 +1141,21 @@ class EdgarEarningsProvider:
             stats.matched += 1
             self.seen.add(filing.key)
 
-            confirmed, period_end = confirm_earnings_item(
+            record = submission_record(
                 filing.cik, filing.accession, fetch=self._get)
+            period_end = record.period_end
             time.sleep(POLITE_SLEEP_S)
-            if not confirmed:
+            if not record.confirmed_earnings:
                 continue
             stats.confirmed_202 += 1
+            if not record.acceptance_datetime:
+                # Fail-soft but never fail-silent: an event with no source
+                # clock still ships, and the gap is named rather than papered
+                # over with the processing clock.
+                _notice("edgar-earnings-acceptance",
+                        f"{exp.ticker} {filing.accession}: submissions payload carries no "
+                        "acceptanceDateTime — the event ships with an empty source clock "
+                        "rather than borrowing the processing clock")
 
             figures: Figures | None = None
             scale = 1e6
@@ -1124,6 +1216,10 @@ class EdgarEarningsProvider:
                 exp, figures, when=now, accession=filing.accession,
                 source_url=source_url, revenue_scale=scale,
                 quarter=_quarter_label(stated_period or period_end, now),
+                cik=filing.cik,
+                acceptance_datetime=record.acceptance_datetime,
+                filing_date=record.filing_date,
+                form=record.form,
             ))
 
         stats.events = len(events)
