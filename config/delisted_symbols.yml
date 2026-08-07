@@ -1,0 +1,95 @@
+# Delisted-symbol exit ledger — securities that STOPPED EXISTING.
+#
+# This is the EXIT half of the symbol-lifecycle pair. Its sibling is the RENAME
+# half (`breadth.ticker_fixups` / `lib.ticker_aliases` in config.yml): a rename is
+# a KEY MIGRATION — the same security keeps trading under a new symbol, so the
+# fetch is re-pointed and the history moves with it. A delisting is the opposite:
+# there is no symbol to re-point at, because the tape ended. Never resolve one
+# with the other's mechanism.
+#
+# WHY THIS FILE EXISTS (research/RESOLUTION_20260806_SIDE_STORE_SYMBOLS.md).
+# `data/yahoo` extras CTRA and TPH were carried for months as "frozen feeds" — the
+# #4643 scan demotion kept them honest with deliberately cause-neutral copy ("no
+# new data since X") because stale-vs-renamed-vs-delisted was not established per
+# name. It is established now: both were acquired, both filed Form 25-NSE, and
+# their store tips are their LAST TRADING SESSIONS, not a broken pull. A symbol
+# whose security stopped existing must not be
+#   * requested nightly forever (it can never return, and a permanent entry in the
+#     never-silent missing-symbol warning trains the reader to ignore the one
+#     tripwire that would catch the NEXT real outage), nor
+#   * described to a user as "no new data" (#4616 law: delisted is not stale).
+#
+# WHAT A ROW DOES NOT DO. It never deletes the store and never removes the ticker
+# from `stock_search.extra_tickers` — the page and its deep links stay alive
+# (CSP-R1, fail-dark is not an option), the history stays readable for replay and
+# backtests, and scoring authority is stripped instead. A row is a DISCLOSURE, not
+# a deletion.
+#
+# EVERY ROW IS RESOLVED, NEVER INFERRED (#4622 protocol). Required evidence before
+# adding one: the security is absent from the NASDAQ symbol directory
+# (nasdaqtraded.txt covers NYSE/NYSE American/NASDAQ/Cboe), AND the issuer's SEC
+# filing history shows the exit (Form 25 / 25-NSE exchange delisting notice, and
+# usually a Form 15 deregistration and a merger 8-K carrying Item 2.01/3.01).
+# A vendor probe saying "possibly delisted" is a HINT, never the evidence — Yahoo
+# says exactly that about a live security whose symbol merely changed (TCNNF, which
+# turned out to be an uplisting to NYSE:TRLV), and static vendor metadata routinely
+# outlives a real delisting (#4616).
+#
+# `successor_ticker` is deliberate and load-bearing. It is null for every row here:
+# an all-stock acquirer (Devon) is a DIFFERENT, pre-existing security on its own
+# price line, and a cash acquirer (Sumitomo Forestry) leaves no US-listed line at
+# all. Neither continues this series, so neither may be spliced onto it. Fill it in
+# only for an exit that genuinely hands the same tape to a new symbol, and then
+# treat it as a rename (key migration), not as a row here.
+
+version: 1
+
+symbols:
+  CTRA:
+    company: Coterra Energy Inc.
+    company_zh: Coterra Energy
+    exchange: NYSE
+    cik: '0000858470'
+    # Store tip == last session: data/yahoo/CTRA.parquet ends 2026-05-07 (the
+    # final row is a 0-volume repeat of the 05-06 close — vendor flat-forward
+    # padding, the same tell BLD showed in #4616).
+    last_session: '2026-05-07'
+    delisted_on: '2026-05-07'
+    reason: acquisition
+    acquirer: Devon Energy
+    acquirer_zh: Devon Energy
+    consideration: 0.70 Devon Energy (DVN) shares per Coterra share, all-stock
+    successor_ticker: null
+    receipts:
+      - 8-K 2026-05-07 (items 1.02/2.01/3.01/3.03/5.01/5.02) — merger with Cubs
+        Merger Sub completed; NYSE notified. Accession 0001104659-26-057278
+      - 25-NSE 2026-05-07 — NYSE delisting notification. Accession 0000876661-26-000399
+      - 15-12G 2026-05-19 — registration termination. Accession 0001193125-26-231109
+      - DEFM14A 2026-03-30 — definitive merger proxy. Accession 0001104659-26-036887
+      - Absent from the NASDAQ symbol directory (nasdaqtraded.txt, fetched 2026-08-06);
+        SEC submissions header carries no ticker and no exchange
+
+  TPH:
+    company: Tri Pointe Homes, Inc.
+    company_zh: Tri Pointe Homes
+    exchange: NYSE
+    cik: '0001561680'
+    # Last session 05-13, merger effective 05-14 — the store tip is one session
+    # BEFORE the delisting date, which is the normal shape for a deal that closes
+    # before the open.
+    last_session: '2026-05-13'
+    delisted_on: '2026-05-14'
+    reason: acquisition
+    acquirer: Sumitomo Forestry
+    acquirer_zh: 住友林业
+    consideration: US$47.00 per share in cash
+    successor_ticker: null
+    receipts:
+      - 8-K 2026-05-14 (items 1.01/2.01/3.01/3.03/5.01/5.02/5.03/8.01) — merger with
+        Teton NewCo completed, each share converted into US$47.00 cash.
+        Accession 0001193125-26-222960
+      - 25-NSE 2026-05-14 — NYSE delisting notification. Accession 0000876661-26-000432
+      - 15-12G 2026-05-26 — registration termination. Accession 0001561680-26-000029
+      - DEFM14A 2026-03-17 — definitive merger proxy. Accession 0001193125-26-110678
+      - Absent from the NASDAQ symbol directory (nasdaqtraded.txt, fetched 2026-08-06)
+        and from OpenFIGI under exchCode US
