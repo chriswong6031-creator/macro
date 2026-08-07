@@ -808,6 +808,24 @@ def test_authority_is_display_only_everywhere(calendar):
         assert report["authority"][flag] is False
 
 
+def test_prices_are_only_reachable_through_the_audited_accessor():
+    """The window hash proves what was consumed only if nothing bypasses it.
+
+    ``read_window_sha256`` covers the triples that pass through ``_read_window``.
+    A direct ``panel.close(...)`` anywhere else would read a bar that the hash
+    cannot see, which is how a leakage guard goes quietly blind.
+    """
+    source = (ROOT / "engine" / "government_revenue" / "candidate_grader.py").read_text(encoding="utf-8")
+    calls = [
+        (number, line)
+        for number, line in enumerate(source.splitlines(), start=1)
+        if ".close(" in line and "def close" not in line
+    ]
+    assert len(calls) == 1, f"price reads outside _read_window: {calls}"
+    inside = source.split("def _read_window(", 1)[1].split("\ndef ", 1)[0]
+    assert calls[0][1].strip() in inside
+
+
 def test_no_promotion_language_in_the_instrument():
     source = (ROOT / "engine" / "government_revenue" / "candidate_grader.py").read_text(encoding="utf-8")
     lowered = source.lower()
