@@ -5034,6 +5034,20 @@ jobs:
       # dependency set, so they are not repeated here.
       - name: recipient entity graph — the Wave 9D proposal tool
         run: python -m pytest tests/test_propose_government_revenue_recipient_graph.py -q
+      # Amount-class conflation gate.  The lobe's central financial-honesty rule —
+      # "obligation, outlay, ceiling, bookings, backlog, funded backlog, and GAAP
+      # revenue are never conflated" — was written twice as PROSE (the account handoff
+      # and the masterplan) and enforced by nothing: `grep -rl 'obligat.*ceiling' tests/`
+      # returned no match.  The incumbent publishes the same caution in its own public
+      # docs; the difference has to be that ours can go red.  The suite pins all four
+      # dangerous mixes (cumulative+delta, obligation+ceiling, obligation+outlay, and a
+      # figure published without its class label), and running it found one real defect
+      # on main: metrics._concentration's weight ladder fell through to
+      # current_award_amount, so a frame arriving without an obligated column produced
+      # shares, an HHI and a total computed from a CEILING and published as
+      # `covered_obligations`.  Stdlib + the job's existing pandas/pyarrow only.
+      - name: amount-class conflation gate — obligation vs ceiling vs outlay vs delta
+        run: python -m pytest tests/test_government_revenue_amount_semantics.py -q
 
   unrun-factor-research:
     # factor registry + measurement disclosure + the study lanes behind them.

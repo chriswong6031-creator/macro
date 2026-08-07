@@ -685,6 +685,15 @@ on:
       - "scripts/propose_government_revenue_recipient_graph.py"
       - "tests/test_propose_government_revenue_recipient_graph.py"
       - "tests/fixtures/govrev_issuer_evidence/**"
+      # Amount-class conflation gate (job: unrun-government-revenue, wired 2026-08-07).
+      # The suite's subjects are the taxonomy (engine/**), the collector's canonical
+      # number-column declarations it DERIVES coverage from (collectors/**), and the
+      # rendered surfaces (templates/**) — all already reachable.  What is NOT reachable
+      # through any broad glob is the guard script itself: there is no "scripts/**"
+      # entry in this filter, so an edit to the reader would ship without ever running
+      # the suite that measures it.  Both halves are named on purpose.
+      - "scripts/check_government_revenue_amount_semantics.py"
+      - "tests/test_government_revenue_amount_semantics.py"
       # W3 CNH part B: the five native flash wires + the forward calendar organ.
       # engine/** is NOT a blanket trigger here, so each of these must be named or a
       # parser/aggregator edit merges with the suite unrun. test_cn_newswires.py was
