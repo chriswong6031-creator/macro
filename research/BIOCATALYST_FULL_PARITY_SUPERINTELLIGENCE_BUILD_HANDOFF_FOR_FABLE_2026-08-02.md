@@ -1,13 +1,20 @@
 # BioCatalyst full-parity and superintelligence build handoff for Fable
 
+> **Execution status superseded 2026-08-06:** use
+> `research/BIOCATALYST_REMAINING_BUILD_WAVES_HANDOFF_FOR_CLAUDE_2026-08-06.md`
+> as the canonical current-state correction and remaining-wave order. This document
+> remains the binding architecture, product-forensics, source, model, and acceptance
+> reference.
+
 | Field | Value |
 |---|---|
-| Status | **Canonical continuation and execution docket** |
+| Status | **Architecture and benchmark reference; execution status superseded by the 2026-08-06 Claude handoff** |
 | Decision | **BUILD TO FULL FUNCTIONAL PARITY, THEN SURPASS IT** — preserve the shipped evidence substrate, complete the missing domain graph and product jobs, and make BioCatalyst the first governed pack on the Sector Intelligence Platform |
 | As of | 2026-08-02, America/Vancouver |
 | Repository baseline | `origin/main` at `822c22f76ce2337ca8c2944fbe7d150f1c7fc3d7` when this handoff finalized; refresh before every implementation PR |
 | Audience | Fable orchestrator; Opus designer, builders, and reviewers; data/ML/operations owners; Neural Web, Mastermind, Prophet, and product-shell owners |
-| Canonical file | `research/BIOCATALYST_FULL_PARITY_SUPERINTELLIGENCE_BUILD_HANDOFF_FOR_FABLE_2026-08-02.md` |
+| Canonical architecture file | `research/BIOCATALYST_FULL_PARITY_SUPERINTELLIGENCE_BUILD_HANDOFF_FOR_FABLE_2026-08-02.md` |
+| Canonical execution file | `research/BIOCATALYST_REMAINING_BUILD_WAVES_HANDOFF_FOR_CLAUDE_2026-08-06.md` |
 | Precedence | This file supersedes the sequencing and current-state sections of the 2026-08-01 teardown and the narrow B4E continuation note wherever the state has advanced. The original teardown remains the detailed product/source/engine reference. The B4E runbook remains binding for activation. |
 | Publication boundary | Private build artifact. Do not publish through `reports.html` without a separate operator decision. |
 | Clean-room boundary | BioPharmCatalyst and BiopharmIQ are behavioral benchmarks only. Use official, public, or properly licensed sources and independently authored code/design. Never use competitor credentials, private APIs, proprietary rows, copied frontend assets, or authenticated scraping. |

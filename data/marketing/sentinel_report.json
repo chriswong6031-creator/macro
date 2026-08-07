@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-06T06:11:07Z",
+  "produced_at": "2026-08-07T00:04:14Z",
   "as_of": "2026-08-06",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 11,
-    "passed": 11,
+    "items": 15,
+    "passed": 15,
     "quarantined": 0,
     "quarantined_policy": 0,
     "quarantined_overflow": 0,
@@ -24,71 +24,71 @@
       "slot": "D1-S11",
       "type": "event",
       "cashtag": "",
-      "headline": "AI and chips are carrying a narrow tape"
+      "headline": "GDPNow has growth at 5.9%. AI and chips are carrying a narrow tape."
     },
     {
       "id": "post-flagship-012",
       "account": "flagship",
       "slot": "D1-S12",
       "type": "chart",
-      "cashtag": "$MDB",
+      "cashtag": "$LPG",
       "headline": ""
     },
     {
-      "id": "post-conf-flagship-001",
-      "account": "flagship",
-      "slot": "CONF-01",
-      "type": "signal",
-      "cashtag": "$AMZN",
-      "headline": "$AMZN just lined up a pattern we track."
-    },
-    {
-      "id": "post-theme-003",
-      "account": "flagship",
-      "slot": "D1-S3",
-      "type": "theme_list",
-      "cashtag": "$AMBA",
-      "headline": "Autonomous Systems ripping, +1.9% avg on Wednesday"
-    },
-    {
-      "id": "post-founder-008",
+      "id": "post-founder-001",
       "account": "founder",
-      "slot": "D1-S8",
-      "type": "watchlist",
-      "cashtag": "$AVNT",
-      "headline": "$AVNT has closed red 3 sessions in a row"
+      "slot": "D1-S1",
+      "type": "event",
+      "cashtag": "",
+      "headline": "AI and chips are carrying a very narrow tape"
     },
     {
-      "id": "post-founder-015",
+      "id": "post-insider-002",
       "account": "founder",
-      "slot": "D1-S15",
-      "type": "signal",
-      "cashtag": "$KWR",
-      "headline": ""
-    },
-    {
-      "id": "post-founder-021",
-      "account": "founder",
-      "slot": "D1-S21",
-      "type": "watchlist",
-      "cashtag": "$CWK",
-      "headline": "$CWK held. I’m still waiting."
-    },
-    {
-      "id": "post-sophia-007",
-      "account": "sophia",
-      "slot": "D1-S7",
-      "type": "watchlist",
-      "cashtag": "$AMBA",
-      "headline": ""
-    },
-    {
-      "id": "post-mover-002",
-      "account": "sophia",
       "slot": "D1-S6",
-      "type": "mover",
-      "cashtag": "$ALHC",
-      "headline": "$ALHC -20.2% on Wednesday"
+      "type": "insider",
+      "cashtag": "$XIIIU",
+      "headline": ""
+    },
+    {
+      "id": "post-meagan-008",
+      "account": "meagan",
+      "slot": "D1-S8",
+      "type": "chart",
+      "cashtag": "$GE",
+      "headline": "Another $GE streak, and I’m still outside."
+    },
+    {
+      "id": "post-meagan-015",
+      "account": "meagan",
+      "slot": "D1-S15",
+      "type": "watchlist",
+      "cashtag": "$CDW",
+      "headline": ""
+    },
+    {
+      "id": "post-sophia-001",
+      "account": "sophia",
+      "slot": "D1-S1",
+      "type": "macro",
+      "cashtag": "",
+      "headline": ""
+    },
+    {
+      "id": "post-sophia-017",
+      "account": "sophia",
+      "slot": "D1-S17",
+      "type": "chart",
+      "cashtag": "$CWK",
+      "headline": "The $CWK story keeps stalling at 14.4"
+    },
+    {
+      "id": "post-sophia-022",
+      "account": "sophia",
+      "slot": "D1-S22",
+      "type": "chart",
+      "cashtag": "$CUBI",
+      "headline": ""
     },
     {
       "id": "post-kelly-009",
@@ -99,17 +99,49 @@
       "headline": ""
     },
     {
-      "id": "post-cici-001",
-      "account": "cici",
-      "slot": "D1-S1",
-      "type": "macro",
-      "cashtag": "",
+      "id": "post-kelly-014",
+      "account": "kelly",
+      "slot": "D1-S14",
+      "type": "chart",
+      "cashtag": "$LPG",
       "headline": ""
+    },
+    {
+      "id": "post-kelly-021",
+      "account": "kelly",
+      "slot": "D1-S21",
+      "type": "chart",
+      "cashtag": "$ARES",
+      "headline": ""
+    },
+    {
+      "id": "post-kelly-025",
+      "account": "kelly",
+      "slot": "D1-S25",
+      "type": "watchlist",
+      "cashtag": "$SSPC",
+      "headline": "$SSPC, base building or stalling?"
+    },
+    {
+      "id": "post-housepick-003",
+      "account": "kelly",
+      "slot": "D1-S16",
+      "type": "watchlist",
+      "cashtag": "$HII",
+      "headline": ""
+    },
+    {
+      "id": "post-cici-024",
+      "account": "cici",
+      "slot": "D1-S24",
+      "type": "signal",
+      "cashtag": "$FCX",
+      "headline": "I missed the clean $FCX entry"
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 45,
+      "pairs_checked": 89,
       "hits": 0,
       "shared_media_hits": 0
     },
@@ -129,13 +161,14 @@
     "cherry_pick": {
       "status": "run",
       "loss_tickers_in_window": [
-        "MS",
+        "FBRT",
+        "GPI",
         "QCOM"
       ],
       "cherry_pick_detected": false
     },
     "stale_receipts": {
-      "age_days": 3,
+      "age_days": 2,
       "max": 7
     },
     "kill_switch": {

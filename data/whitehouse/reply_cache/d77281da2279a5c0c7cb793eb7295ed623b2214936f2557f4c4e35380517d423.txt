@@ -1,0 +1,71 @@
+{
+  "activate": true,
+  "importance": 78,
+  "banner_days": 7,
+  "tone": "mixed",
+  "banner_title": "Trump imposes MIPs and 15% tariff on polysilicon, ingots, wafers, cells, modules — solar costs up, domestic producers shielded",
+  "banner_title_zh": "特朗普对多晶硅、硅锭、晶圆、电池片及组件施加最低进口价和15%关税——太阳能成本上升，国内生产商获保护",
+  "summary": "Under Section 232, the U.S. will establish Minimum Import Prices (MIPs) on polysilicon, wafers, ingots, cells, and modules, alongside a 15% tariff on downstream derivatives, to revive the domestic polysilicon sector. The move directly raises U.S. solar project costs but creates a protected market for American polysilicon and solar manufacturing.",
+  "summary_zh": "依据232条款，美国将对多晶硅、硅锭、晶圆、电池片及组件设定最低进口价格（MIP），并对下游衍生产品加征15%关税，以重振国内多晶硅产业。此举直接抬升美国太阳能项目成本，但为本土多晶硅及太阳能制造创造受保护市场。",
+  "analysis": "This proclamation imposes a structured trade barrier on the foundational material for both semiconductors and solar panels — polysilicon — and a cascading set of derivatives (ingots, wafers, cells, modules). It establishes a price floor: $21/kg for polysilicon, $100/kg for ingots/wafers, $0.22/watt for cells, and $0.38/watt for modules. It layers a 15% ad valorem tariff on top for downstream products, replacing an expired solar safeguard tariff. The effective date is December 4, 2026, giving importers a window to stockpile before Christmas.\n\nThe market impact hits two massive sectors in opposite ways. For the U.S. solar development and utility-scale project pipeline, this is a headwind. It raises the input cost of modules and cells, which may slow installations or compress developer margins unless power purchase agreement (PPA) prices adjust upward. For the tiny, remaining U.S. polysilicon producers and any domestic ingot/wafer/cell manufacturers, this is a structural tailwind, creating a price umbrella that makes their output commercially viable after years of being undercut by global oversupply (especially from China).\n\nThe transmission mechanism is direct: importers must certify arm’s-length sales at or above MIPs, or pay a specific duty equal to the MIP. This effectively sets a floor on U.S. domestic market prices for these goods, severing the link with the deeply depressed global spot market (where polysilicon prices have been crushed by a 270% supply surge since 2020 and 400,000 tons of inventory). It also includes an onshoring incentive authority for the Commerce Secretary to strike company-specific deals, which could attract new investment announcements.\n\nKey uncertainty is whether this policy actually succeeds in onshoring a wafer-to-module supply chain, or simply raises costs for U.S. downstream consumers (solar developers, semiconductor fabs) while providing rents to the handful of existing U.S. polysilicon producers. The global oversupply is vast; a price floor in one market does not eliminate it. Watch for retaliation or circumvention risks from major trading partners not exempted.",
+  "sectors": [
+    {
+      "name": "U.S. Polysilicon Producers",
+      "impact": "tailwind",
+      "rationale": "MIPs create a protected domestic price floor directly benefiting the sole remaining U.S. producer."
+    },
+    {
+      "name": "U.S. Solar Manufacturers (Ingot-to-Module)",
+      "impact": "tailwind",
+      "rationale": "Price umbrella and onshoring incentives make new domestic wafer/cell/module fabs viable against imports."
+    },
+    {
+      "name": "U.S. Utility-Scale Solar Developers / IPPs",
+      "impact": "headwind",
+      "rationale": "Higher module and cell costs raise project CapEx, potentially slowing new installations or compressing returns."
+    },
+    {
+      "name": "U.S. Residential Solar Installers",
+      "impact": "headwind",
+      "rationale": "Increased module pricing feeds through to higher end-customer costs, potentially dampening demand."
+    },
+    {
+      "name": "Solar Inverter / Tracker / BOS Suppliers",
+      "impact": "headwind",
+      "rationale": "Higher project costs could reduce overall solar deployment volumes, indirectly hitting balance-of-system demand."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "WRLGS",
+      "direction": "benefit",
+      "rationale": "Estimated pure-play on U.S. polysilicon production; MIPs directly shield its core product."
+    },
+    {
+      "symbol": "FSLR",
+      "direction": "benefit",
+      "rationale": "Domestic thin-film manufacturer reliant on CdTe, but stands to gain from a protected U.S. module market and reduced crystalline silicon import competition."
+    },
+    {
+      "symbol": "NEE",
+      "direction": "hurt",
+      "rationale": "Largest U.S. utility-scale solar developer; higher module and cell costs pressure new project IRRs."
+    },
+    {
+      "symbol": "SEDG",
+      "direction": "hurt",
+      "rationale": "Supplier to U.S. residential/commercial solar; higher module costs may slow adoption and inverters demand."
+    },
+    {
+      "symbol": "ENPH",
+      "direction": "hurt",
+      "rationale": "U.S. residential solar exposure; higher system costs risk slowing rooftop solar uptake."
+    },
+    {
+      "symbol": "ARRY",
+      "direction": "hurt",
+      "rationale": "Utility-scale solar tracker supplier; faces indirect headwinds if project pipelines slow due to elevated module costs."
+    }
+  ],
+  "confidence": "high"
+}
