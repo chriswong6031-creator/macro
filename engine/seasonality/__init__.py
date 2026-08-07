@@ -42,9 +42,30 @@ from .event_clock import (
     read_event_projection,
     resolve_issuer_unavailable,
 )
+from .model import (
+    BUILD_FLOORS,
+    MODEL_SCHEMA,
+    MODEL_VERSION,
+    OwnerProbabilityFeatureError,
+    UNCERTAINTY_SEMANTICS,
+    UncertaintySemanticsError,
+    classify_feature,
+    forecast,
+    make_uncertainty,
+    require_lawful_features,
+    screen_features,
+)
 from .multiplicity import (
     benjamini_yekutieli,
     max_t_adjusted_p_values,
+)
+from .regime import (
+    AUTHORIZED_AXES,
+    DISPLAY_ONLY_AXES,
+    RegimeFeatureError,
+    conditional_estimate_or_context,
+    interaction_eligibility,
+    read_regime_context,
 )
 from .universe import (
     UNRESOLVED_BLOCKER,
@@ -60,28 +81,45 @@ from .universe import (
 )
 
 __all__ = [
-    "UNRESOLVED_BLOCKER",
+    "AUTHORIZED_AXES",
     "BIOTEMPORAL_EVENT_SCHEMA",
+    "BUILD_FLOORS",
+    "ContractError",
+    "DISPLAY_ONLY_AXES",
     "EVENT_CLOCK_READ_SCHEMA",
     "EXPECTED_PROJECTION_CONTRACT",
+    "MODEL_SCHEMA",
+    "MODEL_VERSION",
     "NEURALWEB_STATE_SCHEMA",
+    "OwnerProbabilityFeatureError",
     "PROPHET_OVERLAY_SCHEMA",
     "QUARANTINE_REASON_CODES",
-    "ContractError",
+    "RegimeFeatureError",
+    "UNCERTAINTY_SEMANTICS",
+    "UNRESOLVED_BLOCKER",
+    "UncertaintySemanticsError",
     "UniverseRead",
     "benjamini_yekutieli",
     "build_neuralweb_state",
     "build_prophet_overlay",
+    "classify_feature",
+    "conditional_estimate_or_context",
     "corporate_actions_asof",
     "coverage_report",
     "earliest_snapshot",
+    "forecast",
+    "interaction_eligibility",
     "latest_snapshot",
+    "make_uncertainty",
     "max_t_adjusted_p_values",
     "membership_asof",
     "price_adjustment_vintage",
     "read_event_projection",
+    "read_regime_context",
+    "require_lawful_features",
     "resolve_issuer_unavailable",
     "resolve_security_asof",
+    "screen_features",
     "snapshot_dates",
     "validate_bitemporal_event",
     "validate_neuralweb_state",
@@ -90,7 +128,7 @@ __all__ = [
 
 #: Modules that carry a numpy/pandas dependency and therefore may not be imported
 #: eagerly here (see the module docstring).  They resolve on first attribute access.
-_LAZY_MODULES = ("event_study",)
+_LAZY_MODULES = ("calibration", "event_study")
 
 
 def __getattr__(name: str):
