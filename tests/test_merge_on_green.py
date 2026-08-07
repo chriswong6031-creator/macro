@@ -1851,6 +1851,11 @@ def test_main_clean_check_names_walks_past_commits_that_published_no_checks(monk
     at all and the tip had none either, with the newest proved commit five back.
     Reading only the tip returned a set with no packs in it, which would have left
     the base-inherited-red refresh inert while looking like it worked.
+
+    The fake HONOURS `per_page`, which is what makes this test pin MAIN_PROOF_WALK
+    itself rather than only the loop around it. A stub that returns three commits no
+    matter what was asked for stays green with `per_page=1` — i.e. with the walk
+    degenerated back to a tip read, the exact regression this test is named for.
     """
     checks = {
         "b" * 40: {  # the proved commit, two back
@@ -1864,7 +1869,12 @@ def test_main_clean_check_names_walks_past_commits_that_published_no_checks(monk
 
     def fake(method, url, token, payload=None):
         if "/commits?" in url:
-            return 200, _commits("a" * 40, "c" * 40, "b" * 40)
+            asked = int(url.rsplit("per_page=", 1)[1].split("&")[0])
+            assert asked >= 3, (
+                f"the walk asked for {asked} commit(s); it must reach past the "
+                "check-less tip commits this repo pushes every few minutes"
+            )
+            return 200, _commits("a" * 40, "c" * 40, "b" * 40)[:asked]
         if "/check-runs" in url:
             sha = url.split("/commits/")[1].split("/")[0]
             page = int(url.rsplit("page=", 1)[1].split("&")[0])
