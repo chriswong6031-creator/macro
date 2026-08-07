@@ -3400,7 +3400,8 @@ jobs:
           tests/test_biocatalyst_api.py
           tests/test_biocatalyst_peer_api_contract.py
           tests/test_biocatalyst_deploy.py
-          tests/test_biocatalyst_page.py -q
+          tests/test_biocatalyst_page.py
+          tests/test_biocatalyst_d0b_ui.py -q
 
   biocatalyst-evidence:
     if: ${{ false }}
