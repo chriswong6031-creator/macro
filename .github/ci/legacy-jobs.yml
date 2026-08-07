@@ -1167,7 +1167,10 @@ jobs:
           tests/test_stock_seasonality_engine.py
           tests/test_seasonality_event_clock.py
           tests/test_seasonality_pit_spine.py
-          tests/test_seasonality_prophet_overlay.py -q
+          tests/test_seasonality_prophet_overlay.py
+          tests/test_seasonality_event_study.py
+          tests/test_seasonality_model.py
+          tests/test_seasonality_calibration.py -q
       # W5 state v2. The suite that has to run here is the one about a
       # migration that has NOT happened yet: v1's ``forecast.p`` is a historical
       # positive-year share, and the failure this pins is a later session

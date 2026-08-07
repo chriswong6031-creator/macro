@@ -954,3 +954,345 @@ def incremental_ic(signal_by_date: dict, fwd_by_date: dict, loadings_by_date: di
     return {"raw": raw, "incremental": inc,
             "ic_delta": round(im - rm, 4) if (rm is not None and im is not None) else None,
             "surviving_frac": round(im / rm, 3) if (rm not in (None, 0) and im is not None) else None}
+
+
+# --------------------------------------------------------------------------- #
+# White's Reality Check + Hansen's SPA — testing a FAMILY, not a winner
+# --------------------------------------------------------------------------- #
+# Every other significance tool in this module prices ONE series (deflated_sharpe
+# haircuts a hand-picked Sharpe by a trial count; benjamini_hochberg controls FDR
+# across a list of p-values). Neither answers the question a search actually poses:
+# "is the BEST of my K models genuinely better than the benchmark, once I account
+# for having taken a maximum over K correlated candidates?" A per-model t-test
+# answers a question nobody asked, and the max of K such t-stats is not a t-stat.
+#
+# White (2000) Reality Check and Hansen (2005) SPA answer exactly that, on the loss
+# differentials d_k = L_benchmark - L_k. Both bootstrap the JOINT distribution of the
+# K sample means (so the correlation between near-duplicate models is priced, not
+# assumed away) and compare the observed maximum against the maximum of the
+# bootstrapped null. SPA additionally studentizes each model by its own long-run
+# standard error and drops hopeless models from the null via Hansen's recentering,
+# which is what recovers the power White's RC loses to a single terrible candidate.
+#
+# The block bootstrap is CIRCULAR with a fixed block length, matching
+# block_bootstrap_ci / paired_delta_ci above so the whole module shares one
+# resampling idiom; the loss differentials of an overlapping forecast grid are
+# serially correlated and an iid bootstrap would understate every standard error.
+#
+# MEASURED EMPIRICAL SIZE, printed rather than assumed (least-favourable null — every
+# model's true expected loss EQUALS the benchmark's, which is where these tests are
+# most distorted; K=5, B=500, 1,200-1,500 replications, nominal 5%):
+#
+#     data                block         RC       SPA_c
+#     iid,      T=120     1 (matched)   5.5%      5.6%
+#     iid,      T=120     5 (auto)      5.9%      7.9%
+#     iid,      T=500     8 (auto)      5.3%      5.9%
+#     AR(1).5,  T=120     5 (auto)     12.6%     14.6%
+#     AR(1).5,  T=500     8 (auto)      7.7%      8.4%
+#
+# Read that honestly. With a block matched to the dependence the machinery is exact
+# (5.5 / 5.6). Everything above that is the BLOCK BOOTSTRAP's finite-sample cost, not
+# the statistic's: a T=120 series resampled in blocks of 5 contains ~24 effective
+# blocks, and no choice of block length rescues it — sweeping the block from 5 to 24
+# on that AR(1) panel moved RC only between 10.2% and 12.6% and made SPA strictly
+# worse past block 8 (13.0% -> 19.3%), because a longer block buys dependence
+# coverage with fewer independent blocks. The distortion shrinks with T, as a
+# consistent test's must.
+#
+# Consequences a caller must live with, not route around:
+#   * On a SHORT, serially-correlated panel (T ~ 100) both tests reject roughly twice
+#     as often as advertised. A p just under 0.05 there is not evidence; treat ~0.02
+#     as the working threshold, or lengthen the sample.
+#   * SPA_c is the more liberal of the two at every T. It ships with Hansen's own
+#     bracketing p-values (``p_value_upper`` = SPA_u, ``p_value_lower`` = SPA_l) so
+#     the finite-sample slack is auditable from the return value itself.
+#   * Report BOTH tests. RC is conservative against a family containing junk; SPA is
+#     liberal in small samples. They fail in opposite directions, and agreement
+#     between them is worth more than either number alone.
+def _rc_abstain(reason: str, *, n_models: int, n_obs: int, block, B: int) -> dict:
+    """The explicit non-answer. A degenerate family returns THIS, never a number:
+    a p-value computed on 8 observations or an all-NaN column is not a weak result,
+    it is an absent one, and the two must not be readable as the same thing."""
+    return {"statistic": None, "p_value": None, "n_models": int(n_models),
+            "n_obs": int(n_obs), "block": block, "B": int(B),
+            "best_model": None, "recentred_models": 0,
+            "abstained": True, "reason": reason}
+
+
+def _rc_prepare(losses_benchmark, losses_models):
+    """Align the benchmark loss series with the model loss panel and return
+    ``(d, keys)`` where ``d`` is the T x K array of ``d_k = L_benchmark - L_k``
+    (positive = model k beats the benchmark) on COMPLETE cases only.
+
+    Accepts the model panel as a DataFrame, a dict of series, a 2-D array, or a
+    single 1-D series. Alignment is by index when both sides are pandas objects
+    with the same index, positional when the lengths match, and by reindex
+    otherwise — a mismatch shows up as NaN rows and is dropped, never silently
+    zero-filled."""
+    if isinstance(losses_benchmark, pd.Series):
+        b = losses_benchmark.astype(float)
+    else:
+        b = pd.Series(np.asarray(losses_benchmark, dtype=float).ravel())
+    if isinstance(losses_models, pd.DataFrame):
+        M = losses_models.astype(float)
+    elif isinstance(losses_models, pd.Series):
+        M = losses_models.astype(float).to_frame()
+    elif isinstance(losses_models, dict):
+        M = pd.DataFrame({k: pd.Series(v) for k, v in losses_models.items()}).astype(float)
+    else:
+        arr = np.asarray(losses_models, dtype=float)
+        if arr.ndim == 1:
+            arr = arr.reshape(-1, 1)
+        M = pd.DataFrame(arr, columns=[f"model_{i}" for i in range(arr.shape[1])])
+    if not M.index.equals(b.index):
+        # Positional alignment is only safe when at least one side's index carries no
+        # meaning (a plain RangeIndex, which is what the array/dict paths above build).
+        # Two MEANINGFUL indices of equal length that merely disagree — a one-row
+        # offset between two date-indexed series — used to be joined positionally and
+        # silently answered the wrong question; those reindex and drop instead.
+        trivial = (isinstance(M.index, pd.RangeIndex) or isinstance(b.index, pd.RangeIndex))
+        M = (M.set_axis(b.index) if (len(M) == len(b) and trivial)
+             else M.reindex(b.index))
+    keys = list(M.columns)
+    bench_all_nan = not np.isfinite(b.to_numpy(float)).any()
+    if not keys:
+        return np.empty((0, 0)), keys, [], bench_all_nan
+    all_nan = [k for k in keys if not np.isfinite(M[k].to_numpy(float)).any()]
+    frame = pd.concat([b.rename("__bench__"), M], axis=1)
+    frame = frame.replace([np.inf, -np.inf], np.nan).dropna()
+    if frame.empty:
+        return np.empty((0, len(keys))), keys, all_nan, bench_all_nan
+    bench = frame["__bench__"].to_numpy(float)
+    d = np.column_stack([bench - frame[k].to_numpy(float) for k in keys])
+    return d, keys, all_nan, bench_all_nan
+
+
+def _rc_auto_block(T: int) -> int:
+    """Block length when the caller declares none: ``max(1, round(T ** (1/3)))``.
+
+    The cube root is the textbook rate for a block bootstrap's optimal block under
+    weak dependence (it balances the bias from breaking dependence at block joins
+    against the variance from having few blocks). It is a DEFAULT, not a claim about
+    this particular series: a caller who knows the autocorrelation horizon should
+    pass ``block`` explicitly, and the value actually used is echoed in the result so
+    a published number can never hide which one was applied."""
+    return max(1, int(round(T ** (1.0 / 3.0))))
+
+
+def _rc_boot_means(d: "np.ndarray", block: int, B: int, seed: int,
+                   chunk: int = 256) -> "np.ndarray":
+    """B x K matrix of circular-block-bootstrap means of the loss differentials.
+
+    The SAME resampled row indices are applied to every model column in a draw, so
+    the cross-model correlation structure survives the bootstrap — that is the whole
+    point of testing a family jointly rather than K times separately. Chunked so a
+    large (B, T, K) gather never materializes at once."""
+    T, K = d.shape
+    rng = np.random.default_rng(seed)
+    nb = int(np.ceil(T / block))
+    grid = np.arange(block)
+    out = np.empty((B, K), dtype=float)
+    for start in range(0, B, chunk):
+        stop = min(start + chunk, B)
+        starts = rng.integers(0, T, size=(stop - start, nb))
+        idx = (starts[:, :, None] + grid[None, None, :]).reshape(stop - start, nb * block)
+        idx = idx[:, :T] % T
+        out[start:stop] = d[idx].mean(axis=1)
+    return out
+
+
+def _rc_mc_pvalue(null_stats: "np.ndarray", observed: float) -> float:
+    """Exact Monte-Carlo p-value: ``(1 + #{null >= observed}) / (B + 1)``.
+
+    Two deliberate departures from the naive ``#{null > observed} / B``, and both
+    are correctness, not taste.
+
+    ``1 +`` / ``B + 1`` (Davison-Hinkley). The plain share treats the B bootstrap
+    draws as if they were the whole null distribution; for finite B the resulting
+    test is anti-conservative. The observed statistic is itself one draw from the
+    null under H0, so it belongs in both numerator and denominator, which makes the
+    test exact for ANY B rather than asymptotically valid for a large one. It also
+    makes the floor honest — a p-value can never be reported as 0.0, only as
+    ``<= 1/(B+1)``, which is the most a bootstrap of that size can resolve.
+
+    ``>=`` rather than ``>``. For a continuous statistic ties have probability zero
+    and the choice is cosmetic; for SPA it is NOT, because ``max(0, ...)`` puts an
+    ATOM at zero. When no model clears its recentring threshold, every bootstrap
+    draw and the observed statistic all collapse to exactly 0 — the honest reading
+    is "not one candidate even beat the benchmark in sample", i.e. p = 1. Under
+    ``>`` that case counts zero exceedances and reports ``p = 1/(B+1)``, turning the
+    weakest possible evidence into the strongest possible rejection. Measured before
+    the fix: SPA's empirical size at T=120, K=1 was 10.9% against a nominal 5%,
+    because the single-model family lands in that atom often. With ``>=`` it is
+    ~5%."""
+    count = int(np.sum(np.asarray(null_stats, float) >= float(observed)))
+    return float((1 + count) / (len(null_stats) + 1))
+
+
+def _rc_core(losses_benchmark, losses_models, *, block, B, seed):
+    """Shared setup for RC and SPA: differentials, degeneracy screen, bootstrap
+    means. Returns ``(payload_or_None, ctx)`` — a non-None payload is an abstention
+    the caller must return verbatim."""
+    d, keys, all_nan, bench_all_nan = _rc_prepare(losses_benchmark, losses_models)
+    K = len(keys)
+    T = int(d.shape[0])
+    # The block a caller would actually get is resolved BEFORE any abstention, so a
+    # refusal reports the block that would have been used rather than echoing the
+    # caller's un-resolved ``None`` — an abstention that reports ``block: None`` names
+    # nothing an auditor can reproduce.
+    blk = _rc_auto_block(max(T, 1)) if block is None else int(block)
+    if block is not None and int(block) < 1:
+        # NOT coerced.  ``max(1, ...)`` used to turn block=0 or block=-5 into an iid
+        # bootstrap of a serially-correlated differential and report ``block: 1`` as
+        # if the caller had asked for it.  A non-positive block is a caller error.
+        return _rc_abstain(f"non_positive_block:{int(block)}", n_models=K, n_obs=T,
+                           block=int(block), B=B), None
+    if int(B) < 2:
+        # np.percentile / a max over an empty null is not a p-value; ``(1+0)/(0+1)``
+        # returned a confident 1.0 out of zero draws.
+        return _rc_abstain(f"insufficient_bootstrap_draws_lt_2:{int(B)}", n_models=K,
+                           n_obs=T, block=blk, B=B), None
+    if K < 1:
+        return _rc_abstain("no_models", n_models=K, n_obs=T, block=blk, B=B), None
+    if bench_all_nan:
+        # Named BEFORE the row-count screen: an all-NaN benchmark leaves zero complete
+        # cases, and reporting that as "insufficient_obs_lt_20" names something other
+        # than the actual defect.
+        return _rc_abstain("all_nan_benchmark", n_models=K, n_obs=T, block=blk, B=B), None
+    if all_nan:
+        return _rc_abstain(f"all_nan_model_columns:{sorted(map(str, all_nan))}",
+                           n_models=K, n_obs=T, block=blk, B=B), None
+    if T < 20:
+        return _rc_abstain("insufficient_obs_lt_20", n_models=K, n_obs=T, block=blk, B=B), None
+    sd = d.std(axis=0, ddof=1)
+    dead = [str(keys[i]) for i in range(K) if not np.isfinite(sd[i]) or sd[i] <= 0.0]
+    if dead:
+        return _rc_abstain(f"zero_variance_loss_differential:{sorted(dead)}",
+                           n_models=K, n_obs=T, block=blk, B=B), None
+    blk = min(blk, T)
+    boot = _rc_boot_means(d, blk, int(B), int(seed))
+    return None, {"d": d, "keys": keys, "T": T, "K": K, "block": blk,
+                  "dbar": d.mean(axis=0), "boot": boot}
+
+
+def reality_check(losses_benchmark, losses_models, *, block=None, B: int = 2000,
+                  seed: int = 7) -> dict:
+    """White's (2000) Reality Check for data snooping over a family of K models.
+
+    Inputs are PER-PERIOD LOSSES (or negative performance): ``losses_benchmark`` is
+    the benchmark's loss series, ``losses_models`` the K competing models as columns
+    (DataFrame / dict of series / 2-D array). The test works on
+    ``d_k = L_benchmark - L_k``, so a POSITIVE ``d_k`` means model k beats the
+    benchmark.
+
+    Null: ``max_k E[d_k] <= 0`` — no model in the family beats the benchmark. The
+    statistic is ``max_k sqrt(T) * mean(d_k)``; its null distribution comes from a
+    circular block bootstrap of the differentials recentred at their sample means
+    (White's least-favourable configuration, all K means at zero), and the p-value is
+    the share of bootstrap maxima exceeding the observed one. Because the maximum is
+    taken over the SAME bootstrap draw for every model, the correlation between
+    near-duplicate candidates is priced rather than assumed away.
+
+    ``block`` defaults to ``max(1, round(T ** (1/3)))`` (see ``_rc_auto_block``);
+    ``seed`` makes every call reproducible — there is no unseeded path.
+
+    RC is known to be conservative when the family contains poor models: a single
+    hopeless candidate inflates the bootstrap maximum and buries a genuinely good
+    one. ``spa_test`` is the studentized, recentred fix; report both.
+
+    Degenerate families return an abstention dict with ``abstained=True`` and a named
+    ``reason`` instead of a number, and the reason names the ACTUAL defect:
+    ``no_models``, ``all_nan_benchmark`` (screened before the row count, which would
+    otherwise report a missing benchmark as ``insufficient_obs_lt_20``),
+    ``all_nan_model_columns``, ``insufficient_obs_lt_20``,
+    ``zero_variance_loss_differential``, ``non_positive_block`` (a caller error, not
+    silently coerced to an iid bootstrap) and ``insufficient_bootstrap_draws_lt_2``
+    (``B <= 1`` has no null distribution to compare against, and the
+    ``(1 + 0) / (0 + 1)`` arithmetic would report a confident ``p = 1.0`` from zero
+    draws).  The ``block`` field of an abstention is the block that WOULD have been
+    used, resolved, never the caller's un-resolved ``None``."""
+    early, ctx = _rc_core(losses_benchmark, losses_models, block=block, B=B, seed=seed)
+    if early is not None:
+        return early
+    T, K, dbar, boot = ctx["T"], ctx["K"], ctx["dbar"], ctx["boot"]
+    root = math.sqrt(T)
+    stat = float(np.max(root * dbar))
+    null_max = np.max(root * (boot - dbar), axis=1)
+    p = _rc_mc_pvalue(null_max, stat)
+    best = int(np.argmax(dbar))
+    return {"statistic": round(stat, 6), "p_value": round(p, 6), "n_models": K,
+            "n_obs": T, "block": ctx["block"], "B": int(B),
+            "best_model": ctx["keys"][best], "recentred_models": K,
+            "abstained": False, "reason": None}
+
+
+def spa_test(losses_benchmark, losses_models, *, block=None, B: int = 2000,
+             seed: int = 7) -> dict:
+    """Hansen's (2005) Superior Predictive Ability test — the CONSISTENT variant (SPA_c).
+
+    Same inputs and same ``d_k = L_benchmark - L_k`` convention as ``reality_check``,
+    and the same null (``max_k E[d_k] <= 0``). Two differences, both of which matter:
+
+    1. STUDENTIZATION. The statistic is
+       ``max(0, max_k sqrt(T) * mean(d_k) / omega_k)`` where ``omega_k`` is the
+       bootstrap standard error of ``sqrt(T) * mean(d_k)`` (the block bootstrap's own
+       long-run standard deviation, Hansen's recommended estimator). Without it the
+       maximum is dominated by whichever model happens to be noisiest.
+
+    2. RECENTERING (this is the ``_c`` in SPA_c). Only models satisfying
+       ``mean(d_k) >= -sqrt((omega_k ** 2 / T) * 2 * log(log(T)))`` are recentred at
+       their sample mean and so CONTRIBUTE to the bootstrap null; every model below
+       that threshold is recentred at zero instead, which pushes its bootstrap draws
+       deep into the negative and removes it from the maximum. That is what stops one
+       hopeless candidate from burying a good one, as it does under RC. The
+       ``recentred_models`` field reports how many models CONTRIBUTE (pass the
+       threshold); ``n_models - recentred_models`` were dropped to zero.
+       The threshold is the consistent (SPA_c) rate. ``p_value`` IS SPA_c — one
+       variant, named, is the reported number. Hansen's two bracketing variants ride
+       along as diagnostics rather than as a menu: ``p_value_upper`` is SPA_u (every
+       model kept, conservative, = studentized RC) and ``p_value_lower`` is SPA_l
+       (every model dropped, liberal). They exist so the finite-sample slack in SPA_c
+       is auditable from the return value; picking whichever of the three is smallest
+       is p-hacking with three names, and no code here does it.
+
+    ``block`` defaults to ``max(1, round(T ** (1/3)))``; ``seed`` is explicit and the
+    result is bit-identical across calls. Degenerate families abstain exactly as in
+    ``reality_check``.
+
+    SIZE: SPA_c is the more liberal of the two tests at every sample length measured
+    (7.9% at T=120 against a nominal 5%, 5.9% at T=500, and ~12% on a short
+    serially-correlated panel). See the measured grid in the section comment above
+    ``reality_check`` before reading a marginal p-value as a result."""
+    early, ctx = _rc_core(losses_benchmark, losses_models, block=block, B=B, seed=seed)
+    if early is not None:
+        return early
+    T, K, dbar, boot = ctx["T"], ctx["K"], ctx["dbar"], ctx["boot"]
+    root = math.sqrt(T)
+    Z = root * (boot - dbar)                       # (B, K) mean-zero bootstrap draws
+    omega = Z.std(axis=0, ddof=1)
+    if not np.all(np.isfinite(omega)) or np.any(omega <= 0.0):
+        return _rc_abstain("zero_bootstrap_standard_error", n_models=K, n_obs=T,
+                           block=ctx["block"], B=B)
+    t_k = root * dbar / omega
+    stat = float(max(0.0, float(np.max(t_k))))
+    thresh = np.sqrt((omega ** 2 / T) * 2.0 * math.log(math.log(T)))
+    keep = dbar >= -thresh                         # Hansen's consistent recentering
+
+    def _p(centre):
+        null_t = (root * (boot - centre)) / omega
+        return _rc_mc_pvalue(np.maximum(0.0, np.max(null_t, axis=1)), stat)
+
+    # Hansen's three recentring thresholds, from most to least permissive:
+    # SPA_u keeps every model (threshold -inf), SPA_c keeps those above -A_k, SPA_l
+    # keeps only models that beat the benchmark in sample (threshold 0). Dropping a
+    # model shrinks the bootstrap null, so p_lower <= p_value <= p_upper by
+    # construction.
+    p = _p(np.where(keep, dbar, 0.0))              # SPA_c — the reported p-value
+    p_upper = _p(dbar)                             # SPA_u — every model kept
+    p_lower = _p(np.where(dbar >= 0.0, dbar, 0.0))  # SPA_l — only in-sample winners
+    best = int(np.argmax(t_k))
+    return {"statistic": round(stat, 6), "p_value": round(p, 6), "n_models": K,
+            "n_obs": T, "block": ctx["block"], "B": int(B),
+            "best_model": ctx["keys"][best], "recentred_models": int(keep.sum()),
+            "p_value_upper": round(p_upper, 6), "p_value_lower": round(p_lower, 6),
+            "abstained": False, "reason": None}

@@ -17,6 +17,11 @@ below.
 scope is pure stdlib and it defers ``pandas``/``yaml`` into the functions that
 actually read a parquet snapshot or the ownership registry, so importing this
 package still costs nothing on a thin runner.
+
+``event_study`` is NOT in that class — it is numpy/pandas-bound — so it is reachable
+as an attribute through the PEP 562 ``__getattr__`` at the bottom of this file, which
+imports it only when something actually asks for it, and it stays out of ``__all__``
+so ``import *`` never drags the scientific stack in behind it.
 """
 
 from .contracts import (
@@ -43,6 +48,19 @@ from .event_clock import (
     read_event_projection,
     resolve_issuer_unavailable,
 )
+from .model import (
+    BUILD_FLOORS,
+    MODEL_SCHEMA,
+    MODEL_VERSION,
+    OwnerProbabilityFeatureError,
+    UNCERTAINTY_SEMANTICS,
+    UncertaintySemanticsError,
+    classify_feature,
+    forecast,
+    make_uncertainty,
+    require_lawful_features,
+    screen_features,
+)
 from .multiplicity import (
     benjamini_yekutieli,
     max_t_adjusted_p_values,
@@ -50,6 +68,14 @@ from .multiplicity import (
 from .prophet_bridge import (
     OVERLAY_SET_SCHEMA,
     build_overlays_for_plans,
+)
+from .regime import (
+    AUTHORIZED_AXES,
+    DISPLAY_ONLY_AXES,
+    RegimeFeatureError,
+    conditional_estimate_or_context,
+    interaction_eligibility,
+    read_regime_context,
 )
 from .universe import (
     UNRESOLVED_BLOCKER,
@@ -65,33 +91,51 @@ from .universe import (
 )
 
 __all__ = [
-    "UNRESOLVED_BLOCKER",
+    "AUTHORIZED_AXES",
     "BIOTEMPORAL_EVENT_SCHEMA",
+    "BUILD_FLOORS",
+    "ContractError",
+    "DISPLAY_ONLY_AXES",
     "EVENT_CLOCK_READ_SCHEMA",
     "EXPECTED_PROJECTION_CONTRACT",
+    "MODEL_SCHEMA",
+    "MODEL_VERSION",
     "NEURALWEB_STATE_SCHEMA",
     "NEURALWEB_STATE_V2_SCHEMA",
     "OVERLAY_SET_SCHEMA",
+    "OwnerProbabilityFeatureError",
     "PROPHET_OVERLAY_SCHEMA",
     "QUARANTINE_REASON_CODES",
-    "SEASONALITY_BLOCK_KEYS",
     "ContractError",
+    "RegimeFeatureError",
+    "SEASONALITY_BLOCK_KEYS",
+    "UNCERTAINTY_SEMANTICS",
+    "UncertaintySemanticsError",
+    "UNRESOLVED_BLOCKER",
     "UniverseRead",
     "benjamini_yekutieli",
     "build_neuralweb_state",
     "build_neuralweb_state_v2",
     "build_overlays_for_plans",
     "build_prophet_overlay",
+    "classify_feature",
+    "conditional_estimate_or_context",
     "corporate_actions_asof",
     "coverage_report",
     "earliest_snapshot",
+    "forecast",
+    "interaction_eligibility",
     "latest_snapshot",
+    "make_uncertainty",
     "max_t_adjusted_p_values",
     "membership_asof",
     "price_adjustment_vintage",
     "read_event_projection",
+    "read_regime_context",
+    "require_lawful_features",
     "resolve_issuer_unavailable",
     "resolve_security_asof",
+    "screen_features",
     "seasonality_state_projection",
     "snapshot_dates",
     "validate_bitemporal_event",
@@ -100,3 +144,22 @@ __all__ = [
     "validate_prophet_overlay",
     "validate_seasonality_state",
 ]
+
+#: Modules that carry a numpy/pandas dependency and therefore may not be imported
+#: eagerly here (see the module docstring).  They resolve on first attribute access.
+_LAZY_MODULES = ("calibration", "event_study")
+
+
+def __getattr__(name: str):
+    """Resolve the heavy submodules on demand — PEP 562.
+
+    ``from engine.seasonality import event_study`` already works as a submodule
+    import; this exists so ``engine.seasonality.event_study`` also resolves after a
+    bare ``import engine.seasonality``, without making the package itself require
+    the scientific stack that the thin ingestion runners deliberately do not have.
+    """
+    if name in _LAZY_MODULES:
+        import importlib
+
+        return importlib.import_module(f".{name}", __name__)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
