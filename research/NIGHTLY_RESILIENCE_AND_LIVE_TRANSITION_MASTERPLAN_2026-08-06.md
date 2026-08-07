@@ -79,6 +79,26 @@ backoff inside the engine critical path even on green nights — cache/de-rate
 or move into the parallel builders band, per the engine comment's own "next
 lever"). Then re-measure; do not inherit step-cost labels (tech_lab law).
 
+> **W3 RE-MEASURED 2026-08-06 — the ~26–29m label was itself stale** (the
+> tech_lab law fired on this very workstream). That figure was measured on the
+> 07-21/07-24 nights, i.e. AT the ship date of the GDELT circuit breaker
+> (#3442, merged 07-24), which already collapsed the stall. Measured
+> build_news band, four recent nights: 07-27 green **5.9m**, 08-03 **4.3m**,
+> 08-05 **4.7m**, 08-06 **5.4m** — of which ~2m is the single nightly 429
+> ladder (30s+75s) that arms the breaker; every later GDELT call
+> short-circuits. All of the engine job's GDELT activity is inside the
+> build_news band; nothing else pays it. Relocation to the parallel band is
+> REJECTED — it would re-create the desync'd news board NWS-01 (#2658) fixed,
+> to save ~5m. What W3 actually shipped: (1) the china_news wire query
+> (410 chars) had been structurally rejected by GDELT every night since the
+> ~06-20 length-limit tightening — a six-week-dark lane burning a doomed
+> paced call nightly; it is now split into ≤230-char sub-queries
+> (news_vector's probed limit) and live again. (2) daily.yml's stale cost
+> labels corrected. **The band that is actually creeping is build_site:
+> ~33m (07-21) → 35.7m (07-27) → 42.0m (08-03) → 61.7m/57.8m (08-05/08-06)**
+> — +25m in two weeks, the largest step in the job and the real driver of the
+> ~205m kill nights. Next W3 target: profile build_site's page loop.
+
 **W4 — Disk program on the M1.** Execute the ranked plan (operator sudo
 required for ranks 0/3): TM snapshots ~80G → `tmutil disable` decision →
 macOS Install Data 12G → `git gc` runner-1's 29G `.git` → theta store 60G to
