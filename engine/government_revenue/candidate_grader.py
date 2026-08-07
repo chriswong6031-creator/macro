@@ -1493,6 +1493,101 @@ def maturity_gate(
     }
 
 
+VERDICT_STATES = ("accruing", "expired_unmeasurable", "kill", "tested_null", "supported")
+
+#: The economic floor the family must clear over its own placebo, registered in
+#: §7 before any observation.  A tilt smaller than this is not separable from the
+#: names' own drift.
+_PLACEBO_FLOOR = 0.01
+
+
+def evaluate_verdict(
+    per_horizon: Mapping[str, Any],
+    *,
+    family: PreregisteredFamily,
+    as_of: datetime,
+) -> dict[str, Any]:
+    """Apply the registered kill condition — the reason this instrument exists.
+
+    A kill condition no code path can emit is a detector with an unsatisfiable
+    precondition: it returns a clean null forever and reads as working.  This
+    function is where GRV-FA1-KILL-V1 becomes reachable, and the suite proves a
+    KILL is actually produced by a losing cohort.
+
+    It decides nothing.  The state is display context for an operator ruling and
+    confers no authority in any branch, including ``supported``.
+    """
+    block = per_horizon.get(family.primary_horizon)
+    if not isinstance(block, Mapping):
+        raise GraderError(f"the primary horizon {family.primary_horizon!r} was not graded")
+    gate = block["gate"]
+    inputs = {
+        "pooled_market_relative_mean": block["market_relative_return"]["mean"],
+        "placebo_delta": block["placebo"]["delta_market_relative_mean"],
+        "hit_rate_lower_bound": block["hit_rate_bounds"]["lower_bound_hit_rate"]["value"],
+        "coverage": block["coverage"],
+    }
+    expiry = date.fromisoformat(family.accrual_expiry_date)
+    if not gate["satisfied"]:
+        # The gate is not an alibi: past the registered expiry, an unmet gate is
+        # itself the finding — the family cannot be measured at this issuance rate.
+        state = "expired_unmeasurable" if as_of.astimezone(timezone.utc).date() > expiry else "accruing"
+        return _verdict(state, family, gate, inputs)
+
+    mean = inputs["pooled_market_relative_mean"]
+    delta = inputs["placebo_delta"]
+    lower = inputs["hit_rate_lower_bound"]
+    if mean is None or delta is None:
+        return _verdict("accruing", family, gate, inputs)
+    if mean <= 0 and delta <= 0:
+        return _verdict("kill", family, gate, inputs)
+    if mean > 0 and delta >= _PLACEBO_FLOOR and lower is not None and lower > 0.5:
+        return _verdict("supported", family, gate, inputs)
+    return _verdict("tested_null", family, gate, inputs)
+
+
+_VERDICT_MEANING = {
+    "accruing": "the maturity gate is not met; no verdict is available and none is implied",
+    "expired_unmeasurable": (
+        "the registered accrual expiry passed with the gate unmet: the family is closed as "
+        "unmeasurable at this issuance rate"
+    ),
+    "kill": (
+        "the family beat neither zero nor its own placebo; file a construction-scoped kill. "
+        "The evidence rails, contract, and display surfaces are not deleted — a null never "
+        "deletes the layer"
+    ),
+    "tested_null": (
+        "positive but not separable from the names' own drift, or the cohort-wide lower bound "
+        "does not clear a coin flip; filed as a null, authority unchanged"
+    ),
+    "supported": (
+        "eligibility to REQUEST the existing gauntlet, and nothing else. This is not a "
+        "promotion, not a rank, not a size, and not a recommendation"
+    ),
+}
+
+
+def _verdict(
+    state: str,
+    family: PreregisteredFamily,
+    gate: Mapping[str, Any],
+    inputs: Mapping[str, Any],
+) -> dict[str, Any]:
+    if state not in VERDICT_STATES:  # pragma: no cover - closed list
+        raise GraderError(f"unknown verdict state {state!r}")
+    return {
+        "state": state,
+        "kill_condition_id": family.kill_condition_id,
+        "primary_horizon": family.primary_horizon,
+        "gate_satisfied": bool(gate["satisfied"]),
+        "inputs": dict(inputs),
+        "placebo_floor": _PLACEBO_FLOOR,
+        "meaning": _VERDICT_MEANING[state],
+        "authority_effect": "none in every branch; a ruling is an operator act",
+    }
+
+
 def build_cohort_report(
     log: IssuanceLog,
     *,
@@ -1662,6 +1757,7 @@ def build_cohort_report(
             "rows": [grade.to_payload() for grade in grades],
         }
 
+    verdict = evaluate_verdict(per_horizon, family=family, as_of=as_of)
     report = {
         "contract": REPORT_CONTRACT,
         "schema_version": SCHEMA_VERSION,
@@ -1696,7 +1792,8 @@ def build_cohort_report(
         "event_coverage": event_coverage.to_payload(),
         "outcome_by_horizon": per_horizon,
         "authority": _authority(),
-        "verdict_state": "accruing",
+        "verdict": verdict,
+        "verdict_state": verdict["state"],
         "limitations": [
             "Display/context only: this report cannot rank, size, gate, or originate a signal.",
             "An interim number here is not a promotion; promotion requires the existing gauntlet and an operator ruling.",

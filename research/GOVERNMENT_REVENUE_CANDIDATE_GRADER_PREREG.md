@@ -230,6 +230,16 @@ months prevent one issuer or one budget cycle from carrying the whole result.
   such. "Still accruing" stops being an available answer on that date. Re-opening requires a
   new registration with a new `family_id`, not an extension of this one.
 
+These four states are **computed**, not narrated:
+`engine/government_revenue/candidate_grader.py:evaluate_verdict` emits exactly one of
+`accruing`, `expired_unmeasurable`, `kill`, `tested_null`, `supported` on every report, and
+`tests/test_government_revenue_candidate_grader.py::test_the_kill_condition_is_reachable`
+proves a losing cohort actually produces `kill`. A kill condition that no code path can emit
+is a detector with an unsatisfiable precondition: it returns a clean null forever and reads
+as working. Emitting the state is not the same as acting on it — filing a kill, or asking
+for the gauntlet, remains an operator act, and the authority block is unchanged in every
+branch including `supported`.
+
 Multiplicity is controlled: exactly ONE kill-bearing hypothesis (H1), at ONE horizon (h63),
 on ONE statistic (pooled market-relative mean, against the registered placebo). Everything
 else in the report is labeled supporting or disclosure and carries no verdict power. No

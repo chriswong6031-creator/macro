@@ -792,6 +792,103 @@ def test_grades_record_their_vintage_and_drift_is_surfaced(calendar):
 
 
 # ---------------------------------------------------------------------------
+# the verdict — proof that this instrument can return "no"
+# ---------------------------------------------------------------------------
+
+
+def _reachable_family(**overrides) -> grader.PreregisteredFamily:
+    """GRV-FA1's RULES with a gate a fixture can reach.
+
+    The thresholds are the registered family's business; what this exercises is
+    whether the decision rule can emit each state at all. A kill condition no
+    code path can produce is a detector with an unsatisfiable precondition.
+    """
+    fields = {field: getattr(GRV_FA1, field) for field in GRV_FA1.__dataclass_fields__}
+    fields.update(
+        horizons=(grader.Horizon(name="h5", sessions=5, role="primary"),),
+        primary_horizon="h5",
+        min_distinct_source_events=1,
+        min_distinct_issuers=1,
+        min_distinct_event_months=1,
+        min_outcome_coverage=0.5,
+    )
+    fields.update(overrides)
+    return grader.PreregisteredFamily(**fields)
+
+
+def _placebo_aware_series(calendar, *, event_move: float, placebo_move: float) -> dict[date, float]:
+    closes = _flat(calendar, 100.0)
+    placebo_entry = _ENTRY_INDEX + GRV_FA1.placebo_offset_sessions
+    for offset in range(1, 6):
+        closes[calendar.sessions[placebo_entry + offset]] = 100.0 * (1 + placebo_move)
+        closes[calendar.sessions[_ENTRY_INDEX + offset]] = 100.0 * (1 + event_move)
+    return closes
+
+
+def test_the_kill_condition_is_reachable(calendar):
+    """A losing cohort must actually produce KILL, not a permanent 'accruing'."""
+    panel = _panel(calendar, {"PLTR": _placebo_aware_series(calendar, event_move=-0.10, placebo_move=0.0)})
+    report = _report(calendar, _log([_row(calendar)]), panel, family=_reachable_family())
+
+    assert report["verdict_state"] == "kill"
+    assert report["verdict"]["kill_condition_id"] == "GRV-FA1-KILL-V1"
+    assert report["verdict"]["gate_satisfied"] is True
+    assert report["verdict"]["inputs"]["pooled_market_relative_mean"] < 0
+    assert report["verdict"]["inputs"]["placebo_delta"] <= 0
+    assert "never deletes the layer" in report["verdict"]["meaning"]
+
+
+def test_a_cohort_that_cannot_beat_its_own_placebo_is_a_null(calendar):
+    panel = _panel(calendar, {"PLTR": _placebo_aware_series(calendar, event_move=0.10, placebo_move=0.10)})
+    report = _report(calendar, _log([_row(calendar)]), panel, family=_reachable_family())
+
+    assert report["verdict_state"] == "tested_null"
+    assert report["verdict"]["inputs"]["pooled_market_relative_mean"] > 0
+    assert report["verdict"]["inputs"]["placebo_delta"] == pytest.approx(0.0)
+
+
+def test_a_supported_verdict_buys_nothing(calendar):
+    panel = _panel(calendar, {"PLTR": _placebo_aware_series(calendar, event_move=0.10, placebo_move=0.0)})
+    report = _report(calendar, _log([_row(calendar)]), panel, family=_reachable_family())
+
+    assert report["verdict_state"] == "supported"
+    assert "not a promotion" in report["verdict"]["meaning"]
+    assert report["verdict"]["authority_effect"] == "none in every branch; a ruling is an operator act"
+    assert report["authority"]["can_rank"] is False
+    assert report["authority"]["can_size"] is False
+    assert report["authority"]["can_gate"] is False
+
+
+def test_an_unmet_gate_expires_instead_of_accruing_forever(calendar):
+    """'Still accruing' must stop being an available answer on the registered date."""
+    panel = _panel(calendar, {"PLTR": _flat(calendar, 100.0)})
+    strict = _reachable_family(min_distinct_source_events=99)
+
+    before = _report(calendar, _log([_row(calendar)]), panel, family=strict)
+    assert before["verdict_state"] == "accruing"
+
+    expiry = date.fromisoformat(GRV_FA1.accrual_expiry_date)
+    after = _report(
+        calendar,
+        _log([_row(calendar)]),
+        panel,
+        family=strict,
+        as_of=datetime.combine(expiry + timedelta(days=1), datetime.min.time(), tzinfo=timezone.utc),
+    )
+    assert after["verdict_state"] == "expired_unmeasurable"
+    assert after["verdict"]["gate_satisfied"] is False
+
+
+def test_the_registered_family_still_carries_its_real_thresholds():
+    """The reachable-family fixture must not be mistaken for the registration."""
+    assert GRV_FA1.min_distinct_source_events == 40
+    assert GRV_FA1.min_distinct_issuers == 12
+    assert GRV_FA1.min_distinct_event_months == 12
+    assert GRV_FA1.min_outcome_coverage == 0.70
+    assert GRV_FA1.primary_horizon == "h63"
+
+
+# ---------------------------------------------------------------------------
 # authority
 # ---------------------------------------------------------------------------
 
