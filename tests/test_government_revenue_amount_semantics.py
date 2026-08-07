@@ -400,3 +400,205 @@ def test_published_amount_facts_carry_their_class(artifact):
 
 def test_guard_selftest_passes():
     assert guard.selftest() == 0
+
+
+# ------------------------------------- the two shapes that already fooled this guard
+#
+# Both were found by injecting a real conflation into the real ``metrics.py`` and watching
+# the gate print "OK — no figure mixes amount classes".  A rule fixed once is a rule that
+# rots, so each is pinned here AS THE MUTATION: the anchor is asserted present in the
+# shipped source (so the test cannot go vacuous when the source moves), the unmutated
+# source is asserted clean at that site (so the finding is attributable to the mutation and
+# not to background noise), and the mutated source must produce a mixed_class_sum naming
+# the two classes.
+
+METRICS = "engine/government_revenue/metrics.py"
+
+
+def _metrics_source() -> str:
+    return (ROOT / METRICS).read_text(encoding="utf-8")
+
+
+def _mutate(source: str, old: str, new: str) -> str:
+    """Replace an anchor that MUST exist exactly once, else the test is vacuous."""
+    assert source.count(old) == 1, (
+        f"{METRICS}: mutation anchor is not present exactly once — this test can no "
+        f"longer prove anything.  Anchor:\n{old}"
+    )
+    return source.replace(old, new)
+
+
+def test_mutation_backlog_headroom_addition_is_seen_through_the_defensive_rebind():
+    """_backlog's ``current - obligated`` flipped to ``+`` must go RED.
+
+    This is the mix the guard exists to refuse — a CEILING added to an OBLIGATION — and
+    for the whole of PR #4950's first round it scanned clean, because ``_backlog`` writes
+    every amount local with the lobe's defensive rebind::
+
+        obligated = pd.to_numeric(active.get("total_obligated"), errors="coerce")
+        if obligated is None:
+            obligated = pd.Series(float("nan"), index=active.index)
+
+    and the tracker popped the local's class on the class-neutral second assignment.  The
+    function was therefore invisible to the matcher in its entirety.
+    """
+    source = _metrics_source()
+    assert guard.scan_python(METRICS, source) == [], "shipped metrics.py is not clean"
+    mutated = _mutate(
+        source,
+        "float((current[current_mask] - obligated[current_mask]).clip(lower=0).sum())",
+        "float((current[current_mask] + obligated[current_mask]).clip(lower=0).sum())",
+    )
+    findings = guard.scan_python(METRICS, mutated)
+    assert _rules(findings) == {"mixed_class_sum"}, [str(f) for f in findings]
+    detail = " ".join(f.detail for f in findings)
+    assert "ceiling" in detail and "award_cumulative" in detail, detail
+
+
+def test_mutation_concentration_total_plus_outlays_is_seen_through_the_loop_variable():
+    """_concentration's published total plus an outlay total must go RED.
+
+    ``weights`` is bound from ``frame[col]`` where ``col`` is the LOOP VARIABLE of
+    ``for col in _CONCENTRATION_WEIGHT_FIELDS``, so it carried no class, and the ``+`` rule
+    needs both operands classed.  An obligation-weighted total added to an outlay total —
+    published under the key ``covered_obligations``, in the very function whose ceiling
+    rung this PR removed — therefore scanned clean.
+    """
+    source = _metrics_source()
+    assert guard.scan_python(METRICS, source) == [], "shipped metrics.py is not clean"
+    mutated = _mutate(
+        source,
+        "    total = float(weights.sum())\n",
+        '    total = float(weights.sum()) + '
+        'float(pd.to_numeric(frame["total_outlays"], errors="coerce").sum())\n',
+    )
+    findings = guard.scan_python(METRICS, mutated)
+    assert _rules(findings) == {"mixed_class_sum"}, [str(f) for f in findings]
+    detail = " ".join(f.detail for f in findings)
+    assert "outlay" in detail and "award_cumulative" in detail, detail
+
+
+def test_the_defensive_rebind_idiom_is_still_in_metrics_where_it_blinded_the_guard():
+    """Proof the mutation tests above exercise the idiom, not a hypothetical.
+
+    If the lobe ever stops writing the rebind, the two tests above would still pass while
+    silently no longer testing the thing they name.
+    """
+    source = _metrics_source()
+    assert source.count('obligated = pd.Series(float("nan"), index=active.index)') == 1
+    assert "for col in _CONCENTRATION_WEIGHT_FIELDS:" in source
+
+
+# ---------------------------------- the re-binding rule, pinned in BOTH directions
+
+
+def test_a_class_neutral_rebind_preserves_the_class():
+    """The guard-clause placeholder is the ABSENCE of the quantity, not a new one."""
+    source = (
+        'obligated = pd.to_numeric(active.get("total_obligated"), errors="coerce")\n'
+        "if obligated is None:\n"
+        '    obligated = pd.Series(float("nan"), index=active.index)\n'
+        'ceiling = row["potential_award_amount"]\n'
+        "exposure = obligated + ceiling\n"
+    )
+    findings = guard.scan_python(PY, source)
+    assert _rules(findings) == {"mixed_class_sum"}, [str(f) for f in findings]
+
+
+@pytest.mark.parametrize(
+    "placeholder",
+    [
+        'pd.Series(float("nan"), index=active.index)',
+        "0.0",
+        "None",
+        "pd.DataFrame()",
+        "frame.iloc[0:0]",
+    ],
+)
+def test_every_placeholder_shape_preserves_the_class(placeholder):
+    source = (
+        'obligated = pd.to_numeric(active.get("total_obligated"), errors="coerce")\n'
+        f"obligated = {placeholder}\n"
+        'total = obligated + row["total_outlay"]\n'
+    )
+    assert _rules(guard.scan_python(PY, source)) == {"mixed_class_sum"}
+
+
+def test_a_rebind_to_a_DIFFERENT_class_still_overwrites():
+    """Preserving is only for silence.  Real counter-evidence keeps Python's last-wins.
+
+    Here the second bind genuinely re-measures the local as a ceiling, so adding it to
+    another ceiling is a same-class sum and must NOT be reported.  Were the rule "union
+    the classes" instead of "silence does not clobber", this would be a false positive.
+    """
+    source = (
+        'x = row["total_obligated"]\n'
+        'x = row["current_award_amount"]\n'
+        'total = x + row["potential_award_amount"]\n'
+    )
+    assert guard.scan_python(PY, source) == []
+
+
+def test_a_rebind_to_a_different_class_is_caught_against_its_NEW_class():
+    source = (
+        'x = row["current_award_amount"]\n'
+        'x = row["total_obligated"]\n'
+        'total = x + row["potential_award_amount"]\n'
+    )
+    assert _rules(guard.scan_python(PY, source)) == {"mixed_class_sum"}
+
+
+def test_a_first_bind_that_carries_no_class_stays_unclassed():
+    """Preservation resurrects nothing: a name that never had a class does not gain one."""
+    source = 'x = compute()\ntotal = x + row["total_obligated"]\n'
+    assert guard.scan_python(PY, source) == []
+
+
+def test_a_right_hand_side_that_itself_spans_classes_leaves_the_name_unclassed():
+    """An ambiguous value carries no single class; the mix is reported where it happens."""
+    source = (
+        'mask = row["total_obligated"] + row["current_award_amount"]\n'
+        'total = mask + row["total_outlay"]\n'
+    )
+    findings = guard.scan_python(PY, source)
+    assert len(findings) == 1 and findings[0].line == 1, [str(f) for f in findings]
+
+
+# ------------------------------- the loop-variable rule, pinned in BOTH directions
+
+
+def test_a_loop_variable_over_a_single_class_ladder_carries_that_class():
+    source = (
+        'WEIGHTS = ("total_obligated", "award_amount")\n'
+        "for col in WEIGHTS:\n"
+        "    if col in frame.columns:\n"
+        "        weights = pd.to_numeric(frame[col])\n"
+        "        break\n"
+        'total = float(weights.sum()) + float(frame["total_outlays"].sum())\n'
+    )
+    assert _rules(guard.scan_python(PY, source)) == {"mixed_class_sum"}
+
+
+def test_a_loop_variable_over_a_MIXED_ladder_carries_no_class():
+    """The loop is already a mixed_class_fallback; guessing one of its two classes would
+    attribute an invented measurement to everything the variable touches."""
+    source = (
+        'LADDER = ("total_obligated", "current_award_amount")\n'
+        "for col in LADDER:\n"
+        "    if col in frame.columns:\n"
+        "        weights = frame[col]\n"
+        "        break\n"
+        'total = float(weights.sum()) + float(frame["total_outlays"].sum())\n'
+    )
+    findings = guard.scan_python(PY, source)
+    assert _rules(findings) == {"mixed_class_fallback"}, [str(f) for f in findings]
+
+
+def test_a_loop_over_an_unknowable_domain_binds_nothing():
+    """``for col in frame.columns`` is unread, and this guard does not guess."""
+    source = (
+        "for col in frame.columns:\n"
+        "    weights = frame[col]\n"
+        'total = float(weights.sum()) + float(frame["total_outlays"].sum())\n'
+    )
+    assert guard.scan_python(PY, source) == []

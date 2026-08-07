@@ -74,6 +74,7 @@ if str(ROOT) not in sys.path:
 from engine.government_revenue.amount_semantics import (  # noqa: E402
     AMOUNT_CLASSES,
     AmountClass,
+    classes_of,
     classify,
     classify_semantic,
     conflict_reason,
@@ -171,7 +172,11 @@ class _PythonScanner(ast.NodeVisitor):
     Local names are tracked when an assignment's right-hand side mentions exactly ONE
     declared amount field (``obligated = pd.to_numeric(active.get("total_obligated"))``);
     all-string collections are tracked by their member list so a ladder hoisted to a
-    constant is still resolved at its call site.
+    constant is still resolved at its call site.  Two shapes that hid real mixes from the
+    first draft are tracked as well, each stated as a rule where it is implemented:
+    a class-neutral RE-BIND does not clobber a class the name already proved
+    (``_bind_class``), and a LOOP VARIABLE walking a known field ladder carries that
+    ladder's class (``visit_For``).
     """
 
     def __init__(self, path: str, readers: frozenset[str]) -> None:
@@ -235,16 +240,60 @@ class _PythonScanner(ast.NodeVisitor):
         return None
 
     # -- name tracking ----------------------------------------------------------
+    def _bind_class(self, name: str, classes: frozenset[AmountClass]) -> None:
+        """Re-bind ``name``'s tracked class.  A CLASS-NEUTRAL re-bind does not clobber.
+
+        THE RULE, stated once:
+
+          * one class on the right-hand side  -> that class, overwriting any earlier one;
+          * two or more                       -> no class (the value's own measurement is
+                                                 ambiguous, and whatever mixed them is
+                                                 reported by its own rule);
+          * none                              -> LEAVE the existing class in place.
+
+        The third line is the fix.  This lobe writes every amount local with a defensive
+        rebind, so ``pop on silence`` made the guard blind to the function that most needed
+        it — ``metrics._backlog`` uses the idiom on all three of its amount locals::
+
+            obligated = pd.to_numeric(active.get("total_obligated"), errors="coerce")
+            if obligated is None:
+                obligated = pd.Series(float("nan"), index=active.index)   # popped the class
+
+        and with the class popped, flipping the genuine ``current - obligated`` headroom to
+        ``current + obligated`` — a CEILING added to an OBLIGATION, the exact mix this file
+        exists to refuse — scanned clean.  A placeholder is the ABSENCE of the quantity, not
+        a different quantity: the branch runs only because the real value was missing, so it
+        cannot be a second measurement.  The module's own law for combining says silence is
+        "unknown", not "compatible"; the same law read for TRACKING says silence is
+        "unknown", not "reclassified".  A re-bind that carries a DIFFERENT class is real
+        counter-evidence and still overwrites, so Python's last-wins semantics survive.
+
+        The other honest option — union the classes and report an ambiguous union — is
+        deliberately NOT taken.  A local genuinely reused for two measurements would then be
+        reported at every downstream USE, blaming expressions that mixed nothing, and the
+        union would be manufactured by the tracker rather than found in the code.  This
+        file's precision is the reason it is allowed to exist (its first draft's six
+        findings were inventory lists), so the rule that cannot invent a mix wins.  The
+        residual cost of preserving is a stale class on a local silently repurposed for
+        something else — which fails toward a REPORT a reader can dismiss, not toward the
+        blindness that shipped.
+
+        The ladder map below keeps last-wins on purpose: a ladder's members are a property
+        of the VALUE, and a re-bind to a non-literal leaves genuinely unknown members, so
+        there is nothing to preserve.
+        """
+        if len(classes) == 1:
+            self._name_class[name] = next(iter(classes))
+        elif classes:
+            self._name_class.pop(name, None)
+
     def visit_Assign(self, node: ast.Assign) -> None:
         classes = self._classes(node.value)
         members = self._string_members(node.value)
         for target in node.targets:
             if not isinstance(target, ast.Name):
                 continue
-            if len(classes) == 1:
-                self._name_class[target.id] = next(iter(classes))
-            else:
-                self._name_class.pop(target.id, None)
+            self._bind_class(target.id, classes)
             if members is not None:
                 self._name_ladder[target.id] = members
             else:
@@ -331,6 +380,22 @@ class _PythonScanner(ast.NodeVisitor):
         members = self._ladder_members(node.iter)
         if members and any(isinstance(child, (ast.Break, ast.Return)) for child in ast.walk(node)):
             self._report(node, "mixed_class_fallback", members)
+        # The loop VARIABLE carries the class of the domain it walks, when that domain is
+        # statically knowable — a field-ladder literal, or a name bound to one.  Without
+        # this, ``for col in _CONCENTRATION_WEIGHT_FIELDS: weights = frame[col]`` left
+        # ``weights`` unclassed, and the ``+`` rule needs BOTH operands classed, so an
+        # obligation-weighted total added to an outlay total inside _concentration —
+        # published under the word ``covered_obligations`` — scanned clean.  A single-class
+        # ladder (which is what _CONCENTRATION_WEIGHT_FIELDS became when this PR removed
+        # its ceiling rung) yields exactly that class; a ladder spanning classes yields
+        # none, because the loop is ALREADY a mixed_class_fallback finding and giving the
+        # variable one of the two classes would be a coin-flip dressed as knowledge.
+        # A domain that is not statically knowable (``for col in frame.columns``, a
+        # parameter, a call result) binds nothing: an unread domain is unknown, and this
+        # file does not guess — an invented class would manufacture findings, which is the
+        # one failure it cannot afford.
+        if members is not None and isinstance(node.target, ast.Name):
+            self._bind_class(node.target.id, classes_of(members))
         self.generic_visit(node)
 
     def visit_Dict(self, node: ast.Dict) -> None:
@@ -630,6 +695,42 @@ _SELFTEST_CASES: tuple[tuple[str, bool, str, str], ...] = (
         False,
         "engine/government_revenue/_selftest.py",
         'headroom = row["potential_award_amount"] - row["total_obligated"]\n',
+    ),
+    (
+        "a class-neutral defensive rebind does not erase the class",
+        True,
+        "engine/government_revenue/_selftest.py",
+        'obligated = pd.to_numeric(active.get("total_obligated"), errors="coerce")\n'
+        "if obligated is None:\n"
+        '    obligated = pd.Series(float("nan"), index=active.index)\n'
+        'exposure = obligated + row["potential_award_amount"]\n',
+    ),
+    (
+        "a rebind carrying a DIFFERENT class still overwrites, so this is same-class",
+        False,
+        "engine/government_revenue/_selftest.py",
+        'x = row["total_obligated"]\n'
+        'x = row["current_award_amount"]\n'
+        'total = x + row["potential_award_amount"]\n',
+    ),
+    (
+        "a loop variable over a single-class ladder carries that class",
+        True,
+        "engine/government_revenue/_selftest.py",
+        'WEIGHTS = ("total_obligated", "award_amount")\n'
+        "for col in WEIGHTS:\n"
+        "    if col in frame.columns:\n"
+        "        weights = frame[col]\n"
+        "        break\n"
+        'total = float(weights.sum()) + float(frame["total_outlays"].sum())\n',
+    ),
+    (
+        "a loop over an unknowable domain binds nothing",
+        False,
+        "engine/government_revenue/_selftest.py",
+        "for col in frame.columns:\n"
+        "    weights = frame[col]\n"
+        'total = float(weights.sum()) + float(frame["total_outlays"].sum())\n',
     ),
     (
         "unparseable source FAILS CLOSED",

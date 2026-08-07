@@ -33,8 +33,19 @@ THE FOUR CLASSES, AND WHY EACH PAIR IS NOT ADDABLE.
                      It LAGS obligation, so obligation + outlay counts the committed
                      dollar once when it is committed and again when it is paid.
 
-None of the four is bookings, backlog, funded backlog, or GAAP revenue, and this
-module never claims otherwise: those live outside the federal source entirely.
+None of the four IS bookings, backlog, funded backlog, or GAAP revenue — but do not read
+that as "the lobe has no backlog figure".  It has several, and they are built from these
+very columns: ``metrics._backlog()`` publishes ``funded_backlog`` / ``total_backlog`` and
+their preferred names ``funded_capacity_observed`` / ``potential_capacity_observed`` as
+``ceiling - obligation`` residuals over the bounded USAspending award-detail sample, and
+``metrics.py`` publishes ``ttm_obligations``, ``covered_obligations`` and
+``funded_capacity_company_exposure_sum`` from the same source.  Each of those is a
+DIFFERENCE or a within-class total, never a cross-class sum, which is why this module
+declares subtraction legal and addition not; none of them is a fifth class, so none is
+declared here.  What genuinely lives outside the federal source is COMPANY-reported
+bookings, company-reported backlog and GAAP revenue — the numbers an issuer prints — and
+this module classifies none of those, which is exactly why a federal residual must never
+be published under their names.
 
 COVERAGE IS DERIVED, NOT HAND-LISTED.  The defect class this lobe keeps hitting is
 "a column joined a canonical list and something downstream never followed" — the
