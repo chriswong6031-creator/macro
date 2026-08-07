@@ -23,6 +23,22 @@ W1 additions (spec §7):
 13. Theme-lane join: present → lane string; missing side-artifact → W0 null behavior.
 14. Full-universe determinism (no --tickers).
 15. Integration: real files → ≥500 tickers, elapsed < 30s.
+
+PSI-W2 additions (charter §5.1/§6/§9 — schema portfolio_ctx.v2):
+16. v1 ADDITIVITY golden — the v1 projection of a fully-covered v2 ticker is
+    byte-identical (content AND key order) to the pinned v1 block; v1 top-level keys
+    and v1 coverage counters do not drift.
+17. `tech` — verbatim ext grade / MA booleans / RS numbers / drawdown (unrounded);
+    census-dropped fields (atr_z, rvol63) stay ABSENT; washout state word only for the
+    names the watcher lists, with no entry implication (DNR:KILL-WASHOUT-TURN).
+18. `msens` / `fq` / `pers` / `dossier` — verbatim copies; fq counts fired flags and
+    prints 0 as a measurement while an absent flags dict omits the block.
+19. Omission honesty — a name with no stockdata emits NO v2 key at all.
+20. Coverage counters per new block.
+21. `market` — verbatim tape states, no derived/fused key, per-source fail-open, present
+    and empty when every source is gone, corrupt shapes never raise.
+22. W2 loaders fail open on an empty root; the stockdata reader is lazy, not materialized.
+23. Gate-8 budget stamps are printed every run and a breach annotates at line start.
 """
 from __future__ import annotations
 
@@ -47,6 +63,17 @@ from scripts.build_portfolio_ctx import (  # noqa: E402
 
 
 ASOF = "2026-07-23"
+
+# The v2 contract surfaces, named once. `market` is the ONE top-level key W2 added
+# (declared in scripts/export_signal_contracts.py, pinned by check_contract_drift);
+# the five new coverage counters are the per-block honesty chips (§5.1).
+TOP_LEVEL_KEYS = {"schema", "v", "asof", "built", "gate_go", "regime", "sectors",
+                  "market", "coverage", "tickers"}
+V1_COVERAGE_KEYS = {"tickers", "stage", "themes", "earnings", "insider", "congress",
+                    "f13", "entry", "chains"}
+W2_COVERAGE_KEYS = {"tech", "msens", "fq", "pers", "dossier"}
+COVERAGE_KEYS = V1_COVERAGE_KEYS | W2_COVERAGE_KEYS
+W2_TICKER_BLOCKS = ("tech", "msens", "fq", "pers", "dossier")
 
 
 def _full_sources() -> dict:
@@ -115,22 +142,19 @@ def _full_sources() -> dict:
 
 def test_schema_invariants():
     p = build_ctx(_full_sources(), ["NVDA"], ASOF)
-    assert p["schema"] == "portfolio_ctx.v1"
-    assert p["v"] == 1
+    assert p["schema"] == "portfolio_ctx.v2"
+    assert p["v"] == 2
     assert p["asof"] == ASOF
     assert isinstance(p["built"], str) and p["built"].endswith("+00:00")
-    assert set(p["coverage"]) == {"tickers", "stage", "themes", "earnings",
-                                  "insider", "congress", "f13", "entry", "chains"}
+    assert set(p["coverage"]) == COVERAGE_KEYS
     assert isinstance(p["tickers"], dict)
     assert "gate_go" in p
     # top-level key set is FIXED (contract stability): full and empty bakes match
-    fixed = {"schema", "v", "asof", "built", "gate_go", "regime", "sectors",
-             "coverage", "tickers"}
-    assert set(p.keys()) == fixed
+    assert set(p.keys()) == TOP_LEVEL_KEYS
     empty = {k: ({} if k != "congress" else None) for k in [
         "risk_state", "us_standouts", "subsector", "sector_central", "screener",
         "by_ticker", "insider", "smartmoney", "baskets", "membership", "congress"]}
-    assert set(build_ctx(empty, ["NVDA"], ASOF).keys()) == fixed
+    assert set(build_ctx(empty, ["NVDA"], ASOF).keys()) == TOP_LEVEL_KEYS
 
 
 # ── 2. join correctness (fully-covered ticker) ──────────────────────────────
@@ -157,9 +181,11 @@ def test_full_ticker_join():
                                   "label_en": "Risk-on",
                                   "label_zh": "风险偏好",
                                   "color": "green"}}
-    # coverage counts everything present (chains: 0 — _full_sources has no chain_state)
+    # coverage counts everything present (chains: 0 — _full_sources has no chain_state;
+    # the five W2 counters are 0 because _full_sources carries no stockdata either)
     assert p["coverage"] == {"tickers": 1, "stage": 1, "themes": 1, "earnings": 1, "chains": 0,
-                             "insider": 1, "congress": 1, "f13": 1, "entry": 1}
+                             "insider": 1, "congress": 1, "f13": 1, "entry": 1,
+                             "tech": 0, "msens": 0, "fq": 0, "pers": 0, "dossier": 0}
 
 
 def test_regime_extra_keys_do_not_leak():
@@ -196,13 +222,16 @@ def test_all_sources_empty_bakes_ok():
         "risk_state", "us_standouts", "subsector", "sector_central", "screener",
         "by_ticker", "insider", "smartmoney", "baskets", "membership", "congress"]}
     p = build_ctx(empty, ["NVDA"], ASOF)
-    assert p["schema"] == "portfolio_ctx.v1"
+    assert p["schema"] == "portfolio_ctx.v2"
     assert p["tickers"] == {}          # zero-coverage → omitted
     assert p["gate_go"] is None        # gate_go absent → null (not fabricated False)
     # top-level regime/sectors are STABLE keys (empty dict, never dropped) so the
     # cross-repo contract does not drift when a source is empty
     assert p["regime"] == {}
     assert p["sectors"] == {}
+    # W2: `market` is the same kind of STABLE top-level key — present and empty, never
+    # dropped and never a fabricated neutral tape state.
+    assert p["market"] == {}
 
 
 # ── 4. zero-coverage ticker omitted ─────────────────────────────────────────
@@ -314,7 +343,7 @@ def test_no_nan_serialization():
     s = json.dumps(p, separators=(",", ":"), allow_nan=False, ensure_ascii=False)
     assert "NaN" not in s
     # round-trips
-    assert json.loads(s)["schema"] == "portfolio_ctx.v1"
+    assert json.loads(s)["schema"] == "portfolio_ctx.v2"
 
 
 def test_congress_nan_amount_coerced_to_null():
@@ -360,11 +389,10 @@ def test_integration_smoke_real_files(tmp_path):
     assert rc == 0
     assert out.exists()
     payload = json.loads(out.read_text(encoding="utf-8"))
-    assert payload["schema"] == "portfolio_ctx.v1"
-    assert payload["v"] == 1
+    assert payload["schema"] == "portfolio_ctx.v2"
+    assert payload["v"] == 2
     assert payload["asof"] == ASOF
-    assert set(payload["coverage"]) == {"tickers", "stage", "themes", "earnings",
-                                        "insider", "congress", "f13", "entry", "chains"}
+    assert set(payload["coverage"]) == COVERAGE_KEYS
     # the artifact must serialize without NaN
     json.dumps(payload, allow_nan=False)
 
@@ -650,7 +678,7 @@ def test_integration_full_universe_real_files(tmp_path):
     elapsed = time.perf_counter() - t0
     assert rc == 0
     payload = json.loads(out.read_text(encoding="utf-8"))
-    assert payload["schema"] == "portfolio_ctx.v1"
+    assert payload["schema"] == "portfolio_ctx.v2"
     n = len(payload["tickers"])
     assert n >= 500, f"full universe should be ≥500 tickers, got {n}"
     assert elapsed < 30.0, f"bake must be < 30s (render budget), took {elapsed:.1f}s"
@@ -658,3 +686,459 @@ def test_integration_full_universe_real_files(tmp_path):
     # sectors are keyed by GICS-family names only (no Yahoo residue)
     assert "Financial" not in payload["sectors"]
     assert "Information Technology" not in payload["sectors"]
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# PSI-W2 — v2 state blocks, the `market` tape block, coverage counts, budgets
+# Charter: research/PORTFOLIO_SUPERINTELLIGENCE_MASTERPLAN_BY_FABLE.md §5.1/§6/§9.
+#
+# The law these pin: the bake is a JOIN. Every W2 value is VERBATIM from a nightly
+# artifact — nothing thresholded, rounded, renamed, graded or blended — a block is
+# OMITTED (not null-filled) when its source has no data for the name, and every v1 key
+# survives byte-identically.
+# ══════════════════════════════════════════════════════════════════════════════
+
+# A stockdata blob shaped like the real site/stockdata/<T>.json (field names and value
+# vocabulary taken verbatim from the 2026-08-06 census of the production artifacts).
+def _stockdata_blob() -> dict:
+    return {
+        "ticker": "NVDA",
+        "asof": "2026-08-06",
+        "ext": {"ext": 11.8, "ext_z": -0.1, "grade": "stretched",
+                "near_52wh": 0.919, "parabolic": False},
+        "tech": {"above50": True, "above200": False, "rs_1m": -3.3, "rs_3m": 3.8,
+                 "rs_6m": 0.8, "off_52w_high_pct": -8.1, "atr_pct": 2.99,
+                 "hv20": 37.0, "price": 312.41, "rsi14": 47.0},
+        "macro_sensitivity": {"tier": "high", "regime": "tailwind",
+                              "regime_label": {"en": "rate tailwind", "zh": "利率顺风"},
+                              "duration_label": {"en": "Duration-neutral", "zh": "久期中性"},
+                              "rate_beta": -0.181},
+        "thesis_funnel": {"state": "not_eligible", "flags": {
+            "s1_dilution": {"fired": False, "computable": True},
+            "s2_moat_falsifier": {"fired": True, "computable": True},
+            "s3_solvency": {"fired": False, "computable": True},
+            "s4_coverage": {"fired": True, "computable": True},
+        }},
+        "personality": {"schema": "stock_personality.v1",
+                        "base": {"archetype": {"key": "quality_compounder",
+                                               "confidence": 0.25}}},
+    }
+
+
+def _w2_sources() -> dict:
+    """_full_sources() + every W2 source, all covering NVDA."""
+    src = _full_sources()
+    src["stockdata"] = {"NVDA": _stockdata_blob()}
+    src["washout_turn"] = {"NVDA": {"state": "WASHOUT_TURN", "since": "2026-06-05",
+                                    "depth_pctile": 43.9}}
+    src["dossier_index"] = {"NVDA"}
+    src["regime_latest"] = {
+        "asof": "2026-08-05", "quad": "Q2", "quad_name": "Reflation",
+        "cycle_tag": "mid", "transition_state": "TRANSITIONING",
+        "liquidity_overlay": "contracting",
+        "risk_radar": {"asof": "2026-08-05", "state": "caution",
+                       "dominant_scare": "bubble", "cap_leadership": False,
+                       "dominant_label_en": "Bubble / blow-off unwind",
+                       "dominant_label_zh": "泡沫/见顶回吐",
+                       "top_score": 67.0},
+        "vol_regime": {"asof": "2026-08-03", "regime": "normalizing",
+                       "ts_slope_state": "contango",
+                       "vrp_state": "thin (vol underpriced — fragile)",
+                       "vvix_state": "complacent", "fragility_confluence": 1},
+    }
+    src["dispersion"] = {"as_of": "2026-08-06", "state": "lean_in",
+                         "dispersion_pctile": 0.82, "avg_corr": 0.07,
+                         "label": "Selection pays — high dispersion",
+                         "label_zh": "选股有效 — 高离散度"}
+    src["rates_command"] = {"asof": "2026-08-05", "schema": "rates_command.v1",
+                            "stance": {"en": "Easing pressure is building.",
+                                       "zh": "宽松压力积聚。"}}
+    src["group_flow"] = {"as_of": "2026-07-31",
+                         "sectors": [{"id": "Energy", "name": "Energy",
+                                      "name_zh": "能源", "stage": "emerging",
+                                      "flow_score": 1.332}],
+                         "baskets": [{"id": "ai_soft", "name": "AI Software",
+                                      "name_zh": "AI软件", "stage": "confirmed",
+                                      "flow_score": 1.283}]}
+    src["subsector_rotation"] = {"asof": "2026-08-07", "sectors": [
+        {"key": "XLY", "name": "Cons Discretionary", "name_zh": "可选消费",
+         "quadrant": "improving", "rs_ratio": -0.25}]}
+    src["covariance_spine"] = {"as_of": "2026-08-06", "blocks": {
+        "factors": {"effective_factor_bets_pr": 2.5964},
+        "dispersion": {"effective_universe_bets_pr": 21.79},
+        "lobes": {"effective_independent_lobes": 1.0,
+                  "same_bet_warning": {"active": False}}}}
+    src["crossasset"] = {"asof": "2026-08-06", "regime": "mixed / no clear trend",
+                         "correlation": "concentrated", "breadth": 0.31}
+    return src
+
+
+# ── 16. v1 ADDITIVITY: every v1 key survives byte-identically ─────────────────
+# Gate 7: `portfolio_ctx` v2 is ADDITIVE — Terminal PR #170 and the shipped brain tool are
+# built against v1. This is the golden: the v1 PROJECTION of a fully-covered v2 ticker
+# (drop the five new keys) must equal the v1 block exactly, in the same key ORDER, and the
+# v1 top-level keys must be untouched. A change here means additivity broke — fix the
+# code, never this literal.
+
+_V1_GOLDEN_NVDA = {
+    "sector": "Technology",
+    "themes": [{"id": "ai_soft", "name": "AI Software", "name_zh": "AI软件",
+                "reco": "accumulate", "rank": 3, "lane": None}],
+    "stage": {"n": 2, "label": "2A Breakout", "weeks": 8, "fresh": True},
+    "entry": {"status": "buy_now", "act_level": 2, "urgency": "now",
+              "label": "BUY ZONE", "state": "FRESH BUY"},
+    "earnings": {"next": "2026-08-27", "days_to": 35},
+    "insider": {"buyers": 2, "sellers": 5, "net_mn": -12.3, "bps": None},
+    "congress": [{"side": "buy", "chamber": "house", "party": "R",
+                  "tx_date": "2026-07-21", "filed": "2026-07-22",
+                  "amount_mid": 8000.0}],
+    "f13": {"holders": 7, "adds": 3, "trims": 1, "direction": "accumulating",
+            "asof": "2026-03-31"},
+}
+
+
+def test_v1_blocks_are_byte_stable_under_v2():
+    """The v1 projection of a fully-covered v2 ticker is byte-identical to the v1 golden."""
+    v2 = build_ctx(_w2_sources(), ["NVDA"], ASOF)["tickers"]["NVDA"]
+    projection = {k: v for k, v in v2.items() if k not in W2_TICKER_BLOCKS}
+    # same content AND same key order → same bytes
+    assert json.dumps(projection, ensure_ascii=False) == \
+        json.dumps(_V1_GOLDEN_NVDA, ensure_ascii=False)
+    # the v2 keys are strictly appended after the v1 ones
+    assert list(v2)[:len(_V1_GOLDEN_NVDA)] == list(_V1_GOLDEN_NVDA)
+
+
+def test_v1_top_level_keys_unchanged_by_v2():
+    """v1 top-level keys keep their exact values whether or not the W2 sources exist."""
+    v1_only = build_ctx(_full_sources(), ["NVDA"], ASOF)
+    v2 = build_ctx(_w2_sources(), ["NVDA"], ASOF)
+    for k in ("gate_go", "regime", "sectors"):
+        assert v1_only[k] == v2[k], f"v1 top-level key {k} drifted under v2"
+    for k in V1_COVERAGE_KEYS:
+        assert v1_only["coverage"][k] == v2["coverage"][k], \
+            f"v1 coverage counter {k} drifted under v2"
+
+
+# ── 17. tech block: verbatim join, no thresholding ───────────────────────────
+
+def test_tech_block_verbatim_join():
+    p = build_ctx(_w2_sources(), ["NVDA"], ASOF)
+    tech = p["tickers"]["NVDA"]["tech"]
+    assert tech == {
+        "ext": "stretched",                                  # ext.grade, verbatim word
+        "ma": {"m50": True, "m200": False},                  # tech.above50 / above200
+        "rs": {"m1": -3.3, "m3": 3.8, "m6": 0.8},            # tech.rs_1m/3m/6m, verbatim
+        "dd252": -8.1,                                       # tech.off_52w_high_pct, NOT rounded
+        "washout": "WASHOUT_TURN",                           # washout_turn state word
+    }
+    # census-dropped fields are ABSENT, never fabricated (no source prints them)
+    for dropped in ("atr_z", "rvol63"):
+        assert dropped not in tech
+
+
+def test_tech_block_copies_the_grade_word_it_is_given():
+    """No re-grading: whatever `ext.grade` says is what ships, including new vocabulary."""
+    for word in ("intrend", "steady", "stretched", "parabolic", "some_future_grade"):
+        src = _w2_sources()
+        src["stockdata"]["NVDA"]["ext"]["grade"] = word
+        assert build_ctx(src, ["NVDA"], ASOF)["tickers"]["NVDA"]["tech"]["ext"] == word
+
+
+def test_tech_dd252_is_not_rounded():
+    """§5.1 sketched a whole number; the source prints 1dp — the copy stays verbatim."""
+    src = _w2_sources()
+    src["stockdata"]["NVDA"]["tech"]["off_52w_high_pct"] = -29.47
+    assert build_ctx(src, ["NVDA"], ASOF)["tickers"]["NVDA"]["tech"]["dd252"] == -29.47
+
+
+def test_tech_partial_source_drops_only_the_missing_subkeys():
+    src = _w2_sources()
+    del src["stockdata"]["NVDA"]["tech"]["above200"]
+    del src["stockdata"]["NVDA"]["tech"]["rs_6m"]
+    src["stockdata"]["NVDA"]["ext"] = {}          # no grade
+    tech = build_ctx(src, ["NVDA"], ASOF)["tickers"]["NVDA"]["tech"]
+    assert "ext" not in tech
+    assert tech["ma"] == {"m50": True}             # the present half survives alone
+    assert tech["rs"] == {"m1": -3.3, "m3": 3.8}
+    assert tech["dd252"] == -8.1
+
+
+def test_washout_word_only_for_names_the_watcher_lists():
+    """The watcher covers ~120 names; everyone else gets NO washout key (never 'none')."""
+    src = _w2_sources()
+    src["washout_turn"] = {}
+    tech = build_ctx(src, ["NVDA"], ASOF)["tickers"]["NVDA"]["tech"]
+    assert "washout" not in tech
+    # and a name the watcher lists carries the state word VERBATIM, with no entry
+    # implication tagging along (DNR:KILL-WASHOUT-TURN — display state only)
+    src["washout_turn"] = {"NVDA": {"state": "TURN_WATCH", "weekly_cb": True,
+                                    "depth_pctile": 11.9}}
+    tech = build_ctx(src, ["NVDA"], ASOF)["tickers"]["NVDA"]["tech"]
+    assert tech["washout"] == "TURN_WATCH"
+    assert set(tech) <= {"ext", "ma", "rs", "dd252", "washout"}
+
+
+# ── 18. msens / fq / pers / dossier ──────────────────────────────────────────
+
+def test_msens_block_verbatim_and_bilingual():
+    p = build_ctx(_w2_sources(), ["NVDA"], ASOF)
+    assert p["tickers"]["NVDA"]["msens"] == {
+        "rate_tier": "high",
+        "read": {"en": "rate tailwind", "zh": "利率顺风"},
+    }
+
+
+def test_msens_omitted_without_the_source_block():
+    src = _w2_sources()
+    del src["stockdata"]["NVDA"]["macro_sensitivity"]
+    assert "msens" not in build_ctx(src, ["NVDA"], ASOF)["tickers"]["NVDA"]
+
+
+def test_fq_counts_fired_flags_only():
+    p = build_ctx(_w2_sources(), ["NVDA"], ASOF)
+    assert p["tickers"]["NVDA"]["fq"] == {"flags": 2}   # s2_moat_falsifier + s4_coverage
+
+
+def test_fq_zero_is_a_measurement_not_a_placeholder():
+    """Covered-and-nothing-fired is 0; NO flags dict at all is an omitted block."""
+    src = _w2_sources()
+    for f in src["stockdata"]["NVDA"]["thesis_funnel"]["flags"].values():
+        f["fired"] = False
+    assert build_ctx(src, ["NVDA"], ASOF)["tickers"]["NVDA"]["fq"] == {"flags": 0}
+
+    src = _w2_sources()
+    del src["stockdata"]["NVDA"]["thesis_funnel"]
+    assert "fq" not in build_ctx(src, ["NVDA"], ASOF)["tickers"]["NVDA"]
+
+
+def test_pers_archetype_verbatim():
+    p = build_ctx(_w2_sources(), ["NVDA"], ASOF)
+    assert p["tickers"]["NVDA"]["pers"] == {"arch": "quality_compounder"}
+    src = _w2_sources()
+    src["stockdata"]["NVDA"]["personality"] = {"base": {}}
+    assert "pers" not in build_ctx(src, ["NVDA"], ASOF)["tickers"]["NVDA"]
+
+
+def test_dossier_flag_is_membership_only():
+    p = build_ctx(_w2_sources(), ["NVDA"], ASOF)
+    assert p["tickers"]["NVDA"]["dossier"] is True
+    src = _w2_sources()
+    src["dossier_index"] = set()
+    # absent → the key is GONE, never `false` (absence = "no dossier page", not a state)
+    assert "dossier" not in build_ctx(src, ["NVDA"], ASOF)["tickers"]["NVDA"]
+
+
+# ── 19. omission honesty: a name with no stockdata emits NO v2 key ───────────
+
+def test_ticker_without_stockdata_emits_no_v2_block():
+    """The coverage-honesty law: absence is silence, never a null-filled block."""
+    src = _w2_sources()
+    src["stockdata"] = {}          # nobody covered
+    src["washout_turn"] = {}
+    src["dossier_index"] = set()
+    blk = build_ctx(src, ["NVDA"], ASOF)["tickers"]["NVDA"]
+    for k in W2_TICKER_BLOCKS:
+        assert k not in blk, f"{k} must be omitted when its source has no data"
+    # ...and the v1 blocks are all still there
+    assert set(blk) == set(_V1_GOLDEN_NVDA)
+
+
+def test_mixed_coverage_across_tickers():
+    """One covered name, one uncovered — each gets exactly what its sources support."""
+    src = _w2_sources()
+    src["insider"]["AAA"] = {"buyers": 1, "sellers": 0}   # v1-only coverage
+    p = build_ctx(src, ["NVDA", "AAA"], ASOF)
+    assert all(k in p["tickers"]["NVDA"] for k in W2_TICKER_BLOCKS)
+    assert not any(k in p["tickers"]["AAA"] for k in W2_TICKER_BLOCKS)
+    assert p["coverage"]["tech"] == 1 and p["coverage"]["dossier"] == 1
+
+
+# ── 20. coverage counters for the new blocks ─────────────────────────────────
+
+def test_w2_coverage_counts():
+    p = build_ctx(_w2_sources(), ["NVDA"], ASOF)
+    for k in W2_COVERAGE_KEYS:
+        assert p["coverage"][k] == 1, f"coverage.{k} should count the covered ticker"
+    src = _w2_sources()
+    src["stockdata"] = {}
+    src["washout_turn"] = {}
+    src["dossier_index"] = set()
+    zero = build_ctx(src, ["NVDA"], ASOF)
+    for k in W2_COVERAGE_KEYS:
+        assert zero["coverage"][k] == 0
+
+
+def test_w2_block_alone_is_desk_coverage():
+    """A universe name whose ONLY read is a v2 block is included, not dropped."""
+    src = {"stockdata": {"TECHONLY": _stockdata_blob()}}
+    p = build_ctx(src, ["TECHONLY"], ASOF)
+    assert "TECHONLY" in p["tickers"]
+    assert p["coverage"]["tickers"] == 1
+
+
+# ── 21. the `market` tape block (§9) ─────────────────────────────────────────
+
+def test_market_block_verbatim_states():
+    m = build_ctx(_w2_sources(), ["NVDA"], ASOF)["market"]
+    assert m["regime"] == {"quad": "Q2", "quad_name": "Reflation", "cycle_tag": "mid",
+                           "transition_state": "TRANSITIONING",
+                           "liquidity_overlay": "contracting", "asof": "2026-08-05"}
+    assert m["risk_radar"] == {"state": "caution", "dominant_scare": "bubble",
+                               "label_en": "Bubble / blow-off unwind",
+                               "label_zh": "泡沫/见顶回吐", "asof": "2026-08-05"}
+    assert m["vol_regime"]["vrp_state"] == "thin (vol underpriced — fragile)"
+    assert m["concentration"] == {"cap_leadership": False}
+    assert m["dispersion"]["state"] == "lean_in"
+    assert m["dispersion"]["label_en"] == "Selection pays — high dispersion"
+    assert m["effective_bets"] == {"factor_bets": 2.5964, "universe_bets": 21.79,
+                                   "lobes": 1.0, "same_bet_warning": False,
+                                   "asof": "2026-08-06"}
+    assert m["crossasset"]["regime"] == "mixed / no clear trend"
+    assert m["rates"]["stance"] == {"en": "Easing pressure is building.",
+                                    "zh": "宽松压力积聚。"}
+    assert m["flow"]["sectors"] == [{"id": "Energy", "name": "Energy",
+                                     "name_zh": "能源", "stage": "emerging"}]
+    assert m["flow"]["baskets"][0]["id"] == "ai_soft"
+    assert m["rotation"]["sectors"] == [{"key": "XLY", "name": "Cons Discretionary",
+                                         "name_zh": "可选消费", "quadrant": "improving"}]
+
+
+def test_market_block_carries_no_derived_state():
+    """Composition only (MSP-R2): no fused/blended key beyond the per-home sub-blocks."""
+    m = build_ctx(_w2_sources(), ["NVDA"], ASOF)["market"]
+    assert set(m) == {"regime", "risk_radar", "vol_regime", "concentration",
+                      "dispersion", "effective_bets", "crossasset", "rates",
+                      "flow", "rotation"}
+
+
+@pytest.mark.parametrize("drop,missing_keys", [
+    ("regime_latest", ("regime", "risk_radar", "vol_regime", "concentration")),
+    ("dispersion", ("dispersion",)),
+    ("rates_command", ("rates",)),
+    ("group_flow", ("flow",)),
+    ("subsector_rotation", ("rotation",)),
+    ("covariance_spine", ("effective_bets",)),
+    ("crossasset", ("crossasset",)),
+])
+def test_market_block_fails_open_per_source(drop, missing_keys):
+    """One dead source drops ONLY its own key — the rest of the tape still prints."""
+    src = _w2_sources()
+    src[drop] = {}
+    m = build_ctx(src, ["NVDA"], ASOF)["market"]
+    for k in missing_keys:
+        assert k not in m, f"{k} must be omitted when {drop} is empty"
+    assert m, "the surviving sources must still produce a market block"
+    # the per-ticker join is untouched by a dead market source
+    assert build_ctx(src, ["NVDA"], ASOF)["tickers"]["NVDA"]["tech"]["ext"] == "stretched"
+
+
+def test_market_block_survives_corrupt_shapes():
+    """Non-dict / non-list sources never raise — they just yield no key."""
+    src = _w2_sources()
+    src["regime_latest"] = {"risk_radar": "not-a-dict", "vol_regime": None}
+    src["group_flow"] = {"sectors": "nope", "baskets": None}
+    src["subsector_rotation"] = {"sectors": [None, {"no_quadrant": 1}]}
+    src["covariance_spine"] = {"blocks": "nope"}
+    m = build_ctx(src, ["NVDA"], ASOF)["market"]
+    for k in ("risk_radar", "vol_regime", "concentration", "flow", "rotation",
+              "effective_bets"):
+        assert k not in m
+
+
+def test_market_block_is_present_and_empty_when_every_source_is_gone():
+    p = build_ctx(_full_sources(), ["NVDA"], ASOF)   # no W2 sources at all
+    assert p["market"] == {}
+    assert "market" in p
+
+
+def test_market_block_determinism_and_no_nan():
+    a = build_ctx(_w2_sources(), ["NVDA"], ASOF)
+    b = build_ctx(_w2_sources(), ["NVDA"], ASOF)
+    a.pop("built"); b.pop("built")
+    assert json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
+    json.dumps(a, allow_nan=False)
+
+
+# ── 22. loaders fail open (fresh worktree / missing render output) ────────────
+
+def test_w2_loaders_fail_open_on_empty_root(tmp_path):
+    from scripts.build_portfolio_ctx import (  # noqa: PLC0415
+        load_stockdata, load_washout_turn, load_dossier_index, load_regime_latest,
+        load_dispersion, load_rates_command, load_group_flow, load_subsector_rotation,
+        load_covariance_spine, load_crossasset,
+    )
+    assert load_stockdata(tmp_path) == {}
+    assert load_washout_turn(tmp_path) == {}
+    assert load_dossier_index(tmp_path) == set()
+    for fn in (load_regime_latest, load_dispersion, load_rates_command, load_group_flow,
+               load_subsector_rotation, load_covariance_spine, load_crossasset):
+        assert fn(tmp_path) == {}, f"{fn.__name__} must fail open to {{}}"
+
+
+def test_stockdata_reader_is_lazy_and_fail_open(tmp_path):
+    """The nightly reader parses one blob at a time and never raises on junk."""
+    from scripts.build_portfolio_ctx import load_stockdata  # noqa: PLC0415
+    d = tmp_path / "site" / "stockdata"
+    d.mkdir(parents=True)
+    (d / "NVDA.json").write_text(json.dumps(_stockdata_blob()), encoding="utf-8")
+    (d / "BAD.json").write_text("{ not json", encoding="utf-8")
+    (d / "LIST.json").write_text("[1,2,3]", encoding="utf-8")
+    sd = load_stockdata(tmp_path)
+    assert sd.get("NVDA")["ticker"] == "NVDA"
+    assert sd.get("BAD") is None          # corrupt → None
+    assert sd.get("LIST") is None         # non-dict → None
+    assert sd.get("MISSING") is None      # absent file → None
+    # it is a reader, not a materialized dict: nothing was loaded up front
+    assert not hasattr(sd, "keys")
+
+
+def test_washout_and_dossier_loaders_read_real_shapes(tmp_path):
+    from scripts.build_portfolio_ctx import (  # noqa: PLC0415
+        load_washout_turn, load_dossier_index,
+    )
+    d = tmp_path / "site" / "stockdata"
+    d.mkdir(parents=True)
+    (d / "washout_turn.json").write_text(json.dumps({
+        "schema": "washout_turn.v1", "as_of": "2026-08-06",
+        "tickers": {"ABT": {"state": "WASHOUT_TURN"}}}), encoding="utf-8")
+    assert load_washout_turn(tmp_path) == {"ABT": {"state": "WASHOUT_TURN"}}
+    s = tmp_path / "site" / "stocks"
+    s.mkdir(parents=True)
+    (s / "NVDA.html").write_text("<html>", encoding="utf-8")
+    (s / "brk.b.html").write_text("<html>", encoding="utf-8")
+    assert load_dossier_index(tmp_path) == {"NVDA", "BRK.B"}
+
+
+# ── 23. gate-8 budget stamps are PRINTED by the bake ─────────────────────────
+
+def test_bake_prints_budget_stamps(tmp_path, capsys):
+    """Charter §0.8: the bake reports BOTH budgets in its log, every run."""
+    from scripts.build_portfolio_ctx import BUDGET_SECONDS, BUDGET_BYTES  # noqa: PLC0415
+    assert BUDGET_SECONDS == 60.0
+    assert BUDGET_BYTES == 2.5 * 1024 * 1024
+    rc = main(["--tickers", "NVDA", "--asof", ASOF,
+               "--out", str(tmp_path / "ctx.json"), "--root", str(tmp_path)])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "[portfolio_ctx budget]" in out
+    line = next(ln for ln in out.splitlines() if ln.startswith("[portfolio_ctx budget]"))
+    assert "/ 60s" in line and "/ 2.5 MB" in line
+    assert "[portfolio_ctx coverage]" in out
+    # under budget → no annotation; the guard only speaks on a breach
+    assert "::warning" not in out
+
+
+def test_budget_breach_emits_a_line_start_annotation(tmp_path, capsys, monkeypatch):
+    """A breach must be VISIBLE in the Actions summary: bare print, line-start, flushed."""
+    import scripts.build_portfolio_ctx as mod  # noqa: PLC0415
+    monkeypatch.setattr(mod, "BUDGET_BYTES", 1)      # any artifact breaches
+    monkeypatch.setattr(mod, "BUDGET_SECONDS", -1.0)
+    rc = mod.main(["--tickers", "NVDA", "--asof", ASOF,
+                   "--out", str(tmp_path / "ctx.json"), "--root", str(tmp_path)])
+    assert rc == 0
+    lines = capsys.readouterr().out.splitlines()
+    warns = [ln for ln in lines if "::warning" in ln]
+    assert len(warns) == 2, "both the time and the size breach must annotate"
+    for ln in warns:
+        # the #3587 defect: a logger prefix ("WARNING ::warning …") makes GitHub drop it
+        assert ln.startswith("::warning title=portfolio-ctx-budget::"), ln

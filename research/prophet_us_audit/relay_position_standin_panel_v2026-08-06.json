@@ -1,0 +1,69 @@
+{
+ "price_basis": {
+  "basis": "frozen_panel",
+  "reproducible": true,
+  "panel_version": "2026-08-06",
+  "panel_sha256": "fb4de8a684d4ec080123006a823a020dc8efb64aaab9636188829bf24fd77230",
+  "panel_asof": "2026-07-31",
+  "coverage": "1266/1540 adjusted-basis names (82.2%); 274 on the unadjusted cache, 0 unresolved; panel v2026-08-06 asof 2026-07-31",
+  "n_covered_adjusted": 1266,
+  "n_requested": 1540,
+  "coverage_pct": 82.2,
+  "n_on_unadjusted_cache": 274,
+  "n_unresolved": 0,
+  "names": 1540,
+  "sessions": 777
+ },
+ "population": {
+  "panel_names": 1540,
+  "panel_sessions": 777,
+  "panel_range": [
+   "2023-06-27",
+   "2026-07-31"
+  ],
+  "cells_observed": 1181892
+ },
+ "n_events": 28692,
+ "n_names": 318,
+ "date_range": [
+  "2023-10-25",
+  "2026-07-17"
+ ],
+ "H": 10,
+ "relay_win": 21,
+ "high_win": 63,
+ "first_mover_pos0": {
+  "n": 115,
+  "names": 83,
+  "median_excess_pp": 0.09,
+  "mean_excess_pp": 1.18,
+  "win_pct": 51.3,
+  "per_name_median_pp": 0.19
+ },
+ "early_le033": {
+  "n": 2924,
+  "names": 301,
+  "median_excess_pp": 0.07,
+  "mean_excess_pp": 0.44,
+  "win_pct": 50.7,
+  "per_name_median_pp": -0.34
+ },
+ "mid": {
+  "n": 9572,
+  "names": 317,
+  "median_excess_pp": 0.54,
+  "mean_excess_pp": 0.95,
+  "win_pct": 54.5,
+  "per_name_median_pp": 0.24
+ },
+ "late_ge067": {
+  "n": 16196,
+  "names": 318,
+  "median_excess_pp": 0.6,
+  "mean_excess_pp": 1.04,
+  "win_pct": 55.0,
+  "per_name_median_pp": 0.22
+ },
+ "delta_early_minus_late_first_half": -0.7,
+ "delta_early_minus_late_second_half": -0.47
+}

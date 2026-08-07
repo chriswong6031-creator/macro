@@ -153,7 +153,13 @@ _BLANK = {"tier": None, "weight": 0.0, "sub": None, "eligible": False,
           # `veto_legs_null` the SAME disclosure for the not-topped veto's own legs (F6/R4)
           # `anchor_era`   the bucketing era this verdict belongs to (R5)
           "bars": None, "young_history": None, "above200": None, "null_legs": None,
-          "veto_legs_null": None, "anchor_era": ANCHOR_ERA}
+          "veto_legs_null": None, "anchor_era": ANCHOR_ERA,
+          # `evaluated` False = the cascade CRASHED or never ran — every other field in
+          # this blank is "not knowable", NOT a verdict. A consumer that treats a blank
+          # as a clean pass converts a data failure into a buyable T1 (audit F2
+          # 2026-08-06: the exception return asserted not_topped=True + ticks=None,
+          # which signal_gate read as fresh-and-clean and admitted at weight 0.9).
+          "evaluated": True}
 
 # HTF super-tier constants (S1/S2 display-only, rank-neutral, 2026-07-06)
 # Frozen per research/signal_engine/HTF_SUPER_TIERS_ADJUDICATION_AND_PREREG.md Part 2.
@@ -521,11 +527,16 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
             "veto_legs_null": veto_nulls, "anchor_era": ANCHOR_ERA,
         }
     except Exception:
-        return dict(_BLANK, null_legs={})
+        # Crash path: "not evaluated" must be distinguishable from "passed" — the blank's
+        # not_topped=True/ticks=None otherwise reads as fresh-and-clean downstream (F2).
+        return dict(_BLANK, null_legs={}, evaluated=False)
 
 
 def _ticks_since_vec(known: pd.Series, cross_pos_daily: np.ndarray, di: pd.DatetimeIndex,
-                     fresh_ticks: int) -> np.ndarray:
+                     fresh_ticks: int | None = None) -> np.ndarray:
+    # `fresh_ticks` is ACCEPTED AND IGNORED (audit F8 2026-08-06): freshness is applied by
+    # the caller (tier_stream's override at its own call sites), never inside this counter.
+    # The parameter stays for call-site stability; do not "fix" a sweep by threading it here.
     """Vectorized per-day tick-age of the most-recent cross, on the TF grid whose per-bar
     known-dates are ``known``. ``cross_pos_daily`` is a daily-length int array giving, for each
     daily bar, the daily index of the last cross at-or-before it (or -1 if none). Returns the
@@ -551,10 +562,16 @@ def _ticks_since_vec(known: pd.Series, cross_pos_daily: np.ndarray, di: pd.Datet
 
 def tier_stream(daily_close: pd.Series, *, fresh_ticks: int | None = None,
                 market: str = "US") -> pd.DataFrame:
-    """VECTORIZED per-day tier for EVERY daily bar, on COMPLETED buckets (the validated / point-in-
-    time basis). This is the single-pass twin of :func:`cascade` — it shares every constant and
-    helper, and on the LAST bar of any truncation it reproduces cascade's tier EXACTLY when T1 is
-    taken via the raw-3D-cross fallback (tests/test_confluence_tier_stream pins this).
+    """VECTORIZED per-day tier for EVERY daily bar. BASIS CAVEAT (audit F3 2026-08-06):
+    interior rows read the last COMPLETED bucket, but the FINAL row sits on the in-progress
+    partial bucket `_tf_bars` still emits — the live board's provisional basis. The last row
+    and the interior rows are therefore NOT one basis; a consumer reading a historical day D
+    must truncate the series at D BEFORE calling (the prophet_stage_shadow pattern), or its
+    day-D read can differ from what the gate saw on ~8% of days. Settled-day parity with
+    :func:`cascade` is pinned by tests/test_provisional_replay.py::
+    test_tier_stream_matches_cascade_on_settled_days (reproduction requires take_active=True;
+    cascade awards no T1 from the raw cross alone, and the live board's §7-validated T1 set
+    is NOT a subset of this stream's — 5/18 sampled live T1 days were absent here).
 
     The provisional-basis replay compares this stream (completed buckets) against the per-day live
     ``cascade`` (provisional tail) to measure the repaint (#22). T1 here uses the raw 3D RSI-MACD

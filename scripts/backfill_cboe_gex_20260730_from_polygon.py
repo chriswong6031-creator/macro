@@ -21,7 +21,18 @@ WHY THIS IS A HEAL AND NOT A FABRICATION
     KNOWN_PERMANENT_GAPS[2026-07-30].
 
 THE DATE MAPPING — THE WHOLE REASON THIS SCRIPT HAS HARD PRECONDITIONS
-    build_polygon_gex stamps its accrual with `datetime.now(timezone.utc).date()`
+    SUPERSEDED FOR NEW WORK (2026-08-07). This one-shot predates #4807, which changed
+    build_polygon_gex to stamp the SESSION a snapshot describes instead of the UTC run
+    date. The +1 mapping below is correct for THIS heal and stays hardcoded — SESSION
+    and POLYGON_STAMP are fixed dates in the pre-#4807 era, the script already ran, and
+    the row it wrote is verified — but it is NOT the current mapping and must not be
+    copied into new code or into operator guidance. Rows written after #4807 carry the
+    session they describe with no shift, and the migration that shipped with it did NOT
+    re-stamp the chain-family underlyings (SPY/QQQ/IWM/NVDA/...), so those summary files
+    now hold BOTH eras. The offset is era-dependent; only the (a)+(b) identity gate below
+    is era-independent, which is why it — not the stamp — is what makes a copy honest.
+
+    build_polygon_gex stamped its accrual with `datetime.now(timezone.utc).date()`
     (scripts/build_polygon_gex._as_date), and the evening collect crosses 00:00Z before
     the polygon band runs. So a polygon row is stamped SESSION + 1 DAY:
 
