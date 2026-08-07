@@ -580,9 +580,31 @@ def test_ex21_extraction_keeps_legal_names_and_drops_table_furniture():
     assert "Delaware" not in names
 
 
-# The 2025 10-K archive listings of GE, BA, and PLTR, verbatim (EDGAR stamps
+# The 2025 10-K archive listings of GE, BA, PLTR, and TXT, verbatim (EDGAR stamps
 # every document ``text.gif``, so the file name is the only usable signal).
 _REAL_LISTINGS = {
+    # Textron is the adversarial one: EDGAR uses a bare ``x`` as the separator
+    # between the exhibit word and its number, and files SEVEN sibling exhibits in
+    # the same ``exx`` family.  The 2026-08-07 live run reported TXT as
+    # ``no_ex21_exhibit`` — "Accession 000021734626000006 carries no EX-21
+    # attachment" — because the separator class was ``[-_.]?`` and could not match
+    # that ``x``.  Every Textron edge was lost and the worksheet asserted something
+    # untrue.  This listing pins both halves: ``exx21`` must win, and exx1013,
+    # exx23, exx24, exx311, exx312, exx321 and exx322 must all still lose.
+    "TXT": (
+        [
+            "0000217346-26-000006-index.html",
+            "q4202510k-exx1013.htm",
+            "q4202510k-exx21.htm",
+            "q4202510k-exx23.htm",
+            "q4202510k-exx24.htm",
+            "q4202510k-exx311.htm",
+            "q4202510k-exx312.htm",
+            "q4202510k-exx321.htm",
+            "q4202510k-exx322.htm",
+        ],
+        "q4202510k-exx21.htm",
+    ),
     "GE": (
         [
             "0000040545-26-000008-index.html",

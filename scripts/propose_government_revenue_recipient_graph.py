@@ -247,7 +247,19 @@ _EX21_LIST_MARKER = re.compile(r"^(?:\(?\d{1,3}[.)]|[•●*\-–—])\s+")
 # the token to the extension — as an earlier revision of this file did — reported
 # GE as "no EX-21 exhibit" when the exhibit was right there, which sends an
 # analyst to EDGAR instead of closing the issuer out.
-_EX21_FILENAME = re.compile(r"ex(?:hibit)?[-_.]?21", re.IGNORECASE)
+# ``x`` belongs in the separator class alongside the punctuation.  EDGAR uses a
+# bare ``x`` where a filename cannot carry a dot, which this module already knew
+# for the PREFIX position (``pltr-20251231xex211.htm``) but not for the position
+# BETWEEN the exhibit word and its number: Textron files
+# ``q4202510k-exx21.htm``, and ``[-_.]?`` cannot match that ``x``.  The live
+# 2026-08-07 run therefore reported TXT as ``no_ex21_exhibit`` — "Accession
+# 000021734626000006 carries no EX-21 attachment" — against a filing whose EX-21
+# is right there, losing every Textron edge and asserting something untrue.  That
+# is the same shape as the extractor defect one function later: a silent filter
+# turning a finished verdict into a phantom errand.  Widening to ``[-_.x]?`` does
+# not loosen the sibling fence, verified against real EDGAR names: ex22...,
+# ex1012, exhibit231, ex232..., ex311..., ex321... all still fail the pattern.
+_EX21_FILENAME = re.compile(r"ex(?:hibit)?[-_.x]?21", re.IGNORECASE)
 _EX21_EXTENSIONS = (".htm", ".html", ".txt")
 
 
