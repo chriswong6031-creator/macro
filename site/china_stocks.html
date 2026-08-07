@@ -57,7 +57,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="theme.css?v=79f699db">
 
 <link rel="stylesheet" href="dashboard-icons.css?v=be32e541">
 <script defer src="dashboard-icons.js?v=e096076e"></script>
@@ -73,43 +73,7 @@
 <link rel="preload" as="style" href="assets/css/38c93717.css?v=38c93717">
 </head>
 <body class="page-china-stocks">
-<style id="lensx-css">
-  /* Row grid for the rich LENS card. Scoped .lensx-* so it can never collide with
-     dashboard.html.j2's page-local .rlx-* set. Colours resolve through the same
-     --lens-* chain theme.js defines on .lens-pop, so vector-family pages (own
-     token names, no theme.css) inherit correctly. */
-  .lensx-rows{display:grid;gap:9px;margin:2px 16px 13px}
-  .lensx-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:baseline}
-  .lensx-k{
-    display:flex;align-items:baseline;gap:6px;white-space:nowrap;
-    font:700 9px/1.5 var(--font-ui,Inter,sans-serif);letter-spacing:.09em;text-transform:uppercase;
-    color:color-mix(in srgb,var(--lens-accent,#5b9bf0) 80%,var(--lens-text,#d7dce3));
-  }
-  .lensx-k::before{
-    content:"";flex:none;width:6px;height:6px;border-radius:50%;
-    background:currentColor;transform:translateY(-1px);
-  }
-  .lensx-row.up   .lensx-k{color:var(--up,#3da564)}
-  .lensx-row.info .lensx-k{color:var(--info,var(--link,#5b9bf0))}
-  .lensx-row.warn .lensx-k{color:var(--warn,#e0a030)}
-  .lensx-row.dn   .lensx-k{color:var(--down,#d3455b)}
-  .lensx-v{
-    font:450 11.5px/1.52 var(--font-ui,Inter,sans-serif);
-    color:color-mix(in srgb,var(--lens-text,#d7dce3) 86%,var(--lens-mut,#8b93a1));
-  }
-  .lensx-v b{font-weight:650;color:var(--lens-text,#d7dce3)}
-  /* the closing sentence sits under the rows, quieter than them */
-  .lens-pop .lensx-note{
-    margin:0 16px 13px;padding-top:11px;
-    border-top:1px solid color-mix(in srgb,var(--lens-text,#d7dce3) 11%,transparent);
-    font:450 11.5px/1.55 var(--font-ui,Inter,sans-serif);
-    color:color-mix(in srgb,var(--lens-text,#d7dce3) 80%,var(--lens-mut,#8b93a1));
-  }
-  .lens-pop .lensx-note b{font-weight:650;color:var(--lens-text,#d7dce3)}
-  @media(max-width:640px){
-    .lensx-row{grid-template-columns:minmax(0,1fr);gap:2px}
-  }
-  </style>
+<link rel="stylesheet" href="assets/css/5e973f2b.css?v=5e973f2b">
 
 
 
@@ -117,7 +81,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css">
+    <link rel="stylesheet" href="navigation-refresh.css?v=95f6bacd">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -326,10 +290,10 @@
     </div>
   </div>
   
-  <script src="logo_config.js"></script>
-  <script src="stock-logos.js"></script>
-  <script src="live_config.js"></script>
-  <script src="live.js"></script>
+  <script src="logo_config.js?v=b37d33d3" defer></script>
+  <script src="stock-logos.js?v=cc29be53" defer></script>
+  <script src="live_config.js?v=52943e92" defer></script>
+  <script src="live.js?v=e19f6af3" defer></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -356,43 +320,7 @@
   
   <!-- ===================== A-SHARE STOCK DASHBOARD HEADER ===================== -->
   
-  <style id="stocks-header-css">
-  #stocks-header{
-    padding:18px 20px;
-    background:
-      radial-gradient(900px 180px at 12% -40%,color-mix(in srgb,var(--link) 16%,transparent),transparent 60%),
-      var(--panel);
-  }
-  #stocks-header .stk-headline{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  #stocks-header .stk-headline h1{margin:0;font-size:26px;letter-spacing:-.035em;line-height:1.1}
-  #stocks-header .stk-head-meta{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-  #stocks-header .stk-status{
-    display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:4px 10px;
-    border:1px solid var(--line);border-radius:999px;background:var(--panel2);
-    color:color-mix(in srgb,var(--text) 76%,transparent);font-size:12px;font-weight:650;
-  }
-  #stocks-header .stk-status strong{color:var(--text);font-weight:750}
-  /* Health dot, NOT a market-direction read: --ok / --warn, never --up. The zh
-     红涨绿跌 flip swaps --up/--down at html scope, so the original var(--up) dot
-     painted "Fresh" RED on the zh US board — an alarm colour for a healthy state.
-     --ok and --warn are direction-neutral and are never flipped (theme.css §zh). */
-  #stocks-header .stk-fresh-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 18%,transparent)}
-  #stocks-header .stk-status.is-delayed .stk-fresh-dot{background:var(--warn);box-shadow:0 0 0 3px color-mix(in srgb,var(--warn) 18%,transparent)}
-  #stocks-header .stk-header-links{display:flex;gap:16px;margin-top:11px;font-size:12px;font-weight:650}
-  #stocks-header .stk-header-links a{color:var(--muted);text-decoration:none}
-  #stocks-header .stk-header-links a:hover{color:var(--link)}
-
-  @media(max-width:900px){
-    #stocks-header .stk-head-meta{margin-left:0;width:100%}
-  }
-  @media(max-width:560px){
-    #stocks-header{padding:15px 14px}
-    #stocks-header .stk-headline h1{font-size:22px}
-    #stocks-header .stk-head-meta{gap:6px}
-    #stocks-header .stk-status{font-size:11px}
-    #stocks-header .stk-header-links{gap:12px;overflow-x:auto;white-space:nowrap;padding-bottom:2px}
-  }
-  </style>
+  <link rel="stylesheet" href="assets/css/2658e187.css?v=2658e187">
   <div class="panel span12" id="stocks-header">
     
     
@@ -485,168 +413,7 @@
   .anv2-go { font-size:10px; opacity:.55; margin-left:3px; }
   </style>
   <div class="panel span12 anv2-board" id="act-now">
-    <style id="decision-card-css">
-  .row-pop:has(> .row-pop-decision){
-    z-index:2147483001;width:344px;max-width:calc(100vw - 20px);
-    max-height:calc(100dvh - 20px);overflow:auto;overscroll-behavior:contain;
-    scrollbar-width:thin;border-color:color-mix(in srgb,var(--line) 76%,var(--text) 10%);
-    border-radius:16px;
-    background:
-      radial-gradient(circle at 0 0,color-mix(in srgb,var(--link) 7%,transparent),transparent 42%),
-      var(--panel);
-    box-shadow:0 22px 64px rgba(0,0,0,.34),0 3px 12px rgba(0,0,0,.18);
-  }
-  .row-pop:has(> .row-pop-decision)::before{
-    content:"";display:block;height:3px;position:sticky;top:0;z-index:2;
-    background:linear-gradient(90deg,var(--link),color-mix(in srgb,var(--link) 12%,transparent));
-  }
-  .row-pop-decision{display:block}
-  .row-pop-decision-hd{
-    display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;
-    gap:10px;padding:12px 14px 10px;
-  }
-  .row-pop-mark{
-    width:34px;height:34px;display:grid;place-items:center;flex:none;border-radius:11px;
-    font-size:15px;line-height:1;color:var(--link);
-    border:1px solid color-mix(in srgb,var(--link) 24%,var(--line));
-    background:color-mix(in srgb,var(--link) 9%,var(--panel2));
-  }
-  .row-pop-mark--theme{
-    color:var(--up);border-color:color-mix(in srgb,var(--up) 24%,var(--line));
-    background:color-mix(in srgb,var(--up) 9%,var(--panel2));
-  }
-  .row-pop-heading{display:flex;min-width:0;flex-direction:column;gap:2px}
-  .row-pop-eyebrow{
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;font-weight:700;
-    letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
-  }
-  .row-pop-decision .row-pop-name{
-    overflow:hidden;font-size:13.5px;line-height:1.25;white-space:normal;
-    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-  }
-  .row-pop-decision .row-pop-tag{
-    margin-left:0;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-    padding:3px 7px;border-radius:7px;font-size:9px;
-  }
-  .row-pop-summary,.row-pop-theme-hero{
-    display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 14px;
-    padding:12px;border:1px solid color-mix(in srgb,var(--line) 82%,transparent);
-    border-radius:12px;background:color-mix(in srgb,var(--panel2) 78%,transparent);
-  }
-  .row-pop-summary-copy{display:flex;min-width:0;flex:1;flex-direction:column;gap:3px}
-  .row-pop-kicker{
-    font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
-  }
-  .row-pop-summary-copy>strong{font-size:15px;line-height:1.15;color:var(--text)}
-  .row-pop-sub{min-height:13px;font-size:10px;color:var(--muted)}
-  .row-pop-bars{display:flex;width:118px;flex-direction:column;gap:6px}
-  .row-pop-bars>span{
-    display:grid;grid-template-columns:24px minmax(38px,1fr) 23px;align-items:center;gap:5px;
-  }
-  .row-pop-bars em{
-    font-style:normal;font-size:8px;font-weight:700;letter-spacing:.05em;color:var(--muted);
-  }
-  .row-pop-bars i{
-    height:5px;position:relative;overflow:hidden;border-radius:999px;
-    background:color-mix(in srgb,var(--muted) 15%,transparent);
-  }
-  .row-pop-bars i b{
-    position:absolute;inset:0 auto 0 0;width:clamp(0%,var(--bar),100%);border-radius:inherit;
-    background:linear-gradient(90deg,var(--link),var(--up));
-  }
-  .row-pop-bars strong{
-    text-align:right;font-size:9px;font-variant-numeric:tabular-nums;color:var(--text);
-  }
-  .row-pop-stats{
-    display:grid;grid-template-columns:repeat(auto-fit,minmax(82px,1fr));gap:1px;
-    margin:11px 14px;overflow:hidden;border:1px solid color-mix(in srgb,var(--line) 82%,transparent);
-    border-radius:11px;background:color-mix(in srgb,var(--line) 75%,transparent);
-  }
-  .row-pop-stat{
-    display:flex;min-width:0;min-height:64px;flex-direction:column;justify-content:center;
-    padding:9px 10px;background:var(--panel);
-  }
-  .row-pop-stat>strong{
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;font-size:15px;
-    line-height:1.1;font-variant-numeric:tabular-nums;color:var(--text);
-  }
-  .row-pop-stat>strong.up,.row-pop-stat>strong .up{color:var(--up)}
-  .row-pop-stat>strong.dn,.row-pop-stat>strong .dn{color:var(--down)}
-  .row-pop-stat>strong.warn{color:var(--warn)}
-  .row-pop-stat small{margin-top:3px;font-size:9px;color:var(--muted)}.row-pop-score{display:grid;justify-items:center;gap:5px;flex:none;width:72px}
-  .row-pop-score-ring{
-    --ring-color:var(--muted);width:72px;height:72px;position:relative;isolation:isolate;
-    display:grid;place-content:center;text-align:center;border-radius:50%;
-    background:conic-gradient(var(--ring-color) calc(var(--score) * 1%),color-mix(in srgb,var(--muted) 13%,transparent) 0);
-  }
-  .row-pop-score-ring::before{
-    content:"";position:absolute;inset:5px;z-index:0;border-radius:50%;background:var(--panel);
-    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--line) 80%,transparent);
-  }
-  .row-pop-score-ring.up{--ring-color:var(--up)}
-  .row-pop-score-ring.warn{--ring-color:var(--warn)}
-  .row-pop-score-ring.dn{--ring-color:var(--down)}
-  .row-pop-score-ring strong{
-    position:relative;z-index:1;font-size:23px;line-height:1;letter-spacing:-.02em;color:var(--text);
-  }
-  .row-pop-score-cap{
-    max-width:100%;overflow:hidden;white-space:nowrap;text-align:center;
-    font-size:8px;line-height:1;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);
-  }
-  .row-pop-trust{display:flex;min-height:18px;flex-wrap:wrap;gap:5px;margin-top:2px}
-  .row-pop-trust>span{
-    padding:2px 6px;border-radius:999px;font-size:8.5px;font-weight:700;
-    background:color-mix(in srgb,currentColor 9%,transparent);
-  }
-  .row-pop-trust>span.up{color:var(--up)}
-  .row-pop-trust>span.warn{color:var(--warn)}
-  .row-pop-trust>span.dn{color:var(--down)}
-  .row-pop-leaders{display:flex;align-items:center;gap:10px;margin:0 14px 11px;padding:0 2px}
-  .row-pop-leaders>span{
-    flex:none;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-    color:var(--muted);
-  }
-  .row-pop-leaders strong{
-    min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;
-    font-variant-numeric:tabular-nums;color:var(--text);
-  }
-  .row-pop-takeaway{
-    --takeaway:var(--muted);display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;
-    margin:0 14px 12px;padding:9px 10px;border-radius:10px;
-    border:1px solid color-mix(in srgb,var(--takeaway) 22%,var(--line));
-    background:color-mix(in srgb,var(--takeaway) 7%,var(--panel2));
-  }
-  .row-pop-takeaway.up{--takeaway:var(--up)}
-  .row-pop-takeaway.warn{--takeaway:var(--warn)}
-  .row-pop-takeaway.dn{--takeaway:var(--down)}
-  .row-pop-takeaway>span:first-child{
-    width:22px;height:22px;display:grid;place-items:center;border-radius:7px;
-    color:var(--takeaway);background:color-mix(in srgb,var(--takeaway) 12%,transparent);
-    font-size:13px;font-weight:800;
-  }
-  .row-pop-takeaway>span:last-child{display:flex;min-width:0;flex-direction:column;gap:2px}
-  .row-pop-takeaway b{
-    font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--takeaway);
-  }
-  .row-pop-takeaway b+span{font-size:10.5px;line-height:1.35;color:var(--text)}
-  .row-pop-decision-ft{
-    display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 14px 11px;
-    border-top:1px solid color-mix(in srgb,var(--line) 75%,transparent);
-    font-size:9px;color:var(--muted);
-  }
-  .row-pop-decision-ft b{
-    flex:none;color:var(--link);font-size:9px;letter-spacing:.04em;text-transform:uppercase;
-  }
-  [data-theme="light"] .row-pop:has(> .row-pop-decision){
-    box-shadow:0 18px 48px rgba(31,41,55,.18),0 2px 8px rgba(31,41,55,.1);
-  }
-  @media(max-width:380px){
-    .row-pop-decision-hd{grid-template-columns:34px minmax(0,1fr)}
-    .row-pop-decision .row-pop-tag{grid-column:2;justify-self:start}
-    .row-pop-summary,.row-pop-theme-hero{align-items:flex-start;flex-direction:column;gap:9px}
-    .row-pop-bars{width:100%}
-  }
-  </style>
+    <link rel="stylesheet" href="assets/css/3cff5b20.css?v=3cff5b20">
     <div class="anv2-hd">
       <h2 style="margin:0">⚡ <span class="l-en">What to Act On Now</span><span class="l-zh">现在行动</span>
         <span class="anv2-v2pill">v2</span>
@@ -7390,157 +7157,7 @@
     </div>
     
     
-<style>
-.pvcard{position:relative;display:flex;flex-direction:column;background:var(--panel2);border:1px solid var(--line);border-radius:12px;overflow:hidden;text-decoration:none;color:var(--text);min-width:0;transition:transform .12s,box-shadow .12s,border-color .12s}
-.pvcard:hover{transform:translateY(-2px);box-shadow:0 5px 18px rgba(0,0,0,.22);border-color:color-mix(in srgb,var(--pvh) 55%,var(--line))}
-.pv-buy{--pvh:var(--pv-buy);--pvh-ink:var(--ink-pv-buy,var(--pvh))}.pv-near{--pvh:var(--pv-near);--pvh-ink:var(--ink-pv-near,var(--pvh))}.pv-wait{--pvh:var(--pv-wait);--pvh-ink:var(--ink-pv-wait,var(--pvh))}.pv-hold{--pvh:var(--pv-hold);--pvh-ink:var(--pv-hold)}.pv-avoid{--pvh:var(--pv-avoid);--pvh-ink:var(--ink-pv-avoid,var(--pvh))}
-.pvcard::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;z-index:3;pointer-events:none;border-radius:12px 12px 0 0;background:linear-gradient(90deg,var(--pvh),color-mix(in srgb,var(--pvh) 12%,transparent) 90%);box-shadow:0 1px 8px color-mix(in srgb,var(--pvh) 45%,transparent)}
-.pvcard.pv-triage::before{box-shadow:0 1px 12px color-mix(in srgb,var(--pvh) 70%,transparent)}
-
-
-.pvcard.pv-featured{background:color-mix(in srgb,var(--pv-buy) 2.5%,var(--panel2));
-  border-color:color-mix(in srgb,var(--pv-buy) 38%,var(--line));
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 24%,transparent),
-             0 0 16px -6px color-mix(in srgb,var(--pv-buy) 32%,transparent),
-             0 10px 26px -14px rgba(0,0,0,.7)}
-
-.pvcard.pv-featured:hover{border-color:color-mix(in srgb,var(--pv-buy) 48%,var(--line));
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 30%,transparent),
-             0 0 20px -6px color-mix(in srgb,var(--pv-buy) 40%,transparent),
-             0 8px 22px -8px rgba(0,0,0,.5)}
-.pvcard.pv-featured::before{background:linear-gradient(90deg,var(--pvh),color-mix(in srgb,var(--pvh) 55%,transparent));
-  box-shadow:0 1px 10px color-mix(in srgb,var(--pvh) 40%,transparent)}
-
-html[data-theme="light"] .pvcard.pv-featured{background:#fff;
-  border-color:color-mix(in srgb,var(--pv-buy) 30%,var(--line));
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 16%,transparent),
-             0 0 12px -6px color-mix(in srgb,var(--pv-buy) 22%,transparent),
-             0 8px 20px -14px rgba(24,58,40,.22)}
-html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srgb,var(--pv-buy) 40%,var(--line));
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 22%,transparent),
-             0 0 16px -6px color-mix(in srgb,var(--pv-buy) 30%,transparent),
-             0 8px 20px -10px rgba(24,58,40,.18)}
-
-.pvcard:has(.pv-cau:hover),.pvcard:has(.pv-cau:focus-within){overflow:visible;z-index:40}
-.pv-chart{position:relative;min-width:0;border-radius:11px 11px 0 0;background:color-mix(in srgb,var(--pvh) 3%,transparent)}
-.pv-chart svg{display:block;width:100%;height:74px;border-radius:11px 11px 0 0}
-
-.pv-chart svg *{stroke:var(--pvh)!important}
-.pv-chart svg [fill]:not([fill="none"]){fill:var(--pvh)!important;stroke:none!important}
-.pv-nochart{height:74px}
-.pv-ov{position:absolute;top:8px;display:flex;gap:5px;align-items:center;z-index:2;max-width:70%}
-
-.pv-ov.pv-ovl{flex-wrap:wrap;row-gap:3px}
-.pv-ovl{left:9px}.pv-ovr{right:9px}
-.pv-chip{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;line-height:1.35;padding:2px 9px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--pvh) 13%,var(--panel));color:var(--pvh-ink,var(--pvh));border:1px solid color-mix(in srgb,var(--pvh-ink,var(--pvh)) 40%,transparent)}
-/* solid Buy chip: ink-grade fill + panel ink — white on the raw hue was 3.61:1
-   light / 2.51:1 dark at 10px/800 (the worst white-on-hue chip in the estate
-   audit); panel-on-ink clears 4.5 in both themes and keeps the solid identity. */
-.pv-buy .pv-chip{background:var(--pvh-ink,var(--pvh));color:var(--panel);border-color:transparent}
-.pvcard .nb-px.pv-px{background:color-mix(in srgb,var(--panel) 86%,transparent);border:1px solid var(--line);border-radius:7px;padding:1px 6px;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap;margin:0}
-.pv-bd{padding:8px 11px 9px;display:flex;flex-direction:column;min-width:0;flex:1}
-.pv-hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;min-width:0}
-.pv-idw{display:flex;align-items:baseline;gap:6px;min-width:0;overflow:hidden}
-.pv-tk{font-size:13px;font-weight:800;letter-spacing:.01em;white-space:nowrap}
-.pv-flg{font-size:12px;flex:none}
-.pv-nm{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.pv-edge{display:inline-flex;align-items:baseline;gap:4px;flex:none}
-.pv-edl{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
-.pv-edn{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--pvh-ink,var(--pvh));line-height:1}
-.pv-edn.pv-edna{color:var(--muted);font-weight:600;font-size:12px}
-.pv-ind{font-size:10.5px;color:var(--muted);opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
-
-
-.pv-mk{display:flex;flex-wrap:wrap;align-items:center;gap:3px 4px;margin-top:4px;min-width:0;min-height:18px}
-.pv-mk-i{font-size:9.5px;font-weight:700;line-height:1.45;padding:1px 6px;border-radius:6px;
-  white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;
-  color:var(--muted);background:color-mix(in srgb,var(--muted) 10%,transparent);
-  border:1px solid color-mix(in srgb,var(--muted) 22%,transparent)}
-.pv-mk-feat{font-weight:800;letter-spacing:.05em;text-transform:uppercase;
-  color:color-mix(in srgb,var(--pv-buy) 60%,var(--text));
-  background:color-mix(in srgb,var(--pv-buy) 16%,var(--panel2));
-  border-color:color-mix(in srgb,var(--pv-buy) 44%,transparent)}
-.pv-mk-new{font-weight:800;letter-spacing:.05em;text-transform:uppercase;
-  color:color-mix(in srgb,var(--info) 60%,var(--text));
-  background:color-mix(in srgb,var(--info) 13%,var(--panel2));
-  border-color:color-mix(in srgb,var(--info) 38%,transparent)}
-.pv-mk-warm{color:color-mix(in srgb,var(--warn) 60%,var(--text));
-  background:color-mix(in srgb,var(--warn) 15%,var(--panel2));
-  border-color:color-mix(in srgb,var(--warn) 38%,transparent)}
-.pv-mk-theme{color:color-mix(in srgb,var(--muted) 55%,var(--text));
-  border-color:color-mix(in srgb,var(--muted) 34%,transparent)}
-
-
-.pv-mk-blow{font-weight:800;letter-spacing:.04em;text-transform:uppercase;
-  color:var(--ink-warn,var(--warn));
-  background:color-mix(in srgb,var(--warn) 8%,var(--panel));
-  border-color:color-mix(in srgb,var(--ink-warn,var(--warn)) 50%,transparent)}
-
-.pv-mk-i[data-tip-en]{cursor:help}
-.pv-stp{display:flex;align-items:center;margin:7px 1px 0}
-.pv-dot{width:6.5px;height:6.5px;border-radius:50%;background:var(--line);flex:none}
-.pv-seg{flex:1;height:2px;background:var(--line);opacity:.75}
-.pv-dot.pa,.pv-seg.pa{background:color-mix(in srgb,var(--pvh) 45%,var(--line));opacity:1}
-.pv-dot.on{background:var(--pvh);box-shadow:0 0 0 3px color-mix(in srgb,var(--pvh) 18%,transparent)}
-.pv-stl{display:flex;justify-content:space-between;gap:3px;margin-top:3px;min-width:0}
-.pv-stl span{font-size:9.5px;color:var(--muted);opacity:.7;white-space:nowrap}
-.pv-stl span.on{color:var(--pvh);opacity:1;font-weight:700}
-.pv-zn{display:flex;align-items:center;gap:5px;background:color-mix(in srgb,var(--panel) 55%,var(--bg));border-top:1px solid var(--line);padding:6px 10px 7px;font-size:10.5px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;margin-top:auto}
-.pv-znl{font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--pvh-ink,var(--pvh));flex:none}
-.pv-znr{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis}
-.pv-znm{color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis}
-.pv-dt{margin-left:auto;color:var(--muted);flex:none;font-size:9.5px;padding-left:5px}
-.pv-trg{display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:800;line-height:1.35;padding:2px 8px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--pvh) 9%,var(--panel));color:var(--pvh-ink,var(--pvh));border:1px solid color-mix(in srgb,var(--pvh-ink,var(--pvh)) 45%,transparent)}
-.pv-trg.pv-trg-soon{border-style:dashed;opacity:.92}
-.pv-cau{position:relative;display:inline-flex}
-.pv-cau-btn{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;line-height:1.35;padding:2px 7px;border-radius:999px;cursor:pointer;background:color-mix(in srgb,var(--warn) 14%,var(--panel));color:var(--ink-warn,var(--warn));border:1px solid color-mix(in srgb,var(--ink-warn,var(--warn)) 40%,transparent);font-family:inherit}
-
-.pv-cau-pop{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:30;width:264px;max-width:min(264px,78vw);max-height:min(300px,58vh);overflow-y:auto;overscroll-behavior:contain;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px 10px;box-shadow:var(--popover-shadow);white-space:normal;text-align:left}
-.pv-cau:hover .pv-cau-pop,.pv-cau:focus-within .pv-cau-pop{display:block}
-.pv-cau-hd{display:block;margin:0 0 7px;font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--warn)}
-
-.pv-cau-row{position:relative;display:block;padding-left:12px;font-size:10.5px;line-height:1.5;color:var(--text)}
-.pv-cau-row::before{content:"";position:absolute;left:2px;top:6.5px;width:4px;height:4px;border-radius:50%;background:var(--warn);opacity:.7}
-.pv-cau-row + .pv-cau-row{margin-top:7px}
-
-.pv-live{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;line-height:1.35;padding:2px 8px;border-radius:999px;white-space:nowrap;--plvc:#62a0e8;background:color-mix(in srgb,var(--plvc) 12%,var(--panel));color:var(--plvc);border:1px solid color-mix(in srgb,var(--plvc) 44%,transparent)}
-
-.pv-live[hidden]{display:none}
-html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
-
-.pv-live--close{background:color-mix(in srgb,var(--plvc) 18%,var(--panel));border-color:color-mix(in srgb,var(--plvc) 70%,transparent)}
-.pv-live--drop,.pv-live--over{--plvc:var(--pv-wait)}
-[data-showmore-rows] .pvcard .pv-chart svg,[data-showmore-rows] .pvcard .pv-nochart{height:56px}
-[data-showmore-rows] .pvcard .pv-tk{font-size:11.5px}
-[data-showmore-rows] .pvcard .pv-stl span{font-size:9px}
-[data-showmore-rows] .pvcard .pv-mk{margin-top:3px}
-@media (min-width:681px){
-  .nbgrid:has(> .pvcard),.cards:has(> .pvcard),.rip-grid:has(> .pvcard){grid-template-columns:repeat(auto-fill,minmax(246px,1fr))!important}
-}
-@media (max-width:680px){
-  .pvcard .pv-chart svg,.pvcard .pv-nochart{height:58px}
-
-  .pv-hd{align-items:flex-start}
-  .pv-idw{flex:1 1 auto;flex-wrap:wrap;row-gap:1px;overflow:visible}
-  .pv-nm{flex-basis:100%;width:100%}
-  .pv-stl span{font-size:9px}
-  .pv-zn{font-size:10px}
-  /* narrow cards: trigger chip collapses to the bare ⚡ glyph (the board copy
-     teaches "marked ⚡"); !important outranks the html[data-lang] l-en/l-zh
-     visibility rules, which otherwise win at any width. The overlay's own
-     flex-wrap now applies at EVERY width (promoted above — it was a desktop
-     clipping bug), so it is no longer repeated here. */
-  .pv-trg .l-en,.pv-trg .l-zh{display:none!important}
-  .pv-trg{padding:2px 5px;gap:0}
-  /* same collapse-to-glyph rule for the ◐ live chip */
-  .pv-live .l-en,.pv-live .l-zh{display:none!important}
-  .pv-live{padding:2px 5px;gap:0}
-  /* marks chips do NOT collapse to a glyph — "Featured" and the theme name are
-     the words that make the row non-colour-only; they get one size UP instead,
-     because a phone is where 9.5px stops being readable. */
-  .pv-mk-i{font-size:10px;padding:2px 7px}
-}
-</style>
+<link rel="stylesheet" href="assets/css/9ad8661f.css?v=9ad8661f">
 
     
     
@@ -19644,227 +19261,7 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
 </script></div>
     
   </div>
-  <style id="cn-theme-tape-css">
-  /* ── CN THEME TAPE (W-C) ───────────────────────────────────────────────────
-     Every value resolves from an existing theme.css token. No new hex, theme.css
-     untouched, so light / dark / zh all repaint at color-mix time with nothing to
-     keep in sync. Light is a design target here, not a translation (DOCTRINE
-     §5.8): the two things that would break on white are the rail's inactive
-     segments (a neutral fill vanishes) and the panel-on-canvas depth, so the rail
-     segments carry a mixed INK rather than a tint, and the panel keeps the page's
-     own .panel chrome instead of inventing a surface. */
-
-  /* THE TRACK WIDTHS, DECLARED ONCE. The header row and every theme row are
-     separate grid containers that must agree on their column edges; the only
-     thing making them agree is that these numbers are identical. Sized for the
-     CLAMPED label, not the authored one: these labels are 10px, below the
-     browser's minimum-font-size preference (commonly 12–16px), which raises the
-     rendered text while the track stays where the CSS put it. The US tape shipped
-     that exact defect (#4553) — "watching" overran its 58px track at a 12px
-     clamp. `overflow-wrap` below makes containment a guarantee rather than a
-     margin, whatever the clamp. Reproduce with
-     `.ctt-k{font-size:13px!important}` before changing anything here. */
-  body.page-china-stocks #cn-theme-tape{padding:15px 18px 14px;
-    --ctt-col:70px;--ctt-quiet:74px;--ctt-cyc:150px;--ctt-gk:78px}
-  body.page-china-stocks .ctt-hd{display:flex;align-items:baseline;gap:6px 12px;
-    flex-wrap:wrap;margin:0 0 4px}
-  body.page-china-stocks .ctt-eyebrow{margin:0;font-size:11px;font-weight:800;
-    letter-spacing:.18em;text-transform:uppercase;color:var(--muted);line-height:1.2}
-  /* zh Hanzi read wrong under Latin display tracking — theme.css makes the same
-     call for headings; the eyebrow keeps its rhythm from weight and colour. */
-  html[data-lang="zh"] body.page-china-stocks .ctt-eyebrow{letter-spacing:.06em}
-  body.page-china-stocks .ctt-asof{margin-left:auto;font-family:var(--font-mono,monospace);
-    font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
-  body.page-china-stocks .ctt-sub{font-size:11.5px;line-height:1.5;color:var(--muted);
-    margin:0 0 10px;max-width:74ch}
-
-  /* THE LADDER GRID. One template shared by the header and every row, so the
-     columns cannot drift apart. Fixed numeric widths (not max-content) are what
-     make a column a COLUMN: the header holds WORDS and the rows hold single
-     digits, so max-content would size the two grids from different content and
-     the figures would never line up under their labels. */
-  body.page-china-stocks .ctt-cols,
-  body.page-china-stocks .ctt-row{display:grid;
-    grid-template-columns:minmax(0,1fr) var(--ctt-cyc) repeat(4,var(--ctt-col)) var(--ctt-quiet);
-    gap:0 6px;align-items:baseline}
-  /* end-aligned, not baseline: a label that wraps under a clamp hangs its second
-     line BELOW a first baseline, straight through the rule this row sits on. */
-  body.page-china-stocks .ctt-cols{padding:0 0 5px;border-bottom:1px solid var(--line);
-    margin:0 0 2px;align-items:end}
-  body.page-china-stocks .ctt-k{font-size:10px;font-weight:700;letter-spacing:.05em;
-    color:var(--muted);text-align:right;line-height:1.25;min-width:0;overflow-wrap:break-word}
-  html[data-lang="zh"] body.page-china-stocks .ctt-k{letter-spacing:0}
-  body.page-china-stocks .ctt-k-cyc{text-align:left}
-
-  /* Each theme is one <details>. The summary holds BOTH glance lines, so the whole
-     row is the disclosure control — a large, obvious tap target on a phone, and a
-     native one, so there is no hover dependency and nothing to trap a popover. */
-  body.page-china-stocks .ctt-i{border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
-  body.page-china-stocks .ctt-i:last-of-type{border-bottom:0}
-  body.page-china-stocks .ctt-s{list-style:none;cursor:pointer;padding:9px 0 8px}
-  body.page-china-stocks .ctt-s::-webkit-details-marker{display:none}
-  body.page-china-stocks .ctt-s:focus-visible{outline:2px solid var(--ink-link,var(--link,var(--text)));
-    outline-offset:2px;border-radius:3px}
-  body.page-china-stocks .ctt-nm{font-size:13px;font-weight:700;color:var(--text);min-width:0}
-  /* The caret is a pseudo, so it stays out of any copy a vocabulary scan reads and
-     needs no translation. It rotates by being REPLACED, not by a transform, so
-     there is nothing here for reduced-motion to gate and no containing block. */
-  body.page-china-stocks .ctt-s .ctt-nm::before{content:"▸";color:var(--muted);font-size:10px;
-    margin-right:6px;display:inline-block;vertical-align:1px}
-  body.page-china-stocks .ctt-i[open] .ctt-s .ctt-nm::before{content:"▾"}
-
-  /* ── THE CYCLE RAIL — the panel's signature ────────────────────────────────
-     Five segments in cycle order, one marked. Position, not magnitude: the
-     segments are equal and fixed, so nothing here can read as a quantity, which
-     is what separates this from the vetoed fake-magnitude bars (#2232).
-     It is monochrome BY DESIGN — see the header note. The inactive segments take
-     a mixed INK (not an opacity on a tint) because a neutral tint is exactly what
-     vanishes against white in light mode (DOCTRINE §5.8), and the 2px gaps are
-     the same ruling's "add 1px gaps" made a little more generous at this size.
-     The whole rail is aria-hidden: the state word beside it carries the identical
-     fact, so a screen reader gets it once, in words, rather than as five boxes. */
-  body.page-china-stocks .ctt-cyc{display:flex;align-items:center;gap:7px;min-width:0}
-  body.page-china-stocks .ctt-rail{display:inline-flex;gap:2px;flex:0 0 auto}
-  body.page-china-stocks .ctt-rail i{display:block;width:7px;height:4px;border-radius:1px;
-    background:color-mix(in srgb,var(--text) 20%,transparent)}
-  body.page-china-stocks .ctt-rail i.on{background:var(--text);height:8px}
-  body.page-china-stocks .ctt-state{font-size:11px;color:var(--muted);line-height:1.3;
-    min-width:0;overflow-wrap:break-word}
-  /* The flow chip rides the theme NAME, not the cycle column: it is a fact about
-     money moving, not about where the cycle sits, and the two must not read as one
-     reading. Outline, no fill, no hue — same restraint as the rail, and for the
-     same reason (it is context, and it is the least confirmed thing on the row). */
-  body.page-china-stocks .ctt-flow{display:inline-block;vertical-align:1px;margin-left:7px;
-    padding:1px 5px;border:1px solid color-mix(in srgb,var(--line) 80%,transparent);
-    border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.05em;
-    color:var(--muted);white-space:nowrap}
-  html[data-lang="zh"] body.page-china-stocks .ctt-flow{letter-spacing:0}
-
-  /* THE FIGURES. Mono + tabular so the digits stack; the body face would ripple the
-     column, and the house rule is mono for FIGURES, never for words — the header
-     above stays body-face. The right edge is set on the CELL, which is the grid
-     item; setting it on the figure inside would align nothing, because the figure
-     is only as wide as it needs to be. */
-  body.page-china-stocks .ctt-c{text-align:right;min-width:0}
-  body.page-china-stocks .ctt-v{font-family:var(--font-mono,monospace);font-size:13px;
-    font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap}
-  /* The ONLY colour on the panel, and only ever on a non-zero `live` count — the one
-     cell that means "there is something to do today". --ink-up is the text-grade form
-     of the state palette (raw --up is fill-grade and misses the contrast floor as
-     light-theme text); the var() fallback keeps a cache-stale theme.css rendering
-     today's colour rather than an invalid declaration. */
-  body.page-china-stocks .ctt-v.is-live{color:var(--ink-up,var(--up))}
-  /* A printed absence, at the weight of an absence. */
-  body.page-china-stocks .ctt-v.is-zero{color:var(--muted);opacity:.5;font-weight:600}
-  body.page-china-stocks .ctt-quiet{font-family:var(--font-mono,monospace);font-size:12.5px;
-    font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
-  body.page-china-stocks .ctt-say{font-size:12.5px;line-height:1.5;color:var(--text);
-    padding-left:16px;margin-top:3px}
-  body.page-china-stocks .ctt-stance{font-weight:650}
-
-  /* Tier 3 — the member lists. Indented under the row they belong to, and quiet:
-     this is a reference list, not a second board. */
-  body.page-china-stocks .ctt-det{padding:2px 0 12px 16px}
-  /* The stance for a row that did not earn the glance-tier line — the opening line of
-     an EXPANDED row, so it takes .ctt-det's indent and adds none of its own. */
-  body.page-china-stocks .ctt-heat{display:block;font-size:11.5px;font-weight:400;
-    color:var(--muted);margin:0 0 7px;line-height:1.5}
-  /* The label column GROWS rather than overflows — `minmax(k, max-content)` keeps
-     the alignment in every normal render and lets the track widen in the clamped
-     state that would otherwise paint a label across the names beside it. Bounding
-     it instead (max-width + overflow:hidden) is worse: it clips a two-word label. */
-  body.page-china-stocks .ctt-g{display:grid;
-    grid-template-columns:minmax(var(--ctt-gk),max-content) minmax(0,1fr);gap:0 10px;
-    align-items:baseline;padding:3px 0}
-  body.page-china-stocks .ctt-gk{font-size:10.5px;font-weight:700;color:var(--muted);
-    text-align:right;line-height:1.5}
-  /* FLEX, and this is load-bearing — an inline run here loses members. The .ctt-n
-     spans are emitted adjacent with no whitespace between them and a ticker is
-     nowrap, so as an inline run the whole list is ONE unbreakable word with no
-     break opportunity: on a 390px phone it overruns the viewport and the tail is
-     sheared off — members silently deleted from a shipped surface (the US tape's
-     own #4488 fix-up commit). `overflow-wrap:anywhere` is the WRONG patch: it
-     breaks INSIDE tokens and tears "+4" apart. A flex line box takes its break
-     opportunities between ITEMS, so every member wraps whole. */
-  body.page-china-stocks .ctt-names{display:flex;flex-wrap:wrap;align-items:baseline;
-    row-gap:2px;font-size:12px;line-height:1.6;color:var(--text);min-width:0;
-    overflow-wrap:break-word}
-  body.page-china-stocks .ctt-n{min-width:0}
-  /* The separator TRAILS its name rather than leading the next one, so a wrapped
-     line never opens with an orphan middot. :not(:last-child) keeps it off the end
-     while still printing before a group-level reason, which is a sibling here. */
-  body.page-china-stocks .ctt-names > .ctt-n:not(:last-child)::after{content:"·";
-    color:var(--muted);padding:0 5px 0 6px;opacity:.6}
-  body.page-china-stocks .ctt-sym{font-family:var(--font-mono,monospace);font-weight:700;
-    letter-spacing:.02em;white-space:nowrap}
-  body.page-china-stocks .ctt-zh{color:var(--muted);font-size:11px;padding-left:5px}
-  /* The reason hangs off the name behind a middot, not a dash: several reasons carry
-     their own em-dash, and two dashes in one phrase read as one muddled clause. A
-     middot needs no translation, so both languages take the same rule, and it is a
-     pseudo so it keeps its spacing however the markup wraps. */
-  body.page-china-stocks .ctt-why{color:var(--muted);font-size:11px}
-  body.page-china-stocks .ctt-why::before{content:"·";padding:0 5px 0 4px;opacity:.5}
-  /* A GROUP-level reason is a sibling of the names, so the last name's trailing
-     separator has already printed and this one would double it. A PER-NAME reason
-     lives inside its .ctt-n, where no separator precedes it, so it keeps its own. */
-  body.page-china-stocks .ctt-names > .ctt-why::before{content:none}
-  body.page-china-stocks .ctt-more{color:var(--muted);font-weight:600;white-space:nowrap}
-
-  /* THE THEME VEHICLE. The panel's one genuinely CN-specific object, and the honest
-     answer to "so what do I do" on a theme whose members are all still waiting: the
-     basket trades as one instrument, and naming it is not the same as recommending
-     it. Reads as a sentence, at the weight of a note — deliberately NOT a chip or a
-     button, because a chip is an affordance and this is a fact. */
-  body.page-china-stocks .ctt-veh{margin:6px 0 0;font-size:11px;line-height:1.55;
-    color:var(--muted);max-width:74ch}
-  body.page-china-stocks .ctt-veh .ctt-sym{color:var(--text)}
-  body.page-china-stocks .ctt-more-link{display:block;margin:7px 0 0;font-size:11px}
-  body.page-china-stocks .ctt-more-link a{color:var(--muted);text-decoration:underline;
-    text-underline-offset:2px}
-
-  body.page-china-stocks .ctt-rule{border:0;border-top:1px solid var(--line);margin:8px 0 10px}
-  body.page-china-stocks .ctt-foot{margin:0;font-size:12px;line-height:1.55;color:var(--muted);
-    max-width:74ch}
-  /* The link is one token. Left to break, the zh label split after 主 and stranded
-     "题 →" on its own line, which reads as a fragment rather than a destination; the
-     line breaks BEFORE it instead. Same reason the stance is held whole below. */
-  body.page-china-stocks .ctt-foot a{color:inherit;text-decoration:underline;
-    text-underline-offset:2px;white-space:nowrap}
-  /* The stance is one token, like a count chip is: broken across a line, "— don't
-     chase." reads as a fragment rather than an instruction. */
-  body.page-china-stocks .ctt-nb{white-space:nowrap}
-
-  @media (max-width:900px){
-    body.page-china-stocks #cn-theme-tape .ctt-asof{margin-left:0}
-    body.page-china-stocks #cn-theme-tape{--ctt-cyc:126px;--ctt-col:62px;--ctt-quiet:66px}
-  }
-  /* ── phones (≤680px, the board's own mobile break) ─────────────────────────
-     The seven-column alignment is a desktop luxury: it exists so a reader can scan
-     one column down eight themes. On a phone you read one theme at a time, so the
-     ladder becomes a flowing line of "N label" pairs and the header row — whose
-     only job was to label those columns — is dropped. Each cell then shows its own
-     label, and a ZERO cell is removed entirely: a printed en-dash is honest inside
-     a column, but "0 blocked" in a sentence is just noise. Nothing here scrolls
-     sideways; the row wraps. */
-  @media (max-width:680px){
-    body.page-china-stocks #cn-theme-tape{padding:13px 14px}
-    body.page-china-stocks .ctt-cols{display:none}
-    body.page-china-stocks .ctt-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
-    body.page-china-stocks .ctt-nm{flex:1 0 100%}
-    body.page-china-stocks .ctt-cyc{flex:1 0 100%;margin:1px 0 2px}
-    body.page-china-stocks .ctt-c{display:inline-flex;align-items:baseline;gap:4px}
-    body.page-china-stocks .ctt-c.is-zero-cell{display:none}
-    body.page-china-stocks .ctt-c .ctt-ik{font-size:10.5px;font-weight:600;color:var(--muted);
-      font-style:normal}
-    body.page-china-stocks .ctt-v,body.page-china-stocks .ctt-quiet{text-align:left;font-size:12.5px}
-    body.page-china-stocks .ctt-g{grid-template-columns:minmax(0,1fr);gap:0}
-    body.page-china-stocks .ctt-gk{text-align:left}
-  }
-  /* The per-cell label is redundant wherever the header row is visible. */
-  @media (min-width:681px){
-    body.page-china-stocks .ctt-c .ctt-ik{display:none}
-  }
-  </style>
+  <link rel="stylesheet" href="assets/css/38c93717.css?v=38c93717">
   <div class="panel span12" id="cn-theme-tape">
     <div class="ctt-hd">
       <h2 class="ctt-eyebrow"><span class="l-en">Theme cycles</span><span class="l-zh">主题周期</span></h2><span class="help">?<span class="tip tip-wide"><span class="l-en">Each theme is a curated basket of A-shares with its own turn model, and the rail shows where that basket sits in its cycle. Every member is then placed in exactly one column, so a row adds up to the whole basket; a name counts once, at its most actionable state, and a name can sit in more than one theme. The cycle read is a place to look, not a measured edge — no horizon of it has cleared a significance bar. Nothing on this panel ranks, gates or sizes anything, and the board above is identical with it present or absent.</span><span class="l-zh">每个主题都是一篮精选A股，各自带有转向模型，刻度条显示该篮子在周期中的位置。每只成分股被归入且仅归入一列，因此整行相加等于该篮子全部成分股；同一只股票按其最可操作的状态计入一次，且可能同时属于多个主题。周期研判只用于确定观察方向，并非经检验的优势——尚无周期通过显著性检验。本面板不参与任何排名、筛选或仓位决定，上方看板有无本面板都完全相同。</span></span></span>
@@ -20775,14 +20172,14 @@ window.__CHART_SWAP__ = {
   labels: {}
 };
 </script>
-<script src="theme.js"></script>
-<script src="china_risk_state_live.js"></script>
-<script defer src="illus.js"></script>
-<script src="chart_i18n.js"></script>
-<script src="mtf.js"></script>
-<script src="tablesort.js"></script>
+<script src="theme.js?v=56784c1a" defer></script>
+<script src="china_risk_state_live.js?v=d36ab2db" defer></script>
+<script defer src="illus.js?v=8e0a3779"></script>
+<script src="chart_i18n.js?v=23272c48" defer></script>
+<script src="mtf.js?v=b62aea2f" defer></script>
+<script src="tablesort.js?v=484d9333" defer></script>
 
-<script src="stocktable.js"></script>
+<script src="stocktable.js?v=b1a1a572" defer></script>
 <script>
 /* W8-E: StockTable init — standout board table view (CN market).
    Wired only on the stocks mode page (setups.buy exists); safe no-op if element absent. */
