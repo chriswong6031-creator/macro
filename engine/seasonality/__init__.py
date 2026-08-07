@@ -17,6 +17,11 @@ below.
 scope is pure stdlib and it defers ``pandas``/``yaml`` into the functions that
 actually read a parquet snapshot or the ownership registry, so importing this
 package still costs nothing on a thin runner.
+
+``event_study`` is NOT in that class — it is numpy/pandas-bound — so it is reachable
+as an attribute through the PEP 562 ``__getattr__`` at the bottom of this file, which
+imports it only when something actually asks for it, and it stays out of ``__all__``
+so ``import *`` never drags the scientific stack in behind it.
 """
 
 from .contracts import (
@@ -82,3 +87,22 @@ __all__ = [
     "validate_neuralweb_state",
     "validate_prophet_overlay",
 ]
+
+#: Modules that carry a numpy/pandas dependency and therefore may not be imported
+#: eagerly here (see the module docstring).  They resolve on first attribute access.
+_LAZY_MODULES = ("event_study",)
+
+
+def __getattr__(name: str):
+    """Resolve the heavy submodules on demand — PEP 562.
+
+    ``from engine.seasonality import event_study`` already works as a submodule
+    import; this exists so ``engine.seasonality.event_study`` also resolves after a
+    bare ``import engine.seasonality``, without making the package itself require
+    the scientific stack that the thin ingestion runners deliberately do not have.
+    """
+    if name in _LAZY_MODULES:
+        import importlib
+
+        return importlib.import_module(f".{name}", __name__)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
