@@ -18,7 +18,14 @@ SITE = ROOT / "site"
 # ROUTES to macro-api (app/main.py), which enforces its own auth. Excluding them
 # from the static matchers is what stops a ws upgrade / API call from being
 # swallowed by the file gate — it is not a public-content decision.
-NON_POLICY_ROUTES = {"/api/*", "/ws/tape"}
+#
+# /sb/* is the same class, added by #4680 (Supabase endpoint inside the GFW
+# perimeter): a `handle_path /sb/*` reverse proxy whose upstream issues its own
+# 401, not a file under site/. That PR added the route to all six Caddy matchers
+# but not here, which reddened this test ON MAIN — listing it in the policy's
+# `public` block instead would be wrong twice over, since it names no static
+# asset and would read as a serving-boundary widening it is not.
+NON_POLICY_ROUTES = {"/api/*", "/ws/tape", "/sb/*"}
 
 # Public policy entries whose target is a RUNTIME artifact, not a committed
 # file. site/live/ is gitignored: the systemd lanes publish by atomic rename
