@@ -1462,6 +1462,60 @@ checks:
       (test_marketing_content, test_marketing_live_verify, test_publish_r2,
       test_research_vault), all repaired in the PR that added the guard.
 
+  - law_id: ops.ci_trigger_closure
+    summary: >
+      A guarded suite's TRIGGER PATHS must reach every module the suite measures.
+      The fourth darkness class, and the reverse direction of every census beside
+      it: audit_unrun_tests.py asks "can ANY edit start this job" — an any() over
+      the closure, satisfied by the test file itself — so a suite stays
+      "triggerable" while the ONE module it exists to guard is matched by no
+      `on.pull_request.paths` entry. An edit to exactly that module then ships
+      without ever running its own guard. The check is static: discover the
+      PR-gated workflows (a workflow with no `paths:` covers everything it runs
+      unconditionally; one WITH `paths:` governs both its own `run:` steps and any
+      job manifest it hands a runner, which is how the packed legacy jobs inherit
+      ci.yml's single filter), resolve each named suite's direct first-party reads
+      (imports, import_module literals, repo-relative path literals, ROOT/"a"/"b.py"
+      joins), and fail when a resolved module is reachable by no gate that runs it.
+    source_ref:
+      - scripts/check_ci_trigger_closure.py
+      - tests/test_ci_trigger_closure.py
+      - "PR #4649 (guard shipped)"
+      - "PR #3488 (a guard whose own edit cannot start the workflow is half wired)"
+      - "PR #4559 (fixture-only heal — same class)"
+    severity: hard
+    check_script: scripts/check_ci_trigger_closure.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: workflow-yaml
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        The gate is DIRECT reads only (depth 1). `--depth N` widens the report to
+        transitive reads and is deliberately NOT gated: past depth 1 the
+        path-literal heuristic starts resolving placeholder strings out of
+        docstrings, and a guard that cries wolf gets ignored — which is the exact
+        failure mode this file exists to end.
+      - >-
+        Reachability is decided under GitHub's `paths` glob semantics (exact,
+        fnmatch, `prefix/**` subtree). A path expression GitHub accepts but this
+        resolver models differently would be judged on the model, not the runner.
+      - >-
+        Suites that NO job names are UNRUN, not trigger gaps —
+        scripts/audit_unrun_tests.py owns that class.
+    owner_program: null
+    notes: >
+      Registered by the 2026-08-06 base heal. The guard shipped wired in #4649
+      (workflow-yaml, beside its two sibling censuses) but was never added to this
+      registry, so the meta-guard's CENSUS pass hard-failed ci-pack-2 on main and
+      on every open PR head — the same shape as the flow_continuity.statement_tape
+      entry below, which was registered by a post-hoc census fix for the same
+      reason. Belongs to the darkness-census family with ops.no_skip_only_suites
+      and ops.workflow_yaml_parses in the same job.
+
   # ── Meta-guard ─────────────────────────────────────────────────────────────
 
   - law_id: meta.house_law_registry
