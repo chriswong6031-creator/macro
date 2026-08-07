@@ -1,0 +1,99 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "CG-2026-06-30-laggards",
+  "ticker": "CG",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "CG",
+    "as_of": "2026-06-30",
+    "lane": "laggards",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "CG",
+    "lane": "laggards",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_alpha",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Financials",
+    "excess_spy": 0.08546919516616192,
+    "excess_sector": 0.047741734909432676,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CLEAN_LIFTOFF",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "CG delivered a clean liftoff despite entering through the laggards lane, with the audit assigning the outcome to company-specific alpha. The record does not show whether this was an early recovery signal or merely Financials rotation.",
+    "root_cause": "CG delivered a clean liftoff despite entering through the laggards lane, with the audit assigning the outcome to company-specific alpha. The record does not show whether this was an early recovery signal or merely Financials rotation.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The laggards and company-alpha books surfaced a successful recovery candidate, but the rotation book's contribution is unknown.",
+    "engines_credit": "The laggards lane and company-alpha book are provisional role models; the regime, rotation, catalyst, and timing organs lack attribution evidence.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "Company-specific recovery or re-rating strength overcame the prior laggard classification.",
+        "evidence_status": "claimed",
+        "timing_status": "known_at_entry",
+        "counterfactual": "If no company-specific recovery existed, a Financials-wide rotation would be the principal competing explanation.",
+        "evidence_refs": [
+          "Pick 3 outcome_cause=idio_alpha",
+          "Pick 3 lane=laggards"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "entry_timing",
+        "factor": "",
+        "mechanism": "The clean process captured the subsequent liftoff without a recorded chase or stop fault.",
+        "evidence_status": "claimed",
+        "timing_status": "known_at_entry",
+        "counterfactual": "Waiting for more confirmation might have reduced early-recovery capture.",
+        "evidence_refs": [
+          "Pick 3 process_fault=clean",
+          "Pick 3 terminal_state=CLEAN_LIFTOFF",
+          "Pick 3 excess_spy=0.08546919516616192"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Financials rotation rather than company alpha may have produced the relative gain.",
+      "An unreported re-rating event may have driven the liftoff."
+    ],
+    "missing_evidence": [
+      "Definition and entry rationale for the laggards lane",
+      "Financials and peer-relative returns",
+      "Ex-ante accumulation measures",
+      "Company event timeline"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "laggard_recovery_breadth",
+        "feature": "Breadth-confirmed recovery among laggard candidates",
+        "measurement": "Test whether improving peer breadth and sector-relative momentum at entry distinguish recoveries from persistent laggards.",
+        "expected_direction": "Improving breadth with company-relative strength should precede successful recoveries.",
+        "falsifier": "Recovery outcomes are unrelated to entry-date breadth and sector-relative momentum.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T13:34:17+00:00"
+}

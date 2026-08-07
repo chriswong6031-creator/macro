@@ -1,39 +1,421 @@
-# Government Revenue Foresight — account handoff
+# Government Revenue Foresight — Claude implementation handoff
 
-Use `research/GOVERNMENT_REVENUE_FORESIGHT_MASTERPLAN_FOR_FABLE.md` as the canonical product/architecture specification. This file is only the compact implementation checkpoint for resuming from another account.
+**Checkpoint:** 2026-08-06
 
-## Current checkpoint
+**Implementation through:** Wave 9B
 
-- Waves 1–5 are on `origin/main`: bounded USAspending award/action collection, first-seen SAM rail, bitemporal and receipt-bound ledgers, procurement workspace, premium three-pane UI, Award Tape, display-only Neural Web/Prophet context, and exact prime-award dossiers.
-- Wave 5 adds a separate content-addressed `government_revenue_dossiers.v1` artifact, byte-identical canonical/public twins, stable generated-award identity, bounded company/award/action APIs with generation-bound cursors, and a progressive premium award-book/action-tape UI.
-- Wave 5 also adds the strict exact-recipient graph and independent absolute-dollar coverage contracts plus fail-closed resolver helpers. It deliberately ships without fabricated mappings; no discovery ticker or fuzzy company name becomes issuer proof.
-- The live and generic render workflows now carry and verify `dossiers.json`; the projection fence rejects stale, malformed, non-canonical, or mixed dossier generations.
-- Wave 6 adds a separately governed official USAspending subaward evidence rail: exact prime generated-award-ID plus source-native broker-row identity, append-only version snapshots, count/detail hash receipts, activation state, ingest health, and a content-addressed canonical/public dossier twin.
-- Collection is daily, keyless, and hard bounded to 160 deterministic parents, 100 rows per page, five pages per parent, 2,000 detail rows per run, and 2,000 public current identities. Parents above 500 reported subawards and parents that would breach the run cap remain explicit verified-count-only coverage; they never fabricate detail.
-- First live baseline: generation `subaward-61cf42853879556a966b1589` / dossier `grsd1-77abcccf4902c93d8202b2fe`; 160 parents counted, 1,949 detail rows published, 21 complete-detail parents, 63 verified-zero parents, 66 high-count count-only parents, and 10 run-cap count-only parents, with zero collector errors.
-- Public serving is precomputed-only through `/api/government-revenue/award/{award_key}/subawards` and `/api/government-revenue/subaward/{subaward_key}`. Both surfaces return parent coverage so `zero`, `not_selected`, `high_count_count_only`, and `run_cap_count_only` cannot be mistaken for complete detail.
-- Wave 7 closes the subaward UI gap with a wide award-detail workspace, explicit complete/zero/count-only/not-selected coverage states, server-side subrecipient search, generation-bound cursor paging, responsive ledger rows, and a receipt drawer. Prime/action evidence remains visible if the optional subaward rail fails, and `grd1-*` is never compared with the independent `grsd1-*` generation.
-- Wave 7 also adds a browser-local Research Briefcase: saved five-filter views, typed opportunity/award-change/derived-expiry alerts, a bounded local inbox, and allowlisted JSON/CSV exports. The first complete-workspace check establishes a baseline without backfill; award-change alerts remain unprimed while the official award-event rail is unavailable. There is no background delivery, account sync, email, push, or cross-device persistence claim.
-- The Wave 7 checkpoint passes 338 focused Government Revenue/build/API/UI/Prophet/Neural Web and asset-contract tests plus template/site sync, JavaScript syntax, projection, and raw edge-budget guards. Its three dependency bundles use the shared `data-sync` loader contract so post-render cache stamping cannot defer them beyond the inline page bootstrap. The parity stylesheet is a canonical site-only static asset (the same repo pattern as `cycle.css`/`odds.css`); the generated HTML remains entirely owned by governed render lanes so scheduled evidence and site-wide asset sweeps cannot conflict with the feature branch.
+**Next build:** forward event-spine recovery and exact issuer expansion
 
-## Truth and authority fences
+**Canonical implementation checkpoint:** this file
 
-- This is an original clean-room implementation over official/public data, not copied competitor code or proprietary data.
-- Government Revenue remains `display/context` only. It cannot rank, size, gate, add a candidate, originate a signal, or escalate one in Prophet/Neural Web.
-- Collection-scope tickers are discovery queries only. Exact reviewed UEI/CAGE/USAspending identifiers plus point-in-time ownership evidence are required for issuer attribution.
-- Obligations, current award value, potential ceiling, GAAP backlog, and revenue are separate semantics.
-- A reported subaward amount is self-reported subrecipient context. It is never a federal obligation/outlay, prime-award value, backlog, revenue, cash flow, or an amount to add to the prime award.
-- The user-supplied competitor login must never be used or preserved.
+**Canonical product and architecture specification:** `research/GOVERNMENT_REVENUE_FORESIGHT_MASTERPLAN_FOR_FABLE.md`
 
-## Resume sequence
+This is the resume document for Claude. Read it before changing Government Revenue code. The masterplan remains the authority for the product thesis, clean-room HigherGov/GovTribe forensics, contracts, source strategy, UI model, and long-range architecture. This handoff records what actually shipped, what production currently says, and the ordered work still required to make the lobe investment-useful.
 
-1. Start a fresh `codex/` worktree from newly fetched `origin/main`; do not touch the shared dirty main checkout.
-2. Read this file, the masterplan, repo `CLAUDE.md`, and `AGENTS.md` before editing.
-3. Verify `https://mastermind-x.com/api/health`, `/government_revenue.html`, `/api/government-revenue/latest`, and one dossier API route.
-4. Verify the subaward source bundle and public twins as one generation: `subaward_snapshots.parquet`, `subaward_collection_receipts.jsonl`, `subaward_projection_state.json`, `subaward_ingest_status.json`, `subaward_dossiers.json`, and `site/government-revenue-data/subaward-dossiers.json`.
-5. Activate the **SAM observed-lifecycle and exact notice→award lane** only after installing a server-side `SAM_API_KEY` and completing a first active-plus-archived baseline. Label all later lifecycle history as observed after activation; never backfill historic amendments from the latest-state API.
-6. Build the **DoD budget→program evidence graph** next: immutable FY budget-line receipts with request/authorization/appropriation/execution kept separate, exact PE/line/program identifiers, PDF page/hash provenance, and manually reviewed edges. Do not allocate a program line to an issuer or award by semantic similarity.
-7. Then add an official USAspending **IDV→child-award identity graph** and an SBIR.gov append-only Phase I/II observation rail. Do not call an IDV relationship a vehicle seat, call an SBIR phase sequence production conversion, or build OTA progression until a source-native OTA identifier and exact lineage are available.
-8. Only after prospective labels exist should calibrated bidder, award-value, revenue-timing, and beneficiary models enter shadow forward validation. They remain research context until leakage, calibration, coverage, and authority gates pass.
+## Executive verdict
 
-Every tracked change must complete the repo ship loop: focused tests, broad relevant tests, commit, PR, concluded checks, squash merge, `origin/main` evidence, deploy completion, production health, and changed-surface verification.
+The product shell is no longer the bottleneck. MastermindX already has a strong, evidence-native Government Revenue workbench: award and action context, opportunities, dossiers, subawards, IDV and budget foundations, saved research workflows, a ticker-first Candidate Radar, receipt drawers, explicit coverage states, point-in-time contracts, and fail-closed authority rules.
+
+The remaining program is an **event-to-issuer-to-investment-signal build**, not another dashboard redesign:
+
+1. make the forward award-event spine persist and activate reliably;
+2. expand exact, reviewed public-company attribution beyond PLTR;
+3. emit evidence-bound candidate hypotheses from real post-baseline changes;
+4. cross-check those already-selected candidates against Neural Web context;
+5. annotate Prophet only after selection, without changing its decisions;
+6. grade every candidate prospectively before requesting any authority; and
+7. add budget, vehicle, SBIR, recompete, earnings, and displacement rails only with source-native lineage.
+
+A zero-candidate product is currently the honest result. Identity coverage, attractive UI, large award values, and ticker search provenance are not catalysts. Do not manufacture activity to make the screen look alive.
+
+## Start here
+
+Read these in order:
+
+1. `CLAUDE.md`
+2. `AGENTS.md`
+3. `research/GOVERNMENT_REVENUE_FORESIGHT_ACCOUNT_HANDOFF.md` — this checkpoint
+4. `research/GOVERNMENT_REVENUE_FORESIGHT_MASTERPLAN_FOR_FABLE.md` — product and architecture authority
+5. `research/GOVERNMENT_REVENUE_WAVE9_DEFENSE_CATALYST_CANDIDATE_LEDGER_2026-08-03.md` — candidate doctrine and Wave 9 contract
+6. `research/GOVERNMENT_REVENUE_WAVE8_HANDOFF_2026-08-02.md` — IDV and DoD budget foundation
+7. `docs/ACTIVE_BUILD_MAP.md` and `research/DO_NOT_REBUILD.md` — coordination fences; verify their freshness against GitHub
+
+Before editing, fetch `origin/main`, inspect open PRs, and create a fresh `codex/` worktree from the fetched remote head. The shared main checkout may be dirty or detached. Never clean it, switch it, or use the shared stash stack.
+
+## What is already shipped — do not rebuild
+
+### Core evidence and product surfaces
+
+- Bounded official USAspending award and action collection with receipts, source-health metadata, and bitemporal/PIT semantics.
+- Government Revenue workspace and premium three-pane UI at `/government_revenue.html`.
+- Award Tape, opportunity views, company/award workspaces, saved filters, local alert inbox, JSON/CSV exports, and a browser-local Research Briefcase.
+- Exact prime-award dossiers with content-addressed canonical/public twins and generation-bound APIs.
+- Exact-recipient graph, resolution, and absolute-dollar coverage contracts that fail closed.
+- Official USAspending subaward evidence rail with explicit complete, verified-zero, high-count-only, run-cap-only, and not-selected states.
+- Responsive subaward UI, server-side search, cursor paging, and receipt inspection.
+- IDV relationship foundation and dossier contracts.
+- DoD budget-line and budget-edge schema foundations, but not an activated production graph.
+- Ticker-first Defense Catalyst Candidate Radar, candidate queue/status contracts, mapping backlog, empty-state projection, and UI.
+- Candidate governance that keeps Government Revenue display/context-only.
+- API, asset, template, projection, raw-data, and edge-budget fences.
+- Scheduled collection/build workflow in `.github/workflows/government-revenue-live.yml`.
+
+### Clean-room and ownership fences
+
+- The competitor study is complete enough to guide jobs-to-be-done. Do not use competitor credentials, scrape authenticated pages, copy code, reproduce proprietary data, or pixel-clone either product.
+- Preserve the superior MastermindX model: public/licensed evidence, visible provenance, freshness, coverage, uncertainty, and authority.
+- Consume central company registry, SEC/13D/13G, earnings transcripts, filings, market data, Neural Web, and Prophet services when their owning lanes expose stable contracts. Do not fork local shadow versions inside Government Revenue.
+- Keep Government Revenue sector-specific. Shared issuer identity, evidence envelopes, event transport, and evaluation should become platform services rather than duplicated lobe internals.
+
+## Production checkpoint on 2026-08-06
+
+The production health endpoint returned a serving commit that is a descendant of the Wave 9B merge. Recheck every value live before relying on this snapshot.
+
+| Surface | Current truth | Interpretation |
+|---|---|---|
+| Aggregate workspace | Serves successfully; 30 workspace companies; freshness `partial` | Product is usable for bounded research, not fully current |
+| Awards/actions | Award detail and actions were about five days old against a four-day SLA | Stale; do not present as live catalyst evidence |
+| Opportunities | Unavailable; zero records and no `observed_at` | SAM lifecycle rail is not active in production |
+| Award-event spine | Unavailable with `projection_state_absent` | No trustworthy before/after event emission yet |
+| Candidate ledger | `grcq1-2e008e5fe4635fa30b6a3772`; zero candidates | Correct fail-closed result |
+| Mapping coverage | 21-company backlog; one reviewed issuer ticker (`PLTR`) | Attribution breadth is the immediate constraint after P0 recovery |
+| PLTR graph | `recipient-graph:reviewed:2026-08-03:pltr-v1`; two exact legal entities and two identifiers | First reviewed issuer path is shipped, not a broad defense universe |
+| Remaining mapping states | 20 `mapping_needed`; one `partial_identifier_coverage` | Never substitute fuzzy name matching |
+| IDV baseline | 24 selected/count-verified IDVs, 15 complete-detail parents, 452 relationship observations, 26 receipts | Useful vehicle context; zero exact bridges into the prime dossier at checkpoint |
+| DoD budget | Contracts/foundation only; production rail unavailable | No budget-to-issuer beneficiary claims yet |
+| Subawards | Bounded rail and UI shipped | Subrecipient evidence is not issuer attribution or federal obligation |
+| Authority | All Government Revenue candidate authority flags false | Context/display only; no ranking, sizing, gating, or signal origination |
+
+Exact PLTR reviewed UEIs at the checkpoint are `FSY4LVSBGWB7` and `HNN4F9JZWDY8`. Treat them as reviewed graph inputs with evidence, not universal aliases to be propagated without temporal ownership checks.
+
+## Immediate incident: award-event persistence is P0
+
+`data/government_revenue/ingest_status.json` records a fresh 2026-08-06 collection that reached the official source but failed during persistence:
+
+- 1,936 awards seen;
+- 34,208 actions seen and 34,181 actions previously accrued;
+- 19 award queries stopped at the configured safety cap with `hasNext=true`;
+- two award queries reached explicit source exhaustion;
+- event spine remained baseline/unactivated with zero eligible event rows;
+- `run_state` became `failed` and `last_successful_observed_at` remained null; and
+- the persistence error is stored as `ledger_write_failed`.
+
+The saved exception begins with `Invalid value '['` followed by a large list of receipt hashes, but `_safe_error` truncates the useful exception suffix. A list-valued/object cell crossing a Parquet schema boundary is the leading hypothesis; it is **not a confirmed root cause**. Possible inputs include receipt-manifest data or mixed legacy/new event-column types. Reproduce from the committed source/status/receipt bundle and capture the complete traceback before changing normalization.
+
+Required safety behavior:
+
+- never overwrite unreadable accrued history;
+- never partially advance one member of the event triad;
+- preserve last-good production artifacts on collection or persistence failure;
+- distinguish a valid bounded partial collection from persistence failure;
+- never mark first-baseline rows as forward events; and
+- never infer an event from the legacy merged award table.
+
+The intended event triad is:
+
+- `data/government_revenue/award_event_snapshots.parquet`
+- `data/government_revenue/award_action_versions.parquet`
+- `data/government_revenue/award_event_projection_state.json`
+
+Those production artifacts were absent at this checkpoint.
+
+## Remaining build waves
+
+Wave numbers continue the shipped Wave 9A/9B candidate work. Keep PRs narrow. A wave may require several PRs, but no PR should silently combine new authority, new data semantics, and major UI work.
+
+### Wave 9C — forward event-spine recovery and activation
+
+**Goal:** establish the first receipt-bound baseline, then emit only genuine changes observed after it.
+
+Build:
+
+- reproduce and fix `ledger_write_failed` with a regression fixture that exercises the real problematic shape;
+- normalize every persisted event cell to a deterministic Parquet-safe type;
+- atomically write and validate the complete event triad;
+- represent coverage as bounded partial when queries hit a declared safety cap;
+- store source exhaustion, truncation, page counts, receipt bindings, and last-good clocks separately;
+- activate baseline only after the full configured bounded universe completes the required receipt-bound conditions;
+- carry omitted fields forward only under the existing presence-manifest rules; explicit JSON null remains distinct from omission;
+- project additions, obligation changes, ceiling changes, period changes, and action corrections/retractions only from exact source versions; and
+- keep Candidate Radar empty until a real post-baseline eligible event exists.
+
+Acceptance gates:
+
+- full traceback captured before the fix and a regression fails on old behavior;
+- all three artifacts exist, validate, and share the expected generation/state binding;
+- interrupted or malformed writes leave last-good artifacts byte-identical;
+- first baseline emits zero candidates;
+- a synthetic second observation proves each supported transition and rejects receipt-only churn;
+- current production API no longer says `projection_state_absent` after a successful live run; and
+- zero fabricated candidates is accepted as success.
+
+Primary code:
+
+- `collectors/usaspending_awards.py`
+- `engine/government_revenue/award_events.py`
+- `engine/government_revenue/candidates.py`
+- `scripts/build_government_revenue.py`
+- `.github/workflows/government-revenue-live.yml`
+- `tests/test_usaspending_awards.py`
+- `tests/test_government_revenue_award_spine.py`
+
+### Wave 9D — reviewed issuer graph expansion
+
+**Goal:** turn the one-issuer proof into a useful defense-company universe without fuzzy attribution.
+
+Start with the highest-confidence direct seeds in the existing mapping backlog, expected to include `LMT`, `LHX`, `AVAV`, and `VSAT` when official identifiers and issuer evidence support them. Recheck the backlog at build time; this list is prioritization, not preapproval.
+
+Build:
+
+- resolve issuer → legal entity → UEI/CAGE/USAspending recipient with reviewed evidence;
+- use SEC exhibits/subsidiary lists, issuer disclosures, official entity records, and USAspending identity evidence;
+- attach valid-from, valid-to, known-at, evidence hash, reviewer, and review status to every edge;
+- support parent/subsidiary ownership without collapsing distinct legal recipients;
+- maintain explicit unresolved, ambiguous, stale, and partial-coverage states;
+- calculate award-dollar coverage independently from entity-count coverage; and
+- surface why each company is or is not candidate-eligible.
+
+Acceptance gates:
+
+- no mapping derives from `discovery_query_ticker`, fuzzy name similarity, web-search snippets, or an LLM assertion;
+- every active edge is reviewable from immutable evidence;
+- PIT tests prevent current ownership from leaking backward;
+- a company can have exact partial coverage without being mislabeled complete;
+- mapping changes cannot create an investment candidate without an eligible event; and
+- candidate contract IDs remain stable under irrelevant graph ordering changes.
+
+### Wave 9E — Neural Web shadow cross-check packets
+
+**Goal:** enrich an already-selected Government Revenue candidate with independent context without creating a fused super-score.
+
+Candidate selection must complete before Neural Web is called. The packet should contain named, separately inspectable legs such as:
+
+- technical trend and relative strength;
+- volatility/liquidity and regime fit;
+- geopolitical and budget-theme relevance;
+- filings/transcript corroboration;
+- ownership/13D/13G changes when available;
+- alternative-data or supply-chain context; and
+- contradiction, staleness, and missing-data flags.
+
+Acceptance gates:
+
+- the candidate set and ordering are byte-identical with Neural Web disabled, unavailable, delayed, or contradictory;
+- no unnamed composite score hides the contributing legs;
+- each leg has source time, known-at, freshness, status, and provenance;
+- contradictory evidence remains visible rather than averaged away; and
+- the UI labels the packet `shadow context`, not signal confirmation.
+
+### Wave 9F — Prophet post-selection annotation
+
+**Goal:** let Prophet consume Government Revenue evidence as annotation only.
+
+Build a narrow, versioned envelope containing candidate ID, issuer identity, procurement event, evidence references, known-at timestamp, freshness, coverage, contradictions, and the Neural Web shadow packet. The adapter must run after Prophet selection.
+
+Acceptance gates:
+
+- candidate membership, rank, confidence, size, gates, and execution decision are byte-identical with the adapter on/off;
+- timeouts and malformed Government Revenue packets fail open to Prophet's preexisting decision;
+- Prophet cannot call Government Revenue to source a candidate;
+- authority remains `display/context`; and
+- every rendered annotation traces to the exact candidate/evidence generation.
+
+### Wave 9G — prospective grader and first preregistered family
+
+**Goal:** determine whether the lobe has predictive value rather than merely persuasive narratives.
+
+Preregister one narrow family first. Recommended starting family: exact-issuer, receipt-bound positive funded-action acceleration, optionally separated from ceiling-only changes. Do not combine multiple catalyst families until each can be graded independently.
+
+Build:
+
+- immutable issuance log with candidate payload hash and `known_at`;
+- fixed forward horizons aligned to the event's economic thesis;
+- market/sector-relative returns, hit rate, calibration, coverage, drawdown, and abstention metrics;
+- earnings-window and subsequent-filings outcome labels where available;
+- counterfactual cohorts and naive baselines;
+- corrections/retractions policy fixed before observation; and
+- versioned preregistration documents and no-leakage tests.
+
+Acceptance gates:
+
+- grader reads only information available at issuance;
+- missing prices, mappings, or source outages produce explicit ungraded/abstained states;
+- no threshold tuning on the held-forward window;
+- negative and null outcomes are preserved;
+- evaluation separates identity coverage, event coverage, and market outcome; and
+- authority remains unchanged regardless of attractive early results.
+
+### Wave 10 — official catalyst and progression rails
+
+Build these as separate evidence lanes, not one mega-wave:
+
+1. **IDV child bridge:** exact source-native parent/child relationships into prime-award dossiers; distinguish vehicle membership, task orders, and count-only coverage.
+2. **DoD budget graph:** immutable PDF/page/hash receipts; request, authorization, appropriation, and execution remain separate; PE/line/program identifiers precede any reviewed company edge.
+3. **SBIR progression:** append-only SBIR.gov Phase I/II observations and exact award/company identity; progression is evidence, not proof of production conversion.
+4. **SAM lifecycle:** first-seen opportunity observations, amendments, archive state, and exact notice → award linkage after a complete baseline.
+5. **Recompete outcome:** expected expiry → solicitation → award chain, incumbent/challenger identity, and displacement/share-gain labels.
+
+The SAM key currently appears constrained to a low daily quota shared with nightly radar. The scheduled workflow's nominal 30-minute cadence does not mean 30-minute upstream polling: quota gating restricts scheduled SAM collection to approximately 00–01 UTC, while manual dispatch can bypass the time gate. Do not claim intraday SAM freshness without a managed/higher-tier key and production evidence.
+
+Acceptance gates for every new rail:
+
+- source-native identity and immutable receipts;
+- explicit collection universe and omission states;
+- separate source, effective, observed, and known-at time;
+- first baseline cannot synthesize history;
+- no semantic-similarity-only issuer/program joins;
+- source failure cannot erase last-good evidence; and
+- candidate impact remains off until the family is preregistered and prospectively gradeable.
+
+### Wave 11 — earnings and revenue translation
+
+**Goal:** connect procurement evidence to investable questions without equating federal values with accounting revenue.
+
+Integrate the central company-intelligence/document engines when their contracts are stable:
+
+- filings, earnings transcripts, guidance, backlog, funded backlog, bookings, and segment revenue;
+- award velocity and modification velocity by issuer and program;
+- book-to-bill proxy with a plainly named methodology and limitations;
+- contract concentration and agency/program exposure;
+- funded obligation versus ceiling-versus-announcement reconciliation;
+- program funding changes that precede disclosed revenue;
+- earnings-window catalyst calendar and post-event reconciliation; and
+- management-language change, corroboration, and contradiction.
+
+Acceptance gates:
+
+- obligation, outlay, ceiling, bookings, backlog, funded backlog, and GAAP revenue are never conflated;
+- one-to-many program/company allocation is visible and never forced to sum without support;
+- document claims carry filing/transcript page or passage provenance;
+- estimates are labeled as estimates with reproducible inputs;
+- PIT joins use the document publication/acceptance time; and
+- Government Revenue cannot silently replace the central issuer or earnings authority.
+
+### Wave 12 — validated confluence and authority proposal
+
+Only after prospective evidence exists, test whether Government Revenue adds incremental value to Prophet/Neural Web beyond the existing baseline.
+
+Required gauntlet:
+
+- data availability and coverage thresholds;
+- calibration and ranking lift against named baselines;
+- regime and sector stability;
+- source-outage and stale-data behavior;
+- leakage and survivorship audit;
+- capacity/liquidity and realistic timestamping;
+- contradiction and retraction handling;
+- shadow canary and kill switch; and
+- independent approval through the Mastermind authority process.
+
+An LLM, UI change, or strong backtest cannot promote authority. The first authority proposal should be narrow: one preregistered event family, a bounded issuer universe, explicit abstention, and rollback. Do not request blanket Government Revenue signal-origination authority.
+
+### Wave 13 — breadth and commercial parity
+
+After the investor-edge loop is validated, expand product breadth:
+
+- grants, OTAs with source-native lineage, DIBBS, procurement forecasts, and GAO protests;
+- state/local/education procurement if licensed sources justify it;
+- bid/no-bid and capture workflows, teaming maps, incumbent intelligence, and pipeline collaboration;
+- evidence-aware semantic search/RAG, MCP tools, alerts, exports, and APIs;
+- user/account sync and team workspaces; and
+- sector-lobe interoperability for biopharma, shipping/import-export, and future niches.
+
+Investor foresight comes before CRM parity. Do not spend a wave reproducing every HigherGov/GovTribe capture-management feature while the forward event grader is still empty.
+
+## Frontend and UX direction
+
+Preserve the current premium operator-cockpit direction. The UI should feel like a billion-dollar intelligence SaaS product, but beauty must clarify state rather than obscure it.
+
+- Keep ticker/company visibility primary: users should immediately see who is emitting, why, when, and with what evidence.
+- Separate `Candidates`, `Watch`, `Mapping needed`, `Stale`, and `Unavailable`; do not bury them in one empty table.
+- Use progressive disclosure: concise candidate cards → evidence packet → source receipt/lineage.
+- Keep funded dollars, ceiling, action delta, confidence, coverage, and freshness visually distinct.
+- Show counterevidence and abstention beside the thesis.
+- Make unavailable and partial states designed states, not broken-looking placeholders.
+- Keep responsive behavior native; no desktop table squeezed into mobile.
+- Use motion only for changed state, new evidence, and graph traversal—not decoration.
+- Prefer one coherent cross-lobe shell and shared design tokens when BioCatalyst and future shipping lobes converge; preserve sector-native workflows inside each lobe.
+- Do not add a fused `AI score`. Users need inspectable catalyst families and named confluence legs.
+
+Before a major new frontend surface, inspect the live page at desktop and mobile widths. Reuse the existing workbench, candidate, dossier, drawer, and data-sync contracts rather than introducing a parallel application shell.
+
+## Claude's recommended first PR
+
+Branch purpose: `govrev-award-event-spine-recovery`.
+
+Do only Wave 9C persistence diagnosis and the minimum safe fix:
+
+1. fetch `origin/main` and create a clean worktree;
+2. reproduce the 2026-08-06 `ledger_write_failed` path from committed fixtures/artifacts without mutating canonical data;
+3. capture the complete traceback and identify the exact column/value/schema conflict;
+4. add the smallest regression fixture that fails before the fix;
+5. make event serialization deterministic and Parquet-safe;
+6. prove atomic rollback and last-good preservation;
+7. materialize/activate the triad only if baseline eligibility rules are actually satisfied;
+8. rebuild candidates and confirm the first baseline emits zero;
+9. run focused and broader Government Revenue tests;
+10. ship through PR, squash merge, render/deploy, `/api/health`, latest API, candidate API, and live-page checks.
+
+Do not combine issuer expansion, Neural Web, Prophet, DoD budget, or new UI work into that recovery PR.
+
+## Likely validation commands
+
+Adapt to changed files and current repo guidance; do not blindly treat this as exhaustive.
+
+```bash
+python3 -m pytest -q \
+  tests/test_usaspending_awards.py \
+  tests/test_government_revenue_award_spine.py \
+  tests/test_government_revenue_candidates.py \
+  tests/test_build_government_revenue.py \
+  tests/test_government_revenue_api.py
+
+python3 scripts/build_government_revenue.py --help
+python3 scripts/check_template_site_sync.py
+python3 scripts/check_government_revenue_projection.py
+python3 -m pytest -q tests/test_dashboard_cold_load_budget.py
+git diff --check
+```
+
+Also run every focused test named by the touched modules plus the existing Government Revenue projection, UI/asset, recipient graph, dossier, subaward, IDV, budget, Neural Web, and Prophet contract tests when their boundaries are affected. Never weaken a failing authority or projection test just to unblock the render.
+
+## Definition of done for every wave
+
+1. Start from freshly fetched `origin/main` in a dedicated clean worktree/`codex/` branch.
+2. Preserve unrelated work and stage only explicit task paths.
+3. Update the contract, fixtures, tests, and handoff/status documentation together.
+4. Run focused tests, broad relevant tests, syntax/template/projection guards, and `git diff --check`.
+5. Push and open a PR targeting `main`.
+6. Wait for required checks and squash-merge the same day.
+7. Verify the merge is on `origin/main`.
+8. Wait for render/deploy workflows and the VPS poller.
+9. Verify `https://mastermind-x.com/api/health` has advanced to the merge or a descendant.
+10. Verify the changed API/artifact and the live UI at desktop and mobile widths.
+
+If a wave cannot complete this loop, report the exact blocked step and preserve a reproducible next command. Local code or an open PR is not completion.
+
+## Non-negotiable prohibitions
+
+- Do not use or retain competitor credentials.
+- Do not copy authenticated competitor UI, code, models, or proprietary records.
+- Do not infer issuer identity from a search ticker or fuzzy company name.
+- Do not let identity coverage alone create a candidate.
+- Do not backfill current state as historical knowledge.
+- Do not emit first-baseline rows as events.
+- Do not call an IDV relationship a vehicle seat without source proof.
+- Do not call SBIR phase movement production conversion without an exact production award chain.
+- Do not allocate a DoD budget line to a company by semantic similarity.
+- Do not equate obligations, ceilings, backlog, bookings, or revenue.
+- Do not claim 30-minute SAM freshness from a 30-minute scheduler when quota gates prevent it.
+- Do not hide missingness or contradiction inside a fused score.
+- Do not let Government Revenue alter Prophet candidates, rank, confidence, sizing, gates, or execution before explicit authority approval.
+- Do not let an LLM originate, escalate, or self-authorize a signal.
+- Do not rebuild shared company, document, market, or signal infrastructure owned by another lane.
+
+## Ready-to-paste resume prompt for Claude
+
+> Continue the Government Revenue Foresight build from `research/GOVERNMENT_REVENUE_FORESIGHT_ACCOUNT_HANDOFF.md`. Treat that file as the canonical current implementation checkpoint and `research/GOVERNMENT_REVENUE_FORESIGHT_MASTERPLAN_FOR_FABLE.md` as product/architecture authority. Read repo `CLAUDE.md`, `AGENTS.md`, the Wave 9 candidate docket, active build map, and do-not-rebuild registry. Verify GitHub and production state before trusting the dated snapshot. Start with the narrow Wave 9C award-event persistence recovery PR: reproduce the Aug. 6 `ledger_write_failed` error, capture the full traceback, add a regression, preserve atomic/last-good semantics, and activate the receipt-bound event triad only if baseline gates genuinely pass. First baseline must emit zero candidates. Do not add mappings, Neural Web, Prophet, budget, or UI scope to the recovery PR. Complete the repo's full branch → test → PR → squash merge → deploy → production verification loop before moving to the next wave.
+
+## End state
+
+The target is not a procurement-data clone. It is a clean-room, evidence-native Government Revenue intelligence lobe that can show which listed defense companies have a real, newly observed, economically meaningful procurement change; explain the exact source and issuer chain; test independent confirming or contradicting context; measure forward usefulness; and only then earn a narrowly governed role in Prophet and Neural Web.

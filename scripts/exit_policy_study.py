@@ -1124,9 +1124,34 @@ def calibrate(board_days: Mapping[str, Iterable[str]], closes: pd.DataFrame,
     """Re-derive the shipped ledger summary on the FULL (uncoverage-filtered) cohort.
 
     Deliberately NOT the horse-race cohort: the ledger scores every episode with a close
-    path, while the horse race additionally requires a high/low path for ATR. Running the
-    calibration on the ledger's own cohort is what makes a non-zero delta mean "the
-    reconstruction drifted" rather than "the cohorts differ".
+    path, while the horse race additionally requires a high/low path for ATR.
+
+    A ZERO DELTA MEANS "SAME CODE **AND** SAME INPUTS" — NOT "SAME CODE" (2026-08-06).
+    ------------------------------------------------------------------------------------
+    This block compares a LIVE recomputation against a COMMITTED artifact, so it is only
+    ever exact when one nightly run wrote both. Two input movements break it with no code
+    change whatsoever, and the 2026-08-06 failure carried both at once:
+
+      * FRONTIER — `daily` died 08-02..08-06, but its *collect* step still committed
+        prices on 08-06 (caches 07-31 -> 08-05) while the *grading* step never re-ran.
+        The shipped ledger was graded through 07-31. Three extra sessions matured 84 more
+        episodes across 3 more board days: the n_matured / n_board_days deltas.
+      * VINTAGE — that same collect RE-ADJUSTED 240 *historical* closes across 12
+        dividend names (OKE, AMP, SYF, EQT, NRG, C, ...) by 0.56..1.18%, the ordinary
+        total-return re-adjustment that lands on a new ex-date. ~6 marginal verdicts
+        flipped and median_hold moved 9->10: 12 further deltas that SURVIVE any date clip.
+
+    So a date clip cannot restore like-for-like, and neither can any field on the shipped
+    artifact: `as_of` is `boards[-1]["as_of"]` (the last BOARD date, advanced by a
+    different lane than prices), and `meta.continuity.last_session` is deliberately a
+    THIRD lane's clock (SPY) — it read 08-04 while grading had seen 07-31.
+
+    Reconstruction FIDELITY is therefore pinned against a frozen input slice instead:
+    ``tests/fixtures/exit_policy_vintage`` (regenerate with
+    ``scripts/build_exit_policy_vintage_fixture.py``). Against that slice this function
+    returns ``exact_match`` and every delta is 0, so a non-zero delta there — and only
+    there — means the reconstruction drifted. Against LIVE inputs the honest reading is
+    ``coupling``: whether the ledger and the price caches came from the same run.
     """
     scored, n_inflight, skipped = [], 0, []
     ob: dict[str, pd.Series | None] = {}
@@ -1161,9 +1186,10 @@ def calibrate(board_days: Mapping[str, Iterable[str]], closes: pd.DataFrame,
                            n_skipped=len(skipped), horizon=LEDGER_HORIZON)
 
     path = ledger_path if ledger_path is not None else LEDGER_JSON
-    shipped: dict[str, Any] = {}
+    doc: dict[str, Any] = {}
     if Path(path).exists():
-        shipped = (json.loads(Path(path).read_text()) or {}).get("summary") or {}
+        doc = json.loads(Path(path).read_text()) or {}
+    shipped: dict[str, Any] = doc.get("summary") or {}
     deltas = {}
     for k in _CALIB_KEYS:
         a, b = rebuilt.get(k), shipped.get(k)
@@ -1175,14 +1201,80 @@ def calibrate(board_days: Mapping[str, Iterable[str]], closes: pd.DataFrame,
     return {"rebuilt": rebuilt, "shipped": shipped, "deltas": deltas,
             "n_skipped_no_price": len(skipped),
             "tickers_skipped": sorted(set(skipped)),
-            "exact_match": bool(exact and shipped)}
+            "exact_match": bool(exact and shipped),
+            "coupling": _coupling(closes, doc)}
+
+
+def _coupling(closes: pd.DataFrame, ledger_doc: Mapping[str, Any]) -> dict:
+    """Were the shipped ledger and the price panel written by the SAME nightly run?
+
+    The question every non-zero calibration delta has to answer first — see calibrate's
+    docstring. ``priced_through`` is the grader's own disclosure of the last session it
+    graded against (``scripts/grade_us_board.emit_ledger``); it is the ONLY field that
+    answers this, which is why it exists. Artifacts written before 2026-08-06 carry no
+    such stamp, and their vintage is simply not knowable from the file — reported as
+    ``unknown`` rather than guessed, because inferring the frontier from the counts it is
+    supposed to explain would make any real drift refit itself into invisibility.
+    """
+    price_asof = str(closes.index.max().date()) if len(closes.index) else None
+    meta = ledger_doc.get("meta") or {}
+    graded_through = meta.get("priced_through")
+    sessions_ahead = None
+    if graded_through and price_asof and len(closes.index):
+        sessions_ahead = int((closes.index > pd.Timestamp(graded_through)).sum())
+    return {
+        "price_asof": price_asof,
+        "ledger_priced_through": graded_through,
+        "ledger_as_of": ledger_doc.get("as_of"),   # last BOARD date — NOT a price frontier
+        "sessions_ahead": sessions_ahead,
+        "same_run": (graded_through == price_asof) if graded_through else None,
+    }
+
+
+def coupling_warning(cal: Mapping[str, Any]) -> str | None:
+    """A line-start ``::warning`` when the ledger and the caches are from different runs.
+
+    Warn-only display tier, matching ``grade_us_board``'s board-continuity guard: a
+    desynced lane is an OPS condition, not a defect in whatever PR happens to be running,
+    so it is annotated rather than gated. The reconstruction guard that IS fail-closed
+    runs against the frozen fixture instead.
+
+    Repo annotation law: the returned string IS the line — print it BARE with flush=True,
+    never through a logger, or GitHub silently drops it.
+    """
+    c = cal.get("coupling") or {}
+    if not cal.get("shipped"):
+        return None
+    got, want = c.get("price_asof"), c.get("ledger_priced_through")
+    if want is None:
+        return ("::warning title=exit-policy-ledger-coupling::shipped us_track_ledger.json "
+                "discloses no meta.priced_through, so the price vintage it was graded "
+                f"against cannot be checked against the caches (now through {got}); "
+                "calibration deltas here are NOT evidence of reconstruction drift")
+    if want == got:
+        return None
+    n = c.get("sessions_ahead")
+    return ("::warning title=exit-policy-ledger-coupling::shipped us_track_ledger.json was "
+            f"graded through {want} but the price caches now run to {got}"
+            f"{f' ({n} sessions ahead)' if n else ''} — the nightly grader has not re-run "
+            "since collect last advanced prices, so its summary is a different vintage; "
+            "calibration deltas against it measure that gap, not reconstruction drift")
 
 
 # --------------------------------------------------------------------------- #
 # study
 # --------------------------------------------------------------------------- #
-def run_study(root: Path | None = None) -> dict:
-    """Everything, deterministically. Returns the full result dict the report renders."""
+def run_study(root: Path | None = None, *, ledger_path: Path | None = None) -> dict:
+    """Everything, deterministically. Returns the full result dict the report renders.
+
+    ``root`` relocates EVERY input, ledger included: before 2026-08-06 the calibration
+    still read the live ``LEDGER_JSON`` while the panels came from ``root``, so a run
+    against a frozen slice silently compared it to today's artifact — the one leak that
+    would have made the vintage fixture below prove nothing.
+    """
+    if ledger_path is None:
+        ledger_path = (Path(root) / "site" / "factordata" / "us_track_ledger.json"
+                       if root is not None else LEDGER_JSON)
     closes, highs, lows, bench = load_prices(root)
     board_days, invalidation, prov = load_board_days(root)
     cohort, exclusions = build_cohort(board_days, invalidation, closes, highs, lows)
@@ -1256,7 +1348,7 @@ def run_study(root: Path | None = None) -> dict:
             "r_pct_p90": round(float(np.percentile(plan_r, 90)), 2) if plan_r else None,
             "target_pct_median": round(float(np.median(plan_r)) * PLAN_R_MULT, 2) if plan_r else None,
         },
-        "calibration": calibrate(board_days, closes, bench),
+        "calibration": calibrate(board_days, closes, bench, ledger_path=ledger_path),
     }
 
 
@@ -2018,6 +2110,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     res = run_study()
+    # BARE print, line-start, flush=True — repo annotation law. Routing this through a
+    # logger prefixes the line and GitHub drops the annotation silently.
+    _warn = coupling_warning(res["calibration"])
+    if _warn:
+        print(_warn, flush=True)
     md = render_report(res)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
