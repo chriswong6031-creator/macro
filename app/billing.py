@@ -62,7 +62,23 @@ router = APIRouter()
 REPO = Path(os.environ.get("MACRO_REPO") or Path(__file__).resolve().parents[1])
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://fsldfzlxyavsuwqbceod.supabase.co").rstrip("/")
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
-# Where hosted Checkout / Portal return the browser. Apex, not www (www has broken edge TLS).
+# Where hosted Checkout / Portal return the browser.
+#
+# This default is the APEX, and app/deploy/Caddyfile 301s the apex to www — so every Checkout
+# and Portal return pays one extra redirect hop before the page paints. Measured live 2026-08-07:
+# ~1.4s median via the apex vs ~0.6s landing on www directly. The redirect carries {uri}, so the
+# query string (`?checkout=success`, Stripe's `?session_id=`) survives it — nothing breaks; it is
+# pure latency on the highest-intent moment in the funnel. It also makes the payment-return path
+# the ONLY thing in the product that depends on the apex host, so an apex-only cert or edge
+# failure would break Checkout returns while the rest of the site stayed green.
+#
+# NOT true: "www has broken edge TLS" (this comment's original claim, #3178). www is served by
+# EdgeOne behind a valid public cert and is canonical everywhere else in the estate
+# (templates/_public_nav.html.j2, app/billing_emails.py, tests/test_public_chrome.py). The
+# self-signed cert is the ORIGIN's (`tls internal` in the Caddyfile's www block), sitting behind
+# the CDN's non-strict origin pull — a browser never sees it.
+#
+# Set MM_SITE_BASE=https://www.mastermind-x.com in /etc/macro-api.env to drop the hop.
 MM_SITE_BASE = os.environ.get("MM_SITE_BASE", "https://mastermind-x.com").rstrip("/")
 # Stripe Tax is an account-level setting (origin address required). Default ON per masterplan;
 # the operator can force it off with STRIPE_AUTOMATIC_TAX=0 until the account is configured.
