@@ -257,6 +257,12 @@ public:
     - /live/quotes.json
     - /live/breadth.json
     - /live/release_publications.json
+    # Freshness-sentinel staleness state (masterplan W1 dead-man switch). Public
+    # by design: it is the input the on-site staleness banner reads, and a
+    # banner that only authenticated users can see defeats its purpose. Carries
+    # only per-surface freshness verdicts and timestamps — no ticker rows,
+    # scores, or customer data.
+    - /live/staleness.json
     - /prophet/showcase.json
     # Claim-bounded methodology only: explicitly reports that live forecasts,
     # screener data, and the event graph are not yet commissioned. It contains

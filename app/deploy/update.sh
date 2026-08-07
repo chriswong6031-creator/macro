@@ -354,6 +354,45 @@ if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
 	fi
 fi
 
+# FRESHNESS SENTINEL — the dead-man switch that must live OUTSIDE GitHub
+# (masterplan W1). Same self-arming contract as the Prophet block above and for
+# the same reason: go-live is a REPO COMMIT — the unit did not exist when
+# live-setup.sh last ran, so a CHANGED-only trigger would install a timer nobody
+# ever enables. The live-fast guard marks the serving VPS (the box this watch
+# must run on) and keeps the block inert everywhere else. `enable --now` on an
+# already-enabled timer is a systemd no-op; the absent-file clause self-heals an
+# earlier failed verify or an operator removal.
+#
+# The .service is NEVER restarted — it is a oneshot; only the timer is (re)armed.
+if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
+   { echo "$CHANGED" | grep -qE '^app/deploy/macro-sentinel\.(service|timer)$' || \
+     [ ! -f /etc/systemd/system/macro-sentinel.timer ]; }; then
+	SENTINEL_UNIT_SOURCES=(
+		"$APP_DIR/app/deploy/macro-sentinel.service"
+		"$APP_DIR/app/deploy/macro-sentinel.timer"
+	)
+	if systemd-analyze verify "${SENTINEL_UNIT_SOURCES[@]}"; then
+		SENTINEL_UNIT_UPDATED=0
+		for UNIT_SOURCE in "${SENTINEL_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				SENTINEL_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$SENTINEL_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			systemctl restart macro-sentinel.timer 2>/dev/null || true
+			RECONCILED=1
+			echo "macro-update: macro-sentinel units updated"
+		fi
+		systemctl enable --now macro-sentinel.timer >/dev/null 2>&1 || \
+			echo "macro-update: macro-sentinel.timer could not be enabled" >&2
+	else
+		echo "macro-update: refusing macro-sentinel unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+
 # PRESS-FEEDS is a long-running daemon, unlike the oneshot live-plane timers
 # above. Arming remains an explicit operator choice: this block neither installs
 # an absent unit nor enables/starts an inactive one. Once the operator has

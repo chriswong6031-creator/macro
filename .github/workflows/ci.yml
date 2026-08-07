@@ -2514,6 +2514,16 @@ on:
       # router must reach it. hub.py was the last one matching no other job here
       # (brain_runs.py and tape_decode.py are already listed above).
       - "app/hub.py"
+      # W1 freshness sentinel (the dead-man switch) and BOTH its subjects. The
+      # units and the script are what a change would edit; without them a PR
+      # retuning a freshness budget or a systemd cap would run the guard on
+      # nothing (#3509 lesson — a guard the guarded change cannot trigger is
+      # not a guard). app/deploy/update.sh + config/site_access.yml already
+      # appear elsewhere in this list and carry the arming/boundary halves.
+      - "tests/test_freshness_sentinel.py"
+      - "scripts/freshness_sentinel.py"
+      - "app/deploy/macro-sentinel.service"
+      - "app/deploy/macro-sentinel.timer"
       - "tests/test_ei_f1d_shadow.py"
       - "tests/test_exit_tax_scenarios.py"
       - "tests/test_expanding_mean_benchmark.py"

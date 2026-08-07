@@ -722,6 +722,12 @@ PUBLIC_EXACT = frozenset({
     "/live/quotes.json", "/live/breadth.json",
     # Official agency event lifecycle/facts; no signal, portfolio or user data.
     "/live/release_publications.json",
+    # Freshness-sentinel staleness state (masterplan W1 dead-man switch) — public
+    # BY DECISION, not as a side effect: it is what the on-site staleness banner
+    # reads, and a banner only logged-in readers can see would leave anonymous
+    # visitors looking at a frozen board with no disclosure. Payload is per-surface
+    # freshness verdicts and timestamps; no signal, portfolio or user data.
+    "/live/staleness.json",
     "/prophet/showcase.json",
     "/seasonalitydata/methodology.json",
     # Stock seasonality calendar clock — public BY DECISION (design-spec §10), not
