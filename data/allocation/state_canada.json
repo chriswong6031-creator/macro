@@ -12,15 +12,17 @@
     "ca_pipelines",
     "ca_rails_ind",
     "ca_reits",
+    "ca_silver_royalty",
+    "ca_tech",
     "ca_utilities"
   ],
   "held": [
-    "ca_banks",
     "ca_base_metals",
-    "ca_pipelines",
-    "ca_utilities"
+    "ca_banks",
+    "ca_silver_royalty",
+    "ca_pipelines"
   ],
-  "leader": "ca_banks",
+  "leader": "ca_base_metals",
   "names": {
     "ca_asset_mgrs": "Asset Managers & Alternatives",
     "ca_banks": "Big Banks",

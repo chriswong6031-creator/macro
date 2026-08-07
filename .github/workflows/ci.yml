@@ -90,6 +90,16 @@ on:
       # fire on EVERY python change needs "scripts/**"/"engine/**" here, which is a
       # CI-cost call for the operator (it would run the whole pack on most PRs).
       - "tests/test_gh_annotation_line_start.py"
+      # sys.modules leak guard. Its RUNTIME half lives in tests/conftest.py (already
+      # listed at the top of this block, which triggers the full suite), so this line
+      # covers the STATIC half: an edit to the scan itself must run the scan. Same
+      # both-halves reasoning as the collect-checkpoint pair below.
+      - "tests/test_no_module_leak.py"
+      # collect-lane qledger staging guard. Its SUBJECT — daily.yml / asia-close.yml —
+      # reaches CI via ".github/workflows/**"; this line is the other direction. The
+      # suite was named by no `run:` step at all until 2026-08-06, which is how #4731's
+      # second checkpoint left it red on main for two days looking like test flake.
+      - "tests/test_collect_staging_globs.py"
       # admin-js no-undef guard: admin/static/app.js is a flat top-level script, so a
       # name declared in one function and read from another parses clean and throws
       # only on click (#3693 blanked the Outbox panel for ~2 days; fixed in #3871).
@@ -186,6 +196,14 @@ on:
       # flip-isolation construction still isolates exactly one leg.
       - "research/prophet_us_audit/reclaim_veto_packet.py"
       - "tests/test_us_reclaim_veto_packet.py"
+      # ...and the packet's OWN ARTIFACTS, which tests/test_merge_on_green.py reads
+      # by path literal. Same #3488 shape one level out: the suite and its module
+      # were wired above, but the two files the suite actually opens were not, so a
+      # PR editing only the packet's findings never started the workflow-yaml job
+      # that runs the guard reading them. check_ci_trigger_closure.py hard-fails on
+      # exactly this and was red on main until these two lines existed.
+      - "research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md"
+      - "research/prophet_us_audit/reclaim_veto_packet_results_2026-08-05.json"
       # W1d trial-budget gate: any new multiple-testing harness must register its budget.
       - "scripts/*_phase0.py"
       - "scripts/*_phase1.py"
@@ -478,10 +496,11 @@ on:
       - "contracts/capital_structure_*.schema.json"
       - "docs/CAPITAL_STRUCTURE_INTELLIGENCE_CONTRACT.md"
       - "templates/capital_structure.html.j2"
-      # The collect-job veto allowlist rides in the capital-structure pack (every
-      # entry in it IS a capital-structure step). Its SUBJECT — daily.yml — already
-      # reaches CI via ".github/workflows/**"; this line covers the other direction,
-      # so an edit that only widens the allowlist still runs the suite that checks it.
+      # The collect-job checkpoint guard rides in the capital-structure pack: it
+      # pins the 2026-08-06 split that keeps every capital-structure step BELOW the
+      # market checkpoint. Its SUBJECT — daily.yml — already reaches CI via
+      # ".github/workflows/**"; this line covers the other direction, so an edit
+      # that only widens the veto allowlist still runs the suite that checks it.
       - "tests/test_daily_collect_commit_path.py"
       - "templates/capital_structure_boot.js"
       - "templates/capital_structure.css"
@@ -2548,6 +2567,13 @@ on:
       - "tests/test_data_quality_audit.py"
       - "tests/test_build_earnings_scores_from_history.py"
       - "tests/test_earnings_qual.py"
+      # The scorer's config carries BEHAVIOR, not just tuning: openai_compat's
+      # per-rung max_chars is what keeps the local 4,096-token endpoint from
+      # being handed a 24,000-char prompt (it answers 200-with-prose, not an
+      # error, and every transcript falls through to a metered provider).
+      # test_earnings_qual.py pins that bound, so an edit to the number alone
+      # must be able to start the job that measures it.
+      - "config/earnings_qual.yml"
       - "tests/test_earnings_seasons.py"
       - "tests/test_earnings_w5.py"
       - "tests/test_hk_fundamentals_collector.py"

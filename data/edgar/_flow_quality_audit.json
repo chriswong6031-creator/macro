@@ -1,5 +1,5 @@
 {
-"applied": "2026-07-30T02:04:58.632129+00:00",
+"applied": "2026-08-06T21:04:43.632624+00:00",
 "rows_flagged": 102,
 "tickers_flagged": 26,
 "by_flag": {
@@ -1553,14 +1553,14 @@
 "ticker": "LW",
 "fy": 2022,
 "col": "ni",
-"panel": 1008900000.0,
+"panel": 1009000000.0,
 "statements": 200900000.0
 },
 {
 "ticker": "LW",
 "fy": 2024,
 "col": "ni",
-"panel": 357200000.0,
+"panel": 357000000.0,
 "statements": 725500000.0
 },
 {
@@ -1616,15 +1616,22 @@
 "ticker": "NEOG",
 "fy": 2023,
 "col": "ni",
-"panel": -9421000.0,
+"panel": -9400000.0,
 "statements": -22870000.0
 },
 {
 "ticker": "NEOG",
 "fy": 2024,
 "col": "ni",
-"panel": -1092044000.0,
+"panel": -1092000000.0,
 "statements": -9421000.0
+},
+{
+"ticker": "NEOG",
+"fy": 2025,
+"col": "ni",
+"panel": -7900000.0,
+"statements": -1092044000.0
 },
 {
 "ticker": "NKE",
@@ -2227,6 +2234,13 @@
 "col": "ni",
 "panel": 34586024.0,
 "statements": 89741398.0
+},
+{
+"ticker": "WS",
+"fy": 2025,
+"col": "ni",
+"panel": 8500000.0,
+"statements": 110700000.0
 },
 {
 "ticker": "WTW",
@@ -4054,6 +4068,13 @@
 "col": "op_income",
 "panel": -19627000.0,
 "statements": -147754000.0
+},
+{
+"ticker": "NEOG",
+"fy": 2025,
+"col": "op_income",
+"panel": -21600000.0,
+"statements": -1060997000.0
 },
 {
 "ticker": "NTCT",
