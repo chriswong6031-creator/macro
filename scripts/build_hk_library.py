@@ -22,6 +22,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine import bar_derive  # noqa: E402 — display-grid anchor era + b3 boundaries (DG-R3/R6)
 from engine import i18n  # noqa: E402
 from engine import stock_score  # noqa: E402
 from engine import name_score  # noqa: E402  — per-name POTENTIAL (buy-readiness) score
@@ -260,14 +261,31 @@ def _consensus_z_map(records: dict[str, dict]) -> dict[str, float]:
     return {t: float(max(-3.0, min(3.0, (v - mu) / sd))) for t, v in ups.items()}
 
 
-def chart_series(close: pd.Series, n: int = 504) -> dict:
+def chart_series(close: pd.Series, n: int = 504, market: str = "HK") -> dict:
     """Compact columnar close history for the client-side chart (the last ~2y of
     daily closes). TradingView's free embed gates HKEX data behind a login, so the
     HK pages draw the chart from OUR stored prices via TradingView Lightweight
-    Charts (open-source) instead — same 'repo is the database' philosophy."""
-    c = close.dropna().tail(n)
-    return {"t": [str(d.date()) for d in c.index],
-            "c": [round(float(v), 3) for v in c.values]}
+    Charts (open-source) instead — same 'repo is the database' philosophy.
+
+    Carries the display-grid ``anchor`` block (DG-R3/R6, ruling
+    ``research/DISPLAY_GRID_ALIGNMENT_ADJUDICATION_BY_FABLE.md``): hk_lookup mounts THIS
+    series inline (``StockChart.mount(..., {data})`` short-circuits the ``hkohlc/`` fetch),
+    so without it the HK chart would be the one surface still grouping 3D candles by
+    ``floor(i/3)`` over a window that slides one session per night. ``b3`` is cut on the HK
+    reference session calendar (the HSI index store) and the ``tail(n)`` window START is
+    trimmed forward (<=2 rows) so the first candle is complete — the DG-R4 stabiliser.
+    """
+    c = close.dropna()
+    c = c[~c.index.duplicated(keep="last")].sort_index()
+    win = c.tail(n)
+    if len(win) and len(c) > len(win):
+        cut = bar_derive.trim_rows_to_bucket_open(
+            win.index, c.index[len(c) - len(win) - 1], market)
+        if cut:
+            win = win.iloc[cut:]
+    return {"t": [str(d.date()) for d in win.index],
+            "c": [round(float(v), 3) for v in win.values],
+            "anchor": bar_derive.chart_anchor(win.index, market)}
 
 
 def _safe(ticker: str) -> str:
