@@ -24,11 +24,14 @@ recorded below with its evidence.
      identifiers**, which are 30 UEIs for ONE legal entity (`NORTHROP GRUMMAN SYSTEMS CORPORATION`)
      because SAM issues a UEI per registered establishment.
 
-2. **The published track record moves if the canon fix lands.** See §"Canon violation" below. The
-   shipped track-record exit rule computes 3D buckets a different way than the repo's own canonical
-   helper, and the two disagree on **6.6% of daily states (up to 11.8% on GD)**, systematically. A
-   correctness fix is in flight; its PR states the before/after numbers. Landing it changes
-   user-facing published numbers, so it is your call whether to merge it as-is or stage it.
+2. **An era break on the published track record is due, and it is not mine.**
+   `tests/test_ob_mask_start_invariance.py::test_start_invariance` is RED on main — an
+   `xfail(strict=True)` tripwire that fired **as designed** when #4732 re-anchored the timeframe grid
+   to the absolute session calendar. It firing means the published track record moved and the era
+   break is owed. Already owned by open PRs **#4942** and **#4934**; nothing for me to do but flag
+   that it is real and waiting on your call.
+   *(An earlier draft of this document claimed I had found a live canon violation here. That was
+   wrong and is retracted in full below — I had read a worktree 330 commits stale.)*
 
 3. **BWXT collects zero USAspending recipients.** Almost certainly a discovery-query defect rather
    than a true zero (BWX Technologies is a large naval-nuclear contractor). Diagnosis in flight.
@@ -42,6 +45,12 @@ Recording these explicitly, because both were wrong when I said them.
 - **"Wave 9G is next."** It was already built and merged — PR #4813, merged 2026-08-07T07:13:50Z,
   shipping `engine/government_revenue/candidate_grader.py`, a versioned preregistration, and its
   test suite. I verified it on `origin/main` myself. What I *did* contribute is below.
+- **"I found a canon violation on the shipped track record."** I had not. I read
+  `engine/confluence_tiers.py` in a worktree **330 commits behind `origin/main`**; the calendar
+  `resample("{n}B")` I "found" was replaced by absolute-session anchoring in #4732. Retracted in
+  full below, with the second error stacked on top of it (a direction generalised from a
+  defense-heavy 12-name sample that the full 1,494-name panel does not support). My own notes name
+  this exact failure — *run `git log origin/main -- <file>` FIRST* — and I did not.
 - **"203 edges" as a coverage number.** That is an *identifier* count. The honest breadth figure is
   **101 legal entities across 19 issuers**. NOC alone contributes 30 identifiers for one company.
   Quoting 203 as though it were 203 companies is exactly the kind of impressive-sounding number this
@@ -186,33 +195,55 @@ the correct state, not a failure. It returns a valid empty evaluation: `verdict_
 
 ---
 
-## Canon violation on the shipped track record
+## RETRACTED: the "canon violation on the shipped track record"
 
-`engine/confluence_tiers.py:197` `_tf_bars` buckets with `daily.resample(f"{n}B")` — calendar
-business-day bins that re-anchor on holidays and listing gaps. `engine/canon.py:353`
-`resample_sessions` is the corrected session-ordinal implementation, and canon.py's module docstring
-states the law: *"A concept computed two ways is a bug the moment the two disagree."*
+**I reported a defect that does not exist. Retracting it in full, with the cause.**
 
-They disagree. Measured on the 3D StochRSI overbought mask, over the real price panel:
+I read `engine/confluence_tiers.py:197` in a worktree that was **330 commits behind
+`origin/main`** and found `_tf_bars` bucketing with calendar `daily.resample(f"{n}B")`. On current
+main that function is already session-anchored —
+`bucket(d) = session_anchor.session_positions(d, market) // n` — repaired in **#4732**
+(`2a0c5e27184`, era `abs-session-2026-08-06`) with its own ruling doc
+`research/SESSION_ANCHOR_ABSOLUTE_CALENDAR_ADJUDICATION_BY_FABLE.md`. The repair's own docstring
+records the blast radius it fixed: one dropped leading bar flipped the tier on 13/232 names.
 
-| ticker | days | differ | % | OB shipped | OB canon |
-|---|---|---|---|---|---|
-| GD | 348 | 41 | **11.8%** | 104 | 85 |
-| NVDA | 348 | 35 | 10.1% | 56 | 21 |
-| MSFT | 348 | 33 | 9.5% | 57 | 24 |
-| NOC | 348 | 32 | 9.2% | 101 | 85 |
-| RTX | 348 | 26 | 7.5% | 84 | 70 |
-| LDOS | 348 | 26 | 7.5% | 46 | 34 |
-| AVAV | 776 | 39 | 5.0% | 193 | 174 |
-| **total** | **4604** | **303** | **6.6%** | | |
+This is precisely the failure my own notes name — *stale worktree diagnoses a fixed bug; run
+`git log origin/main -- <file>` FIRST*. I did not.
 
-The divergence is **systematic**, not noise — the calendar path reports MORE overbought days almost
-everywhere. This matters because `_tf_bars` feeds `_ob_mask` (`scripts/grade_us_board.py:1719`),
-which is the **target exit** of the shipped track-record ledger. An over-firing exit systematically
-shortens holds. `_tf_bars` also feeds `cascade()`, which grades the board itself — a larger blast
-radius, measured separately before any change.
+**A second, independent error on top of it.** I measured the divergence on 12 tickers and reported
+that the calendar path fires overbought "more almost everywhere". Over the full broad panel (1,494
+names, 940,756 ticker-days) the split is **819 names higher / 637 LOWER / 38 equal** — 56/44, with
+only +1.4% relative difference. The magnitude of disagreement (6.78% of ticker-days) was real, but
+**the sign is close to a coin flip**. My sample was defense-sector-heavy and overstated the
+systematicity. The "over-firing exit systematically shortens holds and moves the published track
+record downward" story is not supported at panel scale.
 
----
+**What the investigation was actually worth.** Routing `_tf_bars` to `canon.resample_sessions` — my
+proposed "fix" — would have been a **regression**. Measured over 1,185 name×start-offset pairs:
+
+| grid | any-field flips under a dropped leading session |
+|---|---|
+| `_tf_bars` as shipped | **0 / 1185 — 0.00%** |
+| `canon.resample_sessions` as a delegate | 152 / 1185 — **12.83%** |
+| pre-#4732 calendar `{n}B` | 153 / 1185 — 12.91% |
+
+`canon.resample_sessions` is as start-dependent as the calendar bin it would have replaced, and
+carries no `market` parameter (it would bucket CN/HK/CA tapes on the US grid). Five production
+consumers ride `_tf_bars`.
+
+So the two implementations are **deliberately different anchors**, and canon.py's docstring law
+("a concept computed two ways is a bug the moment the two disagree") had no guard behind it either
+way. That guard now exists — **PR #4949** adds 8 tests to `tests/test_canon.py` pinning the
+byte-for-byte tie on an aligned contiguous window, the never-a-calendar-bin regression, and
+start-invariance holding for `_tf_bars` and explicitly NOT for canon, so neither can be silently
+made a delegate of the other. Docstring-only change to `engine/canon.py`; no behaviour change, no
+golden vector moved.
+
+**Genuinely open, found during this work:** `tests/test_ob_mask_start_invariance.py::test_start_invariance`
+is RED on main — an `xfail(strict=True)` tripwire that fired as designed when #4732 landed, meaning
+the published track record moved and an era break is due. Owned by open PRs **#4942** and **#4934**.
+Also `scripts/grade_us_board.py` (~:2272, :2290) still claims `_tf_bars` resamples on `3B`, which is
+now stale prose; that file is in #4942's diff.
 
 ## What I deliberately did NOT do
 
