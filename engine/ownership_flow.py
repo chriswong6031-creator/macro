@@ -297,8 +297,8 @@ def stock_flow(sm: dict | None, tracker: dict | None, cap: int = 30) -> dict | N
                           "(w: A=2, B=1.5, C=1, else 0.75); est. flow $ only where "
                           "reported value/share deltas make it computable; "
                           "descriptive rank — not a forecast."),
-            "method_zh": ("按基金评级加权的本申报周期持有人广度：买入基金 Σw(评级) 减 "
-                          "卖出基金（w：A=2，B=1.5，C=1，其余 0.75）；预估资金流仅在申报的"
+            "method_zh": ("按基金评级加权的本披露周期持有人广度：买入基金 Σw(评级) 减 "
+                          "卖出基金（w：A=2，B=1.5，C=1，其余 0.75）；预估资金流仅在披露的"
                           "市值/股数变化可计算时给出；描述性排名——非预测。"),
         }
     except Exception:  # noqa: BLE001
@@ -903,7 +903,7 @@ def models(sm: dict | None, tracker: dict | None, stock_flow_d: dict | None,
                  "rate aggregates that fund's PRIOR filing cycles only (latest "
                  "cohort excluded — unresolved); descriptive rank — not a forecast."),
                 ("本周期评级 A/B 基金的高信念新建/加仓，按 信念分×评级权重 排名；"
-                 "买家历史记录仅汇总该基金以往申报周期（最新批次尚未了结，已剔除）；"
+                 "买家历史记录仅汇总该基金以往披露周期（最新批次尚未了结，已剔除）；"
                  "描述性排名——非预测。"), asof),
             "asymmetric": _board(
                 uncrowded_rows, "Uncrowded conviction", "冷门高信念",

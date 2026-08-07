@@ -322,13 +322,14 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
   <div class="pv-chart">
     {% if cx.get('spark') %}{{ cx.spark|safe }}{% else %}<div class="pv-nochart"></div>{% endif %}
     <span class="pv-ov pv-ovl">
-      {#- NO data-tip here (operator, 2026-08-03): the verb chip's hover tip was removed.
-          It restated in prose what the card already SAYS — the chip reads "Buy", the
-          tracker shows the stage, the footer prints the zone — so "Constructive —
-          building a base · Buy zone — entry open now" bought nothing and put a popover
-          over the neighbouring card on the way. `cx.tip_en`/`tip_zh` are now ignored;
-          callers may still pass them. The ⚡ trigger tip and the ⚠N popover STAY: those
-          carry facts that appear nowhere else on the card. #}
+      {#- NO popover on the verb chip (operator 2026-08-05, extending the 2026-08-03
+          removal). BUY/WAIT/NEAR is a one-word ruling and the card already spells out
+          the same thing underneath — the stage rail, the zone row and the ⚠ notes — so
+          "Constructive — building a base · Buy zone — entry open now" bought nothing and
+          put a popover over the neighbouring card on the way. `cx.tip_en`/`tip_zh` are
+          still accepted by callers; they are simply not rendered. Same call for .pv-edge
+          and the feat/new marks below. The ⚡ trigger tip and the ⚠N popover STAY: those
+          carry facts that appear nowhere else on the card. -#}
       <span class="pv-chip">{{ t(_VEN[_verb], _VZH[_verb]) }}</span>
       {%- if cx.get('trigger') %}{% set _tg = cx.trigger %}
       <span class="pv-trg{% if _tg.kind == 'imminent' %} pv-trg-soon{% endif %}"{% if _tg.get('tip_en') %} data-tip-en="{{ _tg.tip_en|e }}" data-tip-zh="{{ (_tg.get('tip_zh') or _tg.tip_en)|e }}"{% endif %}>⚡ {% if _tg.kind == 'imminent' %}{{ t('Imminent','即将触发') }}{% else %}{{ t('Triggered','已触发') }}{% endif %}</span>
@@ -349,11 +350,16 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
   <div class="pv-bd">
     <div class="pv-hd">
       <span class="pv-idw">{% if cx.get('flag') %}<span class="pv-flg">{{ cx.flag }}</span>{% endif %}<span class="pv-tk">{{ cx.tk }}</span>{% if cx.get('name') %}<span class="pv-nm">{{ t(cx.name, cx.get('name_zh') or cx.name) }}</span>{% endif %}</span>
-      <span class="pv-edge"{% if cx.get('edge_tip_en') %} data-tip-en="{{ cx.edge_tip_en|e }}" data-tip-zh="{{ (cx.get('edge_tip_zh') or cx.edge_tip_en)|e }}"{% endif %}><span class="pv-edl">{{ t(cx.get('edge_label_en') or 'Edge', cx.get('edge_label_zh') or '优势') }}</span>{% if cx.get('edge') is not none %}<span class="pv-edn">{{ cx.edge }}</span>{% elif cx.get('edge_txt') %}<span class="pv-edn">{{ cx.edge_txt }}</span>{% else %}<span class="pv-edn pv-edna">—</span>{% endif %}</span>
+      <span class="pv-edge"><span class="pv-edl">{{ t(cx.get('edge_label_en') or 'Edge', cx.get('edge_label_zh') or '优势') }}</span>{% if cx.get('edge') is not none %}<span class="pv-edn">{{ cx.edge }}</span>{% elif cx.get('edge_txt') %}<span class="pv-edn">{{ cx.edge_txt }}</span>{% else %}<span class="pv-edn pv-edna">—</span>{% endif %}</span>
     </div>
     {% if cx.get('sec') %}<div class="pv-ind">{{ t(cx.sec, cx.get('sec_zh') or cx.sec) }}</div>{% endif %}
     {%- if cx.get('marks') is not none %}
-    <div class="pv-mk">{% for _mk in cx.marks %}<span class="pv-mk-i pv-mk-{{ _mk.get('k') or 'lane' }}"{% if _mk.get('tip_en') %} data-tip-en="{{ _mk.tip_en|e }}" data-tip-zh="{{ (_mk.get('tip_zh') or _mk.tip_en)|e }}"{% endif %}>{{ t(_mk.en, _mk.get('zh') or _mk.en) }}</span>{% endfor %}</div>
+    {#- FEATURED and NEW carry no popover (operator 2026-08-05): both are badges whose
+        whole job is to be read at a glance, and their explainers were the longest cards
+        on the board. Marks that genuinely name something the reader cannot infer (warm,
+        theme, lane) keep theirs. -#}
+    {%- set _MK_NOTIP = ('feat', 'new') -%}
+    <div class="pv-mk">{% for _mk in cx.marks %}{% set _mkk = _mk.get('k') or 'lane' %}<span class="pv-mk-i pv-mk-{{ _mkk }}"{% if _mk.get('tip_en') and _mkk not in _MK_NOTIP %} data-tip-en="{{ _mk.tip_en|e }}" data-tip-zh="{{ (_mk.get('tip_zh') or _mk.tip_en)|e }}"{% endif %}>{{ t(_mk.en, _mk.get('zh') or _mk.en) }}</span>{% endfor %}</div>
     {%- endif %}
     <div class="pv-stp">{% for _i in [1,2,3,4] %}{% if _i > 1 %}<span class="pv-seg{% if _stage >= _i %} pa{% endif %}"></span>{% endif %}<span class="pv-dot{% if _stage == _i %} on{% elif _stage > _i %} pa{% endif %}"></span>{% endfor %}</div>
     <div class="pv-stl"><span{% if _stage == 1 %} class="on"{% endif %}>{{ t('Bottoming','筑底') }}</span><span{% if _stage == 2 %} class="on"{% endif %}>{{ t('Turning','转向') }}</span><span{% if _stage == 3 %} class="on"{% endif %}>{{ t('Ready','就绪') }}</span><span{% if _stage == 4 %} class="on"{% endif %}>{{ t('Trend','趋势') }}</span></div>

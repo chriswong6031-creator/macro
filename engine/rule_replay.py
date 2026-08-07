@@ -439,6 +439,12 @@ def _compute_ema_trail_series(
     """
     from engine.signal_quality import signal_frame as _sf
 
+    # market: left at the US default DELIBERATELY. No ticker reaches this helper — its
+    # caller `_compute_per_fire` takes a bare close series — and the replay's fire tape is
+    # the US board's (`replay_boarded`). Threading the calendar down would mean changing
+    # two frozen replay signatures for no measured US difference; if a non-US replay lane
+    # is ever added, the market must be threaded from `replay_spec`'s `ticker` (in scope
+    # there) rather than defaulted here. signal_quality R-SQ1.
     sig = _sf(daily_close)
     if sig.empty or "ema_trail" not in sig.columns:
         return pd.Series(dtype=float), pd.Series(dtype=bool)

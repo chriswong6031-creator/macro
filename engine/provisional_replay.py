@@ -37,7 +37,8 @@ from typing import Any, Callable
 import numpy as np
 import pandas as pd
 
-from engine import confluence_tiers, signal_gate, grading
+from engine import confluence_tiers, signal_gate, grading, session_anchor
+from engine.session_anchor import session_positions
 
 log = logging.getLogger(__name__)
 
@@ -69,6 +70,7 @@ def replay_series(
     end: pd.Timestamp | None = None,
     max_days: int | None = None,
     gate_fn: Callable[[str, pd.Series], dict] | None = None,
+    market: str | None = None,
 ) -> pd.DataFrame:
     """Replay one name day-by-day through the LIVE gate on the truncated-at-D series.
 
@@ -81,8 +83,15 @@ def replay_series(
     ``not_topped`` reads the cascade's veto directly (topped days return a blank tier but the veto
     state is still exposed). Never raises; a bad day yields a blank row rather than aborting the
     replay. ``gate_fn`` is injectable so a KNOB SWEEP can replay under a patched FRESH_TICKS/veto
-    without editing the module under test."""
+    without editing the module under test.
+
+    ``market`` picks the reference session calendar the 2D/3D buckets are anchored to. DEFAULT
+    None = infer from ``ticker``, which is what ``signal_gate.gate`` itself does — so the
+    PROVISIONAL view (through the gate) and the COMPLETED view (tier_stream, below) can never
+    end up on two different calendars and manufacture a repaint that is really a phase
+    disagreement. Pass it explicitly only to override."""
     gate = gate_fn if gate_fn is not None else signal_gate.gate
+    mkt = session_anchor.market_for_ticker(ticker) if market is None else market
     c = pd.to_numeric(daily_close, errors="coerce").dropna()
     if not isinstance(c.index, pd.DatetimeIndex):
         c = c.copy()
@@ -100,7 +109,7 @@ def replay_series(
 
     # COMPLETED-bucket (validated) tier for every day — ONE fast vectorized pass. This is the basis
     # the point-in-time validation covered; the provisional per-day view is compared against it.
-    completed = confluence_tiers.tier_stream(c)
+    completed = confluence_tiers.tier_stream(c, market=mkt)
 
     rows: list[dict] = []
     for D in days:
@@ -112,7 +121,7 @@ def replay_series(
         # The live gate clears tier_cascade to None on topped/stale; the raw cascade carries the
         # not_topped veto. Re-derive the veto from the cascade directly so flicker is measurable
         # even on days the gate blanked the tier.
-        nt = _not_topped_at(trunc)
+        nt = _not_topped_at(trunc, mkt)
         crow = completed.loc[D] if (not completed.empty and D in completed.index) else None
         comp_tier = _clean_tier(crow["tier"]) if crow is not None else None
         rows.append({
@@ -141,11 +150,11 @@ def _clean_tier(t) -> str | None:
     return str(t)
 
 
-def _not_topped_at(trunc_close: pd.Series) -> bool | None:
+def _not_topped_at(trunc_close: pd.Series, market: str = "US") -> bool | None:
     """The not-topped veto state on the truncated series (the raw cascade veto, before the gate
     blanks a stale tier). None if undeterminable."""
     try:
-        casc = confluence_tiers.cascade(trunc_close, take_active=False)
+        casc = confluence_tiers.cascade(trunc_close, take_active=False, market=market)
         return bool(casc.get("not_topped", True))
     except Exception:  # noqa: BLE001
         return None
@@ -231,19 +240,30 @@ def _classify_vs_completed(cur_rank: int, comp_here: int, comp_window: list[int]
 # --------------------------------------------------------------------------- #
 # (b) PROVISIONAL EDGE — forward return of a provisional-tail fire vs a completed-bucket fire
 # --------------------------------------------------------------------------- #
-def bucket_completeness(daily_close: pd.Series, D: pd.Timestamp, n_tf: int = 3) -> dict:
+def bucket_completeness(daily_close: pd.Series, D: pd.Timestamp, n_tf: int = 3,
+                        market: str = "US") -> dict:
     """Is day D's newest n_tf-bar bucket COMPLETE or PROVISIONAL, and how many days have printed?
 
-    The board's freshest tier reads the last n_tf-business-day bucket. On the day that bucket's
+    The board's freshest tier reads the last n_tf-SESSION bucket. On the day that bucket's
     final constituent prints, it is COMPLETE; on the 1-2 days before, it is PROVISIONAL (the tail
-    the validation never saw). Returns {complete, printed, expected, bucket_label}."""
+    the validation never saw). Returns {complete, printed, expected, bucket_label}.
+
+    Buckets come from the ABSOLUTE session anchor, the same grid ``confluence_tiers._tf_bars``
+    grades on (era abs-session-2026-08-06). The previous ``resample(f"{n_tf}B")`` here was the
+    start-anchored bin the rest of this module exists to measure: left in place it would have
+    classified fires against a DIFFERENT bucketing than the one that produced them, and reported
+    the disagreement as repaint.
+
+    ``bucket_label`` is the bucket's FIRST observed session (unchanged meaning: the day the
+    bucket opened), so ``printed`` counts the sessions in it so far.
+    """
     c = pd.to_numeric(daily_close, errors="coerce").dropna()
     c = c[c.index <= pd.Timestamp(D)]
     if len(c) < n_tf:
         return {"complete": None, "printed": None, "expected": n_tf, "bucket_label": None}
-    s = c.resample(f"{n_tf}B").last().dropna()
-    label = s.index[-1]
-    in_bucket = c[c.index >= label]
+    bucket = session_positions(c.index, market) // n_tf
+    in_bucket = c[bucket == bucket[-1]]
+    label = in_bucket.index[0]
     printed = int(len(in_bucket))
     return {
         "complete": bool(printed >= n_tf),
@@ -270,10 +290,11 @@ def edge_of_fires(
     if fires.empty:
         return fires
     c = pd.to_numeric(daily_close, errors="coerce").dropna().sort_index()
+    mkt = session_anchor.market_for_ticker(ticker)   # same calendar the fire was graded on
     recs = []
     for _i, row in fires.iterrows():
         D = pd.Timestamp(row["date"])
-        bc = bucket_completeness(c, D, n_tf=n_tf)
+        bc = bucket_completeness(c, D, n_tf=n_tf, market=mkt)
         fm = grading.forward_metrics(c, D, horizons=horizons)
         rec = dict(row)
         rec["provisional"] = (bc["complete"] is False)

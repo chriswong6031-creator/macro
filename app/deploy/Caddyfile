@@ -101,6 +101,36 @@
 	# the /api/* proxy so a ws upgrade never reaches the HTML gate matchers.
 	reverse_proxy /ws/tape 127.0.0.1:8000
 
+	# ── Supabase auth/REST proxy — the GFW hole ───────────────────────────────
+	# *.supabase.co is fronted by CLOUDFLARE (verified: `server: cloudflare`,
+	# 172.64.149.246 / 104.18.38.10), whose ranges are throttled in mainland China.
+	# Everything ELSE here was hardened for that years ago — supabase.js is vendored
+	# same-origin, fonts are self-hosted, no CDN <script> survives — but the auth
+	# ENDPOINT was never brought inside the perimeter, so a China visitor loads the
+	# site through EdgeOne and then fails every auth call: sign-in, sign-up, password
+	# reset, magic link. (The "/sb Supabase proxy" the /ws/tape comment above refers
+	# to did not exist until this block; probing the live host returned the site
+	# gate's 401 for both /sb/* and /auth/v1/*.)
+	#
+	# handle_path strips the /sb prefix, so browser_url = https://www.mastermind-x.com/sb
+	# and supabase-js's own ${url}/auth/v1/… concatenation lands on the real paths.
+	# The droplet is DigitalOcean (outside China) and makes the supabase.co hop.
+	#
+	# This grants the browser NOTHING it did not already have — it could call the
+	# same project directly with the same public anon key; RLS is what isolates
+	# users, and it is unchanged. Two things to know:
+	#   * every proxied request reaches Supabase from the DROPLET's IP, so any
+	#     per-IP rate limiting upstream now sees one client. X-Forwarded-For is
+	#     forwarded (Caddy default) so gotrue can still bucket per real client.
+	#   * auth responses must never be cached — no-store below, and EdgeOne needs a
+	#     matching cache-bypass rule for /sb/* (docs/ops/site-access.md).
+	handle_path /sb/* {
+		reverse_proxy https://fsldfzlxyavsuwqbceod.supabase.co {
+			header_up Host fsldfzlxyavsuwqbceod.supabase.co
+			header_down Cache-Control "no-store"
+		}
+	}
+
 	# VPS live plane — artifacts are owned by systemd lanes and published by
 	# atomic rename outside both the git work-tree and site.served. This prevents
 	# a main-branch pull/rsync from rolling a fresh tick back to the last commit.
@@ -251,7 +281,7 @@
 	# original leak: direct JSON/JS/model-output URLs no longer bypass auth.
 	# PUBLIC-BOUNDARY-START
 	@reg_asset {
-		not path /api/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /factordata/tech_lab.json /stock_seasonality.css /stock_seasonality.html /stock_seasonality.js /fundamental_forensics.css /fundamental_forensics.js /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
+		not path /api/* /sb/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /factordata/tech_lab.json /stock_seasonality.css /stock_seasonality.html /stock_seasonality.js /fundamental_forensics.css /fundamental_forensics.js /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
 	}
 	# PUBLIC-BOUNDARY-END
 	handle @reg_asset {
@@ -331,7 +361,7 @@
 	# sitemap (lib/seo.py) updated in the same change.
 	@open_html {
 		path *.html
-		not path /api/* /ws/tape
+		not path /api/* /sb/* /ws/tape
 	}
 
 	handle @open_html {
@@ -377,7 +407,7 @@
 		# tests/test_regwall_json_gate.py), so content is still only ever served
 		# from inside `handle @reg_asset` after the gate returns 2xx.
 		@reg_asset_err {
-			not path /api/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /live/wires.json /live/intelligence.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /factordata/tech_lab.json /stock_seasonality.css /stock_seasonality.html /stock_seasonality.js /fundamental_forensics.css /fundamental_forensics.js /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
+			not path /api/* /sb/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /live/wires.json /live/intelligence.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /factordata/tech_lab.json /stock_seasonality.css /stock_seasonality.html /stock_seasonality.js /fundamental_forensics.css /fundamental_forensics.js /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
 		}
 		handle @reg_asset_err {
 			header Cache-Control "private, no-store"
