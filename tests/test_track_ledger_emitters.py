@@ -305,6 +305,55 @@ class TestUSEmitLedger:
         assert d["state"] == "accruing"
         assert d["rows"] == []
 
+    def test_the_artifact_discloses_the_PRICE_FRONTIER_it_was_graded_against(
+            self, monkeypatch, tmp_path):
+        """`meta.priced_through` — the last session this grading run actually saw.
+
+        The only field that says which price VINTAGE produced these numbers. On
+        2026-08-06 the nightly's collect step committed prices through 08-05 while the
+        grading step had last run against a cache stopping at 07-31; downstream
+        (scripts/exit_policy_study.calibrate) compared its own recomputation to this
+        summary and reported the 3-session gap as `calibration drifted`. Nothing on the
+        artifact could distinguish the two: `as_of` is the last BOARD date (a different
+        lane) and `continuity.last_session` is the SPY clock (a third lane, deliberately
+        — see continuity_block), and both were read as frontiers because nothing else
+        was there to read.
+        """
+        from scripts import grade_us_board as gub
+        monkeypatch.setattr(gub, "RETRO_PARQUET", tmp_path / "none.parquet")
+        monkeypatch.setattr(gub, "LEDGER_HISTORY_FROM", "1900-01-01")
+
+        # Prices run PAST the newest board — the half-failed-nightly shape this stamp
+        # exists for, and the one case where board date and price frontier disagree.
+        # The default fixture has them coincide, so asserting on it would pass on a
+        # stamp that just echoed `as_of`.
+        ahead = pd.bdate_range(_US_DATES[0], periods=len(_US_DATES) + 4)
+        closes = pd.DataFrame({c: [float(i) + 100 for i in range(len(ahead))]
+                               for c in ("AAA", "BBB", "DDD")}, index=ahead)
+        d = gub.emit_ledger(_us_boards(), closes, None)
+
+        assert d["meta"]["priced_through"] == str(ahead[-1].date())
+        assert d["as_of"] == str(_US_DATES[-1].date())
+        assert d["meta"]["priced_through"] != d["as_of"]
+
+    def test_the_frontier_stamp_survives_a_HEALTHY_lane(self, monkeypatch, tmp_path):
+        """Unconditional, unlike `continuity` (stamped only when sessions are missing).
+
+        A provenance field that appears only during an outage is absent exactly when a
+        reader wants to confirm the artifact is current, and a coupling check that can
+        only fire on unhealthy days cannot certify a healthy one.
+        """
+        etfs = pd.DataFrame({"SPY": [400.0 + i for i in range(len(_US_DATES))]},
+                            index=_US_DATES)
+        d = _run_us_emit(monkeypatch, tmp_path, etfs=etfs)
+        assert d["meta"].get("continuity") is None, "fixture is not a stale lane"
+        assert d["meta"]["priced_through"] == str(_US_DATES[-1].date())
+
+    def test_an_empty_panel_reports_an_unknown_frontier_not_a_wrong_one(self):
+        from scripts import grade_us_board as gub
+        d = gub.emit_ledger([], pd.DataFrame())
+        assert d["meta"]["priced_through"] is None
+
 
 # ===========================================================================
 # 2. CN — build_china_library.emit_cn_track_ledger (EPISODE grain)
