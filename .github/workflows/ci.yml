@@ -1396,6 +1396,20 @@ on:
       - "scripts/build_flow_desk.py"
       - "templates/flow_desk.html.j2"
       - "tests/test_flow_cohorts.py"
+      # Capital-flow velocity desk (site/flowdata/desk.json) + its staleness alarm.
+      # Wired 2026-08-05: test_flow_velocity.py was matched by no pattern here and
+      # named by no job, so both halves of the #3488 shape were open — the suite
+      # never ran AND no edit to its subject could start ci.yml. Listed together
+      # so the desk that froze for 12 days (A-share legs pinned at 2026-07-24
+      # behind a dark upstream Tushare plane) can never lose its guard again.
+      # lib/desk_guard.py is the shared staleness/thinning logic; china_tushare is
+      # the collector whose utcnow()-stamped heartbeat masked the outage.
+      - "engine/flow_velocity.py"
+      - "scripts/build_flow_velocity.py"
+      - "lib/desk_guard.py"
+      - "collectors/china_tushare.py"
+      - "tests/test_flow_velocity.py"
+      - "tests/test_flow_desk_staleness.py"
       # FS-0 flow-signal ledger + outcome grader (FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE):
       # collector, grader engine, build script, detector config, and test file.
       - "collectors/flow_signals.py"

@@ -572,14 +572,25 @@ class TestLiveConformance:
             "python -m scripts.collect --only sam_gov_opportunities "
             "--skip-quality --skip-shadow-importance"
         ], f"collect must run exactly the bounded SAM fast path; got {invocations}"
-        # A quiet-skip may only ever apply to the SCHEDULED cadence. If the gate
-        # were to fire on workflow_call or push, the projection lane would skip
-        # its own collector in silence and the publish gate would never see it.
-        if "exit 0" in collect_run:
-            assert 'GITHUB_EVENT_NAME}" = "schedule"' in collect_run, (
-                "a quiet-skip in the collect body must be gated on the scheduled "
-                "event alone"
-            )
+        # The quota gate itself is part of the contract: dropping it would put a
+        # ~10/day shared key behind a 30-minute schedule and starve every other
+        # consumer (see collectors/sam_gov.py). Both halves are pinned — the marker
+        # so the gate cannot be quietly renamed away, and the full `if [ ... ]` test
+        # so a mere MENTION of the event name in a comment cannot satisfy it.
+        #
+        # These two pins are UNCONDITIONAL and subsume the earlier conditional
+        # form ("if 'exit 0' in collect_run: assert the schedule key"): requiring
+        # the full `if [ ... ]` test always is strictly stronger than requiring
+        # the bare `GITHUB_EVENT_NAME}" = "schedule"` substring only when the body
+        # happens to contain a quiet-skip. Nothing is dropped by stating it once.
+        assert "SAM quota gate" in collect_run, (
+            "the bounded lane's quota gate must stay — it is what keeps the shared "
+            "~10/day SAM key from being spent by the half-hourly schedule"
+        )
+        assert 'if [ "${GITHUB_EVENT_NAME}" = "schedule" ]' in collect_run, (
+            "the gate must key on the SCHEDULE event only, so a manual or push run "
+            "still collects"
+        )
         assert "default historical sweep is 1,826 days" in text
         assert "--only usaspending_awards" not in collect["run"], (
             "The bounded SAM fast path must not turn the long-lookback USAspending "
