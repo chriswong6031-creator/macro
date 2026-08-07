@@ -4919,6 +4919,14 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: US context vector + full-population grades + miss-audit scorecards
         run: python -m pytest tests/test_us_prophet_grades.py tests/test_us_context_vector.py tests/test_prophet_miss_audit.py -q
+      # The same three modules' NIGHTLY WIRING (2026-08-06): they moved out of the engine
+      # job into daily.yml's us_prophet_ledgers lane, so where they run, what they wait on,
+      # and whether COLLECT_LANE still arms their forward advance are now facts a workflow
+      # edit can silently break. Rides this job because it imports the same modules (and so
+      # needs the same venv) and because the suite above owns their in-process contract —
+      # the two halves of "does the ledger actually advance" belong under one eye.
+      - name: prophet-us nightly lane placement, ledger gate, and failure isolation
+        run: python -m pytest tests/test_prophet_off_engine_lane.py -q
 
   unrun-prophet-learning-loop:
     # Prophet learning loop (#4331) — postmortem forensics over the loser cohort
