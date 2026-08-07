@@ -73,10 +73,21 @@ fired on is a resolved outcome or an outcome-conditioned mark.
 
 IN-FLIGHT ROWS
 --------------
-Episodes without H forward bars are marked to the latest close, CLASSIFIED (four of the
-eleven names the operator flagged on 2026-07-31 are still open — dropping them would
-delete the most recent evidence), and then held in a block that enters no rate. See
-engine/postmortem.py rule 4.
+Episodes without H forward bars are marked to the latest close, CLASSIFIED (dropping
+them would delete the most recent evidence), and then held in a block that enters no
+rate. See engine/postmortem.py rule 4.
+
+A MARK IS NOT A VERDICT, AND THE DIFFERENCE EXPIRES
+---------------------------------------------------
+Five of the eleven names the operator flagged on the 2026-07-31 board were still open
+that night: the number that put them on a worst-rows list was a mark. As the bars
+printed, four resolved as losses and FN 07-21 closed its tenth bar at +1.66% after a
+-19.31% drawdown. Nothing about the engine changed — the mark was never a prediction and
+the verdict is not a correction. Anything downstream that copies a cohort label out of a
+board snapshot and pins it as permanent is asserting the future, and it will come true
+or not on the tape's schedule rather than the code's (a fixture that did exactly this
+broke on 2026-08-06, when `data: daily collection 2026-08-06` completed FN's horizon).
+`path_tails` exists so the drawdown survives the verdict that erased it.
 
 NO LLM ANYWHERE (constitution A7). Every label is a threshold rule in engine/postmortem.
 """
@@ -431,14 +442,43 @@ def _hold_broken(snaps: dict[str, dict[str, dict]], ticker: str,
     return None
 
 
-def _compact_context(ctx: dict) -> dict:
-    """The label-bearing fields only, for episodes in neither tail.
+def _round_trip_counts(rows: list[dict]) -> dict:
+    """How many episodes crossed a gate their verdict does not show, by direction.
 
-    Both tails keep their full entry context — that is what the learning loop reads.
-    The ~530 neutral episodes keep every field a label keys on (so every label in the
-    artifact stays re-derivable by hand) but drop the rest of the nested board payload,
-    which is ~550 KB of context nobody reads for a name that finished flat. The full
-    record is one deterministic re-run away: `python -m scripts.prophet_postmortem`.
+    `n` is the SET, so the two direction counts may double-count an episode that crossed
+    both — `n_crossed_both` is published beside them and the report's sentence reconciles
+    (loser + winner - both = n) rather than leaving a reader to guess.
+    """
+    rt = [r for r in rows if r["path_tails"]]
+    lose = [r for r in rt if "loser" in r["path_tails"]]
+    win = [r for r in rt if "winner" in r["path_tails"]]
+    both = [r for r in rt if len(r["path_tails"]) == 2]
+    return {
+        "n": len(rt),
+        "n_crossed_loser_gate": len(lose),
+        "n_crossed_winner_gate": len(win),
+        "n_crossed_both": len(both),
+        "n_verdict_outside_both_tails": len(
+            [r for r in rt if r["cohort"] not in ("loser", "winner")]),
+        "loser_gate_pct": pm.LOSER_ABS_PCT,
+        "winner_gate_pct": pm.WINNER_ABS_PCT,
+    }
+
+
+def _compact_context(ctx: dict) -> dict:
+    """The label-bearing fields only, for the episodes that were genuinely uneventful.
+
+    Both tails keep their full entry context — that is what the learning loop reads — and
+    so does any episode whose PATH crossed a gate its verdict does not show (`path_tails`,
+    the G3 exit-policy set). The rest keep every field a label keys on (so every label in
+    the artifact stays re-derivable by hand) but drop the rest of the nested board
+    payload, which is context nobody reads for a name that finished flat AND travelled
+    flat. The full record is one deterministic re-run away:
+    `python -m scripts.prophet_postmortem`.
+
+    Trimming on the verdict ALONE was the older rule, and it deleted the entry context of
+    exactly the episodes the exit-policy question is about — a name that fell 19% and
+    closed +1.7% read as "finished flat, nothing to see".
     """
     ext = ctx.get("extension") or {}
     spot = ctx.get("spotlight") or {}
@@ -681,6 +721,10 @@ def build_rows(root: Path = ROOT, horizon: int = ts.DEFAULT_HORIZON) -> dict:
             path_missing_reason=path_reason,
         )
 
+        mae_pct = None if mae is None else round(float(mae), 2)
+        mfe_pct = None if mfe is None else round(float(mfe), 2)
+        cohort = pm.cohort_of(outcome, excess)
+
         rows.append({
             "ticker": tk,
             "entry_date": d0,
@@ -693,10 +737,14 @@ def build_rows(root: Path = ROOT, horizon: int = ts.DEFAULT_HORIZON) -> dict:
                         if sc and sc.get("pnl") is not None else None),
             "excess_pct": None if excess is None else round(float(excess), 2),
             "mark_pct": None if mark is None else round(float(mark), 2),
-            "mae_pct": None if mae is None else round(float(mae), 2),
-            "mfe_pct": None if mfe is None else round(float(mfe), 2),
+            "mae_pct": mae_pct,
+            "mfe_pct": mfe_pct,
             "held": held,
-            "cohort": pm.cohort_of(outcome, excess),
+            "cohort": cohort,
+            # Gates the PATH crossed that `cohort` does not show — the exit-policy
+            # evidence (G3). Computed off the ROUNDED numbers this row publishes so the
+            # flag and the printed MAE/MFE can never disagree at the gate.
+            "path_tails": pm.path_tails(cohort, mae_pct, mfe_pct),
             # The prior-episode comparison `re_admission` was decided on, on EVERY row
             # that had one — including the rows where no leg fired and the rows where the
             # prior could not be scored. Written out rather than left inside the label's
@@ -714,8 +762,12 @@ def build_rows(root: Path = ROOT, horizon: int = ts.DEFAULT_HORIZON) -> dict:
     # Aggregate on the FULL rows, then trim the neutral tail for serialization —
     # never the other way round, or the summary would be computed on a trimmed sample.
     summary = pm.aggregate(rows)
+    summary["round_trips"] = _round_trip_counts(rows)
     for r in rows:
-        if r["cohort"] not in ("loser", "winner"):
+        # A verdict outside both tails is NOT on its own a licence to trim: an episode
+        # whose path crossed a gate is the exit-policy evidence, and its entry context is
+        # the half that says WHY. Compact only the genuinely uneventful.
+        if r["cohort"] not in ("loser", "winner") and not r["path_tails"]:
             r["entry_context"] = _compact_context(r["entry_context"])
         # `en`/`zh` per label are pure duplication of summary.taxonomy, once per row.
         for lb in r["labels"]:
@@ -815,10 +867,12 @@ def build_rows(root: Path = ROOT, horizon: int = ts.DEFAULT_HORIZON) -> dict:
             "lane": LANE,
             "llm_used": False,
             "detail_policy": (
-                "Loser and winner episodes carry their full entry context. Neutral and "
-                "unscored episodes carry a compact context holding every field a label "
-                "keys on, so all labels stay re-derivable; the remaining board payload "
-                "is dropped. Per-label EN/ZH copy lives once in summary.taxonomy."
+                "Loser and winner episodes carry their full entry context, as does any "
+                "episode whose path crossed a gate its verdict does not show "
+                "(`path_tails` non-empty). The remaining neutral and unscored episodes "
+                "carry a compact context holding every field a label keys on, so all "
+                "labels stay re-derivable; the remaining board payload is dropped. "
+                "Per-label EN/ZH copy lives once in summary.taxonomy."
             ),
         },
         "coverage": coverage,
@@ -1092,6 +1146,41 @@ def render_report(doc: dict) -> str:
     infl.sort(key=lambda r: (r["outcome_pct"] if r["outcome_pct"] is not None else 0.0))
     for r in infl:
         A(f"| {r['ticker']} | {r['entry_date']} | {_pct(r['outcome_pct'])} "
+          f"| {_pct(r['mae_pct'])} | {_pct(r['mfe_pct'])} | {_plain(r['held'])} "
+          f"| {', '.join(lb['label'] for lb in r['labels']) or '—'} |")
+    A("")
+
+    # ── round trips — the episodes a verdict-keyed table cannot show ──────────
+    # Deliberately AFTER the loser book: these rows are not a third maturity block and
+    # must never be read into one. They are the same episodes, re-sorted by what the
+    # PATH did, and they are the exit policy's evidence rather than a rate.
+    rt = s["round_trips"]
+    roundtrips = [r for r in doc["episodes"]
+                  if r["path_tails"] and r["cohort"] not in ("loser", "winner")]
+    A("## Round trips — crossed a gate, finished outside both tails")
+    A("")
+    A(f"{rt['n']} episodes crossed a gate their verdict does not show: "
+      f"{rt['n_crossed_loser_gate']} through the {rt['loser_gate_pct']}% loser gate + "
+      f"{rt['n_crossed_winner_gate']} through the +{rt['winner_gate_pct']}% winner gate "
+      f"− {rt['n_crossed_both']} that crossed both = {rt['n']}. The "
+      f"{rt['n_verdict_outside_both_tails']} whose VERDICT landed outside both tails are "
+      "tabled here, because they appear in no other table on this page — a name that "
+      "fell 19% and closed +1.7% is `neutral`, and a table keyed on the verdict says "
+      "nothing about it.")
+    A("")
+    A("This block is evidence for the exit-policy question, NOT a rate: it enters no "
+      "expectancy and no counterfactual above. A stop would have booked every `loser` "
+      "crossing below and forfeited whatever came after it; a target would have banked "
+      "every `winner` crossing and given up the rest. Which of those trades is worth "
+      "making is measured in G3, not asserted here. These rows keep their FULL entry "
+      "context in `summary.json` for that reason.")
+    A("")
+    A("| Ticker | Entry | Verdict | Crossed | MAE | MFE | Held | Labels |")
+    A("|---|---|---|---|---|---|---|---|")
+    for r in sorted(roundtrips, key=lambda r: (r["mae_pct"]
+                                               if r["mae_pct"] is not None else 0.0)):
+        A(f"| {r['ticker']} | {r['entry_date']} | {_pct(r['outcome_pct'])} "
+          f"| {', '.join(r['path_tails'])} "
           f"| {_pct(r['mae_pct'])} | {_pct(r['mfe_pct'])} | {_plain(r['held'])} "
           f"| {', '.join(lb['label'] for lb in r['labels']) or '—'} |")
     A("")
