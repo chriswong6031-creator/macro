@@ -1,0 +1,111 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "VRSK-2026-06-30-watch",
+  "ticker": "VRSK",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "VRSK",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "VRSK",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_alpha",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Industrials",
+    "excess_spy": 0.058878358668564834,
+    "excess_sector": 0.07977857648995368,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 1.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CLEAN_LIFTOFF",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "VRSK outperformed SPY and reached CLEAN_LIFTOFF, with company-specific alpha recorded as the cause. Its watch placement and one-day board tenure suggest recognition before the outcome, but the exact timing mechanism is undocumented.",
+    "root_cause": "VRSK outperformed SPY and reached CLEAN_LIFTOFF, with company-specific alpha recorded as the cause. Its watch placement and one-day board tenure suggest recognition before the outcome, but the exact timing mechanism is undocumented.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The company-alpha and watch books surfaced the opportunity, while the timing and catalyst books lack enough evidence to explain why it remained watch rather than buy.",
+    "engines_credit": "Company-alpha selection is the role model; lane calibration, catalyst attribution, and rotation organs are laggards in evidentiary completeness.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "Recorded company-specific strength drove relative outperformance.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Without company-specific strength, clean liftoff would be less readily explained.",
+        "evidence_refs": [
+          "outcome_cause=idio_alpha",
+          "excess_spy=0.058878358668564834",
+          "terminal_state=CLEAN_LIFTOFF"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "entry_timing",
+        "factor": "",
+        "mechanism": "Watch placement after one day on the board may indicate early recognition without full commitment.",
+        "evidence_status": "corroborated",
+        "timing_status": "known_at_entry",
+        "counterfactual": "Earlier buy classification might have changed participation, but no gate inputs are provided.",
+        "evidence_refs": [
+          "lane=watch",
+          "board_tenure_days=1.0",
+          "process_fault=clean"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "catalyst",
+        "factor": "",
+        "mechanism": "An unidentified catalyst may have converted the recorded alpha into liftoff.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Without a catalyst, the move might have remained gradual or unrealized.",
+        "evidence_refs": []
+      }
+    ],
+    "alternate_explanations": [
+      "Industrials rotation",
+      "Broad data-and-analytics industry re-rating",
+      "Post-entry news"
+    ],
+    "missing_evidence": [
+      "Reason for watch-lane assignment",
+      "Entry gate components and margins",
+      "Price path around board admission",
+      "Dated company and industry catalysts"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "watch_to_liftoff_residual_acceleration",
+        "feature": "Residual momentum acceleration among new watch names",
+        "measurement": "Measure change in market-, sector-, and industry-neutral momentum from board admission using timestamp-safe data.",
+        "expected_direction": "Positive acceleration should associate with later clean liftoff.",
+        "falsifier": "Acceleration does not distinguish liftoff from non-liftoff watch outcomes.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T23:44:21+00:00"
+}

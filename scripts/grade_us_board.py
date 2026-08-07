@@ -1769,11 +1769,19 @@ def emit_ledger(boards: list[dict], names: pd.DataFrame,
     bench = {"code": "SPY", "en": "S&P 500", "zh": "标普500"}
     empty_summary = _ts.summarize([], metric="pnl", horizon=LEDGER_HORIZON)
 
+    # The last session this grading run actually saw — see the priced_through block
+    # below for why the artifact has to carry it. Stamped on EVERY return path,
+    # including the degenerate one: a provenance field with holes in it is a field a
+    # reader has to already know the shape of to trust.
+    priced_through = (str(pd.DatetimeIndex(names.index).max())[:10]
+                      if names is not None and not getattr(names, "empty", True) else None)
+
     if not boards:
         return _tl.build_shell(
             "US", str(dt.date.today()), "accruing", bench,
             summary=empty_summary, rows=[], grain="episode",
             survivorship={"n_skipped_no_price": 0},
+            extra_meta={"priced_through": priced_through},
         )
 
     current_as_of = boards[-1].get("as_of", "")
@@ -1916,6 +1924,19 @@ def emit_ledger(boards: list[dict], names: pd.DataFrame,
                           "n_boards": len(_days),
                           "scored_from": LEDGER_HISTORY_FROM,
                           "n_boards_before_current_definition": n_boards_predefinition}}
+    # PRICE FRONTIER — the last session this grading run actually saw.
+    #
+    # Unconditional provenance, not an outage disclosure: it is the only field on the
+    # artifact that says which price vintage produced these numbers. `as_of` above is the
+    # last BOARD date and `continuity.last_session` is the SPY clock — a deliberately
+    # different lane (see continuity_block) — so neither answers it, and on 2026-08-06
+    # both were read as if they did. That night collect committed prices through 08-05
+    # while this grader last ran against a cache stopping at 07-31; downstream
+    # (scripts/exit_policy_study.calibrate) compared its own recomputation to this
+    # summary and reported the 3-session gap as "the reconstruction drifted". With this
+    # stamp the gap is legible from the file alone.
+    _extra["priced_through"] = priced_through
+
     # Outage disclosure: sessions after the newest snapshot on which no board was
     # recorded. Present in the artifact so the dialog can say so in one quiet line
     # instead of the reader inferring a healthy record from a frozen one.
