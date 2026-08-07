@@ -1,0 +1,120 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "ROIV-2026-06-30-laggards",
+  "ticker": "ROIV",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "ROIV",
+    "as_of": "2026-06-30",
+    "lane": "laggards",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "ROIV",
+    "lane": "laggards",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_break",
+    "secondary_flags": "[]",
+    "process_fault": "premature_stop_noise",
+    "sector": "Health Care",
+    "excess_spy": -0.03367555244682274,
+    "excess_sector": -0.05083936942937506,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "ROIV underperformed SPY and was STOPPED, with an idiosyncratic break as the outcome cause and premature stop noise as a separate process fault. The adverse company mechanism and the stop-process defect must be researched independently.",
+    "root_cause": "ROIV underperformed SPY and was STOPPED, with an idiosyncratic break as the outcome cause and premature stop noise as a separate process fault. The adverse company mechanism and the stop-process defect must be researched independently.",
+    "mitigation_verdict": "mitigable_process",
+    "lesson": "The company-break book identified the adverse outcome class, but the stop and path-risk engine lagged by terminating on noise.",
+    "engines_credit": "Company-break detection receives partial credit; stop calibration and path-risk handling are the specific laggards, while catalyst visibility cannot be judged.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "An idiosyncratic break is the recorded primary driver of relative underperformance.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Without the company-specific break, the negative relative outcome would be less readily explained.",
+        "evidence_refs": [
+          "outcome_cause=idio_break",
+          "excess_spy=-0.03367555244682274"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "Ordinary or transient price noise triggered a premature stop during the adverse path.",
+        "evidence_status": "claimed",
+        "timing_status": "emerged_after",
+        "counterfactual": "Noise-aware stop handling might have avoided premature termination, without negating the underlying idiosyncratic break.",
+        "evidence_refs": [
+          "process_fault=premature_stop_noise",
+          "terminal_state=STOPPED"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "catalyst",
+        "factor": "",
+        "mechanism": "A biotechnology-specific event may have initiated or intensified the break, but the record does not establish its existence or entry-date visibility.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "A visible ex-ante event risk would support a different research explanation than an unforeseeable post-entry event.",
+        "evidence_refs": []
+      }
+    ],
+    "alternate_explanations": [
+      "External clinical, regulatory, financing, or transaction news",
+      "Health Care or biotechnology rotation",
+      "A failed breakout visible before selection",
+      "Transient volatility followed by recovery"
+    ],
+    "missing_evidence": [
+      "Stop threshold, execution record, and rationale",
+      "Price path before and after the stop",
+      "Biotechnology peer and factor returns",
+      "Dated clinical, regulatory, financing, and corporate events",
+      "Entry-date liquidity and volatility estimates"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "biotech_stop_noise_band",
+        "feature": "Biotechnology-specific noise band around the entry and stop",
+        "measurement": "Estimate ordinary timestamp-safe gap, volatility, and liquidity behavior for comparable Health Care names.",
+        "expected_direction": "Stops inside the ordinary noise band should associate with premature-stop classifications.",
+        "falsifier": "Noise-band placement does not distinguish premature stops from persistent breakdowns.",
+        "authority": "research_only",
+        "direct_authority": false
+      },
+      {
+        "feature_key": "event_visibility_partition",
+        "feature": "Ex-ante visibility of company-event risk",
+        "measurement": "Partition events into documented before-entry risks and genuinely post-entry disclosures using dated records.",
+        "expected_direction": "Documented pre-entry risks should explain a different subset of breaks than unforeseeable disclosures.",
+        "falsifier": "Event visibility has no reproducible relationship with idiosyncratic-break outcomes.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T23:44:21+00:00"
+}

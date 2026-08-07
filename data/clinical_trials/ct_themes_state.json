@@ -17,7 +17,7 @@
   },
   "gene_editing_crispr": {
     "last_ingest": "2026-08-06",
-    "api_total": 91
+    "api_total": 92
   },
   "adc_antibody_drug_conjugate": {
     "last_ingest": "2026-08-06",
@@ -25,7 +25,7 @@
   },
   "car_t_cell_therapy": {
     "last_ingest": "2026-08-06",
-    "api_total": 719
+    "api_total": 720
   },
   "obesity_device": {
     "last_ingest": "2026-08-06",
@@ -33,6 +33,6 @@
   },
   "mrna_therapeutics": {
     "last_ingest": "2026-08-06",
-    "api_total": 364
+    "api_total": 365
   }
 }

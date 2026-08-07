@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T20:13:47.287262+00:00",
-  "count": 894,
+  "generated_at": "2026-08-07T00:29:18.793535+00:00",
+  "count": 906,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -343,6 +343,108 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-uoerxlcv1ja-ef22d1",
+      "title": "Asia Pacific Portfolio Strategy Asian equity market daily update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:51:52Z",
+      "summary_points": [
+        "**EM Asia FII Outflows**: Taiwan (-43,440 YTD), India (-105,089 YTD), Korea (-105,089 YTD) show accelerating net foreign outflows, signaling severe capital flight risk and liquidity strain.",
+        "**MXJP Valuation Risk**: Real Estate dominates MXJP returns (35.1%), but equity/bond yield gap at 154bp (-1.8s.d.) indicates expensive valuations relative to bonds (Exhibit 11).",
+        "**DII-FII Mismatch**: Positive DII inflows (Asia total +110,659 YTD) fail to offset FII outflows in key markets (India, Taiwan), creating net outflow pressure and volatility risk.",
+        "**Korea Alpha Driver**: Korea (19% weight) leads with 68% market return, fueled by Info Tech’s 110% performance, offering significant regional outperformance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vbe1v4j1wgw-0faf20",
+      "title": "Aug 06 2026 JefferiesLLC StrongTractionwithNBMsbutEarningsMomentumSlows",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:51:49Z",
+      "summary_points": [
+        "**NAND Revenue Guidance Downgrade**: Management lowered NAND revenue growth to soft y/y due to inventory builds, contrasting June’s strong beat, with NBM momentum showing 8 customers signed and >50% F27/F28 bit commitments.",
+        "**eSSD Growth Catalyst**: eSSD business could reach 7%+ revenue share by 2027 ($2.5B revenue, $2B+ EPS benefit), driven by sustained bit growth and declining ASP degradation from capital intensity subsidies.",
+        "**Valuation Premium Risk**: Forward P/E (F2Y) trades at premium (near +1 St Dev), signaling overvaluation and significant downside risk if earnings miss, especially amid elevated market expectations.",
+        "**Geographic Concentration Risk**: 72% of revenue from Americas (declining US share from 39%→28% FY22-FY25), with Asia growth (China 14%→17%, RoA 18%→20%) offering diversification but exposing portfolio to US disruption vulnerability.",
+        "**Data Center Dominance**: Datacenter drives 50-60% of revenue (accelerating toward 2026), with C26 revenue target at 300B and C27 at 500B, aligning with AI/cloud infrastructure trends as core growth engine."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-au9bsni3jek-6addbe",
+      "title": "eBay Inc. (EBAY) Q2'26 Earnings Review",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:51:44Z",
+      "summary_points": [
+        "**Strategic Shift & Guidance Upgrade**: Q2 beat on GMV/revenue/operating income; C2C/ReCommerce >70% GMV; raised FY26 GMV guidance to 11.5-12.5% YoY (vs 7-7.5%) and Non-GAAP Op Income to 10-12% YoY; $1.4bn Depop acquisition to accelerate fashion growth.",
+        "**Valuation & Margin Strength**: P/E declining (18.2→14.6) signals potential undervaluation; EBITDA growth accelerating (10.6→14.0→8.5) and stable gross margins (72.4→73.6) indicate pricing power and growth momentum.",
+        "**Depop Integration Risk**: Expected to cut near-term operating income growth by 3-4 points due to competitive dynamics; management’s execution on AI/LLMs and category focus critical for sustained growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ab2vmtkpwsf-787fa3",
+      "title": "Driven Brands Holdings (DRVN) First Take 2Q26 EPS beat driven by higher sales and margin",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:51:43Z",
+      "summary_points": [
+        "**Q3 Beat**: Adj.",
+        "EPS ($0.29) and revenue ($507.4mn) beat consensus; same-store sales growth (1.4% vs.",
+        "1% consensus) and lower Corporate & Other losses ($11.8mn vs.",
+        "$15mn) drove outperformance.",
+        "**FY26 EBITDA Revision**: Guidance revised to lower end of $430mn-$460mn due to Middle East conflict impact and lower-income customer trends, with restatement costs near $45mn."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-4tjrevy5yka-133d29",
+      "title": "Americas Entertainment Front Row Report Live Entertainment High Frequency Data Tracker, July 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:51:37Z",
+      "summary_points": [
+        "**Attendance Divergence**: Amphitheaters up +18% YoY (vs stadiums down -13% YoY), driven by strong summer concerts and World Cup shifting stadium supply to non-NFL venues (July stadium drop: -26% YoY).",
+        "**Regulatory Overhang**: 15+ state/federal laws (e.g., DC RESALE Act, NC all-in pricing) constrain pricing power and secondary market dynamics, with 2026 legislative momentum accelerating compliance risks.",
+        "**Revenue Recognition Risk**: Critical financial timing shift—US primary ticketing (venue-owned = deferred) vs international (promoter-driven = immediate)—impacts earnings visibility and valuation.",
+        "**Ticketing App Competition**: StubHub MAUs +25% YoY and downloads +19% YoY vs Ticketmaster downloads -45% YoY (MAUs +11% YoY), signaling retention focus and market share shift.",
+        "**Discovery Platform Decline**: Bandsintown/Songkick MAUs show consistent downward trends (2021–2026), indicating market saturation risk and reduced engagement for ticketing flows."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 37,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-7w2aoalvllc-c354d0",
       "title": "Jefferies SNDK Price Target cut from 3000 to",
       "institution": "Jefferies",
@@ -570,6 +672,88 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-wnfqvgwtpbi-dd20c8",
+      "title": "Novo Nordisk (NOVOb.CO) Wegovy pill remains the key short term driver, but longer term LOE risk will continue to weigh",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T11:17:22Z",
+      "summary_points": [
+        "**ZEUS/REIMAGINE-4 failure dominates pipeline risk**: Phase 3 trial failures for ziltivekimab (ZEUS) and semaglutide (REIMAGINE-4) trigger removal of ziltivekimab sales forecasts and moderate CagriSema peak sales estimates ($3.4bn vs $5bn), overshadowing Wegovy’s UK traction.",
+        "**ROIC collapse signals capital inefficiency**: ROIC plummeted 50% (39.7% to 19.7%) from 12/25 to 12/2E, indicating severe margin erosion and poor capital allocation, directly impacting long-term growth sustainability.",
+        "**Rising leverage heightens financial risk**: Net debt surged to 26,833 (from 19,780), increasing interest rate sensitivity and amplifying default risk amid deteriorating fundamentals.",
+        "**Earnings quality gap vs sector**: Reported EPS lags core EPS by 51% (vs 19% in 1Q26), embedding one-off items (DKK2bn gross-to-net adjustments), creating a 35% earnings gap and 20% valuation discount to sector multiples (14.6x vs 10.5x).",
+        "**Valuation cut driven by growth concerns**: Target price slashed to DKK285 (from DKK310) due to ZEUS/REIMAGINE-4 failures, with DCF valuation at DKK278/share (13x P/E), reflecting limited pipeline catalysts beyond 2026 Capital Markets Day."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-olv01d9pc2b-5b6251",
+      "title": "Block Inc. (XYZ) 2Q26 Takeaways A solid beat and raise amid high expectations",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T11:17:20Z",
+      "summary_points": [
+        "**Q2 Beat & Guidance**: Beat U.S.",
+        "GPV growth (10% Q2, accelerated without gas/eCommerce tailwinds) and Cash App banking (high-teens gross profit); guided 89% Q3 EPS growth; FY2026 gross profit $12.51bn (-1% vs consensus), adjusted EPS $4.02 (-3% vs consensus).",
+        "**Valuation & Upside**: Reiterated Buy at 15x 2027 EPS; 12-month target raised to $107 (18x Q3-28 EPS), implying 27.1% upside from $84.20; revenue to $30.76B (FY26 vs $24.19B consensus), EPS to $6.53.",
+        "**Key Risks**: Downside driven by worsening macro, intensifying competition, and unfavorable regulation—critical for portfolio positioning amid guidance shifts.",
+        "**Fundamentals Acceleration**: Robust growth trajectory: EPS (2.38 → 6.53), revenue ($24.19B → $30.76B), expanding EBITDA, and declining net debt/EBITDA (0.59 → 1.5 by 12/28E)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-e21lo2o43ff-9e7e61",
+      "title": "Vaxcyte Inc. (PCVX) Timelines for Key VAX 31 Readouts Remain on Track",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T11:17:15Z",
+      "summary_points": [
+        "**VAX-31 Trial Timelines**: Ph3 Adult (OPUS-1/2/3) and Ph2 Infant (1H27) readouts on track; non-inferiority misses may still yield protective titers, critical for product viability.",
+        "**Policy Debate Impact**: Vaccine policy uncertainty directly impacts PCVX sentiment; resolution = upside, escalation = downside, major risk factor.",
+        "**Target Price Deterioration**: Goldman Sachs cut Vaxcyte target 47% (from $135 to $67), reflecting declining analyst confidence and heightened risk.",
+        "**Price-Target Gap**: Current price ($63.04) below $67 target, signaling potential undervaluation or structural concerns requiring scrutiny."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fauuekbwwl0-f56715",
+      "title": "Royalty Pharma Plc (RPRX) Steady Outperformance, Another Beat and Raise",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T11:17:14Z",
+      "summary_points": [
+        "**Beat & Raised Guidance**: RPRX beats FY2026 estimates ($773mn vs $754mn portfolio receipts), raises guidance to $3.4bn–$3.5bn (7–10% royalty growth), valuation upgraded to $66 (12.5x EV/EBITDA).",
+        "**Strategic Acquisition**: Deployed $1.7bn in H1 2026, including $425m for AZN’s Clarimutig royalty (3.75% on $3-5bn sales, peak royalties $110m–$190m), enhancing near-term revenue streams.",
+        "**Near-Term Catalysts**: Critical 2026 clinical (Novartis’ pelacarsen Phase 3) and regulatory events (FDA approvals for Avayah/Trodelvy) drive immediate upside potential.",
+        "**Outperformance & Cash Position**: Outperforms pharma/biotech benchmarks (YTD +49% vs DRG +8%), with $812mn cash, $9.2bn debt, and 2.8x leverage—unique royalty vehicle avoiding biotech volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-7535qbcueop-3d1700",
       "title": "Global Metals & Mining Channel Checking Iron Ore Traders",
       "institution": "Goldman Sachs",
@@ -587,6 +771,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-urynpcnmq3i-4cd9a7",
+      "title": "DoorDash Inc. (DASH) Q2'26 Review Strong Operating Performance as Company Remains Focused on Building & Investing Toward A ...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T11:17:07Z",
+      "summary_points": [
+        "**Q2'26 Fundamentals**: Strong EBITDA outperformance vs.",
+        "Street, improving unit economics (grocery/retail on track for gross profit positive H2), DashPass driving ~75% of US grocery/retail orders.",
+        "**Valuation Efficiency**: P/E and EV/EBITDA decline sharply (103.4→30.2, 33.1→13.3), DASH outperforms S&P 500 by 17.3% over 3m signaling market confidence.",
+        "**Growth Catalysts**: Rising DashPass payer conversion, grocery/retail order growth, AI/autonomy investments driving compounded GOV/Adj.",
+        "EBITDA growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
@@ -650,6 +855,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 33,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qdagrcawfke-5f344d",
+      "title": "JPM Retail Radar",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T09:24:55Z",
+      "summary_points": [
+        "**Hyperscaler Earnings & Retail Flow Divergence**: S&P 500 hit new highs on hyperscaler earnings, but retail sold single stocks (MSFT, PLTR, AMZN) while favoring ETFs; record software outflows ($4.2B net selling) vs.",
+        "healthy ETF inflows signal AI trade re-engagement via Memory/Semis and Tech ETFs.",
+        "**Retail ETF Dominance & Sector Shift**: Retail flows ($3.5B, below 12-mo avg) heavily favor ETFs over single stocks; concentrated buying in AI datacenters (JPAMAIDE), electrification, and US firms with high China revenue exposure, driving Tech ETF (SOXX, SMH) inflows amid software outflows.",
+        "**Short Squeeze Risk Catalysts**: BBAI (32% short interest, $400M net retail buys), DFNS (22% short interest), and SES show retail-driven momentum amid elevated short interest; rising cumulative retail imbalance (e.g., DFNS, SES) signals heightened squeeze risk.",
+        "**AMZN AWS Growth & AI Investment Catalyst**: AWS growth +37% (fastest in 18 quarters), backlog up 2.5x to $496B on AI/core demand; management cites strong ROIC on AI investments, with capex raised to ~$220B."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 24,
       "language": "en",
       "needs_metadata": false
     },
@@ -1101,6 +1327,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-5p1dipehbli-939757",
+      "title": "Hon Hai (2317)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:01:46Z",
+      "summary_points": [
+        "**Hon Hai Revenue Momentum**: Jul rev +54% YoY (vs.",
+        "est), Aug rev +73% YoY / +11% MoM (NT$1.05T), 3Q26E rev +48% YoY / +22% QoQ (NT$3.1T) driven by AI server market share gains and smartphone form factor shifts.",
+        "**Dual Growth Catalysts**: AI server demand (market share expansion) and smartphone form factor changes (2026E) underpin near-term revenue growth; Foxtron (EV subsidiary) launched self-branded \"Bria\" vehicle and secured Mitsubishi Motors partnership for passenger cars/zero-emission buses.",
+        "**Valuation Gap & Upside**: Goldman Sachs 12m TP at NT$400 (54.7% upside from NT$258.50), reflecting 120%+ revenue/EBITDA growth (2025–2028E) and 2027E P/E of 18.9x, with current price significantly below target.",
+        "**Key Downside Risks**: Slower AI server ramp-up, weaker EV solution performance (assembly/design/software), and intensified competition in consumer electronics EMS."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
