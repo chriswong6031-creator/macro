@@ -2203,8 +2203,13 @@ jobs:
         run: python3 scripts/check_blocklist_drift.py
       - name: metabolism v4 w1 suite (real BUILD dispatch — R-V4-2)
         run: python -m pytest tests/test_metabolism_v4_w1_dispatch.py tests/test_metabolism_buildlane.py -q
-      - name: llm auth waterfall + multi-key failover suite
-        run: python -m pytest tests/test_codex_provider.py tests/test_llm_auth.py tests/test_key_pool.py -q
+      - name: llm auth waterfall + multi-key failover + usage-ledger attribution suite
+        # test_ollama_provider.py and test_ai_costs.py were enumerated by NO job
+        # until 2026-08-07: the local rung and the ledger it writes to were both
+        # dark, which is how _capture_usage could bill free Ollama calls to the
+        # Claude subscription lane unnoticed.  They guard the same waterfall as
+        # the three files beside them — keep them in this step.
+        run: python -m pytest tests/test_codex_provider.py tests/test_llm_auth.py tests/test_key_pool.py tests/test_ollama_provider.py tests/test_ai_costs.py -q
       - name: V10 key economy suite (enabled-set, header capture, usage snapshot)
         run: python -m pytest tests/test_key_pool_economy.py -q
       - name: cortex provider routing + tool loop suite
