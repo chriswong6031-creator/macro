@@ -1,9 +1,9 @@
 {
   "schema": "index_leadership.track_record.v1",
   "as_of": "2026-08-04",
-  "generated_at": "2026-08-05T14:49:39.423522+00:00",
+  "generated_at": "2026-08-06T21:49:32.283890+00:00",
   "is_context_only": true,
-  "n_snapshots": 128,
+  "n_snapshots": 146,
   "n_days": 4,
   "horizons": {
     "5": {

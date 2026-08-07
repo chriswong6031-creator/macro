@@ -32,6 +32,26 @@ openai_compat:
   connect_timeout_s: 5                     # fail over quickly when the LAN host is down
   timeout_s: 120
   max_tokens: 1200
+  # PER-RUNG transcript bound — overrides the global max_chars/tail_chars below
+  # for THIS rung only (see engine/earnings_qual._rung_text_bounds).  The rungs
+  # do not share a context window: this endpoint serves 4,096 tokens, while the
+  # cloud rungs read the full 24,000 characters comfortably.  Over the window
+  # the server does not error — it drops the overflow and answers with a
+  # markdown summary instead of JSON (HTTP 200, finish_reason "stop"), which
+  # reads downstream as invalid_json, burns the bounded retry, and falls
+  # through to a metered provider on every real transcript.
+  # Measured 2026-08-06 against the real system prompt on qwen3.5:9b, with
+  # /no_think + reasoning_effort:none applied (max_tokens 600 vs 1200 changed
+  # nothing, so this is the context window, not the completion reservation):
+  #   6,000 chars -> 2,547 prompt_tokens, JSON      9,000 -> 3,583, JSON
+  #   8,000 chars -> 3,238 prompt_tokens, JSON     10,000 -> 3,932, NO JSON
+  #  11,000+ chars -> prompt_tokens pinned at 2,050 (silently truncated)
+  # 8,000 sits a full step below the 10,000 failure point: real transcripts are
+  # more token-dense than the synthetic text measured above, so they consume
+  # MORE tokens per character.  Do not tune this to the measured edge.
+  max_chars: 8000
+  tail_chars: 3000                         # ~the global 1:3 tail ratio, and under
+                                           # max_chars//2 so it is never clamped
 
 # --- cloud fallback model ids (routed via engine/llm_auth) -----------------------
 # Cheapest lane only — earnings scoring is off the render-critical path.
@@ -58,6 +78,10 @@ kimi:
 # four calls/name/year, with much larger earnings-season bursts. Local Qwen can
 # absorb this cheaply; a persistent queue carries overflow across runs.
 daily_cap: 64                              # max scores per score_new() invocation
+# GLOBAL transcript bound — applies to every rung that does not set its own
+# max_chars/tail_chars in its provider block above.  The cloud rungs read this
+# in full; do NOT lower it to accommodate a small local context window, that is
+# what the per-rung override exists for.
 max_chars: 24000                           # transcript is truncated to this length
 tail_chars: 8000                           # preserve Q&A tail on long calls
 retry_on_bad_json: 1                       # one retry when the model returns non-JSON
