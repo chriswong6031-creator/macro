@@ -43,6 +43,12 @@ from scripts.publish_r2 import (  # noqa: E402
     _DATA_DIRS, _client, _md5, _remote_etags, _transfer_config,
 )
 
+# Module-top on purpose (mirrors publish_r2): lib.config's import-time
+# _load_dotenv() must populate the R2_* vars from the gitignored ROOT/.env
+# BEFORE fetch() calls _client(), or every local run skips as "no R2 creds"
+# despite a fully-keyed .env (observed live 2026-08-06).
+from lib import config  # noqa: E402
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("fetch_r2")
 
@@ -57,7 +63,6 @@ def fetch(dirs, workers: int = 16) -> int:
         return 0
     _xfer = _transfer_config()
     _xfer_kw = {} if _xfer is None else {"Config": _xfer}
-    from lib import config
     bucket = os.environ["R2_BUCKET"]
     cfg = config.load()["storage"]
     site = config.ROOT / cfg["site_dir"]

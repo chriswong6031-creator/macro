@@ -763,7 +763,7 @@ def _compute_setup(s: dict, tech: dict, ident: dict, favor: dict) -> dict:
 
     if s.get("live"):
         why.append("EDGAR filing confirmed")
-        why_zh.append("EDGAR申报已确认")
+        why_zh.append("EDGAR披露已确认")
 
     if favor.get("theme_ready"):
         why.append("Theme ready for entry")
@@ -776,7 +776,7 @@ def _compute_setup(s: dict, tech: dict, ident: dict, favor: dict) -> dict:
     # If nothing positive and score is positive, add fallback
     if not why and score >= 40:
         why    = ["Event filed with structured data"]
-        why_zh = ["已提交结构化事件申报"]
+        why_zh = ["已提交结构化事件披露"]
 
     return {"score": score, "grade": grade, "why": why, "why_zh": why_zh}
 

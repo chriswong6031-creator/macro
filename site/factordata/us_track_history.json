@@ -1,16 +1,16 @@
 {
   "schema": "us_track_history/v1",
-  "as_of": "2026-08-05",
-  "generated": "2026-08-06T05:48:24.196127+00:00",
+  "as_of": "2026-08-06",
+  "generated": "2026-08-06T23:44:31.304102+00:00",
   "cohort_rollup": {
     "horizons": {
       "h5": {
         "accruing": true,
-        "raw_n": 1513,
+        "raw_n": 1518,
         "effective_n": 1,
-        "win_rate": 0.5849,
-        "avg_excess": 0.0106,
-        "med_excess": 0.011,
+        "win_rate": 0.5856,
+        "avg_excess": 0.0109,
+        "med_excess": 0.0111,
         "wilson_lo": 0.2065,
         "wilson_hi": 1.0,
         "cohort_series": [
@@ -64,11 +64,11 @@
           },
           {
             "week": "2026-07-27/2026-08-02",
-            "raw_n": 5,
+            "raw_n": 10,
             "effective_n": 1,
-            "win_rate": 0.6,
-            "avg_excess": 0.0276,
-            "med_excess": 0.0221
+            "win_rate": 0.7,
+            "avg_excess": 0.0516,
+            "med_excess": 0.0416
           }
         ]
       },

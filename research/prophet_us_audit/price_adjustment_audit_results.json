@@ -1,0 +1,676 @@
+{
+ "instrument": "research/prophet_us_audit/price_adjustment_audit.py",
+ "tier": "RESEARCH \u2014 measurement only; changes no engine, gate, board or grader",
+ "asof_pin": "2026-07-31",
+ "defect": "Excess returns computed with the NAME leg on the breadth close caches (raw between rebuilds) and the BENCHMARK leg on data/yahoo (back-adjusted). A name that goes ex-distribution inside the measurement window books its own payout as a loss against an unaffected benchmark.",
+ "receipt": {
+  "ticker": "CFG",
+  "date": "2026-06-22",
+  "cache": 67.99,
+  "adjusted": 67.5514,
+  "gap_pct": 0.649,
+  "converges": {
+   "date": "2026-07-07",
+   "both": 71.317
+  },
+  "controls_matching_exactly": [
+   "JPM",
+   "KO",
+   "ALB",
+   "CEG"
+  ],
+  "note": "the controls are the half that makes this a basis defect rather than two different data sources \u2014 names with no post-rebuild ex-date agree to the cent across all four stores."
+ },
+ "section_1_census": [
+  {
+   "instrument": "research/prophet_us_audit/fresh_ticks_extension_replay.py",
+   "pr": "#4546",
+   "name_source": "closes_cache (UNADJUSTED)",
+   "bench_source": "data/yahoo/SPY.parquet (ADJUSTED)",
+   "exposed": "yes",
+   "reason": "names from the three breadth caches, SPY from yahoo \u2014 mixed basis in every excess_spy_pp cell. Also reports excess vs the same-panel universe median, which is same-basis and therefore unexposed.",
+   "headline": "FRESH_TICKS extension null: delta +0.04pp [-0.18,+0.24]",
+   "rerun": "fresh_ticks_extension_replay_adjusted_rerun.json",
+   "greps": {
+    "name": "_closes_cache",
+    "bench": "data/yahoo/SPY\\.parquet"
+   }
+  },
+  {
+   "instrument": "research/prophet_us_audit/label_grading_battery.py",
+   "pr": "#4547",
+   "name_source": "closes_cache (UNADJUSTED); weekly leg spliced over data/yahoo with the CACHE winning on overlap",
+   "bench_source": "data/yahoo/SPY.parquet (ADJUSTED)",
+   "exposed": "yes",
+   "reason": "sections 2/3 compute forward returns off the cache panel against a yahoo SPY. Section 1 reads excess_spy off the production ledger and inherits the SAME mixed basis from scripts/grade_us_board.py rather than creating it. The weekly splice also mixes bases WITHIN one name's series.",
+   "headline": "veto-label family null, max +0.28pp",
+   "rerun": "label_grading_battery_adjusted_rerun.json",
+   "greps": {
+    "name": "_closes_cache",
+    "bench": "store\\.read\\(\"yahoo\", BENCH\\)"
+   }
+  },
+  {
+   "instrument": "research/prophet_us_audit/reclaim_veto_packet.py",
+   "pr": "2026-08-05 packet",
+   "name_source": "closes_cache (UNADJUSTED)",
+   "bench_source": "data/yahoo/SPY.parquet (ADJUSTED)",
+   "exposed": "yes",
+   "reason": "load_panel() reads the three caches; load_benchmark() reads yahoo SPY; excess_<h> subtracts them directly.",
+   "headline": "reclaim-veto aggregate",
+   "rerun": null,
+   "greps": {
+    "name": "_closes_cache",
+    "bench": "Path\\(\"data/yahoo\"\\)"
+   }
+  },
+  {
+   "instrument": "research/prophet_us_audit/name_score_pk_benchmark.py",
+   "pr": "name_score P@k",
+   "name_source": "ledger excess_spy (INHERITED)",
+   "bench_source": "ledger excess_spy (INHERITED)",
+   "exposed": "inherited",
+   "reason": "computes no excess of its own \u2014 reads the precomputed excess_spy column from retro_grades.parquet, so it carries exactly the production grader's bias and adds none. Its own cache read is a PIT tier recompute (a signal leg), not a return leg.",
+   "headline": "P@k / rank-IC on the S-A/S-B/S-C frame",
+   "rerun": null,
+   "greps": {
+    "name": "_closes_cache",
+    "bench": "excess_spy"
+   }
+  },
+  {
+   "instrument": "research/prophet_us_audit/superintelligence_standins.py",
+   "pr": "S-A/S-B/S-C",
+   "name_source": "ledger excess_spy (INHERITED)",
+   "bench_source": "ledger excess_spy (INHERITED)",
+   "exposed": "inherited",
+   "reason": "same shape as name_score_pk_benchmark: excess read from the ledger; the cache read is the S-B tier recompute, a signal leg.",
+   "headline": "S-B confirmation by_cross_age_ticks",
+   "rerun": null,
+   "greps": {
+    "name": "_closes_cache",
+    "bench": "excess_spy"
+   }
+  },
+  {
+   "instrument": "research/prophet_us_audit/relay_position_standin.py",
+   "pr": "Door T stand-in",
+   "name_source": "closes_cache (UNADJUSTED)",
+   "bench_source": "same-day median of the SAME cache panel (UNADJUSTED)",
+   "exposed": "partial",
+   "reason": "both legs share one basis, so the SPY-shaped bias is absent. What survives is second-order: a distribution-paying name is measured against a median whose members' distributions partly cancel it, leaving a tilt of (name yield - universe median yield) rather than the full yield.",
+   "headline": "relay-position excess vs day median",
+   "rerun": null,
+   "greps": {
+    "name": "_closes_cache",
+    "bench": "fwd\\.median\\(axis=1\\)"
+   }
+  },
+  {
+   "instrument": "research/prophet_us_audit/leader_reset_study.py",
+   "pr": "leader-reset (killed family)",
+   "name_source": "closes_cache (UNADJUSTED)",
+   "bench_source": "cross-sectional median of the SAME cache panel (UNADJUSTED)",
+   "exposed": "partial",
+   "reason": "same construction as relay_position_standin \u2014 one basis on both legs, residual second-order tilt only.",
+   "headline": "n/a (family already killed)",
+   "rerun": null,
+   "greps": {
+    "name": "_closes_cache",
+    "bench": "median\\(axis=1\\)"
+   }
+  },
+  {
+   "instrument": "research/prophet_us_audit/ignition_standins.py",
+   "pr": "#4564",
+   "name_source": "data/baskets/ohlcv/*.parquet (ADJUSTED)",
+   "bench_source": "data/yahoo/SPY.parquet (ADJUSTED)",
+   "exposed": "no",
+   "reason": "both legs are drawn from the ADJUSTED family, so the subtraction is basis-consistent and this defect cannot reach it. The W8 intersection null and S-COIL's +0.98pp at H=63 are unaffected.",
+   "headline": "W8 intersection null; S-COIL +0.98pp at H=63",
+   "rerun": null,
+   "greps": {
+    "name": "data/baskets/ohlcv",
+    "bench": "data/yahoo/SPY\\.parquet"
+   }
+  },
+  {
+   "instrument": "research/prophet_us_audit/roc_extremes_battery.py",
+   "pr": "ROC extremes",
+   "name_source": "data/baskets/ohlcv/*.parquet (ADJUSTED)",
+   "bench_source": "data/yahoo/SPY.parquet (ADJUSTED)",
+   "exposed": "no",
+   "reason": "both legs ADJUSTED \u2014 basis-consistent.",
+   "headline": "ROC-extreme cohorts",
+   "rerun": null,
+   "greps": {
+    "name": "data/baskets/ohlcv",
+    "bench": "data/yahoo/SPY\\.parquet"
+   }
+  },
+  {
+   "instrument": "research/prophet_us_audit/runner_exclusion_audit.py",
+   "pr": "runner audit",
+   "name_source": "closes_cache (UNADJUSTED)",
+   "bench_source": "none \u2014 no benchmark subtraction anywhere",
+   "exposed": "no",
+   "reason": "computes raw forward return from first admission only (fwd_ret_from_first_pct). With no benchmark leg there is no basis mismatch; a distribution biases the raw return itself, which is a different and much smaller question than a mixed-basis excess.",
+   "headline": "admit-character census",
+   "rerun": null,
+   "greps": {
+    "name": "_closes_cache",
+    "bench": null
+   }
+  },
+  {
+   "instrument": "research/prophet_us_audit/post_board_trajectory.py",
+   "pr": "#4692",
+   "name_source": "adjusted-first ladder (ADJUSTED, cache last)",
+   "bench_source": "data/yahoo/SPY.parquet (ADJUSTED)",
+   "exposed": "no",
+   "reason": "the lane that FOUND this defect; already re-laddered adjusted-first and prints its residual unadjusted count. Reference implementation.",
+   "headline": "post-board trajectory deltas",
+   "rerun": null,
+   "greps": null
+  },
+  {
+   "instrument": "research/cn_prophet_audit/*.py",
+   "pr": "CN program",
+   "name_source": "data/china_stocks (CN family)",
+   "bench_source": "data/china/510300.SS.parquet (CN family)",
+   "exposed": "no",
+   "reason": "a self-consistent China price family that never touches either US family.",
+   "headline": "CN relay/loser studies",
+   "rerun": null,
+   "greps": null
+  },
+  {
+   "instrument": "research/entry_timing/wave*.py",
+   "pr": "entry-timing waves",
+   "name_source": "data/stocks or data/baskets/ohlcv (ADJUSTED)",
+   "bench_source": "data/stocks/SPY.parquet -> data/yahoo/SPY.parquet (ADJUSTED)",
+   "exposed": "no",
+   "reason": "never reads a breadth cache; both rungs of its SPY ladder are ADJUSTED.",
+   "headline": "wave batteries",
+   "rerun": null,
+   "greps": null
+  },
+  {
+   "instrument": "research/entry_intel/**, research/bottom_signal_backtest/, research/species/s7_rs_repair_phase0/",
+   "pr": "various",
+   "name_source": "data/massive_stock_day | data/baskets/ohlcv | data/stocks (ADJUSTED)",
+   "bench_source": "data/yahoo (ADJUSTED)",
+   "exposed": "no",
+   "reason": "same-family pairings. s7 documents the rule explicitly ('Do NOT mix with data/stocks which is yahoo total-return adjusted') and is the house reference for getting this right.",
+   "headline": "various",
+   "rerun": null,
+   "greps": null
+  },
+  {
+   "instrument": "scripts/grade_us_board.py",
+   "pr": "PRODUCTION",
+   "name_source": "engine.equity_factors._closes('broad') -> the three breadth caches (UNADJUSTED by code)",
+   "bench_source": "data/yahoo/{SPY,XL*}.parquet (ADJUSTED)",
+   "exposed": "latent-PRODUCTION",
+   "reason": "READ THE CODE AND IT IS EXPOSED; MEASURE THE ARTIFACT AND IT IS NOT \u2014 both halves are receipts and the row states both. _load_prices() pairs a cache-priced name leg with a yahoo-priced ETF leg, and its docstring claims 'Both dividend-adjusted TR closes', which is true of the ETF leg only. But every one of the 1,931 comparable rows in the shipped ledger matches the ADJUSTED recomputation to 1e-5, including all 21 rows where the two bases actually differ (LPG 2026-06-22 H5: cache basis -13.8224%, adjusted basis -11.8780%, ledger stores -11.8780%). Ledger rows are never re-graded (0 of 950 rows changed between the 2026-07-03 commit and today), so the adjusted value was written at grading time. The exposure is therefore LATENT \u2014 the pairing is wrong in the code but the artifact on this frame is clean. The path that supplies the adjusted price was not identified here, so the protection is not understood and cannot be assumed to hold on the next frame.",
+   "headline": "every excess_spy / excess_sector row in the US board ledger",
+   "rerun": null,
+   "greps": {
+    "name": "_closes\\(\"broad\"\\)",
+    "bench": "\"data\" / \"yahoo\""
+   }
+  },
+  {
+   "instrument": "scripts/prophet_postmortem.py",
+   "pr": "PRODUCTION",
+   "name_source": "closes_cache FIRST, baskets/extras only as fallback (UNADJUSTED for the majority)",
+   "bench_source": "data/yahoo/SPY.parquet (ADJUSTED)",
+   "exposed": "yes-PRODUCTION",
+   "reason": "close_resolver() puts the cache on rung 1, so the common case is mixed; only names ABSENT from the cache get an adjusted rung.",
+   "headline": "postmortem episode scores",
+   "rerun": null,
+   "greps": {
+    "name": "_closes_cache",
+    "bench": "BENCH_REL"
+   }
+  },
+  {
+   "instrument": "engine/manager_trades.py",
+   "pr": "PRODUCTION",
+   "name_source": "data/yahoo FIRST, breadth cache as fallback",
+   "bench_source": "same ladder; SPY resolves to yahoo (ADJUSTED)",
+   "exposed": "partial-PRODUCTION",
+   "reason": "ladder order is already adjusted-first, so only names ABSENT from yahoo land on the cache. Much smaller blast radius than grade_us_board, and the rung order is the right one \u2014 but the fallback is undisclosed.",
+   "headline": "13F manager excess",
+   "rerun": null,
+   "greps": {
+    "name": "_breadth_panel",
+    "bench": "BENCHMARK"
+   }
+  },
+  {
+   "instrument": "scripts/backtest_special_situations.py",
+   "pr": "PRODUCTION",
+   "name_source": "closes_cache (UNADJUSTED)",
+   "bench_source": "SPY from the cache panel if present, else data/yahoo (ADJUSTED)",
+   "exposed": "partial-PRODUCTION",
+   "reason": "basis-consistent when SPY is a cache column; mixed only on the yahoo fallback branch.",
+   "headline": "special-situations backtest",
+   "rerun": null,
+   "greps": {
+    "name": "_closes_cache",
+    "bench": "store\\.read\\(\"yahoo\""
+   }
+  },
+  {
+   "instrument": "scripts/calibrate_bottom_radar.py",
+   "pr": "PRODUCTION",
+   "name_source": "data/stocks by default (ADJUSTED); closes_cache under --universe breadth|midcap|smallcap",
+   "bench_source": "data/yahoo/SPY.parquet (ADJUSTED)",
+   "exposed": "partial-PRODUCTION",
+   "reason": "the DEFAULT path is basis-consistent. The non-default cache path is mixed \u2014 and its own docstring calls that path 'the proper test of the radar's score + vetos', so the more-rigorous mode is the biased one.",
+   "headline": "bottom-radar GO/NO-GO",
+   "rerun": null,
+   "greps": {
+    "name": "_closes_cache",
+    "bench": "\"yahoo\""
+   }
+  },
+  {
+   "instrument": "engine/desk_grader.py",
+   "pr": "PRODUCTION (already correct)",
+   "name_source": "data/yahoo/<T>.parquet ONLY (ADJUSTED)",
+   "bench_source": "data/yahoo/SPY.parquet (ADJUSTED)",
+   "exposed": "no",
+   "reason": "hardened against this exact cache on 2026-07-04 and says so in its own notes: 'grade off data/yahoo adjusted closes ONLY. The S&P-1500 breadth close cache is SPLIT-CORRUPTED \u2014 using it silently poisons every RS / forward-return number.' A name absent from yahoo is a counted coverage skip, never a wrong return. The house already knew; the knowledge just never reached grade_us_board.py.",
+   "headline": "desk grades",
+   "rerun": null,
+   "greps": {
+    "name": "data/yahoo",
+    "bench": "BENCH"
+   }
+  }
+ ],
+ "section_1b_census_selfcheck": {
+  "rows_total": 20,
+  "rows_grep_checked": 16,
+  "files_not_on_disk": [],
+  "drifted": [],
+  "status": "OK",
+  "note": "every row with a `greps` entry is re-read from disk; a DRIFT status means a loader moved and the census row must be re-measured, never patched."
+ },
+ "section_2_basis_divergence": {
+  "names_compared": 1227,
+  "min_overlap_sessions": 200,
+  "deviation_bands": {
+   "exact_match": {
+    "n": 885,
+    "pct": 72.1
+   },
+   "sub_1pct": {
+    "n": 273,
+    "pct": 22.2
+   },
+   "1_to_5pct": {
+    "n": 67,
+    "pct": 5.5
+   },
+   "5_to_25pct": {
+    "n": 1,
+    "pct": 0.1
+   },
+   "split_sized_gt25pct": {
+    "n": 1,
+    "pct": 0.1
+   }
+  },
+  "names_with_any_divergence": 342,
+  "pct_with_any_divergence": 27.9,
+  "step_count": {
+   "median": 0.0,
+   "p90": 1.0,
+   "max": 8
+  },
+  "first_divergence_date": {
+   "min": "2023-09-14",
+   "p05": "2026-05-13",
+   "median": "2026-06-01",
+   "max": "2026-07-01",
+   "by_month": {
+    "2023-09": 1,
+    "2024-11": 1,
+    "2026-05": 143,
+    "2026-06": 180,
+    "2026-07": 17
+   }
+  },
+  "largest_deviations": [
+   {
+    "ticker": "SEM",
+    "dev_pct": 46.1317,
+    "n_steps": 8
+   },
+   {
+    "ticker": "SPGI",
+    "dev_pct": 5.7,
+    "n_steps": 1
+   },
+   {
+    "ticker": "HON",
+    "dev_pct": 4.65,
+    "n_steps": 1
+   },
+   {
+    "ticker": "PMT",
+    "dev_pct": 3.9801,
+    "n_steps": 1
+   },
+   {
+    "ticker": "HST",
+    "dev_pct": 3.8333,
+    "n_steps": 1
+   },
+   {
+    "ticker": "RWT",
+    "dev_pct": 3.75,
+    "n_steps": 1
+   },
+   {
+    "ticker": "WU",
+    "dev_pct": 3.2392,
+    "n_steps": 1
+   },
+   {
+    "ticker": "ADAM",
+    "dev_pct": 3.1142,
+    "n_steps": 1
+   }
+  ],
+  "reading": "The caches are NOT 'never retro-adjusted'. They are re-based at an infrequent full rebuild and accrue raw closes after it: a three-year quarterly payer would carry ~12 divergence steps if the cache were never re-based, and the observed median is 0 with a maximum of 8. The exposure is therefore a bounded TAIL \u2014 windows closing before the last rebuild carry zero bias; windows inside it carry all of it."
+ },
+ "section_3_production_ledger_error": {
+  "ledger": "data/us_board_ledger/retro_grades.parquet",
+  "ledger_rows": 2287,
+  "ledger_frame": [
+   "2026-06-15",
+   "2026-07-27"
+  ],
+  "rows_comparable_on_both_bases": 1931,
+  "rows_not_comparable": 356,
+  "fidelity_of_cache_recompute_vs_stored_ret_pp": {
+   "n": 1931,
+   "median_abs": 0.0,
+   "p95_abs": 0.0,
+   "max_abs": 1.9444,
+   "note": "a median/p95 of 0 means the recompute reproduces the grader exactly, so the error below is the BASIS and not a reimplementation difference. The single large max is a name the grader recovered from the yahoo ADJUSTED store via extend_prices_to_admitted() while this recompute priced it from the cache \u2014 the panel's own internal basis mix, showing up as a receipt."
+  },
+  "by_horizon": {
+   "H5": {
+    "n": 1306,
+    "thin": false,
+    "basis": {
+     "n": 1306,
+     "n_affected": 21,
+     "pct_affected": 1.6,
+     "median_pp": 0.0,
+     "mean_pp": -0.0054,
+     "affected_median_pp": -0.1549,
+     "affected_worst_pp": -1.9444,
+     "p05_pp": 0.0,
+     "p95_pp": 0.0
+    },
+    "ledger_carried": {
+     "n": 1306,
+     "n_affected": 51,
+     "pct_affected": 3.9,
+     "median_pp": 0.0,
+     "mean_pp": 0.0,
+     "affected_median_pp": 0.0,
+     "affected_worst_pp": 0.0,
+     "p05_pp": 0.0,
+     "p95_pp": 0.0
+    }
+   },
+   "H10": {
+    "n": 575,
+    "thin": false,
+    "basis": {
+     "n": 575,
+     "n_affected": 7,
+     "pct_affected": 1.2,
+     "median_pp": 0.0,
+     "mean_pp": -0.0036,
+     "affected_median_pp": -0.4165,
+     "affected_worst_pp": -0.4625,
+     "p05_pp": 0.0,
+     "p95_pp": 0.0
+    },
+    "ledger_carried": {
+     "n": 575,
+     "n_affected": 10,
+     "pct_affected": 1.7,
+     "median_pp": 0.0,
+     "mean_pp": -0.0,
+     "affected_median_pp": 0.0,
+     "affected_worst_pp": -0.0,
+     "p05_pp": 0.0,
+     "p95_pp": 0.0
+    }
+   },
+   "H21": {
+    "n": 50,
+    "thin": false,
+    "basis": {
+     "n": 50,
+     "n_affected": 0,
+     "pct_affected": 0.0,
+     "median_pp": 0.0,
+     "mean_pp": 0.0,
+     "affected_median_pp": null,
+     "affected_worst_pp": null,
+     "p05_pp": 0.0,
+     "p95_pp": 0.0
+    },
+    "ledger_carried": {
+     "n": 50,
+     "n_affected": 0,
+     "pct_affected": 0.0,
+     "median_pp": 0.0,
+     "mean_pp": 0.0,
+     "affected_median_pp": null,
+     "affected_worst_pp": null,
+     "p05_pp": 0.0,
+     "p95_pp": 0.0
+    }
+   }
+  },
+  "by_sector_H5_basis_effect": {
+   "Communication Services": {
+    "n": 32,
+    "thin": false,
+    "n_affected": 0,
+    "pct_affected": 0.0,
+    "mean_err_pp": 0.0,
+    "median_err_pp": 0.0
+   },
+   "Communications": {
+    "n": 11,
+    "thin": true,
+    "n_affected": 0,
+    "pct_affected": 0.0,
+    "mean_err_pp": 0.0,
+    "median_err_pp": 0.0
+   },
+   "Consumer Discretionary": {
+    "n": 233,
+    "thin": false,
+    "n_affected": 3,
+    "pct_affected": 1.3,
+    "mean_err_pp": -0.005,
+    "median_err_pp": 0.0
+   },
+   "Consumer Staples": {
+    "n": 72,
+    "thin": false,
+    "n_affected": 3,
+    "pct_affected": 4.2,
+    "mean_err_pp": -0.0103,
+    "median_err_pp": 0.0
+   },
+   "Energy": {
+    "n": 47,
+    "thin": false,
+    "n_affected": 6,
+    "pct_affected": 12.8,
+    "mean_err_pp": -0.0414,
+    "median_err_pp": 0.0
+   },
+   "Financials": {
+    "n": 230,
+    "thin": false,
+    "n_affected": 3,
+    "pct_affected": 1.3,
+    "mean_err_pp": -0.0074,
+    "median_err_pp": 0.0
+   },
+   "Health Care": {
+    "n": 136,
+    "thin": false,
+    "n_affected": 1,
+    "pct_affected": 0.7,
+    "mean_err_pp": -0.0005,
+    "median_err_pp": 0.0
+   },
+   "Industrials": {
+    "n": 208,
+    "thin": false,
+    "n_affected": 1,
+    "pct_affected": 0.5,
+    "mean_err_pp": -0.0028,
+    "median_err_pp": 0.0
+   },
+   "Information Technology": {
+    "n": 108,
+    "thin": false,
+    "n_affected": 0,
+    "pct_affected": 0.0,
+    "mean_err_pp": 0.0,
+    "median_err_pp": 0.0
+   },
+   "Materials": {
+    "n": 69,
+    "thin": false,
+    "n_affected": 2,
+    "pct_affected": 2.9,
+    "mean_err_pp": -0.0122,
+    "median_err_pp": 0.0
+   },
+   "Real Estate": {
+    "n": 97,
+    "thin": false,
+    "n_affected": 0,
+    "pct_affected": 0.0,
+    "mean_err_pp": 0.0,
+    "median_err_pp": 0.0
+   },
+   "Technology": {
+    "n": 12,
+    "thin": true,
+    "n_affected": 0,
+    "pct_affected": 0.0,
+    "mean_err_pp": 0.0,
+    "median_err_pp": 0.0
+   },
+   "Utilities": {
+    "n": 50,
+    "thin": false,
+    "n_affected": 2,
+    "pct_affected": 4.0,
+    "mean_err_pp": -0.0,
+    "median_err_pp": 0.0
+   },
+   "history": {
+    "n": 1,
+    "thin": true,
+    "n_affected": 0,
+    "pct_affected": 0.0,
+    "mean_err_pp": 0.0,
+    "median_err_pp": 0.0
+   }
+  },
+  "which_basis_is_the_ledger_on": {
+   "rows_where_the_bases_differ": 28,
+   "n_matching_cache_basis": 9,
+   "n_matching_adjusted_basis": 28,
+   "max_abs_gap_to_adjusted_pp": 1.1e-05,
+   "examples": [
+    {
+     "ticker": "LPG",
+     "entry_date": "2026-06-22",
+     "h": 5,
+     "cache_basis_ret_pct": -13.8224,
+     "adjusted_basis_ret_pct": -11.878,
+     "ledger_stores_pct": -11.878
+    },
+    {
+     "ticker": "LKFN",
+     "entry_date": "2026-06-24",
+     "h": 5,
+     "cache_basis_ret_pct": 1.6948,
+     "adjusted_basis_ret_pct": 2.5674,
+     "ledger_stores_pct": 2.5674
+    },
+    {
+     "ticker": "PNC",
+     "entry_date": "2026-06-18",
+     "h": 5,
+     "cache_basis_ret_pct": 4.7458,
+     "adjusted_basis_ret_pct": 5.5809,
+     "ledger_stores_pct": 5.5809
+    },
+    {
+     "ticker": "CL",
+     "entry_date": "2026-06-18",
+     "h": 5,
+     "cache_basis_ret_pct": 2.308,
+     "adjusted_basis_ret_pct": 2.8945,
+     "ledger_stores_pct": 2.8945
+    },
+    {
+     "ticker": "FAST",
+     "entry_date": "2026-06-23",
+     "h": 5,
+     "cache_basis_ret_pct": 4.7541,
+     "adjusted_basis_ret_pct": 5.329,
+     "ledger_stores_pct": 5.3289
+    }
+   ],
+   "reading": "On every row where the choice of basis is observable, the shipped ledger holds the ADJUSTED number. The mixed-basis pairing in _load_prices() is therefore a LATENT defect on this frame, not a realized contamination \u2014 report it, do not restate it as damage. Rows are also never re-graded (verified against the 2026-07-03 ledger commit: 0 of 950 shared rows changed), so this is what was written at grading time and not a later repair."
+  },
+  "cohort_reading": "Sector is the split that most closely tracks distribution-payer status, so it is the split most at risk of inheriting a systematic tilt \u2014 and it does: the affected-row share falls monotonically from the high-yield sectors to the non-payers. The mean shift is what a cohort statistic inherits; the median moves only when affected rows sit near the middle of the cell. Thin cells print n and are flagged rather than read."
+ },
+ "section_4_verdict": {
+  "aggregate_bias_on_the_production_ledger_pp": 0.0,
+  "worst_sector_cell_bias_pp": 0.0414,
+  "affected_row_share_pct": {
+   "H5": 3.9,
+   "H10": 1.7
+  },
+  "per_affected_row_bias_pp": {
+   "H5": 0.0,
+   "H10": 0.0
+  },
+  "decision_boundaries_at_risk": {
+   "macd_bear per-leg separation (#4678)": [
+    -0.26,
+    -0.57,
+    -0.52
+   ],
+   "veto-label family null max (#4547)": 0.28,
+   "S-COIL H=63 (#4564)": 0.98,
+   "FRESH_TICKS kill (#4546)": 0.04
+  },
+  "reading": "Three separate numbers, and collapsing them would misstate the finding. (1) The PER-AFFECTED-ROW basis bias is real and its sign is systematic \u2014 a distribution-paying name always loses its own payout against an unaffected SPY, median -0.15pp at H=5 and -0.42pp at H=10. (2) Only 1.2-1.6% of rows sit on a window spanning a post-rebuild ex-date, so the AGGREGATE shift a cohort statistic would inherit is ~0.005pp \u2014 two orders of magnitude below every separation listed above. (3) The shipped production ledger does not carry the bias at all: all 1,931 comparable rows already match the adjusted recomputation. The defect is genuine in the code, bounded in magnitude, and unrealized in the artifact on this frame.",
+  "what_would_change_this": "The bound comes from the rebuild boundary, not from anything structural. A frame that sits entirely inside an unadjusted tail, a longer measurement window, or a cohort deliberately selected on high distribution yield would all raise the affected-row share and with it the aggregate shift. The adjusted-first ladder removes the question rather than re-checking it."
+ }
+}

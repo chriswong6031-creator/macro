@@ -36,7 +36,43 @@ A kernel cell is the triple (engine, regime_bucket, horizon).
 
 OUTCOME: signed excess via engine.spine._signed_outcome semantics (reused here
   by importing and mirroring exactly — see _signed_outcome). A positive signed
-  outcome means the signal fired in the correct direction.
+  outcome means the signal fired in the correct direction — BUT ONLY where the
+  underlying outcome is genuinely signed; see OUTCOME BASIS below.
+
+OUTCOME BASIS (per-cell label; gates wilson_ci_low)
+---------------------------------------------------
+Cells carry an ``outcome_basis`` column copied from the spine index rows
+(query.OUTCOME_BASIS_FOR_LEDGER; a cell is single-engine so the mode is the
+cell's basis). Vocabulary and the underlying trap are documented in
+engine/neuralweb/query.py — the short version: four ledgers (track_record,
+board_hk, board_ca, board_cn) fill outcome_excess from a forward MAXIMUM-
+FAVORABLE-EXCURSION column that is non-negative BY CONSTRUCTION, with
+direction pinned to 1.
+
+  wilson_ci_low is DIRECTIONAL ACCURACY. Against an unsigned MFE proxy the
+  quantity is undefined — "hits" degenerates to "MFE > 0 at least once",
+  which is nearly always true — so this module emits wilson_ci_low=None for
+  cells whose basis is not signed. Mirrors PR #4673's
+  ``dst_outcome_unsigned_mfe_proxy``: direction agreement is undefined
+  against an unsigned outcome, so the cohort is UNGRADEABLE for sign, not
+  "graded 96% right".
+
+  REPLACED VALUES (this is a correction, not an addition): pre-fix,
+  track_record h=126 published wilson_ci_low=0.963. That number was
+  "fraction of rows whose MFE exceeded zero at least once", never directional
+  accuracy. Every unsigned cell's wilson_ci_low now reads None.
+
+  synthetic_sign_stub cells (cortex_attention ±0.01) KEEP their Wilson CI:
+  the sign there is a real hit/miss, only the magnitude is a placeholder.
+
+  mean_raw, shrunken_ic, shrunken_ic_sd, reliability and the pooling family
+  are UNCHANGED for every basis — they are magnitude statistics, now merely
+  labelled by basis. half_life.py's documented rising-curve measurement reads
+  those, so silently nulling them would delete a live measurement.
+
+  A basis of None (unmapped ledger, or a legacy parquet with no column that
+  somehow escaped the read-time backfill) is treated as NOT signed —
+  fail-closed.
 
 EVENT DEDUP: n_eff counts distinct (engine, symbol, as_of) triples within a
   horizon-specific cell — not raw row count. This is the co-firing collapse
@@ -74,7 +110,11 @@ PER-CELL OUTPUTS
                   sqrt((var/n_eff)·(1-reliability)); at zero noise this equals
                   sqrt(var/(n_eff+K_POOL))). Displays render shrunken_ic ± sd.
   reliability     n_eff / (n_eff + K_POOL) as a single reliability metric
-  wilson_ci_low   Wilson CI lower bound on directional accuracy (None when n_eff < 12)
+  outcome_basis   what outcome_excess measures for this cell (mode of the rows'
+                  query.outcome_basis; None when the rows carry no label)
+  wilson_ci_low   Wilson CI lower bound on directional accuracy (None when
+                  n_eff < 12, OR when outcome_basis is not sign-safe — see
+                  OUTCOME BASIS above)
   date_first      earliest as_of date in the cell (recency anchor)
   date_last       latest as_of date in the cell (recency anchor)
   fill_basis_mode most-common fill_basis value (provenance label)
@@ -153,6 +193,36 @@ NOISE_ASOF_LEGACY: float = 0.5
 
 #: Minimum n_eff to compute Wilson CI; below this, ci_low = None (accruing).
 WILSON_MIN_N: int = 12
+
+#: Outcome bases against which DIRECTIONAL ACCURACY is a defined quantity.
+#: signed_excess — real signed return. synthetic_sign_stub — ±0.01 placeholder
+#: whose SIGN is a real hit/miss (only the magnitude is fabricated), so a
+#: directional hit rate over it is meaningful. Everything else — notably
+#: unsigned_mfe_proxy, and None — yields wilson_ci_low=None (fail-closed).
+SIGN_SAFE_BASES: frozenset[str] = frozenset({
+    "signed_excess",
+    "synthetic_sign_stub",
+})
+
+
+def _cell_outcome_basis(rows: pd.DataFrame) -> str | None:
+    """Mode of the cell's outcome_basis, or None when unlabelled.
+
+    A cell is single-engine and (in practice) single-ledger, so the mode IS
+    the cell's basis; the mode form only guards against a mixed frame.
+    Fail-open: a frame with no column, an all-null column, or an unreadable
+    column returns None — which every caller must read as "not sign-safe".
+    """
+    if "outcome_basis" not in rows.columns:
+        return None
+    try:
+        vals = rows["outcome_basis"].dropna().astype(str)
+        vals = vals[~vals.isin(("", "nan", "None"))]
+        if vals.empty:
+            return None
+        return str(Counter(vals.tolist()).most_common(1)[0][0])
+    except Exception:  # noqa: BLE001
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -264,17 +334,29 @@ def _build_cell(
     frac_legacy = (n_asof_legacy / max(len(fill_bases), 1))
     noise = NOISE_ASOF_LEGACY * frac_legacy if frac_legacy > 0 else 0.0
 
-    # --- Wilson CI lower bound ---
+    # --- outcome basis: what outcome_excess measures for this cell ---
+    outcome_basis = _cell_outcome_basis(rows)
+
+    # --- Wilson CI lower bound (directional accuracy) ---
     # Hits MUST be counted on the SAME deduped population used for n_eff.
     # Using pre-dedup signed_finite would give hits > n_eff under heavy same-day
     # co-firing, producing phat > 1 and sqrt(negative) inside the Wilson formula.
-    deduped_excess = pd.to_numeric(rows_deduped["outcome_excess"], errors="coerce")
-    deduped_direction = rows_deduped["direction"]
-    signed_deduped = _signed_outcome_series(deduped_excess, deduped_direction)
-    hits = int((signed_deduped[np.isfinite(signed_deduped)] > 0).sum())
+    #
+    # BASIS GATE: directional accuracy is only defined where the sign of the
+    # outcome carries information.  Against an unsigned MFE proxy (or an
+    # unlabelled cell) "hits" degenerates to "MFE > 0 at least once" and the
+    # CI reads as a near-1 accuracy that was never measured — so hits are not
+    # counted at all and ci_low stays None.  Magnitude statistics above are
+    # unaffected.  cf. PR #4673 edge_outcomes.py dst_outcome_unsigned_mfe_proxy.
+    hits: int | None = None
     ci_low: float | None = None
-    if n_eff >= WILSON_MIN_N:
-        ci_low = _wilson_ci_low(hits, n_eff)
+    if outcome_basis in SIGN_SAFE_BASES:
+        deduped_excess = pd.to_numeric(rows_deduped["outcome_excess"], errors="coerce")
+        deduped_direction = rows_deduped["direction"]
+        signed_deduped = _signed_outcome_series(deduped_excess, deduped_direction)
+        hits = int((signed_deduped[np.isfinite(signed_deduped)] > 0).sum())
+        if n_eff >= WILSON_MIN_N:
+            ci_low = _wilson_ci_low(hits, n_eff)
 
     # --- date range ---
     asof_vals = rows["as_of"].dropna().astype(str)
@@ -308,6 +390,7 @@ def _build_cell(
         "shrunken_ic": None,
         "shrunken_ic_sd": shrunken_ic_sd,
         "reliability": round(n_eff / (n_eff + K_POOL), 4),
+        "outcome_basis": outcome_basis,
         "wilson_ci_low": ci_low,
         # armed / armed_reason / regime_coverage filled in after arming() call
         "armed": None,
@@ -352,6 +435,17 @@ def build_estimates(
             "gaps": ["spine index empty"],
         }
         return pd.DataFrame(), meta
+
+    # Read-time backfill of outcome_basis.  load_index() already stamps via
+    # _ensure_columns, but build_estimates is also called with hand-built
+    # frames in tests and could be handed a pre-column parquet by a caller
+    # that bypassed the query layer; the stamp is cheap and idempotent, and a
+    # missing column here would silently null every Wilson CI.
+    try:
+        from engine.neuralweb.query import stamp_outcome_basis  # noqa: PLC0415
+        index_df = stamp_outcome_basis(index_df)
+    except Exception as e:  # noqa: BLE001
+        log.warning("kernel.build_estimates: outcome_basis stamp failed (%s)", e)
 
     # Filter to graded rows only
     graded_mask = index_df["outcome_graded"].fillna(False)
@@ -529,7 +623,7 @@ def build_estimates(
     output_cols = [
         "engine", "regime", "regime_col", "horizon",
         "n_raw", "n_eff", "mean_raw", "shrunken_ic", "shrunken_ic_sd",
-        "reliability", "wilson_ci_low", "armed", "armed_reason",
+        "reliability", "outcome_basis", "wilson_ci_low", "armed", "armed_reason",
         "regime_coverage",
         "fill_basis_mode", "date_first", "date_last",
     ]
@@ -595,7 +689,7 @@ def write_estimates(root: Path | str | None = None) -> dict:
         output_cols = [
             "engine", "regime", "regime_col", "horizon",
             "n_raw", "n_eff", "mean_raw", "shrunken_ic", "shrunken_ic_sd",
-            "reliability", "wilson_ci_low", "armed", "armed_reason",
+            "reliability", "outcome_basis", "wilson_ci_low", "armed", "armed_reason",
             "regime_coverage",
             "fill_basis_mode", "date_first", "date_last",
         ]

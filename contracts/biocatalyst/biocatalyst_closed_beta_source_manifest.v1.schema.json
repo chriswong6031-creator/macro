@@ -1,0 +1,430 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_closed_beta_source_manifest.v1.schema.json",
+  "title": "BioCatalyst closed-beta source manifest v1",
+  "description": "The real closed-beta launch denominator. Every source family BioCatalyst closed beta depends on is named by exact source or adapter id and version, with its rights disposition, its SLO denominators, and the exact features it unlocks or leaves unavailable. A family whose source is not eligible is recorded UNAVAILABLE with its blocker. The manifest is a denominator, never an activation: it cannot arm a source, change rights or entitlements, stand in for a rights review, or claim a soak happened. A single launch_critical registry row cannot satisfy it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema_version",
+    "manifest_id",
+    "state",
+    "effective_at",
+    "owner",
+    "source_registry_ref",
+    "source_registry_sha256",
+    "ownership_registry_ref",
+    "ownership_registry_sha256",
+    "reconciliation_receipt_ref",
+    "reconciliation_receipt_id",
+    "reconciliation_receipt_sha256",
+    "launch_slo_manifest_ref",
+    "launch_slo_manifest_id",
+    "launch_slo_manifest_content_sha256",
+    "families",
+    "launch_denominator",
+    "successor_binding",
+    "authority",
+    "hash_scope",
+    "content_sha256"
+  ],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_closed_beta_source_manifest.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "manifest_id": {
+      "type": "string",
+      "pattern": "^biocatalyst_closed_beta_[a-f0-9]{24}$"
+    },
+    "state": {
+      "enum": [
+        "draft_denominator_unarmed",
+        "superseded"
+      ]
+    },
+    "effective_at": {"$ref": "#/$defs/utcTimestamp"},
+    "owner": {"const": "biocatalyst"},
+    "source_registry_ref": {"const": "config/biocatalyst_sources.yml"},
+    "source_registry_sha256": {"$ref": "#/$defs/sha256"},
+    "ownership_registry_ref": {"const": "config/sector_intelligence_ownership.yml"},
+    "ownership_registry_sha256": {"$ref": "#/$defs/sha256"},
+    "reconciliation_receipt_ref": {
+      "const": "data/biocatalyst/fixtures/biocatalyst_f0_delta_reconciliation_receipt.v1.json"
+    },
+    "reconciliation_receipt_id": {
+      "type": "string",
+      "pattern": "^biocatalyst_f0_delta_[a-f0-9]{24}$"
+    },
+    "reconciliation_receipt_sha256": {"$ref": "#/$defs/sha256"},
+    "launch_slo_manifest_ref": {"const": "config/biocatalyst_launch_slo_manifest.yml"},
+    "launch_slo_manifest_id": {
+      "type": "string",
+      "pattern": "^biocatalyst_launch_slo_[a-f0-9]{24}$"
+    },
+    "launch_slo_manifest_content_sha256": {"$ref": "#/$defs/sha256"},
+    "families": {
+      "type": "array",
+      "minItems": 8,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/family"}
+    },
+    "launch_denominator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mandatory_family_ids",
+        "mandatory_families_total",
+        "mandatory_families_available",
+        "all_mandatory_families_available",
+        "readiness_claim",
+        "single_launch_critical_source_is_sufficient",
+        "omitted_family_allowed",
+        "unknown_family_allowed",
+        "weighted_substitution_allowed"
+      ],
+      "properties": {
+        "mandatory_family_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/familyId"}
+        },
+        "mandatory_families_total": {"type": "integer", "minimum": 1},
+        "mandatory_families_available": {"type": "integer", "minimum": 0},
+        "all_mandatory_families_available": {"type": "boolean"},
+        "readiness_claim": {
+          "enum": [
+            "closed_beta_source_denominator_not_met",
+            "closed_beta_source_denominator_met"
+          ]
+        },
+        "single_launch_critical_source_is_sufficient": {"const": false},
+        "omitted_family_allowed": {"const": false},
+        "unknown_family_allowed": {"const": false},
+        "weighted_substitution_allowed": {"const": false}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"all_mandatory_families_available": {"const": false}},
+            "required": ["all_mandatory_families_available"]
+          },
+          "then": {
+            "properties": {
+              "readiness_claim": {"const": "closed_beta_source_denominator_not_met"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "readiness_claim": {"const": "closed_beta_source_denominator_met"}
+            },
+            "required": ["readiness_claim"]
+          },
+          "then": {
+            "properties": {
+              "all_mandatory_families_available": {"const": true}
+            }
+          }
+        }
+      ]
+    },
+    "successor_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "binds_launch_slo_contract",
+        "required_soak_duration_seconds",
+        "successor_manifest_required_before_soak_scheduling",
+        "soak_scheduling_blockers"
+      ],
+      "properties": {
+        "binds_launch_slo_contract": {"const": "biocatalyst_launch_slo_manifest.v1"},
+        "required_soak_duration_seconds": {"const": 1209600},
+        "successor_manifest_required_before_soak_scheduling": {"const": true},
+        "soak_scheduling_blockers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "root_sealed_retention_activation",
+              "operator_arming",
+              "closed_beta_source_denominator_not_met"
+            ]
+          }
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authorizes_source_activation",
+        "authorizes_operator_arming",
+        "authorizes_rights_change",
+        "authorizes_entitlement_change",
+        "authorizes_model_promotion",
+        "authorizes_neural_web_authority",
+        "authorizes_prophet_behavior",
+        "constitutes_rights_review",
+        "constitutes_soak_evidence",
+        "originates_signals_scores_or_ranking"
+      ],
+      "properties": {
+        "authorizes_source_activation": {"const": false},
+        "authorizes_operator_arming": {"const": false},
+        "authorizes_rights_change": {"const": false},
+        "authorizes_entitlement_change": {"const": false},
+        "authorizes_model_promotion": {"const": false},
+        "authorizes_neural_web_authority": {"const": false},
+        "authorizes_prophet_behavior": {"const": false},
+        "constitutes_rights_review": {"const": false},
+        "constitutes_soak_evidence": {"const": false},
+        "originates_signals_scores_or_ranking": {"const": false}
+      }
+    },
+    "hash_scope": {
+      "const": "canonical_payload_excluding_manifest_id_and_content_sha256"
+    },
+    "content_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "utcTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]+)?Z$"
+    },
+    "familyId": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,95}$"},
+    "featureId": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,127}$"},
+    "boundedStatement": {"type": "string", "minLength": 16, "maxLength": 400},
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "binding_kind",
+        "id",
+        "version",
+        "registry_ref",
+        "launch_critical",
+        "production_ingest_allowed",
+        "license_class",
+        "rights_state"
+      ],
+      "properties": {
+        "binding_kind": {
+          "enum": ["source_registry_source", "shared_plane_read_adapter"]
+        },
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,95}(?:\\.v1)?$"},
+        "version": {"type": "string", "minLength": 1, "maxLength": 128},
+        "registry_ref": {
+          "enum": [
+            "config/biocatalyst_sources.yml",
+            "config/sector_intelligence_ownership.yml"
+          ]
+        },
+        "launch_critical": {"type": ["boolean", "null"]},
+        "production_ingest_allowed": {"type": ["boolean", "null"]},
+        "license_class": {
+          "anyOf": [
+            {"type": "null"},
+            {
+              "enum": [
+                "us_government_source_facts",
+                "public_access_review_required",
+                "licensed_internal",
+                "benchmark_only"
+              ]
+            }
+          ]
+        },
+        "rights_state": {
+          "anyOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,127}$"}
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"binding_kind": {"const": "source_registry_source"}},
+            "required": ["binding_kind"]
+          },
+          "then": {
+            "properties": {
+              "registry_ref": {"const": "config/biocatalyst_sources.yml"},
+              "launch_critical": {"type": "boolean"},
+              "production_ingest_allowed": {"type": "boolean"},
+              "license_class": {"type": "string"},
+              "rights_state": {"type": "string"}
+            }
+          },
+          "else": {
+            "properties": {
+              "registry_ref": {"const": "config/sector_intelligence_ownership.yml"},
+              "launch_critical": {"type": "null"},
+              "production_ingest_allowed": {"type": "null"},
+              "license_class": {"type": "null"}
+            }
+          }
+        }
+      ]
+    },
+    "rightsDisposition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "retention",
+        "redistribution",
+        "derived_model_training",
+        "publication",
+        "distribution_obligations"
+      ],
+      "properties": {
+        "retention": {"$ref": "#/$defs/rightsState"},
+        "redistribution": {"$ref": "#/$defs/rightsState"},
+        "derived_model_training": {"$ref": "#/$defs/rightsState"},
+        "publication": {"$ref": "#/$defs/rightsState"},
+        "distribution_obligations": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,159}$"}
+        }
+      }
+    },
+    "rightsState": {
+      "enum": [
+        "private",
+        "private_only",
+        "private_after_review",
+        "private_only_after_review",
+        "private_only_after_dataset_review",
+        "allowed_with_source_attribution",
+        "source_facts_with_attribution",
+        "contract_scoped",
+        "entitlement_scoped",
+        "review_required",
+        "blocked",
+        "blocked_until_review",
+        "blocked_until_enable",
+        "blocked_until_dataset_review",
+        "blocked_unless_contract_allows",
+        "corporate_plane_only",
+        "corporate_adapter_only",
+        "not_applicable_no_eligible_source"
+      ]
+    },
+    "sloPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "freshness_slo_seconds",
+        "freshness_denominator",
+        "completeness_denominator",
+        "error_denominator",
+        "correction_denominator"
+      ],
+      "properties": {
+        "freshness_slo_seconds": {
+          "anyOf": [{"type": "null"}, {"type": "integer", "minimum": 1}]
+        },
+        "freshness_denominator": {"$ref": "#/$defs/boundedStatement"},
+        "completeness_denominator": {"$ref": "#/$defs/boundedStatement"},
+        "error_denominator": {"$ref": "#/$defs/boundedStatement"},
+        "correction_denominator": {"$ref": "#/$defs/boundedStatement"}
+      }
+    },
+    "family": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "family_id",
+        "title",
+        "obligation",
+        "availability",
+        "activation_state",
+        "bindings",
+        "rights",
+        "slo",
+        "features_unlocked",
+        "features_unavailable",
+        "blocker"
+      ],
+      "properties": {
+        "family_id": {"$ref": "#/$defs/familyId"},
+        "title": {"type": "string", "minLength": 8, "maxLength": 160},
+        "obligation": {"enum": ["mandatory", "optional", "deferred"]},
+        "availability": {"enum": ["available", "unavailable"]},
+        "activation_state": {
+          "enum": [
+            "dark_unarmed",
+            "implemented_current_record_facts_only",
+            "implemented_private_in_process_transcript_only",
+            "dark_contract_and_hermetic_harness_only",
+            "dark_b4a_private_only",
+            "frozen_for_b0a",
+            "blocked_until_review",
+            "blocked_until_enable",
+            "blocked_until_dataset_review",
+            "no_biocatalyst_read_contract"
+          ]
+        },
+        "bindings": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/binding"}
+        },
+        "rights": {"$ref": "#/$defs/rightsDisposition"},
+        "slo": {"$ref": "#/$defs/sloPolicy"},
+        "features_unlocked": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/featureId"}
+        },
+        "features_unavailable": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/featureId"}
+        },
+        "blocker": {
+          "anyOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,159}$"}
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"availability": {"const": "unavailable"}},
+            "required": ["availability"]
+          },
+          "then": {
+            "properties": {
+              "blocker": {"type": "string", "minLength": 1},
+              "features_unlocked": {"type": "array", "maxItems": 0},
+              "features_unavailable": {"type": "array", "minItems": 1}
+            }
+          },
+          "else": {
+            "properties": {
+              "blocker": {"type": "null"},
+              "features_unlocked": {"type": "array", "minItems": 1},
+              "activation_state": {
+                "enum": [
+                  "dark_unarmed",
+                  "implemented_current_record_facts_only",
+                  "implemented_private_in_process_transcript_only"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

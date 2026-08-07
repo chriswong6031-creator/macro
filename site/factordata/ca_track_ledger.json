@@ -1,7 +1,7 @@
 {
  "schema": "track_ledger/v1",
  "market": "CA",
- "as_of": "2026-07-31",
+ "as_of": "2026-08-06",
  "state": "accruing",
  "bench": {
   "code": "_GSPTSE",
@@ -10,22 +10,763 @@
  },
  "summary": {
   "state": "accruing",
-  "n_calls": 290,
-  "n_logged": 271,
-  "n_matured": 22,
-  "n_beat": 4,
-  "n_lag": 18,
-  "n_suspended": 90,
-  "hit_matured": 0.182,
-  "wilson_lo_pct": 7.3,
-  "wilson_hi_pct": 38.5,
+  "n_calls": 310,
+  "n_logged": 310,
+  "n_matured": 56,
+  "n_beat": 11,
+  "n_lag": 45,
+  "n_suspended": 75,
+  "hit_matured": 0.196,
+  "wilson_lo_pct": 11.3,
+  "wilson_hi_pct": 31.8,
   "first_read_est": "2026-08-24"
  },
  "rows": [
   {
-   "t": "DSV.TO",
-   "nm": "DISCOVERY MINING LTD",
+   "t": "LNR.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "entry_open",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 1,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "IVN.TO",
+   "nm": "IVANHOE MINES LTD",
    "sec": "Materials",
+   "grp": "entry_open",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 2,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "TIH.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 3,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "ARIS.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 4,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "TKO.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 5,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "NGEX.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 6,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "EDR.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 7,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "TXG.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 8,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "OR.TO",
+   "nm": "OR ROYALTIES INC",
+   "sec": "Materials",
+   "grp": "setting_up",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 9,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "TVK.TO",
+   "nm": "TERRAVEST INDUSTRIES INC",
+   "sec": "Energy",
+   "grp": "setting_up",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 10,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "VET.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 11,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "WFG.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 12,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "QBR-B.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 13,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "BB.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 14,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "EIF.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 15,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "ARE.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 16,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "EXE.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 17,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "VNP.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 18,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "ALS.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 19,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "EFX.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-08-05",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 20,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "GIL.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "entry_open",
+   "d": "2026-07-31",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 1,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "MAU.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-31",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 2,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "IGM.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-31",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 3,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "DSV.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-31",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 4,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "ABX.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-31",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 5,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "PAAS.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-31",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 6,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "TFPM.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-31",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 7,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "KEL.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-31",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 8,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "NPI.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-31",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 9,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "ATS.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-31",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 10,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "EIF.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-31",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 11,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "QBR-B.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-31",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 12,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "VNP.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-31",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 13,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "ALS.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-31",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 14,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "EFX.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-31",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 15,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "REI-UN.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-31",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 16,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "HPS-A.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-31",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 17,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "GRT-UN.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-31",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 18,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "FRU.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-31",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 9,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "DSV.TO",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-30",
    "e": null,
@@ -138,8 +879,8 @@
   },
   {
    "t": "ATS.TO",
-   "nm": "ATS CORPORATION",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-30",
    "e": null,
@@ -366,8 +1107,8 @@
   },
   {
    "t": "TVK.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "TERRAVEST INDUSTRIES INC",
+   "sec": "Energy",
    "grp": "entry_open",
    "d": "2026-07-29",
    "e": null,
@@ -385,8 +1126,8 @@
   },
   {
    "t": "DSV.TO",
-   "nm": "DISCOVERY MINING LTD",
-   "sec": "Materials",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-29",
    "e": null,
@@ -461,8 +1202,8 @@
   },
   {
    "t": "KEL.TO",
-   "nm": "KELT EXPLORATION LTD",
-   "sec": "Energy",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-29",
    "e": null,
@@ -689,8 +1430,8 @@
   },
   {
    "t": "IGM.TO",
-   "nm": "IGM FINANCIAL INC.",
-   "sec": "Financials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-29",
    "e": null,
@@ -721,9 +1462,7 @@
    "m": false,
    "rk": 1,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "LUN.TO",
@@ -740,9 +1479,7 @@
    "m": false,
    "rk": 2,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "HWX.TO",
@@ -759,9 +1496,7 @@
    "m": false,
    "rk": 3,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "AG.TO",
@@ -778,9 +1513,7 @@
    "m": false,
    "rk": 4,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "LNR.TO",
@@ -797,9 +1530,7 @@
    "m": false,
    "rk": 5,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "NGEX.TO",
@@ -816,9 +1547,7 @@
    "m": false,
    "rk": 6,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "ERO.TO",
@@ -835,9 +1564,7 @@
    "m": false,
    "rk": 7,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "RCH.TO",
@@ -854,9 +1581,7 @@
    "m": false,
    "rk": 8,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "VET.TO",
@@ -873,14 +1598,12 @@
    "m": false,
    "rk": 9,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "ATS.TO",
-   "nm": "ATS CORPORATION",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-28",
    "e": null,
@@ -892,9 +1615,7 @@
    "m": false,
    "rk": 10,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "QBR-B.TO",
@@ -911,9 +1632,7 @@
    "m": false,
    "rk": 11,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "VNP.TO",
@@ -930,9 +1649,7 @@
    "m": false,
    "rk": 12,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "EFX.TO",
@@ -949,9 +1666,7 @@
    "m": false,
    "rk": 13,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "REI-UN.TO",
@@ -968,9 +1683,7 @@
    "m": false,
    "rk": 14,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "ALS.TO",
@@ -987,9 +1700,7 @@
    "m": false,
    "rk": 15,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "HPS-A.TO",
@@ -1006,9 +1717,7 @@
    "m": false,
    "rk": 16,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "FCR-UN.TO",
@@ -1025,9 +1734,7 @@
    "m": false,
    "rk": 17,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "TRP.TO",
@@ -1044,31 +1751,10 @@
    "m": false,
    "rk": 18,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "DSV.TO",
-   "nm": "DISCOVERY MINING LTD",
-   "sec": "Materials",
-   "grp": "entry_open",
-   "d": "2026-07-27",
-   "e": null,
-   "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
-   "rk": 1,
-   "tr": null,
-   "fl": [
-    "susp"
-   ]
-  },
-  {
-   "t": "TVK.TO",
    "nm": null,
    "sec": null,
    "grp": "entry_open",
@@ -1080,11 +1766,26 @@
    "dy": null,
    "st": "early",
    "m": false,
+   "rk": 1,
+   "tr": null,
+   "fl": []
+  },
+  {
+   "t": "TVK.TO",
+   "nm": "TERRAVEST INDUSTRIES INC",
+   "sec": "Energy",
+   "grp": "entry_open",
+   "d": "2026-07-27",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
    "rk": 2,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "LUN.TO",
@@ -1101,9 +1802,7 @@
    "m": false,
    "rk": 3,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "LB.TO",
@@ -1120,9 +1819,7 @@
    "m": false,
    "rk": 4,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "ERO.TO",
@@ -1139,9 +1836,7 @@
    "m": false,
    "rk": 5,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "RCH.TO",
@@ -1158,9 +1853,7 @@
    "m": false,
    "rk": 6,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "SJ.TO",
@@ -1177,31 +1870,10 @@
    "m": false,
    "rk": 7,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "KEL.TO",
-   "nm": "KELT EXPLORATION LTD",
-   "sec": "Energy",
-   "grp": "setting_up",
-   "d": "2026-07-27",
-   "e": null,
-   "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
-   "rk": 8,
-   "tr": null,
-   "fl": [
-    "susp"
-   ]
-  },
-  {
-   "t": "IVN.TO",
    "nm": null,
    "sec": null,
    "grp": "setting_up",
@@ -1213,11 +1885,26 @@
    "dy": null,
    "st": "early",
    "m": false,
+   "rk": 8,
+   "tr": null,
+   "fl": []
+  },
+  {
+   "t": "IVN.TO",
+   "nm": "IVANHOE MINES LTD",
+   "sec": "Materials",
+   "grp": "setting_up",
+   "d": "2026-07-27",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
    "rk": 9,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "VZLA.TO",
@@ -1234,9 +1921,7 @@
    "m": false,
    "rk": 10,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "EIF.TO",
@@ -1253,14 +1938,12 @@
    "m": false,
    "rk": 11,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "CLS.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "CELESTICA INC",
+   "sec": "Information Technology",
    "grp": "watch",
    "d": "2026-07-27",
    "e": null,
@@ -1272,9 +1955,7 @@
    "m": false,
    "rk": 12,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "QBR-B.TO",
@@ -1291,9 +1972,7 @@
    "m": false,
    "rk": 13,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "VNP.TO",
@@ -1310,9 +1989,7 @@
    "m": false,
    "rk": 14,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "EFX.TO",
@@ -1329,9 +2006,7 @@
    "m": false,
    "rk": 15,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "REI-UN.TO",
@@ -1348,9 +2023,7 @@
    "m": false,
    "rk": 16,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "ALS.TO",
@@ -1367,9 +2040,7 @@
    "m": false,
    "rk": 17,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "FCR-UN.TO",
@@ -1386,14 +2057,12 @@
    "m": false,
    "rk": 18,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "DSV.TO",
-   "nm": "DISCOVERY MINING LTD",
-   "sec": "Materials",
+   "nm": null,
+   "sec": null,
    "grp": "entry_open",
    "d": "2026-07-24",
    "e": null,
@@ -1405,9 +2074,7 @@
    "m": false,
    "rk": 1,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "VZLA.TO",
@@ -1424,9 +2091,7 @@
    "m": false,
    "rk": 2,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "FTT.TO",
@@ -1443,9 +2108,7 @@
    "m": false,
    "rk": 3,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "RCI-B.TO",
@@ -1462,9 +2125,7 @@
    "m": false,
    "rk": 4,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "WN.TO",
@@ -1481,9 +2142,7 @@
    "m": false,
    "rk": 5,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "DOO.TO",
@@ -1500,9 +2159,7 @@
    "m": false,
    "rk": 6,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "NWC.TO",
@@ -1519,9 +2176,7 @@
    "m": false,
    "rk": 7,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "CAE.TO",
@@ -1538,14 +2193,12 @@
    "m": false,
    "rk": 8,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "TVK.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "TERRAVEST INDUSTRIES INC",
+   "sec": "Energy",
    "grp": "setting_up",
    "d": "2026-07-24",
    "e": null,
@@ -1557,9 +2210,7 @@
    "m": false,
    "rk": 9,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "LUG.TO",
@@ -1576,14 +2227,12 @@
    "m": false,
    "rk": 10,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "CLS.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "CELESTICA INC",
+   "sec": "Information Technology",
    "grp": "watch",
    "d": "2026-07-24",
    "e": null,
@@ -1595,9 +2244,7 @@
    "m": false,
    "rk": 11,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "QBR-B.TO",
@@ -1614,9 +2261,7 @@
    "m": false,
    "rk": 12,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "VNP.TO",
@@ -1633,9 +2278,7 @@
    "m": false,
    "rk": 13,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "EFX.TO",
@@ -1652,9 +2295,7 @@
    "m": false,
    "rk": 14,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "ALS.TO",
@@ -1671,9 +2312,7 @@
    "m": false,
    "rk": 15,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "FCR-UN.TO",
@@ -1690,9 +2329,7 @@
    "m": false,
    "rk": 16,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "HPS-A.TO",
@@ -1709,9 +2346,7 @@
    "m": false,
    "rk": 17,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "ATZ.TO",
@@ -1728,9 +2363,7 @@
    "m": false,
    "rk": 18,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "FTT.TO",
@@ -1836,8 +2469,8 @@
   },
   {
    "t": "TVK.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "TERRAVEST INDUSTRIES INC",
+   "sec": "Energy",
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -2159,8 +2792,8 @@
   },
   {
    "t": "TVK.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "TERRAVEST INDUSTRIES INC",
+   "sec": "Energy",
    "grp": "setting_up",
    "d": "2026-07-20",
    "e": null,
@@ -2210,8 +2843,8 @@
   },
   {
    "t": "CLS.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "CELESTICA INC",
+   "sec": "Information Technology",
    "grp": "watch",
    "d": "2026-07-20",
    "e": null,
@@ -2448,8 +3081,8 @@
   },
   {
    "t": "KEL.TO",
-   "nm": "KELT EXPLORATION LTD",
-   "sec": "Energy",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -2465,8 +3098,8 @@
   },
   {
    "t": "TVK.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "TERRAVEST INDUSTRIES INC",
+   "sec": "Energy",
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -2516,8 +3149,8 @@
   },
   {
    "t": "CLS.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "CELESTICA INC",
+   "sec": "Information Technology",
    "grp": "watch",
    "d": "2026-07-17",
    "e": null,
@@ -2737,8 +3370,8 @@
   },
   {
    "t": "ATS.TO",
-   "nm": "ATS CORPORATION",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-15",
    "e": null,
@@ -2771,8 +3404,8 @@
   },
   {
    "t": "BHC.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "BAUSCH HEALTH COMPANIES INC",
+   "sec": "Health Care",
    "grp": "setting_up",
    "d": "2026-07-15",
    "e": null,
@@ -2822,8 +3455,8 @@
   },
   {
    "t": "CLS.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "CELESTICA INC",
+   "sec": "Information Technology",
    "grp": "watch",
    "d": "2026-07-15",
    "e": null,
@@ -3094,8 +3727,8 @@
   },
   {
    "t": "BHC.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "BAUSCH HEALTH COMPANIES INC",
+   "sec": "Health Care",
    "grp": "setting_up",
    "d": "2026-07-13",
    "e": null,
@@ -3128,8 +3761,8 @@
   },
   {
    "t": "CLS.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "CELESTICA INC",
+   "sec": "Information Technology",
    "grp": "watch",
    "d": "2026-07-13",
    "e": null,
@@ -3315,8 +3948,8 @@
   },
   {
    "t": "DSV.TO",
-   "nm": "DISCOVERY MINING LTD",
-   "sec": "Materials",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-10",
    "e": null,
@@ -3400,8 +4033,8 @@
   },
   {
    "t": "BHC.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "BAUSCH HEALTH COMPANIES INC",
+   "sec": "Health Care",
    "grp": "setting_up",
    "d": "2026-07-10",
    "e": null,
@@ -3434,8 +4067,8 @@
   },
   {
    "t": "CLS.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "CELESTICA INC",
+   "sec": "Information Technology",
    "grp": "watch",
    "d": "2026-07-10",
    "e": null,
@@ -3672,8 +4305,8 @@
   },
   {
    "t": "BHC.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "BAUSCH HEALTH COMPANIES INC",
+   "sec": "Health Care",
    "grp": "setting_up",
    "d": "2026-07-09",
    "e": null,
@@ -3723,8 +4356,8 @@
   },
   {
    "t": "CLS.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "CELESTICA INC",
+   "sec": "Information Technology",
    "grp": "watch",
    "d": "2026-07-09",
    "e": null,
@@ -3825,8 +4458,8 @@
   },
   {
    "t": "IGM.TO",
-   "nm": "IGM FINANCIAL INC.",
-   "sec": "Financials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-09",
    "e": null,
@@ -3865,11 +4498,11 @@
    "d": "2026-07-06",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -3.3,
+   "x": -5.78,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 1,
    "tr": null,
    "fl": []
@@ -3882,11 +4515,11 @@
    "d": "2026-07-06",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -5.0,
+   "x": -7.41,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 2,
    "tr": null,
    "fl": []
@@ -3899,11 +4532,11 @@
    "d": "2026-07-06",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 24.9,
+   "x": 22.47,
+   "dy": 21,
+   "st": "beat",
+   "m": true,
    "rk": 3,
    "tr": null,
    "fl": []
@@ -3916,11 +4549,11 @@
    "d": "2026-07-06",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -0.1,
+   "x": -2.54,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 4,
    "tr": null,
    "fl": []
@@ -3933,11 +4566,11 @@
    "d": "2026-07-06",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -3.4,
+   "x": -5.81,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 5,
    "tr": null,
    "fl": []
@@ -3950,11 +4583,11 @@
    "d": "2026-07-06",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -1.0,
+   "x": -3.41,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 6,
    "tr": null,
    "fl": []
@@ -3967,11 +4600,11 @@
    "d": "2026-07-06",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -1.3,
+   "x": -3.71,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 7,
    "tr": null,
    "fl": []
@@ -3984,28 +4617,28 @@
    "d": "2026-07-06",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 12.7,
+   "x": 10.22,
+   "dy": 21,
+   "st": "beat",
+   "m": true,
    "rk": 8,
    "tr": null,
    "fl": []
   },
   {
    "t": "CLS.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "CELESTICA INC",
+   "sec": "Information Technology",
    "grp": "watch",
    "d": "2026-07-06",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -9.7,
+   "x": -12.15,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 9,
    "tr": null,
    "fl": []
@@ -4018,11 +4651,11 @@
    "d": "2026-07-06",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -30.0,
+   "x": -32.48,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 10,
    "tr": null,
    "fl": []
@@ -4035,11 +4668,11 @@
    "d": "2026-07-06",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -2.9,
+   "x": -5.34,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 11,
    "tr": null,
    "fl": []
@@ -4052,11 +4685,11 @@
    "d": "2026-07-06",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -5.8,
+   "x": -8.29,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 12,
    "tr": null,
    "fl": []
@@ -4069,11 +4702,11 @@
    "d": "2026-07-06",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -2.1,
+   "x": -4.55,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 13,
    "tr": null,
    "fl": []
@@ -4086,11 +4719,11 @@
    "d": "2026-07-06",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -11.5,
+   "x": -13.93,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 14,
    "tr": null,
    "fl": []
@@ -4103,28 +4736,28 @@
    "d": "2026-07-06",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -3.0,
+   "x": -5.41,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 15,
    "tr": null,
    "fl": []
   },
   {
    "t": "IGM.TO",
-   "nm": "IGM FINANCIAL INC.",
-   "sec": "Financials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-06",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 11.7,
+   "x": 9.27,
+   "dy": 21,
+   "st": "beat",
+   "m": true,
    "rk": 16,
    "tr": null,
    "fl": []
@@ -4137,11 +4770,11 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 0.1,
+   "x": -2.51,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 1,
    "tr": null,
    "fl": []
@@ -4154,11 +4787,11 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 10.9,
+   "x": 8.26,
+   "dy": 21,
+   "st": "beat",
+   "m": true,
    "rk": 2,
    "tr": null,
    "fl": []
@@ -4171,11 +4804,11 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 16.4,
+   "x": 13.73,
+   "dy": 21,
+   "st": "beat",
+   "m": true,
    "rk": 3,
    "tr": null,
    "fl": []
@@ -4188,11 +4821,11 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 2.4,
+   "x": -0.25,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 4,
    "tr": null,
    "fl": []
@@ -4205,11 +4838,11 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -5.2,
+   "x": -7.87,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 5,
    "tr": null,
    "fl": []
@@ -4222,11 +4855,11 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 2.4,
+   "x": -0.28,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 6,
    "tr": null,
    "fl": []
@@ -4239,11 +4872,11 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 9.4,
+   "x": 6.79,
+   "dy": 21,
+   "st": "beat",
+   "m": true,
    "rk": 7,
    "tr": null,
    "fl": []
@@ -4256,11 +4889,11 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 1.2,
+   "x": -1.42,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 8,
    "tr": null,
    "fl": []
@@ -4273,11 +4906,11 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 1.1,
+   "x": -1.54,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 9,
    "tr": null,
    "fl": []
@@ -4290,28 +4923,28 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 10.5,
+   "x": 7.9,
+   "dy": 21,
+   "st": "beat",
+   "m": true,
    "rk": 10,
    "tr": null,
    "fl": []
   },
   {
    "t": "CLS.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "CELESTICA INC",
+   "sec": "Information Technology",
    "grp": "watch",
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 2.1,
+   "x": -0.56,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 11,
    "tr": null,
    "fl": []
@@ -4324,11 +4957,11 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -30.5,
+   "x": -33.17,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 12,
    "tr": null,
    "fl": []
@@ -4341,11 +4974,11 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 1.7,
+   "x": -0.99,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 13,
    "tr": null,
    "fl": []
@@ -4358,11 +4991,11 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -4.6,
+   "x": -7.23,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 14,
    "tr": null,
    "fl": []
@@ -4375,11 +5008,11 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -1.4,
+   "x": -4.09,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 15,
    "tr": null,
    "fl": []
@@ -4392,11 +5025,11 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -4.4,
+   "x": -7.01,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 16,
    "tr": null,
    "fl": []
@@ -4409,11 +5042,11 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 0.8,
+   "x": -1.88,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 17,
    "tr": null,
    "fl": []
@@ -4426,11 +5059,11 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -1.4,
+   "x": -4.04,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 18,
    "tr": null,
    "fl": []
@@ -4590,8 +5223,8 @@
   },
   {
    "t": "DSV.TO",
-   "nm": "DISCOVERY MINING LTD",
-   "sec": "Materials",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-06-30",
    "e": null,
@@ -4675,8 +5308,8 @@
   },
   {
    "t": "CLS.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "CELESTICA INC",
+   "sec": "Information Technology",
    "grp": "watch",
    "d": "2026-06-30",
    "e": null,
@@ -4777,8 +5410,8 @@
   },
   {
    "t": "IGM.TO",
-   "nm": "IGM FINANCIAL INC.",
-   "sec": "Financials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-06-30",
    "e": null,
@@ -4811,11 +5444,11 @@
   }
  ],
  "meta": {
-  "n_total": 271,
+  "n_total": 310,
   "truncated": 0,
   "grain": "board_day",
   "survivorship": {
-   "n_suspended": 90,
+   "n_suspended": 75,
    "note": "no delisting archive — vanished names leave the sample"
   }
  }

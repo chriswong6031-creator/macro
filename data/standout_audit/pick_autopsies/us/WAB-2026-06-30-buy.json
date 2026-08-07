@@ -1,0 +1,99 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "WAB-2026-06-30-buy",
+  "ticker": "WAB",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "WAB",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "WAB",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_alpha",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Industrials",
+    "excess_spy": 0.10003938185045391,
+    "excess_sector": 0.12093959967184276,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CLEAN_LIFTOFF",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "WAB produced a clean liftoff and positive excess return attributed to company-specific alpha. No supplied evidence isolates the underlying company mechanism or excludes an Industrials tailwind.",
+    "root_cause": "WAB produced a clean liftoff and positive excess return attributed to company-specific alpha. No supplied evidence isolates the underlying company mechanism or excludes an Industrials tailwind.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The company-alpha book surfaced WAB, while rotation, catalyst, regime, and timing attribution remains unresolved.",
+    "engines_credit": "The company-alpha book is the provisional role model; no other book or organ has enough evidence to be called a role model or laggard.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "An unspecified idiosyncratic advantage generated relative strength.",
+        "evidence_status": "claimed",
+        "timing_status": "known_at_entry",
+        "counterfactual": "Without the asserted company-specific advantage, sector rotation or a catalyst would need to explain the liftoff.",
+        "evidence_refs": [
+          "Pick 2 outcome_cause=idio_alpha",
+          "Pick 2 excess_spy=0.10003938185045391",
+          "Pick 2 terminal_state=CLEAN_LIFTOFF"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "entry_timing",
+        "factor": "",
+        "mechanism": "A clean buy process participated in the favorable path without a recorded process fault.",
+        "evidence_status": "claimed",
+        "timing_status": "known_at_entry",
+        "counterfactual": "A late or extended entry could have weakened capture, but entry-path evidence is absent.",
+        "evidence_refs": [
+          "Pick 2 process_fault=clean",
+          "Pick 2 lane=buy"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "A broad Industrials rotation may have driven part of the result.",
+      "Unreported external news may have accelerated the move."
+    ],
+    "missing_evidence": [
+      "Documented ex-ante company thesis",
+      "Industry-relative performance",
+      "Price and volume history around entry",
+      "News and catalyst chronology"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "sector_neutral_alpha",
+        "feature": "Sector-neutral company strength at entry",
+        "measurement": "Measure entry-date relative strength against both SPY and the relevant Industrials peer group.",
+        "expected_direction": "Dual market-relative and sector-relative strength should be associated with cleaner liftoffs.",
+        "falsifier": "Market-relative strength predicts outcomes but sector-relative strength adds no information.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T13:34:17+00:00"
+}

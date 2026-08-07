@@ -63,7 +63,7 @@
 
     <aside class="eww-side">
       <section><span>{{ t('Archive', '档案') }}</span><h2>{{ t('Recent weeks', '最近几周') }}</h2><nav>{% for item in archive[:12] %}<a href="{{ item.href }}"{% if item.current %} aria-current="page"{% endif %}><span>{{ item.week_start }}</span><b>{{ item.call_records }} calls</b></a>{% endfor %}</nav></section>
-      <section class="eww-honesty"><span>{{ t('Evidence boundary', '证据边界') }}</span><h2>{{ t('Useful, but not complete.', '有用，但并不完整。') }}</h2><p>{{ t('This weekly view covers admitted transcript records only. Releases, filings, slides, consensus, price reaction and non-admitted calls are not silently inferred.', '本周视图仅覆盖准入电话会文本记录。新闻稿、申报文件、演示材料、一致预期、股价反应和未准入电话会不会被静默推断。') }}</p><a href="../index.html">{{ t('Browse every admitted record', '浏览全部准入记录') }} →</a></section>
+      <section class="eww-honesty"><span>{{ t('Evidence boundary', '证据边界') }}</span><h2>{{ t('Useful, but not complete.', '有用，但并不完整。') }}</h2><p>{{ t('This weekly view covers admitted transcript records only. Releases, filings, slides, consensus, price reaction and non-admitted calls are not silently inferred.', '本周视图仅覆盖准入电话会文本记录。新闻稿、披露文件、演示材料、一致预期、股价反应和未准入电话会不会被静默推断。') }}</p><a href="../index.html">{{ t('Browse every admitted record', '浏览全部准入记录') }} →</a></section>
     </aside>
   </div>
 </article>

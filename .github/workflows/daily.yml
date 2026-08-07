@@ -47,7 +47,8 @@ jobs:
     # was 100 — the collectors step's real baseline has grown to ~60-67m (the old "~35m"
     # budget), and on 2026-07-11 it spiked to 98.5m (EDGAR 8-K velocity ~18m, OpenFIGI
     # ~10m, shadow-importance ~14m on a Friday close). The job was CANCELLED at exactly
-    # 100m while still ahead of "commit data", so the whole night's collections were
+    # 100m while still ahead of the data checkpoint (then one step named "commit data";
+    # since 2026-08-06 the market half is "commit market data"), so the whole night was
     # thrown away and engine built the dashboards from the previous day's committed
     # store (us_standouts stuck on 07-09). Same silent-timeout class as the asia-close
     # freeze (#2193) and the engine job's own 70→120 bump below. 150m = spike ×1.5.
@@ -55,7 +56,7 @@ jobs:
     # moved to collect_tail — 150m is now ≥1.7× the residual spike and is deliberately
     # kept: an undersized cap costs a whole night's collections (bitten twice).
     # 2026-07-17: bitten a THIRD time — the first 18:30-ET (22:30 UTC) Build B run's
-    # collect ran 150.4m and was cancelled AT the final "commit data" step, seconds from
+    # collect ran 150.4m and was cancelled AT the data checkpoint, seconds from
     # landing ~148m of freshly-pulled collections (run 29542087837; downstream engine/
     # publish all green but the day's collector data never committed). Runtime grew
     # ~115m→~148m after the schedule moved 02:00 UTC → 22:30 UTC — suspected early-
@@ -72,6 +73,16 @@ jobs:
     outputs:
       government_revenue_projection_needed: ${{ steps.pushdata.outputs.published }}
     steps:
+      # W2 runtime telemetry (research/NIGHTLY_RESILIENCE_AND_LIVE_TRANSITION_MASTERPLAN_2026-08-06.md
+      # §A2): stamp the job's wall-clock start BEFORE checkout (checkout alone has run 3s→14.5m on
+      # this tree), so the timings ledger measures the same clock the job cap kills. The matching
+      # LAST step (scripts/ci/nightly_timings_finish.sh, if: always()) appends the per-band row to
+      # data/ops/nightly_timings/<job>.jsonl and trips a ::warning above 85% of timeout-minutes —
+      # every cap in this file was historically raised only AFTER nights died at it; this makes the
+      # creep visible BEFORE a kill night. Same two steps on every self-hosted job here
+      # (tests/test_nightly_timings.py pins the wiring + cap args).
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
       - name: python 3.12 (Homebrew venv — self-hosted runner)
         run: |
@@ -160,7 +171,7 @@ jobs:
         # (lib.store.upsert keeps disk-only rows) instead of rebuilding a shallow window.
         # continue-on-error: on restore failure the collector still produces a usable
         # ~120d store (the display chip needs ~95d) — but the publish-back step after
-        # "commit data" is GATED on this step's outcome, so a shallow rebuild can never
+        # "commit market data" is GATED on this step's outcome, so a shallow rebuild can never
         # clobber the deep store on R2 (publish_r2's bytes floor is the second fence).
         id: attention_restore
         continue-on-error: true
@@ -177,7 +188,7 @@ jobs:
         # ON TOP of the full store instead of tripping its store-absent fence (that fence
         # exists because fetching into a throwaway tree would mark days processed in the
         # COMMITTED resume state and lose them permanently).
-        # continue-on-error: the publish-back step after "commit data" is GATED on this
+        # continue-on-error: the publish-back step after the checkpoints is GATED on this
         # step's outcome, so a failed or partial restore can never clobber the deep store
         # on R2 — fetch_r2 exits 1 on any download failure, and publish_r2's
         # _DATA_DIR_MIN_FILES floor is the second fence. On failure the adapter blocks
@@ -192,8 +203,11 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.fetch_r2 --dirs massive_stock_day --workers 24
+      - name: timings band — collectors (W2)
+        run: python3 scripts/nightly_timings.py mark --band collectors || echo "::warning::timings band mark failed (non-fatal)"
       - name: run collectors (graceful degradation — never fails the build on one source)
-        # id is load-bearing: "commit data" gates on THIS step's outcome by name.
+        # id is load-bearing: BOTH checkpoints ("commit market data" and "commit
+        # capital-structure data") gate on THIS step's outcome by name.
         # It is the sole bulk producer of the tree that commit stages.
         id: collectors
         env:
@@ -265,6 +279,260 @@ jobs:
           # is its sole serialized ledger owner. Two workflows must never merge and
           # overwrite the same revision/document Parquets concurrently.
           python -m scripts.collect --exclude-group asia --exclude sam_gov_opportunities --skip-shadow-importance
+      - name: refresh Finviz themes snapshot (subsector-rotation feed; non-fatal)
+        # The only network leg for the themes map + Subsector Rotation. Refreshes
+        # data/themes_heatmap/perf_snapshot.json (stamped with asof) so the rotation
+        # read is fresh-daily and its forward track-record accrues a real daily
+        # history. Keyless, can be rate-limited from CI IPs — strictly non-fatal:
+        # on failure the build keeps the last committed snapshot.
+        run: |
+          python scripts/fetch_finviz_themes.py \
+            || echo "::warning::Finviz themes fetch failed (non-fatal) — keeping committed snapshot"
+      - name: collect ZORI national rent index (MRI shelter leg; non-fatal)
+        # Fetches Zillow's public ZORI CSV (keyless) and writes data/zori/national.parquet.
+        # data/zori/national.parquet is git-tracked (un-ignored by .gitignore negation);
+        # metro-level parquet files under data/zori/ remain untracked (size).
+        # collect_zori.py raises RuntimeError on HTTP failure — shell-level guard mandatory.
+        run: |
+          python scripts/collect_zori.py \
+            || echo "::warning::ZORI collection failed (non-fatal) — shelter leg will use cached parquet"
+      - name: audit massive_stock_day store (content tripwire — loud, never blocks the night)
+        # This lane runs --exclude-group asia, and scripts/collect.py skips the WHOLE
+        # run_quality_audits gate on any partial run (--only/--group/--exclude-group) —
+        # so the store's content audit has never executed nightly. The 2026-07 freeze
+        # ran 18 sessions with zero audit coverage behind that hole. Hence its own step.
+        # The module bare-prints ::error/::warning annotations and exits 1 on a content
+        # fail; continue-on-error keeps the night's commit safe while the annotations
+        # plus the engine job's strict audit_r2 anchor carry the alarm. Writes
+        # data/quality/massive_store_audit.json, picked up by "commit market data" below.
+        #
+        # always() (2026-08-05): continue-on-error stops this step from failing the job,
+        # but it does NOT stop an EARLIER failure from skipping it — a bare step inherits
+        # success(). So on every night a veto fired (08-02 → 08-05) the store's own
+        # tripwire was dark, and the freeze surfaced only 6 days later as the engine job's
+        # R2 staleness anchor. The alarm must be loudest exactly on the nights the night
+        # is lost. It stays continue-on-error, so this cannot red the collect job.
+        if: always()
+        continue-on-error: true
+        env:
+          COLLECT_LANE: nightly   # load-bearing: the skip path only annotates on this lane
+                                  # (elsewhere an absent store is normal). Without it the
+                                  # "restore failed -> store did not advance" warning — the
+                                  # single loudest signal here — would never be emitted.
+        run: python -m scripts.audit_massive_store
+      - name: audit stocks store freshness (per-name stale-tip tripwire — loud, never blocks the night)
+        # Own step for the same reason as "audit massive_stock_day store" above: this
+        # lane runs --exclude-group asia, so scripts/collect.py skips the WHOLE
+        # run_quality_audits gate as a partial run, leaving this audit zero nightly
+        # coverage without its own step. 2026-08-03 incident: a name that exits every
+        # sector SPDR's top-20 froze its data/stocks parquet forever — invisible to
+        # audit_prices (interior gaps only) and check_price_store_freshness (SPY in
+        # data/yahoo only). The module bare-prints a ::warning annotation and always
+        # exits 0 for data findings (flags-only law, never gates the night); the ||
+        # echo below only guards an unexpected crash. Writes
+        # data/quality/stocks_freshness_audit.json, picked up by "commit market data" below.
+        continue-on-error: true
+        run: |
+          python -m scripts.audit_stocks_freshness \
+            || echo "::warning::audit_stocks_freshness crashed (non-fatal — per-name freshness disclosure absent this run)"
+      - name: audit reused tickers (zombie-print / identity-swap tripwire — loud, never blocks the night)
+        # Own step for the same partial-run reason as the freshness audit above.
+        # 2026-08-06 ECHO identity swap: Echo Global Logistics (taken private 2021)
+        # had its ticker recycled by EchoStar (SATS->ECHO rename, eff. 2026-06-24) and
+        # the store's bare-string fetch minted a fresh, continuous, internally
+        # consistent EchoStar history under the dead name's key — invisible to every
+        # gap/freshness/basis check. Dead-registry cross-reference + NASDAQ symbol-
+        # directory presence; per-name ::warning for un-acked zombies, flags-only.
+        # Writes data/quality/reused_tickers_audit.json, picked up by "commit market data".
+        continue-on-error: true
+        run: |
+          python -m scripts.audit_reused_tickers \
+            || echo "::warning::audit_reused_tickers crashed (non-fatal — reused-ticker disclosure absent this run)"
+      - name: timings band — market-commit-push (W2)
+        run: python3 scripts/nightly_timings.py mark --band market-commit-push || echo "::warning::timings band mark failed (non-fatal)"
+      # ── MARKET CHECKPOINT (1 of 2) ──────────────────────────────────────────
+      # TWO-CHECKPOINT SPLIT (2026-08-06). This job used to land the whole night in
+      # ONE commit that sat AFTER the five capital-structure steps, so a
+      # capital-structure defect could still cost the market plane its publish
+      # window: the 2026-08-05 named-steps gate stopped a CS failure DISCARDING
+      # the collection, but ~3h of collected bytes still lived only on the runner
+      # for the whole length of the CS chain, one job-cap cancel or runner death
+      # away from the next job's actions/checkout deleting them. Six consecutive
+      # nights (2026-08-01 →) were lost through that window to four unrelated
+      # defects (#4534 duck-typing, runner ENOSPC, #4600 ledger identity, #4640
+      # SEC grammar) and data/stocks froze at 2026-07-31.
+      #
+      # So the checkpoint is now split in two, by SCOPE, in publication order:
+      #   1. THIS step + "push market data": data/ and site/qledger/, EXCLUDING
+      #      the capital-structure paths. It runs before a single CS step, so no
+      #      capital-structure outcome can reach it — not by failing, not by
+      #      hanging, not by burning the job's remaining budget.
+      #   2. "commit capital-structure data" + its push, after the CS chain.
+      # A partial capital-structure generation is still never committed: it is
+      # carved out of THIS commit unconditionally, and its own checkpoint below
+      # only runs when the whole chain returned success.
+      - name: commit market data (local checkpoint — no network ops in this step)
+        # NAMED-STEPS GATE (2026-08-05). This step used to carry no `if:` at all, so it
+        # inherited an implicit success() and ANY earlier red discarded the night's
+        # market collection — 08-02, 08-03 (collectors duck-typing, #4560), 08-04 (host
+        # disk), 08-05 (capital-structure ManifestIdentityError). Four nights lost to
+        # three causes, none of which had anything to do with whether the PRICE data on
+        # disk was sound. The 2026-08-06 split above removes the last of those three
+        # from this step's reach entirely; the gate stays because the gate is what
+        # keeps a SKIPPED or half-run producer from being checkpointed.
+        #
+        # A bare always() is NOT the fix and is forbidden here: on 2026-08-04 an
+        # always() commit step outran its SKIPPED normalizers and committed raw
+        # un-normalized pages sitewide (P0). A skipped producer must block exactly like
+        # a failed one, which is why this gates on `.outcome == 'success'` — outcome is
+        # the raw step result, so 'skipped' and 'cancelled' both block, and unlike
+        # `.conclusion` it is not laundered by a continue-on-error.
+        #
+        # STAGED PATH -> PRODUCING STEP  (the mapping this gate is derived from; extend
+        # it when you add a step that WRITES into the staged tree):
+        #
+        #   data/**                    -> `run collectors`  (id: collectors)  GATES
+        #     the whole market plane: data/stocks, data/baskets/ohlcv, breadth close
+        #     caches, macro series, ~228 adapters. The only bulk producer here.
+        #   site/qledger/track_record.json
+        #                              -> `run collectors`  (grade_qledger)   GATES
+        #   data/capital_structure/**  -> NOT STAGED HERE. `run collectors`
+        #     (sec_capital_structure) rewrites source_manifest.jsonl inside the broad
+        #     `data/` add, so it is unstaged again below and belongs to the SECOND
+        #     checkpoint, after its compilers have accepted it.
+        #   data/themes_heatmap/perf_snapshot.json
+        #                              -> `refresh Finviz themes`   does NOT gate
+        #   data/zori/national.parquet -> `collect ZORI`             does NOT gate
+        #     Both are self-guarded (`|| echo ::warning::`) and purely additive: a miss
+        #     re-commits the previous snapshot, which is a no-op diff, not a torn tree.
+        #   data/quality/massive_store_audit.json
+        #                              -> `audit massive_stock_day store`  does NOT gate
+        #     A tripwire REPORTS on the tree; it does not produce it. Gating on an alarm
+        #     would let the alarm delete the evidence.
+        #
+        # NOT in the gate, deliberately:
+        #   * the whole capital-structure chain — it has not RUN yet. Since the
+        #     2026-08-06 split every one of those steps sits BELOW this checkpoint, so
+        #     `steps.cs_*.outcome` here would be the empty string on every night. That
+        #     is the point of the split: the market plane is published before the CS
+        #     lane can fail, hang, or eat the job's remaining budget. Its paths are
+        #     unstaged below and ride their own checkpoint.
+        #   * collect_tail — a SEPARATE JOB with its own commit; nothing it produces is
+        #     staged here (site/basketdata moved with it in the 2026-07-14 split), and
+        #     cross-job step outcomes are not referenceable in an `if:` anyway.
+        if: always() && steps.collectors.outcome == 'success'
+        id: commitdata
+        run: |
+          echo "committed=false" >> "$GITHUB_OUTPUT"
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # site/qledger: the qledger grader (scripts/collect.py -> grade_qledger)
+          # writes the TRACKED site/qledger/track_record.json (un-ignored by #1139).
+          # Left unstaged it blocks `git pull --rebase` ("unstaged changes") and the
+          # whole data push silently dies after 5 attempts — 07-03/07-04 collections
+          # were lost exactly this way (the sentinel staging-gap pattern). The
+          # --autostash on the rebase below is the durable guard: it survives ANY
+          # stray tracked write collect leaves outside data/+site/qledger/ (e.g.
+          # reports/*.md graders), not just the qledger paths we happen to stage here.
+          # (site/basketdata moved with the TIL steps to collect_tail's commit —
+          # 2026-07-14 split; nothing left in this job writes site/basketdata.)
+          git add data/ site/qledger/
+          # W0b (2026-07-08 stale-HK incident): US collect job must NOT commit asia-owned
+          # data that it never produced. The GHA cache restore steps above may lay stale
+          # data/hk_stocks (restore-keys: hk-stocks-ohlc-) and breadth caches on top of
+          # the fresh files asia-close already committed.  After the broad `git add data/`
+          # above, unstage every asia-close-owned path so -X theirs on the rebase-push
+          # cannot clobber asia's fresh commit with this job's stale copy.
+          # Derived from asia-close.yml: collect --group asia = adapters starting with
+          # `china` or `hk` (scripts/collect.py group_members), so excludes cover all
+          # data/china*, data/hk*, and data/hkma (adapter key `hkma` starts with `hk`).
+          git reset -q -- data/hk data/hk_* data/hkma data/china data/china_* 2>/dev/null || true
+          # Capital-structure SCOPE CARVE-OUT — same idiom as the asia unstage above.
+          # UNCONDITIONAL since the 2026-08-06 split: none of the five capital-structure
+          # steps has run yet at this point, so there is no outcome to test and nothing
+          # here could be a complete generation. `run collectors`
+          # (sec_capital_structure) has already rewritten the TRACKED
+          # source_manifest.jsonl, which the broad `git add data/` above swept in — a
+          # source ledger no compiler has accepted. Drop it; the second checkpoint
+          # commits it once the whole chain has validated it.
+          #
+          # `git reset` ONLY — never `git checkout`. The pre-2026-08-06 carve-out fired
+          # AFTER a failed chain and restored the clean committed ledger (#4600's
+          # self-heal). Here the chain has not run, and that freshly-collected ledger is
+          # its INPUT: reverting it would feed the spine yesterday's manifests every
+          # single night. Unstage, do not revert.
+          git reset -q -- data/capital_structure site/capital-structure-data 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no market data changes to commit"; exit 0; fi
+          git commit -m "data: daily collection $(date -u +%F)"
+          echo "committed=true" >> "$GITHUB_OUTPUT"
+      # COMMIT/PUSH SPLIT (2026-07-17, run 29542087837 postmortem): the local commit above
+      # is atomic and integrity-complete (fully-staged tree, asia paths reset out, empty-
+      # guarded) — everything below is pure network publish. It lives in a SEPARATE
+      # always()-guarded step so a job-timeout cancel during the push can never again
+      # discard an already-committed night of collections (a hung git push ate 57m and
+      # the 150m cap killed the step mid-publish; the commit existed only on the runner).
+      # Every git network op is alarm-bounded (macOS runners have no GNU timeout;
+      # perl alarm survives execve — SIGALRM kills a hung op, the loop retries).
+      - name: push market data (survives a job-cap cancel; alarm-bounded git ops)
+        id: pushdata
+        if: always() && steps.commitdata.outputs.committed == 'true'
+        run: |
+          echo "published=false" >> "$GITHUB_OUTPUT"
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          # best-effort push: losing a race with a concurrent push must NOT fail the
+          # pipeline (the data is collected; the next run re-syncs). Retry rebase+push,
+          # preferring our freshly-collected data on any conflict.
+          #
+          # The capital-structure paths carved out of the commit above are DIRTY here,
+          # and --autostash parks them across the rebase. On a clean re-apply the
+          # compilers below read the ledger the collectors just wrote — the normal
+          # night. On a conflicted re-apply push_autostash_ok resets hard and retries,
+          # so the compilers read origin/main's committed ledger instead. Both are
+          # sound inputs: the second is exactly #4600's restore-a-clean-ledger self-heal.
+          PUSH_ALARM=420
+          push_retry_init "collected market data"
+          while push_attempt; do
+            # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
+            # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
+            # refuses ("untracked working tree files would be overwritten") and --autostash can't
+            # clear it (it parks tracked modifications only), so every retry dies identically.
+            # Everything this step publishes is already committed above, so a path untracked HERE
+            # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
+            # Gitignored files and untracked paths origin/main doesn't track never enter the
+            # intersection (runner-local stores and caches are untouched).
+            # (Asia paths unstaged above: when newly tracked on main, deleting the local stale
+            # copy lets the rebase materialize asia-close's fresh commit — the W0b intent.)
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
+              if push_do; then
+                echo "pushed market data on attempt $PUSH_ATTEMPT"
+                echo "published=true" >> "$GITHUB_OUTPUT"
+                push_won
+                exit 0
+              fi
+            fi
+            push_abort_rebase
+            push_backoff
+          done
+          push_lost
+          echo "::warning::could not push collected market data after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+      # Last-ditch publish if the job was CANCELLED mid-push (cap timeout): one bounded
+      # attempt inside the post-cancel grace window. The commit already exists locally;
+      # losing it costs the whole night's collections (2026-07-16 incident).
+      - name: salvage push (job cancelled mid-publish — one bounded attempt)
+        if: cancelled() && steps.commitdata.outputs.committed == 'true'
+        run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          perl -e 'alarm 90; exec @ARGV or die' -- git fetch origin main || true
+          { perl -e 'alarm 180; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; } || true
+          perl -e 'alarm 120; exec @ARGV or die' -- git push \
+            && echo "salvage push landed the collections" \
+            || echo "::warning::salvage push failed — tonight's collections stay uncommitted"
+      - name: timings band — capital-structure (W2)
+        run: python3 scripts/nightly_timings.py mark --band capital-structure || echo "::warning::timings band mark failed (non-fatal)"
       - name: materialize authenticated capital-structure share counts (context-only)
         # PRE-PRODUCTION GATE: leave false until publication protocol v2 and the
         # bounded full-generation retention lane pass their release audits. A
@@ -336,11 +604,13 @@ jobs:
             perl -e 'alarm 930; exec @ARGV or die' -- python -m scripts.retain_capital_structure_share_counts "${retention_args[@]}"
           fi
       - name: compile capital-structure event spine (offline, context-only)
-        # id: consumed by "commit data" to decide whether the capital-structure PATHS
-        # may be staged — never whether the commit itself runs (see that step).
+        # id: gates "commit capital-structure data" below — this lane's OWN checkpoint.
+        # It cannot reach the market checkpoint, which was committed and pushed before
+        # this step started (2026-08-06 split).
         id: cs_spine
         # AFTER collection so today's verified SEC manifests are visible, and BEFORE
-        # the data commit so immutable event versions/edges ride the same checkpoint.
+        # the capital-structure commit so immutable event versions/edges ride the same
+        # checkpoint as the source ledger they were compiled from.
         # This compiler is network-free by contract and has no Prophet/rank authority.
         # Any source-bundle, ledger, or generation-receipt integrity failure blocks
         # the checkpoint; a partial capital-structure generation is never committed.
@@ -407,216 +677,85 @@ jobs:
             data/capital_structure/telemetry.json
           if-no-files-found: warn
           retention-days: 14
-      - name: refresh Finviz themes snapshot (subsector-rotation feed; non-fatal)
-        # The only network leg for the themes map + Subsector Rotation. Refreshes
-        # data/themes_heatmap/perf_snapshot.json (stamped with asof) so the rotation
-        # read is fresh-daily and its forward track-record accrues a real daily
-        # history. Keyless, can be rate-limited from CI IPs — strictly non-fatal:
-        # on failure the build keeps the last committed snapshot.
-        run: |
-          python scripts/fetch_finviz_themes.py \
-            || echo "::warning::Finviz themes fetch failed (non-fatal) — keeping committed snapshot"
-      - name: collect ZORI national rent index (MRI shelter leg; non-fatal)
-        # Fetches Zillow's public ZORI CSV (keyless) and writes data/zori/national.parquet.
-        # data/zori/national.parquet is git-tracked (un-ignored by .gitignore negation);
-        # metro-level parquet files under data/zori/ remain untracked (size).
-        # collect_zori.py raises RuntimeError on HTTP failure — shell-level guard mandatory.
-        run: |
-          python scripts/collect_zori.py \
-            || echo "::warning::ZORI collection failed (non-fatal) — shelter leg will use cached parquet"
-      - name: audit massive_stock_day store (content tripwire — loud, never blocks the night)
-        # This lane runs --exclude-group asia, and scripts/collect.py skips the WHOLE
-        # run_quality_audits gate on any partial run (--only/--group/--exclude-group) —
-        # so the store's content audit has never executed nightly. The 2026-07 freeze
-        # ran 18 sessions with zero audit coverage behind that hole. Hence its own step.
-        # The module bare-prints ::error/::warning annotations and exits 1 on a content
-        # fail; continue-on-error keeps the night's commit safe while the annotations
-        # plus the engine job's strict audit_r2 anchor carry the alarm. Writes
-        # data/quality/massive_store_audit.json, picked up by "commit data" below.
+      # ── CAPITAL-STRUCTURE CHECKPOINT (2 of 2) ───────────────────────────────
+      # The market plane is already committed AND pushed (see "commit market data"
+      # far above). Nothing from here on can cost it. This checkpoint publishes
+      # ONLY the capital-structure generation, all-or-nothing.
+      #
+      # WHY A SECOND COMMIT RATHER THAN A WIDER FIRST ONE: this lane is an
+      # all-or-nothing SEC publication protocol whose generation is coherent only
+      # if the entire chain ran. `run collectors` (sec_capital_structure) rewrites
+      # the TRACKED source_manifest.jsonl long before the spine validates it, so
+      # between the two checkpoints the tree legitimately holds a source ledger no
+      # compiler has accepted yet. The market checkpoint UNSTAGES those paths
+      # (never `git checkout`s them — that ledger is these compilers' INPUT), and
+      # this step commits them only after every link returned success.
+      #
+      # On a failure this step simply never runs, so the rejected ledger is never
+      # committed and dies with the runner's workspace — which IS #4600's
+      # self-heal: the next night's actions/checkout restores a clean ledger from
+      # git. What it can no longer do is take the night's market data with it.
+      #
+      # Deliberately NOT continue-on-error, and never to be given it: the compile
+      # steps must stay fatal for THIS checkpoint (that was tried in #4578 and
+      # correctly reverted). Fatal for their own commit, invisible to the market's.
+      - name: commit capital-structure data (local checkpoint — no network ops in this step)
+        # Gated on the NAMED producers of the paths it stages, compared with
+        # `.outcome == 'success'` so a SKIPPED link blocks exactly like a failed one
+        # and a future continue-on-error cannot launder a failure into a commit
+        # (`.conclusion` would). always() keeps it decoupled from JOB status for the
+        # same reason the market checkpoint is: an unrelated red elsewhere in this
+        # ~3h job must not discard a capital-structure generation that did compile.
         #
-        # always() (2026-08-05): continue-on-error stops this step from failing the job,
-        # but it does NOT stop an EARLIER failure from skipping it — a bare step inherits
-        # success(). So on every night a veto fired (08-02 → 08-05) the store's own
-        # tripwire was dark, and the freeze surfaced only 6 days later as the engine job's
-        # R2 staleness anchor. The alarm must be loudest exactly on the nights the night
-        # is lost. It stays continue-on-error, so this cannot red the collect job.
-        if: always()
-        continue-on-error: true
-        env:
-          COLLECT_LANE: nightly   # load-bearing: the skip path only annotates on this lane
-                                  # (elsewhere an absent store is normal). Without it the
-                                  # "restore failed -> store did not advance" warning — the
-                                  # single loudest signal here — would never be emitted.
-        run: python -m scripts.audit_massive_store
-      - name: audit stocks store freshness (per-name stale-tip tripwire — loud, never blocks the night)
-        # Own step for the same reason as "audit massive_stock_day store" above: this
-        # lane runs --exclude-group asia, so scripts/collect.py skips the WHOLE
-        # run_quality_audits gate as a partial run, leaving this audit zero nightly
-        # coverage without its own step. 2026-08-03 incident: a name that exits every
-        # sector SPDR's top-20 froze its data/stocks parquet forever — invisible to
-        # audit_prices (interior gaps only) and check_price_store_freshness (SPY in
-        # data/yahoo only). The module bare-prints a ::warning annotation and always
-        # exits 0 for data findings (flags-only law, never gates the night); the ||
-        # echo below only guards an unexpected crash. Writes
-        # data/quality/stocks_freshness_audit.json, picked up by "commit data" below.
-        continue-on-error: true
-        run: |
-          python -m scripts.audit_stocks_freshness \
-            || echo "::warning::audit_stocks_freshness crashed (non-fatal — per-name freshness disclosure absent this run)"
-      - name: audit reused tickers (zombie-print / identity-swap tripwire — loud, never blocks the night)
-        # Own step for the same partial-run reason as the freshness audit above.
-        # 2026-08-06 ECHO identity swap: Echo Global Logistics (taken private 2021)
-        # had its ticker recycled by EchoStar (SATS->ECHO rename, eff. 2026-06-24) and
-        # the store's bare-string fetch minted a fresh, continuous, internally
-        # consistent EchoStar history under the dead name's key — invisible to every
-        # gap/freshness/basis check. Dead-registry cross-reference + NASDAQ symbol-
-        # directory presence; per-name ::warning for un-acked zombies, flags-only.
-        # Writes data/quality/reused_tickers_audit.json, picked up by "commit data".
-        continue-on-error: true
-        run: |
-          python -m scripts.audit_reused_tickers \
-            || echo "::warning::audit_reused_tickers crashed (non-fatal — reused-ticker disclosure absent this run)"
-      - name: commit data (local checkpoint — no network ops in this step)
-        # NAMED-STEPS GATE (2026-08-05). This step used to carry no `if:` at all, so it
-        # inherited an implicit success() and ANY earlier red discarded the night's
-        # market collection — 08-02, 08-03 (collectors duck-typing, #4560), 08-04 (host
-        # disk), 08-05 (capital-structure ManifestIdentityError). Four nights lost to
-        # three causes, none of which had anything to do with whether the PRICE data on
-        # disk was sound.
-        #
-        # A bare always() is NOT the fix and is forbidden here: on 2026-08-04 an
-        # always() commit step outran its SKIPPED normalizers and committed raw
-        # un-normalized pages sitewide (P0). A skipped producer must block exactly like
-        # a failed one, which is why this gates on `.outcome == 'success'` — outcome is
-        # the raw step result, so 'skipped' and 'cancelled' both block, and unlike
-        # `.conclusion` it is not laundered by a continue-on-error.
-        #
-        # STAGED PATH -> PRODUCING STEP  (the mapping this gate is derived from; extend
-        # it when you add a step that WRITES into the staged tree):
-        #
-        #   data/**                    -> `run collectors`  (id: collectors)  GATES
-        #     the whole market plane: data/stocks, data/baskets/ohlcv, breadth close
-        #     caches, macro series, ~228 adapters. The only bulk producer here.
-        #   site/qledger/track_record.json
-        #                              -> `run collectors`  (grade_qledger)   GATES
-        #   data/capital_structure/**  -> `run collectors` (sec_capital_structure writes
-        #     site/capital-structure-data/  source_manifest.jsonl) + cs_spine + cs_terms
-        #                                 + cs_projection.  PATH-SCOPED, see below.
-        #   data/themes_heatmap/perf_snapshot.json
-        #                              -> `refresh Finviz themes`   does NOT gate
-        #   data/zori/national.parquet -> `collect ZORI`             does NOT gate
-        #     Both are self-guarded (`|| echo ::warning::`) and purely additive: a miss
-        #     re-commits the previous snapshot, which is a no-op diff, not a torn tree.
-        #   data/quality/massive_store_audit.json
-        #                              -> `audit massive_stock_day store`  does NOT gate
-        #     A tripwire REPORTS on the tree; it does not produce it. Gating on an alarm
-        #     would let the alarm delete the evidence.
-        #
-        # NOT in the gate, deliberately:
-        #   * the capital-structure compile chain — a compile failure must never again
-        #     discard price collection. But those steps DO write tracked staged paths
-        #     (source_manifest.jsonl, event_versions/edges.parquet, projection.json,
-        #     site/capital-structure-data/latest.json), so committing through a failure
-        #     would stage a REJECTED source ledger beside stale events — a torn
-        #     generation, and it would destroy the self-heal that makes the failure
-        #     recoverable (#4600: each night restores a clean ledger from git, so a
-        #     committed drift becomes permanent). Resolved by SCOPE, not by veto: the
-        #     commit runs, and the capital-structure paths are unstaged below unless
-        #     their whole chain succeeded. Both laws hold.
-        #   * the two var-gated share-count steps — designed to be SKIPPED (vars off).
-        #     `== 'success'` on a normally-skipped step would deadlock the pipeline
-        #     forever. They write only under data/capital_structure/, already covered
-        #     by the scope carve-out.
-        #   * collect_tail — a SEPARATE JOB with its own commit; nothing it produces is
-        #     staged here (site/basketdata moved with it in the 2026-07-14 split), and
-        #     cross-job step outcomes are not referenceable in an `if:` anyway.
-        if: always() && steps.collectors.outcome == 'success'
-        id: commitdata
-        env:
-          CS_SPINE: ${{ steps.cs_spine.outcome }}
-          CS_TERMS: ${{ steps.cs_terms.outcome }}
-          CS_PROJECTION: ${{ steps.cs_projection.outcome }}
+        # The two var-gated share-count steps are deliberately NOT in this gate:
+        # they are designed to be SKIPPED (vars off), so `== 'success'` on them would
+        # deadlock this checkpoint forever. They write only under
+        # data/capital_structure/, which this step stages wholesale.
+        if: >-
+          always()
+          && steps.collectors.outcome == 'success'
+          && steps.cs_spine.outcome == 'success'
+          && steps.cs_terms.outcome == 'success'
+          && steps.cs_projection.outcome == 'success'
+        id: commitcs
         run: |
           echo "committed=false" >> "$GITHUB_OUTPUT"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          # site/qledger: the qledger grader (scripts/collect.py -> grade_qledger)
-          # writes the TRACKED site/qledger/track_record.json (un-ignored by #1139).
-          # Left unstaged it blocks `git pull --rebase` ("unstaged changes") and the
-          # whole data push silently dies after 5 attempts — 07-03/07-04 collections
-          # were lost exactly this way (the sentinel staging-gap pattern). The
-          # --autostash on the rebase below is the durable guard: it survives ANY
-          # stray tracked write collect leaves outside data/+site/qledger/ (e.g.
-          # reports/*.md graders), not just the qledger paths we happen to stage here.
-          # (site/basketdata moved with the TIL steps to collect_tail's commit —
-          # 2026-07-14 split; nothing left in this job writes site/basketdata.)
-          git add data/ site/qledger/ site/capital-structure-data/
-          # W0b (2026-07-08 stale-HK incident): US collect job must NOT commit asia-owned
-          # data that it never produced. The GHA cache restore steps above may lay stale
-          # data/hk_stocks (restore-keys: hk-stocks-ohlc-) and breadth caches on top of
-          # the fresh files asia-close already committed.  After the broad `git add data/`
-          # above, unstage every asia-close-owned path so -X theirs on the rebase-push
-          # cannot clobber asia's fresh commit with this job's stale copy.
-          # Derived from asia-close.yml: collect --group asia = adapters starting with
-          # `china` or `hk` (scripts/collect.py group_members), so excludes cover all
-          # data/china*, data/hk*, and data/hkma (adapter key `hkma` starts with `hk`).
-          git reset -q -- data/hk data/hk_* data/hkma data/china data/china_* 2>/dev/null || true
-          # Capital-structure SCOPE CARVE-OUT (2026-08-05) — same idiom as the asia
-          # unstage above, and the reason a capital-structure failure no longer needs to
-          # veto the whole night. That lane is an all-or-nothing SEC publication
-          # protocol: its own generation is coherent only if the entire chain ran. The
-          # collectors step has ALREADY rewritten the tracked source_manifest.jsonl by
-          # the time the spine validates it, so on a rejection the tree holds a REFUSED
-          # source ledger next to the previous generation's events. Committing that
-          # would (a) publish a torn generation and (b) make it permanent — #4600's
-          # self-heal depends on each night restoring a clean ledger from git.
-          # So: keep the price data, drop the capital-structure paths, say so loudly.
-          if [ "$CS_SPINE" != success ] || [ "$CS_TERMS" != success ] || [ "$CS_PROJECTION" != success ]; then
-            git reset -q -- data/capital_structure site/capital-structure-data 2>/dev/null || true
-            git checkout -q -- data/capital_structure site/capital-structure-data 2>/dev/null || true
-            printf '::warning title=capital-structure-excluded::%s\n' "capital-structure generation incomplete (spine=$CS_SPINE terms=$CS_TERMS projection=$CS_PROJECTION) — its paths are excluded from tonight's data commit; market collection still committed"
-          fi
-          if git diff --cached --quiet; then echo "no data changes to commit"; exit 0; fi
-          git commit -m "data: daily collection $(date -u +%F)"
+          # SCOPE: exactly the capital-structure generation and its byte-identical
+          # public twin — nothing else. The two move together or the twin law breaks.
+          # A broad `git add` here would re-open the coupling this split removed:
+          # market paths must never ride a checkpoint the CS chain can veto.
+          git add data/capital_structure site/capital-structure-data
+          if git diff --cached --quiet; then echo "no capital-structure changes to commit"; exit 0; fi
+          git commit -m "capital-structure: nightly generation $(date -u +%F)"
           echo "committed=true" >> "$GITHUB_OUTPUT"
-      # COMMIT/PUSH SPLIT (2026-07-17, run 29542087837 postmortem): the local commit above
-      # is atomic and integrity-complete (fully-staged tree, asia paths reset out, empty-
-      # guarded) — everything below is pure network publish. It lives in a SEPARATE
-      # always()-guarded step so a job-timeout cancel during the push can never again
-      # discard an already-committed night of collections (a hung git push ate 57m and
-      # the 150m cap killed the step mid-publish; the commit existed only on the runner).
-      # Every git network op is alarm-bounded (macOS runners have no GNU timeout;
-      # perl alarm survives execve — SIGALRM kills a hung op, the loop retries).
-      - name: push data (survives a job-cap cancel; alarm-bounded git ops)
-        id: pushdata
-        if: always() && steps.commitdata.outputs.committed == 'true'
+      # COMMIT/PUSH SPLIT, same law as the market checkpoint (2026-07-17, run
+      # 29542087837 postmortem): the local commit above is atomic and integrity-
+      # complete; everything below is pure network publish in its OWN always()-guarded
+      # step, so a job-cap cancel during the push cannot discard an already-committed
+      # generation. Every git network op is alarm-bounded (macOS runners have no GNU
+      # timeout; perl alarm survives execve — SIGALRM kills a hung op, the loop retries).
+      - name: push capital-structure data (alarm-bounded git ops)
+        id: pushcs
+        if: always() && steps.commitcs.outputs.committed == 'true'
         run: |
-          echo "published=false" >> "$GITHUB_OUTPUT"
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
-          # best-effort push: losing a race with a concurrent push must NOT fail the
-          # pipeline (the data is collected; the next run re-syncs). Retry rebase+push,
-          # preferring our freshly-collected data on any conflict.
+          # Same best-effort policy as the market push: losing a race for refs/heads/main
+          # must not red the job. If the market push above LOST its race, its commit is
+          # still local and this loop publishes both — a free second chance at the night.
           PUSH_ALARM=420
-          push_retry_init "collected data"
+          push_retry_init "capital-structure generation"
           while push_attempt; do
-            # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
-            # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
-            # refuses ("untracked working tree files would be overwritten") and --autostash can't
-            # clear it (it parks tracked modifications only), so every retry dies identically.
-            # Everything this step publishes is already committed above, so a path untracked HERE
-            # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
-            # Gitignored files and untracked paths origin/main doesn't track never enter the
-            # intersection (runner-local stores and caches are untouched).
-            # (Asia paths unstaged above: when newly tracked on main, deleting the local stale
-            # copy lets the rebase materialize asia-close's fresh commit — the W0b intent.)
+            # pre-sync collision sweep — see the market push above for the full rationale
+            # (a mid-run commit on origin/main tracking a path this job wrote untracked).
             perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
             if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
               if push_do; then
-                echo "pushed data on attempt $PUSH_ATTEMPT"
-                echo "published=true" >> "$GITHUB_OUTPUT"
+                echo "pushed capital-structure generation on attempt $PUSH_ATTEMPT"
                 push_won
                 exit 0
               fi
@@ -625,19 +764,9 @@ jobs:
             push_backoff
           done
           push_lost
-          echo "::warning::could not push collected data after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
-      # Last-ditch publish if the job was CANCELLED mid-push (cap timeout): one bounded
-      # attempt inside the post-cancel grace window. The commit already exists locally;
-      # losing it costs the whole night's collections (2026-07-16 incident).
-      - name: salvage push (job cancelled mid-publish — one bounded attempt)
-        if: cancelled() && steps.commitdata.outputs.committed == 'true'
-        run: |
-          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
-          perl -e 'alarm 90; exec @ARGV or die' -- git fetch origin main || true
-          { perl -e 'alarm 180; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; } || true
-          perl -e 'alarm 120; exec @ARGV or die' -- git push \
-            && echo "salvage push landed the collections" \
-            || echo "::warning::salvage push failed — tonight's collections stay uncommitted"
+          echo "::warning::could not push the capital-structure generation after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal — the market data is already published; the next night recompiles)"
+      - name: timings band — r2-publish (W2)
+        run: python3 scripts/nightly_timings.py mark --band r2-publish || echo "::warning::timings band mark failed (non-fatal)"
       - name: publish attention store back to R2 (gated on the restore)
         # The day's upserted increments ride back to R2 so tomorrow's restore (and the
         # engine job's render-side restore) reads a CURRENT deep store — a frozen R2
@@ -646,7 +775,7 @@ jobs:
         # rebuild whose file count matches the deep store, and publishing it would
         # clobber 11y of history. Gaps self-heal: the collector's ~120d fetch window
         # re-covers any missed days on the next successful cycle. Runs AFTER "commit
-        # data" so the commit is never delayed by the upload. Non-fatal.
+        # market data" so the commit is never delayed by the upload. Non-fatal.
         # always(): see the massive_stock_day publish below — an `if:` carrying no status
         # function gets an implicit success(), so ANY earlier red in this ~2h job silently
         # skips the publish. The restore gate is the real fence and it is preserved.
@@ -665,7 +794,7 @@ jobs:
         # green. Gated on massive_restore for the same reason as attention above: a
         # shallow or partial local tree must never overwrite the deep store, and here the
         # collector's store-absent fence means such a tree would not even have advanced.
-        # Runs after "commit data" so the upload never delays the commit. Non-fatal.
+        # Runs after "commit market data" so the upload never delays the commit. Non-fatal.
         #
         # always() (2026-08-05, run 30960328285): an `if:` containing NO status-check
         # function gets an implicit success(), so this step was skipped by ANY earlier
@@ -690,6 +819,11 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.publish_r2 --dirs massive_stock_day || echo "::warning::massive_stock_day R2 publish failed (non-fatal — R2 copy goes stale; the engine job's strict audit_r2 anchor goes red within 26h)"
+      # W2: per-band timings row + >85%-of-cap tripwire. always() so a job-cap cancel
+      # still records the night in the grace window (elapsed ≈ cap → the warning fires).
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 240
 
   government_revenue_projection:
     # A GITHUB_TOKEN push intentionally cannot recursively launch a push workflow.
@@ -759,6 +893,8 @@ jobs:
     # backstop if a freak night stacks every budget at once.
     timeout-minutes: 200
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -789,6 +925,8 @@ jobs:
           else
             echo "::warning::ThetaData Terminal not reachable on this runner host — tape_flow steps will self-skip (Terminal is launchd-managed on the M1 since 2026-07-25; CI must never launch one)"
           fi
+      - name: timings band — tape-flow (W2)
+        run: python3 scripts/nightly_timings.py mark --band tape-flow || echo "::warning::timings band mark failed (non-fatal)"
       - name: T2a tape-flow features — forward accrual (collect-tail lane, non-fatal)
         # Pulls prior-trading-day trade+NBBO tape for the full gex_symbols() universe
         # (~360 roots) via wildcard-bulk ThetaData endpoint (2 requests/root-day).
@@ -836,6 +974,8 @@ jobs:
         run: |
           python -m scripts.build_tape_flow_daily --mode etf-history --budget-minutes 20 \
             || echo "::warning::T2a tape-flow ETF-history backfill failed (non-fatal)"
+      - name: timings band — til-organs (W2)
+        run: python3 scripts/nightly_timings.py mark --band til-organs || echo "::warning::timings band mark failed (non-fatal)"
       # ── TIL collect-lane organs (W8/W9/W10/W11) ───────────────────────────
       # Moved here from the collect job (2026-07-14 split); placement and order
       # follow the declared dag.yml collect_tail lane. W7 (dol_certs) stays
@@ -843,7 +983,36 @@ jobs:
       # Measured 2026-07-12 (Mac Studio, warm venv): W9-W11 6.6s + 0.5s + 0.5s
       # + 1.4s ≈ 9s total; W8 keyless/invalid-key no-op 0.8s + 0.6s; W8 keyed
       # runs hard-capped (see step comment) — no material claim on the budget.
+      #
+      # STEP CAPS ON THE TIL/MLC/CCW BAND (thetadata wedge postmortem 2026-08-06):
+      # every step below was `python -m … || echo "::warning::…"` with a measured
+      # budget in its comment and NO duration bound. `||` bounds the EXIT CODE, never
+      # the DURATION: a step that hangs never exits, so the `||` never fires and the
+      # step silently eats the job's whole 200m cap, taking every step behind it down
+      # as SKIPPED — the exact starvation shape the shadow-importance band below was
+      # capped for (07-29→08-02), including the "commit tail data" step, so even
+      # completed work evaporates on the next clean checkout.
+      # This is not hypothetical for W11: on 2026-08-06 the thetadata_eod store moved
+      # to an external volume (/Volumes/STORAGE), and a launchd-context process that
+      # opens a file there parks forever in open() on the macOS removable-volume
+      # access gate — uninterruptible, no timeout, no error. The M1's backfill lane
+      # accrued nothing for 3h in exactly that state. W11 reads that same store on
+      # that same host, so an unbounded W11 is one permission drift away from a
+      # 200m nightly.
+      # Caps are sized ~3-4x the measured budget: generous enough that a slow night
+      # never trips them, tight enough that a HANG is truncated loudly instead of
+      # silently. As the band below says: if a step starts hitting its bound
+      # nightly, fix ITS runtime — do not silently raise the bound.
+      # `continue-on-error: true` is REQUIRED alongside each cap and is not
+      # decoration: when the runner kills a timed-out step it kills the shell, so the
+      # `|| echo` never runs and the step is marked FAILED. Without the pair, adding a
+      # cap would convert these non-fatal steps into job-killers — strictly worse than
+      # the bug being fixed. Same pairing law as the shadow-importance band below.
       - name: TIL W8 — Census HS-code import-flow ingest (non-fatal)
+        # Cap: --max-requests 450 already self-bounds to ~7-8m; 15m is the backstop
+        # for a hang in a single request (the cap is on requests, not on wall time).
+        timeout-minutes: 15
+        continue-on-error: true
         # Requires the CENSUS_API_KEY repo secret (API is NOT keyless — verified
         # 2026-07-09; keyless/invalid key 302s and the run no-ops honest-null in
         # ~1s, exit 0). --max-requests 450 hard-bounds every run to ~7-8 min
@@ -859,6 +1028,9 @@ jobs:
           python -m collectors.census_trade --max-requests 450 \
             || echo "::warning::census_trade ingest failed (non-fatal)"
       - name: TIL W8 — theme trade-flow rollup (non-fatal)
+        # Cap: measured 0.6s — 5m is a pure hang backstop.
+        timeout-minutes: 5
+        continue-on-error: true
         # Rolls the parquet above into per-theme YoY/accel/confirmation reads
         # (measured 0.6s on the honest-null path). Emits honest null with a
         # fresh as_of when the parquet is absent — keeps both W8 lobes' as_of
@@ -869,6 +1041,9 @@ jobs:
           python -m engine.theme_trade_flows \
             || echo "::warning::theme_trade_flows rollup failed (non-fatal)"
       - name: TIL W10 — ClinicalTrials.gov theme pipeline ingest (non-fatal)
+        # Cap: measured 6.6s; 10m covers a slow CT.gov night and bounds a stalled fetch.
+        timeout-minutes: 10
+        continue-on-error: true
         # Keyless CT.gov v2 full fetch (9 modalities, ~2.5k rows, measured 6.6s).
         # Writes data/clinical_trials/modality_monthly.parquet (git-stored via
         # `git add data/` below). Per-modality isolation; always exits 0.
@@ -876,12 +1051,23 @@ jobs:
           python -m collectors.clinicaltrials_themes \
             || echo "::warning::clinicaltrials_themes ingest failed (non-fatal)"
       - name: TIL W10 — theme clinical rollup (non-fatal)
+        # Cap: measured 0.5s — 5m is a pure hang backstop.
+        timeout-minutes: 5
+        continue-on-error: true
         # Pure in-memory aggregation of the parquet above (measured 0.5s).
         # Produces data/neuralweb/theme_clinical.json + site/basketdata/clinical_pipeline.json.
         run: |
           python -m engine.theme_clinical \
             || echo "::warning::theme_clinical rollup failed (non-fatal)"
       - name: TIL W11 — options-tape crowding witness (non-fatal)
+        # Cap: measured 4m35s on mac-builder-1 (2026-07-26) → 15m (~3x) bounds the
+        # real compute path. THIS is the step the band comment above is about: it
+        # reads the thetadata_eod store on the M1, and that store now lives on an
+        # external volume whose open() can park forever under a launchd context
+        # (2026-08-06). Unbounded, that hang would consume the job's 200m cap and
+        # SKIP the ~10 steps behind it, including "commit tail data".
+        timeout-minutes: 15
+        continue-on-error: true
         # Since the theta-m1 pin (2026-07-26) this job runs on the store-bearing
         # M1 host: the canonical resolver finds the thetadata_eod store via the
         # ops-wt path (engine/thetadata_store.py), so this step takes the REAL
@@ -898,6 +1084,9 @@ jobs:
           python -m engine.theme_options_witness \
             || echo "::warning::theme_options_witness failed (non-fatal)"
       - name: TIL W9 — discovery-confluence join (non-fatal)
+        # Cap: measured 1.4s — 5m is a pure hang backstop.
+        timeout-minutes: 5
+        continue-on-error: true
         # Two-source join (measured 1.4s): EDGAR phrase velocity over the
         # git-tracked data/edgar/{bottleneck,emergence}_hits.parquet (dripped by
         # the engine job) × GitHub star velocity over data/github/repo_stars.parquet
@@ -909,6 +1098,10 @@ jobs:
           python -m scripts.build_discovery_confluence \
             || echo "::warning::discovery confluence join failed (non-fatal)"
       - name: MLC-W5 — US earnings calendar sweep (non-fatal)
+        # Cap: measured ~3.5m/night (66 calendar calls ~155s + surprise drip ~60s)
+        # → 12m bounds a stalled Nasdaq call without tripping on a slow night.
+        timeout-minutes: 12
+        continue-on-error: true
         # Root-cause fix (MLC postmortem 07-14): collectors/equity_earnings.py was never
         # wired into the nightly pipeline — earnings.parquet was permanently empty/missing,
         # making the W1.5 blackout gate and the W5 display chips always stale-fail-open.
@@ -939,6 +1132,9 @@ jobs:
           python -m collectors.equity_earnings \
             || echo "::warning::equity_earnings sweep failed (non-fatal)"
       - name: MLC-W5 — earnings freshness tripwire (non-fatal)
+        # Cap: single-parquet read + audit (seconds) — 5m is a pure hang backstop.
+        timeout-minutes: 5
+        continue-on-error: true
         # Reads the just-written data/earnings/earnings.parquet and checks that
         # the store's as_of is within the expected SLA (2 trading days).
         # Writes data/quality/earnings_freshness_audit.json for observability.
@@ -946,6 +1142,8 @@ jobs:
         run: |
           python -m scripts.audit_earnings_freshness \
             || echo "::warning::audit_earnings_freshness crashed (non-fatal)"
+      - name: timings band — shadow-scorers (W2)
+        run: python3 scripts/nightly_timings.py mark --band shadow-scorers || echo "::warning::timings band mark failed (non-fatal)"
       # ── importance_v0 SHADOW lanes (W3 + W4) ──────────────────────────────
       # Moved out of scripts.collect (2026-07-14 split; collect core passes
       # --skip-shadow-importance). Both passes score the FULL US+CN qbus store
@@ -980,6 +1178,8 @@ jobs:
         run: |
           python -m scripts.shadow_importance_v0_pit \
             || echo "::warning::shadow_importance_v0_pit failed (non-fatal)"
+      - name: timings band — qledger-ccw (W2)
+        run: python3 scripts/nightly_timings.py mark --band qledger-ccw || echo "::warning::timings band mark failed (non-fatal)"
       - name: qledger backfill (altdata + radar + policy → claims.jsonl)
         # ALTDATA_REBOOT W2 (2026-07-12): routes new altdata theses to per-channel
         # claim families with pre-registered horizon rulers; emits 2 placebo claims
@@ -998,6 +1198,10 @@ jobs:
           fi
           exit 0
       - name: CCW W2 — corporate credit g-spread engine (non-fatal)
+        # Cap: measured 3.8s locally (2026-07-14); the step's own comment says
+        # "revisit if it nears ~2m", so 10m bounds a hang well clear of that line.
+        timeout-minutes: 10
+        continue-on-error: true
         # Reads tonight's holdings from collect-core's commit (data/corp_bonds/holdings/*)
         # plus data/fred/DGS*.parquet (CMT curve pillars) and
         # data/corp_bonds/issuer_themes.json (issuer registry from W1).
@@ -1023,6 +1227,8 @@ jobs:
         run: |
           python -m engine.credit_momentum \
             || echo "::warning::credit_momentum engine failed (non-fatal)"
+      - name: timings band — commit (W2)
+        run: python3 scripts/nightly_timings.py mark --band commit || echo "::warning::timings band mark failed (non-fatal)"
       - name: commit tail data
         # if: always() — last-resort backstop for the job-timeout cancel class
         # (07-29→08-02: five nights of completed accrual evaporated because this
@@ -1059,7 +1265,7 @@ jobs:
           if git diff --cached --quiet; then echo "no tail data changes to commit"; exit 0; fi
           git commit -m "data: collect-tail accrual $(date -u +%F)"
           # best-effort push: same 5-retry rebase loop as the collect job's
-          # "commit data" (see the pre-sync collision-sweep rationale there —
+          # "commit market data" (see the pre-sync collision-sweep rationale there —
           # render.yml / #2252). -X theirs prefers THIS job's freshly-accrued
           # data on any conflict; exhausting the retry budget is non-fatal (the
           # stores are state-resumable and re-accrue next night).
@@ -1078,12 +1284,15 @@ jobs:
           done
           push_lost
           echo "::warning::could not push collect-tail data after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 200
 
   engine:
     needs: [collect, government_revenue_projection]
     if: always()            # a scraper failure must still produce a dashboard from cached data
     runs-on: [self-hosted, macstudio]
-    timeout-minutes: 200    # was 150 — 5 of the 8 nightlies 2026-07-16→07-23 got CANCELLED at exactly the 150m cap (the greens finished 133m/147m/148.6m — success had become a coin flip). Measured step timings (07-21 green vs 07-24 cancelled jobs): checkout 3s→14.5m (huge variance on the 14k-file tree), R2 restores + signal/ledger preamble ~10–20m, "run regime engine + build dashboard + daily brief" 74–84m (inside it: build_site ~33m, build_news ~26–29m incl. GDELT 429-backoff stalls, share_cards ~7m), parallel regional/desk builders 31–33m normal with one >61m blowout (07-23 night, cut mid-step), tail band (NW/LLM desks → hub) ~35m. Normal total 135–160m; worst observed combination ≈190m. The timeout-cancel grace window does NOT reliably save the deploy: 07-24's "commit engine outputs" (if: always) ran post-cancel but the pages-artifact upload still failed → publish red; 07-23 was hard-killed before commit → stale site. So the cap must cover the whole job: 200m clears the worst observed night with headroom. Next lever if creep resumes: build_news (~26–29m even on green nights, largely GDELT rate-limit backoff — cache/de-rate the sweep or move the news suite into the parallel builders band). Prior history: was 120 (crept 61m→116m→125m, breached 07-13/07-14); was 70 (cancelled at special-situations pre-commit; fixed by parallelising the ~22 regional/desk builders — serial band ~75m → longest cluster, special-situations' ~28m EDGAR sweep). pages.yml deploys the COMMITTED main tree, so any cancel before "commit engine outputs" leaves the live site serving a stale dashboard until a later run lands.
+    timeout-minutes: 240    # was 200 — the 2026-08-05 AND 08-06 nights were BOTH hard-cancelled at ~205m (cap + grace) on different hosts (mac-builder-5, then mac-builder-1), before the pages artifact landed → publish's "No artifacts named github-pages", two consecutive stale-site nights, and the 6-day Prophet-pick gap found 2026-08-06. Two hosts rules out one sick machine; this is workload creep plus the cold-spare law the collect job's 185→240 bump above already states: the macstudio label can fail over to a cold runner (fresh venv, no warm GHA/R2 caches), so the cap must clear the COLD pace, not the warm one. 240 = the observed ~205m kill point + 35m headroom; the job exits when its steps finish, so a larger cap costs nothing on a healthy night. The real fix is the workload trim — the cap raise buys the nights back while that lands. Prior: was 150 — 5 of the 8 nightlies 2026-07-16→07-23 got CANCELLED at exactly the 150m cap (the greens finished 133m/147m/148.6m — success had become a coin flip). Measured step timings (07-21 green vs 07-24 cancelled jobs): checkout 3s→14.5m (huge variance on the 14k-file tree), R2 restores + signal/ledger preamble ~10–20m, "run regime engine + build dashboard + daily brief" 74–84m (inside it: build_site ~33m, build_news ~26–29m incl. GDELT 429-backoff stalls, share_cards ~7m), parallel regional/desk builders 31–33m normal with one >61m blowout (07-23 night, cut mid-step), tail band (NW/LLM desks → hub) ~35m. Normal total 135–160m; worst observed combination ≈190m. The timeout-cancel grace window does NOT reliably save the deploy: 07-24's "commit engine outputs" (if: always) ran post-cancel but the pages-artifact upload still failed → publish red; 07-23 was hard-killed before commit → stale site. So the cap must cover the whole job: 200m clears the worst observed night with headroom. Next lever if creep resumes: build_site — W3 re-measure 2026-08-06 (never inherit step-cost labels): build_news is NO LONGER the lever; the GDELT circuit breaker (#3442, 2026-07-24) already collapsed it from ~26–29m to a measured 4.3–5.9m/night (07-27 green 5.9m, 08-03 4.3m, 08-05 4.7m, 08-06 5.4m — ~2m of that is the nightly one-time 429 ladder that arms the breaker). The band that IS creeping is build_site: ~33m (07-21 measurement) → 35.7m (07-27) → 42.0m (08-03) → 61.7m/57.8m (08-05/08-06) — +25m in two weeks, the single largest step in the job. Profile build_site's page loop before touching anything else. Prior history: was 120 (crept 61m→116m→125m, breached 07-13/07-14); was 70 (cancelled at special-situations pre-commit; fixed by parallelising the ~22 regional/desk builders — serial band ~75m → longest cluster, special-situations' ~28m EDGAR sweep). pages.yml deploys the COMMITTED main tree, so any cancel before "commit engine outputs" leaves the live site serving a stale dashboard until a later run lands.
     env:
       COLLECT_LANE: nightly   # job-level sentinel: inherited by every step; ensures all
                               # forward-ledger writers in this job (build_track_record,
@@ -1092,6 +1301,8 @@ jobs:
                               # archive_context_snapshots, build_thematic_state,
                               # grade_thematic) can advance their ledgers.
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -1103,6 +1314,8 @@ jobs:
           echo "$VENV/bin" >> "$GITHUB_PATH"
           "$VENV/bin/python" -m pip install --quiet --upgrade pip
       - run: pip install -r requirements.txt
+      - name: timings band — restores-preamble (W2)
+        run: python3 scripts/nightly_timings.py mark --band restores-preamble || echo "::warning::timings band mark failed (non-fatal)"
       - name: restore, acquire, project, and snapshot Filing Forensics SEC sources (hard gate)
         # This is intentionally BEFORE every broad Filing Forensics state build.
         # The SEC source cache is private/ignored, so a clean nightly checkout has
@@ -1196,36 +1409,61 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.fetch_r2 --dirs subsectorohlc,subsectorohlc_nasdaq,subsectorohlc_russell || echo "::warning::subsectorohlc R2 restore failed (non-fatal — index_leadership skips loudly and keeps the last committed board)"
+      # restore-keys REMOVED from all five breadth caches below — the SAME defect the
+      # china per-name OHLC store 25 lines down already fixed (CN-SYS W5a).
+      #
+      # A prefix restore-key matches the newest cache under that prefix from ANY prior run,
+      # so this job laid a stale parquet on top of the fresh one `collect` had committed
+      # hours earlier the same night. Measured 2026-08-06: collect wrote
+      # data/breadth/_closes_cache.parquet through the 08-05 close (348 rows x 510 names,
+      # commit 361136284f2); the engine job 14 hours later committed it back at 2026-07-31
+      # (345 x 509, commit 2dfebf35dbd).
+      #
+      # WHY THIS BIT BREADTH AND NOT china*/hk*: the commit steps in this file already
+      # unstage every asia-close-owned path after `git add data/` (see the W0b 2026-07-08
+      # stale-HK incident notes in the collect and engine commit steps), so a stale
+      # cache-restore there can never reach a commit. data/breadth is US-owned, is NOT in
+      # that unstage list, and so had no such protection.
+      #
+      # That one regression froze the entire US board. _closes() ends at 07-31, so
+      # engine/residual_alpha.py:277 stamps as_of = R.index.max() = 2026-07-31, alpha.json
+      # carries it, build_stock_library.py:4267 copies it into us_standouts.json, and the
+      # snapshotter — which keys on as_of — saw the same date every night and appended
+      # nothing: data/us_board_ledger/snapshots.jsonl dead-ended at 2026-07-31 for six days
+      # while the board kept publishing picks ranked on 07-31 factors beside current-day
+      # entry zones (the operator's ~$6 gap on FCX). build_stock_library's own
+      # _board_continuity_warning had been printing "22 builds all claiming
+      # as_of=2026-07-31" throughout, but it is display-only and gates nothing.
+      #
+      # Dropping the restore-key makes this job's cache lookup MISS by design. That is the
+      # point: on a miss the job simply uses the panel already in the git checkout, which is
+      # collect's fresh one. The key still carries github.run_id so the within-run save/
+      # restore handoff is unaffected.
       - name: restore breadth close cache (stock search library needs constituent closes)
         uses: actions/cache@v4
         with:
           path: data/breadth/_closes_cache.parquet
           key: breadth-closes-engine-${{ github.run_id }}
-          restore-keys: breadth-closes-
       - name: restore smallcap (S&P 600) breadth close cache (stock library needs constituent closes)
         uses: actions/cache@v4
         with:
           path: data/smallcap_breadth/_closes_cache.parquet
           key: smallcap-closes-engine-${{ github.run_id }}
-          restore-keys: smallcap-closes-
       - name: restore midcap (S&P 400) breadth close cache (stock library needs constituent closes)
         uses: actions/cache@v4
         with:
           path: data/midcap_breadth/_closes_cache.parquet
           key: midcap-closes-engine-${{ github.run_id }}
-          restore-keys: midcap-closes-
       - name: restore Russell 2000 breadth close cache (stock library needs constituent closes)
         uses: actions/cache@v4
         with:
           path: data/russell_breadth/_closes_cache.parquet
           key: russell-closes-engine-${{ github.run_id }}
-          restore-keys: russell-closes-
       - name: restore hk breadth close cache (hk stock search library needs constituent closes)
         uses: actions/cache@v4
         with:
           path: data/hk_breadth/_closes_cache.parquet
           key: hk-breadth-closes-engine-${{ github.run_id }}
-          restore-keys: hk-breadth-closes-
       - name: restore china per-name OHLC store (build_china_library overlays it for US parity)
         # restore-keys intentionally removed: data/china_stocks is git-tracked and owned by
         # asia-close. Restoring a stale GHA cache here was causing the 5-day lag regression
@@ -1348,6 +1586,8 @@ jobs:
           MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
         run: |
           python -m scripts.build_sp500_heatmap --refresh-caps-only || echo "::warning title=sp500 heatmap cap refresh::rc!=0 (non-fatal — previous cache/fallbacks remain)"
+      - name: timings band — engine-core (W2)
+        run: python3 scripts/nightly_timings.py mark --band engine-core || echo "::warning::timings band mark failed (non-fatal)"
       - name: run regime engine + build dashboard + daily brief (resilient)
         # Self-diagnosing + deploy-resilient: each builder runs isolated; a failure
         # is surfaced as a ::error:: annotation (readable on the run page + via the
@@ -1429,9 +1669,13 @@ jobs:
           # NWS-01 fix: build_news must run BEFORE build_site so that build_site
           # renders news.html against the CURRENT macro_releases.json (not the
           # previous run's artifact).  build_news is display-tier/leaf (context-only);
-          # it adds ~1-3 min serial wall-time here (FRED fetches cached 12h; LLM
-          # enrichment ~20-60s with DeepSeek; worst-case cold ~3-4 min).  The
-          # site no longer ships a desync'd board.
+          # measured 4.3–5.9 min serial wall-time here (W3 re-measure 2026-08-06:
+          # feeds + DeepSeek enrichment ~2-3m, plus ~2m of GDELT 429 ladder — the
+          # one arming pass per night that opens gdelt_client's circuit breaker;
+          # everything after it short-circuits).  Do NOT relocate this into the
+          # parallel band to chase those minutes — that re-creates the desync'd
+          # board NWS-01 fixed, for a ~5m saving.  The site no longer ships a
+          # desync'd board.
           # news_calib (grade_news_events) runs immediately after — it writes
           # site/news/calibration.json which build_site also reads (W3 side-artifact).
           run_py "news suite (build_news)" scripts.build_news
@@ -1621,6 +1865,8 @@ jobs:
           cat "$RUNNER_TEMP/flip_confirmation.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_flip_confirmation::rc=$rc (non-fatal)"; fi
           exit 0
+      - name: timings band — prophet (W2)
+        run: python3 scripts/nightly_timings.py mark --band prophet || echo "::warning::timings band mark failed (non-fatal)"
       - name: Prophet nightly (plan refresh + ledger advancement + R2 mirror)
         # AFTER build_site: reads site/factordata/us_standouts.json (just written).
         # Originates new prophet.trade_plan/v1 envelopes, runs the management engine
@@ -1746,6 +1992,8 @@ jobs:
           echo "::endgroup::"
           if [ "$rc" -ne 0 ]; then echo "::warning title=reconcile_prophet_live::rc=$rc (non-fatal — the R2 spool is durable, tomorrow picks the day back up)"; fi
           exit 0
+      - name: timings band — builders-parallel (W2)
+        run: python3 scripts/nightly_timings.py mark --band builders-parallel || echo "::warning::timings band mark failed (non-fatal)"
       - name: regional + desk builders (parallelised — independent clusters, barrier before the hub)
         # The ~22 builders between build_site and the landing hub split into mutually
         # INDEPENDENT clusters (each internally ordered by its own data deps). They used
@@ -1980,6 +2228,8 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python -m scripts.check_builder_failstreaks --art-dir "$RUNNER_TEMP/band" --lane nightly || echo "::warning::builder fail-streak check failed (non-fatal)"
+      - name: timings band — tail-desks (W2)
+        run: python3 scripts/nightly_timings.py mark --band tail-desks || echo "::warning::timings band mark failed (non-fatal)"
       - name: OEU M-CMD — the Options workspace (build_options_command)
         # OEU M-CMD: options.html, the canonical options surface (4 modes). It is a
         # pure re-serialisation of stores four OTHER builders write, and those deps
@@ -2021,7 +2271,16 @@ jobs:
         # writes honest partial records (the shortfall printed in each record's coverage block)
         # plus a ::warning, which a killed step could not do.
         # Non-fatal: absent archives/creds degrade to printed nulls and the builder exits 0.
+        # continue-on-error pairs with the cap (added 2026-08-06): the note above is right that
+        # "a killed step could not" emit the ::warning — but it also could not exit 0, and an
+        # UNPAIRED timeout-minutes marks the step FAILED, which fails the whole engine job and
+        # SKIPS every step behind it including "commit engine outputs". BUDGET_SECONDS=180 only
+        # fires if the builder reaches its own budget check; a hang below it (socket, or an
+        # open() parked on the removable-volume access gate — see the collect_tail band note)
+        # never does. This step declares itself non-fatal, so it must be non-fatal on the
+        # timeout path too.
         timeout-minutes: 8
+        continue-on-error: true
         env:
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -2361,21 +2620,14 @@ jobs:
         # Context-only (never feeds a score); the ledger accrues forward from here. The commit
         # step below (git add data/ site/) lands both artifacts. Idempotent per as_of. Resilient.
         run: python -m scripts.grade_us_board --nightly || true
-      - name: Prophet doors — accrue Door T (theme-relay) + Door R (re-arm) flags (shadow, zero authority)
-        # Prophet W3 shadow doors (research/PROPHET_DOORS_PREREG.md, frozen before first accrual).
-        # Evaluates both doors on the committed caches and appends to data/prophet_doors/flags.jsonl.
-        # Sole forward advancer of this ledger (nightly-only: --nightly AND COLLECT_LANE=nightly).
-        # PROSPECTIVE ONLY — no backfill; the ledger starts the night this merges. ZERO AUTHORITY:
-        # no board membership, no plan origination, no rank/gate/size, no site/ artifact. The
-        # commit step below (git add data/) lands the store. ~2.5 min. Idempotent per as_of.
-        run: python -m scripts.emit_prophet_doors --nightly || true
-      - name: Prophet doors — grade matured flags at H=10/21 vs SPY (policy-free marks)
-        # Grades data/prophet_doors/flags.jsonl into grades.jsonl via engine.grading.forward_metrics
-        # (next-bar fill, positional session horizons, excess vs SPY) — the SAME ruler grade_us_board
-        # uses, reused not forked. Policy-free: fixed-horizon marks only, no stops/exits. Graded rows
-        # are frozen (one-grader law). Runs after the emitter so tonight's flags are present.
-        # OUTCOMES ARE NOT TO BE READ before the prereg §4 trigger. Idempotent. Resilient.
-        run: python -m scripts.grade_prophet_doors --nightly || true
+      # NOTE (2026-08-06): the Prophet US program's four post-board modules used to sit
+      # HERE — emit_prophet_doors, grade_prophet_doors, grade_us_prophet_candidates and
+      # run_prophet_miss_audit. They now run in the `us_prophet_ledgers` job (below,
+      # needs: [engine, us_scan_tier]) over the tree THIS job commits. Nothing in that
+      # program gates the dashboard deploy, and on a night this job hits its 200m cap
+      # they used to complete and then be DISCARDED with the skipped commit (run
+      # 31056495943: the doors + miss-audit succeeded at 04:48Z, "commit engine outputs"
+      # never ran, the whole night's Prophet accrual was lost). See that job's comment.
       - name: Bottom Ledger (accrue bottom-class flags + mature at H=60; policy-free instrument)
         # Bottom Ledger P1: the policy-free bottom-calling learning instrument (design PR #3182).
         # Sole forward advancer of this ledger (nightly-only). Accrues board buy-lane +
@@ -2387,37 +2639,6 @@ jobs:
         # sibling forward ledger, the committed store is what lets cohorts accrue night to
         # night. Idempotent per as_of. Resilient.
         run: python -m scripts.grade_bottom_calls --nightly || true
-      - name: Prophet US full-population grades (every stamped name, not just the picks)
-        # Prophet US trend-intelligence W7 (operator order 2026-08-05: "we should be
-        # remembering the score that we give picks … so that we can later assess how robust
-        # and correct our scoring system is"). The US Context Vector store already stamps
-        # every analyzed name nightly WITH its itemized us_prophet_v1 score legs; this grades
-        # every one of those rows at H=10/21 sessions excess-vs-SPY, so the graded record
-        # grows by ~1,579 rows a night instead of ~12. Runs AFTER build_stock_library (which
-        # stamps tonight's rows) and BEFORE the miss-audit (whose priority_score_scorecard
-        # block reads this store). Same ruler as grade_us_board / grade_prophet_doors
-        # (engine.grading.forward_metrics; next-bar fill, positional session horizons) —
-        # reused, not forked, and pinned mark-for-mark by tests/test_us_prophet_grades.py.
-        # Sole forward advancer of data/us_prophet_rank/grades/YYYY-MM.parquet (nightly-only),
-        # idempotent: a graded (stamp_date, ticker, board_definition, horizon) is frozen, so a
-        # re-run appends nothing. Monthly parts keyed by the RUN's month, so a closed part is
-        # never rewritten. Landed by the "commit engine outputs" step below (git add data/).
-        # ZERO authority: no rank/gate/size/board/plan consumer, ever. Resilient.
-        run: python -m scripts.grade_us_prophet_candidates --nightly || true
-      - name: Prophet miss-audit (why don't the winners surface? ops telemetry, ZERO authority)
-        # Prophet US trend-intelligence W0 (masterplan
-        # research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md): the nightly
-        # measurement the program grades itself against — per-runner dominant-excluder
-        # attribution, the trailing-63-session eligibility window, sighting->plan conversion,
-        # and theme-representation counts. Reads the committed close caches + the board/plan
-        # artifacts through the PRODUCTION tier paths (confluence_tiers.tier_stream/cascade,
-        # signal_gate); computes nothing the board reads back. Sole forward advancer of
-        # data/prophet_miss_audit/forward_log.jsonl (nightly-only, like the Bottom Ledger
-        # above), idempotent on price_through. Both it and data/prophet_miss_audit/latest.json
-        # are landed by the "commit engine outputs" step below (git add data/). ~2-3 min on
-        # ~1,500 names. ZERO authority: no rank/gate/size/membership consumer, ever
-        # (tests/test_prophet_miss_audit.py pins that nothing else imports it). Resilient.
-        run: python -m scripts.run_prophet_miss_audit --nightly || true
       - name: Options-state stamp on board ledger (Options Alpha W1.3; context-only)
         # Stamps the freshly-graded + accumulated retro_grades.parquet with the eight nullable
         # opt_* options-state columns (PIT: only positioning data with as-of ≤ each fire's as_of).
@@ -3009,6 +3230,8 @@ jobs:
             echo "::warning title=chronicle_governor::rc=$rc (chronicle events/state_log/rollups may be stale)"
           fi
           exit 0
+      - name: timings band — commit-publish (W2)
+        run: python3 scripts/nightly_timings.py mark --band commit-publish || echo "::warning::timings band mark failed (non-fatal)"
       - name: commit chronicle artifacts
         if: always()
         # always() for the same reason as the build step above — and it matters
@@ -3439,6 +3662,9 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: site/
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 240
 
   # The factor-portfolio RETURN SERIES (factors-page chart) is a ~22-min month-end
   # walk (compute_factors x ~38 month-ends x 2 universes) — it was the real engine
@@ -3455,6 +3681,8 @@ jobs:
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 45
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -3521,6 +3749,9 @@ jobs:
           done
           push_lost
           echo "::warning::could not push factor series after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal — daily reads the last committed json)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 45
 
   # Factor Intelligence panel — incremental nightly append (RULING-C).
   #
@@ -3539,6 +3770,8 @@ jobs:
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 20
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -3626,6 +3859,9 @@ jobs:
           done
           push_lost
           echo "::warning::could not push factor intelligence after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 20
 
   # ── Oracle Rotation Time Machine feed (OFF-RENDER) ─────────────────────────
   # The Time Machine (site/subsector_rotation.html) reads site/oracledata/tm_*.json.
@@ -3647,6 +3883,8 @@ jobs:
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 40
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -3754,6 +3992,9 @@ jobs:
           done
           push_lost
           echo "::warning::could not push oracle Time Machine feed after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 40
 
   # ── TLT-R2: Technical Lab data refresh (off-render) ─────────────────────
   # build_tech_lab_data.py is heavy (231 tickers × 195 signals, ~57 min) and
@@ -3770,6 +4011,8 @@ jobs:
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 120    # was 40 — EVERY nightly 2026-07-19→07-26 was CANCELLED at exactly the 40m cap, mid-way through the first heavy step, so steps 2-5 (incl. the confluence-screener page render AND the commit) were skipped and NOTHING published for 8 days. Cause: #3013 (merged 2026-07-19T01:40, ~4.5h before #3061 added the screener render here) expanded the single-pass build from 64 signals to 195 on a 231-ticker universe — a ~3x workload increase with no re-budget. Measured from the 07-26 job log: 50 tickers/12m28s then 50/11m50s ≈ 14.6s/ticker → 231 tickers ≈ 56m for build_tech_lab_data alone. Whole-job worst case: checkout up to ~15m (the 14k-file tree, see the engine job's note) + 57m lab data + 11m combo miner + ~1m screener page + ~2m m2_profiles + up to ~10m commit/push-retry band ≈ 96m. 120 clears that with headroom. The combo-miner figure is measured end-to-end, not inherited and not extrapolated: this job's own comment claimed "~8 min", and a full 2026-07-27 run on the runner host logged `panel: 323.4s` + `mine_long: 187.7s` + `mine_short: 140.9s` + `artifact: 1.7s` = **654.4s ≈ 11m**. Note mine_short is ~25% CHEAPER than mine_long (58 vs 59 legs but far fewer surviving combos) — an earlier symmetry estimate put the total at ~13m, so even the arithmetic shortcut was wrong. A stale step-cost label is precisely what produced this outage; re-measure, never inherit, and never extrapolate one half from the other. NOTE the per-step `set +e … exit 0` wrappers make a *script* error non-fatal but do NOTHING for a job timeout: the cap hard-cancels the running step, skips every later step, and the `::warning` alarm the step would have printed never fires — the job just reports "cancelled", which reads like this repo's known-benign cancellations. That is why an 8-day publish outage went unnoticed. If the signal count or universe grows again, re-measure and re-budget HERE.
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -3781,6 +4024,8 @@ jobs:
           echo "$VENV/bin" >> "$GITHUB_PATH"
           "$VENV/bin/python" -m pip install --quiet --upgrade pip
       - run: pip install -r requirements.txt
+      - name: timings band — lab-data (W2)
+        run: python3 scripts/nightly_timings.py mark --band lab-data || echo "::warning::timings band mark failed (non-fatal)"
       - name: rebuild Technical Lab screener + lab data (195-signal, ~231-ticker, ~57 min)
         run: |
           set +e
@@ -3789,6 +4034,8 @@ jobs:
             echo "::warning title=tech_lab_data::build_tech_lab_data rc=$rc (artifacts may be stale)"
           fi
           exit 0
+      - name: timings band — combo-miner (W2)
+        run: python3 scripts/nightly_timings.py mark --band combo-miner || echo "::warning::timings band mark failed (non-fatal)"
       - name: rebuild Technical Lab combo miner (tech_confluence, ~8 min)
         run: |
           set +e
@@ -3797,6 +4044,8 @@ jobs:
             echo "::warning title=tech_confluence::build_tech_confluence rc=$rc (combo artifact may be stale)"
           fi
           exit 0
+      - name: timings band — pages-m2 (W2)
+        run: python3 scripts/nightly_timings.py mark --band pages-m2 || echo "::warning::timings band mark failed (non-fatal)"
       - name: render free confluence screener page (+ share card)
         run: |
           set +e
@@ -3813,6 +4062,8 @@ jobs:
             echo "::warning title=m2_profiles::build_m2_profiles rc=$rc (M2 artifact may be stale)"
           fi
           exit 0
+      - name: timings band — commit (W2)
+        run: python3 scripts/nightly_timings.py mark --band commit || echo "::warning::timings band mark failed (non-fatal)"
       # DELIBERATELY NOT `if: always()`, unlike the engine and ledger_heartbeat
       # commit steps. Those salvage completed work when the job is cancelled;
       # here that would be a downgrade. build_tech_lab_data writes its payloads
@@ -3873,6 +4124,9 @@ jobs:
           done
           push_lost
           echo "::warning::could not push tech-lab artifacts after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 120
 
   # SA-W1 — US standout attribution organ (off-render, ~40 min budget)
   # Reads the committed retro_grades.parquet produced by the engine job, runs
@@ -3886,6 +4140,8 @@ jobs:
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 40
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -4205,6 +4461,9 @@ jobs:
           done
           push_lost
           echo "::warning::could not push standout audit US artifacts after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 40
 
   # PROPHET US §4.5 SCAN TIER — "see everything, admit selectively".
   # Operator-ratified 2026-08-05 after the receipts that FNV/FSM/EXK/AG/SBSW were
@@ -4235,6 +4494,8 @@ jobs:
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 60
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -4308,6 +4569,172 @@ jobs:
           done
           push_lost
           echo "::warning::could not push US scan tier artifacts after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 60
+
+  # Prophet US trend-intelligence — the program's four post-board nightly modules, moved
+  # OFF the engine job's critical path 2026-08-06 (sibling of us_scan_tier, same shape).
+  #
+  # WHY. The engine job is chronically at its 200m cap (205m CANCELLED 08-03 run
+  # 30862763261; 205m CANCELLED 08-06 run 31056495943) and a cancel skips "commit engine
+  # outputs", so the night's accrual is COMPUTED AND THEN THROWN AWAY: on 08-06 the doors
+  # emitter finished 04:45:27Z and the miss-audit 04:48:11Z, both green, and the job was
+  # cancelled at 05:37:19Z with the commit step never started — data/prophet_doors,
+  # data/prophet_miss_audit and data/us_prophet_rank all still show 2026-08-05 as their
+  # last advance. Nothing in this program gates the dashboard: `publish` needs ONLY
+  # engine, so this job's conclusion cannot delay or red go-live, and a Prophet module
+  # failure now reds THIS job instead of hiding behind `|| true` inside the deploy lane.
+  # This is not the whole timeout fix — measured, these four steps are ~5.4m of a ~186m
+  # engine step budget (emit_prophet_doors 2.62m/2.70m and run_prophet_miss_audit
+  # 2.62m/2.72m on runs 31056495943/30960328285; grade_prophet_doors 1-5s;
+  # grade_us_prophet_candidates 1.8s for a steady-state night / 8.8s for a 5-night
+  # catch-up, measured over the live 2,932-row candidates store). The workflow's own
+  # timeout comment still names build_news as the next lever, and it belongs to its owner.
+  #
+  # needs: [engine, us_scan_tier] — every input is read from the COMMITTED tree, and both
+  # of those jobs are what commit it:
+  #   emit_prophet_doors            <- data/{breadth,midcap_breadth,smallcap_breadth}/
+  #                                    _closes_cache.parquet + site/marketdata/
+  #                                    subsector_rotation.json (engine: "commit engine
+  #                                    outputs", git add data/ site/)
+  #   grade_prophet_doors           <- data/prophet_doors/flags.jsonl (written by the step
+  #                                    above, same job) + data/yahoo/SPY.parquet
+  #   grade_us_prophet_candidates   <- data/us_prophet_rank/candidates/YYYY-MM.parquet,
+  #                                    stamped by build_stock_library inside build_site
+  #                                    (engine) and appended to by run_us_scan_tier
+  #                                    (us_scan_tier); both commit it before this job runs
+  #   run_prophet_miss_audit        <- data/name_score/us_calls.parquet + site/prophet/
+  #                                    plans/*.json + site/factordata/us_standouts.json
+  #                                    (engine), the grade store above, and data/
+  #                                    prophet_scan_tier/latest.json (us_scan_tier)
+  # Sequencing after us_scan_tier is deliberate on two counts: it upgrades the miss-audit's
+  # scan-tier read from <=1-run-stale to same-night, and it keeps the only two jobs that
+  # write under data/us_prophet_rank/ from racing each other's push.
+  # if: always() — accrual must not stop because the engine hit its cap; that is the whole
+  # point of the move. Every module is nightly-only and idempotent, so a partial night is
+  # safe (doors dedupe 21 sessions/ticker, grades freeze on their key, the miss-audit is
+  # idempotent on price_through).
+  # env COLLECT_LANE=nightly is LOAD-BEARING, not decoration: emit_prophet_doors,
+  # grade_prophet_doors and grade_us_prophet_candidates all gate their forward advance on
+  # engine.ledger_lane.nightly_advance_enabled() (COLLECT_LANE/US_LANE == "nightly") on top
+  # of --nightly. Without it these three would run green and write NOTHING — pinned by
+  # tests/test_prophet_off_engine_lane.py.
+  us_prophet_ledgers:
+    needs: [engine, us_scan_tier]
+    if: always()
+    runs-on: [self-hosted, macstudio]
+    # Budget: ~5.5m of module time (measured above) + checkout/venv/pip. Checkout of the
+    # 14k-file tree has been observed at 3s..14.5m (see the engine job's timeout comment),
+    # so the cap is sized like the us_scan_tier sibling rather than to the module cost.
+    timeout-minutes: 60
+    env:
+      COLLECT_LANE: nightly   # job-level sentinel — see the note above; the forward-ledger
+                              # advance gate for three of the four steps below.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: git pull origin main
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+      - name: Prophet doors — accrue Door T (theme-relay) + Door R (re-arm) flags (shadow, zero authority)
+        # Prophet W3 shadow doors (research/PROPHET_DOORS_PREREG.md, frozen before first accrual).
+        # Evaluates both doors on the committed caches and appends to data/prophet_doors/flags.jsonl.
+        # Sole forward advancer of this ledger (nightly-only: --nightly AND COLLECT_LANE=nightly).
+        # PROSPECTIVE ONLY — no backfill. ZERO AUTHORITY: no board membership, no plan
+        # origination, no rank/gate/size, no site/ artifact. The commit step below (git add
+        # data/) lands the store. ~2.6 min. Idempotent per as_of. The old `|| true` is gone:
+        # the module already degrades internally to a disclosed null, so a non-zero exit is a
+        # real crash and must be visible — and it can no longer cost anything but this job.
+        run: python -m scripts.emit_prophet_doors --nightly
+      - name: Prophet doors — grade matured flags at H=10/21 vs SPY (policy-free marks)
+        # Grades data/prophet_doors/flags.jsonl into grades.jsonl via engine.grading.forward_metrics
+        # (next-bar fill, positional session horizons, excess vs SPY) — the SAME ruler grade_us_board
+        # uses, reused not forked. Policy-free: fixed-horizon marks only, no stops/exits. Graded rows
+        # are frozen (one-grader law). Runs after the emitter so tonight's flags are present.
+        # OUTCOMES ARE NOT TO BE READ before the prereg §4 trigger. Idempotent.
+        # if: always() — accrual is per-module; a crashed sibling must not silently stop this
+        # ledger. This is NOT continue-on-error: a failure here still reds the job.
+        if: always()
+        run: python -m scripts.grade_prophet_doors --nightly
+      - name: Prophet US full-population grades (every stamped name, not just the picks)
+        # Prophet US trend-intelligence W7 (operator order 2026-08-05: "we should be
+        # remembering the score that we give picks … so that we can later assess how robust
+        # and correct our scoring system is"). The US Context Vector store already stamps
+        # every analyzed name nightly WITH its itemized us_prophet_v1 score legs; this grades
+        # every one of those rows across H=10/21/42/63 sessions excess-vs-SPY, so the graded
+        # record grows by thousands of rows a night instead of ~12. Runs AFTER the engine job's
+        # build_stock_library (which stamps tonight's rows) and run_us_scan_tier (which appends
+        # the scan-tier rows) — both COMMIT the candidates store, which is what this reads —
+        # and BEFORE the miss-audit (whose priority_score_scorecard block reads this store).
+        # Same ruler as grade_us_board / grade_prophet_doors (engine.grading.forward_metrics;
+        # next-bar fill, positional session horizons) — reused, not forked, and pinned
+        # mark-for-mark by tests/test_us_prophet_grades.py. Sole forward advancer of
+        # data/us_prophet_rank/grades/ (nightly-only), idempotent: a graded
+        # (stamp_date, ticker, board_definition, horizon) is frozen, so a re-run appends
+        # nothing. Daily parts under the run's month, so a closed part is never rewritten.
+        # ZERO authority: no rank/gate/size/board/plan consumer, ever.
+        if: always()
+        run: python -m scripts.grade_us_prophet_candidates --nightly
+      - name: Prophet miss-audit (why don't the winners surface? ops telemetry, ZERO authority)
+        # Prophet US trend-intelligence W0 (masterplan
+        # research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md): the nightly
+        # measurement the program grades itself against — per-runner dominant-excluder
+        # attribution, the trailing-63-session eligibility window, sighting->plan conversion,
+        # and theme-representation counts. Reads the committed close caches + the board/plan
+        # artifacts through the PRODUCTION tier paths (confluence_tiers.tier_stream/cascade,
+        # signal_gate); computes nothing the board reads back. Its scan-tier coverage block
+        # reads data/prophet_scan_tier/latest.json — written by the us_scan_tier job this one
+        # now waits on, so the read is same-night instead of one run stale (an absent artifact
+        # is still a disclosed null, never an exception). Sole forward advancer of
+        # data/prophet_miss_audit/forward_log.jsonl (nightly-only), idempotent on
+        # price_through. ~2.6 min on ~1,500 names. ZERO authority: no rank/gate/size/
+        # membership consumer, ever (tests/test_prophet_miss_audit.py pins that).
+        if: always()
+        run: python -m scripts.run_prophet_miss_audit --nightly
+      - name: commit prophet ledger artifacts
+        # if: always() — the accrual above is per-module and idempotent, so whatever DID
+        # advance must land even when a sibling module crashed. This is the defect the move
+        # exists to fix: an uncommitted ledger row is a lost night (the next job's
+        # actions/checkout deletes the runner tree), and the engine job's cancel-skipped
+        # commit is exactly how 2026-08-06 was lost. Committing what advanced beats
+        # discarding the night; the job's own conclusion still carries the failure.
+        if: always()
+        run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Every path below is written ONLY by the four steps above (no other lane writes
+          # them), so the add list is exact rather than a broad `git add data/`: this job
+          # must never carry another lane's stray runner-tree bytes to main.
+          git add data/prophet_doors 2>/dev/null || true
+          git add data/us_prophet_rank/grades 2>/dev/null || true
+          git add data/prophet_miss_audit 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no prophet ledger changes"; exit 0; fi
+          push_staged_heal data/ || exit 1
+          if git diff --cached --quiet; then echo "no prophet ledger changes after conflict heal"; exit 0; fi
+          git commit -m "prophet-us: nightly ledger advance $(date -u +%F)"
+          PUSH_ALARM=420
+          push_retry_init "prophet ledger artifacts"
+          while push_attempt; do
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
+              if push_do; then echo "pushed prophet ledger artifacts on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
+            fi
+            push_abort_rebase
+            push_backoff
+          done
+          push_lost
+          echo "::warning::could not push prophet ledger artifacts after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
 
   # AI stock-research briefs = ~30 DeepSeek calls (~20 min) — the heaviest single
   # step in the build, and what pushed the engine job past its timeout. build_site
@@ -4324,6 +4751,8 @@ jobs:
     env:
       DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -4411,6 +4840,9 @@ jobs:
         # heavy store is R2-only), so a manifest built here would clobber the engine job's
         # full ~5000-name one — and bulk consumers prune against that list.
         run: python -m scripts.publish_r2 --dirs stockdata --no-manifest || echo "::warning::R2 stockdata sync failed (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 45
 
   # ── Neural Web W7b: cortex deliberation job ──────────────────────────────
   # Runs after the engine job; own checkout + own commit lane.
@@ -4439,6 +4871,8 @@ jobs:
       # shared ANTHROPIC_API_KEY above; nothing breaks if the secret is not set.
       CORTEX_ANTHROPIC_API_KEY: ${{ secrets.CORTEX_ANTHROPIC_API_KEY }}
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -4615,6 +5049,9 @@ jobs:
           done
           push_lost
           echo "::warning::could not push cortex after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal — downstream reads last committed)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 30
 
   # ──────────────────────────────────────────────────────────────────────────
   # CHF W3 — Causal Hypothesis Factory: nightly drift + weekly bounded battery
@@ -4630,6 +5067,8 @@ jobs:
     env:
       REPLAY_BOARDED_PATH: ${{ vars.REPLAY_BOARDED_PATH }}
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -4811,6 +5250,9 @@ jobs:
           push_lost
           echo "::warning::could not push sf forward outputs after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
           exit 0
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 45
 
   # Light advisory job: generates docs/ACTIVE_BUILD_MAP.md and
   # data/governance/active_builds.json — a map of open PRs, file collisions,
@@ -4822,6 +5264,8 @@ jobs:
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 10
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -4867,6 +5311,9 @@ jobs:
           done
           push_lost
           echo "::warning::could not push active build map after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 10
 
   publish:
     # GitHub Pages can't serve a /site folder from a branch — deploy the
@@ -4893,6 +5340,8 @@ jobs:
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 5
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -4935,3 +5384,6 @@ jobs:
           done
           push_lost
           echo "::warning::could not push heartbeat state after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 5

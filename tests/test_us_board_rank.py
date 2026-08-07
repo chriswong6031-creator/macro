@@ -1764,10 +1764,26 @@ class TestCommittedArtifactIntegration:
         def _pool():
             raw = [json.loads(json.dumps(r)) for r in board["buy"]]
             assert len(raw) >= 2, "committed board must have room for a witness"
-            raw[-1].update({"state": "BOTTOM WATCH", "label": "NEARING A LOW",
-                            "dir": "down"})
-            raw[-1].pop("label_zh", None)
-            return raw, raw[-1]["ticker"]
+            # The witness must be a row the shelf CAN move, and that is not every row:
+            # `stage_for` checks the entry status FIRST, and an explicit blocked/exit/
+            # avoid verdict outranks the cycle read by design ("Blocked wins over
+            # everything") — so relabelling such a row to BOTTOM WATCH leaves it
+            # `blocked` in BOTH runs and the guard fails on fixture composition rather
+            # than on behaviour. That is what happened when the nightly re-bake left ORA
+            # (the board's only blocked-status buy row, 1 of 62) last: this test picked
+            # `raw[-1]` and reddened main while the shelf worked correctly.
+            # Pick the LAST row whose status cannot pre-empt the split, and refuse to
+            # run rather than silently witness nothing.
+            idx = next((i for i in range(len(raw) - 1, -1, -1)
+                        if ubr._status_of(raw[i].get("entry_signal"))
+                        not in ubr._BLOCKED_STATUSES), None)
+            assert idx is not None, (
+                "every buy row carries a blocked/exit/avoid entry status, so no row can "
+                "witness the basing split — the fixture, not the shelf, is the problem")
+            raw[idx].update({"state": "BOTTOM WATCH", "label": "NEARING A LOW",
+                             "dir": "down"})
+            raw[idx].pop("label_zh", None)
+            return raw, raw[idx]["ticker"]
 
         lanes_before = json.dumps(
             {lane: board.get(lane) for lane in

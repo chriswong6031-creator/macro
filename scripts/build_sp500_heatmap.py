@@ -31,6 +31,12 @@ from lib import config  # noqa: E402
 log = logging.getLogger("build_sp500_heatmap")
 
 _CAP_REFRESH_DAYS = 7  # reference (shares/industry) cache staleness ceiling
+_REF_SHARES_WARN_COVERAGE = 0.90    # ::warning below this non-null share coverage
+_REF_SHARES_CLOBBER_FLOOR = 0.50    # majority line: a <50%-populated sweep may not
+                                    # replace a >=50%-populated committed reference
+_REF_SHARES_REGRESS_TOL = 0.90      # no-regress: keep the old cache when a sweep
+                                    # loses >10% of its coverage (same tolerance
+                                    # build_polygon_universe uses on this endpoint)
 
 
 def _data(*parts: str) -> Path:
@@ -328,6 +334,13 @@ def _fetch_live(symbols: list[str]) -> dict[str, dict]:
     return q or {}
 
 
+def _shares_coverage(df: pd.DataFrame | None) -> float:
+    """Fraction of reference rows carrying a usable (numeric) share count."""
+    if df is None or len(df) == 0 or "shares" not in df.columns:
+        return 0.0
+    return float(pd.to_numeric(df["shares"], errors="coerce").notna().mean())
+
+
 def refresh_caps(constituents: pd.DataFrame, *, force: bool = False) -> None:
     """(Re)build data/sp500_heatmap/reference.parquet with shares + SIC industry
     from Polygon /v3/reference/tickers/{ticker}. Best-effort; never fatal.
@@ -350,12 +363,11 @@ def refresh_caps(constituents: pd.DataFrame, *, force: bool = False) -> None:
         log.warning("PolygonOptions import failed: %s", e)
         return
     client = PolygonOptions()
-    recs = []
+    recs, n_err, first_err = [], 0, ""
     for sym in constituents.index:
         poly_sym = str(sym).replace("-", ".")
         try:
-            r = client._get(f"/v3/reference/tickers/{poly_sym}", {})
-            res = (r or {}).get("results") or {}
+            res = client.ticker_details(poly_sym)
             shares = (res.get("weighted_shares_outstanding")
                       or res.get("share_class_shares_outstanding"))
             recs.append({
@@ -365,11 +377,47 @@ def refresh_caps(constituents: pd.DataFrame, *, force: bool = False) -> None:
                 "sic_desc": res.get("sic_description"),
             })
         except Exception as e:  # noqa: BLE001
+            n_err += 1
+            first_err = first_err or \
+                f"{sym}: {type(e).__name__}: {' '.join(str(e).split())[:160]}"
             log.debug("ref %s failed: %s", sym, e)
-            recs.append({"ticker": sym, "shares": None})
+            recs.append({"ticker": sym, "shares": None, "sic": None, "sic_desc": None})
     df = pd.DataFrame(recs).set_index("ticker")
     df["asof"] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    coverage = _shares_coverage(df)
+    if coverage < _REF_SHARES_WARN_COVERAGE:
+        # bare line-start print, never log.* — a logger prefix makes GitHub drop it
+        print(f"::warning title=sp500-ref-shares-coverage::reference sweep returned "
+              f"shares for {int(df['shares'].notna().sum())}/{len(df)} tickers "
+              f"({coverage:.0%} < {_REF_SHARES_WARN_COVERAGE:.0%} floor; {n_err} fetch "
+              f"errors{'; first: ' + first_err if first_err else ''})", flush=True)
+
     out = _data("sp500_heatmap", "reference.parquet")
+    prev_cov = 0.0
+    if out.exists():
+        try:
+            prev_cov = _shares_coverage(pd.read_parquet(out))
+        except Exception as e:  # noqa: BLE001 — an unreadable old cache loses its veto
+            log.warning("existing reference unreadable during no-regress check: %s", e)
+    if prev_cov > 0:
+        # Two vetoes over the same committed cache. The majority line is the
+        # floor this bug needed; the relative one is what build_polygon_universe
+        # already applies to the SAME endpoint, and it is the only one that sees
+        # a partial collapse (503 -> 260 is a 48% regression that clears every
+        # absolute >=50% test).
+        gutted = coverage < _REF_SHARES_CLOBBER_FLOOR <= prev_cov
+        regressed = coverage < prev_cov * _REF_SHARES_REGRESS_TOL
+        if gutted or regressed:
+            why = "majority-None sweep" if gutted else "coverage regression"
+            print(f"::warning title=sp500-ref-refused-overwrite::{why} "
+                  f"({coverage:.0%} shares) would clobber a {prev_cov:.0%}-populated "
+                  f"reference — keeping the old cache (stale asof retries next "
+                  f"nightly)", flush=True)
+            log.warning("refresh_caps: refused to overwrite %.0f%%-populated "
+                        "reference with a %.0f%% sweep (%s)",
+                        prev_cov * 100, coverage * 100, why)
+            return
     out.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(out)
     log.info("wrote reference cache: %d tickers, %d with shares",

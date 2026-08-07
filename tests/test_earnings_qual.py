@@ -287,6 +287,156 @@ def test_incomplete_local_reply_falls_through_to_deepseek(monkeypatch):
     assert row["model"] == "deepseek"
     assert row["degraded_reason"] is None
     assert row["performance"] == pytest.approx(8.5)
+    # The rung that answered with unusable JSON is a failed rung: the row is
+    # healthy, but it was NOT produced locally.
+    assert row["provider_fallback_reason"] == "openai_compat:incomplete_schema"
+
+
+# --------------------------------------------------------------------------- #
+# R0-A: a successful fallback must not look like a healthy primary-rung run.
+#
+# The live defect: the launchd plist exported EARNINGS_LLM_MODEL=qwen3:14b while
+# http://127.0.0.1:11435/v1 served only qwen3.5:9b, so every openai_compat call
+# 404'd and DeepSeek quietly answered instead.  Because the earlier rung's reason
+# was dropped the moment a later rung succeeded, 741 rows recorded
+# model=deepseek and were byte-identical to a clean run.
+# --------------------------------------------------------------------------- #
+def test_transport_failure_then_success_records_the_first_failing_rung(monkeypatch):
+    calls: list[str] = []
+
+    def fake_dispatch(system, user, cfg, provider_cfg, *, max_tokens):
+        provider = provider_cfg["provider_order"][0]
+        calls.append(provider)
+        if provider == "openai_compat":
+            # Exactly what a served-model mismatch produces upstream.
+            return None, "openai_compat_http_404", None
+        return json.dumps(_GOOD_JSON), None, provider
+
+    monkeypatch.setattr(eq, "_dispatch", fake_dispatch)
+    row = eq.score_text(
+        "txt",
+        "AAPL",
+        "Q3",
+        2026,
+        provider_cfg={"provider_order": ["openai_compat", "deepseek"]},
+    )
+
+    assert calls == ["openai_compat", "deepseek"]
+    # The row scored, so it is NOT degraded — degraded_reason keeps its meaning.
+    assert row["degraded_reason"] is None
+    assert row["sentiment"] == pytest.approx(0.7)
+    # ...but the receipt now names the rung that failed AND why, next to the
+    # rung that actually answered.
+    assert row["provider_fallback_reason"] == "openai_compat:openai_compat_http_404"
+    assert row["model"] == "deepseek"
+
+
+def test_first_rung_success_records_no_fallback_reason(monkeypatch):
+    _mock_reply(monkeypatch, _GOOD_JSON)
+    row = eq.score_text(
+        "txt",
+        "AAPL",
+        "Q3",
+        2026,
+        provider_cfg={"provider_order": ["openai_compat", "deepseek"]},
+    )
+    # No false alarm: nothing fell back, so the field stays empty.
+    assert row["provider_fallback_reason"] is None
+    assert row["model"] == "openai_compat"
+    assert row["degraded_reason"] is None
+
+
+def test_only_the_first_failing_rung_is_recorded(monkeypatch):
+    """Two failures before a success still name the FIRST one."""
+
+    def fake_dispatch(system, user, cfg, provider_cfg, *, max_tokens):
+        provider = provider_cfg["provider_order"][0]
+        if provider == "openai_compat":
+            return None, "openai_compat_http_404", None
+        if provider == "kimi":
+            return None, "kimi_http_401", None
+        return json.dumps(_GOOD_JSON), None, provider
+
+    monkeypatch.setattr(eq, "_dispatch", fake_dispatch)
+    row = eq.score_text(
+        "txt",
+        "AAPL",
+        "Q3",
+        2026,
+        provider_cfg={"provider_order": ["openai_compat", "kimi", "deepseek"]},
+    )
+    assert row["provider_fallback_reason"] == "openai_compat:openai_compat_http_404"
+    assert row["model"] == "deepseek"
+    assert row["degraded_reason"] is None
+
+
+def test_all_rungs_failed_keeps_prior_degraded_semantics(monkeypatch):
+    """The all-failed path is unchanged; the receipt is purely additive."""
+
+    def fake_dispatch(system, user, cfg, provider_cfg, *, max_tokens):
+        provider = provider_cfg["provider_order"][0]
+        return None, f"{provider}_http_404", None
+
+    monkeypatch.setattr(eq, "_dispatch", fake_dispatch)
+    row = eq.score_text(
+        "txt",
+        "AAPL",
+        "Q3",
+        2026,
+        provider_cfg={"provider_order": ["openai_compat", "deepseek"]},
+    )
+    # Same contract as before R0-A: last reason wins, no model, no scores.
+    assert row["degraded_reason"] == "deepseek_http_404"
+    assert row["model"] is None
+    assert row["sentiment"] is None
+    assert row["provider_fallback_reason"] == "openai_compat:openai_compat_http_404"
+
+
+def test_fallback_reason_is_stored_and_absent_column_still_loads(tmp_path):
+    """Additive column: a pre-R0-A parquet must still load, merge and upsert."""
+
+    import pandas as pd
+
+    assert "provider_fallback_reason" in eq._STORE_COLUMNS
+
+    legacy_columns = [
+        c for c in eq._STORE_COLUMNS if c != "provider_fallback_reason"
+    ]
+    legacy = {
+        "ticker": "MSFT", "quarter": "Q3", "year": 2026,
+        "call_date": "2026-07-30", "source": "transcript", "model": "qwen",
+        "sentiment": 0.4, "performance": 7.0, "confidence": 0.8,
+        "tone_word": "steady", "positive_highlights": "[]",
+        "negative_highlights": "[]", "tags": "[]",
+        "source_sha256": "legacy-sha", "scored_at": "2026-08-01T00:00:00Z",
+        "source_record_id": "defeatbeta:MSFT:2026Q3",
+        "is_context_only": True, "degraded_reason": None,
+    }
+    store = eq.store_path(tmp_path)
+    store.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(
+        [{c: legacy.get(c) for c in legacy_columns}], columns=legacy_columns
+    ).to_parquet(store, index=False)
+
+    fresh = {
+        "ticker": "AAPL", "quarter": "Q3", "year": 2026,
+        "call_date": "2026-07-30", "source": "transcript", "model": "deepseek",
+        "sentiment": 0.4, "performance": 7.0, "confidence": 0.8,
+        "tone_word": "steady", "positive_highlights": [],
+        "negative_highlights": [], "tags": [], "source_sha256": "fresh-sha",
+        "scored_at": "2026-08-02T00:00:00Z",
+        "source_record_id": "defeatbeta:AAPL:2026Q3",
+        "is_context_only": True, "degraded_reason": None,
+        "provider_fallback_reason": "openai_compat:openai_compat_http_404",
+    }
+    assert eq.upsert_scores([fresh], root=tmp_path) == 1
+
+    stored = eq.load_scores(tmp_path)
+    assert set(stored["ticker"]) == {"MSFT", "AAPL"}
+    by_ticker = stored.set_index("ticker")["provider_fallback_reason"]
+    assert by_ticker["AAPL"] == "openai_compat:openai_compat_http_404"
+    # The legacy row backfills to null rather than failing the read.
+    assert pd.isna(by_ticker["MSFT"]) or by_ticker["MSFT"] is None
 
 
 def test_llm_auth_rung_disables_implicit_codex(monkeypatch):
@@ -538,6 +688,254 @@ def test_bounded_transcript_keeps_head_and_qa_tail():
     assert bounded.endswith("Q&A-TAIL-FACT")
     assert "middle of transcript omitted" in bounded
     assert len(bounded) <= 120
+
+
+# --------------------------------------------------------------------------- #
+# 5b. Per-rung prompt bounds (R0-A2)
+#
+# The rungs need not share a context window, so the prompt is built PER RUNG.
+# A rung whose provider block carries its own max_chars/tail_chars gets that
+# bound; every other rung inherits the global 24,000/8,000 and must NOT be
+# degraded to the smallest window on the ladder.  This is the lever for an
+# endpoint configured below the global transcript budget: such a server answers
+# HTTP 200 with prose instead of JSON rather than erroring, so a prompt built
+# ONCE before the waterfall falls through to a metered cloud provider on every
+# real transcript.
+#
+# NO rung ships with a per-rung bound.  #4784 capped openai_compat at 8,000
+# chars while the host ran Ollama's 4,096-token default; OLLAMA_CONTEXT_LENGTH
+# is now 32,768 there and the local rung reads the full global budget (measured
+# 2026-08-06: 24,000 chars -> 8,797 prompt_tokens on prose / 14,156 token-dense,
+# finish_reason stop, usable JSON).  The tests below therefore configure the
+# per-rung bound EXPLICITLY to exercise the mechanism, and pin separately that
+# the shipped config restates no local default.
+# --------------------------------------------------------------------------- #
+_PROMPT_ENVELOPE = len(eq._build_user_prompt("NVDA", "Q3", 2026, "transcript", ""))
+
+
+def _prompt_body_chars(prompt: str) -> int:
+    """Recover the transcript-body length from a built user prompt."""
+    return len(prompt.removesuffix(eq._RETRY_SUFFIX)) - _PROMPT_ENVELOPE
+
+
+def _long_transcript() -> str:
+    text = (
+        "HEAD-FACT: revenue of $12.4B.\n"
+        + ("Prepared remarks filler about the quarter. " * 2000)
+        + "\nOperator: We will now begin the question-and-answer session.\n"
+        "ANALYST-TAIL-FACT: what is the FY27 margin bridge?"
+    )
+    assert len(text) > 24000
+    return text
+
+
+def _cfg_with_local_bound(max_chars: int, tail_chars: int) -> dict:
+    """Shipped config + an EXPLICIT per-rung bound on openai_compat.
+
+    The shipped config carries no local bound (the endpoint reads the full
+    global budget), so a test of the per-rung mechanism must configure one
+    itself rather than lean on a default that is no longer there.
+    """
+    cfg = eq.load_config()
+    cfg["openai_compat"] = {
+        **cfg["openai_compat"],
+        "max_chars": max_chars,
+        "tail_chars": tail_chars,
+    }
+    return cfg
+
+
+def _capture_rung_prompts(monkeypatch) -> list[tuple[str, str]]:
+    """Record (provider, user prompt) for every rung dispatch of a scoring call.
+
+    The local rung answers the way an under-configured server does over its
+    window: HTTP 200, finish_reason "stop", a markdown summary and no JSON.
+    """
+    seen: list[tuple[str, str]] = []
+
+    def fake_dispatch(system, user, cfg, provider_cfg, *, max_tokens):
+        provider = provider_cfg["provider_order"][0]
+        seen.append((provider, user))
+        if provider == "openai_compat":
+            return (
+                "### Q3 Financial Highlights\n\n- Revenue grew year over year.",
+                None,
+                provider,
+            )
+        return json.dumps(_GOOD_JSON), None, provider
+
+    monkeypatch.setattr(eq, "_dispatch", fake_dispatch)
+    return seen
+
+
+def test_configured_rung_bound_applies_while_cloud_rung_keeps_full_text(monkeypatch):
+    """THE contract: one scoring call, two prompt sizes, chosen per rung.
+
+    The bound is configured HERE, not inherited from a shipped local default —
+    that default is gone, but the mechanism it used must still work, because it
+    is what makes a future server misconfiguration a config change.
+    """
+    seen = _capture_rung_prompts(monkeypatch)
+    cfg = _cfg_with_local_bound(8000, 3000)
+    local_max = int(cfg["openai_compat"]["max_chars"])
+    global_max = int(cfg["max_chars"])
+    assert local_max < global_max
+
+    row = eq.score_text(
+        _long_transcript(),
+        "NVDA",
+        "Q3",
+        2026,
+        cfg=cfg,
+        provider_cfg={"provider_order": ["openai_compat", "deepseek"]},
+    )
+
+    local_prompts = [u for name, u in seen if name == "openai_compat"]
+    cloud_prompts = [u for name, u in seen if name == "deepseek"]
+    assert local_prompts and cloud_prompts
+
+    # The local rung is bounded to ITS window...
+    for prompt in local_prompts:
+        assert _prompt_body_chars(prompt) == local_max
+    # ...and the cloud rung in the SAME call still gets the full budget.
+    for prompt in cloud_prompts:
+        assert _prompt_body_chars(prompt) == global_max
+
+    # Waterfall behavior is unchanged: local prose -> retry -> cloud JSON.
+    assert [name for name, _ in seen] == [
+        "openai_compat",
+        "openai_compat",
+        "deepseek",
+    ]
+    assert row["model"] == "deepseek"
+    assert row["degraded_reason"] is None
+
+
+def test_configured_rung_bound_preserves_the_qa_tail(monkeypatch):
+    """A narrowed rung bound must still carry the Q&A tail — that is its point."""
+    seen = _capture_rung_prompts(monkeypatch)
+    cfg = _cfg_with_local_bound(8000, 3000)
+    local_max = int(cfg["openai_compat"]["max_chars"])
+    local_tail = int(cfg["openai_compat"]["tail_chars"])
+    # tail_chars must not be silently clamped by _bounded_transcript_text's
+    # max_chars//2 ceiling, or the config would state a bound it does not use.
+    assert 0 < local_tail <= local_max // 2
+
+    eq.score_text(
+        _long_transcript(),
+        "NVDA",
+        "Q3",
+        2026,
+        cfg=cfg,
+        provider_cfg={"provider_order": ["openai_compat"]},
+    )
+
+    local_prompt = next(u for name, u in seen if name == "openai_compat")
+    assert _prompt_body_chars(local_prompt) == local_max
+    assert "HEAD-FACT: revenue of $12.4B." in local_prompt
+    assert "middle of transcript omitted" in local_prompt
+    assert "question-and-answer session" in local_prompt
+    assert "ANALYST-TAIL-FACT: what is the FY27 margin bridge?" in local_prompt
+
+
+def test_rung_text_bounds_are_config_driven_with_global_fallback():
+    cfg = {
+        "max_chars": 24000,
+        "tail_chars": 8000,
+        "openai_compat": {"max_chars": 8000, "tail_chars": 3000},
+        "kimi": {"model": "kimi-k2.6"},
+    }
+    # a provider block with its own bound uses it
+    assert eq._rung_text_bounds(cfg, {}, "openai_compat") == (8000, 3000)
+    # a provider block without one, and a provider with no block at all, both
+    # inherit the global bound — cloud rungs are untouched by this mechanism
+    assert eq._rung_text_bounds(cfg, {}, "kimi") == (24000, 8000)
+    assert eq._rung_text_bounds(cfg, {}, "deepseek") == (24000, 8000)
+    assert eq._rung_text_bounds(cfg, {}, "anthropic") == (24000, 8000)
+    # the worker's per-run override beats the config file, as in _dispatch
+    assert eq._rung_text_bounds(
+        cfg, {"openai_compat": {"max_chars": 6000}}, "openai_compat"
+    ) == (6000, 3000)
+    # partial/garbage config falls back instead of raising
+    assert eq._rung_text_bounds({}, {}, "openai_compat") == (24000, 8000)
+    assert eq._rung_text_bounds(
+        {"max_chars": 24000, "tail_chars": 8000, "openai_compat": {"max_chars": "x"}},
+        {},
+        "openai_compat",
+    ) == (24000, 8000)
+
+
+def test_shipped_config_lets_the_local_rung_inherit_the_global_bound():
+    """No rung ships narrowed — the local endpoint reads the full budget.
+
+    #4784 capped openai_compat at 8,000 chars for a 4,096-token Ollama default.
+    The host now sets OLLAMA_CONTEXT_LENGTH=32768 and serves 24,000 chars at
+    finish_reason "stop" with usable JSON (8,797 prompt_tokens on prose, 14,156
+    token-dense), so a local cap would truncate transcripts for no reason.
+    Re-introducing one — in the YAML or in _DEFAULT_CFG — fails here.
+    """
+    cfg = eq.load_config()
+    assert int(cfg["max_chars"]) == 24000
+    assert int(cfg["tail_chars"]) == 8000
+    assert eq._rung_text_bounds(cfg, {}, "openai_compat") == (24000, 8000)
+    for cloud in ("deepseek", "kimi", "anthropic", "codex"):
+        assert eq._rung_text_bounds(cfg, {}, cloud) == (24000, 8000)
+
+    # ...and the bound must be INHERITED, not restated at the global value:
+    # a restated copy silently drifts the next time the global moves.
+    import yaml
+
+    raw = yaml.safe_load(
+        (eq._REPO_ROOT / "config" / "earnings_qual.yml").read_text(encoding="utf-8")
+    )
+    for source, block in (
+        ("config/earnings_qual.yml", raw.get("openai_compat") or {}),
+        ("engine.earnings_qual._DEFAULT_CFG", eq._DEFAULT_CFG["openai_compat"]),
+    ):
+        for key in ("max_chars", "tail_chars"):
+            assert key not in block, f"{source} restates openai_compat.{key}"
+
+
+def test_shipped_config_sends_the_full_global_budget_to_the_local_rung(monkeypatch):
+    """End-to-end proof, on the SHIPPED config: no silent local truncation.
+
+    The unit assertion above resolves bounds; this one checks the prompt that
+    actually reaches the local endpoint, so a bound re-introduced anywhere on
+    the resolution path is caught by the bytes on the wire.
+    """
+    seen = _capture_rung_prompts(monkeypatch)
+    cfg = eq.load_config()
+
+    eq.score_text(
+        _long_transcript(),
+        "NVDA",
+        "Q3",
+        2026,
+        cfg=cfg,
+        provider_cfg={"provider_order": ["openai_compat", "deepseek"]},
+    )
+
+    local_prompts = [u for name, u in seen if name == "openai_compat"]
+    cloud_prompts = [u for name, u in seen if name == "deepseek"]
+    assert local_prompts and cloud_prompts
+    for prompt in local_prompts + cloud_prompts:
+        assert _prompt_body_chars(prompt) == int(cfg["max_chars"]) == 24000
+
+
+def test_server_side_prompt_truncation_is_logged(caplog):
+    """A prompt_tokens count the sent prompt cannot explain must be surfaced."""
+    caplog.set_level("WARNING", logger=eq.log.name)
+    # 25,600 chars reported as 2,050 prompt_tokens — the measured signature.
+    eq._log_prompt_truncation(25600, {"usage": {"prompt_tokens": 2050}}, "qwen3.5:9b")
+    assert "TRUNCATED" in caplog.text
+    assert "2050" in caplog.text
+    caplog.clear()
+    # A prompt that fit (10,000 chars -> 3,932 tokens) must NOT warn, nor must
+    # a response that reports no usage at all.
+    eq._log_prompt_truncation(10000, {"usage": {"prompt_tokens": 3932}}, "qwen3.5:9b")
+    eq._log_prompt_truncation(10000, {}, "qwen3.5:9b")
+    eq._log_prompt_truncation(10000, {"usage": {"prompt_tokens": None}}, "qwen3.5:9b")
+    assert caplog.text == ""
 
 
 # --------------------------------------------------------------------------- #

@@ -2762,6 +2762,21 @@ watchlist:
   supabase:
     url: "https://fsldfzlxyavsuwqbceod.supabase.co"
     anon_key: "sb_publishable_f33VG8fZuyIZPl_lZIDX3w_RFuuZtpv"   # publishable key — PUBLIC by design (RLS enforces isolation)
+    # BROWSER-facing origin for the auth/REST calls (GFW). *.supabase.co is fronted by
+    # Cloudflare, whose ranges are throttled in mainland China, so a China visitor can
+    # load the site (Tencent EdgeOne) and still fail EVERY auth call — sign-in, sign-up,
+    # password reset, magic link. Setting this points the browser SDK at our own origin,
+    # where Caddy reverse-proxies /auth/v1/* and /rest/v1/* to the project; the DO
+    # droplet (outside China) makes the supabase.co hop.
+    #
+    # EMPTY = direct to `url` (today's behaviour). Fill it ONLY after the Caddy route is
+    # confirmed live — pointing the browser at a route that 404s breaks auth GLOBALLY,
+    # not just in China. Verify first:  curl https://www.mastermind-x.com/auth/v1/health
+    #
+    # Server-side callers (app/*.py, SUPABASE_URL env) must keep talking to supabase.co
+    # DIRECTLY — they run on the droplet, and routing service-role traffic back through
+    # the public proxy would be both pointless and a needless exposure.
+    browser_url: ""
 
 # -----------------------------------------------------------------------------
 # Regime engine

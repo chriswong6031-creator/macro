@@ -12,7 +12,18 @@
 {# =========================================================================== #}
 
 {# ---- unified feed (from build_site; null-safe) --------------------------- #}
-{% set FEED = (news_feed if news_feed is iterable and news_feed is not string else [])|select('mapping')|list %}
+{% set _RAW = (news_feed if news_feed is iterable and news_feed is not string else [])|select('mapping')|list %}
+{# The same headline reaches us from more than one wire — the live board carried
+   "AMD sinks 5% despite earnings beat…" twice, once from CNBC - Tech and once from
+   cnbc.com, adjacent in Also big. Whatever the upstream dedup misses, a news page
+   must not print the same headline twice, so the render drops repeats and keeps the
+   first (highest-ranked) copy. Display-tier only: nothing upstream is changed. #}
+{% set _seen = [] %}{% set _dedup = [] %}
+{% for _h in _RAW %}
+  {% set _k = (_h.title or '')|lower|trim %}
+  {% if _k and _k not in _seen %}{% set _ = _seen.append(_k) %}{% set _ = _dedup.append(_h) %}{% endif %}
+{% endfor %}
+{% set FEED = _dedup %}
 {% set LEAD = FEED[0] if FEED else None %}
 {% set MOVERS = FEED[1:4] if FEED|length > 1 else [] %}
 
@@ -86,152 +97,166 @@
 {%- endblock %}
 
 {% block base_css %}
-/* ===================== MARKETS NEWS — mx5 idiom ===================== */
+/* ===================== MARKETS NEWS — the front page =====================
+   A news page, not a dashboard about news. The previous idiom put a fixed
+   animated aurora behind the whole page and floated glass cards on it, which is
+   what made light mode read as a lavender haze; the lead card also breathed an
+   inset glow in the STORY'S OWN sentiment colour, so a negative headline pulsed
+   pink every four seconds. Both are gone. The ground is paper (ink in dark
+   mode), the cards are ruled rows, and colour has stopped being atmosphere —
+   it now only ever means something.
+
+   Identity is carried by TYPE: headlines are set in a display serif and
+   everything else stays in the house sans. The serif is a SYSTEM stack, so it
+   costs no webfont, no render budget and nothing in the Caddyfile immutable
+   list — Iowan/Palatino ship on macOS, Georgia everywhere else. zh gets a CJK
+   serif, which is the same editorial register in Chinese news.
+
+   The tokens below are also consumed by the Intelligence Desk, the Live Wire,
+   the rail and the diagnostics drawer, so redefining them here carries those
+   sections into the same language.                                          */
 .nxx{ --num:var(--font-mono,ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Mono","JetBrains Mono",Menlo,Consolas,monospace);
-  --nx-card:color-mix(in srgb, var(--panel) 80%, transparent);
-  --nx-card-solid:var(--panel);
-  --nx-card2:color-mix(in srgb, var(--panel2) 78%, transparent);
-  --nx-brd:color-mix(in srgb, var(--text) 12%, transparent);
-  --nx-hair:color-mix(in srgb, var(--line) 82%, transparent);
-  --nx-blur:blur(16px) saturate(135%);
-  --nx-radius:16px;
-  --nx-shadow:0 12px 34px -18px rgba(0,0,0,.5), inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent);
-  position:relative; z-index:1; max-width:1200px; margin:0 auto; }
+  --nx-serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+  /* paper / ink — a hair off the app chrome so the reading column reads as a sheet */
+  --nx-paper:color-mix(in srgb, var(--panel) 92%, var(--bg));
+  /* Still real surfaces — the release cards, the rail, the Desk and the Wire all
+     read these — but mixed toward the paper instead of being translucent glass,
+     so they sit ON the sheet rather than floating over an aurora. */
+  --nx-card:color-mix(in srgb, var(--panel2) 50%, var(--nx-paper));
+  --nx-card-solid:var(--nx-paper);
+  --nx-card2:color-mix(in srgb, var(--panel2) 72%, var(--nx-paper));
+  --nx-brd:color-mix(in srgb, var(--text) 20%, transparent);
+  --nx-hair:color-mix(in srgb, var(--text) 13%, transparent);
+  --nx-rule:color-mix(in srgb, var(--text) 26%, transparent);
+  --nx-blur:none;
+  --nx-radius:6px;
+  --nx-shadow:none;
+  position:relative; z-index:1; max-width:1180px; margin:0 auto;
+  padding-bottom:8px; }
 .nxx .num{ font-family:var(--num); font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
-.nxx a{ color:inherit; }
+.nxx a{ color:inherit; text-decoration:none; }
+html[data-lang="zh"] .nxx{ --nx-serif:"Songti SC","SimSun","Noto Serif CJK SC","Source Han Serif SC",serif; }
 
-/* aurora backdrop — fixed, low-opacity, gentle breathe (opacity only) */
-.nx-aurora{ position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
-.nx-aurora::before,.nx-aurora::after{ content:""; position:absolute; width:60vw; height:60vw;
-  border-radius:50%; filter:blur(90px); opacity:.5; }
-.nx-aurora::before{ top:-18vw; left:-10vw;
-  background:radial-gradient(circle, color-mix(in srgb,var(--link) 30%,transparent) 0%, transparent 70%);
-  animation:nxAur 12s ease-in-out infinite; }
-.nx-aurora::after{ bottom:-22vw; right:-12vw;
-  background:radial-gradient(circle, color-mix(in srgb,var(--up) 22%,transparent) 0%, transparent 70%);
-  animation:nxAur 15s ease-in-out infinite reverse; }
-@keyframes nxAur{ 0%,100%{ opacity:.38; } 50%{ opacity:.62; } }
+/* The reading column is a SHEET on the app's ground, rather than a full-viewport
+   fixed layer: same look, one less always-composited element, and the sheet edge
+   is the metaphor — this is a page you read, sitting on the app around it.
+   Derived from --panel so it flips with the theme and hardcodes no surface. */
+.nxx{ background:var(--nx-paper); padding-left:clamp(16px,3vw,44px); padding-right:clamp(16px,3vw,44px);
+  padding-top:6px; border-inline:1px solid var(--nx-hair); min-height:60vh; }
 
-/* header */
-.nx-head{ padding:8px 0 14px; }
-.nx-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--muted);
+/* the front-page structural device: a rule with a small-caps kicker */
+.nx-kick{ display:flex; align-items:center; gap:10px; margin:0 0 14px;
+  font-size:11px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+.nx-kick::after{ content:""; flex:1; height:1px; background:var(--nx-hair); }
+.nx-kick .live{ width:6px; height:6px; border-radius:50%; background:var(--up); flex:0 0 auto;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 22%,transparent); }
+
+/* ---- masthead ---- */
+.nx-head{ padding:10px 0 16px; border-bottom:2px solid var(--nx-rule); margin-bottom:22px; }
+.nx-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--muted);
   display:flex; align-items:center; gap:8px; }
 .nx-eyebrow .live{ width:7px; height:7px; border-radius:50%; background:var(--up);
   box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 26%,transparent); }
-.nx-title{ font-size:30px; font-weight:800; letter-spacing:-.02em; margin:6px 0 4px; line-height:1.08;
-  background:linear-gradient(110deg, var(--text) 0%, color-mix(in srgb,var(--link) 70%, var(--text)) 100%);
-  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
-.nx-sub{ color:var(--muted); font-size:13px; max-width:60ch; }
-.nx-updated{ font-size:11.5px; color:var(--muted); margin-top:6px; }
-.nx-updated .num{ color:var(--text); }
+.nx-title{ font-family:var(--nx-serif); font-size:clamp(32px,5vw,46px); font-weight:600; letter-spacing:-.015em;
+  margin:8px 0 6px; line-height:1.02; color:var(--text); }
+.nx-sub{ color:var(--muted); font-size:13.5px; max-width:62ch; line-height:1.5; }
+.nx-updated{ font-size:11.5px; color:var(--muted); margin-top:10px;
+  display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.nx-updated .num{ color:var(--text); font-weight:600; }
+.nx-updated .sep{ color:var(--nx-rule); }
 
-/* ---- HERO ---- */
-.nx-hero{ display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:14px; margin:6px 0 20px; }
-.nx-lead{ position:relative; padding:20px; border-radius:var(--nx-radius);
-  background:var(--nx-card); border:1px solid var(--nx-brd); box-shadow:var(--nx-shadow);
-  -webkit-backdrop-filter:var(--nx-blur); backdrop-filter:var(--nx-blur); overflow:hidden; }
-.nx-lead::after{ content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
-  box-shadow:inset 0 0 60px -20px var(--acc, var(--link)); opacity:0; animation:nxBreathe 4s ease-in-out infinite; }
-@keyframes nxBreathe{ 0%,100%{ opacity:0; } 50%{ opacity:.55; } }
-.nx-lead-eyebrow{ font-size:10.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
-  color:var(--acc, var(--link)); margin-bottom:10px; }
-.nx-lead-row{ display:flex; gap:18px; align-items:flex-start; }
-.nx-lead-body{ flex:1; min-width:0; }
-.nx-lead-title{ display:block; font-size:22px; font-weight:800; line-height:1.22; letter-spacing:-.015em;
-  margin-bottom:10px; text-wrap:balance; }
-.nx-lead-title:hover{ color:var(--link); }
-.nx-lead-why{ font-size:13px; color:var(--muted); margin:2px 0 12px; }
-.nx-chips{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
-.nx-lead-meta{ margin-top:12px; font-size:11.5px; color:var(--muted); display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-.nx-lead-meta .src{ color:var(--text); font-weight:600; }
+/* ---- LEAD + also-big: the front page ---- */
+.nx-hero{ display:grid; grid-template-columns:minmax(0,1.62fr) minmax(0,1fr); gap:34px; margin:0 0 30px;
+  padding-bottom:26px; border-bottom:1px solid var(--nx-hair); }
+.nx-lead{ position:relative; min-width:0; }
+.nx-lead-eyebrow{ font-size:10.5px; font-weight:800; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--text); margin-bottom:12px; display:flex; align-items:center; gap:9px; }
+.nx-lead-kick{ font-weight:700; color:var(--muted); letter-spacing:.14em; }
+.nx-lead-eyebrow::after{ content:""; flex:1; height:2px; background:var(--nx-rule); }
+.nx-lead-title{ display:block; font-family:var(--nx-serif); font-size:clamp(26px,3.4vw,38px); font-weight:600;
+  line-height:1.14; letter-spacing:-.015em; color:var(--text); margin:0 0 12px; text-wrap:balance; }
+.nx-lead-title:hover{ text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px; }
+.nx-lead-why{ font-size:15px; line-height:1.55; color:color-mix(in srgb,var(--text) 74%,var(--bg));
+  margin:0 0 14px; max-width:56ch; }
+.nx-lead-meta{ font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:9px; align-items:center; }
+.nx-lead-meta .src{ color:var(--text); font-weight:700; }
+.nx-lead-meta .sep{ color:var(--nx-rule); }
 
-/* impact ring (rank_score 0-100) */
-.nx-impact{ --v:0; --acc:var(--link); flex:0 0 auto; width:60px; height:60px; border-radius:50%;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative;
-  overflow:hidden;
-  background:conic-gradient(var(--acc) calc(var(--v)*1%), color-mix(in srgb,var(--text) 12%,transparent) 0); }
-.nx-impact::before{ content:""; position:absolute; inset:4px; border-radius:50%; background:var(--nx-card-solid); }
-.nx-impact b{ position:relative; font-size:17px; font-weight:800; line-height:1; font-family:var(--num); }
-.nx-impact small{ position:relative; display:block; width:100%; padding:0 6px; margin-top:4px;
-  font-size:8px; line-height:1; letter-spacing:.06em; text-align:center; white-space:nowrap;
-  overflow:hidden; color:var(--muted); text-transform:uppercase; }
+/* also-big — ruled subheads, no boxes: a column of stories, the way a paper sets one */
+.nx-movers{ display:flex; flex-direction:column; min-width:0; }
+.nx-movers-hd{ font-size:10.5px; font-weight:800; letter-spacing:.18em; text-transform:uppercase; color:var(--text);
+  padding-bottom:9px; border-bottom:2px solid var(--nx-rule); margin-bottom:4px; }
+.nx-mover{ display:block; padding:13px 0; border-bottom:1px solid var(--nx-hair); }
+.nx-mover:last-child{ border-bottom:0; }
+.nx-mover-title{ font-family:var(--nx-serif); font-size:16px; font-weight:600; line-height:1.28;
+  color:var(--text); display:block; }
+.nx-mover:hover .nx-mover-title{ text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:2px; }
+.nx-mover-meta{ font-size:11px; color:var(--muted); margin-top:6px; display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
+.nx-mover-meta .sep{ color:var(--nx-rule); }
 
-/* movers column */
-.nx-movers{ display:flex; flex-direction:column; gap:8px; }
-.nx-movers-hd{ font-size:10.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding:2px; }
-.nx-mover{ display:flex; gap:10px; align-items:flex-start; padding:11px 12px; border-radius:12px;
-  background:var(--nx-card2); border:1px solid var(--nx-hair); transition:border-color .18s, transform .18s; }
-.nx-mover:hover{ border-color:var(--nx-brd); transform:translateY(-1px); }
-.nx-mover-rank{ flex:0 0 auto; font-size:12px; font-weight:800; font-family:var(--num); color:var(--acc,var(--link));
-  width:20px; text-align:center; padding-top:1px; }
-.nx-mover-body{ min-width:0; }
-.nx-mover-title{ font-size:13px; font-weight:600; line-height:1.3; display:block; }
-.nx-mover-title:hover{ color:var(--link); }
-.nx-mover-meta{ font-size:10.5px; color:var(--muted); margin-top:4px; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
-
-/* ---- PULSE strip ---- */
-.nx-pulse{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:12px 14px; margin-bottom:16px;
-  border-radius:14px; background:var(--nx-card2); border:1px solid var(--nx-hair); }
-.nx-pulse-lbl{ font-size:10.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-right:2px; }
-.nx-heat{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:100px;
-  background:color-mix(in srgb,var(--c,var(--muted)) 13%,transparent); color:color-mix(in srgb,var(--c,var(--muted)) 88%,var(--text));
-  border:1px solid color-mix(in srgb,var(--c,var(--muted)) 28%,transparent); }
-.nx-heat b{ font-family:var(--num); }
+/* ---- what the desk is watching (was: "theme pulse" counts) ---- */
+.nx-pulse{ display:flex; flex-wrap:wrap; gap:7px 10px; align-items:baseline; margin:0 0 26px;
+  padding-bottom:16px; border-bottom:1px solid var(--nx-hair); font-size:12.5px; }
+.nx-pulse-lbl{ font-size:10.5px; font-weight:800; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--muted); margin-right:4px; }
+.nx-heat{ display:inline-flex; align-items:baseline; gap:5px; color:var(--text); font-weight:600; }
+.nx-heat + .nx-heat::before{ content:"·"; color:var(--nx-rule); margin-right:6px; font-weight:400; }
+.nx-heat b{ font-family:var(--num); font-weight:700; color:var(--muted); font-size:11.5px; }
 .nx-pulse-sent{ margin-left:auto; font-size:11.5px; color:var(--muted); display:inline-flex; align-items:center; gap:6px; }
-.nx-pulse-sent .dot{ width:8px; height:8px; border-radius:50%; }
+.nx-pulse-sent .dot{ width:7px; height:7px; border-radius:50%; }
 
-/* ---- CONTROLS: segmented + search ---- */
-.nx-controls{ display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
-.seg{ display:inline-flex; gap:3px; padding:3px; border-radius:100px; background:var(--nx-card2); border:1px solid var(--nx-hair); }
-.seg-btn{ appearance:none; border:0; background:transparent; color:var(--muted); font-family:inherit; font-size:12px; font-weight:600;
-  padding:6px 13px; border-radius:100px; cursor:pointer; transition:background .16s,color .16s; white-space:nowrap; }
-.seg-btn:hover{ color:var(--text); }
-.seg-btn.on{ background:color-mix(in srgb,var(--link) 90%, var(--panel)); color:#fff; }
-.nx-search{ flex:1; min-width:180px; max-width:360px; position:relative; }
-.nx-search input{ width:100%; font-family:inherit; font-size:13px; color:var(--text); padding:9px 12px 9px 32px;
-  border-radius:100px; background:var(--nx-card2); border:1px solid var(--nx-hair); outline:none; transition:border-color .16s; }
-.nx-search input:focus{ border-color:color-mix(in srgb,var(--link) 55%,transparent); }
-.nx-search svg{ position:absolute; left:11px; top:50%; transform:translateY(-50%); opacity:.5; }
-.nx-count{ font-size:11px; color:var(--muted); font-family:var(--num); }
+/* ---- CONTROLS ---- */
+.nx-controls{ display:flex; gap:12px; align-items:center; margin-bottom:6px; flex-wrap:wrap;
+  padding-bottom:12px; border-bottom:2px solid var(--nx-rule); }
+.seg{ display:inline-flex; gap:2px; }
+.seg-btn{ appearance:none; border:0; background:transparent; color:var(--muted); font-family:inherit;
+  font-size:12px; font-weight:700; letter-spacing:.04em; padding:6px 11px; border-radius:4px; cursor:pointer;
+  transition:color .16s, background .16s; white-space:nowrap; }
+.seg-btn:hover{ color:var(--text); background:color-mix(in srgb,var(--text) 6%,transparent); }
+.seg-btn.on{ background:var(--text); color:var(--nx-paper); }
+.nx-search{ flex:1; min-width:170px; max-width:300px; position:relative; margin-left:auto; }
+.nx-search input{ width:100%; font-family:inherit; font-size:12.5px; color:var(--text); padding:7px 10px 7px 29px;
+  border-radius:4px; background:transparent; border:1px solid var(--nx-hair); outline:none; transition:border-color .16s; }
+.nx-search input:focus{ border-color:var(--nx-rule); }
+.nx-search svg{ position:absolute; left:9px; top:50%; transform:translateY(-50%); opacity:.5; }
+.nx-count{ font-size:11px; color:var(--muted); font-family:var(--num); flex:0 0 auto; }
 
-/* ---- FEED ---- */
-.nx-feed{ display:flex; flex-direction:column; gap:9px; }
-.nx-story{ display:flex; gap:13px; align-items:flex-start; padding:14px 15px; border-radius:14px;
-  background:var(--nx-card); border:1px solid var(--nx-hair); box-shadow:var(--nx-shadow);
-  -webkit-backdrop-filter:var(--nx-blur); backdrop-filter:var(--nx-blur); transition:border-color .18s, transform .18s; }
-.nx-story:hover{ border-color:var(--nx-brd); transform:translateY(-1px); }
+/* ---- FEED — a story list, not a stack of cards ---- */
+.nx-feed{ display:flex; flex-direction:column; }
+.nx-story{ display:block; padding:16px 0; border-bottom:1px solid var(--nx-hair); }
+.nx-story:hover .nx-story-title{ text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:2px; }
 .nx-story.hide{ display:none; }
-.nx-rankdot{ flex:0 0 auto; width:34px; height:34px; border-radius:9px; display:grid; place-items:center;
-  font-family:var(--num); font-size:13px; font-weight:800; color:var(--acc,var(--link));
-  background:color-mix(in srgb,var(--acc,var(--link)) 12%,transparent);
-  border:1px solid color-mix(in srgb,var(--acc,var(--link)) 26%,transparent); }
-.nx-story-main{ min-width:0; flex:1; }
-.nx-story-title{ font-size:15px; font-weight:600; line-height:1.32; display:block; letter-spacing:-.005em; }
-.nx-story-title:hover{ color:var(--link); }
-.nx-story .nx-chips{ margin-top:8px; }
-.nx-meta{ margin-top:8px; font-size:11px; color:var(--muted); display:flex; flex-wrap:wrap; gap:7px; align-items:center; }
-.nx-meta .src{ color:var(--text); font-weight:600; }
-.nx-tk{ font-family:var(--num); font-size:10.5px; font-weight:700; color:var(--link);
-  background:color-mix(in srgb,var(--link) 12%,transparent); padding:1px 6px; border-radius:5px; }
-.nx-more{ margin:14px auto 4px; display:block; }
-.nx-empty{ text-align:center; color:var(--muted); font-size:13px; padding:30px; }
+.nx-story-main{ min-width:0; }
+.nx-story-title{ font-family:var(--nx-serif); font-size:18px; font-weight:600; line-height:1.28;
+  display:block; color:var(--text); }
+.nx-meta{ margin-top:7px; font-size:11.5px; color:var(--muted); display:flex; flex-wrap:wrap; gap:7px; align-items:center; }
+.nx-meta .src{ color:var(--text); font-weight:700; }
+.nx-meta .sep{ color:var(--nx-rule); }
+.nx-tk{ font-family:var(--num); font-size:10.5px; font-weight:700; color:var(--muted);
+  border:1px solid var(--nx-hair); padding:0 5px; border-radius:3px; }
+a.nx-tk:hover{ color:var(--link); border-color:currentColor; }
+.nx-more{ margin:20px auto 4px; display:block; }
+.nx-empty{ text-align:center; color:var(--muted); font-size:13px; padding:34px; }
 
-/* ---- generic tinted chip ---- */
-.nx-chip{ display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:600; line-height:1.5;
-  padding:2px 8px; border-radius:100px; white-space:nowrap;
-  background:color-mix(in srgb,var(--c,var(--muted)) 14%,transparent);
-  color:color-mix(in srgb,var(--c,var(--muted)) 90%,var(--text));
-  border:1px solid color-mix(in srgb,var(--c,var(--muted)) 28%,transparent); }
-.nx-chip.evt{ --c:var(--link); font-family:var(--num); }
-.nx-chip.ai{ --c:var(--info); }
-.nx-chip.tier{ --c:var(--muted); }
+/* ---- the one label a story carries ----
+   A theme label, set as text with a leading tick in the theme's hue. The old
+   idiom gave every story a tinted pill for theme AND event AND direction AND an
+   "✦ AI" badge AND five ticker pills — five to nine coloured objects per
+   headline, which is the chip soup that made the list unreadable. */
+.nx-chip{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700;
+  letter-spacing:.04em; text-transform:uppercase; white-space:nowrap;
+  color:color-mix(in srgb,var(--c,var(--muted)) 62%,var(--text)); }
+.nx-chip::before{ content:""; width:5px; height:5px; border-radius:1px; flex:0 0 auto;
+  background:var(--c,var(--muted)); }
+.nx-chip.evt,.nx-chip.ai,.nx-chip.tier{ display:none; }   /* demoted — the theme label carries the row */
+.nx-chips{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
 .dir-up{ --c:var(--up); } .dir-down{ --c:var(--down); } .dir-mixed{ --c:var(--warn); }
 /* theme / lane hues */
-.th-monetary,.th-fed{ --c:#c77dff; } .th-credit{ --c:#3fb6c0; }
-.th-inflation{ --c:#e0973a; } .th-labor{ --c:#5b8def; } .th-growth{ --c:#46b87a; }
-.th-fiscal{ --c:#d0877a; } .th-macro,.th-markets{ --c:#5b8def; }
-.th-earnings,.th-guidance,.th-stocks,.th-companies{ --c:#46b87a; }
-.th-analyst{ --c:#b48ead; } .th-deals,.th-capital_return{ --c:#e0973a; }
+.th-monetary,.th-fed{ --c:#8b5cf6; } .th-credit{ --c:#0e9aa7; }
+.th-inflation{ --c:#c2760f; } .th-labor{ --c:#3b6fd4; } .th-growth{ --c:#1f9a55; }
+.th-fiscal{ --c:#b5604f; } .th-macro,.th-markets{ --c:#3b6fd4; }
+.th-earnings,.th-guidance,.th-stocks,.th-companies{ --c:#1f9a55; }
+.th-analyst{ --c:#8d6e9b; } .th-deals,.th-capital_return{ --c:#c2760f; }
 
 /* ---- two-column: releases + rail ---- */
 .nx-cols{ display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:16px; margin-top:26px; align-items:start; }
@@ -600,30 +625,30 @@ html[data-lang="zh"] .nxi-track-rest{ margin-left:68px; }
 
 /* ---- responsive ---- */
 @media(max-width:900px){
-  .nx-hero{ grid-template-columns:1fr; }
+  .nx-hero{ grid-template-columns:1fr; gap:26px; }
+  .nx-movers-hd{ padding-top:2px; }
   .nx-cols{ grid-template-columns:1fr; }
   .nx-rail{ position:static; }
-  .nx-title{ font-size:25px; }
 }
 @media(max-width:560px){
-  .nx-lead{ padding:16px; } .nx-lead-title{ font-size:19px; }
-  .nx-lead{ display:grid; grid-template-columns:minmax(0,1fr) 50px;
-    grid-template-areas:"eyebrow impact" "body body"; column-gap:12px; row-gap:12px; }
-  .nx-lead-eyebrow{ grid-area:eyebrow; align-self:center; margin-bottom:0; }
-  .nx-lead-row{ display:contents; }
-  .nx-impact{ grid-area:impact; width:50px; height:50px; }
-  .nx-lead-body{ grid-area:body; width:100%; }
+  .nx-head{ padding-top:4px; margin-bottom:18px; }
   .nx-lead-title{ overflow-wrap:anywhere; }
-  .nx-controls{ gap:8px; } .nx-search{ order:3; max-width:none; flex-basis:100%; }
+  .nx-story-title{ font-size:17px; }
+  .nx-controls{ gap:8px; }
+  .nx-search{ order:3; max-width:none; flex-basis:100%; margin-left:0; }
+  .nx-pulse-sent{ margin-left:0; flex-basis:100%; }
 }
-/* motion / perf gates (mobile-perf law: opacity-only, killed on reduce/touch) */
-@media(prefers-reduced-motion:reduce){ .nx-aurora::before,.nx-aurora::after,.nx-lead::after{ animation:none; } }
-@media(pointer:coarse){ .nx-aurora::before,.nx-aurora::after,.nx-lead::after{ animation:none; } }
+/* Motion: there is none left to gate on this page. The aurora's 12s opacity loop
+   and the lead card's 4s sentiment "breathe" were the only animations here, and
+   both are gone — the strongest form of reduced-motion compliance is having
+   nothing to disable. Any animation added back needs its own kill block. */
 {% endblock %}
 
 {% block content %}
 <div class="nxx">
-<div class="nx-aurora" aria-hidden="true"></div>
+{# The old .nx-aurora painted two fixed 60vw blurred colour blobs on a 12s opacity
+   loop behind everything, and every card was glass floating on it — that is what made
+   light mode a lavender haze. The ground is now the .nxx sheet itself. #}
 
 <header class="nx-head">
   <div class="nx-eyebrow"><span class="live"></span>{{ t('Markets News','市场新闻') }}</div>
@@ -638,26 +663,24 @@ html[data-lang="zh"] .nxi-track-rest{ margin-left:68px; }
 {% set lead_acc = 'var(--up)' if (LEAD.event and LEAD.event.direction in ['bullish']) or LEAD.ai_sentiment=='pos' or LEAD.sentiment=='pos' else ('var(--down)' if (LEAD.event and LEAD.event.direction in ['bearish']) or LEAD.ai_sentiment=='neg' or LEAD.sentiment=='neg' else 'var(--link)') %}
 <section class="nx-hero">
   <div class="nx-lead" style="--acc:{{ lead_acc }};">
-    <div class="nx-lead-eyebrow">{{ t('Top story','头条') }}</div>
-    <div class="nx-lead-row">
-      <div class="nx-impact" style="--v:{{ (LEAD.rank_score or 0)|round|int }}; --acc:{{ lead_acc }};">
-        <b>{{ (LEAD.rank_score or 0)|round|int }}</b><small>{{ t('impact','影响') }}</small>
-      </div>
-      <div class="nx-lead-body">
-        <a class="nx-lead-title" href="{{ LEAD.url }}" target="_blank" rel="noopener">{{ t(LEAD.title|e, (LEAD.title_zh or LEAD.title)|e) }}</a>
-        <div class="nx-lead-why">{{ why(LEAD) }}</div>
-        <div class="nx-chips">
-          {{ themechip(LEAD) }}
-          {% if LEAD.event and LEAD.event.event_type and EVL.get(LEAD.event.event_type) %}<span class="nx-chip evt">{{ t(EVL[LEAD.event.event_type][0], EVL[LEAD.event.event_type][1]) }}</span>{% endif %}
-          {{ dirchip(LEAD) }}
-          {% if LEAD.get('ai_importance') is not none %}<span class="nx-chip ai">✦ {{ t('AI-scored','AI评分') }}</span>{% endif %}
-          {% for tk in (LEAD.tickers or [])[:4] %}<span class="nx-tk">{{ tk }}</span>{% endfor %}
-        </div>
-        <div class="nx-lead-meta">
-          <span class="src">{{ LEAD.source_name or LEAD.source or LEAD.domain }}</span>
-          <span>· <span class="rel-time" data-ts="{{ LEAD.seendate }}"></span></span>
-        </div>
-      </div>
+    {#- One kicker, not two. `why()` yields a THEME-level phrase ("Market context",
+        "Earnings mover"), which read as a broken subtitle when it sat under the
+        headline where a standfirst belongs. It is a classification, so it belongs
+        in the kicker beside "Top story". -#}
+    <div class="nx-lead-eyebrow">{{ t('Top story','头条') }} <span class="nx-lead-kick">· {{ why(LEAD) }}</span></div>
+    {#- The impact ring is gone. It set an 8px uppercase label inside a circular
+        overflow:hidden clip, which fits at 8px and clips the moment a browser
+        enforces a minimum font size (measured: from 12px at the 60px ring, from
+        10px at the 50px mobile ring) — sub-9px type is not under our control.
+        The list's own order carries the ranking, the standfirst says why it
+        matters, and the diagnostics drawer keeps the technical receipt. -#}
+    <a class="nx-lead-title" href="{{ LEAD.url }}" target="_blank" rel="noopener">{{ t(LEAD.title|e, (LEAD.title_zh or LEAD.title)|e) }}</a>
+    <div class="nx-lead-meta">
+      {{ themechip(LEAD) }}
+      <span class="sep">·</span>
+      <span class="src">{{ LEAD.source_name or LEAD.source or LEAD.domain }}</span>
+      <span class="sep">·</span><span class="rel-time" data-ts="{{ LEAD.seendate }}"></span>
+      {% for tk in (LEAD.tickers or [])[:4] %}<a class="nx-tk" href="stock.html#{{ tk|e }}">{{ tk }}</a>{% endfor %}
     </div>
   </div>
 
@@ -666,11 +689,8 @@ html[data-lang="zh"] .nxi-track-rest{ margin-left:68px; }
     {% for m in MOVERS %}
     {% set macc = 'var(--up)' if (m.event and m.event.direction=='bullish') or m.ai_sentiment=='pos' or m.sentiment=='pos' else ('var(--down)' if (m.event and m.event.direction=='bearish') or m.ai_sentiment=='neg' or m.sentiment=='neg' else 'var(--link)') %}
     <a class="nx-mover" href="{{ m.url }}" target="_blank" rel="noopener" style="--acc:{{ macc }};">
-      <div class="nx-mover-rank">{{ loop.index + 1 }}</div>
-      <div class="nx-mover-body">
-        <span class="nx-mover-title">{{ t(m.title|e, (m.title_zh or m.title)|e) }}</span>
-        <div class="nx-mover-meta">{{ themechip(m) }}<span>{{ m.source_name or m.source or m.domain }}</span>·<span class="rel-time" data-ts="{{ m.seendate }}"></span></div>
-      </div>
+      <span class="nx-mover-title">{{ t(m.title|e, (m.title_zh or m.title)|e) }}</span>
+      <div class="nx-mover-meta">{{ themechip(m) }}<span class="sep">·</span><span>{{ m.source_name or m.source or m.domain }}</span><span class="sep">·</span><span class="rel-time" data-ts="{{ m.seendate }}"></span></div>
     </a>
     {% endfor %}
   </div>
@@ -686,8 +706,11 @@ html[data-lang="zh"] .nxi-track-rest{ margin-left:68px; }
 <div class="nx-pulse">
   <span class="nx-pulse-lbl">{{ t('Theme pulse','主题热度') }}</span>
   {% for th, cnt in (theme_counts.items()|sort(attribute='1', reverse=true))[:7] %}
-    {% set tl = TL.get(th) %}
-    <span class="nx-heat th-{{ th }}">{{ t(tl[0] if tl else th, tl[1] if tl else th) }} <b>{{ cnt }}</b></span>
+    {#- TL first, then the lane dictionary, and only then a prettified slug. The old
+        fallback printed the raw key, which is how "companies" and "markets" reached a
+        glance surface in lower case beside properly labelled themes. -#}
+    {% set tl = TL.get(th) or LANEL.get(th) %}
+    <span class="nx-heat th-{{ th }}">{{ t(tl[0] if tl else th|replace('_',' ')|title, tl[1] if tl else th|replace('_',' ')|title) }} <b>{{ cnt }}</b></span>
   {% endfor %}
   {% if NS_STATE %}
   <span class="nx-pulse-sent"><span class="dot" style="background:{{ 'var(--up)' if NS_STATE in ['optimistic','positive'] else 'var(--down)' }};"></span>
@@ -789,19 +812,17 @@ html[data-lang="zh"] .nxi-track-rest{ margin-left:68px; }
            data-idx="{{ loop.index0 }}"
            data-search="{{ ((h.title or '') ~ ' ' ~ (h.tickers|join(' ') if h.tickers else '') ~ ' ' ~ (h.source_name or h.source or h.domain or ''))|lower|e }}"
            style="--acc:{{ acc }};">
-    <div class="nx-rankdot">{{ (h.rank_score or 0)|round|int }}</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="{{ h.url }}" target="_blank" rel="noopener">{{ t(h.title|e, (h.title_zh or h.title)|e) }}</a>
-      <div class="nx-chips">
-        {{ themechip(h) }}
-        {% if h.event and h.event.event_type and EVL.get(h.event.event_type) %}<span class="nx-chip evt">{{ t(EVL[h.event.event_type][0], EVL[h.event.event_type][1]) }}</span>{% endif %}
-        {{ dirchip(h) }}
-        {% if h.get('ai_importance') is not none %}<span class="nx-chip ai">✦ AI</span>{% endif %}
-      </div>
+      {#- ONE label per story. The event chip, the direction chip and the "✦ AI"
+          badge are demoted (hidden by .nx-chip.evt/.ai/.tier): five to nine
+          coloured objects around a headline is what made this list unreadable. -#}
       <div class="nx-meta">
+        {{ themechip(h) }}
+        <span class="sep">·</span>
         <span class="src">{{ h.source_name or h.source or h.domain }}</span>
-        <span>·</span><span class="rel-time" data-ts="{{ h.seendate }}"></span>
-        {% for tk in (h.tickers or [])[:5] %}<span class="nx-tk">{{ tk }}</span>{% endfor %}
+        <span class="sep">·</span><span class="rel-time" data-ts="{{ h.seendate }}"></span>
+        {% for tk in (h.tickers or [])[:4] %}<a class="nx-tk" href="stock.html#{{ tk|e }}">{{ tk }}</a>{% endfor %}
       </div>
     </div>
   </article>
