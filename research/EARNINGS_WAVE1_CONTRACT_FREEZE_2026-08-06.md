@@ -113,10 +113,19 @@ document-level lineage must not be silently upgraded to span-level — a typed
 absence is the compliant answer, not a fabricated receipt.
 
 The corpus commits an `expected_v2_outcome` per case, and its distribution is the
-grading key: `exact_receipt` 155, `typed_absence` 49, `duplicate_collapsed` 16,
-`quarantined` 14. **49 typed absences is the number that matters** — if a Wave 1
+grading key: `exact_receipt` 155, `typed_absence` 51, `duplicate_collapsed` 14,
+`quarantined` 14. **51 typed absences is the number that matters** — if a Wave 1
 implementation resolves materially more than 155 to `exact_receipt`, it is
 manufacturing citations.
+
+The `typed_absence`/`duplicate_collapsed` split was corrected from 49/16 on
+2026-08-07: two `edgar_identity_join` cases (CIE-GC-0227, CIE-GC-0234) had been
+labelled `duplicate_collapsed` by a positional rule in the builder, but their
+fixture rows are structurally identical to the twelve siblings that expect
+`typed_absence` — no second document, so no duplicate to observe. They are now
+`typed_absence`, which is what the EDGAR fixture's own `open_contract_question`
+said all along. `duplicate_collapsed` keeps its 14 evidenced cases from the
+`duplicate_release` class, each carrying a real second revision.
 
 ### Q4 — The fiscal label belongs to the EVENT
 
