@@ -1,0 +1,111 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "BKH-2026-06-30-buy",
+  "ticker": "BKH",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "BKH",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "BKH",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "mixed",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Utilities",
+    "excess_spy": -0.03470136177396521,
+    "excess_sector": -0.023617048548461583,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "DEAD_MONEY",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "BKH became dead money and underperformed SPY under a mixed outcome attribution, with no recorded process fault. This is a clean-process outcome failure requiring regime and sector-conditioning research rather than tighter gates.",
+    "root_cause": "BKH became dead money and underperformed SPY under a mixed outcome attribution, with no recorded process fault. This is a clean-process outcome failure requiring regime and sector-conditioning research rather than tighter gates.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The buy organ executed cleanly, while the regime and Utilities-rotation books may have missed an unfavorable conditioning cell.",
+    "engines_credit": "The execution organ is not a laggard; the regime and sector-rotation books are the research focus, although current evidence does not prove they failed.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "market_rotation",
+        "factor": "",
+        "mechanism": "An absent or adverse rotation into Utilities may have limited relative demand.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Improving Utilities breadth and relative strength at entry would weaken this explanation.",
+        "evidence_refs": [
+          "Pick 7 sector=Utilities",
+          "Pick 7 outcome_cause=mixed"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "Insufficient company-specific strength may have failed to overcome the broader backdrop.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Strong peer-relative fundamentals and accumulation would shift causality away from company weakness.",
+        "evidence_refs": [
+          "Pick 7 terminal_state=DEAD_MONEY",
+          "Pick 7 excess_spy=-0.03470136177396521"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "counterfactual",
+        "factor": "",
+        "mechanism": "Conditioning the thesis on the contemporaneous Utilities regime may have identified a low-propulsion environment.",
+        "evidence_status": "unknown",
+        "timing_status": "known_at_entry",
+        "counterfactual": "Compare identical setup types across favorable and unfavorable Utilities regime cells without tightening the gate.",
+        "evidence_refs": [
+          "Pick 7 process_fault=clean",
+          "Pick 7 lane=buy"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Company-specific stagnation may have dominated sector effects.",
+      "A broad risk-on market could have made defensive Utilities lag even without a negative sector shock."
+    ],
+    "missing_evidence": [
+      "Utilities breadth and relative-strength series at entry",
+      "Macro rate and risk-regime state",
+      "BKH peer-relative fundamentals and momentum",
+      "Catalyst and news timeline"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "utilities_regime_cell",
+        "feature": "Utilities setup performance by rate, risk, and sector-breadth regime",
+        "measurement": "Partition historical Utilities picks by entry-date macro regime and sector breadth, then compare matured relative outcomes.",
+        "expected_direction": "Weak sector breadth or an unfavorable rate regime should be associated with more dead-money outcomes.",
+        "falsifier": "Outcome distributions remain similar across regime cells.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T13:34:17+00:00"
+}

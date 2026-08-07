@@ -149,7 +149,11 @@ def _arm_ladder(monkeypatch, rungs):
     return ledger
 
 
-GOOD_POST = "$ARES dipped back to 122 and held. Not chasing it here."
+#: Copy that CLEARS every writer validator, which is the only property these
+#: provider-plumbing tests need from it. It closed on "Not chasing it here."
+#: until 2026-08-06, when the abstention law made that a validate-stage drop and
+#: two of these tests started reporting a provider fault that had not happened.
+GOOD_POST = "$ARES dipped back to 122 and held. Buyers keep showing up there."
 #: A reply that ARRIVED and is not the contracted object. Verbatim-shaped after
 #: the wrappers models actually add: a sentence of preamble and no JSON at all.
 UNREADABLE = "Sure thing! Here is a post for you: $ARES dipped back to 122."

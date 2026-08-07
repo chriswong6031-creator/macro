@@ -1,0 +1,1477 @@
+{
+ "instrument": "W5.1 per-leg veto isolation \u2014 ADJUSTED-BASIS RE-RUN (both columns)",
+ "charter": "research/prophet_us_audit/MACD_BEAR_RATIFICATION_PACKET.md \u00a78",
+ "scope": "MEASUREMENT ONLY \u2014 no gate/board/engine/config change follows; W5 stays sequenced behind G0.2 and operator ratification",
+ "supersedes_nothing": "veto_leg_isolation_results.json is NOT overwritten \u2014 it is the frozen artifact the packet's original numbers came from",
+ "repro_asof": "2026-07-31",
+ "as_shipped_read_date": "2026-08-05",
+ "horizons": [
+  10,
+  21,
+  63
+ ],
+ "loser_def_pp": -3.0,
+ "section_0_ladder_receipt": {
+  "vendored_from": "PR #4698 (origin/claude/price-adjustment-audit-20260806)",
+  "why_vendored": "price_ladder.py is not on main yet; importing across branches is not reproducible, so the file is carried here byte-identically and the receipt below proves it was not re-invented",
+  "local_sha256": "a8e376e03c12c05c9a36fc1feec59ebc15da6b6a2c62890b95099e8670176175",
+  "on_merge": "if both PRs land, the two copies are byte-identical, so git resolves the add/add as one file; the note stays until #4698 is on main",
+  "source_sha256": "a8e376e03c12c05c9a36fc1feec59ebc15da6b6a2c62890b95099e8670176175",
+  "identical": true
+ },
+ "section_1_basis_control": {
+  "why": "#4698's first adjusted run grew its admitted population 31% because baskets/ohlcv carries the large-cap sleeve ~2 years deeper than the breadth cache \u2014 a COVERAGE change wearing a basis effect's clothes. All three axes are pinned here and each is proven with a count.",
+  "universe": {
+   "frozen_run_names": 1493,
+   "adjusted_panel_names_before_pinning": 1227,
+   "names_after_intersection": 1227,
+   "names_dropped_no_adjusted_source_or_thin": 266,
+   "dropped_tickers": [
+    "AAON",
+    "ACI",
+    "ACM",
+    "ADC",
+    "ADT",
+    "AFG",
+    "AGO",
+    "ALGM",
+    "ALV",
+    "AM",
+    "AMG",
+    "AMH",
+    "AMTM",
+    "AN",
+    "APPF",
+    "AR",
+    "ARMK",
+    "ARW",
+    "ATR",
+    "AVT",
+    "AVTR",
+    "AWI",
+    "AXTA",
+    "AYI",
+    "BAH",
+    "BBWI",
+    "BC",
+    "BFAM",
+    "BHF",
+    "BILL",
+    "BIO",
+    "BMRN",
+    "BRC",
+    "BRKR",
+    "BRX",
+    "BSY",
+    "BWA",
+    "CACI",
+    "CAR",
+    "CBSH"
+   ],
+   "identical_name_list_across_runs": true,
+   "cost_note": "the adjusted ladder has no source for these names, so BOTH columns lose them. Every A-vs-B number below is therefore on a sub-universe of the frozen run's, and section_6 prints the gap."
+  },
+  "calendar": {
+   "frozen_run_sessions": 777,
+   "adjusted_sessions_before_pinning": 777,
+   "sessions_used_by_both_runs": 777,
+   "frame": [
+    "2023-06-27",
+    "2026-07-31"
+   ],
+   "identical_index_across_runs": true
+  },
+  "observed_cell_mask": {
+   "cache_observed_cells": 939611,
+   "adjusted_observed_cells_on_pinned_axes": 950151,
+   "intersection_cells": 734994,
+   "cells_dropped_from_cache": 204617,
+   "cells_dropped_from_adjusted": 215157,
+   "final_cache_cells": 734994,
+   "final_adjusted_cells": 734994,
+   "masks_identical": true,
+   "mask_mismatches": 0
+  },
+  "resample_phase": {
+   "why": "_tf_bars anchors 2B/3B buckets on each series' FIRST index date, so a shifted first observation silently re-phases every oscillator leg",
+   "names_whose_first_observation_moved_vs_the_frozen_run": 22,
+   "examples": [
+    "AMKR",
+    "APG",
+    "CLH",
+    "EPAM",
+    "KEX",
+    "MEDP",
+    "MIDD",
+    "MKTX",
+    "MORN",
+    "MTSI",
+    "MTZ",
+    "OGN",
+    "PAYC",
+    "PFGC",
+    "PINS",
+    "RRC",
+    "SCI",
+    "ST",
+    "THC",
+    "TWLO"
+   ],
+   "note": "these names are re-phased IDENTICALLY in both runs, so the A-vs-B comparison is unaffected; the count is disclosed because it is one of the three reasons the cache-today column differs from the frozen original (section_6)"
+  },
+  "ladder_provenance": {
+   "ladder": [
+    "baskets_ohlcv",
+    "yahoo",
+    "data_stocks",
+    "closes_cache_UNADJUSTED"
+   ],
+   "adjusted_sources": [
+    "baskets_ohlcv",
+    "yahoo",
+    "data_stocks"
+   ],
+   "unadjusted_sources": [
+    "closes_cache_UNADJUSTED"
+   ],
+   "n_requested": 1493,
+   "resolved_from": {
+    "baskets_ohlcv": 1189,
+    "yahoo": 38,
+    "data_stocks": 0,
+    "closes_cache_UNADJUSTED": 0,
+    "unresolved": 266
+   },
+   "names_on_unadjusted_basis": 0,
+   "panel_range": [
+    "2023-06-27",
+    "2026-07-31"
+   ]
+  },
+  "unresolved_on_adjusted_ladder": 266,
+  "unresolved_examples": [
+   "AAON",
+   "ACI",
+   "ACM",
+   "ADC",
+   "ADT",
+   "AFG",
+   "AGO",
+   "ALGM",
+   "ALV",
+   "AM",
+   "AMG",
+   "AMH",
+   "AMTM",
+   "AN",
+   "APPF",
+   "AR",
+   "ARMK",
+   "ARW",
+   "ATR",
+   "AVT",
+   "AVTR",
+   "AWI",
+   "AXTA",
+   "AYI",
+   "BAH",
+   "BBWI",
+   "BC",
+   "BFAM",
+   "BHF",
+   "BILL",
+   "BIO",
+   "BMRN",
+   "BRC",
+   "BRKR",
+   "BRX",
+   "BSY",
+   "BWA",
+   "CACI",
+   "CAR",
+   "CBSH"
+  ],
+  "allow_unadjusted": false,
+  "allow_unadjusted_note": "the adjusted panel refuses the cache rung outright \u2014 a name that fell through would put the very basis mix this run exists to remove back into the B column",
+  "as_shipped_cache_read_date": "2026-08-05",
+  "reproducibility": "the as-shipped column is a FROZEN HISTORICAL ARTIFACT. The breadth caches are re-based at each full rebuild, so a later read returns different numbers for the same past session (#4698's receipt: PNC 2026-06-22 read 234.71 on 07-01 and 232.85 today). Only the adjusted column is re-derivable.",
+  "cache_names_source": {
+   "cache_names": 1540,
+   "universe_after_min_history": 1493,
+   "min_history_sessions": 260,
+   "names_deepened_from_yahoo": 324,
+   "splice_scope": "deep_probe ONLY \u2014 every graded leg is computed on the unspliced production cache series so its resample phase matches the gate",
+   "frame": [
+    "2023-06-27",
+    "2026-07-31"
+   ],
+   "sessions": 777
+  }
+ },
+ "section_2_leg_diagnostics": {
+  "A_cache_today": {
+   "in_range_name_days": 734994,
+   "fire_counts_name_days": {
+    "stoch_ob": 188686,
+    "stoch_bear": 301511,
+    "macd_bear": 222401,
+    "tier_reachable": 118329,
+    "eligible": 54545,
+    "t1_fresh": 69311,
+    "t2_active": 44681,
+    "t3_active": 5812,
+    "t4_active": 12890
+   },
+   "dead_legs": [],
+   "equality_gate": {
+    "basis": "inline legs vs engine.confluence_tiers.tier_stream, every name, every in-range cell",
+    "names_compared": 1227,
+    "names_tier_stream_empty": 0,
+    "cells": 734994,
+    "not_topped_mismatches": 0,
+    "eligible_mismatches": 0,
+    "status": "PASS",
+    "why_it_matters": "the sole-blocker predicate rests on eligible == not_topped & tier_reachable; a mismatch here voids every cohort below"
+   },
+   "universe_names": 1227,
+   "sessions": 777
+  },
+  "B_adjusted": {
+   "in_range_name_days": 734994,
+   "fire_counts_name_days": {
+    "stoch_ob": 188967,
+    "stoch_bear": 301512,
+    "macd_bear": 222132,
+    "tier_reachable": 118206,
+    "eligible": 54492,
+    "t1_fresh": 69270,
+    "t2_active": 44640,
+    "t3_active": 5796,
+    "t4_active": 12839
+   },
+   "dead_legs": [],
+   "equality_gate": {
+    "basis": "inline legs vs engine.confluence_tiers.tier_stream, every name, every in-range cell",
+    "names_compared": 1227,
+    "names_tier_stream_empty": 0,
+    "cells": 734994,
+    "not_topped_mismatches": 0,
+    "eligible_mismatches": 0,
+    "status": "PASS",
+    "why_it_matters": "the sole-blocker predicate rests on eligible == not_topped & tier_reachable; a mismatch here voids every cohort below"
+   },
+   "universe_names": 1227,
+   "sessions": 777
+  },
+  "cohort_cell_counts": {
+   "CONTROL:admitted": {
+    "A_cache_today": 54545,
+    "B_adjusted": 54492,
+    "pct_change": -0.1
+   },
+   "SOLE:stoch_ob": {
+    "A_cache_today": 17301,
+    "B_adjusted": 17317,
+    "pct_change": 0.1
+   },
+   "SOLE:stoch_bear": {
+    "A_cache_today": 4227,
+    "B_adjusted": 4248,
+    "pct_change": 0.5
+   },
+   "SOLE:macd_bear": {
+    "A_cache_today": 34400,
+    "B_adjusted": 34295,
+    "pct_change": -0.3
+   },
+   "UNION:board_without_macd_bear": {
+    "A_cache_today": 88945,
+    "B_adjusted": 88787,
+    "pct_change": -0.2
+   }
+  },
+  "cohort_channel_note": "a cohort count that moves is the LEGS moving on the corrected basis, not the bias \u2014 run C separates it"
+ },
+ "section_3_both_columns_full_frame": {
+  "window": "full_frame",
+  "metric": "per-name-first median excess vs SPY (pp), and that cohort minus CONTROL:admitted",
+  "by_horizon": {
+   "H10": {
+    "CONTROL:admitted": {
+     "A_cache_today": {
+      "n": 53550,
+      "pnf_pp": -0.24,
+      "vs_control_pp": null,
+      "median_dm_pp": 0.02,
+      "loser_pct": 32.0
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 53550,
+      "pnf_pp": -0.23,
+      "vs_control_pp": null,
+      "median_dm_pp": 0.01,
+      "loser_pct": 32.0
+     },
+     "B_adjusted": {
+      "n": 53527,
+      "pnf_pp": -0.23,
+      "vs_control_pp": null,
+      "median_dm_pp": 0.02,
+      "loser_pct": 32.0
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": null,
+      "pnf_pp": 0.01,
+      "n_pct": -0.0
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": null,
+      "cohort_C_to_B_vs_control_pp": null
+     }
+    },
+    "SOLE:stoch_ob": {
+     "A_cache_today": {
+      "n": 16989,
+      "pnf_pp": -0.32,
+      "vs_control_pp": -0.08,
+      "median_dm_pp": -0.02,
+      "loser_pct": 32.1
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 16989,
+      "pnf_pp": -0.32,
+      "vs_control_pp": -0.09,
+      "median_dm_pp": -0.02,
+      "loser_pct": 32.1
+     },
+     "B_adjusted": {
+      "n": 17010,
+      "pnf_pp": -0.33,
+      "vs_control_pp": -0.1,
+      "median_dm_pp": -0.02,
+      "loser_pct": 32.0
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": -0.02,
+      "pnf_pp": -0.01,
+      "n_pct": 0.1
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": -0.01,
+      "cohort_C_to_B_vs_control_pp": -0.01
+     }
+    },
+    "SOLE:stoch_bear": {
+     "A_cache_today": {
+      "n": 4097,
+      "pnf_pp": 0.22,
+      "vs_control_pp": 0.46,
+      "median_dm_pp": -0.01,
+      "loser_pct": 30.3
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 4097,
+      "pnf_pp": 0.23,
+      "vs_control_pp": 0.46,
+      "median_dm_pp": -0.01,
+      "loser_pct": 30.3
+     },
+     "B_adjusted": {
+      "n": 4118,
+      "pnf_pp": 0.28,
+      "vs_control_pp": 0.51,
+      "median_dm_pp": -0.01,
+      "loser_pct": 30.2
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": 0.05,
+      "pnf_pp": 0.06,
+      "n_pct": 0.5
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": 0.0,
+      "cohort_C_to_B_vs_control_pp": 0.05
+     }
+    },
+    "SOLE:macd_bear": {
+     "A_cache_today": {
+      "n": 33825,
+      "pnf_pp": -0.58,
+      "vs_control_pp": -0.34,
+      "median_dm_pp": -0.07,
+      "loser_pct": 33.5
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 33825,
+      "pnf_pp": -0.58,
+      "vs_control_pp": -0.35,
+      "median_dm_pp": -0.07,
+      "loser_pct": 33.5
+     },
+     "B_adjusted": {
+      "n": 33743,
+      "pnf_pp": -0.6,
+      "vs_control_pp": -0.37,
+      "median_dm_pp": -0.07,
+      "loser_pct": 33.5
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": -0.03,
+      "pnf_pp": -0.02,
+      "n_pct": -0.2
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": -0.01,
+      "cohort_C_to_B_vs_control_pp": -0.02
+     }
+    },
+    "UNION:board_without_macd_bear": {
+     "A_cache_today": {
+      "n": 87375,
+      "pnf_pp": -0.3,
+      "vs_control_pp": -0.06,
+      "median_dm_pp": -0.01,
+      "loser_pct": 32.6
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 87375,
+      "pnf_pp": -0.3,
+      "vs_control_pp": -0.07,
+      "median_dm_pp": -0.01,
+      "loser_pct": 32.6
+     },
+     "B_adjusted": {
+      "n": 87270,
+      "pnf_pp": -0.32,
+      "vs_control_pp": -0.09,
+      "median_dm_pp": -0.01,
+      "loser_pct": 32.6
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": -0.03,
+      "pnf_pp": -0.02,
+      "n_pct": -0.1
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": -0.01,
+      "cohort_C_to_B_vs_control_pp": -0.02
+     }
+    }
+   },
+   "H21": {
+    "CONTROL:admitted": {
+     "A_cache_today": {
+      "n": 52205,
+      "pnf_pp": -0.89,
+      "vs_control_pp": null,
+      "median_dm_pp": -0.08,
+      "loser_pct": 42.2
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 52205,
+      "pnf_pp": -0.88,
+      "vs_control_pp": null,
+      "median_dm_pp": -0.07,
+      "loser_pct": 42.2
+     },
+     "B_adjusted": {
+      "n": 52207,
+      "pnf_pp": -0.89,
+      "vs_control_pp": null,
+      "median_dm_pp": -0.07,
+      "loser_pct": 42.1
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": null,
+      "pnf_pp": 0.0,
+      "n_pct": 0.0
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": null,
+      "cohort_C_to_B_vs_control_pp": null
+     }
+    },
+    "SOLE:stoch_ob": {
+     "A_cache_today": {
+      "n": 16307,
+      "pnf_pp": -1.49,
+      "vs_control_pp": -0.6,
+      "median_dm_pp": -0.1,
+      "loser_pct": 42.4
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 16307,
+      "pnf_pp": -1.46,
+      "vs_control_pp": -0.58,
+      "median_dm_pp": -0.1,
+      "loser_pct": 42.3
+     },
+     "B_adjusted": {
+      "n": 16335,
+      "pnf_pp": -1.44,
+      "vs_control_pp": -0.55,
+      "median_dm_pp": -0.09,
+      "loser_pct": 42.3
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": 0.05,
+      "pnf_pp": 0.05,
+      "n_pct": 0.2
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": 0.02,
+      "cohort_C_to_B_vs_control_pp": 0.03
+     }
+    },
+    "SOLE:stoch_bear": {
+     "A_cache_today": {
+      "n": 4003,
+      "pnf_pp": -0.14,
+      "vs_control_pp": 0.75,
+      "median_dm_pp": 0.1,
+      "loser_pct": 37.2
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 4003,
+      "pnf_pp": -0.14,
+      "vs_control_pp": 0.74,
+      "median_dm_pp": 0.08,
+      "loser_pct": 37.1
+     },
+     "B_adjusted": {
+      "n": 4025,
+      "pnf_pp": -0.06,
+      "vs_control_pp": 0.83,
+      "median_dm_pp": 0.07,
+      "loser_pct": 36.8
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": 0.08,
+      "pnf_pp": 0.08,
+      "n_pct": 0.5
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": -0.01,
+      "cohort_C_to_B_vs_control_pp": 0.09
+     }
+    },
+    "SOLE:macd_bear": {
+     "A_cache_today": {
+      "n": 33003,
+      "pnf_pp": -1.7,
+      "vs_control_pp": -0.81,
+      "median_dm_pp": -0.13,
+      "loser_pct": 43.1
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 33003,
+      "pnf_pp": -1.66,
+      "vs_control_pp": -0.78,
+      "median_dm_pp": -0.13,
+      "loser_pct": 43.1
+     },
+     "B_adjusted": {
+      "n": 32955,
+      "pnf_pp": -1.68,
+      "vs_control_pp": -0.79,
+      "median_dm_pp": -0.13,
+      "loser_pct": 43.1
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": 0.02,
+      "pnf_pp": 0.02,
+      "n_pct": -0.1
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": 0.03,
+      "cohort_C_to_B_vs_control_pp": -0.01
+     }
+    },
+    "UNION:board_without_macd_bear": {
+     "A_cache_today": {
+      "n": 85208,
+      "pnf_pp": -1.26,
+      "vs_control_pp": -0.37,
+      "median_dm_pp": -0.1,
+      "loser_pct": 42.5
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 85208,
+      "pnf_pp": -1.25,
+      "vs_control_pp": -0.37,
+      "median_dm_pp": -0.09,
+      "loser_pct": 42.5
+     },
+     "B_adjusted": {
+      "n": 85162,
+      "pnf_pp": -1.26,
+      "vs_control_pp": -0.37,
+      "median_dm_pp": -0.09,
+      "loser_pct": 42.5
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": 0.0,
+      "pnf_pp": 0.0,
+      "n_pct": -0.1
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": 0.0,
+      "cohort_C_to_B_vs_control_pp": 0.0
+     }
+    }
+   },
+   "H63": {
+    "CONTROL:admitted": {
+     "A_cache_today": {
+      "n": 47140,
+      "pnf_pp": -1.94,
+      "vs_control_pp": null,
+      "median_dm_pp": 0.07,
+      "loser_pct": 48.1
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 47140,
+      "pnf_pp": -1.91,
+      "vs_control_pp": null,
+      "median_dm_pp": 0.06,
+      "loser_pct": 48.0
+     },
+     "B_adjusted": {
+      "n": 47128,
+      "pnf_pp": -1.91,
+      "vs_control_pp": null,
+      "median_dm_pp": 0.06,
+      "loser_pct": 48.0
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": null,
+      "pnf_pp": 0.03,
+      "n_pct": -0.0
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": null,
+      "cohort_C_to_B_vs_control_pp": null
+     }
+    },
+    "SOLE:stoch_ob": {
+     "A_cache_today": {
+      "n": 14851,
+      "pnf_pp": -2.93,
+      "vs_control_pp": -0.99,
+      "median_dm_pp": 0.03,
+      "loser_pct": 49.3
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 14851,
+      "pnf_pp": -2.87,
+      "vs_control_pp": -0.96,
+      "median_dm_pp": 0.03,
+      "loser_pct": 49.2
+     },
+     "B_adjusted": {
+      "n": 14859,
+      "pnf_pp": -2.85,
+      "vs_control_pp": -0.94,
+      "median_dm_pp": 0.05,
+      "loser_pct": 49.2
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": 0.05,
+      "pnf_pp": 0.08,
+      "n_pct": 0.1
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": 0.03,
+      "cohort_C_to_B_vs_control_pp": 0.02
+     }
+    },
+    "SOLE:stoch_bear": {
+     "A_cache_today": {
+      "n": 3328,
+      "pnf_pp": -2.0,
+      "vs_control_pp": -0.06,
+      "median_dm_pp": 0.54,
+      "loser_pct": 47.3
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 3328,
+      "pnf_pp": -2.0,
+      "vs_control_pp": -0.09,
+      "median_dm_pp": 0.47,
+      "loser_pct": 47.3
+     },
+     "B_adjusted": {
+      "n": 3330,
+      "pnf_pp": -2.11,
+      "vs_control_pp": -0.2,
+      "median_dm_pp": 0.47,
+      "loser_pct": 47.3
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": -0.14,
+      "pnf_pp": -0.11,
+      "n_pct": 0.1
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": -0.03,
+      "cohort_C_to_B_vs_control_pp": -0.11
+     }
+    },
+    "SOLE:macd_bear": {
+     "A_cache_today": {
+      "n": 30003,
+      "pnf_pp": -2.43,
+      "vs_control_pp": -0.49,
+      "median_dm_pp": 0.83,
+      "loser_pct": 46.9
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 30003,
+      "pnf_pp": -2.25,
+      "vs_control_pp": -0.34,
+      "median_dm_pp": 0.82,
+      "loser_pct": 46.8
+     },
+     "B_adjusted": {
+      "n": 29993,
+      "pnf_pp": -2.25,
+      "vs_control_pp": -0.34,
+      "median_dm_pp": 0.82,
+      "loser_pct": 46.8
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": 0.15,
+      "pnf_pp": 0.18,
+      "n_pct": -0.0
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": 0.15,
+      "cohort_C_to_B_vs_control_pp": 0.0
+     }
+    },
+    "UNION:board_without_macd_bear": {
+     "A_cache_today": {
+      "n": 77143,
+      "pnf_pp": -1.97,
+      "vs_control_pp": -0.03,
+      "median_dm_pp": 0.33,
+      "loser_pct": 47.6
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 77143,
+      "pnf_pp": -1.91,
+      "vs_control_pp": 0.0,
+      "median_dm_pp": 0.32,
+      "loser_pct": 47.6
+     },
+     "B_adjusted": {
+      "n": 77121,
+      "pnf_pp": -1.91,
+      "vs_control_pp": 0.0,
+      "median_dm_pp": 0.32,
+      "loser_pct": 47.6
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": 0.03,
+      "pnf_pp": 0.06,
+      "n_pct": -0.0
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": 0.03,
+      "cohort_C_to_B_vs_control_pp": 0.0
+     }
+    }
+   }
+  }
+ },
+ "section_4_both_columns_recent_window": {
+  "window": "battery_window",
+  "metric": "per-name-first median excess vs SPY (pp), and that cohort minus CONTROL:admitted",
+  "by_horizon": {
+   "H10": {
+    "CONTROL:admitted": {
+     "A_cache_today": {
+      "n": 15264,
+      "pnf_pp": 0.18,
+      "vs_control_pp": null,
+      "median_dm_pp": 0.06,
+      "loser_pct": 33.5
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 15264,
+      "pnf_pp": 0.2,
+      "vs_control_pp": null,
+      "median_dm_pp": 0.05,
+      "loser_pct": 33.4
+     },
+     "B_adjusted": {
+      "n": 15253,
+      "pnf_pp": 0.24,
+      "vs_control_pp": null,
+      "median_dm_pp": 0.05,
+      "loser_pct": 33.5
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": null,
+      "pnf_pp": 0.06,
+      "n_pct": -0.1
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": null,
+      "cohort_C_to_B_vs_control_pp": null
+     }
+    },
+    "SOLE:stoch_ob": {
+     "A_cache_today": {
+      "n": 5294,
+      "pnf_pp": -0.1,
+      "vs_control_pp": -0.28,
+      "median_dm_pp": 0.18,
+      "loser_pct": 32.9
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 5294,
+      "pnf_pp": -0.1,
+      "vs_control_pp": -0.3,
+      "median_dm_pp": 0.18,
+      "loser_pct": 32.9
+     },
+     "B_adjusted": {
+      "n": 5307,
+      "pnf_pp": -0.14,
+      "vs_control_pp": -0.38,
+      "median_dm_pp": 0.18,
+      "loser_pct": 32.8
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": -0.1,
+      "pnf_pp": -0.04,
+      "n_pct": 0.2
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": -0.02,
+      "cohort_C_to_B_vs_control_pp": -0.08
+     }
+    },
+    "SOLE:stoch_bear": {
+     "A_cache_today": {
+      "n": 1382,
+      "pnf_pp": 1.29,
+      "vs_control_pp": 1.11,
+      "median_dm_pp": 0.34,
+      "loser_pct": 26.6
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 1382,
+      "pnf_pp": 1.4,
+      "vs_control_pp": 1.2,
+      "median_dm_pp": 0.35,
+      "loser_pct": 26.6
+     },
+     "B_adjusted": {
+      "n": 1401,
+      "pnf_pp": 1.48,
+      "vs_control_pp": 1.24,
+      "median_dm_pp": 0.28,
+      "loser_pct": 26.5
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": 0.13,
+      "pnf_pp": 0.19,
+      "n_pct": 1.4
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": 0.09,
+      "cohort_C_to_B_vs_control_pp": 0.04
+     }
+    },
+    "SOLE:macd_bear": {
+     "A_cache_today": {
+      "n": 10941,
+      "pnf_pp": -0.47,
+      "vs_control_pp": -0.65,
+      "median_dm_pp": -0.1,
+      "loser_pct": 34.8
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 10941,
+      "pnf_pp": -0.47,
+      "vs_control_pp": -0.67,
+      "median_dm_pp": -0.1,
+      "loser_pct": 34.7
+     },
+     "B_adjusted": {
+      "n": 10869,
+      "pnf_pp": -0.52,
+      "vs_control_pp": -0.76,
+      "median_dm_pp": -0.1,
+      "loser_pct": 34.9
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": -0.11,
+      "pnf_pp": -0.05,
+      "n_pct": -0.7
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": -0.02,
+      "cohort_C_to_B_vs_control_pp": -0.09
+     }
+    },
+    "UNION:board_without_macd_bear": {
+     "A_cache_today": {
+      "n": 26205,
+      "pnf_pp": -0.34,
+      "vs_control_pp": -0.52,
+      "median_dm_pp": -0.0,
+      "loser_pct": 34.0
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 26205,
+      "pnf_pp": -0.34,
+      "vs_control_pp": -0.54,
+      "median_dm_pp": -0.0,
+      "loser_pct": 34.0
+     },
+     "B_adjusted": {
+      "n": 26122,
+      "pnf_pp": -0.37,
+      "vs_control_pp": -0.61,
+      "median_dm_pp": -0.01,
+      "loser_pct": 34.1
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": -0.09,
+      "pnf_pp": -0.03,
+      "n_pct": -0.3
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": -0.02,
+      "cohort_C_to_B_vs_control_pp": -0.07
+     }
+    }
+   },
+   "H21": {
+    "CONTROL:admitted": {
+     "A_cache_today": {
+      "n": 13919,
+      "pnf_pp": -1.04,
+      "vs_control_pp": null,
+      "median_dm_pp": 0.05,
+      "loser_pct": 43.7
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 13919,
+      "pnf_pp": -1.04,
+      "vs_control_pp": null,
+      "median_dm_pp": 0.06,
+      "loser_pct": 43.5
+     },
+     "B_adjusted": {
+      "n": 13933,
+      "pnf_pp": -1.03,
+      "vs_control_pp": null,
+      "median_dm_pp": 0.06,
+      "loser_pct": 43.4
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": null,
+      "pnf_pp": 0.01,
+      "n_pct": 0.1
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": null,
+      "cohort_C_to_B_vs_control_pp": null
+     }
+    },
+    "SOLE:stoch_ob": {
+     "A_cache_today": {
+      "n": 4612,
+      "pnf_pp": -1.43,
+      "vs_control_pp": -0.39,
+      "median_dm_pp": 0.12,
+      "loser_pct": 43.4
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 4612,
+      "pnf_pp": -1.27,
+      "vs_control_pp": -0.23,
+      "median_dm_pp": 0.13,
+      "loser_pct": 43.3
+     },
+     "B_adjusted": {
+      "n": 4632,
+      "pnf_pp": -1.27,
+      "vs_control_pp": -0.24,
+      "median_dm_pp": 0.15,
+      "loser_pct": 43.2
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": 0.15,
+      "pnf_pp": 0.16,
+      "n_pct": 0.4
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": 0.16,
+      "cohort_C_to_B_vs_control_pp": -0.01
+     }
+    },
+    "SOLE:stoch_bear": {
+     "A_cache_today": {
+      "n": 1288,
+      "pnf_pp": 2.89,
+      "vs_control_pp": 3.93,
+      "median_dm_pp": 0.84,
+      "loser_pct": 32.1
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 1288,
+      "pnf_pp": 2.89,
+      "vs_control_pp": 3.93,
+      "median_dm_pp": 0.91,
+      "loser_pct": 31.9
+     },
+     "B_adjusted": {
+      "n": 1308,
+      "pnf_pp": 2.85,
+      "vs_control_pp": 3.88,
+      "median_dm_pp": 0.91,
+      "loser_pct": 31.2
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": -0.05,
+      "pnf_pp": -0.04,
+      "n_pct": 1.6
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": 0.0,
+      "cohort_C_to_B_vs_control_pp": -0.05
+     }
+    },
+    "SOLE:macd_bear": {
+     "A_cache_today": {
+      "n": 10119,
+      "pnf_pp": -2.46,
+      "vs_control_pp": -1.42,
+      "median_dm_pp": -0.26,
+      "loser_pct": 48.1
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 10119,
+      "pnf_pp": -2.42,
+      "vs_control_pp": -1.38,
+      "median_dm_pp": -0.26,
+      "loser_pct": 48.0
+     },
+     "B_adjusted": {
+      "n": 10081,
+      "pnf_pp": -2.47,
+      "vs_control_pp": -1.44,
+      "median_dm_pp": -0.29,
+      "loser_pct": 48.2
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": -0.02,
+      "pnf_pp": -0.01,
+      "n_pct": -0.4
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": 0.04,
+      "cohort_C_to_B_vs_control_pp": -0.06
+     }
+    },
+    "UNION:board_without_macd_bear": {
+     "A_cache_today": {
+      "n": 24038,
+      "pnf_pp": -1.79,
+      "vs_control_pp": -0.75,
+      "median_dm_pp": -0.08,
+      "loser_pct": 45.5
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 24038,
+      "pnf_pp": -1.78,
+      "vs_control_pp": -0.74,
+      "median_dm_pp": -0.07,
+      "loser_pct": 45.4
+     },
+     "B_adjusted": {
+      "n": 24014,
+      "pnf_pp": -1.81,
+      "vs_control_pp": -0.78,
+      "median_dm_pp": -0.08,
+      "loser_pct": 45.4
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": -0.03,
+      "pnf_pp": -0.02,
+      "n_pct": -0.1
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": 0.01,
+      "cohort_C_to_B_vs_control_pp": -0.04
+     }
+    }
+   },
+   "H63": {
+    "CONTROL:admitted": {
+     "A_cache_today": {
+      "n": 8854,
+      "pnf_pp": -0.18,
+      "vs_control_pp": null,
+      "median_dm_pp": 1.41,
+      "loser_pct": 44.6
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 8854,
+      "pnf_pp": 0.09,
+      "vs_control_pp": null,
+      "median_dm_pp": 1.36,
+      "loser_pct": 44.3
+     },
+     "B_adjusted": {
+      "n": 8854,
+      "pnf_pp": 0.09,
+      "vs_control_pp": null,
+      "median_dm_pp": 1.36,
+      "loser_pct": 44.3
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": null,
+      "pnf_pp": 0.27,
+      "n_pct": 0.0
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": null,
+      "cohort_C_to_B_vs_control_pp": null
+     }
+    },
+    "SOLE:stoch_ob": {
+     "A_cache_today": {
+      "n": 3156,
+      "pnf_pp": -0.2,
+      "vs_control_pp": -0.02,
+      "median_dm_pp": 1.64,
+      "loser_pct": 43.8
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 3156,
+      "pnf_pp": 0.13,
+      "vs_control_pp": 0.04,
+      "median_dm_pp": 1.66,
+      "loser_pct": 43.4
+     },
+     "B_adjusted": {
+      "n": 3156,
+      "pnf_pp": 0.13,
+      "vs_control_pp": 0.04,
+      "median_dm_pp": 1.66,
+      "loser_pct": 43.4
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": 0.06,
+      "pnf_pp": 0.33,
+      "n_pct": 0.0
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": 0.06,
+      "cohort_C_to_B_vs_control_pp": 0.0
+     }
+    },
+    "SOLE:stoch_bear": {
+     "A_cache_today": {
+      "n": 613,
+      "pnf_pp": -0.57,
+      "vs_control_pp": -0.39,
+      "median_dm_pp": 2.41,
+      "loser_pct": 47.5
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 613,
+      "pnf_pp": -0.57,
+      "vs_control_pp": -0.66,
+      "median_dm_pp": 2.22,
+      "loser_pct": 47.5
+     },
+     "B_adjusted": {
+      "n": 613,
+      "pnf_pp": -0.57,
+      "vs_control_pp": -0.66,
+      "median_dm_pp": 2.22,
+      "loser_pct": 47.5
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": -0.27,
+      "pnf_pp": 0.0,
+      "n_pct": 0.0
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": -0.27,
+      "cohort_C_to_B_vs_control_pp": 0.0
+     }
+    },
+    "SOLE:macd_bear": {
+     "A_cache_today": {
+      "n": 7119,
+      "pnf_pp": -2.06,
+      "vs_control_pp": -1.88,
+      "median_dm_pp": 1.2,
+      "loser_pct": 48.1
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 7119,
+      "pnf_pp": -1.84,
+      "vs_control_pp": -1.93,
+      "median_dm_pp": 1.2,
+      "loser_pct": 47.6
+     },
+     "B_adjusted": {
+      "n": 7119,
+      "pnf_pp": -1.84,
+      "vs_control_pp": -1.93,
+      "median_dm_pp": 1.2,
+      "loser_pct": 47.6
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": -0.05,
+      "pnf_pp": 0.22,
+      "n_pct": 0.0
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": -0.05,
+      "cohort_C_to_B_vs_control_pp": 0.0
+     }
+    },
+    "UNION:board_without_macd_bear": {
+     "A_cache_today": {
+      "n": 15973,
+      "pnf_pp": -1.76,
+      "vs_control_pp": -1.58,
+      "median_dm_pp": 1.33,
+      "loser_pct": 46.2
+     },
+     "C_cache_cohorts_adjusted_returns": {
+      "n": 15973,
+      "pnf_pp": -1.59,
+      "vs_control_pp": -1.68,
+      "median_dm_pp": 1.3,
+      "loser_pct": 45.8
+     },
+     "B_adjusted": {
+      "n": 15973,
+      "pnf_pp": -1.59,
+      "vs_control_pp": -1.68,
+      "median_dm_pp": 1.3,
+      "loser_pct": 45.8
+     },
+     "delta_B_minus_A": {
+      "vs_control_pp": -0.1,
+      "pnf_pp": 0.17,
+      "n_pct": 0.0
+     },
+     "channel_split": {
+      "outcome_A_to_C_vs_control_pp": -0.1,
+      "cohort_C_to_B_vs_control_pp": 0.0
+     }
+    }
+   }
+  }
+ },
+ "section_5_forfeiture_adjusted": {
+  "as_shipped": {
+   "admitted_name_days_now": 70972,
+   "added_name_days": 45115,
+   "widening_pct": 63.6,
+   "admitted_per_session_mean_now": 91.34,
+   "added_per_session_mean": 58.06,
+   "sessions": 777,
+   "names_added_at_least_once": 1480,
+   "names_admitted_at_least_once": 1491
+  },
+  "adjusted": {
+   "admitted_name_days_now": 54492,
+   "added_name_days": 34295,
+   "widening_pct": 62.9
+  },
+  "union_board_delta_vs_control": {
+   "H10": {
+    "A_cache_today": {
+     "union_pnf_pp": -0.3,
+     "control_pnf_pp": -0.24,
+     "union_loser_pct": 32.6,
+     "control_loser_pct": 32.0
+    },
+    "C_cache_cohorts_adjusted_returns": {
+     "union_pnf_pp": -0.3,
+     "control_pnf_pp": -0.23,
+     "union_loser_pct": 32.6,
+     "control_loser_pct": 32.0
+    },
+    "B_adjusted": {
+     "union_pnf_pp": -0.32,
+     "control_pnf_pp": -0.23,
+     "union_loser_pct": 32.6,
+     "control_loser_pct": 32.0
+    }
+   },
+   "H21": {
+    "A_cache_today": {
+     "union_pnf_pp": -1.26,
+     "control_pnf_pp": -0.89,
+     "union_loser_pct": 42.5,
+     "control_loser_pct": 42.2
+    },
+    "C_cache_cohorts_adjusted_returns": {
+     "union_pnf_pp": -1.25,
+     "control_pnf_pp": -0.88,
+     "union_loser_pct": 42.5,
+     "control_loser_pct": 42.2
+    },
+    "B_adjusted": {
+     "union_pnf_pp": -1.26,
+     "control_pnf_pp": -0.89,
+     "union_loser_pct": 42.5,
+     "control_loser_pct": 42.1
+    }
+   },
+   "H63": {
+    "A_cache_today": {
+     "union_pnf_pp": -1.97,
+     "control_pnf_pp": -1.94,
+     "union_loser_pct": 47.6,
+     "control_loser_pct": 48.1
+    },
+    "C_cache_cohorts_adjusted_returns": {
+     "union_pnf_pp": -1.91,
+     "control_pnf_pp": -1.91,
+     "union_loser_pct": 47.6,
+     "control_loser_pct": 48.0
+    },
+    "B_adjusted": {
+     "union_pnf_pp": -1.91,
+     "control_pnf_pp": -1.91,
+     "union_loser_pct": 47.6,
+     "control_loser_pct": 48.0
+    }
+   }
+  }
+ },
+ "section_6_frozen_vs_cache_today": {
+  "question": "how far does the re-masked cache column sit from the committed frozen JSON the packet's numbers were reported from?",
+  "not_decomposable_here": "this gap conflates THREE causes and this file does not separate them: (1) STORE DRIFT \u2014 the breadth caches re-base between reads, so a past session's close is not stable (#4698: PNC 2026-06-22 read 234.71 on 07-01, 232.85 today); (2) UNIVERSE \u2014 the adjusted ladder has no source for 266 of 1,493 names, and they are dropped from BOTH columns; (3) PHASE \u2014 the names whose first observation moved under the intersection mask. Do not read this gap as a basis effect; the basis effect is A-vs-B.",
+  "frozen": {
+   "H10": {
+    "SOLE:stoch_ob": -0.07,
+    "SOLE:stoch_bear": 0.2,
+    "SOLE:macd_bear": -0.26
+   },
+   "H21": {
+    "SOLE:stoch_ob": -0.31,
+    "SOLE:stoch_bear": 0.67,
+    "SOLE:macd_bear": -0.57
+   },
+   "H63": {
+    "SOLE:stoch_ob": -0.63,
+    "SOLE:stoch_bear": -0.33,
+    "SOLE:macd_bear": -0.52
+   }
+  },
+  "cache_today": {
+   "H10": {
+    "SOLE:stoch_ob": -0.08,
+    "SOLE:stoch_bear": 0.46,
+    "SOLE:macd_bear": -0.34
+   },
+   "H21": {
+    "SOLE:stoch_ob": -0.6,
+    "SOLE:stoch_bear": 0.75,
+    "SOLE:macd_bear": -0.81
+   },
+   "H63": {
+    "SOLE:stoch_ob": -0.99,
+    "SOLE:stoch_bear": -0.06,
+    "SOLE:macd_bear": -0.49
+   }
+  },
+  "frozen_universe_names": 1493,
+  "cache_today_universe_names": 1227,
+  "frozen_read_date": "2026-08-05"
+ },
+ "readout": {
+  "noise_floor_basis": "#4547's readout reports max_edge_over_control_pp = 0.28 as the largest gap it measured and called a clean null; a separation at or under that is at that instrument's demonstrated floor",
+  "per_leg": {
+   "SOLE:stoch_ob": {
+    "verdict": "HOLDS",
+    "adjusted_vs_control_pp": [
+     -0.1,
+     -0.55,
+     -0.94
+    ],
+    "as_shipped_vs_control_pp": [
+     -0.08,
+     -0.6,
+     -0.99
+    ],
+    "sign_stable_across_horizons": true,
+    "sign_matches_as_shipped": true,
+    "largest_shrink_pp": 0.05,
+    "max_abs_adjusted_pp": 0.94,
+    "noise_floor_pp": 0.28
+   },
+   "SOLE:stoch_bear": {
+    "verdict": "HOLDS",
+    "adjusted_vs_control_pp": [
+     0.51,
+     0.83,
+     -0.2
+    ],
+    "as_shipped_vs_control_pp": [
+     0.46,
+     0.75,
+     -0.06
+    ],
+    "sign_stable_across_horizons": false,
+    "sign_matches_as_shipped": true,
+    "largest_shrink_pp": -0.05,
+    "max_abs_adjusted_pp": 0.83,
+    "noise_floor_pp": 0.28
+   },
+   "SOLE:macd_bear": {
+    "verdict": "HOLDS BUT WEAKENS",
+    "adjusted_vs_control_pp": [
+     -0.37,
+     -0.79,
+     -0.34
+    ],
+    "as_shipped_vs_control_pp": [
+     -0.34,
+     -0.81,
+     -0.49
+    ],
+    "sign_stable_across_horizons": true,
+    "sign_matches_as_shipped": true,
+    "largest_shrink_pp": 0.15,
+    "max_abs_adjusted_pp": 0.79,
+    "noise_floor_pp": 0.28
+   }
+  },
+  "headline_leg": "SOLE:macd_bear",
+  "headline": "HOLDS BUT WEAKENS",
+  "frozen_original_for_reference": {
+   "H10": {
+    "SOLE:stoch_ob": -0.07,
+    "SOLE:stoch_bear": 0.2,
+    "SOLE:macd_bear": -0.26
+   },
+   "H21": {
+    "SOLE:stoch_ob": -0.31,
+    "SOLE:stoch_bear": 0.67,
+    "SOLE:macd_bear": -0.57
+   },
+   "H63": {
+    "SOLE:stoch_ob": -0.63,
+    "SOLE:stoch_bear": -0.33,
+    "SOLE:macd_bear": -0.52
+   }
+  }
+ }
+}

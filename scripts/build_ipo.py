@@ -440,7 +440,7 @@ def _build_avoid(after: dict, pipe: dict, lk_summary: dict,
                   if spac_pct is not None else "近期大量新股为空白支票SPAC")
         if wr is not None:
             det_en += f"; ~{wr}% of filed deals were pulled."
-            det_zh += f"；约 {wr}% 的申报交易被撤回。"
+            det_zh += f"；约 {wr}% 的已披露交易被撤回。"
         else:
             det_en += "."
             det_zh += "。"

@@ -1,6 +1,6 @@
 {
   "schema": "prophet.status/v1",
-  "as_of": "2026-08-06T05:48:24+00:00",
+  "as_of": "2026-08-06T23:44:31+00:00",
   "built_by": "engine.neuralweb.prophet_governor",
   "markets": {
     "us": {
@@ -16,13 +16,13 @@
       ],
       "maturity_state": "accruing",
       "retro_grades": {
-        "total_rows": 2287,
-        "matured_rows": 2287,
+        "total_rows": 2292,
+        "matured_rows": 2292,
         "graded_col_counts": {
-          "excess_spy": 2287,
-          "mae_close_excess_spy": 2287,
-          "excess_sector": 2285,
-          "mae_close_excess_sector": 2285
+          "excess_spy": 2292,
+          "mae_close_excess_spy": 2292,
+          "excess_sector": 2290,
+          "mae_close_excess_sector": 2290
         },
         "note": "one-grader law (SA-R14); win_rate from committed scoreboard only"
       },
@@ -50,7 +50,7 @@
         "process_integrity": null
       },
       "track_history": {
-        "as_of": "2026-08-05",
+        "as_of": "2026-08-06",
         "n_cohorts": null,
         "status": null
       },
@@ -65,18 +65,18 @@
       "data_gaps": [],
       "maturity_state": "accruing",
       "cn_board": {
-        "board_definition": "cn_prophet_v2",
-        "total_rows": 72,
+        "board_definition": "cn_prophet_v3",
+        "total_rows": 24,
         "matured_rows": 0,
         "fill_basis_note": "t1_hl2 \u2014 accruing"
       },
       "fitness_card": {
-        "as_of": "2026-08-05",
+        "as_of": "2026-08-06",
         "hit_quality": null,
         "process_integrity": null
       },
       "audit_scoreboard": {
-        "as_of": "2026-08-05",
+        "as_of": "2026-08-06",
         "status": null,
         "n_matured": null
       },
@@ -178,21 +178,21 @@
           "artifact": "us-audit-scoreboard",
           "path": "site/factordata/us_audit_scoreboard.json",
           "status": "ok",
-          "age_hours": 5.8,
+          "age_hours": 23.7,
           "sla_hours": 48.0
         },
         {
           "artifact": "us-track-history",
           "path": "site/factordata/us_track_history.json",
           "status": "ok",
-          "age_hours": 29.8,
+          "age_hours": 23.7,
           "sla_hours": 48.0
         },
         {
           "artifact": "us-board-outcomes",
           "path": "site/factordata/us_board_outcomes.json",
           "status": "stale",
-          "age_hours": 149.8,
+          "age_hours": 167.7,
           "sla_hours": 48
         }
       ],
@@ -206,7 +206,7 @@
           "artifact": "site-china-standouts",
           "path": "data/metabolism/fitness/standouts_cn.json",
           "status": "ok",
-          "age_hours": 29.8,
+          "age_hours": 23.7,
           "sla_hours": 30.0
         }
       ],
@@ -220,7 +220,7 @@
           "artifact": "hk-board-ledger",
           "path": "data/board_ledger/hk_board.parquet",
           "status": "ok",
-          "age_hours": 15.8,
+          "age_hours": 10.6,
           "sla_hours": 48
         }
       ],
@@ -261,18 +261,18 @@
     "note": "Cross-connected Mastermind-Charts lane. Prophet manages US buy-lane \u2192 trade-plan envelopes. Display-only crosslink; Prophet reads, never writes these stores (PR-R2).",
     "data_gaps": [],
     "ledger": {
-      "total_rows_sampled": 16,
+      "total_rows_sampled": 23,
       "open_count": 0,
-      "closed_count": 16,
+      "closed_count": 23,
       "outcome_mix": {
         "EXPIRED": 9,
-        "INVALIDATED": 6,
-        "T1_HIT": 1
+        "INVALIDATED": 9,
+        "T1_HIT": 5
       }
     },
     "index": {
       "as_of": null,
-      "plan_count": 76
+      "plan_count": 80
     }
   },
   "pick_lab": {

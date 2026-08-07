@@ -1981,6 +1981,8 @@ def home_alert_feed() -> list[dict]:
             # EXCEPT for the rules whose persisted zh is known to carry raw
             # English inside the Chinese wrapper — there the translator's
             # rebuild-from-canonical-English wins over the stored value.
+            # _zh_needs_rebuild subsumes the plain _ZH_HALF_TRANSLATED_RULES
+            # membership test and adds the per-tripwire PREFIX family.
             stored_zh = str(r.get("message_zh", "") or "").strip()
             if not stored_zh or _zh_needs_rebuild(r["rule"]):
                 stored_zh = _translate_macro_detail(r["message"], r["rule"]) or stored_zh
@@ -2276,6 +2278,18 @@ html[data-lang="zh"] .sb-tx b{letter-spacing:0}
 .ha-when{font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap}
 .ha-detail{padding:0 0 12px 22px;font-size:12.5px;color:var(--text);line-height:1.55}
 .ha-detail a{font-weight:700;color:var(--link)}
+/* the opened row leads with WHAT IT MEANS (the alert's own plain-word copy), then the
+   conviction/null line, and only then the raw measurement. Mirrors the macro page's
+   ms-sig-what / ms-sig-edge stack; ordered explanation-first because on the hub this
+   row is the only place the signal is ever explained. */
+.ha-what{font-size:12.5px;color:var(--text);line-height:1.55}
+.ha-edge{font-size:12px;color:var(--muted);line-height:1.45;margin-top:6px}
+.ha-edge b{color:var(--text);font-weight:700}
+/* the measurement is a receipt, not the explanation — demote it to a mono readout,
+   but ONLY when plain words sit above it (some feeds carry no `what`, and there the
+   measurement is all the row has, so it must stay body text). */
+.ha-what ~ .ha-foot,.ha-edge ~ .ha-foot{margin-top:9px;padding-top:8px;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.ha-what ~ .ha-foot .ha-read,.ha-edge ~ .ha-foot .ha-read{font-family:var(--font-mono);font-size:11.5px;color:var(--muted)}
 .al-more{display:block;text-align:center;padding:11px 0 6px;font-size:12.5px;font-weight:700;color:var(--link);text-decoration:none}
 .al-more:hover{text-decoration:underline}
 .ha-toggle{display:block;width:100%;background:none;border:none;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);padding:9px 0;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--link);cursor:pointer;text-align:center}
@@ -3211,22 +3225,47 @@ def _g_alerts(alerts):
             head_t = str(T(a["headline"], a.get("headline_zh") or a["headline"]))
             detail = str(T(a["detail"], a.get("detail_zh") or a["detail"]))
             cta = str(T(a.get("cta", "Open →"), a.get("cta_zh") or a.get("cta", "Open →")))
+            # The plain-word explanation and the conviction/null note are carried on every
+            # feed row (`_home_alerts` fills them from engine.alerts ALERT_META /
+            # ALERT_CONVICTION) but went unrendered here until 2026-08-06, so an opened row
+            # showed only the raw measurement — "GEX: net GEX changed sign (net +79bn, spot
+            # vs flip -0.7%)" and nothing that said what that means. The hub greeter quotes
+            # the newest headline and promises "the evidence is below", so this row IS the
+            # explanation surface. Both stay optional: the vector/commodity feeds may carry
+            # neither, and the row must still render.
+            what = str(a.get("what", "") or "").strip()
+            edge = str(a.get("edge", "") or "").strip()
+            prose = ""
+            if what:
+                prose += ('<div class="ha-what">'
+                          + str(T(what, str(a.get("what_zh", "") or "").strip() or what))
+                          + '</div>')
+            if edge:
+                prose += ('<div class="ha-edge"><b>' + str(T("Conviction:", "可信度：")) + '</b> '
+                          + str(T(edge, str(a.get("edge_zh", "") or "").strip() or edge))
+                          + '</div>')
             # 2b: rows 6+ (idx>=5) go inside the hidden expander; wrap them after row 5
             if idx == 5:
                 k = len(deduped) - 5
                 out.append(
                     '<div class="ha-more-wrap" id="ha-more" style="display:none">'
                 )
-            # newest row gets a one-shot pulse; severity is carried by the dot colour
+            # newest row gets a one-shot pulse; severity is carried by the dot colour.
+            # It also opens by default: the greeter points the reader straight at it
+            # ("the evidence is below"), and a collapsed row keeps that promise empty.
             item_cls = "ha-item"
+            opened = ""
             if idx == 0:
                 item_cls += " newest"
-            out.append('<details class="' + item_cls + '"><summary>'
+                opened = " open"
+            out.append('<details class="' + item_cls + '"' + opened + '><summary>'
                        '<span class="ha-dot d-' + dot + '"></span>'
                        '<span class="ha-src ' + src_cls + '">' + src + '</span>'
                        '<span class="ha-head">' + head_t + '</span>'
                        '<span class="ha-when">' + _bi(when, when_zh) + '</span></summary>'
-                       '<div class="ha-detail">' + detail + ' <a href="' + a["link"] + '">' + cta + '</a></div></details>')
+                       '<div class="ha-detail">' + prose
+                       + '<div class="ha-foot"><span class="ha-read">' + detail + '</span> '
+                       '<a href="' + a["link"] + '">' + cta + '</a></div></div></details>')
         if len(deduped) > 5:
             # close the hidden wrapper after the last extra row
             out.append('</div>')

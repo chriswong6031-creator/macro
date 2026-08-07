@@ -39,6 +39,7 @@ import pandas as pd
 
 from engine.htf_durability import _biweekly_close  # PIT-safe 2W resampler
 from engine.signal_quality import signal_frame  # house 3D MACD+StochRSI (REUSE VERBATIM)
+from engine import session_anchor as _sa        # per-market bucket calendar (R-SQ1)
 from engine.technicals import rsi  # Wilder RSI
 
 log = logging.getLogger(__name__)
@@ -367,13 +368,18 @@ def _leg_d_macd(close: pd.Series) -> bool:
     return False
 
 
-def _leg_d3_confluence(close: pd.Series) -> bool:
+def _leg_d3_confluence(close: pd.Series, market: str = "US") -> bool:
     """3D MACD+StochRSI confluence — reuse signal_frame from signal_quality VERBATIM.
 
     Returns True if the last 3D bar shows CB (buy signal) or revBuy (reversal buy),
     matching the house definition exactly.
+
+    ``market`` is the reference session calendar the 3D buckets are anchored to
+    (signal_quality R-SQ1). This organ runs a US lane and a CN lane off the SAME
+    ``_compute_symbol``, so the calendar is inferred per symbol there rather than pinned
+    here — a CN name bucketed on NYSE sessions would be wrong invisibly.
     """
-    sf = signal_frame(close)
+    sf = signal_frame(close, market=market)
     if sf.empty:
         return False
     # CB or revBuy on last available 3D bar
@@ -489,7 +495,10 @@ def _compute_symbol(
     """
     # Compute legs
     d_macd = _leg_d_macd(close)
-    d3_conf = _leg_d3_confluence(close)
+    # the 3D leg's buckets are anchored to the symbol's OWN market calendar (signal_quality
+    # R-SQ1): this function serves both the US lane and the CN lane, and `sym` is the only
+    # place that distinction is visible.
+    d3_conf = _leg_d3_confluence(close, _sa.market_for_ticker(sym))
     w_macd_status = _leg_w_macd(close)
     w_macd_cross = (w_macd_status == "cross")
     w2_macd = _leg_w2_macd(close)

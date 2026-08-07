@@ -31,6 +31,7 @@ from typing import Optional
 import pandas as pd
 
 from lib import config
+from lib.closes_panel import disclose_merge, merge_close_caches
 
 log = logging.getLogger("build_pick_lab")
 
@@ -250,25 +251,13 @@ def _load_close_panel() -> Optional[pd.DataFrame]:
 
     Returns a DataFrame[date x ticker] or None if no caches found.
     """
-    frame: Optional[pd.DataFrame] = None
-    for tier in _CLOSE_CACHE_TIERS:
-        p = config.data_dir() / tier / "_closes_cache.parquet"
-        if not p.exists():
-            continue
-        try:
-            d = pd.read_parquet(p)
-        except Exception as exc:  # noqa: BLE001
-            log.warning("pick_lab: close cache %s unreadable (%s) — skipped", p, exc)
-            continue
-        d = d.loc[:, ~d.columns.duplicated()]
-        if frame is None:
-            frame = d
-        else:
-            new = [c for c in d.columns if c not in frame.columns]
-            frame = frame.join(d[new], how="outer")
-    if frame is None:
+    # Freshest column per ticker (lib/closes_panel.py) — tier order alone gives an index
+    # migrant the column from the tier it LEFT, frozen on its exit date, so the name is
+    # NaN at the tip and silently leaves the pick universe.
+    frame, meta = merge_close_caches(_CLOSE_CACHE_TIERS)
+    if frame.empty:
         return None
-    frame = frame.sort_index()
+    disclose_merge(meta, "pick_lab")
 
     # Outer-join the ETF closes store (SPY + 11 GICS ETFs) so ret_excess_spy
     # and ret_rel_sector are non-null on every grade row going forward.
