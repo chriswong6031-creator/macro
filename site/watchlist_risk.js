@@ -40,6 +40,67 @@
   function pct0(x) { return Math.round(x * 100) + '%'; }
   function isNum(x) { return typeof x === 'number' && isFinite(x); }
 
+  // ---- FX-corruption guard (A3 law 3) -------------------------------------
+  // The 9-factor model is USD and carries zero suffixed tickers. Non-US books price
+  // in HKD/CNY/CAD, so their values must never reach a book statistic: one HK$ figure
+  // inside the weight sum silently corrupts every number this layer prints (factor
+  // shares, effective bets, correlations, MCTR). Filter at the book-math boundary —
+  // not only at the producer — so any future weights source is covered too.
+  function isModeled(t) {
+    return (window.MB && window.MB.isModeled) ? window.MB.isModeled(t) : true;
+  }
+  function modeledUniverse(list) {
+    return (list || []).filter(isModeled);
+  }
+  function activeBook() {
+    return (window.MB && window.MB.getBook) ? window.MB.getBook() : 'all';
+  }
+  // books whose names the factor/risk model actually covers
+  function bookIsModeled(b) { return b === 'all' || b === 'us' || b === 'crypto' || b === 'macro'; }
+  // does the user hold names in more than one market? (drives the scope wording)
+  function multiBook() {
+    return !!(window.MB && window.MB.presentBooks && window.MB.presentBooks().length > 1);
+  }
+
+  // ---- condition counts (§5.4) --------------------------------------------
+  // Registry of per-name JSONs already fetched by the cards / the position table.
+  // No new fetches: the counts simply read what the page has hydrated so far and
+  // refresh as more arrives.
+  var CARD_JSON = {};
+  function noteJson(t, j) {
+    if (!t || !j) return;
+    if (CARD_JSON[t] === j) return;
+    CARD_JSON[t] = j;
+    updateConditionCounts();
+  }
+  function updateConditionCounts() {
+    var host = document.getElementById('wri_conds');
+    if (!host) return;
+    var b = activeBook();
+    var names = Object.keys(CARD_JSON).filter(function (t) {
+      if (!CARD_JSON[t] || !isModeled(t)) return false;
+      if (b === 'all') return true;
+      return window.MB && window.MB.marketOf(t) === b;
+    });
+    var M = names.length;
+    if (!M) { host.innerHTML = ''; return; }
+    var review = 0, elevated = 0;
+    names.forEach(function (t) {
+      var lanes = laneRead(CARD_JSON[t]);
+      if (roleBadge(lanes)) review++;
+      LANES.forEach(function (k) { if (lanes[k] && lanes[k].state === 'elev') elevated++; });
+    });
+    if (!review && !elevated) {
+      // Law 1: the honest nothing is a finding, not an empty panel
+      host.innerHTML = te('Nothing elevated across your names tonight.',
+        '今晚你的名称无升高风险项。');
+      return;
+    }
+    host.innerHTML = te(
+      review + ' of ' + M + ' names in review or worse · ' + elevated + ' lanes elevated.',
+      M + '只中' + review + '只处于复查或更高级别 · ' + elevated + '条风险线升高。');
+  }
+
   // ---- factor display metadata (hue class + bilingual label) --------------
   // labels mirror factor_exposure.js ZH map + the mockup's plain words.
   var FLABEL = {
@@ -229,6 +290,19 @@
       if (kind === 'trim') return { kind: 'trim', en: 'Take-profit review', zh: '止盈复查' };
       return { kind: 'review', en: 'Review', zh: '复查' };
     }
+  }
+
+  // The seven lane rows as HTML — the ONE renderer, shared by the watchlist cards and
+  // the portfolio assessment drawer (portfolio.js calls it through window.WRI). Keeping
+  // a single implementation is why the drawer and the card can never drift apart.
+  function laneRowsHTML(j) {
+    var lanes = laneRead(j);
+    return LANES.map(function (k) {
+      var L = lanes[k], lbl = LANE_LABEL[k];
+      return '<div class="wri-lrow"><span class="ln">' + te(lbl.en, lbl.zh) + '</span>' +
+        '<span class="st ' + L.state + '">' + stateToken(L.state) + '</span>' +
+        '<span class="rs">' + te(esc(L.en), esc(L.zh)) + '</span></div>';
+    }).join('');
   }
 
   // ---- date helpers ---------------------------------------------------
@@ -428,8 +502,10 @@
         te(esc(cs.en), esc(cs.zh)) + ' <a href="transmission.html">' +
         te('cascade →', '传导链 →') + '</a></span>';
     }
+    // the regime artifact reads the US tape; say so once the user holds other markets
+    var scope = multiBook() ? te('US tape · ', '美股行情 · ') : '';
     host.innerHTML =
-      '<span class="dot"></span>' +
+      '<span class="dot"></span>' + scope +
       '<b>' + te(esc(domEn) + ' — market on ' + esc(stateEn), esc(domZh) + '——市场' + esc(stateZh)) + '</b>' +
       betaFrag + chainFrag +
       '<a href="macro.html">' + te('market state →', '市场状态 →') + '</a>';
@@ -453,12 +529,33 @@
   var animatedOnce = false;
 
   // Build the render model for BOTH lenses from RiskCore, then paint the active one.
+  /* A non-modeled book (cn/hk/ca/intl): the USD factor stack does not cover these
+     names, so the hero collapses to ONE honest line instead of a verdict computed
+     from a different book's names (WRI-R6 / gate 6). Their per-name signals are
+     unaffected — they render in full below, which is what the line says. */
+  function renderBookNote(hero) {
+    var b = activeBook();
+    var meta = (window.MB && window.MB.BOOKS && window.MB.BOOKS[b]) || null;
+    var nEn = meta ? meta.en : b, nZh = meta ? meta.zh : b;
+    hero.style.display = '';
+    hero.setAttribute('data-state', 'ok');
+    hero.className = 'tile wri wri-hero';
+    hero.innerHTML = '<div class="wri-empty muted">' + te(
+      'Book-structure risk modeling covers US &amp; crypto names for now — your ' +
+        esc(nEn) + ' names still carry tonight&#39;s signals below.',
+      '组合结构风险建模目前覆盖美股与加密——你的' + esc(nZh) + '名称在下方仍有今晚信号。') +
+      '</div>';
+    hidePanel();
+  }
+
   function renderHero(data, weights) {
     var hero = document.getElementById('wri_hero');
     if (!hero) return;
-    var wmap = weights.wmap, universe = weights.universe;
+    if (!bookIsModeled(activeBook())) { renderBookNote(hero); renderRail(null); return; }
+    var wmap = weights.wmap, universe = modeledUniverse(weights.universe);
     // filter the weights map to the universe the FX layer resolved (auto: portfolio
-    // dollar values; manual: watchlist tickers). Build a {ticker->value} map.
+    // dollar values; manual: watchlist tickers), MODELED names only (USD). Build a
+    // {ticker->value} map.
     var wIn = {};
     universe.forEach(function (t) { var v = wmap[t]; wIn[t] = isNum(v) && v > 0 ? v : 1; });
 
@@ -504,7 +601,11 @@
 
     // ---- header + verdict ----
     var asof = (window.WRI_REGIME && window.WRI_REGIME.asof) || (st.data && st.data.as_of) || '';
-    var html = '<div class="eyebrow"><span>' + te('BOOK RISK', '组合风险') + '</span>' +
+    // when the user holds more than one market, the eyebrow says WHICH book this reads
+    var eyebrow = multiBook()
+      ? te('BOOK STRUCTURE — US &amp; CRYPTO', '组合结构——美股与加密')
+      : te('BOOK RISK', '组合风险');
+    var html = '<div class="eyebrow"><span>' + eyebrow + '</span>' +
       '<span class="asof">' + te('AS OF ' + esc(asof), '截至 ' + esc(asof)) + '</span></div>';
 
     if (abstain) {
@@ -530,6 +631,8 @@
     html += '<div class="wri-verdict"><h2 id="wri_verdict">' + verdict.h2 + '</h2>' +
       '<span class="wri-state">' + stateChip + '</span></div>';
     html += '<p class="wri-so">' + soWhat(active, cov) + '</p>';
+    // condition counts — filled (and refilled) as the per-name reads hydrate
+    html += '<p class="wri-conds" id="wri_conds"></p>';
 
     // ---- lens toggle (only when stress available) ----
     if (RR.hasStress) {
@@ -562,6 +665,7 @@
     html += footnote(RR, cov);
 
     hero.innerHTML = html;
+    updateConditionCounts();
     // paint the patch-bay from the active-lens model
     paintBraid(active, clusters);
     absorbFxPanel(hero, RR.calm);
@@ -1203,6 +1307,7 @@
       var t = card.getAttribute('data-t');
       if (card.querySelector('.wri-lanes')) return;   // already decorated this render
       window.SD.loadTicker(t).then(function (j) {
+        noteJson(t, j);
         if (!card.isConnected) return;
         card.__wriJson = j;
         paintLanes(card, j);
@@ -1255,14 +1360,8 @@
         top.appendChild(span);
       }
     }
-    // drawer: one row per lane
-    var rows = LANES.map(function (k) {
-      var L = lanes[k], lbl = LANE_LABEL[k];
-      var stCls = L.state, stTok = stateToken(L.state);
-      return '<div class="wri-lrow"><span class="ln">' + te(lbl.en, lbl.zh) + '</span>' +
-        '<span class="st ' + stCls + '">' + stTok + '</span>' +
-        '<span class="rs">' + te(esc(L.en), esc(L.zh)) + '</span></div>';
-    }).join('');
+    // drawer: one row per lane (shared renderer — see laneRowsHTML)
+    var rows = laneRowsHTML(j);
     // chain drawer rows — ALL armed chains this name sits downstream of (the chip shows only
     // the furthest along; the drawer carries the rest). Each is a plain review read, never a call.
     rows += chainDrawerRows(chainMs);
@@ -1305,57 +1404,13 @@
   var BOOK_SHARES = {};   // {ticker -> mctr share} from the last L2 read (for chips + table)
   var BOOK_ROLES = {};    // {ticker -> role badge} from lane reads (filled lazily)
   var UNMODELED = {};     // {ticker -> 1} names present in the list but absent from the factor model
-  function decorateTable() {
-    var table = document.querySelector('#pf_desk table');
-    if (!table) return;
-    // header: insert two columns before the trailing action <th> (last child)
-    var headRow = table.querySelector('thead tr');
-    if (headRow && !headRow.querySelector('.wri-th-share')) {
-      var thShare = document.createElement('th');
-      thShare.className = 'wri-th-share'; thShare.style.textAlign = 'right';
-      thShare.innerHTML = te('Share of book risk', '组合风险占比');
-      var thRead = document.createElement('th');
-      thRead.className = 'wri-th-read';
-      thRead.innerHTML = te('Risk read', '风险状态');
-      var lastTh = headRow.lastElementChild;
-      headRow.insertBefore(thShare, lastTh);
-      headRow.insertBefore(thRead, lastTh);
-    }
-    // body rows: pf_rows carries data via td:first-child = ticker. Build the two
-    // cells once, then UPDATE their contents on later passes (share + role can
-    // arrive after the row first renders — the card's lane read is async).
-    table.querySelectorAll('tbody tr').forEach(function (tr) {
-      var tkCell = tr.querySelector('td'); if (!tkCell) return;
-      var t = (tkCell.textContent || '').trim().toUpperCase();
-      var share = BOOK_SHARES[t], role = BOOK_ROLES[t];
-      var tdShare = tr.querySelector('.wri-td-share');
-      var tdRead = tr.querySelector('.wri-td-read');
-      var fresh = !tdShare;
-      if (fresh) { tdShare = document.createElement('td'); tdRead = document.createElement('td'); }
-      // share cell
-      tdShare.className = 'tabnum wri-td-share';
-      if (share != null) {
-        var neg = share < 0, pctv = Math.abs(Math.round(share * 100));
-        // mini-bar width is the share relative to the book's largest |share|
-        var barW = Math.min(100, Math.abs(share) / (maxAbsShare() || 1) * 100);
-        tdShare.innerHTML = (neg ? '<span style="color:var(--wri-ok)">−' + pctv + '%</span>' : pctv + '%') +
-          '<span class="wri-rsbar"><i class="' + (neg ? 'neg' : '') + '" style="width:' + barW.toFixed(0) + '%"></i></span>';
-      } else { tdShare.className = 'wri-td-share muted'; tdShare.style.fontSize = '12px'; tdShare.textContent = '—'; }
-      // read cell
-      tdRead.className = 'wri-td-read';
-      if (role) tdRead.innerHTML = '<span class="wri-role wri-role-' + role.kind + '" style="margin:0">' + te(esc(role.en), esc(role.zh)) + '</span>';
-      else if (share != null && share < 0) tdRead.innerHTML = '<span class="muted" style="font-size:12px">' + te('offsets the book', '对冲组合') + '</span>';
-      else { tdRead.className = 'wri-td-read muted'; tdRead.style.fontSize = '12px'; tdRead.textContent = '—'; }
-      if (!fresh) return;   // already inserted; contents updated in place
-      var lastTd = tr.lastElementChild;
-      tr.insertBefore(tdShare, lastTd);
-      tr.insertBefore(tdRead, lastTd);
-    });
-  }
-  function maxAbsShare() {
-    var m = 0; Object.keys(BOOK_SHARES).forEach(function (k) { m = Math.max(m, Math.abs(BOOK_SHARES[k])); });
-    return m;
-  }
+  /* The portfolio table used to be decorated from HERE — two columns injected into a
+     generic 9-column table. The table is now the Position Assessment desk (portfolio.js)
+     and renders its own assessment cell + drawer from this file's exported lane engine
+     (window.WRI below), so injecting columns would fight its markup. What this layer
+     still owns for the table is the SHARE data itself: BOOK_SHARES / BOOK_ROLES stay
+     populated for the card chips, and portfolio.js reads the lane engine directly. */
+  function decorateTable() { /* retired — see comment above */ }
 
   // =========================================================================
   //  Orchestration — recompute L2/L3 whenever weights change; decorate L1 on
@@ -1387,15 +1442,22 @@
     loadData().then(function (data) {
       if (!data) { var h = document.getElementById('wri_hero'); if (h) h.style.display = 'none'; return; }
       var hero = document.getElementById('wri_hero'); if (hero) hero.style.display = '';
-      // fill BOOK_SHARES for chips + table from the default-lens read
+      // fill BOOK_SHARES for chips + table from the default-lens read (MODELED only —
+      // a non-USD value entering here would corrupt every downstream statistic)
       var wIn = {};
-      (weights.universe || []).forEach(function (t) { var v = weights.wmap[t]; wIn[t] = isNum(v) && v > 0 ? v : 1; });
+      modeledUniverse(weights.universe).forEach(function (t) {
+        var v = weights.wmap[t]; wIn[t] = isNum(v) && v > 0 ? v : 1;
+      });
       var RR = RiskCore.read(data, wIn);
       BOOK_SHARES = {}; UNMODELED = {};
       var b = RR.hasStress ? RR.stress : RR.calm;
       if (b && b.ok) b.held.forEach(function (t) { BOOK_SHARES[t] = b.mctrShare[t]; });
-      // names in the list but not in the factor model (for the "price signals only" chip)
-      (weights.universe || []).forEach(function (t) { if (!(data.betas && data.betas[t])) UNMODELED[t] = 1; });
+      // names in the list but not in the factor model (for the "price signals only" chip).
+      // A non-US name is not "unmodeled" in this sense — it has its own market's signals;
+      // it is simply outside the USD factor stack, which the book-risk note already says.
+      (weights.universe || []).forEach(function (t) {
+        if (isModeled(t) && !(data.betas && data.betas[t])) UNMODELED[t] = 1;
+      });
       renderHero(data, weights);
       // book shares changed -> refresh card chips + table columns
       refreshShareConsumers();
@@ -1449,6 +1511,11 @@
     // 5) language / theme flips -> re-render L2 wording + L1 decorations + rail
     document.addEventListener('langchange', onLangTheme);
     document.addEventListener('themechange', onLangTheme);
+    // 6) book switch -> the hero is scoped to the active book (modeled vs note form)
+    document.addEventListener('bk-change', function () {
+      if (window.FX && window.FX.currentWeights) recomputeBook(window.FX.currentWeights());
+      else onLangTheme();
+    });
     // theme.js toggles data-lang via attribute; also observe it directly
     new MutationObserver(function (muts) {
       for (var i = 0; i < muts.length; i++) if (muts[i].attributeName === 'data-lang') { onLangTheme(); return; }
@@ -1465,6 +1532,19 @@
 
   // keyboard: Enter/Space on a ? tip is a no-op focus target; tips are CSS/hover +
   // focus. (data-tip-en/zh consumed by the page's shared tooltip, no title=.)
+
+  /* Shared seam for the position table (portfolio.js). The assessment drawer renders
+     the SAME seven lane rows and the SAME role ladder the cards do — exported here
+     rather than duplicated there, so the two surfaces can never drift. */
+  if (typeof window !== 'undefined') {
+    window.WRI = {
+      laneRead: laneRead,
+      roleBadge: roleBadge,
+      laneRows: laneRowsHTML,
+      chainRows: function (t) { return chainDrawerRows(CHAINS_IDX[t]); },
+      noteJson: noteJson
+    };
+  }
 
   // Browser bootstrap — guarded so `require()` under node (the unit-test shell) never
   // touches the DOM at load. In node `document` is undefined; we skip straight to the export.

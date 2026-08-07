@@ -533,6 +533,120 @@
     .wri-braid { display:none; }
     .wri-buckets { display:flex; }
   }
+
+  /* ===================================================================== */
+  /* Market books (PSI A3) — the books strip, the today strip, and the      */
+  /* Position Assessment table. Same .wri idiom: hairline plates, mono      */
+  /* eyebrows, tokens + color-mix only. Directional tint is --up/--down     */
+  /* ONLY; the risk/state ramp never borrows them (zh-flip law).            */
+  /* ===================================================================== */
+  .bk-strip { display:flex; gap:8px; overflow-x:auto; padding:2px 2px 10px; margin:0 0 14px;
+    position:relative; scrollbar-width:none; }
+  .bk-strip::-webkit-scrollbar { display:none; }
+  .bk-strip::after { content:""; position:absolute; left:2px; right:2px; bottom:4px;
+    height:1px; background:color-mix(in srgb, var(--line) 85%, var(--muted)); }
+  .bk-plate { flex:0 0 auto; min-width:118px; text-align:left; cursor:pointer;
+    background:color-mix(in srgb, var(--panel) 88%, transparent);
+    border:1px solid color-mix(in srgb, var(--line) 80%, transparent); border-radius:10px;
+    padding:9px 12px 8px; color:var(--text); font:inherit; display:flex;
+    flex-direction:column; gap:2px; }
+  .bk-plate:hover { border-color:color-mix(in srgb, var(--link) 45%, var(--line)); }
+  .bk-plate[aria-selected="true"] { border-color:color-mix(in srgb, var(--link) 55%, var(--line));
+    box-shadow:0 0 0 1px color-mix(in srgb, var(--link) 45%, transparent),
+               0 0 14px color-mix(in srgb, var(--link) 18%, transparent); }
+  .bk-plate:focus-visible { outline:2px solid var(--link); outline-offset:2px; }
+  .bk-glyph { font-family:var(--wri-mono); font-size:9.5px; font-weight:700;
+    letter-spacing:.16em; color:var(--muted); }
+  .bk-line1 { font-size:13.5px; font-weight:700; letter-spacing:-.01em; }
+  .bk-line2 { font-size:11px; color:var(--muted); }
+  .bk-day.up { color:var(--up); } .bk-day.down { color:var(--down); }
+  .bk-atcost { font-size:11px; color:var(--muted); font-weight:400; }
+  @media (max-width:560px){ .bk-plate { min-width:104px; padding:8px 10px 7px; } }
+
+  /* today strip — the .wri-rail grammar, its own meaning */
+  .tod-strip { display:flex; gap:8px; align-items:center; overflow-x:auto; margin:0 0 14px;
+    scrollbar-width:none; }
+  .tod-strip::-webkit-scrollbar { display:none; }
+  .tod-chip { flex:0 0 auto; display:inline-flex; align-items:center; gap:7px;
+    padding:6px 12px; border-radius:9px; font:inherit; font-size:12.5px; cursor:pointer;
+    color:var(--text); background:color-mix(in srgb, var(--panel) 82%, transparent);
+    border:1px solid color-mix(in srgb, var(--info) 26%, var(--line)); }
+  .tod-chip:hover { border-color:color-mix(in srgb, var(--info) 50%, var(--line)); }
+  .tod-chip:focus-visible { outline:2px solid var(--link); outline-offset:2px; }
+  .tod-chip .dot { width:7px; height:7px; border-radius:50%; background:var(--info); flex:none;
+    box-shadow:0 0 10px 1px color-mix(in srgb, var(--info) 65%, transparent); }
+  @media (prefers-reduced-motion:no-preference){
+    .bk-flash { animation:bk-flash 1.2s ease-out 1; border-radius:10px; }
+    @keyframes bk-flash {
+      0%   { box-shadow:0 0 0 0 color-mix(in srgb, var(--info) 55%, transparent); }
+      100% { box-shadow:0 0 0 10px transparent; }
+    }
+  }
+
+  /* condition counts under the hero verdict */
+  .wri-conds { margin:6px 0 0; font-size:12.5px; color:var(--muted); line-height:1.55; }
+  .wri-conds:empty { display:none; }
+
+  /* ---- Position Assessment table ---- */
+  .pfx-ts table { min-width:520px; }
+  .pfx-ts td { vertical-align:top; }
+  tr.pfx-row { cursor:pointer; }
+  tr.pfx-row:hover > td { background:color-mix(in srgb, var(--panel2) 55%, transparent); }
+  tr.pfx-row:focus-visible { outline:2px solid var(--link); outline-offset:-2px; }
+  .pfx-pos a { color:var(--text); }
+  .pfx-pos a:hover { color:var(--link); }
+  .pfx-name { display:block; font-size:11px; font-weight:400; max-width:190px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pfx-val .wri-rsbar { margin-left:0; margin-top:4px; display:block; }
+  .pfx-assess-in { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .pfx-assess .state { font-size:11px; padding:2px 8px; }
+  .pfx-assess .wri-role { margin-left:0; }
+  .pfx-dash { font-size:12px; }
+  .pfx-tgl { margin-left:auto; flex:none; width:13px; height:13px; position:relative; opacity:.55; }
+  .pfx-tgl::before { content:""; position:absolute; left:2px; top:3px; width:7px; height:7px;
+    border-right:1.5px solid var(--muted); border-bottom:1.5px solid var(--muted);
+    transform:rotate(45deg); transition:transform .18s ease; }
+  @media (prefers-reduced-motion:reduce){ .pfx-tgl::before { transition:none; } }
+  tr.pfx-row[aria-expanded="true"] .pfx-tgl::before { transform:rotate(225deg); }
+  tr.pfx-drawer > td { padding:0 10px 12px; border-bottom:1px solid var(--line); }
+  tr.pfx-drawer .wri-drawer { margin-top:0; border-top:0; padding-top:0; }
+  .pfx-lead { font-size:13.5px; font-weight:600; line-height:1.5; margin:4px 0 8px; }
+  .pfx-foot { display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-top:10px;
+    padding-top:9px; border-top:1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+  .pfx-foot a { color:var(--link); font-size:12px; font-weight:600; }
+  .pfx-foot .wl-btn { padding:5px 11px; font-size:12px; }
+  .pfx-foot .pfx-rm { color:var(--muted); }
+  .pfx-foot .pfx-rm:hover { color:var(--down); border-color:var(--down); }
+  tr.pfx-bookhead > td { padding:12px 10px 6px; border-bottom:1px solid var(--line);
+    font-size:12px; color:var(--muted); }
+  tr.pfx-bookhead b { color:var(--text); font-weight:700; margin-left:6px; }
+  tr.pfx-bookhead .bk-glyph { margin-right:2px; }
+  #pf_localnote { margin-top:12px; font-size:12.5px; display:flex; gap:10px;
+    align-items:center; flex-wrap:wrap; }
+  .wl-bkempty { padding:14px 2px; font-size:13px; }
+  .wl-mkt, .pfm-mkt { margin:0 4px 0 2px; }
+
+  /* mobile: the table becomes stacked cards — same DOM, CSS only. The 560px
+     min-width rule is released here so 390px never scrolls the page sideways. */
+  @media (max-width:879px){
+    .pfx-ts { overflow-x:visible; }
+    .pfx-ts table { min-width:0; width:100%; }
+    .pfx-ts thead { position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+      overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    .pfx-ts tbody tr.pfx-row { display:block; padding:10px 0 4px;
+      border-bottom:1px solid var(--line); }
+    .pfx-ts tbody tr.pfx-row > td { display:grid; grid-template-columns:92px 1fr;
+      gap:10px; align-items:baseline; border:0; padding:3px 0; }
+    .pfx-ts tbody tr.pfx-row > td::before { content:attr(data-th); color:var(--muted);
+      font-size:11px; }
+    .pfx-ts tbody tr.pfx-row > td.tabnum { text-align:left; }
+    .pfx-ts .pfx-name { max-width:none; }
+    .pfx-ts .pfx-assess-in { justify-content:flex-start; }
+    .pfx-ts .pfx-tgl { margin-left:0; }
+    .pfx-ts tr.pfx-drawer > td { display:block; padding:0 0 12px; }
+    .pfx-ts tr.pfx-bookhead > td { display:block; }
+    .pfx-ts tr.pfx-bookhead > td::before { content:none; }
+  }
 </style>
 </head>
 <body>
@@ -549,12 +663,20 @@
       <span id="wl_count"></span>
     </div>
     <p class="muted" style="margin:8px 0 0">{{ t(
-      'Your list and holdings with tonight\'s signals — and what your book really is.',
-      '你的自选与持仓，附今晚信号——以及你的组合到底押了什么。') }}</p>
+      'Your book, by market — every position with the desk\'s read.',
+      '你的组合，按市场分列——每笔持仓都附系统解读。') }}</p>
   </div>
 
   <!-- ===== L3 · regime rail (window.WRI_REGIME × book beta; hidden if absent) ===== -->
   <div class="wri-rail" id="wri_rail" style="display:none"></div>
+
+  <!-- ===== Books strip — one ledger plate per market the user actually holds
+       (market_books.js). Hidden entirely when only one market is present. ===== -->
+  <div id="bk_strip" style="display:none"></div>
+
+  <!-- ===== Today strip — fact chips (earnings this week, signals changed since the
+       last visit). Hidden when there is nothing true to say. ===== -->
+  <div id="tod_strip" style="display:none"></div>
 
   <!-- ===== L2 · Book Risk hero (watchlist_risk.js renders from factor_betas.json;
        hidden until ≥2 modeled holdings; absorbs the old #fx_panel into sub-card 1) ===== -->
@@ -581,40 +703,13 @@
 
   <div id="wl_banner" class="wl-banner"></div>
 
-  <div class="wl-controls" id="wl_controls" style="display:none">
-    <label><span id="wl_sortlbl"></span>
-      <select id="wl_sort">
-        <option value="order"></option><option value="added"></option>
-        <option value="name"></option><option value="sector"></option><option value="signal"></option>
-      </select>
-    </label>
-    <label><input type="checkbox" id="wl_buysoon"> <span id="wl_buysoonlbl"></span></label>
-  </div>
-
-  <div id="wl_list" class="wl-grid"></div>
-
-  <div class="panel" id="wl_empty">
-    <p class="muted" id="wl_emptymsg"></p>
-    <div id="wl_starters"></div>
-    <script>document.getElementById('wl_emptymsg').textContent =
-      (document.documentElement.getAttribute('data-lang')==='zh'
-        ? '清单为空。在上方搜索以添加持仓——股票、ETF、大宗商品或加密货币。'
-        : 'Your watchlist is empty. Search above to add a holding — equity, ETF, commodity or crypto.');</script>
-  </div>
-
-  <!-- ---- Portfolio section ---- -->
+  <!-- ---- Position assessment desk (above the cards: the book leads the page) ---- -->
   <div class="panel" id="pf_section">
     <div class="pf-sh">
       <h2>{{ t('Portfolio', '持仓') }}</h2>
       <button class="pf-help" aria-label="About portfolio"
-        data-tip-en="Track your open and closed positions. Prices shown are the last nightly close — not live. Your holdings are stored privately in your account and sync across devices when signed in. Add a position with the button below."
-        data-tip-zh="记录你的开仓和已平仓持仓。显示的价格为最近夜间收盘价——非实时。你的持仓仅保存在账户中，登录后跨设备同步。点击下方按钮添加持仓。">?</button>
-    </div>
-
-    <!-- signed-out state -->
-    <div id="pf_signedout">
-      <p>{{ t('Sign in to track your holdings — synced across your devices.', '登录以记录持仓——多设备同步。') }}</p>
-      <button class="wl-btn" id="pf_signin_btn">{{ t('Sign in', '登录') }}</button>
+        data-tip-en="Track your open and closed positions. Prices shown are the last nightly close — not live. Your holdings are stored privately in your account and sync across devices when signed in. Add a position with the button below. Books split your names by market; each book's totals stay in its own currency."
+        data-tip-zh="记录你的开仓和已平仓持仓。显示的价格为最近夜间收盘价——非实时。你的持仓仅保存在账户中，登录后跨设备同步。点击下方按钮添加持仓。「账本」按市场拆分你的名称；每个账本的合计使用其本币。">?</button>
     </div>
 
     <!-- inline error -->
@@ -626,27 +721,25 @@
       <button class="wl-btn" id="pf_add_first">{{ t('Add holding', '添加持仓') }}</button>
     </div>
 
-    <!-- table desk -->
+    <!-- assessment table -->
     <div id="pf_desk" style="display:none">
-      <div class="ts">
+      <div class="ts pfx-ts">
         <table>
           <thead>
             <tr>
-              <th id="pf_th_ticker"></th>
-              <th id="pf_th_name"></th>
-              <th id="pf_th_signal"></th>
-              <th id="pf_th_shares" style="text-align:right"></th>
-              <th id="pf_th_entry" style="text-align:right"></th>
-              <th id="pf_th_date"></th>
-              <th id="pf_th_last" style="text-align:right"></th>
+              <th id="pf_th_position"></th>
+              <th id="pf_th_value" style="text-align:right"></th>
               <th id="pf_th_since" style="text-align:right"></th>
-              <th></th>
+              <th id="pf_th_assess"></th>
             </tr>
           </thead>
           <tbody id="pf_rows"></tbody>
         </table>
       </div>
     </div>
+
+    <!-- signed-out: one quiet value-framed line, never a locked panel -->
+    <div id="pf_localnote" style="display:none"></div>
 
     <!-- add button -->
     <button class="wl-btn" id="pf_add" style="display:none; margin-top:10px">{{ t('Add holding', '添加持仓') }}</button>
@@ -678,6 +771,28 @@
   <!-- Portfolio factor exposure — your book's hidden bet (factor_exposure.js fills
        it client-side from factor_betas.json; hidden until ≥2 covered holdings) -->
   <div class="panel" id="fx_panel" style="display:none"></div>
+
+  <!-- ---- Watchlist cards (filtered by the active book) ---- -->
+  <div class="wl-controls" id="wl_controls" style="display:none">
+    <label><span id="wl_sortlbl"></span>
+      <select id="wl_sort">
+        <option value="order"></option><option value="added"></option>
+        <option value="name"></option><option value="sector"></option><option value="signal"></option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="wl_buysoon"> <span id="wl_buysoonlbl"></span></label>
+  </div>
+
+  <div id="wl_list" class="wl-grid"></div>
+
+  <div class="panel" id="wl_empty">
+    <p class="muted" id="wl_emptymsg"></p>
+    <div id="wl_starters"></div>
+    <script>document.getElementById('wl_emptymsg').textContent =
+      (document.documentElement.getAttribute('data-lang')==='zh'
+        ? '清单为空。在上方搜索以添加持仓——股票、ETF、大宗商品或加密货币。'
+        : 'Your watchlist is empty. Search above to add a holding — equity, ETF, commodity or crypto.');</script>
+  </div>
 
   <!-- ---- Holding modal ---- -->
   <div id="dlg-holding" class="mx5-dlg" role="dialog" aria-modal="true" tabindex="-1">
@@ -742,15 +857,18 @@
 
   <div id="wl_toast" class="wl-toast"></div>
 
-<script src="stockdata.js"></script>
-<script src="watchlist.js?v=2"></script>
+<!-- market_books.js owns marketOf()/storeOf() and MUST load before stockdata.js:
+     SD routes each per-ticker fetch to its market's store through window.MB. -->
+<script src="market_books.js?v=1"></script>
+<script src="stockdata.js?v=2"></script>
+<script src="watchlist.js?v=3"></script>
 <script src="factor_exposure.js?v=2"></script>
 <!-- WRI W3: pure book-structure math + the render layer (rail, hero, patch-bay,
      card lanes). risk_core.js must precede watchlist_risk.js; both need SD + FX. -->
 <script src="risk_core.js?v=1"></script>
-<script src="watchlist_risk.js?v=1"></script>
-<script src="watchstore.js?v=2"></script>
-<script src="portfolio.js?v=1"></script>
+<script src="watchlist_risk.js?v=2"></script>
+<script src="watchstore.js?v=3"></script>
+<script src="portfolio.js?v=2"></script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
 <p class="muted" style="font-size:12px">{{ t('Generated', '生成于') }} {{ generated_utc }} UTC</p>
