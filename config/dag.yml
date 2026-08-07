@@ -70,6 +70,26 @@ lanes:
           only, continue-on-error, exits 0 for data findings. Writes
           data/quality/stocks_freshness_audit.json (picked up by "commit
           market data").
+      - id: audit_reused_tickers
+        module: scripts.audit_reused_tickers
+        note: >
+          Zombie-print / identity-swap tripwire (#4686). Loud, never blocks the
+          night: continue-on-error. Declared here post-hoc — the workflow step
+          landed without its dag.yml row during the 2026-08-07 backlog sweep and
+          hard-failed dag-conformance on main until this row.
+      - id: check_ohlc_basis_coherence
+        module: scripts.check_ohlc_basis_coherence
+        note: >
+          OHLC basis coherence tripwire — `if: always()`, continue-on-error, so a
+          partial nightly still gets the check. Declared post-hoc for the same
+          reason as audit_reused_tickers above.
+      - id: chain_snapshot_salvage
+        module: scripts.ci.chain_snapshot_salvage
+        note: >
+          Options-chain snapshot salvage. Runs only on a failed collectors step
+          (`if: always() && steps.collectors.outcome != 'success'`), so it is a
+          recovery path, not part of the happy nightly. Declared post-hoc for the
+          same reason as audit_reused_tickers above.
       - id: publish_r2_attention
         module: scripts.publish_r2
         args: [--dirs, attention]

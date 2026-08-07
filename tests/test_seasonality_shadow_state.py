@@ -96,8 +96,27 @@ def _states(root: Path, now: datetime = _NOW, live_n: dict | None = None):
         (root / "site" / "seasonalitydata" / "index.json").read_text(encoding="utf-8")
     )
     return season_state.build_states(
-        index, root / "site" / "seasonalitydata" / "entities", live_n or {}, now
+        index, root / "site" / "seasonalitydata" / "entities", live_n or {}, now, root=root
     )
+
+
+def _calendar_clock(state: dict) -> dict:
+    """The calendar entry of a v2 state's ``clocks`` list, flattened.
+
+    v2 splits what v1 called ``clock`` into a typed list entry plus its own
+    ``window``.  The tests below assert on the FLATTENED view so the migration
+    reads as a rename in the diff: if a number moved rather than being renamed,
+    these assertions still fail.
+    """
+    clock = next(
+        entry for entry in state["clocks"] if entry["type"] == "calendar"
+    )
+    return {**clock, **clock["window"]}
+
+
+def _share(state: dict) -> dict:
+    """The v2 object carrying what v1 called ``forecast`` — a HISTORICAL share."""
+    return state["historical_up_share"]
 
 
 # ---------------------------------------------------------------------------
@@ -113,8 +132,8 @@ class TestContract:
         assert gaps == []
         for symbol, state in states.items():
             # Raises ContractError if anything drifted.
-            contracts.validate_neuralweb_state(state)
-            assert state["schema"] == contracts.NEURALWEB_STATE_SCHEMA, symbol
+            contracts.validate_seasonality_state(state)
+            assert state["schema"] == contracts.NEURALWEB_STATE_V2_SCHEMA, symbol
             assert state["tier"] == "shadow", symbol
             assert state["is_context_only"] is True, symbol
 
@@ -135,13 +154,25 @@ class TestContract:
         ):
             assert authority[key] is False, f"{key} must be false — seasonality cannot act"
 
-    def test_contradiction_hook_visible_on_every_state(self, tmp_path):
+    def test_contradiction_and_overlap_are_visible_on_every_state(self, tmp_path):
+        """v1's post-validation ``hooks`` blob is now two CONTRACTED fields.
+
+        The blob could carry any free-text ``status`` and was attached after the
+        contract ran, so the two facts the lobe most needed to be honest about
+        were the two nothing checked.  Both are validated fields now, and both
+        must name a reason code rather than going quiet.
+        """
         _write_universe(tmp_path, {"SPY": _entity("SPY"), "MU": _entity("MU")})
         states, _ = _states(tmp_path)
         for symbol, state in states.items():
-            hooks = state["hooks"]
-            assert hooks["calendar_tailwind_vs_event_hazard"]["status"], symbol
-            assert hooks["momentum_overlap"]["status"] == "not_yet_measured", symbol
+            assert "hooks" not in state, symbol
+            contradiction = state["contradiction"]
+            assert contradiction["present"] is False, symbol
+            assert contradiction["reason_code"], symbol
+            overlap = state["overlap"]
+            assert overlap["measured"] is False, symbol
+            assert overlap["redundancy"] is None, symbol
+            assert overlap["reason_code"], symbol
 
     def test_state_stays_bounded(self, tmp_path):
         """Bounded and explainable is a Lane 6 acceptance line — no year arrays."""
@@ -192,7 +223,7 @@ class TestWindowConvention:
         )
         _write_universe(tmp_path, {"SPY": entity})
         states, _ = _states(tmp_path)
-        assert states["SPY"]["forecast"]["p"] == pytest.approx(row["up_share"])
+        assert _share(states["SPY"])["p"] == pytest.approx(row["up_share"])
 
     def test_scalar_and_vector_doy_mappings_agree_across_a_leap_year(self):
         """``slot_for_date`` may not fork the Feb-29 fold ``slots_for`` implements."""
@@ -220,18 +251,18 @@ class TestForecast:
         _write_universe(tmp_path, {"SPY": _entity("SPY"), "MU": _entity("MU")})
         states, _ = _states(tmp_path)
         for symbol, state in states.items():
-            forecast = state["forecast"]
-            assert forecast["edge"] == pytest.approx(
-                forecast["p"] - forecast["p_baseline"], abs=1e-9
+            share = _share(state)
+            assert share["edge"] == pytest.approx(
+                share["p"] - share["p_baseline"], abs=1e-9
             ), symbol
 
     def test_ci90_contains_p_and_stays_a_probability(self, tmp_path):
         _write_universe(tmp_path, {"SPY": _entity("SPY"), "MU": _entity("MU")})
         states, _ = _states(tmp_path)
         for symbol, state in states.items():
-            low, high = state["forecast"]["ci90"]
+            low, high = _share(state)["ci90"]
             assert 0.0 <= low <= high <= 1.0, symbol
-            assert low <= state["forecast"]["p"] <= high, symbol
+            assert low <= _share(state)["p"] <= high, symbol
 
     @pytest.mark.parametrize("p", [0.0, 0.04, 0.5, 0.96, 1.0])
     @pytest.mark.parametrize("n", [1, 6, 19, 25, 400])
@@ -258,10 +289,7 @@ class TestForecast:
     def test_baseline_basis_is_declared(self, tmp_path):
         _write_universe(tmp_path, {"SPY": _entity("SPY")})
         states, _ = _states(tmp_path)
-        assert (
-            states["SPY"]["forecast"]["baseline_basis"]
-            == "same_length_all_starts_mean"
-        )
+        assert _share(states["SPY"])["basis"] == "same_length_all_starts_mean"
 
 
 # ---------------------------------------------------------------------------
@@ -275,7 +303,10 @@ class TestClock:
         [
             (date(2026, 11, 1), "in_window", "2026-12-10"),      # inside 284..344
             (date(2026, 9, 27), "pre_window", "2026-12-10"),     # 14 days before start
-            (date(2026, 3, 1), "out_of_window", "2026-12-10"),   # far outside
+            # Far outside the window, and still AFTER the fixture's own data
+            # as-of (2026-07-31): a build cannot precede the data it folds, and
+            # the contract now refuses that look-ahead outright.
+            (date(2026, 8, 15), "out_of_window", "2026-12-10"),
             (date(2026, 12, 20), "out_of_window", "2027-12-10"),  # past end -> rolls over
         ],
     )
@@ -283,7 +314,7 @@ class TestClock:
         _write_universe(tmp_path, {"SPY": _entity("SPY")})
         now = datetime(today.year, today.month, today.day, 12, 0, tzinfo=timezone.utc)
         states, _ = _states(tmp_path, now=now)
-        clock = states["SPY"]["clock"]
+        clock = _calendar_clock(states["SPY"])
         assert clock["type"] == "calendar"
         assert clock["phase"] == expected_phase
         assert clock["occurrence_end_date"] == expected_end
@@ -293,18 +324,19 @@ class TestClock:
         _write_universe(tmp_path, {"SPY": _entity("SPY")})
         now = datetime(2026, 12, 20, 12, 0, tzinfo=timezone.utc)
         states, _ = _states(tmp_path, now=now)
-        forecast = states["SPY"]["forecast"]
-        assert forecast["horizon_td"] == (date(2027, 12, 10) - date(2026, 7, 31)).days
-        assert forecast["horizon_td"] > 0
+        share = _share(states["SPY"])
+        assert share["horizon_td"] == (date(2027, 12, 10) - date(2026, 7, 31)).days
+        assert share["horizon_td"] > 0
 
     def test_pre_window_boundary_is_21_days(self, tmp_path):
         _write_universe(tmp_path, {"SPY": _entity("SPY")})
         # doy 284 - 21 = 263 (Sep 20) is still pre_window; 262 (Sep 19) is not.
         inside = datetime(2026, 9, 20, 12, 0, tzinfo=timezone.utc)
         outside = datetime(2026, 9, 19, 12, 0, tzinfo=timezone.utc)
-        assert _states(tmp_path, now=inside)[0]["SPY"]["clock"]["phase"] == "pre_window"
+        assert _calendar_clock(_states(tmp_path, now=inside)[0]["SPY"])["phase"] == "pre_window"
         assert (
-            _states(tmp_path, now=outside)[0]["SPY"]["clock"]["phase"] == "out_of_window"
+            _calendar_clock(_states(tmp_path, now=outside)[0]["SPY"])["phase"]
+            == "out_of_window"
         )
 
 
@@ -390,7 +422,7 @@ class TestAbstain:
         states, gaps = _states(tmp_path)
         assert gaps == []
         state = states["SPY"]
-        contracts.validate_neuralweb_state(state)
+        contracts.validate_seasonality_state(state)
         assert state["uncertainty"]["abstain"] is True
         assert "thin_years" in state["uncertainty"]["flags"]
         assert state["evidence"]["n_independent"] == 4
@@ -471,11 +503,11 @@ class TestLedger:
         assert season_state.register_rows(states, set(), _ASOF) == []
 
     def test_registration_is_not_phase_gated(self, tmp_path):
-        """A window nine months out still gets its forward row."""
+        """A window nearly four months out still gets its forward row."""
         _write_universe(tmp_path, {"SPY": _entity("SPY")})
-        now = datetime(2026, 3, 1, 12, 0, tzinfo=timezone.utc)
+        now = datetime(2026, 8, 15, 12, 0, tzinfo=timezone.utc)
         states, _ = _states(tmp_path, now=now)
-        assert states["SPY"]["clock"]["phase"] == "out_of_window"
+        assert _calendar_clock(states["SPY"])["phase"] == "out_of_window"
         assert len(season_state.register_rows(states, set(), _ASOF)) == 1
 
     def test_grade_computes_the_realized_log_return(self):

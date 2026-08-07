@@ -2262,9 +2262,14 @@ body.ff-modal-open #mmb-launch {
   border-top: 1px solid var(--ff-border);
 }
 
+/* One column per fact, not a fixed three: the count-bearing fourth item is
+   present only when the build supplies a summary, so the row has to size
+   itself. Three facts make three columns, four make four, with no
+   count-specific rule to keep in step with the template. */
 .ff-gate-facts {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   margin: 0 0 22px;
   padding: 0;
   gap: 14px;
@@ -2288,6 +2293,9 @@ body.ff-modal-open #mmb-launch {
   margin: 5px 0 0;
   font-size: 12px;
   font-weight: 650;
+  /* A value long enough to wrap is otherwise left with a one-word last line;
+     balancing splits it evenly instead. */
+  text-wrap: balance;
 }
 
 .ff-gate-steps {
@@ -2453,9 +2461,13 @@ html[data-theme="light"] .ff-gate-anatomy { background: color-mix(in srgb, var(-
 html[data-theme="light"] .ff-gate-slot-index { background: #fff; }
 
 @media (max-width: 900px) {
+  .ff-gate-facts { grid-auto-flow: row; }
   .ff-gate-facts,
   .ff-gate-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ff-gate-facts > div:last-child,
+  /* Only an ODD last fact is an orphan in two columns — three facts leave one,
+     four pair up cleanly — so the span is conditioned on the count instead of
+     firing on whichever item happens to be last. */
+  .ff-gate-facts > div:nth-child(odd):last-child,
   .ff-gate-steps > li:last-child { grid-column: 1 / -1; }
 }
 
@@ -2471,7 +2483,7 @@ html[data-theme="light"] .ff-gate-slot-index { background: #fff; }
   .ff-gate-preview { padding: 18px 16px 22px; }
   .ff-gate-facts,
   .ff-gate-steps { grid-template-columns: minmax(0, 1fr); }
-  .ff-gate-facts > div:last-child,
+  .ff-gate-facts > div:nth-child(odd):last-child,
   .ff-gate-steps > li:last-child { grid-column: auto; }
   .ff-gate-facts { gap: 11px; }
 

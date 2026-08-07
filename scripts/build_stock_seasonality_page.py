@@ -374,6 +374,173 @@ def sm_panel(rows, labels_en, labels_zh, width: float = 320.0) -> dict:
     return {"bars": bars, "zero": 46.0, "w": width}
 
 
+# ── Catalyst mode: the evidence boundary (W2C/W3) ───────────────────────────
+# There is no event data. No BioCatalyst source is connected and the producer
+# contract does not exist yet, so Catalyst mode ships as an honest UNAVAILABLE
+# surface: it states the exact boundary of the evidence rather than reserving
+# space for data that will appear later. Nothing below invents an event, a date,
+# or a probability — every row is driven by the availability block of
+# site/seasonalitydata/methodology.json, and a field that is missing renders NOT
+# CONNECTED. `is True` is deliberate: a null, a string, or an absent key is not
+# a live feed.
+#
+# THREE STATES, NOT TWO (adversarial review 2026-08-07). The first cut counted
+# five rows and printed "3 not connected", which reads at a glance as "this page
+# is 40% built". It is not: exactly ONE source is missing. `Forecasts` and
+# `Symbol screening` are not feeds we lack — their own why-clauses say we chose
+# never to build them. A design choice wearing the state word NOT CONNECTED is a
+# false gap, and the rail (the mode's one non-verbal encoding) was counting it.
+# So rows carry a `state`:
+#   "on"    — a source we have          (solid rail, CONNECTED)
+#   "off"   — a source we want, lack    (dashed rail, NOT CONNECTED)
+#   "never" — a thing we chose not to do (no rail at all — it is not on the
+#             evidence axis, so it must not be marked on it)
+# The counts and the rail now describe SOURCES only, and the ledger can actually
+# reach all-connected.
+#
+# The clause for the event row names the event families the methodology itself
+# declares (clocks.event). Slugs never reach the page — an unmapped one folds
+# into one plain-word "other event feeds" phrase (doctrine Law 2), so a producer
+# adding a clock can never leak `clinical_trial` into the copy.
+EVENT_CLOCK_EN = {
+    "fda": "regulatory decisions",
+    "clinical_trial": "trial readouts",
+    "conference": "medical conferences",
+    "financing": "financing",
+    "commercial": "product launches",
+}
+# ZH is written for a Chinese reader, not transliterated from the EN (memory:
+# zh-copy-was-english-shaped-not-wrong). `试验读数` was "readout" carried across
+# letter by letter — 读数 is a meter reading. `上市销售` alone reads as an IPO on
+# a stock page, so the product sense is spelled out.
+EVENT_CLOCK_ZH = {
+    "fda": "监管决定",
+    "clinical_trial": "试验结果公布",
+    "conference": "医学会议",
+    "financing": "融资",
+    "commercial": "产品上市",
+}
+OTHER_CLOCK_EN = "other event feeds"
+OTHER_CLOCK_ZH = "其他事件数据源"
+
+# (availability key, name EN, name ZH, why EN, why ZH, is_source). The event
+# row's clause is built from the artifact, so it carries None and is filled in
+# below. is_source=False marks the two deliberate non-features.
+AVAIL_ROWS = [
+    ("live_calendar_clock", "Calendar clock", "日历时钟",
+     "Every complete year drawn from adjusted closing prices.",
+     "以复权收盘价绘制每一个完整年份。", True),
+    ("live_selection_correction", "Search accounting", "搜索校正",
+     "Counts every window tried before calling one of them strong.",
+     "在判定某个窗口是否强势前，计入所有测试过的窗口。", True),
+    ("live_event_graph", "Event calendar", "事件日历", None, None, True),
+    ("live_forecasts", "Forecasts", "预测",
+     "This page reports what past years did. It predicts nothing.",
+     "本页只记录过往年份的表现，不做任何预测。", False),
+    ("live_screener", "Symbol screening", "跨标的筛选",
+     "One symbol at a time. No list here puts names in order.",
+     "这里每次只看一个标的，不提供任何排序名单。", False),
+]
+
+
+def event_clock_clause(meth: dict, live: bool = False) -> tuple[str, str]:
+    """Name, in plain words, exactly which event feeds the method declares — and
+    whether they are connected. The `live` branch is not decoration: an
+    unconditional absence clause once rendered "No feed is connected for …"
+    underneath the state word CONNECTED (adversarial review 2026-08-07)."""
+    keys = ((meth.get("clocks") or {}).get("event")) or []
+    en, zh, other = [], [], False
+    for k in keys:
+        if k in EVENT_CLOCK_EN:
+            en.append(EVENT_CLOCK_EN[k])
+            zh.append(EVENT_CLOCK_ZH[k])
+        else:
+            other = True
+    if other:
+        en.append(OTHER_CLOCK_EN)
+        zh.append(OTHER_CLOCK_ZH)
+    if not en:
+        if live:
+            return ("An event feed is connected; this page does not draw it yet.",
+                    "已接入事件数据源，但本页尚未绘制。")
+        return ("No clinical or regulatory event feed is connected.",
+                "尚未接入任何临床或监管事件数据源。")
+    listed = en[0] if len(en) == 1 else ", ".join(en[:-1]) + ", or " + en[-1]
+    if live:
+        return (f"Dates are connected for {listed}; this page does not draw them yet.",
+                "、".join(zh) + "，均已接入数据源，但本页尚未绘制。")
+    return (f"No feed is connected for {listed}.", "、".join(zh) + "，均无数据源接入。")
+
+
+def _asof_parts(iso: str) -> date | None:
+    """A plain YYYY-MM-DD calendar date, or None.
+
+    STRICT on purpose. The as-of stamp used to be folded through the seasonal
+    clock's 365-slot day-of-year helper, which returns slot 1 on any parse
+    failure — so an ordinary ISO *timestamp* from a producer ("2026-08-06T00:00:00Z")
+    rendered the chip "Through Jan 1", a date computed from nothing, on the one
+    surface whose whole thesis is that no figure appears unless an artifact
+    produced it (adversarial review 2026-08-07). Availability already fails
+    closed; the date must too. Leap day is also correct here — the 365-slot fold
+    is a clock convention, and this is a wall-clock date."""
+    try:
+        return datetime.strptime((iso or "").strip(), "%Y-%m-%d").date()
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def build_catalyst(meth: dict) -> dict:
+    """The availability ledger, computed from the methodology artifact only."""
+    meth = meth or {}
+    avail = meth.get("availability")
+    meth_ok = isinstance(avail, dict) and bool(avail)
+    avail = avail if isinstance(avail, dict) else {}
+    rows = []
+    for key, en, zh, w_en, w_zh, is_source in AVAIL_ROWS:
+        live = avail.get(key) is True
+        if key == "live_event_graph":
+            w_en, w_zh = event_clock_clause(meth, live)
+        rows.append({"key": key, "en": en, "zh": zh, "why_en": w_en, "why_zh": w_zh,
+                     "live": live, "source": is_source,
+                     "state": ("on" if live else "off") if is_source else "never"})
+    sources = [r for r in rows if r["source"]]
+    asof = _asof_parts(meth.get("as_of") or "")
+    return {
+        "rows": rows,
+        # counts describe SOURCES only — a thing we chose not to build is not a gap
+        "n_live": sum(1 for r in sources if r["live"]),
+        "n_dark": sum(1 for r in sources if not r["live"]),
+        "n_never": len(rows) - len(sources),
+        "meth_ok": meth_ok,
+        "event_live": avail.get("live_event_graph") is True,
+        "clock_live": avail.get("live_calendar_clock") is True,
+        "correction_live": avail.get("live_selection_correction") is True,
+        # The year is carried, and the idiom differs from the price-coverage
+        # chip's "Through Aug 5": two bare month-day stamps in one masthead, in
+        # the same words the seasonal window chips use, is ambiguous on a
+        # 25-year page and a two-year-stale method looked identical to today's.
+        "asof_en": f"{asof.strftime('%b')} {asof.day}, {asof.year}" if asof else "",
+        "asof_zh": f"{asof.year}年{asof.month}月{asof.day}日" if asof else "",
+    }
+
+
+def load_methodology(root: Path) -> dict:
+    """The published method contract. Unreadable or absent -> {}, which renders
+    every source NOT CONNECTED and says so as a fact about the METHOD FILE, never
+    as a claim about the page: the calendar mode is drawn from the entity
+    artifact and keeps drawing whatever this file says (adversarial review
+    2026-08-07 — the old copy read "Nothing on this page is connected right now"
+    one click away from 25 drawn years and a verdict)."""
+    path = root / "site" / "seasonalitydata" / "methodology.json"
+    if not path.is_file():
+        return {}
+    try:
+        return json.loads(path.read_text())
+    except Exception as exc:  # noqa: BLE001
+        log.warning("seasonalitydata/methodology.json unreadable: %s", exc)
+        return {}
+
+
 # ── entity loading ──────────────────────────────────────────────────────────
 def load_entity(root: Path) -> tuple[dict, dict | None, bool]:
     """(entity, index, is_example). Prefers the nightly artifact; falls back to the
@@ -409,7 +576,8 @@ def _doy_of_iso(iso: str) -> int:
     return doy - 1 if leap and doy >= 60 else doy
 
 
-def build_view(ent: dict, index: dict | None, is_example: bool) -> dict:
+def build_view(ent: dict, index: dict | None, is_example: bool,
+               methodology: dict | None = None) -> dict:
     cov = ent.get("coverage") or {}
     scale = cum_scale(ent)
     years_all = ent.get("years") or []
@@ -523,6 +691,7 @@ def build_view(ent: dict, index: dict | None, is_example: bool) -> dict:
                "weekday": sm_panel(views.get("weekday") or [], WEEKDAY_EN, WEEKDAY_ZH),
                "tdom": sm_panel(tdom, tlab, tlab)},
         "entities": entities,
+        "catalyst": build_catalyst(methodology or {}),
         "n_entities": (index or {}).get("n_entities") or len(entities),
         "program": {"n_symbols": raw_rate.get("n_symbols"),
                     "n_clearing": raw_rate.get("n_clearing"),
@@ -539,7 +708,7 @@ def render(root: Path) -> str:
     from jinja2 import Environment, FileSystemLoader
 
     ent, index, is_example = load_entity(root)
-    view = build_view(ent, index, is_example)
+    view = build_view(ent, index, is_example, load_methodology(root))
     env = Environment(loader=FileSystemLoader(str(root / "templates")), autoescape=True)
     env.globals.update(zip=zip, abs=abs, enumerate=enumerate)
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")

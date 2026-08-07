@@ -58,10 +58,33 @@ from engine import earnings_blackout as _eb  # noqa: E402  — W1.5 earnings-bla
 from engine import earnings_catalyst as _ecat  # noqa: E402  — W4 display-tier catalyst fields
 from engine import us_board_rank  # noqa: E402  — us_prophet_v1 priority score / stages / ran lane
 from engine import washout_turn  # noqa: E402  — WTN-W1 weekly washout-turn watch (display-tier)
+from engine import event_atlas  # noqa: E402  — SEA-W3 matching-episode receipts (display-tier)
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, delisted_symbols, store  # noqa: E402
 from lib.ticker_popularity import attach_latest_volume, latest_volume_map  # noqa: E402
+from collectors.us_names_zh import load_aliases_zh as _load_us_aliases_zh  # noqa: E402
+from collectors.us_names_zh import load_names_zh as _load_us_names_zh  # noqa: E402
+from collectors.us_names_zh import lookup as _us_name_zh  # noqa: E402
+
+# Loaded once at module level — small committed JSONs, no I/O on re-import.
+# Feed the search manifest so a Chinese query (苹果 / 英伟达) reaches US names, the
+# way chinastockdata / hkstockdata already do for their markets: `z` is the
+# curated name we DISPLAY, `za` a broader search-only alias we never render.
+_US_NAMES_ZH: dict[str, str] = _load_us_names_zh()
+_US_ALIASES_ZH: dict[str, str] = _load_us_aliases_zh()
+
+
+def search_name_zh(ticker: str) -> tuple[str | None, str | None]:
+    """Return (displayed Chinese name, search-only alias) for a US search row.
+
+    Exactly one side is ever populated: a curated name wins outright, and the
+    noisier alias only stands in when there is no curated name to shadow.
+    """
+    name = _us_name_zh(_US_NAMES_ZH, ticker)
+    if name:
+        return name, None
+    return None, _us_name_zh(_US_ALIASES_ZH, ticker)
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("stock_library")
@@ -3205,6 +3228,19 @@ def main() -> int:
                 rec["washout_turn"] = wt
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("washout-turn for %s failed (%s)", ticker, e)
+        # ---- Matching past episodes (engine/event_atlas) — the SO-WHAT --------
+        # The chip above says the name IS in a washout turn. This says what the
+        # matching historical episodes of the SAME CLASS did — on this name, and
+        # on its archetype cohort, blended by event count so a name with n=3 shows
+        # its 3 episodes AND inherits the cohort curve with the weight printed.
+        # No per-name indicator selection (DNR §2 row 69) — one frozen construction.
+        # `close` is already in scope: passing it avoids re-loading the series.
+        try:
+            ea = event_atlas.live_state(ticker, close=close)
+            if ea:
+                rec["event_atlas"] = ea
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("event-atlas for %s failed (%s)", ticker, e)
         # ---- Confluence cascade verdict (T1->T4) on the per-stock JSON ---------
         # The owner's MACD-2D x StochRSI-3D gate (already computed above as sig_verdict),
         # persisted per name so the theme/basket-detail Holdings table can surface a fresh
@@ -3490,7 +3526,13 @@ def main() -> int:
         safe = ticker.replace("=", "_").replace("^", "_")
         to_write.append((safe, rec))            # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
+        _zh, _zh_alias = search_name_zh(ticker)
+        if _zh:
+            idx["z"] = _zh              # displayed Chinese name + search key
+        elif _zh_alias:
+            idx["za"] = _zh_alias       # search-only; theme.js matches, never renders
         attach_latest_volume(idx, ticker, latest_volumes)
+        stock_technicals.attach_chg_1d(idx, rec.get("tech"))   # `c1` — mirrors tech.chg_1d
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
         index.append(idx)

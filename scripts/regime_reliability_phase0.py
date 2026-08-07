@@ -30,6 +30,7 @@ Usage:  python3 scripts/regime_reliability_phase0.py [--out reports/regime-relia
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -87,6 +88,8 @@ def _interaction(df: pd.DataFrame, min_n: int = 0) -> tuple[pd.DataFrame, pd.Dat
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="reports/regime-reliability-phase0.md")
+    ap.add_argument("--json-out", dest="json_out",
+                    default="data/quant_lab/methods/regime_reliability.json")
     args = ap.parse_args()
 
     d = load()
@@ -109,10 +112,37 @@ def main() -> int:
     P("")
 
     # --- 0. estimability of every candidate axis -------------------------------------
+    cov = rcc.assess(pd.read_parquet(TRACK))
+    J: dict = {                       # structured twin of this report (see --json-out)
+        "schema": "quant_lab_method_result.v1",
+        "method_key": "regime_reliability",
+        "substrate": {
+            "store": "data/signal_archive/track_record.parquet",
+            "n_matured": int(len(d)),
+            "span": [f"{d.date.min():%Y-%m-%d}", f"{d.date.max():%Y-%m-%d}"],
+            "n_months": int(d.month.nunique()),
+            "outcome": OUTCOME,
+            "outcome_label": "60d forward max drawdown (pp)",
+            "regime_axis": REGIME_AXIS,
+            "regime_states": sorted(d[REGIME_AXIS].unique().tolist()),
+            "family_col": FAMILY_COL,
+            "n_families": int(d.family.nunique()),
+        },
+        "determinism": {"seed": SEED, "n_boot": N_BOOT, "era_split": ERA_SPLIT},
+        "estimability": {
+            "gates": cov["gates"],
+            "estimable_axes": cov["estimable_axes"],
+            "axes": [{"axis": a, "coverage": r["coverage"], "n_states": r["n_states"],
+                      "min_state_months": r["min_state_months"], "verdict": r["verdict"],
+                      "span": r.get("span")}
+                     for a, r in cov["axes"].items()],
+        },
+    }
+
     P("## 0. Which regime axes can carry a conditional claim at all?")
     P("")
     P("```")
-    P(rcc.format_report(rcc.assess(pd.read_parquet(TRACK))))
+    P(rcc.format_report(cov))
     P("```")
     P("")
     P("Only `regime_at_entry` clears the gate. The five richer axes the proposal actually")
@@ -157,6 +187,13 @@ def main() -> int:
         f"regime main-effect spread   {reg_spread:6.2f} pp"); P(
         f"largest |interaction|       {imax:6.2f} pp"); P("```")
     P("")
+    J["decomposition"] = {
+        "family_main_effect_pp": round(fam_spread, 2),
+        "regime_main_effect_pp": round(reg_spread, 2),
+        "max_abs_interaction_pp": round(imax, 2),
+        "family_over_regime_ratio": round(fam_spread / max(reg_spread, 1e-9), 2),
+        "unit": "pp of 60d forward max drawdown, month-demeaned",
+    }
     P(f"**Knowing the family is worth {fam_spread / max(reg_spread, 1e-9):.1f}x more than knowing "
       f"the regime.** The interaction the proposal would trade on is the smallest term.")
     P("")
@@ -196,6 +233,9 @@ def main() -> int:
     P("")
     P(f"Cells whose CI excludes 0: **{n_sig}/{n_tot}**.")
     P("")
+    thin = sorted(int(v) for v in cnt.values.flatten() if pd.notna(v))[:2]
+    J["bootstrap"] = {"n_boot": N_BOOT, "cells_ci_excludes_zero": int(n_sig),
+                      "cells_tested": int(n_tot), "thinnest_cell_n": thin}
 
     # --- 4. era stability ---------------------------------------------------------------
     A, _ = _interaction(d[d.date < ERA_SPLIT], min_n=MIN_CELL_N)
@@ -222,6 +262,9 @@ def main() -> int:
     P("")
     P(f"Sign-stable **{same}/{tot} ({pct:.0f}%)**. Coin-flip expectation is 50%.")
     P("")
+    J["era_stability"] = {"split": ERA_SPLIT, "min_cell_n": MIN_CELL_N,
+                          "sign_stable": int(same), "cells_compared": int(tot),
+                          "pct_stable": round(pct, 1), "chance_pct": 50.0}
 
     # --- verdict ------------------------------------------------------------------------
     P("## Verdict")
@@ -240,10 +283,32 @@ def main() -> int:
     P("gate in `engine/regime_conditioning_coverage.py` to turn green on a richer axis.")
     P("")
 
+    J["verdict"] = "null"
+    J["verdict_line_en"] = (
+        "A regime-conditional reliability table is not supportable on this record: the "
+        "family x regime interaction is smaller than the family effect alone, its largest "
+        "cells are its thinnest, and its sign is not stable across the era split."
+    )
+    J["verdict_line_zh"] = "本记录不足以支撑「按市场状态给策略打可靠度」的表格：状态交互项小于家族主效应，且跨时代符号不稳定。"
+    J["headline_en"] = (
+        f"Which signal family fired is worth {J['decomposition']['family_over_regime_ratio']}x "
+        f"more than which regime it fired in."
+    )
+    J["artifacts"] = {
+        "report": args.out,
+        "adjudication": "research/REGIME_RELIABILITY_FACTOR_CROWDING_ADJUDICATION.md",
+        "gate_module": "engine/regime_conditioning_coverage.py",
+        "registry_rows": ["RRC-R1", "RRC-R2"],
+    }
+
     out = REPO / args.out
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("\n".join(L) + "\n")
+    jout = REPO / args.json_out
+    jout.parent.mkdir(parents=True, exist_ok=True)
+    jout.write_text(json.dumps(J, indent=2, sort_keys=False) + "\n")
     print(f"wrote {out}  ({len(L)} lines)")
+    print(f"wrote {jout}")
     print(f"interaction/family ratio {fam_spread / max(reg_spread, 1e-9):.2f}x; "
           f"sign-stable {same}/{tot}; CI-excl-0 {n_sig}/{n_tot}")
     return 0

@@ -517,3 +517,97 @@ def test_sentinel_is_stdlib_only():
             names = [a.name for a in node.names]
         for name in names:
             assert name in stdlib_ok, f"non-stdlib module-level import: {name}"
+
+
+# --------------------------------------------------------------------------- #
+# china board-lag arming (templates/china.html.j2 delayed-board disclosure)
+# --------------------------------------------------------------------------- #
+#: china's rendering of the marker. Same English phrase the regex anchors on,
+#: different surrounding copy from us_stocks — this body proves the sentinel
+#: reads the CHINA wording, not just the dashboard one.
+CN_OUTAGE_BODY = (
+    "<html>FX data as of 2026-08-07 "
+    "<strong>⚠ BOARD DELAYED</strong> — prices as of 2026-07-20 (19d behind). "
+    "Data is stale; readings on this page may not reflect latest prices.</html>"
+)
+
+#: Same marker, lag still inside the holiday budget.
+CN_HOLIDAY_BODY = CN_OUTAGE_BODY.replace("2026-07-20", "2026-08-01")
+
+
+def _china_surface() -> dict:
+    return next(s for s in fs.SURFACES if s["id"] == "china")
+
+
+def test_china_is_armed_on_the_board_marker():
+    """china carries a board-lag budget — it is no longer bake-only.
+
+    Reverting delay_budget_days to None fails here, and would also silence
+    test_china_breaches_when_its_board_lag_exceeds_the_budget below.
+    """
+    assert _china_surface()["delay_budget_days"] == 12
+
+
+def test_china_budget_clears_the_longest_mainland_closure():
+    """The budget is a calendar fact, not a slack allowance.
+
+    Spring Festival and National Day Golden Week each run ~9-10 CALENDAR days
+    with no A-share session, and lib/cn_calendar.py's holiday table is minimal
+    on purpose, so china may legitimately print its disclosure part-way through
+    one. The budget has to clear that or the sentinel pages every October.
+    """
+    assert _china_surface()["delay_budget_days"] > 10
+
+
+def test_china_page_is_fetched_with_a_body_now():
+    """run() decides GET-vs-HEAD from the budget: a None budget fetches no body,
+    and a body-less china page can never be parsed for the marker."""
+    assert _china_surface()["delay_budget_days"] is not None
+
+
+def test_china_breaches_when_its_board_lag_exceeds_the_budget():
+    """The china twin of the Jul-31 replay: bake stamp fresh (the page re-bakes
+    nightly throughout), FX widget stamp fresh, board marker frozen 19 days."""
+    results = _fresh_results()
+    results["china"] = _page(2.0, CN_OUTAGE_BODY)
+    report = fs.evaluate(results, NOW)
+
+    assert report["ok"] is False
+    assert report["stale_surfaces"] == ["china"]
+    c = report["surfaces"]["china"]
+    assert c["board_delayed"] is True
+    assert c["board_price_through"] == "2026-07-20"
+    assert "prices as of 2026-07-20" in c["detail"]
+    # the failure mode Last-Modified alone cannot see
+    assert "page re-bakes are landing, board data is not" in c["detail"]
+
+
+def test_china_holiday_length_lag_is_not_a_breach():
+    """A Golden-Week-length lag with the marker showing is honest, not an
+    outage. Tightening the budget under the longest legitimate closure fails
+    here — that is the false-positive this budget exists to prevent."""
+    results = _fresh_results()
+    results["china"] = _page(2.0, CN_HOLIDAY_BODY)
+    report = fs.evaluate(results, NOW)
+
+    assert report["ok"] is True
+    assert report["stale_surfaces"] == []
+    c = report["surfaces"]["china"]
+    # the marker WAS parsed — this is budget tolerance, not a failure to read
+    assert c["board_delayed"] is True
+    assert c["board_price_through"] == "2026-08-01"
+    assert c["status"] == "ok"
+
+
+def test_china_fx_widget_stamp_is_not_mistaken_for_a_board_marker():
+    """china.html's only pre-existing 'as of' was an FX widget stamp. It must
+    never register as a board delay — that would arm the surface on a string
+    that stays fresh while the board freezes."""
+    fx_only = "<html><div>FX data as of 2026-08-07</div>rotation as of 2026-08-07</html>"
+    assert fs.board_delay_stamp(fx_only) is None
+
+    results = _fresh_results()
+    results["china"] = _page(2.0, fx_only)
+    report = fs.evaluate(results, NOW)
+    assert report["stale_surfaces"] == []
+    assert report["surfaces"]["china"]["board_delayed"] is False

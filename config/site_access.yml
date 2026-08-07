@@ -314,8 +314,15 @@ public:
     # those routes stay untouched behind require_site_full_user (401 signed out,
     # 403 unentitled), so promoting the client changes who can read the
     # WORKBENCH, never who can read the WORK. The page's own preview shell is
-    # server-rendered into fundamental_forensics.html and contains only product
-    # anatomy, methodology and the SEC basis — no rows to protect.
+    # server-rendered into fundamental_forensics.html and contains product
+    # anatomy, methodology, the SEC basis and two aggregate totals — the number
+    # of companies read and the number of changes ranked — but no rows to
+    # protect. The totals are free by the rule templates/tier_preview.js states
+    # outright: a count names nobody, while the member rows are the product.
+    # They are projected field by field from the private summary by
+    # build_fundamental_forensics.public_summary_projection(), which can emit
+    # only those two integers, so no symbol, ranking or finding can reach a
+    # public byte through them.
     - /fundamental_forensics.css
     - /fundamental_forensics.js
     # Existing Terminal ingest compatibility. Remove after the separate

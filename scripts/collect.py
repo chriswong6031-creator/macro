@@ -423,7 +423,7 @@ def run_quality_audits(cfg: dict | None = None, audit_fns: list | None = None) -
     if audit_fns is None:
         from scripts import (audit_prices, audit_macro, audit_universe,
                              audit_fred_groups, audit_massive_store, audit_price_basis,
-                             audit_stocks_freshness)
+                             audit_reused_tickers, audit_stocks_freshness)
         audit_fns = [
             ("prices", lambda: audit_prices.run(cfg=cfg)),
             ("macro", lambda: audit_macro.run(cfg=cfg)),
@@ -442,6 +442,12 @@ def run_quality_audits(cfg: dict | None = None, audit_fns: list | None = None) -
             # gaps only) and check_price_store_freshness (SPY/yahoo only). Per-name
             # stale-tip tripwire; flags-only, never gates this run.
             ("stocks_freshness", lambda: audit_stocks_freshness.run(cfg=cfg)),
+            # 2026-08-06 ECHO identity swap: a dead name's key (Echo Global Logistics,
+            # taken private 2021) silently filled with EchoStar's full history after
+            # its SATS->ECHO rename — invisible to every gap/freshness check because
+            # the file is fresh, continuous, and internally consistent. Dead-registry
+            # cross-reference + NASDAQ-directory presence tripwire; flags-only.
+            ("reused_tickers", lambda: audit_reused_tickers.run(cfg=cfg)),
         ]
 
     docs: list[tuple[str, dict]] = []

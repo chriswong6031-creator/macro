@@ -516,14 +516,42 @@ www.mastermind-x.com {
 	# crashes startup. journald is the idiomatic, sandbox-safe sink.
 }
 
-# ---- apex mastermind-x.com - DIRECT redirect to the CDN-fronted www --------
-# The apex A record points straight at this origin (it CANNOT be a CNAME to the
-# EdgeOne edge, because mastermind-x.com also carries the MX for email; a CNAME
-# at the apex illegally shadows MX and makes mail flap). So the apex is a direct
-# host here: Caddy issues a REAL public Let's Encrypt cert (ACME HTTP-01 on :80
-# works because apex A -> this box) and 301s everything to https://www, which
-# stays behind EdgeOne. Kept OUT of the www serving block above so EdgeOne's www
-# origin-pull (Host: www.mastermind-x.com) can never land on this redirect+loop.
+# ---- apex mastermind-x.com — 301 to the CDN-fronted www ---------------------
+# Split out of the www block by #3040 (2026-07-19). The SPLIT is still correct:
+# keeping the apex out of the www serving block is what stops EdgeOne's www
+# origin-pull (Host: www.mastermind-x.com) from landing on this redirect and
+# looping. #3040's DNS/TLS rationale was wrong when written; corrected below,
+# all of it re-verified live 2026-08-07.
+#
+# * The apex is a CNAME, NOT an A record: mastermind-x.com ->
+#   mastermind-x.com.eo.dnse3.com -> 43.159.98.106 / 43.159.99.101, the same
+#   EdgeOne edge IPs as www. Every estate host (apex/www/admin/app/bot) is
+#   proxied this way — pages.yml recorded it 2026-07-05, two weeks BEFORE #3040
+#   claimed the apex pointed straight here. Nothing migrated after #3040; the
+#   comment simply mis-described a topology that was already in place.
+# * Public TLS for the apex is terminated AT THE EDGE (TrustAsia DV, EdgeOne's
+#   CA). Visitors never see this box's cert. The Let's Encrypt cert Caddy holds
+#   is what the ORIGIN presents on EdgeOne's origin-pull (and to direct-to-IP
+#   hits) — real and in use, but not the public-facing cert.
+# * ACME HTTP-01 still works, but NOT "on :80" as #3040 said — the edge's
+#   Force-HTTPS 302s the challenge away before it ever reaches this box. It
+#   survives that hop: LE follows the 302 to https://mastermind-x.com/..., the
+#   edge origin-pulls it here, and Caddy answers the challenge ahead of routing.
+#   Verified by GETting the challenge path through the edge and watching this
+#   box's handler fire ("looking up info for HTTP challenge", identifier
+#   mastermind-x.com) in `journalctl -u caddy`. NB no renewal has been exercised
+#   since the apex moved behind the edge — the cert is still the original
+#   2026-06-30 issuance and ARI selects 2026-08-29 05:42 UTC for the first one.
+#   Watch that run. If it ever fails, the fix is `tls internal` here (origin-pull
+#   is non-strict, exactly like www above), NOT a DNS revert.
+# * The MX hazard #3040 feared has NOT materialised. The apex still carries
+#   `10 m.northlighttrade.com` and it resolves alongside the apex CNAME (28/28
+#   across Google/Cloudflare/Quad9/OpenDNS/114DNS/AliDNS) because DNSPod answers
+#   the apex per-qtype instead of chasing its own CNAME. That is still RFC 1034
+#   §3.6.2 non-conformant, and transient CNAME-only/NODATA answers for MX (and
+#   even for A) did show up during that testing — so treat it as a live caution,
+#   not a closed question. Reverting the apex to an A record is the remedy IF
+#   mail ever flaps; nothing else needs it, ACME included.
 http://mastermind-x.com {
 	redir https://www.mastermind-x.com{uri} permanent
 }
@@ -598,20 +626,69 @@ app.mastermind-x.com {
 	tls internal
 }
 
-# ---- bot.mastermind-x.com — Brain BOT serve-only mirror (uvicorn :8001) -------
+# ---- bot.mastermind-x.com — Brain BOT desk, PRO-ONLY (uvicorn :8001) ----------
 # The Mastermind Brain dashboard (paper-trading FastAPI), served by
-# mastermind.service on 127.0.0.1:8001. The app handles its own auth
-# (MASTERMIND_PASSWORD in /opt/mastermind/.env; currently disabled). MUST live
-# here — without a site block, Caddy's `tls internal` has no cert for this SNI and
-# the Cloudflare<->origin handshake fails with HTTP 525. DNS A record:
-# bot -> 146.190.142.17 (proxied), SSL mode "Full".
+# mastermind.service on 127.0.0.1:8001. The app's browser login flow is gone; its
+# remaining auth covers only mutating/LLM-triggering operator POSTs (bearer
+# token), so until this block gained a gate every PAGE and read API on the desk
+# answered 200 to anyone. MUST live here — without a site block, Caddy's `tls
+# internal` has no cert for this SNI and the Cloudflare<->origin handshake fails
+# with HTTP 525. DNS A record: bot -> 146.190.142.17 (proxied), SSL mode "Full".
+#
+# THE GATE. Every path except /health is a Pro-membership surface. Identity is
+# the shared Supabase session cookie (Domain=.mastermind-x.com, so a request to
+# this host carries it), resolved by macro-api's /api/paywall/check_pro — a
+# WHO-only sibling of /api/paywall/check that deliberately does NOT classify the
+# path: config/site_access.yml describes the macro site's URL space, and this is
+# a different application's. 2xx continues to the origin; on anything else
+# Caddy's default copy_response streams the 403 interstitial back and STOPS, so
+# the bot app is never reached. Fail-closed by construction: if macro-api is
+# down, unreachable, or answering 404, nobody gets in.
+#
+# DEPLOY-ORDER WINDOW (accepted, self-healing). app/deploy/update.sh reinstalls
+# and reloads Caddy near the top of its run but only restarts macro-api much
+# later, after runtime setup and pip reconciliation. On the single tick that
+# ships (or later changes) this endpoint, Caddy therefore calls a route the
+# still-running macro-api does not have yet: 404, non-2xx, deny — every visitor
+# including Pro members sees the upgrade interstitial for roughly a minute, then
+# the macro-api restart heals it. That is the correct direction to fail, so the
+# ordering is left alone; do NOT "fix" it by treating 404 as allow.
+#
+# /health is handled FIRST and stays ungated on purpose: admin/uptime_board.py
+# probes it over the PUBLIC hostname and needs an unauthenticated 200 to tell
+# "the service is down" apart from "you are not Pro" — a gated probe collects an
+# anonymous 403 and cannot see an outage. (The bot repo's own deploy script hits
+# 127.0.0.1:8001/health directly for its rollback check, so it never passes
+# through here; keeping this hole open is for the public-side monitor.)
 bot.mastermind-x.com {
 	encode zstd gzip
-	reverse_proxy 127.0.0.1:8001
 	header {
 		X-Robots-Tag "noindex, nofollow, noarchive"
 		-Server
 	}
+
+	handle /health {
+		reverse_proxy 127.0.0.1:8001
+	}
+
+	handle {
+		route {
+			reverse_proxy 127.0.0.1:8000 {
+				method GET
+				rewrite /api/paywall/check_pro
+				header_up X-Original-Uri {http.request.uri}
+				@proallow status 2xx
+				handle_response @proallow {
+				}
+			}
+			# A Pro-only body must never sit in a shared cache. This host is
+			# orange-clouded, so Cloudflare is the shared cache in question.
+			header Cache-Control "private, no-store"
+			header Vary "Cookie"
+			reverse_proxy 127.0.0.1:8001
+		}
+	}
+
 	# Self-signed origin cert; pair with Cloudflare SSL mode = "Full".
 	tls internal
 }

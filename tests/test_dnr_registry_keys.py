@@ -148,6 +148,72 @@ class TestRealRegistryKeys:
         )
 
 
+class TestRegistryRowShape:
+    """Cell-count integrity — the failure mode the Key tests cannot see.
+
+    `dict(zip(headers, cells))` truncates from the right, so a row with one cell
+    too many shifts every column left and DROPS `Ruling / source` on the floor,
+    silently. Three rows shipped that way while this suite was unwired:
+    KILL-LIQUIDITY-SHOCK-REVERSAL-CLASSIFIER carried a duplicated key cell (its
+    compiled `topic` was the literal string "KILL-LIQUIDITY-SHOCK-REVERSAL-
+    CLASSIFIER"), and two rulings quoting a pipe over-split — PM4-OVERHEAD-SUPPLY
+    compiled to verdict "\\" with no source at all. Both survive the key regex,
+    because the surviving first cell still looks like a well-formed key.
+
+    This parses the raw markdown independently of `compile_loop_blocklists` on
+    purpose: a guard that reuses the splitter it is guarding cannot fail when
+    that splitter is what regressed.
+    """
+
+    _SECTION_RE = re.compile(r"^##\s+(\d+)\.")
+    _UNESCAPED_PIPE = re.compile(r"(?<!\\)\|")
+    _SEPARATOR_RE = re.compile(r"^[-:]+$")
+
+    def _rows(self):
+        """Yield (line_no, section, cells) for every data row in sections 1-4."""
+        md = (_repo_root() / "research" / "DO_NOT_REBUILD.md").read_text(encoding="utf-8")
+        section = None
+        header_len = None
+        for line_no, raw in enumerate(md.splitlines(), 1):
+            line = raw.strip()
+            m = self._SECTION_RE.match(line)
+            if m:
+                section, header_len = int(m.group(1)), None
+                continue
+            if section not in _SECTION_PREFIX or not line.startswith("|"):
+                continue
+            body = line[1:]
+            if body.endswith("|") and not body.endswith("\\|"):
+                body = body[:-1]
+            cells = [c.strip() for c in self._UNESCAPED_PIPE.split(body)]
+            if header_len is None:
+                header_len = len(cells)
+                continue
+            if all(self._SEPARATOR_RE.match(c.replace(" ", "")) for c in cells if c):
+                continue
+            yield line_no, section, cells, header_len
+
+    def test_every_row_has_one_cell_per_header(self):
+        bad = [
+            f"line {ln} (§{sec}): {len(cells)} cells vs {want} headers -> {cells[0][:40]!r}"
+            for ln, sec, cells, want in self._rows()
+            if len(cells) != want
+        ]
+        assert not bad, (
+            "registry rows whose cell count does not match their header (columns "
+            f"shift left and `Ruling / source` is dropped): {bad}"
+        )
+
+    def test_topic_column_is_not_a_registry_key(self):
+        """A key-shaped Topic is the fingerprint of a left-shifted row."""
+        bad = [
+            f"line {ln} (§{sec}): topic {cells[1][:50]!r}"
+            for ln, sec, cells, _ in self._rows()
+            if len(cells) > 1 and _KEY_RE.match(cells[1])
+        ]
+        assert not bad, f"Topic column holds a registry key (row is column-shifted): {bad}"
+
+
 # ---------------------------------------------------------------------------
 # 2. Compiler behavior (hermetic fixtures)
 # ---------------------------------------------------------------------------
@@ -189,6 +255,32 @@ class TestCompilerKeyHandling:
         compiler = _load_compiler()
         dup = _KEYED_MD.replace("KILL-BETA", "KILL-ALPHA")
         assert compiler.compile_blocklists(_setup(tmp_path, dup)) == 1
+
+    def test_escaped_pipe_stays_inside_its_cell(self, tmp_path: Path):
+        """`\\|` is GFM for a literal pipe — splitting on it eats the source column.
+
+        Before the fix, this row compiled to verdict "REDUNDANT — \\" with the
+        `Ruling / source` column dropped entirely (the real KILL-PM4-OVERHEAD-SUPPLY
+        row, live on main under a dark guard).
+        """
+        compiler = _load_compiler()
+        md = textwrap.dedent("""\
+            # DO NOT REBUILD
+
+            ## 2. Killed / refuted signal families and theses
+
+            | Key | Topic | Verdict | Ruling / source |
+            |---|---|---|---|
+            | KILL-RHO | Rho topic | REDUNDANT — \\|ρ\\| 0.95 vs ext_atr | EI-PM0 run |
+        """)
+        assert compiler.compile_blocklists(_setup(tmp_path, md)) == 0
+        entries = compiler.parse_do_not_rebuild(md)
+        assert len(entries) == 1
+        entry = entries[0]
+        assert entry["key"] == "KILL-RHO"
+        assert entry["topic"] == "Rho topic"
+        assert entry["verdict"] == "REDUNDANT — |ρ| 0.95 vs ext_atr"
+        assert entry["source"] == "EI-PM0 run"
 
     def test_an_escaped_pipe_is_a_literal_bar_not_a_cell_boundary(self, tmp_path: Path):
         """Pins the COMPILER's splitter, which the arity test above cannot reach.

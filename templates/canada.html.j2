@@ -333,6 +333,14 @@
   body.page-canada .ms-green .cax-gauge-fill{stroke:var(--up)}
   body.page-canada .ms-yellow .cax-gauge-fill{stroke:var(--warn)}
   body.page-canada .ms-red .cax-gauge-fill{stroke:var(--down)}
+  /* Light mode: the needle's backing line and blade ship as dark-mode presentation
+     attributes (rgba(255,255,255,.30) / white) and composited to ~1:1 on the light
+     .cax-card — the dial rendered as an arc with no reading on it. The hub / core / tip
+     already paint from --up/--warn/--down below and stay as they are. Twin rules on
+     body.page-macro / .page-china / .page-hk — the dial is the same component. */
+  [data-theme="light"] body.page-canada .cax-gauge-needle line{stroke:rgba(10,16,24,.20);}
+  [data-theme="light"] body.page-canada .cax-gauge-needle polygon{fill:rgba(10,16,24,.82);}
+  [data-theme="light"] body.page-canada .cax-gauge-needle circle:first-of-type{fill:rgba(10,16,24,.07);}
   /* needle accents follow the same .ms-* class (US idiom) */
   body.page-canada .cax-needle-hub{fill:var(--panel,rgba(8,12,18,.85));stroke:var(--warn);stroke-width:1.5}
   body.page-canada .cax-needle-core,body.page-canada .cax-needle-tip{fill:var(--warn)}

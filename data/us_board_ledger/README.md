@@ -42,6 +42,38 @@ keep-FRESH, which meant every run silently rewrote history: re-running the grade
 (`grade_us_board._FROZEN_PRICE_COLS`); annotations (regime stamp, archetype,
 `board_tenure_days`, new spine columns) still accrue onto historical rows as before.
 
+## Options chain-derived era — boundary 2026-08-07
+
+`opt_doi_slope_5d`, `opt_voi_flag` and `opt_front7_charm_share` are computed from a
+POSITIONAL window over `data/polygon_gex/chains/`. #4807 and #4883 re-stamped that store
+onto the SESSION each snapshot describes rather than its UTC run date, which removed 20
+fabricated non-session chain files (45 → 25) and 11 summary files (419 → 408). Every
+value computed before that ran was fitted over a window containing files that do not
+correspond to a trading session.
+
+**Values committed before 2026-08-07 are not comparable to values after it.** The
+boundary is a commit boundary, not an `as_of` boundary — there is no column to filter on.
+
+| column | rows | corrected at the boundary | direction |
+|---|---|---|---|
+| `opt_doi_slope_5d` | 217 | 180 | 97 up / 83 down, median \|Δ\| 0.027 |
+| `opt_front7_charm_share` | 243 | 119 | 63 up / 56 down, median \|Δ\| 0.073 |
+| `opt_voi_flag` | 263 | 20 | 12 False→True / 8 True→False |
+
+Affected `as_of` span 2026-07-01 .. 2026-07-28 (194 rows, 12 dates, 56 tickers). The
+corrections are two-sided in every column, so this is a re-measurement, not a re-label.
+
+**215 cells could not be re-measured and still carry their pre-boundary value**
+(`opt_doi_slope_5d` 37, `opt_voi_flag` 99, `opt_front7_charm_share` 79). The repair purged
+the fabricated files those windows were drawn from, so the current store has no session
+coverage for that `(as_of, ticker)` and the recompute returns null. The restamp is
+non-destructive by contract, so the old value is kept rather than blanked — these are the
+cells where "before the boundary" is still true. They are counted and printed by
+`--restamp-cols`, never silently kept.
+
+**Summary-derived `opt_*` columns are stale against the same store rewrite and were NOT
+repaired here** — see the ERA BREAK section of the PR that set this boundary.
+
 ## Structural facts that bound every column
 
 * **Grading lag:** a fire is graded only when its horizon matures. The shortest horizon is
@@ -121,3 +153,46 @@ keep-FRESH, which meant every run silently rewrote history: re-running the grade
 * Nightly coverage per column is printed by `scripts/stamp_options_state.py`; a stamp
   column that is 0% while its display twin populates trips the `_twin_silent_null_guard`
   ::warning (W-OVC class defect tripwire).
+
+## Disclosed null eras — holes that must NOT be repaired by backfilling
+
+`snapshots.jsonl` has **no rows for 2026-08-03..08-06**. That looks like an outage
+someone should fix. The obvious fix — backfill the dates — is the **wrong action**, and
+the machine-readable record of why is `disclosed_gaps.json`
+(id `us-board-frozen-alpha-2026-08`).
+
+**The board published every one of those days. It just ranked on frozen factors.** A GHA
+cache regression had the `engine` job restoring `data/breadth/_closes_cache.parquet` from
+a prefix-matched cache over the fresh panel `collect` had committed hours earlier, then
+committing the stale copy back (`git add data/` + push_retry's `-X theirs`). Since the
+board's ranking key **is** alpha — `build_stock_library.py:3850`,
+`rank_setups(cand, as_of=alpha_asof, rank_by="alpha", ...)` — and alpha is stamped
+`as_of = R.index.max()` off that panel (`engine/residual_alpha.py:277`), every board in
+the window ordered its names by **2026-07-31 factors while pricing entry zones off current
+data**. Measured: every `alpha.json` revision from 2026-07-31T20:35Z to 2026-08-06T16:36Z
+carries one `as_of` value, while the buy lane moved 71 → 76 → 73 → 55 → 59 → 62. Different
+boards, one stamp. The snapshotter keys on `as_of`, so it saw the same date nightly and
+appended nothing.
+
+**Why the hole rather than the rows.** Backfilling with corrected dates fixes the *dates*
+and leaves the *rankings* wrong — Prophet would learn from orderings computed on six-day
+stale factors at six-day newer prices. That is the corruption the exercise set out to
+prevent. Operator adjudication 2026-08-07: record as a disclosed null era, no graded
+entries, six days of learning signal forfeited so the substrate stays clean.
+
+**This is enforced, not just documented.** `tests/test_grade_us_board.py` asserts the
+window stays empty (`test_no_graded_rows_were_backfilled_into_a_disclosed_null_era`), so
+filling it turns a test red instead of quietly widening a denominator. If a reconstruction
+is ever wanted it needs a **new `board_definition` era stamp** — a re-ranked board is a
+different admission rule from the one that actually published — plus a point-in-time
+replay harness that does not exist today (`build_stock_library.py` has no argparse and no
+as-of clamp; `as_of` is derived from whatever panel is on disk).
+
+The cause is fixed (#4798) and verified in production: `data: daily collection 2026-08-07`
+wrote `max_date=2026-08-06` (349×510), the first advance since 07-31. The guard against
+recurrence is
+`tests/test_daily_collect_commit_path.py::test_no_job_restores_a_stale_cache_over_data_it_will_commit`.
+
+**The alarm was never the gap.** `build_stock_library._board_continuity_warning` printed
+*"22 builds all claiming as_of=2026-07-31"* every night throughout, and is marked
+`Display-only: never a gate`. Detection worked; escalation did not.

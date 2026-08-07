@@ -1,21 +1,9 @@
 {
   "schema": "china_calendar.v1",
-  "asof": "2026-08-06",
-  "generated_at_utc": "2026-08-06T13:04:53.840239+00:00",
+  "asof": "2026-08-07",
+  "generated_at_utc": "2026-08-07T10:17:33.820717+00:00",
   "horizon_days": 45,
   "entries": [
-    {
-      "date": "2026-08-06",
-      "window_end": "2026-08-31",
-      "etype": "earnings_season",
-      "label_en": "A-share interim results season — 99% of the covered board reports in 2026-08",
-      "label_zh": "A股中报密集披露期：2026年8月约99%的覆盖名单披露",
-      "region": "cn",
-      "impact": "high",
-      "source_class": "feed",
-      "source": "china_earnings.calendar",
-      "approx": false
-    },
     {
       "date": "2026-08-07",
       "window_end": null,
@@ -39,6 +27,18 @@
       "source_class": "rule",
       "source": "engine.china_event_calendar",
       "approx": true
+    },
+    {
+      "date": "2026-08-07",
+      "window_end": "2026-08-31",
+      "etype": "earnings_season",
+      "label_en": "A-share interim results season — 99% of the covered board reports in 2026-08",
+      "label_zh": "A股中报密集披露期：2026年8月约99%的覆盖名单披露",
+      "region": "cn",
+      "impact": "high",
+      "source_class": "feed",
+      "source": "china_earnings.calendar",
+      "approx": false
     },
     {
       "date": "2026-08-07",
@@ -386,6 +386,18 @@
       "impact": "medium",
       "source_class": "static",
       "source": "engine.hk_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-09-21",
+      "window_end": null,
+      "etype": "LPR",
+      "label_en": "LPR fix (loan prime rate)",
+      "label_zh": "LPR 报价（贷款市场报价利率）",
+      "region": "cn",
+      "impact": "high",
+      "source_class": "rule",
+      "source": "engine.china_event_calendar",
       "approx": false
     }
   ],

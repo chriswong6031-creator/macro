@@ -1,0 +1,48 @@
+{
+  "what": "completes the #4807 polygon_gex session re-stamp on the summary files and chains file its merge reverted",
+  "reverted_by": "merge of #4807 (fc7ad1a6a95) against `data: daily collection 2026-08-07` (1fc6d1181e4), which had already appended an 08-07 row to the 372 summary files in that night's universe",
+  "authority": "docs/polygon_gex_session_stamp_migration.json (frozen accrual instants; the migration commit made them unrecoverable from git)",
+  "session_resolver": "lib.nyse_calendar.expected_last_session on the accrual instant, cross-section verified per underlying",
+  "summaries_already_migrated": 36,
+  "summaries_re_dated": 372,
+  "post_manifest_chains": [
+    {
+      "original_stamp": "2026-08-07",
+      "original_path": "data/polygon_gex/chains/2026-08-07.parquet",
+      "accrual_instant_utc": "2026-08-07T04:06:20+00:00",
+      "accrual_instant_et": "2026-08-07T00:06:20-04:00",
+      "resolved_session": "2026-08-06",
+      "classification": "CLEAN",
+      "metrics": {
+        "underlyings": 372,
+        "checkable": 283,
+        "unverifiable": 89,
+        "median_abs_err_pct": 0.0,
+        "within_0_5pct_rate": 100.0,
+        "exact_to_the_cent_rate": 100.0,
+        "worst_abs_err_pct": 0.0
+      },
+      "recovery_sha": "1fc6d1181e4c2f9fc1f9879284d88b32b3bfbe0d",
+      "new_path": "data/polygon_gex/chains/2026-08-06.parquet"
+    }
+  ],
+  "before": {
+    "summary_files": 408,
+    "summary_rows": 13340,
+    "chains_files": 25,
+    "sessions": 45
+  },
+  "after": {
+    "summary_files": 408,
+    "summary_rows": 8434,
+    "chains_files": 25,
+    "sessions": 25
+  },
+  "stats": {
+    "chains_redated": 1,
+    "summaries_rewritten": 372,
+    "summaries_deleted": 0,
+    "rows_dropped": 4906,
+    "rows_kept": 8084
+  }
+}

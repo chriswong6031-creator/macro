@@ -9079,20 +9079,28 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/mastermind_context.py
+      - engine/neuralweb/cortex.py
     external_consumers: []
     notes: >
       Lane 6 shadow lobe — per-symbol expiring context states built by the
-      fail-closed contracts.build_neuralweb_state, one per covered Health Care
-      symbol in site/seasonalitydata/index.json (MEASURED from the index sector
-      labels, never a hand-listed roster). Authority ceiling is all-false: the
-      states never boost, rank, gate, size, or originate anything, and each one
-      carries a 48h expires_at so a stale read is dropped rather than carried
-      forward. Symbols whose entity artifact is absent, unreadable, or
-      shape-shifted appear as structured gaps rather than as missing keys.
-      RUL-P10 path b (git-committed, single writer = the producer, staged by the
-      nightly blanket git add data/). Consumed ONLY by mastermind
-      candidate_context as an annotate-only sparse map attached to names that
-      universe already admitted.
+      fail-closed contracts.build_neuralweb_state_v2 (schema
+      neuralweb.biopharma_seasonality_state.v2; the file envelope declares the
+      per-state schema in state_schema, and contracts.validate_seasonality_state
+      dispatches v1/v2 on the state's own schema string), one per covered Health
+      Care symbol in site/seasonalitydata/index.json (MEASURED from the index
+      sector labels, never a hand-listed roster). Authority ceiling is
+      all-false: the states never boost, rank, gate, size, or originate
+      anything, and each one carries a 48h expires_at so a stale read is dropped
+      rather than carried forward. Symbols whose entity artifact is absent,
+      unreadable, or shape-shifted appear as structured gaps rather than as
+      missing keys. RUL-P10 path b (git-committed, single writer = the producer,
+      staged by the nightly blanket git add data/). TWO consumers, both
+      annotate-only and both applying the same drops: mastermind
+      candidate_context attaches a sparse map to names that universe already
+      admitted, and the cortex read tool read_seasonality_state serves compact
+      rows to the deliberation loop. Both skip expired and abstaining states and
+      count what they skipped — a divergence between them would put two readers
+      of one artifact into disagreement about what is current.
 
   data-seasonality-nw-forward-ledger:
     path: data/seasonality/nw_forward_ledger.jsonl
@@ -10738,6 +10746,7 @@ artifacts:
     consumers:
       - engine/neuralweb/confluence.py  # R-ORTH PR-4: reads lobes block to embed independence summary in confluence_graph.json (display-only)
       - engine/neuralweb/brief_context.py
+      - engine/seasonality/state.py  # W5: reads blocks.lobes for the seasonality lobe's overlap slot (delegated redundancy — never a second measurement)
     external_consumers: []
     notes: >
       R-ORTH PR-3 (RUL-ORTH-1..11) — covariance spine rail (not a lobe).

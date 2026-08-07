@@ -290,14 +290,29 @@ CORE_CHAIN_SERIES: tuple[str, ...] = ("putcall", "gex", "gex_SPX")
 # the disclosure entry here is the accepted terminal state (never fabricate a row).
 # The coverage tripwire stays loud about an unregistered hole until it is either
 # healed (impossible for chains) or explicitly registered here with its cause.
+#
+# TWO CAUSES LIVE IN HERE, AND THEY HAVE DIFFERENT FIXES (2026-08-06 postmortem).
+# The 07-27 entry taught every later reader to blame the CBOE CDN, and for a week
+# nobody found the bigger half: MOST of the lost sessions were collected perfectly
+# and then thrown away by our own pipeline.
+#   * SOURCE loss  — the CDN 429'd the chain endpoint through the retry window.
+#     Nothing was ever on disk. Unfixable after the fact; mitigate with retries.
+#   * COMMIT loss  — the adapter wrote the row, the collect job then died at a LATER
+#     step, `commit data` was skipped, and the next night's `actions/checkout` reset
+#     the tracked parquet. The row EXISTED and we deleted it.
+# Telling them apart is one command — the store advances only on nights that
+# committed, so compare the run log's `cboe_putcall -> ok (1 rows, last <date>)`
+# against `git log --format='%ad %s' --date=short -- data/cboe/putcall.parquet`.
+# "ok" in the log with no commit that evening is COMMIT loss, not a CBOE outage.
+#
 # The registry is date-keyed and DATE-GLOBAL — one entry silences every series for that
 # date — so each string carries the per-series nuance the key cannot.
 KNOWN_PERMANENT_GAPS: dict[date, str] = {
-    date(2026, 7, 27): "CBOE CDN rate-limited (HTTP 429) the delayed_quotes chain "
+    date(2026, 7, 27): "SOURCE loss — CBOE CDN rate-limited (HTTP 429) the delayed_quotes chain "
                        "endpoint through the whole retry window of the 07-27 evening "
                        "collect (run 30314534128): putcall + gex/gex_SPX/gex_SPY/"
                        "gex_MSFT lost the session; snapshots are unrecoverable.",
-    date(2026, 7, 30): "CBOE CDN held a continuous HTTP 429 on delayed_quotes for ≥3 "
+    date(2026, 7, 30): "SOURCE loss — CBOE CDN held a continuous HTTP 429 on delayed_quotes for ≥3 "
                        "minutes (23:42:32Z→23:45:33Z+, run 30590845976), outlasting "
                        "both the 3/6/12s per-request ladder and the single 60s "
                        "cooldown of the day: putcall + gex/gex_SPX/gex_SPY/gex_QQQ/"
@@ -311,13 +326,13 @@ KNOWN_PERMANENT_GAPS: dict[date, str] = {
                        "putcall + gex + gex_SPX STAY LOST: no archive anywhere carries "
                        "SPX options, and putcall is all-or-nothing on its _SPX leg. "
                        "This 429 is what escalated the cooldown to a 60s/300s ladder.",
-    date(2026, 7, 31): "Same 429 flap shape later in the 07-31 evening sweep (run "
+    date(2026, 7, 31): "SOURCE loss — same 429 flap shape later in the 07-31 evening sweep (run "
                        "30673008620): gex_META + gex_MSFT lost the session; the other "
                        "ten series landed. NOT recoverable — the polygon archive has "
                        "no 07-31 row at all: that Friday-evening accrual crossed into "
                        "Saturday 2026-08-01 UTC and build_polygon_gex's is_session "
                        "gate correctly refused to stamp a non-session date.",
-    date(2026, 8, 3): "scripts/collect.py crashed mid-run (run 30862763261): "
+    date(2026, 8, 3): "COMMIT loss — scripts/collect.py crashed mid-run (run 30862763261): "
                       "AttributeError 'NYGamingAdapter' object has no attribute "
                       "'fetch_result_status', then 'expected_failure'. The night's "
                       "single checkpoint commit never ran, so CBOE parquet rows that "
@@ -327,12 +342,12 @@ KNOWN_PERMANENT_GAPS: dict[date, str] = {
                       "closed by #4731 (split checkpoint — market data commits before "
                       "the capital-structure chain can fail). No archive: the polygon "
                       "rows died in the same dead commit.",
-    date(2026, 8, 4): "compile_capital_structure_events raised ManifestIdentityError "
+    date(2026, 8, 4): "COMMIT loss — compile_capital_structure_events raised ManifestIdentityError "
                       "(source ledger row 0 manifest mismatch, run 30960328285) → step "
                       "exit 1 → the same single-checkpoint commit loss as 08-03: all 12 "
                       "chain series lost the session. Fixed by #4600; commit-loss "
                       "window closed by #4731. No archive (same dead commit).",
-    date(2026, 8, 5): "compile_capital_structure_document_terms exited 2 degraded on a "
+    date(2026, 8, 5): "COMMIT loss — compile_capital_structure_document_terms exited 2 degraded on a "
                       "mass 'SEC complete-submission must contain exactly 1 canonical "
                       "SEC-HEADER opener line(s)' (run 31056495943) → the same commit "
                       "loss: all 12 chain series lost the session. Fixed by #4640; "
@@ -404,21 +419,35 @@ def check_chain_session_coverage(lookback_sessions: int = 5) -> list[dict]:
               f"{len(CHAIN_FAMILY_SERIES)} cboe delayed-chain series missing session "
               f"rows: {affected} — chain snapshots are unrecoverable; investigate "
               f"TODAY or register the gap in collectors/cboe.py KNOWN_PERMANENT_GAPS. "
+              f"FIRST check WHICH failure this is, because they have different fixes: "
+              f"grep that evening's collect log for `cboe_putcall -> ` / `cboe_gex -> `. "
+              f"`-> ok` means the row was COLLECTED and the pipeline then dropped it "
+              f"(the collect job died before `commit data`, and the next checkout reset "
+              f"the parquet) — look at the job's failing STEP, not at CBOE. `-> failed` "
+              f"or `gex: <sym> failed: HTTP 429` is a genuine source loss. "
               f"For a gex_<name> hole ONLY: if data/polygon_gex/summary_<name>.parquet "
-              f"carries the same session (same engine, identical schema — note the "
-              f"accrual stamps UTC now(), so an evening session usually sits in the "
-              f"row stamped session+1), it can be honestly cross-filled — see "
-              f"scripts/backfill_cboe_gex_20260730_from_polygon.py for the pattern "
-              f"(verify spot against the yahoo close for that session before copying; "
-              f"never fabricate a row)", flush=True)
+              f"carries the same session (same engine, identical schema), it can be "
+              f"honestly cross-filled — see "
+              f"scripts/backfill_cboe_gex_20260730_from_polygon.py for the pattern. "
+              f"ASSUME NO FIXED STAMP OFFSET: the store spans two eras — rows written "
+              f"before the session-stamp fix (#4807, 2026-08-07) are stamped UTC "
+              f"run-date, i.e. session+1; rows written after it carry the session they "
+              f"describe, no shift; and a pre-market-tape row matches no session's "
+              f"close at all. Pin the session on the DATA, never on the stamp: the "
+              f"row's spot must match the yahoo close of the TARGET session, and match "
+              f"it closer than either neighbouring session, before copying — never "
+              f"fabricate a row", flush=True)
         core_missing = set.intersection(
             *(set(missing_by_series.get(s, [])) for s in CORE_CHAIN_SERIES))
         if core_missing:
             days = ", ".join(map(str, sorted(core_missing)))
             print(f"::error title=cboe-session-miss::whole-family miss — putcall + gex "
-                  f"+ gex_SPX all lack session(s) {days} (the 2026-07-27 shape); the "
-                  f"board regime panel, conditions P/C and the gex_flip_cross alert "
-                  f"are all running without that session", flush=True)
+                  f"+ gex_SPX all lack session(s) {days} (the 2026-07-27 shape: every "
+                  f"board-critical series losing the SAME session, from either a CDN "
+                  f"429 or a skipped `commit data` — see KNOWN_PERMANENT_GAPS for how "
+                  f"to tell them apart); the board regime panel, conditions P/C and "
+                  f"the gex_flip_cross alert are all running without that session",
+                  flush=True)
     else:
         log.info("chain coverage: all %d series carry the last %d sessions "
                  "(through %s)", len(CHAIN_FAMILY_SERIES), lookback_sessions, expected)

@@ -116,6 +116,81 @@ def _data_through() -> str | None:
     return _name_data_through(CSI300_ETF)
 
 
+def compute_board_staleness(data_through: str | None = None,
+                            now: "datetime | None" = None) -> dict:
+    """Board staleness for the China board — the CN analogue of
+    build_stock_library._compute_board_staleness (CSP-W5).
+
+    price_through is the board's own settled-session anchor: the CSI300 benchmark's last bar
+    (``_data_through()``), the same date coverage already publishes. ``delayed`` is what the
+    template gates its disclosure on, and it fires on EITHER of two independent tests:
+
+      * >= 2 A-share sessions behind ``lib.cn_calendar.expected_last_session`` — the same
+        session-count rule the US board uses, now computable because lib/cn_calendar.py
+        exists. This is the early, precise signal (~2-4 calendar days).
+      * age > cn_calendar.MAX_LEGIT_CLOSURE_DAYS — a calendar-day backstop that needs NO
+        holiday table to be right. The CN holiday table is deliberately minimal (see that
+        module's DIRECTION OF ERROR note), so this clause guarantees a genuine long freeze is
+        disclosed even if every rule in it is wrong. Without it a bad table could hide exactly
+        the six-day board freeze this disclosure exists to catch.
+
+    Returns:
+        {
+          "price_through": "2026-07-31",  # CSI300 last bar actually behind the board
+          "age_days":      6,             # calendar days to the expected session (int)
+          "delayed":       True,          # gates the template disclosure
+          "inputs": {                     # per-input reach disclosure (display-only)
+            "csi300_through":   "2026-07-31",
+            "expected_session": "2026-08-06",
+            "sessions_behind":  4,
+            "backstop_days":    11,
+          },
+        }
+
+    Fail-soft: if the anchor is unreadable or anything raises, returns
+        {"price_through": None, "age_days": None, "delayed": False}
+    so the disclosure is silently suppressed — never crashes a build.
+    """
+    from datetime import datetime as _dt, timezone as _tz
+    from lib import cn_calendar as _cn
+
+    _sentinel = {"price_through": None, "age_days": None, "delayed": False}
+    try:
+        _through_s = data_through if data_through is not None else _data_through()
+        if not _through_s:
+            return _sentinel
+        try:
+            _through = _dt.strptime(str(_through_s)[:10], "%Y-%m-%d").date()
+        except Exception:  # noqa: BLE001 — malformed anchor never breaks the badge
+            return _sentinel
+
+        _now = now or _dt.now(_tz.utc)
+        _expected = _cn.expected_last_session(_now)
+        _age_days = (_expected - _through).days
+        _sessions_behind = _cn.sessions_between(_through, _expected)
+        _delayed = bool(_sessions_behind >= 2 or _age_days > _cn.MAX_LEGIT_CLOSURE_DAYS)
+
+        log.debug(
+            "china board staleness: price_through=%s expected=%s age_days=%d "
+            "sessions_behind=%d delayed=%s",
+            _through, _expected, _age_days, _sessions_behind, _delayed,
+        )
+        return {
+            "price_through": str(_through),
+            "age_days": _age_days,
+            "delayed": _delayed,
+            "inputs": {
+                "csi300_through": str(_through),
+                "expected_session": str(_expected),
+                "sessions_behind": _sessions_behind,
+                "backstop_days": _cn.MAX_LEGIT_CLOSURE_DAYS,
+            },
+        }
+    except Exception as _e:  # noqa: BLE001 — never crashes a build
+        log.warning("compute_board_staleness: failed (%s) — suppressing disclosure", _e)
+        return _sentinel
+
+
 # ── per-ticker analyze() fan-out (mirrors build_stock_library's process pool) ──
 # The ~795-name China universe runs the GIL-bound engine.cycles.analyze per name;
 # fan it across processes so the daily build doesn't pay it serially. Knobs match
@@ -2204,6 +2279,7 @@ def main(alpha: dict | None = None) -> dict | None:
             name_en=name_en_by.get(ticker), name_zh=name_zh_by.get(ticker),
         )
         attach_latest_volume(idx, ticker, latest_volumes)
+        stock_technicals.attach_chg_1d(idx, rec.get("tech"))   # `c1` — mirrors tech.chg_1d
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
         index.append(idx)
@@ -3455,6 +3531,22 @@ def main(alpha: dict | None = None) -> dict | None:
         }
         wide["track_ledger"] = None
         wide["sleeve_chip"] = {}
+        # Board staleness — the engine-driven delayed-board disclosure china.html.j2 gates on,
+        # and the ONE string scripts/freshness_sentinel.py anchors the china surface's delay
+        # budget to. Computed here with the other conservative defaults so the key always
+        # exists on the artifact; compute_board_staleness reads the CSI300 anchor directly and
+        # depends on nothing the enrichment passes below produce. Fail-soft inside, so a
+        # failure suppresses the disclosure rather than the board.
+        wide["staleness"] = compute_board_staleness()
+        log.info(
+            "china board staleness: price_through=%s age_days=%s delayed=%s "
+            "(expected_session=%s sessions_behind=%s)",
+            wide["staleness"].get("price_through"),
+            wide["staleness"].get("age_days"),
+            wide["staleness"].get("delayed"),
+            (wide["staleness"].get("inputs") or {}).get("expected_session"),
+            (wide["staleness"].get("inputs") or {}).get("sessions_behind"),
+        )
         # The renderer and both JSON artifacts now share one lossless object; later
         # enrichments cannot drift between the live page and the machine contract.
         setups = wide
@@ -4172,6 +4264,9 @@ def main(alpha: dict | None = None) -> dict | None:
                 "note": "Analysis universe collapsed; no admission decision is available.",
             },
             "coverage": _zero_coverage,
+            # A zero-name collapse is exactly when the reader most needs to know how far
+            # behind the prices are — carry the same disclosure the healthy board carries.
+            "staleness": compute_board_staleness(),
             "sleeve_chip": _zero_sleeve,
             "cap_composition": {
                 "large": 0, "mid": 0, "small": 0, "unknown": 0,
