@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_product_acceptance_manifest.v2.schema.json",
+  "title": "BioCatalyst product acceptance manifest v2",
+  "description": "The successor to the const-locked v1 draft. It declares v1 as its predecessor, binds the named design ruling by path and SHA-256, carries the ruling's machine-checkable gates, and can only reach design acceptance behind a receipt written by an independent browser verifier. It authorizes nothing: design acceptance is not a release authorization. Generic registry validation is schema-only and is NOT this contract's gate; the gate is engine.biocatalyst.acceptance_v2.validate_biocatalyst_product_acceptance_manifest_v2, which additionally reads the bound files and the verifier receipt off disk.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "manifest_id", "state", "effective_at",
+    "supersedes_manifest_ref", "supersedes_manifest_id", "supersedes_manifest_content_sha256",
+    "owner", "acceptance_authority", "design_spec_ref", "design_spec_sha256",
+    "design_adjudication_ref", "design_adjudication_sha256", "reference_fixture",
+    "benchmark_corpus", "matrix", "gates", "trusted_verifier", "approval", "authority",
+    "hash_scope", "content_sha256"
+  ],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_product_acceptance_manifest.v2"},
+    "schema_version": {"const": "2.0.0"},
+    "manifest_id": {"type": "string", "pattern": "^biocatalyst_product_acceptance_v2_[a-f0-9]{24}$"},
+    "state": {"enum": ["draft_awaiting_browser_capture", "browser_capture_failed", "design_accepted_capture_complete"]},
+    "effective_at": {"$ref": "#/$defs/utcTimestamp"},
+    "supersedes_manifest_ref": {"const": "config/biocatalyst_product_acceptance.yml"},
+    "supersedes_manifest_id": {"type": "string", "pattern": "^biocatalyst_product_acceptance_[a-f0-9]{24}$"},
+    "supersedes_manifest_content_sha256": {"$ref": "#/$defs/sha256"},
+    "owner": {"const": "biocatalyst"},
+    "acceptance_authority": {"const": "engine.biocatalyst.acceptance_v2.validate_biocatalyst_product_acceptance_manifest_v2"},
+    "design_spec_ref": {"const": "research/BIOCATALYST_D0A_IA_STATE_CONTENT_CONTRACT.md"},
+    "design_spec_sha256": {"$ref": "#/$defs/sha256"},
+    "design_adjudication_ref": {"const": "research/BIOCATALYST_D0A_DESIGN_ADJUDICATION_2026-08-06.md"},
+    "design_adjudication_sha256": {"$ref": "#/$defs/sha256"},
+    "reference_fixture": {"$ref": "#/$defs/fileBinding"},
+    "benchmark_corpus": {"$ref": "#/$defs/fileBinding"},
+    "matrix": {"$ref": "#/$defs/matrix"},
+    "gates": {"$ref": "#/$defs/gates"},
+    "trusted_verifier": {"$ref": "#/$defs/trustedVerifier"},
+    "approval": {"$ref": "#/$defs/approval"},
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "description": "Design acceptance is not a release authorization. Every flag is const false.",
+      "required": ["authorizes_ui_release", "authorizes_source_activation", "authorizes_entitlement_change", "authorizes_model_promotion", "authorizes_neural_web_authority", "authorizes_prophet_behavior"],
+      "properties": {
+        "authorizes_ui_release": {"const": false},
+        "authorizes_source_activation": {"const": false},
+        "authorizes_entitlement_change": {"const": false},
+        "authorizes_model_promotion": {"const": false},
+        "authorizes_neural_web_authority": {"const": false},
+        "authorizes_prophet_behavior": {"const": false}
+      }
+    },
+    "hash_scope": {"const": "canonical_payload_excluding_manifest_id_and_content_sha256"},
+    "content_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"state": {"const": "design_accepted_capture_complete"}}, "required": ["state"]},
+      "then": {
+        "properties": {
+          "trusted_verifier": {"properties": {"capture_state": {"const": "passed"}}, "required": ["capture_state"]},
+          "approval": {"properties": {"status": {"enum": ["approved", "approved_with_amendments"]}}, "required": ["status"]}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"state": {"const": "browser_capture_failed"}}, "required": ["state"]},
+      "then": {"properties": {"trusted_verifier": {"properties": {"capture_state": {"const": "failed"}}, "required": ["capture_state"]}}}
+    },
+    {
+      "if": {"properties": {"state": {"const": "draft_awaiting_browser_capture"}}, "required": ["state"]},
+      "then": {"properties": {"trusted_verifier": {"properties": {"capture_state": {"const": "not_run"}}, "required": ["capture_state"]}}}
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "utcTimestamp": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+    "repoPath": {"type": "string", "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$"},
+    "checkName": {"enum": ["bilingual_gate", "decision_sentence_budget", "temporal_braid_two_clock_text_equivalent", "no_hover_only_meaning", "visible_keyboard_focus", "reduced_motion_information_parity"]},
+    "stateCode": {"enum": ["catalyst_radar", "explorer_dense", "trial_peer_matrix", "company_partial", "asset_ambiguous_identity", "regulatory_mixed_sources", "change_tape_correction", "evidence_thread_expanded", "historical_mode", "source_outage", "locked", "empty"]},
+    "fileBinding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256", "purpose"],
+      "properties": {
+        "path": {"$ref": "#/$defs/repoPath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "purpose": {"type": "string", "minLength": 12, "maxLength": 240}
+      }
+    },
+    "matrix": {
+      "type": "object", "additionalProperties": false,
+      "description": "The frozen 3x2x2x2 browser capture matrix. Cell identifiers are derived by the verifier, never authored here; the D0a reference plates are explicitly not the D0b target (ruling section 5).",
+      "required": ["viewports", "themes", "languages", "motions", "required_state_codes", "cell_id_prefix", "cell_ids", "reference_plates_are_the_implementation_target"],
+      "properties": {
+        "viewports": {
+          "const": [
+            {"name": "desktop", "width": 1440, "height": 900},
+            {"name": "tablet", "width": 820, "height": 1180},
+            {"name": "mobile", "width": 390, "height": 844}
+          ]
+        },
+        "themes": {"const": ["dark", "light"]},
+        "languages": {"const": ["en", "zh"]},
+        "motions": {"const": ["standard", "reduced"]},
+        "required_state_codes": {"type": "array", "minItems": 12, "maxItems": 12, "uniqueItems": true, "items": {"$ref": "#/$defs/stateCode"}},
+        "cell_id_prefix": {"const": "d0b"},
+        "cell_ids": {
+          "type": "array", "minItems": 24, "maxItems": 24, "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^d0b_(desktop|tablet|mobile)_(dark|light)_(en|zh)_(standard|reduced)$"}
+        },
+        "reference_plates_are_the_implementation_target": {"const": false}
+      }
+    },
+    "gates": {
+      "type": "object", "additionalProperties": false,
+      "description": "The named design ruling's gates, expressed as machine-checkable requirements. Every parameter must equal the corresponding constant owned by the trusted verifier module.",
+      "required": ["bilingual_gate", "decision_sentence", "temporal_braid_accessibility"],
+      "properties": {
+        "bilingual_gate": {
+          "type": "object", "additionalProperties": false,
+          "required": ["ruling_section", "check_name", "applies_to_locales", "zh_tier1_latin_whitelist"],
+          "properties": {
+            "ruling_section": {"const": "3.3"},
+            "check_name": {"const": "bilingual_gate"},
+            "applies_to_locales": {"const": ["zh"]},
+            "zh_tier1_latin_whitelist": {"type": "array", "minItems": 6, "maxItems": 12, "uniqueItems": true, "items": {"type": "string", "minLength": 2, "maxLength": 64}}
+          }
+        },
+        "decision_sentence": {
+          "type": "object", "additionalProperties": false,
+          "required": ["ruling_section", "check_name", "separator", "max_words_en", "max_characters_zh", "research_stances_en", "research_stances_zh"],
+          "properties": {
+            "ruling_section": {"const": "3.1"},
+            "check_name": {"const": "decision_sentence_budget"},
+            "separator": {"const": "—"},
+            "max_words_en": {"const": 14},
+            "max_characters_zh": {"const": 24},
+            "research_stances_en": {"type": "array", "minItems": 6, "maxItems": 6, "uniqueItems": true, "items": {"type": "string", "minLength": 3, "maxLength": 40}},
+            "research_stances_zh": {"type": "array", "minItems": 6, "maxItems": 6, "uniqueItems": true, "items": {"type": "string", "minLength": 2, "maxLength": 24}}
+          }
+        },
+        "temporal_braid_accessibility": {
+          "type": "object", "additionalProperties": false,
+          "required": ["ruling_section", "check_names", "two_clock_labels_en", "two_clock_labels_zh"],
+          "properties": {
+            "ruling_section": {"const": "3.2"},
+            "check_names": {"const": ["temporal_braid_two_clock_text_equivalent", "no_hover_only_meaning", "visible_keyboard_focus", "reduced_motion_information_parity"]},
+            "two_clock_labels_en": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "string", "minLength": 2, "maxLength": 32}},
+            "two_clock_labels_zh": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "string", "minLength": 1, "maxLength": 32}}
+          }
+        }
+      }
+    },
+    "trustedVerifier": {
+      "type": "object", "additionalProperties": false,
+      "description": "Binds the independent verifier by module path and byte hash, and binds the receipt it produced by path and digest. The digest is over the bytes the verifier wrote, so this block cannot be satisfied by a value authored inside the manifest: until the verifier has actually written that file, no digest exists to bind.",
+      "required": ["module_path", "module_sha256", "verifier_version", "receipt_artifact_id", "required_checks", "trust_basis", "capture_state", "receipt_path", "receipt_sha256"],
+      "properties": {
+        "module_path": {"const": "scripts/biocatalyst_browser_verifier.py"},
+        "module_sha256": {"$ref": "#/$defs/sha256"},
+        "verifier_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "receipt_artifact_id": {"const": "biocatalyst_browser_verification_receipt.v1"},
+        "required_checks": {"type": "array", "minItems": 6, "maxItems": 6, "uniqueItems": true, "items": {"$ref": "#/$defs/checkName"}},
+        "trust_basis": {"const": "receipt_digest_over_bytes_written_by_the_verifier"},
+        "capture_state": {"enum": ["not_run", "passed", "failed"]},
+        "receipt_path": {"type": ["null", "string"]},
+        "receipt_sha256": {"type": ["null", "string"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"capture_state": {"const": "not_run"}}, "required": ["capture_state"]},
+          "then": {"properties": {"receipt_path": {"const": null}, "receipt_sha256": {"const": null}}}
+        },
+        {
+          "if": {"properties": {"capture_state": {"enum": ["passed", "failed"]}}, "required": ["capture_state"]},
+          "then": {"properties": {"receipt_path": {"$ref": "#/$defs/repoPath"}, "receipt_sha256": {"$ref": "#/$defs/sha256"}}}
+        }
+      ]
+    },
+    "approval": {
+      "type": "object", "additionalProperties": false,
+      "description": "The named design-owner ruling. Recording it is necessary and never sufficient: the browser receipt is a separate, independent requirement.",
+      "required": ["required_role", "reviewer_role", "named_reviewer", "status", "ruling", "recorded_at", "reason", "browser_receipt_required"],
+      "properties": {
+        "required_role": {"const": "fable_or_opus_design_owner"},
+        "reviewer_role": {"const": "fable_or_opus_design_owner"},
+        "named_reviewer": {"type": ["null", "string"], "minLength": 3, "maxLength": 160},
+        "status": {"enum": ["pending", "approved_with_amendments", "approved", "rejected"]},
+        "ruling": {"enum": ["pending", "accept", "amend", "reject"]},
+        "recorded_at": {"type": ["null", "string"], "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+        "reason": {"type": "string", "minLength": 12, "maxLength": 800},
+        "browser_receipt_required": {"const": true}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"enum": ["approved_with_amendments", "approved", "rejected"]}}, "required": ["status"]},
+          "then": {
+            "required": ["named_reviewer", "recorded_at"],
+            "properties": {
+              "named_reviewer": {"type": "string", "minLength": 3, "maxLength": 160},
+              "recorded_at": {"$ref": "#/$defs/utcTimestamp"}
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -3201,7 +3201,13 @@
     {% set _do = setups.get('data_outage') %}
     {% if _do and _do.get('flag') %}
     <div style="margin:6px 0 10px;padding:9px 13px;border-radius:9px;font-size:12px;line-height:1.5;border:1.5px solid var(--down);background:color-mix(in srgb,var(--down) 10%,var(--panel));color:var(--down)">
-      ⚠ <b><span class="l-en">data coverage degraded — board incomplete today</span><span class="l-zh">数据覆盖下降 — 今日看板不完整</span></b>
+      {# The W0.7 headline is the DEFAULT, not the only one: it describes a board that
+         is genuinely partial (buy-count collapsed past the drop threshold). A path that
+         publishes NO board — the Prophet outage shell — overrides it, because saying
+         "data coverage degraded" there names a data problem that does not exist. That
+         exact sentence sent the 2026-08-06 investigation after the China feed while the
+         real cause was a renderer refusing a complete board. #}
+      ⚠ <b><span class="l-en">{{ _do.get('headline', 'data coverage degraded — board incomplete today') }}</span><span class="l-zh">{{ _do.get('headline_zh', '数据覆盖下降 — 今日看板不完整') }}</span></b>
       <span class="muted" style="font-size:10.5px;display:block;margin-top:2px"><span class="l-en">{{ _do.get('reason','') }}</span><span class="l-zh">{{ _do.get('reason_zh', _do.get('reason','')) }}</span></span>
     </div>
     {% endif %}

@@ -1,0 +1,129 @@
+{
+  "schema": "company_intelligence.golden_corpus_v1_manifests/v1",
+  "note": "v1-shaped manifests that MUST round-trip through the real validate_manifest(). Note the vocabulary split recorded in the corpus manifest's known_limits: manifest status is {ready, degraded, empty} while context status is {ready, partial, stale, not_covered} -- two inline set literals, no shared enum.",
+  "manifests": [
+    {
+      "case_ref": "v1man-ready",
+      "expected": "valid",
+      "manifest": {
+        "schema": "company_intelligence_manifest.v1",
+        "generation_id": "9bfc969f96cb357bb3211418",
+        "generated_at": "2026-08-06T00:00:00Z",
+        "company_count": 2,
+        "event_count": 3,
+        "latest_event_date": "2026-05-07",
+        "source": {
+          "earnings_manifest": {
+            "generation_id": "bbbbbbbbbbbbbbbbbbbbbbbb",
+            "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "observed_counts": {
+              "history_rows": 3,
+              "history_tickers": 2,
+              "score_rows": 0,
+              "score_tickers": 0
+            }
+          },
+          "tx_index": {
+            "generation_id": "dddddddddddddddddddddddd",
+            "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "schema": "mastermind.tx-index/v1"
+          }
+        },
+        "files": {
+          "companies/AAPL.json": {
+            "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "bytes": 4096
+          },
+          "companies/JPM.json": {
+            "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "bytes": 2048
+          }
+        },
+        "status": "ready",
+        "warnings": [],
+        "operational": {
+          "history_rows_rejected": 0
+        }
+      }
+    },
+    {
+      "case_ref": "v1man-degraded",
+      "expected": "valid",
+      "manifest": {
+        "schema": "company_intelligence_manifest.v1",
+        "generation_id": "1aa8619f669ac2ed87750a0c",
+        "generated_at": "2026-08-06T00:00:00Z",
+        "company_count": 1,
+        "event_count": 1,
+        "latest_event_date": "2025-11-04",
+        "source": {
+          "earnings_manifest": {
+            "generation_id": "bbbbbbbbbbbbbbbbbbbbbbbb",
+            "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "observed_counts": {
+              "history_rows": 1,
+              "history_tickers": 1,
+              "score_rows": 0,
+              "score_tickers": 0
+            }
+          },
+          "tx_index": {
+            "generation_id": "dddddddddddddddddddddddd",
+            "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "schema": "mastermind.tx-index/v1"
+          }
+        },
+        "files": {
+          "companies/O.json": {
+            "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "bytes": 1024
+          }
+        },
+        "status": "degraded",
+        "warnings": [
+          "transcripts_partial"
+        ],
+        "operational": {
+          "history_rows_rejected": 0
+        }
+      }
+    },
+    {
+      "case_ref": "v1man-empty",
+      "expected": "valid",
+      "manifest": {
+        "schema": "company_intelligence_manifest.v1",
+        "generation_id": "d57020f84262657ebe460001",
+        "generated_at": "2026-08-06T00:00:00Z",
+        "company_count": 0,
+        "event_count": 0,
+        "latest_event_date": null,
+        "source": {
+          "earnings_manifest": {
+            "generation_id": "bbbbbbbbbbbbbbbbbbbbbbbb",
+            "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "observed_counts": {
+              "history_rows": 0,
+              "history_tickers": 0,
+              "score_rows": 0,
+              "score_tickers": 0
+            }
+          },
+          "tx_index": {
+            "generation_id": "dddddddddddddddddddddddd",
+            "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "schema": "mastermind.tx-index/v1"
+          }
+        },
+        "files": {},
+        "status": "empty",
+        "warnings": [
+          "earnings_history_missing"
+        ],
+        "operational": {
+          "history_rows_rejected": 0
+        }
+      }
+    }
+  ]
+}

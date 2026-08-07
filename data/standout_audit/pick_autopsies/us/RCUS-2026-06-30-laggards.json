@@ -1,0 +1,120 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "RCUS-2026-06-30-laggards",
+  "ticker": "RCUS",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "RCUS",
+    "as_of": "2026-06-30",
+    "lane": "laggards",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "RCUS",
+    "lane": "laggards",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_break",
+    "secondary_flags": "[]",
+    "process_fault": "premature_stop_noise",
+    "sector": "Health Care",
+    "excess_spy": -0.026945018036533486,
+    "excess_sector": -0.0441088350190858,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "RCUS underperformed SPY and was STOPPED, with an idiosyncratic break recorded as the outcome cause and premature stop noise independently recorded as the process fault. Both axes matter: the company break explains the adverse outcome, while the noisy stop identifies a timing and path-handling defect.",
+    "root_cause": "RCUS underperformed SPY and was STOPPED, with an idiosyncratic break recorded as the outcome cause and premature stop noise independently recorded as the process fault. Both axes matter: the company break explains the adverse outcome, while the noisy stop identifies a timing and path-handling defect.",
+    "mitigation_verdict": "mitigable_process",
+    "lesson": "The company-break book surfaced adverse idiosyncratic behavior, but the stop and path-risk engine lagged by treating noise as a terminal breach.",
+    "engines_credit": "Company-break detection receives partial credit; stop calibration and path-risk handling are the specific laggards, while catalyst visibility remains unknown.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "An idiosyncratic break is the recorded primary cause of underperformance.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Without the company-specific break, the adverse relative outcome would be less readily explained.",
+        "evidence_refs": [
+          "outcome_cause=idio_break",
+          "excess_spy=-0.026945018036533486"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "Short-horizon noise interacted with the adverse move and triggered a premature stop.",
+        "evidence_status": "claimed",
+        "timing_status": "emerged_after",
+        "counterfactual": "A noise-aware stop treatment might have avoided premature termination, although it would not erase the underlying idiosyncratic break.",
+        "evidence_refs": [
+          "process_fault=premature_stop_noise",
+          "terminal_state=STOPPED"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "catalyst",
+        "factor": "",
+        "mechanism": "A company event may have caused or accelerated the break, but its existence and ex-ante visibility are unknown.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "If a visible event risk existed at entry, the research remedy would differ from an unforeseeable post-entry shock.",
+        "evidence_refs": []
+      }
+    ],
+    "alternate_explanations": [
+      "External biotechnology news or trial information",
+      "Health Care or biotechnology rotation",
+      "A fake breakout or failed cycle already visible at entry",
+      "Pure volatility noise with subsequent recovery"
+    ],
+    "missing_evidence": [
+      "Stop rule, threshold, and execution timestamp",
+      "Intraday and daily path before and after the stop",
+      "Biotechnology benchmark and peer returns",
+      "Dated trial, regulatory, financing, and corporate news",
+      "Entry-date volatility and liquidity estimates"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "stop_noise_normalization",
+        "feature": "Stop distance normalized by pre-entry volatility, liquidity, and gap behavior",
+        "measurement": "Compare recorded stop distance with timestamp-safe distributions of ordinary price noise.",
+        "expected_direction": "Stops placed inside ordinary noise ranges should associate with premature-stop classifications.",
+        "falsifier": "Noise-normalized distance does not distinguish premature stops from necessary stops.",
+        "authority": "research_only",
+        "direct_authority": false
+      },
+      {
+        "feature_key": "post_stop_recovery_test",
+        "feature": "Recovery after a noise-classified stop",
+        "measurement": "Measure whether price and residual momentum recover after the stop without using that recovery as an ex-ante reason.",
+        "expected_direction": "Frequent prompt recovery would support a stop-process defect hypothesis.",
+        "falsifier": "Noise-classified stops continue deteriorating similarly to other idiosyncratic breaks.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T23:44:21+00:00"
+}

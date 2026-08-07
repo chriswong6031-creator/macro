@@ -2,7 +2,8 @@
 
 Computes per-ticker latest oscillator values for two resampling grids:
   d1 — raw daily bars
-  d2 — resample('2B') (2-business-day bars)
+  d2 — 2-SESSION bars on the market's absolute session calendar
+       (engine.session_anchor.session_positions // 2; era pl-abs-session-2026-08-06)
 
 For each grid g ∈ {d1, d2}, returns:
   {g}_macd         — RSI-MACD value (EMA14 − EMA60 of RSI14)
@@ -34,9 +35,20 @@ import logging
 import numpy as np
 import pandas as pd
 
+from engine import session_anchor
 from engine.technicals import rsi   # Wilder RSI — shared with signal_quality.py
 
 log = logging.getLogger(__name__)
+
+#: Era stamp for the session-anchored re-bucket of the resampled grids (this module's
+#: d2 grid on every region's panel, plus build_hk_library's 3-session d3 site, which
+#: buckets through :func:`session_bucket_last` below). DT-R16 family — a dated
+#: graded-population change, labelled forever, never silent. Snapshot rows carry it as
+#: the ``pl_anchor_era`` column; rows logged before the era keep a null there and are
+#: never edited (keep-first dedup), so the column fences the cohorts. Sibling stamps:
+#: ``abs-session-2026-08-06`` (confluence cascade), ``sq-abs-session-2026-08-06``
+#: (§7 marker engine) — each charter labels only its own grids.
+ANCHOR_ERA = "pl-abs-session-2026-08-06"
 
 # Constants — identical to signal_quality.py §1 / spec §1
 RSI_LEN   = 14
@@ -106,6 +118,35 @@ def _since(cond: pd.Series) -> pd.Series:
     return pd.Series(pos, index=cond.index) - last
 
 
+def session_bucket_last(panel: pd.DataFrame, n: int, market: str = "US") -> pd.DataFrame:
+    """Last value per ``n``-SESSION bucket on the market's ABSOLUTE session calendar.
+
+    ``bucket(date) = session_anchor.session_positions(date, market) // n`` — a function
+    of (reference calendar, date) only, never of the panel's first row, so any two
+    windows of the same history agree on every bucket. This replaces
+    ``panel.resample(f"{n}B")``, whose bin edges anchored to the PANEL's first date and
+    mis-split real session pairs at every market holiday (bdate bins): one dropped
+    leading row moved d2 scalars on 60/60 measured deep US names (2026-08-06).
+
+    ONE positions computation per panel, shared by every column — per-name windows
+    (leading NaNs from late listings) cannot phase a neighbour's buckets, because the
+    grid never depends on the data at all. ``.last()`` takes each bucket's final
+    non-null value per column, exactly as ``Resampler.last`` did, so a bucket's value
+    is fixed once its final traded session is in-window — the invariance property the
+    grids' start-invariance battery pins.
+
+    The result is indexed by absolute bucket ordinal (int). Downstream consumers are
+    positional (``iloc``-based); the ordinals are for debuggability, not a label
+    contract.
+
+    A missing CN/HK/CA reference store raises ``FileNotFoundError`` (session_anchor's
+    no-fallback law) — callers' additive never-fatal blocks log it and ship null
+    oscillators for the night rather than silently re-bucketing on the wrong calendar.
+    """
+    pos = session_anchor.session_positions(panel.index, market)
+    return panel.groupby(pos // n).last()
+
+
 # ------------------------------------------------- per-series computation ---
 
 def _grid_scalars(c: pd.Series) -> dict:
@@ -166,6 +207,7 @@ def _grid_scalars(c: pd.Series) -> dict:
 
 def compute_grids(
     close_panel: pd.DataFrame,
+    market: str = "US",
 ) -> pd.DataFrame:
     """Compute 1D and 2D oscillator latest values for all tickers.
 
@@ -174,12 +216,20 @@ def compute_grids(
     close_panel : pd.DataFrame
         Columns = ticker symbols, index = trading dates (DatetimeIndex or
         date-parseable index), values = adjusted close prices.
+    market : str
+        Session calendar the d2 buckets are anchored to — ``"US"`` (rules-computed
+        NYSE reference), ``"CN"``, ``"HK"``, ``"CA"`` (index reference stores). Each
+        regional builder passes its own region; the panel is single-region by
+        construction. d1 never buckets, so it is market-independent.
 
     Returns
     -------
     pd.DataFrame
         Index = tickers, columns = {d1,d2}_{macd,sig,macd_xup_bars,k,d,
-        kd_xup_bars,from_os,ob}. NaN where insufficient history.
+        kd_xup_bars,from_os,ob} plus ``pl_anchor_era`` (the bucket-geometry era
+        stamp, constant :data:`ANCHOR_ERA` — stamped on every row this code emits,
+        including null-scalar short-history rows: null UNDER THE NEW GEOMETRY is
+        still the new geometry). NaN where insufficient history.
     """
     if close_panel.empty:
         return pd.DataFrame()
@@ -189,12 +239,13 @@ def compute_grids(
         panel.index = pd.to_datetime(panel.index)
     panel = panel.sort_index()
 
-    # d2 resampled panel (2-business-day bars, last close)
-    panel_d2 = panel.resample("2B").last()
+    # d2 panel: 2-session buckets on the absolute session calendar (one positions
+    # computation for the whole panel, reused across every column).
+    panel_d2 = session_bucket_last(panel, 2, market=market)
 
     records: list[dict] = []
     for ticker in panel.columns:
-        row: dict = {"ticker": ticker}
+        row: dict = {"ticker": ticker, "pl_anchor_era": ANCHOR_ERA}
         for grid, ser in (("d1", panel[ticker]), ("d2", panel_d2[ticker])):
             scalars = _grid_scalars(ser)
             for key, val in scalars.items():

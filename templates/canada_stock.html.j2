@@ -251,13 +251,13 @@
     <div class="panel" id="r_pos_panel" style="display:none">
       <h2>{{ t('Positioning', '持仓与做空') }} <span class="note" style="text-transform:none">· {{ t('short interest &amp; ownership', '空头与持股结构') }}</span>{{ help(
         'Short interest (shares short + days-to-cover) and insider / institutional ownership, from yfinance. Heavy or rising short interest is a caution; high institutional ownership is crowding context. This is the ownership SNAPSHOT — actual insider buy/sell filings are in the Insider activity panel below. Descriptive, not a signal.',
-        '空头（做空股数＋回补天数）与内部人／机构持股，来自 yfinance。高或上升的空头是警示；高机构持股是拥挤背景。这是持股快照——实际的内部人买卖申报见下方"内部人交易"面板。描述性，非信号。') }}</h2>
+        '空头（做空股数＋回补天数）与内部人／机构持股，来自 yfinance。高或上升的空头是警示；高机构持股是拥挤背景。这是持股快照——实际的内部人买卖披露见下方"内部人交易"面板。描述性，非信号。') }}</h2>
       <div id="r_pos"></div>
     </div>
     <div class="panel" id="r_insider_panel" style="display:none">
-      <h2>👤 {{ t('Insider activity', '内部人交易') }} <span class="note" style="text-transform:none">· {{ t('SEDI open-market filings (yfinance)', 'SEDI 公开市场申报（yfinance）') }}</span>{{ help(
+      <h2>👤 {{ t('Insider activity', '内部人交易') }} <span class="note" style="text-transform:none">· {{ t('SEDI open-market filings (yfinance)', 'SEDI 公开市场披露（yfinance）') }}</span>{{ help(
         'Personal insider open-market buys / sells from SEDI (Canada\'s insider-filing system), via yfinance — issuer buybacks and option exercises are excluded. CONTEXT, not a validated signal: SEDI filings lag the trade by up to ~5 days and TSX insider breadth is thin, so read net buying / selling as a conviction tell, not a timing trigger. Coverage is best-effort per name.',
-        '来自 SEDI（加拿大内部人申报系统）的个人内部人公开市场买入／卖出，经 yfinance 获取——已剔除公司回购与期权行权。背景，而非已验证信号：SEDI 申报相对交易最多滞后约5天，且 TSX 内部人样本稀疏，故净买入／卖出应作为信念参考，而非择时触发。覆盖为尽力而为，逐名而定。') }}</h2>
+        '来自 SEDI（加拿大内部人披露系统）的个人内部人公开市场买入／卖出，经 yfinance 获取——已剔除公司回购与期权行权。背景，而非已验证信号：SEDI 披露相对交易最多滞后约5天，且 TSX 内部人样本稀疏，故净买入／卖出应作为信念参考，而非择时触发。覆盖为尽力而为，逐名而定。') }}</h2>
       <div id="r_insider"></div>
     </div>
     <div class="panel" id="r_cbeta_panel" style="display:none">

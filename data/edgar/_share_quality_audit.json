@@ -1,17 +1,17 @@
 {
-"applied": "2026-07-30T02:04:52.331838+00:00",
-"rows_flagged": 353,
+"applied": "2026-08-06T21:04:38.159202+00:00",
+"rows_flagged": 349,
 "tickers_flagged": 199,
 "by_flag": {
 "placeholder": 50,
-"pre_public": 242,
+"pre_public": 238,
 "pre_public_tiny": 7,
 "unit_extreme": 7,
 "unit_level": 8,
 "unit_scale": 39
 },
 "repaired": 80,
-"nulled": 273,
+"nulled": 269,
 "rows": [
 {
 "ticker": "AAP",
@@ -1518,54 +1518,6 @@
 "note": "period_end<2023-05-02"
 },
 {
-"ticker": "KORE",
-"fy": 2020,
-"flag": "pre_public",
-"shares_raw": 30281520.0,
-"repair": null,
-"note": "period_end<2026-06-01"
-},
-{
-"ticker": "KORE",
-"fy": 2021,
-"flag": "pre_public",
-"shares_raw": 72027743.0,
-"repair": null,
-"note": "period_end<2026-06-01"
-},
-{
-"ticker": "KORE",
-"fy": 2022,
-"flag": "pre_public",
-"shares_raw": 76292241.0,
-"repair": null,
-"note": "period_end<2026-06-01"
-},
-{
-"ticker": "KORE",
-"fy": 2023,
-"flag": "pre_public",
-"shares_raw": 16476530.0,
-"repair": null,
-"note": "period_end<2026-06-01"
-},
-{
-"ticker": "KORE",
-"fy": 2024,
-"flag": "pre_public",
-"shares_raw": 17008356.0,
-"repair": null,
-"note": "period_end<2026-06-01"
-},
-{
-"ticker": "KORE",
-"fy": 2025,
-"flag": "pre_public",
-"shares_raw": 17540384.0,
-"repair": null,
-"note": "period_end<2026-06-01"
-},
-{
 "ticker": "KVUE",
 "fy": 2022,
 "flag": "pre_public",
@@ -1644,6 +1596,14 @@
 "shares_raw": 1991347.0,
 "repair": 19582075.0,
 "note": "carry-forward last clean prior"
+},
+{
+"ticker": "LPRO",
+"fy": 2019,
+"flag": "pre_public",
+"shares_raw": 37631052.0,
+"repair": null,
+"note": "period_end<2020-05-02"
 },
 {
 "ticker": "LSCC",
@@ -1772,14 +1732,6 @@
 "shares_raw": 22229978.0,
 "repair": null,
 "note": "period_end<2012-05-02"
-},
-{
-"ticker": "NSA",
-"fy": 2014,
-"flag": "pre_public",
-"shares_raw": 1000.0,
-"repair": null,
-"note": "period_end<2015-03-02"
 },
 {
 "ticker": "NSIT",
@@ -2436,6 +2388,22 @@
 "shares_raw": 1000.0,
 "repair": null,
 "note": "no clean flank snap"
+},
+{
+"ticker": "TOI",
+"fy": 2019,
+"flag": "pre_public",
+"shares_raw": 5750000.0,
+"repair": null,
+"note": "period_end<2021-10-02"
+},
+{
+"ticker": "TOI",
+"fy": 2020,
+"flag": "pre_public",
+"shares_raw": 23000000.0,
+"repair": null,
+"note": "period_end<2021-10-02"
 },
 {
 "ticker": "TTWO",

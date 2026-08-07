@@ -13,6 +13,7 @@ import pytest
 from engine.signal_gate import BUYABLE_TIERS, buy_signal, is_buyable
 from engine.signal_gate import blend_sorted, tier_rank, TIER_FRAC
 from engine import confluence_tiers
+from engine import signal_quality
 
 
 def test_buyable_tiers_are_t1_t2_t3_only():
@@ -54,12 +55,28 @@ def test_buy_signal_is_slim_and_json_safe():
                          "htf_s1", "htf_s2",   # HTF super-tier badges (S1 display / S2 shadow)
                          # graded-cohort label for the measured-floor change (2026-08-05):
                          # a young name reaching a buy strip must be labellable there too.
-                         "young_history"}
+                         "young_history",
+                         # the other graded-cohort label: which BUCKETING ERA graded this row
+                         # (abs-session-2026-08-06). Before it, the same name graded
+                         # differently from two loaders on the same night, so a persisted buy
+                         # row is only comparable to another row from the same era.
+                         "anchor_era",
+                         # ...and the §7 marker stream's OWN era (sq-abs-session-2026-08-06,
+                         # R-SQ3). The two grids were re-anchored in different PRs, so a row
+                         # needs BOTH labels to be placed: `anchor_era` fences the cascade
+                         # that tiered it, `sq_anchor_era` the marker stream that fed it.
+                         "sq_anchor_era"}
     assert "last" not in slim and "result" not in slim          # no NaN-prone / heavy fields
     json.dumps(slim, allow_nan=False)                            # must not raise
     assert is_buyable(slim) is True                              # slim still gates correctly
+    # a BLANK carries the era too — the board persisted this row under a known anchor, and a
+    # row with no era cannot be placed in either cohort after the fact.
     assert buy_signal(None) == {"eligible": False, "tier_cascade": None,
-                                "htf_s1": False, "htf_s2": False, "young_history": False}
+                                "htf_s1": False, "htf_s2": False, "young_history": False,
+                                "anchor_era": confluence_tiers.ANCHOR_ERA,
+                                # BOTH eras ride on a blank: the row was produced by both
+                                # grids whether or not either had anything to say (R-SQ3).
+                                "sq_anchor_era": signal_quality.ANCHOR_ERA}
     assert is_buyable(buy_signal(None)) is False
 
 
@@ -89,11 +106,14 @@ class TestNearMissAnnotation:
         # silently degrades to "insufficient history" — the behaviour under test
         # vanishes while looking like a logic bug.  Absorb any kwarg.
         monkeypatch.setattr(sg, "analyze", lambda t, c, **kw: res)
+        # `market=` joined that signature with the absolute session anchor
+        # (abs-session-2026-08-06): gate() infers it from the ticker and passes it down.
         monkeypatch.setattr(ct, "cascade",
-                            lambda close, take_active=False, take_date=None: {
+                            lambda close, take_active=False, take_date=None, market="US": {
                                 "not_topped": not topped, "tier": None,
                                 "ticks": ticks, "sub": None,
-                                "bars_to_cross": None, "provisional": False})
+                                "bars_to_cross": None, "provisional": False,
+                                "anchor_era": ct.ANCHOR_ERA})
         return sg.gate("TEST", self._series())
 
     def test_topped_only_is_not_topped_veto(self, monkeypatch):
@@ -127,10 +147,10 @@ class TestNearMissAnnotation:
         # vanishes while looking like a logic bug.  Absorb any kwarg.
         monkeypatch.setattr(sg, "analyze", lambda t, c, **kw: res)
         monkeypatch.setattr(ct, "cascade",
-                            lambda close, take_active=False, take_date=None: {
+                            lambda close, take_active=False, take_date=None, market="US": {
                                 "not_topped": True, "tier": "T1", "ticks": 1,
                                 "sub": None, "bars_to_cross": None,
-                                "provisional": False})
+                                "provisional": False, "anchor_era": ct.ANCHOR_ERA})
         v = sg.gate("TEST", self._series())
         assert v["eligible"] is True
         assert v.get("near_miss_reason") is None

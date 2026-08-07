@@ -1673,6 +1673,11 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/grading_stats.py
+      # _basket_turn_map() reads the latest rows for the cycle engine's own
+      # registered bottoming condition (phase == "Trough" AND osc_slope > 0).
+      # Feeds the stock_score caution DUAL-READ only — it can change no size,
+      # no rank and no haircut, so this stays a display-tier read.
+      - scripts/build_stock_library.py
       - engine/neuralweb/query.py
       - scripts/grade_promises.py
       - scripts/backfill_forward_logs.py
@@ -3022,7 +3027,7 @@ artifacts:
     external_consumers:
       - terminal:chart_markers
       - mastermind:vendored
-    notes: "Per-ticker placeholder path. The ONLY jsonschema-enforced artifact family (Draft202012). Producer: scripts/build_signal_quality.py:45 via engine/signal_gate.py:write_signal_file."
+    notes: "Per-ticker placeholder path. The ONLY jsonschema-enforced artifact family (Draft202012). Producer: scripts/build_signal_quality.py writes each file itself (json.dumps of the analyze() payload after engine/marker_integrity.py:merge_payload applies the append-only merge law). The retired engine/signal_gate.py:write_signal_file never wrote these — it had zero callers."
 
   # --- 6 consumers ---
   site-qledger-track-record:

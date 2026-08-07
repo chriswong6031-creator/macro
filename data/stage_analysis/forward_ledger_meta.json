@@ -1,0 +1,69 @@
+{
+  "quarantine": {
+    "file": "forward_ledger_quarantine.jsonl",
+    "n_rows": 170,
+    "reason": "duplicate re-description of an already-recorded session stamped under a fresh calendar date (UTC-date-on-a-PT-evening-run stamp; forward-ledger calendar-asof audit 2026-08-05)",
+    "healed_by": "scripts/heal_stage_forward_ledger.py",
+    "last_heal": "2026-08-06T22:01:44+00:00"
+  },
+  "pre_fix_stamp": "pre-fix rows were stamped from contract['asof'] = datetime.now(timezone.utc); the nightly runs 20:00-22:30 PT so the UTC date was already the next calendar day — all 13 committed row batches were committed on the PT evening BEFORE the date they stamped (e.g. commit 2026-08-03T21:30 PT -> rows stamped 2026-08-04), leaving the ledger +1 against the tape with 180/780 rows on weekend dates",
+  "residual": "conservative rule: only stamps that committed frames prove were never a session for that ticker were moved; a stamp naming a real session one bar after the tape it describes is indistinguishable in the frame index and was left in place",
+  "known_gaps": [
+    {
+      "session": "2026-07-20",
+      "reason": "the calendar date is not evidence about that session: the run that wrote these rows read tape no newer than the restamped session (no frame bar after 2026-08-05), so whether this session had real fresh-Stage-2 candidates is unknowable from committed data"
+    },
+    {
+      "session": "2026-07-21",
+      "reason": "the calendar date is not evidence about that session: the run that wrote these rows read tape no newer than the restamped session (no frame bar after 2026-08-05), so whether this session had real fresh-Stage-2 candidates is unknowable from committed data"
+    },
+    {
+      "session": "2026-07-22",
+      "reason": "the calendar date is not evidence about that session: the run that wrote these rows read tape no newer than the restamped session (no frame bar after 2026-08-05), so whether this session had real fresh-Stage-2 candidates is unknowable from committed data"
+    },
+    {
+      "session": "2026-07-26",
+      "reason": "the calendar date is not evidence about that session: the run that wrote these rows read tape no newer than the restamped session (no frame bar after 2026-08-05), so whether this session had real fresh-Stage-2 candidates is unknowable from committed data"
+    },
+    {
+      "session": "2026-07-27",
+      "reason": "the calendar date is not evidence about that session: the run that wrote these rows read tape no newer than the restamped session (no frame bar after 2026-08-05), so whether this session had real fresh-Stage-2 candidates is unknowable from committed data"
+    },
+    {
+      "session": "2026-07-28",
+      "reason": "the calendar date is not evidence about that session: the run that wrote these rows read tape no newer than the restamped session (no frame bar after 2026-08-05), so whether this session had real fresh-Stage-2 candidates is unknowable from committed data"
+    },
+    {
+      "session": "2026-07-29",
+      "reason": "the calendar date is not evidence about that session: the run that wrote these rows read tape no newer than the restamped session (no frame bar after 2026-08-05), so whether this session had real fresh-Stage-2 candidates is unknowable from committed data"
+    },
+    {
+      "session": "2026-07-30",
+      "reason": "the calendar date is not evidence about that session: the run that wrote these rows read tape no newer than the restamped session (no frame bar after 2026-08-05), so whether this session had real fresh-Stage-2 candidates is unknowable from committed data"
+    },
+    {
+      "session": "2026-07-31",
+      "reason": "the calendar date is not evidence about that session: the run that wrote these rows read tape no newer than the restamped session (no frame bar after 2026-08-05), so whether this session had real fresh-Stage-2 candidates is unknowable from committed data"
+    },
+    {
+      "session": "2026-08-01",
+      "reason": "the calendar date is not evidence about that session: the run that wrote these rows read tape no newer than the restamped session (no frame bar after 2026-08-05), so whether this session had real fresh-Stage-2 candidates is unknowable from committed data"
+    },
+    {
+      "session": "2026-08-02",
+      "reason": "the calendar date is not evidence about that session: the run that wrote these rows read tape no newer than the restamped session (no frame bar after 2026-08-05), so whether this session had real fresh-Stage-2 candidates is unknowable from committed data"
+    },
+    {
+      "session": "2026-08-03",
+      "reason": "the calendar date is not evidence about that session: the run that wrote these rows read tape no newer than the restamped session (no frame bar after 2026-08-05), so whether this session had real fresh-Stage-2 candidates is unknowable from committed data"
+    },
+    {
+      "session": "2026-08-04",
+      "reason": "the calendar date is not evidence about that session: the run that wrote these rows read tape no newer than the restamped session (no frame bar after 2026-08-05), so whether this session had real fresh-Stage-2 candidates is unknowable from committed data"
+    },
+    {
+      "session": "2026-08-05",
+      "reason": "the calendar date is not evidence about that session: the run that wrote these rows read tape no newer than the restamped session (no frame bar after 2026-08-05), so whether this session had real fresh-Stage-2 candidates is unknowable from committed data"
+    }
+  ]
+}

@@ -239,13 +239,28 @@ def integration_synth_data():
     """Build synthetic close, d1_grid, and d3_map.
 
     Fixture shape (verified to fire the T0 condition):
-      - 600 business-day close series starting 2020-01-01.
+      - 600 REAL NYSE sessions starting 2020-01-01.
       - Noisy decline at -0.6%/day avg (seed=999) keeps RSI depressed.
-      - Last 4 bars: -1.5%, -1.5%, +2.0%, +1.5% — the two up bars create a
+      - Last 4 bars: -5.0%, -4.5%, +0.8%, +0.8% — the two up bars create a
         1D StochRSI K-above-D cross on the final bar (xup_bars=0).
-      - The 3B grid (resample('3B').last()) is fully in oversold territory
-        (d3_k ≈ 0) because the 3B RSI range denominator sees mostly declining
-        prices even after the 2-bar bounce.
+      - The 3D grid is in oversold territory (d3_k ≈ 20.9) because its RSI
+        range denominator sees mostly declining prices even after the bounce.
+
+    RE-TUNED 2026-08-06 for era ``sq-abs-session-2026-08-06``
+    (research/SIGNAL_QUALITY_SESSION_ANCHOR_ADJUDICATION_BY_FABLE.md). Two changes,
+    both to the FIXTURE only — ``T0_D3K_MAX`` and every assertion are untouched:
+
+      1. ``pd.bdate_range`` → real NYSE sessions. A bdate index carries market
+         HOLIDAYS as if they were bars, and under the absolute anchor a date absent
+         from the reference takes the NEXT session's position — so a synthetic
+         holiday bar shares a bucket with the session after it. The fixture was
+         therefore describing a calendar production never sees. This alone moved
+         d3_k from 50.5 to 37.4.
+      2. Deeper final down-bars (was -1.5%/-1.5%/+2.0%/+1.5%). The old tail left
+         d3_k at 37.4 — still above the 30 gate — because the re-anchored last
+         bucket composes different sessions. The new tail lands d3_k at 20.9, a
+         9-point margin rather than the ~1-point one the old fixture had, so this
+         does not need re-tuning again on the next benign engine change.
 
     Do NOT change the seed or the last-bar log-returns without re-verifying
     that both conditions still hold (d3_k < 30 AND d1_kd_xup_bars == 0).
@@ -253,17 +268,25 @@ def integration_synth_data():
     from engine.pick_lab import signals_1d as _s1d
     from engine.signal_quality import signal_frame as _sf
 
+    from datetime import date as _date
+
+    from lib import nyse_calendar as _cal
+
     ticker = "SYNTH"
     np.random.seed(999)
     n = 600
-    dates = pd.bdate_range("2020-01-01", periods=n)
+    # REAL sessions, not bdates — see the note above on why the calendar is load-bearing.
+    _sessions = pd.DatetimeIndex(pd.to_datetime(
+        _cal.sessions_between(_date(2020, 1, 1), _date(2024, 12, 31))))
+    assert len(_sessions) >= n, "reference calendar too short for this fixture"
+    dates = _sessions[:n]
 
     # Noisy declining log-returns; last 4 bars overridden for the T0 cross
     log_rets = np.random.normal(-0.006, 0.010, n)
-    log_rets[-4] = -0.015   # down
-    log_rets[-3] = -0.015   # down
-    log_rets[-2] = 0.020    # up (creates K lift)
-    log_rets[-1] = 0.015    # up (K crosses D on this bar)
+    log_rets[-4] = -0.050   # down
+    log_rets[-3] = -0.045   # down
+    log_rets[-2] = 0.008    # up (creates K lift)
+    log_rets[-1] = 0.008    # up (K crosses D on this bar)
 
     prices = 100 * np.exp(np.cumsum(log_rets))
     prices = np.insert(prices, 0, 100.0)[:n]

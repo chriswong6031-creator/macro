@@ -18,22 +18,31 @@ WHERE EVERY FIELD COMES FROM
                                               read, alignment/extension read, entry
                                               plan (stop, chase level), hold state.
                                               Richer than the parquet; used first.
-  data/breadth/_closes_cache.parquet (+ smallcap / midcap / russell)
-                                              dividend-adjusted closes, FIRST-HIT-WINS
-                                              across the four caches in that order —
-                                              the same precedence build_stock_library
-                                              uses to assemble its universe.
   data/baskets/ohlcv/<T>.parquet, then
-  data/baskets/extras.parquet                 FALLBACK RUNGS, consulted only when no
-                                              cache carries the ticker. The board's
+  data/yahoo/<T>.parquet, data/stocks/<T>.parquet,
+  data/baskets/extras.parquet                 the ADJUSTED rungs, walked FIRST, in that
+                                              order, via engine.price_ladder. The board's
                                               universe (~1,579 names) is wider than the
                                               caches' S&P-1500, so extras-universe picks
-                                              such as ASTS were structurally ungradeable
-                                              — held, exited, never scored. Appending
-                                              rungs can only turn an ungraded episode
-                                              into a graded one; a cache-resolved name
-                                              keeps the identical series and grade.
-  data/yahoo/SPY.parquet                      benchmark leg (excess return).
+                                              such as ASTS would otherwise be structurally
+                                              ungradeable — held, exited, never scored.
+  data/breadth/_closes_cache.parquet (+ smallcap / midcap / russell)
+                                              LAST RESORT, first-hit-wins in that order
+                                              (the precedence build_stock_library uses).
+                                              These caches are NOT dividend-adjusted —
+                                              this header claimed they were until
+                                              2026-08-06. They are raw closes accrued
+                                              forward and re-based only at a full
+                                              rebuild, so an episode priced here and
+                                              measured against SPY books the name's own
+                                              dividend as underperformance. Kept as a
+                                              rung because dropping a name deletes the
+                                              population this study measures; every
+                                              episode carries price_source/price_basis so
+                                              the residual is visible on the artifact.
+  data/yahoo/SPY.parquet                      benchmark leg (excess return). ALWAYS
+                                              back-adjusted — which is exactly why the
+                                              name leg has to be too.
   data/baskets/latest.json  VIA GIT HISTORY   theme state AS OF the entry date. The file
                                               is overwritten nightly, so the only way to
                                               know what the desk thought of a theme on
@@ -73,10 +82,21 @@ fired on is a resolved outcome or an outcome-conditioned mark.
 
 IN-FLIGHT ROWS
 --------------
-Episodes without H forward bars are marked to the latest close, CLASSIFIED (four of the
-eleven names the operator flagged on 2026-07-31 are still open — dropping them would
-delete the most recent evidence), and then held in a block that enters no rate. See
-engine/postmortem.py rule 4.
+Episodes without H forward bars are marked to the latest close, CLASSIFIED (dropping
+them would delete the most recent evidence), and then held in a block that enters no
+rate. See engine/postmortem.py rule 4.
+
+A MARK IS NOT A VERDICT, AND THE DIFFERENCE EXPIRES
+---------------------------------------------------
+Five of the eleven names the operator flagged on the 2026-07-31 board were still open
+that night: the number that put them on a worst-rows list was a mark. As the bars
+printed, four resolved as losses and FN 07-21 closed its tenth bar at +1.66% after a
+-19.31% drawdown. Nothing about the engine changed — the mark was never a prediction and
+the verdict is not a correction. Anything downstream that copies a cohort label out of a
+board snapshot and pins it as permanent is asserting the future, and it will come true
+or not on the tape's schedule rather than the code's (a fixture that did exactly this
+broke on 2026-08-06, when `data: daily collection 2026-08-06` completed FN's horizon).
+`path_tails` exists so the drawdown survives the verdict that erased it.
 
 NO LLM ANYWHERE (constitution A7). Every label is a threshold rule in engine/postmortem.
 """
@@ -97,6 +117,7 @@ if str(ROOT) not in sys.path:
 
 from engine import postmortem as pm  # noqa: E402
 from engine import track_scoring as ts  # noqa: E402
+from engine.price_ladder import is_adjusted as _px_is_adjusted  # noqa: E402
 
 RETRO_REL = Path("data/us_board_ledger/retro_grades.parquet")
 SNAPSHOTS_REL = Path("data/us_board_ledger/snapshots.jsonl")
@@ -112,26 +133,59 @@ REPORT_DIR_REL = Path("reports")
 #: disagree about the same ticker's price.
 CLOSE_CACHE_GROUPS = ("breadth", "smallcap_breadth", "midcap_breadth", "russell_breadth")
 
-#: FALLBACK RUNGS, walked only when the four caches above carry no column for a ticker.
-#: The board admits a wider universe than the caches cover — Russell plus curated extras,
-#: 1,579 names against the caches' S&P-1500 — so an extras-universe name could be picked,
-#: held and exited without ever being gradeable: ASTS sat in `tickers_no_price_path` for
-#: every episode it ever had (D21, missed-ignitions audit). These two stores are where
-#: the board itself reads those names' prices.
-#:
-#: APPEND-ONLY BY CONSTRUCTION. The rungs run AFTER the cache lookup and are consulted
-#: only on a miss, so a name the caches resolve resolves to the identical series it did
-#: before this ladder existed and its grade cannot move. Adding a rung may only turn an
-#: ungraded episode into a graded one — never re-grade a graded one. Reordering these,
-#: or promoting one above the caches, breaks that and is a different change requiring
-#: its own era stamp.
+#: ADJUSTED RUNGS, walked BEFORE the caches. The board admits a wider universe than the
+#: caches cover — Russell plus curated extras, 1,579 names against the caches' S&P-1500 —
+#: so an extras-universe name could be picked, held and exited without ever being
+#: gradeable: ASTS sat in `tickers_no_price_path` for every episode it ever had (D21,
+#: missed-ignitions audit). These stores are where the board itself reads those prices.
 BASKET_OHLCV_REL = Path("data/baskets/ohlcv")      # per-ticker OHLCV, deep (2014+)
 BASKET_EXTRAS_REL = Path("data/baskets/extras.parquet")   # wide off-index closes (~3y)
 
-#: The rung each episode's price path came from, for the coverage receipt.
-SOURCE_CACHE = "breadth_caches"
+#: ERA STAMP — PRICE BASIS, 2026-08-06 (#4698 → this PR).
+#:
+#: This ladder used to put the four breadth caches FIRST, and the note here used to argue
+#: that made it "APPEND-ONLY BY CONSTRUCTION … reordering these, or promoting one above
+#: the caches, … is a different change requiring its own era stamp". That is the change,
+#: and this is the era stamp.
+#:
+#: The reason the old order could not stand: the caches are UNADJUSTED (raw closes
+#: accrued forward, re-based only at a full rebuild) while `bench` is `data/yahoo/SPY`,
+#: which IS back-adjusted. `excess_pct` differences the two, so every episode whose window
+#: straddled the name's ex-dividend date booked that name's own payout as underperformance
+#: against SPY. THIS SITE WAS THE CONTAMINATED ONE: 796 of 807 resolved episodes (98.6%)
+#: were priced from the raw caches, because the caches ran FIRST and cover the S&P 1500.
+#:
+#: Measured A/B on the same day, same universe, same calendar — only the basis differs:
+#: 17 of 524 scored episodes move on `excess_pct`, and EVERY ONE MOVES UP (17 positive,
+#: 0 negative) — the signature of the defect, since a swallowed dividend is always a
+#: headwind. mean +0.588pp, median +0.480pp, worst +2.16pp (LPG 2026-06-18, −4.83 → −2.67).
+#: ZERO episodes changed cohort (loser/winner/neutral), so no published classification
+#: moves; what moves is the magnitude every downstream average is computed from.
+#:
+#: Episodes are NOT re-graded in place: this study regenerates its whole artifact on every
+#: run, so the boundary is the artifact's own `method.price_basis` / `price_basis_era`
+#: stamp plus the per-episode `price_source`. An artifact carrying no such stamp is era 1
+#: (cache-first) and its `excess_pct` is not comparable, row for row, with era 2.
+#:
+#: COVERAGE: no regression, measured. 4 names (ARWR, FN, HL, TR) have a STALE
+#: `baskets/ohlcv` store — it stops 2026-07-10/07-21 while the caches run to 07-31 — and
+#: naively preferring it cost 2 episodes their score. `min_last` (see
+#: engine.price_ladder.resolve_close) walks the remaining ADJUSTED rungs instead of
+#: settling for a stale one, which restores them: n_unscored is 30 before and after, and
+#: n_matured goes 526 → 529 because the adjusted stores carry deeper history than the
+#: caches. Basis is never traded for coverage — a name with NO adjusted source at all
+#: still resolves on the cache and says so via price_basis=unadjusted (103 episodes).
+PRICE_BASIS_ERA = "adjusted_first_20260806"
+PRICE_BASIS_ERA_BOUNDARY = "2026-08-06"
+
+#: The rung each episode's price path came from, for the coverage receipt. Values are the
+#: shared ladder's tags (engine.price_ladder.LADDER) so a receipt names its own basis:
+#: `closes_cache_UNADJUSTED` says out loud what `breadth_caches` used to hide.
+SOURCE_CACHE = "closes_cache_UNADJUSTED"
 SOURCE_BASKET_OHLCV = "baskets_ohlcv"
 SOURCE_BASKET_EXTRAS = "baskets_extras"
+SOURCE_YAHOO = "yahoo"
+SOURCE_DATA_STOCKS = "data_stocks"
 
 #: The lane this study grades. `buy` is the board's actual call; `watch` and `laggards`
 #: are context the desk publishes but does not claim as a pick.
@@ -164,73 +218,57 @@ def load_closes(root: Path) -> pd.DataFrame:
 
 
 def close_resolver(root: Path, closes: pd.DataFrame):
-    """A memoized per-ticker close resolver: caches → baskets/ohlcv → baskets/extras.
+    """A memoized per-ticker close resolver, ADJUSTED-FIRST.
 
     Returns ``resolve(ticker) -> (series | None, source | None)``.
 
-    The cache frame is consulted FIRST and returned untouched, so every name the four
-    breadth caches carry resolves exactly as it did before the fallback rungs existed —
-    the byte-identity property this ladder is only allowed to have if it appends.
-    The rungs below are lazy and memoized: only the handful of episodes the caches miss
-    ever open a parquet, so a full postmortem run reads a dozen files, not seven hundred.
+    Rung order (2026-08-06, see PRICE_BASIS_ERA above): ``baskets_ohlcv`` → ``yahoo`` →
+    ``data_stocks`` → ``baskets_extras`` → the breadth caches → null. The adjusted rungs
+    are delegated to ``engine.price_ladder`` so this study, ``scripts/grade_us_board.py``
+    and any future grader share ONE ladder instead of three hand-rolled ones — the
+    knowledge that ``engine/desk_grader.py`` already had on 2026-07-04 and that never
+    propagated. ``tests/test_price_basis_graders.py`` fails the build if it stops being
+    shared.
 
-    Every rung normalises the same way the cache loader does (numeric coercion, NaNs
-    dropped, DatetimeIndex, sorted) so a fallback-resolved series is the same SHAPE the
-    scorer already handles — a rung that returned a differently-indexed series would
-    grade the right name off the wrong bars.
+    The cache stays as the LAST rung rather than being dropped: coverage comes first, and
+    a name with no adjusted counterpart is worth grading on a disclosed unadjusted basis
+    rather than deleting from the study that exists to measure it. Every episode carries
+    the rung it came from (``price_source``) and whether that rung is adjusted
+    (``price_basis``), so the residual is measured on the artifact.
+
+    The pre-loaded ``closes`` frame supplies the cache rung so a run does not read the
+    ~1,500-column caches twice; the adjusted rungs are lazy and memoized, so a run opens
+    only the parquets it actually needs.
     """
+    from engine import price_ladder as _pl
+
     memo: dict[str, tuple["pd.Series | None", "str | None"]] = {}
-    extras: dict[str, "pd.DataFrame | None"] = {}
-
-    def _clean(series: pd.Series) -> "pd.Series | None":
-        s = pd.to_numeric(series, errors="coerce").dropna()
-        if s.empty:
-            return None
-        s.index = pd.to_datetime(s.index)
-        return s.sort_index()
-
-    def _from_ohlcv(ticker: str) -> "pd.Series | None":
-        path = root / BASKET_OHLCV_REL / f"{ticker}.parquet"
-        if not path.exists():
-            return None
-        try:
-            frame = pd.read_parquet(path, columns=["close"])
-        except Exception as exc:  # noqa: BLE001 — a bad file is a miss, not a crash
-            print(f"::warning title=prophet-postmortem::{ticker} unreadable in "
-                  f"{BASKET_OHLCV_REL} ({exc})", flush=True)
-            return None
-        return _clean(frame["close"])
-
-    def _from_extras(ticker: str) -> "pd.Series | None":
-        if "frame" not in extras:
-            path = root / BASKET_EXTRAS_REL
-            try:
-                extras["frame"] = pd.read_parquet(path) if path.exists() else None
-            except Exception as exc:  # noqa: BLE001
-                print(f"::warning title=prophet-postmortem::{BASKET_EXTRAS_REL} "
-                      f"unreadable ({exc})", flush=True)
-                extras["frame"] = None
-        frame = extras["frame"]
-        if frame is None or ticker not in frame.columns:
-            return None
-        return _clean(frame[ticker])
+    data_dir = str(Path(root) / "data")
+    # Inject the already-loaded cache panel: it saves a second wide read, and it
+    # guarantees the ladder's last rung IS the frame this module reasons about elsewhere
+    # (the episode calendar, the coverage receipt) instead of a re-read that could differ.
+    books = _pl.make_books(data_dir, cache_frames=[closes])
+    # ONE CALENDAR FOR THE WHOLE STUDY. The cache panel's last session is both the
+    # freshness floor and the CEILING every rung is clipped to.
+    #
+    # The ceiling is not cosmetic. Under the old cache-first ladder 796 of 807 episodes
+    # were priced from the caches, so every in-flight MARK was struck on the same session.
+    # Resolving adjusted-first mixes in stores with different end dates — data/yahoo
+    # carries FN to 2026-08-04 while the caches stop at 07-31 — and an unclipped ladder
+    # would mark FN four sessions later than its peers purely because its store is
+    # fresher. That moved FN@2026-07-21 out of the loser cohort on a data-vintage
+    # difference, not on anything the name did. Clipping restores one as-of for all.
+    min_last = None
+    if closes is not None and not getattr(closes, "empty", True) and len(closes.index):
+        min_last = pd.Timestamp(closes.index.max())
 
     def resolve(ticker: str) -> tuple["pd.Series | None", "str | None"]:
         if ticker in memo:
             return memo[ticker]
-        result: tuple["pd.Series | None", "str | None"] = (None, None)
-        if ticker in closes.columns:
-            series = closes[ticker].dropna()
-            result = (series, SOURCE_CACHE)
-        else:
-            for source, reader in ((SOURCE_BASKET_OHLCV, _from_ohlcv),
-                                   (SOURCE_BASKET_EXTRAS, _from_extras)):
-                series = reader(ticker)
-                if series is not None:
-                    result = (series, source)
-                    break
-        memo[ticker] = result
-        return result
+        r = _pl.resolve_close(ticker, data_dir=data_dir, asof=min_last,
+                              min_last=min_last, _book=books)
+        memo[ticker] = (r.series, r.price_source) if r.ok else (None, None)
+        return memo[ticker]
 
     return resolve
 
@@ -431,14 +469,43 @@ def _hold_broken(snaps: dict[str, dict[str, dict]], ticker: str,
     return None
 
 
-def _compact_context(ctx: dict) -> dict:
-    """The label-bearing fields only, for episodes in neither tail.
+def _round_trip_counts(rows: list[dict]) -> dict:
+    """How many episodes crossed a gate their verdict does not show, by direction.
 
-    Both tails keep their full entry context — that is what the learning loop reads.
-    The ~530 neutral episodes keep every field a label keys on (so every label in the
-    artifact stays re-derivable by hand) but drop the rest of the nested board payload,
-    which is ~550 KB of context nobody reads for a name that finished flat. The full
-    record is one deterministic re-run away: `python -m scripts.prophet_postmortem`.
+    `n` is the SET, so the two direction counts may double-count an episode that crossed
+    both — `n_crossed_both` is published beside them and the report's sentence reconciles
+    (loser + winner - both = n) rather than leaving a reader to guess.
+    """
+    rt = [r for r in rows if r["path_tails"]]
+    lose = [r for r in rt if "loser" in r["path_tails"]]
+    win = [r for r in rt if "winner" in r["path_tails"]]
+    both = [r for r in rt if len(r["path_tails"]) == 2]
+    return {
+        "n": len(rt),
+        "n_crossed_loser_gate": len(lose),
+        "n_crossed_winner_gate": len(win),
+        "n_crossed_both": len(both),
+        "n_verdict_outside_both_tails": len(
+            [r for r in rt if r["cohort"] not in ("loser", "winner")]),
+        "loser_gate_pct": pm.LOSER_ABS_PCT,
+        "winner_gate_pct": pm.WINNER_ABS_PCT,
+    }
+
+
+def _compact_context(ctx: dict) -> dict:
+    """The label-bearing fields only, for the episodes that were genuinely uneventful.
+
+    Both tails keep their full entry context — that is what the learning loop reads — and
+    so does any episode whose PATH crossed a gate its verdict does not show (`path_tails`,
+    the G3 exit-policy set). The rest keep every field a label keys on (so every label in
+    the artifact stays re-derivable by hand) but drop the rest of the nested board
+    payload, which is context nobody reads for a name that finished flat AND travelled
+    flat. The full record is one deterministic re-run away:
+    `python -m scripts.prophet_postmortem`.
+
+    Trimming on the verdict ALONE was the older rule, and it deleted the entry context of
+    exactly the episodes the exit-policy question is about — a name that fell 19% and
+    closed +1.7% read as "finished flat, nothing to see".
     """
     ext = ctx.get("extension") or {}
     spot = ctx.get("spotlight") or {}
@@ -626,10 +693,10 @@ def build_rows(root: Path = ROOT, horizon: int = ts.DEFAULT_HORIZON) -> dict:
         sc = ts.score_episode(series, d0, horizon, bench_close=bench) if series is not None else None
         if sc is None:
             no_price.append(f"{tk}@{d0}")
-            scored.append({"ep": ep, "sc": None, "series": None})
+            scored.append({"ep": ep, "sc": None, "series": None, "source": source})
             continue
         price_sources[source] = price_sources.get(source, 0) + 1
-        scored.append({"ep": ep, "sc": sc, "series": series})
+        scored.append({"ep": ep, "sc": sc, "series": series, "source": source})
 
     # ── pass 2: prior-episode scan, per ticker, in entry order ────────────────
     prior_by_key = prior_episodes(scored, calendar)
@@ -638,6 +705,7 @@ def build_rows(root: Path = ROOT, horizon: int = ts.DEFAULT_HORIZON) -> dict:
     rows: list[dict] = []
     for item in scored:
         ep, sc, series = item["ep"], item["sc"], item["series"]
+        px_source = item.get("source")
         tk, d0 = ep["ticker"], ep["entry_date"]
         snap_row = snaps.get(d0, {}).get(tk)
         retro_row = retro_by_key.get((d0, tk))
@@ -681,6 +749,10 @@ def build_rows(root: Path = ROOT, horizon: int = ts.DEFAULT_HORIZON) -> dict:
             path_missing_reason=path_reason,
         )
 
+        mae_pct = None if mae is None else round(float(mae), 2)
+        mfe_pct = None if mfe is None else round(float(mfe), 2)
+        cohort = pm.cohort_of(outcome, excess)
+
         rows.append({
             "ticker": tk,
             "entry_date": d0,
@@ -693,10 +765,14 @@ def build_rows(root: Path = ROOT, horizon: int = ts.DEFAULT_HORIZON) -> dict:
                         if sc and sc.get("pnl") is not None else None),
             "excess_pct": None if excess is None else round(float(excess), 2),
             "mark_pct": None if mark is None else round(float(mark), 2),
-            "mae_pct": None if mae is None else round(float(mae), 2),
-            "mfe_pct": None if mfe is None else round(float(mfe), 2),
+            "mae_pct": mae_pct,
+            "mfe_pct": mfe_pct,
             "held": held,
-            "cohort": pm.cohort_of(outcome, excess),
+            "cohort": cohort,
+            # Gates the PATH crossed that `cohort` does not show — the exit-policy
+            # evidence (G3). Computed off the ROUNDED numbers this row publishes so the
+            # flag and the printed MAE/MFE can never disagree at the gate.
+            "path_tails": pm.path_tails(cohort, mae_pct, mfe_pct),
             # The prior-episode comparison `re_admission` was decided on, on EVERY row
             # that had one — including the rows where no leg fired and the rows where the
             # prior could not be scored. Written out rather than left inside the label's
@@ -708,14 +784,27 @@ def build_rows(root: Path = ROOT, horizon: int = ts.DEFAULT_HORIZON) -> dict:
             "entry_context": ctx,
             "labels": labels,
             "labels_null": sorted(nulls, key=lambda d: (d["label"], d["reason"])),
+            # PRICE-BASIS STAMP. Which store this episode's NAME leg came from, and
+            # whether that store is back-adjusted. `bench` (data/yahoo/SPY) is always
+            # adjusted, so `price_basis == "adjusted"` is this row's certificate that
+            # `excess_pct` differenced two legs on ONE basis. "unadjusted" means the name
+            # had no adjusted counterpart and its own distributions are still booked as
+            # underperformance — disclosed per row rather than dropped from the study.
+            "price_source": px_source,
+            "price_basis": {True: "adjusted", False: "unadjusted"}.get(
+                _px_is_adjusted(px_source)),
         })
 
     rows.sort(key=lambda r: (r["entry_date"], r["ticker"]))
     # Aggregate on the FULL rows, then trim the neutral tail for serialization —
     # never the other way round, or the summary would be computed on a trimmed sample.
     summary = pm.aggregate(rows)
+    summary["round_trips"] = _round_trip_counts(rows)
     for r in rows:
-        if r["cohort"] not in ("loser", "winner"):
+        # A verdict outside both tails is NOT on its own a licence to trim: an episode
+        # whose path crossed a gate is the exit-policy evidence, and its entry context is
+        # the half that says WHY. Compact only the genuinely uneventful.
+        if r["cohort"] not in ("loser", "winner") and not r["path_tails"]:
             r["entry_context"] = _compact_context(r["entry_context"])
         # `en`/`zh` per label are pure duplication of summary.taxonomy, once per row.
         for lb in r["labels"]:
@@ -814,11 +903,27 @@ def build_rows(root: Path = ROOT, horizon: int = ts.DEFAULT_HORIZON) -> dict:
             "benchmark": "SPY",
             "lane": LANE,
             "llm_used": False,
+            # ERA STAMP (see PRICE_BASIS_ERA). An artifact WITHOUT this key was produced
+            # by the cache-first ladder: its `excess_pct` differenced an unadjusted name
+            # leg against an adjusted SPY, so its rows are not comparable one-for-one
+            # with this era's. 17 of 524 scored episodes moved at the boundary, all in
+            # the same direction (mean +0.588pp, worst +2.16pp on excess_pct), with zero
+            # cohort reclassifications. The old artifact is NOT restated — this study
+            # regenerates wholesale, so the stamp is the boundary.
+            "price_basis": PRICE_BASIS_ERA,
+            "price_basis_era_boundary": PRICE_BASIS_ERA_BOUNDARY,
+            "price_ladder": (
+                "engine.price_ladder — adjusted-first: baskets_ohlcv → yahoo → "
+                "data_stocks → baskets_extras → breadth caches (UNADJUSTED, last resort, "
+                "stamped per episode as price_basis=unadjusted)"
+            ),
             "detail_policy": (
-                "Loser and winner episodes carry their full entry context. Neutral and "
-                "unscored episodes carry a compact context holding every field a label "
-                "keys on, so all labels stay re-derivable; the remaining board payload "
-                "is dropped. Per-label EN/ZH copy lives once in summary.taxonomy."
+                "Loser and winner episodes carry their full entry context, as does any "
+                "episode whose path crossed a gate its verdict does not show "
+                "(`path_tails` non-empty). The remaining neutral and unscored episodes "
+                "carry a compact context holding every field a label keys on, so all "
+                "labels stay re-derivable; the remaining board payload is dropped. "
+                "Per-label EN/ZH copy lives once in summary.taxonomy."
             ),
         },
         "coverage": coverage,
@@ -1092,6 +1197,41 @@ def render_report(doc: dict) -> str:
     infl.sort(key=lambda r: (r["outcome_pct"] if r["outcome_pct"] is not None else 0.0))
     for r in infl:
         A(f"| {r['ticker']} | {r['entry_date']} | {_pct(r['outcome_pct'])} "
+          f"| {_pct(r['mae_pct'])} | {_pct(r['mfe_pct'])} | {_plain(r['held'])} "
+          f"| {', '.join(lb['label'] for lb in r['labels']) or '—'} |")
+    A("")
+
+    # ── round trips — the episodes a verdict-keyed table cannot show ──────────
+    # Deliberately AFTER the loser book: these rows are not a third maturity block and
+    # must never be read into one. They are the same episodes, re-sorted by what the
+    # PATH did, and they are the exit policy's evidence rather than a rate.
+    rt = s["round_trips"]
+    roundtrips = [r for r in doc["episodes"]
+                  if r["path_tails"] and r["cohort"] not in ("loser", "winner")]
+    A("## Round trips — crossed a gate, finished outside both tails")
+    A("")
+    A(f"{rt['n']} episodes crossed a gate their verdict does not show: "
+      f"{rt['n_crossed_loser_gate']} through the {rt['loser_gate_pct']}% loser gate + "
+      f"{rt['n_crossed_winner_gate']} through the +{rt['winner_gate_pct']}% winner gate "
+      f"− {rt['n_crossed_both']} that crossed both = {rt['n']}. The "
+      f"{rt['n_verdict_outside_both_tails']} whose VERDICT landed outside both tails are "
+      "tabled here, because they appear in no other table on this page — a name that "
+      "fell 19% and closed +1.7% is `neutral`, and a table keyed on the verdict says "
+      "nothing about it.")
+    A("")
+    A("This block is evidence for the exit-policy question, NOT a rate: it enters no "
+      "expectancy and no counterfactual above. A stop would have booked every `loser` "
+      "crossing below and forfeited whatever came after it; a target would have banked "
+      "every `winner` crossing and given up the rest. Which of those trades is worth "
+      "making is measured in G3, not asserted here. These rows keep their FULL entry "
+      "context in `summary.json` for that reason.")
+    A("")
+    A("| Ticker | Entry | Verdict | Crossed | MAE | MFE | Held | Labels |")
+    A("|---|---|---|---|---|---|---|---|")
+    for r in sorted(roundtrips, key=lambda r: (r["mae_pct"]
+                                               if r["mae_pct"] is not None else 0.0)):
+        A(f"| {r['ticker']} | {r['entry_date']} | {_pct(r['outcome_pct'])} "
+          f"| {', '.join(r['path_tails'])} "
           f"| {_pct(r['mae_pct'])} | {_pct(r['mfe_pct'])} | {_plain(r['held'])} "
           f"| {', '.join(lb['label'] for lb in r['labels']) or '—'} |")
     A("")

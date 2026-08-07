@@ -604,21 +604,41 @@ SUBSTRATE = {
 }
 
 # The coverage fact that decides the whole assessment.
+#
+# `our_fundamentals_universe` and `published_leaders_in_our_fundamentals_panel` are
+# LIVE-DERIVED at page-build time (engine/quant_lab/page.py:_live_coverage) — they were
+# hardcoded at 1,552/4 and W2-A (#4688) widened the panel to ~2,826, which would have left
+# the page printing a stale coverage chip and the flatly false sentence "CMT and KRT are in
+# our price universe with no fundamentals at all". The values below are FALLBACKS used only
+# when the panel cannot be read. `*_at_study` is the frozen historical fact — the study's IC
+# numbers were computed on the 1,552-name panel and do not change when the panel grows.
 UNIVERSE_GAP = {
     "our_price_universe": 2895,
     "our_price_universe_groups": {"r2000": 1994, "sp600": 633, "sp500": 509, "sp400": 412},
     "our_fundamentals_universe": 1552,
+    "our_fundamentals_universe_at_study": 1552,
     "fintel_screened": 36606,
     "fintel_covered": 75000,
     "published_leaders_tested": 10,
-    "published_leaders_in_our_fundamentals_panel": 4,   # STRL, IESC, WSM, AMR(11th)
+    # EXACTLY the ten QVM leaders published 2023-08-21, so the numerator and the
+    # denominator describe the same set. AMR is deliberately NOT here: it comes from the
+    # separate QVF article and was previously counted INTO the numerator against this
+    # denominator of 10, which is what made the stamped figure 4 rather than 3.
+    "published_leaders": ["STRL", "IESC", "WSM", "CLS", "CMT",
+                          "KRT", "GAMB", "SCPL", "MCEM", "VASO"],
+    "published_leaders_in_our_fundamentals_panel": 3,
+    # Verified against the committed pre-W2-A panel: STRL, IESC, WSM.
+    "published_leaders_in_our_fundamentals_panel_at_study": 3,
     "note": (
-        "Our PRICE universe reaches the Russell 2000, but the EDGAR fundamentals panel — the "
-        "binding universe for any QV recreation — covers 1,552 names. Of the ten QVM leaders "
-        "Fintel published on 2023-08-21, six (CLS, CMT, KRT, GAMB, SCPL, MCEM, VASO) are "
-        "outside it; CMT and KRT are in our price universe with no fundamentals at all. The "
-        "model is explicitly a small-cap 'multi-bagger' finder benchmarked to the Russell "
-        "2000, and that is precisely the size band our fundamentals thin out in."
+        "Our PRICE universe reaches the Russell 2000. The EDGAR fundamentals panel — the "
+        "binding universe for any QV recreation — used to stop at 1,552 names, and only 3 "
+        "of the ten QVM leaders Fintel published on 2023-08-21 were inside it. W2-A widened "
+        "the panel to the full tracked price universe: CMT and KRT, both previously in our "
+        "price universe with no fundamentals at all, are now covered. The measurement on "
+        "this page still ran on the narrower 1,552-name panel — the model is explicitly a "
+        "small-cap 'multi-bagger' finder benchmarked to the Russell 2000, so its re-test on "
+        "the widened panel is the read that will actually judge it, and that re-test has "
+        "not run yet."
     ),
 }
 
