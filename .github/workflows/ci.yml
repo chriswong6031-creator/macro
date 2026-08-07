@@ -3334,6 +3334,23 @@ on:
       # must re-run the guard that binds it.
       - "tests/test_government_revenue_candidate_grader.py"
       - "research/GOVERNMENT_REVENUE_CANDIDATE_GRADER_PREREG.md"
+      # ── Trigger-gap heal (2026-08-07) ───────────────────────────────────────
+      # Four suites already RUN by a pack read a document or config by path, with
+      # no on.pull_request.paths entry reaching it — so an edit to exactly the
+      # thing each guard binds ships without the guard running, and
+      # check_ci_trigger_closure.py reds test_main_has_no_trigger_gap for EVERY
+      # open PR until it is listed. Same load-bearing-prereg reasoning as the
+      # block directly above; these are the fixes the guard itself prints.
+      #   research/PROPHET_DOORS_PREREG.md            <- tests/test_prophet_doors.py:1400
+      #   research/PROPHET_ARENA_REGISTRATION.md      <- tests/test_prophet_arena.py:1042
+      #   research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md
+      #                                               <- tests/test_event_atlas.py:360
+      #   config/biocatalyst_outcome_family_policy.yml
+      #                        <- tests/test_biocatalyst_m0a_outcome_family_policy.py:19
+      - "research/PROPHET_DOORS_PREREG.md"
+      - "research/PROPHET_ARENA_REGISTRATION.md"
+      - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
+      - "config/biocatalyst_outcome_family_policy.yml"
       # ── Price-basis census (2026-08-07) ─────────────────────────────────────
       # Job: price-basis-census (.github/ci/legacy-jobs.yml). Same two-halves law
       # as the blocks above: every module the census SCANS rides a catch-all
