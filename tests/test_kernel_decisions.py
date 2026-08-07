@@ -38,7 +38,7 @@ import pytest
 _EST_COLS = [
     "engine", "regime", "regime_col", "horizon",
     "n_raw", "n_eff", "mean_raw", "shrunken_ic",
-    "reliability", "wilson_ci_low", "armed",
+    "reliability", "outcome_basis", "wilson_ci_low", "armed",
     "fill_basis_mode", "date_first", "date_last",
 ]
 
@@ -54,6 +54,7 @@ def _est_row(
     date_last: str = "2026-07-01",
     armed: bool = True,
     n_raw: int | None = None,
+    outcome_basis: str | None = "signed_excess",
 ) -> dict:
     return {
         "engine": engine,
@@ -65,6 +66,7 @@ def _est_row(
         "mean_raw": mean_raw,
         "shrunken_ic": shrunken_ic,
         "reliability": n_eff / (n_eff + 8.0),
+        "outcome_basis": outcome_basis,
         "wilson_ci_low": wilson_ci_low,
         "armed": armed,
         "fill_basis_mode": "next_bar",
@@ -73,14 +75,26 @@ def _est_row(
     }
 
 
-def _write_estimates(tmp_path: Path, rows: list[dict]) -> Path:
+def _write_estimates(
+    tmp_path: Path,
+    rows: list[dict],
+    *,
+    cols: list[str] | None = None,
+) -> Path:
+    """Write a kernel_estimates fixture parquet.
+
+    ``cols`` overrides the column set — pass a list WITHOUT 'outcome_basis' to
+    simulate a pre-column (legacy) parquet for the fail-closed test.
+    """
+    est_cols = cols if cols is not None else _EST_COLS
     out = tmp_path / "data" / "neuralweb"
     out.mkdir(parents=True, exist_ok=True)
     p = out / "kernel_estimates.parquet"
-    df = pd.DataFrame(rows if rows else [], columns=_EST_COLS)
-    for c in _EST_COLS:
+    df = pd.DataFrame(rows if rows else [], columns=est_cols)
+    for c in est_cols:
         if c not in df.columns:
             df[c] = None
+    df = df[est_cols]
     df.to_parquet(p, index=False)
     # Also create the trial_ledger dir
     (tmp_path / "data").mkdir(parents=True, exist_ok=True)
@@ -142,6 +156,82 @@ class TestEligibilityRules:
                          date_last="2026-07-01")]
         result = self._run(tmp_path, rows)
         assert result["n_eligible"] == 1
+
+    # ------------------------------------------------------------------
+    # [OUTCOME BASIS] criterion 4 — the sign test needs a real sign.
+    #
+    # track_record / board_hk / board_ca / board_cn fill outcome_excess from a
+    # non-negative forward-MFE proxy with direction pinned to +1, so "hits"
+    # means "MFE > 0 at least once" (~87% of rows on the 2026-08-05 index).
+    # A track_record cell carries n_eff in the tens of thousands: sign-testing
+    # 0.87 against H0=0.5 at n≈57,000 gives p≈0 and BH-FDR promotes a
+    # tautology to behavior-changing authority. First batch runs 2026-10-01.
+    # These tests FAIL pre-fix (no basis criterion existed).
+    # cf. PR #4673 edge_outcomes.py dst_outcome_unsigned_mfe_proxy.
+    # ------------------------------------------------------------------
+
+    @pytest.mark.parametrize("basis", ["unsigned_mfe_proxy", "synthetic_sign_stub", None])
+    def test_non_signed_basis_is_ineligible(self, tmp_path, basis):
+        """[OUTCOME BASIS] a cell passing every OTHER criterion is ineligible."""
+        rows = [
+            # Meets n_eff, ci_low and freshness — ONLY the basis differs.
+            _est_row(engine="unsigned", n_eff=57000, wilson_ci_low=0.87,
+                     date_last="2026-07-01", outcome_basis=basis),
+            _est_row(engine="signed", n_eff=30, wilson_ci_low=0.45,
+                     date_last="2026-07-01", outcome_basis="signed_excess"),
+        ]
+        result = self._run(tmp_path, rows)
+        assert result["n_eligible"] == 1, (
+            f"a cell with outcome_basis={basis!r} must not be eligible for "
+            f"promotion; n_eligible={result['n_eligible']}"
+        )
+        assert result["n_ineligible_outcome_basis"] == 1
+        assert result["ineligible_outcome_basis_detail"]["reason"] == (
+            "outcome_basis_not_signed"
+        )
+        by_basis = result["ineligible_outcome_basis_detail"]["by_basis"]
+        assert sum(by_basis.values()) == 1, by_basis
+        # The excluded cell cannot appear among survivors.
+        assert all(s["engine"] != "unsigned" for s in result["survivors"])
+
+    def test_signed_cell_is_unaffected_by_the_basis_gate(self, tmp_path):
+        """[OUTCOME BASIS] a signed cell still runs the batch normally."""
+        rows = [_est_row(engine="good", n_eff=30, wilson_ci_low=0.45,
+                         date_last="2026-07-01", outcome_basis="signed_excess")]
+        result = self._run(tmp_path, rows)
+        assert result["n_eligible"] == 1
+        assert result["n_ineligible_outcome_basis"] == 0
+        assert result["ineligible_outcome_basis_detail"]["by_basis"] == {}
+
+    def test_missing_outcome_basis_column_is_fail_closed(self, tmp_path):
+        """[OUTCOME BASIS] a pre-column parquet promotes NOTHING.
+
+        Fail-closed: an estimates parquet with no outcome_basis column has
+        unknown provenance (it was built by a path that bypassed the query
+        layer), so every cell is ineligible rather than every cell eligible.
+        """
+        fixture_dir = tmp_path / "fixture"
+        legacy_cols = [c for c in _EST_COLS if c != "outcome_basis"]
+        _write_estimates(
+            fixture_dir,
+            [_est_row(engine="legacy", n_eff=5000, wilson_ci_low=0.9)],
+            cols=legacy_cols,
+        )
+        real_root = tmp_path / "real_root"
+        real_root.mkdir(parents=True, exist_ok=True)
+        from scripts.run_kernel_decisions import _run_batch
+        result = _run_batch(real_root, dry_run=True, fixture_dir=fixture_dir,
+                            _now_override="2026-10-01")
+        assert result["n_eligible"] == 0
+        assert result["n_ineligible_outcome_basis"] == 1
+        assert result["survivors"] == []
+
+    def test_basis_requirement_recorded_in_the_decision_rule(self, tmp_path):
+        """[OUTCOME BASIS] the artifact states the criterion it applied."""
+        rows = [_est_row(engine="good", n_eff=30, wilson_ci_low=0.45,
+                         date_last="2026-07-01")]
+        result = self._run(tmp_path, rows)
+        assert result["decision_rule"]["outcome_basis_required"] == "signed_excess"
 
 
 # ---------------------------------------------------------------------------

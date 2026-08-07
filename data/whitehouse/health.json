@@ -1,47 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-07T00:16:35.210381+00:00",
+  "as_of": "2026-08-07T07:40:38.569273+00:00",
   "posts_seen": 16,
-  "seen_total": 94,
-  "evaluated": 6,
-  "activated": 3,
+  "seen_total": 96,
+  "evaluated": 0,
+  "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-08-06-fact-sheet-president-donald-j-trump-ends-birth-tourism-and-protects-the-meaning-",
-      "importance": 35,
-      "activated": false,
-      "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "wh-2026-08-06-continuing-to-protect-the-meaning-and-value-of-american-citizenship",
-      "importance": 75,
-      "activated": true,
-      "degraded_reason": null
-    },
-    {
-      "id": "wh-2026-08-06-ending-birth-tourism",
-      "importance": 15,
-      "activated": false,
-      "degraded_reason": null
-    },
-    {
-      "id": "wh-2026-08-06-fact-sheet-president-donald-j-trump-bolsters-national-security-and-strengthens-u",
-      "importance": 65,
-      "activated": true,
-      "degraded_reason": null
-    },
-    {
-      "id": "wh-2026-08-06-adjusting-imports-of-polysilicon-and-its-derivatives-into-the-united-states",
-      "importance": 78,
-      "activated": true,
-      "degraded_reason": null
-    },
-    {
-      "id": "wh-2026-08-06-national-purple-heart-day-2026",
-      "importance": 5,
-      "activated": false,
-      "degraded_reason": null
-    }
-  ]
+  "gate_scores": []
 }

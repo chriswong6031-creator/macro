@@ -3304,6 +3304,40 @@ def test_handoff_verdict_classifies_the_three_outcomes():
     ) == ("armed", [])
 
 
+def test_handoff_verdict_will_not_release_a_session_on_an_all_skipped_head():
+    """PR #4779's exact head — the shape that must not read `armed`.
+
+    The sweeper's `decide_verdict` refuses this head as `unproven` (nothing
+    affirmatively passed), so releasing the session on it would ORPHAN the work:
+    the session stops, and the armed pull request sits there forever because the
+    thing it handed off to will never merge it. The two verdicts have to agree
+    about what "proven" means, and neither may read a `skipped` third-party
+    integration check as evidence.
+    """
+    assert GUARD._handoff_verdict(
+        [
+            {"name": "Supabase Preview", "status": "completed", "conclusion": "skipped"},
+            {"name": "Workers Builds: macro", "status": "completed", "conclusion": "failure"},
+        ]
+    ) == ("unproven", [])
+
+
+def test_handoff_verdict_still_arms_a_head_whose_packs_are_merely_running():
+    """The boundary: `unproven` is gated on nothing PENDING, unlike the sweeper's copy.
+
+    `armed` deliberately covers a head still being proven — handing that wait to
+    the sweeper is the whole release valve. So a skipped integration check BESIDE a
+    running pack must stay `armed`; only a head that has FINISHED proving nothing
+    may pin the session.
+    """
+    assert GUARD._handoff_verdict(
+        [
+            _run_stub("Supabase Preview", conclusion="skipped"),
+            _run_stub("ci-pack-1", "in_progress"),
+        ]
+    ) == ("armed", [])
+
+
 def test_a_labeled_pull_request_with_checks_pending_releases_the_session(
     monkeypatch, tmp_path, capsys
 ):

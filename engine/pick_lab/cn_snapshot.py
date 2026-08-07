@@ -80,6 +80,8 @@ _CN_OSC_D2 = [
     "d2_macd", "d2_sig", "d2_macd_xup_bars",
     "d2_k", "d2_d", "d2_kd_xup_bars",
     "d2_from_os", "d2_ob",
+    "pl_anchor_era",   # session-anchor era of the d2 buckets (signals_1d.ANCHOR_ERA);
+                       # null = pre-era resample("2B") row or oscillators not computed
 ]
 
 # Technicals (from china_signals.ashare_tech)
@@ -357,6 +359,7 @@ def build_cn_core_rows(
             "d2_kd_xup_bars": osc.get("d2_kd_xup_bars"),
             "d2_from_os": osc.get("d2_from_os"),
             "d2_ob": osc.get("d2_ob"),
+            "pl_anchor_era": osc.get("pl_anchor_era"),
             # technicals
             "rsi_5": tech.get("rsi5"),
             "rsi_10": tech.get("rsi10"),

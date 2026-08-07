@@ -1,0 +1,14 @@
+{
+  "contract_id": "biocatalyst_seasonality_event_projection.v1",
+  "coverage_epoch_id": "epoch_synthetic_2026_08_06",
+  "fixture_only": true,
+  "generation_id": "ctgov_run_synthetic_2026_08_06",
+  "hash_scope": "canonical_payload_excluding_packet_hash",
+  "last_complete_run_ref": "ctgov_run_synthetic_2026_08_06",
+  "note": "SYNTHETIC. Hand-authored consumer-side fixture for engine/seasonality/event_clock.py. No real issuer, trial, or filing is described here, and nothing in this file may be published.",
+  "packet_hash": "7b4571bc401e4d9b1cfe0fd3831e4239d2a00e440c070c99d059f6143c48a036",
+  "packet_id": "pkt_synthetic_rows_not_a_list",
+  "publishable": false,
+  "rows": {},
+  "schema_version": "1.0.0"
+}

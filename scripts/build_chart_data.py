@@ -25,6 +25,15 @@ The deep store carries no ``open`` column, so open is reconstructed as the prior
 close and high/low are clamped to include it — candles never render inverted and
 day-coloring (close vs prior close) stays meaningful. Only the most recent
 ``MAX_BARS`` sessions ship, so even a 45-year name stays a small lazy-loaded file.
+
+Every record also ships an ``"anchor": {"era", "b3"}`` block (DG-R3/R6, ruling
+``research/DISPLAY_GRID_ALIGNMENT_ADJUDICATION_BY_FABLE.md``): ``b3`` lists the row
+indices at which a new ABSOLUTE 3-session bucket opens, cut on the market's reference
+session calendar (``engine.session_anchor``) exactly as the engine cuts its own 3D grid.
+chart.js buckets its 3D candles by those boundaries. Without them the client grouped by
+``floor(i/3)`` over the loaded window — and the window is a ``tail(MAX_BARS)`` that
+advances one session per night, so the whole 3D view re-phased mod 3 on two of every
+three nights and ~99% of a name's §7 markers landed on a candle the engine never cut.
 """
 
 from __future__ import annotations
@@ -39,6 +48,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config, store  # noqa: E402
+from engine import bar_derive, session_anchor  # noqa: E402
 from engine.ohlc_reconstruct import reconstruct_ohlc, has_real_ohlc  # noqa: E402
 
 log = logging.getLogger("build_chart_data")
@@ -124,6 +134,44 @@ def _bars_recon(close: pd.Series, vol: pd.Series | None = None) -> list:
     return out
 
 
+# ------------------------------------------------------- display-grid anchor ----
+
+def _source_dates(source) -> pd.DatetimeIndex:
+    """The dates a bar builder would emit for this source if nothing were capped: finite
+    close, de-duplicated keep-last, sorted. The DG-R4 trim needs the row immediately
+    BEFORE the shipped window, which only the untruncated source knows."""
+    s = source["close"] if isinstance(source, pd.DataFrame) else source
+    s = pd.to_numeric(s, errors="coerce").dropna()
+    s = s[~s.index.duplicated(keep="last")]
+    idx = s.index if isinstance(s.index, pd.DatetimeIndex) else pd.DatetimeIndex(
+        pd.to_datetime(s.index))
+    return idx.sort_values()
+
+
+def _with_anchor(rec: dict, source, market: str) -> dict:
+    """Trim the window's START forward to a bucket boundary (DG-R4) and attach the
+    ``anchor`` block (DG-R3) — the two halves of the display-grid contract.
+
+    ``market`` picks the reference session calendar the buckets are counted against
+    (``engine.session_anchor``: US from rules, CN/HK/CA from their index store). There is
+    no fallback chain — a missing non-US reference raises rather than silently bucketing a
+    Hong Kong name on the NYSE calendar, which is a wrongness nothing downstream could see.
+    """
+    bars = rec.get("bars") or []
+    if not bars:
+        return rec
+    dates = pd.DatetimeIndex(pd.to_datetime([b[0] for b in bars]))
+    src = _source_dates(source)
+    earlier = src[src < dates[0]]
+    cut = bar_derive.trim_rows_to_bucket_open(
+        dates, earlier[-1] if len(earlier) else None, market)
+    if cut:
+        rec["bars"] = bars = bars[cut:]
+        dates = dates[cut:]
+    rec["anchor"] = bar_derive.chart_anchor(dates, market)
+    return rec
+
+
 def _load_caches() -> dict[str, pd.DataFrame]:
     """Close-only constituent caches, loaded once and reused across the universe."""
     caches: dict[str, pd.DataFrame] = {}
@@ -137,8 +185,11 @@ def _load_caches() -> dict[str, pd.DataFrame]:
     return caches
 
 
-def _build_ticker(t: str, deep_dir: Path, caches: dict[str, pd.DataFrame]) -> dict | None:
-    """Resolve the best price source for one ticker and return its compact record."""
+def _build_ticker(t: str, deep_dir: Path, caches: dict[str, pd.DataFrame],
+                  market: str = "US") -> dict | None:
+    """Resolve the best price source for one ticker and return its compact record.
+    ``market`` is the reference session calendar the ``anchor`` block is cut on (DG-R1);
+    the US stock library is US by construction."""
     # 1. deep OHLC store — true candles, decades of history.
     p = deep_dir / f"{t}.parquet"
     if p.exists():
@@ -147,7 +198,8 @@ def _build_ticker(t: str, deep_dir: Path, caches: dict[str, pd.DataFrame]) -> di
             if "close" in df and len(df):
                 bars = _bars_ohlc(df)
                 if bars:
-                    return {"t": t, "o": 1, "src": "deep", "bars": bars}
+                    return _with_anchor({"t": t, "o": 1, "src": "deep", "bars": bars},
+                                        df["close"], market)
         except Exception as e:  # noqa: BLE001
             log.warning("deep %s unreadable (%s)", t, e)
 
@@ -158,7 +210,8 @@ def _build_ticker(t: str, deep_dir: Path, caches: dict[str, pd.DataFrame]) -> di
         if cache is not None and t in cache.columns:
             bars = _bars_recon(cache[t])
             if bars:
-                return {"t": t, "o": 1, "src": grp, "recon": 1, "bars": bars}
+                return _with_anchor({"t": t, "o": 1, "src": grp, "recon": 1, "bars": bars},
+                                    cache[t], market)
 
     # 4. yahoo store — ETFs / macro proxies / searchable extras. Most are close-only,
     # but a few names DO carry true OHLC (e.g. futures like BTC=F): prefer the real
@@ -168,11 +221,13 @@ def _build_ticker(t: str, deep_dir: Path, caches: dict[str, pd.DataFrame]) -> di
         if has_real_ohlc(df):
             bars = _bars_ohlc(df)
             if bars:
-                return {"t": t, "o": 1, "src": "yahoo", "bars": bars}
+                return _with_anchor({"t": t, "o": 1, "src": "yahoo", "bars": bars},
+                                    df["close"], market)
         vol = df["volume"] if "volume" in df else None
         bars = _bars_recon(df["close"], vol)
         if bars:
-            return {"t": t, "o": 1, "src": "yahoo", "recon": 1, "bars": bars}
+            return _with_anchor({"t": t, "o": 1, "src": "yahoo", "recon": 1, "bars": bars},
+                                df["close"], market)
 
     return None
 
@@ -194,7 +249,7 @@ def build_us(site: Path) -> tuple[int, int]:
 
     written = candles = 0
     for t in tickers:
-        rec = _build_ticker(t, deep_dir, caches)
+        rec = _build_ticker(t, deep_dir, caches, market="US")
         if rec is None:
             continue
         (outdir / f"{_safe(t)}.json").write_text(
@@ -233,9 +288,15 @@ def emit_close_only(index_file: Path, close_path: Path, outdir: Path, src_label:
         bars = _bars_recon(closes[t])
         if not bars:
             continue
+        # Anchor calendar per TICKER, not per directory (DG-R1): .SS/.SZ -> CN, .TO/.V ->
+        # CA. An intl suffix this repo maps nowhere (.L / .PA / .DE / .T …) resolves to US
+        # — session_anchor's disclosed R1 approximation, not a guess about the store:
+        # start-invariance holds under ANY fixed reference, and only bucket-edge placement
+        # around that market's own holidays is approximate.
+        rec = {"t": t, "o": 1, "src": src_label, "recon": 1, "bars": bars}
+        rec = _with_anchor(rec, closes[t], session_anchor.market_for_ticker(t))
         (outdir / f"{_safe(t)}.json").write_text(
-            json.dumps({"t": t, "o": 1, "src": src_label, "recon": 1, "bars": bars},
-                       separators=(",", ":")))
+            json.dumps(rec, separators=(",", ":")))
         n += 1
     return n
 
@@ -243,11 +304,15 @@ def emit_close_only(index_file: Path, close_path: Path, outdir: Path, src_label:
 def build_hk(site: Path) -> int:
     """Emit `site/hkohlc/<T>.json` reconstructed candles from the HK per-stock JSON.
 
-    Each `site/hkstockdata/<T>.json` ships a close-only `chart` series ({t:[dates], c:[closes]})
-    — HKEX intraday is login-gated on TradingView's free embed, so we never get real OHLC.
-    We reconstruct a conservative high/low band and write the `o:1`+`recon:1` candle schema;
-    `hk_lookup.html` prefers these candles and falls back to its inline close line if absent.
-    Returns the count written; a missing source dir is a no-op."""
+    Each `site/hkstockdata/<T>.json` ships a close-only `chart` series ({t:[dates], c:[closes],
+    anchor:{…}}) — HKEX intraday is login-gated on TradingView's free embed, so we never get
+    real OHLC. We reconstruct a conservative high/low band and write the `o:1`+`recon:1`
+    candle schema, anchored on the HK reference session calendar (the HSI index store).
+    Consumer: the Mastermind chat widget's chart (`mm_brain.js` routes `.HK` names to
+    `hkohlc/`). `hk_lookup.html` does NOT read this dir — it mounts the inline `chart`
+    series from hkstockdata directly, which carries its own anchor block from
+    `build_hk_library.chart_series`. Returns the count written; a missing source dir is a
+    no-op."""
     src = site / "hkstockdata"
     if not src.exists():
         log.warning("HK chart data: %s missing — skipped", src)
@@ -271,9 +336,10 @@ def build_hk(site: Path) -> int:
         bars = _bars_recon(close)
         if not bars:
             continue
+        rec = _with_anchor({"t": p.stem, "o": 1, "src": "hk", "recon": 1, "bars": bars},
+                           close, "HK")
         (outdir / f"{_safe(p.stem)}.json").write_text(
-            json.dumps({"t": p.stem, "o": 1, "src": "hk", "recon": 1, "bars": bars},
-                       separators=(",", ":")))
+            json.dumps(rec, separators=(",", ":")))
         n += 1
     return n
 
@@ -306,7 +372,11 @@ def emit_intraday(site: Path) -> int:
     """Emit site/intraday/<T>.json (hourly bars: [epochSec, o, h, l, c, v]) from
     data/intraday/<T>.parquet (scripts/build_polygon_intraday). chart.js aggregates these
     to 4-hour candles client-side for the US 4H timeframe. Intraday carries a true open
-    (Polygon), so 4H candles are real OHLC. No-op when the intraday store is absent."""
+    (Polygon), so 4H candles are real OHLC. No-op when the intraday store is absent.
+
+    NO ``anchor`` block here, deliberately (DG-R3 scope): 4H buckets by
+    ``floor(epochSec / 4h)`` — already absolute, already independent of where the window
+    starts. The session-position grid is the fix for the DAILY-derived 3D view only."""
     src = config.data_dir() / "intraday"
     if not src.exists():
         return 0

@@ -120,6 +120,58 @@ def _shakeout_recovery(
     return pd.Series(prices, index=idx, dtype=float)
 
 
+def _geometric_leg(start_px: float, end_px: float, periods: int) -> np.ndarray:
+    """Constant-log-step leg from start_px (exclusive) to end_px (inclusive)."""
+    step = (end_px / start_px) ** (1.0 / periods)
+    return start_px * step ** np.arange(1, periods + 1)
+
+
+def _crash_then_ma50_wobble(
+    peak: float = 100.0,
+    lead: int = 320,
+    lead_drift: float = 0.0006,
+    crash_periods: int = 10,
+    dd_bottom: float = -33.0,
+    rebound_periods: int = 24,
+    dd_rebound_top: float = -11.3,
+    pullback_periods: int = 3,
+    dd_pullback: float = -17.0,
+    hold_periods: int = 8,
+    hold_drift: float = 0.002,
+    start: str = "2019-01-01",
+) -> pd.Series:
+    """Quiet lead -> fast crash -> V-rebound through MA50 -> pullback back under it.
+
+    The point of this shape is the pullback.  A fresh rebound off a crash low
+    pokes above MA50 (repair_entry fires, state becomes ``recovery``), then a
+    routine pullback drops price back *under* MA50 while it is still above
+    MA20 — MA20 has not yet crossed up through MA50 this early in a repair.
+    That kills ``repair_entry`` (which demands ``above_ma50``) while leaving
+    every piece of repair evidence intact: above MA20, positive 20-session
+    momentum, improving 10-session drawdown, positive MACD.  Only
+    ``repair_hold`` can carry those sessions.
+
+    Drawdowns are expressed against ``peak``, which is the 252-session high
+    for the whole post-peak stretch, so the ``dd_*`` arguments are the
+    literal ``dd_pct`` values the engine will see on the last day of each leg.
+    """
+    lead_px = peak * np.exp(-np.cumsum(np.full(lead, np.log(1 + lead_drift)))[::-1])
+    bottom = peak * (1 + dd_bottom / 100.0)
+    rebound_top = peak * (1 + dd_rebound_top / 100.0)
+    pullback_low = peak * (1 + dd_pullback / 100.0)
+
+    prices = np.concatenate([
+        lead_px,                                                   # quiet drift up to the high
+        np.array([peak]),                                          # the 252d high itself
+        _geometric_leg(peak, bottom, crash_periods),               # fast crash (ret20 <= -15%)
+        _geometric_leg(bottom, rebound_top, rebound_periods),      # V-rebound up through MA50
+        _geometric_leg(rebound_top, pullback_low, pullback_periods),  # pullback back under MA50
+        pullback_low * (1 + hold_drift) ** np.arange(1, hold_periods + 1),  # slow grind
+    ])
+    idx = _bdate_range(start, len(prices))
+    return pd.Series(prices, index=idx, dtype=float)
+
+
 # ---------------------------------------------------------------------------
 # Test 1: Parabola → crash — events include parabolic_enter + exactly one crash_20d
 # ---------------------------------------------------------------------------
@@ -337,26 +389,99 @@ class TestRSIDivergence:
 KOSPI_PATH = ROOT / "data" / "intl" / "_KS11.parquet"
 HSI_PATH = ROOT / "data" / "hk" / "_HSI.parquet"
 
+# These parquets are LIVE nightly-collected files, not frozen fixtures — the
+# collector appends a row every session.  `market_states()` reports the LATEST
+# row, so any replay assertion made against its output is really an assertion
+# about "today", and rots the moment the market moves on.  That is exactly what
+# broke on 2026-08-06: KOSPI's ret20 reset above -15% on 07-31 and re-crossed on
+# 08-03 (a legitimate second crossing), and HSI ran recovery -> uptrend -> back
+# to recovery, moving `since` off the rebound date.  Neither was an engine
+# regression; both assertions were pinned to a moving target.
+#
+# Each replay is therefore truncated to the as-of date of the episode it
+# documents.  Every component in the engine is causal (trailing rolling windows
+# and a causal percentile rank), so truncating reproduces those historical rows
+# bit-for-bit — verified: states identical, max numeric diff 0.0.  Assertions
+# about a frozen window cannot rot; the live tail is covered separately by the
+# `test_live_*` cases below, which assert only invariants, never a state.
+KOSPI_ASOF = "2026-07-16"   # the crash session this class replays
+HSI_ASOF = "2026-07-24"     # the second off-high wobble session (dd -10.74%)
+
+
+def _assert_first_crossing_discipline(events: list[dict], sessions: pd.DatetimeIndex) -> None:
+    """Assert every non-state event is a FIRST crossing of its condition.
+
+    A crossing fires on session t only when its condition is True at t and False
+    at t-1, so under correct discipline a code can NEVER fire on two ADJACENT
+    trading sessions.  Broken dedup (emitting while the condition merely holds)
+    produces exactly that, so this catches the defect the cap below was added
+    for.  A repeat further apart is legitimate: it means the condition reset and
+    re-crossed, which is what KOSPI's 2026-07-13 / 2026-08-03 crash_20d pair is.
+    Session adjacency pins the discipline without pinning a date.
+    """
+    pos = {ts.strftime("%Y-%m-%d"): i for i, ts in enumerate(sessions)}
+    last_seen: dict[str, int] = {}
+    for e in sorted(events, key=lambda ev: ev["date"]):
+        code = e["code"]
+        if code.startswith("state:"):
+            continue
+        i = pos.get(e["date"])
+        assert i is not None, f"event dated on a non-session day: {e}"
+        prev = last_seen.get(code)
+        assert prev is None or i - prev > 1, (
+            f"{code} fired on adjacent sessions {sessions[prev].date()} and "
+            f"{sessions[i].date()}: first-crossing discipline not enforced"
+        )
+        last_seen[code] = i
+
+
+def _assert_since_starts_the_current_run(result: dict, states: pd.Series) -> None:
+    """`since` must be the first day of the current uninterrupted state run.
+
+    Cross-checks `_find_since` against `_resolve_state_series` on whatever the
+    latest data happens to be, so the contract stays covered without naming a
+    state or a date.
+    """
+    since = pd.Timestamp(result["since"])
+    assert since in states.index, f"since={result['since']} is not a trading session"
+    assert (states.loc[since:] == result["state"]).all(), (
+        f"state changed after since={result['since']}: "
+        f"{dict(states.loc[since:].value_counts())}"
+    )
+    prior = states.loc[:since]
+    if len(prior) > 1:
+        assert prior.iloc[-2] != result["state"], (
+            f"since={result['since']} is not the START of the run — "
+            f"the previous session was already {result['state']}"
+        )
+
 
 @pytest.mark.skipif(not KOSPI_PATH.exists(), reason="KOSPI parquet not available")
 class TestKOSPIReplay:
-    """Golden-date tests against the real KOSPI data (2026 episode)."""
+    """Golden-date tests against the real KOSPI data (2026 episode).
+
+    `self.kr` replays the series as of KOSPI_ASOF; `self.states` is the full
+    live series (its historical rows are identical either way).
+    """
 
     def setup_method(self):
         df = pd.read_parquet(str(KOSPI_PATH))
-        self.close = df["close"]
-        self.result = market_states({"KR": self.close})
+        self.close = df["close"].dropna().sort_index()
+        self.asof_close = self.close.loc[:KOSPI_ASOF]
+        self.result = market_states({"KR": self.asof_close})
         self.kr = self.result["KR"]
-        f = _compute_components(self.close.dropna().sort_index())
+        f = _compute_components(self.close)
         self.states = _resolve_state_series(f)
 
     def test_crash_state_on_2026_07_16(self):
-        """KOSPI should be in crash state on 2026-07-16."""
+        """KOSPI should be in crash state as of 2026-07-16."""
         assert self.kr["state"] == "crash", (
-            f"expected crash on 2026-07-16, got {self.kr['state']}"
+            f"expected crash on {KOSPI_ASOF}, got {self.kr['state']}"
         )
+        assert self.states.loc[KOSPI_ASOF] == "crash"
 
     def test_crash_urgency_9(self):
+        """The 2026-07-16 crash read carries the top urgency rung."""
         assert self.kr["urgency"] == 9
 
     def test_was_parabolic_40d(self):
@@ -394,7 +519,11 @@ class TestKOSPIReplay:
             assert self.states.loc[candidates[0]] == "crash"
 
     def test_exactly_one_crash_20d_in_july(self):
-        """The crash_20d event must fire exactly once in July 2026."""
+        """The 2026-07-13 waterfall must announce itself exactly once.
+
+        ret20 stayed <= -15% from 07-13 through 07-30, so one crossing covers
+        the whole run — 13 sessions, one event.
+        """
         july_crash = [
             e for e in self.kr["events"]
             if e["code"] == "crash_20d" and e["date"].startswith("2026-07")
@@ -402,6 +531,7 @@ class TestKOSPIReplay:
         assert len(july_crash) == 1, (
             f"expected exactly 1 crash_20d in July 2026, got {len(july_crash)}: {july_crash}"
         )
+        assert july_crash[0]["date"] == "2026-07-13"
 
     def test_rsi_divergence_evidence(self):
         """RSI at June-22 ATH (rsi_at_high) should show divergence vs May-11 RSI.
@@ -440,51 +570,12 @@ class TestKOSPIReplay:
         assert 10.0 <= rsi_at_high <= 100.0, f"rsi_at_high out of range: {rsi_at_high}"
 
     def test_events_are_readable(self):
-        """Events list should be a manageable size (not hundreds of duplicates).
-
-        WHY THIS RULE IS SESSION-ADJACENCY AND NOT LIST-ADJACENCY (2026-08-06)
-        ---------------------------------------------------------------------
-        This test used to assert that a code never appears at two consecutive
-        POSITIONS IN THE EVENT LIST.  That is stricter than anything the emitter
-        promises, and the KOSPI replay outgrew it honestly rather than breaking:
-
-            2026-07-13  ret20 = -20.35  → crosses below -15%, crash_20d fires
-            ...         (condition holds, correctly silent)
-            2026-07-31  ret20 = -13.76  → condition RESETS to False
-            2026-08-03  ret20 = -22.64  → crosses again, crash_20d fires again
-
-        Two distinct crash episodes 14 sessions apart, with no other event in
-        between to separate them in the list.  The emitter's first-crossing
-        discipline worked exactly as documented; the reader's rule was wrong.
-
-        The property that discipline actually guarantees is about SESSIONS: a
-        binary condition fires only on its False→True transition, so a re-fire
-        requires an intervening session on which the condition was False, and two
-        firings of the same code are therefore always >= 2 sessions apart.  A
-        broken discipline — firing while the condition merely HOLDS, i.e. dropping
-        `& (~*_prev_full)` from any of the crossing signals in
-        engine.intl_market_state._build_events — puts the same code on ADJACENT
-        sessions, which is what this now pins.  (Mutation-checked: reverting
-        crash_enter_full to the bare condition reds this test.)
-        """
+        """Events list should be a manageable size (not hundreds of duplicates)."""
         events = self.kr["events"]
         assert len(events) <= 60, (
             f"event list too long ({len(events)}): first-crossing discipline not enforced"
         )
-        session = {d.strftime("%Y-%m-%d"): i for i, d in enumerate(self.states.index)}
-        last_fired: dict[str, tuple[int, str]] = {}
-        for e in sorted(events, key=lambda x: x["date"]):
-            code = e["code"]
-            if code.startswith("state:"):
-                continue
-            assert e["date"] in session, f"{code} dated off the state series: {e['date']}"
-            i = session[e["date"]]
-            prev = last_fired.get(code)
-            assert prev is None or i - prev[0] > 1, (
-                f"{code} fired on adjacent sessions {prev[1]} and {e['date']}: "
-                f"first-crossing discipline not enforced"
-            )
-            last_fired[code] = (i, e["date"])
+        _assert_first_crossing_discipline(events, self.asof_close.index)
 
     def test_events_newest_first(self):
         """Events should be sorted newest first."""
@@ -494,6 +585,25 @@ class TestKOSPIReplay:
             f"events not in newest-first order: {dates[:5]}"
         )
 
+    # --- live tail: invariants only, never a state or a date ---------------
+
+    def test_live_events_keep_first_crossing_discipline(self):
+        """The discipline must hold on today's data, not just the replay window.
+
+        A code may legitimately repeat across a reset — KOSPI's ret20 fell back
+        to -13.76% on 2026-07-31 and re-crossed on 08-03 — but never on two
+        adjacent sessions.
+        """
+        live = market_states({"KR": self.close})["KR"]
+        assert len(live["events"]) <= 60
+        _assert_first_crossing_discipline(live["events"], self.close.index)
+
+    def test_live_since_starts_the_current_run(self):
+        live = market_states({"KR": self.close})["KR"]
+        assert live["state"] in STATES
+        assert live["urgency"] == STATES[live["state"]]["urgency"]
+        _assert_since_starts_the_current_run(live, self.states)
+
 
 # ---------------------------------------------------------------------------
 # Test 6: HSI crash-rebound replay — repair hysteresis, no -10% threshold flip
@@ -501,52 +611,35 @@ class TestKOSPIReplay:
 
 @pytest.mark.skipif(not HSI_PATH.exists(), reason="HSI parquet not available")
 class TestHSIRepairReplay:
-    """The June/July 2026 HSI rebound must not be hidden by crash memory."""
+    """The June/July 2026 HSI rebound must not be hidden by crash memory.
+
+    `self.result` replays the series as of HSI_ASOF; `self.states`/`self.frame`
+    stay on the full live series so the crash-precedence invariant below keeps
+    being checked against today's data.
+    """
 
     def setup_method(self):
         self.close = pd.read_parquet(str(HSI_PATH))["close"].dropna().sort_index()
-        self.result = market_states({"HK": self.close})["HK"]
+        self.asof_close = self.close.loc[:HSI_ASOF]
+        self.result = market_states({"HK": self.asof_close})["HK"]
         frame = _compute_components(self.close)
         self.states = _resolve_state_series(frame)
         self.frame = frame
 
     def test_latest_state_has_repaired(self):
-        """The rebound may progress from recovery into a healthy uptrend.
+        """As of HSI_ASOF the rebound reads as repair, not as crash memory.
 
-        `since` IS AN INVARIANT, NOT A CALENDAR CONSTANT (2026-08-06)
-        ------------------------------------------------------------
-        The recovery branch used to assert `since == "2026-07-20"`, which silently
-        assumed the run that began at the repair would still be the CURRENT run.
-        HSI outgrew that: it repaired to recovery on 2026-07-20, strengthened to
-        uptrend on 07-29 when it took back its 200-day, then slipped back under it
-        on 08-06 and resolved to recovery again.  `since` correctly reported
-        2026-08-04's successor run, because _find_since is documented as "first
-        date of the current uninterrupted state run" — the date moved because the
-        run moved, which is the field working.
-
-        Pinning the field against the state series instead keeps a real contract
-        (a `since` that disagrees with the resolved states is a bug, and that is
-        still caught) without freezing one session's answer into the suite.  The
-        claim this class exists for — that crash memory does not swallow the
-        repair — is asserted directly below, over the whole repair window.
+        `since` pins the START of the recovery run: the repair-hold gate carried
+        the state unbroken from the 07-20 rebound through the 07-23/07-24 wobble
+        without a reset.  (`since` tracks the CURRENT run, so this is only a
+        stable claim as of a frozen date — HSI later ran up into `uptrend` on
+        07-29 and relapsed to `recovery` on 08-06, which correctly moved `since`
+        to 08-06 and used to break this test.)
         """
-        assert self.result["state"] in {"recovery", "uptrend"}
+        assert self.result["state"] == "recovery"
+        assert self.result["above_ma200"] is False
         assert self.states.loc["2026-07-20"] == "recovery"
-        # The repair window must never be re-swallowed by crash memory.
-        window = self.states.loc["2026-07-20":"2026-07-28"]
-        assert not (window == "crash").any(), (
-            f"crash memory swallowed the repair window: {dict(window)}"
-        )
-        # `since` must be the first session of the CURRENT uninterrupted run.
-        i = len(self.states) - 1
-        while i > 0 and self.states.iloc[i - 1] == self.result["state"]:
-            i -= 1
-        assert self.result["since"] == self.states.index[i].strftime("%Y-%m-%d"), (
-            f"since={self.result['since']} disagrees with the state series, whose "
-            f"current {self.result['state']} run starts {self.states.index[i].date()}"
-        )
-        if self.result["state"] == "uptrend":
-            assert self.result["above_ma200"] is True
+        assert self.result["since"] == "2026-07-20"
 
     def test_recovery_survives_off_high_boundary_wobble(self):
         """Jul-23 dd=-9.86% and Jul-24 dd=-10.74% carry the same repair evidence."""
@@ -565,6 +658,189 @@ class TestHSIRepairReplay:
         crash_dates = self.states.index[self.frame["ret20_pct"] <= -15.0]
         assert len(crash_dates) > 0
         assert (self.states.loc[crash_dates] == "crash").all()
+
+    # --- live tail: invariants only, never a state or a date ---------------
+
+    def test_live_since_starts_the_current_run(self):
+        live = market_states({"HK": self.close})["HK"]
+        assert live["state"] in STATES
+        _assert_since_starts_the_current_run(live, self.states)
+
+    def test_live_uptrend_requires_ma200(self):
+        """`uptrend` and `recovery` are separated by the 200-day line.
+
+        This is the rule that moved HSI off the 07-20 recovery run: it reclaimed
+        MA200 on 07-29 (-> uptrend) and lost it again on 08-06 (-> recovery).
+        """
+        above200 = self.frame["above_ma200"].astype(bool)
+        assert above200.loc[self.states == "uptrend"].all()
+        assert not above200.loc[self.states == "recovery"].any()
+
+
+# ---------------------------------------------------------------------------
+# Test 6b: repair_hold hysteresis — SYNTHETIC, drift-proof
+#
+# TestHSIRepairReplay above guards the same rule against the live HSI parquet,
+# and that is exactly why it cannot be trusted to guard it forever: the live
+# data drifted until repair_entry alone carried 2026-07-23/24, so deleting
+# `repair_hold` left the whole suite green.  This class pins the hold clause to
+# a constructed series that no nightly collection can move.
+# ---------------------------------------------------------------------------
+
+def _crash_gate_inputs(frame: pd.DataFrame, states: pd.Series, i: int) -> dict:
+    """Re-derive the clause-1 crash-gate inputs the engine sees on row ``i``.
+
+    Mirrors the NaN handling in ``_resolve_state_series`` (non-finite numerics
+    are read as 0.0; a non-finite ``dd_vel_10d`` is read as None).  This is a
+    *locator* only — every assertion below is made against the engine's own
+    state output, never against these re-derived values.
+    """
+    row = frame.iloc[i]
+
+    def _num(key: str) -> float:
+        val = float(row[key])
+        return val if np.isfinite(val) else 0.0
+
+    dd = _num("dd_pct")
+    dd_min30 = _num("dd_min30")
+    mom20 = _num("mom20_pct")
+    ret20 = _num("ret20_pct")
+    dd_vel_raw = float(row["dd_vel_10d"])
+    dd_vel = dd_vel_raw if np.isfinite(dd_vel_raw) else None
+    macd_positive = bool(float(row["macd_hist"]) > 0.0)  # NaN > 0 is False
+    above_ma20 = bool(row["above_ma20"])
+    above_ma50 = bool(row["above_ma50"])
+    previous_state = states.iloc[i - 1] if i > 0 else None
+
+    repair_entry = (
+        above_ma20
+        and above_ma50
+        and mom20 >= 5.0
+        and dd_vel is not None
+        and dd_vel >= 0.0
+        and macd_positive
+    )
+    repair_hold = (
+        previous_state == "recovery"
+        and above_ma20
+        and mom20 > 0.0
+        and (dd_vel is None or dd_vel > -1.0)
+        and macd_positive
+    )
+    return {
+        "damage_memory": dd_min30 <= -18.0 and dd <= -10.0,
+        "velocity_crash": ret20 <= -15.0,
+        "repair_entry": repair_entry,
+        "repair_hold": repair_hold,
+        "previous_state": previous_state,
+        "dd": dd,
+        "dd_min30": dd_min30,
+        "mom20": mom20,
+        "dd_vel": dd_vel,
+        "macd_positive": macd_positive,
+        "above_ma20": above_ma20,
+        "above_ma50": above_ma50,
+    }
+
+
+class TestRepairHoldHysteresis:
+    """`repair_hold` alone must keep a repairing market out of `crash`.
+
+    The constructed series rebounds off a -33% crash, crosses back above MA50
+    (repair_entry fires -> `recovery`), then pulls back *under* MA50 while MA20
+    is still below it.  On those pullback sessions the damage-memory crash test
+    is live (dd_min30 <= -18 and dd <= -10), the velocity crash test is not
+    (ret20 well above -15), and `repair_entry` is dead because price sits below
+    MA50 — so `repair_hold` is the only thing standing between `recovery` and a
+    threshold-wobble flip to `crash`.
+
+    Deleting the `or repair_hold` term from `repair_confirmed` turns every one
+    of those sessions into `crash`.
+    """
+
+    def setup_method(self):
+        self.close = _crash_then_ma50_wobble()
+        self.frame = _compute_components(self.close)
+        self.states = _resolve_state_series(self.frame)
+        self.hold_only = [
+            i
+            for i in range(1, len(self.frame))
+            if (
+                (g := _crash_gate_inputs(self.frame, self.states, i))["damage_memory"]
+                and not g["velocity_crash"]
+                and not g["repair_entry"]
+                and g["repair_hold"]
+            )
+        ]
+
+    def test_series_reaches_the_hold_only_regime(self):
+        """The series must actually exercise the clause — else this file is decoration.
+
+        This is the anti-rot assertion: if a future change to the state machine
+        or to the component maths stops this shape from reaching a
+        hold-only session, the guard below would silently stop guarding.
+        """
+        assert self.hold_only, (
+            "constructed series never reaches a session where damage-memory crash "
+            "is live, velocity crash is not, and repair_entry is False while "
+            "repair_hold is True — the hysteresis clause is untested"
+        )
+
+    def test_repair_hold_alone_prevents_the_crash_flip(self):
+        """The mutation guard: hold-only sessions stay `recovery`, never `crash`.
+
+        Removing `or repair_hold` from `repair_confirmed` makes each of these
+        sessions fail the damage-memory gate and resolve to `crash`.
+        """
+        for i in self.hold_only:
+            g = _crash_gate_inputs(self.frame, self.states, i)
+            assert self.states.iloc[i] == "recovery", (
+                f"session {i} ({self.states.index[i].date()}) must stay in recovery on "
+                f"the hold clause alone; got {self.states.iloc[i]!r}. "
+                f"dd={g['dd']:.2f} dd_min30={g['dd_min30']:.2f} mom20={g['mom20']:.2f} "
+                f"dd_vel={g['dd_vel']:.2f} macd_positive={g['macd_positive']} "
+                f"above_ma20={g['above_ma20']} above_ma50={g['above_ma50']}"
+            )
+
+    def test_hold_only_sessions_have_no_other_repair_evidence(self):
+        """Document *why* those sessions are decisive: only the hold gate is open."""
+        for i in self.hold_only:
+            g = _crash_gate_inputs(self.frame, self.states, i)
+            assert g["damage_memory"], f"session {i} is not under damage memory"
+            assert not g["velocity_crash"], f"session {i} is a velocity crash"
+            assert not g["repair_entry"], f"session {i} still satisfies repair_entry"
+            assert not g["above_ma50"], (
+                f"session {i} is above MA50 — repair_entry would carry it"
+            )
+            assert g["previous_state"] == "recovery"
+
+    def test_entry_gate_opens_the_repair_before_the_hold_carries_it(self):
+        """The first repair session is won by `repair_entry`, not by the hold clause.
+
+        `repair_hold` requires a prior `recovery`, so it can never *start* one.
+        A series where the hold clause opened the repair would be testing
+        nothing about hysteresis.
+        """
+        first_recovery = int(np.argmax((self.states == "recovery").to_numpy()))
+        assert self.states.iloc[first_recovery] == "recovery"
+        g = _crash_gate_inputs(self.frame, self.states, first_recovery)
+        assert g["repair_entry"], "first recovery session should be won by repair_entry"
+        assert not g["repair_hold"]
+        assert first_recovery < min(self.hold_only)
+
+    def test_velocity_crash_still_overrides_the_hold(self):
+        """A live -15%/20-session waterfall stays `crash` no matter what."""
+        velocity_days = self.frame.index[self.frame["ret20_pct"] <= -15.0]
+        assert len(velocity_days) > 0, "series should contain a real velocity crash"
+        assert (self.states.loc[velocity_days] == "crash").all()
+
+    def test_hold_expires_when_the_evidence_does(self):
+        """The clause is hysteresis, not a latch — it lets go once evidence fails."""
+        last_hold = max(self.hold_only)
+        tail = self.states.iloc[last_hold + 1:]
+        assert (tail == "recovery").sum() < len(tail), (
+            "repair_hold never released — a permanent recovery latch would be a bug"
+        )
 
 
 # ---------------------------------------------------------------------------

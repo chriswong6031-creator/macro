@@ -1,0 +1,184 @@
+# BioCatalyst product acceptance manifest v2 -- the successor contract.
+#
+# v1 (config/biocatalyst_product_acceptance.yml) is const-locked and is NOT edited by this
+# file: its state, both supersession fields, and all six authority flags are schema consts.
+# This is a new contract id with a new schema, exactly as the named design ruling requires.
+#
+# HONEST STATE. The browser matrix has NOT been captured. state is
+# draft_awaiting_browser_capture and trusted_verifier.capture_state is not_run, so this
+# manifest fails closed on product_acceptance_v2.trusted_browser_capture_pending. That is
+# correct: the named design ruling is recorded, and design acceptance is still pending an
+# independent browser capture. Nothing here claims a capture, a measurement, a soak, or an
+# operator decision happened.
+#
+# AUTHORIZES NOTHING. Design acceptance is not a release authorization. Every authorizes_*
+# flag is false and stays false.
+#
+# Gate: engine.biocatalyst.acceptance_v2.validate_biocatalyst_product_acceptance_manifest_v2
+# (generic contract validation is schema shape only and reads no bound file).
+contract_id: biocatalyst_product_acceptance_manifest.v2
+schema_version: 2.0.0
+manifest_id: biocatalyst_product_acceptance_v2_84db4a2a74a5a2d4b37a3190
+state: draft_awaiting_browser_capture
+effective_at: '2026-08-06T00:00:00Z'
+supersedes_manifest_ref: config/biocatalyst_product_acceptance.yml
+supersedes_manifest_id: biocatalyst_product_acceptance_506244f236be52f12a8eaa96
+supersedes_manifest_content_sha256: 506244f236be52f12a8eaa968415988fb7989caa57c3683a9ecd76a3caf76198
+owner: biocatalyst
+acceptance_authority: engine.biocatalyst.acceptance_v2.validate_biocatalyst_product_acceptance_manifest_v2
+design_spec_ref: research/BIOCATALYST_D0A_IA_STATE_CONTENT_CONTRACT.md
+design_spec_sha256: 296efc9de0114eb23d591334844ab461ac2a8113362e7173287b9c85cac9a52c
+design_adjudication_ref: research/BIOCATALYST_D0A_DESIGN_ADJUDICATION_2026-08-06.md
+design_adjudication_sha256: 33f81f44b7df1f9c2eb7d37ccbeb3b52de762335f9cf902c3ec491dca9493240
+reference_fixture:
+  path: data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json
+  sha256: 750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24
+  purpose: Synthetic production-shaped visual state data; non-authorizing.
+benchmark_corpus:
+  path: data/biocatalyst/fixtures/biocatalyst_d0a_benchmark_corpus.v1.json
+  sha256: cad0b984e29da8049371877f421b99881312bcb3529f8b819cda62e317bbf75c
+  purpose: Frozen endpoint, cardinality, entitlement, and measurement corpus.
+matrix:
+  viewports:
+  - name: desktop
+    width: 1440
+    height: 900
+  - name: tablet
+    width: 820
+    height: 1180
+  - name: mobile
+    width: 390
+    height: 844
+  themes:
+  - dark
+  - light
+  languages:
+  - en
+  - zh
+  motions:
+  - standard
+  - reduced
+  required_state_codes:
+  - catalyst_radar
+  - explorer_dense
+  - trial_peer_matrix
+  - company_partial
+  - asset_ambiguous_identity
+  - regulatory_mixed_sources
+  - change_tape_correction
+  - evidence_thread_expanded
+  - historical_mode
+  - source_outage
+  - locked
+  - empty
+  cell_id_prefix: d0b
+  cell_ids:
+  - d0b_desktop_dark_en_standard
+  - d0b_desktop_dark_en_reduced
+  - d0b_desktop_dark_zh_standard
+  - d0b_desktop_dark_zh_reduced
+  - d0b_desktop_light_en_standard
+  - d0b_desktop_light_en_reduced
+  - d0b_desktop_light_zh_standard
+  - d0b_desktop_light_zh_reduced
+  - d0b_tablet_dark_en_standard
+  - d0b_tablet_dark_en_reduced
+  - d0b_tablet_dark_zh_standard
+  - d0b_tablet_dark_zh_reduced
+  - d0b_tablet_light_en_standard
+  - d0b_tablet_light_en_reduced
+  - d0b_tablet_light_zh_standard
+  - d0b_tablet_light_zh_reduced
+  - d0b_mobile_dark_en_standard
+  - d0b_mobile_dark_en_reduced
+  - d0b_mobile_dark_zh_standard
+  - d0b_mobile_dark_zh_reduced
+  - d0b_mobile_light_en_standard
+  - d0b_mobile_light_en_reduced
+  - d0b_mobile_light_zh_standard
+  - d0b_mobile_light_zh_reduced
+  reference_plates_are_the_implementation_target: false
+gates:
+  bilingual_gate:
+    ruling_section: '3.3'
+    check_name: bilingual_gate
+    applies_to_locales:
+    - zh
+    zh_tier1_latin_whitelist:
+    - ClinicalTrials.gov
+    - FDA
+    - NCT########
+    - ISO-8601 date or time
+    - measurement unit token
+    - record version token
+  decision_sentence:
+    ruling_section: '3.1'
+    check_name: decision_sentence_budget
+    separator: —
+    max_words_en: 14
+    max_characters_zh: 24
+    research_stances_en:
+    - Read the record
+    - Check the source
+    - Wait for the record
+    - Reconcile the conflict
+    - Treat as historical
+    - Nothing here
+    research_stances_zh:
+    - 记录可直接看
+    - 去核对来源
+    - 等记录更新
+    - 两处对不上
+    - 这是当时的记录
+    - 暂无内容
+  temporal_braid_accessibility:
+    ruling_section: '3.2'
+    check_names:
+    - temporal_braid_two_clock_text_equivalent
+    - no_hover_only_meaning
+    - visible_keyboard_focus
+    - reduced_motion_information_parity
+    two_clock_labels_en:
+    - effective
+    - known at
+    two_clock_labels_zh:
+    - 生效
+    - 获知
+trusted_verifier:
+  module_path: scripts/biocatalyst_browser_verifier.py
+  module_sha256: b662c24d0b74ef5cc2425b70b3bf464a1cd12e438bd9d946e924d991c7df6225
+  verifier_version: 1.0.0
+  receipt_artifact_id: biocatalyst_browser_verification_receipt.v1
+  required_checks:
+  - bilingual_gate
+  - decision_sentence_budget
+  - temporal_braid_two_clock_text_equivalent
+  - no_hover_only_meaning
+  - visible_keyboard_focus
+  - reduced_motion_information_parity
+  trust_basis: receipt_digest_over_bytes_written_by_the_verifier
+  capture_state: not_run
+  receipt_path: null
+  receipt_sha256: null
+approval:
+  required_role: fable_or_opus_design_owner
+  reviewer_role: fable_or_opus_design_owner
+  named_reviewer: Claude Fable 5, commissioning session (BioCatalyst remaining-waves program)
+  status: approved_with_amendments
+  ruling: amend
+  recorded_at: '2026-08-06T00:00:00Z'
+  reason: 'Named design ruling AMEND: the seven-surface information architecture, shared frame, Evidence
+    Thread source locator, Research Tray, and twelve-rank state precedence are frozen; the 24 D0a plates
+    are rejected as the D0b implementation target over four named defects. The ruling is a necessary input
+    and never sufficient: the browser matrix has not been captured, so design acceptance remains pending
+    capture by the independent verifier.'
+  browser_receipt_required: true
+authority:
+  authorizes_ui_release: false
+  authorizes_source_activation: false
+  authorizes_entitlement_change: false
+  authorizes_model_promotion: false
+  authorizes_neural_web_authority: false
+  authorizes_prophet_behavior: false
+hash_scope: canonical_payload_excluding_manifest_id_and_content_sha256
+content_sha256: 84db4a2a74a5a2d4b37a31909e82f30d026cc2ec3b84ec3a354b33b55f02b2bd
