@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T10:47:11.400898+00:00",
-  "count": 936,
+  "generated_at": "2026-08-07T11:17:15.674012+00:00",
+  "count": 937,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -59,6 +59,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-a4azjz2hgsd-f09120",
+      "title": "AEJ Week Ahead China inflation and credit data, India inflation, and Singapore and Malaysia GDP",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T10:50:33Z",
+      "summary_points": [
+        "**China Inflation & Credit Outlook**: CPI at 0.9% yoy (above consensus), PPI at 4.0% yoy (above consensus), RMB loans down RMB100bn signaling credit slowdown and decelerating industrial activity.",
+        "**India Inflation & RBI Policy**: Core inflation at 4.3% yoy (energy/gold/silver driven), RBI held rates at 5.25% with dovish stance and delayed 2026 hike call (50bp pushback).",
+        "**ASEAN GDP Revisions**: Singapore Q2 GDP revised up to 5.9% YoY (industrial/construction strength), Malaysia Q2 GDP at 5.9% YoY (agricultural weakness), both with upward/downward full-year forecasts.",
+        "**Hong Kong GDP Forecast Revised Down**: Q2 2026 growth at +4.3% (below consensus), full-year cut to 4.4% (from 4.6%) due to inventory slowdown and consumption moderation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-hymi33ivzjz-7af1ff",
       "title": "JPM International Market Intelligence Morning Briefing Aug 7",
