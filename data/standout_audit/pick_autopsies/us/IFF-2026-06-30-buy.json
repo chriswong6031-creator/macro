@@ -1,0 +1,113 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "IFF-2026-06-30-buy",
+  "ticker": "IFF",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "IFF",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "IFF",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "mixed",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Materials",
+    "excess_spy": -0.025486107902206623,
+    "excess_sector": -0.012219025597011268,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "IFF underperformed SPY and was STOPPED under a mixed recorded cause, with the process independently classified clean. The failure therefore calls for conditioning evidence around Materials and company weakness, not gate tightening.",
+    "root_cause": "IFF underperformed SPY and was STOPPED under a mixed recorded cause, with the process independently classified clean. The failure therefore calls for conditioning evidence around Materials and company weakness, not gate tightening.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The Materials, rotation, and company-alpha books did not separate a favorable setup from a failure-prone context, while no process fault is recorded.",
+    "engines_credit": "The process engine remains clean; Materials rotation, company-alpha, and catalyst attribution are the organs requiring research.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "The company-specific component of the mixed setup failed or was overwhelmed.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Stronger company-specific evidence might have offset sector or market weakness.",
+        "evidence_refs": [
+          "outcome_cause=mixed",
+          "excess_spy=-0.025486107902206623"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "sector",
+        "factor": "",
+        "mechanism": "Materials rotation or industry weakness may have amplified the adverse outcome.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Supportive Materials breadth could have reduced the probability of a stopped path.",
+        "evidence_refs": [
+          "sector=Materials"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The combined weakness produced a path that reached the STOPPED terminal state.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "A less adverse path could have remained active even if terminal relative performance was weak.",
+        "evidence_refs": [
+          "terminal_state=STOPPED",
+          "process_fault=clean"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Extended-sector rollover",
+      "Failed company-specific breakout",
+      "External news or event after entry",
+      "Macro rotation away from cyclical Materials exposure"
+    ],
+    "missing_evidence": [
+      "Materials and specialty-chemicals breadth",
+      "Entry-date breakout structure and volume",
+      "Stop level and full price path",
+      "Dated company news and estimate revisions",
+      "Macro-regime snapshot"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "materials_rollover_condition",
+        "feature": "Extended Materials-sector momentum followed by breadth deterioration",
+        "measurement": "Measure timestamp-safe sector extension, breadth change, and industry-relative momentum at entry.",
+        "expected_direction": "Greater extension with deteriorating breadth should associate with stopped outcomes.",
+        "falsifier": "The pattern does not distinguish stopped from successful Materials selections out of sample.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T23:44:21+00:00"
+}

@@ -111,6 +111,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from engine import options_stamp
 from engine.options_stamp import (
     STAMP_COLS,
     STAMP_COVERAGE_COLS,
@@ -131,11 +132,71 @@ ALL_STAMP_COLS: list[str] = STAMP_COLS + TAPE_FLOW_STAMP_COLS
 # Columns whose value comes from a POSITIONAL window over a dated store (chains files or
 # summary rows) and is therefore invalidated by a non-session entry inside that window.
 # These are the columns --restamp-positional recomputes; see module header REPAIR.
+# Cross-sectional floors for the opt_vanna_relief tercile (see the COVERAGE FLOOR block
+# in stamp_ledger).  _TERCILE_MIN_NAMES is the pre-existing "enough values to have a
+# boundary" floor; _TERCILE_MIN_COVERAGE is the share of MEASURABLE names that must
+# actually carry a 5-session basis before the tercile means anything cross-sectionally.
+_TERCILE_MIN_NAMES = 3
+_TERCILE_MIN_COVERAGE = 0.50
+
+
+def _tercile_thresholds(
+    vhd_by_asof: dict[str, list[float]],
+    measurable_by_asof: dict[str, int],
+) -> dict[str, float]:
+    """Per-as_of top-tercile boundary of vanna_hedge_5d — or NO entry when unmeasurable.
+
+    COVERAGE FLOOR (2026-08-06).  A tercile is a CROSS-SECTIONAL statement — "top third
+    of the market's vanna hedge pressure" — so it means something only when the ranked
+    names actually represent the measurable universe.  Since the 5-session basis became
+    calendar-resolved (``options_stamp._row_n_sessions_back``) it returns None on a store
+    gap, and a gap at the ONE session the basis needs is store-WIDE, not per-name: every
+    name reads the same store on the same schedule.  Measured over the committed store,
+    as_of 2026-07-13 / 07-22 / 07-24 collapse from 355–375 ranked names to exactly 5 (the
+    handful whose store happens to hold that session) while every other date ranks
+    99.7–100% of them.
+
+    A bare ``len(vals) >= 3`` still FIRES on those five, silently redefining "top tercile
+    of the market" as "top tercile of 5 coverage-selected names": the threshold moves
+    +21,153 → −850 at as_of 2026-07-22 and +15,516 → −850 at 07-24, admitting names
+    nowhere near the true top third.  That is not a null; it is a gate whose meaning
+    changed.
+
+    The survivors are worse than a biased sample — they are DEAD STORES.  The threshold
+    lands on exactly −850.1826 on all three dates because the same five names survive
+    every time (ALM, BLD, CRML, NB, PPTA), and they survive precisely because their
+    stores stopped updating on 2026-07-02: a frozen store trivially "has" the 5-back
+    session because its whole tail predates the gap.  Without this floor the market's
+    top tercile would be defined by five stores publishing a three-week-old reading.
+
+    So below the floor the date is simply not ranked and the flag stays null (nulls
+    printed).  Coverage is ranked ÷ MEASURABLE, never ÷ the whole board: a name with no
+    options history was never a candidate, and counting it would refuse to rank on
+    perfectly healthy dates.  The healthy and collapsed populations sit ~70× apart
+    (99.7% vs 1.3%), so a 50% floor is nowhere near either of them.
+    """
+    out: dict[str, float] = {}
+    for asof_k, vals in vhd_by_asof.items():
+        measurable = measurable_by_asof.get(asof_k, len(vals))
+        if len(vals) < _TERCILE_MIN_NAMES:
+            continue
+        if measurable and len(vals) < _TERCILE_MIN_COVERAGE * measurable:
+            print(f"::warning title=vanna-tercile-coverage::opt_vanna_relief not ranked "
+                  f"for as_of {asof_k}: only {len(vals)} of {measurable} measurable names "
+                  f"carry a 5-session basis ({100.0 * len(vals) / measurable:.1f}% < "
+                  f"{100.0 * _TERCILE_MIN_COVERAGE:.0f}% floor) — the polygon_gex store is "
+                  f"missing that as_of's 5-back session for the rest, so a tercile over "
+                  f"the survivors would be coverage-selected, not cross-sectional",
+                  flush=True)
+            continue
+        out[asof_k] = float(np.percentile(vals, 100.0 * 2.0 / 3.0))
+    return out
+
 _POSITIONAL_WINDOW_COLS: list[str] = [
     "opt_doi_slope_5d",        # OLS over the trailing 6 chain files
     "opt_voi_flag",            # chains usable[-1] volume vs usable[-2] OI
     "opt_front7_charm_share",  # chains usable[-1] greeks vs usable[-2] OI
-    "opt_vanna_relief",        # summary iloc[-6] iv30 + cross-sectional tercile
+    "opt_vanna_relief",        # summary 5-sessions-back iv30 (calendar-resolved) + tercile
 ]
 
 
@@ -248,6 +309,8 @@ def stamp_ledger(
     _ovc_pending: dict[tuple, dict] = {}
     # Separate map for vanna_hedge_5d values (computed per-ticker for cross-sectional ranking)
     _ovc_vhd_precomputed: dict[tuple, float | None] = {}
+    # Why each null is null — feeds the tercile's coverage floor (BASIS_* in options_stamp)
+    _ovc_vhd_basis: dict[tuple, str] = {}
 
     for idx in df.index[eligible_mask]:
         as_of = df.at[idx, "as_of"]
@@ -269,10 +332,14 @@ def stamp_ledger(
             _ovc_pending[key] = stamp  # stash for cross-sectional ranking below
             # Compute vanna_hedge_5d for this (as_of, ticker) if not already done
             if key not in _ovc_vhd_precomputed:
-                from engine.options_stamp import _vanna_hedge_5d_from_summary, _default_read_summary, _as_date as _stamp_as_date
+                from engine.options_stamp import _vanna_hedge_5d_basis, _default_read_summary, _as_date as _stamp_as_date
                 _as_of_d = _stamp_as_date(as_of)
                 _sdf = _default_read_summary(ticker)
-                _ovc_vhd_precomputed[key] = _vanna_hedge_5d_from_summary(_as_of_d, _sdf) if _as_of_d else None
+                _vhd_val, _vhd_status = (
+                    _vanna_hedge_5d_basis(_as_of_d, _sdf) if _as_of_d
+                    else (None, options_stamp.BASIS_NO_HISTORY))
+                _ovc_vhd_precomputed[key] = _vhd_val
+                _ovc_vhd_basis[key] = _vhd_status
             # Always write opt_opex_days (calendar-derived; always available) even when
             # coverage-gated cols are null.  This lets us track OPEX proximity for all
             # fires without poisoning the retry gate.
@@ -343,10 +410,14 @@ def stamp_ledger(
         if vhd is not None and math.isfinite(vhd):
             _vhd_by_asof.setdefault(str(asof_k), []).append(vhd)
 
-    _tercile_hi: dict[str, float] = {}
-    for asof_k, vals in _vhd_by_asof.items():
-        if len(vals) >= 3:
-            _tercile_hi[asof_k] = float(np.percentile(vals, 100.0 * 2.0 / 3.0))
+    # COVERAGE FLOOR — the decision lives in _tercile_thresholds (see its docstring for
+    # the measured collapse it refuses to rank).
+    _measurable_by_asof: dict[str, int] = {}
+    for (asof_k, _tk), status in _ovc_vhd_basis.items():
+        if status in (options_stamp.BASIS_OK, options_stamp.BASIS_GAP):
+            _measurable_by_asof[str(asof_k)] = _measurable_by_asof.get(str(asof_k), 0) + 1
+
+    _tercile_hi = _tercile_thresholds(_vhd_by_asof, _measurable_by_asof)
 
     # Step 3: Compute opt_vanna_relief per eligible row and write it back.
     # Also compute iv30_5d_chg directly from the summary frame for each ticker.
@@ -530,13 +601,20 @@ def _get_iv30_5d_chg_from_summary(
 ) -> float | None:
     """Extract iv30_5d_chg for (as_of, ticker) from the summary parquet.
 
-    PIT: reads only rows with index date ≤ as_of. Needs ≥ 6 such rows.
-    Returns None when insufficient history or columns absent.
+    PIT: reads only rows with index date ≤ as_of. Needs ≥ 6 such rows, and a row AT
+    the session exactly 5 sessions before the latest usable row — resolved by
+    CALENDAR via ``engine.options_stamp._row_n_sessions_back``, never by position,
+    so a collection outage (e.g. 2026-08-03..08-05) yields None instead of a
+    silently widened basis.
+    Returns None when insufficient history, the 5-back session's row is absent, or
+    columns absent.
 
     We re-read the summary parquet rather than storing it in the stamp to keep
     STAMP_COLS clean (iv30_5d_chg is a transient quantity for the ranking pass).
     """
-    from engine.options_stamp import _default_read_summary, _as_date
+    from engine.options_stamp import (
+        _default_read_summary, _as_date, _row_n_sessions_back,
+    )
     import datetime as _dt_local
 
     as_of_d = _as_date(as_of)
@@ -550,9 +628,12 @@ def _get_iv30_5d_chg_from_summary(
     usable = sdf[mask]
     if len(usable) < 6:
         return None
+    prior = _row_n_sessions_back(usable, 5)
+    if prior is None:
+        return None
     try:
         iv30_latest = float(usable.iloc[-1]["iv30"])
-        iv30_prior = float(usable.iloc[-6]["iv30"])
+        iv30_prior = float(prior["iv30"])
     except (TypeError, ValueError, KeyError):
         return None
     if not (math.isfinite(iv30_latest) and math.isfinite(iv30_prior)):

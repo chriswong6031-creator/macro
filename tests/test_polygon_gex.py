@@ -85,6 +85,31 @@ def test_get_paginates_and_attaches_key(monkeypatch):
     assert calls[1][1] == {"apiKey": "TESTKEY"}
 
 
+def test_ticker_details_returns_the_results_dict(monkeypatch):
+    """/v3/reference/tickers/{T} returns ``results`` as ONE dict — it must not
+    go through _get, whose list.extend would iterate the dict's keys (that
+    mismatch silently nulled the S&P 500 shares reference for four weeks)."""
+    client = PolygonOptions()
+    client.key = "TESTKEY"
+    payload = {"results": {"ticker": "BKNG",
+                           "weighted_shares_outstanding": 774_878_436}}
+    seen = {}
+
+    def fake_get(url, **kw):
+        seen["url"], seen["params"] = url, kw.get("params", {})
+        return _Resp(payload)
+
+    monkeypatch.setattr(client, "http_get", fake_get)
+    res = client.ticker_details("BKNG")
+    assert res["weighted_shares_outstanding"] == 774_878_436
+    assert seen["url"].endswith("/v3/reference/tickers/BKNG")
+    assert seen["params"]["apiKey"] == "TESTKEY"
+    # malformed / list-shaped results degrade to {} rather than leaking a list
+    monkeypatch.setattr(client, "http_get",
+                        lambda url, **kw: _Resp({"results": [{"a": 1}]}))
+    assert client.ticker_details("BKNG") == {}
+
+
 def _raw(symbols=("SPY",), spot=100.0):
     rows = []
     for sym in symbols:
@@ -113,9 +138,14 @@ def test_accrue_writes_raw_and_summary(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
     monkeypatch.setattr(bpg, "PolygonOptions", lambda: _FakeClient(_raw(("SPY", "QQQ"))))
 
-    res = bpg.accrue(ASOF.to_pydatetime())
+    # A `date` is an EXPLICIT session — "store session 2026-06-15" (2026-08-06). A
+    # datetime would be an accrual INSTANT and would resolve to the session it describes;
+    # midnight UTC 06-15 is 20:00 ET Sunday 06-14, i.e. session 06-12. That path has its
+    # own tests in tests/test_polygon_gex_session_stamps.py.
+    res = bpg.accrue(ASOF.date())
     assert res["status"] == "ok"
     assert res["underlyings"] == 2
+    assert res["session"] == "2026-06-15"
 
     raw_file = tmp_path / "polygon_gex" / "chains" / "2026-06-15.parquet"
     assert raw_file.exists()
@@ -134,6 +164,6 @@ def test_accrue_no_key_is_noop(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
     monkeypatch.setattr(bpg, "PolygonOptions", lambda: _FakeClient(_raw(), enabled=False))
 
-    res = bpg.accrue(ASOF.to_pydatetime())
+    res = bpg.accrue(ASOF.date())
     assert res["status"] == "no_key"
     assert not (tmp_path / "polygon_gex").exists()

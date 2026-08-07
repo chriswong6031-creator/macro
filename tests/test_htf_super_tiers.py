@@ -234,12 +234,16 @@ class TestSignalGateHTFPassthrough:
         # so a signature-drifted stub degrades the verdict silently (see the same
         # note in tests/test_signal_gate.py).
         monkeypatch.setattr(sg, "analyze", lambda t, c, **kw: res)
+        # `market=` is the per-market session anchor gate() now infers from the ticker
+        # (engine.session_anchor, era abs-session-2026-08-06); the stub must accept it or
+        # gate() raises TypeError inside a swallowed path and the verdict silently degrades.
         monkeypatch.setattr(ct, "cascade",
-                            lambda close, take_active=False, take_date=None: {
+                            lambda close, take_active=False, take_date=None, market="US": {
                                 "not_topped": True, "tier": "T2", "ticks": 1,
                                 "sub": "shallow", "bars_to_cross": None,
                                 "provisional": False, "weight": 1.0,
-                                "htf": {"s1": s1, "s2": s2}})
+                                "htf": {"s1": s1, "s2": s2},
+                                "anchor_era": ct.ANCHOR_ERA})
 
     def _series(self):
         idx = pd.bdate_range("2024-01-01", periods=300)

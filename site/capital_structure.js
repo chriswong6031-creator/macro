@@ -64,11 +64,11 @@
   // neutral observed-state fallback.
   var LABELS = {
     lifecycle: {
-      filed: ['Filed', '已申报'],
+      filed: ['Filed', '已披露'],
       amended: ['Amended', '已修订'],
       effective: ['Effective', '已生效'],
       withdrawn: ['Withdrawn', '已撤回'],
-      priced: ['Pricing filing observed', '已观察到定价申报'],
+      priced: ['Pricing filing observed', '已观察到定价披露'],
       closed: ['Closed', '已结束'],
       expired: ['Expired', '已到期'],
       unknown: ['Observed', '已观察']
@@ -79,37 +79,37 @@
       registration_amendment: ['Registration amendment', '注册说明书修订'],
       post_effective_amendment: ['Post-effective amendment', '生效后修订'],
       effectiveness_notice: ['SEC effectiveness notice', 'SEC 生效通知'],
-      withdrawal_request: ['Withdrawal filing', '撤回申报'],
+      withdrawal_request: ['Withdrawal filing', '撤回申请'],
       automatic_shelf_withdrawal: ['Automatic shelf withdrawal', '自动货架撤回'],
-      prospectus_event: ['Prospectus filing', '招股说明书申报'],
-      charter_amendment_candidate: ['Charter amendment filing', '章程修订申报'],
-      shareholder_vote_candidate: ['Shareholder vote filing', '股东投票申报'],
-      unregistered_equity_sale_candidate: ['Equity sale filing', '股权出售申报'],
-      financing_agreement_candidate: ['Financing agreement filing', '融资协议申报'],
-      current_report_candidate: ['Current report filing', '临时报告申报'],
-      authorization_or_vote_candidate: ['Authorization or vote filing', '授权或投票申报'],
+      prospectus_event: ['Prospectus filing', '招股说明书披露'],
+      charter_amendment_candidate: ['Charter amendment filing', '章程修订披露'],
+      shareholder_vote_candidate: ['Shareholder vote filing', '股东投票披露'],
+      unregistered_equity_sale_candidate: ['Equity sale filing', '股权出售披露'],
+      financing_agreement_candidate: ['Financing agreement filing', '融资协议披露'],
+      current_report_candidate: ['Current report filing', '临时报告披露'],
+      authorization_or_vote_candidate: ['Authorization or vote filing', '授权或投票披露'],
       offering_statement: ['Regulation A statement', 'Regulation A 说明书'],
       offering_statement_amendment: ['Regulation A amendment', 'Regulation A 修订'],
-      reg_a_event_candidate: ['Regulation A filing', 'Regulation A 申报'],
-      periodic_reconciliation_source: ['Periodic filing source', '定期申报来源'],
-      ownership_context_source: ['Ownership filing source', '持股申报来源'],
-      unsupported_form: ['Observed SEC filing', '已观察 SEC 申报']
+      reg_a_event_candidate: ['Regulation A filing', 'Regulation A 披露'],
+      periodic_reconciliation_source: ['Periodic filing source', '定期披露来源'],
+      ownership_context_source: ['Ownership filing source', '持股披露来源'],
+      unsupported_form: ['Observed SEC filing', '已观察 SEC 披露']
     },
     family: {
       shelf: ['Shelf registration', '货架注册'],
-      atm: ['At-the-market filing', '按市价发行申报'],
-      follow_on: ['Follow-on offering filing', '后续发行申报'],
-      rdo: ['Registered direct filing', '注册直销申报'],
-      pipe: ['Private investment filing', '私募投资申报'],
-      eloc: ['Equity line filing', '股权额度申报'],
-      sepa: ['Equity purchase filing', '股权购买申报'],
-      warrant: ['Warrant filing', '认股权证申报'],
-      convertible: ['Convertible filing', '可转换证券申报'],
+      atm: ['At-the-market filing', '按市价发行披露'],
+      follow_on: ['Follow-on offering filing', '后续发行披露'],
+      rdo: ['Registered direct filing', '注册直销披露'],
+      pipe: ['Private investment filing', '私募投资披露'],
+      eloc: ['Equity line filing', '股权额度披露'],
+      sepa: ['Equity purchase filing', '股权购买披露'],
+      warrant: ['Warrant filing', '认股权证披露'],
+      convertible: ['Convertible filing', '可转换证券披露'],
       resale_registration: ['Resale registration', '转售注册'],
-      rights_offering: ['Rights offering filing', '配股发行申报'],
-      reg_a: ['Regulation A filing', 'Regulation A 申报'],
-      corporate_action: ['Corporate action filing', '公司行动申报'],
-      other: ['Observed SEC filing', '已观察 SEC 申报']
+      rights_offering: ['Rights offering filing', '配股发行披露'],
+      reg_a: ['Regulation A filing', 'Regulation A 披露'],
+      corporate_action: ['Corporate action filing', '公司行动披露'],
+      other: ['Observed SEC filing', '已观察 SEC 披露']
     },
     classification: {
       classified: ['Classified', '已分类'],
@@ -126,11 +126,11 @@
       registration_amendment_observed: ['Registration amendment observed', '已观察到注册说明书修订'],
       post_effective_amendment_observed: ['Post-effective amendment observed', '已观察到生效后修订'],
       effectiveness_notice_observed: ['SEC effectiveness notice observed', '已观察到 SEC 生效通知'],
-      withdrawal_observed: ['Withdrawal filing observed', '已观察到撤回申报'],
+      withdrawal_observed: ['Withdrawal filing observed', '已观察到撤回申请'],
       reg_a_statement_observed: ['Regulation A statement observed', '已观察到 Regulation A 说明书'],
       reg_a_amendment_observed: ['Regulation A amendment observed', '已观察到 Regulation A 修订'],
-      classification_pending: ['Filing observed; review pending', '已观察到申报；待复核'],
-      filing_state_observed: ['Filing state observed', '已观察到申报状态'],
+      classification_pending: ['Filing observed; review pending', '已观察到披露；待复核'],
+      filing_state_observed: ['Filing state observed', '已观察到披露状态'],
       amendment_of_link_observed: ['Amendment link observed', '已观察到修订关联'],
       effectuates_link_observed: ['Effectiveness link observed', '已观察到生效关联'],
       withdraws_link_observed: ['Withdrawal link observed', '已观察到撤回关联'],
@@ -139,10 +139,10 @@
   };
   var LABEL_FALLBACKS = {
     lifecycle: ['Observed', '已观察'],
-    subtype: ['Observed SEC filing', '已观察 SEC 申报'],
-    family: ['Observed SEC filing', '已观察 SEC 申报'],
+    subtype: ['Observed SEC filing', '已观察 SEC 披露'],
+    family: ['Observed SEC filing', '已观察 SEC 披露'],
     classification: ['Review state not available', '复核状态暂不可用'],
-    change: ['Observed filing update', '已观察到申报更新']
+    change: ['Observed filing update', '已观察到披露更新']
   };
 
   function normalizedKey(value) { return String(value || '').trim().toLowerCase(); }
@@ -236,10 +236,10 @@
     var raw = coverageFrom(state.coverage);
     var status = String(firstDefined(raw.freshness, raw.state, raw.source_status, 'loading')).toLowerCase();
     var message;
-    if (status === 'fresh' || status === 'ok') message = copy('Observed filing coverage is current', '已观察申报覆盖范围为最新');
-    else if (status === 'partial') message = copy('Observed filing coverage is partial', '已观察申报覆盖范围不完整');
-    else if (status === 'degraded') message = copy('Observed filing coverage is temporarily limited', '已观察申报覆盖范围暂时受限');
-    else message = copy('Observed filing coverage is loading', '正在加载已观察申报覆盖范围');
+    if (status === 'fresh' || status === 'ok') message = copy('Observed filing coverage is current', '已观察披露覆盖范围为最新');
+    else if (status === 'partial') message = copy('Observed filing coverage is partial', '已观察披露覆盖范围不完整');
+    else if (status === 'degraded') message = copy('Observed filing coverage is temporarily limited', '已观察披露覆盖范围暂时受限');
+    else message = copy('Observed filing coverage is loading', '正在加载已观察披露覆盖范围');
     setNotice(message, status === 'fresh' || status === 'ok' ? 'fresh' : status === 'degraded' ? 'degraded' : 'partial');
     ui.asOf.textContent = formatTime(firstDefined(raw.as_of, state.coverage && state.coverage.as_of));
     ui.generatedAt.textContent = formatTime(firstDefined(raw.generated_at, state.coverage && state.coverage.generated_at));
@@ -358,7 +358,7 @@
       var url = safeSecUrl(firstDefined(source.filing_url, source.url));
       var evidence = asArray(source.evidence);
       var receipt = evidence[0] || {};
-      var links = url ? '<a class="cs-evidence-link" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer"><span>' + esc(copy('Open SEC filing', '打开 SEC 申报')) + '</span><span aria-hidden="true">↗</span></a>' : '';
+      var links = url ? '<a class="cs-evidence-link" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer"><span>' + esc(copy('Open SEC filing', '打开 SEC 披露原文')) + '</span><span aria-hidden="true">↗</span></a>' : '';
       var receiptText = [
         receipt.manifest_id ? 'manifest: ' + receipt.manifest_id : '',
         receipt.span_id ? 'span: ' + receipt.span_id : '',
@@ -527,7 +527,7 @@
       state.nextEventCursor = '';
       ui.emptyDossier.hidden = false;
       ui.dossierBody.hidden = true;
-      ui.emptyDossier.innerHTML = '<span class="cs-empty-glyph" aria-hidden="true">!</span><h2>' + esc(copy('Record unavailable', '记录暂不可用')) + '</h2><p>' + esc(error.status === 401 || error.status === 403 ? copy('Sign in with an eligible account to read this filing record.', '请使用符合条件的账户登录后读取此申报记录。') : copy('This issuer record is temporarily unavailable. Try again shortly.', '该发行人记录暂时不可用，请稍后重试。')) + '</p>';
+      ui.emptyDossier.innerHTML = '<span class="cs-empty-glyph" aria-hidden="true">!</span><h2>' + esc(copy('Record unavailable', '记录暂不可用')) + '</h2><p>' + esc(error.status === 401 || error.status === 403 ? copy('Sign in with an eligible account to read this filing record.', '请使用符合条件的账户登录后读取此披露记录。') : copy('This issuer record is temporarily unavailable. Try again shortly.', '该发行人记录暂时不可用，请稍后重试。')) + '</p>';
     });
   }
 
@@ -587,7 +587,7 @@
       if (firstId) return selectIssuer(firstId, { replaceUrl: true });
       return null;
     }).catch(function (error) {
-      setNotice(error.status === 401 || error.status === 403 ? copy('Sign in to open observed filing state', '请登录后打开已观察申报状态') : copy('Observed filing state is temporarily unavailable', '已观察申报状态暂时不可用'), 'degraded');
+      setNotice(error.status === 401 || error.status === 403 ? copy('Sign in to open observed filing state', '请登录后打开已观察披露状态') : copy('Observed filing state is temporarily unavailable', '已观察披露状态暂时不可用'), 'degraded');
       ui.railCount.textContent = '—';
       ui.issuerList.innerHTML = '<div class="cs-issuer-empty">' + esc(copy('The issuer browser could not load. Refresh to try again.', '发行人浏览器无法加载，请刷新后重试。')) + '</div>';
     });

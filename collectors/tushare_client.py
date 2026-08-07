@@ -19,7 +19,10 @@ dependency, matching this repo's direct-Eastmoney-JSON convention. Notes:
     whole-market call per endpoint per build, so the throttle mostly matters for the few
     per-window loops.
   * Best-effort: any network / auth / parse failure returns ``None`` (logged) — never raises into
-    a build.
+    a build. An AUTH rejection additionally LATCHES into ``last_auth_error()`` so the one caller
+    that can act on it (``collectors/china_tushare``) can distinguish "the vendor is refusing our
+    credential" from "there were no rows"; degrading both to ``None`` is what kept the plane
+    silently dark from 2026-07-27 to 2026-08-06.
 
 See research/TUSHARE_INTEGRATION.md for the tier, endpoint→积分 map, and the validate-before-score
 roadmap (every new premium feed lands display-only until china_validation proves it).
@@ -45,6 +48,36 @@ _ENV = "TUSHARE_TOKEN"
 _THROTTLE: dict[str, float] = {"report_rc": 3600.0}
 _DEFAULT_THROTTLE = 0.35
 _last_call: dict[str, float] = {}
+
+# Vendor AUTH-class codes — the token VALUE is rejected, so every endpoint fails
+# identically and no amount of retrying or waiting helps; only an operator can fix it.
+# 40101 (``您的token不对，请确认。``) is the one observed in the wild: the plane went dark
+# 2026-07-27 when the configured token started coming back 40101 on trade_cal / daily /
+# daily_basic / moneyflow_dc alike (run 31095457182, asia job 2026-08-06 11:39Z).
+# DELIBERATELY NARROW: 40203 is the rate-limit / entitlement code (频率超限, or 权限 for an
+# above-tier endpoint) — a throttle and a tier gap are NOT a dead credential, and folding
+# them in here would turn `report_rc`'s expected hourly throttle into a false
+# "regenerate your token" alarm every single night.
+_AUTH_CODES = frozenset({40101})
+
+# Latest auth rejection, or None. Latched by query() on an auth-class code and cleared by
+# the next code==0 response, so a re-issued token self-clears with no restart.
+_auth_error: dict | None = None
+
+
+def last_auth_error() -> "dict | None":
+    """The most recent vendor auth rejection — ``{api_name, code, msg, ts}`` — or None.
+
+    Exists because an auth failure is otherwise INVISIBLE: ``query()`` degrades every
+    rejection to ``None``, so a rejected token looks exactly like an empty snapshot to
+    every caller, the collectors return 0 rows, and the china_tushare heartbeat still
+    reports ok (the plane was dark 2026-07-27 → 2026-08-06 with nothing in run_status
+    saying so). Callers that can tell the difference — see
+    ``collectors/china_tushare.ChinaTushareAdapter.fetch`` — read this to raise LOUDLY.
+
+    A copy is returned so a caller cannot mutate the latch.
+    """
+    return dict(_auth_error) if _auth_error else None
 
 
 def token() -> str | None:
@@ -84,7 +117,13 @@ def query(api_name: str, fields: str = "", *, _retries: int = 2, **params) -> "p
     Returns None — never raises — when: no token (gate closed), the endpoint errors, access is
     denied / credits are short, or the response is empty. A code-40203 rate-limit message is
     retried once after a pause; other non-zero codes degrade to None.
+
+    The return contract is unchanged, but an auth-class rejection (see ``_AUTH_CODES``) is now
+    also LATCHED into module state readable via ``last_auth_error()`` — every caller that only
+    wants the frame is unaffected; the one caller that can raise on it (china_tushare) finally
+    can. Any code==0 response clears the latch, so recovery needs no restart.
     """
+    global _auth_error
     tok = token()
     if not tok:
         return None
@@ -100,6 +139,10 @@ def query(api_name: str, fields: str = "", *, _retries: int = 2, **params) -> "p
             return None
         code = d.get("code")
         if code == 0:
+            # Authenticated round-trip: whatever was wrong with the credential is over.
+            # Cleared on code==0 regardless of row count — an empty snapshot is a DATA
+            # answer, and treating it as "still broken" would leave a healed token latched.
+            _auth_error = None
             data = d.get("data") or {}
             cols = data.get("fields") or []
             items = data.get("items") or []
@@ -116,6 +159,9 @@ def query(api_name: str, fields: str = "", *, _retries: int = 2, **params) -> "p
             log.info("tushare %s rate-limited — backing off", api_name)
             time.sleep(max(_THROTTLE.get(api_name, _DEFAULT_THROTTLE), 1.0))
             continue
+        if code in _AUTH_CODES:
+            _auth_error = {"api_name": api_name, "code": code, "msg": msg,
+                           "ts": datetime.now(timezone.utc).isoformat()}
         log.warning("tushare %s returned code=%s msg=%s", api_name, code, msg)
         return None
     return None

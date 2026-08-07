@@ -43,6 +43,15 @@ estimates — which equals the spine-index engine column):
      disjoint time-blocks are available (pre/post regime epochs), pooling would
      be appropriate; it is not appropriate here.
 
+     OUTCOME BASIS GATE.  ``wilson_ci_low`` in recency_trend is a DIRECTIONAL
+     accuracy, so it is emitted as null for families whose outcome_excess is
+     an unsigned MFE proxy (outcome_unit='magnitude_nonneg' — track_record and
+     the hk/ca/cn boards).  ``mean`` is still reported for those families: it
+     is a labelled magnitude, and outcome_unit sits beside it in the artifact
+     saying so.  The family's basis is derived once from the spine index's
+     outcome_basis column (see outcome_unit below), never per window.
+     cf. PR #4673 edge_outcomes.py dst_outcome_unsigned_mfe_proxy.
+
   C. staleness
      date_last per family (from kernel_estimates) + days_since_last_fire relative
      to the build date.
@@ -66,7 +75,11 @@ OUTPUT ARTIFACT: data/neuralweb/kernel_families.json
         "staleness": {"date_last": "YYYY-MM-DD"|null, "days_since_last_fire": int|null},
         "armed": bool,
         "armed_reason": str|null,     # pooling.arming() reason (was dropped pre-fix)
-        "outcome_unit": "magnitude_nonneg"|"signed_excess",  # what outcome_excess measures
+        # what outcome_excess measures — derived from the spine index's
+        # outcome_basis (query.OUTCOME_BASIS_FOR_LEDGER); half_life's engine
+        # map is the fallback for families with no graded rows.
+        # 'magnitude_nonneg' families get recency wilson_ci_low=null.
+        "outcome_unit": "magnitude_nonneg"|"signed_excess",
         "regime_coverage": float|null  # fraction of graded events with quad_hard_label
       }
     },
@@ -122,9 +135,19 @@ RECENCY_WINDOWS: dict[str, int] = {
 
 #: outcome_unit vocabulary for kernel_families.json.
 #: Which engines measure a non-negative favorable-excursion magnitude (vs a
-#: signed excess) has ONE source of truth: half_life._OUTCOME_UNIT_MAP
-#: ('magnitude'). This artifact spells it 'magnitude_nonneg' to make the
-#: non-negativity explicit for display consumers.
+#: signed excess) is now derived STRUCTURALLY from the spine index's
+#: outcome_basis column (query.OUTCOME_BASIS_FOR_LEDGER) — the ledger the rows
+#: came from decides, not a hand-maintained engine list.
+#: half_life._OUTCOME_UNIT_MAP remains the fallback for engines with no graded
+#: rows in the index. This artifact spells the magnitude case
+#: 'magnitude_nonneg' to make the non-negativity explicit for display consumers.
+#:
+#: WHY THE FLIP: the hand-maintained map carried no board entries, so
+#: kernel_families.json published outcome_unit='signed_excess' for hk_board and
+#: ca_board — both of which fill outcome_excess from an unsigned fwd_mfe proxy
+#: (measured 2026-08-05: 0.0% negatives on both). That was a live mislabel; the
+#: structural derivation cures it and cannot drift again when a new board lands.
+#: cf. PR #4673 edge_outcomes.py dst_outcome_unsigned_mfe_proxy.
 _UNIT_MAGNITUDE: str = "magnitude_nonneg"
 _UNIT_SIGNED: str = "signed_excess"
 
@@ -169,13 +192,47 @@ def _load_index(root: Path | str | None) -> pd.DataFrame:
     return load_index(root)
 
 
-def _family_outcome_unit(engine: str) -> str:
+def _basis_mode(rows: pd.DataFrame) -> str | None:
+    """Mode of outcome_basis over a family's graded rows; None when unlabelled.
+
+    Fail-open: no column, empty frame, or an all-null column → None, which the
+    caller resolves through the half_life map fallback.
+    """
+    if rows is None or rows.empty or "outcome_basis" not in rows.columns:
+        return None
+    try:
+        vals = rows["outcome_basis"].dropna().astype(str)
+        vals = vals[~vals.isin(("", "nan", "None"))]
+        if vals.empty:
+            return None
+        return str(vals.value_counts().idxmax())
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _family_outcome_unit(engine: str, basis: str | None = None) -> str:
     """outcome_unit for a family, in kernel_families vocabulary.
 
-    Reuses half_life._OUTCOME_UNIT_MAP (via _outcome_unit_for) as the single
-    source of truth for WHICH engines are magnitude-valued; only the spelling
-    differs ('magnitude' → 'magnitude_nonneg'). Fail-open to signed_excess.
+    STRUCTURAL FIRST: ``basis`` is the mode of outcome_basis over the family's
+    graded spine-index rows (query.OUTCOME_BASIS_FOR_LEDGER). An unsigned MFE
+    proxy is a magnitude, everything else labelled is a signed excess.
+
+    FALLBACK: when the family has no graded rows in the index (or they carry
+    no basis label — legacy parquet that escaped the read-time backfill), fall
+    back to half_life._OUTCOME_UNIT_MAP, then to signed_excess. Fail-open
+    throughout: this is a display label, never a gate.
     """
+    from engine.neuralweb.query import (  # noqa: PLC0415
+        OUTCOME_BASIS_SIGNED,
+        OUTCOME_BASIS_SYNTHETIC_SIGN,
+        OUTCOME_BASIS_UNSIGNED_MFE,
+    )
+
+    if basis == OUTCOME_BASIS_UNSIGNED_MFE:
+        return _UNIT_MAGNITUDE
+    if basis in (OUTCOME_BASIS_SIGNED, OUTCOME_BASIS_SYNTHETIC_SIGN):
+        return _UNIT_SIGNED
+
     try:
         from engine.neuralweb.half_life import _outcome_unit_for  # noqa: PLC0415
         unit = _outcome_unit_for(engine)
@@ -189,6 +246,8 @@ def _window_stats(
     graded: pd.DataFrame,
     window_days: int | None,
     today_str: str,
+    *,
+    sign_safe: bool = True,
 ) -> dict[str, Any]:
     """Compute mean signed excess + Wilson CI for a trailing calendar-day window.
 
@@ -198,6 +257,14 @@ def _window_stats(
     graded:       all graded rows for this engine (entity scope, finite outcomes).
     window_days:  trailing calendar days; None = all-time.
     today_str:    ISO date string for the cutoff (today).
+    sign_safe:    whether this family's outcome_excess carries a real sign
+                  (derived ONCE from the family's outcome_basis by the caller,
+                  not recomputed per window — every window is a slice of the
+                  same ledger). When False, wilson_ci_low is None: a Wilson CI
+                  on an unsigned MFE proxy measures "MFE > 0 at least once",
+                  not directional accuracy. ``mean`` is still emitted — it is a
+                  labelled magnitude, and kernel_families carries outcome_unit
+                  alongside it. cf. PR #4673 dst_outcome_unsigned_mfe_proxy.
 
     Returns
     -------
@@ -238,9 +305,9 @@ def _window_stats(
         return {"n_eff": n_eff, "mean": None, "wilson_ci_low": None}
 
     mean_val = float(finite.mean())
-    hits = int((finite > 0).sum())
     ci_low: float | None = None
-    if n_eff >= WILSON_MIN_N:
+    if sign_safe and n_eff >= WILSON_MIN_N:
+        hits = int((finite > 0).sum())
         ci_low = _wilson_ci_low(hits, n_eff)
 
     return {
@@ -358,10 +425,22 @@ def build_families(root: Path | str | None = None) -> dict:
             # Match engine values in the spine index — engine column matches kernel families
             eng_graded = entity_graded[entity_graded["engine"].astype(str) == engine].copy()
 
+        # --- outcome basis: derived ONCE per family from its graded rows, then
+        # used for both the outcome_unit label and the recency Wilson gate.
+        # Computing it per window would re-derive the same ledger fact five
+        # times and could disagree between windows on a thin slice.
+        basis = _basis_mode(eng_graded)
+        outcome_unit = _family_outcome_unit(engine, basis)
+        sign_safe = outcome_unit != _UNIT_MAGNITUDE
+
         recency_trend: dict[str, Any] = {}
         for window_name, window_days in RECENCY_WINDOWS.items():
-            recency_trend[window_name] = _window_stats(engine, eng_graded, window_days, today_str)
-        recency_trend["all"] = _window_stats(engine, eng_graded, None, today_str)
+            recency_trend[window_name] = _window_stats(
+                engine, eng_graded, window_days, today_str, sign_safe=sign_safe,
+            )
+        recency_trend["all"] = _window_stats(
+            engine, eng_graded, None, today_str, sign_safe=sign_safe,
+        )
 
         families_out[engine] = {
             "horizon_curve": horizon_curve,
@@ -373,7 +452,7 @@ def build_families(root: Path | str | None = None) -> dict:
             },
             "armed": armed,
             "armed_reason": armed_reason,
-            "outcome_unit": _family_outcome_unit(engine),
+            "outcome_unit": outcome_unit,
             "regime_coverage": regime_cov,
         }
 

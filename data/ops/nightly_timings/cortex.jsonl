@@ -1,0 +1,1 @@
+{"date":"2026-08-06","workflow":"daily","job":"cortex","run_id":"31067383446","run_attempt":"1","runner":"mac-builder-1","cap_minutes":30.0,"start":"2026-08-06T13:49:30Z","end":"2026-08-06T13:55:37Z","elapsed_minutes":6.1,"pct_of_cap":20.4,"bands":[],"source":"backfill-gh-api","conclusion":"success"}
