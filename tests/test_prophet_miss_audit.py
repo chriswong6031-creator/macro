@@ -1214,7 +1214,13 @@ def test_no_module_outside_the_runner_imports_the_audit():
                # CI pack) rather than here. A TEST importing the audit is not an authority
                # path — the fence is about production modules — so the allowance is scoped
                # to that one file, not widened to tests/*.
-               "tests/test_us_prophet_grades.py"}
+               "tests/test_us_prophet_grades.py",
+               # 2026-08-06: the off-engine-lane suite names this module because the audit
+               # is one of the four steps it pins into the us_prophet_ledgers job, and it
+               # imports ARTIFACT_REL/FORWARD_LOG_REL so the commit step's `git add` list
+               # is DERIVED from the writer rather than copied out of the workflow. Same
+               # scoping as above: one named test file, no authority path.
+               "tests/test_prophet_off_engine_lane.py"}
     offenders = []
     for d in ("engine", "scripts", "app", "admin", "collectors", "lib", "tools", "tests"):
         for p in (root / d).rglob("*.py"):

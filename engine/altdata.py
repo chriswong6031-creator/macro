@@ -523,6 +523,11 @@ def stocktwits_sentiment(top: int = 15, bull_hot: float = 0.65,
 
 
 # --------------------------------------------------------------------------- unusual options
+#: Widest session span the 12-file vol/OI baseline may cover — 1.5× the nominal window.
+#: See the GAP DISCIPLINE note in `unusual_options` for why this is a cap and not a refusal.
+_BASELINE_MAX_SESSIONS = 18
+
+
 def unusual_options(min_oi: float = 5000.0, mult_hot: float = 3.0, top: int = 20) -> list[dict]:
     """Per-underlying UNUSUAL options activity from the ALREADY-STORED Polygon per-strike chains
     (data/polygon_gex/chains/*.parquet — no new API calls). For each name: today's total
@@ -549,6 +554,29 @@ def unusual_options(min_oi: float = 5000.0, mult_hot: float = 3.0, top: int = 20
         keep_unparseable=True,
         label="polygon_gex/chains",
     )[-12:]
+    # GAP DISCIPLINE — WINDOW/BASELINE, span-capped (lib/nyse_calendar, 2026-08-06).
+    # Classified explicitly rather than left alone. This is NOT the mislabeling class the
+    # two-endpoint sites are: `mult` is today's vol/OI over a MEDIAN of recent ratios, a
+    # median is order-insensitive and gap-robust, and no field here publishes a day count
+    # ("recent baseline" is the only claim). So refusing on a gap would be the wrong rule
+    # and would delete a working panel.
+    # What a gap DOES do is stretch what "recent" means: measured over the committed
+    # store, 18 of 20 twelve-file windows (90%) span more than 12 sessions, up to 16.
+    # That is tolerable; an unbounded stretch after a long outage is not — the baseline
+    # would quietly become a two-month-old comparison under an unchanged label. Hence a
+    # span cap at 1.5× the nominal window. Measured cost on the committed store: ZERO
+    # points dropped (a strict 12-session cap would have cost 2-3 of 12), so this bounds
+    # the future without changing today's numbers.
+    if files:
+        _last = nyse_calendar.as_day(os.path.basename(files[-1]).removesuffix(".parquet"))
+        _floor = (nyse_calendar.session_n_back(_last, _BASELINE_MAX_SESSIONS - 1)
+                  if _last is not None else None)
+        if _floor is not None:
+            _kept = [f for f in files
+                     if (nyse_calendar.as_day(
+                         os.path.basename(f).removesuffix(".parquet")) or _floor) >= _floor]
+            if len(_kept) >= 2:          # never starve the baseline below its own floor
+                files = _kept
     if len(files) < 2:
         return []
     frames = []

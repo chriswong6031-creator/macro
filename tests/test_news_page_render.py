@@ -7,7 +7,8 @@ invariants and the critical house-law guards:
   • schema-violating side-artifacts degrade, never raise
   • no translated text inside a title= attribute (CI i18n guard)
   • internal scorer strings never surface; reason slugs are de-underscored
-  • the AI chip appears ONLY when a real ai_importance is present (Undefined guard)
+  • a story row carries exactly ONE label — no event / direction / AI chips (the
+    Undefined guard the AI chip needed is moot: the branch no longer exists)
   • the build_site render-call shape (no duplicate macro_news kwarg) holds
   • bilingual l-en/l-zh spans are emitted
 
@@ -15,6 +16,7 @@ Mirrors scripts/build_site.py's Jinja env (autoescape=False, same loader).
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import jinja2
@@ -130,32 +132,35 @@ def test_empty_vm_renders_without_exception():
 
 def test_hero_lead_story_renders():
     html = _render_full()
-    assert "nx-lead" in html and "nx-impact" in html
+    assert "nx-lead" in html
     assert "RTX beats Q2" in html              # top-ranked story leads the hero
     assert "Top story" in html or "头条" in html
 
 
-def test_impact_ring_content_is_compact_and_centered():
-    """The score stays self-contained and gives mobile headlines full width.
+def test_the_impact_ring_is_gone_and_stays_gone():
+    """The ring set an 8px uppercase label inside a circular overflow:hidden clip.
 
-    Without this guard they inherit the page's 1.6 line-height, spreading the
-    two rows into the ring edge. On mobile the ring belongs in the eyebrow row,
-    rather than reserving scarce horizontal space beside the lead headline.
+    It fits at 8px and clips the moment a browser enforces a minimum font size —
+    measured on the live page, from 12px at the 60px ring and from 10px at the 50px
+    mobile ring, which is what the operator saw ("IMPAC" with the T cut off). Type
+    that small is not under our control, so the fix is that no text lives inside a
+    circular clip here at all; the list's order carries the ranking and the
+    diagnostics drawer keeps the receipt. Re-adding the ring re-opens the defect.
     """
     html = _render_full()
-    assert "flex-direction:column; align-items:center; justify-content:center" in html
-    assert "overflow:hidden;" in html
-    assert ".nx-impact b{ position:relative; font-size:17px; font-weight:800; line-height:1;" in html
-    assert "font-size:8px; line-height:1; letter-spacing:.06em; text-align:center;" in html
-    assert 'grid-template-areas:"eyebrow impact" "body body"' in html
-    assert ".nx-lead-row{ display:contents; }" in html
+    assert "nx-impact" not in html
+    assert "font-size:8px" not in html, "sub-9px type is not under design control"
+    # the lead still leads, and still wraps rather than overflowing on a narrow screen
+    assert "nx-lead-title" in html
     assert ".nx-lead-title{ overflow-wrap:anywhere; }" in html
 
 
 def test_feed_renders_ranked_story_cards():
     html = _render_full()
-    assert html.count("nx-story") >= 5         # one card per feed item
-    assert "nx-rankdot" in html                # per-card impact number
+    assert html.count("nx-story") >= 5         # one row per feed item
+    # No per-row score badge: a number beside every headline is the system talking
+    # about itself, and the list is already in rank order (the masthead says so).
+    assert "nx-rankdot" not in html
 
 
 def test_lane_and_search_data_attributes_present():
@@ -214,16 +219,29 @@ def test_importance_reasons_and_internal_slugs_never_render():
     assert "stock_pick_roundup" not in html
 
 
-def test_ai_chip_only_when_ai_importance_present():
-    """Regression guard for the Jinja Undefined bug: a missing ai_importance key
-    (Undefined) must NOT render the AI chip. Chip appears only for a real value."""
+def test_a_story_carries_exactly_one_label():
+    """Was: the AI chip renders only for a real ai_importance (a Jinja Undefined guard).
+
+    The chip itself is gone. A headline used to carry theme + event + direction +
+    "✦ AI" + up to five tickers — five to nine coloured objects each — which is what
+    made the list unreadable. One theme label survives on the row; the rest is source
+    and time. The Undefined bug it guarded cannot recur because the branch is gone,
+    and this pins that: a real ai_importance must still not produce a chip.
+    """
     html = _render_full()
-    assert "nx-chip ai" not in html            # fixture items have ai_importance=None
-    # now add a real AI score → chip appears
+    assert "nx-chip ai" not in html
     vm = _full_vm()
     vm["news_feed"][0]["ai_importance"] = 92.0
     html2 = _env().get_template("news.html.j2").render(**vm)
-    assert "nx-chip ai" in html2
+    assert "nx-chip ai" not in html2
+    # exactly one theme label inside each story row (the lead and the also-big
+    # column carry their own, so count per row rather than over the whole page)
+    rows = re.findall(r'<article class="nx-story.*?</article>', html2, re.S)
+    assert rows, "no story rows rendered"
+    for row in rows:
+        assert row.count('class="nx-chip th-') == 1, "a story row grew a second label"
+        for gone in ("nx-chip evt", "nx-chip ai", "dir-up", "dir-down", "dir-mixed"):
+            assert gone not in row, f"{gone} came back to the row"
 
 
 def test_bilingual_spans_present():
