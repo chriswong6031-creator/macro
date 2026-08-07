@@ -5,8 +5,8 @@
     "may_originate": false,
     "may_escalate": false
   },
-  "built": "2026-08-06T12:53:56.774743+00:00",
-  "asof": "2026-08-06",
+  "built": "2026-08-07T10:09:28.258325+00:00",
+  "asof": "2026-08-07",
   "policy_impulse": "targeted_support",
   "transmission_channel": [
     "fiscal_or_structural",
@@ -118,16 +118,16 @@
   ],
   "staleness": {
     "per_source_days": {
-      "lpr": 17,
-      "rrr": 456,
+      "lpr": 18,
+      "rrr": 457,
       "fr007": 0,
-      "communiques": 100
+      "communiques": 101
     }
   },
   "priced_in_check": {
     "descriptive": true,
     "label": "descriptive only — not a signal",
-    "fr007_z": -0.480921877330244,
+    "fr007_z": -0.6178901923398944,
     "pboc_stance": "neutral"
   },
   "data_gaps": []
