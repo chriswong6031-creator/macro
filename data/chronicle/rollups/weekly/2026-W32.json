@@ -1,9 +1,9 @@
 {
-  "as_of": "2026-08-06",
+  "as_of": "2026-08-07",
   "coverage": {
-    "end": "2026-08-06",
+    "end": "2026-08-07",
     "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W32; 14 week(s) have events so far; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
-    "start": "2026-05-07"
+    "start": "2026-05-08"
   },
   "iso_week": "2026-W32",
   "schema": "chronicle.rollup.weekly/v1",
@@ -11,13 +11,7 @@
     {
       "clusters": [
         {
-          "n_events": 240,
-          "source": "earnings_call",
-          "theme": "earnings",
-          "top_events": []
-        },
-        {
-          "n_events": 239,
+          "n_events": 282,
           "source": "research_vault",
           "theme": null,
           "top_events": [
@@ -72,6 +66,12 @@
               "weight_hint": 3
             }
           ]
+        },
+        {
+          "n_events": 240,
+          "source": "earnings_call",
+          "theme": "earnings",
+          "top_events": []
         },
         {
           "n_events": 6,
@@ -269,7 +269,7 @@
           "top_events": []
         },
         {
-          "n_events": 2,
+          "n_events": 3,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -356,7 +356,7 @@
     {
       "clusters": [
         {
-          "n_events": 5,
+          "n_events": 6,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -373,7 +373,7 @@
     {
       "clusters": [
         {
-          "n_events": 10,
+          "n_events": 12,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -395,7 +395,7 @@
     {
       "clusters": [
         {
-          "n_events": 12,
+          "n_events": 17,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -406,7 +406,7 @@
     {
       "clusters": [
         {
-          "n_events": 29,
+          "n_events": 37,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -417,7 +417,7 @@
     {
       "clusters": [
         {
-          "n_events": 44,
+          "n_events": 52,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -428,7 +428,7 @@
     {
       "clusters": [
         {
-          "n_events": 33,
+          "n_events": 41,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -445,7 +445,7 @@
     {
       "clusters": [
         {
-          "n_events": 111,
+          "n_events": 130,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -468,38 +468,74 @@
     {
       "clusters": [
         {
-          "n_events": 157,
+          "n_events": 24,
           "source": "earnings",
           "theme": "earnings",
           "top_events": [
             {
-              "date": "2026-05-07",
-              "id": "cev-earnings-0608a6aa9d38",
+              "date": "2026-05-08",
+              "id": "cev-earnings-025659e0a888",
               "kind": "earnings",
               "source": "earnings",
-              "source_ref": "CWEN#2026-05-07",
+              "source_ref": "BAM#2026-05-08",
               "tickers": [
-                "CWEN"
+                "BAM"
               ],
-              "title": "Earnings: CWEN actual vs est",
+              "title": "Earnings: BAM actual vs est",
               "weight_hint": 2
             },
             {
-              "date": "2026-05-07",
-              "id": "cev-earnings-06e260fd5abe",
+              "date": "2026-05-08",
+              "id": "cev-earnings-273e1f2f71d1",
               "kind": "earnings",
               "source": "earnings",
-              "source_ref": "ELVN#2026-05-07",
+              "source_ref": "TDS#2026-05-08",
               "tickers": [
-                "ELVN"
+                "TDS"
               ],
-              "title": "Earnings: ELVN actual vs est",
+              "title": "Earnings: TDS actual vs est",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-08",
+              "id": "cev-earnings-34bdf776249c",
+              "kind": "earnings",
+              "source": "earnings",
+              "source_ref": "ROAD#2026-05-08",
+              "tickers": [
+                "ROAD"
+              ],
+              "title": "Earnings: ROAD actual vs est",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-08",
+              "id": "cev-earnings-389b30a1d4f2",
+              "kind": "earnings",
+              "source": "earnings",
+              "source_ref": "SBET#2026-05-08",
+              "tickers": [
+                "SBET"
+              ],
+              "title": "Earnings: SBET actual vs est",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-08",
+              "id": "cev-earnings-393d3e71313c",
+              "kind": "earnings",
+              "source": "earnings",
+              "source_ref": "DCH#2026-05-08",
+              "tickers": [
+                "DCH"
+              ],
+              "title": "Earnings: DCH actual vs est",
               "weight_hint": 2
             }
           ]
         },
         {
-          "n_events": 11,
+          "n_events": 3,
           "source": "earnings_call",
           "theme": "earnings",
           "top_events": [
@@ -516,42 +552,6 @@
               "weight_hint": 2
             },
             {
-              "date": "2026-05-07",
-              "id": "cev-earnings_call-68bb2493b953",
-              "kind": "earnings",
-              "source": "earnings_call",
-              "source_ref": "defeatbeta:SIGA:2026Q1",
-              "tickers": [
-                "SIGA"
-              ],
-              "title": "Earnings call: SIGA Q1 FY2026 — steady",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-05-07",
-              "id": "cev-earnings_call-844426c20a6a",
-              "kind": "earnings",
-              "source": "earnings_call",
-              "source_ref": "defeatbeta:GEL:2026Q1",
-              "tickers": [
-                "GEL"
-              ],
-              "title": "Earnings call: GEL Q1 FY2026 — mixed",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-05-07",
-              "id": "cev-earnings_call-a690f4334447",
-              "kind": "earnings",
-              "source": "earnings_call",
-              "source_ref": "defeatbeta:PSQH:2026Q1",
-              "tickers": [
-                "PSQH"
-              ],
-              "title": "Earnings call: PSQH Q1 FY2026 — confident",
-              "weight_hint": 2
-            },
-            {
               "date": "2026-05-08",
               "id": "cev-earnings_call-a9f4e02e3cf1",
               "kind": "earnings",
@@ -561,6 +561,18 @@
                 "GTE"
               ],
               "title": "Earnings call: GTE Q1 FY2026 — confident",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-08",
+              "id": "cev-earnings_call-d08db14411b8",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:JOUT:2026Q2",
+              "tickers": [
+                "JOUT"
+              ],
+              "title": "Earnings call: JOUT Q2 FY2026 — confident",
               "weight_hint": 2
             }
           ]
