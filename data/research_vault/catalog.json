@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T23:59:15.758090+00:00",
-  "count": 905,
+  "generated_at": "2026-08-07T02:01:52.213935+00:00",
+  "count": 909,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -380,6 +380,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-au9bsni3jek-6addbe",
+      "title": "eBay Inc. (EBAY) Q2'26 Earnings Review",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:51:44Z",
+      "summary_points": [
+        "**Strategic Shift & Guidance Upgrade**: Q2 beat on GMV/revenue/operating income; C2C/ReCommerce >70% GMV; raised FY26 GMV guidance to 11.5-12.5% YoY (vs 7-7.5%) and Non-GAAP Op Income to 10-12% YoY; $1.4bn Depop acquisition to accelerate fashion growth.",
+        "**Valuation & Margin Strength**: P/E declining (18.2→14.6) signals potential undervaluation; EBITDA growth accelerating (10.6→14.0→8.5) and stable gross margins (72.4→73.6) indicate pricing power and growth momentum.",
+        "**Depop Integration Risk**: Expected to cut near-term operating income growth by 3-4 points due to competitive dynamics; management’s execution on AI/LLMs and category focus critical for sustained growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
@@ -1190,6 +1209,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-liog0n7af9m-e9ff44",
+      "title": "Big Oils 2Q26 wrap up Strong FCF and degearing in 2Q",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:35Z",
+      "summary_points": [
+        "**FCF & Debt Dynamics**: EU Big Oils generated $39.6bn FCF (+26% vs est), reducing net debt by $19.9bn (gearing 32%→29% qoq), driven by +14% OCF, -4% capex, and $4.1bn working capital release.",
+        "**Refining Margin Upside**: Middle East disruptions (1.3-1.4 mb/d capacity impaired) drive +3% refining margin upside in H2 2026 vs 2026, with Repsol/Galp having highest OCF sensitivity (4.3%/3.4%).",
+        "**Windfall Tax Divergence**: Repsol faces ~12% profit exposure to windfall tax (vs Galp/ENI at 2.4% each), creating material earnings risk under EU policy scenarios.",
+        "**Capex-Oil Price Disconnect**: Structural decoupling (R²=0.884) as EU Big Oils' capex per barrel no longer correlates with Brent, breaking historical investment thesis.",
+        "**LNG Capacity Acceleration**: 220 mtpa LNG capacity to come online 2025-30 (US/Qatar-led), driving lower gas prices 2028-30 and discouraging new FIDs beyond 2028."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 28,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-gz0ejqpeavf-bf9471",
       "title": "Cushman & Wakefield Ltd. (CWK) 2Q26 First Take Top line beat and guidance raised, but Cap Markets softer",
       "institution": "Goldman Sachs",
@@ -1230,6 +1270,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-gjg98c64ble-4304f3",
+      "title": "What's Top of Mind in Macro Research Yen intervention, tech rebound but leadership rotation, US jobs report",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:25Z",
+      "summary_points": [
+        "**Yen Intervention Efficacy Fade**: Muted USD/JPY response to interventions (e.g., -13.7 bp on 11-Jul-24) signals persistent weakness; structural capital flow reversal (Japanese investors returning home) critical for sustainable strength amid trade-off risks.",
+        "**US Jobs & Middle East Oil Risk**: July nonfarm payrolls estimated +75k (unemployment to 4.3%), Middle East conflict tightening physical oil market despite price retreat; US-Iran deal pivotal for oil stability.",
+        "**AI Investment Surge Drives Tech Rotation**: $600bn US/$1tn global AI investment (vs.",
+        "$250bn/$490bn 2025), fueling North Asia tech export surpluses and structural leadership rotation from mega-cap tech to value sectors (energy, infrastructure, defense).",
+        "**China-Euro Area Growth Divergence**: China CAI 2026/27 GDP at 4.6%/4.7% vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-9i52qkqjtoq-b14f58",
       "title": "Western Digital Corp. (WDC) Solid guidance falls short of high expectations given technology transition",
       "institution": "Goldman Sachs",
@@ -1247,6 +1308,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hlmkk2yr774-d2645d",
+      "title": "Uber Technologies Inc. (UBER) Q2'26 Earnings Review Revenue Noise Shouldn’t Distract from Long Term Narratives Building in ...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:20Z",
+      "summary_points": [
+        "**AV Scaling & Revenue Momentum**: Uber's AV operations scaling to 15 cities by year-end (from 7) and $15bn global cross-platform run-rate (Grocery/Retail) drive GS' $110 price target (61.3% upside), emphasizing revenue/FCF growth over short-term noise.",
+        "**Financial Trajectory**: GS forecasts revenue rising from $52.017m (12/25) to $75.397m (12/27E), EPS from $4.74 to $6.21, with Brazil supply softness deemed transient and AV scaling critical to growth.",
+        "**Profitability & Cash Flow**: EBIT margin expanding to 16.9% (12/28E), FCF/share rising to $8.36, and gross margin stabilizing at 44.8% signal strong operational efficiency and cash generation.",
+        "**Gross Bookings Momentum**: Q2’26 Gross Bookings +22% YoY (fourth consecutive quarter >20%), exceeding estimates due to broad business line/geography strength and US Mobility momentum.",
+        "**Technical Outperformance**: UBER outperformed S&P 500 (12-month, Oct-25–Jul-26) with P/E declining from 17.9 to 11.0 (12/25–12/28E), indicating valuation compression but robust relative performance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
