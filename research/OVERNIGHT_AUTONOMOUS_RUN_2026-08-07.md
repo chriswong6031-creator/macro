@@ -245,6 +245,102 @@ the published track record moved and an era break is due. Owned by open PRs **#4
 Also `scripts/grade_us_board.py` (~:2272, :2290) still claims `_tf_bars` resamples on `3B`, which is
 now stale prose; that file is in #4942's diff.
 
+## The BWXT zero was a false null wearing a completeness badge
+
+This is the most important finding of the run, and it is worse than the "collection gap" I first
+called it. **PR #4951.**
+
+`data/government_revenue/entities.json:146` set BWXT's `recipient_search_text` to the SEC issuer
+legal name `"BWX TECHNOLOGIES"`. USAspending's `recipient_search_text` filter is a **contiguous
+substring** match, not an unordered token match — verified independently against the live API:
+
+| query | rows |
+|---|---|
+| `"BWX TECHNOLOGIES"` | **0** |
+| `"BWXT"` | 10 (`BWXT ORDNANCE TENNESSEE, INC.`, …) |
+| `"OCKHEED MARTI"` (interior substring, no word boundary) | 10 Lockheed-subsidiary rows |
+| `"MARTIN LOCKHEED"` (same tokens, reordered) | **0** |
+
+Every USAspending award-recipient name for this issuer is spelled `BWXT …` — one token, no space —
+so the configured string could never match. The parent *does* exist in the recipient dimension
+(`uei CMT4S6G76QB5`); it simply is not the name carried on the award rows.
+
+**Three defects compounded it, and the third is the one that matters:**
+
+1. `recipient_aliases` was **dead config** — never consulted by the discovery rail
+   (`collectors/usaspending_awards.py:2174` built its query from `recipient_search_text` alone),
+   while `engine/government_revenue/metrics.py:1990` still published it as provenance.
+2. `match_confidence: "high"` on a query that matched zero award rows — an unbacked calibration
+   claim that nothing ever tested against a nonzero return.
+3. **A zero-row page with `hasNext=false` was classified `complete` / `source_exhausted=true` /
+   `bounded_sample_complete=true`.** So a config typo emitted the collector's *strongest completeness
+   signal*, raised no error row, and appeared in neither `ingest_status.json` nor the parquet.
+
+That is a false null wearing a finished-answer badge — the same failure family as the EX-21 defects,
+and the reason it stayed invisible for the life of the entity. Fixed: alias list wired into the
+query (**zero extra requests** — the endpoint ORs terms in one call), BWXT repaired as an
+8-term wholly-owned-subsidiary allowlist with JV exclusions recorded, `match_confidence` high→medium,
+and a `zero_rows_for_configured_query` tripwire that flags without touching completeness arithmetic.
+
+Live end-to-end: **BWXT 0 → 22 awards / 81 actions**, all wholly-owned subsidiaries, zero JV names,
+exhausted on page 1.
+
+`entities.json` is hand-curated config declared under `reads:` in `config/dag.yml` for both the
+collector and the builder — not a nightly-advanced ledger — so editing it does not breach the
+no-`data/`-writes law.
+
+### The recommended fix would have been worse than the bug
+
+The diagnosis proposed an 11-term alias list. Measured live: a 10-term body returns a
+**deterministic HTTP 503** (6/6 repeats, sub-second, empty body); 9 terms return 200; dropping any
+one of the failing 10 restores 200. The cliff is not a clean function of body size or term count.
+Because the collector's retry loop treats 503 as retryable, an uncapped list would have **blanked
+the entity entirely** rather than degrading it. Hence `MAX_RECIPIENT_QUERY_TERMS = 8`, with
+over-cap terms disclosed via an errors row and a `::warning`, never silently dropped.
+
+## The safety caps: page_size doubled, max_pages deliberately NOT raised
+
+I had assumed raising `max_pages` was the obvious win. Measured, it is not:
+`spending_by_award_count` over the 21-issuer universe returns **195,400 in-window contract awards**
+(LMT alone 70,535). Exhaustion would need **1,965 pages** at a measured **8.35 s/page** on deep
+pages — hours against a ~67-minute budget. `source_exhausted` is therefore **structurally
+unreachable** and is now documented as such rather than left as an aspiration.
+
+What *is* free: `page_size` 50 → 100.
+
+| config | requests | rows | wall | source-exhausted |
+|---|---|---|---|---|
+| page_size=50, max_pages=2 | 40 | 1,958 | 78.3 s | 2 |
+| page_size=100, max_pages=2 | 40 | 3,766 | 78.3 s | 4 |
+
+Same request count, same wall time, **+92% sample**. The detail sample is unchanged because the sort
+is Award Amount descending and the top 8 already sit on page 1. A test pins that at the cap the run
+still reports `truncated_by_safety_cap: true` and `source_exhausted: false` — the raise must not be
+allowed to blur bounded-sample semantics into a completeness claim.
+
+## The non-additivity guard is BLOCKED, deliberately
+
+**PR #4950 — disarmed, not merged.** It found and fixed one real latent defect: `_concentration()`
+weighted shares by a ladder whose third rung (`current_award_amount`) is a **ceiling**, publishing
+authorised-money-derived numbers under the key `covered_obligations`.
+
+But adversarial review proved the guard reads clean **for the wrong reason**. Two positive controls,
+both on the real file and real function, both passing silently:
+
+- `_backlog()` is entirely invisible — the scanner pops a local's tracked class on the lobe's
+  defensive rebind idiom (`if x is None: x = pd.Series(nan)`), which appears 3× there. Flipping the
+  genuine headroom subtraction to an addition — ceiling + obligation, the exact target mix — gives
+  `OK … EXIT=0`.
+- `_concentration`'s published `covered_obligations` accepts an obligation+outlay sum, because
+  `weights` binds from a loop variable and carries no class.
+
+The instrument is wired to the real tree (the equivalent injection into the JS template fired
+correctly); only the Python matcher is narrow. So "one violation, tree otherwise clean" is **not
+established by this guard**. An independent manual audit of every `a + b` across the lobe found no
+additional live conflation, so the codebase is probably fine — but the guard is not the evidence,
+and merging it as though it were would install false assurance. A fix round is widening the matcher
+and turning both controls into permanent tests.
+
 ## What I deliberately did NOT do
 
 - **Did not publish the Wave 9D candidate.** `verification_state: reviewed` is a human assertion.
