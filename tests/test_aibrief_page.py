@@ -123,8 +123,18 @@ def test_page_does_not_link_old_brief_pages():
     # The header's external entry is Terminal. The old "Mastermind" nav pill was
     # removed 2026-08-01 — theme.js injects mm_brain.js sitewide, which mounts its
     # own bottom-right launcher, so the pill was a duplicate entry point.
-    assert 'href="https://app.mastermind-x.com"' in html
-    assert 'href="https://bot.mastermind-x.com"' not in html
+    #
+    # Scoped to `.nav-ctrls` since 2026-08-07: the guard was written when NO Bot
+    # link existed anywhere, so a whole-page substring read as "the header has no
+    # Bot pill". The Bot now has a legitimate Research mega-menu card, and the
+    # header contract is what this line always meant. theme.js:1492 strips any
+    # `.nav-ctrls a[href*="bot.mastermind-x.com"]` at runtime; the SOURCE must not
+    # lean on that, so the control cluster ships without one.
+    ctrls = html[html.find('<div class="nav-ctrls">'):]
+    ctrls = ctrls[:ctrls.find("</nav>")]
+    assert ctrls, "the shared header lost its .nav-ctrls control cluster"
+    assert 'href="https://app.mastermind-x.com"' in ctrls
+    assert "bot.mastermind-x.com" not in ctrls
 
 
 def test_no_template_links_deleted_brief_pages():

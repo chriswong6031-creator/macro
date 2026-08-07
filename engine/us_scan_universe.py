@@ -32,7 +32,7 @@ not printed is a hidden universe change.
 * ``last bar == the store's own last bar`` — still trading.  ~8k of the 20.5k
   parquets are delisted/halted tape that ends years ago; scanning them would
   manufacture "runners" out of stale last prices.
-* ``bars >= 200`` — ``confluence_tiers.MIN_HISTORY``.  Below it the cascade
+* ``bars >= confluence_tiers.MIN_HISTORY`` (159 since 2026-08-05; imported, never restated).  Below it the cascade
   returns nothing, so a shorter name could only ever be stamped as a null.  This
   module does not own that constant and never redefines it: it imports it.
 * ``close >= MIN_PRICE_USD`` ($3) — sub-$3 tape is where percentage "runners" are

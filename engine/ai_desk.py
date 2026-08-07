@@ -182,13 +182,32 @@ def _breadth_frame(root):
     return _BREADTH_MEMO[key]
 
 
+_CLOSE_MEMO: dict[tuple[str, str], "pd.Series | None"] = {}
+
+
 def _close_series(ticker: str, root) -> pd.Series | None:
     """Closes for an instrument. Prefers the per-ticker yahoo parquet (cols are
     lowercase 'close'); falls back to the S&P 1500 breadth close cache so subjects
     beyond the ~153 yahoo names are still scorable; then to the China price
     parquets (data/china_stocks/<ticker>.parquet A-share OHLCV, data/china/<t>.parquet
     for CN benches like 510300.SS) so the qledger grader can price China
-    event-move claims and their 510300.SS benchmark. None if none has it."""
+    event-move claims and their 510300.SS benchmark. None if none has it.
+
+    Memoized per (root, ticker) for the life of the process — the graders
+    (desk_scorer.covers/close_at → subsector_track_record, qledger, radar desks)
+    re-price the same names hundreds of thousands of times per nightly against
+    stores that never change mid-run. Callers slice the result (new objects) and
+    must not mutate it in place; radar_ic's older local _SERIES_MEMO stays as a
+    harmless second layer."""
+    memo_key = (str(root), ticker)
+    if memo_key in _CLOSE_MEMO:
+        return _CLOSE_MEMO[memo_key]
+    s = _close_series_uncached(ticker, root)
+    _CLOSE_MEMO[memo_key] = s
+    return s
+
+
+def _close_series_uncached(ticker: str, root) -> pd.Series | None:
     try:
         df = pd.read_parquet(Path(root) / "data" / "yahoo" / f"{ticker}.parquet")
         s = df["close"].dropna()

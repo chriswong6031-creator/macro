@@ -11,6 +11,9 @@
   var DESKTOP_QUERY = '(min-width: 1100px)';
   var state = {
     payload: null,
+    // Which of the workbench's mutually exclusive surfaces is on screen.
+    // 'pending'/'open' show the workbench; every other value shows the gate.
+    access: 'pending',
     symbol: '',
     findingId: '',
     priority: 'all',
@@ -45,6 +48,7 @@
 
   var ui = {};
   var desktopMedia = window.matchMedia(DESKTOP_QUERY);
+  var gateSigninHtml = '';
 
   var METRICS = [
     { key: 'revenue', en: 'Revenue', zh: '营收', format: 'currency' },
@@ -94,7 +98,7 @@
     financial_statements: ['Financial statements', '财务报表'],
     controls: ['Controls and procedures', '控制与程序'],
     accounting_policies: ['Accounting policies', '会计政策'],
-    preamble: ['Filing preamble', '申报前言'],
+    preamble: ['Filing preamble', '披露前言'],
     segments: ['Segments', '分部'],
     kpi_disappearance: ['Disappearing KPI', '消失的 KPI'],
     margin: ['Margins', '利润率'],
@@ -146,6 +150,14 @@
     ui.receiptInspectorClose = byId('ff-receipt-inspector-close');
     ui.scrim = byId('ff-scrim');
     ui.siteNav = document.querySelector('.site-nav');
+    ui.gate = byId('ff-gate');
+    ui.gateState = byId('ff-gate-state');
+    ui.gatePreview = byId('ff-gate-preview');
+    // The anonymous state is authored in the shell so a stranger and a crawler
+    // read it without running JS. Stash it verbatim before any other state
+    // overwrites the node: signing out mid-session has to restore exactly this
+    // markup, and a second copy of the copy in JS would drift from the shell.
+    if (ui.gateState && !gateSigninHtml) gateSigninHtml = ui.gateState.innerHTML;
   }
 
   function esc(value) {
@@ -200,7 +212,7 @@
       'SEC Company Facts normalized projection': 'SEC 公司事实标准化投影',
       'repository quarterly and annual EDGAR panels': '仓库内季度及年度 EDGAR 面板',
       'normalized_quarterly_projection': '标准化季度投影',
-      'filing_index': '申报索引',
+      'filing_index': '披露索引',
       'companyfacts_source': '公司事实来源'
     };
     return known[text] || text;
@@ -586,23 +598,127 @@
     ui.trace.innerHTML = loading;
   }
 
+  // Same shape as receiptFailurePhase() below, which already separates "you may
+  // not read this" from "this is broken" for the private receipt pane. The main
+  // loader used to collapse both into one 'Data unavailable' card, so a visitor
+  // who simply was not signed in was told the product was broken and handed a
+  // Retry button that could never work.
+  //
+  // The three denials are distinct products of app/forensics.py: 401 from the
+  // authentication dependency, 403 from the site_full entitlement check, and 503
+  // when the state object itself is missing. Anything without a status (offline,
+  // a decode failure, a contract violation) is a genuine fault, so it takes the
+  // temporary branch and keeps its Retry.
+  function stateFailurePhase(error) {
+    var status = error && error.status;
+    if (status === 401) return 'signin';
+    if (status === 403) return 'upgrade';
+    return 'unavailable';
+  }
+
+  var GATE_COPY = {
+    upgrade: {
+      chip: ['Included in Essential', 'Essential 包含'],
+      title: ['Not in your plan', '当前方案未包含'],
+      stance: [
+        'Essential opens the findings, the rules behind them, and the SEC sources.',
+        'Essential 可查阅全部发现、触发它们的规则，以及对应的 SEC 来源。'
+      ],
+      primary: ['View Essential plans', '查看 Essential 方案'],
+      primaryAction: 'plans'
+    },
+    unavailable: {
+      chip: ['Temporary', '暂时'],
+      title: ['Data is being refreshed', '数据正在更新'],
+      stance: [
+        'Nothing is wrong with your account. Try again in a few minutes.',
+        '这与你的账户无关，请稍后几分钟再试。'
+      ],
+      primary: ['Retry', '重试'],
+      primaryAction: 'retry'
+    },
+    empty: {
+      chip: ['Coverage', '覆盖范围'],
+      title: ['No companies this run', '本次更新没有公司'],
+      stance: [
+        'This is not an all-clear — the latest run added no companies to review.',
+        '这不代表“没有问题”——本次更新未纳入可审阅的公司。'
+      ],
+      note: ['Check back after the next filing run.', '下次披露更新后再来查看。']
+    }
+  };
+
+  function renderGateState(phase) {
+    var copy = GATE_COPY[phase];
+    if (!copy) return;
+    var actions = '';
+    if (copy.primary) {
+      actions = '<div class="ff-gate-actions"><button class="ff-gate-primary" type="button" data-gate-action="' +
+        copy.primaryAction + '">' + pair(copy.primary[0], copy.primary[1]) + '</button></div>';
+    } else if (copy.note) {
+      actions = '<p class="ff-gate-note">' + pair(copy.note[0], copy.note[1]) + '</p>';
+    }
+    ui.gateState.innerHTML = '<p class="ff-gate-chip"><span class="ff-gate-dot" aria-hidden="true"></span>' +
+      pair(copy.chip[0], copy.chip[1]) + '</p>' +
+      '<h2 id="ff-gate-title">' + pair(copy.title[0], copy.title[1]) + '</h2>' +
+      '<p class="ff-gate-stance">' + pair(copy.stance[0], copy.stance[1]) + '</p>' + actions;
+  }
+
+  // One surface is on screen at a time: the workbench, or the gate. Routing both
+  // through here is what keeps a half-populated workbench from sitting under an
+  // error, which is how the old error path left the tab bar, the filter chrome
+  // and the company picker live over seven panels of "Data unavailable".
+  function setAccess(next) {
+    ui.gate.removeAttribute('aria-busy');
+    if (state.access === next) return;
+    state.access = next;
+    var gated = next !== 'pending' && next !== 'open';
+    ui.workspace.setAttribute('data-access', next);
+    ui.workspace.classList.toggle('ff-gated', gated);
+    ui.gate.hidden = !gated;
+    if (!gated) return;
+    // The gate carries the whole message; a second copy in the notice strip
+    // would be the stacked-disclaimer defect the copy law forbids.
+    ui.notice.hidden = true;
+    ui.notice.innerHTML = '';
+    // Both funnel states get the product story; the two states behind the wall
+    // do not. A Free member is the visitor closest to paying, so showing them
+    // less than a stranger gets is backwards — and the preview holds no rows, so
+    // there is nothing to withhold. A signed-in Essential member hitting a
+    // refresh or an empty run already owns the desk: pitching it back to them is
+    // noise over the one thing they came for, which is when to return.
+    ui.gatePreview.hidden = next !== 'signin' && next !== 'upgrade';
+    ui.gateState.setAttribute('data-state', next);
+    if (next === 'signin') ui.gateState.innerHTML = gateSigninHtml;
+    else renderGateState(next);
+  }
+
+  function openPlans() {
+    if (window.MMOnboard && typeof window.MMOnboard.open === 'function') {
+      window.MMOnboard.open('upgrade', { plan: 'essential', period: 'annual' });
+      return;
+    }
+    window.location.href = '/plans.html';
+  }
+
+  function openSignin() {
+    if (window.MMXAccessPreview && typeof window.MMXAccessPreview.openSignin === 'function') {
+      window.MMXAccessPreview.openSignin();
+      return;
+    }
+    if (window.MDXAuth && typeof window.MDXAuth.open === 'function') {
+      window.MDXAuth.open('signin');
+      return;
+    }
+    window.location.href = '/?signin=1';
+  }
+
   function showLoadError(error) {
-    var detail = error && error.message ? error.message : 'Unknown response error';
-    ui.notice.hidden = false;
-    ui.notice.className = 'ff-data-notice is-error';
-    ui.notice.innerHTML = '<span>' + pair('Filing data could not be loaded. ' + detail, '无法载入财报数据。' + detail) + '</span>' +
-      '<button class="ff-retry" id="ff-retry" type="button">' + pair('Retry', '重试') + '</button>';
-    ui.viewStatus.innerHTML = pair('Data unavailable', '数据不可用');
-    var empty = emptyState('Data unavailable', '数据不可用',
-      'Retry the data request. The interface will not infer results without its source state.',
-      '请重试数据请求；缺少来源状态时，界面不会推断结果。', '×');
-    ui.findings.innerHTML = empty;
-    ui.statements.innerHTML = empty;
-    ui.disclosureFeed.innerHTML = empty;
-    ui.redlineList.innerHTML = empty;
-    ui.timeline.innerHTML = empty;
-    ui.compareGrid.innerHTML = empty;
-    ui.trace.innerHTML = empty;
+    var phase = stateFailurePhase(error);
+    setAccess(phase);
+    ui.viewStatus.innerHTML = phase === 'signin' ? pair('Sign in to read the desk', '登录后查阅') :
+      phase === 'upgrade' ? pair('Included in Essential', 'Essential 包含') :
+        pair('Data is being refreshed', '数据正在更新');
   }
 
   function withAuth(headers) {
@@ -624,6 +740,12 @@
     setLoading();
     ui.notice.hidden = true;
     ui.notice.className = 'ff-data-notice';
+    // Deliberately does NOT reset access to 'pending'. A retry from the
+    // refreshing state should keep showing that state until the answer changes;
+    // dropping back to the skeleton would flash a loading state at a visitor who
+    // is already being told to wait, and would flash it at every anonymous
+    // visitor between init() and the 401.
+    ui.gate.setAttribute('aria-busy', 'true');
 
     withAuth({ Accept: 'application/gzip' })
       .then(function (headers) {
@@ -634,7 +756,13 @@
         });
       })
       .then(function (response) {
-        if (!response.ok) throw new Error('HTTP ' + response.status);
+        if (!response.ok) {
+          // Carry the status onto the error the way historyRequest() does: it is
+          // the only thing that tells signed-out from unentitled from broken.
+          var failure = new Error('State request failed');
+          failure.status = response.status;
+          throw failure;
+        }
         // Inspect the received bytes instead of trusting Content-Encoding. Fetch
         // may already have decoded a proxy encoding; a literal private .gz object
         // still carries the gzip magic bytes. This also survives accidental outer
@@ -656,6 +784,11 @@
           throw new Error('Invalid state contract');
         }
         state.payload = payload;
+        // A run that covers nobody is a fact about the run, not a failure and
+        // not an all-clear, so it gets its own gate state rather than seven
+        // panels of empty cards behind a live tab bar.
+        setAccess(Object.keys(payload.companies).length ? 'open' : 'empty');
+        if (state.access === 'empty') return;
         selectInitialCompany();
         renderAll();
       })
@@ -743,7 +876,7 @@
     var symbol = target.symbol || state.symbol;
     var identityCore = [target.sector, target.latest_period].filter(Boolean).join(' · ');
     var identityDetailEn = [identityCore, target.latest_filed ? 'Filed ' + formatDate(target.latest_filed) : ''].filter(Boolean).join(' · ');
-    var identityDetailZh = [identityCore, target.latest_filed ? '申报于 ' + formatDate(target.latest_filed) : ''].filter(Boolean).join(' · ');
+    var identityDetailZh = [identityCore, target.latest_filed ? '披露于 ' + formatDate(target.latest_filed) : ''].filter(Boolean).join(' · ');
     ui.companyIdentity.innerHTML = '<div class="ff-company-mark" aria-hidden="true">' + esc(String(symbol).slice(0, 5)) + '</div>' +
       '<div><div class="ff-company-name">' + esc(target.name || symbol) + '</div>' +
       '<div class="ff-company-detail">' + pair(identityDetailEn || '—', identityDetailZh || '—') + '</div></div>';
@@ -775,21 +908,13 @@
     updateViewStatus();
   }
 
+  // Coverage-less runs are one product state, so they get one home. This used to
+  // paint seven "The current state file contains no company records" cards —
+  // machine vocabulary aimed at a reader who cannot act on it, under a live tab
+  // bar that implied there was something behind the other six tabs.
   function renderNoCompanies() {
-    ui.companyIdentity.innerHTML = '<div class="ff-company-mark" aria-hidden="true">—</div><div><div class="ff-company-name">' +
-      pair('No companies available', '暂无公司') + '</div><div class="ff-company-detail">—</div></div>';
-    ui.companyAction.removeAttribute('data-action');
-    ui.companyAction.innerHTML = '<span class="ff-action-glyph" aria-hidden="true">×</span>' + pair('No coverage', '暂无覆盖');
-    var empty = emptyState('No coverage in this dataset', '此数据集暂无覆盖',
-      'The current state file contains no company records.', '当前状态文件不含公司记录。', '—');
-    ui.findings.innerHTML = empty;
-    ui.statements.innerHTML = empty;
-    ui.disclosureFeed.innerHTML = empty;
-    ui.redlineList.innerHTML = empty;
-    ui.timeline.innerHTML = empty;
-    ui.compareGrid.innerHTML = empty;
-    ui.trace.innerHTML = empty;
-    ui.viewStatus.innerHTML = pair('0 companies', '0 家公司');
+    setAccess('empty');
+    ui.viewStatus.innerHTML = pair('No companies this run', '本次更新没有公司');
   }
 
   function renderNotice(target) {
@@ -1004,7 +1129,7 @@
     }
     if (why.reason === 'same_reporting_form_required') return pair(
       'The supplied filings are not the same reporting form, so this comparison is not evaluable.',
-      '提供的财报不是同一申报表格，因此无法直接比较。'
+      '提供的财报不是同一类报表，因此无法直接比较。'
     );
     if (why.reason === 'risk_factor_section_missing') return pair(
       'The expected risk-factor section was not found in one supplied filing.',
@@ -1111,7 +1236,7 @@
         filtered ? 'No observed changes in this section' : 'No review prompt in this comparison',
         filtered ? '该章节未见观察到的变化' : '本次对比暂无复核提示',
         filtered ? 'Choose another section to inspect the available observations.' : 'This is not a conclusion that every disclosure is unchanged; inspect the filing trail and source coverage.',
-        filtered ? '请选择其他章节查看已有观察结果。' : '这不代表每项披露都没有变化；请查看申报轨迹和来源覆盖范围。', filtered ? '↺' : '✓'
+        filtered ? '请选择其他章节查看已有观察结果。' : '这不代表每项披露都没有变化；请查看披露轨迹和来源覆盖范围。', filtered ? '↺' : '✓'
       );
       return;
     }
@@ -1192,7 +1317,7 @@
     var documents = disclosureDocuments(target);
     if (!documents.length) {
       ui.timeline.innerHTML = emptyState(
-        'No filing trail supplied', '未提供申报轨迹',
+        'No filing trail supplied', '未提供披露轨迹',
         'The disclosure layer has not supplied filing accessions for this company.',
         '该公司的披露层尚未提供财报文件编号。', '—'
       );
@@ -1205,7 +1330,7 @@
         (document._filing_role === 'prior' ? pair('Prior ' + form, '上期 ' + form) : pair('Source filing', '来源财报'));
       var reportDate = formatDate(document.report_date);
       var sourceAction = href ? '<a class="ff-source-link ff-timeline-link" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">↗</span>' + pair('Open SEC filing', '打开 SEC 财报') + '</a>' : '<span class="ff-timeline-unavailable">' + pair('SEC link not supplied', '未提供 SEC 链接') + '</span>';
-      return '<article class="ff-timeline-card"><span class="ff-timeline-node" aria-hidden="true">' + (index + 1) + '</span><p class="ff-kicker">' + role + '</p><h3>' + esc(form) + '</h3><dl><div><dt>' + pair('Filed', '申报日') + '</dt><dd>' + esc(documentDate(document)) + '</dd></div><div><dt>' + pair('Report date', '报告期') + '</dt><dd>' + esc(reportDate) + '</dd></div><div><dt>' + pair('Accession', '文件编号') + '</dt><dd class="ff-accession">' + esc(documentAccession(document)) + '</dd></div></dl>' + sourceAction + '</article>';
+      return '<article class="ff-timeline-card"><span class="ff-timeline-node" aria-hidden="true">' + (index + 1) + '</span><p class="ff-kicker">' + role + '</p><h3>' + esc(form) + '</h3><dl><div><dt>' + pair('Filed', '披露日') + '</dt><dd>' + esc(documentDate(document)) + '</dd></div><div><dt>' + pair('Report date', '报告期') + '</dt><dd>' + esc(reportDate) + '</dd></div><div><dt>' + pair('Accession', '文件编号') + '</dt><dd class="ff-accession">' + esc(documentAccession(document)) + '</dd></div></dl>' + sourceAction + '</article>';
     }).join('') + '</div>';
   }
 
@@ -1216,11 +1341,11 @@
         'The source state has no normalized periods for this company.', '来源状态中没有该公司的标准化期间。', '—');
       return;
     }
-    var header = '<th>' + pair('Period / filed', '期间 / 申报日') + '</th>' + METRICS.map(function (metric) {
+    var header = '<th>' + pair('Period / filed', '期间 / 披露日') + '</th>' + METRICS.map(function (metric) {
       return '<th>' + pair(metric.en, metric.zh) + '</th>';
     }).join('');
     var rows = periods.map(function (period) {
-      var first = '<td data-label-en="Period / filed" data-label-zh="期间 / 申报日">' + esc(periodLabel(period)) +
+      var first = '<td data-label-en="Period / filed" data-label-zh="期间 / 披露日">' + esc(periodLabel(period)) +
         '<span class="ff-period-filed">' + esc(formatDate(period.filed || period.period_end)) + '</span></td>';
       return '<tr>' + first + METRICS.map(function (metric) {
         return '<td data-label-en="' + esc(metric.en) + '" data-label-zh="' + esc(metric.zh) + '">' +
@@ -2106,7 +2231,7 @@
     var nextDisabled = !receipt.page.nextCursor ? ' disabled' : '';
     var nonclaims = authority.nonclaims || {};
     var limits = [];
-    if (nonclaims.filing_complete === false) limits.push(pair('Does not establish filing completeness.', '不证明申报文件完整性。'));
+    if (nonclaims.filing_complete === false) limits.push(pair('Does not establish filing completeness.', '不证明披露文件完整性。'));
     if (nonclaims.trading_authority === false) limits.push(pair('Does not grant trading authority.', '不授予交易决策权限。'));
     if (nonclaims.neural_web_authority === false) limits.push(pair('Does not grant Neural Web authority.', '不授予 Neural Web 权限。'));
 
@@ -2228,7 +2353,7 @@
       does_not_determine_remediation_status: ['The wording alone does not establish remediation status.', '单凭措辞无法确定整改状态。'],
       negation_handling_is_sentence_based: ['Context can extend beyond the matched sentence.', '上下文可能超出匹配句子。'],
       absence_is_measured_within_supplied_filing_text: ['Absence is measured only within the supplied filing text.', '“未出现”只在提供的财报文本范围内成立。'],
-      cross_form_kpi_cadence_is_not_comparable: ['Different reporting forms may disclose a metric on different schedules.', '不同申报表格可能按不同节奏披露指标。']
+      cross_form_kpi_cadence_is_not_comparable: ['Different reporting forms may disclose a metric on different schedules.', '不同类型的报表可能按不同节奏披露指标。']
     };
     var knownPair = known[raw];
     return knownPair ? pair(knownPair[0], knownPair[1]) : pair(
@@ -2496,7 +2621,7 @@
     }, 0);
     if (state.tab === 'radar') {
       ui.viewStatus.innerHTML = pair(findings.length + ' findings · filed ' + formatDate(target.latest_filed),
-        findings.length + ' 项发现 · 申报于 ' + formatDate(target.latest_filed));
+        findings.length + ' 项发现 · 披露于 ' + formatDate(target.latest_filed));
     } else if (state.tab === 'statements') {
       ui.viewStatus.innerHTML = pair(periods.length + ' normalized periods', periods.length + ' 个标准化期间');
     } else if (state.tab === 'compare') {
@@ -2752,6 +2877,17 @@
   }
 
   function bindEvents() {
+    // Delegated so the three runtime states can replace the gate's markup
+    // without re-binding, the way the receipt pane's data-receipt-action works.
+    ui.gate.addEventListener('click', function (event) {
+      var trigger = event.target.closest('[data-gate-action]');
+      if (!trigger) return;
+      var action = trigger.getAttribute('data-gate-action');
+      if (action === 'plans') openPlans();
+      else if (action === 'signin') openSignin();
+      else if (action === 'retry') loadData();
+    });
+
     ui.tabs.forEach(function (button, index) {
       button.addEventListener('click', function () { setTab(button.getAttribute('data-tab'), false); });
       button.addEventListener('keydown', function (event) {
@@ -2951,6 +3087,12 @@
     cacheUi();
     bindEvents();
     updateLocalizedAttributes();
+    // tier_preview.js resolves the visitor's tier from the session cookie before
+    // any network call and stamps it on <html>; both scripts are deferred, so it
+    // has already run. Showing the preview here rather than after the 401 is
+    // what stops a stranger meeting a loading skeleton that resolves into a
+    // wall. The fetch below remains the authority and corrects this if wrong.
+    if (document.documentElement.getAttribute('data-access-tier') === 'anon') setAccess('signin');
     if (!IS_LOOPBACK) {
       var bindAuth = function () {
         if (window.MDXAuth && window.MDXAuth.onChange) {

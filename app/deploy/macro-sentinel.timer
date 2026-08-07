@@ -1,0 +1,20 @@
+# Freshness-sentinel cadence — every 30 minutes, around the clock, seven days a
+# week. The budgets are 26h+, so the cadence buys detection latency (≤30 min past
+# breach), not precision; :12/:42 keeps the pass clear of the :00/:05-boundary
+# live-plane lanes and the :03 macro-update cron ticks.
+#
+# Persistent=true ON PURPOSE, unlike the market-windowed sibling timers: this is
+# the dead-man switch, so a pass missed to a reboot must fire on boot rather than
+# wait up to 30 minutes — a box that was down is exactly when staleness is likely.
+[Unit]
+Description=Run the external freshness sentinel every 30 minutes
+
+[Timer]
+OnCalendar=*-*-* *:12/30:00 UTC
+AccuracySec=1s
+RandomizedDelaySec=30s
+Persistent=true
+Unit=macro-sentinel.service
+
+[Install]
+WantedBy=timers.target

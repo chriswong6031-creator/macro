@@ -539,6 +539,31 @@ def main() -> int:
         # Bare print, NOT a logger call — GitHub only parses "::" at LINE START.
         print(f"::warning::washout_turn hook failed: {_wtn_exc}", flush=True)
 
+    # SEA-W1/W2 — Signal Episode Atlas: nightly event append + outcome maturation
+    # + the cohort-grain atlas artifact (research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md).
+    # Sits after washout_turn: that organ says a name IS in a washout turn, this
+    # library says what the matching historical episodes of the same CLASS did.
+    # The append and the maturation are both COLLECT_LANE-gated inside the engine
+    # (an off-lane run computes and discards); only small monthly live parts are
+    # ever rewritten (#4540). Measurement tier, zero authority; own try/except.
+    try:
+        from engine import event_atlas as _sea_atlas
+        from engine import stock_events as _sea_events
+        _sea_upd = _sea_events.nightly_update()
+        _sea_payload = _sea_atlas.build_atlas(refresh_cache=True)
+        _sea_path = _sea_atlas.write_site_artifact(_sea_payload)
+        log.info(
+            "stock_events: %d events extracted, %d appended, %d outcome cells matured "
+            "(lane_write=%s); event_atlas: %d cells → %s (elapsed=%.1fs)",
+            _sea_upd.get("extracted", 0), _sea_upd.get("appended", 0),
+            _sea_upd.get("matured_filled", 0), _sea_upd.get("written"),
+            _sea_payload.get("n_cells", 0), _sea_path,
+            float(_sea_upd.get("elapsed_s", 0.0)) + float(_sea_payload.get("elapsed_s", 0.0)),
+        )
+    except Exception as _sea_exc:  # noqa: BLE001 — additive, never fatal
+        # Bare print, NOT a logger call — GitHub only parses "::" at LINE START.
+        print(f"::warning::stock_events hook failed: {_sea_exc}", flush=True)
+
     # NAR-W1 — Flare Persistence organ (flare_persistence.v1). Reads raw tape witnesses
     # (T1 altdata convergence, T2 call premium z, T3 GEX flip, T4 news bull ratio z).
     # Placed beside mtf_upturn (TS-U2 pattern). Display-tier; own try/except — never fatal.

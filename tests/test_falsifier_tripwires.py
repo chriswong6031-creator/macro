@@ -446,7 +446,10 @@ class TestFalsifiersJson:
         if not FALSIFIERS_JSON.exists():
             pytest.skip("falsifiers.json not committed yet")
         entries = json.loads(FALSIFIERS_JSON.read_text(encoding="utf-8"))
-        required = {"id", "cycle", "version", "direction", "claim",
+        # claim_zh is required, not optional: the claim is free authored prose,
+        # so an entry without it ships English inside the Chinese alert body
+        # (tests/test_alert_zh_completeness.py fences what that copy must read).
+        required = {"id", "cycle", "version", "direction", "claim", "claim_zh",
                     "coverage", "manual", "source_prose"}
         for e in entries:
             missing = required - set(e.keys())

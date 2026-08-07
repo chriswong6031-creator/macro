@@ -135,6 +135,11 @@ _EXTENSION_CONTEXT_RE = re.compile(
 )
 _CORRECTION_RE = re.compile(r"\b(?:correct(?:ion|ed|s|ing)?|administrative\s+error)\b", re.I)
 _SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
+# The only two rail names for the source's own effective clock.  Kept as one
+# constant because ``_effective_at`` and ``_receipt`` previously carried
+# separate, differently-ordered copies that had already drifted (one coalesced
+# ``end_date``, the other did not).
+EFFECTIVE_CLOCK_ALIASES: tuple[str, ...] = ("effective_at", "action_date")
 _ALLOWED_RECEIPT_HOSTS = {"api.usaspending.gov", "usaspending.gov"}
 _LEDGER_RECEIPT_BOUND = object()
 _LEDGER_RECEIPT_MARKER = "_award_event_ledger_receipt_marker"
@@ -472,10 +477,7 @@ def _receipt(row: Mapping[str, Any], *, mode: str) -> dict[str, Any] | None:
     if not receipt_id or not _field_is_asserted_present(row, "source_receipt_id"):
         return None
     known_at = iso_instant(row.get("_pit_known_at") or row.get("known_at") or row.get("first_seen_at"))
-    effective_at = iso_instant(
-        row.get("_pit_effective_at")
-        or _first(row, ("effective_at", "action_date", "base_obligation_date", "start_date"))
-    )
+    effective_at = _effective_at(row)
     content_hash = _first(
         row,
         (
@@ -686,10 +688,18 @@ def _all_receipts(*receipts: dict[str, Any] | None) -> list[dict[str, Any]]:
 
 
 def _effective_at(row: Mapping[str, Any]) -> str | None:
-    return iso_instant(
-        row.get("_pit_effective_at")
-        or _first(row, ("effective_at", "action_date", "base_obligation_date", "start_date", "end_date"))
-    )
+    """Read the source's own effective clock, never a different official date.
+
+    ``effective_at`` (snapshots) and ``action_date`` (action versions) are the
+    same semantic fact under two rail names.  ``base_obligation_date``,
+    ``start_date`` and ``end_date`` are separate official facts and were
+    previously coalesced in, which published a change observed today under an
+    ``effective_at`` the source never asserted.  ``_receipt`` reads the clock
+    through this one helper so the receipt envelope and the published event can
+    never disagree about whether a clock exists.
+    """
+
+    return iso_instant(row.get("_pit_effective_at") or _first(row, EFFECTIVE_CLOCK_ALIASES))
 
 
 def _known_at(row: Mapping[str, Any]) -> str | None:

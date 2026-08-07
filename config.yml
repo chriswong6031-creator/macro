@@ -2389,7 +2389,10 @@ stock_search:
     - CSGP   # CoStar Group
     - CSW    # CSW Industrials
     - CSX    # CSX Corp
-    - CTRA   # Coterra Energy
+    - CTRA   # Coterra Energy — DELISTED 2026-05-07 (acquired by Devon Energy, 0.70 DVN
+             # per share; that is a different pre-existing security, so nothing
+             # continues this price line). Membership kept for the same reason as TPH
+             # below — see config/delisted_symbols.yml before touching this line.
     - CTSH   # Cognizant
     - CVNA   # Carvana
     - CVR    # CVR Energy
@@ -2529,15 +2532,29 @@ stock_search:
     - SYF    # Synchrony Financial
     - T      # AT&T
     - TCBI   # Texas Capital Bancshares
-    - TCNNF  # Trulieve Cannabis
     - TECH   # Bio-Techne
     - TEL    # TE Connectivity
     - TFC    # Truist Financial
     - THC    # Tenet Healthcare
     - TJX    # TJX Companies
     - TMUS   # T-Mobile US
-    - TPH    # Tri Pointe Homes
+    - TPH    # Tri Pointe Homes — DELISTED 2026-05-14 (acquired by Sumitomo Forestry,
+             # US$47.00 cash; last session 05-13). Membership is KEPT on purpose: the
+             # page, its search entry and its deep links stay alive (CSP-R1) and the
+             # history stays readable. The exit row in config/delisted_symbols.yml is
+             # what stops the nightly fetch requesting it and swaps the page's
+             # cause-neutral "no new data" note for the truth. Do NOT delete this line
+             # to "clean up" — that removes the name from universe() and 404s the page.
     - TPR    # Tapestry
+    - TRLV   # Trulieve Cannabis — KEY MIGRATION from TCNNF (2026-08-06). Trulieve
+             # uplisted from the OTC quote TCNNF to NYSE:TRLV on 2026-06-09 (Form
+             # 8-A12B + NYSE listing certification, CIK 1754195); Yahoo stopped serving
+             # TCNNF on 2026-07-17 and the store froze there. Same security, same basis
+             # — TRLV and TCNNF closes agree to the cent on all 19 overlapping sessions
+             # — so data/yahoo/TCNNF.parquet was re-keyed, not re-based. The ticker
+             # here, the store filename and the extra_names label move TOGETHER or the
+             # library mints a duplicate company.
+             # research/RESOLUTION_20260806_SIDE_STORE_SYMBOLS.md
     - TSCO   # Tractor Supply
     - TTD    # The Trade Desk
     - TTWO   # Take-Two Interactive
@@ -2742,6 +2759,16 @@ stock_search:
     DKNG:  {name: "DraftKings", sector: "Consumer Discretionary"}
     POOL:  {name: "Pool Corp", sector: "Consumer Discretionary"}
     OSCR:  {name: "Oscar Health", sector: "Health Care"}
+    # Trulieve had no label under its old OTC ticker, so search showed a bare "TCNNF /
+    # ETF / macro" for a real operating company. GICS Health Care per SEC SIC 2833
+    # (medicinal chemicals & botanical products).
+    TRLV:  {name: "Trulieve Cannabis", sector: "Health Care"}
+    # CTRA and TPH keep their labels while their pages stand (both delisted 2026-05,
+    # config/delisted_symbols.yml): the page still has to name the company it is
+    # showing, and a name that renders as "CTRA / ETF / macro" is a worse page than
+    # one that says Coterra Energy stopped trading.
+    CTRA:  {name: "Coterra Energy", sector: "Energy"}
+    TPH:   {name: "Tri Pointe Homes", sector: "Consumer Discretionary"}
     # ADR sensor mini-set (W0-4 — INTL-49; collected in yahoo.adr_sensors)
     ASML:  {name: "ASML Holding (ADR)", sector: "Information Technology"}
     LVMUY: {name: "LVMH (ADR)", sector: "Consumer Discretionary"}
@@ -3495,6 +3522,23 @@ quality:
   # 2026-08-03 incident: names exiting every sector SPDR's top-20 froze their
   # data/stocks parquets 10-46d with nothing watching per-name tips.
   stocks_stale_calendar_days: 7  # per-name tip lag beyond this = stale FLAG only (mirrors #4441 ledger gate's _MAX_BAR_LAG_DAYS; strict >)
+  # --- reused-ticker / zombie-print tripwire (audit_reused_tickers) ---
+  # A ticker STRING is not a stable identity: delisted/take-private names get their
+  # symbol recycled, and the per-ticker stores fetch by bare string, so a dead name's
+  # key silently fills with the new holder's full spliced history (ECHO 2026-06:
+  # Echo Global Logistics d.2021 -> EchoStar after its SATS->ECHO rename). Acked names
+  # below are operator-ratified identities — still disclosed nightly in
+  # data/quality/reused_tickers_audit.json, never ::warning'd. The ack text is the
+  # key-migration record the house law requires (ticker-rename-is-a-key-migration).
+  reused_grace_days: 30          # store tip must advance > this many days past the name's last dead-registry bar to count as "printing past death"
+  reused_ticker_acks:
+    ECHO: "EchoStar Corp (NASDAQ dir 'EchoStar Corporation'; EDGAR CIK 1415404; FIGI BBG000TGLV00) under its 2026-06-24 SATS->ECHO rename — store holds EchoStar's full history (2008->). Prior holder Echo Global Logistics (CUSIP 27875T101, take-private 2021-12 @ $48.25) lives ONLY in the dead registry."
+    SPWR: "New SunPower (ex-Complete Solaria) adopted the SPWR ticker 2024-09 after SunPower Corp's 2024-08 Ch.11 — store rows spanning the corpse era are the new holder's tape (overlap corr ~0.05)."
+    RPT: "Rithm Property Trust took RPT in 2024 after RPT Realty merged into Kimco 2024-01 — store rows spanning the corpse era are Rithm's spliced tape (overlap corr ~0.22)."
+    FI: "Membership key FI = Fiserv, deliberately fetched via the FISV vendor alias (lib/ticker_aliases; Fiserv left NYSE 'FI' ~2025-11, NASDAQ lists FISV). The registry's FI rows are foreign tape — registry-side contamination, not a store defect."
+    AHRT: "Same instrument as its registry rows on the 16-day overlap (ret corr 1.00, constant 0.954 adjustment ratio; overlap just under the 20-row receipt bar) — registry-side contamination (live 'AH Realty Trust' tape under a dead-name resolution), not a store zombie."
+  delisted_printing_acks:
+    - RHHBY                      # OTC ADR (Roche) — never in the NASDAQ/NYSE listing directory by design
   # --- governance gate (collect.py) ---
   abort_fail_pct: 5              # > this % of a universe failing aborts the collect run
   warn_fail_pct: 1               # 1-5% only warns + logs
