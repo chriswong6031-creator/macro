@@ -5079,8 +5079,10 @@ jobs:
     # Enumerated here at birth: the unrun-suite census (2026-07-26) proved an unnamed
     # suite is genuinely never executed, and the reference organ's own suite
     # (test_mtf_upturn.py) is an existing instance of that hole.
+    # The Signal Episode Atlas suites (stock_events / event_atlas) ride the same
+    # lane: same organ family, same canon math, same ledger-lane gate.
     if: ${{ false }}
-    timeout-minutes: 3
+    timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -5089,8 +5091,12 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: prophet doors incl. Door W (washout-turn entries; fire legs, prereg pins, invariance)
+        run: python -m pytest tests/test_prophet_doors.py tests/test_gate_crash_failopen.py -q
+      - name: prophet arena (frozen challenger policies, closure-replay ruler, ledger lane gate, pick-chain fence)
+        run: python -m pytest tests/test_prophet_arena.py -q
       - name: washout-turn organ (depth-gated weekly cross, PIT completed-bars pin, ledger gate)
-        run: python -m pytest tests/test_washout_turn.py tests/test_mtf_upturn.py -q
+        run: python -m pytest tests/test_washout_turn.py tests/test_mtf_upturn.py tests/test_oracle_memory_analogues_step.py tests/test_stock_events.py tests/test_event_atlas.py -q
 
   coiled-mtf-anchor-era:
     # COILED bonus/fire + mtf trend.d3 absolute session anchor (era
