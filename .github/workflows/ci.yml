@@ -2551,6 +2551,15 @@ on:
       - "engine/postmortem.py"
       - "scripts/prophet_postmortem.py"
       - "scripts/exit_policy_study.py"
+      # The exit-policy calibration is pinned to a FROZEN input slice (2026-08-06):
+      # recomputing from the live price caches only agreed with the shipped ledger while
+      # one nightly run wrote both, and collect re-adjusts historical closes in place, so
+      # no date pin can restore like-for-like. The slice and its regenerator are inputs to
+      # the suite's claims exactly as the module under test is — an edit to either must be
+      # able to start the job that checks them, or the pin is a guard its own change
+      # cannot trigger (#3488 shape).
+      - "tests/fixtures/exit_policy_vintage/**"
+      - "scripts/build_exit_policy_vintage_fixture.py"
       # The COMMITTED CN board store + china_stocks price panel are the input grid
       # of test_cn_prophet_audit.py's frozen reproduction (REPRO_ASOF-truncated),
       # so a hand rewrite of either store — a re-adjustment sweep, an era edit —
