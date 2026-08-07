@@ -395,8 +395,14 @@ def test_active_query_is_a_removable_chip_set_not_a_dense_form_echo():
 
 def test_facet_counts_disclose_missingness_and_what_they_cannot_mean():
     assert "MISSINGNESS_STATES = ['observed', 'source_null', 'source_missing', 'not_applicable', 'parser_degraded', 'license_restricted']" in JS
-    assert "trials do not record this field." in JS
-    assert "could not be read for this field." in JS
+    # Both grammatical numbers ship. A single absent trial must read "1 trial does
+    # not record this field.", never "1 trials do not record this field." — the
+    # count is data-driven, so the singular branch is reachable in production.
+    assert "' trial does not record '" in JS
+    assert "' trials do not record '" in JS
+    assert "' trial could not be read'" in JS
+    assert "' trials could not be read'" in JS
+    assert "' for this field.'" in JS
     # Self-excluding, unique-trial counting is stated rather than implied, so a
     # reader never reads the buckets as an additive breakdown.
     assert "so they do not add up to the total" in JS

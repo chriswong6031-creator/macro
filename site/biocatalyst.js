@@ -1614,10 +1614,12 @@
         group.appendChild(button);
       });
       if (absent || unreadable) {
+        var absentPhrase = absent + (absent === 1 ? ' trial does not record ' : ' trials do not record ');
+        var unreadablePhrase = unreadable + (unreadable === 1 ? ' trial could not be read' : ' trials could not be read');
         group.appendChild(el('p', 'bci-facet-miss', absent && unreadable
-          ? tr(absent + ' trials do not record this, and ' + unreadable + ' could not be read.', absent + ' 项试验未记录此项，另有 ' + unreadable + ' 项无法读取。')
-          : (unreadable ? tr(unreadable + ' trials could not be read for this field.', unreadable + ' 项试验的此字段无法读取。')
-            : tr(absent + ' trials do not record this field.', absent + ' 项试验未记录此字段。'))));
+          ? tr(absentPhrase + 'this, and ' + unreadable + ' could not be read.', absent + ' 项试验未记录此项，另有 ' + unreadable + ' 项无法读取。')
+          : (unreadable ? tr(unreadablePhrase + ' for this field.', unreadable + ' 项试验的此字段无法读取。')
+            : tr(absentPhrase + 'this field.', absent + ' 项试验未记录此字段。'))));
       }
       ui.facets.appendChild(group);
     });
