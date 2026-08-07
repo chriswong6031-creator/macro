@@ -118,6 +118,32 @@ For Macro, the `Workers Builds: macro` red X is known-spurious. Template/source
 changes must include their paired `site/` artifact when required, and “merged” is
 not “live” until the VPS/render path and live marker are verified.
 
+**Healing a red pack: claim the lane FIRST, and heal the WHOLE pack (2026-08-07,
+#4850 closed unmerged).** A fleet-wide red is being worked by the whole fleet, so
+before writing a line: identify every red job **by name** and confirm its pack
+(`python3 scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml
+--pack-index N --pack-count 4 --validate-only`) — never trust the pack index in a
+failure report, `run_ci_pack.py` rebalances whenever any job's weight moves — then
+check `gh pr list --search "<filename>"` and `docs/ACTIVE_BUILD_MAP.md` for an open
+lane on the files you are about to touch. The "before proposing new work" rule is
+scoped to NEW work and does not cover heals, which is exactly how this was missed.
+
+**A pack is ONE check, so two partial heals DEADLOCK.** With two independent reds
+in `ci-pack-3`, the ITR-only PR stayed red from the stale report and the
+report-only PR stayed red from ITR: neither could ever go green, so neither could
+merge. One PR must carry every fix the pack needs. Cherry-pick a sibling with `-x`
+(authorship preserved) rather than rewriting it, and read its diff first — the
+sibling's version is often the better one.
+
+**Re-fetch `origin/main` and re-run the job line before pushing OR merging.** On a
+red main the tree moves in hours (five heal PRs landed mid-session here), and a
+`merge-blocked` "real content conflict" on a heal PR usually means the heal already
+landed rather than that you must resolve anything. Diff against fresh main
+(`git diff --stat origin/main HEAD -- <files>`; empty = already there) and **close
+rather than force through** — a superseded regeneration silently reverts the better
+fix that landed behind you (#4850's live-cache report would have reverted #4842's
+frozen-slice render).
+
 **Merge on CONCLUDED checks, never mid-flight (operator 2026-07-28).** A pending
 check is not a pass: an `--admin` squash-merge while the PR's packs are still
 running used to fire a `pull_request: closed` event into the live concurrency
