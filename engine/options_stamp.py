@@ -52,6 +52,35 @@ The filter therefore lives in the two READERS, not in the seven consumers:
 so every positional consumer inherits it. See each function's docstring for the measured
 corruption it removes.
 
+GAP DISCIPLINE (hard rule, tested — the 2026-08-03..08-05 outage class): session-filtering
+guarantees every snapshot IS a session; it does not guarantee every session HAS a snapshot.
+``polygon_gex`` is chronically gappy and always has been — measured on the committed chain
+store at 2026-08-06, four interior gaps (2026-07-06, 07-15, 07-17, and the three-session
+08-03..08-05 collection outage) punch holes in 31 snapshot dates, and the snapshot API is
+current-only so NONE of them can ever be backfilled. Positional slicing then lies a second
+way, independent of the weekend-row class above: ``usable[-6:]`` still returns six rows, but
+they span NINE sessions at as_of 2026-08-06, and ``usable[-2]`` is FOUR sessions back rather
+than one. The two chain readers answer this differently, because the honest answer differs:
+
+  * ``_doi_slope_stamp`` FITS — and an OLS fit does not require evenly spaced x. Fitting
+    against SESSION ORDINALS (``[0,1,2,3,4,8]`` rather than ``np.arange``) makes the slope
+    genuinely per-session across the hole instead of charging a nine-session move to five
+    steps. This is the correct estimator under irregular sampling, not a patch: on a dense
+    window the ordinals ARE ``np.arange`` and the value is unchanged. Measured over 14
+    liquid names at as_of 2026-08-06, positional overstated the per-session rate by ~1.6x
+    and flipped META's SIGN (−0.0028 → +0.0348) — and ``S-DOI`` buckets on ``slope > 0``.
+  * ``_voi_flag_stamp`` / ``_ovc_from_chain`` COMPARE TWO SNAPSHOTS, and both pin the older
+    one to a specific meaning: "YESTERDAY's open interest". There is no re-weighting that
+    rescues a boolean or an OI-weighted share whose baseline is four sessions stale — and
+    the staleness is not neutral (OI accrues, so an older baseline is a LOWER bar and the
+    vol>OI flag biases toward True). They therefore REFUSE: null unless ``usable[-2]`` is
+    the session immediately before ``usable[-1]``.
+
+Nulls printed, never a mislabeled basis. Refusing costs one as_of per gap for the two
+comparisons (4 of 30 measured), where refusing the FIT would have cost 46% of all as_of
+dates (12 of 26 windows are wider than six sessions) — a stat that is null half the time is
+not a ledger primitive, and no repo change heals a collector outage.
+
 The ledger's ``as_of`` column is a STRING (``YYYY-MM-DD``); store dates are datetimes.
 All comparisons are done on ``date`` objects to avoid tz / ms-precision traps.
 
@@ -156,6 +185,13 @@ _NULL_STAMP: dict = {c: None for c in STAMP_COLS}
 _NEAR_MONEY_FRAC = 0.10
 # window length for the ΔOI slope: today + 5 prior trading snapshots = 6 points
 _DOI_WINDOW = 6
+# ...but the six snapshots are only SIX SESSIONS apart when the collector ran every
+# session, and it does not (GAP DISCIPLINE, module header).  The fit is therefore taken
+# against session ordinals, and the window is allowed to stretch only so far: at most as
+# many sessions may be MISSING from it as the fit has steps (``_DOI_WINDOW - 1`` = 5), so
+# six snapshots must span ≤ 11 sessions.  Past that the sample is more gap than
+# observation and no re-weighting makes "5d" describe it → None.
+_DOI_MAX_SPAN = 2 * _DOI_WINDOW - 1
 # roots with a numeric suffix (e.g. AAPL1) are corporate-action-adjusted — never mis-parse
 _ADJUSTED_ROOT = re.compile(r"\d$")
 
@@ -361,6 +397,45 @@ def _near_money_call_oi(chain: pd.DataFrame, ticker: str) -> float | None:
     return float(calls["oi"].fillna(0).sum())
 
 
+def _session_span(first: _dt.date, last: _dt.date) -> int:
+    """Sessions in the INCLUSIVE range — 1 for a single session, 0 when ``last < first``."""
+    return len(nyse_calendar.sessions_between(first, last))
+
+
+def _is_prior_session(prev_d: _dt.date, cur_d: _dt.date) -> bool:
+    """True only when ``prev_d`` is the session IMMEDIATELY before ``cur_d``.
+
+    The two-snapshot chain readers mean a literal "yesterday" by their older snapshot (see
+    GAP DISCIPLINE in the module header), and after a collection gap it is not one. Also
+    False when either date is a non-session, so a fabricated snapshot that slipped past the
+    session filter cannot be read as yesterday either — fail-closed in both directions."""
+    return _session_span(prev_d, cur_d) == 2
+
+
+def _session_ordinals(dates: list[_dt.date]) -> list[float] | None:
+    """0-based SESSION index of each date, counted from ``dates[0]``.
+
+    A dense window yields ``[0,1,2,3,4,5]`` — exactly ``np.arange``, so the fit is
+    unchanged wherever the collector ran every session. The 2026-08-06 window yields
+    ``[0,1,2,3,4,8]``: the three sessions the outage lost are counted as elapsed time
+    rather than silently collapsed into one step.
+
+    None when any date is not a session or the list is not strictly ascending. A caller
+    handing over unsorted or fabricated dates gets a null rather than a silent mis-fit."""
+    if not dates:
+        return None
+    base = dates[0]
+    out: list[float] = []
+    for d in dates:
+        span = nyse_calendar.sessions_between(base, d)
+        if not span or span[-1] != d:
+            return None          # d precedes base, or is not a session
+        out.append(float(len(span) - 1))
+    if any(b <= a for a, b in zip(out, out[1:])):
+        return None              # duplicate or out-of-order snapshot dates
+    return out
+
+
 def _doi_slope_stamp(
     as_of: _dt.date,
     ticker: str,
@@ -371,11 +446,29 @@ def _doi_slope_stamp(
     snapshots with date ≤ as_of. Needs ≥ 5 prior days (6 points total) or returns None.
 
     Normalized = OLS slope / mean(series) so it is comparable across names. Positive =
-    call-OI accumulating (informed-accumulation proxy, Garleanu-Pedersen-Poteshman)."""
+    call-OI accumulating (informed-accumulation proxy, Garleanu-Pedersen-Poteshman).
+
+    TIME-TRUE ACROSS COLLECTION GAPS (see GAP DISCIPLINE in the module header). The fit is
+    taken against SESSION ORDINALS, not snapshot positions, so the slope is a per-SESSION
+    rate whether or not the collector ran every session: the units the ``_5d`` name and the
+    ``S-DOI`` ``slope > 0`` bucket both assume. On a dense window the ordinals are
+    ``np.arange`` and the value is byte-identical to the positional fit; only gapped
+    windows change, where the positional number was wrong. The window may stretch to
+    ``_DOI_MAX_SPAN`` sessions; past that no re-weighting makes it a 5-day read → None.
+
+    That the chain filename is a RUN stamp carrying the PRIOR session's snapshot does not
+    disturb the ordinals: ``D → previous session`` shifts every session index by exactly
+    one, and OLS is invariant to a constant x offset, so the SPACING is identical whether
+    ordinals are counted over run dates or over vintages."""
     usable = [d for d in chain_dates if d <= as_of]
     if len(usable) < _DOI_WINDOW:
         return None
     window = usable[-_DOI_WINDOW:]
+    if _session_span(window[0], window[-1]) > _DOI_MAX_SPAN:
+        return None
+    x_vals = _session_ordinals(window)
+    if x_vals is None:
+        return None
     series: list[float] = []
     for d in window:
         ch = read_chain(d)
@@ -389,7 +482,7 @@ def _doi_slope_stamp(
     mean = float(y.mean())
     if not (mean > 0):
         return None
-    x = np.arange(len(y), dtype=float)
+    x = np.asarray(x_vals, dtype=float)
     slope = float(np.polyfit(x, y, 1)[0])
     return round(slope / mean, 6)
 
@@ -405,11 +498,21 @@ def _voi_flag_stamp(
 
     Requires the current + one prior snapshot; None when unavailable. Uses prior-day OI so
     the comparison is genuinely 'fresh volume against pre-existing positioning' (not vol vs
-    same-day OI, which trivially includes the new trades)."""
+    same-day OI, which trivially includes the new trades).
+
+    PRIOR-SESSION-STRICT (see GAP DISCIPLINE in the module header): the prior snapshot must
+    be the session immediately before the current one, else None. After a collection gap
+    ``usable[-2]`` is several sessions back — at as_of 2026-08-06 it is four — and OI accrues
+    over the sessions in between, so a stale baseline is a systematically LOWER bar and this
+    flag biases toward True. A boolean has no re-weighting escape the way the ΔOI fit does:
+    the honest output is a null, which ``S-VOI`` excludes from both buckets rather than
+    scoring as False."""
     usable = [d for d in chain_dates if d <= as_of]
     if len(usable) < 2:
         return None
     today_d, prev_d = usable[-1], usable[-2]
+    if not _is_prior_session(prev_d, today_d):
+        return None
     today = read_chain(today_d)
     prev = read_chain(prev_d)
     if today is None or prev is None:
@@ -617,6 +720,16 @@ def _ovc_from_chain(
 
     This matches _voi_flag_stamp's pattern (today chain for volume, prior chain for OI).
     When fewer than 2 usable snapshots exist the metric is null (cannot form prior-day OI).
+
+    PRIOR-SESSION-STRICT (see GAP DISCIPLINE in the module header): what certifies this
+    metric PIT-clean is that its OI is the study's ``shift(1)`` — the PRIOR SESSION's book.
+    Across a collection gap ``usable[-2]`` is a shift(4), which is a different construction
+    from the frozen one, and not a uniformly conservative one: front-week OI builds steeply
+    into expiry, so a stale book understates exactly the ≤7-day weights this share is made
+    of, by an amount that varies with each name's expiry ladder. That distorts the
+    per-as_of tercile ``S-FRONT-CHARM`` buckets on, so the share goes null rather than
+    mixed-basis. ``opt_root_class`` is unaffected — it is taxonomy from the ticker alone and
+    needs no chain at all.
     """
     # Import here to avoid circular dependency at module level
     from engine.greeks import bs_greeks
@@ -630,6 +743,8 @@ def _ovc_from_chain(
         return out
     chain_date = usable[-1]   # current snapshot — provides greeks (T, iv, spot, expiry)
     prev_date = usable[-2]    # prior snapshot — provides OI (pre-fire-day positions)
+    if not _is_prior_session(prev_date, chain_date):
+        return out            # gap: the OI book is not the study's shift(1) — null, not mixed-basis
 
     cdf = read_chain(chain_date)
     if cdf is None or cdf.empty:
