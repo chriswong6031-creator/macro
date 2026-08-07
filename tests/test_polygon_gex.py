@@ -85,6 +85,31 @@ def test_get_paginates_and_attaches_key(monkeypatch):
     assert calls[1][1] == {"apiKey": "TESTKEY"}
 
 
+def test_ticker_details_returns_the_results_dict(monkeypatch):
+    """/v3/reference/tickers/{T} returns ``results`` as ONE dict — it must not
+    go through _get, whose list.extend would iterate the dict's keys (that
+    mismatch silently nulled the S&P 500 shares reference for four weeks)."""
+    client = PolygonOptions()
+    client.key = "TESTKEY"
+    payload = {"results": {"ticker": "BKNG",
+                           "weighted_shares_outstanding": 774_878_436}}
+    seen = {}
+
+    def fake_get(url, **kw):
+        seen["url"], seen["params"] = url, kw.get("params", {})
+        return _Resp(payload)
+
+    monkeypatch.setattr(client, "http_get", fake_get)
+    res = client.ticker_details("BKNG")
+    assert res["weighted_shares_outstanding"] == 774_878_436
+    assert seen["url"].endswith("/v3/reference/tickers/BKNG")
+    assert seen["params"]["apiKey"] == "TESTKEY"
+    # malformed / list-shaped results degrade to {} rather than leaking a list
+    monkeypatch.setattr(client, "http_get",
+                        lambda url, **kw: _Resp({"results": [{"a": 1}]}))
+    assert client.ticker_details("BKNG") == {}
+
+
 def _raw(symbols=("SPY",), spot=100.0):
     rows = []
     for sym in symbols:
