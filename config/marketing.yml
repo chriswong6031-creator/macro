@@ -595,6 +595,25 @@ cold_read:
   provider_order: [ollama]
   ollama_model: "qwen3.5:9b"
   ollama_timeout_s: 30
+  # 4096 IS THE MEASURED FIT, not a fossil of the old 4,096-token server cap.
+  # Measured 2026-08-06 over all 222 relayed-lane posts in
+  # data/marketing/outbox/items.jsonl, end to end through this config against
+  # the real endpoint (prompt_eval_count from the served tokenizer, not a
+  # chars/token estimate): the prompt is a fixed 1,589-char system prompt plus
+  # one post that X itself caps at 280 chars, and it runs
+  #
+  #     min 424 · p50 464 · p90 503 · max 527 tokens
+  #
+  # — 13% of this window, 7.8x headroom. The same corpus at num_ctx 32768
+  # returns an IDENTICAL distribution, which is the proof that nothing here is
+  # being truncated. Raising this buys no coverage and costs KV cache: +228 MiB
+  # at 8192, +1.0 GiB at 32768 (5.25 GiB resident at 4096, RTX 5070 Ti).
+  #
+  # WHAT WOULD CHANGE THE ANSWER. This window is the silent-failure surface for
+  # the gate: a truncated prompt comes back as prose, _coerce_verdict discards
+  # it as unparseable, and the run reports mode "read" having read nothing. The
+  # system prompt would have to grow ~7x to reach that. If it ever does, raise
+  # this BEFORE the prompt lands, not after.
   ollama_num_ctx: 4096
   max_tokens: 200
 
@@ -2586,6 +2605,23 @@ breaking:
     oauth_pool_lane: "marketing-breaking"
     ollama_model: "qwen3.5:9b"
     ollama_timeout_s: 45
+    # 8192 fits with 15x to spare. Measured 2026-08-06 through _llm_summarize
+    # against the real endpoint, walking this lane's own input ceiling: a long
+    # headline + the 600-char raw-feed snippet + the wire_deep prompt law + a
+    # repair turn carrying the rejected draft and the validator's complaints —
+    # the largest prompt this lane can build — is 542 tokens. A typical flash
+    # item (headline + the 400-char press_lane snippet) is 264. Same counts at
+    # num_ctx 32768, so nothing truncates.
+    #
+    # IT DIFFERS FROM cold_read's 4096 ON PURPOSE-BY-DEFAULT, NOT BY DESIGN.
+    # Ollama fingerprints a loaded runner on its options, so alternating
+    # windows on one box evicts and reloads the 6.6 GB model: measured 5.5s on
+    # a switch against 0.29s warm, ~19x, paid in BOTH directions. Both lanes fit
+    # either window, so unifying them costs one line and +228 MiB. Not done
+    # here because there is no measured frequency to justify it — this is the
+    # 5th rung behind codex/oauth/anthropic/deepseek, added 2026-08-04, and
+    # nothing in data/marketing/ records it ever having fired. If it starts
+    # interleaving with publisher sweeps, unify on 8192 rather than raise it.
     ollama_num_ctx: 8192
 
   # ═══════════════════════════════════════════════════════════════════════════
