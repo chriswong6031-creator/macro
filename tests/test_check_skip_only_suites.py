@@ -176,19 +176,114 @@ def _fixture_jobs(*specs: tuple[str, str, str | None]) -> list[dict]:
 
 def test_thin_only_lane_reads_skip_only_and_the_pair_repairs_it() -> None:
     """The #3760 shape, end to end: seeded defect red, seeded fix green."""
-    suite = next(iter(ROOT.glob("tests/test_chart_render_inline.py")))
-    thin = _fixture_jobs(
-        ("thin", f"pytest tests/{suite.name}", "pip install pytest pyyaml")
-    )
-    rows = [r for r in GUARD.census(thin) if r["test"] == suite.name]
+    rel = "tests/test_chart_render_inline.py"
+    assert (ROOT / rel).is_file()
+    thin = _fixture_jobs(("thin", f"pytest {rel}", "pip install pytest pyyaml"))
+    rows = [r for r in GUARD.census(thin) if r["test"] == rel]
     assert rows and all(r["status"] == "SKIP-ONLY" for r in rows)
 
     paired = thin + _fixture_jobs(
-        ("fat", f"pytest tests/{suite.name}",
-         "pip install pytest pandas numpy pyarrow pyyaml")
+        ("fat", f"pytest {rel}", "pip install pytest pandas numpy pyarrow pyyaml")
     )
-    rows = [r for r in GUARD.census(paired) if r["test"] == suite.name]
+    rows = [r for r in GUARD.census(paired) if r["test"] == rel]
     assert rows and all(r["status"] == "OK" for r in rows)
+
+
+# ── scope: the whole tree, not tests/ (#4693) ────────────────────────────────
+
+def test_rows_are_keyed_by_repo_relative_path() -> None:
+    """A basename stopped identifying a suite the moment scope left tests/."""
+    rows = GUARD.census()
+    assert rows
+    assert all("/" in r["test"] for r in rows)
+
+
+def test_a_research_resident_suite_is_in_scope() -> None:
+    """The suites this guard could not see: written beside their instrument
+    because the packet that shipped them was fenced to files-only."""
+    discovered = set(GUARD.discover_suites())
+    assert "research/prophet_us_audit/test_label_grading_battery.py" in discovered
+    assert "research/signal_engine/test_buy_filters.py" in discovered
+
+
+def test_a_seeded_suite_outside_tests_reads_skip_only_when_its_lane_is_thin(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The mutation, end to end, one directory over from where it used to work.
+
+    Before the widening this produced NO rows at all: the suite was outside
+    `tests/`, so the census never looked at it and the gate stayed green while every
+    one of its tests skipped in the only job that named it. Verified against the
+    real tree during #4693 — the pre-change guard reported `SKIP-ONLY 0` and exited
+    0 with exactly this suite seeded and wired into `workflow-yaml`.
+    """
+    rel = "research/packet/test_seeded_guard.py"
+    seeded = tmp_path / rel
+    seeded.parent.mkdir(parents=True)
+    seeded.write_text(
+        "import pytest\n\n\n"
+        "def test_needs_pandas():\n"
+        '    pytest.importorskip("pandas")\n'
+    )
+    monkeypatch.setattr(GUARD, "ROOT", tmp_path)
+    monkeypatch.setattr(GUARD, "discover_suites", lambda: [rel])
+
+    thin = _fixture_jobs(("thin", f"pytest {rel}", "pip install pytest pyyaml"))
+    rows = [r for r in GUARD.census(thin) if r["test"] == rel]
+    assert rows, "a suite outside tests/ must be censused at all"
+    assert all(r["status"] == "SKIP-ONLY" for r in rows)
+
+    paired = thin + _fixture_jobs(
+        ("fat", f"pytest {rel}", "pip install pytest pandas pyyaml")
+    )
+    rows = [r for r in GUARD.census(paired) if r["test"] == rel]
+    assert rows and all(r["status"] == "OK" for r in rows)
+
+
+def test_a_test_shaped_cli_instrument_is_never_censused() -> None:
+    """Widening by FILENAME would have added three permanent false work items."""
+    discovered = set(GUARD.discover_suites())
+    for rel in (
+        "research/cn_prophet_audit/sector_intel_exante_test.py",
+        "research/signal_engine/test_breadth_consume.py",
+        "research/signal_engine/test_buyfilter.py",
+    ):
+        assert (ROOT / rel).is_file(), f"{rel} moved; re-derive the classification"
+        assert rel not in discovered
+
+
+@pytest.mark.parametrize(
+    "run_text,expected",
+    [
+        # The spelling every run: step in this repo actually uses.
+        ("python -m pytest tests/test_ci_pack.py -q", {"tests/test_ci_pack.py"}),
+        # Outside tests/ — unnameable before the widening.
+        ("python -m pytest research/signal_engine/test_buy_filters.py -q",
+         {"research/signal_engine/test_buy_filters.py"}),
+        ("python -m pytest scripts/research/test_run_w4_controls_fingerprints.py -q",
+         {"scripts/research/test_run_w4_controls_fingerprints.py"}),
+        # The *_test.py shape pytest also collects.
+        ("python -m pytest research/pkt/thing_test.py -q",
+         {"research/pkt/thing_test.py"}),
+        # A leading ./ is the same file.
+        ("python -m pytest ./tests/test_ci_pack.py -q", {"tests/test_ci_pack.py"}),
+    ],
+)
+def test_run_step_parsing_keeps_the_directory(run_text: str, expected: set) -> None:
+    assert GUARD._job_view("j", "f.yml", run_text, None)["tests"] == expected
+
+
+def test_a_job_naming_one_directorys_suite_does_not_claim_another() -> None:
+    """Basename-only matching credited `tests/test_x.py` with running
+    `research/a/test_x.py`. With scope beyond tests/ that is a wrong answer, not a
+    harmless one — it would mark a genuinely dark suite as covered."""
+    jobs = _fixture_jobs(
+        ("names-tests-copy", "pytest tests/test_buy_filters.py",
+         "pip install pytest")
+    )
+    rows = [r for r in GUARD.census(jobs)
+            if r["test"] == "research/signal_engine/test_buy_filters.py"]
+    assert all(not r["naming_jobs"] for r in rows)
 
 
 def test_a_suite_no_job_names_is_unrun_not_skip_only() -> None:

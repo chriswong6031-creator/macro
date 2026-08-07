@@ -29,6 +29,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -1414,11 +1415,20 @@ def _archetype(fac: dict, ni: float | None, net_margin: float | None,
       my      dict  _multiyear() output (rev_cagr, eps_cagr, altman sub-dict)
       betas   dict  per-ticker row from factor_betas.json['betas']
 
+    Factor-less names (EDGAR panel coverage without a factor-table row — the
+    factor table is the curated universe, the panel is wider) still classify
+    through the buckets whose inputs they carry: the ni<=0 unprofitable veto and
+    the anchored v2 buckets (distressed / rate / commodity / secular / broken
+    growth). The factor-z buckets self-disable on None z-scores, and the "mixed"
+    fallback is withheld — "mixed" asserts factors were measured and none
+    dominates, which is a claim an unmeasured name cannot make. Nothing
+    firing -> None: honestly unlabeled, not mislabeled.
+
     Returns {key, label, label_zh, confidence, conf_word, why, why_zh,
              anchored, v2_inputs}.
     """
-    if not fac:
-        return None
+    fac_absent = not fac
+    fac = fac or {}
     v, q, p = fac.get("value"), fac.get("quality"), fac.get("profitability")
     pay, lv, lb = fac.get("payout"), fac.get("low_vol"), fac.get("low_beta")
     nm_top = (net_margin is not None and nm_top_thr is not None and net_margin >= nm_top_thr)
@@ -1540,6 +1550,11 @@ def _archetype(fac: dict, ni: float | None, net_margin: float | None,
         key = "mixed"
         why, why_zh = ["no single factor dominates"], ["无单一因子主导"]
         slack = 0.15
+
+    # A name with no factor row cannot claim "mixed" — that label means factors
+    # were measured and balanced. Unlabeled beats mislabeled.
+    if fac_absent and key == "mixed":
+        return None
 
     slack = _num(slack) or 0.0
     conf = max(0.0, min(1.0, slack / 0.6))
@@ -2270,8 +2285,10 @@ def archetypes_history(out_path=None) -> pd.DataFrame:
       - site/factordata/factors.json            (sector + factor z-scores — CURRENT-SNAPSHOT, non-PIT)
 
     Returns the DataFrame (also written to disk).
-    Lifecycle: rebuilt on demand via scripts/build_archetype_history.py; not on the
-    nightly path; frozen between rebuilds.
+    Lifecycle: kept in lockstep with fundamentals_panel.parquet by
+    archetypes_history_refresh_if_stale() (wired after fetch_panel in
+    build_site); scripts/build_archetype_history.py remains the manual entry
+    point for threshold/bucket changes.
     """
     import os
 
@@ -2350,6 +2367,9 @@ def archetypes_history(out_path=None) -> pd.DataFrame:
             "confidence": arche["confidence"] if arche else None,
             "anchored":   arche["anchored"] if arche else None,
             "why":        arche["why"] if arche else None,
+            # False = labeled (or unlabeled) WITHOUT a factor-table row: only the
+            # ni-veto + anchored PIT buckets were reachable for this row.
+            "fac_present": bool(fac),
             "sector":     (fac or {}).get("sector"),
             "rev_cagr":   (my_block or {}).get("rev_cagr"),
             "eps_cagr":   (my_block or {}).get("eps_cagr"),
@@ -2370,3 +2390,64 @@ def archetypes_history(out_path=None) -> pd.DataFrame:
     df.to_parquet(out_path, index=False)
     log.info("archetypes_history: wrote %d rows to %s", len(df), out_path)
     return df
+
+
+def archetypes_history_refresh_if_stale(panel_path=None, hist_path=None, *,
+                                        rebuild=None) -> bool:
+    """Rebuild data/archetypes/history.parquet when it no longer covers the
+    fundamentals panel's (ticker, fy) key set.
+
+    The history store is derived row-for-row from fundamentals_panel.parquet,
+    and its documented lifecycle ("rebuild when the panel is refreshed" —
+    scripts/build_archetype_history.py) was a manual step that rotted in
+    practice: built once 2026-07-03 at 1,331 tickers while the weekly
+    fetch_panel refresh grew the panel to 1,552, so every later-added name (MCD
+    included) stamped archetype-absent in every downstream PIT join
+    (us_prophet_rank candidates, us_board_ledger backfill). This makes the
+    contract mechanical: a key-set comparison each render night (~0.3 s), a
+    full rebuild only when the sets differ (~2.6 s measured 2026-08-05).
+
+    Key-set equality is the freshness definition — additions AND drops both
+    trigger, so any panel mutation path (weekly fetch, partial backfills,
+    unit-artifact heal scripts) re-syncs on the next nightly. A content-only
+    heal that rewrites values under unchanged (ticker, fy) keys is NOT
+    detected; hand-run the rebuild script in that PR (both existing heal
+    scripts already rebuild the panel through fetch_panel, which changes the
+    latest-fy key set in practice).
+
+    Fail-open: any error keeps the last committed store and prints a
+    line-start ::warning (annotation law). Returns True only when a rebuild
+    ran and produced a non-empty store.
+    """
+    try:
+        panel_path = Path(panel_path) if panel_path else (
+            config.data_dir() / "edgar" / "fundamentals_panel.parquet")
+        hist_default = config.data_dir() / "archetypes" / "history.parquet"
+        hist_path = Path(hist_path) if hist_path else hist_default
+        rebuild_fn = rebuild or archetypes_history
+
+        if not panel_path.exists():
+            return False                    # nothing to derive from — not stale
+        panel_keys = {
+            (str(t), int(y)) for t, y in pd.read_parquet(
+                panel_path, columns=["ticker", "fy"]).itertuples(index=False, name=None)
+        }
+        if hist_path.exists():
+            hist_keys = {
+                (str(t), int(y)) for t, y in pd.read_parquet(
+                    hist_path, columns=["ticker", "fy"]).itertuples(index=False, name=None)
+            }
+            if panel_keys == hist_keys:
+                return False                # fresh — the nightly common case
+            log.info(
+                "archetypes_history stale: %d panel keys unlabeled, %d orphaned — rebuilding",
+                len(panel_keys - hist_keys), len(hist_keys - panel_keys))
+        else:
+            log.info("archetypes_history absent at %s — building", hist_path)
+
+        df = rebuild_fn(out_path=hist_path)
+        return df is not None and not df.empty
+    except Exception as exc:  # noqa: BLE001 — display-tier store; never break the render
+        print(f"::warning title=archetype-history-refresh::rebuild failed ({exc}) "
+              "— keeping last committed store", flush=True)
+        return False

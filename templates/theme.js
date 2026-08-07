@@ -796,6 +796,7 @@
     var dropdown = box.querySelector('.ticker-dropdown');
     var idleTicker = box.querySelector('.idle-ticker');
     var lib = [], libsStarted = false, pending = 0, page = 0, selected = -1;
+    var libFailed = {};                 // market key → 'auth' | 'error' (see loadLibs)
     var pageRows = [], idleTimer = 0, idleIndex = 0, idleChars = 0, deleting = false;
     var isComposing = false;
 
@@ -826,6 +827,7 @@
           selectTicker: '选择股票并在终端中打开',
           stillLoading: '仍在加载匹配市场…',
           noMatches: '没有匹配的股票代码或公司。',
+          retry: '重新加载',
           company: '公司',
           inLibrary: '已收录',
           logoAttribution: 'Logo 由 Logo.dev 提供'
@@ -850,6 +852,7 @@
         selectTicker: 'Select a ticker to open Terminal',
         stillLoading: 'Still loading matching markets…',
         noMatches: 'No ticker or company matches this search.',
+        retry: 'Try again',
         company: 'Company',
         inLibrary: 'IN LIBRARY',
         logoAttribution: 'Logos by Logo.dev'
@@ -929,21 +932,50 @@
     applySearchLocale();
     document.addEventListener('langchange', applySearchLocale);
 
+    /* A library that never arrived is NOT an empty market. Substituting an empty
+       array for a non-ok response swallowed every 401/404/5xx, so a signed-out
+       visitor — or one market blipping — got the confident lie "No ticker or
+       company matches this search." for a name that IS in the universe. Record
+       WHY each market is missing, retry a transport-class failure once, and let
+       render() say the true thing instead of reporting a load failure as a miss. */
+    function marketLoadFailed(key, reason) { libFailed[key] = reason; }
+
+    function fetchLib(m, attempt) {
+      return fetch(pfx + m.lib, { credentials: 'same-origin' }).then(function (r) {
+        if (!r.ok) {
+          var err = new Error('lib ' + r.status);
+          err.reason = (r.status === 401 || r.status === 403) ? 'auth' : 'error';
+          throw err;
+        }
+        return r.json();
+      }).then(function (data) {
+        delete libFailed[m.key];
+        (data || []).forEach(function (x, index) {
+          x._tgt = m.target;
+          x._fl = x.fl || m.flag;
+          x._mk = x.mk || m.mkt;
+          x._key = m.key;
+          x._order = index;
+        });
+        lib = lib.concat(data || []);
+      }).catch(function (e) {
+        var reason = (e && e.reason) || 'error';
+        /* An expired session will 401 again on a retry — only transport-class
+           failures (offline blip, 5xx, a truncated body) are worth one more go. */
+        if (reason !== 'auth' && attempt < 1) {
+          return new Promise(function (resolve) { window.setTimeout(resolve, 1200); })
+            .then(function () { return fetchLib(m, attempt + 1); });
+        }
+        marketLoadFailed(m.key, reason);
+      });
+    }
+
     function loadLibs() {
       if (libsStarted) return;
       libsStarted = true;
       pending = STOCK_MARKETS.length;
       STOCK_MARKETS.forEach(function (m) {
-        fetch(pfx + m.lib).then(function (r) { return r.ok ? r.json() : []; }).then(function (data) {
-          (data || []).forEach(function (x, index) {
-            x._tgt = m.target;
-            x._fl = x.fl || m.flag;
-            x._mk = x.mk || m.mkt;
-            x._key = m.key;
-            x._order = index;
-          });
-          lib = lib.concat(data || []);
-        }).catch(function () {}).then(function () {
+        fetchLib(m, 0).then(function () {
           pending -= 1;
           /* Popular rows are one composed snapshot. Repainting after each of
              five libraries arrives made cards repeatedly disappear, reorder
@@ -952,6 +984,56 @@
           if (box.classList.contains('open') && (pending === 0 || input.value.trim())) render();
         });
       });
+    }
+
+    function reloadFailedLibs() {
+      var retryable = STOCK_MARKETS.filter(function (m) { return libFailed[m.key]; });
+      if (!retryable.length) return;
+      pending += retryable.length;
+      render();
+      retryable.forEach(function (m) {
+        fetchLib(m, 1).then(function () {
+          pending -= 1;
+          if (box.classList.contains('open')) render();
+        });
+      });
+    }
+
+    /* The honest empty state. Returns null when every market loaded, so the
+       genuine "nothing matched" copy is still reachable. */
+    function loadFailureNotice() {
+      var keys = STOCK_MARKETS.map(function (m) { return m.key; }).filter(function (k) { return libFailed[k]; });
+      if (!keys.length) return null;
+      var c = searchCopy(), zh = curLang() === 'zh';
+      var names = keys.map(function (k) {
+        var meta = marketMeta(k);
+        return zh ? (meta.mktZh || meta.mkt) : meta.mkt;
+      }).join(zh ? '、' : ', ');
+      var authOnly = keys.every(function (k) { return libFailed[k] === 'auth'; });
+      var all = keys.length === STOCK_MARKETS.length;
+      if (authOnly) {
+        return {
+          text: all
+            ? (zh ? '登录后即可搜索全部市场的股票。' : 'Sign in to search stocks across every market.')
+            : (zh ? '登录后即可搜索：' + names + '。' : 'Sign in to also search ' + names + '.'),
+          action: null,
+          blank: all
+        };
+      }
+      return {
+        text: all
+          ? (zh ? '股票库未能加载，所以这里搜不到任何股票。' : 'The ticker library did not load, so nothing can be found here yet.')
+          : (zh ? names + ' 未能加载，结果并不完整。' : names + ' did not load, so these results are incomplete.'),
+        action: c.retry,
+        blank: all
+      };
+    }
+
+    function noticeMarkup(notice) {
+      if (!notice) return '';
+      return '<div class="search-notice">' + esc(notice.text) +
+        (notice.action ? ' <button type="button" data-search-retry>' + esc(notice.action) + '</button>' : '') +
+        '</div>';
     }
 
     function go(x) {
@@ -970,14 +1052,23 @@
       location.href = pfx + (x._tgt || 'stock.html') + '#' + encodeURIComponent(x.t);
     }
 
+    /* A search-only Chinese alias: broad-but-noisy (mixed Simplified/Traditional,
+       sometimes a former company name), so it earns a match but is never shown —
+       displayName() reads nameChinese(), which deliberately ignores it. */
+    function nameChineseAlias(x) {
+      return String(x.za || '').trim();
+    }
+
     function rank(x, value) {
       var ticker = normalizeSearch(x.t), en = normalizeSearch(nameEnglish(x));
       var zh = normalizeSearch(nameChinese(x)), raw = normalizeSearch(x.n);
+      var alias = normalizeSearch(nameChineseAlias(x));
       if (ticker === value) return 0;
       if (ticker.indexOf(value) === 0) return 1;
       if (en.indexOf(value) === 0 || zh.indexOf(value) === 0 || raw.indexOf(value) === 0) return 2;
       if (ticker.indexOf(value) > -1) return 3;
       if (en.indexOf(value) > -1 || zh.indexOf(value) > -1 || raw.indexOf(value) > -1) return 4;
+      if (alias.indexOf(value) > -1) return 5;   // ranks below every curated key
       return 9;
     }
 
@@ -1081,12 +1172,13 @@
           return;
         }
         pageRows = popularRows();
+        var idleNotice = loadFailureNotice();
         if (!pageRows.length) {
           dropdown.innerHTML =
             '<div class="search-drop-head"><div><div class="search-drop-title">' + esc(c.loadingTitle) + '</div>' +
             '<div class="search-drop-sub">' + esc(c.loadingSub) + '</div></div>' +
             '<span class="market-profile">' + esc(profileLabel()) + '</span></div>' +
-            '<div class="empty-search">' + esc(c.loadingEmpty) + '</div>';
+            (idleNotice ? noticeMarkup(idleNotice) : '<div class="empty-search">' + esc(c.loadingEmpty) + '</div>');
           return;
         }
         dropdown.innerHTML =
@@ -1094,6 +1186,7 @@
           '<div class="search-drop-sub">' + esc(c.popularSub) + '</div></div>' +
           '<span class="market-profile">' + esc(profileLabel()) + '</span></div>' +
           '<div class="fan-grid">' + pageRows.map(function (x, i) { return resultMarkup(x, i, true); }).join('') + '</div>' +
+          noticeMarkup(idleNotice) +
           attribution();
         enhanceLogos();
         return;
@@ -1119,16 +1212,26 @@
         }
         pagination = '<div class="search-pagination">' + buttons.join('') + '</div>';
       }
-      var resultTitle = curLang() === 'zh'
-        ? '“' + esc(queryDisplay) + '” 的匹配结果（' + matches.length + '）'
-        : matches.length + ' match' + (matches.length === 1 ? '' : 'es') + ' for “' + esc(queryDisplay) + '”';
+      /* A market that failed to load must never be reported as a miss: with
+         nothing matched the notice REPLACES the "no matches" copy, and with
+         partial matches it sits under them so the count reads as incomplete.
+         When NOTHING loaded, "0 matches" would be a verdict on a search that
+         never happened — head with the query instead of a count. */
+      var notice = loadFailureNotice();
+      var zhLang = curLang() === 'zh';
+      var resultTitle = notice && notice.blank
+        ? (zhLang ? '暂时无法搜索“' + esc(queryDisplay) + '”' : 'Can’t search “' + esc(queryDisplay) + '” yet')
+        : (zhLang
+          ? '“' + esc(queryDisplay) + '” 的匹配结果（' + matches.length + '）'
+          : matches.length + ' match' + (matches.length === 1 ? '' : 'es') + ' for “' + esc(queryDisplay) + '”');
       dropdown.innerHTML =
         '<div class="search-drop-head"><div><div class="search-drop-title">' + resultTitle + '</div>' +
         '<div class="search-drop-sub">' + esc(c.selectTicker) + '</div></div>' +
         '<span class="market-profile">' + esc(c.allMarkets) + '</span></div>' +
         (pageRows.length
           ? '<div class="results-list">' + pageRows.map(function (x, i) { return resultMarkup(x, i, false); }).join('') + '</div>' + pagination
-          : '<div class="empty-search">' + esc(pending > 0 ? c.stillLoading : c.noMatches) + '</div>') +
+          : (notice ? '' : '<div class="empty-search">' + esc(pending > 0 ? c.stillLoading : c.noMatches) + '</div>')) +
+        noticeMarkup(notice) +
         attribution();
       enhanceLogos();
     }
@@ -1222,6 +1325,11 @@
       }
     });
     dropdown.addEventListener('mousedown', function (e) {
+      if (e.target.closest('[data-search-retry]')) {
+        e.preventDefault();
+        reloadFailedLibs();
+        return;
+      }
       var pageButton = e.target.closest('[data-search-page]');
       if (pageButton) {
         e.preventDefault();
@@ -1701,8 +1809,18 @@
     for (var k in map) { if (map.hasOwnProperty(k) && /^sb-.*-auth-token(\.\d+)?$/.test(k)) return true; }
     return false;
   }
+  // The session cookie is keyed by the PROJECT, not by whichever host the browser
+  // was pointed at. `ref` is baked by lib/site_assets.supabase_cfg_json and is always
+  // the project ref; deriving from _sbCfg.url is the legacy fallback and is correct
+  // only while url IS the project. Once url is a proxy origin (GFW — see config.yml
+  // watchlist.supabase.browser_url) that derivation yields `sb-www-auth-token` while
+  // app.main._sb_storage_key still reads `sb-<ref>-auth-token`: every session orphaned,
+  // every user logged out, and the server blind to sessions from then on.
   function _storageKey() {
-    try { return 'sb-' + new URL(_sbCfg.url).hostname.split('.')[0] + '-auth-token'; }
+    try {
+      if (_sbCfg && _sbCfg.ref) return 'sb-' + _sbCfg.ref + '-auth-token';
+      return 'sb-' + new URL(_sbCfg.url).hostname.split('.')[0] + '-auth-token';
+    }
     catch (e) { return 'sb-auth-token'; }
   }
   function _isAuthReturn() {

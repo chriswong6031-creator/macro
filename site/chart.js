@@ -204,15 +204,28 @@
     var wk = 1 + Math.round((dt - firstThu) / 604800000);
     return dt.getUTCFullYear() + '-' + wk;
   }
-  function resample(rows, tf) {
+  // 3D buckets come from the PAYLOAD (`anchor.b3`: the row indices at which a new absolute
+  // 3-session bucket opens, cut server-side on the market's reference session calendar —
+  // engine/session_anchor, era display-grid-abs-session-2026-08-06). That is the same grid
+  // the engine cuts its own 3D closes and §7 marker dates on, so a candle here and a bucket
+  // there are the same object. `floor(i/3)` survives ONLY as the fallback for a stale cached
+  // payload emitted before the block existed: it phases off row 0 of a tail(1300) window that
+  // advances one session per night, so the entire 3D view regrouped on ~2 of every 3 nights.
+  function resample(rows, tf, anchor) {
     if (tf === '1D' || rows.length === 0) return rows;
-    var out = [], cur = null, key = null;
+    var opens = null;
+    if (tf === '3D' && anchor && anchor.b3 && anchor.b3.length) {
+      opens = {};
+      for (var j = 0; j < anchor.b3.length; j++) opens[anchor.b3[j]] = 1;
+    }
+    var out = [], cur = null, key = null, grp = -1;
     function flush() { if (cur) out.push(cur); }
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i], k;
       if (tf === '1W') k = isoWeek(r.time);
       else if (tf === '1M') k = r.time.slice(0, 7);   // calendar month: YYYY-MM
-      else k = Math.floor(i / 3);             // 3D = chunks of 3 sessions
+      else if (opens) { if (opens[i]) grp++; k = grp; }   // 3D = shipped session buckets
+      else k = Math.floor(i / 3);             // 3D fallback = chunks of 3 loaded rows
       if (k !== key) { flush(); key = k; cur = { time: r.time, o: r.o, h: r.h, l: r.l, c: r.c, v: r.v || 0 }; }
       else {
         cur.h = Math.max(cur.h, r.h); cur.l = Math.min(cur.l, r.l);
@@ -469,7 +482,8 @@
       handleScale: { axisPressedMouseMove: true }
     });
     this.chart = chart; this.S = {};
-    var rows = (this.tf === '4H') ? resample4H(this.intradayRows || []) : resample(this.rows, this.tf);
+    var rows = (this.tf === '4H') ? resample4H(this.intradayRows || [])
+      : resample(this.rows, this.tf, this.data && this.data.anchor);
     this.view = rows;
     if (!rows.length) { this.updateLegend(null); return; }   // safety: never build an empty chart
     var ohlc = (this.tf === '4H') ? true : (this.data.o === 1);   // intraday is always OHLC
@@ -782,11 +796,15 @@
     this.chips.appendChild(b);
   };
 
-  // Snap each 3D-bin marker date onto an actual chart bar. The engine bins on a pandas
-  // '3B' fixed business-day grid (label = bin's LEFT edge, may be a holiday); the chart
-  // resamples by floor(i/3) over real sessions — the two never share a phase, so we map
-  // a marker to the bar whose bucket COVERS it (first bar with time >= date) instead of
-  // assuming equality. LWC also requires a marker time to be a real series time.
+  // Snap each 3D marker date onto an actual chart bar. The two sides now share ONE grid
+  // (engine: session_positions//3 labelled by the bucket's OPEN date; chart: the same
+  // boundaries shipped as anchor.b3), but they label a bucket at opposite ENDS — the engine
+  // stamps its first session, a candle is stamped with its last. So snap-forward is the
+  // seam, not a workaround: the first bar with time >= date is EXACTLY the marker's own
+  // bucket, because the previous bucket's last session is strictly before the marker's
+  // open date and its own bucket's last session is on or after it. On a stale payload with
+  // no anchor block it degrades to what it always did — the covering bar of a re-phased
+  // grid, never a lost marker. LWC also requires a marker time to be a real series time.
   Instance.prototype.mapMarkers = function (rows) {
     var ms = (this.signals && this.signals.markers) || [];
     if (!rows.length) return [];

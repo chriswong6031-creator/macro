@@ -1,11 +1,12 @@
-"""Prophet W3 — shadow candidate DOORS: **T (theme-relay)** and **R (re-arm)**.
+"""Prophet shadow candidate DOORS: **T (theme-relay)**, **R (re-arm)**, **W (washout-turn)**.
 
-Program: `research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md` §5 W3.
+Program: `research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md` §5 W3 (Doors T/R)
+and `research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md` §4 W5 (Door W).
 Pre-registration (FROZEN before first accrual): `research/PROPHET_DOORS_PREREG.md`.
 
 WHAT THIS IS
 ------------
-Two new candidate ORIGINATION doors, shipped as **shadow-accrual lanes**: they append
+Three candidate ORIGINATION doors, shipped as **shadow-accrual lanes**: they append
 forward-graded flags to their own ledger and nothing else. The masterplan's §2 audit found
 the incumbent fresh-cross family sights most eventual winners but holds them for a median of
 3 sessions, and that hot-theme members sit veto-blocked by construction (44 of the top-50
@@ -25,6 +26,18 @@ laggard-cross cell was the one positive (+1.44% per-name). So neither door loose
   while the 3D StochRSI stays constructive (K ≥ D). Keys on trend-intactness + reset, never
   on washout DEPTH (#1747 Amendment-3).
 
+  **Door W (washout-turn).** The class the Signal Episode Atlas census found Prophet blind
+  to: of the 117 names in WASHOUT_TURN/TURN_WATCH on 2026-07-31, **0 were on the board and
+  109 were invisible to Prophet**, and the highest-conviction sub-class — WASHOUT_TURN with
+  2D+3D+W all bullish — held **65 names of which 61 were invisible**. The MCD miss is a live
+  61-name class, not an anecdote. Door W RECORDS the ENTRY into that class: the display-tier
+  `engine.washout_turn` organ says WASHOUT_TURN, the cross is FRESH (≤ 2 completed weeks
+  old), and both faster canon grids (2B, 3B) are bull on their last completed bars. It keys
+  on the DISPLAY-tier watch state + grid alignment — it is a RECORD of candidates, never an
+  entry-stack leg or a gate covariate (#1747 Amendment-3), and the sector-grain washout→turn
+  null (Oracle P8 P-W1/S-W3) is acknowledged, not re-litigated: the door exists to grade the
+  CONDITIONED name-grain class FORWARD, prospectively.
+
 ZERO AUTHORITY (the whole point)
 --------------------------------
 Nothing in the pick chain imports this module. No board membership, no plan origination, no
@@ -41,13 +54,16 @@ the PSS prospective-accrual charters. Every row is a real forward call made with
 
 RECORDED FEATURES ARE NOT FIRE CONDITIONS
 -----------------------------------------
-Each flag carries an analysis-only feature block (relay position, admission-day turnover,
-Foresight Desk stage — :data:`FEATURE_KEYS`, prereg §9 addendum 2026-08-04). They exist so the
-promotion read can test the CN-measured relay hypothesis on US forward data from day one.
-**They have ZERO effect on fire / cap / dedupe / grading**: :class:`_RecordedFeatures` is
-queried only AFTER a night's kept rows are already decided, and it degrades to nulls on any
-failure. `tests/test_prophet_doors.py::TestFireInvariance` pins that the fire set is identical
-with features on and off.
+Each flag carries an analysis-only feature block — Doors T/R: relay position, admission-day
+turnover, Foresight Desk stage (:data:`FEATURE_KEYS`, prereg §9 addendum 2026-08-04), plus the
+W8 ignition states, coil and theme thrust (§10 addendum 2026-08-05); Door W: era / regime /
+archetype + the Signal Episode Atlas matching-episode posteriors (:data:`FEATURE_KEYS_W`,
+prereg §10). They exist so the promotion read can test the CN-measured relay hypothesis, the W8
+stand-in findings and the matching-episode hypothesis on US forward data from day one.
+**They have ZERO effect on fire / cap / dedupe / grading**: :class:`_RecordedFeatures` and
+:class:`_WashoutFeatures` are queried only AFTER a night's kept rows are already decided, and
+both degrade to nulls on any failure. `tests/test_prophet_doors.py::TestFireInvariance` pins
+that the fire set is identical with features on and off.
 
 NIGHTLY IS THE SOLE ADVANCER
 ----------------------------
@@ -74,10 +90,12 @@ from typing import Any
 import pandas as pd
 
 from engine import confluence_tiers as ct
+from engine import ignition_features as ig
 from engine import signal_gate
 # Reuse the VALIDATED tier math — never reimplement it here (masterplan P1: rewire before
 # invent). These are the same helpers `cascade()` and the §2 audit instruments run on.
 from engine.confluence_tiers import _rsi_macd, _stoch_rsi_kd, _tf_bars, _xup
+from engine.session_anchor import session_positions
 from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 
 log = logging.getLogger("prophet_doors")
@@ -101,13 +119,23 @@ MIN_HISTORY = ct.MIN_HISTORY     # the production gate's own history floor — r
                                  # restated (it is the MEASURED warmup max, 200 -> 159 on
                                  # 2026-08-05; a hardcoded twin here would silently fork)
 
+# Door W (washout-turn) — FROZEN, prereg §10. Changing either constant changes the door.
+WASHOUT_FRESH_WEEKS = 2          # weeks_since_cross <= 2: Door W records ENTRIES, not states
+WASHOUT_ALIGN_GRIDS = ("2B", "3B")   # both faster canon grids must be bull at fire time
+
 UNIVERSE_GROUPS = ("breadth", "midcap_breadth", "smallcap_breadth")
 THEME_ARTIFACT = ("site", "marketdata", "subsector_rotation.json")
 SECTOR_PARQUET = ("data", "breadth", "ticker_sectors.parquet")
+#: Door W's universe SOURCE, data-root-relative. `mtf_upturn._build_universe` falls back to a
+#: hardcoded ALWAYS_INCLUDE list (Mag7 + SPDRs + ETFs) when this artifact is missing; firing
+#: Door W off 30 hardcoded ETFs would be a DIFFERENT door, so its absence closes the door for
+#: the night with a disclosed reason (the Door T fail-soft discipline, §1.1).
+WASHOUT_UNIVERSE_SOURCE = ("baskets", "membership.json")
 
 DOOR_T = "T"
 DOOR_R = "R"
-DOORS = (DOOR_T, DOOR_R)
+DOOR_W = "W"
+DOORS = (DOOR_T, DOOR_R, DOOR_W)
 
 # --------------------------------------------------------------------------- #
 # RECORDED-FEATURE constants — ANALYSIS ONLY (prereg §9 addendum, 2026-08-04).
@@ -127,6 +155,17 @@ CLOSES_CACHE_NAME = "_closes_cache.parquet"
 VOLUME_CACHE_NAME = "_volume_cache.parquet"
 FORESIGHT_ARTIFACT = ("site", "basketdata", "foresight_cascade.json")
 
+# W8 ignition sensors (prereg §10 addendum, 2026-08-05). The CONSTRUCTIONS live in
+# `engine/ignition_features.py` — a port of the frozen W8 stand-in battery whose fidelity is
+# pinned by `tests/test_ignition_features.py::TestPortFidelity`. Nothing is re-derived here.
+#
+# Frame: `data/baskets/ohlcv/*.parquet` — the SAME panel PR #4564 measured on, and the only
+# local source deep enough. The three breadth `_high_cache`/`_low_cache` parquets carry a
+# MEDIAN of 51 non-null sessions against the 293 an ATR21-percentile-over-252d read needs
+# (measured 2026-08-05: 33 of ~1,550 columns clear 252), so reading high/low from there would
+# null the coil on ~98% of flags. The ohlcv store covers 1,190 of the 1,495 universe names.
+OHLCV_DIR = ("data", "baskets", "ohlcv")
+
 #: Every recorded-feature key. Present on EVERY flag row (null when uncomputable) so a null is
 #: always a disclosed null and never an absent field.
 FEATURE_KEYS = (
@@ -137,19 +176,75 @@ FEATURE_KEYS = (
     "turnover_window",
     "foresight_stage",
     "foresight_covered",
+    "coil_compressed",
+    "coil_bars_compressed",
+    "coil_reason",
+    "theme_thrust_state",
+    "theme_thrust_frac",
+    "theme_thrust_reason",
 )
+
+#: Reason slugs a null coil / thrust block discloses. A feature that could not be computed says
+#: WHY in its own field; it never degrades to `False`, which would read as a measured negative.
+COIL_REASONS = ("ohlcv_absent", "no_bar_on_flag_date", "short_history", "read_failed")
+THRUST_REASONS = ("no_theme", "no_covered_member", "thin_membership", "short_history")
+
+
+#: Door W's recorded-feature keys (prereg §10). Same discipline, separate tuple: Door W's
+#: features come from a different source family (the Signal Episode Atlas), so mixing them
+#: into FEATURE_KEYS would make "every flag carries every key" false for Doors T/R.
+FEATURE_KEYS_W = (
+    "era",
+    "regime_bucket",
+    "archetype",
+    "atlas_event_date",
+    "atlas_event_on_cross",
+    "atlas_class",
+    "atlas_name_post_13w",
+    "atlas_name_post_13w_exc",
+    "atlas_arch_post_13w",
+    "atlas_arch_post_13w_exc",
+    "atlas_n_name",
+    "atlas_n_archetype",
+    "atlas_n_global",
+    "atlas_covered",
+)
+
+ATLAS_W_GRID = "W"           # the atlas grid Door W's own class lives on
+ATLAS_W_DIRECTION = "bull"   # ...and the side: a washout TURN is a bull cross, never a bear one
+ATLAS_W_HORIZON = "13w"      # the atlas horizon recorded (the W grid's short horizon)
 
 
 def null_features() -> dict[str, Any]:
-    """The all-null feature block. Every failure path returns exactly this shape."""
+    """The all-null feature block. Every failure path returns exactly this shape.
+
+    ``coil_compressed`` and ``theme_thrust_state`` are ``None`` here, never ``False``/``"quiet"``:
+    an uncomputable coil is not an uncompressed name and an unreadable theme is not a quiet
+    theme. ``foresight_covered`` is the one deliberate ``False`` — it is a COVERAGE flag, not a
+    feature, and its companion ``foresight_stage`` carries that block's null.
+    """
     out: dict[str, Any] = {k: None for k in FEATURE_KEYS}
     out["foresight_covered"] = False
+    return out
+
+
+def null_features_w() -> dict[str, Any]:
+    """The all-null Door W feature block. Every failure path returns exactly this shape."""
+    out: dict[str, Any] = {k: None for k in FEATURE_KEYS_W}
+    out["atlas_covered"] = False
     return out
 
 
 # --------------------------------------------------------------------------- #
 # paths
 # --------------------------------------------------------------------------- #
+def data_root(root: Path | None = None) -> Path:
+    """The data root the organ readers take. Kept as ``<repo>/data`` — the same literal
+    :func:`ledger_dir` and the close-cache readers already use — so one repo root always
+    resolves to one data root inside this module."""
+    return Path(root or ROOT) / "data"
+
+
 def ledger_dir(root: Path | None = None) -> Path:
     return Path(root or ROOT) / "data" / "prophet_doors"
 
@@ -432,26 +527,33 @@ def theme_membership(root: Path | None = None, *, asof: pd.Timestamp | None = No
 # --------------------------------------------------------------------------- #
 # completed-bucket helper (PIT: never fire off the in-progress resample tail)
 # --------------------------------------------------------------------------- #
-def completed_tf(c: pd.Series, n: int) -> tuple[pd.Series, pd.Series]:
+def completed_tf(c: pd.Series, n: int, market: str = "US") -> tuple[pd.Series, pd.Series]:
     """``confluence_tiers._tf_bars(c, n)`` with the IN-PROGRESS tail bucket dropped.
 
-    `_tf_bars` resamples on an ``{n}B`` grid whose bins are labelled by bin START, so the
-    right-label truncation `confluence_tiers._completed_resample` uses for W-FRI / 2W-FRI
-    (labelled by period END) does not transfer. A bin is provably CLOSED whenever a LATER bin
-    already holds data, so only the FINAL bin needs a test: it closed once the tape printed
-    through its last business day (label + n-1 business days). A holiday inside that bin makes
-    the test conservative — the bin is held open one extra session rather than fired early,
-    which is the correct direction for a point-in-time gate.
+    Every bucket but the last is provably CLOSED (a LATER bucket already holds data), so only
+    the FINAL one needs a test. Under the ABSOLUTE session anchor (era abs-session-2026-08-06)
+    that test is exact arithmetic rather than a calendar guess: a bucket spans reference
+    positions ``[b*n, b*n+n-1]``, so it has closed exactly when the tape's last session sits on
+    its LAST position — ``session_positions(last_obs) % n == n - 1``.
+
+    THIS FUNCTION READS ``_tf_bars``' INDEX. Before the anchor repair that index was pandas'
+    ``{n}B`` bin LABEL (the bin START), and the closing test was "label + n-1 business days
+    <= last_obs". It is now each bucket's LAST OBSERVED SESSION, which would make that same
+    expression drop a bucket that had in fact closed — silently delaying every Door R fire by
+    a session. Pinned by tests/test_prophet_doors.py::test_closed_tail_bucket_is_kept.
+
+    Still conservative in the same direction as before: a name that did not trade on its
+    bucket's final reference session keeps that bucket provisional one extra session rather
+    than firing early, which is the correct side for a point-in-time gate.
 
     This is the guard behind `cascade()`'s ``provisional`` flag (T3 repaints at a measured
     23.8% US because it IS read off the incomplete tail). Door R refuses to repaint.
     """
-    s, known = _tf_bars(c, n)
+    s, known = _tf_bars(c, n, market)
     if len(s) == 0:
         return s, known
-    last_obs = c.index.max()
-    tail_close = s.index[-1] + pd.tseries.offsets.BDay(n - 1)
-    if last_obs < tail_close:
+    last_pos = int(session_positions(c.index[-1:], market)[0])
+    if last_pos % n != n - 1:                 # the final bucket is still taking sessions
         return s.iloc[:-1], known.iloc[:-1]
     return s, known
 
@@ -530,6 +632,208 @@ def door_r_legs(v: dict | None, close: pd.Series) -> dict:
 
 
 # --------------------------------------------------------------------------- #
+# Door W (washout-turn) — the class the SEA census found Prophet blind to
+# --------------------------------------------------------------------------- #
+def door_w_aligned(close: pd.Series) -> dict:
+    """Faster-grid alignment at fire time — a PURE recompute, zero artifact dependency.
+
+    Each grid in :data:`WASHOUT_ALIGN_GRIDS` is resampled by `stock_events.grid_series`
+    (COMPLETED buckets only — the 2B/3B trailing bucket is dropped when the session count is
+    not an exact multiple of n) and read through the canon RSI-MACD via
+    `stock_events._line_sig`. The leg holds when ``line > signal`` on that grid's LAST
+    COMPLETED bar.
+
+    RECOMPUTED, NOT READ. `site/stockdata/event_atlas.json` and
+    `data/stock_events/` already carry an ``align_class``, and reading either would make Door
+    W's fire set depend on where those steps sit in the nightly DAG. A door whose fire
+    condition moves with step ordering is not a frozen door, so the alignment is derived from
+    price on the spot — same canon math, same completed-bar law, no ordering dependency.
+
+    DEFINITE-TRUE ONLY (the `stock_events` ``bull_state`` convention): a grid that cannot be
+    read (too little history, all-NaN warm-up) records ``None`` and is NOT an aligned leg —
+    an unreadable grid must never pass as a bullish one.
+
+    Returns ``{"align_2b", "align_3b", "align_class", "aligned"}``; ``align_class`` is the
+    count of definite-True legs, matching the SEA taxonomy's align_class for a W-grid event.
+    """
+    out: dict[str, Any] = {"align_2b": None, "align_3b": None,
+                           "align_class": 0, "aligned": False}
+    try:
+        from engine import stock_events as _se
+    except Exception as e:  # noqa: BLE001 — an organ import failure closes the door, quietly
+        log.debug("prophet_doors: stock_events unimportable (%s)", e)
+        return out
+    try:
+        daily = pd.to_numeric(close, errors="coerce").dropna().sort_index()
+        if daily.empty:
+            return out
+        n_true = 0
+        for grid in WASHOUT_ALIGN_GRIDS:
+            key = f"align_{grid.lower()}"
+            bars = _se.grid_series(daily, grid)
+            if bars is None or len(bars) < _se.MIN_DEPTH_OBS:
+                continue
+            line, sig = _se._line_sig(bars)
+            if len(line) == 0:
+                continue
+            lv, sv = float(line.iloc[-1]), float(sig.iloc[-1])
+            if lv != lv or sv != sv:                     # NaN leg -> stays None
+                continue
+            out[key] = bool(lv > sv)
+            n_true += 1 if out[key] else 0
+        out["align_class"] = int(n_true)
+        out["aligned"] = bool(n_true == len(WASHOUT_ALIGN_GRIDS))
+    except Exception as e:  # noqa: BLE001 — one bad series must never kill the nightly door
+        log.debug("prophet_doors: door W alignment failed (%s)", e)
+        return {"align_2b": None, "align_3b": None, "align_class": 0, "aligned": False}
+    return out
+
+
+def washout_universe(droot: Path) -> tuple[dict[str, list[str]], dict]:
+    """({symbol: basket_ids}, disclosure) — the `mtf_upturn` organ universe, or a DISCLOSED
+    empty when its membership artifact is absent.
+
+    FAIL-SOFT + DISCLOSED, for the same reason Door T refuses a stale theme artifact:
+    `mtf_upturn._build_universe` returns its hardcoded ALWAYS_INCLUDE list (Mag7 + SPDRs +
+    index ETFs) when `data/baskets/membership.json` is missing, and a Door W fired over 30
+    hardcoded ETFs is a different door — not a degraded version of this one. So the artifact's
+    absence emits NOTHING and prints why.
+    """
+    disc: dict[str, Any] = {"source": "/".join(WASHOUT_UNIVERSE_SOURCE), "ok": False,
+                            "universe_n": 0, "reason": None}
+    p = Path(droot).joinpath(*WASHOUT_UNIVERSE_SOURCE)
+    if not p.exists():
+        disc["reason"] = ("basket membership artifact absent — Door W emitted nothing tonight "
+                          "(the ALWAYS_INCLUDE fallback universe would be a different door)")
+        return {}, disc
+    try:
+        from engine.mtf_upturn import _build_universe
+    except Exception as e:  # noqa: BLE001
+        disc["reason"] = (f"mtf_upturn unimportable ({type(e).__name__}) — "
+                          "Door W emitted nothing tonight")
+        return {}, disc
+    try:
+        uni = _build_universe(Path(droot))
+    except Exception as e:  # noqa: BLE001
+        disc["reason"] = (f"universe build failed ({type(e).__name__}) — "
+                          "Door W emitted nothing tonight")
+        return {}, disc
+    disc["ok"] = True
+    disc["universe_n"] = len(uni)
+    if not uni:
+        disc["reason"] = "membership artifact carries no members — Door W emitted nothing tonight"
+    return uni, disc
+
+
+def door_w_candidates(root: Path | None = None) -> dict:
+    """Evaluate Door W over the whole organ universe.
+
+    Returns ``{"candidates": [(sort_key, ticker, fire_receipts), ...], "disclosure": {...}}``.
+
+    THE THREE LEGS (prereg §10.1, frozen):
+      W1  `engine.washout_turn`'s own per-symbol evaluation says **WASHOUT_TURN**. The state,
+          the depth gate and the graduation/failure exits are the ORGAN's, called through its
+          public :func:`~engine.washout_turn.compute_symbol_washout` on the organ's own closes
+          ladder (`mtf_upturn._load_close` preferred store + the #4663 `_deepen_close`
+          prepend-splice for the depth legs). Never reimplemented here.
+      W2  The cross is **FRESH**: ``weeks_since_cross <= WASHOUT_FRESH_WEEKS``. Door W records
+          ENTRIES into the class, not standing membership of it — a name that has sat in
+          WASHOUT_TURN for two months is a state, and re-recording it every night would grade
+          the same episode dozens of times.
+      W3  **Full MTF alignment**: :func:`door_w_aligned` — both faster canon grids bull on
+          their last COMPLETED bars.
+
+    Nothing here reads `site/` or `data/stock_events/`, so Door W has no artifact-ordering
+    dependency inside the nightly DAG. One bad name is skipped and counted, never fatal.
+    """
+    t0 = time.time()
+    droot = data_root(root)
+    uni, disc = washout_universe(droot)
+    disc.update({"evaluated": 0, "skipped": 0, "state_turn": 0, "fresh": 0, "aligned": 0,
+                 "asof_max": None, "asof_mismatch": 0,
+                 "fresh_weeks_max": WASHOUT_FRESH_WEEKS,
+                 "align_grids": list(WASHOUT_ALIGN_GRIDS), "runtime_s": None})
+    out: dict[str, Any] = {"candidates": [], "disclosure": disc}
+    if not uni:
+        disc["runtime_s"] = round(time.time() - t0, 1)
+        return out
+    try:
+        from engine.mtf_upturn import _load_close
+        from engine.washout_turn import STATE_TURN, _deepen_close, compute_symbol_washout
+    except Exception as e:  # noqa: BLE001
+        disc["ok"] = False
+        disc["reason"] = (f"washout organ unimportable ({type(e).__name__}) — "
+                          "Door W emitted nothing tonight")
+        disc["runtime_s"] = round(time.time() - t0, 1)
+        return out
+
+    for sym, basket_ids in sorted(uni.items()):
+        try:
+            close = _load_close(sym, droot)
+            if close is None:
+                disc["skipped"] += 1
+                continue
+            disc["evaluated"] += 1
+            rec = compute_symbol_washout(close, _deepen_close(sym, close, droot))
+        except Exception as e:  # noqa: BLE001 — one bad name never kills the pass
+            log.debug("prophet_doors: door W evaluate failed for %s (%s)", sym, e)
+            disc["skipped"] += 1
+            continue
+        if not rec or rec.get("state") != STATE_TURN:
+            continue
+        disc["state_turn"] += 1
+
+        weeks = rec.get("weeks_since_cross")
+        if not (isinstance(weeks, (int, float)) and not isinstance(weeks, bool)
+                and 0 <= int(weeks) <= WASHOUT_FRESH_WEEKS):
+            continue
+        disc["fresh"] += 1
+
+        al = door_w_aligned(close)
+        if not al["aligned"]:
+            continue
+        disc["aligned"] += 1
+
+        through = rec.get("data_through")
+        if through and (disc["asof_max"] is None or str(through) > disc["asof_max"]):
+            disc["asof_max"] = str(through)
+        depth = rec.get("depth_pctile")
+        try:
+            depth_key = float(depth)
+        except (TypeError, ValueError):
+            depth_key = float("inf")            # an unreadable depth sorts LAST, never first
+        if depth_key != depth_key:
+            depth_key = float("inf")
+        out["candidates"].append((
+            depth_key, str(sym),
+            {
+                "state": rec.get("state"),
+                "since": rec.get("since"),
+                "weeks_since_cross": int(weeks),
+                "depth_pctile": depth,
+                "depth_pctile_at_cross": rec.get("depth_pctile_at_cross"),
+                "align_class": al["align_class"],
+                "align_2b": al["align_2b"],
+                "align_3b": al["align_3b"],
+                "weekly_cb": rec.get("weekly_cb"),
+                "drawdown_pct": rec.get("drawdown_pct"),
+                "stoch_k": rec.get("stoch_k"),
+                "stoch_d": rec.get("stoch_d"),
+                "history_weeks": rec.get("history_weeks"),
+                "history_start": rec.get("history_start"),
+                "data_through": through,
+                "basket_ids": list(basket_ids or []),
+            },
+        ))
+
+    # ``asof_run`` / ``asof_mismatch`` are filled by :func:`emit`, which is the only caller
+    # that knows the run's date (the close cache's last bar). They are declared in the
+    # disclosure shape above so a reader never has to tell "absent" from "zero".
+    disc["runtime_s"] = round(time.time() - t0, 1)
+    return out
+
+
+# --------------------------------------------------------------------------- #
 # dedupe
 # --------------------------------------------------------------------------- #
 def _sessions_since(index: pd.DatetimeIndex, prior_date: Any, asof: pd.Timestamp) -> int | None:
@@ -587,6 +891,17 @@ class _RecordedFeatures:
         Admission-day share volume against the name's OWN recent history.
     ``foresight_stage`` / ``foresight_covered``
         The Thematic Foresight Desk's stage for the flag's theme, when the desk covers it.
+    ``coil_compressed`` / ``coil_bars_compressed`` / ``coil_reason``
+        The W8 S-COIL compression state for the flag's own name at the flag bar, and the
+        compressed-session count in the trailing 21. Null + a reason slug when uncomputable.
+    ``theme_thrust_state`` / ``theme_thrust_frac`` / ``theme_thrust_reason``
+        The W8 S-THRUST-LAG thrust reading for the flag's own theme at the flag bar.
+
+    RUNTIME, ignition. The two W8 features read `data/baskets/ohlcv/<ticker>.parquet` lazily,
+    once per ticker per run, and each theme's thrust is computed once and shared by every flag
+    in it. A night is bounded by (flags) + (members of the <= TOP_K_THEMES hot themes) distinct
+    reads; measured 2026-08-05 at ~3.3 ms/ticker and ~200 tickers worst case, i.e. under a
+    second on top of a run whose universe pass already dominates it.
     """
 
     def __init__(self, root: Path, px: pd.DataFrame, members: dict[str, dict],
@@ -601,6 +916,12 @@ class _RecordedFeatures:
         self._relay_disc: dict[str, Any] = {"consulted": False}
         self._vol_disc: dict[str, Any] = {"consulted": False}
         self._fs_disc: dict[str, Any] = {"consulted": False}
+        self._asof = px.index[-1] if px is not None and len(px.index) else None
+        # Per-run caches. The OHLC frames are shared by BOTH ignition features (a theme's
+        # thrust re-reads the same members a coil read may already have loaded) and the thrust
+        # answer is identical for every flag in a theme, so each theme is computed once.
+        self._ohlcv_cache: dict[str, tuple[pd.DataFrame | None, str | None]] = {}
+        self._thrust_cache: dict[str, dict[str, Any]] = {}
 
     # ---- inputs (lazy) ---------------------------------------------------- #
     def _breakouts(self) -> pd.DataFrame:
@@ -737,6 +1058,168 @@ class _RecordedFeatures:
             out["turnover_pctile"] = round(float((w <= float(w.iloc[-1])).mean()), 4)
         return out
 
+    # ---- W8 ignition sensors (prereg §10 addendum, 2026-08-05) ------------- #
+    def _ohlcv(self, ticker: str) -> tuple[pd.DataFrame | None, str | None]:
+        """``(close/high/low frame ending ON the flag bar, None)`` or ``(None, reason)``.
+
+        NEVER IMPUTED, same rule as :meth:`_turnover`. A store that stops before the flag bar
+        has no ignition state to report FOR the flag bar, and carrying the last available
+        session forward would date-shift the feature onto a bar the name did not trade. That is
+        a disclosed ``no_bar_on_flag_date``, not a silent stale read.
+
+        HOLES ARE DROPPED, NOT HELD — a stated delta from the stand-in, which read a panel where
+        a hole stayed NaN. Held as NaN, every rolling window covering the hole returns NaN, and
+        because :func:`ignition_features.coil_compression` is a boolean AND that lands as
+        ``False`` — a fabricated "not compressed" for a name nobody measured. Dropping instead
+        computes over the bars the name actually traded, at the cost of a window that spans more
+        calendar time than sessions. Neither is free; this one cannot manufacture a negative.
+        (The W8 frame is survivor-lean — 119 of 120 sampled names carry bars to the final
+        session — so this bites rarely, but it is stated rather than assumed away.)
+        """
+        key = str(ticker)
+        if key in self._ohlcv_cache:
+            return self._ohlcv_cache[key]
+        res: tuple[pd.DataFrame | None, str | None]
+        p = Path(self._root).joinpath(*OHLCV_DIR, f"{key}.parquet")
+        if self._asof is None:
+            res = (None, "no_bar_on_flag_date")
+        elif not p.exists():
+            res = (None, "ohlcv_absent")
+        else:
+            try:
+                d = pd.read_parquet(p, columns=["close", "high", "low"])
+                d.index = pd.to_datetime(d.index)
+                d = d.sort_index().dropna()
+                d = d.loc[d.index <= self._asof]
+                res = (d, None) if (len(d) and d.index[-1] == self._asof) \
+                    else (None, "no_bar_on_flag_date")
+            except Exception as e:  # noqa: BLE001 — an unreadable store is a null, not a crash
+                log.debug("prophet_doors: ohlcv read failed for %s (%s)", key, e)
+                res = (None, "read_failed")
+        self._ohlcv_cache[key] = res
+        return res
+
+    def _coil(self, ticker: str) -> dict[str, Any]:
+        """S-COIL compression state for the flag's own name, at the flag bar.
+
+        ``coil_compressed`` is the INSTANTANEOUS state — ATR21 percentile against its own 252d
+        history below p25, price above a RISING 50dMA. That is exactly the leg S-THRUST-LAG
+        used to pick its candidates (``comp_np[i, j]`` on the thrust bar), so a recorded pair
+        reproduces that sensor's candidate test.
+
+        ``coil_bars_compressed`` is the compressed-session count inside the trailing
+        ``COMP_LOOKBACK`` (21). ``count >= COMP_MIN`` (10) is S-COIL's own ARMED run, so the
+        count reconstructs that state as well while keeping the distance from the threshold a
+        boolean would have thrown away.
+
+        WHAT THIS IS NOT: the flag bar is not S-COIL's graded event. S-COIL grades the RELEASE
+        bar (first close above the prior 21d high out of an armed run); a door flag is its own
+        trigger and coincides with a release only by accident. This records the ARMING state,
+        which ESX §9 / DT-R5 ban as a standalone SURFACED or GRADED read — hence no surface, no
+        rank, no grade, ledger only (prereg §10.3).
+
+        Below ``COIL_MIN_SESSIONS`` the block is null with ``short_history``. That floor is not
+        cosmetic: :func:`ignition_features.coil_compression` returns BOOLEANS, so a bar whose
+        ATR percentile is still warming up reads ``False`` rather than NaN — a short name would
+        otherwise record a confident "not compressed, 0 bars" that nobody measured.
+        """
+        out: dict[str, Any] = {"coil_compressed": None, "coil_bars_compressed": None,
+                               "coil_reason": None}
+        d, reason = self._ohlcv(ticker)
+        if d is None:
+            out["coil_reason"] = reason
+            return out
+        tail = d.tail(ig.COIL_MIN_SESSIONS)
+        if len(tail) < ig.COIL_MIN_SESSIONS:
+            out["coil_reason"] = "short_history"
+            return out
+        key = str(ticker)
+        # One shared column label per frame — `coil_compression` combines the three frames
+        # elementwise, and pandas aligns on COLUMNS first, so "close"/"high"/"low" labels would
+        # align to nothing and silently produce an all-NaN (i.e. all-False) result.
+        c = tail[["close"]].rename(columns={"close": key})
+        h = tail[["high"]].rename(columns={"high": key})
+        lo = tail[["low"]].rename(columns={"low": key})
+        comp = ig.coil_compression(c, h, lo)
+        bars = ig.compressed_bars(comp)
+        out["coil_compressed"] = bool(comp[key].iloc[-1])
+        out["coil_bars_compressed"] = int(bars[key].iloc[-1])
+        return out
+
+    def _thrust(self, theme: Any) -> dict[str, Any]:
+        """S-THRUST-LAG thrust state for the flag's OWN theme, at the flag bar.
+
+        ``theme_thrust_frac`` — the fraction of the theme's covered members trading above their
+        own 20d high on the flag bar. ``theme_thrust_state`` — ``"thrusting"`` when that
+        fraction fires the stand-in's thrust event on the flag bar (above ``THRUST_HI`` now,
+        below ``THRUST_LO`` within the prior ``THRUST_WIN``, de-bounced to the run's first
+        bar), else ``"quiet"``.
+
+        MOST FLAGS WILL READ "quiet", and that is the point rather than a defect: the surviving
+        S-THRUST-LAG arm measured coiled members of a theme ON ITS THRUST BAR (n=228) against
+        coiled names in non-thrusting themes. Recording a standing "frac is high" condition
+        instead would accrue a population #4564 never graded, and the forward comparison would
+        not be a comparison.
+
+        COVERAGE IS STRICT, matching :meth:`_breakouts`: a member counts only when its close
+        AND high are complete across the whole trailing window. A hole would make the 20d-high
+        comparison read False and quietly deflate the fraction for a name nobody could measure.
+        ``n < THRUST_MIN_MEMBERS`` (6) is a disclosed ``thin_membership`` null — the stand-in's
+        own readability floor.
+
+        PIT DELTA, disclosed. The stand-in honoured each basket's ``added``/``removed`` dates.
+        `site/marketdata/subsector_rotation.json` is a nightly SNAPSHOT carrying no membership
+        history, so the fraction is read over the theme's CURRENT member set across the trailing
+        window. The shipped relay feature already has this property; it is stated, not fixed
+        here, because inventing membership dates the artifact never recorded would be worse.
+        """
+        out: dict[str, Any] = {"theme_thrust_state": None, "theme_thrust_frac": None,
+                               "theme_thrust_reason": None}
+        if not theme:
+            out["theme_thrust_reason"] = "no_theme"      # Door R name in no hot theme
+            return out
+        key = str(theme)
+        if key in self._thrust_cache:
+            return dict(self._thrust_cache[key])
+        res = self._thrust_uncached(key)
+        self._thrust_cache[key] = res
+        return dict(res)
+
+    def _thrust_uncached(self, theme: str) -> dict[str, Any]:
+        out: dict[str, Any] = {"theme_thrust_state": None, "theme_thrust_frac": None,
+                               "theme_thrust_reason": None}
+        need = ig.THRUST_MIN_SESSIONS
+        if self._asof is None or len(self._px.index) < need:
+            out["theme_thrust_reason"] = "short_history"
+            return out
+        # The doors' own price index is the canonical session calendar for this lane; members
+        # are reindexed onto it so a member's private holiday cannot lengthen the window.
+        idx = self._px.index[-need:]
+        closes: dict[str, pd.Series] = {}
+        highs: dict[str, pd.Series] = {}
+        for m in self._by_theme.get(theme, ()):
+            d, _ = self._ohlcv(m)
+            if d is None:
+                continue
+            closes[m] = d["close"].reindex(idx)
+            highs[m] = d["high"].reindex(idx)
+        if not closes:
+            out["theme_thrust_reason"] = "no_covered_member"
+            return out
+        close = pd.DataFrame(closes, index=idx)
+        high = pd.DataFrame(highs, index=idx)
+        covered = [c for c in close.columns
+                   if bool(close[c].notna().all()) and bool(high[c].notna().all())]
+        if len(covered) < ig.THRUST_MIN_MEMBERS:
+            out["theme_thrust_reason"] = "thin_membership"
+            return out
+        a20 = ig.above_20d_high(close.loc[:, covered], high.loc[:, covered])
+        frac = a20.sum(axis=1) / float(len(covered))
+        fired = ig.thrust_fired(frac)
+        out["theme_thrust_frac"] = round(float(frac.iloc[-1]), 4)
+        out["theme_thrust_state"] = "thrusting" if bool(fired.iloc[-1]) else "quiet"
+        return out
+
     def _stage(self, theme: Any) -> dict[str, Any]:
         """Foresight Desk stage for the flag's theme, or a disclosed non-coverage."""
         out: dict[str, Any] = {"foresight_stage": None, "foresight_covered": False}
@@ -753,7 +1236,8 @@ class _RecordedFeatures:
         if not self._enabled:
             return {}
         try:
-            return {**self._relay(ticker, theme), **self._turnover(ticker), **self._stage(theme)}
+            return {**self._relay(ticker, theme), **self._turnover(ticker), **self._stage(theme),
+                    **self._coil(ticker), **self._thrust(theme)}
         except Exception as e:  # noqa: BLE001 — an analysis feature may never break the lane
             log.warning("prophet_doors: recorded features failed for %s (%s)", ticker, e)
             return null_features()
@@ -762,7 +1246,147 @@ class _RecordedFeatures:
         """What each feature source actually offered tonight — the "nulls printed" receipt."""
         return {"enabled": self._enabled, "keys": list(FEATURE_KEYS),
                 "relay": dict(self._relay_disc), "turnover": dict(self._vol_disc),
-                "foresight": dict(self._fs_disc)}
+                "foresight": dict(self._fs_disc), "ignition": self._ignition_disclosure()}
+
+    def _ignition_disclosure(self) -> dict[str, Any]:
+        """Per-run receipt for the W8 ignition features: what the OHLCV store actually offered.
+
+        Built from the caches the night's own reads populated, so it counts the names that were
+        ASKED for rather than a store-wide statistic that no flag depended on.
+        """
+        asked = len(self._ohlcv_cache)
+        reasons: dict[str, int] = {}
+        for _, reason in self._ohlcv_cache.values():
+            if reason:
+                reasons[reason] = reasons.get(reason, 0) + 1
+        disc: dict[str, Any] = {
+            "consulted": bool(asked),
+            "source": "/".join(OHLCV_DIR) + "/<ticker>.parquet",
+            "tickers_read": asked,
+            "tickers_ok": asked - sum(reasons.values()),
+            "null_reasons": reasons,
+            "coil_min_sessions": ig.COIL_MIN_SESSIONS,
+            "thrust_min_sessions": ig.THRUST_MIN_SESSIONS,
+            "thrust_min_members": ig.THRUST_MIN_MEMBERS,
+            "themes_read": {t: dict(v) for t, v in self._thrust_cache.items()},
+            "reason": None,
+        }
+        if asked and disc["tickers_ok"] == 0:
+            disc["reason"] = ("no flagged name resolved in the OHLCV store — "
+                              "coil and thrust null on every flag tonight")
+        return disc
+
+
+class _WashoutFeatures:
+    """Door W's per-flag analysis features — the Signal Episode Atlas matching-episode read.
+
+    ZERO EFFECT ON THE DOOR, structurally, for the same reason :class:`_RecordedFeatures` has
+    none on Doors T/R: :func:`emit` settles every W fire condition, the frozen depth priority
+    sort, the cap and the dedupe, and only THEN calls :meth:`compute` on the rows it already
+    kept. Nothing here can add, drop, or reorder a flag, and every failure path returns
+    :func:`null_features_w`.
+
+    SOURCE. `engine.event_atlas` — the SAME hierarchical shrinkage receipt the stock page
+    renders, on the name's most recent **W-grid BULL** event. The direction is pinned:
+    `event_atlas.live_state` quotes whichever event on the grid is LATEST, which for a name
+    that printed a bear cross after its washout turn (ATO on 2026-07-31 is a live instance)
+    would file a bear-class posterior under a bull entry — a different episode wearing the
+    flag's name. ``atlas_event_on_cross`` then discloses whether the quoted bull event IS the
+    door's own cross bar or an older one, so a stale quote is visible rather than assumed.
+
+    The atlas is a MEASUREMENT artifact: class-conditional base rates over a survivor-biased
+    backfill, never a forecast. They are recorded so the promotion read can ask whether the
+    class posterior said anything about the forward outcome — the read is the ledger's, not
+    the atlas's. The event library may simply not exist yet, in which case every key is a
+    DISCLOSED null.
+
+    RUNTIME. Bounded: at most ``MAX_FLAGS_PER_DOOR`` (25) receipts a night, on ONE grid each;
+    the library frame and every class slice are memoised inside `event_atlas`.
+    """
+
+    def __init__(self, root: Path, *, enabled: bool = True) -> None:
+        self._droot = data_root(root)
+        self._enabled = bool(enabled)
+        self._events: Any = None
+        self._disc: dict[str, Any] = {"consulted": False}
+        self._n_covered = 0
+        self._n_asked = 0
+
+    def _library(self):
+        """The memoised event library frame (loaded at most once per emit)."""
+        if self._events is None:
+            from engine import event_atlas as _ea
+            self._events = _ea.events(self._droot)
+        return self._events
+
+    def compute(self, ticker: str, since: Any = None) -> dict[str, Any]:
+        """The full feature block for one KEPT flag. ``{}`` when features are disabled.
+
+        ``since`` is the washout organ's own cross date, used ONLY to set
+        ``atlas_event_on_cross``; it never selects or filters anything.
+        """
+        if not self._enabled:
+            return {}
+        out = null_features_w()
+        try:
+            from engine import event_atlas as _ea
+            self._n_asked += 1
+            if not self._disc.get("consulted"):
+                self._disc = {"consulted": True, "source": "engine.event_atlas.receipt",
+                              "grid": ATLAS_W_GRID, "direction": ATLAS_W_DIRECTION,
+                              "horizon": ATLAS_W_HORIZON, "reason": None}
+            data = self._library()
+            if data is None or data.empty:
+                self._disc["reason"] = ("event library absent or empty — atlas features null "
+                                        "on every Door W flag")
+                return out
+            rows = data[(data["ticker"] == ticker)
+                        & (data["grid"] == ATLAS_W_GRID)
+                        & (data["direction"] == ATLAS_W_DIRECTION)]
+            if rows.empty:
+                self._disc["reason"] = self._disc.get("reason") or (
+                    f"no {ATLAS_W_GRID}/{ATLAS_W_DIRECTION} event in the library for at least "
+                    "one flagged name — atlas features null there")
+                return out
+            latest = rows.sort_values("date").iloc[-1]
+            when = pd.Timestamp(latest["date"])
+            out["era"] = str(latest.get("era") or "") or None
+            out["regime_bucket"] = str(latest.get("regime_bucket") or "") or None
+            out["archetype"] = str(latest.get("archetype_at_event") or "") or None
+            out["atlas_event_date"] = str(when.date())
+            out["atlas_event_on_cross"] = (None if since in (None, "")
+                                           else bool(str(when.date()) == str(since)))
+            class_key = {a: (int(latest[a]) if a == "align_class" else str(latest[a]))
+                         for a in _ea.CLASS_AXES}
+            out["atlas_class"] = "|".join(str(class_key[a]) for a in _ea.CLASS_AXES)
+            rec = _ea.receipt(
+                ticker, ATLAS_W_GRID, ATLAS_W_DIRECTION, class_key,
+                df=data, data_root=self._droot,
+                archetype=out["archetype"] or "archetype_unknown",
+                sector=str(latest.get("sector") or "sector_unknown"),
+            )
+            h = (rec.get("horizons") or {}).get(ATLAS_W_HORIZON)
+            if h:
+                name_post, arch_post = h.get("name_post") or {}, h.get("arch_post") or {}
+                out["atlas_name_post_13w"] = name_post.get("med")
+                out["atlas_name_post_13w_exc"] = name_post.get("med_exc")
+                out["atlas_arch_post_13w"] = arch_post.get("med")
+                out["atlas_arch_post_13w_exc"] = arch_post.get("med_exc")
+                out["atlas_n_name"] = h.get("n_name")
+                out["atlas_n_archetype"] = h.get("n_archetype")
+                out["atlas_n_global"] = h.get("n_global")
+                out["atlas_covered"] = True
+                self._n_covered += 1
+        except Exception as e:  # noqa: BLE001 — an analysis feature may never break the lane
+            log.warning("prophet_doors: door W features failed for %s (%s)", ticker, e)
+            return null_features_w()
+        return out
+
+    def disclosure(self) -> dict[str, Any]:
+        """What the atlas actually offered tonight — the "nulls printed" receipt."""
+        return {"enabled": self._enabled, "keys": list(FEATURE_KEYS_W),
+                "atlas": {**self._disc, "n_asked": self._n_asked,
+                          "n_covered": self._n_covered}}
 
 
 # --------------------------------------------------------------------------- #
@@ -770,17 +1394,23 @@ class _RecordedFeatures:
 # --------------------------------------------------------------------------- #
 def emit(root: Path | None = None, *, dry_run: bool = False,
          universe: pd.DataFrame | None = None, features: bool = True) -> dict:
-    """Evaluate both doors on the committed caches and (unless ``dry_run``) accrue the flags.
+    """Evaluate every door on the committed caches and (unless ``dry_run``) accrue the flags.
 
     Returns the run document: per-door flag rows, overflow counts, dedupe counts, the theme
-    disclosure, and timing. ``dry_run=True`` writes NOTHING anywhere — it is the PR-receipt
-    and local-preview path. On the nightly lane the ledger append is additionally gated by
-    :func:`append_flags`, so an off-lane nightly invocation is also a no-op.
+    and washout disclosures, and timing. ``dry_run=True`` writes NOTHING anywhere — it is the
+    PR-receipt and local-preview path. On the nightly lane the ledger append is additionally
+    gated by :func:`append_flags`, so an off-lane nightly invocation is also a no-op.
 
     ``features=False`` records no analysis feature block. It exists so the fire set can be
-    compared with features on and off (``TestFireInvariance``); the two MUST be identical,
-    because the feature computer only ever sees rows the doors already kept. Production always
-    runs with features on.
+    compared with features on and off (``TestFireInvariance`` / ``TestDoorWFireInvariance``);
+    the two MUST be identical, because the feature computers only ever see rows the doors
+    already kept. Production always runs with features on.
+
+    ``universe`` overrides only the close-cache frame Doors T/R evaluate. Door W reads the
+    ORGAN universe (`mtf_upturn`) off ``root`` instead, because the washout organ's own
+    closes ladder is where its state is defined — a different universe would be a different
+    door. It shares the run's ``asof`` and dedupe calendar so one night is one date across all
+    three doors.
     """
     t0 = time.time()
     root = Path(root or ROOT)
@@ -789,15 +1419,18 @@ def emit(root: Path | None = None, *, dry_run: bool = False,
         "schema": SCHEMA,
         "run_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
         "asof": None, "n_universe": 0,
-        "flags": {DOOR_T: [], DOOR_R: []},
-        "overflow": {DOOR_T: 0, DOOR_R: 0},
-        "deduped": {DOOR_T: 0, DOOR_R: 0},
-        "candidates": {DOOR_T: 0, DOOR_R: 0},
-        "theme_source": {}, "feature_source": {}, "appended": 0, "dry_run": bool(dry_run),
+        "flags": {d: [] for d in DOORS},
+        "overflow": {d: 0 for d in DOORS},
+        "deduped": {d: 0 for d in DOORS},
+        "candidates": {d: 0 for d in DOORS},
+        "theme_source": {}, "washout_source": {}, "feature_source": {},
+        "feature_source_w": {}, "appended": 0, "dry_run": bool(dry_run),
         "runtime_s": None,
     }
     if px is None or px.empty:
-        run["note"] = "universe cache empty — both doors emitted nothing"
+        # The run's date IS the close cache's last bar, so an empty cache leaves the night
+        # undatable — Door W is not evaluated either rather than accruing an undated row.
+        run["note"] = "universe cache empty — no door emitted anything"
         print("::warning title=prophet_doors::universe cache empty; no doors evaluated", flush=True)
         run["runtime_s"] = round(time.time() - t0, 1)
         return run
@@ -869,21 +1502,41 @@ def emit(root: Path | None = None, *, dry_run: bool = False,
                 },
             ))
 
+    # Door W runs its own pass over the ORGAN universe (see the docstring): a different
+    # universe and a different closes ladder, but the same asof, dedupe calendar, cap and
+    # ledger.
+    w_run = door_w_candidates(root)
+    w_cand, w_disc = w_run["candidates"], w_run["disclosure"]
+    run["washout_source"] = w_disc
+    if not w_disc.get("ok"):
+        print(f"::warning title=prophet_doors_washout::{w_disc.get('reason')}", flush=True)
+
     run["candidates"][DOOR_T] = len(t_cand)
     run["candidates"][DOOR_R] = len(r_cand)
+    run["candidates"][DOOR_W] = len(w_cand)
 
     # Deterministic priority BEFORE the cap, frozen in the prereg:
     #   Door T — hottest theme first, then the cascade's own entry-quality rank, then ticker.
     #   Door R — freshest re-arm (fewest ticks since the master cross) first, then ticker.
+    #   Door W — DEEPEST first (lowest depth_pctile), then ticker; an unreadable depth sorts
+    #            last so a missing percentile can never win a capped slot.
     t_cand.sort(key=lambda x: (x[0], x[1], x[2]))
     r_cand.sort(key=lambda x: (x[0], x[1]))
+    w_cand.sort(key=lambda x: (x[0], x[1]))
 
     prior = recent_by_door(load_flags(root), di, asof)
     asof_str = str(asof.date())
-    rows_by_door: dict[str, list[dict]] = {DOOR_T: [], DOOR_R: []}
+    # A Door W name whose own tape ends before the close cache's does not make the run date
+    # wrong, but it does date that row on a session the name had not printed. Counted, not
+    # swallowed.
+    w_disc["asof_run"] = asof_str
+    w_disc["asof_mismatch"] = sum(
+        1 for c in w_cand if c[2].get("data_through") and str(c[2]["data_through"]) != asof_str)
+    rows_by_door: dict[str, list[dict]] = {d: [] for d in DOORS}
     fx = _RecordedFeatures(root, px, members, enabled=features)
+    wfx = _WashoutFeatures(root, enabled=features)
 
-    for door, cands in ((DOOR_T, t_cand), (DOOR_R, r_cand)):
+    for door, cands in ((DOOR_T, t_cand), (DOOR_R, r_cand), (DOOR_W, w_cand)):
         kept: list[dict] = []
         for cand in cands:
             tk, feats = cand[-2], cand[-1]
@@ -899,9 +1552,13 @@ def emit(root: Path | None = None, *, dry_run: bool = False,
         # Recorded features are attached HERE — after every fire decision, the priority sort,
         # the cap and the dedupe are already settled, and only to rows that survived them
         # (≤ MAX_FLAGS_PER_DOOR per door). Nothing above this line can read them, which is what
-        # makes "features change no flag" structural rather than a promise (prereg §9).
+        # makes "features change no flag" structural rather than a promise (prereg §9/§10).
         for row in kept:
-            row["features"].update(fx.compute(row["ticker"], row["features"].get("theme")))
+            if door == DOOR_W:
+                row["features"].update(
+                    wfx.compute(row["ticker"], row["features"].get("since")))
+            else:
+                row["features"].update(fx.compute(row["ticker"], row["features"].get("theme")))
         rows_by_door[door] = kept
         run["flags"][door] = kept
         if run["overflow"][door]:
@@ -910,16 +1567,19 @@ def emit(root: Path | None = None, *, dry_run: bool = False,
                   f"{MAX_FLAGS_PER_DOOR}; {run['overflow'][door]} candidate(s) dropped "
                   f"(asof {asof_str})", flush=True)
 
-    all_rows = rows_by_door[DOOR_T] + rows_by_door[DOOR_R]
+    all_rows = [r for d in DOORS for r in rows_by_door[d]]
     run["feature_source"] = fx.disclosure()
+    run["feature_source_w"] = wfx.disclosure()
     run["runtime_s"] = round(time.time() - t0, 1)
     if not dry_run:
         run["appended"] = append_flags(all_rows, root)
         write_status({k: v for k, v in run.items() if k != "flags"} |
                      {"flag_tickers": {d: [r["ticker"] for r in rows_by_door[d]] for d in DOORS}},
                      root)
-    log.info("prophet_doors: asof=%s doorT=%d doorR=%d (overflow %d/%d, deduped %d/%d) %.1fs",
+    log.info("prophet_doors: asof=%s doorT=%d doorR=%d doorW=%d "
+             "(overflow %s, deduped %s) %.1fs",
              asof_str, len(rows_by_door[DOOR_T]), len(rows_by_door[DOOR_R]),
-             run["overflow"][DOOR_T], run["overflow"][DOOR_R],
-             run["deduped"][DOOR_T], run["deduped"][DOOR_R], run["runtime_s"])
+             len(rows_by_door[DOOR_W]),
+             "/".join(str(run["overflow"][d]) for d in DOORS),
+             "/".join(str(run["deduped"][d]) for d in DOORS), run["runtime_s"])
     return run

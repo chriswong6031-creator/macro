@@ -1,0 +1,111 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "GEO-2026-06-30-laggards",
+  "ticker": "GEO",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "GEO",
+    "as_of": "2026-06-30",
+    "lane": "laggards",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "GEO",
+    "lane": "laggards",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "mixed",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Industrials",
+    "excess_spy": 0.01676056295774142,
+    "excess_sector": 0.037660780779130265,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 5.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "DEAD_MONEY",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "GEO outperformed SPY but ended DEAD_MONEY after entering through the laggards lane. The supplied cause is mixed, and the record cannot determine whether modest relative resilience, sector support, or company-specific behavior dominated.",
+    "root_cause": "GEO outperformed SPY but ended DEAD_MONEY after entering through the laggards lane. The supplied cause is mixed, and the record cannot determine whether modest relative resilience, sector support, or company-specific behavior dominated.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The laggards and outcome books preserved a mixed but relatively favorable result, while the path-risk engine did not explain the DEAD_MONEY trajectory.",
+    "engines_credit": "The relative-outcome ledger gets credit; the laggard-reversion, Industrials-rotation, company-alpha, and path organs are evidential laggards.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "A mixed combination of company and systematic effects was the recorded explanation.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Clear peer-matched behavior would shift attribution away from company alpha.",
+        "evidence_refs": [
+          "outcome_cause=mixed",
+          "lane=laggards"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "entry_timing",
+        "factor": "",
+        "mechanism": "Existing board tenure indicates the pick was not newly surfaced on the stated pick date, which may affect the interpretation of entry freshness.",
+        "evidence_status": "corroborated",
+        "timing_status": "known_at_entry",
+        "counterfactual": "Evidence that the actionable entry was independently refreshed would weaken the stale-opportunity interpretation.",
+        "evidence_refs": [
+          "board_tenure_days=5.0"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The DEAD_MONEY state indicates that relative outperformance did not translate into a strong terminal path classification.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "A sustained liftoff would contradict the dead-money characterization.",
+        "evidence_refs": [
+          "terminal_state=DEAD_MONEY",
+          "excess_spy positive"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "SPY weakness may have allowed relative outperformance without meaningful absolute progress.",
+      "A laggard rebound may have begun but lacked persistence.",
+      "An Industrials move may have cushioned otherwise weak company behavior."
+    ],
+    "missing_evidence": [
+      "Absolute return and intraperiod path",
+      "Original board-entry timestamp and refresh events",
+      "Industrials and peer-relative returns",
+      "GEO-specific news, flows, and estimate changes"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "laggard_tenure_decay",
+        "feature": "Laggard-board tenure decay",
+        "measurement": "Relate board age and evidence refresh frequency to subsequent path quality for laggards-lane observations.",
+        "expected_direction": "Older unrefreshed observations should be more associated with dead-money paths.",
+        "falsifier": "Board tenure has no relationship with path quality after controlling for setup type.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-07",
+  "asof": "2026-08-07",
+  "ts": "2026-08-07T08:35:36+00:00"
+}

@@ -233,14 +233,44 @@ QV recreation here is structurally testing the model on the wrong population.
 ```
 engine/quant_lab/
   specs.py    vendor registry — disclosure provenance, per-leg fidelity, distortions
+              + METHODS registry (non-ranker proposals; see §6.1)
   legs.py     PIT leg computation (the two PIT stores only)
   score.py    percentile scoring; the three combination rules; the vendor-rule fit
   study.py    IC / decile / FDR harness reusing engine.validation
-  page.py     cheap payload assembler (reads the precomputed study)
+  page.py     cheap payload assembler (reads the precomputed study + method artifacts)
 scripts/build_quant_lab.py     the EXPENSIVE study — off the render path
 templates/quant_lab.html.j2    the surface
 tests/test_quant_lab.py        the honesty contract
+data/quant_lab/methods/*.json  per-method result artifacts (§6.1)
 ```
+
+### §6.1 The second shelf — methods that are not name-rankers
+
+The MODELS pipeline scores names: `legs → percentile → composite → rank-IC`. Some published
+methods make a claim of a different SHAPE — about *when* a strategy works, not *which* name to
+hold. They emit no per-name score, so there is no cross-section to rank and no rank-IC to
+compute; pushing one through this pipeline would invent a score the method never had.
+
+Those live in `specs.METHODS` and render as their own cards. Two rules make the shelf honest:
+
+1. **The spec holds the CLAIM; the artifact holds every NUMBER.** A method's measurements come
+   from `data/quant_lab/methods/<key>.json`, written by that method's own harness. A statistic
+   hand-typed into the registry outlives the recompute that would have corrected it, and the
+   registry cannot tell it went stale — so `test_method_specs_carry_no_numbers` fails the build
+   on any numeric literal in a METHODS spec.
+2. **A missing artifact claims nothing.** The card renders and says the measurement is absent
+   rather than letting the spec's prose imply a measurement that was never made.
+
+**Wave 1 entry — the regime-reliability engine** (external proposal, 2026-08-05). Rebuilt as an
+interaction test on the signal track record; NULL. Rulings RRC-R1 (the 16-signal composite
+monitor: REJECT-REDUNDANT + FORBIDDEN fusion path) and RRC-R2 (the reliability table: KILLED,
+construction-scoped) are in `research/DO_NOT_REBUILD.md`. Full adjudication:
+`research/REGIME_RELIABILITY_FACTOR_CROWDING_ADJUDICATION.md`; measurement:
+`reports/regime-reliability-phase0.md`.
+
+That card also carries the reusable half of the work — `engine/regime_conditioning_coverage.py`,
+which reports, per market-state measure, whether the record contains enough *separate months of
+each state* to support a conditional claim at all. It is the gate W2-C needs (§7).
 
 Render-budget placement: the study (12 rebalances × a full leg cross-section) runs in
 `scripts/build_quant_lab.py` and lands in `data/quant_lab/study.json`. `build_site.py`
@@ -253,12 +283,53 @@ reads that artifact and computes one live cross-section only.
 1. **W2-A · Widen the fundamentals universe toward the Russell 2000.** The §5 finding makes
    this the highest-value item by a distance; every other improvement is second-order until
    the model can be tested on the names it was built for.
+   **SHIPPED 2026-08-05** — `collectors/edgar.py:_universe_tickers()` now unions each
+   group's committed `constituents.parquet` with its closes cache across all four groups
+   (`russell_breadth` included; its closes cache is a gitignored CI artifact, so the
+   committed constituents table is what carries the R2000 on a fresh checkout). Universe
+   1,577 → 2,895; the frames-API request count scales with years×concepts, never tickers,
+   so the fetch cost is unchanged. Measured against the July candidates store: 1,268 of the
+   1,461 fundamentals-absent candidates become coverable; the 193 that remain are foreign
+   20-F/IFRS filers the us-gaap frames endpoint cannot serve (BABA/ASML/AZN class), funds/
+   crypto tickers with no filings, and a small tail of non-index US filers outside the four
+   tracked groups — each a separate lane, none reachable by widening this filter. The panel
+   itself advances on the nightly's weekly `fetch_panel` cache expiry; archetype labels
+   follow mechanically via `archetypes_history_refresh_if_stale()` (#4677). `edgar_eps`
+   shares the universe and widens for free (also frames-based). The §5/§6 "1,552" figures
+   and the committed study stamps describe the narrow-universe study and stay until the
+   study re-runs on the widened panel (that re-run is the remaining W2-A follow-through,
+   after which W2-F should re-stratify on the true small-cap band).
+
+   **Measured end-to-end (local rebuild, 2026-08-05).** Panel 1,552 → **2,826 tickers**
+   (22,458 → 35,953 rows, FY2009–2025); fetch wall-clock ~18 min, unchanged from the
+   narrow build as predicted. Archetype store rebuilt from it in 3.8 s → 2,826 tickers;
+   `heal_candidates_archetype` dry-run on 2026-07: **1,457 → 835 still-absent (622
+   filled)**.
+
+   **The next binding constraint is the PRICE universe, not the panel.** Of the 1,457,
+   1,221 gained panel rows but only 622 labeled, because the archetype store labels
+   100% of rows carrying a factor-table row (22,070/22,070) and only 46% of `fac_present
+   =False` rows (6,349/13,883) — the fac-less path withholds a label rather than
+   fabricating "mixed". 1,278 of the 1,316 never-factor-covered tickers are russell-only
+   names: `equity_factors._closes()` reads `_UNIVERSE_GROUPS["broad"]` = the three S&P
+   groups only, so R2000 names get no price → no mktcap → no factor row. Widening THAT
+   is not a mechanical follow-through — it re-percentiles every rank on a user-facing
+   surface across a 2× wider population, and `russell_breadth/_closes_cache.parquet` is
+   a gitignored CI artifact absent from fresh checkouts — so it needs its own charter.
+   The remaining 236 with no panel rows at all are foreign 20-F/IFRS filers, funds, and
+   crypto tickers, unreachable from the us-gaap frames endpoint.
 2. **W2-B · Point-in-time debt and cash on the annual spine.** Backfill `debt_cur` / `cash`
    into `fundamentals_panel` from the quarterly filed-date store so EV and invested capital
    stop depending on a ~49% debt column.
 3. **W2-C · Deep price history.** The in-tree close caches cap the study at 12 rebalances.
    The IC scorecard already reaches 2011 on an offline deep panel; point the Quant Lab at
-   the same cache to get a real regime sample.
+   the same cache to get a real regime sample. **Gate it, do not eyeball it:**
+   `engine.regime_conditioning_coverage.assess()` (§6.1) answers "is this a real regime
+   sample yet?" per market-state measure — coverage, states actually observed, and separate
+   months per state, because same-month rebalances share one market and are not independent
+   evidence. Today it passes on exactly one axis. Twelve rebalances inside one regime is the
+   §4 "one market mood" limitation restated; this is the instrument that says when that has
+   stopped being true.
 4. **W2-D · Full 13F aggregate** — the only route to a real QVO. Until then the model stays
    graded `absent`.
 5. **W2-E · Delisting-recovered prices.** `dead_name_panel` / `dead_name_prices` exist

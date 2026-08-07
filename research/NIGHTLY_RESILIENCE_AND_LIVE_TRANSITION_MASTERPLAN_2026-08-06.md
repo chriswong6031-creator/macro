@@ -65,6 +65,25 @@ indistinguishable from silence. Silence must become impossible: the check
 lives on infrastructure that fails independently of GitHub. (The existing R2
 freshness tripwire inside `engine` is the right idea in the wrong place — it
 only fires when the nightly RUNS.)
+**SHIPPED 2026-08-06:** `scripts/freshness_sentinel.py` +
+`app/deploy/macro-sentinel.{service,timer}` (self-armed by `update.sh` on the
+serving VPS, every 30 min, `Persistent=true`), state served at
+`/live/staleness.json`. Budgets: 26h bakes (max observed healthy gap 23.2h over
+60 days) + 4 calendar days on the us_stocks board's OWN delayed-board
+disclosure (`prices as of` — rendered only when the engine reports the lag).
+The board anchor matters: the Jul-31→Aug-6 outage re-baked the page every day
+with fresh per-panel as-of annotations while the board froze, so neither
+Last-Modified nor a page-wide as-of scrape can see that mode. china.html emits
+no board stamp yet (its only `as of` is an FX widget) → bake-only until the
+template grows one (follow-up chip filed). Alerts = Telegram + Discord + mailer
+fan-out, 6h re-alert (immediate on a NEW surface joining; sticky through
+blindness so a dark site never reads as recovery), blind escalation after ~3h,
+alerts dispatched BEFORE state writes so a full disk cannot silence them.
+Gate §0.1 pinned by
+`tests/test_freshness_sentinel.py::test_simulated_dead_nightly_delivers_a_real_alert`
+(real local webhook, no mocks on the transport path); the outage replay by
+`test_jul31_outage_replay_breaches_on_the_board_marker`. Ops runbook:
+`docs/VPS_LIVE_ORCHESTRATION.md` §Lanes.
 
 **W2 — Runtime budget telemetry + 85% trend alarm.** Every cap raise in
 daily.yml's history (70→120→150→200→240 engine; 40→120 tech_lab;
@@ -72,12 +91,78 @@ daily.yml's history (70→120→150→200→240 engine; 40→120 tech_lab;
 tiny per-band timing ledger (job start/end per named band, committed nightly or
 pushed to R2) + a guard that `::warning`s at >85% of cap. Caps then get raised
 from trend data BEFORE a kill night. This is ~30 lines of shell in the jobs +
-one reader script.
+one reader script. **SHIPPED 2026-08-06:** every self-hosted daily.yml job
+carries a pre-checkout start mark + an `always()` finish step
+(`scripts/ci/nightly_timings_finish.sh`) that appends per-band rows to
+`data/ops/nightly_timings/<job>.jsonl` (per-job files — the append can never
+race a sibling job's) and trips the line-start `::warning` above 85% of
+`timeout-minutes`; band marks instrument collect/collect_tail/engine/tech_lab.
+Reader: `scripts/nightly_timings_report.py`. Guard:
+`tests/test_nightly_timings.py` (in the dag-conformance CI pack) pins the
+wiring, pins each finish arg == the job's `timeout-minutes` so a cap raise
+cannot silently rescale the tripwire, and drives the synthetic 86% run of gate
+§0.2. Ledger seeded with the 2026-08-06 kill night — whose engine row reads
+85.4% of even the NEW 240m cap, i.e. the tripwire fires on night one.
 
 **W3 — Workload trims.** build_news GDELT de-rate first (~26–29m of 429
 backoff inside the engine critical path even on green nights — cache/de-rate
 or move into the parallel builders band, per the engine comment's own "next
 lever"). Then re-measure; do not inherit step-cost labels (tech_lab law).
+
+> **W3 RE-MEASURED 2026-08-06 — the ~26–29m label was itself stale** (the
+> tech_lab law fired on this very workstream). That figure was measured on the
+> 07-21/07-24 nights, i.e. AT the ship date of the GDELT circuit breaker
+> (#3442, merged 07-24), which already collapsed the stall. Measured
+> build_news band, four recent nights: 07-27 green **5.9m**, 08-03 **4.3m**,
+> 08-05 **4.7m**, 08-06 **5.4m** — of which ~2m is the single nightly 429
+> ladder (30s+75s) that arms the breaker; every later GDELT call
+> short-circuits. All of the engine job's GDELT activity is inside the
+> build_news band; nothing else pays it. Relocation to the parallel band is
+> REJECTED — it would re-create the desync'd news board NWS-01 (#2658) fixed,
+> to save ~5m. What W3 actually shipped: (1) the china_news wire query
+> (410 chars) had been structurally rejected by GDELT every night since the
+> ~06-20 length-limit tightening — a six-week-dark lane burning a doomed
+> paced call nightly; it is now split into ≤230-char sub-queries
+> (news_vector's probed limit) and live again. (2) daily.yml's stale cost
+> labels corrected. **The band that is actually creeping is build_site:
+> ~33m (07-21) → 35.7m (07-27) → 42.0m (08-03) → 61.7m/57.8m (08-05/08-06)**
+> — +25m in two weeks, the largest step in the job and the real driver of the
+> ~205m kill nights. Next W3 target: profile build_site's page loop.
+
+**W3 re-measure (2026-08-06, from `##[group]` boundary timestamps in the engine
+job logs — runs 30314534128 / 30862763261 / 31056495943 / 31067383446).** The
+"build_news is the next lever" label was stale: measured, the creep is
+**entirely inside build_site**, and every sibling band is flat.
+
+| band | 07-27 | 08-03 | 08-05 | 08-06 |
+|---|---|---|---|---|
+| regime engine (engine.run) | 1.6m | 1.1m | 1.4m | 1.3m |
+| news suite (build_news) | 5.9m | 4.3m | 4.7m | 5.4m |
+| **build_site** | **35.5m** | **41.6m** | **61.3m** | **57.4m** |
+| build_track_record | 3.0m | 3.0m | 3.5m | 2.9m |
+| MTF signals | 1.3m | 1.3m | 1.2m | 1.3m |
+
+Intra-step attribution is impossible from CI logs (`run_py` buffers the whole
+step to `$RUNNER_TEMP/step.log` and `cat`s it at the end, so per-line
+timestamps all stamp at flush). A per-section checkpoint ledger now lives in
+`scripts/build_site.py` (W2 for this step): 35 `_tmark()` sections, logged as
+a sorted table each night + appended to `data/nightly_timings/build_site.jsonl`
+(rides the engine job's `git add data/`). First instrumented run (local,
+Studio, under nightly load — shares are the signal, absolutes inflate):
+**stock_library 1248s (53%) + subsector_rotation 758s (32%) = 84% of the
+build**; 32 of 35 sections total <4m together.
+
+Root cause of the rotation pig (cProfile, 706s→27s fix verified): every
+grader price lookup funnels through `engine/ai_desk.py::_close_series`, which
+re-read parquet **uncached on every call** — `subsector_track_record.compute()`
+grades all matured snapshot rows × 4 horizons × members × 2 endpoints =
+268,564 loader calls / 413,053 `read_parquet` attempts per night, growing
+~250 ledger rows/night since mid-July. That unbounded-in-ledger-size scan is
+the gradual +25m creep; `radar_ic.py` had already memoized the same loader
+locally in 06-2026 (`_SERIES_MEMO`) — the fix hoists the memo into
+`_close_series` itself so every desk grader gets it. stock_library's own
+attribution + trim is the follow-on lane (profiled serially; washout-turn
+(#4657) and the per-name loop are the candidates).
 
 **W4 — Disk program on the M1.** Execute the ranked plan (operator sudo
 required for ranks 0/3): TM snapshots ~80G → `tmutil disable` decision →
@@ -211,6 +296,17 @@ therefore hard-asserts spot-vs-yahoo before writing. Fixing the stamping (and
 migrating the young store) is chipped separately. SPX has no archive anywhere, so
 putcall/gex/gex_SPX stay permanently lost for all five sessions — registered in
 `KNOWN_PERMANENT_GAPS`, never fabricated.
+
+> **SUPERSEDED 2026-08-07 (#4807) — do not apply the `session+1` rule above to a
+> cross-fill today.** The chip landed: `build_polygon_gex` now stamps the session a
+> snapshot describes, so rows written after it carry that session with **no shift**.
+> Its migration re-stamped the raw `chains/` files but **not** the chain-family
+> underlyings' summaries (SPY/QQQ/IWM/NVDA/AAPL/TSLA/AMD/META/MSFT), so those files
+> now hold **both** eras. Measured on all nine 2026-08-07: stamps ≤ 07-31 match the
+> PRIOR session's close to 0.000%, the 08-07 stamp matches its OWN session to 0.000%,
+> and the 08-06 stamp matches no session at all (a pre-market tape). The offset is
+> era-dependent — pin the session on the spot-vs-yahoo identity check, never on the
+> stamp. The paragraph above stands as the 2026-08-06 forensic record only.
 
 **(2) SEC CS_TERMS — forensics only; the two nights failed DIFFERENTLY.** Treating
 "CS_TERMS failed" as one recurring fault would have mis-fixed it. 08-05 (run

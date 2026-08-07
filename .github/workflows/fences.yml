@@ -53,8 +53,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # jinja2/markupsafe are for the chat-nav guard below, which RENDERS
+      # _site_nav.html.j2 rather than grepping it. CI packs install minimal deps,
+      # not requirements.txt — an unlisted import here is an ImportError, not a
+      # skip, and the --selftest path additionally imports lib.pages (which pulls
+      # lib.config → pyyaml).
       - name: install minimal deps
-        run: pip install pytest pyyaml
+        run: pip install pytest pyyaml jinja2 markupsafe
 
       - name: self-mod-fence selftest (all four cases proven)
         id: self_mod_selftest
@@ -102,6 +107,36 @@ jobs:
         id: grader_live
         continue-on-error: true
         run: python3 scripts/check_grader_manifest.py
+
+      # chat-nav drift: HERE because the ci-pack copy is too SLOW, not missing.
+      # templates/chat.html cannot {% include %} the shared nav (plain-copy page,
+      # byte-matched to site/chat.html), so its header is GENERATED from
+      # _site_nav.html.j2 by scripts/sync_chat_nav.py. The same guard already runs
+      # in ci-pack pack 0 — ci.yml's paths: filter has covered templates/** since
+      # 2026-07-03 and names both nav partials explicitly. Coverage was never the
+      # gap: ci-pack takes ~2h, so the red lands AFTER the merge. #4666's ci run
+      # started 03:43:06Z and the PR merged 03:51:36Z, 8m30s later; #4637 merged
+      # ~6 min before its pack-0 failed. Both times the drift reddened MAIN, not
+      # the PR (three occurrences: #4637, #4666, #4721).
+      #
+      # This workflow is the always-on fast lane — no paths: filter, ~1-2 min —
+      # and the guard is a pure static check (render a Jinja template, compare
+      # strings, ~1s), so the red now arrives while the PR is still open. The
+      # ci-pack copy stays as defence in depth; it costs nothing there.
+      #
+      # NOTE: these deliberately do NOT feed the publish step below. The three
+      # published contexts are the branch-protection ruleset's contract; adding a
+      # fourth, or folding chat-nav into one of the three, is an operator
+      # decision. They gate the fence-pack JOB check instead, via the aggregation
+      # step at the bottom.
+      - name: chat-nav selftest (gate fires on a hand-edited header; --fix keeps ?v=/defer)
+        id: chat_nav_selftest
+        continue-on-error: true
+        run: python3 scripts/sync_chat_nav.py --selftest
+      - name: chat.html's header must match _site_nav.html.j2
+        id: chat_nav_live
+        continue-on-error: true
+        run: python3 scripts/sync_chat_nav.py
 
       - name: publish required fence contexts
         id: publish
@@ -169,13 +204,16 @@ jobs:
           CAPABILITY_LIVE: ${{ steps.capability_live.outcome }}
           GRADER_SELFTEST: ${{ steps.grader_selftest.outcome }}
           GRADER_LIVE: ${{ steps.grader_live.outcome }}
+          CHAT_NAV_SELFTEST: ${{ steps.chat_nav_selftest.outcome }}
+          CHAT_NAV_LIVE: ${{ steps.chat_nav_live.outcome }}
           PUBLISH: ${{ steps.publish.outcome }}
         run: |
           set -euo pipefail
           for outcome in \
             "$SELF_MOD_SELFTEST" "$SELF_MOD_LIVE" "$SELF_MOD_TESTS" \
             "$CAPABILITY_SELFTEST" "$CAPABILITY_LIVE" \
-            "$GRADER_SELFTEST" "$GRADER_LIVE" "$PUBLISH"; do
+            "$GRADER_SELFTEST" "$GRADER_LIVE" \
+            "$CHAT_NAV_SELFTEST" "$CHAT_NAV_LIVE" "$PUBLISH"; do
             case "$outcome" in
               success|skipped) ;;
               *) echo "::error::fence pack failed ($outcome)"; exit 1 ;;

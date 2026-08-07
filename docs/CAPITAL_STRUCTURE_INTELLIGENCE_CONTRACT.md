@@ -64,15 +64,33 @@ flowchart LR
 | R2 `capital_structure/share_counts/v2/generations/<sha256>/ledger.json` | `scripts/materialize_capital_structure_share_counts.py` | Immutable v2 direct share/public-float observations bound to authenticated Company Facts bytes |
 | R2 `capital_structure/share_counts/v2/receipts/<sha256>.json` | same | HMAC-authenticated exact-predecessor publication receipt with constant-size rolling-prefix binding, bounded skip refs, and all-false authority |
 | R2 `capital_structure/share_counts/v2/current_head.json` | same | Mutable selector cataloged by a closed v2/v3/v4 witness union; runtime authenticates all three, supports exact structural migration/recovery, and keeps native v4 genesis/successor production publication unavailable |
-| ignored local `data/capital_structure/share_counts/v2/current_receipt.json` | same | Runner-local recovery/high-water cache; never an independent selector and never staged by the nightly broad `git add data/` |
+| ignored local `data/capital_structure/share_counts/v2/current_receipt.json` | same | Runner-local recovery/high-water cache; never an independent selector and never committed — it is gitignored, `collect`'s broad `git add data/` unstages every capital-structure path, and the capital-structure checkpoint stages only the generation and its public twin |
 | GitHub Actions review artifact `capital_structure_share_count_r2_conformance_receipt.json` | `scripts/probe_capital_structure_share_count_r2.py` | Expiring, local-only record of one explicitly dispatched isolated-key conditional-write probe; not a Synapse artifact, R2 receipt, publication selector, coverage record, or authority source |
 | `data/edgar/dilution_events.parquet` | `collectors/edgar_dilution.py` | Existing legacy feed; unchanged in Wave 1 |
 
-The collector runs inside the serial SEC host group. The compiler runs immediately after
-collection and before the nightly data checkpoint. Render workflows never fetch SEC or
-compile the spine.
+The collector runs inside the serial SEC host group, in `daily.yml`'s `collect` job.
+Since 2026-08-06 the compiler does **not** run in that job: the whole chain lives in the
+`capital_structure` job (`needs: collect`), which nothing needs in turn, so a
+fail-closed integrity error reds that job alone instead of the job the nightly hangs
+off. It still runs after collection and before the capital-structure checkpoint that
+publishes its generation — the ordering guarantee is now the `needs:` edge rather than
+step adjacency.
 
-The share-count materializer is placed immediately after collection but its R2
+That job boundary is crossed by an artifact, not by git, and the distinction is
+load-bearing. `collect`'s market checkpoint deliberately **unstages**
+`data/capital_structure`, because a source ledger no compiler has accepted must never be
+committed (that carve-out is what lets a drifted ledger self-heal from git the next
+night). Tonight's freshly appended manifest rows therefore exist only in `collect`'s
+workspace and are handed over as a build artifact, together with a sha256/row-count
+receipt published as a job output. The consuming job verifies the bytes against that
+receipt before any compiler reads them, and fails closed on a mismatch: without the
+check, a fresh `actions/checkout` would silently serve the last committed ledger, the
+compilers would reproduce the previous generation byte for byte, and the lane would
+freeze while every step stayed green.
+
+Render workflows never fetch SEC or compile the spine.
+
+The share-count materializer runs at the head of that same chain, but its R2
 step is default-off behind
 `CAPITAL_STRUCTURE_SHARE_COUNT_PUBLICATION_ENABLED`. Once its scalable
 publication gate passes and a safe retention protocol is separately released,

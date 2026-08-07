@@ -15,6 +15,7 @@ import pytest
 
 import collectors.cboe as cboe
 from collectors.cboe import (
+    CHAIN_429_COOLDOWN_LADDER_S,
     CHAIN_429_COOLDOWN_S,
     CHAIN_FAMILY_SERIES,
     KNOWN_PERMANENT_GAPS,
@@ -231,3 +232,281 @@ def test_putcall_still_fails_source_when_retry_fails(monkeypatch):
     monkeypatch.setattr(PutCallAdapter, "_chain_volumes", fake_volumes)
     with pytest.raises(RuntimeError):
         PutCallAdapter().fetch()
+
+
+# ------------------------------------------- 2026-07-30 ≥3-min 429: the cooldown LADDER
+# 07-27 was a ~1-min flap that one 60s cooldown cleared. 07-30 held the 429 continuously
+# for ≥3 min (23:42:32Z→23:45:33Z+, run 30590845976) and outlasted it, costing putcall +
+# gex/gex_SPX/gex_SPY/gex_QQQ/gex_IWM the session. These pin the 60s→300s escalation.
+
+def test_gex_second_cooldown_recovers_a_long_429_window(monkeypatch):
+    """The 07-30 shape: the window outlasts the 60s pass and lifts only during the
+    300s one. The symbol must be recovered, and ONLY the still-failing symbol may be
+    re-swept on the second pass (a healthy symbol is never re-fetched)."""
+    import engine.gex_engine as gex_engine
+    monkeypatch.setattr(gex_engine, "compute_gex",
+                        lambda chain, spot, cfg: {"spot": spot, "net_gex_bn": 1.0})
+    sleeps: list[float] = []
+    monkeypatch.setattr(cboe.time, "sleep", sleeps.append)
+    calls: list[tuple[str, int | None]] = []
+
+    def fake_chain(self, symbol, retries=None):
+        calls.append((symbol, retries))
+        if symbol == "_SPX" and len(sleeps) < 2:   # still inside the ≥3-min window
+            raise RuntimeError("HTTP 429")
+        return _stub_chain(), 100.0
+
+    monkeypatch.setattr(GexAdapter, "_chain", fake_chain)
+    out = GexAdapter().fetch()
+
+    assert {"gex_SPX", "gex"} <= set(out)          # recovered on the 300s pass
+    assert sleeps == list(CHAIN_429_COOLDOWN_LADDER_S) == [CHAIN_429_COOLDOWN_S, 300.0]
+    # both recovery passes are single-attempt, and target only the failed symbol
+    post_cooldown = [c for c in calls if c[1] == 1]
+    assert post_cooldown == [("_SPX", 1), ("_SPX", 1)]
+
+
+def test_gex_ladder_stops_as_soon_as_the_set_empties(monkeypatch):
+    """A window that lifts on the FIRST pass must not spend the 300s sleep — the
+    07-27 shape keeps its old cost, only the long window pays the ladder."""
+    import engine.gex_engine as gex_engine
+    monkeypatch.setattr(gex_engine, "compute_gex",
+                        lambda chain, spot, cfg: {"spot": spot, "net_gex_bn": 1.0})
+    sleeps: list[float] = []
+    monkeypatch.setattr(cboe.time, "sleep", sleeps.append)
+
+    def fake_chain(self, symbol, retries=None):
+        if symbol in ("_SPX", "SPY") and retries is None:
+            raise RuntimeError("HTTP 429")
+        return _stub_chain(), 100.0
+
+    monkeypatch.setattr(GexAdapter, "_chain", fake_chain)
+    out = GexAdapter().fetch()
+    assert {"gex_SPX", "gex_SPY"} <= set(out)
+    assert sleeps == [CHAIN_429_COOLDOWN_S]        # never reached the 300s rung
+
+
+def test_putcall_spx_leg_walks_to_the_second_cooldown(monkeypatch):
+    """putcall is all-or-nothing on _SPX — the leg that killed 07-27 AND 07-30. It
+    must walk the whole ladder before giving the session up."""
+    sleeps: list[float] = []
+    monkeypatch.setattr(cboe.time, "sleep", sleeps.append)
+    attempts: list[int | None] = []
+
+    def fake_volumes(self, symbol, retries=None):
+        if symbol != "_SPX":
+            return 10.0, 20.0
+        attempts.append(retries)
+        if len(sleeps) < 2:                        # still inside the ≥3-min window
+            raise RuntimeError("HTTP 429")
+        return 100.0, 50.0
+
+    monkeypatch.setattr(PutCallAdapter, "_chain_volumes", fake_volumes)
+    snap = PutCallAdapter().fetch()["putcall"]
+    assert float(snap["index_pc_ratio"].iloc[0]) == 2.0
+    assert sleeps == list(CHAIN_429_COOLDOWN_LADDER_S)
+    assert attempts == [None, 1, 1]                # first sweep + both ladder rungs
+
+
+def test_putcall_exhausts_the_ladder_then_fails_the_source(monkeypatch):
+    """A window outlasting BOTH rungs must still raise — an honest hole beats a
+    fabricated row, and the coverage tripwire is what makes it loud."""
+    sleeps: list[float] = []
+    monkeypatch.setattr(cboe.time, "sleep", sleeps.append)
+
+    def fake_volumes(self, symbol, retries=None):
+        raise RuntimeError("HTTP 429 forever")
+
+    monkeypatch.setattr(PutCallAdapter, "_chain_volumes", fake_volumes)
+    with pytest.raises(RuntimeError, match="429"):
+        PutCallAdapter().fetch()
+    assert sleeps == list(CHAIN_429_COOLDOWN_LADDER_S)
+
+
+# ------------------------------------- the 07-30 → 08-05 outage window is REGISTERED
+# Five consecutive lost sessions from four distinct causes (429 flap; then three
+# nights of collect-step crashes discarding the night's single checkpoint commit).
+# The window ending 2026-08-05 is exactly those five sessions.
+
+@pytest.fixture
+def frozen_calendar_0805(monkeypatch):
+    import lib.nyse_calendar as cal
+    monkeypatch.setattr(cal, "expected_last_session",
+                        lambda now=None: dt.date(2026, 8, 5))
+
+
+OUTAGE_SESSIONS = [dt.date(2026, 7, 30), dt.date(2026, 7, 31),
+                   dt.date(2026, 8, 3), dt.date(2026, 8, 4), dt.date(2026, 8, 5)]
+
+
+def test_outage_window_dates_are_all_registered():
+    """Every session lost in the 07-30→08-05 outage carries a disclosure string."""
+    for d in OUTAGE_SESSIONS:
+        assert d in KNOWN_PERMANENT_GAPS, f"{d} lost but not registered"
+        assert len(KNOWN_PERMANENT_GAPS[d]) > 80, f"{d} registered without a cause"
+    assert dt.date(2026, 7, 27) in KNOWN_PERMANENT_GAPS   # the original stays
+
+
+def test_registered_outage_window_is_silent(monkeypatch, tmp_path, capsys,
+                                            frozen_calendar_0805):
+    """A store missing all five outage sessions must be QUIET — they are registered."""
+    frames = {s: _frame([dt.date(2026, 7, 28), dt.date(2026, 7, 29)])
+              for s in CHAIN_FAMILY_SERIES}
+    _fake_store(monkeypatch, tmp_path, frames)
+    assert check_chain_session_coverage() == []
+    assert "::" not in capsys.readouterr().out
+
+
+def test_registry_is_load_bearing_not_vacuous(monkeypatch, tmp_path, capsys,
+                                              frozen_calendar_0805):
+    """Mutation of the test above: drop ONE date from the registry and the same store
+    must fire for exactly that date. Without this, the silence proves nothing."""
+    frames = {s: _frame([dt.date(2026, 7, 28), dt.date(2026, 7, 29)])
+              for s in CHAIN_FAMILY_SERIES}
+    _fake_store(monkeypatch, tmp_path, frames)
+    monkeypatch.delitem(cboe.KNOWN_PERMANENT_GAPS, dt.date(2026, 8, 4))
+    problems = check_chain_session_coverage()
+    assert {p["series"] for p in problems} == set(CHAIN_FAMILY_SERIES)
+    assert all("2026-08-04" in p["reason"] for p in problems)
+    assert all(str(d) not in p["reason"]                      # the rest stay silenced
+               for p in problems for d in OUTAGE_SESSIONS if d != dt.date(2026, 8, 4))
+    out = capsys.readouterr().out
+    assert len([ln for ln in out.splitlines() if ln.startswith("::warning ")]) == 1
+
+
+def test_tripwire_warning_names_the_cross_fill_remedy(monkeypatch, tmp_path, capsys,
+                                                      frozen_calendar):
+    """The remedy hint must point at the honest polygon cross-fill for gex_<name>
+    holes — and stay a LINE-START annotation (a logger prefix would drop it).
+
+    It must NOT hand the operator a blind stamp offset. data/polygon_gex spans two
+    stamping eras: rows written before #4807 (2026-08-07) carry the UTC run date
+    (= session+1), rows written after carry the session they describe, and the
+    chain-family underlyings (SPY/QQQ/IWM/NVDA/...) were never re-stamped by that
+    PR's migration, so a single file holds BOTH. Measured 2026-08-07 on all nine:
+    stamps <= 07-31 match the prior session's yahoo close to 0.000%, the 08-07 stamp
+    matches its OWN session to 0.000%, and the 08-06 stamp matches no session (a
+    pre-market tape). Any fixed offset in this text is therefore wrong for half the
+    store and would fabricate an off-by-one row — the exact failure the last clause
+    warns against. The session must be pinned on the DATA."""
+    frames = _full_family()
+    frames["gex_SPY"] = _frame(WINDOW[:-1])
+    _fake_store(monkeypatch, tmp_path, frames)
+    check_chain_session_coverage()
+    warn = [ln for ln in capsys.readouterr().out.splitlines()
+            if ln.startswith("::warning ")]
+    assert len(warn) == 1
+    assert "backfill_cboe_gex_20260730_from_polygon.py" in warn[0]
+    assert "polygon_gex" in warn[0]
+    # the load-bearing instruction: no blind offset, pin the session on the data
+    assert "ASSUME NO FIXED STAMP OFFSET" in warn[0]
+    assert "yahoo close of the TARGET session" in warn[0]
+    assert "closer than either neighbouring session" in warn[0]
+    # session+1 may appear ONLY as the named pre-#4807 era, never as the live mapping
+    assert "#4807" in warn[0]
+    assert "usually sits in the row stamped session+1" not in warn[0]
+
+
+# ------------------------------------------------------- the 07-30 polygon cross-fill
+
+def test_backfill_is_idempotent(monkeypatch, tmp_path, capsys):
+    """Second run on the same store is a pure no-op: no duplicate row, no mutation."""
+    import scripts.backfill_cboe_gex_20260730_from_polygon as bf
+    from lib import config as _config
+    _config.load()
+    monkeypatch.setattr(_config, "ROOT", tmp_path)
+    monkeypatch.setattr(_config, "data_dir", lambda: tmp_path)
+
+    sym, session = "SPY", pd.Timestamp(bf.SESSION)
+    cols = ["spot", "net_gex_bn", "gamma_flip", "gamma_regime", "n_strikes"]
+    src = pd.DataFrame({"spot": [741.69], "net_gex_bn": [-6.15749],
+                        "gamma_flip": [750.66], "gamma_regime": ["short"],
+                        "n_strikes": [6249]},
+                       index=pd.DatetimeIndex([pd.Timestamp(bf.POLYGON_STAMP)]))[cols]
+    tgt = pd.DataFrame({"spot": [729.46, 747.03], "net_gex_bn": [-1.0, -2.0],
+                        "gamma_flip": [730.0, 750.0], "gamma_regime": ["short", "short"],
+                        "n_strikes": [100, 200]},
+                       index=pd.to_datetime(["2026-07-29", "2026-07-31"]))[cols]
+    yahoo = pd.DataFrame({"close": [729.46, 741.69, 747.03]},
+                         index=pd.to_datetime(["2026-07-29", "2026-07-30", "2026-07-31"]))
+    for grp, name, df in (("polygon_gex", f"summary_{sym}", src),
+                          ("cboe", f"gex_{sym}", tgt), ("yahoo", sym, yahoo)):
+        (tmp_path / grp).mkdir(parents=True, exist_ok=True)
+        df.to_parquet(tmp_path / grp / f"{name}.parquet")
+
+    first = bf.backfill(symbols=(sym,))
+    assert [r["symbol"] for r in first["written"]] == [sym] and first["skipped"] == []
+    after = _store.read("cboe", f"gex_{sym}")
+    assert session in after.index and len(after) == 3
+    assert after.index.is_monotonic_increasing
+    assert float(after.loc[session, "spot"]) == 741.69     # the re-dated polygon row
+    assert list(after.dtypes) == list(tgt.dtypes)          # nothing upcast
+    snapshot = after.copy()
+
+    second = bf.backfill(symbols=(sym,))
+    assert second["written"] == [] and second["skipped"] == [sym]
+    assert "SKIP" in capsys.readouterr().out
+    pd.testing.assert_frame_equal(_store.read("cboe", f"gex_{sym}"), snapshot)
+
+
+def test_backfill_refuses_the_wrong_session(monkeypatch, tmp_path):
+    """The session-identity gate is the whole safety story: for this 2026-07-30 heal the
+    polygon stamp is session+1 — the pre-#4807 UTC run-date era this one-shot was written
+    against — so a row whose spot does not match the target session's close must be
+    REFUSED rather than written under the wrong date. The GATE is what makes the copy
+    honest, not the offset: the offset is era-dependent (see the tripwire-remedy test
+    above) and must never be assumed by anything that is not pinned to a fixed date."""
+    import scripts.backfill_cboe_gex_20260730_from_polygon as bf
+    from lib import config as _config
+    _config.load()
+    monkeypatch.setattr(_config, "ROOT", tmp_path)
+    monkeypatch.setattr(_config, "data_dir", lambda: tmp_path)
+
+    sym = "SPY"
+    cols = ["spot", "net_gex_bn"]
+    # spot is the 07-29 close — i.e. the row stamped 07-30, one session off
+    src = pd.DataFrame({"spot": [729.46], "net_gex_bn": [-6.0]},
+                       index=pd.DatetimeIndex([pd.Timestamp(bf.POLYGON_STAMP)]))[cols]
+    tgt = pd.DataFrame({"spot": [747.03], "net_gex_bn": [-2.0]},
+                       index=pd.to_datetime(["2026-07-31"]))[cols]
+    yahoo = pd.DataFrame({"close": [729.46, 741.69, 747.03]},
+                         index=pd.to_datetime(["2026-07-29", "2026-07-30", "2026-07-31"]))
+    for grp, name, df in (("polygon_gex", f"summary_{sym}", src),
+                          ("cboe", f"gex_{sym}", tgt), ("yahoo", sym, yahoo)):
+        (tmp_path / grp).mkdir(parents=True, exist_ok=True)
+        df.to_parquet(tmp_path / grp / f"{name}.parquet")
+
+    with pytest.raises(bf.BackfillPreconditionError, match="NOT the 2026-07-30 session"):
+        bf.backfill(symbols=(sym,))
+    assert pd.Timestamp(bf.SESSION) not in _store.read("cboe", f"gex_{sym}").index
+
+
+def test_backfill_refuses_an_ambiguous_session_match(monkeypatch, tmp_path):
+    """A spot inside the tolerance of the target session but CLOSER to a neighbour is
+    ambiguous and must be refused. This is the real 08-05 case: the polygon row
+    stamped 08-06 sits 0.175% from the 08-05 close (inside a 0.5% gate) but 0.025%
+    from 08-04 — the tolerance alone would have written a live intraday snapshot as
+    a session close."""
+    import scripts.backfill_cboe_gex_20260730_from_polygon as bf
+    from lib import config as _config
+    _config.load()
+    monkeypatch.setattr(_config, "ROOT", tmp_path)
+    monkeypatch.setattr(_config, "data_dir", lambda: tmp_path)
+
+    sym = "SPY"
+    cols = ["spot", "net_gex_bn"]
+    src = pd.DataFrame({"spot": [742.9], "net_gex_bn": [-6.0]},   # 0.16% from 07-30
+                       index=pd.DatetimeIndex([pd.Timestamp(bf.POLYGON_STAMP)]))[cols]
+    tgt = pd.DataFrame({"spot": [729.46], "net_gex_bn": [-2.0]},
+                       index=pd.to_datetime(["2026-07-29"]))[cols]
+    # 07-31's close sits nearer the source spot than 07-30's does
+    yahoo = pd.DataFrame({"close": [729.46, 741.69, 742.95]},
+                         index=pd.to_datetime(["2026-07-29", "2026-07-30", "2026-07-31"]))
+    for grp, name, df in (("polygon_gex", f"summary_{sym}", src),
+                          ("cboe", f"gex_{sym}", tgt), ("yahoo", sym, yahoo)):
+        (tmp_path / grp).mkdir(parents=True, exist_ok=True)
+        df.to_parquet(tmp_path / grp / f"{name}.parquet")
+
+    with pytest.raises(bf.BackfillPreconditionError, match="ambiguous"):
+        bf.backfill(symbols=(sym,))
+    assert pd.Timestamp(bf.SESSION) not in _store.read("cboe", f"gex_{sym}").index

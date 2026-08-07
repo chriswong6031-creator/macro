@@ -1,0 +1,469 @@
+{
+  "schema": "prophet_arena.scoreboard/v1",
+  "as_of": "2026-08-03",
+  "tier": "display",
+  "authority": {
+    "tier": "display",
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false
+  },
+  "registration": "research/PROPHET_ARENA_REGISTRATION.md",
+  "standing_line": "shadow record \u2014 the live policy changes only by operator ratification",
+  "standing_line_zh": "\u5f71\u5b50\u8bb0\u5f55 \u2014 \u5b9e\u76d8\u7b56\u7565\u4ec5\u5728\u64cd\u4f5c\u8005\u6279\u51c6\u540e\u624d\u4f1a\u66f4\u6539",
+  "headline_min_closed": 20,
+  "harness_validity": {
+    "c0_plan_ids": [
+      "AAPL-BULL-20260731"
+    ],
+    "live_plan_ids": [
+      "AAPL-BULL-20260731"
+    ],
+    "c0_mismatch_count": 0,
+    "missing_from_mirror": [],
+    "extra_in_mirror": [],
+    "harness_ok": true,
+    "meaning": "the mirror of the live rule started exactly the same plans the live run did"
+  },
+  "policies": [
+    {
+      "policy": "C0_champion_mirror",
+      "label": "the live rule, mirrored",
+      "label_zh": "\u5b9e\u76d8\u89c4\u5219\u955c\u50cf",
+      "grain": "selection",
+      "n_open": 4,
+      "n_closed": 1,
+      "win_rate_pct": 100.0,
+      "avg_pct": 108.44,
+      "median_pct": 108.44,
+      "expired_share_pct": 0.0,
+      "time_stopped_share_pct": 0.0,
+      "outcomes": {
+        "T1_HIT": 1
+      },
+      "nights_recorded": 2,
+      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 1",
+      "readable": false
+    },
+    {
+      "policy": "C1_buy_soon_first",
+      "label": "earlier entries first",
+      "label_zh": "\u4f18\u5148\u8f83\u65e9\u5165\u573a",
+      "grain": "selection",
+      "n_open": 4,
+      "n_closed": 1,
+      "win_rate_pct": 100.0,
+      "avg_pct": 108.44,
+      "median_pct": 108.44,
+      "expired_share_pct": 0.0,
+      "time_stopped_share_pct": 0.0,
+      "outcomes": {
+        "T1_HIT": 1
+      },
+      "nights_recorded": 2,
+      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 1",
+      "readable": false,
+      "vs_champion": {
+        "shared_nights": 1,
+        "n_policy": 1,
+        "n_champion": 1,
+        "avg_pct": 108.44,
+        "champion_avg_pct": 108.44,
+        "diff_pp": 0.0
+      },
+      "vs_champion_basis": "same-cohort \u2014 only the nights on which both this policy and the live rule started a plan that has since finished"
+    },
+    {
+      "policy": "C2_stage_ran_preferred",
+      "label": "already-moving names first",
+      "label_zh": "\u4f18\u5148\u5df2\u542f\u52a8\u4e2a\u80a1",
+      "grain": "selection",
+      "n_open": 4,
+      "n_closed": 1,
+      "win_rate_pct": 100.0,
+      "avg_pct": 108.44,
+      "median_pct": 108.44,
+      "expired_share_pct": 0.0,
+      "time_stopped_share_pct": 0.0,
+      "outcomes": {
+        "T1_HIT": 1
+      },
+      "nights_recorded": 2,
+      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 1",
+      "readable": false,
+      "vs_champion": {
+        "shared_nights": 1,
+        "n_policy": 1,
+        "n_champion": 1,
+        "avg_pct": 108.44,
+        "champion_avg_pct": 108.44,
+        "diff_pp": 0.0
+      },
+      "vs_champion_basis": "same-cohort \u2014 only the nights on which both this policy and the live rule started a plan that has since finished"
+    },
+    {
+      "policy": "C3_door_w_union",
+      "label": "washout turns added",
+      "label_zh": "\u7eb3\u5165\u8d85\u8dcc\u8f6c\u6298",
+      "grain": "selection",
+      "n_open": 22,
+      "n_closed": 5,
+      "win_rate_pct": 40.0,
+      "avg_pct": 13.11,
+      "median_pct": -8.15,
+      "expired_share_pct": 0.0,
+      "time_stopped_share_pct": 0.0,
+      "outcomes": {
+        "INVALIDATED": 3,
+        "T1_HIT": 2
+      },
+      "nights_recorded": 2,
+      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 5",
+      "readable": false,
+      "vs_champion": {
+        "shared_nights": 1,
+        "n_policy": 5,
+        "n_champion": 1,
+        "avg_pct": 13.11,
+        "champion_avg_pct": 108.44,
+        "diff_pp": -95.33
+      },
+      "vs_champion_basis": "same-cohort \u2014 only the nights on which both this policy and the live rule started a plan that has since finished"
+    },
+    {
+      "policy": "C4_dispersion_cap",
+      "label": "book size follows dispersion",
+      "label_zh": "\u6301\u4ed3\u6570\u91cf\u968f\u79bb\u6563\u5ea6",
+      "grain": "selection",
+      "n_open": 4,
+      "n_closed": 1,
+      "win_rate_pct": 100.0,
+      "avg_pct": 108.44,
+      "median_pct": 108.44,
+      "expired_share_pct": 0.0,
+      "time_stopped_share_pct": 0.0,
+      "outcomes": {
+        "T1_HIT": 1
+      },
+      "nights_recorded": 2,
+      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 1",
+      "readable": false,
+      "vs_champion": {
+        "shared_nights": 1,
+        "n_policy": 1,
+        "n_champion": 1,
+        "avg_pct": 108.44,
+        "champion_avg_pct": 108.44,
+        "diff_pp": 0.0
+      },
+      "vs_champion_basis": "same-cohort \u2014 only the nights on which both this policy and the live rule started a plan that has since finished"
+    },
+    {
+      "policy": "C5_align2_gate",
+      "label": "weekly-aligned only",
+      "label_zh": "\u4ec5\u9650\u5468\u7ebf\u540c\u5411",
+      "grain": "selection",
+      "n_open": 1,
+      "n_closed": 0,
+      "win_rate_pct": null,
+      "avg_pct": null,
+      "median_pct": null,
+      "expired_share_pct": null,
+      "time_stopped_share_pct": null,
+      "outcomes": {},
+      "nights_recorded": 1,
+      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 0",
+      "readable": false,
+      "vs_champion": {
+        "shared_nights": 0,
+        "n_policy": 0,
+        "n_champion": 0,
+        "avg_pct": null,
+        "champion_avg_pct": null,
+        "diff_pp": null
+      },
+      "vs_champion_basis": "same-cohort \u2014 only the nights on which both this policy and the live rule started a plan that has since finished"
+    },
+    {
+      "policy": "C6_time_stop_21",
+      "label": "cut dead money at 21 sessions",
+      "label_zh": "21\u4e2a\u4ea4\u6613\u65e5\u6b62\u635f\u79bb\u573a",
+      "grain": "closure",
+      "n_open": 4,
+      "n_closed": 1,
+      "win_rate_pct": 100.0,
+      "avg_pct": 108.44,
+      "median_pct": 108.44,
+      "expired_share_pct": 0.0,
+      "time_stopped_share_pct": 0.0,
+      "outcomes": {
+        "T1_HIT": 1
+      },
+      "nights_recorded": 2,
+      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 1",
+      "readable": false,
+      "vs_champion": {
+        "n_paired": 1,
+        "avg_diff_pp": 0.0,
+        "median_diff_pp": 0.0,
+        "better": 0,
+        "worse": 0,
+        "same": 1,
+        "unpaired_plans": 0
+      },
+      "vs_champion_basis": "per-plan paired \u2014 same plan ids and entries as the live rule, different exits"
+    }
+  ],
+  "tonight": {
+    "asof": "2026-08-03",
+    "standouts_as_of": "2026-08-03",
+    "gate_go": false,
+    "dispersion": {
+      "mode": "lean_in",
+      "state": "lean_in",
+      "artifact_as_of": "2026-08-05",
+      "stale_sessions": -2,
+      "cap": 12,
+      "path": "data/dispersion/regime.json"
+    },
+    "door_w": {
+      "ok": true,
+      "candidates": 25,
+      "rows": 25,
+      "skipped_no_prices": 0,
+      "skipped_tickers": [],
+      "reason": null,
+      "door_w_disclosure": {
+        "source": "baskets/membership.json",
+        "ok": true,
+        "universe_n": 715,
+        "reason": null,
+        "evaluated": 702,
+        "skipped": 13,
+        "state_turn": 91,
+        "fresh": 26,
+        "aligned": 25,
+        "asof_max": "2026-07-31",
+        "asof_mismatch": 0,
+        "fresh_weeks_max": 2,
+        "align_grids": [
+          "2B",
+          "3B"
+        ],
+        "runtime_s": 15.5
+      }
+    },
+    "policies": {
+      "C0_champion_mirror": {
+        "selected_tickers": [
+          "AAPL"
+        ],
+        "plan_ids": [
+          "AAPL-BULL-20260731"
+        ],
+        "n_plans": 1,
+        "selection": {
+          "admitted": 1,
+          "cap": 12
+        },
+        "origination": {
+          "offered": 1,
+          "skipped_duplicate_id": 0,
+          "skipped_open_plan": 0,
+          "skipped_no_spot": 0,
+          "skipped_door_w_no_geometry": 0,
+          "skipped_door_w_tickers": [],
+          "originated": 1
+        },
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
+      },
+      "C1_buy_soon_first": {
+        "selected_tickers": [
+          "AAPL"
+        ],
+        "plan_ids": [
+          "AAPL-BULL-20260731"
+        ],
+        "n_plans": 1,
+        "selection": {
+          "admitted": 1,
+          "cap": 12,
+          "act_level_2": 0,
+          "lifted": 0
+        },
+        "origination": {
+          "offered": 1,
+          "skipped_duplicate_id": 0,
+          "skipped_open_plan": 0,
+          "skipped_no_spot": 0,
+          "skipped_door_w_no_geometry": 0,
+          "skipped_door_w_tickers": [],
+          "originated": 1
+        },
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
+      },
+      "C2_stage_ran_preferred": {
+        "selected_tickers": [
+          "AAPL"
+        ],
+        "plan_ids": [
+          "AAPL-BULL-20260731"
+        ],
+        "n_plans": 1,
+        "selection": {
+          "admitted": 1,
+          "cap": 12,
+          "stage_ran_in_champion_pool": 0,
+          "stage_ran_admitted_by_widening": 0,
+          "stage_ran_selected": 0,
+          "widening": "the act_level gate is relaxed for stage-ran rows only; band, direction, entry-signal presence and the gate mode stay the champion's"
+        },
+        "origination": {
+          "offered": 1,
+          "skipped_duplicate_id": 0,
+          "skipped_open_plan": 0,
+          "skipped_no_spot": 0,
+          "skipped_door_w_no_geometry": 0,
+          "skipped_door_w_tickers": [],
+          "originated": 1
+        },
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
+      },
+      "C3_door_w_union": {
+        "selected_tickers": [
+          "AAPL",
+          "HII",
+          "LDOS",
+          "UROY",
+          "NOC",
+          "CME",
+          "EGO",
+          "FOX",
+          "FOXA",
+          "HCA",
+          "MCD",
+          "ATO"
+        ],
+        "plan_ids": [
+          "AAPL-BULL-20260731",
+          "ATO-BULL-20260803",
+          "CME-BULL-20260803",
+          "EGO-BULL-20260803",
+          "FOX-BULL-20260803",
+          "FOXA-BULL-20260803",
+          "HCA-BULL-20260803",
+          "HII-BULL-20260803",
+          "LDOS-BULL-20260803",
+          "MCD-BULL-20260803",
+          "NOC-BULL-20260803",
+          "UROY-BULL-20260803"
+        ],
+        "n_plans": 12,
+        "selection": {
+          "admitted": 1,
+          "cap": 12,
+          "door_w_offered": 25,
+          "door_w_already_in_champion_pool": 0,
+          "door_w_reserved_slots": 4,
+          "door_w_selected": 11,
+          "champion_rows_displaced": 0
+        },
+        "origination": {
+          "offered": 12,
+          "skipped_duplicate_id": 0,
+          "skipped_open_plan": 0,
+          "skipped_no_spot": 0,
+          "skipped_door_w_no_geometry": 0,
+          "skipped_door_w_tickers": [],
+          "originated": 12
+        },
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
+      },
+      "C4_dispersion_cap": {
+        "selected_tickers": [
+          "AAPL"
+        ],
+        "plan_ids": [
+          "AAPL-BULL-20260731"
+        ],
+        "n_plans": 1,
+        "selection": {
+          "admitted": 1,
+          "cap": 12
+        },
+        "origination": {
+          "offered": 1,
+          "skipped_duplicate_id": 0,
+          "skipped_open_plan": 0,
+          "skipped_no_spot": 0,
+          "skipped_door_w_no_geometry": 0,
+          "skipped_door_w_tickers": [],
+          "originated": 1
+        },
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
+      },
+      "C5_align2_gate": {
+        "selected_tickers": [],
+        "plan_ids": [],
+        "n_plans": 0,
+        "selection": {
+          "admitted": 1,
+          "cap": 12,
+          "align_gate": {
+            "admitted": 0,
+            "admitted_via_fallback": 0,
+            "excluded_misaligned": 1,
+            "excluded_unreadable": 0,
+            "basis": "event_atlas weekly align_class == 2 (its full value), falling back to align_now == 3 (its full value) when the name has no weekly event on record; a name the atlas cannot read is excluded, never admitted"
+          },
+          "passed_gate": 0,
+          "excluded": 1
+        },
+        "origination": {
+          "offered": 0,
+          "skipped_duplicate_id": 0,
+          "skipped_open_plan": 0,
+          "skipped_no_spot": 0,
+          "skipped_door_w_no_geometry": 0,
+          "skipped_door_w_tickers": [],
+          "originated": 0
+        },
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
+      },
+      "C6_time_stop_21": {
+        "selected_tickers": [
+          "AAPL"
+        ],
+        "plan_ids": [
+          "AAPL-BULL-20260731"
+        ],
+        "n_plans": 1,
+        "selection": {
+          "admitted": 1,
+          "cap": 12,
+          "selection_basis": "identical to C0 by construction"
+        },
+        "origination": {
+          "offered": 1,
+          "skipped_duplicate_id": 0,
+          "skipped_open_plan": 0,
+          "skipped_no_spot": 0,
+          "skipped_door_w_no_geometry": 0,
+          "skipped_door_w_tickers": [],
+          "originated": 1
+        },
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
+      }
+    }
+  },
+  "note": "Each policy is a frozen way of choosing which plans to start, or when to close them, run beside the live rule on the same nights and scored by the same closure rules. Nothing here has ever changed a live plan. Records start empty and fill one night at a time \u2014 there is no backfill, so a small count means young, not weak. shadow record \u2014 the live policy changes only by operator ratification.",
+  "note_zh": "\u6bcf\u6761\u7b56\u7565\u90fd\u662f\u4e00\u79cd\u5df2\u51bb\u7ed3\u7684\u9009\u80a1\u6216\u79bb\u573a\u89c4\u5219\uff0c\u4e0e\u5b9e\u76d8\u89c4\u5219\u5728\u540c\u4e00\u6279\u4ea4\u6613\u591c\u5e76\u884c\u8fd0\u884c\uff0c\u5e76\u4ee5\u76f8\u540c\u7684\u5e73\u4ed3\u89c4\u5219\u8bc4\u5206\u3002\u6b64\u5904\u7684\u4efb\u4f55\u7ed3\u679c\u90fd\u4ece\u672a\u6539\u53d8\u8fc7\u5b9e\u76d8\u8ba1\u5212\u3002\u8bb0\u5f55\u4ece\u96f6\u5f00\u59cb\u9010\u591c\u7d2f\u79ef\uff0c\u6ca1\u6709\u56de\u586b \u2014 \u6837\u672c\u5c11\u4ee3\u8868\u65f6\u95f4\u77ed\uff0c\u800c\u975e\u7ed3\u8bba\u5f31\u3002\u5f71\u5b50\u8bb0\u5f55 \u2014 \u5b9e\u76d8\u7b56\u7565\u4ec5\u5728\u64cd\u4f5c\u8005\u6279\u51c6\u540e\u624d\u4f1a\u66f4\u6539\u3002"
+}

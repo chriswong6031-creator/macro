@@ -133,7 +133,10 @@ def extract_prod_t1_stream_v3(c: pd.Series) -> dict:
     sk3_vals = pd.to_datetime(pd.Series(sk3_ser.to_numpy()).to_numpy()).values  # datetime64[ns]
     idx3d_full = ss3.index  # 3D bar start-dates
 
-    # Build signal frame
+    # Build signal frame. market: US default DELIBERATELY — no ticker reaches this function,
+    # and the sibling `_tf_bars(c, 3)` call above is on the US reference too, so pinning a
+    # different calendar here would put the two grids this function CROSS-INDEXES on
+    # different anchors. A per-market backtest must thread the calendar into BOTH.
     sig = signal_frame(c)
     if sig.empty or len(sig) < 5:
         return {

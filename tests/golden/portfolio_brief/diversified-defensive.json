@@ -75,7 +75,7 @@
       "lines": [
         {
           "en": "This week: a Congress sell in XOM (filed 2026-07-20).",
-          "zh": "本周：XOM 出现一笔国会售出披露（申报于 2026-07-20）。"
+          "zh": "本周：XOM 出现一笔国会售出披露（2026-07-20）。"
         },
         {
           "en": "Insider tape: JPM 0 buyers / 4 sellers.",
@@ -91,7 +91,7 @@
         }
       ],
       "title_en": "Filings desk",
-      "title_zh": "监管申报"
+      "title_zh": "监管披露"
     }
   ],
   "stale": false,

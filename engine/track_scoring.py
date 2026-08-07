@@ -76,6 +76,15 @@ BOOT_SEED = 20260726
 # record was 24 calendar days old and no episode had 21 forward bars.
 DEFAULT_HORIZON = 10
 
+# ``capture`` (realised / MFE) needs a STRICTLY POSITIVE favourable excursion. A
+# position that never traded above its entry inside the window has none, and dividing
+# a negative realised by a negative MFE prints a flattering positive — a −11.4% loss
+# whose best bar was −4.5% scored 2.51. Rows below this floor are dropped from the
+# capture median and COUNTED (``n_capture_undefined``). Mirrors the same-named floor in
+# scripts/exit_policy_study.py; the two must stay equal or the study and the shipped
+# track record would report different quantities under one column name.
+MFE_FLOOR = 1e-9
+
 
 # --------------------------------------------------------------------------- #
 # episode construction
@@ -356,6 +365,10 @@ def summarize(
         "ci_lo_pct": None, "ci_hi_pct": None,
         "exp_lo_pct": None, "exp_hi_pct": None,
         "median_hold": None, "capture": None,
+        # capture is UNDEFINED where MFE <= 0 (no favourable excursion to keep any of).
+        # The counts ship always, so "no capture" is readable as a disclosed null
+        # rather than as a missing field.
+        "n_capture": 0, "n_capture_undefined": 0, "capture_undefined_pct": None,
     }
     if not n:
         return out
@@ -383,8 +396,23 @@ def summarize(
     holds = [r["held"] for r in rows if r.get("held") is not None]
     if holds:
         out["median_hold"] = int(np.median(holds))
-    caps = [r["pnl"] / r["mfe"] for r in rows
-            if r.get("mfe") and r.get("pnl") is not None and abs(r["mfe"]) > 1e-9]
+    # ``capture`` = realised / maximum favourable excursion: "how much of the best
+    # close it saw while holding did it keep?".  The filter was ``abs(mfe) > 1e-9``,
+    # which ADMITS A NEGATIVE MFE — a position that never traded above its entry
+    # inside the window.  realised/MFE is then a ratio of two negatives and prints as
+    # a healthy positive: a −11.4% loss whose best bar was −4.5% scored 2.51, ranking
+    # above a perfect winner.  The denominator is floored to a STRICTLY POSITIVE
+    # excursion, so a pure loser has no capture to report rather than a flattering
+    # one, and the dropped rows are COUNTED (n_capture / n_capture_undefined) rather
+    # than averaged away — a null printed, not hidden.  Same rule and same floor as
+    # scripts/exit_policy_study.policy_metrics, which discovered it.
+    caps = [float(r["pnl"]) / float(r["mfe"]) for r in rows
+            if r.get("pnl") is not None and r.get("mfe") is not None
+            and math.isfinite(float(r["mfe"])) and float(r["mfe"]) > MFE_FLOOR]
+    n_undefined = n - len(caps)
+    out["n_capture"] = len(caps)
+    out["n_capture_undefined"] = n_undefined
+    out["capture_undefined_pct"] = round(100.0 * n_undefined / n, 1) if n else None
     if caps:
         out["capture"] = round(float(np.median(caps)), 2)
     mfes = [r["mfe"] for r in rows if r.get("mfe") is not None]

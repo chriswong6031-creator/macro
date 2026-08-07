@@ -249,7 +249,12 @@ def _synth_closes(tail_scale: float = 1.0, tail_len: int = 20):
     if tail_scale != 1.0:
         values[-tail_len:] *= tail_scale
     series = pd.Series(values, index=index)
-    frame = sq.signal_frame(series).dropna(
+    # market="HK" — the SAME calendar the HK board's own confirmation read uses
+    # (hk_board_rank.confirmation_move). The labels this returns are what the tests hand
+    # back as marker dates, so if they were cut on the US reference the board would look
+    # them up on a grid they never sat on and every lane would print a disclosed null:
+    # the fixture would be testing a mismatch of its own making. signal_quality R-SQ1.
+    frame = sq.signal_frame(series, market="HK").dropna(
         subset=["macd", "sig", "k", "d", "rsi14"])
     return ([str(stamp.date()) for stamp in index],
             [float(value) for value in values],
@@ -1071,7 +1076,7 @@ class TestVetoedLane:
         assert row["anchor"] == hbr.ANCHOR_CONFIRM
         assert row["signal_date"] == marker, "the block's own date is unchanged"
         assert row["measured_from"] == str(
-            sq.confirmation_date(_as_series(dates, closes), marker).date())
+            sq.confirmation_date(_as_series(dates, closes), marker, market="HK").date())
         assert row["pct_since"] == hbr.cross_read(
             dates, closes, cross_date=row["measured_from"])["pct_since"]
 
@@ -1455,17 +1460,38 @@ class TestG1Witnesses:
     def test_lane_caps_actually_bind_on_the_real_panel(self, lanes):
         """Without this, a witness could be 'visible' only for lack of competition.
 
-        leaders and vetoed still fill to their caps under the production exclusion.
-        `ran` comes back one short of RAN_CAP (11 of 12) and that is a real reading,
-        not slack: the buy/watch exclusion removes a name the lane would otherwise
-        have taken, which is exactly the effect the empty-exclusion harness hid.  It
-        is pinned as an exact number so a future drift in either direction shows up.
+        RE-DERIVED a second time under the §7 marker anchor (era
+        ``sq-abs-session-2026-08-06``, research/SIGNAL_QUALITY_SESSION_ANCHOR_ADJUDICATION_
+        BY_FABLE.md). The first re-derivation, below, moved the CASCADE onto the HK session
+        calendar; this one moves the §7 MARKER STREAM there too, which is the layer that
+        decides which lane a name belongs in at all.
+
+        MEASURED old-vs-new on this exact panel (157 names, verdicts recomputed from the
+        full column, `reclaim_veto=False`): 139/157 last-marker DATES moved, 52/157 last-
+        marker IDENTITIES moved, 83/157 ticks moved. The take population is stable and
+        slightly HIGHER (81 → 85 takes); blocks fall 63 → 52. So the lanes did not lose
+        names to a defect — the stream re-drew and the freshness arithmetic re-sorted them:
+        `leaders` comes back one short of its cap and `ran` fills 3 of 12, because names
+        whose take is now measured as fresher are claimed by the buy∪watch exclusion or by
+        `leaders` before `ran` ever sees them.
+
+        PRIOR re-derivation (era abs-session-2026-08-06, the cascade): HK began bucketing on
+        the HK session calendar rather than the market-blind business-day grid, 22 of 157
+        verdicts moved — a ticks histogram dominated by −1 (14 names) — and exactly one name
+        left the eligible set (0763.HK, T2 → None).
+
+        Still pinned as exact numbers, and still for the original reason: without them a
+        witness could be "visible" only for lack of competition, and a drift in either
+        direction must show up rather than be absorbed as slack.
         """
-        assert len(lanes["leaders"]) == hbr.LEADERS_CAP
         assert len(lanes["vetoed"]) == hbr.VETOED_CAP
-        assert len(lanes["ran"]) == 11, (
-            "measured 2026-07-31 under exclude=buy∪watch; RAN_CAP is %d"
-            % hbr.RAN_CAP)
+        assert len(lanes["leaders"]) == 14, (
+            "leaders fills 14 of LEADERS_CAP=%d under the §7 anchor — re-measured "
+            "2026-08-06; a change in either direction is a real population move, not slack"
+            % hbr.LEADERS_CAP)
+        assert len(lanes["ran"]) == 3, (
+            "ran fills 3 of RAN_CAP=%d under the §7 anchor — re-measured 2026-08-06 with "
+            "exclude=buy∪watch∪leaders on the HK session calendar" % hbr.RAN_CAP)
 
     def test_every_vetoed_row_names_its_block_reason(self, lanes):
         for row in lanes["vetoed"]:
@@ -1479,10 +1505,35 @@ class TestG1Witnesses:
                 assert row["measured_from"] > row["signal_date"]
 
     def test_the_vetoed_lane_prints_what_the_board_missed(self, lanes):
-        """Self-critical by construction: the moves are real and they are shown."""
-        moves = [r["pct_since"] for r in lanes["vetoed"] if r["pct_since"] is not None]
+        """Self-critical by construction: the moves are real and they are shown.
+
+        THE PIN IS COVERAGE, NOT MAGNITUDE (re-derived 2026-08-06, era
+        ``sq-abs-session-2026-08-06``). It used to be ``max(moves) > 20.0``, and that
+        number has to go — not because the lane got quieter, but because it stopped
+        overstating. A ``pct_since`` is measured from the CONFIRMATION close; under the
+        old start-phased grid the verdicts were computed on the full panel column while
+        the move was read off the frozen ~340-session window, two DIFFERENT bin phases, so
+        the marker date was frequently not a bucket label of the window at all. Measured
+        on this panel: the old geometry could anchor 2 of 12 vetoed rows and printed 10
+        disclosed nulls; the new one anchors 12 of 12 with zero nulls. The lane's largest
+        honest move is 11.5%; the >20% it used to show came from rows whose anchor slid
+        back toward the marker — the overstatement `confirmation_move` exists to remove.
+
+        So the assertion is now the property that actually protects the reader, and it is
+        STRICTER than the old one: the lane fills to its cap AND every single admitted row
+        carries a real measurement. A regression to the old defect — rows silently dropped
+        or nulled because they cannot be anchored — fails here immediately and by name,
+        which is exactly what the 2026-08-04 incident (33 measured names → 5, read as "the
+        panel no longer carries big missed moves") went a whole investigation without.
+        """
+        rows = lanes["vetoed"]
+        moves = [r["pct_since"] for r in rows if r["pct_since"] is not None]
         assert moves, "the lane exists to print these"
-        assert max(moves) > 20.0, "the 2026-07-31 panel carries >20% missed moves"
+        assert len(moves) == len(rows) == hbr.VETOED_CAP, (
+            f"{len(moves)} of {len(rows)} vetoed rows carry a measured move (cap "
+            f"{hbr.VETOED_CAP}) — an unanchorable row is the 2026-08-04 defect signature")
+        assert max(moves) >= 10.0, (
+            f"the 2026-07-31 panel carries double-digit missed moves; max is {max(moves)}")
 
     def test_no_vetoed_move_exceeds_its_confirmation_anchored_truth(self, frozen_lanes,
                                                                     board):
@@ -1504,7 +1555,7 @@ class TestG1Witnesses:
             # 2026-07-01), in which case the row displays the nearest session at or
             # before it — which is not a bucket label and cannot re-derive the anchor.
             marker = board["verdicts"][row["ticker"]]["last"]["date"]
-            confirmed = sq.confirmation_date(_as_series(dates, values), marker)
+            confirmed = sq.confirmation_date(_as_series(dates, values), marker, market="HK")
             assert confirmed is not None, row["ticker"]
             truth = hbr.cross_read(dates, values,
                                    cross_date=str(confirmed.date()))["pct_since"]
@@ -1789,7 +1840,8 @@ class TestLedgerIsTheGradedBoardOnly:
     def _lanes(self):
         return [{"ticker": "9988.HK", "group": "leaders", "close_asof": 1.0},
                 {"ticker": "0700.HK", "group": "ran", "close_asof": 1.0},
-                {"ticker": "1810.HK", "group": "vetoed", "close_asof": 1.0}]
+                {"ticker": "1810.HK", "group": "vetoed", "close_asof": 1.0},
+                {"ticker": "0027.HK", "group": "ripening", "close_asof": 1.0}]
 
     def _calls(self):
         from scripts.build_hk_library import _board_ledger_calls
@@ -1830,6 +1882,21 @@ class TestLedgerIsTheGradedBoardOnly:
         assert calls, "nothing was appended"
         for call in calls:
             assert call.get("board_definition") == hbr.BOARD_DEFINITION, call
+
+    def test_the_bucketing_eras_thread_off_the_row_verdict(self):
+        """R5 + R-SQ3: the verdict's own anchor_era/sq_anchor_era reach the ledger
+        row; a verdict without them (pre-era shape, no-signal blank) yields None so
+        the row reads as the pre-fence cohort, never a defaulted era."""
+        from scripts.build_hk_library import _board_ledger_calls
+        buys, watch = self._rows()
+        buys[0]["signal"] = {"tier": "T2",
+                             "anchor_era": "abs-session-2026-08-06",
+                             "sq_anchor_era": "sq-abs-session-2026-08-06"}
+        rows = _board_ledger_calls(buys, watch)
+        assert rows[0]["anchor_era"] == "abs-session-2026-08-06"
+        assert rows[0]["sq_anchor_era"] == "sq-abs-session-2026-08-06"
+        assert rows[1]["anchor_era"] is None
+        assert rows[1]["sq_anchor_era"] is None
 
     def test_watch_rows_keep_their_group_and_their_stamps(self):
         """On-lane behaviour for the cohorts that DO get logged is unchanged."""
@@ -1955,26 +2022,35 @@ class TestG1FixtureIsNotStale:
     tripwire without making every new market session break an older measurement.
     """
 
-    def test_every_frozen_window_starts_on_a_3b_bucket_boundary(self, board):
-        """THE PHASE INVARIANT — asserted, not described.
+    def test_every_frozen_window_shares_the_full_columns_bucket_grid(self, board):
+        """THE ANCHOR INVARIANT — the property the retired phase rule was proxying for.
 
-        ``regenerate_g1_fixture`` has called the 3B alignment "load-bearing rather
-        than cosmetic" since 2026-08-03 and NOTHING checked it.  It broke exactly as
-        prose predicts: a regenerator re-cutting a flat ``tail(_tail_sessions)``
-        (correct only if every window were the same length — 123 of these 157 are
-        not) put 123 windows off-grid, and because ``signal_quality.signal_frame``
-        anchors its ``resample("3B")`` bins on the series' FIRST index date, every
-        frozen marker date stopped being a bucket label.  The move-anchored lanes
-        then dropped the rows they could no longer anchor: the vetoed lane fell from
-        33 measured names (max +24.3%) to 5 (max +4.7%), TOP-FIRST.
+        WHAT THIS REPLACED, and why.  Until ``sq-abs-session-2026-08-06`` this test
+        asserted ``np.busday_count(column_start, window_start) % 3 == 0`` for every
+        frozen window, because ``signal_quality`` bucketed with business-day bins
+        anchored on the SERIES' FIRST index date: cut a column anywhere off that
+        phase and every bucket label moved, so the frozen verdicts' marker dates
+        stopped being bucket labels at all.  That broke exactly as its prose
+        predicted — a regenerator re-cutting a flat ``tail(_tail_sessions)`` (correct
+        only if every window were the same length; 123 of these 157 are not) put 123
+        windows off-grid, the move-anchored lanes silently dropped the rows they
+        could no longer anchor, and the vetoed lane fell from 33 measured names
+        (max +24.3%) to 5 (max +4.7%).  The only thing that failed was
+        ``test_the_vetoed_lane_prints_what_the_board_missed``'s ``max(moves) > 20.0``,
+        which READS as "the panel no longer carries big missed moves" — a
+        data-falsification claim.  A whole investigation went that way.
 
-        The only thing that failed was ``test_the_vetoed_lane_prints_what_the_board
-        _missed``'s ``max(moves) > 20.0``, which reads as "the panel no longer
-        carries big missed moves" — a data-falsification claim.  A whole
-        investigation went that way.  A fixture-shape defect must fail as a
-        fixture-shape defect, so it is measured here, on the shape, by name.
+        Under the absolute session anchor (R-SQ1/R-SQ4) the start phase is MOOT:
+        ``bucket(d) = session_positions(d, "HK") // 3`` is a function of the HK
+        reference calendar and the date alone, so a window cut ANYWHERE shares the
+        full column's grid.  Asserting the old modulus now would pin a rule the
+        engine no longer has.  So the invariant is asserted DIRECTLY, on the thing
+        the modulus was only ever a proxy for: the frozen window's bucket labels are
+        the full column's bucket labels.  This still fails loudly on a fixture-shape
+        defect — a window sliced out of a different column, or a re-anchored engine
+        that stops agreeing with itself — and it now also fails if the anchor ever
+        regresses to a start-phased grid, which the modulus could not detect.
         """
-        np = pytest.importorskip("numpy")
         pd = pytest.importorskip("pandas")
         src = Path(board["_source"])
         if not src.exists():                    # pragma: no cover — committed in-tree
@@ -1983,16 +2059,24 @@ class TestG1FixtureIsNotStale:
 
         off_grid = {}
         for ticker, frozen in board["closes"].items():
-            column_start = str(panel[ticker].dropna().index[0].date())
-            phase = int(np.busday_count(column_start, frozen["dates"][0])) % 3
-            if phase:
-                off_grid[ticker] = phase
+            column = panel[ticker].dropna()
+            window = pd.Series(
+                [float(v) for v in frozen["closes"]],
+                index=pd.to_datetime(list(frozen["dates"])))
+            full_labels = sq._tf_grid(column, 3, "HK").close.index
+            win_labels = sq._tf_grid(window, 3, "HK").close.index
+            # Only the LEADING bucket may differ: the window can start mid-bucket, in
+            # which case its open-date label is the first session the window actually
+            # carries. Every bucket after that must match the full column exactly.
+            missing = [d for d in win_labels[1:] if d not in full_labels]
+            if missing:
+                off_grid[ticker] = [str(d.date()) for d in missing[:3]]
         assert not off_grid, (
-            f"{len(off_grid)} of {len(board['closes'])} frozen windows do not start "
-            f"on a 3B bucket boundary of their own column "
-            f"(first few: {dict(list(off_grid.items())[:5])}) — the frozen verdicts' "
-            f"marker dates are no longer bucket labels, so the move-anchored lanes "
-            f"will silently drop rows rather than fail. Regenerate the fixture: "
+            f"{len(off_grid)} of {len(board['closes'])} frozen windows carry bucket "
+            f"labels their own full column does not (first few: "
+            f"{dict(list(off_grid.items())[:5])}) — the frozen verdicts' marker dates "
+            f"are no longer bucket labels, so the move-anchored lanes will silently "
+            f"drop rows rather than fail. Regenerate the fixture: "
             f"{regenerate_g1_fixture()}")
 
     def test_the_window_stamp_describes_the_windows_it_stamps(self, board):
@@ -2050,3 +2134,206 @@ class TestG1FixtureIsNotStale:
             frozen = board["verdicts"][ticker]
             for key in ("eligible", "ticks", "fresh_bars", "above200", "weekly_bull"):
                 assert live.get(key) == frozen[key], f"{ticker}.{key} drifted"
+
+
+# --------------------------------------------------------------------------- #
+# Ripening shelf (CN W8-R1 port, 2026-08-07) — the bench between fresh crosses
+# --------------------------------------------------------------------------- #
+class TestRipeningAdmits:
+    """The admission predicate, leg by leg — every unknown reads OUT, never IN."""
+
+    def test_a_cascade_eligible_name_never_ripens(self):
+        assert hbr.ripening_admits({"eligible": True}) is False
+
+    def test_a_recent_buy_marker_is_ran_lane_territory(self):
+        v = {"eligible": False, "last": {"type": "buy"}, "fresh_bars": 3}
+        assert hbr.ripening_admits(v) is False
+
+    def test_the_recent_cross_boundary_is_inclusive(self):
+        at = {"eligible": False, "last": {"type": "buy"},
+              "fresh_bars": hbr.RIPENING_RECENT_CROSS_SESSIONS}
+        past = {"eligible": False, "last": {"type": "buy"},
+                "fresh_bars": hbr.RIPENING_RECENT_CROSS_SESSIONS + 1}
+        assert hbr.ripening_admits(at) is False
+        assert hbr.ripening_admits(past) is True
+
+    def test_an_unknown_age_buy_marker_is_out_fail_closed(self):
+        """"Possibly just crossed" must not ripen — same law as the unknown
+        turnover never passing the featured floor."""
+        v = {"eligible": False, "last": {"type": "buy"}, "fresh_bars": None}
+        assert hbr.ripening_admits(v) is False
+
+    def test_a_sell_marker_and_a_missing_verdict_may_ripen(self):
+        assert hbr.ripening_admits({"eligible": False, "last": {"type": "sell"}}) is True
+        assert hbr.ripening_admits(None) is True
+
+    def test_zone_vocabulary_matches_the_classifier(self):
+        """The module-level zone words exist for templates/tests; they must be the
+        classifier's own — a drifted copy would silently empty a zone split."""
+        from engine import setup_tier
+        assert hbr.ZONE_READY == setup_tier.ZONE_READY
+        assert hbr.ZONE_BASING == setup_tier.ZONE_BASING
+        assert hbr.ZONE_FALLING == setup_tier.ZONE_FALLING
+
+    def test_the_lane_is_declared_display_tier(self):
+        assert "ripening" in hbr.DISPLAY_TIER_LANES
+
+    def test_lane_counts_carries_the_shelf(self):
+        counts = hbr.lane_counts(buy=[], ripening=[{"ticker": "0027.HK"}])
+        assert counts["ripening"] == 1
+
+
+class TestBuildRipeningRows:
+    """Lane mechanics — admission, exclusion, zoning, caps, ordering, carriage.
+
+    The zone CLASSIFIER is engine/setup_tier's and is pinned there; these tests
+    monkeypatch it (and w_setup) at the module the lane lazily imports, so what is
+    under test is exactly the lane's own behaviour.  One unpatched integration
+    test at the end runs the real engines end to end.
+    """
+
+    @staticmethod
+    def _series(n: int = 600, seed: int = 5):
+        """A seeded noisy grind-down into a sideways base — enough history for
+        w_setup's 2W floor (40 bins ≈ 400 daily bars) and enough texture for the
+        StochRSI legs (a noiseless ramp degenerates them to None).  Seed 5 is
+        pinned because it produces a LIVE washout setup zoned READY through the
+        real engines; the mechanics tests below never depend on the seed."""
+        import numpy as np
+        import pandas as pd
+        rng = np.random.default_rng(seed)
+        idx = pd.bdate_range("2024-01-02", periods=n)
+        steps = np.concatenate([rng.normal(-0.0012, 0.012, n - 130),
+                                rng.normal(0.0, 0.010, 130)])
+        vals = 100 * np.exp(np.cumsum(steps))
+        return [str(d.date()) for d in idx], list(vals)
+
+    def _close_of(self, tickers):
+        table = {t: self._series() for t in tickers}
+        return lambda t: table.get(t)
+
+    def _patch(self, monkeypatch, zones):
+        """w_setup always live; zone assignment read from the `zones` map."""
+        from engine import setup_tier
+
+        def fake_wsetup(daily):
+            return {"setup_live": True, "setup_reasons": ["2W stoch washout (stoch=20.0)"],
+                    "w2": {"stoch": 20.0, "macd_bars_to_cross": 2.0,
+                           "stoch_cross_up": False},
+                    "w1_cross": {"cross_date": "2026-07-24", "bars_since": 2,
+                                 "d_at_cross": 18.0, "from_washout": True},
+                    "base": {"spot_pct_in_range": 12.5}}
+
+        calls = {"n": 0}
+
+        def fake_zone(**kwargs):
+            ticker_zone = zones[calls["n"] % len(zones)]
+            calls["n"] += 1
+            return {"zone": ticker_zone, "evidence": ["e"],
+                    "evidence_display": [{"en": "e", "zh": "e", "receipt": "e"}]}
+
+        monkeypatch.setattr(setup_tier, "w_setup", fake_wsetup)
+        monkeypatch.setattr(setup_tier, "assign_ripening_zone", fake_zone)
+
+    def test_eligible_excluded_and_claimed_names_never_land(self, monkeypatch):
+        self._patch(monkeypatch, ["BASING"])
+        verdicts = {
+            "0001.HK": {"eligible": True},                       # buy board's story
+            "0002.HK": {"eligible": False, "last": {"type": "buy"}, "fresh_bars": 4},
+            "0003.HK": {"eligible": False},                      # claimed by leaders
+            "0004.HK": {"eligible": False},                      # should land
+        }
+        rows = hbr.build_ripening_rows(
+            verdicts, close_of=self._close_of(verdicts), exclude={"0003.HK"})
+        assert [r["ticker"] for r in rows] == ["0004.HK"]
+
+    def test_no_close_series_drops_the_candidate(self, monkeypatch):
+        self._patch(monkeypatch, ["BASING"])
+        rows = hbr.build_ripening_rows({"0004.HK": {"eligible": False}},
+                                       close_of=lambda t: None)
+        assert rows == []
+
+    def test_falling_zone_rows_are_dropped(self, monkeypatch):
+        self._patch(monkeypatch, ["FALLING"])
+        rows = hbr.build_ripening_rows({"0004.HK": {"eligible": False}},
+                                       close_of=self._close_of(["0004.HK"]))
+        assert rows == []
+
+    def test_ready_groups_before_basing_and_caps_hold(self, monkeypatch):
+        self._patch(monkeypatch, ["READY", "BASING"])   # alternating by call order
+        verdicts = {f"{i:04d}.HK": {"eligible": False} for i in range(1, 9)}
+        rows = hbr.build_ripening_rows(
+            verdicts, close_of=self._close_of(verdicts), cap=4, ready_cap=2)
+        assert len(rows) == 4
+        zones = [r["zone"] for r in rows]
+        assert zones == ["READY", "READY", "BASING", "BASING"]
+
+    def test_rows_carry_the_watch_stance_and_no_sort_keys(self, monkeypatch):
+        self._patch(monkeypatch, ["BASING"])
+        meta = {"0004.HK": {"name": "Sample Holdings", "name_zh": "样本控股",
+                            "sector": "Industrials", "sector_zh": "工业"}}
+        rows = hbr.build_ripening_rows({"0004.HK": {"eligible": False}},
+                                       meta_by=meta,
+                                       close_of=self._close_of(["0004.HK"]))
+        (row,) = rows
+        assert row["display_only"] is True
+        assert row["stance"] == hbr.RIPENING_STANCE
+        assert row["stance_zh"] == hbr.RIPENING_STANCE_ZH
+        assert row["name"] == "Sample Holdings"
+        assert row["name_zh"] == "样本控股"
+        assert row["sector_zh"] == "工业"
+        assert not any(k.startswith("_sort") for k in row)
+        # the shelf never speaks the buy language
+        assert "entry_signal" not in row and "priority_score" not in row
+
+    def test_article2_ordering_within_a_zone(self, monkeypatch):
+        """Imminence first: 2W bars-to-cross asc, then 1W cross age, then stoch."""
+        from engine import setup_tier
+
+        specs = {
+            "0001.HK": {"btc": 5.0, "bars": 1, "stoch": 10.0},
+            "0002.HK": {"btc": 1.0, "bars": 9, "stoch": 90.0},
+            "0003.HK": {"btc": None, "bars": 0, "stoch": 5.0},
+        }
+
+        def fake_wsetup_for(t):
+            s = specs[t]
+            return {"setup_live": True, "setup_reasons": ["r"],
+                    "w2": {"stoch": s["stoch"], "macd_bars_to_cross": s["btc"],
+                           "stoch_cross_up": False},
+                    "w1_cross": {"cross_date": "2026-07-24", "bars_since": s["bars"],
+                                 "d_at_cross": 18.0, "from_washout": True},
+                    "base": {"spot_pct_in_range": 50.0}}
+
+        table = {t: self._series() for t in specs}
+        order_seen = []
+
+        def fake_wsetup(daily):
+            # close_of is called per ticker in dict order; recover the ticker by
+            # tracking the call sequence (dict order == iteration order).
+            t = order_seen.pop(0)
+            return fake_wsetup_for(t)
+
+        real_close_of = self._close_of(specs)
+
+        def tracking_close_of(t):
+            order_seen.append(t)
+            return real_close_of(t)
+
+        monkeypatch.setattr(setup_tier, "w_setup", fake_wsetup)
+        monkeypatch.setattr(
+            setup_tier, "assign_ripening_zone",
+            lambda **k: {"zone": "BASING", "evidence": [], "evidence_display": []})
+        rows = hbr.build_ripening_rows(
+            {t: {"eligible": False} for t in specs}, close_of=tracking_close_of)
+        assert [r["ticker"] for r in rows] == ["0002.HK", "0001.HK", "0003.HK"]
+
+    def test_real_engines_end_to_end_on_a_washout_series(self):
+        """No monkeypatch: a long decline into a washout must land on the shelf
+        through the real w_setup + zone classifier, zoned READY or BASING."""
+        rows = hbr.build_ripening_rows(
+            {"0004.HK": {"eligible": False, "last": {"type": "sell"}}},
+            close_of=self._close_of(["0004.HK"]))
+        assert len(rows) == 1
+        assert rows[0]["zone"] in (hbr.ZONE_READY, hbr.ZONE_BASING)
+        assert rows[0]["reasons"], "the shelf must say WHY the setup is live"

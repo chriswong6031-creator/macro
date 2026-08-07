@@ -12,9 +12,15 @@ Output
 
 Lifecycle
 ---------
-  Rebuilt on demand; NOT on the nightly path; frozen between rebuilds.
-  Run when: (a) the EDGAR fundamentals_panel is refreshed, (b) the v2 archetype
-  thresholds change, or (c) a new archetype bucket is added.
+  Kept in lockstep with the fundamentals panel MECHANICALLY since 2026-08:
+  archetypes_history_refresh_if_stale() runs right after fetch_panel in
+  build_site (key-set check ~0.3s nightly; rebuild ~2.6s only when the panel's
+  (ticker, fy) set changed). The manual "rebuild on demand" contract rotted in
+  practice — built once 2026-07-03 at 1,331 tickers while the panel grew to
+  1,552, leaving MCD and 230 other names label-less downstream for a month.
+  Run this script by hand when: (a) the v2 archetype thresholds change, (b) a
+  new archetype bucket is added, or (c) a heal rewrote panel VALUES under
+  unchanged (ticker, fy) keys (the key-set check cannot see that).
 
 Note on PIT status
 ------------------
