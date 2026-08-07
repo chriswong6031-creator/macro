@@ -1220,7 +1220,15 @@ def test_no_module_outside_the_runner_imports_the_audit():
                # imports ARTIFACT_REL/FORWARD_LOG_REL so the commit step's `git add` list
                # is DERIVED from the writer rather than copied out of the workflow. Same
                # scoping as above: one named test file, no authority path.
-               "tests/test_prophet_off_engine_lane.py"}
+               "tests/test_prophet_off_engine_lane.py",
+               # 2026-08-07 (#4715): this one does not IMPORT the audit at all — it names
+               # the module in a price-basis annotation table, as the value
+               # "INHERITS: reads excess_spy from a ledger, does not compute it". The
+               # check below is a substring sweep over the file, not an import graph, so
+               # documenting that the audit derives rather than computes reads as an
+               # authority path to it. That assertion is the fence's own claim, so the
+               # allowance is the same one-named-file scoping as the entries above.
+               "tests/test_price_basis_graders.py"}
     offenders = []
     for d in ("engine", "scripts", "app", "admin", "collectors", "lib", "tools", "tests"):
         for p in (root / d).rglob("*.py"):
