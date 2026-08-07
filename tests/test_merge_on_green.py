@@ -1341,3 +1341,122 @@ def test_re_proving_never_labels_a_pull_request_a_concurrent_sweep_just_merged(
         line.startswith("::notice") and "concurrent sweep" in line
         for line in capsys.readouterr().out.splitlines()
     )
+
+
+# --- base-inherited reds: the thing that regenerated the backlog ---------------
+#
+# Every time main went red, every armed PR inherited the failure, and `sweep_pull`
+# returned at `blocked` BEFORE reaching the staleness path — so nothing ever
+# re-tested them once main was healed. Measured 2026-08-07: of 100 armed PRs,
+# ci-pack-2 was red on 62 and ci-pack-3 on 62, both already repaired on main by
+# #4752 and #4767. Fleet-wide IDENTICAL failures are a stale base, not 62 bugs.
+# They drained only when a human ran `update-branch` on each one by hand.
+
+
+def test_a_red_inherited_from_a_since_healed_main_is_refreshed_not_blocked(
+    monkeypatch, capsys
+):
+    """The whole point: every failing check green on main => refresh, don't block."""
+    pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-3", conclusion="failure")]}}
+    calls = _fake_api(monkeypatch, check_pages=pages, update_status=202)
+    verdict = MOG.sweep_pull(
+        "acme/widgets", _pull(), "read", "write", _freshness(), {"ci-pack-3"}
+    )
+    assert verdict == "rebased"
+    assert any(call[1].endswith("/update-branch") for call in calls), \
+        "must fast-forward the stale head"
+    posts = [call for call in calls if call[0] == "POST"]
+    assert not [c for c in posts if c[1].endswith("/labels")], \
+        "a base-inherited red must NOT be labeled merge-blocked"
+    assert not [c for c in posts if c[1].endswith("/comments")], \
+        "and must NOT burn the one-shot comment"
+
+
+def test_a_red_main_does_not_share_is_still_blocked(monkeypatch, capsys):
+    """The narrowness that keeps this safe.
+
+    One failing check that is NOT clean on main means the red is (or may be) this
+    pull request's own, so the unchanged blocking path must run. Refreshing here
+    would rebase a genuine regression out of sight.
+    """
+    pages = {
+        1: {
+            "total_count": 2,
+            "check_runs": [
+                _run("ci-pack-3", conclusion="failure"),
+                _run("ci-pack-9", conclusion="failure"),
+            ],
+        }
+    }
+    calls = _fake_api(monkeypatch, check_pages=pages, update_status=202)
+    verdict = MOG.sweep_pull(
+        "acme/widgets", _pull(), "read", "write", _freshness(), {"ci-pack-3"}
+    )
+    assert verdict == "blocked"
+    assert not any(call[1].endswith("/update-branch") for call in calls), \
+        "a genuine red must never be refreshed"
+
+
+def test_an_unreadable_main_blocks_exactly_as_before(monkeypatch, capsys):
+    """Fail-closed: no knowledge of main is never permission to refresh."""
+    pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-3", conclusion="failure")]}}
+    calls = _fake_api(monkeypatch, check_pages=pages, update_status=202)
+    verdict = MOG.sweep_pull(
+        "acme/widgets", _pull(), "read", "write", _freshness(), set()
+    )
+    assert verdict == "blocked"
+    assert not any(call[1].endswith("/update-branch") for call in calls)
+
+
+def test_a_head_already_current_falls_through_and_cannot_loop(monkeypatch, capsys):
+    """update-branch answers 422 when there is nothing to fast-forward.
+
+    That is precisely the case where the red must be the pull request's own, so the
+    call falls through to `merge-blocked`. This is what makes the branch
+    self-terminating — a PR can never be refreshed twice for the same red.
+    """
+    pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-3", conclusion="failure")]}}
+    calls = _fake_api(monkeypatch, check_pages=pages, update_status=422)
+    verdict = MOG.sweep_pull(
+        "acme/widgets", _pull(), "read", "write", _freshness(), {"ci-pack-3"}
+    )
+    assert verdict == "blocked"
+    assert any(call[1].endswith("/update-branch") for call in calls), "it tried"
+    assert any(
+        call[0] == "POST" and call[1].endswith("/labels") for call in calls
+    ), "and then blocked exactly as before"
+
+
+def test_main_clean_check_names_is_fail_closed_on_an_unreadable_main(monkeypatch):
+    """Any error reading main yields an EMPTY set — never a permissive one."""
+    def boom(method, url, token, payload=None):
+        if url.endswith("/commits/main"):
+            return 500, {}
+        return 200, {}
+
+    monkeypatch.setattr(MOG, "_request", boom)
+    assert MOG.main_clean_check_names("acme/widgets", "read") == set()
+
+
+def test_main_clean_check_names_ignores_the_spurious_check_and_pending_runs(monkeypatch):
+    """Only CONCLUDED, non-spurious, clean names may widen what a red PR can do."""
+    def fake(method, url, token, payload=None):
+        if url.endswith("/commits/main"):
+            return 200, {"sha": "a" * 40}
+        if "/check-runs" in url:
+            page = int(url.rsplit("page=", 1)[1].split("&")[0])
+            if page > 1:
+                return 200, {"total_count": 0, "check_runs": []}
+            return 200, {
+                "total_count": 4,
+                "check_runs": [
+                    _run("ci-pack-0", conclusion="success"),
+                    _run("Workers Builds: macro", conclusion="success"),
+                    _run("ci-pack-1", status="in_progress", conclusion=None),
+                    _run("ci-pack-2", conclusion="failure"),
+                ],
+            }
+        return 200, {}
+
+    monkeypatch.setattr(MOG, "_request", fake)
+    assert MOG.main_clean_check_names("acme/widgets", "read") == {"ci-pack-0"}
