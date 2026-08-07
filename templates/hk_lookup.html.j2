@@ -722,8 +722,14 @@
       box.innerHTML = '<p class="muted" style="font-size:13px">' + L('nochart') + '</p>';
       return;
     }
+    // `anchor` carries the ABSOLUTE 3-session bucket boundaries the engine cuts its 3D
+    // grid on (build_hk_library.chart_series, era display-grid-abs-session-2026-08-06).
+    // Passing it through is what keeps this inline path on the same grid as every fetched
+    // payload — without it chart.js falls back to floor(i/3), which re-phases whenever the
+    // ~2y window slides a session.
     var data = { t: d.ticker, o: 0, src: 'hk',
-      bars: ch.t.map(function (x, i) { return [x, ch.c[i], null]; }) };
+      bars: ch.t.map(function (x, i) { return [x, ch.c[i], null]; }),
+      anchor: ch.anchor || null };
     try { window.StockChart.mount(box, d.ticker, {name: d.name, data: data}); }
     catch (e) { /* chart is garnish — analysis above stands alone */ }
   }

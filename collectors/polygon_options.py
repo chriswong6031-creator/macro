@@ -127,6 +127,19 @@ class PolygonOptions(Adapter):
             url, params = nxt, {"apiKey": self.key}
         return out
 
+    def ticker_details(self, symbol: str) -> dict:
+        """GET /v3/reference/tickers/{symbol} -> the ``results`` object (shares
+        outstanding, SIC industry). Single-object endpoint: ``results`` is a
+        DICT, so it must not go through _get — list.extend over that dict
+        iterates its KEYS, which is exactly how the S&P 500 shares reference
+        shipped all-None for four weekly sweeps (2026-07-11..08-02)."""
+        r = self.http_get(f"{self.base}/v3/reference/tickers/{symbol}",
+                          retries=int(self.cfg.get("retries", 3)),
+                          timeout=int(self.cfg.get("request_timeout", 60)),
+                          params={"apiKey": self.key})
+        res = (r.json() or {}).get("results")
+        return res if isinstance(res, dict) else {}
+
     def spot(self, symbol: str) -> float | None:
         """Last/close from the (15-min delayed) stock snapshot — fine for an EOD build.
         Prefers the day close, then the last minute, then prior close."""

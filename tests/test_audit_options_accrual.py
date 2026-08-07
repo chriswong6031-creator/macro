@@ -11,32 +11,52 @@ import pandas as pd
 import pytest
 
 from scripts.audit_options_accrual import (
-    _is_trading_day,
     _last_trading_day,
     _latest_chain_date,
+    _sessions_behind,
     audit,
 )
 
 
-# ── _is_trading_day ───────────────────────────────────────────────────────────
+# ── the calendar is lib.nyse_calendar, not a hand-rolled one ──────────────────
+#
+# `_is_trading_day` was deleted in the 2026-08-06 repair. It was a Mon-Fri check minus
+# THREE fixed holidays, so every other market closure read as a trading day and raised a
+# false STALE. These tests pin the module's behaviour against the real calendar rather
+# than re-testing a deleted internal.
 
 
-def test_weekdays_are_trading_days():
-    # 2026-07-06 is a Monday
-    assert _is_trading_day(date(2026, 7, 6))
-    assert _is_trading_day(date(2026, 7, 7))  # Tuesday
-    assert _is_trading_day(date(2026, 7, 8))  # Wednesday
+def test_weekdays_are_sessions():
+    for d in (date(2026, 7, 6), date(2026, 7, 7), date(2026, 7, 8)):  # Mon/Tue/Wed
+        assert _last_trading_day(d) == d
 
 
-def test_weekend_not_trading():
-    assert not _is_trading_day(date(2026, 7, 4))   # Saturday
-    assert not _is_trading_day(date(2026, 7, 5))   # Sunday
+def test_weekends_roll_back_to_the_prior_session():
+    assert _last_trading_day(date(2026, 7, 11)) == date(2026, 7, 10)  # Sat → Fri
+    assert _last_trading_day(date(2026, 7, 12)) == date(2026, 7, 10)  # Sun → Fri
 
 
-def test_fixed_holiday_not_trading():
-    assert not _is_trading_day(date(2026, 1, 1))   # New Year
-    assert not _is_trading_day(date(2026, 7, 4))   # Independence (also Sat but still)
-    assert not _is_trading_day(date(2026, 12, 25)) # Christmas
+@pytest.mark.parametrize("holiday,prior_session", [
+    (date(2026, 1, 1),  date(2025, 12, 31)),  # New Year's Day
+    (date(2026, 6, 19), date(2026, 6, 18)),   # Juneteenth  — missed by the old list
+    (date(2026, 7, 3),  date(2026, 7, 2)),    # Independence observed (07-04 is a Sat)
+    (date(2026, 9, 7),  date(2026, 9, 4)),    # Labor Day   — missed by the old list
+    (date(2026, 11, 26), date(2026, 11, 25)), # Thanksgiving — missed by the old list
+    (date(2026, 12, 25), date(2026, 12, 24)), # Christmas
+])
+def test_market_holidays_are_not_sessions(holiday, prior_session):
+    """Each of these read as a trading day under the old three-holiday list, so a store
+    that was correctly up to date on the prior session was reported STALE."""
+    assert _last_trading_day(holiday) == prior_session
+
+
+def test_staleness_is_counted_in_sessions_not_calendar_days():
+    """`(last_td - latest).days` was the old measure and is wrong across any closure."""
+    assert _sessions_behind(date(2026, 7, 2), date(2026, 7, 6)) == 1   # 4 calendar days
+    assert _sessions_behind(date(2026, 7, 6), date(2026, 7, 8)) == 2
+    assert _sessions_behind(date(2026, 7, 8), date(2026, 7, 8)) == 0
+    # a store somehow ahead of the calendar clamps to 0, never negative
+    assert _sessions_behind(date(2026, 7, 9), date(2026, 7, 8)) == 0
 
 
 # ── _last_trading_day ─────────────────────────────────────────────────────────
@@ -54,9 +74,26 @@ def test_last_trading_day_saturday_rolls_back():
 
 
 def test_last_trading_day_sunday_rolls_back():
-    # Sunday 2026-07-05 → Friday 2026-07-03 (not a holiday)
-    result = _last_trading_day(date(2026, 7, 5))
-    assert result == date(2026, 7, 3)
+    # Sunday 2026-07-05 → Thursday 2026-07-02, NOT Friday 07-03.
+    # 2026-07-04 is a Saturday, so the NYSE observes Independence Day on Friday 07-03.
+    # This assertion used to read `== date(2026, 7, 3)` with the comment "not a holiday",
+    # which is exactly the belief the old hand-rolled three-holiday calendar encoded.
+    assert _last_trading_day(date(2026, 7, 5)) == date(2026, 7, 2)
+
+
+def test_a_holiday_gap_is_not_counted_as_staleness(tmp_path, monkeypatch):
+    """The regression the real calendar removes: 07-02 → 07-06 is FOUR calendar days but
+    only ONE session (07-03 Independence Day observed, 07-04/05 the weekend). The old
+    code did `(last_td - latest).days` and raised a false STALE on every long weekend."""
+    import scripts.audit_options_accrual as aoa
+    monkeypatch.setattr("scripts.audit_options_accrual._last_trading_day",
+                        lambda ref=None: date(2026, 7, 6))
+    _make_chains_dir(tmp_path, ["2026-07-02"])
+    monkeypatch.setattr(aoa.config, "data_dir", lambda: tmp_path)
+    result = aoa.audit(max_age_sessions=1)
+    assert result["detail"]["chains_age_sessions"] == 1, "07-02 → 07-06 is one session"
+    assert not [f for f in result["fail_reasons"] if "STALE" in f]
+    assert result["ok"]
 
 
 # ── _latest_chain_date ────────────────────────────────────────────────────────
@@ -115,22 +152,23 @@ def test_audit_ok_fresh_chains(tmp_path, monkeypatch):
 
 
 def test_audit_stale_chains(tmp_path, monkeypatch):
-    """Chains 2 days behind last_td → STALE fail reason."""
-    last_td = date(2026, 7, 3)
+    """Chains 2 SESSIONS behind the last completed session → STALE fail reason."""
+    last_td = date(2026, 7, 8)   # Wednesday
     monkeypatch.setattr("scripts.audit_options_accrual._last_trading_day",
                         lambda ref=None: last_td)
-    _make_chains_dir(tmp_path, ["2026-07-01"])   # 2 days behind
+    _make_chains_dir(tmp_path, ["2026-07-06"])   # 07-07 + 07-08 = 2 sessions behind
     import scripts.audit_options_accrual as aoa
     monkeypatch.setattr(aoa.config, "data_dir", lambda: tmp_path)
     monkeypatch.delenv("MASSIVE_S3_ACCESS_KEY_ID", raising=False)
-    result = aoa.audit(max_age_days=1)
+    result = aoa.audit(max_age_sessions=1)
+    assert result["detail"]["chains_age_sessions"] == 2
     assert not result["ok"]
     assert any("STALE" in f for f in result["fail_reasons"])
 
 
 def test_audit_dark_chains(tmp_path, monkeypatch):
     """No chain files at all → DARK fail reason."""
-    last_td = date(2026, 7, 3)
+    last_td = date(2026, 7, 8)
     monkeypatch.setattr("scripts.audit_options_accrual._last_trading_day",
                         lambda ref=None: last_td)
     (tmp_path / "polygon_gex" / "chains").mkdir(parents=True)
@@ -142,27 +180,30 @@ def test_audit_dark_chains(tmp_path, monkeypatch):
 
 
 def test_audit_at_limit_is_warning_not_fail(tmp_path, monkeypatch):
-    """Chains exactly 1 day behind → warning, not fail (OK today but will trip tomorrow)."""
-    last_td = date(2026, 7, 3)
+    """Chains exactly 1 SESSION behind → warning, not fail.
+
+    This is the steady state between the 16:00 ET close and that night's accrual, so it
+    must never fail — the threshold tolerating exactly 1 is load-bearing, not slack."""
+    last_td = date(2026, 7, 8)
     monkeypatch.setattr("scripts.audit_options_accrual._last_trading_day",
                         lambda ref=None: last_td)
-    _make_chains_dir(tmp_path, ["2026-07-02"])   # exactly 1 day behind
+    _make_chains_dir(tmp_path, ["2026-07-07"])   # exactly 1 session behind
     import scripts.audit_options_accrual as aoa
     monkeypatch.setattr(aoa.config, "data_dir", lambda: tmp_path)
     monkeypatch.setenv("MASSIVE_S3_ACCESS_KEY_ID", "k")
     monkeypatch.setenv("MASSIVE_S3_SECRET_ACCESS_KEY", "s")
     monkeypatch.setenv("MASSIVE_S3_ENDPOINT", "https://x")
-    result = aoa.audit(max_age_days=1)
+    result = aoa.audit(max_age_sessions=1)
     assert result["ok"]   # at-limit is a warning, not a failure
     assert any("AT LIMIT" in w for w in result["warnings"])
 
 
 def test_audit_missing_creds_warns(tmp_path, monkeypatch):
     """Missing MASSIVE_S3 creds → warning (not fail) in options_flow_creds."""
-    last_td = date(2026, 7, 3)
+    last_td = date(2026, 7, 8)
     monkeypatch.setattr("scripts.audit_options_accrual._last_trading_day",
                         lambda ref=None: last_td)
-    _make_chains_dir(tmp_path, ["2026-07-03"])  # fresh chains
+    _make_chains_dir(tmp_path, ["2026-07-08"])  # fresh chains
     import scripts.audit_options_accrual as aoa
     monkeypatch.setattr(aoa.config, "data_dir", lambda: tmp_path)
     monkeypatch.delenv("MASSIVE_S3_ACCESS_KEY_ID", raising=False)

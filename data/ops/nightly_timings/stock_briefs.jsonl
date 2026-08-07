@@ -1,0 +1,1 @@
+{"date":"2026-08-06","workflow":"daily","job":"stock_briefs","run_id":"31067383446","run_attempt":"1","runner":"mac-builder-1","cap_minutes":45.0,"start":"2026-08-06T13:47:16Z","end":"2026-08-06T13:49:28Z","elapsed_minutes":2.2,"pct_of_cap":4.9,"bands":[],"source":"backfill-gh-api","conclusion":"success"}
