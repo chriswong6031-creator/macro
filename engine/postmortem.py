@@ -29,8 +29,11 @@ FOUR THINGS THIS MODULE DELIBERATELY DOES NOT DO
    to the latest close, and a mark is outcome-conditioned in the exact way
    track_scoring rule 2 exists to prevent: today's biggest losers are over-represented
    among names that have not yet resolved. In-flight episodes are CLASSIFIED (that is
-   the forensic value — four of the operator's eleven worst names are still open) and
-   are then held in a separate, labelled block that enters NO rate and NO expectancy.
+   the forensic value — a worst-rows list is largely made of names that have not yet
+   finished) and are then held in a separate, labelled block that enters NO rate and NO
+   expectancy. The corollary is that a cohort label read off such a row is a MARK with a
+   shelf life: five of the operator's eleven worst names on 2026-07-31 were still open,
+   and one of them (FN 07-21) closed +1.66%. See `path_tails`.
    `aggregate()` enforces this structurally: every rate is computed over
    `maturity == "matured"` only.
 
@@ -533,6 +536,34 @@ def cohort_of(outcome_pct: float | None, excess_pct: float | None) -> str:
     if (o is not None and o <= LOSER_ABS_PCT) or (x is not None and x <= LOSER_EXCESS_PCT):
         return "loser"
     return "neutral"
+
+
+def path_tails(cohort: str, mae_pct: float | None, mfe_pct: float | None) -> list[str]:
+    """The gates an episode's PATH crossed that its VERDICT does not show.
+
+    A forced-horizon verdict is a single number read off one bar, and `cohort_of` is
+    right to trust it — but it is not the whole episode. FN 2026-07-21 fell 19.3% and
+    closed +1.66%: `neutral`, correctly, and yet nothing like a name that drifted
+    sideways for ten sessions. The difference IS the exit-policy question (masterplan
+    G3): a stop would have booked that drawdown and forfeited the recovery, and the
+    winner that ran +12% before handing it back is the same question from the other
+    side. Both are invisible in a table keyed on the verdict alone.
+
+    Recorded per row so the round trip is a FACT ON THE EPISODE rather than something a
+    reader has to re-derive from MAE/MFE by eye — and so the serializer can tell a
+    genuinely uneventful episode (safe to compact) from one whose context is the
+    evidence. Empty when the path never left the band the verdict sits in.
+
+    Takes the ROUNDED mae/mfe the row publishes, never the raw floats: a reader checking
+    the flag against the printed number must never find them disagreeing at the gate.
+    """
+    out: list[str] = []
+    mae, mfe = _f(mae_pct), _f(mfe_pct)
+    if cohort != "loser" and mae is not None and mae <= LOSER_ABS_PCT:
+        out.append("loser")
+    if cohort != "winner" and mfe is not None and mfe >= WINNER_ABS_PCT:
+        out.append("winner")
+    return out
 
 
 # --------------------------------------------------------------------------- #

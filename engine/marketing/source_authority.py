@@ -53,6 +53,7 @@ That asymmetry is the whole design: WE STOP BORROWING CREDIBILITY WE CANNOT NAME
 Public API:
     citation(item, *, cfg=None) -> dict     # {credit, tier, reason}
     authority_tier(item, *, cfg=None) -> str
+    card_chip_name(source_name, source_tier, *, cfg=None) -> str
     self_evident(item) -> tuple[bool, str]
     resolve_attribution(item, decision, *, cfg=None) -> dict
 """
@@ -293,6 +294,72 @@ def citation(item: dict, *, cfg: dict | None = None) -> dict:
                 "reason": "no display name to cite"}
     return {"credit": name, "tier": tier,
             "reason": f"{tier} source — the name adds standing"}
+
+
+def card_chip_name(
+    source_name: object, source_tier: object, *, cfg: dict | None = None
+) -> str:
+    """The publication name the CARD CHIP may draw, or "" for none.
+
+    OPERATOR RULING 2026-08-06 — "NAME REAL NEWSWIRES ONLY". This narrows the
+    2026-08-05 law that killed the name outright. That law was written against
+    three live cards ("ZeroHedge · WIRE SERVICE", "CNBC · WIRE SERVICE",
+    "ForexLive · WIRE SERVICE") and the blanket kill took CNBC down with the
+    other two. The ruling separates them: a real newswire or a primary source
+    MAY be named, and everything else — aggregators, relay blogs, unknown tiers,
+    our own desks — may not. ZeroHedge and ForexLive stay unnamed; CNBC and a
+    Federal-Reserve-tier source are named.
+
+    DEFAULT-DENY, AND THE CONFIG IS THE WHOLE ADMISSION. This module supplies no
+    built-in chip names: the two lists live in config/press_sources.yml under
+    ``citation.card_chip`` so the operator can add or retire a masthead without
+    a deploy, and an absent/empty/unparseable config names NOBODY. That is the
+    safe direction — the failure mode of a broken config is the 2026-08-05
+    behaviour (tier caption alone), never a masthead we did not admit.
+
+    THE TIER STILL DECIDES THE CAPTION; THIS DECIDES THE NAME. An `official`
+    source is checked against ``card_chip.official``, a `wire` source against
+    ``card_chip.newswire``, and every other tier (aggregator, mirror, x_relay,
+    unknown) is refused before either list is read — a mirror relays somebody
+    else's copy, so naming the mirror claims a relationship with a newsroom we
+    do not have (the same reasoning as ``_NEVER_CITE_TIERS`` above).
+
+    MATCHED ON THE DISPLAY NAME, lower-cased and EXACT. The chip is deciding
+    about the exact string it is about to draw, so the string is the key; a
+    substring match would let "Reuters-style" or "Not-CNBC" through, which is
+    the defect :data:`_MARQUEE_NAMES` documents. The parenthetical mirror note
+    is stripped first ("Truth Social (via trumpstruth.org)"), the same
+    normalisation :func:`citation` applies, so a name cannot dodge the list by
+    carrying its relay in brackets.
+
+    WHY NOT REUSE :func:`authority_tier`. That answers a question about an ITEM
+    (host, feed key, event class, corroboration) for the POST BODY's credit
+    clause. The renderer holds a name and a tier and nothing else, and the two
+    policies are meant to be separately editable — ``never_cite`` retires a
+    masthead from the post text, ``card_chip`` admits one to the picture.
+    """
+    tier = str(source_tier or "").strip().lower()
+    if tier == "official":
+        key = "official"
+    elif tier == "wire":
+        key = "newswire"
+    else:
+        return ""
+
+    name = str(source_name or "").strip()
+    # "Truth Social (via trumpstruth.org)" -> "Truth Social".
+    name = re.split(r"\s*\(", name, maxsplit=1)[0].strip()
+    if not name:
+        return ""
+
+    block = (cfg or {}).get("card_chip") if isinstance(cfg, dict) else None
+    if not isinstance(block, dict):
+        return ""
+    allowed = block.get(key)
+    if not isinstance(allowed, (list, tuple)):
+        return ""
+    admitted = {str(entry).strip().lower() for entry in allowed if str(entry).strip()}
+    return name if name.lower() in admitted else ""
 
 
 def self_evident(item: dict) -> tuple[bool, str]:

@@ -1,0 +1,113 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "AEE-2026-06-30-buy",
+  "ticker": "AEE",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "AEE",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "AEE",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "mixed",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Utilities",
+    "excess_spy": -0.024699704749393203,
+    "excess_sector": -0.013615391523889575,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "DEAD_MONEY",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "AEE underperformed SPY and ended DEAD_MONEY under a mixed recorded cause, while the process was classified clean. This is an outcome-cause problem requiring conditioning research, not tighter gating.",
+    "root_cause": "AEE underperformed SPY and ended DEAD_MONEY under a mixed recorded cause, while the process was classified clean. This is an outcome-cause problem requiring conditioning research, not tighter gating.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The Utilities, macro-regime, and rotation books may have missed an unfavorable conditioning cell, while no timing or gate process defect is evidenced.",
+    "engines_credit": "The clean process record is not a laggard; Utilities rotation and macro-regime organs require study because the supplied mixed attribution is unresolved.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "The company-specific component of the mixed thesis failed to generate relative strength during the audit window.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "A stronger company-specific component could have offset contextual weakness.",
+        "evidence_refs": [
+          "outcome_cause=mixed",
+          "excess_spy=-0.024699704749393203"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "sector",
+        "factor": "",
+        "mechanism": "Utilities conditions may have constrained performance or failed to provide the expected defense.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "If Utilities had shown supportive relative breadth, AEE might have avoided dead money.",
+        "evidence_refs": [
+          "sector=Utilities"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "Insufficient relative progress matured into DEAD_MONEY despite a clean recorded process.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "Sustained relative momentum after entry could have prevented the terminal classification.",
+        "evidence_refs": [
+          "terminal_state=DEAD_MONEY",
+          "process_fault=clean"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "An adverse rate or macro regime for Utilities",
+      "Market rotation away from defensive sectors",
+      "Company-specific weakness not represented in the supplied fields",
+      "Opportunity-cost underperformance rather than an outright price breakdown"
+    ],
+    "missing_evidence": [
+      "Utilities relative breadth and fund flows",
+      "Entry-date rate, volatility, and growth regime",
+      "Company estimate revisions and news chronology",
+      "Absolute return and intraperiod path",
+      "Decomposition of the mixed cause"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "utilities_regime_cell",
+        "feature": "Utilities relative performance conditional on rate and market-rotation regime",
+        "measurement": "Partition historical Utilities selections by timestamp-safe rate direction, defensive breadth, and market leadership.",
+        "expected_direction": "Supportive Utilities breadth and rate conditions should associate with less dead money.",
+        "falsifier": "Dead-money incidence is unchanged across held-out regime cells.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T23:44:21+00:00"
+}

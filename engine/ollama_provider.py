@@ -211,6 +211,21 @@ class _Messages:
     ) -> None:
         self.base_url = validate_base_url(base_url)
         self.timeout_s = max(1.0, float(timeout_s))
+        # A FLOOR, NOT A CAP — and inert at every window this repo configures.
+        #
+        # It only RAISES a nonsense request (0, a typo, a lane that resolved its
+        # window from an absent config key); it never lowers a real one, so a
+        # caller asking for 32768 sends 32768. Read as a ceiling it looks like a
+        # 4,096-token pin, which is how it was misread once the host's
+        # OLLAMA_CONTEXT_LENGTH moved off its 4,096 default on 2026-08-06.
+        #
+        # That host setting never reaches this line: it is the default for
+        # requests that OMIT num_ctx, and every request built here carries one.
+        # Measured against qwen3.5:9b on the RTX 5070 Ti — a request for 65536
+        # against a server configured at 32768 loaded a 65536-token runner — so
+        # the per-request option is the lever in both directions, above the
+        # server's default as well as below it. `tests/test_ollama_provider.py`
+        # pins both halves.
         self.num_ctx = max(4096, int(num_ctx))
         self.keep_alive = str(keep_alive or "5m")
 

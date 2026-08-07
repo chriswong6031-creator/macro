@@ -1,0 +1,111 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "FCN-2026-06-30-buy",
+  "ticker": "FCN",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "FCN",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "FCN",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_alpha",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Industrials",
+    "excess_spy": 0.06516899605175808,
+    "excess_sector": 0.08606921387314692,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CLEAN_LIFTOFF",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "FCN outperformed SPY and reached CLEAN_LIFTOFF, with the supplied taxonomy attributing the outcome to company-specific alpha. The record does not identify the underlying company mechanism or catalyst.",
+    "root_cause": "FCN outperformed SPY and reached CLEAN_LIFTOFF, with the supplied taxonomy attributing the outcome to company-specific alpha. The record does not identify the underlying company mechanism or catalyst.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The company-alpha book surfaced the winner, while catalyst, rotation, and regime engines cannot be assessed from the supplied evidence.",
+    "engines_credit": "Company-alpha selection is the role model; the catalyst, market-rotation, sector, and macro-regime organs remain uncredited because their entry-date evidence is missing.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "Company-specific strength is the recorded primary explanation for relative outperformance.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "If FCN had lacked company-specific strength, its excess return and clean liftoff would be less readily explained.",
+        "evidence_refs": [
+          "outcome_cause=idio_alpha",
+          "excess_spy=0.06516899605175808",
+          "terminal_state=CLEAN_LIFTOFF"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "entry_timing",
+        "factor": "",
+        "mechanism": "Immediate buy-lane placement may have captured the favorable move without a recorded process fault.",
+        "evidence_status": "claimed",
+        "timing_status": "known_at_entry",
+        "counterfactual": "A later entry could have captured less of the move, but the price path is unavailable.",
+        "evidence_refs": [
+          "lane=buy",
+          "board_tenure_days=0.0",
+          "process_fault=clean"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "catalyst",
+        "factor": "",
+        "mechanism": "An unidentified catalyst or re-rating may have translated company strength into the observed liftoff.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Absent a catalyst, the same alpha thesis might have developed more slowly.",
+        "evidence_refs": []
+      }
+    ],
+    "alternate_explanations": [
+      "Industrials rotation rather than purely company-specific alpha",
+      "A broad risk-on regime not captured by SPY-relative return alone",
+      "Post-entry news or external re-rating"
+    ],
+    "missing_evidence": [
+      "Entry-date thesis and feature snapshot",
+      "Industry-relative and sector-relative returns",
+      "Dated news, filings, estimates, and price-volume history",
+      "Macro and rotation regime at entry"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "idio_strength_preentry",
+        "feature": "Pre-entry company-specific strength net of market, sector, and industry effects",
+        "measurement": "Estimate residual momentum using only information available by the pick timestamp.",
+        "expected_direction": "Stronger positive residual momentum should associate with clean liftoff.",
+        "falsifier": "The association disappears after sector, industry, and regime controls.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T23:44:21+00:00"
+}

@@ -12,20 +12,20 @@
      "peak_date": "2026-07-09",
      "runup_pct": 0.4618,
      "runup_z": 2.36,
-     "drawdown_pct": 0.2689,
+     "drawdown_pct": 0.2588,
      "qualified_by": "z"
     },
     "turn": {
      "low_date": "2026-07-30",
-     "off_low_pct": 0.1671,
+     "off_low_pct": 0.1905,
      "reclaimed": true
     },
     "ratio": {
-     "ratio_chg_10s": 0.0463,
+     "ratio_chg_10s": 0.0259,
      "inflected": true,
      "ratio_20s_high": false
     },
-    "asof": "2026-08-05"
+    "asof": "2026-08-06"
    }
   },
   "cn_tech:cn_semis->cn_software": {
@@ -34,7 +34,7 @@
    "from_leg": "cn_semis",
    "to_leg": "cn_software",
    "started": "2026-07-31",
-   "lapse_count": 3,
+   "lapse_count": 4,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-30",

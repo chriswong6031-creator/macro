@@ -1,0 +1,113 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "MDU-2026-06-30-buy",
+  "ticker": "MDU",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "MDU",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "MDU",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "mixed",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Utilities",
+    "excess_spy": -0.03840015518795925,
+    "excess_sector": -0.027315841962455623,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "DEAD_MONEY",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "MDU became dead money and underperformed SPY with a mixed outcome cause and clean process. The clustering with other Utilities picks suggests a sector or regime hypothesis, but the supplied sample cannot establish it.",
+    "root_cause": "MDU became dead money and underperformed SPY with a mixed outcome cause and clean process. The clustering with other Utilities picks suggests a sector or regime hypothesis, but the supplied sample cannot establish it.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The execution organ remained clean, while the regime and Utilities-rotation books may have missed a shared headwind.",
+    "engines_credit": "The process organ is not implicated; the regime and sector books are provisional laggard candidates pending breadth and macro evidence.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "sector",
+        "factor": "",
+        "mechanism": "A shared Utilities headwind may have reduced propulsion across the sector cohort.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "If Utilities peers broadly outperformed during the same horizon, a shared sector explanation would be contradicted.",
+        "evidence_refs": [
+          "Pick 8 sector=Utilities",
+          "Pick 7 sector=Utilities",
+          "Pick 10 sector=Utilities",
+          "Pick 8 terminal_state=DEAD_MONEY"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "MDU lacked enough idiosyncratic strength to offset any sector drag.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Positive peer-relative performance would indicate that the company component was not the principal weakness.",
+        "evidence_refs": [
+          "Pick 8 outcome_cause=mixed",
+          "Pick 8 excess_spy=-0.03840015518795925"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "counterfactual",
+        "factor": "",
+        "mechanism": "Regime-cell conditioning could test whether the setup only works when Utilities breadth and macro support align.",
+        "evidence_status": "unknown",
+        "timing_status": "known_at_entry",
+        "counterfactual": "Compare the same setup across contemporaneous regime cells while leaving process thresholds unchanged.",
+        "evidence_refs": [
+          "Pick 8 process_fault=clean",
+          "Pick 8 lane=buy"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "MDU-specific weakness may have caused the underperformance.",
+      "SPY strength rather than absolute MDU deterioration may explain the negative excess return."
+    ],
+    "missing_evidence": [
+      "Absolute return and price path",
+      "Utilities benchmark and peer returns",
+      "Entry-date macro and rate regime",
+      "Company news and catalyst chronology"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "utilities_cluster_conditioning",
+        "feature": "Cross-sectional Utilities weakness at entry",
+        "measurement": "Measure sector breadth, peer momentum, and relative participation using entry-date data.",
+        "expected_direction": "Broader peer weakness should precede more dead-money Utilities outcomes.",
+        "falsifier": "MDU-like failures occur equally when Utilities breadth is strong.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T13:34:17+00:00"
+}

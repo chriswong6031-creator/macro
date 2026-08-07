@@ -42,6 +42,58 @@ log = logging.getLogger(__name__)
 REFRESH_DAYS = 90          # delisted history is static; refresh rarely
 _UA = {"User-Agent": "Mozilla/5.0 (macro-dashboard research)"}
 
+# --- identity guards (a ticker string is a MUTABLE key) ------------------------
+# Every fetcher here asks a vendor for a BARE TICKER STRING, so it gets whoever
+# holds that string TODAY over whatever window we ask for. When the string changed
+# hands, the reply welds two registrants into one key. Two bounds contain that:
+TENURE_LOOKBACK_DAYS = 400   # pre-index history a rebalance lookback legitimately needs
+SPLICE_GAP_DAYS = 45         # a hole this long is an identity seam, not a trading halt
+
+
+def tenure_bounds(ticker: str, mem: pd.DataFrame) -> tuple[pd.Timestamp, pd.Timestamp] | None:
+    """(first_held, last_held) — the span over which THIS registrant held the string,
+    read from the PIT membership. None when the name has no membership row."""
+    sub = mem[mem["ticker"] == ticker]
+    if sub.empty:
+        return None
+    start = pd.to_datetime(sub["start_date"]).min()
+    end = pd.to_datetime(sub["end_date"]).max()
+    if pd.isna(start):
+        return None
+    return start, end
+
+
+def split_identity_seam(s: pd.Series, tenure_start: pd.Timestamp | None,
+                        gap_days: int = SPLICE_GAP_DAYS) -> tuple[pd.Series, pd.Series]:
+    """Split a fetched close series into (kept, foreign) at an identity seam.
+
+    A segment is FOREIGN when it lies **entirely before** the name's tenure AND is
+    separated from the tenure segment by a hole of >= `gap_days` — the signature of
+    the string's PREVIOUS holder (FI = Frank's International welded to Fiserv across
+    an empty 2022; ALTM = Altus Midstream welded to Arcadium Lithium across 2022-23).
+
+    Deliberately narrow. A gap INSIDE the tenure is a corporate event, not a swap
+    (EBIX/ENDP → OTC after Ch.11), and that price→0 tail is exactly the anti-
+    survivorship data the panel needs — so it is never dropped. A merely-early
+    segment with no gap is the SAME company trading before index inclusion, and is
+    kept as legitimate lookback.
+    """
+    empty = pd.Series(dtype=float)
+    if s is None or len(s) == 0 or tenure_start is None or pd.isna(tenure_start):
+        return (s if s is not None else empty), empty
+    s = s.sort_index()
+    gaps = s.index.to_series().diff().dt.days
+    # segment id increments at every hole >= gap_days
+    seg = (gaps >= gap_days).fillna(False).cumsum().values
+    keep_mask = pd.Series(True, index=s.index)
+    for sid in pd.unique(seg):
+        block = s.index[seg == sid]
+        if block.max() < tenure_start:          # entirely before this holder's tenure
+            keep_mask.loc[block] = False
+    if keep_mask.all():
+        return s, empty
+    return s[keep_mask.values], s[~keep_mask.values]
+
 
 # --------------------------------------------------------------------------- #
 # per-source daily-close fetchers (each returns a tz-naive close Series or None)
@@ -118,7 +170,8 @@ def _membership_window(ticker: str, mem: pd.DataFrame) -> tuple[str, str]:
     sub = mem[mem["ticker"] == ticker]
     if sub.empty:
         return "2005-01-01", datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    start = (pd.to_datetime(sub["start_date"]).min() - pd.Timedelta(days=400)).strftime("%Y-%m-%d")
+    start = (pd.to_datetime(sub["start_date"]).min()
+             - pd.Timedelta(days=TENURE_LOOKBACK_DAYS)).strftime("%Y-%m-%d")
     end = (pd.to_datetime(sub["end_date"]).max() + pd.Timedelta(days=60)).strftime("%Y-%m-%d")
     return start, end
 
@@ -173,8 +226,21 @@ def fetch_dead_prices(force: bool = False, max_new: int = 150,
             s, src = _polygon_daily(t, start, end), "polygon"
         if s is None:
             s, src = _yf_daily(t, start, end), "yfinance"
+        # Stooq is unwindowed (full vendor history) and every source is fetched by
+        # BARE STRING, so refuse any pre-tenure segment behind an identity seam
+        # before it can reach the store.
+        n_foreign = 0
+        if s is not None:
+            bounds = tenure_bounds(t, mem)
+            s, foreign = split_identity_seam(s, bounds[0] if bounds else None)
+            n_foreign = int(len(foreign))
+            if n_foreign:
+                print(f"::warning title=dead-name-splice::{t}: refused {n_foreign} pre-tenure "
+                      f"bar(s) ending {foreign.index.max().date()} — string held by another "
+                      f"registrant before {bounds[0].date()}", flush=True)
         seen[t] = {"at": now, "source": src if s is not None else None,
-                   "n": int(len(s)) if s is not None else 0}
+                   "n": int(len(s)) if s is not None else 0,
+                   "refused_pre_tenure": n_foreign}
         if s is not None and len(s) >= 2:
             for d, c in s.items():
                 new_rows.append({"ticker": t, "date": d, "close": float(c), "source": src})
@@ -205,6 +271,81 @@ def dead_name_closes() -> pd.DataFrame:
     if long.empty:
         return pd.DataFrame()
     return long.pivot_table(index="date", columns="ticker", values="close", aggfunc="last").sort_index()
+
+
+def _still_trading(tickers: set[str], fresh_days: int = 45) -> list[str]:
+    """Dead-universe names that STILL have a live, advancing per-ticker store — i.e.
+    names that left the S&P index but never died. Index-only, so it stays cheap."""
+    cutoff = pd.Timestamp.now().normalize() - pd.Timedelta(days=fresh_days)
+    alive = []
+    for t in sorted(tickers):
+        for store in ("baskets/ohlcv", "stocks"):
+            p = config.data_dir() / store / f"{t}.parquet"
+            if not p.exists():
+                continue
+            try:
+                idx = pd.to_datetime(pd.read_parquet(p, columns=[]).index)
+            except Exception:  # noqa: BLE001 — corruption is audit_prices' beat
+                continue
+            if len(idx) and idx.max() >= cutoff:
+                alive.append(t)
+                break
+    return alive
+
+
+def _universe_basis_caveat(universe: list[str], with_px: set[str]) -> dict:
+    """The caveat that outranks acquisition skew: this universe is an INDEX-EXIT set,
+    not a death set. `dead_universe()` selects a CLOSED S&P membership, and a name
+    leaves the index for a market-cap drop as readily as for a merger — so a sizeable
+    minority of "dead" names are alive and still trading. Their recovered prices are
+    genuine (their own tape, truncated at the fetch bound), but calling the resulting
+    panel de-biased for SURVIVORSHIP overstates it: the alive cohort is not a
+    survivorship correction, and the delisted cohort is what remains."""
+    try:
+        alive = _still_trading(set(universe))
+        alive_px = sorted(set(alive) & with_px)
+    except Exception:  # noqa: BLE001 — never let a caveat break the stamp
+        return {"basis": "sp1500_pit_membership.end_date NOT NULL", "measured": False}
+    n = len(universe) or 1
+    return {
+        "basis": "sp1500_pit_membership.end_date NOT NULL (INDEX EXIT, not death)",
+        "measured": True,
+        "n_universe": len(universe),
+        "n_still_trading": len(alive),
+        "still_trading_frac": round(len(alive) / n, 4),
+        "n_still_trading_with_prices": len(alive_px),
+        "caveat": (
+            f"{len(alive)} of {len(universe)} names in this 'dead' universe "
+            f"({round(100 * len(alive) / n, 1)}%) still have a live advancing price store: "
+            "they were REMOVED FROM THE INDEX, not delisted. Their recovered rows are "
+            "their own genuine prices (bounded by the fetch window, not by a death), so "
+            "they must NOT be trimmed to a 'death date' — but neither do they correct "
+            "survivorship. Any study calling this panel de-biased should partition "
+            "index-exit-alive from truly-delisted before claiming a survivorship fix."),
+    }
+
+
+def _splice_quarantine_stamp() -> dict:
+    """Identity splices removed by scripts/heal_dead_name_prices (bare-string fetches
+    that welded a prior registrant onto the current one under one ticker key)."""
+    p = config.data_dir() / "quarantine" / "dead_name_prices_spliced.json"
+    if not p.exists():
+        return {"applied": False, "n_names": 0, "n_rows": 0,
+                "note": "no splice quarantine on record — run scripts/heal_dead_name_prices"}
+    try:
+        m = json.loads(p.read_text())
+    except Exception:  # noqa: BLE001
+        return {"applied": False, "n_names": 0, "n_rows": 0, "note": "manifest unreadable"}
+    return {
+        "applied": bool(m.get("applied")),
+        "n_names": int(m.get("n_names_spliced") or 0),
+        "n_rows": int(m.get("n_rows_quarantined") or 0),
+        "names": [f["ticker"] for f in (m.get("findings") or [])],
+        "manifest": "data/quarantine/dead_name_prices_spliced.json",
+        "note": ("A ticker string is a mutable key: fetching by bare string can weld a "
+                 "prior registrant's tape onto the current one. Refused rows are "
+                 "quarantined, never deleted."),
+    }
 
 
 def price_coverage() -> dict:
@@ -250,7 +391,7 @@ def price_coverage() -> dict:
             "impute −100% terminals from a delisting-reason feed (Ch.11 8-Ks, Item 1.03).")
 
     out = {
-        "schema": "dead_name_price_coverage.v2",
+        "schema": "dead_name_price_coverage.v3",
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "n_dead_universe": n,
         "n_cik_resolved": len(resolved & set(universe)),
@@ -260,6 +401,8 @@ def price_coverage() -> dict:
         "delisting_reason": reasons,
         "n_imputed_bankruptcies": n_imputed_bk,
         "residual_bias": residual,
+        "universe_basis": _universe_basis_caveat(universe, with_px),
+        "identity_splice_quarantine": _splice_quarantine_stamp(),
         "note": "yfinance ~0 on delisted; Stooq/Polygon are IP-gated → this accrues in CI.",
     }
     (config.data_dir() / "edgar" / "_dead_name_price_coverage.json").write_text(json.dumps(out, indent=1))
