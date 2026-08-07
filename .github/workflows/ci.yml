@@ -2656,6 +2656,13 @@ on:
       - "tests/test_stage_analysis.py"
       - "tests/test_heal_stage_forward_ledger.py"
       - "tests/test_weinstein_stage.py"
+      # coiled/mtf_upturn absolute session anchor (era coiled-mtf-abs-session-
+      # 2026-08-06, job coiled-mtf-anchor-era): the engines are reached by the
+      # broad "engine/**" trigger; these entries are the OTHER half — a PR
+      # editing ONLY a suite must still start the pack that executes it
+      # (test_coiled.py was previously named by no run step AND no path).
+      - "tests/test_coiled.py"
+      - "tests/test_coiled_mtf_anchor_invariance.py"
       - "scripts/heal_contagion_links_ledger.py"
       - "scripts/heal_stage_forward_ledger.py"
       # The nightly stage builder invokes the heal above; it is the only lane

@@ -5023,6 +5023,29 @@ jobs:
       - name: washout-turn organ (depth-gated weekly cross, PIT completed-bars pin, ledger gate)
         run: python -m pytest tests/test_washout_turn.py tests/test_mtf_upturn.py -q
 
+  coiled-mtf-anchor-era:
+    # COILED bonus/fire + mtf trend.d3 absolute session anchor (era
+    # coiled-mtf-abs-session-2026-08-06, ruling research/COILED_MTF_SESSION_ANCHOR_
+    # REPAIR_BY_FABLE.md). test_coiled.py was named by NO run step in any workflow
+    # before this (the unrun-suite hole the washout-turn-organ comment above records
+    # for test_mtf_upturn.py) — enumerated here together with the era's invariance
+    # battery, which pins start-invariance k=1..6 on real NYSE/CN session fixtures,
+    # the one-era-two-modules equality, the payload era stamps, and the CN market
+    # threading. The battery reads the tracked CN reference store
+    # (data/china/000001.SS.parquet) and skips that single test if absent.
+    if: ${{ false }}
+    timeout-minutes: 6
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: coiled + mtf_upturn anchored-grid suites (bonus/fire chips, trend.d3, era stamps)
+        run: python -m pytest tests/test_coiled.py tests/test_coiled_mtf_anchor_invariance.py -q
+
   unrun-page-guards:
     # Shipped-page regression guards over the rendered estate: the US
     # action-board hover cards, the macro desk surface + its proportional
