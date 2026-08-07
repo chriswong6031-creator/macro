@@ -2828,6 +2828,7 @@ on:
       - "tests/test_prophet_card_shared.py"
       - "tests/test_stock_board_v2.py"
       - "tests/test_track_ledger_emitters.py"
+      - "tests/test_us_board_fail_closed_freshness.py"
       - "tests/test_us_board_lanes.py"
       - "tests/test_us_board_priority_ui.py"
       - "tests/test_us_board_rank.py"
