@@ -162,14 +162,14 @@
           <hr class="det-sep">
           {# form + filing info #}
           <div>
-            <div class="det-label">{{ t('Form', '申报表') }}</div>
+            <div class="det-label">{{ t('Form', '表格类型') }}</div>
             <div class="det-val">{{ r.form }}
               {% if r.low_conf %}<span class="heur-mark" title="Keyword-heuristic detection — unverified; LLM/digest lane upgrades it">~</span>{% endif %}
               {% if r.n_amend %}<span class="amend-mark" title="Amendments tracked">{{ r.n_amend }}× /A</span>{% endif %}
             </div>
           </div>
           <div>
-            <div class="det-label">{{ t('Filed', '申报日') }}</div>
+            <div class="det-label">{{ t('Filed', '披露日') }}</div>
             <div class="det-val">{{ r.date }}</div>
           </div>
           {# tech tier (raw ID here) #}

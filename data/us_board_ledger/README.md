@@ -12,6 +12,36 @@ rediscovers "dead" columns that are actually young, gated, or maturing. Measured
 risen since; the start dates and mechanisms below are the durable part. Re-measure before
 relying on any number here.
 
+## Price-basis era — boundary 2026-08-06
+
+Two eras live in this parquet, separated by the `price_basis` column. **Rows are never
+re-graded across the boundary**, so the stamp is the only way to tell them apart.
+
+| `price_basis` | Era | What it means |
+|---|---|---|
+| `unverified_pre_20260806` | 1 | Graded before the boundary. The name leg came from the RAW breadth close caches while the benchmark leg (SPY / sector ETF) came from the back-adjusted `data/yahoo`, so `excess_spy` and `excess_sector` could book a name's own dividend as underperformance. 2,277 rows at the boundary. |
+| `adjusted` | 2 | Name and benchmark legs share the back-adjusted basis (`engine.price_ladder`). |
+| `unadjusted` | 2 | The name has **no** adjusted counterpart in any store, so it is still priced from the raw cache — kept and disclosed rather than dropped. ~20.6% of freshly-graded rows (154 of 855 admitted tickers). Closing this needs a collector change, not a grader change. |
+
+`price_source` names the exact store (`baskets_ohlcv` / `yahoo` / `data_stocks` /
+`baskets_extras` / `closes_cache_UNADJUSTED`); it is null on era-1 rows because nothing
+recorded it at the time.
+
+**Era 1 is unverified, not presumed wrong.** Measured at the boundary, 2,277 of 2,287
+shipped rows already agreed with the adjusted basis to <0.01pp — the caches happened to
+have been re-based shortly before those rows were graded. Only 33 rows sat on a window
+where the two bases genuinely differ, and on all 33 the stored value matches the adjusted
+one.
+
+**Why the rows were frozen instead of corrected.** The breadth caches are re-based *in
+place*, so the same `(ticker, date)` reads differently on different days (`PNC`
+2026-06-22: `234.71` on 2026-07-01, `232.85` on 2026-08-06). The merge used to be
+keep-FRESH, which meant every run silently rewrote history: re-running the grader on
+2026-08-06 would have moved **75 already-published rows, 19 of them materially** (worst
+−1.94pp, `LPG` 2026-06-18 H5). Price-derived columns are now write-once
+(`grade_us_board._FROZEN_PRICE_COLS`); annotations (regime stamp, archetype,
+`board_tenure_days`, new spine columns) still accrue onto historical rows as before.
+
 ## Structural facts that bound every column
 
 * **Grading lag:** a fire is graded only when its horizon matures. The shortest horizon is
@@ -28,10 +58,10 @@ relying on any number here.
 |---|---|---|---|
 | 2026-06-15 | Core grades: `ret`, `excess_spy`, `excess_sector`, `sector_etf`, `etf_ret`, `mae_close_excess_*` | ~100% | Ledger inception; price-resolvable names only |
 | 2026-06-15 | `opt_opex_days` | 97.9% | Calendar-derived; excluded from the stamp retry gate |
-| 2026-06-16 | W1.3 options state: `opt_gamma_regime`, `opt_wall_up/down`, `opt_iv30`, `opt_dist_to_flip_pct`, `opt_voi_flag`, `opt_front7_charm_share` | 10–12% | Needs chain/summary store coverage at `as_of`; stores begin mid-June and cover an options subset of board names (gitignored R2 stores — populated on the runner, not locally). `opt_front7_charm_share` history restored by the 2026-08-02 `--backfill-ovc` repair |
+| 2026-06-16 | W1.3 options state: `opt_gamma_regime`, `opt_wall_up/down`, `opt_iv30`, `opt_dist_to_flip_pct`, `opt_voi_flag`, `opt_front7_charm_share` | 10–12% | Needs chain/summary store coverage at `as_of`; stores begin mid-June and cover an options subset of board names (gitignored R2 stores — populated on the runner, not locally). `opt_front7_charm_share` history restored by the 2026-08-02 `--backfill-ovc` repair. `opt_voi_flag` and `opt_front7_charm_share` additionally go null on the first `as_of` after a chain-collection gap: both compare today's snapshot against YESTERDAY's open interest, and after a gap the prior snapshot is several sessions stale (GAP DISCIPLINE, `engine/options_stamp.py`) |
 | 2026-06-18 | Board-payload wave 1: `entry_status`, `act_level`, `validation_status`, `vol_squeeze`, `dispersion_state` | 78.2% | Board schema gained the fields on 06-18 boards |
 | 2026-06-23 | `align_tier` | 30.0% | Board schema addition; only some lanes carry it |
-| 2026-06-30 | W-C options: `opt_skew`, `opt_skew_5d_chg`, `opt_ivspread_rel`, `opt_pin_risk`, `opt_wall_dist_up/down_pct`, `opt_doi_slope_5d`, `opt_vanna_relief` | 9.2–9.4% | W-C snapshot stores begin 2026-06-30 (skew/ivspread) |
+| 2026-06-30 | W-C options: `opt_skew`, `opt_skew_5d_chg`, `opt_ivspread_rel`, `opt_pin_risk`, `opt_wall_dist_up/down_pct`, `opt_doi_slope_5d`, `opt_vanna_relief` | 9.2–9.4% | W-C snapshot stores begin 2026-06-30 (skew/ivspread). `opt_doi_slope_5d` survives chain-collection gaps — it is fitted against session ordinals, so the slope stays a per-session rate — but nulls when its six snapshots span more than 11 sessions (GAP DISCIPLINE, `engine/options_stamp.py`) |
 | 2026-06-30 | Confluence/alt-data confirmers: `news_burst`, `confluence_k`, `has_stop_guidance`, `smartmoney_add`, `sue_fresh`, `insider_cluster`, `altdata_conv_gte2`, `board_tenure_days` | 58.4% | W3 evidence-stack fields enter the board payload 06-30 |
 | 2026-06-30 | Spine: `fwd_mfe_{5,10,21}`, `terminal_state_clean8_21`, `post_cushion_breach`, `signal_quality`, `tier_cascade` | 3–33% | W0.1 B-b; `fwd_mfe_h` populates only on that horizon's own rows, and only once matured |
 | 2026-07-01 | PIT regime stamp: `vol_regime`, `quad_hard_label`, `fused_risk_label`, `risk_radar_state`, `regime_vector_degraded`, `vector_asof`, `staleness_hours` | 49.2% | `regime_vector.parquet` history begins 07-01; earlier `as_of` rows stay null (PIT) |

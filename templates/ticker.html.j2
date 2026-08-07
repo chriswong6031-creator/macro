@@ -1287,8 +1287,17 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
     <div class="mod-hd"><h2>{{ t('Themes & baskets', '主题与篮子') }}</h2></div>
     {% if themes.baskets %}
     {% for b in themes.baskets %}
+    {#- The name links ONLY when basket/<id>.html actually shipped. A basket is
+        curated by hand into membership.json but its page is built only once 3+
+        members carry price history (engine/baskets.py), so a new sleeve is
+        linkable-looking and unbuilt for at least a night — silver_miners was
+        curated 2026-08-05 and 404'd from HL and SSRM, which failed the dead-ref
+        guard on every render for ~28h. Unlinked it still reads: the name and the
+        charter sentence below it are the substance. `b.linked` is set for every
+        row by _build_themes, so an unset value here means an old context dict,
+        not an unbuilt page — hence `is defined` rather than a bare falsy test. -#}
     <div class="throw">
-      <a href="../basket/{{ b.id }}.html">{{ t(b.name_en, b.name_zh) }}</a>
+      {% if b.linked is not defined or b.linked %}<a href="../basket/{{ b.id }}.html">{{ t(b.name_en, b.name_zh) }}</a>{% else %}<b>{{ t(b.name_en, b.name_zh) }}</b>{% endif %}
       <span class="tm">{{ b.theme if b.theme else b.rationale }}</span>
       {% if b.band_en %}<span class="okx q" style="font-size:10px;">{{ t(b.band_en, b.band_zh) }}</span>{% endif %}
     </div>

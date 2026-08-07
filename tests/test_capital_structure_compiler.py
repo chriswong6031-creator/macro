@@ -790,9 +790,35 @@ def test_generation_receipt_hashes_artifacts_and_failed_promotion_rolls_back(tmp
 
 
 def test_nightly_order_and_render_network_firewall_are_pinned():
-    """A capital-structure integrity failure must BLOCK the nightly checkpoint.
+    """A capital-structure integrity failure blocks ITS OWN checkpoint — and no other.
 
-    The step is located STRUCTURALLY — its own parsed step dict — never by
+    RESTATED 2026-08-06 (the capital-structure checkpoint split).  This pin used
+    to read `collect < compile < commit`, with `commit` found by
+    `name.startswith("commit data")`.  That was one checkpoint, and this compiler
+    sat upstream of it, which is exactly what let a capital-structure defect hold
+    the night's market collection on the runner: six consecutive nights from
+    2026-08-01 through four unrelated causes (#4534 duck-typing, runner ENOSPC,
+    #4600 ledger identity, #4640 SEC grammar), `data/stocks` frozen at 2026-07-31.
+
+    The invariant now has two halves and BOTH must hold:
+
+      1. `run collectors` -> "commit market data" -> "push market data" all happen
+         BEFORE this compiler runs.  The market plane is already committed and
+         published; nothing this lane does — failing, hanging, or spending the
+         job's remaining budget — can reach it.
+      2. this compiler -> "commit capital-structure data".  The compiler is still
+         upstream of its OWN checkpoint and still carries no `continue-on-error`,
+         so an integrity failure still blocks publication of a partial event
+         generation.  (#4578 added continue-on-error here; correctly reverted.)
+
+    Half 2 alone is the old assertion and is NOT sufficient: naming the second
+    checkpoint "commit data ..." would satisfy it verbatim while restoring the
+    very coupling the split removed.  So the market checkpoint is asserted by its
+    own name, ahead of the compiler, and no collect step may be named "commit
+    data" any more.  The market side of this is guarded from the other direction
+    by tests/test_daily_collect_commit_path.py.
+
+    The steps are located STRUCTURALLY — their own parsed step dicts — never by
     slicing the file text between two step names. The old slice ran from
     "- name: compile capital-structure" to "- name: refresh Finviz themes", so
     it only held while those two steps stayed adjacent: on 2026-08-01 #4013
@@ -811,17 +837,44 @@ def test_nightly_order_and_render_network_firewall_are_pinned():
         for step in (job.get("steps") or [])
     ]
     runs = [str(step.get("run") or "") for step in steps]
+    names = [str(step.get("name") or "") for step in steps]
+
+    def _named(prefix: str) -> int:
+        hits = [i for i, name in enumerate(names) if name.startswith(prefix)]
+        assert len(hits) == 1, f"expected exactly one step named {prefix!r}, got {hits}"
+        return hits[0]
+
     collect_at = next(
         i for i, run in enumerate(runs) if "python -m scripts.collect " in run
     )
     compile_at = next(i for i, run in enumerate(runs) if compile_call in run)
-    commit_at = next(
-        i for i, step in enumerate(steps)
-        if str(step.get("name") or "").startswith("commit data")
+    market_commit_at = _named("commit market data")
+    market_push_at = _named("push market data")
+    cs_commit_at = _named("commit capital-structure data")
+
+    # Half 1 — the market checkpoint is complete before this lane starts.
+    assert collect_at < market_commit_at < market_push_at < compile_at, (
+        "the market checkpoint must commit AND push before the capital-structure "
+        f"compiler runs (collect={collect_at}, commit={market_commit_at}, "
+        f"push={market_push_at}, compile={compile_at}). Moving the compiler back "
+        "above it puts ~3h of collected market data behind this lane again."
     )
-    assert collect_at < compile_at
-    assert compile_at < commit_at
-    assert "continue-on-error" not in steps[compile_at]
+    # Half 2 — the compiler still gates its own generation, fatally.
+    assert compile_at < cs_commit_at, (
+        "the capital-structure compiler must still run BEFORE the checkpoint that "
+        "publishes its generation, or a rejected ledger could be committed"
+    )
+    assert "continue-on-error" not in steps[compile_at], (
+        "the compile step must stay fatal for its own checkpoint (#4578)"
+    )
+    # The second checkpoint must not impersonate the first.
+    assert not [n for n in names if n.startswith("commit data")], (
+        "a step is named 'commit data ...' again. The two checkpoints are 'commit "
+        "market data' and 'commit capital-structure data'; a step reusing the old "
+        "name would satisfy this pin's previous form while re-coupling the market "
+        "plane to the capital-structure lane."
+    )
+
     assert "R2_BUCKET: ${{ secrets.R2_BUCKET }}" in daily
     assert (
         "R2_CAPITAL_STRUCTURE_BUCKET: ${{ secrets.R2_CAPITAL_STRUCTURE_BUCKET }}"

@@ -1701,8 +1701,18 @@
     for (var k in map) { if (map.hasOwnProperty(k) && /^sb-.*-auth-token(\.\d+)?$/.test(k)) return true; }
     return false;
   }
+  // The session cookie is keyed by the PROJECT, not by whichever host the browser
+  // was pointed at. `ref` is baked by lib/site_assets.supabase_cfg_json and is always
+  // the project ref; deriving from _sbCfg.url is the legacy fallback and is correct
+  // only while url IS the project. Once url is a proxy origin (GFW — see config.yml
+  // watchlist.supabase.browser_url) that derivation yields `sb-www-auth-token` while
+  // app.main._sb_storage_key still reads `sb-<ref>-auth-token`: every session orphaned,
+  // every user logged out, and the server blind to sessions from then on.
   function _storageKey() {
-    try { return 'sb-' + new URL(_sbCfg.url).hostname.split('.')[0] + '-auth-token'; }
+    try {
+      if (_sbCfg && _sbCfg.ref) return 'sb-' + _sbCfg.ref + '-auth-token';
+      return 'sb-' + new URL(_sbCfg.url).hostname.split('.')[0] + '-auth-token';
+    }
     catch (e) { return 'sb-auth-token'; }
   }
   function _isAuthReturn() {

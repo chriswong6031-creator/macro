@@ -115,6 +115,14 @@ TARGET_DELTA = 0.60        # nearest-delta strike for option resolution
 STAGE_TILT_LEASH = 1.25
 STAGE_TILT_DEMOTE_MIN_MATURED = 30   # §4 floor: n_matured_126 needed before diff can demote
 
+# R0-C disclosure: the leash's earnings-call arm reads a local-only EquityDesk backfill
+# parquet that is gitignored and absent on every CI/deploy host, so in production the EC
+# lookup always answers null and the leash is pinned at 1.0. That is a STARVED negative,
+# not an honest one, and the two used to be indistinguishable in the emitted plan. Every
+# stage_tilt block now states which it is. Fail-closed default: with no source record we
+# never claim a source exists. This is disclosure only — it never moves the leash.
+STAGE_TILT_EC_SOURCE_UNAVAILABLE = "unavailable"
+
 # Monthly expiry calendar helper: US options use 3rd Friday of month.
 # We find the first monthly expiry >= min_expiry_date.
 _MONTHS = range(1, 13)
@@ -1540,32 +1548,59 @@ def _load_stage_tilt_inputs(data_root: "Path | None" = None) -> dict:
 
     Loaded once per nightly run (NOT per pick). Any load failure degrades that
     input so the per-pick compute falls back to leash 1.0. Never raises.
+
+    R0-C: the point-in-time primitives come from ``engine.prophet_stage_inputs`` — a
+    governed production module — NOT from ``engine.prophet_stage_fusion``, which is a
+    research backtest harness and must never be a live dependency of origination.
+
+    R0-C disclosure: the EC table's backing parquet is a local-only EquityDesk backfill
+    that is absent on every CI/deploy host, so ``load_ec_table`` fails open to an EMPTY
+    frame and every EC lookup answers null. That made "no positive earnings call" and
+    "no earnings-call data at all" the same output. ``ec_source`` records which one it
+    is, and an unavailable source now emits a ``::warning::`` instead of degrading in
+    silence. The leash value is unchanged by this disclosure.
     """
     from lib import config  # noqa: PLC0415
-    import engine.prophet_stage_fusion as psf  # noqa: PLC0415
+    import engine.prophet_stage_inputs as psi  # noqa: PLC0415
     root = Path(data_root) if data_root is not None else config.data_dir()
 
     ec_by_ticker: dict = {}
     ec_load_ok = True
+    ec_source: dict = {"state": psi.EC_SOURCE_UNAVAILABLE, "path": None,
+                       "reason": "earnings-call source not resolved"}
     try:
-        ec_by_ticker = psf.ec_index(psf.load_ec_table())
+        ec_table, ec_source = psi.load_ec_table_with_source()
+        ec_by_ticker = psi.ec_index(ec_table)
     except Exception as e:  # noqa: BLE001
         ec_load_ok = False
+        ec_source = {"state": psi.EC_SOURCE_UNAVAILABLE, "path": ec_source.get("path"),
+                     "reason": f"earnings-call source load failed: {e}"}
         print(f"::warning:: prophet_bridge: EC table load failed ({e}) — tilt eligibility off "
               "(leash 1.0)",
               flush=True)
 
+    if ec_source.get("state") != psi.EC_SOURCE_AVAILABLE:
+        # The silent-degrade alarm. Without this the Stage tilt reads as a healthy
+        # negative on every host where its data source does not exist.
+        print("::warning:: prophet_bridge: earnings-call source unavailable "
+              f"({ec_source.get('path')}) — {ec_source.get('reason')}; the Stage hold-tilt "
+              "cannot become eligible on this host (every pick stays at leash 1.0)",
+              flush=True)
+
     try:
-        bench = psf.load_bench_close(root)
+        bench = psi.load_bench_close(root)
     except Exception as e:  # noqa: BLE001
         bench = None
         print(f"::warning:: prophet_bridge: bench close load failed ({e})", flush=True)
 
     return {
         "root": root,
-        "psf": psf,
+        # Duck-typed point-in-time interface (EC_SENT_GATE / load_ticker_prices /
+        # stage_at_entry / ec_sent_at_entry). Tests substitute a stub here.
+        "stage_inputs": psi,
         "ec_by_ticker": ec_by_ticker,
         "ec_load_ok": ec_load_ok,
+        "ec_source": ec_source,
         "bench": bench,
         "bear": _bear_from_regime(root),
         "demoted": _stage_tilt_demoted(root),
@@ -1575,29 +1610,35 @@ def _load_stage_tilt_inputs(data_root: "Path | None" = None) -> dict:
 def _compute_stage_tilt(ticker: str, signal_date: str, tilt_inputs: dict) -> tuple[int, dict]:
     """§1 per-pick leash. Returns (horizon_days, stage_tilt_block).
 
-    Uses the SAME PIT functions the shadow uses (psf.stage_at_entry /
-    psf.ec_sent_at_entry) — one code path. Any classify/lookup failure degrades
+    Uses the SAME PIT functions the shadow uses (``prophet_stage_inputs.stage_at_entry``
+    / ``ec_sent_at_entry``) — one code path. Any classify/lookup failure degrades
     this pick to leash 1.0 with a ::warning::; NEVER raises.
+
+    ``ec_source_state`` (R0-C) is DISCLOSURE, not behavior: it separates "this name has
+    no positive earnings call" (``available``) from "there is no earnings-call data on
+    this host" (``unavailable``). It never enters the eligibility test and never moves
+    the leash.
     """
-    psf = tilt_inputs["psf"]
+    pit = tilt_inputs["stage_inputs"]
     root = tilt_inputs["root"]
     ec_by_ticker = tilt_inputs["ec_by_ticker"]
     bench = tilt_inputs["bench"]
     bear = bool(tilt_inputs["bear"])
     demoted = bool(tilt_inputs["demoted"])
+    ec_source = tilt_inputs.get("ec_source") or {}
 
     stage_at_entry_val: int | None = None
     ec_sent: float | None = None
     ec_call_date: str | None = None
 
     try:
-        close, vol = psf.load_ticker_prices(ticker, root)
+        close, vol = pit.load_ticker_prices(ticker, root)
         if close is not None and not close.empty:
-            st, _wis, _nwk = psf.stage_at_entry(close, vol, bench, signal_date)
+            st, _wis, _nwk = pit.stage_at_entry(close, vol, bench, signal_date)
             stage_at_entry_val = int(st)
         # EC most-recent call_date < signal_date (strictly-before, PIT).
         if tilt_inputs.get("ec_load_ok", True):
-            ec_sent = psf.ec_sent_at_entry(ec_by_ticker, ticker, signal_date)
+            ec_sent = pit.ec_sent_at_entry(ec_by_ticker, ticker, signal_date)
             if ec_sent is not None:
                 g = ec_by_ticker.get(str(ticker))
                 if g is not None and not g.empty:
@@ -1616,7 +1657,7 @@ def _compute_stage_tilt(ticker: str, signal_date: str, tilt_inputs: dict) -> tup
     eligible = (
         stage_at_entry_val == 2
         and ec_sent is not None
-        and ec_sent >= tilt_inputs["psf"].EC_SENT_GATE
+        and ec_sent >= pit.EC_SENT_GATE
     )
     # bear gate and auto-demote both force the leash back to 1.0.
     leash = STAGE_TILT_LEASH if (eligible and not bear and not demoted) else 1.0
@@ -1630,6 +1671,10 @@ def _compute_stage_tilt(ticker: str, signal_date: str, tilt_inputs: dict) -> tup
         "stage_at_entry": stage_at_entry_val,
         "ec_sent": ec_sent,
         "ec_call_date": ec_call_date,
+        # Disclosure only (R0-C) — never read by the eligibility test above.
+        "ec_source_state": str(ec_source.get("state") or STAGE_TILT_EC_SOURCE_UNAVAILABLE),
+        "ec_source_path": ec_source.get("path"),
+        "ec_source_reason": ec_source.get("reason"),
         "bear_gate": bool(bear),             # True = gate forced 1.0
         "provisional": True,
         "demoted": bool(demoted),
@@ -1798,7 +1843,11 @@ def originate_plans(
             plan_horizon_days = HORIZON_DAYS_DEFAULT
             stage_tilt = {
                 "leash": 1.0, "eligible": False, "stage_at_entry": None,
-                "ec_sent": None, "ec_call_date": None, "bear_gate": True,
+                "ec_sent": None, "ec_call_date": None,
+                "ec_source_state": STAGE_TILT_EC_SOURCE_UNAVAILABLE,
+                "ec_source_path": None,
+                "ec_source_reason": "stage-tilt inputs unavailable — no source resolved",
+                "bear_gate": True,
                 "provisional": True, "demoted": False,
                 "basis": (
                     "PSQ 2026-07-20 quality re-grade; provisional — forward-shadow "

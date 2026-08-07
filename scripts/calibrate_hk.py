@@ -108,7 +108,7 @@ def main() -> int:
     log.info("calibrating cycle ladder on the deep panel ...")
     hcfg = config.load()["hk"]["engine"]["calibration"]
     panel = deep_panel()
-    ladder = calibrate_ladder(panel, fwd=hcfg.get("ladder_fwd", 21), step=hcfg.get("ladder_step", 10))
+    ladder = calibrate_ladder(panel, fwd=hcfg.get("ladder_fwd", 21), step=hcfg.get("ladder_step", 10), market="HK")
     # persist the ladder record as JSON for the stock-search "measured record" table
     import json as _json
     hdir = config.data_dir() / "hk_regime"

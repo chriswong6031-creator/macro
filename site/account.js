@@ -37,10 +37,14 @@
   var trigger = null, scrim = null, panel = null;
 
   // -------------------------------------------------------------- helpers ----
+  // `ref` MUST survive this normalisation. It is the project id that pins the session
+  // storage key (see sbClient); dropping it here silently re-enables supabase-js's
+  // url-derived default, which is the whole bug the pin exists to prevent — and it
+  // fails INVISIBLY, because the pin is still there in the source, just fed undefined.
   function normSupa(c) {
     if (!c) return null;
     var url = c.url, key = c.anonKey || c.anon_key;
-    return (url && key) ? { url: url, anonKey: key } : null;
+    return (url && key) ? { url: url, anonKey: key, ref: c.ref || '' } : null;
   }
   function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
   function curTheme() { return document.documentElement.getAttribute('data-theme') || 'dark'; }
@@ -162,10 +166,15 @@
       // proper fix — pkce + a 6-digit OTP-code fallback for cross-device — must be
       // built and VERIFIED in the standalone app (Terminal) repo, not here. See
       // ACCOUNTS_SETUP.md "Security model".
-      _sb = window.supabase.createClient(SUPA.url, SUPA.anonKey, {
-        auth: { persistSession: true, autoRefreshToken: true,
-          detectSessionInUrl: true, flowType: 'implicit' }
-      });
+      // storageKey is PINNED to the project ref, not left to supabase-js's default
+      // (which derives it from the url it was handed). Once SUPA.url is a proxy
+      // origin (GFW — config.yml watchlist.supabase.browser_url) the default would
+      // become `sb-www-auth-token` and this client would stop sharing the session
+      // that theme.js COOKIE_STORAGE and app.main both key as `sb-<ref>-auth-token`.
+      var _opts = { persistSession: true, autoRefreshToken: true,
+        detectSessionInUrl: true, flowType: 'implicit' };
+      if (SUPA.ref) _opts.storageKey = 'sb-' + SUPA.ref + '-auth-token';
+      _sb = window.supabase.createClient(SUPA.url, SUPA.anonKey, { auth: _opts });
       return _sb;
     });
   }
