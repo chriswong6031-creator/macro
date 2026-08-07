@@ -1120,15 +1120,39 @@ def _rejection_reason(
     # this guard protects — one fact, one post per day — becomes one fact, one
     # alert plus its one brief. Any OTHER trigger dressing the same fact is
     # still refused.
+    # THE LEAD FACT, same unit as the publisher's cooldown (ruling R1,
+    # 2026-08-06). Reading every number in the body refused a post whose LEAD
+    # fact was new because its framing quoted an older print, and the two gates
+    # answering "is this the same fact?" differently is how a post gets refused
+    # here and would have shipped there.
     anchors = ctx.get("fact_anchors")
     if anchors is not None and trigger != BRIEF_TRIGGER:
-        for key in _clock.fact_anchor_keys(str(text or ""), kind):
+        for key in _clock.lead_fact_keys(str(text or ""), kind):
             owner = anchors.get((as_of, key))
             if owner and owner != item_id:
                 log.warning(
                     "outbox.enqueue: %s rejected — fact %s already anchors %s "
                     "on %s", account, key, owner, as_of)
                 return "fact_fanout"
+        # CORRECTION C2, the same bound the publisher applies: a new lead may
+        # carry ONE already-owned supporting fact as framing, not a paragraph of
+        # last week behind a headline that happens to refresh daily. Same
+        # reasoning as the lead-key check above — the two gates that answer "is
+        # this the same fact?" must answer it identically, or a post is refused
+        # at publish time that this one queued.
+        ride_max = _clock.fact_ride_along_max(ctx.get("ride_along_max"))
+        if ride_max >= 0:
+            owned = [k for k in sorted(_clock.ride_along_keys(str(text or ""), kind))
+                     if anchors.get((as_of, k))
+                     and anchors.get((as_of, k)) != item_id]
+            if len(owned) > ride_max:
+                log.warning(
+                    "outbox.enqueue: %s rejected — %d supporting facts already "
+                    "anchor live siblings on %s (%s); at most %d may ride along "
+                    "with a new lead", account, len(owned), as_of,
+                    ", ".join(f"{k}->{anchors.get((as_of, k))}" for k in owned),
+                    ride_max)
+                return "fact_recital"
     # Cap: every existing same-day item consumed a slot regardless of
     # status (quarantined/failed included — refilling a bad slot the
     # same day is how retry-spam starts). A negative cap = unlimited
@@ -1153,6 +1177,10 @@ def _enqueue_ctx(root: Path | str | None, as_of: object, cfg: dict | None) -> di
         },
         "recent_texts_by_account": _recent_texts_by_account(existing, as_of, dead),
         "cross_account_threshold": cross_account_threshold(cfg),
+        # Correction C2's bound, resolved once from the same config block as the
+        # cooldown windows the publisher reads.
+        "ride_along_max": ((cfg or {}).get("publish") or {}).get(
+            "fact_ride_along_max"),
         # (as_of, anchor_key) -> the id that claimed it. Dead items release
         # their anchors for the same reason they leave the text corpus: a
         # quarantined post is not competing for the slot, so it must not veto
@@ -1165,8 +1193,8 @@ def _enqueue_ctx(root: Path | str | None, as_of: object, cfg: dict | None) -> di
         iid = str(i.get("id") or "")
         if iid in dead:
             continue
-        for ak in _clock.fact_anchor_keys(str(i.get("text") or ""),
-                                          str(i.get("kind") or "")):
+        for ak in _clock.lead_fact_keys(str(i.get("text") or ""),
+                                        str(i.get("kind") or "")):
             ctx["fact_anchors"].setdefault((i.get("as_of"), ak), iid)
     return ctx
 
@@ -1374,13 +1402,16 @@ def enqueue(
             # collapse to the first, not just across nights. Three of the six
             # posts in the 2026-08-01 family were emitted in a single run.
             _anchors = ctx.setdefault("fact_anchors", {})
-            for _ak in _clock.fact_anchor_keys(
+            for _ak in _clock.lead_fact_keys(
                     str(item.get("text") or ""), str(item.get("kind") or "")):
                 _anchors.setdefault((as_of, _ak), item_id)
             return "queued"
 
         if _ctx is not None:
             _ctx.setdefault("cross_account_threshold", cross_account_threshold(cfg))
+            _ctx.setdefault("ride_along_max",
+                            ((cfg or {}).get("publish") or {}).get(
+                                "fact_ride_along_max"))
             return _check_and_append(_ctx)
 
         with _outbox_lock(root):
