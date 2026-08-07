@@ -33,6 +33,9 @@ import pytest
 
 from collectors import issuer_evidence
 from collectors.issuer_evidence import (
+    MAX_RECIPIENT_QUERY_FORMS,
+    SEC_MIN_INTERVAL_SECONDS,
+    USASPENDING_MIN_INTERVAL_SECONDS,
     IssuerEvidenceCollector,
     append_issuer_evidence_receipts,
     build_evidence_receipt,
@@ -41,6 +44,7 @@ from collectors.issuer_evidence import (
     parse_recipient_records,
     parse_ticker_cik_map,
     read_verified_evidence,
+    recipient_query_forms,
     select_exhibit21_document,
     select_latest_10k,
     store_evidence_document,
@@ -1425,6 +1429,13 @@ def test_the_recipient_query_filters_on_keyword_and_carries_the_exhibit_name() -
 
     The test also pins the other half of the rule: the query text comes from the
     issuer's own Exhibit 21, never from a ticker.
+
+    And it pins the union AT THE SAME SITE, because `keyword` being literal is
+    also why one spelling is not enough: the exhibit name is queried verbatim
+    FIRST and punctuation-stripped SECOND, both as `keyword`, never as
+    `search_text`. The two forms here return the same single recipient, so the
+    pooled result is ONE row -- the dedupe is what keeps a recipient found twice
+    from being resolved twice into two identical proposals.
     """
     sent: list[dict] = []
 
@@ -1443,10 +1454,485 @@ def test_the_recipient_query_filters_on_keyword_and_carries_the_exhibit_name() -
     result = IssuerEvidenceCollector(fetch=fetch).recipient_records(EXHIBIT_NAME)
 
     assert sent[0]["keyword"] == EXHIBIT_NAME
+    assert sent[1]["keyword"] == "Vanguard Defense Systems Inc"
     assert "search_text" not in sent[0]
-    assert result["pages_read"] == 1
+    assert "search_text" not in sent[1]
+    assert result["query_forms"] == [EXHIBIT_NAME, "Vanguard Defense Systems Inc"]
+    assert result["search_text"] == EXHIBIT_NAME
+    assert result["pages_read"] == 2
+    assert len(result["records"]) == 1
     assert result["records"][0]["uei"] == RECIPIENT_UEI
-    assert evidence_receipt_is_valid(result["receipts"][0])
+    assert len(result["receipts"]) == 2
+    assert all(evidence_receipt_is_valid(receipt) for receipt in result["receipts"])
+    # Each form's receipt names the query that produced it, so the ledger can
+    # show that the second spelling was actually asked and what it answered.
+    assert [receipt["record_id"] for receipt in result["receipts"]] == [
+        f"usaspending:recipient-search:{EXHIBIT_NAME}:page-1",
+        "usaspending:recipient-search:Vanguard Defense Systems Inc:page-1",
+    ]
+    assert result["receipts"][0]["evidence_id"] != result["receipts"][1]["evidence_id"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Union retrieval: `keyword` is literal, so ONE spelling is not enough.
+#
+# The retrieval is unioned, never normalized -- the verbatim exhibit name AND a
+# punctuation-stripped form are both asked, and the answers are POOLED into one
+# candidate list.  That widens what is LOOKED AT.  Nothing below may widen what
+# is ADMITTED, and `engine/government_revenue/issuer_graph_expansion.py` is
+# untouched by this change, which is the strongest evidence of that: the
+# resolver counts DISTINCT recipients per normalized name, so pooling both forms
+# into one list gets the correct tie behaviour from the rule that was already
+# there.
+# ─────────────────────────────────────────────────────────────────────────────
+
+class _FakeUSAspendingRecipientSearch:
+    """`/api/v2/recipient/` as measured: `keyword` is a literal substring test.
+
+    THE MATCH RULE HERE IS THE OBSERVED ONE, not a convenience.  `keyword` does
+    a literal, case-insensitive SUBSTRING match against the registered recipient
+    name.  It does not fold punctuation and it does not tokenize.  That single
+    rule reproduces both facts measured against the live API on 2026-08-07,
+    without either being special-cased:
+
+        "palantir usg, inc."  is NOT a substring of  "PALANTIR USG INC"  ->  0
+        "palantir usg inc"    IS  a substring of     "PALANTIR USG INC"  ->  1
+        "calzoni s.r.l."      IS  a substring of     "CALZONI S.R.L."    ->  1
+        "calzoni s r l"       is NOT a substring of  "CALZONI S.R.L."    ->  0
+
+    Those two rows point in OPPOSITE directions, which is the whole reason the
+    retrieval unions instead of picking a normalization.
+
+    Every `keyword` asked for is appended to `.keywords`, so a test can count
+    requests as well as read results.
+
+    A registry entry is `(name, uei)`, or `(name, uei, recipient_id, amount)`
+    when a test needs to control the row identity -- the shape that matters is
+    the SAME recipient published at two aggregation levels with different `id`s.
+    `recipient_level` is read off the id's trailing token (`abc-R` -> `R`,
+    `abc-P` -> `P`), which is how USAspending's own ids are suffixed.
+    """
+
+    def __init__(self, registry: list[tuple]) -> None:
+        self.registry: list[tuple[str, str | None, str, float]] = []
+        for entry in registry:
+            name, uei = entry[0], entry[1]
+            recipient_id = entry[2] if len(entry) > 2 else f"{(uei or name).casefold()}-R"
+            amount = entry[3] if len(entry) > 3 else 1000.0
+            self.registry.append((name, uei, recipient_id, amount))
+        self.keywords: list[str] = []
+
+    def __call__(self, url: str, body: dict | None) -> tuple[int, bytes]:
+        keyword = (body or {}).get("keyword")
+        self.keywords.append(keyword)
+        needle = str(keyword).casefold()
+        results = [
+            {
+                "name": name,
+                "uei": uei,
+                "recipient_level": recipient_id.rsplit("-", 1)[-1].upper(),
+                "id": recipient_id,
+                "amount": amount,
+            }
+            for name, uei, recipient_id, amount in self.registry
+            if needle in name.casefold()
+        ]
+        return 200, json.dumps(
+            {"results": results, "page_metadata": {"hasNext": False}}
+        ).encode("utf-8")
+
+
+def _as_recipient_records(rows: list[dict]) -> list[dict]:
+    """Carry pooled collector rows into the resolver's record shape, verbatim.
+
+    Only the registered legal name and the identifier travel; the clocks and
+    evidence refs come from the shared builder, so the ONLY thing that can vary
+    between these tests is what the retrieval found.
+    """
+    return [_recipient(row["legal_name"], uei=row["uei"]) for row in rows]
+
+
+def test_the_union_finds_a_recipient_the_verbatim_spelling_alone_misses() -> None:
+    """Gate 1: `Palantir USG, Inc.` reaches `HNN4F9JZWDY8` only via the union.
+
+    Measured 2026-08-07: the exhibit spelling returns 0 recipients and the
+    punctuation-stripped spelling returns the real one.  The pooled list holds
+    exactly one row, and it is admitted at `exact_verbatim_name` -- the resolver
+    compares the recipient's REGISTERED name against the issuer's own exhibit
+    name, and the stripped string was only ever a retrieval key.
+
+    The two controls below are the non-vacuity half: the same pooled row is
+    refused when its exact identifier is missing, and refused again when its
+    name differs beyond orthography.  Both prove the edge above exists because
+    an exact UEI met an exact verbatim name, not because the pool got wider.
+    """
+    backend = _FakeUSAspendingRecipientSearch([("PALANTIR USG INC", "HNN4F9JZWDY8")])
+    collector = IssuerEvidenceCollector(fetch=backend)
+    exhibit_name = "Palantir USG, Inc."
+
+    verbatim_only = collector._recipient_records_for_query(exhibit_name)
+    stripped_only = collector._recipient_records_for_query("Palantir USG Inc")
+    pooled = collector.recipient_records(exhibit_name)
+
+    assert verbatim_only["records"] == []
+    assert [row["uei"] for row in stripped_only["records"]] == ["HNN4F9JZWDY8"]
+    assert [row["uei"] for row in pooled["records"]] == ["HNN4F9JZWDY8"]
+    assert pooled["query_forms"] == [exhibit_name, "Palantir USG Inc"]
+
+    resolved = _resolve(
+        entities=[_exhibit_entity(exhibit_name)],
+        recipients=_as_recipient_records(pooled["records"]),
+    )
+
+    assert len(resolved["proposals"]) == 1
+    proposal = resolved["proposals"][0]
+    assert proposal["admission"]["tier"] == "exact_verbatim_name"
+    assert [row["value"] for row in proposal["identifiers"]] == ["HNN4F9JZWDY8"]
+
+    # (a) No exact identifier on the pooled row -> no edge, refusal recorded.
+    no_identifier = _resolve(
+        entities=[_exhibit_entity(exhibit_name)],
+        recipients=[_recipient("PALANTIR USG INC", uei=None)],
+    )
+    assert no_identifier["proposals"] == []
+    assert [row["reason_code"] for row in no_identifier["rejections"]] == [
+        "recipient_identifier_absent"
+    ]
+
+    # (b) Same UEI, name differing by more than orthography -> no edge.
+    renamed = _resolve(
+        entities=[_exhibit_entity(exhibit_name)],
+        recipients=[_recipient("PALANTIR USG HOLDINGS INC", uei="HNN4F9JZWDY8")],
+    )
+    assert renamed["proposals"] == []
+    assert [row["reason_code"] for row in renamed["rejections"]] == [
+        "name_not_in_issuer_exhibit"
+    ]
+
+
+def test_the_union_reveals_a_tie_instead_of_loosening_admission() -> None:
+    """Gate 2: a wider pool can only turn an edge into `ambiguous`, never into an edge.
+
+    Two DIFFERENT recipients answer the two forms of one exhibit name, and both
+    normalize to `palantir usg inc`.  Under verbatim-only retrieval this
+    resolution would have produced a clean edge to `AAAAAAAAAAAA` -- the second
+    recipient was invisible, so nothing looked contested.  The union makes the
+    tie visible, and a tie is never a pick: both rows land in `ambiguous` and
+    zero proposals survive.
+
+    That is a STRENGTHENING, and it is the direction this wave's rule requires.
+    Losing a would-be edge because the evidence turned out to be contested is
+    the rule working, not a regression in it.  Both identifiers must appear in
+    the recorded rows: an ambiguity that silently drops one of the two claimants
+    is not a recorded ambiguity, it is a quiet pick with a different label.
+    """
+    backend = _FakeUSAspendingRecipientSearch([
+        ("PALANTIR USG, INC.", "AAAAAAAAAAAA"),
+        ("PALANTIR USG INC", "HNN4F9JZWDY8"),
+    ])
+    collector = IssuerEvidenceCollector(fetch=backend)
+    exhibit_name = "Palantir USG, Inc."
+
+    verbatim_only = collector._recipient_records_for_query(exhibit_name)
+    pooled = collector.recipient_records(exhibit_name)
+
+    # The premise: verbatim-only sees exactly one of the two, the union sees both.
+    assert [row["uei"] for row in verbatim_only["records"]] == ["AAAAAAAAAAAA"]
+    # THE DEDUPE MUST NOT COLLAPSE THESE TWO.  Both names normalize to
+    # `palantir usg inc`, so a key that dropped the identifier -- or any future
+    # tightening toward name-only -- would silently turn this contested pair
+    # into one row and hand back the edge the tie is supposed to refuse.  The
+    # key is loose enough to collapse ONE recipient seen twice
+    # (test_one_recipient_returned_at_two_aggregation_levels_is_one_edge) and
+    # tight enough to keep TWO recipients apart, which is this assertion.
+    assert len(pooled["records"]) == 2
+    assert sorted(row["uei"] for row in pooled["records"]) == [
+        "AAAAAAAAAAAA", "HNN4F9JZWDY8"
+    ]
+
+    would_have_been = _resolve(
+        entities=[_exhibit_entity(exhibit_name)],
+        recipients=_as_recipient_records(verbatim_only["records"]),
+    )
+    assert [
+        row["value"]
+        for proposal in would_have_been["proposals"]
+        for row in proposal["identifiers"]
+    ] == ["AAAAAAAAAAAA"]
+
+    resolved = _resolve(
+        entities=[_exhibit_entity(exhibit_name)],
+        recipients=_as_recipient_records(pooled["records"]),
+    )
+
+    assert resolved["proposals"] == []
+    assert {row["reason_code"] for row in resolved["ambiguous"]} == {
+        "ambiguous_name_matches_multiple_recipients"
+    }
+    assert {row["recipient_identifier"] for row in resolved["ambiguous"]} == {
+        "sam_uei:AAAAAAAAAAAA", "sam_uei:HNN4F9JZWDY8"
+    }
+
+
+def test_one_recipient_returned_at_two_aggregation_levels_is_one_edge() -> None:
+    """The real duplicate shape: one recipient, two rows, two `id`s, one edge.
+
+    MEASURED AGAINST THE LIVE API, 2026-08-07.  Querying PLTR's exhibit name
+    `Palantir USG, Inc.` returned 0 records for the verbatim form and TWO for
+    the stripped form `Palantir USG Inc`, and both rows were the same recipient:
+
+        PALANTIR USG INC  [HNN4F9JZWDY8]
+        PALANTIR USG INC  [HNN4F9JZWDY8]
+
+    USAspending publishes a recipient at more than one aggregation level
+    (`recipient_level` R and P) with DIFFERENT `id` values, so a dedupe key
+    carrying the id lets both rows through and the resolver proposes the same
+    edge twice -- one piece of evidence counted twice in the edge count. That is
+    reachable from a SINGLE query form, so it is not created by the union; the
+    union only makes it more likely, and the dedupe's own docstring claims to
+    prevent it, so the key is `(normalized legal name, exact identifier)`.
+
+    The fixture below is that observed shape, not an invented one: same name,
+    same UEI, different ids, different amounts.
+    """
+    backend = _FakeUSAspendingRecipientSearch([
+        ("PALANTIR USG INC", "HNN4F9JZWDY8", "abc-R", 4_000_000.0),
+        ("PALANTIR USG INC", "HNN4F9JZWDY8", "abc-P", 1_250_000.0),
+    ])
+    collector = IssuerEvidenceCollector(fetch=backend)
+    exhibit_name = "Palantir USG, Inc."
+
+    stripped_only = collector._recipient_records_for_query("Palantir USG Inc")
+    pooled = collector.recipient_records(exhibit_name)
+
+    # The premise: the endpoint really does hand back the same recipient twice.
+    assert [row["usaspending_recipient_id"] for row in stripped_only["records"]] == [
+        "abc-R", "abc-P"
+    ]
+    assert len(pooled["records"]) == 1
+    assert pooled["records"][0]["uei"] == "HNN4F9JZWDY8"
+    # First-seen wins, so one recipient's dollars enter coverage once.
+    assert pooled["records"][0]["observed_award_amount"] == 4_000_000.0
+
+    resolved = _resolve(
+        entities=[_exhibit_entity(exhibit_name)],
+        recipients=_as_recipient_records(pooled["records"]),
+    )
+
+    assert len(resolved["proposals"]) == 1
+    assert [row["value"] for row in resolved["proposals"][0]["identifiers"]] == [
+        "HNN4F9JZWDY8"
+    ]
+
+
+def test_the_union_does_not_regress_the_punctuation_bearing_name() -> None:
+    """Gate 3: `Calzoni S.r.l.` is the case that only the VERBATIM form finds.
+
+    Measured 2026-08-07 in the opposite direction from Palantir: the exhibit
+    spelling returns the recipient and the stripped spelling returns nothing.
+    So the union has to leave this one exactly as it was -- same single row,
+    same single edge -- and the dedupe must not turn one recipient seen once
+    into anything other than one row.
+    """
+    backend = _FakeUSAspendingRecipientSearch([("CALZONI S.R.L.", "RBVAKLPTAJU3")])
+    collector = IssuerEvidenceCollector(fetch=backend)
+    exhibit_name = "Calzoni S.r.l."
+
+    verbatim_only = collector._recipient_records_for_query(exhibit_name)
+    stripped_only = collector._recipient_records_for_query("Calzoni S r l")
+    pooled = collector.recipient_records(exhibit_name)
+
+    assert [row["uei"] for row in verbatim_only["records"]] == ["RBVAKLPTAJU3"]
+    assert stripped_only["records"] == []
+    assert pooled["records"] == verbatim_only["records"]
+
+    resolved = _resolve(
+        entities=[_exhibit_entity(exhibit_name)],
+        recipients=_as_recipient_records(pooled["records"]),
+    )
+
+    assert len(resolved["proposals"]) == 1
+    assert resolved["proposals"][0]["admission"]["tier"] == "exact_verbatim_name"
+    assert [row["value"] for row in resolved["proposals"][0]["identifiers"]] == [
+        "RBVAKLPTAJU3"
+    ]
+
+
+def test_the_union_is_monotone_over_a_corpus_that_has_no_contested_name() -> None:
+    """Gate 3: every edge verbatim-only retrieval produced still exists, plus one.
+
+    THE HONEST CAVEAT, stated rather than asserted away: the proposal COUNT is
+    not universally monotone, and this test does not claim it is.  A wider pool
+    can reveal a second recipient registered under the same normalized name, and
+    the resolver then records `ambiguous_name_matches_multiple_recipients`
+    instead of the edge verbatim-only retrieval would have proposed -- exactly
+    the case pinned in `test_the_union_reveals_a_tie_instead_of_loosening_admission`.
+    That is a strengthening, not a regression: the union did not break an edge,
+    it revealed that the evidence for it was contested all along.
+
+    So the corpus here is chosen so that no name in it is contested -- each of
+    the three registry names is reachable by exactly one query form of exactly
+    one exhibit name -- and what is asserted is the containment that holds in
+    that case: the verbatim-only proposal set is a SUBSET of the union's, and
+    the union strictly adds the PLTR edge that no single spelling could reach.
+    """
+    corpus = ["Palantir USG, Inc.", "Calzoni S.r.l.", "Vanguard Defense Systems, Inc."]
+    registry = [
+        ("PALANTIR USG INC", "HNN4F9JZWDY8"),        # only the stripped form finds it
+        ("CALZONI S.R.L.", "RBVAKLPTAJU3"),          # only the verbatim form finds it
+        ("VANGUARD DEFENSE SYSTEMS, INC.", RECIPIENT_UEI),  # only the verbatim form
+    ]
+    entities = [
+        _exhibit_entity(name, entity_id=f"entity:corpus-{index}")
+        for index, name in enumerate(corpus)
+    ]
+
+    collector = IssuerEvidenceCollector(fetch=_FakeUSAspendingRecipientSearch(registry))
+    verbatim_rows = [
+        row
+        for name in corpus
+        for row in collector._recipient_records_for_query(name)["records"]
+    ]
+    union_rows = [
+        row for name in corpus for row in collector.recipient_records(name)["records"]
+    ]
+
+    old = _resolve(entities=entities, recipients=_as_recipient_records(verbatim_rows))
+    new = _resolve(entities=entities, recipients=_as_recipient_records(union_rows))
+
+    old_ids = {proposal["proposal_id"] for proposal in old["proposals"]}
+    new_ids = {proposal["proposal_id"] for proposal in new["proposals"]}
+
+    assert old_ids <= new_ids
+    assert len(old_ids) == 2 and len(new_ids) == 3
+    added = new_ids - old_ids
+    assert len(added) == 1
+    gained = next(p for p in new["proposals"] if p["proposal_id"] in added)
+    assert [row["value"] for row in gained["identifiers"]] == ["HNN4F9JZWDY8"]
+    assert new["ambiguous"] == []
+
+
+def test_the_query_forms_are_bounded_and_the_stripper_is_unicode_aware() -> None:
+    """Gate 4: at most two forms, and two requests, per name -- accents intact.
+
+    The stripper drops PUNCTUATION, not non-ASCII.  `Palantir Technologies
+    Geneva Sàrl` is a real Palantir subsidiary and carries no punctuation at
+    all, so it must produce ONE form; an ASCII-only class would mangle it into
+    `Palantir Technologies Geneva S rl`, a spelling no recipient carries, and
+    spend a second request asking for it.
+    """
+    assert MAX_RECIPIENT_QUERY_FORMS == 2
+
+    unpunctuated = "Vanguard Defense Systems LLC"
+    assert recipient_query_forms(unpunctuated) == [unpunctuated]
+    one_form = _FakeUSAspendingRecipientSearch([])
+    IssuerEvidenceCollector(fetch=one_form).recipient_records(unpunctuated)
+    assert one_form.keywords == [unpunctuated]
+
+    punctuated = "Helicopter Support, Inc."
+    assert recipient_query_forms(punctuated) == [punctuated, "Helicopter Support Inc"]
+    two_forms = _FakeUSAspendingRecipientSearch([])
+    IssuerEvidenceCollector(fetch=two_forms).recipient_records(punctuated)
+    assert two_forms.keywords == [punctuated, "Helicopter Support Inc"]
+
+    accented = "Palantir Technologies Geneva Sàrl"
+    assert recipient_query_forms(accented) == [accented]
+    accented_backend = _FakeUSAspendingRecipientSearch([])
+    IssuerEvidenceCollector(fetch=accented_backend).recipient_records(accented)
+    assert accented_backend.keywords == [accented]
+
+    for name in (
+        unpunctuated,
+        punctuated,
+        accented,
+        "Palantir USG, Inc.",
+        "Calzoni S.r.l.",
+        "ComPetro Comunicações Holdings do Brasil, Ltda.",
+        "L3Harris Technologies, Inc. (U.K.) -- Bristol",
+        "",
+    ):
+        assert len(recipient_query_forms(name)) <= MAX_RECIPIENT_QUERY_FORMS
+
+
+def test_the_politeness_floors_are_unchanged_and_still_bite() -> None:
+    """Gate 4: unioning doubles the requests, so the rate floor must still hold.
+
+    The floors are pinned by value first, because the whole risk of a second
+    query form is that someone "makes room" for it by lowering them.
+
+    The floor is then proven DIRECTLY through `_throttle` rather than through
+    the fixture path, because injecting `fetch` bypasses `_http` entirely -- the
+    injected fetcher is called instead, so no test ever sleeps and no test can
+    observe the throttle by counting requests.  Calling `_throttle` twice for
+    the same host class is the honest way to show the floor is live: both query
+    forms POST under `host_class="usaspending"`, so the SECOND form's request is
+    paced by the same per-host-class clock as the first, with no second rate
+    limiter anywhere in the union path.
+    """
+    assert USASPENDING_MIN_INTERVAL_SECONDS == 1.0
+    assert SEC_MIN_INTERVAL_SECONDS == 0.35
+
+    waits: list[float] = []
+    collector = IssuerEvidenceCollector(sleep=waits.append)
+    assert collector.usaspending_min_interval == USASPENDING_MIN_INTERVAL_SECONDS
+    assert collector.sec_min_interval == SEC_MIN_INTERVAL_SECONDS
+
+    collector._throttle("usaspending", collector.usaspending_min_interval)
+    assert waits == []  # nothing to wait for on the first request
+    collector._throttle("usaspending", collector.usaspending_min_interval)
+
+    assert len(waits) == 1
+    assert 0.9 <= waits[0] <= 1.0
+
+
+def test_both_query_forms_survive_into_the_durable_receipt_ledger(tmp_path: Path) -> None:
+    """The ledger must be able to prove the SECOND spelling was asked.
+
+    THE ZERO-RESULT CASE IS THE ONE THAT MATTERS MOST, and it is the ordinary
+    case: when both forms of a name find nothing, both responses are
+    byte-identical.  "We asked and there was nothing" is exactly the fact the
+    receipt ledger exists to preserve -- it is the difference between a recipient
+    that does not exist under either spelling and a query that was never sent.
+
+    `receipt_id` is the ledger's append-only key, so deriving it from the
+    response body ALONE would collapse those two receipts into one and drop the
+    stripped spelling's record from durable history -- a union that cannot be
+    audited afterwards.  Keying it on `record_id` + the body digest keeps the id
+    retrieval-distinct while leaving it content-bound, which is what the first
+    two assertions below pin.
+
+    The re-append at the end is the non-vacuity control: distinctness must come
+    from the retrieval identity, not from having quietly broken the append-only
+    dedupe.  A true repeat of the same retrieval still adds nothing.
+    """
+    exhibit_name = "Palantir USG, Inc."
+    backend = _FakeUSAspendingRecipientSearch([])  # every keyword answers zero rows
+    result = IssuerEvidenceCollector(fetch=backend).recipient_records(exhibit_name)
+
+    assert backend.keywords == [exhibit_name, "Palantir USG Inc"]
+    receipts = result["receipts"]
+    assert len(receipts) == 2
+    # Byte-identical answers -- the collision case, reproduced rather than assumed.
+    assert receipts[0]["content_sha256"] == receipts[1]["content_sha256"]
+    # ...and still two distinct ledger keys.
+    assert receipts[0]["receipt_id"] != receipts[1]["receipt_id"]
+
+    ledger = tmp_path / "issuer_evidence_receipts.jsonl"
+    appended = append_issuer_evidence_receipts(receipts, ledger)
+
+    assert appended["new_receipts_this_run"] == 2
+    persisted = [
+        json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
+    assert {row["record_id"] for row in persisted} == {
+        f"usaspending:recipient-search:{exhibit_name}:page-1",
+        "usaspending:recipient-search:Palantir USG Inc:page-1",
+    }
+
+    # Non-vacuity: the append-only dedupe still refuses a true repeat.
+    again = append_issuer_evidence_receipts(receipts, ledger)
+    assert again["new_receipts_this_run"] == 0
+    assert again["receipts_total"] == 2
 
 
 def test_an_issuer_with_zero_enumerated_recipients_reports_none_not_complete() -> None:
@@ -1458,7 +1944,11 @@ def test_an_issuer_with_zero_enumerated_recipients_reports_none_not_complete() -
     recipient, and `Calzoni S.r.l.` returns 1 while `Calzoni S r l` returns 0.
     So an exhibit spelling can miss a recipient that exists -- PLTR enumerated
     zero recipients across all 31 of its exhibit names even though its two
-    reviewed UEIs are reachable under a looser query.
+    reviewed UEIs are reachable under a looser query.  That measurement was
+    taken under VERBATIM-ONLY retrieval; the collector now unions both
+    spellings (see the union tests above), which narrows the gap without
+    closing it -- a name whose registered spelling differs from the exhibit's
+    by more than punctuation is still unreachable by any literal `keyword`.
 
     The safety property that must hold regardless is this one: an issuer we
     found nothing for is reported `none`, never `complete`. "Not found yet" and
