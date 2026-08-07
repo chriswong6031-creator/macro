@@ -243,6 +243,17 @@ migrating the young store) is chipped separately. SPX has no archive anywhere, s
 putcall/gex/gex_SPX stay permanently lost for all five sessions — registered in
 `KNOWN_PERMANENT_GAPS`, never fabricated.
 
+> **SUPERSEDED 2026-08-07 (#4807) — do not apply the `session+1` rule above to a
+> cross-fill today.** The chip landed: `build_polygon_gex` now stamps the session a
+> snapshot describes, so rows written after it carry that session with **no shift**.
+> Its migration re-stamped the raw `chains/` files but **not** the chain-family
+> underlyings' summaries (SPY/QQQ/IWM/NVDA/AAPL/TSLA/AMD/META/MSFT), so those files
+> now hold **both** eras. Measured on all nine 2026-08-07: stamps ≤ 07-31 match the
+> PRIOR session's close to 0.000%, the 08-07 stamp matches its OWN session to 0.000%,
+> and the 08-06 stamp matches no session at all (a pre-market tape). The offset is
+> era-dependent — pin the session on the spot-vs-yahoo identity check, never on the
+> stamp. The paragraph above stands as the 2026-08-06 forensic record only.
+
 **(2) SEC CS_TERMS — forensics only; the two nights failed DIFFERENTLY.** Treating
 "CS_TERMS failed" as one recurring fault would have mis-fixed it. 08-05 (run
 31056495943) exited **2, `status: degraded`**, mass `SEC complete-submission must
