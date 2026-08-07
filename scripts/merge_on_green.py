@@ -721,11 +721,29 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
     return "red", f"{conclusion or 'missing conclusion'} at {detail}"
 
 
+#: How far back along main to look for a commit that actually published checks.
+#: Measured 2026-08-07 on the last 14 main commits: NINE carried no check runs at
+#: all — `[skip ci]` press-wire ticks, earnings-wire publishes, research_vault
+#: catalogs, whitehouse alert updates — and the tip had none either. The newest
+#: commit with concluded packs sat 5 back. 20 clears that with room; a main whose
+#: last 20 commits are all skip-ci is a main nothing has proved, and the walk
+#: correctly returns an empty set there.
+MAIN_PROOF_WALK = 20
+
+
 def main_clean_check_names(repo: str, token: str) -> set[str]:
-    """Non-spurious check names that concluded CLEAN on main's current tip.
+    """Non-spurious check names that concluded CLEAN on the newest PROVED main commit.
 
     Read ONCE per sweep and shared by every pull request, because it answers a
     question about main, not about any PR.
+
+    NOT the tip. main's tip is usually a commit that never ran CI: this repo pushes
+    `[skip ci]` wire ticks and research_vault catalogs to main every few minutes, and
+    ci.yml is path-filtered on top of that. Reading the tip alone returned a set with
+    no packs in it almost always, which would have left this whole mechanism inert —
+    it would have looked like it worked while never firing. So walk newest->oldest and
+    answer from the first commit that published ANY concluded non-spurious check, the
+    same shape `integration_baseline_state` already uses for the breaker.
 
     This exists to tell two reds apart that look identical on a PR:
 
@@ -743,30 +761,44 @@ def main_clean_check_names(repo: str, token: str) -> set[str]:
     and 18 open pull requests inherited a ci-pack-1 failure until #4645 repaired
     it."
 
-    FAILS CLOSED. Any error returns an EMPTY set, and an empty set can never be a
-    superset of a non-empty failing set, so the caller falls through to the
-    unchanged `merge-blocked` path. An unreadable main is never permission to
-    refresh anything.
+    Stops at the first PROVED commit and answers from that one alone — it does not
+    union across commits. A union would let a check that passed four commits ago
+    excuse a red the very next commit introduced.
+
+    FAILS CLOSED at every exit: an unreadable main, a walk that finds no proved
+    commit, or any exception all return an EMPTY set, and an empty set can never be
+    a superset of a non-empty failing set, so the caller falls through to the
+    unchanged `merge-blocked` path. Not knowing what main proves is never permission
+    to refresh anything.
     """
     try:
         status, payload = _request(
-            "GET", f"{GITHUB_API}/repos/{repo}/commits/main", token
+            "GET",
+            f"{GITHUB_API}/repos/{repo}/commits?sha=main&per_page={MAIN_PROOF_WALK}",
+            token,
         )
-        if status >= 400 or not isinstance(payload, dict):
+        if status >= 400 or not isinstance(payload, list):
             return set()
-        tip = str(payload.get("sha") or "")
-        if not tip:
-            return set()
-        runs = head_check_runs(repo, tip, token)
+        for commit in payload:
+            sha = str((commit or {}).get("sha") or "")
+            if not sha:
+                continue
+            considered = [
+                run
+                for run in head_check_runs(repo, sha, token)
+                if not is_spurious_check(str(run.get("name") or ""))
+                and run.get("status") == "completed"
+            ]
+            if not considered:
+                continue  # a skip-ci / path-filtered commit proves nothing either way
+            return {
+                str(run.get("name") or "")
+                for run in considered
+                if run.get("conclusion") in CLEAN_CONCLUSIONS
+            }
     except Exception:  # noqa: BLE001 — a diagnostic must never fail a sweep
         return set()
-    return {
-        str(run.get("name") or "")
-        for run in runs
-        if not is_spurious_check(str(run.get("name") or ""))
-        and run.get("status") == "completed"
-        and run.get("conclusion") in CLEAN_CONCLUSIONS
-    }
+    return set()
 
 
 def failing_check_names(runs: list[dict[str, Any]]) -> set[str]:
