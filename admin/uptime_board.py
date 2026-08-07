@@ -16,11 +16,17 @@ except Exception:  # noqa: BLE001
 
 # (label, url, expected_status_or_None) — the public endpoints that must stay up.
 # None = accept any non-5xx (some surfaces redirect or gate behind auth).
+#
+# Prefer a real status over None wherever an UNGATED endpoint exists. The bot desk
+# went Pro-only at the edge (app/deploy/Caddyfile, bot.mastermind-x.com): probing its
+# root would collect an anonymous 403, pass the non-5xx test, and keep reporting "up"
+# with the service dead behind it. /health is the one path that block leaves open
+# precisely so this probe can tell an outage from a locked door.
 TARGETS = [
     ("Main site", "https://mastermind-x.com/", 200),
     ("macro API", "https://mastermind-x.com/api/health", 200),
     ("Terminal", "https://app.mastermind-x.com/", None),
-    ("Brain bot", "https://bot.mastermind-x.com/", None),
+    ("Brain bot", "https://bot.mastermind-x.com/health", 200),
     ("Admin console", "https://admin.mastermind-x.com/healthz", 200),
 ]
 
