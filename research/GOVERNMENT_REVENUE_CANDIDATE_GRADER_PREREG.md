@@ -1,12 +1,22 @@
 # Government Revenue candidate grader — pre-registration (GRV-FA1)
 
-**Version 2.0.0. Registered 2026-08-06, before any observation exists.**
+**Version 3.0.0. Registered 2026-08-06, amended 2026-08-07, before any observation exists.**
 
 *Version 2.0.0 amends 1.0.0 on the same day, still before the first issuance row exists (the
 live log is 0 bytes — see §0). The amendments are §7's decision rule and power calculation,
 §6's clocks, and §8's correction allowlist; each is recorded in the amendment table in §10 with
 its reason. §9's amendment law is untouched: after the first issuance row exists, none of this
 may move without a new `family_id`.*
+
+*Version 3.0.0 (2026-08-07) adds §11, the disclosure-label layer the Wave 9G handoff asks for
+("earnings-window and subsequent-filings outcome labels where available"). It is still
+pre-observation: the live issuance log does not exist and the candidate ledger is 0 bytes. The
+amendment touches **no** threshold, horizon, benchmark, admission rule, or decision rule — §11
+is descriptive and is computed after the verdict — so §7's power calculation and the registered
+kill condition are unchanged, and N = 545 still describes the statistic it was derived for.
+(The kill condition is named and stated in §7.3; it is deliberately not repeated above the
+machine-readable declaration, because §9's drift guard reads the prose on both sides of that
+block and a mention here would satisfy it without anyone stating the rule.)*
 
 Program: Government Revenue Foresight, Wave 9G
 (`research/GOVERNMENT_REVENUE_FORESIGHT_ACCOUNT_HANDOFF.md` §"Wave 9G — prospective grader
@@ -85,7 +95,7 @@ not registered.
   "family_id": "grv-fa1",
   "title": "exact-issuer receipt-bound positive funded-action acceleration",
   "document": "research/GOVERNMENT_REVENUE_CANDIDATE_GRADER_PREREG.md",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "horizons": [
     {"name": "h5", "sessions": 5, "role": "disclosure"},
     {"name": "h21", "sessions": 21, "role": "supporting"},
@@ -508,3 +518,59 @@ originate or escalate a grade here.
 | 2.0.0 §8 | 2026-08-06 | correction field **allowlist**; closed `correction_reason` vocabulary; the **supersession ratchet** | A plain correction could rewrite `known_at` (re-cutting the entry session after the outcome was observable), `ticker`, `horizons`, or `entry_rule`; the reason was unvalidated free text; and ungrading a loser moved a two-row cohort from `kill` to `tested_null`. |
 | 2.0.0 §1 | 2026-08-06 | `is_late_discovery` admission is fail-**closed** | `bool(...)` admitted a payload that omitted the key — the only fail-open admission test in the family. |
 | 2.0.0 §5/§6 | 2026-08-06 | coverage walker covers `*_mean`/`*_summary`/`*_bound`; `window_independence` emitted | The walker was structurally blind to the mean the verdict reads; `issued_n` counted overlapping windows as independent draws with no disclosure. |
+| 3.0.0 §11 | 2026-08-07 | **disclosure-label layer registered**: earnings-window and subsequent-filings labels, their two PIT clamps, and the `unavailable` / `none_in_window` split | Wave 9G's build list asks for "earnings-window and subsequent-filings outcome labels where available" and 1.0.0/2.0.0 shipped neither — the word `earnings` did not appear in the instrument, the registration, or the suite. Registered pre-observation (log still absent, ledger still 0 bytes) and deliberately **outside** the decision rule, so §7's N = 545 continues to describe the statistic it was derived for. |
+
+## 11. Disclosure labels — earnings windows and subsequent filings (descriptive)
+
+The Wave 9G build list asks for "earnings-window and subsequent-filings outcome labels **where
+available**". This section registers what those labels mean, before any of them exists.
+
+**What they are for.** A graded horizon may span an earnings print or a subsequent periodic
+filing. If it does, the return it produced is not cleanly attributable to the award action the
+family issued on. The label records that so a reader can partition the cohort afterwards. It
+is a *contamination marker*, not an outcome, not a hit, and not a signal.
+
+**What they may never do.** They are **not** an input to GRV-FA1-KILL-V2 or to any verdict
+region. §7.2 derives N = 545 from a power calculation over the paired market-relative mean; a
+decision rule that grew a term would leave that registered N describing a statistic the
+instrument no longer computes. Enforcement is structural rather than by convention:
+`build_cohort_report` computes the labels, holds them aside, calls `evaluate_verdict`, and only
+then attaches them to the report. The suite pins the ordering by asserting that the verdict
+block of a report built *with* a disclosure calendar is byte-identical to one built *without*.
+
+**The three states, and why the third exists.** This is the point of the whole section:
+
+| State | Meaning |
+|---|---|
+| `observed` | the calendar covers this issuer and ≥1 disclosure fell inside the graded window |
+| `none_in_window` | the calendar covers this issuer and **nothing** fell inside the window |
+| `unavailable` | the label could not be computed; a named reason says why |
+
+`none_in_window` is evidence. `unavailable` is the absence of evidence. The natural
+implementation — a mapping that returns an empty list for an unknown ticker — merges them, and
+merges them in the flattering direction: every issuer with the *worst* disclosure data scores
+as the *cleanest* window. A `DisclosureCalendar` therefore declares `covered_tickers`, a ticker
+outside that set is `unavailable`/`issuer_not_in_calendar`, and no code path collapses the two.
+The `unavailable` vocabulary is closed: `no_disclosure_calendar`, `issuer_not_in_calendar`,
+`row_ungraded`, `source_outage`.
+
+**The two point-in-time clamps**, both mutation-proved in the suite:
+
+1. **Window clamp.** Only disclosures dated inside `[entry_session, exit_session]` — the
+   graded window, computed in one place (`_disclosure_window`) so a widening is a one-line
+   mutation the suite can catch. A disclosure after the exit did not touch the measured return.
+2. **Availability clamp.** Only disclosures whose own `known_at` is at or before the report's
+   `as_of`. Filing indexes publish on a lag, so an event carries an availability clock separate
+   from its event date; without this clamp a label would use tomorrow's index to describe a
+   window already graded.
+
+**Denominators.** Both `earnings_window_rate` and `filing_window_rate` are conditioned on rows
+whose label was *computable*, and both carry an `outcome` coverage whose universe is the fixed
+issuance cohort. Poor filing coverage therefore reads as poor coverage, never as a clean
+cohort — the §5 rule applied to the label layer.
+
+**Contract gap (carried, not closed).** The candidate payload has no earnings date and no
+filing pointer: `earnings_transmission` is mechanism prose, not a clock. The calendar is
+therefore supplied by the caller, and with no calendar supplied every label is
+`unavailable`/`no_disclosure_calendar` — which is the honest reading of "where available" on
+2026-08-07, when no such calendar is wired.
