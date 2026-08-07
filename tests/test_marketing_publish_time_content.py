@@ -2215,11 +2215,22 @@ _PROXY_THEME = "Commodities Metals"
 
 def _write_proxy_bars(tmp: Path, tickers, *, rho: float, seed: int = 5,
                       n: int = 260) -> None:
-    """Correlated bars under the curated tree theme_proxy.cohesion reads first."""
+    """Correlated bars under the curated tree theme_proxy.cohesion reads first.
+
+    Gated, not bare: theme_proxy.cohesion is the one code path in this suite that
+    genuinely needs the data stack (it reads the parquet through pandas and means
+    the pairwise correlations through numpy — both LAZY inside the module, which
+    is why importing publish_time_content still costs only stdlib). The bar
+    fixture has to pay what the code under test pays. A bare `import numpy` here
+    ERRORS in the thin pytest+pyyaml lane that names this file, which is how nine
+    tests turned main red from #4646 onward. The gate makes them skip there; the
+    marketing-data lane names this file so they actually execute.
+    """
     import math
 
-    import numpy as np
-    import pandas as pd
+    np = pytest.importorskip("numpy")
+    pd = pytest.importorskip("pandas")
+    pytest.importorskip("pyarrow")  # DataFrame.to_parquet needs a parquet engine
     rng = np.random.default_rng(seed)
     d = tmp / "data" / "baskets" / "ohlcv"
     d.mkdir(parents=True, exist_ok=True)
