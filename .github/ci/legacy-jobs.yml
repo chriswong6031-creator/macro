@@ -712,6 +712,19 @@ jobs:
           tests/test_fundamental_forensics_attested_history_pilot.py
           tests/test_fundamental_forensics_attested_history_seed.py
           tests/test_fundamental_forensics_attested_occurrence_governance.py -q
+      # NEVER put a `#` comment inside the folded `run: >` scalar below. YAML folds it
+      # onto ONE shell line, where `#` starts a SHELL comment — everything after it,
+      # including every remaining test path and the trailing `-q`, silently vanishes
+      # from the run. The step still exits 0, so it reads GREEN while running fewer
+      # suites (caught 2026-08-07: a 5-line note added mid-list dropped 24 suites plus
+      # the two being added). Annotate the list here, above `- name:`, where YAML
+      # comments are real comments.
+      #
+      # Includes the china delayed-board disclosure + the A-share session calendar
+      # behind it: the disclosure suite renders the real china.html.j2 end to end
+      # (jinja2) and imports build_china_library (pandas/pyarrow), and it is the only
+      # guard tying the template's English wording to the regex
+      # scripts/freshness_sentinel.py parses.
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
@@ -795,11 +808,6 @@ jobs:
           tests/test_china_library_limited.py
           tests/test_china_standouts_serialization.py
           tests/test_china_stocks_w1c_render.py
-          # China delayed-board disclosure + the A-share session calendar behind it.
-          # Belongs in this fat lane: the disclosure suite renders the real
-          # china.html.j2 end to end (jinja2) and imports build_china_library
-          # (pandas/pyarrow), and it is the only guard tying the template's English
-          # wording to the regex scripts/freshness_sentinel.py parses.
           tests/test_china_delayed_board_disclosure.py
           tests/test_cn_calendar.py
           tests/test_china_stocks_copy_w09.py
