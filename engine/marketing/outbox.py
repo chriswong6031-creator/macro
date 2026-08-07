@@ -700,6 +700,7 @@ def stamp_value_gate(
     source_headline: str = "",
     citation: str = "",
     cfg: dict | None = None,
+    media_withheld: bool = False,
 ) -> bool:
     """Evaluate the Gift-Grip-Proof gate and STAMP the verdict onto `source`.
 
@@ -712,6 +713,12 @@ def stamp_value_gate(
     armed). The caller decides what to do with that: record-only today,
     skip-the-emission once `value_gate.enforce` is flipped.
 
+    ``media_withheld`` says a card WAS built for this post and deliberately
+    dropped because it added nothing the copy did not already carry. It is not
+    the same as `has_media=False` and the gate must not read it as one — see
+    value_gate._proof_tier for why (it is the difference between slimming a post
+    down and deleting it).
+
     Fail-soft: if the gate raises, the item is stamped `error` and treated as
     PASSING. A publish gate that goes down must not silence the desks — the
     whole calibration exercise was about not doing that.
@@ -723,6 +730,7 @@ def stamp_value_gate(
             headline, body, kind=kind, has_media=has_media,
             numbers_whitelist=numbers_whitelist,
             source_headline=source_headline, citation=citation,
+            media_withheld=media_withheld,
         )
         meta = _vg.verdict_metadata(verdict)
         meta["enforced"] = _value_gate_enforced(cfg)

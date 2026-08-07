@@ -779,6 +779,43 @@ def _deferral_covers(it: dict) -> bool:
     return kind in _CHART_BEARING_KINDS or kind in _TICKER_ROLLUP_KINDS
 
 
+def _card_withheld_for_value(it: dict) -> bool:
+    """Did a lane draw this post a card and then deliberately not print it?
+
+    THE THIRD STATE OF THE MEDIA QUESTION (2026-08-06). `media == []` reads the
+    same for a post no lane ever illustrated and for a post whose card was
+    rendered, measured against the copy and withheld because it only restated
+    it. Those are opposite facts about the post's evidence and this publisher
+    used to collapse them, which is how the card-value law came to quarantine
+    the posts it had just tidied.
+
+    Set by engine/marketing/press_lane._emit_outbox_item on the item's `source`,
+    which is the dict make_item persists into items.jsonl — so the flag survives
+    the queue and is readable here, in a process that never sees the card.
+    Absent/unparseable reads as False: the gate stays armed by default and only
+    an explicit, positively-stamped decision stands it down.
+
+    SCOPED BY KIND, AND THE SCOPE IS THE OPERATOR'S (ruling 2026-08-06 —
+    "charts yes, text cards no"; review F6 found the hole). The 2026-07-30 rule
+    this stands down is a PER-KIND rule — "these kinds always carry their chart"
+    — and reading a bare boolean off `source` let any producer buy an exemption
+    from it. The narrowing the operator granted covers exactly one line, the wire
+    flash that merely mentions a ticker; a price or rollup post is where "a chart
+    is DATA" applies and it is untouched. `breaking`
+    and `earnings` sit outside both media-owing sets on purpose and are the only
+    kinds whose lanes draw this card, so the flag is honoured only where the
+    rule it relaxes was never absolute. A future lane stamping the flag on a
+    `signal`/`chart`/`watchlist`/`receipt`/`theme_list`/`mover` item gets
+    nothing: those kinds owe a picture by their own definition. Derived from the
+    same frozensets as everything else here, so widening one widens this.
+    """
+    src = it.get("source")
+    if not (isinstance(src, dict) and src.get("card_withheld_for_value")):
+        return False
+    kind = str(it.get("kind") or "")
+    return kind not in (_CHART_BEARING_KINDS | _TICKER_ROLLUP_KINDS)
+
+
 def _bare_cashtag_post(it: dict, pub_cfg: dict, media_paths: list[str]) -> str:
     """A post that names tickers and ships no picture. Returns the tickers, or "".
 
@@ -786,6 +823,29 @@ def _bare_cashtag_post(it: dict, pub_cfg: dict, media_paths: list[str]) -> str:
     account: "YOU WILL NOT SHIP THESE TEXT ONLY, ID RATHER YOU DESTROY THE
     ENTIRE ENGINE THAN SHIP TEXT ONLY, CUZ NO ONE CARES ABOUT THESE TICKER POSTS
     IF UR GOING TO SHIP THEM NAKED WITH NO CHARTS."
+
+    …AND THE OPERATOR NARROWED IT, 2026-08-06, IN ONE PLACE: "CHARTS YES, TEXT
+    CARDS NO." A WIRE FLASH that merely mentions a ticker MAY ship text-only when
+    its card was drawn, MEASURED, and found to only restate the post. The
+    operator's reasoning, recorded here because it is the whole argument: A CHART
+    IS DATA; A TEXT CARD IS A SCREENSHOT OF THE POST. Withholding a screenshot of
+    the post is not shipping naked — there was nothing under the clothes.
+
+    THE 2026-07-30 LAW KEEPS ITS FULL FORCE EVERYWHERE ELSE, unchanged: the
+    price/rollup posts it was written about — every kind in
+    ``_CHART_BEARING_KINDS`` and ``_TICKER_ROLLUP_KINDS``, i.e. `signal`,
+    `chart`, `watchlist`, `receipt`, `theme_list`, `mover` — carry a real chart
+    or they do not ship, withheld stamp or no withheld stamp. That scoping is
+    :func:`_card_withheld_for_value`'s kind test, and it is pinned both ways by
+    tests/test_marketing_card_earns_pixels.py::
+    test_the_withheld_exemption_does_not_reach_a_chart_bearing_kind and
+    ::test_a_real_press_emission_relabelled_to_a_rollup_kind_is_still_quarantined.
+
+    THIS IS A NARROWING BY THE OPERATOR, NOT BY A BUILDER. The engineering
+    argument (the lane drew a card, measured it against the copy, and found it
+    said nothing the copy did not) was made in this docstring for one day with no
+    ruling cited, and the round-3 review was right to refuse to merge on it. It
+    is cited now.
 
     :func:`_missing_required_media` could not enforce that. It keys on
     ``_CHART_BEARING_KINDS`` (signal/chart/watchlist/receipt) AND requires a
@@ -837,6 +897,33 @@ def _bare_cashtag_post(it: dict, pub_cfg: dict, media_paths: list[str]) -> str:
         # would wedge every ticker post, same reasoning as the deferral gate.
         return ""
     _built_a_card = any(isinstance(m, dict) for m in (it.get("media") or []))
+    if not _built_a_card and _card_withheld_for_value(it):
+        # THE PICTURE WAS DRAWN AND DELIBERATELY NOT PRINTED. This gate asks
+        # "does this post owe a picture it never got?" — and here the lane got
+        # one, measured it against the copy, and found it said nothing the post
+        # did not already say (breaking_summary.card_earns_attachment). Holding
+        # the post for review on that basis quarantines it for being TOO tidy:
+        # the reviewer's only available action is to approve the very text that
+        # is already in the queue. Measured 2026-08-05: every cashtag-bearing
+        # press flash whose card was withheld landed here, terminal.
+        #
+        # THIS IS NOT A HOLE IN THE 2026-07-30 RULE. The 19 posts that outage
+        # quarantined carried no `media` and no lane-set withholding decision;
+        # they simply shipped bare. Nothing sets this flag except a card gate
+        # that has SEEN a rendered card and read back what it DREW, so a lane
+        # cannot buy an exemption by skipping the render. That premise was false
+        # when first written — earnings_call_lane decided before rendering, and
+        # scored a 190-char string against a 129-char box — and is enforced now
+        # by tests/test_marketing_card_earns_pixels.py::
+        # test_every_card_drawing_lane_judges_what_the_card_drew, which walks
+        # each lane's AST and fails on a gate call that does not read the fit
+        # report. A renderer that fell through its fail-soft is NOT this case in
+        # either lane: it returns the transient `media_unhosted` /
+        # `card_render_degraded` refusal and never stamps the flag.
+        #
+        # AND IT IS SCOPED BY KIND — see _card_withheld_for_value. A `signal` or
+        # `watchlist` item stamping the flag gets nothing.
+        return ""
     if not _built_a_card and str(it.get("kind") or "") not in _BARE_CASHTAG_KINDS:
         # Prose that mentions a ticker in passing and never claimed a picture.
         return ""
