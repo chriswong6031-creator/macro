@@ -18,10 +18,19 @@ engine moved to the absolute session calendar:
 1. **`engine/bar_derive.py` `derive_2d_ohlcv`/`derive_3d_ohlcv`** bucketed with raw
    `resample("2B"/"3B")` — bin edges phased to the series' first timestamp, holiday
    mis-splits included — while the 3D docstring claimed its close "equals what
-   `signal_frame` derives internally". That claim has been FALSE since era
-   `sq-abs-session-2026-08-06`: `signal_quality._tf_grid` buckets by
-   `session_anchor.session_positions // n`. (Zero production callers today — the defect
-   was a loaded footgun plus a false contract, not a live wrong number.)
+   `signal_frame` derives internally". That claim goes FALSE the moment era
+   `sq-abs-session-2026-08-06` (PR #4738) lands, because `signal_quality._tf_grid` then
+   buckets by `session_anchor.session_positions // n` while `bar_derive` would not.
+   **As of this writing it still HOLDS on `main`**: both sides sit on `resample("3B")`
+   (`signal_quality.py:87`, `bar_derive.py:207`), so they agree by both being wrong the
+   same way. (Zero production callers today — the defect is a loaded footgun plus a
+   contract about to go false, not a live wrong number.)
+
+   **This is why the ordering is load-bearing, not a preference.** Landing the
+   `bar_derive` fix BEFORE #4738 would move this surface to the absolute grid while
+   `signal_frame` stayed on `3B` — *breaking* a contract that currently holds, and
+   creating the very divergence this ruling exists to close. #4738 first, then the
+   implementation.
 
 2. **`site/chart.js` `resample()`** builds its 3D candles by `floor(i/3)` over the LOADED
    window — and the window is `tail(MAX_BARS=1300)` of a store that advances one session
