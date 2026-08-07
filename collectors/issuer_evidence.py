@@ -69,12 +69,24 @@ MAX_RECIPIENT_PAGE_SIZE = 100
 REQUEST_TIMEOUT_SECONDS = 45
 MAX_ATTEMPTS = 3
 
+#: A recipient name is queried in at most this many literal forms.  `keyword` is
+#: a literal substring match, so one spelling can miss a recipient that exists;
+#: the union widens the CANDIDATE POOL only -- admission is unchanged and still
+#: decided by exact identifier + verbatim exhibit name in the resolver.
+MAX_RECIPIENT_QUERY_FORMS = 2
+
 #: Exhibit 21 documents are small; anything larger is not an exhibit.
 MAX_EXHIBIT_BYTES = 4_000_000
 
 _ACCESSION = re.compile(r"^\d{10}-\d{2}-\d{6}$")
 _TAG = re.compile(r"<[^>]+>")
 _WS = re.compile(r"\s+")
+
+#: Punctuation, UNICODE-AWARE ON PURPOSE.  ``\w`` keeps every accented letter, so
+#: ``Palantir Technologies Geneva Sàrl`` survives untouched; the ASCII-only class
+#: ``[^0-9A-Za-z\s]`` would shred the ``à`` and query for ``S rl``, a spelling no
+#: recipient carries.  Only marks that are genuinely punctuation are dropped.
+_PUNCT = re.compile(r"[^\w\s]", re.UNICODE)
 
 #: Exhibit 21 filenames vary widely; match on the EDGAR-declared exhibit TYPE,
 #: which is a structured field, rather than guessing from the document name.
@@ -313,6 +325,39 @@ def _looks_like_entity_name(name: str) -> bool:
     return True
 
 
+def recipient_query_forms(name: str) -> list[str]:
+    """Return the literal query forms to union for one exhibit name.
+
+    ``keyword`` on ``/api/v2/recipient/`` is a LITERAL, PUNCTUATION-SENSITIVE
+    substring match against the registered name, and no single normalization
+    serves both directions -- measured 2026-08-07, ``Palantir USG, Inc.``
+    returns 0 while ``Palantir USG Inc`` returns the real recipient
+    ``HNN4F9JZWDY8``, and ``Calzoni S.r.l.`` returns 1 while ``Calzoni S r l``
+    returns 0.  So the retrieval is UNIONED rather than normalized: both
+    spellings are asked, and the answers are pooled.
+
+    THIS WIDENS WHAT IS LOOKED AT, NEVER WHAT IS ADMITTED.  These forms only
+    decide which recipient records enter the candidate pool; admission is still
+    exact identifier plus verbatim Exhibit 21 name, decided in
+    ``engine.government_revenue.issuer_graph_expansion`` against the issuer's
+    own exhibit spelling.  A wider pool can only turn a would-be edge into an
+    `ambiguous` tie, never into a looser accept.
+
+    The first form is always the verbatim name.  The second is the same name
+    with punctuation replaced by spaces and whitespace collapsed, CASE
+    PRESERVED, and is omitted when it is byte-identical to the verbatim form.
+    An empty or ``None`` name yields no forms at all.
+    """
+    verbatim = _text(name)
+    if verbatim is None:
+        return []
+    stripped = _WS.sub(" ", _PUNCT.sub(" ", verbatim)).strip()
+    forms = [verbatim]
+    if stripped and stripped != verbatim:
+        forms.append(stripped)
+    return forms[:MAX_RECIPIENT_QUERY_FORMS]
+
+
 def parse_recipient_records(payload: Mapping[str, Any]) -> list[dict[str, Any]]:
     """Normalize USAspending recipient search results to exact-identifier rows.
 
@@ -377,6 +422,21 @@ def build_evidence_receipt(
     ``content_sha256`` is taken over the exact response bytes, and
     ``source_ref`` is derived from it, so the pair cannot disagree.  A
     downstream consumer re-verifies by re-hashing the stored or re-fetched body.
+
+    ``receipt_id`` IS KEYED ON THE RETRIEVAL *AND* THE BODY, not the body alone.
+    A receipt answers two questions -- "what came back" and "what did we ask" --
+    and the ledger is append-only keyed on this id, so an id derived from the
+    bytes alone silently collapses two different questions that happened to get
+    the same answer.  That is reachable in the ordinary case now that a recipient
+    name is queried in more than one literal form (see ``recipient_query_forms``):
+    when BOTH spellings return zero results the two response bodies are
+    byte-identical, and a body-only id would drop the second form's receipt at
+    the ledger -- erasing the proof that the stripped spelling was asked and
+    answered nothing, which is precisely the fact the union exists to record.
+    Mixing ``record_id`` in keeps the id distinct per retrieval while leaving it
+    content-bound: the digest is still in the derivation, so tampered bytes still
+    move the id, and a genuine re-fetch of the same ``record_id`` returning the
+    same bytes still yields the same id, so true repeats still deduplicate.
     """
     if not isinstance(body, (bytes, bytearray)):
         raise ExpansionInputError("evidence body must be bytes")
@@ -386,7 +446,10 @@ def build_evidence_receipt(
     digest = _sha256_bytes(body)
     return {
         "schema_version": ISSUER_EVIDENCE_RECEIPT_SCHEMA,
-        "receipt_id": f"issuer-evidence:{digest[:24]}",
+        "receipt_id": (
+            "issuer-evidence:"
+            f"{_sha256_json({'record_id': record_id, 'content_sha256': digest})[:24]}"
+        ),
         "evidence_id": evidence_id,
         "source_ref": evidence_source_ref(digest),
         "publisher": publisher,
@@ -659,6 +722,92 @@ class IssuerEvidenceCollector:
         ticker.  The endpoint ranks by relevance and returns unrelated
         recipients, so this is enumeration only -- admission is decided later
         by exact identifier plus verbatim name.
+
+        THE RETRIEVAL IS A UNION, NOT A NORMALIZATION.  ``keyword`` is a
+        literal substring match, so one spelling of a name can miss a recipient
+        that exists while another finds it, in both directions (see
+        ``recipient_query_forms``).  Every form that function returns is queried
+        and the results are POOLED into one candidate list, deduplicated in
+        first-seen order.
+
+        THE DEDUPE KEY IS ``(normalized legal name, exact identifier)``, and the
+        USAspending recipient ``id`` is deliberately NOT part of it.  A
+        recipient's identity for this pipeline is the exact pair admission is
+        based on -- the registered legal name and the SAM UEI -- so two rows
+        agreeing on both are the same recipient, and proposing that edge twice
+        counts one piece of evidence twice.  Keying on ``id`` looked tighter and
+        was in fact broken: USAspending returns the same recipient at more than
+        one aggregation level (``recipient_level`` R and P) with DIFFERENT
+        ``id`` values, so the differing id defeated the very collapse the key
+        existed to perform.  Measured 2026-08-07 against the live API, the query
+        ``Palantir USG Inc`` returned ``PALANTIR USG INC [HNN4F9JZWDY8]`` TWICE,
+        and an id-bearing key let both through into two identical proposals.
+
+        The key has to stay loose enough to collapse one recipient seen twice
+        and tight enough to keep two recipients apart: two DIFFERENT recipients
+        registered under one name carry different identifiers, so they survive
+        the dedupe and reach the resolver as the recorded tie they are.
+
+        Widening the pool cannot loosen admission.  The resolver counts DISTINCT
+        recipients per normalized name, so a second recipient the union reveals
+        turns the name into a recorded ``ambiguous_name_matches_multiple_recipients``
+        tie -- never into an edge that verbatim-only retrieval would have refused.
+
+        THE PAGE BUDGET IS PER FORM.  Worst case is
+        ``MAX_RECIPIENT_QUERY_FORMS * max_recipient_pages`` pages for one name;
+        ``pages_read`` is the sum across forms and ``stopped_at_page_cap`` is
+        true when ANY form hit its own cap.  Both forms are POSTed through the
+        same ``_post`` under ``host_class="usaspending"``, so the existing
+        per-host-class throttle already paces them; there is no second rate
+        floor here and none is needed.
+        """
+        records: list[dict[str, Any]] = []
+        receipts: list[dict[str, Any]] = []
+        pages_read = 0
+        stopped_at_page_cap = False
+        seen: set[tuple[str | None, str | None]] = set()
+        query_forms = recipient_query_forms(search_text)
+        for query in query_forms:
+            answer = self._recipient_records_for_query(query)
+            for row in answer["records"]:
+                # `normalize_legal_name` is the resolver's own transformation --
+                # reused, never re-implemented, so the collapse cannot disagree
+                # with the comparison admission is decided by.
+                key = (normalize_legal_name(row.get("legal_name")), row.get("uei"))
+                if key in seen:
+                    continue
+                seen.add(key)
+                # First-seen wins, and that includes `observed_award_amount`:
+                # the duplicate is the SAME recipient reported at another
+                # USAspending aggregation level, so keeping one row is what
+                # stops one recipient's dollars being counted twice into
+                # `build_issuer_coverage`'s award-dollar denominator.
+                records.append(row)
+            # Receipts are NOT deduplicated: each form's receipts are distinct
+            # retrievals, and their `record_id` and `evidence_id` both embed the
+            # query text that produced them.  Dropping one would erase the proof
+            # that the second spelling was actually asked.  `build_evidence_receipt`
+            # keys `receipt_id` on `record_id` + body digest for the same reason --
+            # two forms that both answer ZERO results return byte-identical bodies,
+            # and a body-only id would have collapsed them at the ledger instead.
+            receipts.extend(answer["receipts"])
+            pages_read += answer["pages_read"]
+            stopped_at_page_cap = stopped_at_page_cap or answer["stopped_at_page_cap"]
+        return {
+            "records": records,
+            "receipts": receipts,
+            "pages_read": pages_read,
+            "stopped_at_page_cap": stopped_at_page_cap,
+            "search_text": search_text,
+            "query_forms": query_forms,
+        }
+
+    def _recipient_records_for_query(self, query: str) -> dict[str, Any]:
+        """Page one literal ``keyword`` query and receipt every page of it.
+
+        One spelling, one paging loop, bounded by ``max_recipient_pages``.
+        ``recipient_records`` calls this once per query form and pools the
+        answers; nothing here knows about the union.
         """
         records: list[dict[str, Any]] = []
         receipts: list[dict[str, Any]] = []
@@ -675,7 +824,7 @@ class IssuerEvidenceCollector:
             # recipients, so the enumeration looks like evidence about the issuer
             # when it is actually the leaderboard.
             body = {
-                "keyword": search_text,
+                "keyword": query,
                 "limit": MAX_RECIPIENT_PAGE_SIZE,
                 "page": page,
                 "order": "desc",
@@ -692,11 +841,11 @@ class IssuerEvidenceCollector:
             receipts.append(build_evidence_receipt(
                 evidence_id=(
                     f"evidence:usaspending-recipient-"
-                    f"{_sha256_json({'q': search_text, 'page': page})[:16]}"
+                    f"{_sha256_json({'q': query, 'page': page})[:16]}"
                 ),
                 publisher="USAspending.gov",
                 evidence_class="official_award",
-                record_id=f"usaspending:recipient-search:{search_text}:page-{page}",
+                record_id=f"usaspending:recipient-search:{query}:page-{page}",
                 url=USASPENDING_RECIPIENT_SEARCH_URL,
                 body=raw,
                 retrieved_at=retrieved_at,
@@ -712,5 +861,5 @@ class IssuerEvidenceCollector:
             "receipts": receipts,
             "pages_read": pages_read,
             "stopped_at_page_cap": has_next and pages_read >= self.max_recipient_pages,
-            "search_text": search_text,
+            "query": query,
         }
