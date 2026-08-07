@@ -19,12 +19,31 @@ back `code=40101 msg=您的token不对，请确认。` ("your token is incorrect
 `daily_basic` and `moneyflow_dc` alike (last observed: run 31095457182, asia job 2026-08-06
 11:39Z–11:49Z). The `TUSHARE_TOKEN` secret **is set** — the gate in `collectors/china_tushare.py`
 would have raised before the module loop otherwise, and a heartbeat row was written every night —
-so this is not a missing credential: the vendor is rejecting its **value** (a rotated, regenerated
-or mangled token). `data/tushare/*.parquet` has been frozen at the 2026-07-24 close ever since.
+so this is not a missing credential: the vendor is rejecting its **value**.
+`data/tushare/*.parquet` has been frozen at the 2026-07-24 close ever since.
 
-**Remedy (operator only):** regenerate the token on the tushare.pro account page and update the
-GitHub Actions secret `TUSHARE_TOKEN`. Nothing in the repo can fix it — never paste a token value
-into a file, a PR, or a log line.
+**Nothing on this side changed — the invalidation is server-side.** The `TUSHARE_TOKEN` secret
+was last written **2026-07-02** (GitHub's secret `updated_at`; the API exposes the timestamp, never
+the value), 25 days before the break, and that same value collected cleanly every night up to the
+cliff — `data/china_tushare/run_log.parquet` reads valuation 5526 / moneyflow 5910 on 07-26, then
+`0.0` across all seven modules from 07-27 onward. `collectors/tushare_client.py` has not been
+touched since before 07-15 either. So the same string, unchanged, worked for 24 nights and was
+then refused: it was invalidated on tushare.pro's side, NOT rotated or mangled here. (An earlier
+revision of this note guessed "a rotated, regenerated or mangled token" — the secret timeline
+refutes that; the operator confirmed they never changed it.)
+
+**Remedy (operator only) — compare first, then decide.** Open the tushare.pro account page and
+compare the token shown there with the one in the GitHub Actions secret `TUSHARE_TOKEN`:
+
+* **It DIFFERS** → the token was regenerated on their side (their account page has a refresh
+  action, and a password change rotates it too, killing the old string instantly). Copy the
+  current token into the secret and the plane resumes on the next asia run.
+* **It MATCHES** → the value is correct and re-copying it changes nothing. The account itself is
+  what stopped resolving — check membership / 积分 state.
+
+`40101` reads as "token is wrong" in both cases, so the error text alone cannot separate them —
+which is why the remedy is a comparison and not a blind regeneration. Nothing in the repo can fix
+either case; never paste a token value into a file, a PR, or a log line.
 
 **Why it was invisible for ten nights, and what now surfaces it.** `query()` degrades *every*
 failure to `None`, so a rejected credential was indistinguishable from an empty snapshot: each

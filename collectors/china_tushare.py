@@ -79,9 +79,21 @@ class ChinaTushareAdapter(Adapter):
         auth = tushare_client.last_auth_error()
         if auth and not any(v > 0 for v in rows.values()):
             code, msg = auth.get("code"), auth.get("msg")
+            # The remedy deliberately says COMPARE, not "regenerate". Nothing on this side
+            # changed: the secret was last written 2026-07-02 (GitHub secret updated_at) and
+            # that same value collected cleanly every night through 07-26 — the rejection
+            # began 07-27 with no edit to the secret and no change to this client. So the
+            # invalidation is server-side, and which server-side cause it is decides the fix:
+            # a token rotated on the account page needs re-copying, while a lapsed account
+            # would return the SAME string and re-copying it would change nothing.
             detail = (f"tushare code={code} {msg} — TUSHARE_TOKEN secret is SET but the vendor "
-                      "rejects it (dark since 2026-07-27); regenerate the token in the "
-                      "tushare.pro account page and update the GitHub secret TUSHARE_TOKEN")
+                      "rejects its value (dark since 2026-07-27; the secret itself has not "
+                      "changed since 2026-07-02 and worked through 07-26, so this was "
+                      "invalidated on tushare.pro's side). Open the tushare.pro account page "
+                      "and COMPARE the token shown there with the secret: if it DIFFERS the "
+                      "token was rotated — copy the current one into the GitHub secret "
+                      "TUSHARE_TOKEN; if it MATCHES the value is fine and re-copying it will "
+                      "not help — check the account's membership/积分 state instead")
             # BARE print at line start — GitHub only parses '::' at column 0, and every logger
             # here prefixes the line (tests/test_gh_annotation_line_start.py).
             print(f"::error title=tushare-auth-rejected::{detail}", flush=True)

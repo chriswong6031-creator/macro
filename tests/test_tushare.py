@@ -119,7 +119,9 @@ def test_auth_latch_clears_on_the_next_success(vendor):
     err = tc.last_auth_error()
     assert err["code"] == 40101 and err["api_name"] == "daily_basic" and "token" in err["msg"]
     assert err is not tc._auth_error, "last_auth_error() must hand back a copy, not the latch"
-    # operator regenerates the token → the very next authenticated round-trip clears it, no restart
+    # the credential is restored (re-copied or the account healed) → the very next authenticated
+    # round-trip clears the latch, no restart. Deliberately not "regenerates": the 07-27 outage
+    # began with a secret nobody had touched since 07-02, so recovery need not involve a new token.
     vendor["body"] = {"code": 0, "data": {"fields": ["ts_code"], "items": [["600519.SH"]]}}
     df = tc.query("daily_basic", trade_date="20260807")
     assert df is not None and df["ts_code"].iloc[0] == "600519.SS"
