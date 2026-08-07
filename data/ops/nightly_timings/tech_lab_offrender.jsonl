@@ -1,0 +1,1 @@
+{"date":"2026-08-06","workflow":"daily","job":"tech_lab_offrender","run_id":"31067383446","run_attempt":"1","runner":"mac-builder-2","cap_minutes":120.0,"start":"2026-08-06T13:30:49Z","end":"2026-08-06T14:54:05Z","elapsed_minutes":83.3,"pct_of_cap":69.4,"bands":[],"source":"backfill-gh-api","conclusion":"success"}

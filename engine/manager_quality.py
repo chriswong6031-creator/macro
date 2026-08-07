@@ -26,6 +26,7 @@ import pandas as pd
 from engine.smart_money import (_read_all, diff_snapshots, full_cusip_map,
                                  name_ticker_map, resolve_tickers)
 from lib import config
+from lib.closes_panel import disclose_merge, merge_close_caches
 
 log = logging.getLogger(__name__)
 
@@ -38,20 +39,14 @@ _SELL = {"trim", "exit"}
 def load_closes() -> pd.DataFrame | None:
     """Combined date×ticker close panel from the breadth caches. None if absent
     (caller degrades to an empty quality map)."""
-    frames = []
-    for grp in ("breadth", "smallcap_breadth", "midcap_breadth"):
-        p = config.data_dir() / grp / "_closes_cache.parquet"
-        if p.exists():
-            try:
-                frames.append(pd.read_parquet(p))
-            except Exception:  # noqa: BLE001
-                continue
-    if not frames:
+    # Freshest column per ticker (lib/closes_panel.py): tier order alone would take an
+    # index migrant's column from the tier it LEFT, frozen on its exit date, and every
+    # forward/since return for that name would then end on the freeze rather than today.
+    panel, meta = merge_close_caches(("breadth", "smallcap_breadth", "midcap_breadth"))
+    if panel.empty:
         return None
-    closes = pd.concat(frames, axis=1)
-    closes = closes.loc[:, ~closes.columns.duplicated()]
-    closes.index = pd.to_datetime(closes.index)
-    return closes.sort_index()
+    disclose_merge(meta, "manager_quality")
+    return panel
 
 
 def forward_return(closes: pd.DataFrame, ticker: str, entry: str,
