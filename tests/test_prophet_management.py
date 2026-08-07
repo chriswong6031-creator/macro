@@ -886,16 +886,19 @@ class TestEdgeCases:
 # ===========================================================================
 # 20. End-to-end: originate_plans dict shape -> compute_management_state
 #
-#  Guards against the signal_date key regression (review fix #1):
-#  originate_plans emitted '_signal_date' but NOT 'signal_date', so
-#  compute_management_state fell through to plan.get('asof') and produced
-#  days_elapsed=0 / tau=0 for EVERY plan, silently disabling the pace,
-#  overtime, and pre-trigger stall guards.
+#  THE CLOCK IS THE ENTRY DATE (P1, 2026-08-06).  This section originally
+#  pinned the opposite: it required compute_management_state to read
+#  `signal_date` and treated the fall-through to `asof` as the bug.  That was
+#  measured wrong.  `signal_date` is the base-FORMATION anchor (hold.anchor)
+#  and precedes origination by up to 152 days on the shipped book, while
+#  `entry` is the ORIGINATION-day close — so reading `signal_date` started τ
+#  months before the plan existed and 10 live plans read as overtime at birth.
 #
-#  This test constructs a plan dict that matches the shape originate_plans
-#  produces (before the fix: only '_signal_date'), verifies the failure
-#  mode (days_elapsed=0), then verifies the fix ('signal_date' key present)
-#  produces the correct non-zero days_elapsed.
+#  The engine now resolves through `plan_clock_date` (entry_date → asof →
+#  signal_date).  `asof` is written once at origination and never rewritten, so
+#  it is a stable birth stamp, not "today".  Both directions are pinned below:
+#  a plan born tonight has days_elapsed == 0 no matter how old its formation
+#  anchor is, and a plan whose ENTRY is a month old carries the real τ penalty.
 # ===========================================================================
 
 class TestOriginatePlansDictShapeEndToEnd:
@@ -938,49 +941,64 @@ class TestOriginatePlansDictShapeEndToEnd:
             d["signal_date"] = signal_date
         return d
 
-    def test_signal_date_regression_pre_fix_gives_zero_elapsed(self):
-        """Without 'signal_date' key, days_elapsed falls to 0 (old broken behaviour)."""
-        signal_date = "2026-06-01"
-        asof = "2026-07-01"  # 30 days after signal — should NOT be 0
-        plan = self._make_originate_style_plan(
-            signal_date=signal_date,
-            asof=asof,
-            include_signal_date_key=False,  # pre-fix shape
-        )
-        # Build 22 price rows from signal to asof (inclusive); filter to <= asof
-        prices = _make_prices(signal_date, [100.0] * 25)
-        prices = prices[prices.index.date <= date.fromisoformat(asof)]
-        result = compute_management_state(plan=plan, price_history=prices, asof=asof)
-        # Without 'signal_date', engine reads plan.get('asof') = asof → days_elapsed=0 → tau=0.
-        # At tau=0, smoothstep returns 0 → expected_t1=0 → pace_t1=1.0 → pace score=100.0 (0-100 scale).
-        # This inflates pace and disables the pre-trigger stall guard (requires tau>0.3).
-        assert result["components"]["pace"] == pytest.approx(100.0, abs=1.0), (
-            "Pre-fix: pace=100.0 when days_elapsed=0 (tau=0 gives no schedule pressure)"
-        )
+    def test_a_plan_born_tonight_has_spent_none_of_its_horizon(self):
+        """P1: an old FORMATION anchor does not age a plan that was born tonight.
 
-    def test_signal_date_key_produces_nonzero_elapsed(self):
-        """With 'signal_date' key (post-fix), days_elapsed > 0 and tau reflects real age."""
+        This is the exact shape that poisoned the book: signal_date a month before the
+        run, `entry` taken from the run day's close.  Reading signal_date gave
+        tau≈0.37 and a pace penalty on a plan whose first bar had not printed yet.
+        """
         signal_date = "2026-06-01"
-        asof = "2026-07-01"   # ~22 business days after signal
+        asof = "2026-07-01"           # origination night — entry IS this day's close
         plan = self._make_originate_style_plan(
-            signal_date=signal_date,
-            asof=asof,
-            include_signal_date_key=True,   # post-fix shape
+            signal_date=signal_date, asof=asof, include_signal_date_key=True,
         )
         prices = _make_prices(signal_date, [100.0] * 25)
         prices = prices[prices.index.date <= date.fromisoformat(asof)]
         result = compute_management_state(plan=plan, price_history=prices, asof=asof)
-        # tau = days_elapsed / horizon_days = ~22/60 ≈ 0.37
-        # At tau=0.37, pre-trigger pace < 100.0 (schedule pressure applied: pace≈22.5).
-        # Pre-fix (tau=0): pace=100.0 (no schedule pressure, no stall guard).
+        assert result["days_elapsed"] == 0, (
+            "a plan originated on `asof` has spent zero days of its horizon, however "
+            "old its base-formation anchor is"
+        )
+        # tau == 0 → smoothstep 0 → expected_t1 0 → pace 100 (no schedule pressure yet).
+        assert result["components"]["pace"] == pytest.approx(100.0, abs=1.0)
+
+    def test_an_entry_date_a_month_old_carries_the_real_tau_penalty(self):
+        """P1, the other direction: the clock is not merely pinned to zero.
+
+        A plan whose ENTRY was a month ago has genuinely spent a month of its horizon,
+        and the pace/stall guards must see it — otherwise the fix would have swapped
+        one dead clock for another.
+        """
+        asof = "2026-07-01"
+        entry_date = "2026-06-01"     # ~30 calendar days of a 60-day horizon spent
+        plan = self._make_originate_style_plan(
+            signal_date="2026-05-01", asof="2026-06-01", include_signal_date_key=True,
+        )
+        plan["entry_date"] = entry_date
+        prices = _make_prices(entry_date, [100.0] * 25)
+        prices = prices[prices.index.date <= date.fromisoformat(asof)]
+        result = compute_management_state(plan=plan, price_history=prices, asof=asof)
+        assert result["days_elapsed"] == 30
+        # tau = 30/60 = 0.5 → schedule pressure active on a flat, pre-trigger plan.
         pace = result["components"]["pace"]
         assert pace < 50.0, (
-            f"Post-fix: pace={pace:.1f} should be < 50.0 (tau≈0.37 penalty active); "
-            "days_elapsed=0 (pre-fix) gives pace=100.0"
+            f"pace={pace:.1f} should be < 50.0 at tau=0.5; a clock stuck at zero "
+            "would report 100.0"
         )
-        # Verify the stall guard can fire: tau > 0.3 and p1 < 0.05 (flat price)
-        # The ceiling may be reduced — just assert it is a valid float <= 92
+        # The stall guard can fire here: tau > 0.3 and p1 < 0.05 (flat price).
         assert result["confidence_ceiling"] <= 92
+
+    def test_entry_date_outranks_asof_which_outranks_signal_date(self):
+        """The resolution ORDER is the fix — pin all three rungs against one plan."""
+        from engine.prophet_bridge import plan_clock_date  # noqa: PLC0415
+        full = {"entry_date": "2026-07-01", "asof": "2026-06-20",
+                "signal_date": "2026-03-01"}
+        assert plan_clock_date(full) == "2026-07-01"
+        assert plan_clock_date({k: v for k, v in full.items() if k != "entry_date"}) \
+            == "2026-06-20"
+        assert plan_clock_date({"signal_date": "2026-03-01"}) == "2026-03-01"
+        assert plan_clock_date({}) is None
 
     def test_originate_style_plan_passes_management_validator(self):
         """Full round-trip: originate-shaped plan -> management state -> validator passes."""

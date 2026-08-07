@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-07T00:04:14Z",
-  "as_of": "2026-08-06",
+  "produced_at": "2026-08-07T08:44:44Z",
+  "as_of": "2026-08-07",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 15,
-    "passed": 15,
+    "items": 8,
+    "passed": 8,
     "quarantined": 0,
     "quarantined_policy": 0,
     "quarantined_overflow": 0,
@@ -24,70 +24,30 @@
       "slot": "D1-S11",
       "type": "event",
       "cashtag": "",
-      "headline": "GDPNow has growth at 5.9%. AI and chips are carrying a narrow tape."
+      "headline": ""
     },
     {
-      "id": "post-flagship-012",
+      "id": "post-conf-flagship-009",
       "account": "flagship",
-      "slot": "D1-S12",
-      "type": "chart",
-      "cashtag": "$LPG",
-      "headline": ""
+      "slot": "CONF-09",
+      "type": "signal",
+      "cashtag": "$PLTR",
+      "headline": "$PLTR just lined up a pattern we track."
     },
     {
-      "id": "post-founder-001",
+      "id": "post-theme-003",
+      "account": "flagship",
+      "slot": "D1-S3",
+      "type": "theme_list",
+      "cashtag": "$TDUP",
+      "headline": "Consumer Goods selling off, -2.4% avg on Thursday"
+    },
+    {
+      "id": "post-founder-027",
       "account": "founder",
-      "slot": "D1-S1",
-      "type": "event",
-      "cashtag": "",
-      "headline": "AI and chips are carrying a very narrow tape"
-    },
-    {
-      "id": "post-insider-002",
-      "account": "founder",
-      "slot": "D1-S6",
-      "type": "insider",
-      "cashtag": "$XIIIU",
-      "headline": ""
-    },
-    {
-      "id": "post-meagan-008",
-      "account": "meagan",
-      "slot": "D1-S8",
-      "type": "chart",
-      "cashtag": "$GE",
-      "headline": "Another $GE streak, and I’m still outside."
-    },
-    {
-      "id": "post-meagan-015",
-      "account": "meagan",
-      "slot": "D1-S15",
+      "slot": "D1-S27",
       "type": "watchlist",
-      "cashtag": "$CDW",
-      "headline": ""
-    },
-    {
-      "id": "post-sophia-001",
-      "account": "sophia",
-      "slot": "D1-S1",
-      "type": "macro",
-      "cashtag": "",
-      "headline": ""
-    },
-    {
-      "id": "post-sophia-017",
-      "account": "sophia",
-      "slot": "D1-S17",
-      "type": "chart",
-      "cashtag": "$CWK",
-      "headline": "The $CWK story keeps stalling at 14.4"
-    },
-    {
-      "id": "post-sophia-022",
-      "account": "sophia",
-      "slot": "D1-S22",
-      "type": "chart",
-      "cashtag": "$CUBI",
+      "cashtag": "$NSSC",
       "headline": ""
     },
     {
@@ -99,28 +59,12 @@
       "headline": ""
     },
     {
-      "id": "post-kelly-014",
+      "id": "post-theme-005",
       "account": "kelly",
-      "slot": "D1-S14",
-      "type": "chart",
-      "cashtag": "$LPG",
-      "headline": ""
-    },
-    {
-      "id": "post-kelly-021",
-      "account": "kelly",
-      "slot": "D1-S21",
-      "type": "chart",
-      "cashtag": "$ARES",
-      "headline": ""
-    },
-    {
-      "id": "post-kelly-025",
-      "account": "kelly",
-      "slot": "D1-S25",
-      "type": "watchlist",
-      "cashtag": "$SSPC",
-      "headline": "$SSPC, base building or stalling?"
+      "slot": "D1-S5",
+      "type": "theme_list",
+      "cashtag": "$FOUR",
+      "headline": "FinTech selling off, -2.0% avg on Thursday"
     },
     {
       "id": "post-housepick-003",
@@ -131,17 +75,17 @@
       "headline": ""
     },
     {
-      "id": "post-cici-024",
+      "id": "post-theme-006",
       "account": "cici",
-      "slot": "D1-S24",
-      "type": "signal",
-      "cashtag": "$FCX",
-      "headline": "I missed the clean $FCX entry"
+      "slot": "D1-S5",
+      "type": "theme_list",
+      "cashtag": "$UTI",
+      "headline": "Education Technology selling off, -4.0% avg on Thursday"
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 89,
+      "pairs_checked": 22,
       "hits": 0,
       "shared_media_hits": 0
     },
@@ -199,7 +143,7 @@
       "graduate_after_days": 21,
       "weeks_1_2_days": 5,
       "weeks_3_4_days": 10,
-      "as_of": "2026-08-06",
+      "as_of": "2026-08-07",
       "as_of_usable": true,
       "base": {
         "max_posts_per_account_per_day": null,
@@ -215,7 +159,7 @@
       "accounts": {
         "flagship": {
           "created": "2026-07-24",
-          "age_days": 13,
+          "age_days": 14,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -328,7 +272,7 @@
         },
         "founder": {
           "created": "2026-07-27",
-          "age_days": 10,
+          "age_days": 11,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -346,12 +290,12 @@
         },
         "meagan": {
           "created": "2026-07-28",
-          "age_days": 9,
-          "tier": "weeks_3_4",
+          "age_days": 10,
+          "tier": "week_5_plus",
           "enabled": true,
           "caps": {
-            "max_posts_per_account_per_day": 18,
-            "max_media_posts_per_account_per_day": 18,
+            "max_posts_per_account_per_day": 20,
+            "max_media_posts_per_account_per_day": 20,
             "max_same_cashtag_per_account_per_day": 3,
             "max_replies_per_account_per_day": 0,
             "max_new_follows_per_account_per_day": 0,
@@ -364,12 +308,12 @@
         },
         "sophia": {
           "created": "2026-07-28",
-          "age_days": 9,
-          "tier": "weeks_3_4",
+          "age_days": 10,
+          "tier": "week_5_plus",
           "enabled": true,
           "caps": {
-            "max_posts_per_account_per_day": 18,
-            "max_media_posts_per_account_per_day": 18,
+            "max_posts_per_account_per_day": 20,
+            "max_media_posts_per_account_per_day": 20,
             "max_same_cashtag_per_account_per_day": 3,
             "max_replies_per_account_per_day": 0,
             "max_new_follows_per_account_per_day": 0,
@@ -382,12 +326,12 @@
         },
         "kelly": {
           "created": "2026-07-28",
-          "age_days": 9,
-          "tier": "weeks_3_4",
+          "age_days": 10,
+          "tier": "week_5_plus",
           "enabled": true,
           "caps": {
-            "max_posts_per_account_per_day": 18,
-            "max_media_posts_per_account_per_day": 18,
+            "max_posts_per_account_per_day": 20,
+            "max_media_posts_per_account_per_day": 20,
             "max_same_cashtag_per_account_per_day": 3,
             "max_replies_per_account_per_day": 0,
             "max_new_follows_per_account_per_day": 0,
@@ -400,12 +344,12 @@
         },
         "cici": {
           "created": "2026-07-28",
-          "age_days": 9,
-          "tier": "weeks_3_4",
+          "age_days": 10,
+          "tier": "week_5_plus",
           "enabled": true,
           "caps": {
-            "max_posts_per_account_per_day": 18,
-            "max_media_posts_per_account_per_day": 18,
+            "max_posts_per_account_per_day": 20,
+            "max_media_posts_per_account_per_day": 20,
             "max_same_cashtag_per_account_per_day": 3,
             "max_replies_per_account_per_day": 0,
             "max_new_follows_per_account_per_day": 0,
@@ -418,16 +362,16 @@
         },
         "mastermind_news": {
           "created": "2026-08-02",
-          "age_days": 4,
-          "tier": "weeks_1_2",
+          "age_days": 5,
+          "tier": "weeks_3_4",
           "enabled": true,
           "caps": {
-            "max_posts_per_account_per_day": 14,
-            "max_media_posts_per_account_per_day": 14,
+            "max_posts_per_account_per_day": 18,
+            "max_media_posts_per_account_per_day": 18,
             "max_same_cashtag_per_account_per_day": 3,
             "max_replies_per_account_per_day": 0,
             "max_new_follows_per_account_per_day": 0,
-            "max_cashtags_per_post": 2,
+            "max_cashtags_per_post": 3,
             "min_minutes_between_posts": 30,
             "links_allowed": false,
             "theme_list_allowed": true

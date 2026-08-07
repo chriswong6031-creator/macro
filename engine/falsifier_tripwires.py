@@ -63,6 +63,10 @@ class TripwireResult:
     direction: str
     coverage: str               # full | partial | none
     expires: str | None
+    # Written Chinese for `claim` (falsifiers.json `claim_zh`).  The claim is
+    # free-form authored prose, so it cannot be glossed by a vocabulary map the
+    # way a state label can — every zh surface reads this field or leaks English.
+    claim_zh: str = ""
     legs: list[dict] = field(default_factory=list)   # per-leg detail for UI
     manual: dict | None = None  # {ttl_days, last_reviewed, note} for none/partial residuals
     overdue_days: int | None = None   # days past TTL for MANUAL entries
@@ -406,6 +410,7 @@ def evaluate_all(asof: pd.Timestamp | None = None) -> list[TripwireResult]:
         dsl = entry.get("dsl")
         expires = entry.get("expires")
         claim = entry.get("claim", "")
+        claim_zh = entry.get("claim_zh", "")
         direction = entry.get("direction", "refutes")
         manual = entry.get("manual")
         # nwqs-c scope extension: schema-tolerant — existing entries carry no
@@ -421,7 +426,7 @@ def evaluate_all(asof: pd.Timestamp | None = None) -> list[TripwireResult]:
                     results.append(TripwireResult(
                         id=eid, cycle=cycle, version=version,
                         state="EXPIRED", fired_on=None, latched=False,
-                        current_leg=None, claim=claim, direction=direction,
+                        current_leg=None, claim=claim, claim_zh=claim_zh, direction=direction,
                         coverage=coverage, expires=expires, legs=[],
                         manual=manual, scope=scope, tickers=tickers,
                     ))
@@ -442,7 +447,7 @@ def evaluate_all(asof: pd.Timestamp | None = None) -> list[TripwireResult]:
             results.append(TripwireResult(
                 id=eid, cycle=cycle, version=version,
                 state="MANUAL", fired_on=None, latched=False,
-                current_leg=None, claim=claim, direction=direction,
+                current_leg=None, claim=claim, claim_zh=claim_zh, direction=direction,
                 coverage=coverage, expires=expires, legs=[],
                 manual=manual, overdue_days=overdue, scope=scope, tickers=tickers,
             ))
@@ -459,7 +464,7 @@ def evaluate_all(asof: pd.Timestamp | None = None) -> list[TripwireResult]:
             results.append(TripwireResult(
                 id=eid, cycle=cycle, version=version,
                 state="DATA_MISSING", fired_on=None, latched=False,
-                current_leg=None, claim=claim, direction=direction,
+                current_leg=None, claim=claim, claim_zh=claim_zh, direction=direction,
                 coverage=coverage, expires=expires, legs=leg_details,
                 manual=manual, scope=scope, tickers=tickers,
             ))
@@ -473,7 +478,7 @@ def evaluate_all(asof: pd.Timestamp | None = None) -> list[TripwireResult]:
             fired_on=(str(asof.date()) if current_leg else None),
             latched=False,  # set by persist()
             current_leg=current_leg,
-            claim=claim, direction=direction,
+            claim=claim, claim_zh=claim_zh, direction=direction,
             coverage=coverage, expires=expires, legs=leg_details,
             manual=manual, scope=scope, tickers=tickers,
         ))
@@ -532,6 +537,75 @@ def persist(results: list[TripwireResult]) -> list[TripwireResult]:
 
 
 # ── alert wiring ──────────────────────────────────────────────────────────────
+# Bilingual display vocabulary for the alert body (the #4700 idiom: the emitter
+# owns the map, scripts/build_vector.py imports it rather than re-declaring one
+# that can drift).  Keyed by the registry's `cycle` slug — the raw slug is
+# lowercase English ("long-bonds", "credit"), so a miss here leaks English into
+# the zh body just as surely as an untranslated claim does.  A new cycle with no
+# entry is caught by tests/test_alert_zh_completeness.py, not silently glossed.
+_CYCLE_ZH = {
+    "semis": "半导体",
+    "memory": "存储芯片",
+    "housing": "地产",
+    "business": "美国经济周期",
+    "oil": "原油",
+    "copper": "铜",
+    "uranium": "铀",
+    "gold": "黄金",
+    "bitcoin": "比特币",
+    "credit": "信用周期",
+    "shipping": "航运",
+    "lithium": "锂",
+    "agriculture": "农产品",
+    "vol": "波动率",
+    "biotech": "生物科技",
+    "long-bonds": "美国长债",
+    "dollar": "美元",
+    "natural-gas": "天然气",
+    "iron-ore": "铁矿石",
+    "silver": "白银",
+    "em-equities": "新兴市场股市",
+    "japan": "日本",
+    "pgms": "铂族金属",
+    "spx": "标普 500",
+}
+
+_DIRECTION_ZH = {"refutes": "与原判断相反", "confirms": "支持原判断"}
+
+
+def alert_bodies(r: TripwireResult) -> tuple[str, str]:
+    """(message, message_zh) for one newly-fired tripwire.
+
+    Single source for both emitters below so their two zh renderings cannot
+    drift apart — the failure mode #4700 found and fenced.
+
+    The zh claim is the AUTHORED `claim_zh` from falsifiers.json, never the
+    English `claim`: the claim is free prose, so no vocabulary map can render
+    it.  When an entry carries no zh copy the English is used and the body is
+    knowingly half-translated — better than dropping the thesis — and
+    tests/test_alert_zh_completeness.py reds so the gap is filled rather than
+    shipped.
+
+    The zh claim is wrapped in 「」 rather than ASCII quotes on purpose: the
+    completeness guard's _NAME_LIKE exemption strips '...' spans before looking
+    for English, so straight quotes here would hide a leaked English claim from
+    the very check that exists to catch it.
+    """
+    # Display register (operator 2026-07-27, #3821): the schema value stays
+    # "refutes"/"confirms", but user-shown text never uses those words.
+    dirn = "cuts against the read" if r.direction == "refutes" else "supports the read"
+    dirn_zh = _DIRECTION_ZH.get(r.direction, _DIRECTION_ZH["refutes"])
+    msg_en = (
+        f"Cycle read-change condition HIT — {r.cycle}: "
+        f"'{r.claim}' (coverage: {r.coverage}, direction: {dirn})."
+    )
+    msg_zh = (
+        f"周期改判条件触发 — {_CYCLE_ZH.get(r.cycle, r.cycle)}："
+        f"「{r.claim_zh or r.claim}」（{dirn_zh}）。"
+    )
+    return msg_en, msg_zh
+
+
 def cycle_falsifier_fired(hist: "pd.DataFrame", f: "pd.DataFrame",
                           newly_fired: list[TripwireResult]) -> list:
     """Alert rule for new FIRED tripwires.  Returns a list[Alert].
@@ -550,19 +624,7 @@ def cycle_falsifier_fired(hist: "pd.DataFrame", f: "pd.DataFrame",
     for r in newly_fired:
         # direction → severity mapping: refutes = warn, confirms = info
         severity = "warn" if r.direction == "refutes" else "info"
-        # Display register (operator 2026-07-27, #3821): the schema value stays
-        # "refutes"/"confirms", but user-shown text never uses those words.
-        dirn = "cuts against the read" if r.direction == "refutes" else "supports the read"
-        dirn_zh = "与原判断相反" if r.direction == "refutes" else "支持原判断"
-        msg_en = (
-            f"Cycle read-change condition HIT — {r.cycle}: {r.claim}. "
-            f"Direction: {dirn}. "
-            f"Coverage: {r.coverage}."
-        )
-        msg_zh = (
-            f"周期改判条件触发 — {r.cycle}：{r.claim}。"
-            f"方向：{dirn_zh}。"
-        )
+        msg_en, msg_zh = alert_bodies(r)
         alerts.append(Alert(
             rule=f"cycle_falsifier_fired:{r.id}",
             severity=severity,
@@ -610,15 +672,7 @@ def dispatch_alerts(newly_fired: list[TripwireResult],
     alerts = []
     for r in newly_fired:
         severity = "warn" if r.direction == "refutes" else "info"
-        dirn = "cuts against the read" if r.direction == "refutes" else "supports the read"
-        dirn_zh = "与原判断相反" if r.direction == "refutes" else "支持原判断"
-        msg_en = (
-            f"Cycle read-change condition HIT — {r.cycle}: "
-            f"'{r.claim}' (coverage: {r.coverage}, direction: {dirn})."
-        )
-        msg_zh = (
-            f"周期改判条件触发 — {r.cycle}：'{r.claim}'（{dirn_zh}）。"
-        )
+        msg_en, msg_zh = alert_bodies(r)
         alerts.append(Alert(
             rule=f"cycle_falsifier_fired:{r.id}",
             severity=severity,
@@ -722,6 +776,7 @@ def results_summary(results: list[TripwireResult]) -> dict:
             "latched": r.latched,
             "current_leg": r.current_leg,
             "claim": r.claim,
+            "claim_zh": r.claim_zh,
             "direction": r.direction,
             "coverage": r.coverage,
             "expires": r.expires,
@@ -760,6 +815,7 @@ def results_by_ticker(results: list[TripwireResult]) -> dict[str, list[dict]]:
             "latched": r.latched,
             "current_leg": r.current_leg,
             "claim": r.claim,
+            "claim_zh": r.claim_zh,
             "direction": r.direction,
             "coverage": r.coverage,
             "expires": r.expires,

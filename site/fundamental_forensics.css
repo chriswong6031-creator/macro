@@ -2125,3 +2125,378 @@ body.ff-modal-open #mmb-launch {
   .ff-receipt-inspector { transition: none; }
   .ff-loading-dot { animation-duration: 1.8s; }
 }
+
+/* ── Access gate ───────────────────────────────────────────────────────────
+   The surface a visitor meets when the workbench cannot be read: signed out,
+   unentitled, mid-refresh, or covering nobody this run.
+
+   Deliberately appended after the responsive blocks above. The gated layout
+   has to beat `.ff-workspace[data-tab="radar"] .ff-evidence { display:block }`
+   at >=1100px, and both selectors carry the same specificity — so source order
+   is what decides it. Moving this block earlier silently restores a sticky,
+   empty evidence rail beside the wall.
+
+   Every state borrows an ink the page already uses for that meaning, so the
+   four are distinguishable at a glance without introducing a colour: --info
+   marks structure and sources, --ff-review marks "this wants your attention",
+   --ff-watch marks "hold on", and --muted marks "nothing is wrong here". */
+.ff-gate {
+  margin-top: 12px;
+  padding: 0;
+  border: 1px solid var(--ff-border);
+  border-radius: var(--ff-radius);
+  background: var(--ff-glass);
+  box-shadow: var(--ff-shadow);
+  backdrop-filter: saturate(145%) blur(18px);
+  -webkit-backdrop-filter: saturate(145%) blur(18px);
+}
+
+.ff-gate[aria-busy="true"] { opacity: .62; }
+
+.ff-gate-state {
+  --ff-gate-ink: var(--info);
+  position: relative;
+  padding: 26px 28px 24px 31px;
+  border-radius: var(--ff-radius) var(--ff-radius) 0 0;
+  background: linear-gradient(118deg, color-mix(in srgb, var(--ff-gate-ink) 9%, transparent), transparent 62%);
+}
+
+.ff-gate-state::before {
+  position: absolute;
+  top: 26px;
+  bottom: 24px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--ff-gate-ink);
+  content: "";
+}
+
+.ff-gate-state[data-state="upgrade"] { --ff-gate-ink: var(--ff-review); }
+.ff-gate-state[data-state="unavailable"] { --ff-gate-ink: var(--ff-watch); }
+.ff-gate-state[data-state="empty"] { --ff-gate-ink: var(--muted); }
+
+.ff-gate-chip {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 9px;
+  color: var(--ff-gate-ink);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  gap: 7px;
+}
+
+.ff-gate-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.ff-gate-state h2 {
+  max-width: 640px;
+  margin: 0;
+  font-size: clamp(20px, 2.1vw, 26px);
+  line-height: 1.14;
+  letter-spacing: -.032em;
+}
+
+.ff-gate-stance {
+  max-width: 560px;
+  margin: 9px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ff-gate-note {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ff-gate-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  gap: 10px;
+}
+
+.ff-gate-primary {
+  min-height: 42px;
+  padding: 12px 19px;
+  border: 1px solid var(--ff-gate-ink);
+  border-radius: 10px;
+  color: #fff;
+  background: var(--ff-gate-ink);
+  box-shadow: 0 9px 22px -12px color-mix(in srgb, var(--ff-gate-ink) 85%, transparent);
+  font-size: 12.5px;
+  font-weight: 760;
+  cursor: pointer;
+  transition: transform .16s ease, filter .16s ease;
+}
+
+.ff-gate-primary:hover { transform: translateY(-1px); filter: brightness(1.06); }
+
+.ff-gate-secondary {
+  min-height: 42px;
+  padding: 12px 17px;
+  border: 1px solid var(--gbtn-brd);
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--gbtn-bg);
+  box-shadow: inset 0 1px 0 var(--gbtn-sheen);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ff-gate-secondary:hover { background: var(--gbtn-bg-hover); }
+
+.ff-gate-preview {
+  padding: 22px 28px 26px;
+  border-top: 1px solid var(--ff-border);
+}
+
+/* One column per fact, not a fixed three: the count-bearing fourth item is
+   present only when the build supplies a summary, so the row has to size
+   itself. Three facts make three columns, four make four, with no
+   count-specific rule to keep in step with the template. */
+.ff-gate-facts {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  margin: 0 0 22px;
+  padding: 0;
+  gap: 14px;
+}
+
+.ff-gate-facts > div {
+  min-width: 0;
+  padding-left: 13px;
+  border-left: 1px solid var(--ff-border);
+}
+
+.ff-gate-facts dt {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.ff-gate-facts dd {
+  margin: 5px 0 0;
+  font-size: 12px;
+  font-weight: 650;
+  /* A value long enough to wrap is otherwise left with a one-word last line;
+     balancing splits it evenly instead. */
+  text-wrap: balance;
+}
+
+.ff-gate-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  gap: 18px;
+  list-style: none;
+}
+
+.ff-gate-steps > li { min-width: 0; }
+
+.ff-gate-step-index {
+  color: var(--info);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+
+.ff-gate-steps h3 {
+  margin: 6px 0 5px;
+  font-size: 14px;
+  letter-spacing: -.02em;
+}
+
+.ff-gate-steps p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+/* The signature: the evidence inspector's own furniture, shown empty. The
+   withheld slots are ruled placeholders rather than a blurred or invented
+   sample — a blur becomes a dirty smudge in light mode, and a sample would put
+   a fabricated finding into a public byte. */
+.ff-gate-anatomy {
+  margin-top: 24px;
+  padding: 20px 22px 18px;
+  border: 1px solid var(--ff-border);
+  border-left: 3px solid var(--info);
+  border-radius: var(--ff-radius-sm);
+  background: var(--ff-soft);
+}
+
+.ff-gate-anatomy h3 {
+  margin: 0 0 16px;
+  font-size: 15px;
+  letter-spacing: -.02em;
+}
+
+.ff-gate-slots {
+  position: relative;
+  display: grid;
+  margin: 0;
+  padding: 0;
+  gap: 12px;
+  list-style: none;
+}
+
+/* The margin rule an auditor ticks against, with the slot marks punched
+   through it. */
+.ff-gate-slots::before {
+  position: absolute;
+  z-index: 0;
+  top: 11px;
+  bottom: 11px;
+  left: 10px;
+  width: 1px;
+  background: var(--ff-border-strong);
+  content: "";
+}
+
+.ff-gate-slots > li {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 21px minmax(0, 178px) minmax(0, 232px);
+  align-items: center;
+  justify-content: start;
+  min-width: 0;
+  gap: 14px;
+}
+
+.ff-gate-slot-index {
+  display: grid;
+  width: 21px;
+  height: 21px;
+  place-items: center;
+  border: 1px solid var(--ff-border-strong);
+  border-radius: 50%;
+  color: var(--muted);
+  background: var(--panel);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.ff-gate-slot-label {
+  min-width: 0;
+  font-size: 11.5px;
+  font-weight: 650;
+}
+
+/* Two ruled lines standing in for the withheld value. Ragged lengths, set per
+   slot, so it reads as text held back rather than as a table underline. */
+.ff-gate-rule {
+  height: 8px;
+  color: var(--ff-border-strong);
+  background-image: linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 1px, 0 6px;
+  background-size: 100% 1px, 58% 1px;
+}
+
+.ff-gate-slots > li:nth-child(2) .ff-gate-rule { background-size: 82% 1px, 44% 1px; }
+.ff-gate-slots > li:nth-child(3) .ff-gate-rule { background-size: 94% 1px, 31% 1px; }
+.ff-gate-slots > li:nth-child(4) .ff-gate-rule { background-size: 66% 1px, 0 0; }
+
+.ff-gate-anatomy-foot {
+  margin: 16px 0 0;
+  padding-top: 13px;
+  border-top: 1px solid var(--ff-border);
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+
+.ff-gate-limit {
+  max-width: 720px;
+  margin: 20px 0 0;
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.55;
+}
+
+/* Gated layout: one surface at a time. Leaving the tab bar, the company picker
+   and the run clocks live over a wall is what made the old error state read as
+   a broken page rather than a closed door. */
+.ff-workspace.ff-gated { grid-template-columns: minmax(0, 1fr); }
+
+.ff-workspace.ff-gated .ff-run-meta,
+.ff-workspace.ff-gated .ff-context-card,
+.ff-workspace.ff-gated .ff-tabs,
+.ff-workspace.ff-gated .ff-panel,
+.ff-workspace.ff-gated .ff-evidence,
+.ff-workspace.ff-gated .ff-receipt-inspector { display: none; }
+
+.ff-workspace.ff-gated .ff-hero { padding-bottom: 6px; }
+
+/* Light is a design target, not a token swap. The tint that reads as a soft
+   wash on the dark canvas becomes a highlighter smear on white, so it drops to
+   a trace and the ink deepens to carry the state instead. */
+html[data-theme="light"] .ff-gate-state {
+  background: linear-gradient(118deg, color-mix(in srgb, var(--ff-gate-ink) 5%, transparent), transparent 58%);
+}
+
+html[data-theme="light"] .ff-gate-chip { color: color-mix(in srgb, var(--ff-gate-ink) 78%, #202a38); }
+html[data-theme="light"] .ff-gate-state[data-state="empty"] .ff-gate-chip { color: var(--muted); }
+html[data-theme="light"] .ff-gate-anatomy { background: color-mix(in srgb, var(--panel2) 55%, #fff); }
+html[data-theme="light"] .ff-gate-slot-index { background: #fff; }
+
+@media (max-width: 900px) {
+  .ff-gate-facts { grid-auto-flow: row; }
+  .ff-gate-facts,
+  .ff-gate-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Only an ODD last fact is an orphan in two columns — three facts leave one,
+     four pair up cleanly — so the span is conditioned on the count instead of
+     firing on whichever item happens to be last. */
+  .ff-gate-facts > div:nth-child(odd):last-child,
+  .ff-gate-steps > li:last-child { grid-column: 1 / -1; }
+}
+
+@media (max-width: 700px) {
+  .ff-gate-state { padding: 20px 16px 20px 19px; }
+  .ff-gate-state::before { top: 20px; bottom: 20px; }
+  .ff-gate-state h2 { font-size: 21px; }
+  .ff-gate-stance { font-size: 12.5px; }
+  .ff-gate-actions { flex-direction: column; align-items: stretch; }
+  .ff-gate-primary,
+  .ff-gate-secondary { width: 100%; }
+
+  .ff-gate-preview { padding: 18px 16px 22px; }
+  .ff-gate-facts,
+  .ff-gate-steps { grid-template-columns: minmax(0, 1fr); }
+  .ff-gate-facts > div:nth-child(odd):last-child,
+  .ff-gate-steps > li:last-child { grid-column: auto; }
+  .ff-gate-facts { gap: 11px; }
+
+  .ff-gate-anatomy { padding: 16px 15px 15px; }
+  /* The label and its withheld rule stack, so the margin rule would run past
+     the last tick — it retires and each slot keeps its own mark. */
+  .ff-gate-slots::before { display: none; }
+  .ff-gate-slots { gap: 14px; }
+  .ff-gate-slots > li { grid-template-columns: 21px minmax(0, 1fr); }
+  .ff-gate-rule { grid-column: 2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ff-gate-primary { transition: none; }
+  .ff-gate-primary:hover { transform: none; }
+}

@@ -157,6 +157,35 @@ def test_extras_grafted_over_fresh_window():
     pd.testing.assert_series_equal(merged["AAA"], truth["AAA"], check_names=False)
 
 
+def test_extras_grafted_for_a_ticker_absent_from_the_fresh_window():
+    """2026-08-06 split-basis incident: the graft must NOT be filtered by the fresh
+    window's columns.
+
+    yfinance can return no High/Low for a name in a given 1mo batch. The old filter
+    (`t in w.columns`) skipped exactly that ticker — healing its closes while its
+    high/low kept the pre-split basis. That is the one split shape nothing in the
+    tree can see: seam_suspects reads only the closes matrix, so both repair paths
+    report success and the extras rot silently. Only ATR reads H/L and C together,
+    and it fails as a blown-up true range, not as an error.
+    """
+    truth, cached, fresh = _split_universe()
+    calls: list = []
+    a = _adapter(truth, calls)
+    # AAA — the ticker being healed — is missing from the fresh window's High frame.
+    a._last_extras = {"high": (fresh * 1.01)[["BBB"]]}
+    a._repull_extras = {"high": truth * 1.01}
+    merged = a._merge_refreshed(fresh, cached)
+    assert calls == [(["AAA"], "4y")]
+    high = a._last_extras["high"]
+    assert "AAA" in high.columns, "healed ticker dropped from the extras graft"
+    # and it carries the POST-split basis over the whole cached window, so the
+    # combine_first in fetch() overrides the poisoned cache rows instead of keeping them
+    assert high["AAA"].first_valid_index() == DATES[0]
+    assert float(high["AAA"].iloc[0]) == pytest.approx(float(truth["AAA"].iloc[0]) * 1.01)
+    # the invariant the guard checks: close never sits outside its own [low, high]
+    assert (merged["AAA"] <= high["AAA"].reindex(merged.index) * 1.000001).all()
+
+
 def test_seam_scan_sees_across_nan_gaps():
     # a suspension gap ending exactly at the seam: without ffill the 1-day
     # ratio at the basis break is NaN/NaN and the seam is invisible

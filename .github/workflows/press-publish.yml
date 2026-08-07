@@ -46,7 +46,9 @@ name: press-publish
 # feed.xml the free-content builder renders from them, one append-only row per
 # piece in data/press/published.jsonl, and (W1.5) the per-publication property
 # trees under properties/ plus, after cutover, the routed .md under
-# content/press/. The commit step's `git add` names those five paths EXPLICITLY.
+# content/press/, plus (#4549) the content-hashed site/assets/{css,js} those
+# pages link once externalize_css has lifted their inline CSS out. The commit
+# step's `git add` names those seven paths EXPLICITLY.
 # site/sitemap.xml is never staged — the nightly owns it, and
 # scripts/run_press.py raises if an emit changed it. (The property trees carry
 # their own sitemap.xml on their own domains; those ARE this lane's to write.)

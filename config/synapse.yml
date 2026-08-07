@@ -1674,9 +1674,10 @@ artifacts:
     consumers:
       - engine/grading_stats.py
       # _basket_turn_map() reads the latest rows for the cycle engine's own
-      # registered bottoming condition (phase == "Trough" AND osc_slope > 0).
-      # Feeds the stock_score caution DUAL-READ only — it can change no size,
-      # no rank and no haircut, so this stays a display-tier read.
+      # registered bottoming condition (phase == "Trough" AND osc_slope > 0)
+      # to build the basket turn map. Feeds the stock_score caution DUAL-READ
+      # only — it can change no size, no rank and no haircut, so this stays a
+      # display-tier read.
       - scripts/build_stock_library.py
       - engine/neuralweb/query.py
       - scripts/grade_promises.py

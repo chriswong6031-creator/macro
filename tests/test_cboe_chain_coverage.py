@@ -377,7 +377,18 @@ def test_registry_is_load_bearing_not_vacuous(monkeypatch, tmp_path, capsys,
 def test_tripwire_warning_names_the_cross_fill_remedy(monkeypatch, tmp_path, capsys,
                                                       frozen_calendar):
     """The remedy hint must point at the honest polygon cross-fill for gex_<name>
-    holes — and stay a LINE-START annotation (a logger prefix would drop it)."""
+    holes — and stay a LINE-START annotation (a logger prefix would drop it).
+
+    It must NOT hand the operator a blind stamp offset. data/polygon_gex spans two
+    stamping eras: rows written before #4807 (2026-08-07) carry the UTC run date
+    (= session+1), rows written after carry the session they describe, and the
+    chain-family underlyings (SPY/QQQ/IWM/NVDA/...) were never re-stamped by that
+    PR's migration, so a single file holds BOTH. Measured 2026-08-07 on all nine:
+    stamps <= 07-31 match the prior session's yahoo close to 0.000%, the 08-07 stamp
+    matches its OWN session to 0.000%, and the 08-06 stamp matches no session (a
+    pre-market tape). Any fixed offset in this text is therefore wrong for half the
+    store and would fabricate an off-by-one row — the exact failure the last clause
+    warns against. The session must be pinned on the DATA."""
     frames = _full_family()
     frames["gex_SPY"] = _frame(WINDOW[:-1])
     _fake_store(monkeypatch, tmp_path, frames)
@@ -386,7 +397,14 @@ def test_tripwire_warning_names_the_cross_fill_remedy(monkeypatch, tmp_path, cap
             if ln.startswith("::warning ")]
     assert len(warn) == 1
     assert "backfill_cboe_gex_20260730_from_polygon.py" in warn[0]
-    assert "polygon_gex" in warn[0] and "session+1" in warn[0]
+    assert "polygon_gex" in warn[0]
+    # the load-bearing instruction: no blind offset, pin the session on the data
+    assert "ASSUME NO FIXED STAMP OFFSET" in warn[0]
+    assert "yahoo close of the TARGET session" in warn[0]
+    assert "closer than either neighbouring session" in warn[0]
+    # session+1 may appear ONLY as the named pre-#4807 era, never as the live mapping
+    assert "#4807" in warn[0]
+    assert "usually sits in the row stamped session+1" not in warn[0]
 
 
 # ------------------------------------------------------- the 07-30 polygon cross-fill
@@ -432,9 +450,12 @@ def test_backfill_is_idempotent(monkeypatch, tmp_path, capsys):
 
 
 def test_backfill_refuses_the_wrong_session(monkeypatch, tmp_path):
-    """The session-identity gate is the whole safety story: the polygon stamp is
-    session+1, so a row whose spot does not match the target session's close must be
-    REFUSED rather than written under the wrong date."""
+    """The session-identity gate is the whole safety story: for this 2026-07-30 heal the
+    polygon stamp is session+1 — the pre-#4807 UTC run-date era this one-shot was written
+    against — so a row whose spot does not match the target session's close must be
+    REFUSED rather than written under the wrong date. The GATE is what makes the copy
+    honest, not the offset: the offset is era-dependent (see the tripwire-remedy test
+    above) and must never be assumed by anything that is not pinned to a fixed date."""
     import scripts.backfill_cboe_gex_20260730_from_polygon as bf
     from lib import config as _config
     _config.load()

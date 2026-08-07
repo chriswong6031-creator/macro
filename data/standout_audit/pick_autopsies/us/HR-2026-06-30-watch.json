@@ -1,0 +1,109 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "HR-2026-06-30-watch",
+  "ticker": "HR",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "HR",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "HR",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "beta_tailwind",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Real Estate",
+    "excess_spy": 0.033782438469923015,
+    "excess_sector": 0.015340577401174782,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CUSHIONED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "HR outperformed SPY and finished CUSHIONED. The supplied attribution names beta tailwind, while the record provides no evidence identifying the operative regime, rotation, or catalyst.",
+    "root_cause": "HR outperformed SPY and finished CUSHIONED. The supplied attribution names beta tailwind, while the record provides no evidence identifying the operative regime, rotation, or catalyst.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The lane and outcome books recorded a favorable result, but the regime and rotation engines lack the evidence needed to explain it.",
+    "engines_credit": "The outcome ledger gets credit for preserving the beta attribution; the macro-regime, sector-rotation, catalyst, and timing organs remain unassessed.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "macro_regime",
+        "factor": "",
+        "mechanism": "A broad beta-supportive environment was the stated primary driver.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "If comparable Real Estate names did not receive the same support, beta tailwind would be an insufficient explanation.",
+        "evidence_refs": [
+          "outcome_cause=beta_tailwind",
+          "excess_spy positive"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "sector",
+        "factor": "",
+        "mechanism": "Real Estate exposure may have transmitted the broad tailwind to HR.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "If the Real Estate cohort lagged while HR outperformed, company alpha would become more plausible.",
+        "evidence_refs": [
+          "sector=Real Estate"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The CUSHIONED terminal state suggests a supported rather than clearly explosive maturation path.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "A clean and persistent breakout path would weaken the interpretation that cushioning characterized the outcome.",
+        "evidence_refs": [
+          "terminal_state=CUSHIONED"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Company-specific strength may have contributed to the outperformance.",
+      "A Real Estate rotation may explain the result more directly than market beta."
+    ],
+    "missing_evidence": [
+      "Entry-date macro and rate-regime features",
+      "Real Estate cohort and factor-relative returns",
+      "HR news, estimates, flows, and price-volume history",
+      "Intraperiod path and entry-quality diagnostics"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "re_beta_regime_cell",
+        "feature": "Real Estate beta-regime cell",
+        "measurement": "Compare matured outcomes across entry-date rate, volatility, and Real Estate relative-strength states.",
+        "expected_direction": "Supportive regime cells should be associated with stronger relative outcomes.",
+        "falsifier": "HR-like outcomes show no stable relationship with the entry-date regime cell.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-07",
+  "asof": "2026-08-07",
+  "ts": "2026-08-07T08:35:36+00:00"
+}

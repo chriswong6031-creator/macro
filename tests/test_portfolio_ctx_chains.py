@@ -18,9 +18,14 @@ import pytest
 
 FIX = Path(__file__).resolve().parent / "fixtures" / "transmission" / "chain_state.json"
 
-# the frozen top-level contract for portfolio_ctx.v1 (must not drift — #3385 class)
+# The frozen top-level contract (must not drift — #3385 class). PSI-W2 added exactly ONE
+# key, `market`, as a deliberate additive schema bump: it is declared in
+# scripts/export_signal_contracts.py ARTIFACT_MANIFEST (schema_version 1.1.0) and pinned
+# by scripts/check_contract_drift.py against the live artifact. Nothing else moved, and
+# `chains` is still a PER-TICKER block — the top level stays this list.
 EXPECTED_TOP_LEVEL = sorted(
-    ["asof", "built", "coverage", "gate_go", "regime", "schema", "sectors", "tickers", "v"]
+    ["asof", "built", "coverage", "gate_go", "market", "regime", "schema", "sectors",
+     "tickers", "v"]
 )
 
 

@@ -694,6 +694,17 @@ PUBLIC_EXACT = frozenset({
     # whole point of this frozen set: widening the public boundary is an
     # explicit, reviewed act, never a side effect of shipping a page.
     "/stock_seasonality.html", "/stock_seasonality.css", "/stock_seasonality.js",
+    # Filing Forensics presentation + client (Calcbench parity Wave 0C). The
+    # 2026-08-04 change opened every *.html shell to anonymous visitors but never
+    # promoted these two with it, so the page served a 200 whose stylesheet and
+    # script both 401'd — an unstyled, non-functional skeleton of a paid product.
+    # Ratified here deliberately, per this set's own rule: neither file carries a
+    # finding, a company row, a receipt field, or any embedded payload. The CSS is
+    # presentation and the JS is a pure fetcher whose only network calls are
+    # /api/forensics/state and /api/forensics/v1/attested-history — both still
+    # behind require_site_full_user (401 signed out, 403 unentitled). This changes
+    # who can read the WORKBENCH, never who can read the WORK.
+    "/fundamental_forensics.css", "/fundamental_forensics.js",
     "/onboard.css", "/onboard.js", "/tier_preview.css", "/tier_preview.js",
     "/landing.css", "/scene-motion.css", "/scene-motion.js",
     "/chat.css",
@@ -711,6 +722,12 @@ PUBLIC_EXACT = frozenset({
     "/live/quotes.json", "/live/breadth.json",
     # Official agency event lifecycle/facts; no signal, portfolio or user data.
     "/live/release_publications.json",
+    # Freshness-sentinel staleness state (masterplan W1 dead-man switch) — public
+    # BY DECISION, not as a side effect: it is what the on-site staleness banner
+    # reads, and a banner only logged-in readers can see would leave anonymous
+    # visitors looking at a frozen board with no disclosure. Payload is per-surface
+    # freshness verdicts and timestamps; no signal, portfolio or user data.
+    "/live/staleness.json",
     "/prophet/showcase.json",
     "/seasonalitydata/methodology.json",
     # Stock seasonality calendar clock — public BY DECISION (design-spec §10), not
