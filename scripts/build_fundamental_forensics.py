@@ -53,6 +53,11 @@ from engine.fundamental_forensics.disclosure_projection import (
 log = logging.getLogger("build_fundamental_forensics")
 
 SCHEMA = STATE_SCHEMA
+
+# The counts-only public projection: aggregate totals the anonymous gate may
+# print, carried in a committed file because the private state is gitignored.
+PUBLIC_SUMMARY_RELATIVE = Path("data/fundamental_forensics/public_summary.json")
+PUBLIC_SUMMARY_SCHEMA = "fundamental_forensics.public_summary/v1"
 QUARTERLY_METRICS = (
     "revenue",
     "gross_profit",
@@ -743,7 +748,9 @@ def compose_state(root: Path, *, generated_at: str | None = None) -> dict[str, A
 
 def render(root: Path, state: dict[str, Any]) -> Path:
     """Atomically render the public shell/assets, then commit private state last."""
-    page = render_shell(root)
+    summary = state.get("summary") or {}
+    _write_public_summary(root, summary)
+    page = render_shell(root, state_summary=summary)
     _write_state_atomic(root / LOCAL_STATE_RELATIVE, state)
     return page
 
@@ -783,14 +790,78 @@ def _write_state_atomic(path: Path, state: dict[str, Any]) -> Path:
     return path
 
 
-def render_shell(root: Path) -> Path:
-    """Render only the data-free public workbench shell and versioned assets."""
+def public_summary_projection(summary: dict[str, Any]) -> dict[str, int]:
+    """Project the private summary down to the two counts the gate may publish.
+
+    Aggregate COUNTS are free by the same house rule the tier preview states:
+    a count names nobody, while the member rows are the product. This builds the
+    projection field by field on purpose — never by spreading `summary` — so a
+    later key added to compose_state() (a symbol, a top-finding, a per-company
+    breakdown) cannot reach a public byte by default.
+    """
+    return {
+        "companies": int(summary.get("companies") or 0),
+        "findings": int(summary.get("findings") or 0),
+    }
+
+
+def _write_public_summary(root: Path, summary: dict[str, Any]) -> Path:
+    """Persist the counts-only projection so BOTH render paths read one number.
+
+    The private state is gitignored, and build_site.py re-renders this shell
+    through render_from_state() moments after the nightly forensics build (see
+    daily.yml — forensics, then build_site) and again on every render.yml lane
+    that never composes state at all. A count passed only in-process would be
+    overwritten by that second render within seconds and would never exist on a
+    render-lane rebuild. This file is committed by the nightly's broad
+    `git add data/`, so the shell prints the same counts on every path.
+    """
+    path = root / PUBLIC_SUMMARY_RELATIVE
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {"schema": PUBLIC_SUMMARY_SCHEMA, **public_summary_projection(summary)}
+    temp = _temp_sibling(path)
+    try:
+        temp.write_text(json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+        os.replace(temp, path)
+    finally:
+        temp.unlink(missing_ok=True)
+    return path
+
+
+def read_public_summary(root: Path) -> dict[str, int]:
+    """Read the committed counts, or {} when absent/unreadable/malformed.
+
+    Absence is a normal state, not an error: a fresh clone, a CI checkout and
+    the very first build all lack the file, and the page must simply omit the
+    fact rather than print a zero or a stale literal.
+    """
+    try:
+        raw = json.loads((root / PUBLIC_SUMMARY_RELATIVE).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    if not isinstance(raw, dict) or raw.get("schema") != PUBLIC_SUMMARY_SCHEMA:
+        return {}
+    try:
+        return public_summary_projection(raw)
+    except (TypeError, ValueError):
+        return {}
+
+
+def render_shell(root: Path, state_summary: dict[str, Any] | None = None) -> Path:
+    """Render only the public workbench shell, versioned assets, and free counts.
+
+    `state_summary` carries no rows — only the aggregate counts projected by
+    public_summary_projection(). When the caller supplies none (build_site's
+    compatibility hook), the committed projection is read from disk so every
+    render path agrees.
+    """
     site = root / "site"
     site.mkdir(parents=True, exist_ok=True)
     env = Environment(loader=FileSystemLoader(str(root / "templates")), autoescape=True)
+    counts = public_summary_projection(state_summary) if state_summary else read_public_summary(root)
     html = env.get_template("fundamental_forensics.html.j2").render(
         generated_utc="private-state-runtime",
-        state_summary={},
+        state_summary=counts,
         active_section="research",
         active_page="fundamental_forensics",
     )

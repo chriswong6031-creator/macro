@@ -112,6 +112,23 @@
             <dt>{{ t('Basis', '数据口径') }}</dt>
             <dd>{{ t('Company Facts and filing text', '公司事实与披露原文') }}</dd>
           </div>
+          {#- The only numbers on this page. Aggregate counts stay free by the
+              rule templates/tier_preview.js states outright — "a count names
+              nobody", while the member rows are the product — so this names no
+              company, ranks nothing and reveals no finding. Both counts come
+              from the build's own projection of state["summary"], never a
+              literal, so they cannot outlive their recompute; when the build
+              supplies no summary (fresh clone, CI checkout, first build) the
+              fact is omitted whole rather than printing a zero. -#}
+          {%- if state_summary.get('companies') and state_summary.get('findings') %}
+          <div>
+            <dt>{{ t('Last pass', '最近一轮') }}</dt>
+            <dd>{{ t(
+              '{:,} companies read, {:,} changes ranked for a look'.format(state_summary['companies'], state_summary['findings']),
+              '读取 {:,} 家公司，排出 {:,} 项值得一看的变化'.format(state_summary['companies'], state_summary['findings'])
+            ) }}</dd>
+          </div>
+          {%- endif %}
         </dl>
 
         <ol class="ff-gate-steps">
