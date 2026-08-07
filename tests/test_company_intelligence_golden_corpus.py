@@ -292,6 +292,37 @@ def test_duplicate_and_amendment_cases_carry_a_second_revision(cases: list[dict]
             assert revisions[1]["supersedes_source_sha256"] == revisions[0]["source_sha256"]
 
 
+def test_every_duplicate_collapsed_case_proves_its_own_duplicate(
+    manifest: dict, cases: list[dict]
+) -> None:
+    """An outcome assigned by POSITION rather than by evidence cannot be graded.
+
+    The defect this pins: the builder once labelled two ``edgar_identity_join``
+    cases (CIE-GC-0227, CIE-GC-0234) ``duplicate_collapsed`` off an
+    ``index % 7 == 6`` rule, while their rows carried ONE ``release`` revision and
+    no observable duplication at all — structurally identical to the twelve
+    siblings expecting ``typed_absence``.  Only the answer key could separate them.
+    This assertion is keyed on the OUTCOME rather than the difficulty class, which
+    is precisely why ``test_duplicate_and_amendment_cases_carry_a_second_revision``
+    (class-keyed, and still the right test for what it covers) could not see it.
+    """
+    collapsed = 0
+    for case in cases:
+        if case["expected_v2_outcome"] != "duplicate_collapsed":
+            continue
+        revisions = case["document_revisions"]
+        assert len(revisions) >= 2, (
+            f"{case['case_id']} expects duplicate_collapsed carrying {len(revisions)} "
+            "revision(s) — with no second document there is no duplicate to collapse"
+        )
+        assert revisions[1]["document_kind"] == "release_duplicate", case["case_id"]
+        assert revisions[1]["source_sha256"] != revisions[0]["source_sha256"], case["case_id"]
+        assert revisions[1]["supersedes_source_sha256"] == revisions[0]["source_sha256"], case["case_id"]
+        collapsed += 1
+    assert collapsed == manifest["counts"]["by_expected_v2_outcome"]["duplicate_collapsed"]
+    assert collapsed > 0
+
+
 def test_share_class_and_dual_listing_cases_actually_span_sibling_symbols(cases: list[dict]) -> None:
     """The id-inflation finding must be EXERCISED, not merely asserted in prose."""
     for difficulty in ("share_class", "dual_listing"):
