@@ -218,6 +218,7 @@ never migrated — each row carries the URL it was actually published at.
 | `update.sh` | `git pull` + Caddy reload (installed as `/usr/local/bin/macro-update`, cron'd); publishes `site.served` and the two `press_*.served` trees |
 | `codex-runtime-setup.sh` | pins the official Codex CLI and prepares its root-only VPS state directory |
 | `live-setup.sh` | installs the fast, full-snapshot, and intraday-bar systemd lanes |
+| `macro-sentinel.service` + `.timer` | external freshness sentinel (masterplan W1 dead-man switch) — self-armed by `update.sh` on the live-plane box; every 30 min it checks live bake stamps + R2 publish time, alerts the operator on breach, publishes `/live/staleness.json` |
 | `live-rollback.sh` | disables the live lanes, restores legacy cron, and preserves artifacts in a backup |
 
 ## Notes / gotchas

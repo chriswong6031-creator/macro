@@ -57,6 +57,7 @@ log = logging.getLogger(__name__)
 BASE = "https://finnhub.io/api/v1"
 MAX_TICKERS = 120          # 3 calls each -> ~360 calls; ~6 min at the 60/min free cap
 PACE_S = 0.9               # stay under 60 req/min
+RATE_LIMIT_GIVEUP = 5      # consecutive 429s on one endpoint -> stop asking, by name
 
 # HTTP codes that mean "this key/plan may not have this endpoint" — never a retry.
 _GATE_STATUS = {401: "key rejected (401) — rotate FINNHUB_API_KEY",
@@ -67,6 +68,17 @@ _GATE_WORDS = ("permission", "plan", "access", "unauthorized", "forbidden",
 
 def _key() -> str | None:
     return config.secret("FINNHUB_API_KEY") or config.secret("FINNHUB_KEY")
+
+
+def _is_rate_limited(exc: Exception) -> bool:
+    """True for an HTTP 429. Same structured-then-anchored-regex shape as
+    gate_reason_from_exc, so a ticker or timestamp containing '429' cannot match."""
+    resp = getattr(exc, "response", None)
+    code = getattr(resp, "status_code", None)
+    if code is None:
+        m = re.search(r"(?<!\d)429(?!\d)", str(exc))
+        code = 429 if m else None
+    return code == 429
 
 
 def gate_reason_from_exc(exc: Exception) -> str | None:
@@ -176,6 +188,9 @@ class FinnhubAltdataAdapter(Adapter):
         errors = 0
         # Per-endpoint gates: one paid endpoint must not cost the endpoints after it.
         dead: set[str] = set()
+        # Rate-limited endpoints, kept SEPARATE from `dead` on purpose (see below).
+        throttled: set[str] = set()
+        rl_streak: dict[str, int] = {}
 
         for tk in watch:
             if self._gate:
@@ -186,7 +201,7 @@ class FinnhubAltdataAdapter(Adapter):
                  {"symbol": tk, "from": since, "to": end.isoformat()}),
                 ("earnings", "/stock/earnings", {"symbol": tk, "limit": 4}),
             ):
-                if endpoint in dead:
+                if endpoint in dead or endpoint in throttled:
                     continue
                 try:
                     data, gate = self._call(endpoint, path, params)
@@ -195,7 +210,32 @@ class FinnhubAltdataAdapter(Adapter):
                         raise
                     errors += 1
                     log.debug("finnhub_altdata %s %s: %s", tk, endpoint, e)
+                    # RATE-LIMIT BACKSTOP (2026-08-06). Errors used to `continue` past
+                    # the pace sleep below (see the finally), so the first burst of
+                    # failures removed the only rate limiting this sweep had and the
+                    # run hammered the API into a self-sustaining 429 wall — the
+                    # 2026-08-05 nightly burned 116s to reach "no rows from 120
+                    # tickers (errors=120)". Pacing is now unconditional, and once an
+                    # endpoint answers 429 this many times in a row there is nothing
+                    # left to learn by asking 300 more times: stop it by NAME.
+                    # NOT added to `dead` — `dead` means auth/plan, which reports
+                    # 'blocked' (a known limitation). A throttle is transient and must
+                    # stay a real failure, or a rate-limited night launders itself into
+                    # an expected one.
+                    if _is_rate_limited(e):
+                        rl_streak[endpoint] = rl_streak.get(endpoint, 0) + 1
+                        if rl_streak[endpoint] >= RATE_LIMIT_GIVEUP:
+                            throttled.add(endpoint)
+                            log.warning("finnhub_altdata: %s rate-limited %dx in a row "
+                                        "— stopping that endpoint for this run",
+                                        endpoint, rl_streak[endpoint])
+                    else:
+                        rl_streak[endpoint] = 0
                     continue
+                finally:
+                    # Pace EVERY attempted call, not just the ones that worked.
+                    time.sleep(PACE_S)
+                rl_streak[endpoint] = 0
                 if gate:
                     dead.add(endpoint)
                     # every endpoint gated => the key/plan itself is the problem
@@ -223,7 +263,6 @@ class FinnhubAltdataAdapter(Adapter):
                     for d in (ea if isinstance(ea, list) else [])[:2]:
                         earn_rows.append({"ticker": tk, "period": d.get("period"), "actual": d.get("actual"),
                                           "estimate": d.get("estimate"), "surprisePercent": d.get("surprisePercent")})
-                time.sleep(PACE_S)
 
         n = (self._merge("recommendation", pd.DataFrame(rec_rows), ["ticker", "period"])
              + self._merge("insider_sentiment", pd.DataFrame(mspr_rows), ["ticker", "year", "month"])
@@ -233,9 +272,17 @@ class FinnhubAltdataAdapter(Adapter):
                 # expected_failure is set -> the runner reports 'blocked', with the reason
                 raise RuntimeError(f"finnhub_altdata: {self._gate}")
             gated = f"; gated endpoints: {sorted(dead)}" if dead else ""
+            # Name the throttle in the sentence the operator actually reads
+            # (run_status.json sources.finnhub_altdata.error). "no rows from 120
+            # tickers (errors=120)" is the message that made this un-actionable for
+            # 17 nights: it cannot tell a rejected key from a rate limit from an
+            # outage. 429 is transient and needs a different response than a gate.
+            rl = (f"; RATE-LIMITED endpoints (stopped after {RATE_LIMIT_GIVEUP} "
+                  f"consecutive HTTP 429): {sorted(throttled)}") if throttled else ""
             raise RuntimeError(
                 f"finnhub_altdata: no rows from {len(watch)} tickers "
-                f"(errors={errors}{gated}) — not an auth/plan gate, so this is a real failure")
+                f"(errors={errors}{gated}{rl}) — not an auth/plan gate, so this is a "
+                f"real failure")
         if dead:
             print(f"::warning title=finnhub-altdata-partial::endpoints gated: "
                   f"{sorted(dead)} — those channels stay dark, the rest ingested "

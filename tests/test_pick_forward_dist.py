@@ -379,6 +379,66 @@ def test_split_factor_carries_to_ohlv_and_stamps_the_print():
     print("ok test_split_factor_carries_to_ohlv_and_stamps_the_print")
 
 
+def test_leading_gap_bfill_is_the_same_constant_not_a_look_ahead():
+    """The .bfill() in carry_split_factor is split repair, not a future leak.
+
+    `split_adjust` dropna()s its input, so the recovered factor is NaN exactly
+    where close is NaN.  ffill covers interior/trailing gaps; bfill covers ONLY a
+    LEADING gap.  No split is detectable before the first valid price, so the
+    first valid bar already carries the FULL cumulative factor and bfill simply
+    propagates that same constant backwards — it is not a distinct value pulled
+    from a distant future.
+
+    This is the executable half of the tests/test_no_lookahead.py ALLOWLIST entry
+    for engine/pick_forward_dist.py:95 (disclosed as REVIEW-10).  The test the
+    split fixture above cannot do: that one has no leading gap, so bfill never
+    fires in it and the whole path was uncovered.
+    """
+    from scripts.replay_standout_pipeline import split_adjust
+
+    n, gap = 300, 10
+    idx = pd.bdate_range("2022-01-03", periods=n)
+    close = np.linspace(200.0, 240.0, n)
+    close[150:] /= 4.0                                   # 4:1 split at bar 150
+    vol = np.full(n, 1_000_000.0)
+    vol[150:] *= 4.0
+    df = pd.DataFrame({"open": close * 0.999, "high": close * 1.01, "low": close * 0.99,
+                       "close": close, "volume": vol}, index=idx)
+    df.loc[df.index[:gap], "close"] = np.nan             # leading gap -> bfill fires
+
+    adj, _ = pfd.carry_split_factor(df, split_adjust(df["close"]))
+    implied = (adj["volume"] / df["volume"]).to_numpy()
+    assert set(np.round(implied[:gap], 9)) == {4.0}, \
+        f"bfilled bars must carry the cumulative factor, got {set(implied[:gap])}"
+    assert abs(implied[gap] - 4.0) < 1e-12, "first valid bar must carry the same constant"
+    assert abs(implied[151] - 1.0) < 1e-12, "post-split bars are unadjusted"
+
+    # No fabricated discontinuity at the gap boundary. Dropping the bfill leaves
+    # those bars at fillna(1.0) and manufactures a split-sized crash — precisely
+    # the false knife/washout split_adjust exists to prevent.
+    hi = adj["high"].to_numpy()
+    assert abs(float(np.log(hi[gap] / hi[gap - 1]))) < 0.01, "bfill left a gap in the series"
+    raw, a2 = df["close"].astype(float), split_adjust(df["close"]).reindex(df.index)
+    no_bfill = (raw / a2).where(a2.abs() > 0).ffill().fillna(1.0)
+    hi2 = (df["high"].astype(float) / no_bfill).to_numpy()
+    assert abs(float(np.log(hi2[gap] / hi2[gap - 1]))) > 1.0, \
+        "fixture no longer exercises the bfill — without it there must be a fake gap"
+
+    # THE look-ahead property: back-adjustment is retroactive for EVERY pre-split
+    # bar by design. Under truncation a bfilled bar must move by the same ratio as
+    # an ordinary pre-split bar — i.e. bfill adds no look-ahead of its own.
+    trunc = df.iloc[:100]                                # cut before the split
+    adj_t, _ = pfd.carry_split_factor(trunc, split_adjust(trunc["close"]))
+    r_bfilled = float(adj["high"].iloc[5] / adj_t["high"].iloc[5])
+    r_ordinary = float(adj["high"].iloc[20] / adj_t["high"].iloc[20])
+    assert abs(r_bfilled - r_ordinary) < 1e-12, (
+        f"bfilled bar moved differently from an ordinary pre-split bar under "
+        f"truncation ({r_bfilled} vs {r_ordinary}) — that WOULD be a look-ahead"
+    )
+    print("ok test_leading_gap_bfill_is_the_same_constant_not_a_look_ahead "
+          f"(factor {implied[0]:.1f}, truncation ratio {r_bfilled:.4f} both bars)")
+
+
 def test_panel_respects_universe_filter():
     """Cheap/illiquid/short-history bars must not reach the panel — the universe filter
     is causal and applies to TRAINING observations as well as evaluated ones."""

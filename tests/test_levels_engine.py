@@ -9,7 +9,7 @@ internally consistent.
 Coverage:
   1.  Anchor = the max |gamma_net| strike
   2.  Cluster threshold: exactly 50% included, 49% excluded; Anchor itself excluded
-  3.  Flip: payload value reused verbatim; recomputed from a crafted sign-change when absent
+  3.  Flip: payload value reused verbatim; an ABSENT one stays null (never reconstructed)
   4.  Void: exactly 3 empties = a void run; 2 = not
   5.  Trapdoor / Launchpad orientation
   6.  Regime label follows the net-gamma sign
@@ -109,7 +109,12 @@ def test_cluster_threshold_boundary():
 
 
 # --------------------------------------------------------------------------- #
-# 3. Flip — reuse payload verbatim; recompute when absent
+# 3. Flip — reuse payload verbatim; an absent flip is null, never reconstructed
+#
+# These three tests were RED on main and named by no CI job. They still asserted
+# the pre-retirement contract (`_flip_from_rows` interpolating a crossing out of
+# by_strike); engine/levels_engine.py retired that reconstruction and renders an
+# honest null instead, and nothing went red because nothing ran them.
 # --------------------------------------------------------------------------- #
 
 def test_flip_reuses_payload_value():
@@ -120,23 +125,41 @@ def test_flip_reuses_payload_value():
     assert "Reconstructed" not in flip["note"]
 
 
-def test_flip_recomputed_when_absent():
-    # Cumulative from the bottom: -6 (95), -1 (100), +4 (105) -> crosses between 100 & 105.
-    # Interp: 100 - (-1)*(105-100)/(4-(-1)) = 100 + 5/5 = 101.0
+def test_flip_absent_from_payload_is_null_even_when_the_ladder_crosses_zero():
+    """The RETIREMENT of ``_flip_from_rows``, pinned from the outside.
+
+    These rows are the crafted sign-change this suite used to assert a
+    reconstruction from: cumulative -6 (95), -1 (100), +4 (105) crosses between
+    100 and 105 and interpolates to a tidy 101.0. The engine deliberately no
+    longer does that arithmetic — a gamma flip is the hypothetical SPOT at which
+    the whole book RE-PRICED there carries zero net dealer gamma, which the
+    by-strike ladder cannot express (charting-app
+    docs/audits/2026-08-01-market-structure-core/gamma-flip-defect-rca.md).
+
+    A ladder that DOES cross zero is the only case where the retired code would
+    have produced a number, so it is the case that has to stay null: a green here
+    is what stops the fabricated flip from being re-introduced.
+    """
     rows = [_row(95, -6.0), _row(100, 5.0), _row(105, 5.0), _row(110, 1.0)]
     lv = compute_levels(_payload(rows, spot=104.0, gamma_flip=None))
     flip = _one(lv, "flip")
-    assert flip["strike"] == pytest.approx(101.0, abs=1e-6)
-    assert "Reconstructed" in flip["note"]
+    assert flip["strike"] is None
+    assert "Reconstructed" not in flip["note"]
+    assert "cannot be reconstructed from the by-strike ladder" in flip["note"]
 
 
-def test_flip_null_when_no_crossing():
-    # All positive cumulative -> never crosses zero.
+def test_flip_absent_from_payload_is_null_when_the_ladder_never_crosses():
+    """Same null, reached the other way — all-positive cumulative, no crossing.
+
+    Paired with the test above on purpose: together they assert the null is
+    unconditional on the ladder's shape, so no future 'well, we can infer it
+    HERE' branch can slip back in on one side of the crossing.
+    """
     rows = [_row(95, 3.0), _row(100, 4.0), _row(105, 5.0), _row(110, 2.0)]
     lv = compute_levels(_payload(rows, spot=100.0, gamma_flip=None))
     flip = _one(lv, "flip")
     assert flip["strike"] is None
-    assert "does not cross zero" in flip["note"]
+    assert "shown as absent rather than estimated" in flip["note"]
 
 
 # --------------------------------------------------------------------------- #

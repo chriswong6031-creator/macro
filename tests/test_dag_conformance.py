@@ -10,6 +10,7 @@ Tests:
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -555,23 +556,30 @@ class TestLiveConformance:
         )
         assert collect["continue-on-error"] is True
         assert collect["env"]["COLLECT_LANE"] == "government-revenue-live"
-        # 2026-08-06: the step grew a SAM quota gate ahead of the invocation
-        # (schedule-only quiet-skip outside 00/01 UTC — shared ~10/day key,
-        # radar-first allocation). Byte-equality against the whole script no longer
-        # holds, so pin BOTH halves instead: the invocation keeps its exact flags,
-        # and the gate is pinned too, so a silent change to either fails here.
-        assert (
+        # SCOPE, not line count. #4601 wrapped the command in a schedule-hour
+        # quota gate (shared ~10/day SAM key, radar-first allocation), so the body
+        # is no longer a bare one-liner. What this pin exists for is unchanged and
+        # is asserted directly: exactly ONE collector invocation, and it is the
+        # narrow SAM one. A prelude may only narrow the cadence — it can never add
+        # a second collector, because there is no second invocation to add it to.
+        collect_run = collect["run"]
+        invocations = [
+            line.strip()
+            for line in collect_run.splitlines()
+            if re.search(r"\bpython3?\s+-m\b", line)
+        ]
+        assert invocations == [
             "python -m scripts.collect --only sam_gov_opportunities "
             "--skip-quality --skip-shadow-importance"
-        ) in collect["run"]
-        assert "SAM quota gate" in collect["run"], (
-            "the bounded lane's quota gate must stay — it is what keeps the shared "
-            "~10/day SAM key from being spent by the half-hourly schedule"
-        )
-        assert '"${GITHUB_EVENT_NAME}" = "schedule"' in collect["run"], (
-            "the gate must key on the SCHEDULE event only, so a manual or push run "
-            "still collects"
-        )
+        ], f"collect must run exactly the bounded SAM fast path; got {invocations}"
+        # A quiet-skip may only ever apply to the SCHEDULED cadence. If the gate
+        # were to fire on workflow_call or push, the projection lane would skip
+        # its own collector in silence and the publish gate would never see it.
+        if "exit 0" in collect_run:
+            assert 'GITHUB_EVENT_NAME}" = "schedule"' in collect_run, (
+                "a quiet-skip in the collect body must be gated on the scheduled "
+                "event alone"
+            )
         assert "default historical sweep is 1,826 days" in text
         assert "--only usaspending_awards" not in collect["run"], (
             "The bounded SAM fast path must not turn the long-lookback USAspending "
@@ -710,11 +718,25 @@ class TestLiveConformance:
         collect_steps = daily["jobs"]["collect"]["steps"]
         push_data = next(step for step in collect_steps if step.get("id") == "pushdata")
         assert 'published=true" >> "$GITHUB_OUTPUT"' in push_data["run"]
-        assert daily["jobs"]["collect"]["outputs"] == {
-            "government_revenue_projection_needed": (
-                "${{ steps.pushdata.outputs.published }}"
-            )
-        }
+        collect_outputs = daily["jobs"]["collect"]["outputs"]
+        assert collect_outputs["government_revenue_projection_needed"] == (
+            "${{ steps.pushdata.outputs.published }}"
+        )
+        # The full key SET is pinned too, so a new output cannot appear unreviewed
+        # — a collect output is a cross-job contract, and this lane's `if:` reads
+        # one of them. The capital-structure pair arrived 2026-08-06 with the job
+        # split: the chain left `collect`, and the source ledger it compiles is
+        # deliberately never committed by the market checkpoint, so it crosses the
+        # job boundary as an artifact whose sha256/row-count receipt travels here.
+        # tests/test_daily_capital_structure_job.py owns their meaning.
+        assert set(collect_outputs) == {
+            "government_revenue_projection_needed",
+            "capital_structure_ledger_sha256",
+            "capital_structure_ledger_rows",
+        }, (
+            f"collect's job outputs changed to {sorted(collect_outputs)}. Every one "
+            "is a cross-job contract; add it here with the reason, or drop it."
+        )
         projection_job = daily["jobs"]["government_revenue_projection"]
         assert projection_job["needs"] == "collect"
         assert projection_job["if"] == (

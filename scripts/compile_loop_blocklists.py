@@ -71,6 +71,28 @@ def _slug(text: str) -> str:
     return text[:80].strip("-")
 
 
+# A GFM cell boundary is an UNESCAPED pipe.  `\|` is the documented way to put a
+# literal bar inside a cell, and this registry uses it for absolute-value bars
+# (`\|ρ\|`) and conditional-expectation notation (`E[… \| market regime]`).  A plain
+# `.split("|")` treats those as boundaries, which does not merely mangle one cell:
+# the row gains cells, `zip(headers, cells)` below keeps only the first len(headers),
+# and every column shifts one place left while the LAST one is dropped in silence.
+# Two rows shipped that way (KILL-PM4-OVERHEAD-SUPPLY compiled to
+# verdict: 'REDUNDANT — \' / source: 'ρ\'; KILL-PER-SIGNAL-FAMILY-RELIABILITY lost
+# its ruling entirely) — see tests/test_dnr_registry_keys.py, which was dark.
+_CELL_BOUNDARY_RE = re.compile(r"(?<!\\)\|")
+
+
+def _split_row(line: str) -> list[str]:
+    """Split one GFM pipe row on unescaped `|`, then unescape the cells."""
+    inner = line.strip()
+    if inner.startswith("|"):
+        inner = inner[1:]
+    if inner.endswith("|") and not inner.endswith("\\|"):
+        inner = inner[:-1]
+    return [c.strip().replace("\\|", "|") for c in _CELL_BOUNDARY_RE.split(inner)]
+
+
 def _parse_markdown_table(lines: list[str]) -> list[dict[str, str]]:
     """Parse a GFM pipe-table and return list of row dicts.
 
@@ -86,7 +108,7 @@ def _parse_markdown_table(lines: list[str]) -> list[dict[str, str]]:
             if headers:
                 break  # table ended
             continue
-        cells = [c.strip() for c in line.strip("|").split("|")]
+        cells = _split_row(line)
         if not headers:
             headers = cells
             continue

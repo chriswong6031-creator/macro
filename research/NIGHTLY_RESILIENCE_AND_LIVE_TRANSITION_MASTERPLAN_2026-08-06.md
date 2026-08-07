@@ -65,6 +65,25 @@ indistinguishable from silence. Silence must become impossible: the check
 lives on infrastructure that fails independently of GitHub. (The existing R2
 freshness tripwire inside `engine` is the right idea in the wrong place — it
 only fires when the nightly RUNS.)
+**SHIPPED 2026-08-06:** `scripts/freshness_sentinel.py` +
+`app/deploy/macro-sentinel.{service,timer}` (self-armed by `update.sh` on the
+serving VPS, every 30 min, `Persistent=true`), state served at
+`/live/staleness.json`. Budgets: 26h bakes (max observed healthy gap 23.2h over
+60 days) + 4 calendar days on the us_stocks board's OWN delayed-board
+disclosure (`prices as of` — rendered only when the engine reports the lag).
+The board anchor matters: the Jul-31→Aug-6 outage re-baked the page every day
+with fresh per-panel as-of annotations while the board froze, so neither
+Last-Modified nor a page-wide as-of scrape can see that mode. china.html emits
+no board stamp yet (its only `as of` is an FX widget) → bake-only until the
+template grows one (follow-up chip filed). Alerts = Telegram + Discord + mailer
+fan-out, 6h re-alert (immediate on a NEW surface joining; sticky through
+blindness so a dark site never reads as recovery), blind escalation after ~3h,
+alerts dispatched BEFORE state writes so a full disk cannot silence them.
+Gate §0.1 pinned by
+`tests/test_freshness_sentinel.py::test_simulated_dead_nightly_delivers_a_real_alert`
+(real local webhook, no mocks on the transport path); the outage replay by
+`test_jul31_outage_replay_breaches_on_the_board_marker`. Ops runbook:
+`docs/VPS_LIVE_ORCHESTRATION.md` §Lanes.
 
 **W2 — Runtime budget telemetry + 85% trend alarm.** Every cap raise in
 daily.yml's history (70→120→150→200→240 engine; 40→120 tech_lab;
@@ -109,6 +128,41 @@ lever"). Then re-measure; do not inherit step-cost labels (tech_lab law).
 > ~33m (07-21) → 35.7m (07-27) → 42.0m (08-03) → 61.7m/57.8m (08-05/08-06)**
 > — +25m in two weeks, the largest step in the job and the real driver of the
 > ~205m kill nights. Next W3 target: profile build_site's page loop.
+
+**W3 re-measure (2026-08-06, from `##[group]` boundary timestamps in the engine
+job logs — runs 30314534128 / 30862763261 / 31056495943 / 31067383446).** The
+"build_news is the next lever" label was stale: measured, the creep is
+**entirely inside build_site**, and every sibling band is flat.
+
+| band | 07-27 | 08-03 | 08-05 | 08-06 |
+|---|---|---|---|---|
+| regime engine (engine.run) | 1.6m | 1.1m | 1.4m | 1.3m |
+| news suite (build_news) | 5.9m | 4.3m | 4.7m | 5.4m |
+| **build_site** | **35.5m** | **41.6m** | **61.3m** | **57.4m** |
+| build_track_record | 3.0m | 3.0m | 3.5m | 2.9m |
+| MTF signals | 1.3m | 1.3m | 1.2m | 1.3m |
+
+Intra-step attribution is impossible from CI logs (`run_py` buffers the whole
+step to `$RUNNER_TEMP/step.log` and `cat`s it at the end, so per-line
+timestamps all stamp at flush). A per-section checkpoint ledger now lives in
+`scripts/build_site.py` (W2 for this step): 35 `_tmark()` sections, logged as
+a sorted table each night + appended to `data/nightly_timings/build_site.jsonl`
+(rides the engine job's `git add data/`). First instrumented run (local,
+Studio, under nightly load — shares are the signal, absolutes inflate):
+**stock_library 1248s (53%) + subsector_rotation 758s (32%) = 84% of the
+build**; 32 of 35 sections total <4m together.
+
+Root cause of the rotation pig (cProfile, 706s→27s fix verified): every
+grader price lookup funnels through `engine/ai_desk.py::_close_series`, which
+re-read parquet **uncached on every call** — `subsector_track_record.compute()`
+grades all matured snapshot rows × 4 horizons × members × 2 endpoints =
+268,564 loader calls / 413,053 `read_parquet` attempts per night, growing
+~250 ledger rows/night since mid-July. That unbounded-in-ledger-size scan is
+the gradual +25m creep; `radar_ic.py` had already memoized the same loader
+locally in 06-2026 (`_SERIES_MEMO`) — the fix hoists the memo into
+`_close_series` itself so every desk grader gets it. stock_library's own
+attribution + trim is the follow-on lane (profiled serially; washout-turn
+(#4657) and the per-name loop are the candidates).
 
 **W4 — Disk program on the M1.** Execute the ranked plan (operator sudo
 required for ranks 0/3): TM snapshots ~80G → `tmutil disable` decision →

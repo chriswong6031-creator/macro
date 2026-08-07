@@ -257,6 +257,12 @@ public:
     - /live/quotes.json
     - /live/breadth.json
     - /live/release_publications.json
+    # Freshness-sentinel staleness state (masterplan W1 dead-man switch). Public
+    # by design: it is the input the on-site staleness banner reads, and a
+    # banner that only authenticated users can see defeats its purpose. Carries
+    # only per-surface freshness verdicts and timestamps — no ticker rows,
+    # scores, or customer data.
+    - /live/staleness.json
     - /prophet/showcase.json
     # Claim-bounded methodology only: explicitly reports that live forecasts,
     # screener data, and the event graph are not yet commissioned. It contains
@@ -294,6 +300,24 @@ public:
     - /stock_seasonality.html
     - /stock_seasonality.css
     - /stock_seasonality.js
+    # Filing Forensics presentation + client. The SHELL was opened to anonymous
+    # visitors by the 2026-08-04 *.html change, but these two were never
+    # promoted with it, so the page served a 200 whose stylesheet and script
+    # both 401'd: an unstyled, non-functional skeleton of a paid product, which
+    # is the worst of both boundaries — it protects nothing a stranger wanted
+    # and advertises nothing we sell.
+    #
+    # Safe because the split is already where it belongs. Neither file carries a
+    # finding, a company row, a receipt field or any embedded payload: the CSS
+    # is presentation, and the JS is a pure fetcher whose only two network calls
+    # are /api/forensics/state and /api/forensics/v1/attested-history. Both of
+    # those routes stay untouched behind require_site_full_user (401 signed out,
+    # 403 unentitled), so promoting the client changes who can read the
+    # WORKBENCH, never who can read the WORK. The page's own preview shell is
+    # server-rendered into fundamental_forensics.html and contains only product
+    # anatomy, methodology and the SEC basis — no rows to protect.
+    - /fundamental_forensics.css
+    - /fundamental_forensics.js
     # Existing Terminal ingest compatibility. Remove after the separate
     # Terminal session moves these fetches behind authenticated transport.
     - /factordata/tech_lab.json

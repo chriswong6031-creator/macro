@@ -47,7 +47,10 @@ smart money, insider prints, SUE, and options/GEX are **context chips only**.
 Fail-closed rule, inherited from CN: unknown evidence never earns best-case points.
 A row with no extension reading scores 0 on ``runway`` (it is not assumed "not
 extended"); a row with an unknown entry status buckets to ``setting_up``, never to
-``live``.
+``live``; and, from 2026-08-06, a row with no extension reading is not eligible for
+``featured`` either — the veto used to pass anything it could not measure, which is
+how a board whose ``ext_z`` wiring was dark featured ten rows with the extension check
+never once firing.
 """
 from __future__ import annotations
 
@@ -72,13 +75,19 @@ RAN_TICKS_MAX = 15
 #
 # BOUNDARY CONVENTION (intended, not incidental): the SCORE leg is CLOSED at the top —
 # ``runway_value`` clips, so ext_z == 2.0 earns 0 runway (>= is the effective test).
-# The FEATURED veto is OPEN — ``featured_shortfalls`` flags "extended" only on
-# ``ext_z > EXT_Z_FULL``, so a row sitting exactly ON the parabolic line is still
-# featurable.  The asymmetry is deliberate: scoring is a continuous dial where the
+# The FEATURED veto is OPEN AT THE BOUNDARY — ``featured_shortfalls`` flags "extended"
+# only on ``ext_z > EXT_Z_FULL``, so a row sitting exactly ON the parabolic line is
+# still featurable.  The asymmetry is deliberate: scoring is a continuous dial where the
 # endpoint must saturate (2.0 and 2.5 are both "no room left"), while featuring is a
 # discrete veto, and a veto fires on evidence that is PAST the line, never on evidence
 # that merely reaches it — the same fail-open-on-the-boundary rule the tier freshness
 # window uses (``ticks <= FEATURED_MAX_TICKS`` qualifies at exactly 2).
+#
+# OPEN AT THE BOUNDARY IS NOT OPEN ON ABSENCE (B3, 2026-08-06).  A row with NO ext_z
+# reading is not "at the line", it is unmeasured, and it is now blocked from featured
+# (``ext_z_unknown``) exactly as an unknown ``ticks`` or an unknown tier already was.
+# The veto fired 0 times in 59 rows on the 07-31 board while all 10 featured names
+# carried ext_z None — a veto whose input is dark cannot be said to have passed.
 EXT_Z_FULL = 2.0
 
 # Featured freshness window (mirrors engine.confluence_tiers.FRESH_TICKS).
@@ -636,8 +645,18 @@ def featured_shortfalls(
     if row.get("antichase_shadow_blocked") is True:
         reasons.append("antichase_blocked")
 
+    # B3 2026-08-06 — an UNKNOWN extension is not "not extended".  The veto used to
+    # fire only on a numeric ext_z above the line, so a row with no reading passed it
+    # unopposed: on the 07-31 board `extended` fired 0 times in 59 rows and all 10
+    # featured names carried ext_z None.  A veto that cannot see its own evidence is
+    # not a veto.  Fail-closed here matches the score leg's own rule (a row with no
+    # extension reading earns 0 runway — it is not assumed un-extended) and the
+    # `ticks_unknown` precedent directly above.  Display-tier only: the row keeps its
+    # place on the buy lane and its score; it just cannot be FEATURED.
     ext_z = _finite_float(row.get("ext_z"))
-    if ext_z is not None and ext_z > EXT_Z_FULL:
+    if ext_z is None:
+        reasons.append("ext_z_unknown")
+    elif ext_z > EXT_Z_FULL:
         reasons.append("extended")
 
     alpha = _finite_float((alpha_of or selection_value)(row))
@@ -887,6 +906,16 @@ def ranking_block(
         "featured_cap": max(0, int(featured_cap)),
         "sector_cap": max(0, int(sector_cap)),
         "featured_count": sum(1 for row in scored if row.get("featured")),
+        # B3 disclosure — how many rows the featured flag refused for lack of an
+        # extension reading, recomputed from the rows actually scored.  This is the
+        # number that says whether the veto is doing its job or whether the builder's
+        # ext_z wiring is dark: 0 featured with a large count here means the leg has no
+        # input on this board, which is a data fact the artifact must print rather than
+        # a reason to let unknown evidence through.
+        "featured_blocked_unknown_extension": sum(
+            1 for row in scored
+            if "ext_z_unknown" in (row.get("featured_blocked_by") or ())
+        ),
         "featured_requirements": [
             "stage is live",
             "entry status is buy_now or partial",
@@ -894,7 +923,9 @@ def ranking_block(
             f"cross no older than {FEATURED_MAX_TICKS} ticks (a same-day cross, "
             "ticks 0, qualifies)",
             "verdict not provisional",
-            "no anti-chase flag and no extension block",
+            "no anti-chase flag, and a KNOWN extension reading at or below the "
+            f"parabolic line (ext_z <= {EXT_Z_FULL}; an unknown reading does not "
+            "qualify)",
             "residual alpha at or above zero",
             "outside the earnings blackout window",
             f"at most {int(sector_cap)} per sector, {int(featured_cap)} on the board",

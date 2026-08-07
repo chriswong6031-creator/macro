@@ -953,7 +953,11 @@ def main() -> int:
     if "yahoo" in registry:
         try:
             from collectors.yahoo import YahooAdapter, audit_store_freshness
-            audit_store_freshness(YahooAdapter().all_tickers(), group="yahoo")
+            # maintained_tickers(), NOT all_tickers(): a delisted name is dropped from
+            # the FETCH list but its store still exists and still has to be audited —
+            # that is the only check that would catch a wrong exit row or a reused
+            # ticker refilling under a dead name.
+            audit_store_freshness(YahooAdapter().maintained_tickers(), group="yahoo")
         except Exception as e:  # noqa: BLE001 — a tripwire's crash must not abort the run
             print(f"::warning title=yahoo store audit crashed::{e}", flush=True)
 

@@ -1,0 +1,143 @@
+{
+  "schema": "quant_lab_method_result.v1",
+  "method_key": "regime_reliability",
+  "substrate": {
+    "store": "data/signal_archive/track_record.parquet",
+    "n_matured": 57642,
+    "span": [
+      "1962-11-29",
+      "2026-05-04"
+    ],
+    "n_months": 763,
+    "outcome": "fwd_mdd_60",
+    "outcome_label": "60d forward max drawdown (pp)",
+    "regime_axis": "regime_at_entry",
+    "regime_states": [
+      "bear",
+      "bull",
+      "choppy"
+    ],
+    "family_col": "reason",
+    "n_families": 5
+  },
+  "determinism": {
+    "seed": 7,
+    "n_boot": 600,
+    "era_split": "2010-01-01"
+  },
+  "estimability": {
+    "gates": {
+      "min_coverage": 0.2,
+      "min_states": 2,
+      "min_months_per_state": 12
+    },
+    "estimable_axes": [
+      "regime_at_entry"
+    ],
+    "axes": [
+      {
+        "axis": "regime_at_entry",
+        "coverage": 1.0,
+        "n_states": 3,
+        "min_state_months": 725,
+        "verdict": "estimable",
+        "span": [
+          "1962-11-29",
+          "2026-07-31"
+        ]
+      },
+      {
+        "axis": "quad_hard_label",
+        "coverage": 0.004,
+        "n_states": 2,
+        "min_state_months": 1,
+        "verdict": "insufficient_coverage",
+        "span": [
+          "2026-07-01",
+          "2026-07-31"
+        ]
+      },
+      {
+        "axis": "vol_regime",
+        "coverage": 0.004,
+        "n_states": 1,
+        "min_state_months": 1,
+        "verdict": "insufficient_coverage",
+        "span": [
+          "2026-07-01",
+          "2026-07-31"
+        ]
+      },
+      {
+        "axis": "fused_risk_label",
+        "coverage": 0.004,
+        "n_states": 4,
+        "min_state_months": 1,
+        "verdict": "insufficient_coverage",
+        "span": [
+          "2026-07-01",
+          "2026-07-31"
+        ]
+      },
+      {
+        "axis": "rate_pressure",
+        "coverage": 0.0036,
+        "n_states": 1,
+        "min_state_months": 1,
+        "verdict": "insufficient_coverage",
+        "span": [
+          "2026-07-06",
+          "2026-07-31"
+        ]
+      },
+      {
+        "axis": "risk_radar_state",
+        "coverage": 0.004,
+        "n_states": 2,
+        "min_state_months": 1,
+        "verdict": "insufficient_coverage",
+        "span": [
+          "2026-07-01",
+          "2026-07-31"
+        ]
+      }
+    ]
+  },
+  "decomposition": {
+    "family_main_effect_pp": 3.59,
+    "regime_main_effect_pp": 0.95,
+    "max_abs_interaction_pp": 1.49,
+    "family_over_regime_ratio": 3.79,
+    "unit": "pp of 60d forward max drawdown, month-demeaned"
+  },
+  "bootstrap": {
+    "n_boot": 600,
+    "cells_ci_excludes_zero": 5,
+    "cells_tested": 15,
+    "thinnest_cell_n": [
+      41,
+      48
+    ]
+  },
+  "era_stability": {
+    "split": "2010-01-01",
+    "min_cell_n": 30,
+    "sign_stable": 8,
+    "cells_compared": 13,
+    "pct_stable": 61.5,
+    "chance_pct": 50.0
+  },
+  "verdict": "null",
+  "verdict_line_en": "A regime-conditional reliability table is not supportable on this record: the family x regime interaction is smaller than the family effect alone, its largest cells are its thinnest, and its sign is not stable across the era split.",
+  "verdict_line_zh": "\u672c\u8bb0\u5f55\u4e0d\u8db3\u4ee5\u652f\u6491\u300c\u6309\u5e02\u573a\u72b6\u6001\u7ed9\u7b56\u7565\u6253\u53ef\u9760\u5ea6\u300d\u7684\u8868\u683c\uff1a\u72b6\u6001\u4ea4\u4e92\u9879\u5c0f\u4e8e\u5bb6\u65cf\u4e3b\u6548\u5e94\uff0c\u4e14\u8de8\u65f6\u4ee3\u7b26\u53f7\u4e0d\u7a33\u5b9a\u3002",
+  "headline_en": "Which signal family fired is worth 3.79x more than which regime it fired in.",
+  "artifacts": {
+    "report": "reports/regime-reliability-phase0.md",
+    "adjudication": "research/REGIME_RELIABILITY_FACTOR_CROWDING_ADJUDICATION.md",
+    "gate_module": "engine/regime_conditioning_coverage.py",
+    "registry_rows": [
+      "RRC-R1",
+      "RRC-R2"
+    ]
+  }
+}

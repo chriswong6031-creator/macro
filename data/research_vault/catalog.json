@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T08:01:23.349648+00:00",
-  "count": 928,
+  "generated_at": "2026-08-07T08:31:22.925380+00:00",
+  "count": 929,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -302,6 +302,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 24,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ghet4olm8u8-0b2b56",
+      "title": "JPM US Market Intelligence Macro Week Ahead",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T01:42:43Z",
+      "summary_points": [
+        "**US Data & Fed Policy Catalysts**: ADP (Aug 11), CPI/Real Earnings (Aug 12), Jobless Claims/PPI (Aug 13), Retail Sales (Aug 14), and Fed dates (Sep 16, Oct 28, Dec 9) dominate near-term monetary policy expectations and market volatility.",
+        "**Global Macro Policy Shifts**: Germany CPI revision (Aug 12), UK GDP/Private Consumption (Aug 13), and Eurozone IP (Aug 13) drive cross-border policy adjustments and risk sentiment across major economies.",
+        "**Geopolitical Risk Triggers**: US-China AI talks (Sep), Brazil election (Oct), and Trump-Xi trade truce expiration (Nov 1) amplify geopolitical volatility and portfolio repositioning risks.",
+        "**AI Tech Catalysts**: Google Gemini 3.5 Pro (Jul), Z-AI GLM 5.5 (Aug), Meta Connect (Sep), and AWS re:Invent (Nov-Dec) shape sector-specific sentiment and capital flows in tech."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
