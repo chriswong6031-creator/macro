@@ -347,6 +347,32 @@ jobs:
       # one leg — if that drifts, a research file starts overstating the veto's cost.
       - name: W-F reclaim-veto flip-isolation construction
         run: python -m pytest tests/test_us_reclaim_veto_packet.py -q
+      # The two research/-RESIDENT suites, wired 2026-08-06 — UNRUN from birth: named by
+      # no run: step in any workflow, so nothing ever executed them in CI. (They were
+      # triggerable — research/**/*.py in ci.yml starts this workflow — which is the
+      # worse half of the trap: the gate STARTS, the pack goes green, and the suite that
+      # would have caught the break never ran.) Both were written beside their instrument
+      # under research/ because the packets that shipped them were fenced to files-only;
+      # nothing here runs pytest over research/, so a PR could break either instrument
+      # and stay green. They belong in THIS job for exactly
+      # the reason test_signal_quality_no_leak.py does: each pins the buy-side §7
+      # machinery this job already owns, one layer down — the veto-day label classifier
+      # (#4547) and the canonical reclaim/divergence/200-MA filter math the §7 buy filter
+      # is built from. No new job, no second venv: the install line above already
+      # satisfies both (numpy + pandas, plus pyyaml for lib.config via engine.technicals),
+      # so neither needs an importorskip and neither uses one. Synthetic only — hand-built
+      # frames and planted structure, no data/ store and no network — which is why they
+      # can ride a job that checks out no caches. Measured in this job's exact install
+      # string on a committed-files-only tree: 22 tests, ~2.0s combined.
+      #
+      # NOTE the three darkness censuses (audit_unrun_tests.py, check_skip_only_suites.py,
+      # check_ci_trigger_closure.py) all scan tests/ ONLY, so they cannot see these two
+      # either way — this wiring is hand-verified, not census-verified.
+      - name: research-resident label-grading + buy-filter guards
+        run: >
+          python -m pytest
+          research/prophet_us_audit/test_label_grading_battery.py
+          research/signal_engine/test_buy_filters.py -q
       - name: fundamental forensics lineage, normalization, detector, and schema contracts
         run: >
           python -m pytest
