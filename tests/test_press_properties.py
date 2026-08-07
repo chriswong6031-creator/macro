@@ -1076,6 +1076,48 @@ def test_the_workflow_rebuilds_the_properties_after_emitting():
         "a crashed rebuild must not sail past into the commit step"
 
 
+# Tokens that end the ARGUMENT list of a `git add` line in these run: blocks —
+# every one of them is written `git add <paths> 2>/dev/null || true`.
+_ARGV_END = ("||", "&&", ";", "|")
+
+# Paths this lane stages plainly. A flag on any of these would change what a
+# publish commits, so they are pinned bare.
+_PROPERTY_PATHS = frozenset({
+    "content/seo/blog", "site/blog", "data/press/published.jsonl",
+    "content/press", "properties",
+})
+
+# ...and the content-hashed assets the normalized pages LINK (#4549,
+# aa143e42c80). externalize_css rewrites each article to
+# <link> site/assets/css/<hash>.css, so staging a page without its asset ships a
+# 404 stylesheet.
+_ASSET_PATHS = frozenset({"site/assets/css", "site/assets/js"})
+
+
+def _git_add_targets(step: str) -> dict[str, tuple[str, ...]]:
+    """Every ``git add`` in a run: block, as ``{path: flags}``.
+
+    Parsed rather than regex-sliced because the naive ``git add ([^\\s]+)`` reads
+    the FIRST token as the path, so a flag becomes a phantom staged path: when
+    #4549 added ``git add --ignore-removal site/assets/css`` this test began
+    asserting that the lane stages a directory called ``--ignore-removal``
+    (ci-pack-2 red, 2026-08-06). The flags are not noise to skip — ``--ignore-
+    removal`` is the difference between staging an asset and staging its
+    deletion — so they are returned alongside the path and asserted below.
+    """
+    targets: dict[str, tuple[str, ...]] = {}
+    for tail in re.findall(r"^\s*git add\s+(.+)$", step, re.MULTILINE):
+        flags: list[str] = []
+        paths: list[str] = []
+        for token in tail.split():
+            if token in _ARGV_END or re.match(r"^\d*[<>]", token):
+                break
+            (flags if token.startswith("-") else paths).append(token)
+        for path in paths:
+            targets[path] = tuple(flags)
+    return targets
+
+
 def test_the_commit_step_stages_the_property_paths():
     """The staged set is EXACT — the lane cannot silently widen what it commits.
 
@@ -1095,10 +1137,26 @@ def test_the_commit_step_stages_the_property_paths():
     """
     step = next(str(s.get("run") or "") for s in _emit_steps()
                 if "git add" in str(s.get("run") or ""))
-    added = staged_paths(step)
-    assert added == {"content/seo/blog", "site/blog", "data/press/published.jsonl",
-                     "content/press", "properties",
-                     "site/assets/css", "site/assets/js"}
+    staged = _git_add_targets(step)
+    assert set(staged) == _PROPERTY_PATHS | _ASSET_PATHS
+    for path in sorted(_PROPERTY_PATHS):
+        assert staged[path] == (), \
+            f"{path} gained an unreviewed `git add` flag: {staged[path]}"
+    for path in sorted(_ASSET_PATHS):
+        assert "--ignore-removal" in staged[path], (
+            f"{path} must be staged --ignore-removal: the orphan prune reasons only "
+            "from pages it can see and this lane has no post-rebase normalize, so a "
+            "staged DELETION here 404s a sibling page's stylesheet")
+    # ...and the shared parser must agree on the SET.  _git_add_targets is the
+    # flag-aware local reader (the flags are load-bearing above, and
+    # staged_paths deliberately drops them); staged_paths is the one shared with
+    # test_press_workflow.py and test_marketing_hot_tape_radar.py.  Pinning them
+    # against each other here is what stops the three guards drifting apart
+    # again — the partial sweep (#4549 → #4707 → #4714) IS the recurring bug.
+    assert staged_paths(step) == set(staged), (
+        "tests/workflow_staging.py::staged_paths and the flag-aware local reader "
+        f"disagree on this lane's staged set: {staged_paths(step)} vs {set(staged)}")
+
     # The nightly still owns site/sitemap.xml; the properties carry their own.
     assert "git add site/sitemap.xml" not in step
     assert "press_sitemap_guard" in step

@@ -1,0 +1,111 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "ARLO-2026-06-30-watch",
+  "ticker": "ARLO",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "ARLO",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "ARLO",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_alpha",
+    "secondary_flags": "[]",
+    "process_fault": "premature_stop_noise",
+    "sector": "Information Technology",
+    "excess_spy": 0.0846438809782688,
+    "excess_sector": 0.1416748997974726,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 7.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "ARLO ultimately generated strong excess return, but the position was stopped and the audit records premature stop noise. The favorable company-alpha outcome therefore coexisted with a process failure in path-risk handling.",
+    "root_cause": "ARLO ultimately generated strong excess return, but the position was stopped and the audit records premature stop noise. The favorable company-alpha outcome therefore coexisted with a process failure in path-risk handling.",
+    "mitigation_verdict": "mitigable_process",
+    "lesson": "The company-alpha and watch books surfaced the opportunity, while the stop and path-risk organ missed the distinction between thesis failure and ordinary noise.",
+    "engines_credit": "The company-alpha book is the role model, and the stop-management organ is the laggard because it terminated a later winner prematurely.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "Interim adverse movement triggered a stop classified as noise rather than durable thesis impairment.",
+        "evidence_status": "claimed",
+        "timing_status": "emerged_after",
+        "counterfactual": "A stop calibrated to expected volatility or structural invalidation might have preserved participation.",
+        "evidence_refs": [
+          "Pick 4 process_fault=premature_stop_noise",
+          "Pick 4 terminal_state=STOPPED"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "The asserted company-specific alpha subsequently expressed despite the earlier stop.",
+        "evidence_status": "claimed",
+        "timing_status": "known_at_entry",
+        "counterfactual": "Without persistent company alpha, relaxing the stop would only have increased loss exposure.",
+        "evidence_refs": [
+          "Pick 4 outcome_cause=idio_alpha",
+          "Pick 4 excess_spy=0.0846438809782688"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "counterfactual",
+        "factor": "",
+        "mechanism": "Holding through the noisy path could have converted the stopped position into participation in the later liftoff.",
+        "evidence_status": "unknown",
+        "timing_status": "hindsight_only",
+        "counterfactual": "Replay the actual price path under volatility-aware and thesis-invalidation stop rules.",
+        "evidence_refs": [
+          "Pick 4 board_tenure_days=7.0",
+          "Pick 4 terminal_state=STOPPED"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "The stop may have been appropriate under information available at the time even though price later recovered.",
+      "A post-stop catalyst may have created a new thesis rather than confirming the original one."
+    ],
+    "missing_evidence": [
+      "Entry and stop prices",
+      "Intraperiod price and volatility path",
+      "Original stop rule and thesis invalidation criteria",
+      "Timing of any post-entry catalyst"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "stop_noise_distance",
+        "feature": "Stop distance relative to expected path noise",
+        "measurement": "Replay stopped watch picks using entry-date volatility, liquidity, and structural support measures.",
+        "expected_direction": "Stops placed inside expected noise should show more premature exits followed by recovery.",
+        "falsifier": "Noise-adjusted stops do not reduce premature exits or materially worsen downside paths.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T13:34:17+00:00"
+}

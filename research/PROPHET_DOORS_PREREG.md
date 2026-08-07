@@ -382,6 +382,160 @@ door can pass a gate with, and a relay result cannot rescue a G3/G4 failure.
 
 ---
 
+## §10 W8 ignition features (2026-08-05 addendum)
+
+Appended, not a rewrite: **§1–§8 are untouched**, and §9's seven fields are unchanged. This
+addendum adds six recorded keys and nothing else. No gate moved, no horizon moved, no
+comparator moved, no fire condition moved.
+
+Registered while the ledger is still young and, as with §9, **before any outcome has been
+read** — §3's interim-read discipline has not been broken by anybody, and no distribution,
+win rate or excess figure from `data/prophet_doors/` has been inspected.
+
+**Why now.** `PROPHET_US_IGNITION_LAYER_W8_BY_FABLE.md` ran four ignition stand-ins on the
+2014–2026 OHLCV panel (PR #4564, `research/prophet_us_audit/ignition_standins.py`). Two
+survived. Recording their STATE on every door flag from tonight makes them measurable on the
+whole forward ledger; added later they would be measurable only on rows accrued later.
+
+### 10.1 Provenance — what #4564 actually measured
+
+Matched-set deltas against gate-matched controls, month-block CI in brackets.
+
+| Stand-in | H=10 | H=21 | H=63 | n |
+|---|---|---|---|---|
+| **S-COIL** (release out of a compressed uptrend) | +0.12 [−0.02, +0.27] | +0.24 [−0.00, +0.53] | **+0.98 [+0.42, +1.55]** | 24,989 |
+| **S-THRUST-LAG** vs coiled names in NON-thrusting themes | **+1.31 [+0.64, +1.95]** | **+2.04 [+0.79, +4.21]** | **+4.67 [+2.29, +6.41]** | 228 |
+| S-THRUST-LAG vs already-moved members of the SAME theme | +0.24 [−0.40, +0.97] | −0.22 [−1.04, +0.90] | +0.39 [−1.37, +2.42] | 228 |
+
+Bold = the CI excludes zero. The third row is the arm that came back **null at every horizon**:
+theme context pays, the laggard-vs-leader choice inside the theme does not. Only the
+theme-context reading is recorded here.
+
+**Not recorded, deliberately.** S-RANKVEL was **refuted** (negative at every horizon) and is
+wired nowhere. S-INSIDER was **never run** (its kills-check hit a named gap). Neither appears
+in `FEATURE_KEYS`, and a refuted sensor is not "available for later" — re-proposing it needs a
+new instrument, not this addendum.
+
+### 10.2 The fields
+
+Six keys, present on every flag row, null-with-a-reason when uncomputable.
+Constructions live in `engine/ignition_features.py` — a port of the frozen W8 instrument whose
+**elementwise fidelity is pinned** by `tests/test_ignition_features.py::TestPortFidelity`
+(the research file is frozen and is not edited to import the engine module, so the fork risk
+is answered by a test rather than by a convention).
+
+| Field | Definition as coded |
+|---|---|
+| `coil_compressed` | The S-COIL compression state of the flag's own name **at the flag bar**: ATR(21) percentile against its own trailing 252 sessions `< 0.25`, **and** close above a 50dMA that is rising over 10 sessions. This is the instantaneous leg S-THRUST-LAG used to pick candidates. `bool`; `null` + a reason when uncomputable. |
+| `coil_bars_compressed` | Compressed sessions inside the trailing `COMP_LOOKBACK = 21`. `>= COMP_MIN = 10` is S-COIL's own **armed** run, so the count reconstructs that state while keeping the distance from the threshold that a bare boolean would discard. |
+| `coil_reason` | Why the coil block is null: one of `ohlcv_absent`, `no_bar_on_flag_date`, `short_history`, `read_failed`. `null` when the block computed. |
+| `theme_thrust_state` | `"thrusting"` when the flag's theme fires the stand-in's thrust **event** on the flag bar — above-20d-high member fraction `> 0.50` now, `< 0.30` within the prior 5 sessions, de-bounced to the run's first bar — else `"quiet"`. `null` + a reason when uncomputable. |
+| `theme_thrust_frac` | That fraction at the flag bar: covered theme members trading above their own 20d high, over the covered-member count. |
+| `theme_thrust_reason` | Why the thrust block is null: one of `no_theme`, `no_covered_member`, `thin_membership`, `short_history`. `null` when the block computed. |
+
+**Frame.** `data/baskets/ohlcv/<ticker>.parquet` — the SAME panel #4564 measured on, so a
+forward reading is comparable with the numbers in §10.1 rather than merely analogous. The
+breadth `_high_cache`/`_low_cache` parquets were measured on 2026-08-05 at a **median of 51
+non-null sessions** against the **293** an ATR-percentile-over-252d read needs (33 of ~1,550
+columns clear 252), so sourcing high/low there would have nulled the coil on ~98% of flags.
+The OHLCV store covers **1,190 of the 1,495** universe names; the rest record `ohlcv_absent`.
+
+**Theme resolution** is §9's, unchanged: Door T uses the flag's own theme, Door R the name's
+best-ranked hot theme, `null` when it has none.
+
+### 10.3 Null rules and stated construction deltas
+
+- **Null, never `False`.** An uncomputable coil is not an uncompressed name and an unreadable
+  theme is not a quiet theme, so both carry `null` plus a reason key. `False` and `"quiet"`
+  are reserved for readings that were actually taken. This is load-bearing rather than
+  stylistic: `coil_compression` and `above_20d_high` return **booleans**, so a bar inside a
+  warm-up window reads `False`, not NaN — cold data does not announce itself, it impersonates
+  a measured negative. The history floors (`COIL_MIN_SESSIONS = 293`,
+  `THRUST_MIN_SESSIONS = 27`) exist to keep that fabricated `False` out of the ledger.
+- **The crash path is all-null, including the reason keys.** The four/four slugs above cover
+  data gaps, which is what a per-row reason can honestly name. An exception inside the feature
+  computer is an engine fault, not a coverage fact, so it records §9's all-null block (every W8
+  key `null`, reasons included) and announces itself at run level — `feature_source.ignition`
+  plus a logged warning — rather than inventing a fifth coverage slug for it.
+- **Never imputed.** A store that stops before the flag bar records `no_bar_on_flag_date`;
+  carrying the last available session forward would date-shift the feature onto a bar the name
+  did not trade. Same rule §9.2 applies to admission-day volume.
+- **Strict coverage.** A theme member enters the thrust fraction only when its close and high
+  are complete across the whole trailing window; a holed member leaves the numerator **and the
+  denominator**. `thin_membership` below `THRUST_MIN_MEMBERS = 6`, the stand-in's own
+  readability floor.
+- **DELTA — the thrust de-bounce is kept.** `"thrusting"` is an event-day reading, so most
+  flags will read `"quiet"`. That is deliberate: #4564's +1.31/+2.04/+4.67pp was measured on
+  coiled members **on the thrust bar** (n=228). Recording a standing "fraction is high"
+  condition would accrue a population the study never graded, and the forward comparison would
+  not be a comparison.
+- **DELTA — holes are dropped, not held.** The stand-in read a panel where a missing bar stayed
+  NaN. Held as NaN, every rolling window covering the hole returns NaN and — because the
+  detector is a boolean AND — lands as `False`, i.e. a fabricated "not compressed". The per-name
+  read here drops holed rows instead and computes over the bars the name actually traded, at the
+  cost of a window spanning more calendar time than sessions. Neither choice is free; this one
+  cannot manufacture a negative. The W8 frame is survivor-lean (119 of 120 sampled names carry
+  bars to the final session), so it bites rarely.
+- **DELTA — no PIT membership.** The stand-in honoured each basket's `added`/`removed` dates.
+  `site/marketdata/subsector_rotation.json` is a nightly snapshot carrying no membership
+  history, so the fraction is read over the theme's CURRENT member set across the trailing
+  window. §9's relay feature already has this property. Stated, not fixed: inventing membership
+  dates the artifact never recorded would be the worse error.
+- **DELTA — the flag bar is not S-COIL's graded event.** S-COIL grades the **release** bar
+  (first close above the prior 21d high out of an armed run). A door flag is its own trigger and
+  coincides with a release only by accident. What is recorded is therefore the **arming state**,
+  which ESX §9 / DT-R5 ban as a standalone **surfaced or graded** read. It is recorded here in a
+  no-authority shadow ledger with no surface, no rank and no grade of its own, and this addendum
+  grants it none. A future surface would need its own adjudication, not this section.
+
+### 10.4 The horizon mismatch — stated, not papered over
+
+**S-COIL's only measured payoff was at H=63. §2 grades H=10 and H=21, and nothing else.**
+
+Those are exactly the two horizons where S-COIL came back null (+0.12 and +0.24, both CIs
+straddling zero). So the coil keys accrue a state whose measured effect this ledger's ruler
+**cannot currently see**. That is a real limitation of recording it here, and it is worth
+recording anyway — the state is cheap, it is needed as the candidate leg of the thrust reading
+regardless, and a state not accrued tonight is unmeasurable for every row accrued before
+somebody notices.
+
+What this addendum explicitly does **not** do is add an H=63 mark to fix the mismatch. Changing
+the horizon set is a §2 change and therefore a §8 amendment with its own restart of the accrual
+clock — not something an addendum may do silently to make its own feature look promotable. Any
+future coil promotion read must either state that it is reading a longer horizon than §2 grades
+(and register it properly first), or accept that it is testing the sensor at the two horizons
+where it already failed.
+
+The thrust keys carry no such mismatch: the surviving arm cleared zero at **H=10 and H=21**,
+both of which §2 grades.
+
+### 10.5 Authority — none, by the same structural fences as §9
+
+§9.3 applies unchanged and its fences are the same code path: computed after every fire
+decision, the priority sort, the cap and the dedupe; degrade-to-null on any failure; the grader
+stays blind (`tests/test_prophet_doors.py::TestFeatureScopeFences` iterates `FEATURE_KEYS`, so
+the new keys are covered without a new rule); constants segregated into the analysis block.
+
+`TestFireInvariance` now seeds the ignition store too, and carries an explicit guard
+(`test_the_ignition_features_actually_computed_in_this_fixture`) asserting the W8 keys really
+computed in that fixture — an invariance test whose features all degraded to null would agree
+with itself no matter what the feature computer did.
+
+**Cost.** Measured 2026-08-05 against the live store: a full 25-flag door computes in **0.66 s**,
+including the one-time load of its 128 hot-theme members (~3.3 ms/ticker, ~27 ms/flag amortised).
+Bounded by construction — at most `2 × MAX_FLAGS_PER_DOOR` coil reads plus the members of at
+most `TOP_K_THEMES` themes, each theme's thrust computed once and shared by every flag in it,
+every read cached per run. Against the doors' own ~159 s universe pass this is under 1%.
+
+### 10.6 What this addendum does not do
+
+It adds no gate, no horizon, no comparator, no score, no composite and no ordering. §4's four
+gates remain the only promotion trigger, and a coil or thrust result cannot rescue a failure
+there. These fields are inputs to the **adjudication** a §4 pass opens — never evidence a door
+can pass a gate with.
+
+---
+
 *Related: `PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md` (§5 W3, the program),
 `PROPHET_US_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md` (§4.1, the addendum's origin),
 `PROPHET_STAGE_QUALITY_PREREG.md` (the prereg form this follows),

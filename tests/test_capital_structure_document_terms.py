@@ -33,6 +33,7 @@ from engine.capital_structure.source_identity import (
     manifest_id_for,
     validate_manifest_retained_bytes_binding,
 )
+import scripts.compile_capital_structure_document_terms as compile_capital_structure_document_terms
 from scripts.compile_capital_structure_document_terms import (
     DOCUMENT_TERM_COLUMNS,
     compile_from_disk,
@@ -1708,6 +1709,91 @@ def test_disk_compiler_resolves_mixed_manifest_namespaces_independently(tmp_path
     assert result["new_observations"] == 10
     ledger = pd.read_parquet(tmp_path / "document_term_observations.parquet")
     assert set(ledger["issuer_id"]) == {"sec:cik:0000000001", "sec:cik:0000000002"}
+
+
+def _root_span_only_fixture() -> tuple[bytes, dict]:
+    """A deferral row: the whole document is the only evidence span.
+
+    Declaring form ``S-3`` against an ``S-3/A`` primary document makes
+    ``_eligible_documents`` return nothing, so every row defers with
+    ``eligible_document_not_found`` -- no child document, and the manifest root
+    as its single span. That is the shape the 2026-08-06 nightly aborted on.
+    """
+    raw = FIXTURE.read_bytes().replace(b"<TYPE>S-3", b"<TYPE>S-3/A")
+    return raw, _manifest(raw, form="S-3")
+
+
+def test_disk_compiler_binds_root_span_only_rows_against_their_retained_bytes(tmp_path):
+    """Regression: run 31067383446 aborted the whole nightly on this shape.
+
+    ``_validate_observation_lineage`` used to read source bytes only for rows
+    carrying a child document or a span narrower than the document, and pass
+    ``None`` for the rest. ``validate_observation_source_binding`` re-derives
+    manifest identity from the submission envelope first, so it requires the
+    bytes for every row -- the deferral rows below made it raise
+    ``ManifestIdentityError("retained source bytes are required")`` and the
+    collect job exited 1 with no ledger written.
+    """
+    raw, manifest = _root_span_only_fixture()
+    _write_ledger(source_ledger_path(tmp_path), [manifest])
+
+    class Store:
+        store_id = "r2_shared"
+
+        def get_verified(self, object_key: str, expected_sha256: str) -> bytes | None:
+            return raw
+
+    result = compile_from_disk(
+        root=tmp_path, generated_at="2026-08-03T00:00:00Z", source_store=Store()
+    )
+    assert result["status"] == "ok"
+    assert result["new_observations"] == 5
+
+    ledger = pd.read_parquet(tmp_path / "document_term_observations.parquet")
+    assert len(ledger) == 5
+    observations = [json.loads(value) for value in ledger["observation_json"]]
+    # Pin the SHAPE too. Without this the fixture could drift into carrying a
+    # child document or a table span, and the test would keep passing while no
+    # longer exercising the path that broke.
+    assert {row["state"]["reason"] for row in observations} == {"eligible_document_not_found"}
+    assert all(row["document"]["child_document_type"] is None for row in observations)
+    assert all(
+        {span["locator_type"] for span in row["evidence"]["spans"]} == {"document"}
+        for row in observations
+    )
+
+
+def test_lineage_validation_reads_retained_bytes_for_every_row_shape(tmp_path):
+    """The lineage pass must ASK for the bytes, not decide the row is exempt.
+
+    Pinned on the reader rather than on the outcome: the compiler's memoized
+    reader means a byte read is a dict hit by the time lineage runs, so a
+    re-introduced shortcut would be invisible to timing or to a store call
+    count. Asking is the behaviour under test.
+    """
+    raw, manifest = _root_span_only_fixture()
+    observations = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z"
+    )["observations"]
+    assert observations, "fixture must produce rows"
+
+    asked: list[str] = []
+
+    def spy(record):
+        asked.append(str(record["manifest_id"]))
+        return raw
+
+    compile_capital_structure_document_terms._validate_observation_lineage(
+        observations, [manifest], _contract(), source_reader=spy,
+    )
+    assert asked == [str(manifest["manifest_id"])]
+
+    # Genuinely absent bytes stay a hard, named refusal -- the all-or-nothing
+    # law: no partial ledger, and never a quiet pass on unbound evidence.
+    with pytest.raises(ValueError, match="source bytes are unavailable"):
+        compile_capital_structure_document_terms._validate_observation_lineage(
+            observations, [manifest], _contract(), source_reader=lambda record: None,
+        )
 
 
 def test_debt_and_unit_rows_have_safe_explicit_dimensions_not_share_defaults():

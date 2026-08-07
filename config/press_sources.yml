@@ -523,6 +523,91 @@ citation:
     - forexlive.com
     - investinglive.com
 
+  # ───────────────────────────────────────────────────────────────────────────
+  # THE CARD-CHIP NAME ALLOWLIST (operator ruling 2026-08-06)
+  #
+  # The chip at the foot of a breaking card. On 2026-08-05 it printed
+  # "ZeroHedge · WIRE SERVICE", "CNBC · WIRE SERVICE" and
+  # "ForexLive · WIRE SERVICE" and the operator killed the name outright. On
+  # 2026-08-06 the operator narrowed that kill: "name real newswires only" —
+  # a real newswire or a primary source MAY be named, everything else may not.
+  # ZeroHedge and ForexLive were the two that started it and they stay unnamed;
+  # CNBC is named.
+  #
+  # DEFAULT-DENY, and the list is the WHOLE admission. A source that appears on
+  # neither list below draws its TIER CAPTION alone ("WIRE SERVICE") or, for the
+  # unlabelled tier, the bare seal. The lists live here rather than in code so
+  # the operator can add or retire a masthead without a deploy; the code
+  # (engine/marketing/source_authority.card_chip_name) supplies NO built-in
+  # names, so deleting these keys silences every chip rather than falling back
+  # to a hidden default.
+  #
+  # MATCHED ON THE DISPLAY NAME, lower-cased and exact — the chip is deciding
+  # about the exact string it is about to draw, so the string is the key. Never
+  # a substring: "Reuters-style" and "Not-CNBC" must not match. A source's
+  # display name is `source_name` in config/marketing.yml `breaking.sources`;
+  # add the name AS WRITTEN there. (The POST BODY's credit clause is a different
+  # question with an item in hand, so it keeps host matching — see
+  # `primary_extra` / `marquee_extra` above. These two policies are deliberately
+  # separate: `never_cite` retires a masthead from the post text, this list
+  # admits one to the picture.)
+  #
+  # OUR OWN DESKS ARE NOT HERE AND MUST NOT BE ADDED. A card that signs itself
+  # is not a citation. The earnings lane's "Earnings call transcript" is
+  # likewise absent on purpose: it is a description of an artefact, not a
+  # masthead, and it draws "OFFICIAL SOURCE" alone.
+  card_chip:
+    # OFFICIAL — the body that ISSUED the fact. Drawn as "<name> · OFFICIAL
+    # SOURCE" (the operator's own example: "Federal Reserve · OFFICIAL SOURCE"
+    # is two facts and is lawful). Only reached by a source whose configured
+    # tier is `official`; naming is still gated on this list.
+    official:
+      - federal reserve
+      - bureau of labor statistics
+      - bureau of economic analysis
+      - white house
+      # Not live in breaking.sources yet — listed because the operator named
+      # them and because an official feed must not have to wait for a deploy.
+      - u.s. treasury
+      - treasury
+      - european central bank
+      - bank of japan
+      - bank of england
+      - securities and exchange commission
+      - sec
+    # NEWSWIRE — a primary newswire or newsroom whose masthead lends standing.
+    # Drawn as "<name> · WIRE SERVICE". The bar is "would a reader think better
+    # of us for citing it", which is why the list is short and boring.
+    #
+    # DELIBERATELY ABSENT, though all five are configured `tier: wire` in
+    # config/marketing.yml and will now draw the caption alone: ZeroHedge and
+    # ForexLive (the operator's two named cases), Investing.com (already on
+    # `never_cite` above), CoinDesk and Cointelegraph (crypto reference desks,
+    # not newswires — the operator did not name them, and default-deny means
+    # the silence is the ruling, not an oversight). Adding one is a one-line
+    # edit and an operator call.
+    newswire:
+      - reuters
+      - bloomberg
+      - associated press
+      - the associated press
+      - afp
+      - agence france-presse
+      - dow jones
+      - cnbc
+      - the wall street journal
+      - wall street journal
+      - wsj
+      - financial times
+      - the financial times
+      - ft
+      - nikkei
+      # Dow Jones mastheads carried as their own feeds; MarketWatch is live in
+      # breaking.sources today.
+      - marketwatch
+      - barron's
+      - barrons
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Wire lane emission policy — flagship interim lane (B1). Only the top-K highest
 # salience wire items/day may emit for the flagship account; counter persisted in

@@ -1,0 +1,128 @@
+{#- ================== US BOTTOMING-WATCH LANE (W-A, restored) ==================
+   The sixth strip of the US act board, sitting UNDER the five action lanes on the
+   Sector Intelligence Overview (sector_central.html).
+
+   WHY THIS FILE EXISTS. #4599 shipped this lane on sector_central because the
+   cycle organ had written `b-gold_miners: phase=Trough, osc_slope=+1.3` while the
+   board showed gold_miners on reduce/avoid — "the engine saw it; nothing the
+   operator looks at said so". #4642 then transplanted the us_stocks five-lane
+   board over sector_central's own five lanes; its summary called the board it
+   replaced "the client-rendered 4-lane themes-only board", but the deleted code
+   ran FIVE actLane() calls — buy, wait, trim, avoid, AND bottom. Both boards had
+   five lanes, so the swap read as like-for-like and the bottoming lane went dark
+   while engine/us_act_now.py and scripts/build_baskets.py kept computing and
+   shipping its payload. This restores the display half. The engine, the builder,
+   and the payload are untouched.
+
+   LANE, NOT COLUMN. #4599's design note is "fifth lane under the existing four
+   (they keep their 4-col geometry at every breakpoint)" — the bottoming lane has
+   never been an action column. It is a WATCH surface: the five lanes above answer
+   "what do I do", this one answers "what is forming". It spans the full grid width
+   (grid-column: 1/-1) rather than squeezing the action lanes into a sixth column.
+
+   COPY LAW (F1/W8-R3, doctrine Law 1-2). Watch vocabulary only, never a buy verb.
+   Two payload fields are deliberately NEVER rendered here — `signal` ("BUY") and
+   `timing_state` (whose real vocabulary includes the literal "FRESH BUY").
+   The cycle organ's registered output is instead quoted as the fixed phrase
+   "cycle turn signal — watch only", with its trend-gate conflict printed beside
+   it. tests/test_us_act_now.py pins that fence against this file.
+
+   The lane's fixed wording is authored HERE; its disclosures ship from the engine
+   (`bottoming_authority`) so the page cannot drift from the measured basis. An
+   older artifact without the authority block renders no disclosure rather than a
+   blank one. Hover copy rides data-tip-en/data-tip-zh — never a translated HTML
+   title attribute, which the language switch cannot reach (house law, CI-guarded).
+   That fence greps this file for the literal attribute spelling, so do not write it
+   out even inside a comment: the guard cannot tell prose from markup.
+
+   Host contract: sector_central passes `bottoming` = theme_intel.act_now sliced to
+   {bottoming_watch, dual_read_ids, recovering_ids, bottoming_authority}. Absent or
+   empty → the strip self-hides. t()/tr() come from the host Jinja env. -#}
+{#- `is defined` is load-bearing: the same board include renders on us_stocks.html
+    via dashboard.html.j2, where no bottoming payload is passed. Default Undefined is
+    falsy so `bottoming and ...` already short-circuits, but the explicit guard keeps
+    the strip self-hiding if a host ever switches to StrictUndefined. -#}
+{%- if bottoming is defined and bottoming and bottoming.get('bottoming_watch') is not none -%}
+{%- set _bw_rows = bottoming.get('bottoming_watch') or [] -%}
+{%- set _bw_auth = bottoming.get('bottoming_authority') or {} -%}
+{#- Both id spellings ride the set ('b-uranium_miners' and 'uranium_miners'), so a
+    row matches whichever namespace produced it. -#}
+{%- set _bw_dual = bottoming.get('dual_read_ids') or [] -%}
+  <style>
+  /* Bottoming watch — the act board's watch strip. Reuses the V2 lane chrome
+     (.actcol/.acth/.actitem/.ab-chip) verbatim; the only additions are the
+     full-width span and the internal row grid, because this strip is as wide as
+     the whole board rather than one column. Rides with the include for the same
+     reason the board CSS does: editing theme.css rehashes it and stales the ?v=
+     stamp on ~176 committed pages. */
+  .actcol.act-bottom { grid-column: 1 / -1; --act-accent: var(--info); --act-accent-ink: var(--ink-info, var(--info)); }
+  .abw-rows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; padding: 6px 0; }
+  @media (max-width: 900px) { .abw-rows { grid-template-columns: minmax(0, 1fr); } }
+  /* The turn reading sits right of the name, like .act-row-score on a theme row.
+     Info-toned, NOT green: a rising oscillator on a watch lane is a state, not an
+     endorsement, and green here would read as the buy verb this lane must not carry. */
+  .abw-turn { flex: none; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+              white-space: nowrap; color: var(--ink-info, var(--info)); cursor: help; }
+  .abw-foot { padding: 8px 13px 10px; border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+              font-size: 10.5px; line-height: 1.5; color: var(--muted); }
+  .abw-foot p { margin: 0 0 4px; }
+  .abw-foot p:last-child { margin-bottom: 0; }
+  </style>
+  <div class="actcol act-bottom" id="ab-bottom">
+    <div class="acth">
+      <div class="acth-title-row">
+        <span class="acth-emoji">🔵</span>
+        <span class="acth-name"><span class="l-en">Bottoming watch</span><span class="l-zh">筑底观察</span></span>
+        <span class="acth-count">{{ _bw_rows | length }}</span>
+      </div>
+      <div class="acth-sub"><span class="l-en">cycle lows forming — watch, don't chase</span><span class="l-zh">周期底部形成中——观察，勿追</span></div>
+    </div>
+    <div class="actbody">
+      {%- if _bw_rows %}
+      <div class="abw-rows">
+        {%- for x in _bw_rows %}
+        {#- Dual read (FT-R1): this row also sits on reduce/avoid. Both reads are
+            shown rather than picking one — the chip names the disagreement. -#}
+        {%- set _dual = (x.id in _bw_dual) or (x.cid in _bw_dual) -%}
+        <a class="actitem" data-rpop href="{{ x.href }}">
+          <span class="act-row-top">
+            <span class="ai-bdg">{{ '🧩' if x.kind == 'BASKET' else '🏛' }}</span>
+            <span class="act-row-name"><span class="l-en">{{ x.name | e }}</span><span class="l-zh">{{ (x.name_zh or x.name) | e }}</span></span>
+            {%- if x.osc_slope is not none %}
+            <span class="abw-turn" data-tip-en="Momentum is turning up from the low — a bigger number is a sharper turn. A first hint, not a buy signal." data-tip-zh="动能正从低位回升——数字越大转向越明显。仅是初步迹象，非买入信号。">&#8599; {{ '%.1f'|format(x.osc_slope) }}</span>
+            {%- endif %}
+          </span>
+          {%- if x.cycle_signal or x.gate_conflict or _dual %}
+          <span class="act-row-chips">
+            {#- The cycle organ's own registered output, quoted as such. The raw
+                field is never printed: its vocabulary is a buy verb. -#}
+            {%- if x.cycle_signal %}<span class="ab-chip ab-chip--info" data-tip-en="The cycle model registered a turn on this name. It is shown as the model's own output, quoted — this lane is watch-only and never a buy signal." data-tip-zh="周期模型对该名称登记了一次转折。此处按模型自身输出原样引用——本栏仅供观察，绝非买入信号。"><span class="l-en">cycle turn signal — watch only</span><span class="l-zh">周期转折信号——仅观察</span></span>{% endif -%}
+            {%- if x.gate_conflict %}<span class="ab-chip ab-chip--warn" data-tip-en="The cycle read turned up, but price is still below its 200-day trend — the longer-term gate has not opened. The two disagree; both are shown." data-tip-zh="周期读数已转升，但价格仍低于200日趋势线——长期闸门尚未打开。两者判读不一致，并列显示。"><span class="l-en">below 200-day trend — gate shut</span><span class="l-zh">低于200日趋势——闸门关闭</span></span>{% endif -%}
+            {%- if _dual %}<span class="ab-chip ab-chip--warn" data-tip-en="The longer trend still says reduce, but the cycle read shows a low forming. This name also appears on the Reduce / Stand aside lanes above — both reads are shown so you can see the disagreement." data-tip-zh="长期趋势仍建议减仓，但周期读数显示底部正在形成。该名称同时出现在上方的减仓／观望栏——两种判读并列显示，便于看清分歧。"><span class="l-en">may be bottoming</span><span class="l-zh">或正筑底</span></span>{% endif -%}
+          </span>
+          {%- endif %}
+          {%- if x.pos is not none %}
+          <span class="act-row-stat"><span class="l-en">position in cycle range</span><span class="l-zh">周期区间位置</span> <b>{{ '%.0f'|format(x.pos) }}</b>/100</span>
+          {%- endif %}
+        </a>
+        {%- endfor %}
+      </div>
+      {%- else %}
+      <p class="muted sm" style="padding:10px 13px"><span class="l-en">no basing candidates tonight</span><span class="l-zh">今晚无筑底候选</span></p>
+      {%- endif %}
+    </div>
+    {#- Disclosures ship from the engine, printed only when they describe something
+        actually on the page: the honest null when the lane has rows, the graduation
+        note only when a recovering chip was rendered on the board above. -#}
+    {%- if (_bw_rows and _bw_auth.get('null_disclosure_en')) or (bottoming.get('recovering_rendered') and _bw_auth.get('recovering_disclosure_en')) %}
+    <div class="abw-foot">
+      {%- if _bw_rows and _bw_auth.get('null_disclosure_en') %}
+      <p><span class="l-en">{{ _bw_auth.get('null_disclosure_en') }}</span><span class="l-zh">{{ _bw_auth.get('null_disclosure_zh') or _bw_auth.get('null_disclosure_en') }}</span></p>
+      {%- endif %}
+      {%- if bottoming.get('recovering_rendered') and _bw_auth.get('recovering_disclosure_en') %}
+      <p><span class="l-en">{{ _bw_auth.get('recovering_disclosure_en') }}</span><span class="l-zh">{{ _bw_auth.get('recovering_disclosure_zh') or _bw_auth.get('recovering_disclosure_en') }}</span></p>
+      {%- endif %}
+    </div>
+    {%- endif %}
+  </div>
+{%- endif -%}

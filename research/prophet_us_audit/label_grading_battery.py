@@ -56,9 +56,25 @@ import pandas as pd
 
 REPO = str(Path(__file__).resolve().parents[2])
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, "label_grading_battery_results.json")
 os.chdir(REPO)
 sys.path.insert(0, REPO)
+sys.path.insert(0, HERE)
+
+# PRICE-ADJUSTMENT AUDIT (2026-08-06). Sections 2/3 price NAMES from the breadth close
+# caches (raw between rebuilds) and the BENCHMARK from data/yahoo/SPY.parquet
+# (back-adjusted), so a name going ex-distribution inside a window books its own payout
+# as a loss against an unaffected SPY. Section 1 reads `excess_spy` off the production
+# ledger and inherits the same mixed basis from scripts/grade_us_board.py.
+# `PRICE_BASIS=adjusted` re-prices the panel adjusted-first; `cache` is the default and
+# reproduces the shipped JSON. See PRICE_ADJUSTMENT_AUDIT_2026-08-06.md.
+import price_ladder                                             # noqa: E402
+
+PRICE_BASIS = os.environ.get("PRICE_BASIS", "cache").strip().lower()
+if PRICE_BASIS not in ("cache", "adjusted"):
+    raise SystemExit(f"PRICE_BASIS must be 'cache' or 'adjusted', got {PRICE_BASIS!r}")
+OUT = os.path.join(HERE, "label_grading_battery_results.json"
+                   if PRICE_BASIS == "cache"
+                   else "label_grading_battery_adjusted_rerun.json")
 
 from engine import confluence_tiers as ct                      # noqa: E402
 from engine import us_board_rank as ubr                        # noqa: E402
@@ -370,6 +386,27 @@ def load_universe() -> tuple[pd.DataFrame, dict[str, pd.Series], dict]:
     wide = wide.loc[wide.index <= pd.Timestamp(REPRO_ASOF)]      # frozen-replay pin
     px = wide.loc[:, wide.notna().sum() >= MIN_HIST]
 
+    # PRICE-ADJUSTMENT AUDIT: re-price the SAME names, on the SAME calendar, in the SAME
+    # observed cells, through the adjusted-first ladder — so a delta against the default
+    # run is attributable to the price basis and to nothing else. The cell mask is
+    # load-bearing: the large-cap `breadth` cache starts 2025-03-18 while
+    # data/baskets/ohlcv carries those names back to 2014, so an unmasked swap would hand
+    # the large-cap sleeve two extra years of warm-up and read a COVERAGE change as a
+    # basis effect (memory: comparing-across-measures-manufactures-results). Names absent
+    # from every adjusted store fall through to the cache and are counted, never dropped.
+    ladder_prov = {"basis": "cache"}
+    if PRICE_BASIS == "adjusted":
+        adj, ladder_prov = price_ladder.close_panel(
+            list(px.columns), asof=REPRO_ASOF, start=px.index.min())
+        adj = adj.reindex(index=px.index, columns=px.columns)
+        ladder_prov["cells_observed"] = int(px.notna().to_numpy().sum())
+        ladder_prov["cells_masked_out"] = int((adj.isna() & px.notna()).to_numpy().sum())
+        px = adj.where(px.notna())
+        ladder_prov["basis"] = "adjusted"
+        ladder_prov["held_fixed"] = ("universe, session calendar and observed-cell mask "
+                                     "taken from the cache panel; only price VALUES differ")
+        ladder_prov.pop("price_source", None)     # per-name stamp is large; counts kept
+
     deep: dict[str, pd.Series] = {}
     deepened = 0
     ydir = Path("data/yahoo")
@@ -404,6 +441,16 @@ def load_universe() -> tuple[pd.DataFrame, dict[str, pd.Series], dict]:
                         "the gate they grade",
         "splice_rule": "cache value wins on any overlapping date; data/yahoo/<T>.parquet "
                        "fills earlier history only",
+        "price_basis": PRICE_BASIS,
+        "price_ladder": ladder_prov,
+        # PRICE-ADJUSTMENT AUDIT: the original overlap check ("median max relative
+        # difference 0.000000 over a 40-name sample") could not have found this defect.
+        # 72.1% of names are bit-identical across the two bases, so the MEDIAN of a
+        # 40-name sample is 0.000000 whether or not the other 27.9% diverge. A max or a
+        # nonzero-share over the whole universe is the statistic that can see it.
+        "overlap_check_caveat": ("the median-over-sample overlap check is insensitive to "
+                                 "this defect by construction; see "
+                                 "PRICE_ADJUSTMENT_AUDIT_2026-08-06.md"),
     }
     return px, deep, prov
 

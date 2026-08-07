@@ -11,10 +11,33 @@ label reads FUTURE bars, so the earliest legal anchor for any forward-return gra
 which the label became knowable — the rule china_standout_track enforces (board-date close → T+1
 fill). If _buy_filter is ever refactored to not consult i+1/i+2, these guards must be revisited.
 """
+from datetime import date
+
 import numpy as np
 import pandas as pd
 
 from engine import signal_quality as sq
+from engine.session_anchor import session_positions
+from lib import nyse_calendar
+
+# REAL NYSE SESSIONS, not ``pd.bdate_range`` (changed 2026-08-06, era
+# ``sq-abs-session-2026-08-06``). A bdate index carries every market HOLIDAY as if it were
+# a bar, and under the absolute anchor a date absent from the reference takes the NEXT
+# session's position — so a synthetic holiday bar shares a bucket slot with the session
+# after it and the earlier close is dropped by the per-bucket ``.last()``. That is correct,
+# documented behaviour for a date the market was shut (session_anchor's three edges), but
+# it means a bdate fixture no longer produces the same bucket COMPOSITION a real store
+# does, and the shapes these tests hunt for — an above-200 'take', the exact i+2 boundary —
+# stop appearing. The look-ahead facts below are construction-independent and unchanged;
+# only the calendar the fixture is drawn on is now the one production actually sees.
+_SESSIONS = pd.DatetimeIndex(pd.to_datetime(
+    nyse_calendar.sessions_between(date(2024, 1, 1), date(2027, 12, 31))))
+
+
+def _sessions(n: int) -> pd.DatetimeIndex:
+    """The first ``n`` real NYSE sessions from 2024-01-01 — the old fixtures' start date."""
+    assert len(_SESSIONS) >= n, "reference calendar too short for this fixture"
+    return _SESSIONS[:n]
 
 
 def _sig_for(close: pd.Series) -> pd.DataFrame:
@@ -24,9 +47,18 @@ def _sig_for(close: pd.Series) -> pd.DataFrame:
 
 
 def test_buy_filter_take_label_depends_on_the_NEXT_bar():
-    """held = c[i+1] > c[i]: flip only bar i+1 and a 'take' must become a 'block'. Pure look-ahead."""
-    t = np.arange(420)
-    idx = pd.bdate_range("2024-01-01", periods=420)
+    """held = c[i+1] > c[i]: flip only bar i+1 and a 'take' must become a 'block'. Pure look-ahead.
+
+    DEEPENED 420 → 800 sessions (2026-08-06, era ``sq-abs-session-2026-08-06``). The
+    assertion is unchanged; only the fixture's PRECONDITION needed more room. This
+    deterministic sine yields exactly one above-200 buy cross in 420 sessions, and under the
+    re-anchored grid that one cross lands on a bar whose next close is DOWN — a 'block', so
+    the loop finds no 'take' to overturn and the test fails on its own setup rather than on
+    the fact it pins. 800 sessions yield two above-200 takes, so the precondition holds with
+    margin instead of by luck.
+    """
+    t = np.arange(800)
+    idx = _sessions(800)
     close = pd.Series(100 + 10 * np.sin(t / 25) + 0.10 * t + 3 * np.sin(t / 6), index=idx)
     sig = _sig_for(close)
     n = len(sig)
@@ -56,7 +88,7 @@ def test_pending_when_future_bar_is_unavailable():
     """At the last bar the label CANNOT be known (needs i+1) → 'pending', never a booked 'take'.
     This is exactly why a live board must anchor a grade on a PAST, resolved bar, not the marker."""
     t = np.arange(300)
-    idx = pd.bdate_range("2024-01-01", periods=300)
+    idx = _sessions(300)
     close = pd.Series(100 + 8 * np.sin(t / 20) + 0.08 * t, index=idx)
     sig = _sig_for(close)
     n = len(sig)
@@ -71,7 +103,7 @@ def test_analyze_marker_dates_are_pre_resolution_anchors():
     whole marker stream: for each resolved buy marker there is at least one later bar in the frame
     (the confirmation bar the label consumed), i.e. no resolved label sits on the final bar."""
     t = np.arange(420)
-    idx = pd.bdate_range("2024-01-01", periods=420)
+    idx = _sessions(420)
     close = pd.Series(100 + 10 * np.sin(t / 25) + 0.10 * t + 3 * np.sin(t / 6), index=idx)
     res = sq.analyze("SYNTH", close)
     buys = [m for m in res["markers"]
@@ -91,20 +123,39 @@ def test_analyze_marker_dates_are_pre_resolution_anchors():
 def _synth(periods: int = 420) -> pd.Series:
     t = np.arange(periods)
     return pd.Series(100 + 10 * np.sin(t / 25) + 0.10 * t + 3 * np.sin(t / 6),
-                     index=pd.bdate_range("2024-01-01", periods=periods))
+                     index=_sessions(periods))
+
+
+def _independent_grid(close: pd.Series):
+    """(open_label, last_session) per 3D bucket, derived from ``session_positions`` ALONE.
+
+    Deliberately NOT a call into ``_tf_grid``: this is the independent re-derivation the
+    test below checks the engine against, so it must share nothing with it but the ruling.
+    Rewritten 2026-08-06 for era ``sq-abs-session-2026-08-06`` — it used to re-derive the
+    geometry with ``resample("3B")``, which is the construction the anchor retired.
+    """
+    idx = pd.DatetimeIndex(close.index)
+    bucket = session_positions(idx, "US") // 3
+    ok = close.notna().to_numpy()
+    g = (pd.DataFrame({"d": idx.to_numpy()[ok], "b": bucket[ok]})
+         .groupby("b")["d"].agg(["first", "last"]))
+    return (pd.Series(pd.DatetimeIndex(g["first"]), index=pd.DatetimeIndex(g["first"])),
+            pd.Series(pd.DatetimeIndex(g["last"]), index=pd.DatetimeIndex(g["first"])))
 
 
 def test_confirmation_date_is_bucket_i_plus_2s_last_daily_session():
-    """The derivation, checked against the 3B geometry re-derived independently here.
+    """The derivation, checked against the anchored geometry re-derived independently here.
 
     A mid-panel marker: its bucket sits well inside the frame, so ``i + 2`` exists and
-    the answer is that bucket's last DAILY session — not its label, which is the 3B
-    bucket's LEFT edge and precedes even its own close.
+    the answer is that bucket's last DAILY session — not its label, which is the bucket's
+    OPEN date and precedes even its own close by up to two sessions.
     """
     close = _synth()
     sig = _sig_for(close)
-    lastday = (pd.Series(close.index, index=close.index)
-               .resample("3B").last().dropna().reindex(sig.index))
+    labels, lastday = _independent_grid(close)
+    lastday = lastday.reindex(sig.index)
+    assert labels.reindex(sig.index).notna().all(), (
+        "every frame label must be a bucket OPEN date of the independent grid")
     mid = len(sig) // 2
     for i in (mid, mid + 7, mid + 13):
         got = sq.confirmation_date(close, sig.index[i])
@@ -130,8 +181,8 @@ def test_a_marker_inside_its_own_confirmation_window_degrades_to_null():
     # pinned from both sides so an off-by-one in either direction fails here.  It is
     # the same boundary _buy_filter draws with `if i + 2 >= n: pending confirmation`.
     edge = sig.index[len(sig) - 1 - sq.CONFIRM_BARS]
-    lastday = (pd.Series(close.index, index=close.index)
-               .resample("3B").last().dropna().reindex(sig.index))
+    _labels, lastday = _independent_grid(close)
+    lastday = lastday.reindex(sig.index)
     assert sq.confirmation_date(close, edge) == lastday.iloc[-1]
     # and it is the SAME boundary _buy_filter draws with `if i + 2 >= n: pending`
     assert sq._buy_filter(len(sig) - 1, sig, False, len(sig)) == (None, "pending confirmation")

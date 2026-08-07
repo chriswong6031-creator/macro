@@ -141,7 +141,7 @@ def run_replay(panel: dict, *, max_days: int, workers: int) -> dict:
 
 
 # ------------------------------------------------------------------ FRESH_TICKS sweep
-def _fresh_ticks_signal_fn(fresh_ticks: int):
+def _fresh_ticks_signal_fn(fresh_ticks: int, anchor_market: str = "US"):
     """A walk_forward signal callable whose only knob is FRESH_TICKS. It returns the daily BUY
     events of the confluence gate's FRESH tiers under a patched FRESH_TICKS — so the stop-out-vs-
     lead harness scores the freshness window directly (the same harness the tier weights used).
@@ -151,11 +151,16 @@ def _fresh_ticks_signal_fn(fresh_ticks: int):
     swept. A BUY event = a bar where a FRESH board tier (BUYABLE_TIERS = T1/T2/T3) FIRST appears (a
     new cross), leak-free (every indicator at bar t uses only data <= t). This is the completed-
     bucket / tradeable basis — the correct one for a next-bar-filled stop-out harness (a real fill
-    happens on settled data, not the provisional intrabar tail)."""
+    happens on settled data, not the provisional intrabar tail).
+
+    ``anchor_market`` picks the reference session calendar the 2D/3D buckets are anchored to
+    (engine.session_anchor). walk_forward hands the callable a bare close Series with no ticker,
+    so the market cannot be inferred here — the CN sweep MUST pass it, or every CN name would be
+    bucketed on the NYSE calendar while the live CN board is bucketed on Shanghai's."""
     def fn(close, high=None, low=None):
         c = close.dropna()
         buy = pd.Series(False, index=c.index)
-        ts = confluence_tiers.tier_stream(c, fresh_ticks=fresh_ticks)
+        ts = confluence_tiers.tier_stream(c, fresh_ticks=fresh_ticks, market=anchor_market)
         if ts.empty:
             return buy
         # a board-buyable fresh tier (T1/T2/T3 — T4 is board-excluded, matching signal_gate)
@@ -198,8 +203,10 @@ def run_fresh_sweep(panel: dict, grid, *, market: str, workers: int, ledger: Tri
 
     results = {}
     incumbent = 2
+    # "us"/"cn" are this script's own market labels; the anchor keys are the session_anchor ones.
+    anchor_market = "CN" if market == "cn" else "US"
     for g in grid:
-        res = wf.walk_forward(_fresh_ticks_signal_fn(g), wf_panel, wf.DEFAULT_CFG,
+        res = wf.walk_forward(_fresh_ticks_signal_fn(g, anchor_market), wf_panel, wf.DEFAULT_CFG,
                               metric="stop_out_rate", tag=f"fresh_{market}_{g}",
                               family=fam, log=False)
         oos = res["pooled"]["oos"]
