@@ -23,12 +23,33 @@
 # before launch. Product login (Supabase) arrives in Slice 2; for a private beta
 # right now, front this with Cloudflare Access (email OTP, zero code).
 {
-	# The CDN edge owns the public http->https redirect for the proxied hosts; don't
-	# fight it with Caddy's automatic upgrade, which can loop the edge's origin pull.
-	# Only the grey-cloud admin.* host (direct, no CDN) declares its own explicit
-	# http:// redirect block below — disable_redirects just suppresses the AUTO ones.
+	# The CDN edge owns the public http->https redirect for EVERY host in this file;
+	# don't fight it with Caddy's automatic upgrade, which can loop the edge's origin
+	# pull. disable_redirects suppresses only the AUTO upgrades — the explicit http://
+	# blocks below (the www :80 mirror, the admin redirect, the port-80 421 catch-all)
+	# still route normally.
+	#
+	# There is NO grey-cloud exception, despite what this comment claimed until
+	# 2026-08-07. admin.* is edge-proxied like the rest: it CNAMEs to
+	# admin.mastermind-x.com.eo.dnse3.com -> 43.159.99.101 / 43.159.98.106, the same
+	# EdgeOne edge IPs as apex/www/app/bot, and the edge Force-HTTPS 302s
+	# http://admin.* before this box ever sees it (all five hosts probed on :80,
+	# 2026-08-07 — every one answered 302 with `Server: TencentEdgeOne`). So the
+	# explicit http:// blocks now serve exactly ONE path: a direct-to-origin :80 hit
+	# that bypasses DNS, which ufw permits from Anywhere. Still worth keeping for
+	# that path (see the admin block), but no longer what upgrades a real visitor.
 	auto_https disable_redirects
-	# Trust Cloudflare's forwarded client IP (so logs show the real visitor).
+
+	# NOT "the real visitor" — this said "trust Cloudflare's forwarded client IP",
+	# which is not what the directive does. private_ranges trusts RFC1918 peers only,
+	# and the edge arrives from PUBLIC addresses (43.175.104.x observed on
+	# origin-pull), so it is deliberately UNTRUSTED: {remote_host}, {client_ip} and
+	# the access log all resolve to the EDGE, not the client. That default is the safe
+	# one — every real-client header the edge forwards (EO-Client-IP, CF-Connecting-IP,
+	# X-Forwarded-For) is attacker-suppliable here, because ufw lets anyone reach this
+	# box directly. Consequence worth knowing before you read a peer IP as identity:
+	# per-client keying off the peer now buckets ALL edge-borne traffic together (see
+	# X-Admin-Client-IP on the admin host below, where that is a live defect).
 	servers {
 		trusted_proxies static private_ranges
 	}
@@ -695,18 +716,56 @@ bot.mastermind-x.com {
 
 # ---- admin.mastermind-x.com — the Admin console (python -m admin :8787) -------
 # Authenticated control + observability console (admin.service on 127.0.0.1:8787).
-# UNLIKE the other hosts this is GREY-CLOUD / DNS-only (A record admin ->
-# 146.190.142.17, NOT proxied through Cloudflare), so Caddy provisions a REAL
-# Let's Encrypt cert over HTTP-01 (port 80 is kept open to all in ufw by
-# firewall-cloudflare.sh's grey-cloud escape hatch) — no `tls internal`, no
-# Cloudflare in front. The app enforces password + signed-session auth
-# (ADMIN_PASSWORD in /etc/macro-admin.env); Caddy adds anti-framing + HSTS headers.
+# The app enforces password + signed-session auth (ADMIN_PASSWORD in
+# /etc/macro-admin.env); Caddy adds anti-framing + HSTS headers.
 #
-# The global `auto_https disable_redirects` (correct for the CF-fronted hosts)
-# would otherwise serve this host over PLAINTEXT http:// with no upgrade — and the
-# login posts the shared password. So we add an explicit http:// block that
-# force-redirects to https:// (Caddy still answers the ACME HTTP-01 challenge on
-# :80 ahead of this redirect, so cert issuance/renewal is unaffected).
+# NOT GREY-CLOUD. This block claimed for months that admin.* was a direct A record
+# with no CDN in front, and the global options block above repeated it. Both were
+# wrong. Corrected and re-verified live 2026-08-07:
+#
+# * admin is a CNAME to admin.mastermind-x.com.eo.dnse3.com -> 43.159.99.101 /
+#   43.159.98.106 — the same EdgeOne edge IPs as apex/www/app/bot. No host in this
+#   estate is grey-cloud; :80/:443 being open to Anywhere in ufw (the
+#   firewall-cloudflare.sh escape hatch) is what makes the direct path reachable,
+#   not evidence that DNS points here.
+# * Public TLS is terminated AT THE EDGE — TrustAsia DV (EdgeOne's CA), Jun 30 ->
+#   Sep 27 2026. Visitors never see the certificate this box holds.
+# * The Let's Encrypt cert Caddy provisions (YE1, Jun 30 -> Sep 28 2026) is real and
+#   in use, but only on the edge's origin-pull and on direct-to-IP hits. Keeping it
+#   over `tls internal` is fine — origin-pull is non-strict either way.
+#
+# ACME HTTP-01 SURVIVES THE EDGE HOP, password gate and all. NOT "on :80 ahead of
+# this redirect" as this comment used to say — :80 never reaches the box for a real
+# client. LE follows the edge's 302 to https://admin.mastermind-x.com/.well-known/…,
+# the edge origin-pulls it here, and Caddy's solver answers AHEAD of routing, so
+# neither the admin password gate nor the reverse_proxy below can shadow it; the
+# edge does not gate /.well-known/acme-challenge/* on this host either. Verified by
+# GETting the challenge path through the edge and watching the handler fire in
+# `journalctl -u caddy` (the 401 the probe gets back is the admin app answering
+# after the solver falls through — the journal line is the evidence, not the body):
+#   "looking up info for HTTP challenge" identifier=admin.mastermind-x.com
+#   remote_addr=43.175.104.236 error="no information found to solve challenge…"
+# "no information found" just means no order was in flight; the point is that the
+# request REACHED the solver, from an edge IP. Zero ACME errors for this host in the
+# journal, and Caddy polls LE's ARI for it roughly every 6h.
+#
+# NB NO RENEWAL HAS BEEN EXERCISED since admin moved behind the edge — the cert is
+# still the original 2026-06-30 issuance, so a clean journal is not proof the next
+# one works. ARI selects 2026-08-29 20:13 UTC (window 08-28 12:07 -> 08-30 07:18);
+# the apex's first lands the same week. Watch both. If either fails, the fix is
+# `tls internal` here (origin-pull is non-strict, exactly like www), NOT a DNS
+# revert — TLS-ALPN-01 genuinely is dead behind the edge, so HTTP-01 is the only
+# live path and must not be removed.
+#
+# WHY THE http:// BLOCK BELOW STILL EARNS ITS KEEP, now that its original reason is
+# gone. It no longer fires for real visitors: the edge Force-HTTPS 302s them before
+# the origin sees the request, so this host cannot serve the password login over
+# plaintext regardless. It survives for the one path that bypasses the edge — a
+# direct-to-origin :80 hit — where it 301s to https instead of dropping into the
+# port-80 catch-all's 421 (both verified 2026-08-07). It cannot fight the edge,
+# because anything arriving through the edge was already redirected there. Deleting
+# it would not expose the login (the catch-all 421s), but it would turn a working
+# upgrade into a confusing error for the direct path.
 http://admin.mastermind-x.com {
 	redir https://admin.mastermind-x.com{uri} permanent
 }
@@ -729,10 +788,24 @@ admin.mastermind-x.com {
 
 	handle {
 		reverse_proxy 127.0.0.1:8787 {
-			# admin.* is grey-cloud / direct-to-origin (no CDN), so the TCP peer IS
-			# the real client. Inject it as a trusted header the app reads for its
-			# per-client login lockout; replacing a caller-supplied value prevents
-			# brute-force clients from rotating lockout buckets.
+			# {remote_host} is the verified TCP peer and header_up REPLACES any
+			# caller-supplied X-Admin-Client-IP, so this value cannot be spoofed.
+			# That half still holds. What does NOT hold is the claim this comment
+			# carried until 2026-08-07 — that admin.* is "grey-cloud /
+			# direct-to-origin (no CDN), so the TCP peer IS the real client". It is
+			# edge-proxied (see the block header), so for every visitor arriving
+			# through the edge the peer is an EDGE IP: a probe fired from a
+			# residential Mac landed here as 43.175.104.236.
+			#
+			# LIVE DEFECT, deliberately not fixed in this comment-only change:
+			# admin/auth.py keys its per-client login lockout (5 fails -> escalating
+			# lock, 300s cap) on this value, so all edge-borne traffic now shares ONE
+			# bucket. That inverts the property auth.py documents — "one attacker can
+			# only lock out *themselves*" — into an anonymous operator lockout. The
+			# X-Forwarded-For fallback collapses identically (Caddy appends the same
+			# peer). Recovering per-client identity means trusting EO-Client-IP only
+			# when the peer is inside the edge ranges, which is a real behaviour
+			# change with its own spoofing risk and belongs in its own PR.
 			header_up X-Admin-Client-IP {remote_host}
 		}
 	}
@@ -774,20 +847,24 @@ admin.mastermind-x.com {
 # that does not point at the box — but the pairing test forbids it anyway,
 # because the config half without the DNS half is a claim nobody verified.
 #
-# REAL CERTIFICATES, NOT `tls internal`. Every other host in this file sits
-# behind the EdgeOne CDN and uses a self-signed origin cert. These two do not:
-# they are GREY-CLOUD / direct A records, exactly like admin.mastermind-x.com
-# above, so Caddy provisions genuine Let's Encrypt certs over HTTP-01 on :80
-# (ufw keeps :80 open for the grey-cloud escape hatch). A `tls internal` here
-# would serve a self-signed cert straight to a browser — the test asserts its
-# absence.
+# REAL CERTIFICATES, NOT `tls internal`. These two are planned as direct A records
+# to 146.190.142.17 with NO CDN in front, so a browser sees this box's certificate
+# and it has to be a genuine Let's Encrypt one — ACME HTTP-01 on :80 works
+# directly for them (ufw keeps 80/443 open to Anywhere). A `tls internal` here
+# would serve a self-signed cert straight to a browser; the test asserts its
+# absence. NB this paragraph used to cite them as "GREY-CLOUD / direct A records,
+# exactly like admin.mastermind-x.com above" — admin is edge-proxied like every
+# other host here (corrected 2026-08-07), so on cutover these two would be the
+# FIRST direct hosts in the file, not a copy of an existing arrangement. Re-check
+# that assumption at cutover rather than inheriting it.
 #
 # WHY THE http:// BLOCKS EXIST: the global `auto_https disable_redirects` (right
 # for the CDN-fronted hosts, which must not fight the edge's own redirect) means
 # Caddy adds NO automatic http->https upgrade. Without an explicit redirect these
 # hosts would answer plain http from the port-80 catch-all as a 421. Caddy answers
 # ACME HTTP-01 challenges BEFORE routing, so these redirects never interfere with
-# issuance or renewal — same arrangement admin.* has run on for months.
+# issuance or renewal — the same ordering admin.* relies on, though for admin the
+# challenge now arrives via the edge's HTTPS origin-pull rather than on :80.
 #
 # ONE CANONICAL HOST. The apex (mastermindx.ai) serves; www 301s to it. Serving
 # BOTH names off one site block would put every page on two live URLs and rely
