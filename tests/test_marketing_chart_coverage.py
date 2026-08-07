@@ -24,6 +24,7 @@ ticker (education / macro / a company event) may ship text-only.
 """
 from __future__ import annotations
 
+import ast
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -40,6 +41,41 @@ def _worktree_root() -> Path:
 
 ROOT = _worktree_root()
 _FRESH = (datetime.now(timezone.utc).date() - timedelta(days=3)).isoformat()
+
+
+def _literal_binding(path: Path, name: str):
+    """A module-level literal's value, read WITHOUT importing the module.
+
+    Some modules this file needs a constant from pull pandas at module scope, and the
+    CI packs that run this file do not all install it (marketing-engine: pytest, pyyaml,
+    jinja2). Importing would make the guard a ModuleNotFoundError there, and
+    ``pytest.importorskip`` would make it a silent SKIP — a contract checked in one lane
+    and switched off in the other. This keeps it live in both.
+
+    Fails loudly rather than skipping when the binding is gone or is no longer a literal:
+    both mean the thing the caller is about to assert on has changed shape, which is
+    exactly when a guard must speak up.
+    """
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            targets = node.targets
+        elif isinstance(node, ast.AnnAssign):
+            targets = [node.target]
+        else:
+            continue
+        for target in targets:
+            if isinstance(target, ast.Name) and target.id == name:
+                assert node.value is not None, f"{path.name}: {name} has no value"
+                try:
+                    return ast.literal_eval(node.value)
+                except ValueError as exc:
+                    raise AssertionError(
+                        f"{path.name}: {name} is no longer a literal ({exc}). This guard "
+                        "reads it without importing the module — see the call site — so "
+                        "it must stay one, or the guard needs a different anchor."
+                    ) from exc
+    raise AssertionError(f"{path.name}: no module-level binding named {name!r}")
 
 
 @pytest.fixture(autouse=True)
@@ -264,12 +300,19 @@ def test_price_search_order_matches_prophet():
     # The literal has since moved into engine/prophet_bridge.py as _PLAN_PRICE_DIRS, which
     # build_prophet imports (scripts/build_prophet.py:74) and iterates (:1137) — so the
     # grep could never match again however correct the code was. It went red fleet-wide
-    # on 2026-08-07 while the contract below was intact the whole time. Asserting on the
-    # imported value pins the real contract and survives the next refactor; it is also
-    # what tests/test_prophet_plan_clock.py already does with the same symbol.
-    from engine.prophet_bridge import _PLAN_PRICE_DIRS
+    # on 2026-08-07 while the contract below was intact the whole time.
+    #
+    # Read that binding out of the AST rather than importing it. engine/prophet_bridge.py
+    # does `import pandas as pd` at module scope, and this test runs in BOTH marketing-data
+    # (which installs pandas) and marketing-engine (deps: pytest pyyaml jinja2), so the
+    # import is a ModuleNotFoundError in one of the two jobs that check this contract.
+    # pytest.importorskip — the idiom used elsewhere in this file — would turn that red
+    # into a silent SKIP, switching the guard off in exactly the lane where marketing
+    # actually renders. literal_eval keeps it live under minimal deps and still pins the
+    # VALUE, so it survives the literal moving again.
+    plan_dirs = _literal_binding(ROOT / "engine" / "prophet_bridge.py", "_PLAN_PRICE_DIRS")
 
-    assert tuple(_PLAN_PRICE_DIRS[:2]) == tuple(_PRICE_SUBDIRS[:2]), (
+    assert tuple(plan_dirs[:2]) == tuple(_PRICE_SUBDIRS[:2]), (
         "build_prophet's search order moved — chart_render._PRICE_SUBDIRS must "
         "move with it or marketing goes blind on the tickers Prophet chooses"
     )
