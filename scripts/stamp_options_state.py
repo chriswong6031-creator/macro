@@ -87,6 +87,19 @@ computed None NEVER overwrites an existing non-null, so running it on a machine 
 gitignored stores are absent is a no-op rather than a data loss. Run it once, where the
 stores live, after the session filter lands.
 
+REPAIR — ``--restamp-cols`` (2026-08-07, the era-scoping instrument):
+``--restamp-positional`` re-opens the ORDINARY pass, so it writes the WHOLE options family,
+not the columns the repair was authorised for.  Measured against the post-#4883 store on
+2026-08-07: scoping the run to the three chain-derived columns moves 319 cells, while the
+same run unscoped moves 1,713 across 14 columns — the other 1,394 are the ordinary pass
+riding along (retry-gate fills the nightly would make anyway, plus summary-derived columns
+that are stale for their OWN reason).  Since nightly is the sole advancer of forward
+ledgers, an era-marked repair commit must carry ONLY its own cause; ``--restamp-cols``
+restricts BOTH the row gate and the write set to the named columns and runs nothing else —
+no ordinary fill, no opex/root_class dedicated write, no tape-flow family, no vanna tercile.
+Everything it does not name is left for the nightly.  Same per-row compute path as the
+ordinary pass (``stamp_options_state``), never a parallel implementation.
+
 REPAIR — ``--backfill-ovc`` (2026-08-02, registry defect opex-vanna-charm-wovc):
 from the W-OVC build (2026-07-17) to 2026-08-02, ``opt_root_class`` had NO write path
 (excluded from ``STAMP_COVERAGE_COLS`` like ``opt_opex_days``, but without the dedicated
@@ -462,6 +475,94 @@ def stamp_ledger(
     return df, newly_stamped
 
 
+# Columns --restamp-cols will accept. opt_vanna_relief is a POSITIONAL column but is
+# deliberately NOT accepted: its value is a per-as_of tercile ranked over the universe the
+# pass happens to stamp, so a narrowed pass ranks a narrower universe and returns a
+# DIFFERENT flag for reasons that have nothing to do with the store. That is a
+# re-adjudication, not a restamp — the same reason backfill_ovc refuses to touch it.
+_RESTAMP_COLS_ALLOWED: list[str] = [
+    c for c in _POSITIONAL_WINDOW_COLS if c != "opt_vanna_relief"
+]
+
+
+def restamp_columns(
+    df: pd.DataFrame, cols: list[str]
+) -> tuple[pd.DataFrame, dict[str, dict[str, int]]]:
+    """ERA-SCOPED REPAIR: recompute ONLY ``cols``, on ONLY the rows that already carry them.
+
+    The narrow sibling of ``--restamp-positional`` (module header REPAIR).  The wide flag
+    re-opens the ordinary pass, which then writes every coverage column plus opex,
+    root_class, the tape-flow family and the vanna tercile — far more than any single
+    era-repair authorises, and in a ledger whose sole advancer is the nightly.  This pass
+    writes nothing it was not asked for:
+
+      * ROW GATE: a row is eligible iff at least one requested column is already non-null.
+        A row that never carried the column is not stale — it is unstamped, and belongs to
+        the ordinary retry gate.  This pass never opens or closes that gate: it writes only
+        columns that are already non-null on the row, so a row's stamped/unstamped status
+        is identical before and after.
+      * WRITE SET: only ``cols``.  Every other key the stamp produces is discarded.
+      * NON-DESTRUCTIVE: a recomputed None never replaces an existing value, so running
+        where the gitignored stores are absent is a no-op rather than a data loss (the
+        ``--restamp-positional`` contract, kept).
+
+    Returns (df, per-column {changed, unchanged, filled, blanked}) so the caller can report
+    what actually MOVED rather than how many rows were visited.
+    """
+    bad = [c for c in cols if c not in _RESTAMP_COLS_ALLOWED]
+    if bad:
+        raise SystemExit(
+            f"--restamp-cols: {', '.join(bad)} not restampable in scoped mode; "
+            f"allowed: {', '.join(_RESTAMP_COLS_ALLOWED)}. "
+            f"opt_vanna_relief is excluded on purpose — it is a cross-sectional tercile "
+            f"over the pass's own stamp universe, so narrowing the pass re-adjudicates it "
+            f"instead of restamping it (see _RESTAMP_COLS_ALLOWED)."
+        )
+    stats = {c: {"changed": 0, "unchanged": 0, "filled": 0, "blanked": 0} for c in cols}
+    if df.empty:
+        return df, stats
+    df = _ensure_stamp_columns(df.copy())
+
+    present = [c for c in cols if c in df.columns]
+    if not present:
+        return df, stats
+    eligible = df[present].notna().any(axis=1)
+    if not eligible.any():
+        return df, stats
+
+    chain_dates = _default_chain_dates()
+    skew_df = _default_read_skew_snapshots()
+    ivspread_df = _default_read_ivspread_snapshots()
+    cache: dict[tuple, dict] = {}
+
+    for idx in df.index[eligible]:
+        as_of = df.at[idx, "as_of"]
+        ticker = df.at[idx, "ticker"]
+        key = (as_of, ticker)
+        if key not in cache:
+            cache[key] = stamp_options_state(
+                as_of, ticker,
+                chain_dates=chain_dates,
+                skew_df=skew_df,
+                ivspread_df=ivspread_df,
+            )
+        stamp = cache[key]
+        for col in present:
+            old = df.at[idx, col]
+            new = stamp.get(col)
+            if pd.isna(old):
+                continue           # row gate is per-column: never fill what was not stale
+            if new is None:
+                stats[col]["blanked"] += 1   # counted, NOT written (non-destructive)
+                continue
+            if old == new:
+                stats[col]["unchanged"] += 1
+                continue
+            df.at[idx, col] = new
+            stats[col]["changed"] += 1
+    return df, stats
+
+
 def backfill_ovc(df: pd.DataFrame) -> tuple[pd.DataFrame, int, int]:
     """ONE-OFF W-OVC REPAIR (2026-08-02): backfill opt_root_class + opt_front7_charm_share.
 
@@ -653,6 +754,14 @@ def main() -> None:
                          "carry them, against the session-filtered stores. Never writes a "
                          "null over an existing value, so it is a no-op where the "
                          "gitignored stores are absent. Not part of the nightly pass.")
+    ap.add_argument("--restamp-cols", default="",
+                    help="ERA-SCOPED REPAIR (see restamp_columns docstring): comma-separated "
+                         "columns to recompute, on rows that already carry them, writing "
+                         "NOTHING else — no ordinary fill, no opex/root_class write, no "
+                         "tape-flow family, no vanna tercile. Use this, not "
+                         "--restamp-positional, when a repair commit must carry only its "
+                         f"own cause. Allowed: {', '.join(_RESTAMP_COLS_ALLOWED)}. "
+                         "Not part of the nightly pass.")
     ap.add_argument("--backfill-ovc", action="store_true",
                     help="ONE-OFF W-OVC REPAIR (2026-08-02, see backfill_ovc docstring): "
                          "fill opt_root_class wherever null and opt_front7_charm_share on "
@@ -665,6 +774,27 @@ def main() -> None:
     if not ledger.exists():
         if not args.quiet:
             print(f"[options_stamp] ledger absent ({ledger}); nothing to stamp")
+        return
+
+    if args.restamp_cols:
+        cols = [c.strip() for c in args.restamp_cols.split(",") if c.strip()]
+        df = pd.read_parquet(ledger)
+        df, stats = restamp_columns(df, cols)
+        moved = sum(s["changed"] for s in stats.values())
+        if moved:
+            df.to_parquet(ledger, index=False)
+        if not args.quiet:
+            print(f"[options_stamp] --restamp-cols {','.join(cols)}: "
+                  f"{moved} values changed (scoped mode writes nothing else)")
+            for col, s in stats.items():
+                print(f"  [{col}] changed {s['changed']}, unchanged {s['unchanged']}, "
+                      f"recomputed-null-kept {s['blanked']}")
+                if s["blanked"]:
+                    print(f"::warning title=restamp-cols-null-kept::{col}: {s['blanked']} "
+                          f"rows recomputed to null and KEPT their existing value "
+                          f"(non-destructive contract) — the store may be absent here",
+                          flush=True)
+        _twin_silent_null_guard(df)
         return
 
     if args.backfill_ovc:

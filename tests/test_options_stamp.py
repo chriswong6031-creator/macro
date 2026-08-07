@@ -1518,6 +1518,118 @@ def test_restamp_positional_leaves_unstamped_rows_to_the_normal_gate(monkeypatch
     assert foo["opt_gamma_regime"].notna().all()
 
 
+# ── ERA SCOPING: --restamp-cols writes ONLY its own cause ────────────────────────────
+# --restamp-positional re-opens the ORDINARY pass, so it writes the whole options family.
+# Measured on the real ledger at 2026-08-07 (post-#4883 store): the three chain-derived
+# columns move 319 cells, but the unscoped run moves 1,713 across 14 columns — the other
+# 1,394 ride along on a ledger whose sole advancer is the nightly. restamp_columns is the
+# narrow instrument; these tests pin the narrowness, because "it happened not to write
+# anything else THIS time" is not a contract.
+
+_SESSIONS_TO_0622 = [_dt.date(2026, 6, 11), _dt.date(2026, 6, 12), _dt.date(2026, 6, 15),
+                     _dt.date(2026, 6, 16), _dt.date(2026, 6, 17), _dt.date(2026, 6, 18),
+                     _dt.date(2026, 6, 22)]
+
+
+def _patch_stores_iv30(monkeypatch, iv30):
+    """_patch_stores, but with a summary iv30 that DIFFERS from the locked ledger's 0.25.
+
+    The difference is the point: it gives the wide pass a non-named column it provably
+    rewrites, so a scoped pass that also rewrote it would fail rather than pass silently.
+    """
+    monkeypatch.setattr("engine.options_stamp._default_chain_dates",
+                        lambda: list(_SESSIONS_TO_0622))
+    monkeypatch.setattr("scripts.stamp_options_state._default_chain_dates",
+                        lambda: list(_SESSIONS_TO_0622))
+    monkeypatch.setattr("engine.options_stamp._default_read_chain",
+                        lambda d: _chain_frame("FOO", call_oi=1000.0 + 100.0 * d.day))
+    monkeypatch.setattr(
+        "engine.options_stamp._default_read_summary",
+        lambda t: (_summary_frame([d.isoformat() for d in _SESSIONS_TO_0622], iv30=iv30)
+                   if t == "FOO" else None))
+    # the gitignored R2 snapshot stores must not leak into a unit test
+    monkeypatch.setattr("scripts.stamp_options_state._default_read_skew_snapshots",
+                        lambda: None)
+    monkeypatch.setattr("scripts.stamp_options_state._default_read_ivspread_snapshots",
+                        lambda: None)
+
+
+def test_restamp_cols_writes_only_the_named_column(monkeypatch):
+    """The scoping contract: the wide flag rewrites the family, the scoped one does not.
+
+    Both arms run against the SAME fixture, so the assertions on the wide arm are what
+    make the scoped arm's assertions mean something: opt_iv30 and opt_dist_to_flip_pct
+    are demonstrably writable here, and the scoped pass still leaves them alone.
+    """
+    from scripts.stamp_options_state import restamp_columns
+    _patch_stores_iv30(monkeypatch, 0.44)      # ledger carries 0.25
+
+    wide, _ = stamp_ledger(_positional_locked_ledger(), restamp_positional=True)
+    assert wide["opt_iv30"].iloc[0] == 0.44, "wide arm did not rewrite opt_iv30 — fixture is not a discriminator"
+    assert pd.notna(wide["opt_dist_to_flip_pct"].iloc[0]), "wide arm did not fill opt_dist_to_flip_pct"
+    wide_slope = wide["opt_doi_slope_5d"].iloc[0]
+    assert wide_slope != _SENTINEL_SLOPE, "wide arm did not recompute the positional column"
+
+    scoped, stats = restamp_columns(_positional_locked_ledger(), ["opt_doi_slope_5d"])
+
+    # the named column moves, and to exactly the value the wide pass computed
+    assert scoped["opt_doi_slope_5d"].iloc[0] == wide_slope
+    assert stats["opt_doi_slope_5d"]["changed"] == 1
+    # ...and nothing else does
+    assert scoped["opt_iv30"].iloc[0] == 0.25, "scoped pass wrote a non-named column"
+    assert pd.isna(scoped["opt_dist_to_flip_pct"].iloc[0]), "scoped pass filled a non-named column"
+    assert bool(scoped["opt_voi_flag"].iloc[0]) is True, "scoped pass wrote an unnamed positional column"
+
+
+def test_restamp_cols_never_opens_or_closes_the_retry_gate(monkeypatch):
+    """A row that never carried the column is UNSTAMPED, not stale — leave it to nightly.
+
+    Filling it here would flip the row's coverage status and lock the ordinary gate.
+    """
+    from scripts.stamp_options_state import restamp_columns
+    _patch_stores_iv30(monkeypatch, 0.44)
+
+    df = _positional_locked_ledger()
+    df["opt_doi_slope_5d"] = None                 # never stamped on this row
+
+    before = df[[c for c in STAMP_COVERAGE_COLS if c in df.columns]].isna().all(axis=1)
+    out, stats = restamp_columns(df, ["opt_doi_slope_5d"])
+    after = out[[c for c in STAMP_COVERAGE_COLS if c in out.columns]].isna().all(axis=1)
+
+    assert pd.isna(out["opt_doi_slope_5d"].iloc[0]), "scoped pass filled a null it was not asked to fill"
+    assert stats["opt_doi_slope_5d"] == {"changed": 0, "unchanged": 0, "filled": 0, "blanked": 0}
+    assert list(before) == list(after), "retry-gate eligibility moved"
+
+
+def test_restamp_cols_never_nulls_an_existing_value(monkeypatch):
+    """Non-destructive contract, kept: no chains store → no-op, and the loss is COUNTED."""
+    from scripts.stamp_options_state import restamp_columns
+    _patch_stores_iv30(monkeypatch, 0.44)
+    monkeypatch.setattr("engine.options_stamp._default_chain_dates", lambda: [])
+    monkeypatch.setattr("scripts.stamp_options_state._default_chain_dates", lambda: [])
+
+    out, stats = restamp_columns(_positional_locked_ledger(), ["opt_doi_slope_5d"])
+
+    assert out["opt_doi_slope_5d"].iloc[0] == _SENTINEL_SLOPE, "a null overwrote a value"
+    assert stats["opt_doi_slope_5d"]["blanked"] == 1, (
+        "a value that could not be recomputed must be COUNTED, not silently kept"
+    )
+
+
+def test_restamp_cols_refuses_a_cross_sectional_column():
+    """opt_vanna_relief is a tercile over the pass's own universe — narrowing re-adjudicates it."""
+    from scripts.stamp_options_state import (
+        restamp_columns, _RESTAMP_COLS_ALLOWED, _POSITIONAL_WINDOW_COLS,
+    )
+
+    assert "opt_vanna_relief" in _POSITIONAL_WINDOW_COLS, "premise moved"
+    assert "opt_vanna_relief" not in _RESTAMP_COLS_ALLOWED
+
+    with pytest.raises(SystemExit) as e:
+        restamp_columns(_positional_locked_ledger(), ["opt_vanna_relief"])
+    assert "cross-sectional" in str(e.value)
+
+
 # ── W-OVC silent-null repair (2026-08-02; registry defect opex-vanna-charm-wovc) ────
 # From the W-OVC build (2026-07-17) to 2026-08-02 opt_front7_charm_share and
 # opt_root_class never reached the ledger (0/2282) while the display store carried
