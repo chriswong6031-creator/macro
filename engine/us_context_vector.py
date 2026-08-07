@@ -731,6 +731,9 @@ def build_records(
             # is the permanent record, so the two populations stay separable forever.
             "young_history": _bool(verdict.get("young_history")),
             "history_bars": _finite(verdict.get("history_bars")),
+            # Bucketing-era cohort label (abs-session-2026-08-06, adjudication R5) — the
+            # store is the permanent record, so it travels exactly like young_history.
+            "anchor_era": _text(verdict.get("anchor_era")),
             # key is ABSENT (not None) on the verdict when no near-miss applies
             "near_miss_reason": _text(verdict.get("near_miss_reason")),
             "signal_asof": _date(verdict.get("asof")),

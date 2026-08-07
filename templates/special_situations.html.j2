@@ -333,7 +333,7 @@ html[data-lang="zh"] .live-mark{color:var(--red);border-color:var(--red)}
     <div class="hero-h1">{{ t('Corporate events in play right now', '当前正在进行中的公司事件') }}</div>
     <div class="hero-sub">{{ t(
       'Activist campaigns, M&A, spin-offs, going-private, tenders, divestitures & restructurings — drawn from SEC filings, digest monitoring, and global sources.',
-      '来自 SEC 申报、信息摘要监控与全球来源的维权、并购、分拆、私有化、要约、剥离与重组事件。') }}
+      '来自 SEC 披露、信息摘要监控与全球来源的维权、并购、分拆、私有化、要约、剥离与重组事件。') }}
       <span style="color:var(--faint);margin-left:8px;font-size:12px">{{ t('built','生成于') }} {{ built }}</span>
     </div>
     <div class="hero-glance">{{ t(
@@ -406,7 +406,7 @@ html[data-lang="zh"] .live-mark{color:var(--red);border-color:var(--red)}
     </svg>
     <span class="l-en">Search, filters and sorting run across all {{ total }} situations on Essential. This preview
       is the {{ gate.preview }} most recent filings.</span>
-    <span class="l-zh">搜索、筛选与排序在 Essential 下覆盖全部 {{ total }} 起事件。此预览为最新 {{ gate.preview }} 份申报。</span>
+    <span class="l-zh">搜索、筛选与排序在 Essential 下覆盖全部 {{ total }} 起事件。此预览为最新 {{ gate.preview }} 份披露文件。</span>
   </div>
   {% endif %}
   <div class="filter-bar{% if gate %} gated{% endif %}" id="ss-filter-bar">
@@ -559,7 +559,7 @@ html[data-lang="zh"] .live-mark{color:var(--red);border-color:var(--red)}
         <span class="l-en">You’re reading the {{ gate.preview }} most recent filings. Essential and Pro open the
           whole board — all {{ total }} situations across {{ n_cats }} categories, the top-setup strip,
           and search, filters and sorting over every name.</span>
-        <span class="l-zh">你正在阅读最新 {{ gate.preview }} 份申报。Essential 与 Pro 可查看完整看板 ——
+        <span class="l-zh">你正在阅读最新 {{ gate.preview }} 份披露文件。Essential 与 Pro 可查看完整看板 ——
           {{ n_cats }} 个类别共 {{ total }} 起事件、精选设置条，以及对全部标的的搜索、筛选与排序。</span>
       </div>
       <div class="tw-acts">
@@ -585,7 +585,7 @@ html[data-lang="zh"] .live-mark{color:var(--red);border-color:var(--red)}
   <div class="cov-card">
     <div style="color:var(--text);font-size:13.5px;line-height:1.6">{{ t(
       'Structured forms (SC 13D activist, SC TO tenders, SC 13E-3 / merger proxies, Form 25 delistings) classify with high precision. Acquisitions, divestitures, spin-offs, strategic reviews and capital returns are read from 8-K filing text — higher recall but noisier. Schedule 13G (passive) and routine officer-change 8-Ks are excluded; non-operating filers (ABS / ETF / exchange shells) are filtered out.',
-      '结构化申报（SC 13D 维权、SC TO 要约、SC 13E-3/并购代理、Form 25 退市）以高精度归类。并购、剥离、分拆、战略评估与资本回报读自 8-K 正文，召回率更高但更嘈杂。被动 13G 及例行高管变动 8-K 已排除；非经营性申报人（ABS/ETF/交易所壳）已过滤。') }}</div>
+      '结构化披露（SC 13D 维权、SC TO 要约、SC 13E-3/并购代理、Form 25 退市）以高精度归类。并购、剥离、分拆、战略评估与资本回报读自 8-K 正文，召回率更高但更嘈杂。被动 13G 及例行高管变动 8-K 已排除；非经营性披露人（ABS/ETF/交易所壳）已过滤。') }}</div>
     <div class="cov-grid">
       {% if coverage.digest_situations is not none %}<div class="cov-item"><div class="v">{{ coverage.digest_situations }}</div><div class="k">{{ t('Digest situations','摘要事件') }}</div></div>{% endif %}
       {% if coverage.edgar_confirmed is not none %}<div class="cov-item"><div class="v">{{ coverage.edgar_confirmed }}</div><div class="k">{{ t('EDGAR confirmed','EDGAR确认') }}</div></div>{% endif %}
@@ -599,7 +599,7 @@ html[data-lang="zh"] .live-mark{color:var(--red);border-color:var(--red)}
   <div class="foot">
     {{ t(
       'Display-only context feed. Source: SEC EDGAR daily index + full-text search (form type, 8-K items) — public filings only. US-registered filers including cross-listed ADRs / foreign private issuers (&#x1F310; cross-border). Categories are deterministic. Setup grades are display context only — never investment advice or a sizing input. Built',
-      '仅供展示的背景信息流。来源：SEC EDGAR 每日索引 + 全文检索 — 仅公开申报。含跨境 ADR/外国私人发行人（&#x1F310; 跨境）。类别为确定性归类。设置评级仅为展示背景，绝非投资建议或仓位输入。生成于') }} {{ built }}.
+      '仅供展示的背景信息流。来源：SEC EDGAR 每日索引 + 全文检索 — 仅公开披露。含跨境 ADR/外国私人发行人（&#x1F310; 跨境）。类别为确定性归类。设置评级仅为展示背景，绝非投资建议或仓位输入。生成于') }} {{ built }}.
   </div>
 </div>
 

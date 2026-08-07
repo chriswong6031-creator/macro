@@ -339,3 +339,157 @@ def test_every_workflow_test_path_exists() -> None:
         "a reason unrelated to the code. Delete the stale path from the workflow "
         "(or restore the file if the deletion was a mistake)."
     )
+
+
+# ── the converse: a suite NAMED BY NOTHING never runs ────────────────────────
+#
+# READ THIS BEFORE "FIXING" AN `if: ${{ false }}` LINE. `.github/ci/legacy-jobs.yml`
+# is a MANIFEST, not a set of GitHub jobs. Every one of its ~162 jobs declares
+# `if: ${{ false }}`, and that line is REQUIRED BOILERPLATE, not a disable switch:
+# scripts/run_ci_pack.py FLAGS AS AN ERROR any manifest job that omits it, so that
+# GitHub does not allocate a second, duplicate runner for steps the ci-pack matrix
+# already executes. Removing or inverting it fails validation and breaks the pack.
+# The manifest's jobs genuinely run — unrun-government-revenue executes in
+# ci-pack-1.
+#
+# The real darkness sits one line away and looks like nothing at all: a suite that
+# no `run:` step ANYWHERE names is executed by nothing, whatever any `if:` says.
+# This repo has no catch-all `pytest tests/` sweep to pick up the omission, so an
+# unnamed suite is silently inert. It passes locally, it is never red, and the lobe
+# it guards reads green because its guards are INVISIBLE, not because they hold.
+# Nineteen Government Revenue suites sat that way — among them
+# test_government_revenue_award_spine.py and test_government_revenue_award_events.py,
+# which own the forward award-event spine whose persistence break shipped to
+# production on 2026-08-06. A line tracer over the seven suites CI did name
+# executed 0 of 147 function bodies across metrics.py, candidates.py,
+# opportunities.py, budget_program.py, freshness.py and federation.py (5,279
+# lines) — including the fail-closed withholding gate in metrics.py.
+#
+# test_every_workflow_test_path_exists (above) checks NAMED -> EXISTS. The two
+# below check the converse, EXISTS -> NAMED, and then the same question one layer
+# down: a contract the ENGINE loads at runtime must be able to start the CI that
+# validates against it.
+#
+# SCOPE — deliberately Government Revenue only. scripts/audit_unrun_tests.py
+# measures 963 of 2,015 tests/test_*.py suites unrun repo-wide, so the generalised
+# "every suite must be named" assertion would be red on ~48% of the tree the day it
+# landed and would be deleted rather than fixed. Widen this per-program, behind a
+# program that has actually closed its own darkness.
+
+_GOVERNMENT_REVENUE_SUITE_GLOBS = (
+    # also catches tests/test_prophet_government_revenue_context.py
+    "tests/test_*government_revenue*.py",
+    "tests/test_usaspending*.py",
+)
+
+_CLOSURE_SPEC = importlib.util.spec_from_file_location(
+    "check_ci_trigger_closure", ROOT / "scripts" / "check_ci_trigger_closure.py"
+)
+assert _CLOSURE_SPEC and _CLOSURE_SPEC.loader
+CLOSURE = importlib.util.module_from_spec(_CLOSURE_SPEC)
+sys.modules[_CLOSURE_SPEC.name] = CLOSURE
+_CLOSURE_SPEC.loader.exec_module(CLOSURE)
+
+
+def _executable_run_commands() -> str:
+    """Every `run:` body CI can execute: the packed manifest plus real workflows.
+
+    The manifest is the usual home, but a suite wired into a standalone workflow
+    genuinely runs too. Scanning both keeps this guard from going red on a correct
+    fix — a guard that punishes the right answer gets weakened, not obeyed.
+    """
+    bodies: list[str] = []
+
+    def walk(node: object) -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key == "run" and isinstance(value, str):
+                    bodies.append(value)
+                else:
+                    walk(value)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+
+    for path in [MANIFEST] + sorted((ROOT / ".github" / "workflows").glob("*.yml")):
+        walk(yaml.safe_load(path.read_text(encoding="utf-8")))
+    return "\n".join(bodies)
+
+
+def test_every_government_revenue_suite_is_named_by_a_run_step() -> None:
+    """A Government Revenue suite no `run:` step names is executed by nothing."""
+    on_disk = sorted(
+        {
+            str(path.relative_to(ROOT))
+            for pattern in _GOVERNMENT_REVENUE_SUITE_GLOBS
+            for path in ROOT.glob(pattern)
+        }
+    )
+    # Vacuity gate: if the globs stop matching the program, this guard would pass
+    # by finding nothing at all. 29 suites exist as of 2026-08-06.
+    assert len(on_disk) >= 25, (
+        f"only {len(on_disk)} Government Revenue suites matched "
+        f"{_GOVERNMENT_REVENUE_SUITE_GLOBS} — the program was renamed or moved and "
+        "this guard is now measuring an empty set. Re-point the globs; do not "
+        "lower this floor."
+    )
+
+    commands = _executable_run_commands()
+    unnamed = [rel for rel in on_disk if rel not in commands]
+
+    assert not unnamed, (
+        f"{len(unnamed)} Government Revenue suite(s) are named by NO `run:` step in "
+        ".github/ci/legacy-jobs.yml or .github/workflows/, so nothing executes "
+        "them:\n  " + "\n  ".join(unnamed) + "\n\n"
+        "This is NOT the `if: ${{ false }}` line, and 'enabling' a job does not fix "
+        "it. That line is required boilerplate on every manifest job — "
+        "scripts/run_ci_pack.py errors on any job missing it so GitHub does not "
+        "allocate a duplicate runner — and the manifest's steps really are "
+        "executed, by the ci-pack matrix in ci.yml. The defect is being UNNAMED: "
+        "there is no catch-all `pytest tests/` sweep in this repo, so a suite no "
+        "step lists is inert, green-by-absence, and its subject ships unguarded. "
+        "Fix by naming the suite in a `run:` step of the owning manifest job "
+        "(unrun-government-revenue) AND adding its path to ci.yml's "
+        "on.pull_request.paths so an edit to it can start that job."
+    )
+
+
+_RUNTIME_SCHEMA_RE = re.compile(r'"([A-Za-z0-9_.]+\.schema\.json)"')
+_WORKSPACE = ROOT / "engine" / "government_revenue" / "workspace.py"
+
+
+def test_workspace_runtime_contracts_can_start_the_ci_that_validates_them() -> None:
+    """A contract the engine loads at runtime must be a trigger for its own CI."""
+    names = sorted(set(_RUNTIME_SCHEMA_RE.findall(_WORKSPACE.read_text("utf-8"))))
+    assert names, (
+        f"{_WORKSPACE.relative_to(ROOT)} no longer names a *.schema.json literal. "
+        "Either the runtime loader moved (re-point this guard at its new home) or "
+        "the extractor drifted — a silently empty extraction turns this assertion "
+        "into a no-op, which is the exact failure mode it exists to prevent."
+    )
+
+    contracts = [f"contracts/government_revenue/{name}" for name in names]
+    absent = [rel for rel in contracts if not (ROOT / rel).exists()]
+    assert not absent, (
+        "workspace.py loads contract files that are not in the tree:\n  "
+        + "\n  ".join(absent)
+        + "\n\nThe validator fails CLOSED on a missing schema, so every payload "
+        "would read invalid at runtime."
+    )
+
+    workflow = _yaml(WORKFLOW)
+    triggers = (workflow.get("on") or workflow.get(True))["pull_request"]["paths"]
+    unmatched = [rel for rel in contracts if not CLOSURE.matched(rel, triggers)]
+
+    assert not unmatched, (
+        f"{len(unmatched)} contract(s) that engine/government_revenue/workspace.py "
+        "loads AT RUNTIME match no glob in ci.yml's on.pull_request.paths:\n  "
+        + "\n  ".join(unmatched)
+        + "\n\nSo editing one of these schemas cannot fire the CI that validates "
+        "against it. workspace.py's validator fails CLOSED — a schema edit that "
+        "makes every payload read invalid merges without a single check running. "
+        "scripts/check_ci_trigger_closure.py does not cover this: it is DEPTH 1 "
+        "(the files a test file itself reads), and these are read one layer "
+        "deeper, inside the engine module the test imports. Fix by adding "
+        '- "contracts/government_revenue/**" to that paths list.'
+    )
