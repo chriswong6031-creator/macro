@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-08-06",
+ "as_of": "2026-08-07",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -40,12 +40,12 @@
      "name": "Texas Instruments Inc"
     },
     {
-     "ticker": "ADI",
-     "name": "Analog Devices Inc"
-    },
-    {
      "ticker": "MRVL",
      "name": "Marvell Technology Inc"
+    },
+    {
+     "ticker": "ADI",
+     "name": "Analog Devices Inc"
     },
     {
      "ticker": "QCOM",
@@ -86,16 +86,16 @@
      "name": "Adobe Inc"
     },
     {
-     "ticker": "DDOG",
-     "name": "Datadog Inc"
-    },
-    {
      "ticker": "CDNS",
      "name": "Cadence Design Systems Inc"
     },
     {
      "ticker": "INTU",
      "name": "Intuit Inc"
+    },
+    {
+     "ticker": "DDOG",
+     "name": "Datadog Inc"
     },
     {
      "ticker": "ADSK",
@@ -200,12 +200,12 @@
      "name": "PDD Holdings Inc ADR"
     },
     {
-     "ticker": "MELI",
-     "name": "MercadoLibre Inc"
-    },
-    {
      "ticker": "DASH",
      "name": "DoorDash Inc"
+    },
+    {
+     "ticker": "MELI",
+     "name": "MercadoLibre Inc"
     }
    ]
   },
@@ -214,11 +214,11 @@
    "sector": "Internet & Platforms",
    "members": [
     {
-     "ticker": "GOOGL",
+     "ticker": "GOOG",
      "name": "Alphabet Inc"
     },
     {
-     "ticker": "GOOG",
+     "ticker": "GOOGL",
      "name": "Alphabet Inc"
     },
     {
@@ -334,12 +334,12 @@
    "sector": "Software & Cloud",
    "members": [
     {
-     "ticker": "AXON",
-     "name": "Axon Enterprise Inc"
-    },
-    {
      "ticker": "RKLB",
      "name": "Rocket Lab Corp"
+    },
+    {
+     "ticker": "AXON",
+     "name": "Axon Enterprise Inc"
     },
     {
      "ticker": "KTOS",
@@ -394,12 +394,12 @@
      "name": "Texas Instruments Inc"
     },
     {
-     "ticker": "ADI",
-     "name": "Analog Devices Inc"
-    },
-    {
      "ticker": "MRVL",
      "name": "Marvell Technology Inc"
+    },
+    {
+     "ticker": "ADI",
+     "name": "Analog Devices Inc"
     },
     {
      "ticker": "QCOM",
@@ -528,16 +528,16 @@
      "name": "Adobe Inc"
     },
     {
-     "ticker": "DDOG",
-     "name": "Datadog Inc"
-    },
-    {
      "ticker": "CDNS",
      "name": "Cadence Design Systems Inc"
     },
     {
      "ticker": "INTU",
      "name": "Intuit Inc"
+    },
+    {
+     "ticker": "DDOG",
+     "name": "Datadog Inc"
     },
     {
      "ticker": "ADSK",
@@ -572,12 +572,12 @@
      "name": "Copart Inc"
     },
     {
-     "ticker": "AXON",
-     "name": "Axon Enterprise Inc"
-    },
-    {
      "ticker": "RKLB",
      "name": "Rocket Lab Corp"
+    },
+    {
+     "ticker": "AXON",
+     "name": "Axon Enterprise Inc"
     },
     {
      "ticker": "KTOS",
@@ -610,11 +610,11 @@
    "name_zh": "互联网与平台",
    "members": [
     {
-     "ticker": "GOOGL",
+     "ticker": "GOOG",
      "name": "Alphabet Inc"
     },
     {
-     "ticker": "GOOG",
+     "ticker": "GOOGL",
      "name": "Alphabet Inc"
     },
     {
@@ -630,12 +630,12 @@
      "name": "PDD Holdings Inc ADR"
     },
     {
-     "ticker": "MELI",
-     "name": "MercadoLibre Inc"
-    },
-    {
      "ticker": "DASH",
      "name": "DoorDash Inc"
+    },
+    {
+     "ticker": "MELI",
+     "name": "MercadoLibre Inc"
     },
     {
      "ticker": "TMUS",

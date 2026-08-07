@@ -9,8 +9,11 @@
 
    Self-sufficient by design: it carries its own help/t/dispshort DISPLAY macros and
    the board CSS. tr()/td() come from the host Jinja env globals (i18n); the shared
-   row-pop hover engine (theme.js) and the .rp-src/.row-pop/.lst-*/.help/.tip framework
-   come from theme.css (both hosts link it). Every per-row field (sector_setup, EW
+   row-pop hover engine (theme.js) and the .rp-src/.row-pop/.lst-* framework come from
+   theme.css (both hosts link it). The legacy .help/.tip hover framework does NOT —
+   it lives inline in dashboard.html.j2, so this include carries a byte-identical
+   copy at the end of its <style> (hosts without the page-level copy — sector_central —
+   rendered the h2 help() tip permanently inline before it). Every per-row field (sector_setup, EW
    overlay, two-reads) is pre-merged onto each item by action_board(), so the board
    needs nothing from the view-model but action_board (shock_state is optional/guarded). -#}
 {% macro help(en, zh='') -%}
@@ -117,6 +120,15 @@
                    color: var(--ink-info, var(--info)); border: 1px solid color-mix(in srgb, var(--ink-info, var(--info)) 28%, transparent); }
   .ab-chip--muted { background: color-mix(in srgb, var(--muted) 12%, transparent);
                     color: var(--muted); border: 1px solid color-mix(in srgb, var(--muted) 22%, transparent); }
+  /* A chip whose wording is longer than a lane column. .ab-chip is nowrap + flex:none,
+     so a long label runs past .actitem's overflow:hidden and is silently CLIPPED —
+     measured at 180px inside a 177px row for the graduation-gap chip. Its words ship
+     from the engine (bottoming_authority) and must not be shortened on the page, so
+     the chip wraps to a second line instead of losing its tail.
+     white-space alone is NOT enough: .ab-chip is `flex: none` (= 0 0 auto), so the
+     chip keeps its max-content width and wraps nowhere. It has to be allowed to
+     shrink as well — flex-shrink + min-width:0 are what actually let the text reflow. */
+  .ab-chip--wrap { white-space: normal; line-height: 1.3; flex: 0 1 auto; min-width: 0; max-width: 100%; }
   /* gate-override ✓ pill */
   .ab-chip--gate { background: color-mix(in srgb, var(--up) 10%, transparent);
                    color: var(--up); border: 1px solid color-mix(in srgb, var(--up) 22%, transparent);
@@ -150,6 +162,54 @@
   /* ── TS-R6: two-reads reconciliation chip ───────────────────────────────── */
   .two-reads-chip { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:600; white-space:nowrap; background:color-mix(in srgb,var(--info) 9%,var(--panel2)); border:1px solid color-mix(in srgb,var(--info) 28%,var(--line)); color:var(--info,var(--link)); cursor:help; }
   .two-reads-chip .tr-sep { opacity:.45; margin:0 2px; }
+  /* ── Legacy help() "?" hover framework — HOST-PORTABILITY COPY ─────────────
+     us_stocks gets these rules from dashboard.html.j2's inline page <style>;
+     they are NOT in theme.css (theme.css carries only the span.help glyph
+     metrics + .help-upgraded popover overrides — see its help-icon comment).
+     The SI Overview host has no page-level copy, so without this block the
+     board h2's help() tip renders permanently inline next to the heading
+     (Tier-2 sentence at the glance tier — doctrine violation, 2026-08-06).
+     On us_stocks this is a harmless same-rules duplicate of the page block
+     (same precedent as dc.dc_css() above). theme.js upgradeHelpIcons still
+     swaps the CSS hover for the LENS popover where it runs; these rules are
+     the no-JS floor. */
+  /* help-tip-framework:BEGIN — legacy help() "?" hover framework. Byte-identical
+     twin in templates/dashboard.html.j2 AND templates/_us_act_now_board.html.j2
+     (the shared board include ships it to hosts that have no page-level copy —
+     sector_central leaked the whole tip sentence inline without it, 2026-08-06).
+     Deliberately NOT in theme.css: editing theme.css re-stamps ~176 pages, and
+     its span.help glyph metrics must keep outranking these bare-.help rules.
+     Keep both copies in step — pinned by
+     tests/test_us_act_now.py::test_help_tip_framework_is_byte_identical_in_both_copies. */
+  .help { display: inline-flex; align-items: center; justify-content: center;
+          width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
+          color: var(--muted); font-size: 10px; font-weight: 600; cursor: help;
+          position: relative; vertical-align: middle; margin-left: 5px; flex: none; }
+  .help .tip { display: none; position: absolute; bottom: 140%; left: 50%;
+               transform: translateX(-50%); width: 330px;
+               background: var(--panel); border: 1px solid var(--line);
+               padding: 10px 13px; border-radius: 8px;
+               z-index: 60; font-size: 12px; line-height: 1.5; color: var(--text);
+               text-align: left; font-weight: 400; text-transform: none;
+               letter-spacing: normal; box-shadow: var(--popover-shadow);
+               pointer-events: auto; cursor: auto; white-space: normal;
+               max-height: min(60vh, 420px); overflow-y: auto; overscroll-behavior: contain; }
+  /* invisible hover pad across the gap between the ? icon and the tip box —
+     without it the :hover chain breaks mid-travel and the tip vanishes before
+     the cursor can reach (and scroll) it. Lives on .help, not .tip: the tip
+     is a scroll container (overflow-y:auto), which clips its own pseudos. */
+  .help:hover::before { content: ''; position: absolute; bottom: 100%; left: -30px; right: -30px; height: 10px; }
+  .help:hover .tip, .help.tip-open .tip { display: block; }
+  th .help .tip, .help.below .tip { bottom: auto; top: 140%; }
+  th .help:hover::before, .help.below:hover::before { bottom: auto; top: 100%; }
+  /* keep tooltips on-screen near the right/left viewport edges */
+  .help.edge-right .tip { left: auto; right: 0; transform: none; }
+  .help.edge-left .tip { left: 0; right: auto; transform: none; }
+  .help .tip.tip-wide { width: min(430px, calc(100vw - 32px)); }
+  @media (max-width: 640px) {
+    .help .tip.tip-wide { width: calc(100vw - 28px); font-size: 11.5px; line-height: 1.45; }
+  }
+  /* help-tip-framework:END */
   </style>
   <div class="panel span12" id="action-board">
     <h2>{{ t('What to act on now', '当前可操作') }}
@@ -185,6 +245,17 @@
     {#- ---- Jinja macros for V2 rows ---- -#}
     {%- macro ab_chip(chip_en, chip_zh, chip_tone) -%}
     {%- if chip_en %}<span class="ab-chip ab-chip--{{ chip_tone }}"><span class="l-en">{{ chip_en }}</span><span class="l-zh">{{ chip_zh }}</span></span>{% endif -%}
+    {%- endmacro -%}
+    {#- W-A Amendment 1 (#4614): the graduation-gap chip. A reduce-side row the cycle
+        organ reads as recovering off a low, which has already LEFT the bottoming lane —
+        so it sits on no lane, and this chip is the only place it is named. Stamped by
+        build_sector_central.build_bottoming_context() from the engine's own copy, so the
+        page cannot drift from the measured basis; unstamped rows (every row on
+        us_stocks.html, which does the join nowhere) render nothing. Info-toned, NOT
+        green: "recovering from cycle low" is a state, never a buy verb. Deliberately a
+        SEPARATE chip from conflict_chip_* — the two describe different disagreements. -#}
+    {%- macro ab_recov(x) -%}
+    {%- if x.get('recovering_chip_en') %}<span class="ab-chip ab-chip--info ab-chip--wrap" data-tip-en="{{ x.get('recovering_tip_en','')|e }}" data-tip-zh="{{ x.get('recovering_tip_zh', x.get('recovering_tip_en',''))|e }}"><span class="l-en">{{ x.recovering_chip_en|e }}</span><span class="l-zh">{{ x.get('recovering_chip_zh', x.recovering_chip_en)|e }}</span></span>{% endif -%}
     {%- endmacro -%}
     {%- macro ab_gate(x) -%}
     {%- if x.get('gate_override') %}<span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: {{ x.get('ew', {}).get('label', '') }}" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：{{ x.get('ew', {}).get('label_zh', '') or x.get('ew', {}).get('label', '') }}">&#10003;</span>{% endif -%}
@@ -309,13 +380,14 @@
         <span class="ai-bdg">🏛</span>
         <span class="act-row-name"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></span>
       </span>
-      {%- if x.get('chip_en') or x.get('gate_override') or x.get('ew_two_reads') or x.get('conflict_chip_en') %}
+      {%- if x.get('chip_en') or x.get('gate_override') or x.get('ew_two_reads') or x.get('conflict_chip_en') or x.get('recovering_chip_en') %}
       <span class="act-row-chips">
         {{- ab_chip(x.get('chip_en',''), x.get('chip_zh',''), x.get('chip_tone','muted')) -}}
         {{- ab_gate(x) -}}
         {{- ab_ew_two_reads(x) -}}
         {#- W2b/W4 demotion receipt lifted from the EW overlay (MLC-R7) -#}
         {{- ab_chip(x.get('conflict_chip_en',''), x.get('conflict_chip_zh', x.get('conflict_chip_en','')), 'warn') -}}
+        {{- ab_recov(x) -}}
       </span>
       {%- endif %}
       {%- if x.get('stat_en') %}<span class="act-row-stat"><span class="l-en">{{ x.stat_en }}</span><span class="l-zh">{{ x.get('stat_zh', x.stat_en) }}</span></span>{%- endif %}
@@ -338,9 +410,13 @@
         {%- endif %}
       </span>
       {#- FIX 1: conflict chip (warn tone) when theme was demoted from buy lanes -#}
-      {%- if x.get('conflict_chip_en') %}
+      {#- The ab_chip() call keeps its exact pinned spelling (tests/test_theme_scoring_conflicted.py
+          asserts this literal): an absent conflict_chip_en is Jinja Undefined, which ab_chip
+          already treats as falsy, so a recovering-only row renders just its own chip. -#}
+      {%- if x.get('conflict_chip_en') or x.get('recovering_chip_en') %}
       <span class="act-row-chips">
         {{- ab_chip(x.conflict_chip_en, x.get('conflict_chip_zh', x.conflict_chip_en), 'warn') -}}
+        {{- ab_recov(x) -}}
       </span>
       {%- endif %}
       {%- if x.get('perf_20d_rel') is not none and x.get('perf_20d_rel') is defined %}
@@ -460,6 +536,11 @@
         <button class="lst-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more', '显示更多') }} ({{ _hold_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>
         {% endif %}
       </div>
+      {#- ---- WATCH STRIP: BOTTOMING WATCH (W-A, #4599; restored after #4642) ----
+          Not a sixth action lane — a full-width watch strip under the five. Renders
+          only where a bottoming payload is passed (the SI Overview); self-hides on
+          us_stocks.html, whose action_board carries no bottoming keys. -#}
+      {% include "_us_bottoming_watch.html.j2" %}
     </div>
   </div>{# /panel — What to act on now (standouts split into their own panel 2026-07-11) #}
 {% endif %}

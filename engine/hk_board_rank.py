@@ -813,7 +813,19 @@ def confirmation_move(
     daily = pd.Series(values.to_numpy(), index=index).sort_index()
     daily = daily[~daily.index.duplicated(keep="last")]
     daily = daily[daily.index.notna()]
-    confirmed = confirmation_date(daily, marker_date)
+    # market="HK": the marker was LABELLED on the Hong Kong session calendar (session_anchor
+    # R-SQ1), and confirmation_date must walk the same grid or the label lookup misses and
+    # the lane prints a null. This helper takes closes, not a ticker — but it is only ever
+    # reached from the HK board, so the calendar is a property of the module, not the row.
+    try:
+        confirmed = confirmation_date(daily, marker_date, market="HK")
+    except FileNotFoundError:
+        # session_anchor RAISES rather than silently bucketing HK on NYSE sessions (the
+        # no-fallback-chain law). A checkout without data/hk/_HSI.parquet therefore cannot
+        # derive this anchor at all — which is precisely the disclosed-null case this
+        # function already documents, not a new kind of answer. Narrow on purpose: only
+        # the missing-reference failure degrades; every other error still surfaces.
+        return None
     if confirmed is None:
         return None
     stamp = str(confirmed.date())

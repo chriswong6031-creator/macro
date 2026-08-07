@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-06T23:08:56.889843+00:00",
+  "generated_utc": "2026-08-06T23:40:29.946958+00:00",
   "as_of": "2026-08-06",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -25049,6 +25049,133 @@
         "hot": true
       }
     ],
+    "insider_mspr": [
+      {
+        "ticker": "BA",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "CAT",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "CEG",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "CW",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "D",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "DUK",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "EME",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "HBAN",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "HII",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "HWM",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "ITW",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "LDOS",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "LEU",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "LHX",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "LITE",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "MRCY",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "MU",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "NEE",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "NOC",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "NOW",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "ORCL",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "SRE",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "VRT",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "WTFC",
+        "mspr": 100.0,
+        "hot": true
+      },
+      {
+        "ticker": "TDY",
+        "mspr": 98.3,
+        "hot": true
+      }
+    ],
     "short_interest": [
       {
         "ticker": "OTTR",
@@ -27201,14 +27328,14 @@
         "sentiment": 0.107
       },
       {
-        "ticker": "QQQ",
-        "mentions": 25,
-        "sentiment": 0.074
-      },
-      {
         "ticker": "MSFT",
         "mentions": 25,
         "sentiment": 0.015
+      },
+      {
+        "ticker": "QQQ",
+        "mentions": 25,
+        "sentiment": 0.074
       },
       {
         "ticker": "OKLO",

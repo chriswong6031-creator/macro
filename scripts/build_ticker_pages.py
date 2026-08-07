@@ -38,7 +38,8 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from lib import config  # noqa: E402
-from lib.pages import rendered_ticker_pages, write_page  # noqa: E402
+from lib.pages import (rendered_basket_pages, rendered_ticker_pages,  # noqa: E402
+                       write_page)
 from lib.seo import SITE_BASE as _SITE_BASE  # noqa: E402
 
 log = logging.getLogger(__name__)
@@ -2859,7 +2860,17 @@ def _build_peers(
     return rows or None
 
 
-def _build_themes(blob: dict | None, member_ctx_list: list, baskets_map: dict) -> list | None:
+def _build_themes(blob: dict | None, member_ctx_list: list, baskets_map: dict,
+                  linkable_baskets: frozenset[str] | None = None) -> list | None:
+    """`linkable_baskets`: basket ids that ship a basket/<id>.html page.
+
+    A row whose id is absent still RENDERS — the name, the charter sentence and
+    the band are worth reading on their own — it just does not become a link to
+    a page that was never built. Membership is curated by hand; page-building is
+    gated on 3+ members having price history (engine/baskets.py), so a freshly
+    curated basket is linkable-looking and unbuilt for at least a night. None
+    means "unknown, link everything", which preserves every existing caller.
+    """
     if not blob and not member_ctx_list:
         return None
     rows = []
@@ -2939,6 +2950,11 @@ def _build_themes(blob: dict | None, member_ctx_list: list, baskets_map: dict) -
             "rank": sp.get("rank"),
             "n_themes": sp.get("n_themes"),
         }
+
+    # Link only what ships. Done once here, after both row sources have merged,
+    # so neither can slip a row past the gate.
+    for r in rows:
+        r["linked"] = (linkable_baskets is None) or (r["id"] in linkable_baskets)
 
     if not rows and not basket_alloc and not sector_pulse:
         return None
@@ -3147,12 +3163,14 @@ def build_page_context(
     all_groups: set[str] | None = None,
     dow30_set: set[str] | None = None,
     linkable_tickers: frozenset[str] | None = None,
+    linkable_baskets: frozenset[str] | None = None,
 ) -> dict:
     """Build the full v2 context dict for one ticker. Pure — no I/O.
 
     `linkable_tickers`: tickers that ship a stocks/<T>.html page, passed in
     rather than read here so this stays pure. None = link every peer (the
     pre-filter behaviour). See _build_peers.
+    `linkable_baskets`: the same contract for basket/<id>.html. See _build_themes.
     """
     blob = per.get("blob")
     ohlc_bars = per.get("ohlc_bars") or []
@@ -3240,7 +3258,7 @@ def build_page_context(
         self_cap_hint=profile.get("mktcap_bn"),
         linkable=linkable_tickers,
     )
-    themes_raw = _build_themes(blob, member_ctx_list, baskets_map)
+    themes_raw = _build_themes(blob, member_ctx_list, baskets_map, linkable_baskets)
     signal_history = _build_signal_history(blob)
     seasonality = _build_seasonality_section(season_this, season_this_zh, season_next, season_next_zh, monthly_data)
     profile_extras = _build_profile_extras(blob)
@@ -3451,6 +3469,8 @@ def run(
     # sound (never links a 404), one night behind for a brand-new ticker.
     linkable_tickers = rendered_ticker_pages(site)
     log.info("Peer links restricted to %d shipped ticker page(s)", len(linkable_tickers))
+    linkable_baskets = rendered_basket_pages(site)
+    log.info("Basket links restricted to %d shipped basket page(s)", len(linkable_baskets))
 
     n_rendered = 0
     n_skipped = 0
@@ -3537,6 +3557,7 @@ def run(
                 ticker, name, sector, per, agg, generated_utc,
                 group=group, all_groups=_all_groups, dow30_set=dow30_set,
                 linkable_tickers=linkable_tickers,
+                linkable_baskets=linkable_baskets,
             )
 
             # ── Share card (og:image) ─────────────────────────────────────
