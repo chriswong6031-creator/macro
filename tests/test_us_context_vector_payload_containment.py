@@ -192,17 +192,29 @@ PAID_PAYLOAD_SUFFIXES = ("__findings", "__disclosure_changes")
 
 
 def _tracked_parquets() -> list[Path]:
-    """Every parquet COMMITTED under data/, via git — not a filesystem glob.
+    """Every parquet COMMITTED ANYWHERE in the repo, via git — not a filesystem glob.
 
-    The contract is about what `git clone` hands a stranger, so the file list
-    has to come from the index. A glob would also sweep untracked local scratch
-    parquets and report a leak that was never published.
+    The contract is about what `git clone` hands a stranger, so the file list has
+    to come from the index — and it has to be the WHOLE index. `git clone` hands
+    over every tracked file, not just `data/`.
+
+    This swept `data/` only until 2026-08-07, while this docstring already made
+    the `git clone` argument. That mismatch is the same defect class this file
+    exists to close: the rationale read correct while the coverage was narrow, so
+    the guard could not see a leak into the 15 tracked parquets under
+    `research/species/` and `tests/fixtures/`. A guard that cannot see the
+    failure it names is not a guard. Verified by mutation in both directions: a
+    `__findings` column injected under tests/fixtures/ FAILS the sweep now and
+    passed silently under the data/-only list.
+
+    Still the index rather than a filesystem glob, which would also sweep
+    untracked local scratch parquets and report a leak that was never published.
     """
     import subprocess
 
     try:
         out = subprocess.run(
-            ["git", "ls-files", "-z", "data/"],
+            ["git", "ls-files", "-z", "*.parquet"],
             cwd=ROOT, capture_output=True, text=True, timeout=120, check=True,
         ).stdout
     except Exception:  # noqa: BLE001 — no git / no checkout is a skip, not a red
@@ -211,7 +223,7 @@ def _tracked_parquets() -> list[Path]:
 
 
 def test_no_committed_parquet_carries_a_paid_payload_column() -> None:
-    """No tracked parquet under data/ may carry an entitlement-gated body.
+    """No tracked parquet ANYWHERE in the repo may carry an entitlement-gated body.
 
     This is the durable half of the fix, and the one the seam allowlist cannot
     provide. `STAMP_FORBIDDEN_COLUMNS` stops the CURRENT writer; this stops the
@@ -226,7 +238,7 @@ def test_no_committed_parquet_carries_a_paid_payload_column() -> None:
     """
     parquets = _tracked_parquets()
     if not parquets:
-        pytest.skip("no tracked parquets under data/ in this checkout")
+        pytest.skip("no tracked parquets in this checkout")
 
     import pyarrow.parquet as pq
 
