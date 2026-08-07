@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T06:30:28.201370+00:00",
-  "count": 923,
+  "generated_at": "2026-08-07T06:45:31.091195+00:00",
+  "count": 924,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -1722,6 +1722,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bd8pms0hcv4-d57085",
+      "title": "Uber Technologies Inc. (UBER) Q2'26 Earnings First Take",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:01:30Z",
+      "summary_points": [
+        "**Earnings & Growth Drivers**: Gross Bookings ($58.02bn) and Adj.",
+        "EBITDA ($2.82bn) beat estimates; Mobility (40% YoY) and Delivery ($15bn annualized run rate) growth are core strategic priorities, with AV expansion to 15 cities by year-end.",
+        "**Guidance & Key Risks**: Q3 bookings guidance ($58.25-60.25bn) slightly above Street ($59.33bn); critical risks include slower Mobility growth, regulatory hurdles (driver classification, merchant caps), and competitive pressures.",
+        "**Valuation Upside & Fundamentals**: $115 target (59.7% upside from $71.99), driven by 43% revenue/87% EBITDA growth (12/25-12/28E), P/E compression (17.9→11.7), and strong EBITDA margin expansion.",
+        "**Target Price Momentum**: Sustained upward trajectory in target prices (e.g., $115 as of May 2026 vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
