@@ -91,12 +91,43 @@ daily.yml's history (70→120→150→200→240 engine; 40→120 tech_lab;
 tiny per-band timing ledger (job start/end per named band, committed nightly or
 pushed to R2) + a guard that `::warning`s at >85% of cap. Caps then get raised
 from trend data BEFORE a kill night. This is ~30 lines of shell in the jobs +
-one reader script.
+one reader script. **SHIPPED 2026-08-06:** every self-hosted daily.yml job
+carries a pre-checkout start mark + an `always()` finish step
+(`scripts/ci/nightly_timings_finish.sh`) that appends per-band rows to
+`data/ops/nightly_timings/<job>.jsonl` (per-job files — the append can never
+race a sibling job's) and trips the line-start `::warning` above 85% of
+`timeout-minutes`; band marks instrument collect/collect_tail/engine/tech_lab.
+Reader: `scripts/nightly_timings_report.py`. Guard:
+`tests/test_nightly_timings.py` (in the dag-conformance CI pack) pins the
+wiring, pins each finish arg == the job's `timeout-minutes` so a cap raise
+cannot silently rescale the tripwire, and drives the synthetic 86% run of gate
+§0.2. Ledger seeded with the 2026-08-06 kill night — whose engine row reads
+85.4% of even the NEW 240m cap, i.e. the tripwire fires on night one.
 
 **W3 — Workload trims.** build_news GDELT de-rate first (~26–29m of 429
 backoff inside the engine critical path even on green nights — cache/de-rate
 or move into the parallel builders band, per the engine comment's own "next
 lever"). Then re-measure; do not inherit step-cost labels (tech_lab law).
+
+> **W3 RE-MEASURED 2026-08-06 — the ~26–29m label was itself stale** (the
+> tech_lab law fired on this very workstream). That figure was measured on the
+> 07-21/07-24 nights, i.e. AT the ship date of the GDELT circuit breaker
+> (#3442, merged 07-24), which already collapsed the stall. Measured
+> build_news band, four recent nights: 07-27 green **5.9m**, 08-03 **4.3m**,
+> 08-05 **4.7m**, 08-06 **5.4m** — of which ~2m is the single nightly 429
+> ladder (30s+75s) that arms the breaker; every later GDELT call
+> short-circuits. All of the engine job's GDELT activity is inside the
+> build_news band; nothing else pays it. Relocation to the parallel band is
+> REJECTED — it would re-create the desync'd news board NWS-01 (#2658) fixed,
+> to save ~5m. What W3 actually shipped: (1) the china_news wire query
+> (410 chars) had been structurally rejected by GDELT every night since the
+> ~06-20 length-limit tightening — a six-week-dark lane burning a doomed
+> paced call nightly; it is now split into ≤230-char sub-queries
+> (news_vector's probed limit) and live again. (2) daily.yml's stale cost
+> labels corrected. **The band that is actually creeping is build_site:
+> ~33m (07-21) → 35.7m (07-27) → 42.0m (08-03) → 61.7m/57.8m (08-05/08-06)**
+> — +25m in two weeks, the largest step in the job and the real driver of the
+> ~205m kill nights. Next W3 target: profile build_site's page loop.
 
 **W4 — Disk program on the M1.** Execute the ranked plan (operator sudo
 required for ranks 0/3): TM snapshots ~80G → `tmutil disable` decision →

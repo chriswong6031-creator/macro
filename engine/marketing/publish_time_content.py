@@ -1099,110 +1099,21 @@ def _cand_session(cand: dict) -> str | None:
 # local copy would silently reopen.
 # ─────────────────────────────────────────────────────────────────────────────
 
-#: A weekday name as published copy writes it ("on Friday", "Friday's move").
-#: CASE-SENSITIVE on the capitalised form: these are proper nouns in a headline,
-#: and a case-insensitive match would be a needless invitation for a lower-case
-#: false positive to kill a good post (the quarantine here is terminal).
-_WEEKDAY_CLAIM_RE = re.compile(
-    r"(?<![\w'])(" + "|".join(market_clock._WEEKDAYS_EN) + r")(?![\w])")
+#: THE CLAIM RESOLVER LIVES IN market_clock, NOT HERE (generalised 2026-08-06).
+#: This lane wrote the weekday / month-day / "today" resolver first, and the
+#: publisher's new session-freshness gate needs exactly the same answers for
+#: every OTHER lane. A second copy is how two gates start disagreeing about
+#: which session "on Friday" names, so the tables and the walk moved next to the
+#: calendar they depend on and this name is now an alias. The lookback constants
+#: are re-exported because this module's tests pin them by name.
+_WEEKDAY_LOOKBACK_DAYS = market_clock._WEEKDAY_LOOKBACK_DAYS
+_MONTH_DAY_LOOKBACK_DAYS = market_clock._MONTH_DAY_LOOKBACK_DAYS
+_WEEKDAY_CLAIM_RE = market_clock._WEEKDAY_CLAIM_RE
+_MONTH_DAY_CLAIM_RE = market_clock._MONTH_DAY_CLAIM_RE
 
-#: "on July 31", "Aug 1" — the shape `market_clock.temporal_vocab` degrades to
-#: once a weekday name would be ambiguous. Two deliberate narrowings:
-#:   * a BARE month name is NOT matched. "May" is also an ordinary English word,
-#:     and a month with no day number names no session anyway.
-#:   * the alternation lists the FULL names and their 3-letter abbreviations
-#:     EXPLICITLY, longest-first, instead of `Mar[a-z]*`-style prefixing. A
-#:     wildcard suffix makes "Market 5" a March date, and a false positive here
-#:     kills a good post (the refusal is terminal).
-_MONTH_ALTS: tuple[str, ...] = tuple(
-    sorted({m for name in market_clock._MONTHS_EN for m in (name, name[:3])}
-           | {"Sept"},
-           key=len, reverse=True))
-_MONTH_DAY_CLAIM_RE = re.compile(
-    r"(?<![\w'])(" + "|".join(_MONTH_ALTS) + r")\.?\s+(\d{1,2})(?![\d])")
-
-#: How far back a weekday / month-day phrase is resolved. 7 days covers every
-#: phrase this lane's banks can emit (the vocab switches to month-day past 6
-#: days); a month-day gets a year, because that is the range over which a
-#: "July 31" in a live post could still be honest.
-_WEEKDAY_LOOKBACK_DAYS = 7
-_MONTH_DAY_LOOKBACK_DAYS = 366
-
-
-def _session_claims(text: str, *, now: datetime) -> tuple[set[date], list[str]]:
-    """(sessions the text claims, unresolvable claims) for copy said at `now`.
-
-    Every claim is resolved to a SESSION DATE so two differently-worded claims
-    about the same session ("today" on Monday and "on Monday") compare equal, and
-    two claims about different sessions compare unequal no matter how they were
-    phrased. That is the whole point: the check is about sessions, not strings.
-
-    An unresolvable claim (a "today" word on a day with no session in progress; a
-    weekday or month-day naming no session in the lookback) is returned SEPARATELY
-    rather than dropped, because "we cannot tell which session this names" is a
-    refusal, not a pass.
-    """
-    body = str(text or "")
-    claims: set[date] = set()
-    unresolved: list[str] = []
-    if not body.strip():
-        return claims, unresolved
-
-    et_today = market_clock.et_date(now)
-
-    # "today" / "this session" / "at the close" … → the session in progress NOW.
-    if market_clock._TODAY_RE.search(body):
-        cur = market_clock.current_session(now)
-        if cur is None:
-            # No session in progress (weekend / holiday) — a "today" word here
-            # names nothing at all. market_clock.temporal_violations reports the
-            # same condition; it is repeated as an unresolved CLAIM so the two
-            # halves of this check share one refusal path.
-            unresolved.append(
-                f"today-word with no session in progress at "
-                f"{et_today.isoformat()}")
-        else:
-            claims.add(cur)
-
-    for m in _WEEKDAY_CLAIM_RE.finditer(body):
-        name = m.group(1)
-        hit: date | None = None
-        for back in range(_WEEKDAY_LOOKBACK_DAYS + 1):
-            d = et_today - timedelta(days=back)
-            if market_clock.weekday_name(d) == name:
-                # session_of walks back off a non-session day, so "on Friday"
-                # said about a Good Friday resolves to the Thursday that
-                # actually traded — the same normalisation temporal_vocab uses.
-                hit = market_clock.session_of(d)
-                break
-        if hit is None:
-            unresolved.append(f"weekday '{name}' names no session in the last "
-                              f"{_WEEKDAY_LOOKBACK_DAYS} days")
-        else:
-            claims.add(hit)
-
-    for m in _MONTH_DAY_CLAIM_RE.finditer(body):
-        mon = m.group(1)
-        try:
-            day = int(m.group(2))
-            month = next(i + 1 for i, name in enumerate(market_clock._MONTHS_EN)
-                         if name.startswith(mon))
-        except (ValueError, StopIteration):  # pragma: no cover - regex-guarded
-            unresolved.append(f"unparseable date '{m.group(0)}'")
-            continue
-        hit = None
-        for back in range(_MONTH_DAY_LOOKBACK_DAYS + 1):
-            d = et_today - timedelta(days=back)
-            if d.month == month and d.day == day:
-                hit = market_clock.session_of(d)
-                break
-        if hit is None:
-            unresolved.append(f"date '{m.group(0)}' is not in the last "
-                              f"{_MONTH_DAY_LOOKBACK_DAYS} days")
-        else:
-            claims.add(hit)
-
-    return claims, unresolved
+#: (sessions the text claims, unresolvable claims). See
+#: :func:`engine.marketing.market_clock.session_claims`.
+_session_claims = market_clock.session_claims
 
 
 def _session_conflict(text: str, *, now: datetime, row_session: str | None,

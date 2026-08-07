@@ -293,9 +293,29 @@ def _compute_iv_rank(df: pd.DataFrame) -> tuple[float | None, int, bool]:
 
 
 def _compute_iv30_chg_5d(df: pd.DataFrame) -> float | None:
-    """Return 5-day IV-change in IV points ×100 (latest − 5-rows-earlier), or None.
+    """Return 5-SESSION IV-change in IV points ×100 (latest − 5 sessions back), or None.
 
-    Requires ≥6 rows of iv30 data.
+    GAP DISCIPLINE — TWO-ENDPOINT (lib/nyse_calendar, 2026-08-06).  A difference reads
+    only its two endpoints, so an interior gap costs nothing and the far endpoint is
+    resolved BY CALENDAR (`row_n_sessions_back`); when the store holds no row AT that
+    session the change is unmeasurable and this returns None rather than a wider change
+    under a "5d" label.
+
+    This is the PUBLIC twin of the ledger stat fixed in #4809, and it was the loosest
+    reader of the family: the `.dropna()` below silently closes an iv30 hole, so the
+    positional `.iloc[-6]` could reach back further still.  Measured at as_of
+    2026-08-06 over the committed store, the positional endpoint was 2026-07-27 where
+    the true 5-sessions-back session is 2026-07-30 — an EIGHT-session change published
+    as five, for 353 of 375 names (94.1%), with 80 SIGN FLIPS (21.3%): ABNB −2.0 → +4.9,
+    ANET −7.1 → +2.4, and FTNT −23.7 → −62.5 at the extreme.
+
+    Refusal is date-WIDE when it happens, because every name reads the same store on the
+    same schedule: over 26 as_of dates the 5-back row is present for 86.4% of
+    (as_of, name) pairs, and the loss concentrates entirely on 2026-07-13 / 07-22 / 07-24
+    where the target sessions 07-06 / 07-15 / 07-17 have no row in ANY store.  The
+    column is display-only (no cross-sectional rank/tercile consumes it — it reaches
+    `site/screenerdata/rows.json` and the screener table), so a blank column on those
+    dates is the honest reading, not a hole in a gate.
     """
     if df is None or df.empty or "iv30" not in df.columns:
         return None
@@ -303,9 +323,10 @@ def _compute_iv30_chg_5d(df: pd.DataFrame) -> float | None:
     if len(iv_series) < 6:
         return None
     try:
-        latest = float(iv_series.iloc[-1])
-        five_back = float(iv_series.iloc[-6])
-        chg = (latest - five_back) * 100
+        five_back = nyse_calendar.row_n_sessions_back(iv_series, 5)
+        if five_back is None:
+            return None
+        chg = (float(iv_series.iloc[-1]) - float(five_back)) * 100
         return round(chg, 1)
     except (TypeError, ValueError, IndexError):
         return None

@@ -43,6 +43,10 @@ from collectors.sec_document_spine import (
     persist_filing_manifest,
     read_archive_document,
 )
+from engine.fundamental_forensics.attested_history_credentials import (
+    R2TemporaryCredentialError,
+    mint_r2_temporary_credentials,
+)
 from engine.fundamental_forensics.attested_history_pilot import (
     prepare_attested_history_base_candidate,
 )
@@ -83,9 +87,7 @@ from engine.research_vault.r2_store import (
 )
 from scripts.run_fundamental_forensics_attested_history import (
     MAX_SPEC_BYTES as MAX_OPERATOR_PACKET_BYTES,
-    R2TemporaryCredentialError,
     build_readonly_operator_store,
-    mint_r2_temporary_credentials,
     operator_spec_from_bytes,
     run_readonly_preflight,
     write_private_receipt,

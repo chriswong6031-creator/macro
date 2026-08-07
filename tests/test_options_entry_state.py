@@ -649,3 +649,153 @@ def test_ovc_schema_completeness(tmp_path):
     for col in ("front7_charm_share", "front7_gex_share", "signed_vanna_pressure",
                 "vanna_hedge_5d", "root_class"):
         assert col in df.columns, f"W-OVC column {col!r} missing from result"
+
+
+# ---------------------------------------------------------------------------
+# The 5-SESSION basis resolves its far endpoint by DATE, not by POSITION
+# ---------------------------------------------------------------------------
+# `vanna_hedge_5d` is the DISPLAY TWIN of the ledger's opt_vanna_hedge_5d, so it carries
+# the same defect and needs the same repair. data/polygon_gex/summary_*.parquet is
+# chronically gapped: measured on summary_AAPL at as_of 2026-08-06 the six trailing
+# session rows are 07-27, 07-28, 07-29, 07-30, 07-31, 08-06 — SIX rows spanning NINE
+# sessions, because the collector did not run 08-03..08-05. The positional `iloc[-6]`
+# therefore resolved 2026-07-27 where the 5-sessions-back session is 2026-07-30, and
+# published a NINE-session change labelled "5d".
+#
+# Only the two endpoints enter a difference, so resolving the far one BY DATE recovers the
+# stat exactly across an interior hole, and returns None when the target session itself
+# has no row — unmeasurable, printed as a null, never a mislabeled basis.
+# (Shared resolver: engine.options_stamp._row_n_sessions_back.)
+
+_VH_NET_VEX = 1_000_000.0
+_VH_FIVE_BACK = _dt.date(2026, 7, 30)     # 5 sessions before 08-06: 08-05/04/03, 07-31
+_VH_ILOC6 = _dt.date(2026, 7, 27)         # what the positional read used to give
+
+# 6 rows / 9 sessions. iv30 puts the calendar row (0.30) and the positional row (0.20) on
+# OPPOSITE sides of the latest reading (0.26), so the two answers differ in SIGN.
+_VH_GAP_ROWS = ["2026-07-27", "2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31",
+                "2026-08-06"]
+_VH_GAP_IV30 = [0.20, 0.22, 0.24, 0.30, 0.28, 0.26]
+_VH_CAL_CHG = _VH_GAP_IV30[-1] - _VH_GAP_IV30[3]    # −0.04 → vanna +40,000
+_VH_POS_CHG = _VH_GAP_IV30[-1] - _VH_GAP_IV30[0]    # +0.06 → vanna −60,000
+
+# SEVEN rows with the 5-back session (07-30) absent; iloc[-6] is 07-24, so the old
+# positional read would have returned a number here.
+_VH_MISSING_ROWS = ["2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28",
+                    "2026-07-29", "2026-07-31", "2026-08-06"]
+_VH_MISSING_IV30 = [0.18, 0.20, 0.20, 0.22, 0.24, 0.28, 0.26]
+
+# Six CONSECUTIVE sessions — dense, so the calendar target IS index[-6].
+_VH_DENSE_ROWS = ["2026-07-30", "2026-07-31", "2026-08-03", "2026-08-04",
+                  "2026-08-05", "2026-08-06"]
+_VH_DENSE_IV30 = [0.30, 0.28, 0.27, 0.29, 0.31, 0.26]
+
+
+def _write_vanna_summary(tmp: Path, ticker: str, dates: list[str],
+                         iv30s: list[float], net_vex: float = _VH_NET_VEX) -> None:
+    """A multi-row polygon_gex summary — the two columns vanna_hedge_5d reads, dated."""
+    gex_dir = tmp / "data" / "polygon_gex"
+    gex_dir.mkdir(parents=True, exist_ok=True)
+    n = len(dates)
+    df = pd.DataFrame(
+        {
+            "spot": [100.0] * n, "net_gex_bn": [0.5] * n,
+            "net_vex": [float(net_vex)] * n, "net_cex": [5e7] * n,
+            "gamma_flip": [85.0] * n, "dist_to_flip_pct": [15.0] * n,
+            "gamma_regime": ["long"] * n,
+            "magnet_up": [101.0] * n, "magnet_down": [97.0] * n,
+            "charm_anchor": [100.0] * n, "charm_net_sign": [1] * n,
+            "iv30": [float(v) for v in iv30s],
+            "put_call_oi_ratio": [0.8] * n, "max_pain": [90.0] * n,
+            "n_strikes": [100] * n, "tier": ["full"] * n,
+        },
+        index=pd.DatetimeIndex(list(dates)),
+    )
+    df.to_parquet(gex_dir / f"summary_{ticker}.parquet")
+
+
+def _assert_all_sessions(rows: list[str]) -> list[_dt.date]:
+    """Every fixture date must trade, or the reader's own session filter shrinks it."""
+    from lib import nyse_calendar
+    idx = [_dt.date.fromisoformat(d) for d in rows]
+    assert all(nyse_calendar.is_session(d) for d in idx), (
+        f"fixture premise: non-session dates in {rows}")
+    return idx
+
+
+def test_vanna_hedge_5d_resolves_the_far_endpoint_by_calendar_not_by_position(tmp_path):
+    """The measured outage shape: 6 rows / 9 sessions, opposite-sign answers."""
+    from lib import nyse_calendar
+
+    idx = _assert_all_sessions(_VH_GAP_ROWS)
+    # PREMISE — six rows spanning NINE sessions. If a calendar change ever made this
+    # fixture dense the two answers would coincide and the assertions below would pass
+    # for the wrong reason; fail loudly instead.
+    assert len(_VH_GAP_ROWS) == 6, "the outage fixture must hold exactly six rows"
+    assert len(nyse_calendar.sessions_between(idx[0], idx[-1])) == 9, (
+        f"fixture premise gone: {idx[0]}..{idx[-1]} no longer spans nine sessions")
+    assert idx[3] == _VH_FIVE_BACK and idx[0] == _VH_ILOC6
+
+    cal = round(-_VH_NET_VEX * _VH_CAL_CHG, 6)      # +40,000 — the 07-30 endpoint
+    pos = round(-_VH_NET_VEX * _VH_POS_CHG, 6)      # −60,000 — the iloc[-6] endpoint
+    assert cal > 0 > pos, "fixture premise: the two answers have opposite signs"
+
+    _write_vanna_summary(tmp_path, "GAPPY", _VH_GAP_ROWS, _VH_GAP_IV30)
+    got = OES._compute_vanna_hedge_5d(tmp_path, "GAPPY")
+
+    assert got == pytest.approx(cal), (
+        f"published {got}; five sessions before {idx[-1]} is {_VH_FIVE_BACK} "
+        f"(iv30 {_VH_GAP_IV30[3]}), so vanna_hedge_5d is {cal}")
+    assert got != pytest.approx(pos), (
+        f"published the POSITIONAL iloc[-6] answer {pos} — the {_VH_ILOC6} endpoint is "
+        "NINE sessions back, and this column is labelled 5d")
+
+    # …and the same value reaches the published state frame, not just the helper.
+    row = OES.build_state(tmp_path)
+    row = row[row["ticker"] == "GAPPY"]
+    assert not row.empty
+    assert float(row.iloc[0]["vanna_hedge_5d"]) == pytest.approx(cal)
+
+
+def test_vanna_hedge_5d_nulls_when_the_five_back_session_has_no_row(tmp_path):
+    """≥6 rows and still null — the null comes from RESOLUTION, not the row floor."""
+    from lib import nyse_calendar
+
+    idx = _assert_all_sessions(_VH_MISSING_ROWS)
+    # PREMISE — SEVEN rows. Load-bearing: _compute_vanna_hedge_5d already returns None
+    # below six SESSION rows, so at exactly the floor a null could not be attributed to
+    # the missing target session.
+    assert len(_VH_MISSING_ROWS) >= 6, "a null here must come from target resolution"
+    assert nyse_calendar.is_session(_VH_FIVE_BACK), "fixture premise: 07-30 trades"
+    assert _VH_FIVE_BACK not in idx, "fixture premise: the store has no 07-30 row"
+    # A positional read would have returned a number (iloc[-6] = 07-24, iv30 0.20).
+    assert idx[1] == _dt.date(2026, 7, 24)
+    would_have = round(-_VH_NET_VEX * (_VH_MISSING_IV30[-1] - _VH_MISSING_IV30[1]), 6)
+    assert would_have == pytest.approx(-60_000.0), "fixture premise: iloc[-6] is non-null"
+
+    _write_vanna_summary(tmp_path, "HOLEY", _VH_MISSING_ROWS, _VH_MISSING_IV30)
+    got = OES._compute_vanna_hedge_5d(tmp_path, "HOLEY")
+    assert got is None, (
+        f"published {got} for a store with no {_VH_FIVE_BACK} row — unmeasurable is a "
+        "null, never a substituted endpoint")
+
+
+def test_vanna_hedge_5d_on_a_dense_store_is_the_old_positional_value(tmp_path):
+    """Strict refinement: no gap, no change — every healthy date keeps its value."""
+    from lib import nyse_calendar
+
+    idx = _assert_all_sessions(_VH_DENSE_ROWS)
+    # PREMISE — six rows over exactly six sessions: dense, so calendar target == index[-6].
+    assert len(_VH_DENSE_ROWS) == 6
+    assert len(nyse_calendar.sessions_between(idx[0], idx[-1])) == 6, (
+        "fixture premise gone: these six dates no longer span exactly six sessions")
+
+    # The literal the OLD positional code produced, computed from the fixture's own
+    # numbers (not from a second call to the function under test).
+    expected = round(-_VH_NET_VEX * (_VH_DENSE_IV30[-1] - _VH_DENSE_IV30[0]), 6)
+    assert expected == pytest.approx(40_000.0)
+
+    _write_vanna_summary(tmp_path, "DENSE", _VH_DENSE_ROWS, _VH_DENSE_IV30)
+    got = OES._compute_vanna_hedge_5d(tmp_path, "DENSE")
+    assert got == pytest.approx(expected), (
+        f"dense store published {got}, not the unchanged positional value {expected}")

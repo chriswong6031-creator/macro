@@ -3027,7 +3027,7 @@ artifacts:
     external_consumers:
       - terminal:chart_markers
       - mastermind:vendored
-    notes: "Per-ticker placeholder path. The ONLY jsonschema-enforced artifact family (Draft202012). Producer: scripts/build_signal_quality.py:45 via engine/signal_gate.py:write_signal_file."
+    notes: "Per-ticker placeholder path. The ONLY jsonschema-enforced artifact family (Draft202012). Producer: scripts/build_signal_quality.py writes each file itself (json.dumps of the analyze() payload after engine/marker_integrity.py:merge_payload applies the append-only merge law). The retired engine/signal_gate.py:write_signal_file never wrote these — it had zero callers."
 
   # --- 6 consumers ---
   site-qledger-track-record:

@@ -30,13 +30,14 @@ THE SIX COMPONENTS THE TASK ASKS FOR
      rolled by `step`, with a `purge` gap before each test and an `embargo` after it, so
      no test bar's information bleeds into a neighbouring split.  (`make_windows`.)
 
-  2. LEAK-FREE MULTI-TIMEFRAME BAR -> DAILY MAPPING.  A 3D (or N-day) bar's close is only
-     KNOWN on the last daily date inside its bin — `resample("NB")` labels the bin's LEFT
-     edge, which can sit 2-4 calendar days BEFORE that close.  Every TF bar is mapped to
-     its true known-date and fired on the first daily bar STRICTLY AFTER it.  The whole
-     trade simulation then runs on the DAILY grid so a ≤ stop_pct stop is checked every
-     day (a 3D-only sim would step over intraday shake-outs).  (`tf_bars`, `to_daily`,
-     `_daily_events_after`.)
+  2. LEAK-FREE MULTI-TIMEFRAME BAR -> DAILY MAPPING.  A 3D bar is labelled by its OPEN
+     date (`confluence.compute_signals`' session-grouped geometry — `tf_bars` delegates
+     to `confluence._3d_groups`, so the two label systems cannot drift) but its close is
+     only KNOWN on the bar's LAST traded session, 2-4 calendar days later.  Every TF bar
+     is mapped to its true known-date and fired on the first daily bar STRICTLY AFTER it.
+     The whole trade simulation then runs on the DAILY grid so a ≤ stop_pct stop is
+     checked every day (a 3D-only sim would step over intraday shake-outs).  (`tf_bars`,
+     `to_daily`, `_daily_events_after`.)
 
   3. AS-TRADED-WITH-STOP METRICS.  stop_out_rate (PRIMARY), realised-loss distribution
      under the stop, avg loss size, entry efficiency, per-trade expectancy, win rate.
@@ -153,20 +154,38 @@ assert not _is_better(40.0, 39.0, "stop_out_rate"), "stop_out_rate: higher must 
 
 
 # ============================================================ cross-grid utils (comp. 2)
-# Leak-free TF -> daily mapping.  A TF bar is labelled by its bin's LEFT edge but is only
-# KNOWN on the last daily date in the bin; we map by that known date and fire on the first
-# daily bar STRICTLY AFTER it.
+# Leak-free TF -> daily mapping.  A TF bar is labelled by its OPEN date but its close is
+# only KNOWN on the bar's last traded session; we map by that known date and fire on the
+# first daily bar STRICTLY AFTER it.
 def tf_bars(daily: pd.Series, n: int):
-    """resample to n-business-day bars (faithful to confluence.py) and return, per bar,
-    the true daily date its close became known."""
+    """n-session bars in ``confluence.compute_signals``' EXACT geometry, plus, per bar,
+    the true daily date its close became known.
+
+    n==3 delegates to ``confluence._3d_groups`` (session-grouped 3D bars anchored at the
+    series start, labelled by OPEN date), so the known-date labels are the same objects
+    ``compute_signals`` indexes by — both call sites exact-match ``known.reindex(sig.index)``,
+    and ANY drift between the two label systems silently drops bars.  This function used to
+    build its own ``resample(f"{n}B")`` calendar bins ("faithful to confluence.py", which
+    held only until confluence retired resample for session grouping): the two systems then
+    re-diverged at every market holiday and only re-coincided while the cumulative holiday
+    count since series start ≡ 0 (mod 3), so the exact-match reindex went NaN on 67.3-67.6%
+    of 3D bars (measured AAPL/NUE/PEP, 2026-08-06) and the gold entry/exit stream ran on a
+    silent ~1/3 subsample.
+
+    Other n have no caller in this module and no confluence geometry to be faithful to —
+    refuse them rather than hand back calendar bins that would recreate the same defect."""
     if n == 1:
         return daily.copy(), pd.Series(daily.index, index=daily.index)
-    s = daily.resample(f"{n}B").last().dropna()
-    known = (daily.resample(f"{n}B")
-                  .apply(lambda x: x.dropna().index.max())
-                  .reindex(s.index).dropna())
-    s = s.reindex(known.index)
-    return s, pd.Series(pd.to_datetime(known.values), index=known.index)
+    if n == 3:
+        from confluence import _3d_groups
+        open_dates, close_dates, close_px = _3d_groups(daily, 0)
+        s = pd.Series(close_px, index=open_dates, name=getattr(daily, "name", None))
+        return s, pd.Series(pd.DatetimeIndex(close_dates), index=open_dates)
+    raise ValueError(
+        f"tf_bars(n={n}): only n=1 (daily) and n=3 (confluence._3d_groups geometry) are "
+        "supported.  Calendar resample bins mis-split sessions at every holiday and their "
+        "labels do not match compute_signals' session-grouped OPEN dates — derive any new "
+        "timeframe from confluence's geometry deliberately before consuming it.")
 
 
 def _daily_events_after(known_dates, daily_index: pd.DatetimeIndex) -> pd.Series:
