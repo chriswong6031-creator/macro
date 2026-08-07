@@ -1,7 +1,7 @@
 {
   "schema": "theme_clinical.v1",
   "as_of": "2026-08-07",
-  "generated_at": "2026-08-07T04:37:25.267904+00:00",
+  "generated_at": "2026-08-07T14:08:19.036420+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -18,7 +18,7 @@
     "total_themes": 3,
     "themes_with_data": 3,
     "total_modalities_configured": 9,
-    "total_studies_stored": 2495,
+    "total_studies_stored": 2496,
     "parquet_absent": false
   },
   "themes": {
@@ -26,9 +26,9 @@
       "theme_id": "diagnostics_lifesci",
       "n_modalities_configured": 6,
       "n_modalities_with_data": 6,
-      "n_studies_total": 1838,
+      "n_studies_total": 1839,
       "year_month_max": "2026-08",
-      "theme_registration_yoy_pct": 11.52,
+      "theme_registration_yoy_pct": 11.69,
       "theme_registration_velocity_read": "accelerating",
       "theme_registration_magnitude_band": "moderate",
       "n_phase3_trailing12m": 30,
@@ -103,19 +103,19 @@
         },
         "car_t_cell_therapy": {
           "modality_id": "car_t_cell_therapy",
-          "n_studies_total": 721,
+          "n_studies_total": 722,
           "year_month_max": "2026-08",
-          "registration_yoy_pct": 17.17,
+          "registration_yoy_pct": 18.18,
           "registration_velocity_read": "accelerating",
           "registration_magnitude_band": "moderate",
-          "enrollment_yoy_pct": 37.49,
+          "enrollment_yoy_pct": 38.0,
           "enrollment_velocity_read": "accelerating",
           "n_phase3_trailing12m": 7,
           "phase_distribution_read": "mixed",
-          "phase_distribution_share_phase2plus_recent": 0.3621,
+          "phase_distribution_share_phase2plus_recent": 0.3675,
           "phase_data_caveat": "phase_non_pit: API returns current phase only; backfill rows carry phase-as-of-ingest (upper-biased toward late phase for pre-2025 studies); cross-cohort delta is confounded and not published; read is based on trailing-12m recent-window only (near-PIT).",
-          "coverage_note": "721 INDUSTRY-sponsored studies; most recent registration: 2026-08; 103 months of registration data",
-          "coverage_note_zh": "共721个行业赞助研究；最近注册月份：2026-08；103个月的注册数据",
+          "coverage_note": "722 INDUSTRY-sponsored studies; most recent registration: 2026-08; 103 months of registration data",
+          "coverage_note_zh": "共722个行业赞助研究；最近注册月份：2026-08；103个月的注册数据",
           "expected_read": "phase-2/3 migration = development cost commitment"
         },
         "mrna_therapeutics": {
@@ -136,8 +136,8 @@
           "expected_read": "rising registrations = mRNA platform capital commitment"
         }
       },
-      "coverage_note": "6/6 modalities have data; 1838 total INDUSTRY-sponsored studies; most recent: 2026-08",
-      "coverage_note_zh": "6个模态中6个有数据；共1838个行业赞助研究；最新月份：2026-08"
+      "coverage_note": "6/6 modalities have data; 1839 total INDUSTRY-sponsored studies; most recent: 2026-08",
+      "coverage_note_zh": "6个模态中6个有数据；共1839个行业赞助研究；最新月份：2026-08"
     },
     "glp1_obesity": {
       "theme_id": "glp1_obesity",

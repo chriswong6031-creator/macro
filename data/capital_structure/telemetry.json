@@ -4,7 +4,7 @@
     "event_versions": "e41c43de32e14375d491b736916f0ddc9b6afae75488bbf21cb2846240050e4f",
     "review_queue": "1f26dc372320224250e8e51808695170678a9f7a4a4bd5f2ec3ad0447842ba4c"
   },
-  "as_of": "2026-08-02T01:10:39.908687+00:00",
+  "as_of": "2026-08-07T12:57:18.572617+00:00",
   "authority": {
     "entry_authority": false,
     "is_context_only": true,
@@ -18,11 +18,11 @@
     "compile_failures": 0,
     "event_edges": 0,
     "event_versions": 400,
-    "new_event_versions": 200,
+    "new_event_versions": 0,
     "review_queue": 291,
     "source_manifests": 1258
   },
-  "coverage_claim": "explicit_wave1_form_allowlist_only",
+  "coverage_claim": "registration_allowlist_plus_issuer_scoped_reconciliation",
   "form_policy": {
     "capital_relevant_declared_not_collected": [
       "424B2",
@@ -49,7 +49,25 @@
       "S-8",
       "S-8 POS"
     ],
-    "policy_version": "capital-structure-sec-form-policy/1.1.0",
+    "issuer_scoped_reconciliation": [
+      "10-K",
+      "10-K/A",
+      "10-Q",
+      "10-Q/A",
+      "20-F",
+      "20-F/A",
+      "40-F",
+      "40-F/A",
+      "6-K",
+      "6-K/A",
+      "8-K",
+      "8-K/A",
+      "DEF 14A",
+      "DEF 14C",
+      "PRE 14A",
+      "PRE 14C"
+    ],
+    "policy_version": "capital-structure-sec-form-policy/1.2.0",
     "wave1_discovery": [
       "1-A",
       "1-A POS",
@@ -106,27 +124,13 @@
       "PRE 14C"
     ]
   },
-  "generation_id": "generation:cs:704d85a3499c1a948e6f57fe",
+  "generation_id": "generation:cs:82c5dd3d1dc2357830883d15",
   "known_exclusions": [
-    "10-K",
-    "10-K/A",
-    "10-Q",
-    "10-Q/A",
-    "20-F",
-    "20-F/A",
-    "40-F",
-    "40-F/A",
     "424B2",
     "424B6",
     "424H",
     "424H/A",
     "424I",
-    "6-K",
-    "6-K/A",
-    "8-K",
-    "8-K/A",
-    "DEF 14A",
-    "DEF 14C",
     "F-3D",
     "F-4",
     "F-4/A",
@@ -138,8 +142,6 @@
     "N-2 POSASR",
     "N-2/A",
     "N-2ASR",
-    "PRE 14A",
-    "PRE 14C",
     "S-11",
     "S-11/A",
     "S-3D",
@@ -168,7 +170,7 @@
   },
   "schema": "capital_structure.telemetry.v1",
   "source_ledger_receipt": {
-    "form_policy_version": "capital-structure-sec-form-policy/1.1.0",
+    "form_policy_version": "capital-structure-sec-form-policy/1.2.0",
     "immutable_prefix": true,
     "prefix_sha256": "73631e1f83f1d5deb4ee240680534fe4764201e908091e6fa8b315a6277a16e3",
     "record_count": 1258,

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-07T09:35:18.760006+00:00",
+  "generated_at": "2026-08-07T12:28:34.985364+00:00",
   "grade_horizons": [
     5,
     21,
@@ -35,10 +35,10 @@
         "state": "GRADED"
       },
       "21": {
-        "n_obs": 4468,
+        "n_obs": 4469,
         "n_dates": 21,
-        "hit_rate": 0.466077,
-        "excess_mean": -0.022193,
+        "hit_rate": 0.466198,
+        "excess_mean": -0.022189,
         "wilson_ci_low": 0.283437,
         "state": "ACCRUING"
       }
@@ -92,7 +92,7 @@
         "n_obs": 2720,
         "n_dates": 18,
         "hit_rate": null,
-        "excess_mean": -0.027578,
+        "excess_mean": -0.027576,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -128,7 +128,7 @@
         "n_obs": 2720,
         "n_dates": 18,
         "hit_rate": null,
-        "excess_mean": -0.027578,
+        "excess_mean": -0.027576,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -189,10 +189,10 @@
         "state": "ACCRUING"
       },
       "21": {
-        "n_obs": 192,
+        "n_obs": 193,
         "n_dates": 6,
-        "hit_rate": 0.663043,
-        "excess_mean": -0.016671,
+        "hit_rate": 0.659459,
+        "excess_mean": -0.016713,
         "wilson_ci_low": 0.299988,
         "state": "ACCRUING"
       }
@@ -245,10 +245,10 @@
         "state": "GRADED"
       },
       "21": {
-        "n_obs": 4468,
+        "n_obs": 4469,
         "n_dates": 21,
-        "hit_rate": 0.466077,
-        "excess_mean": -0.022193,
+        "hit_rate": 0.466198,
+        "excess_mean": -0.022189,
         "wilson_ci_low": 0.283437,
         "state": "ACCRUING"
       }
@@ -302,7 +302,7 @@
         "n_obs": 2720,
         "n_dates": 18,
         "hit_rate": null,
-        "excess_mean": -0.027578,
+        "excess_mean": -0.027576,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -338,7 +338,7 @@
         "n_obs": 2720,
         "n_dates": 18,
         "hit_rate": null,
-        "excess_mean": -0.027578,
+        "excess_mean": -0.027576,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -399,10 +399,10 @@
         "state": "ACCRUING"
       },
       "21": {
-        "n_obs": 192,
+        "n_obs": 193,
         "n_dates": 6,
-        "hit_rate": 0.663043,
-        "excess_mean": -0.016671,
+        "hit_rate": 0.659459,
+        "excess_mean": -0.016713,
         "wilson_ci_low": 0.299988,
         "state": "ACCRUING"
       }
@@ -543,13 +543,13 @@
     }
   },
   "counts": {
-    "n_claims": 39819,
-    "n_grades": 46192,
+    "n_claims": 39808,
+    "n_grades": 46124,
     "n_placebo": 850,
     "n_rejected": 1,
     "grades_by_fill_convention": {
       "asof_legacy": 2780,
-      "next_bar": 43412
+      "next_bar": 43344
     },
     "n_claims_unstamped_regime": 5817
   },
@@ -1019,7 +1019,7 @@
       }
     }
   },
-  "ladder_states_at": "2026-08-07T09:35:43.832862+00:00",
+  "ladder_states_at": "2026-08-07T12:28:59.509042+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
@@ -1181,8 +1181,8 @@
         "excess_mean": -0.053072,
         "ready": false,
         "approaching": true,
-        "projected_ready_date": null,
-        "reason": "n_dates=25 OK but no directional hits recorded (graded_hits=0) — cannot compute Wilson CI. Family may be salience-only (direction=0); salience families gate on |excess| > placebo instead."
+        "projected_ready_date": "2026-08-08",
+        "reason": "n_dates=24 < 25 required. State: ACCRUING. Need 1 more independent date clusters."
       },
       "63": {
         "n_dates": 0,
@@ -1216,8 +1216,8 @@
         "excess_mean": -0.053072,
         "ready": false,
         "approaching": true,
-        "projected_ready_date": null,
-        "reason": "n_dates=25 OK but no directional hits recorded (graded_hits=0) — cannot compute Wilson CI. Family may be salience-only (direction=0); salience families gate on |excess| > placebo instead."
+        "projected_ready_date": "2026-08-08",
+        "reason": "n_dates=24 < 25 required. State: ACCRUING. Need 1 more independent date clusters."
       },
       "63": {
         "n_dates": 0,
@@ -1597,8 +1597,8 @@
         "n_dates": 21,
         "needed": 25,
         "wilson_ci_low": 0.283437,
-        "hit_rate": 0.466077,
-        "excess_mean": -0.022193,
+        "hit_rate": 0.466198,
+        "excess_mean": -0.022189,
         "ready": false,
         "approaching": true,
         "projected_ready_date": "2026-08-10",
@@ -1703,7 +1703,7 @@
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": -0.027578,
+        "excess_mean": -0.027576,
         "ready": false,
         "approaching": false,
         "projected_ready_date": "2026-08-14",
@@ -1738,7 +1738,7 @@
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": -0.027578,
+        "excess_mean": -0.027576,
         "ready": false,
         "approaching": false,
         "projected_ready_date": "2026-08-14",
@@ -1926,5 +1926,5 @@
       }
     }
   },
-  "promotion_readiness_at": "2026-08-07T09:36:21.978205+00:00"
+  "promotion_readiness_at": "2026-08-07T12:29:37.515190+00:00"
 }
