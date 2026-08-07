@@ -1117,7 +1117,9 @@ jobs:
           tests/test_biopharma_seasonality_foundation.py
           tests/test_stock_seasonality_engine.py
           tests/test_seasonality_event_clock.py
-          tests/test_seasonality_pit_spine.py -q
+          tests/test_seasonality_pit_spine.py
+          tests/test_seasonality_screener.py
+          tests/test_seasonality_api.py -q
 
   china-native-collectors:
     if: ${{ false }}

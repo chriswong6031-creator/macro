@@ -396,6 +396,11 @@ on:
       # main because no CI job ran them. engine/** is broad on purpose — most of these
       # tests pin engine contracts (display-only firewalls, unit guards, honesty layer).
       - "engine/**"
+      # W7 seasonality research-browser API surface. engine/** already covers
+      # engine/seasonality/screener.py, but tests/test_seasonality_api.py imports
+      # app/seasonality.py, and a PR touching ONLY that handler would otherwise
+      # never start the stock-seasonality pack that executes the suite.
+      - "app/seasonality.py"
       # Signal-Lab promotion-stat display gate: the BTC Vector card's DSR/Sharpe/n
       # must equal what calibrate_vector actually computed. engine/** covers the
       # module, but a test-only re-pin (or a nightly refresh of the artifacts the
