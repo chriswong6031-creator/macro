@@ -2203,8 +2203,14 @@ jobs:
         run: python3 scripts/check_blocklist_drift.py
       - name: metabolism v4 w1 suite (real BUILD dispatch — R-V4-2)
         run: python -m pytest tests/test_metabolism_v4_w1_dispatch.py tests/test_metabolism_buildlane.py -q
+      # tests/test_ollama_provider.py joins its siblings 2026-08-06. It was DARK
+      # since it shipped — no `run:` line anywhere in .github named it, so its
+      # base-url allowlist and payload-translation guards had never once been
+      # executed by CI. It rides here rather than in a marketing pack because
+      # the module it covers is a PROVIDER: llm_auth (already on this line) is
+      # what constructs OllamaClient, and this job's deps already carry it.
       - name: llm auth waterfall + multi-key failover suite
-        run: python -m pytest tests/test_codex_provider.py tests/test_llm_auth.py tests/test_key_pool.py -q
+        run: python -m pytest tests/test_codex_provider.py tests/test_llm_auth.py tests/test_key_pool.py tests/test_ollama_provider.py -q
       - name: V10 key economy suite (enabled-set, header capture, usage snapshot)
         run: python -m pytest tests/test_key_pool_economy.py -q
       - name: cortex provider routing + tool loop suite
