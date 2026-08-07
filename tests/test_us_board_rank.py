@@ -1946,6 +1946,17 @@ class TestCommittedArtifactIntegration:
         verdicts instead, and the board rows themselves carry that shape under
         `signal` (signal_gate.compact keeps `fresh_bars`). Re-scoring off the rows'
         own verdicts proves the session branch engages on real data.
+
+        WHICH session count, specifically: since #4933 `signal_age` prefers
+        `fresh_bars_knowable` — counted from the session the marker's 3D bucket
+        CLOSED on — and keeps `fresh_bars` (the bucket's OPEN label) only as the
+        fallback for verdicts built before that field existed. This asserted
+        `fresh_bars` until 2026-08-07 and went red on the committed board the day
+        the preference flipped (GPCR: knowable 41 vs fresh_bars 43). Asserting the
+        PREFERENCE rather than a field name is the point — the two differ by up to
+        two sessions on every marker-anchored row, which is the whole reason
+        `templates/stocktable.js`'s `FRESH_DAYS = 2` filter was dropping the
+        freshest turns on the board.
         """
         board, _rows = scored
         assert {r["days_since_signal_basis"] for r in _rows} == {"calendar"}
@@ -1953,12 +1964,29 @@ class TestCommittedArtifactIntegration:
         rich = {r["ticker"]: r["signal"] for r in board["buy"]
                 if (r.get("signal") or {}).get("fresh_bars") is not None}
         assert rich, "fixture must carry at least one marker-anchored verdict"
+        knowable = {t: v for t, v in rich.items()
+                    if v.get("fresh_bars_knowable") is not None}
+        assert knowable, (
+            "fixture must carry at least one verdict with fresh_bars_knowable, else "
+            "this pins the FALLBACK branch and #4933's preference goes untested")
         rows = ubr.score_rows([dict(r) for r in board["buy"]],
                               verdict_by=rich, board_asof=board["as_of"])
         by = {r["ticker"]: r for r in rows}
         for ticker, verdict in rich.items():
-            assert by[ticker]["days_since_signal"] == verdict["fresh_bars"]
+            expected = verdict.get("fresh_bars_knowable")
+            if expected is None:
+                expected = verdict["fresh_bars"]
+            assert by[ticker]["days_since_signal"] == expected, ticker
             assert by[ticker]["days_since_signal_basis"] == "sessions"
+
+        # The docstring's stated relationship between the two counts, asserted rather
+        # than described: the OPEN label can never postdate its own bucket's close, and
+        # a 3D bucket is three sessions wide. A drift outside that band means one of the
+        # two anchors moved and the "up to two sessions" reasoning above is stale.
+        for ticker, verdict in knowable.items():
+            gap = verdict["fresh_bars"] - verdict["fresh_bars_knowable"]
+            assert 0 <= gap <= 2, (ticker, verdict["fresh_bars"],
+                                   verdict["fresh_bars_knowable"])
 
     def test_no_downtrend_row_escapes_the_blocked_bucket(self, scored_with_blocked_witness):
         """m1 on production shape with a deterministic DOWNTREND witness."""
