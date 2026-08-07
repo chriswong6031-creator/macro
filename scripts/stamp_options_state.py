@@ -159,9 +159,15 @@ def _tercile_thresholds(
     A bare ``len(vals) >= 3`` still FIRES on those five, silently redefining "top tercile
     of the market" as "top tercile of 5 coverage-selected names": the threshold moves
     +21,153 → −850 at as_of 2026-07-22 and +15,516 → −850 at 07-24, admitting names
-    nowhere near the true top third.  It lands on −850.18 on all three dates because the
-    survivors are the SAME five every time — a fixed coverage-selected subsample, not a
-    random one.  That is not a null; it is a gate whose meaning changed.
+    nowhere near the true top third.  That is not a null; it is a gate whose meaning
+    changed.
+
+    The survivors are worse than a biased sample — they are DEAD STORES.  The threshold
+    lands on exactly −850.1826 on all three dates because the same five names survive
+    every time (ALM, BLD, CRML, NB, PPTA), and they survive precisely because their
+    stores stopped updating on 2026-07-02: a frozen store trivially "has" the 5-back
+    session because its whole tail predates the gap.  Without this floor the market's
+    top tercile would be defined by five stores publishing a three-week-old reading.
 
     So below the floor the date is simply not ranked and the flag stays null (nulls
     printed).  Coverage is ranked ÷ MEASURABLE, never ÷ the whole board: a name with no

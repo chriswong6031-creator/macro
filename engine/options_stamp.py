@@ -199,8 +199,13 @@ def _default_read_summary(ticker: str) -> pd.DataFrame | None:
         +5.51e6 → −2.54e7, IWM +3.28e6 → −1.68e6). ``opt_vanna_relief`` gates on a
         cross-sectional tercile of that value, so a sign flip moves names across the gate.
         Since 2026-08-06 its 5-back endpoint is resolved by CALENDAR
-        (``_row_n_sessions_back``), so an interior store gap (the 08-03..08-05 collection
-        outage) degrades the stat to None instead of widening its basis; this filter
+        (``_row_n_sessions_back``), which splits the two gap shapes that positional
+        slicing conflated. A gap INTERIOR to the window (the 08-03..08-05 collection
+        outage, at as_of 08-06) no longer widens the basis at all — only the endpoints
+        enter a difference and the 5-back session 07-30 is stored, so the stat recovers
+        exactly. A gap AT THE TARGET SESSION is the unmeasurable case and returns None:
+        measured over the committed store that is as_of 07-13 / 07-22 / 07-24, whose
+        5-back targets 07-06 / 07-15 / 07-17 have no row in ANY store. This filter
         remains the first line of defence against weekend rows reaching that resolver.
       * ``scripts/stamp_options_state._get_iv30_5d_chg_from_summary`` — the same 5-back
         read; it reads through THIS function and ``_row_n_sessions_back``, so it
@@ -738,7 +743,8 @@ def _row_n_sessions_back(usable: pd.DataFrame, n: int) -> pd.Series | None:
     A two-endpoint "n-session change" needs endpoints ``n`` SESSIONS apart, not ``n``
     ROWS apart — the two differ whenever the store took a collection outage. The
     2026-08-03..08-05 outage left every summary store's 6 trailing rows spanning 9
-    sessions, so the positional ``iloc[-(n+1)]`` silently widened each "5d" basis.
+    sessions inclusive, i.e. EIGHT steps between the endpoints, so the positional
+    ``iloc[-(n+1)]`` shipped an eight-session change under a five-session label.
     Calendar resolution stays exact across an interior gap (only the endpoints matter
     for a difference) and returns None when the target session has no row —
     unmeasurable, never mislabeled."""
