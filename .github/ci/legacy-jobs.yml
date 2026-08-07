@@ -4240,6 +4240,8 @@ jobs:
           tests/test_company_intelligence_refresh.py
           tests/test_company_intelligence_golden_corpus.py
           tests/test_company_intelligence_golden_corpus_replay.py
+          tests/test_company_intelligence_spine.py
+          tests/test_company_intelligence_spine_corpus.py
           tests/test_company_theme_exposure.py
           tests/test_publish_company_theme_exposure_r2.py
           tests/test_earnings_story_promotion.py

@@ -2943,6 +2943,12 @@ on:
       - "tests/fixtures/company_intelligence/**"
       - "tests/test_company_intelligence_golden_corpus.py"
       - "tests/test_company_intelligence_golden_corpus_replay.py"
+      # Wave 1A event/document/span spine. The engine modules are already covered
+      # by engine/company_intelligence/** above; these two lines exist so a
+      # test-only edit still re-runs the suites that grade the spine against the
+      # corpus, which tests/** does not do — it is not a catch-all in this repo.
+      - "tests/test_company_intelligence_spine.py"
+      - "tests/test_company_intelligence_spine_corpus.py"
       - "engine/company_theme_exposure/**"
       - "engine/earnings_transcript_intake.py"
       - "scripts/build_company_intelligence.py"
