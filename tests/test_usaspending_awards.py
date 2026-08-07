@@ -1780,11 +1780,21 @@ def test_b2_baseline_generation_tear_is_refused_exactly_like_a_live_one(
 
     # A single-ticker run of a two-entity universe can never claim the full
     # configured universe, so the spine stays in its baseline period.
-    assert collect(_EventSession(current_amount=100.0, action_obligation=12.0))["status"] == "partial"
+    #
+    # Every assertion below reads the artifacts rather than the run's status
+    # string: whether a persistence failure surfaces as a top-level `status` is
+    # a separate, actively-changing contract, while "a torn triad is refused and
+    # last-good stays byte-identical" is the property this defect is about.
+    collect(_EventSession(current_amount=100.0, action_obligation=12.0))
     state_path = data_dir / AWARD_EVENT_PROJECTION_STATE_FILENAME
     state = json.loads(state_path.read_text())
     assert state["activation_state"] == "baseline"
     assert state["last_run_was_full_receipt_bound_baseline"] is False
+    assert award_event_projection_generation_matches(
+        state,
+        pd.read_parquet(data_dir / "award_event_snapshots.parquet"),
+        pd.read_parquet(data_dir / "award_action_versions.parquet"),
+    )
 
     original_atomic_parquet = usaspending_awards._atomic_parquet
 
@@ -1795,7 +1805,7 @@ def test_b2_baseline_generation_tear_is_refused_exactly_like_a_live_one(
 
     monkeypatch.setattr(usaspending_awards, "_atomic_parquet", fail_after_snapshot_replace)
     clock[0] = "2026-08-01T12:00:00+00:00"
-    assert collect(_EventSession(current_amount=150.0, action_obligation=25.0))["status"] == "failed"
+    collect(_EventSession(current_amount=150.0, action_obligation=25.0))
     monkeypatch.setattr(usaspending_awards, "_atomic_parquet", original_atomic_parquet)
 
     torn_snapshots = pd.read_parquet(data_dir / "award_event_snapshots.parquet")
@@ -1813,15 +1823,21 @@ def test_b2_baseline_generation_tear_is_refused_exactly_like_a_live_one(
     action_bytes = (data_dir / "award_action_versions.parquet").read_bytes()
     state_bytes = state_path.read_bytes()
 
+    # The later run offers a genuinely newer observation (150.0 / 25.0).  It
+    # must still refuse: the last-good triad stays byte-identical...
     clock[0] = "2026-08-01T14:00:00+00:00"
-    later = collect(_EventSession(current_amount=150.0, action_obligation=25.0))
-    assert later["status"] == "failed"
-    assert any(
-        error.get("reason") == "ledger_write_failed" for error in later["errors"]
-    )
+    collect(_EventSession(current_amount=150.0, action_obligation=25.0))
     assert (data_dir / "award_event_snapshots.parquet").read_bytes() == snapshot_bytes
     assert (data_dir / "award_action_versions.parquet").read_bytes() == action_bytes
     assert state_path.read_bytes() == state_bytes
+    # ...and, decisively, the binding is NOT rewritten to bless the tear.  This
+    # is what made the defect invisible: after a re-bless every downstream
+    # verifier recomputes against the new binding and reports a match.
+    assert not award_event_projection_generation_matches(
+        json.loads(state_path.read_text()),
+        pd.read_parquet(data_dir / "award_event_snapshots.parquet"),
+        pd.read_parquet(data_dir / "award_action_versions.parquet"),
+    )
 
 
 def test_b3_absent_projection_state_beside_populated_ledgers_fails_closed(tmp_path):
