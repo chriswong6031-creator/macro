@@ -1,0 +1,113 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "FNF-2026-06-30-buy",
+  "ticker": "FNF",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "FNF",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "FNF",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "mixed",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Financials",
+    "excess_spy": 0.0746583697419061,
+    "excess_sector": 0.036930909485176855,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CLEAN_LIFTOFF",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "FNF achieved a clean liftoff and positive excess return under a mixed outcome attribution. The available fields do not separate company alpha, Financials rotation, macro conditions, or catalysts.",
+    "root_cause": "FNF achieved a clean liftoff and positive excess return under a mixed outcome attribution. The available fields do not separate company alpha, Financials rotation, macro conditions, or catalysts.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The buy process surfaced a winner, but the alpha, rotation, regime, and catalyst books lack enough evidence for causal allocation.",
+    "engines_credit": "The buy and execution organs receive provisional credit for clean participation; causal books remain unranked because the outcome label is mixed.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "Company-specific strength may have contributed to the favorable relative outcome.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "If peer-adjusted performance were weak, company alpha would be an unlikely primary driver.",
+        "evidence_refs": [
+          "Pick 6 outcome_cause=mixed",
+          "Pick 6 sector=Financials"
+        ]
+      },
+      {
+        "order": 1,
+        "layer": "market_rotation",
+        "factor": "",
+        "mechanism": "Financials rotation may have supplied a favorable market-level tailwind.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "If Financials breadth and relative strength were not improving at entry, rotation would be weakened as an explanation.",
+        "evidence_refs": [
+          "Pick 6 sector=Financials",
+          "Pick 6 outcome_cause=mixed"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "entry_timing",
+        "factor": "",
+        "mechanism": "A clean buy entry captured the favorable combination of drivers.",
+        "evidence_status": "claimed",
+        "timing_status": "known_at_entry",
+        "counterfactual": "A later entry might have reduced capture, but no path evidence is provided.",
+        "evidence_refs": [
+          "Pick 6 lane=buy",
+          "Pick 6 process_fault=clean",
+          "Pick 6 terminal_state=CLEAN_LIFTOFF",
+          "Pick 6 excess_spy=0.0746583697419061"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "A macro rate shift may have supported the Financials exposure.",
+      "A company-specific catalyst may account for most of the move."
+    ],
+    "missing_evidence": [
+      "Financials regime and breadth at entry",
+      "Peer-adjusted return",
+      "Company thesis and catalyst calendar",
+      "Entry-to-maturity price path"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "mixed_driver_decomposition",
+        "feature": "Decomposition of mixed outcomes into sector and company components",
+        "measurement": "Estimate market-, sector-, and peer-adjusted returns using only information aligned to the pick date.",
+        "expected_direction": "Successful mixed picks should exhibit either favorable sector breadth or persistent peer-relative strength.",
+        "falsifier": "Neither component is associated with subsequent clean liftoffs.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T13:34:17+00:00"
+}

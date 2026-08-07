@@ -1,0 +1,99 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "REZI-2026-06-30-buy",
+  "ticker": "REZI",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "REZI",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "REZI",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_alpha",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Industrials",
+    "excess_spy": 0.10048204882943423,
+    "excess_sector": 0.12138226665082308,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CLEAN_LIFTOFF",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "REZI produced a clean liftoff and positive excess return attributed by the audit record to company-specific alpha. The supplied record does not establish a macro, rotation, or catalyst mechanism.",
+    "root_cause": "REZI produced a clean liftoff and positive excess return attributed by the audit record to company-specific alpha. The supplied record does not establish a macro, rotation, or catalyst mechanism.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The company-alpha book surfaced the opportunity, while the regime, rotation, catalyst, and timing engines cannot be assessed from the supplied evidence.",
+    "engines_credit": "The company-alpha book is the provisional role model; the other books and organs remain uncredited rather than classified as laggards.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "An unspecified idiosyncratic advantage drove relative outperformance.",
+        "evidence_status": "claimed",
+        "timing_status": "known_at_entry",
+        "counterfactual": "If the asserted company-specific advantage were absent, the observed relative liftoff would require another explanation.",
+        "evidence_refs": [
+          "Pick 1 outcome_cause=idio_alpha",
+          "Pick 1 excess_spy=0.10048204882943423",
+          "Pick 1 terminal_state=CLEAN_LIFTOFF"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "entry_timing",
+        "factor": "",
+        "mechanism": "The clean process classification is consistent with an entry that captured the favorable move without a recorded timing fault.",
+        "evidence_status": "claimed",
+        "timing_status": "known_at_entry",
+        "counterfactual": "A materially later entry might have captured less of the move, but no path data are supplied.",
+        "evidence_refs": [
+          "Pick 1 process_fault=clean",
+          "Pick 1 lane=buy"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Industrials rotation could have contributed to the result.",
+      "A catalyst or broad risk-on regime could explain part of the excess return."
+    ],
+    "missing_evidence": [
+      "Ex-ante thesis and company features",
+      "Sector and industry-relative returns",
+      "Catalyst calendar and news timestamps",
+      "Entry price and return path"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "idio_alpha_persistence",
+        "feature": "Persistence of ex-ante company-alpha features",
+        "measurement": "Compare documented entry-date alpha features with subsequent sector-neutral relative returns.",
+        "expected_direction": "Stronger persistent features should precede stronger sector-neutral outcomes.",
+        "falsifier": "The relationship disappears after controlling for sector and market rotation.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T13:34:17+00:00"
+}

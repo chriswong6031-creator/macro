@@ -140,6 +140,10 @@ _DEFAULT_CFG: dict[str, Any] = {
         "api_key_env": "LOCAL_LLM_API_KEY",
         "timeout_s": 120,
         "max_tokens": 1200,
+        # Per-rung transcript bound.  The local endpoint serves a 4,096-token
+        # context window; the cloud rungs do not.  See _rung_text_bounds.
+        "max_chars": 8000,
+        "tail_chars": 3000,
     },
     "opus_model": "claude-haiku-4-5",
     "deepseek_model": "deepseek-v4-flash",
@@ -244,6 +248,43 @@ def _qwen3_no_think_user_prompt(model: str, user: str) -> str:
     return f"{user.rstrip()}\n\n/no_think"
 
 
+# A local server whose context window is smaller than the prompt does not
+# error: it drops the overflow and answers from what fit.  The one artifact it
+# leaves behind is its own ``usage.prompt_tokens``, which stops tracking the
+# prompt's size.  No natural-language text reaches 12 characters per token
+# (English runs ~4, CJK ~1-2, i.e. always FEWER chars per token), so a count
+# below that floor is arithmetic proof the server never read the whole prompt —
+# not a tuned heuristic.  Measured 2026-08-06 on qwen3.5:9b @ 4,096 tokens:
+# a 25,600-char prompt reported 2,050 prompt_tokens (12.5 chars/token).
+_TRUNCATION_CHARS_PER_TOKEN = 12.0
+
+
+def _log_prompt_truncation(sent_chars: int, data: dict, model: str) -> None:
+    """Log when the server's own prompt_tokens proves it dropped the prompt."""
+    try:
+        usage = (data or {}).get("usage") or {}
+        prompt_tokens = int(usage.get("prompt_tokens") or 0)
+    except (TypeError, ValueError, AttributeError):
+        return
+    if prompt_tokens <= 0 or sent_chars <= 0:
+        return
+    ratio = sent_chars / float(prompt_tokens)
+    if ratio <= _TRUNCATION_CHARS_PER_TOKEN:
+        return
+    log.warning(
+        "earnings_qual: openai_compat prompt was TRUNCATED by the server — "
+        "model=%s sent %d prompt chars but usage.prompt_tokens=%d (%.1f "
+        "chars/token; no text exceeds %.0f). The reply answers a PARTIAL "
+        "prompt and will usually not be JSON. Lower openai_compat.max_chars "
+        "in config/earnings_qual.yml below this endpoint's context window.",
+        model,
+        sent_chars,
+        prompt_tokens,
+        ratio,
+        _TRUNCATION_CHARS_PER_TOKEN,
+    )
+
+
 def _call_openai_compat(
     system: str, user: str, oc_cfg: dict, *, max_tokens: int
 ) -> tuple[str | None, str | None]:
@@ -296,6 +337,11 @@ def _call_openai_compat(
     except Exception as exc:  # noqa: BLE001
         log.warning("earnings_qual: openai_compat call failed (%s)", exc)
         return None, "openai_compat_error"
+    _log_prompt_truncation(
+        sum(len(str(m.get("content") or "")) for m in payload["messages"]),
+        data if isinstance(data, dict) else {},
+        model,
+    )
     try:
         choices = data.get("choices") or []
         if not choices:
@@ -637,16 +683,12 @@ def score_text(
         base_row["degraded_reason"] = "empty_text"
         return base_row
 
-    max_chars = int(cfg.get("max_chars", 24000))
-    tail_chars = int(cfg.get("tail_chars", 8000))
-    body = _bounded_transcript_text(str(text), max_chars=max_chars, tail_chars=tail_chars)
+    raw_text = str(text)
     max_tokens = int(
         (provider_cfg.get("openai_compat") or {}).get("max_tokens")
         or (cfg.get("openai_compat") or {}).get("max_tokens")
         or 1200
     )
-
-    user = _build_user_prompt(base_row["ticker"], q_norm, y_norm, source, body)
 
     # Validate and retry one provider rung at a time. A local endpoint that
     # answers with malformed or incomplete JSON must not pin the durable queue;
@@ -664,6 +706,30 @@ def score_text(
     for provider_name in [str(name) for name in order if str(name).strip()]:
         rung_cfg = dict(provider_cfg)
         rung_cfg["provider_order"] = [provider_name]
+        # The prompt is built HERE, per rung, not once for the whole waterfall:
+        # a rung whose context window is smaller than the transcript budget
+        # must receive a smaller prompt, and a rung that reads the full budget
+        # must not be degraded to the smallest window on the ladder.
+        rung_max_chars, rung_tail_chars = _rung_text_bounds(
+            cfg, provider_cfg, provider_name
+        )
+        body = _bounded_transcript_text(
+            raw_text, max_chars=rung_max_chars, tail_chars=rung_tail_chars
+        )
+        user = _build_user_prompt(base_row["ticker"], q_norm, y_norm, source, body)
+        log.info(
+            "earnings_qual: %s %s FY%s rung=%s max_chars=%d tail_chars=%d "
+            "body_chars=%d prompt_chars=%d source_chars=%d",
+            base_row["ticker"],
+            q_norm or "?",
+            y_norm if y_norm is not None else "?",
+            provider_name,
+            rung_max_chars,
+            rung_tail_chars,
+            len(body),
+            len(user),
+            len(raw_text),
+        )
         reply, reason, used = _dispatch(
             _SYSTEM_PROMPT, user, cfg, rung_cfg, max_tokens=max_tokens
         )
@@ -730,6 +796,52 @@ def score_text(
     )):
         base_row["degraded_reason"] = "incomplete_schema"
     return base_row
+
+
+def _int_or(value: Any, fallback: int) -> int:
+    """Coerce a config value to int, falling back on None/garbage.  0 is kept."""
+    if value is None:
+        return int(fallback)
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return int(fallback)
+
+
+def _rung_text_bounds(
+    cfg: dict, provider_cfg: dict, provider_name: str
+) -> tuple[int, int]:
+    """Resolve the transcript character bound for ONE provider rung.
+
+    The rungs do not share a context window, so they cannot share a prompt.
+    The local ``openai_compat`` endpoint serves a 4,096-token window; the cloud
+    rungs read the full global budget comfortably.  Sending a cloud-sized
+    prompt to the local server does NOT error — it silently drops the overflow
+    and answers from what fit, usually with a markdown summary instead of the
+    JSON object, which reads downstream as ``invalid_json`` and burns the
+    bounded retry before falling through to a metered provider (measured
+    2026-08-06: 9,000 user-prompt chars returned usable JSON, 10,000 did not,
+    and at 11,000+ the reported ``prompt_tokens`` collapsed to a constant).
+
+    A provider's config block may carry its own ``max_chars`` / ``tail_chars``;
+    absent that, the global values apply.  Bounds stay config-driven per rung —
+    nothing here is keyed to a specific provider name.  ``provider_cfg`` (the
+    worker's per-run overrides) wins over the config file, matching how
+    ``_dispatch`` merges the endpoint block.
+    """
+    global_max = _int_or(cfg.get("max_chars"), 24000)
+    global_tail = _int_or(cfg.get("tail_chars"), 8000)
+    block: dict[str, Any] = {}
+    base_block = cfg.get(provider_name)
+    if isinstance(base_block, dict):
+        block.update(base_block)
+    override = (provider_cfg or {}).get(provider_name)
+    if isinstance(override, dict):
+        block.update(override)
+    return (
+        _int_or(block.get("max_chars"), global_max),
+        _int_or(block.get("tail_chars"), global_tail),
+    )
 
 
 def _bounded_transcript_text(text: str, *, max_chars: int, tail_chars: int) -> str:
