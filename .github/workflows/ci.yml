@@ -196,14 +196,40 @@ on:
       # flip-isolation construction still isolates exactly one leg.
       - "research/prophet_us_audit/reclaim_veto_packet.py"
       - "tests/test_us_reclaim_veto_packet.py"
-      # ...and the packet's OWN ARTIFACTS, which tests/test_merge_on_green.py reads
-      # by path literal. Same #3488 shape one level out: the suite and its module
-      # were wired above, but the two files the suite actually opens were not, so a
-      # PR editing only the packet's findings never started the workflow-yaml job
-      # that runs the guard reading them. check_ci_trigger_closure.py hard-fails on
-      # exactly this and was red on main until these two lines existed.
+      # The two evidence files the SAME suite reads by path literal. #4652 taught
+      # tests/test_merge_on_green.py to read the reclaim-veto packet's write-up and its
+      # frozen results as a worked example, and scripts/check_ci_trigger_closure.py has
+      # failed RED on main ever since (4768a3c1574, 2026-08-05 19:58 PT) — the closure
+      # gate in the workflow-yaml job, which is the same pack as signal-contract, so
+      # every PR since inherits it. Adding the two paths is the fix the guard's own
+      # error message prescribes verbatim: the suite reads them, so an edit to either
+      # must be able to start the job that runs the suite.
       - "research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md"
       - "research/prophet_us_audit/reclaim_veto_packet_results_2026-08-05.json"
+      # research/-RESIDENT suites (2026-08-06). Same job, same lesson, one directory over.
+      # The packets that introduced these were fenced to files-only, so each suite was
+      # written NEXT TO its instrument under research/ instead of in tests/. Nothing in
+      # this repo runs pytest over research/ — no workflow collects that tree and no
+      # `run:` step named either file — so both were UNRUN from birth: green locally,
+      # and unable to fail a PR that broke the very instrument they pin.
+      # They were NOT untriggerable: `research/**/*.py` (added far below for the
+      # import-hygiene ratchet, an unrelated concern) already starts this workflow on
+      # any research/ .py edit. These four entries are the #3488 "both halves BY NAME"
+      # idiom anyway — exactly as reclaim_veto_packet.py directly above is named
+      # explicitly despite that same catch-all covering it — so the trigger survives if
+      # the ratchet's glob is ever narrowed to its own subject. The engine/lib modules
+      # these suites import reach this workflow through the engine/** and lib/**
+      # subtrees below. Wired into signal-contract, which already owns this family
+      # (the reclaim-veto packet directly above).
+      #   * label-grading battery (#4547): the veto-day label classifier + the ran-lane
+      #     numpy-bool trap the entry gauge is written against.
+      #   * buy_filters: the canonical reclaim-and-hold / bearish-divergence / 200-MA
+      #     bar-raiser math — the same buy-side §7 machinery
+      #     tests/test_signal_quality_no_leak.py pins one layer up.
+      - "research/prophet_us_audit/label_grading_battery.py"
+      - "research/prophet_us_audit/test_label_grading_battery.py"
+      - "research/signal_engine/buy_filters.py"
+      - "research/signal_engine/test_buy_filters.py"
       # W1d trial-budget gate: any new multiple-testing harness must register its budget.
       - "scripts/*_phase0.py"
       - "scripts/*_phase1.py"
@@ -2067,6 +2093,14 @@ on:
       - "tests/test_claim_accountability.py"
       - "tests/test_onboard_compare_matrix.py"
       - "tests/test_track_record_dlg.py"
+      # Board continuity, both shipped 2026-08-05 and named by NO workflow until
+      # now (#4554 row-persistence/outage continuity, #4557 same-as_of Jaccard).
+      # Subject halves are already triggerable, so only the test halves were
+      # missing: scripts/grade_us_board.py is listed below, and
+      # scripts/build_stock_library.py (which owns _board_continuity_warning) is
+      # listed with the setup-tier block above — do not re-add either here.
+      - "tests/test_us_board_continuity_guard.py"
+      - "tests/test_us_board_ledger_continuity.py"
       - "tests/test_us_board_outcomes.py"
       - "tests/test_us_board_outcomes_strip.py"
       - "scripts/audit_claim_accountability.py"
@@ -2188,6 +2222,26 @@ on:
       - "tests/test_no_lookahead.py"
       - "tests/test_options_history_gauntlet.py"
       - "tests/test_per_fire_sector_benchmark.py"
+      # Pick-conditional forward distributions (advanced-quant-methods w1 + w1.5,
+      # wired 2026-08-06). BORN DARK: wave-1 shipped tests/test_pick_forward_dist.py
+      # named by no `run:` step in any of the 51 workflows, so its PIT
+      # truncate-and-recompute equality, its embargo boundary and its
+      # noise-partition negative control have never executed in CI. The w1.5 suite
+      # would have inherited exactly that — and its whole job is an IMPORT-SURFACE
+      # PIN that refuses the study when phase-0's function SIGNATURES (parameter
+      # names/kinds/defaults) or the frozen CONSTANTS defining both arms drift:
+      # phase-0's cohort window/floors/taus/OOS-start/bootstrap seed, and the engine's
+      # VOL_FLOOR, universe floors, feature windows (VOL_WIN/VOL_MINP/REF_WIN/REF_MINP)
+      # and all five scheme axis tuples. Function BODIES are not pinned. That guard is
+      # worth nothing if it never runs. Both halves listed: the suites AND their
+      # subjects (engine/pick_forward_dist.py, engine/vol_forecast.py, the two study
+      # scripts), so no possible edit leaves the guard untriggerable.
+      - "tests/test_pick_forward_dist.py"
+      - "tests/test_pick_forward_dist_phase1.py"
+      - "engine/pick_forward_dist.py"
+      - "engine/vol_forecast.py"
+      - "scripts/pick_forward_dist_phase0.py"
+      - "scripts/pick_forward_dist_phase1_har.py"
       - "tests/test_register_factor_hypotheses.py"
       - "tests/test_run_w1_sev.py"
       - "tests/test_run_w2_slq.py"
@@ -2240,6 +2294,17 @@ on:
       - "tests/test_committee_template.py"
       - "tests/test_confluence_screener_page.py"
       - "tests/test_contagion_card_render.py"
+      # Dark-pool desk (backfill 2026-08-06). The subject rides the "scripts/*.py"
+      # catch-all below, so an edit to the builder DID start this workflow — it just
+      # ran nothing that touched the builder, which is the worse half: a green ci.yml
+      # read as proof. tests/** is deliberately not broad, so the test half matched no
+      # pattern at all. #4704 is the measured cost: the suite overwrote three tracked
+      # artifacts on every run (site/darkpool.html, site/darkpool_eod.json,
+      # data/darkpool/context/latest.json). conftest.py's repo-wide MM_DATA_GUARD
+      # tripwire detects exactly that class and forces exit 1 — but it never ran here,
+      # so only a local invocation could ever find it. Both halves listed per the
+      # census convention ("a guard the guarded change cannot trigger is not a guard").
+      - "tests/test_darkpool_desk.py"
       - "tests/test_options_estate_redirect_stubs.py"
       - "tests/test_macro_signals_render.py"
       - "tests/test_movers_page.py"
@@ -2279,6 +2344,7 @@ on:
       - "scripts/build_ai_desk_page.py"
       - "scripts/build_chart_data.py"
       - "scripts/build_confluence_screener.py"
+      - "scripts/build_darkpool_desk.py"
       - "scripts/build_movers_page.py"
       - "scripts/build_odds.py"
       - "scripts/build_sector_map.py"
@@ -2536,6 +2602,15 @@ on:
       - "tests/test_us_context_vector.py"
       - "tests/test_prophet_miss_audit.py"
       - "scripts/grade_us_prophet_candidates.py"
+      # The nightly-wiring half of the same pack job (2026-08-06): the four modules moved
+      # off the engine job's critical path into daily.yml's us_prophet_ledgers lane. Its
+      # subjects (.github/workflows/daily.yml, config/dag.yml) already reach CI via
+      # ".github/workflows/**" and the config/dag.yml entry above; this line covers the
+      # test-only direction, so a re-pin still re-runs the job that carries it.
+      - "tests/test_prophet_off_engine_lane.py"
+      - "scripts/emit_prophet_doors.py"
+      - "scripts/grade_prophet_doors.py"
+      - "scripts/run_prophet_miss_audit.py"
       # The US candidate + grade stores are the SUBJECT of that suite (PIT keep-first,
       # monthly-part isolation, the frozen grade key), so a nightly append or a hand
       # rewrite of either store must be able to start this workflow — the same reason
@@ -2673,6 +2748,16 @@ on:
       # unrun-brain-gateway
       - "tests/test_brain_gateway.py"
       # unrun-macro-panels
+      # engine/equity_factors.py was STRICTLY DARK (2026-08-06): named by no `run:` step
+      # and by no path here, so an edit to the module carrying `composite_rank` — the
+      # board TIEBREAK read by build_stock_library.py / build_site.py — could not even
+      # START ci.yml. Both halves listed on purpose (a guard the guarded change cannot
+      # trigger is not a guard): the tripwire suite AND the two files it reads.
+      - "tests/test_factor_universe_hold.py"
+      - "engine/equity_factors.py"
+      - "research/DO_NOT_REBUILD.md"
+      - "research/FACTOR_UNIVERSE_WIDENING_CHARTER.md"
+      - ".gitignore"
       - "tests/test_build_dispersion_regime.py"
       - "tests/test_build_factor_panel.py"
       - "tests/test_commodity_mtf_verdict_honesty.py"

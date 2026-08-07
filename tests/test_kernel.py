@@ -39,7 +39,7 @@ _SPINE_COLS = [
     "signal_id", "engine", "family", "ledger", "as_of", "symbol",
     "scope_type", "universe", "horizon", "direction", "size_binding",
     "fill_basis", "score",
-    "outcome_excess", "outcome_graded", "graded_at",
+    "outcome_excess", "outcome_graded", "graded_at", "outcome_basis",
     "terminal_state_clean15_126", "terminal_state_clean8_21",
     "fwd_mfe_5", "fwd_mfe_10", "fwd_mfe_21", "fwd_mfe_63", "fwd_mfe_126",
     "rate_pressure", "quad_hard_label", "fused_risk_label",
@@ -68,13 +68,21 @@ def _row(
     quad_hard_label: str | None = "Goldilocks",
     fill_basis: str = "next_bar",
     idx: int = 0,
+    ledger: str = "spine",
 ) -> dict:
-    """Build one canonical spine row."""
+    """Build one canonical spine row.
+
+    ``ledger`` drives outcome_basis at read time (query.OUTCOME_BASIS_FOR_LEDGER,
+    stamped by load_index): 'spine'/'qledger' → signed_excess, the four MFE
+    ledgers → unsigned_mfe_proxy, 'cortex_attention' → synthetic_sign_stub.
+    outcome_basis is deliberately NOT set here — the fixture exercises the
+    read-time backfill the production parquet depends on.
+    """
     return {
         "signal_id": f"test:{as_of}:{symbol}:{horizon}:{idx}",
         "engine": engine,
         "family": f"{engine}:buy",
-        "ledger": "spine",
+        "ledger": ledger,
         "as_of": as_of,
         "symbol": symbol,
         "scope_type": "entity",
@@ -863,3 +871,150 @@ def test_armed_reason_persisted_to_cells(tmp_path):
     assert (reasons.str.strip() != "").all(), "armed_reason must never be empty"
     # Must match the family record's reason (n=1 → accruing)
     assert reasons.iloc[0] == meta["families"]["eng_ar"]["reason"]
+
+
+# ---------------------------------------------------------------------------
+# (14) [OUTCOME BASIS] wilson_ci_low is null for unsigned-outcome cells
+# ---------------------------------------------------------------------------
+# track_record / board_hk / board_ca / board_cn fill outcome_excess from a
+# forward MAXIMUM-FAVORABLE-EXCURSION column that is non-negative BY
+# CONSTRUCTION, with direction pinned to +1.  "hits" therefore degenerates to
+# "MFE > 0 at least once", and the Wilson CI publishes it as DIRECTIONAL
+# ACCURACY.  Pre-fix, track_record h=126 shipped wilson_ci_low=0.963 on exactly
+# that tautology.  These tests FAIL pre-fix (wilson was a float; the
+# outcome_basis column did not exist).
+# cf. PR #4673 edge_outcomes.py dst_outcome_unsigned_mfe_proxy.
+
+
+def test_unsigned_cell_gets_null_wilson_and_basis_label(tmp_path):
+    """[OUTCOME BASIS] a track_record-like cell reports wilson_ci_low=None."""
+    # 15 distinct events (>= WILSON_MIN_N=12) and every outcome positive —
+    # exactly the shape the real ledger has (0.0% negatives).
+    rows = [
+        _row(engine="track_record", ledger="track_record",
+             as_of=f"2026-01-{i + 1:02d}", symbol=f"S{i}", horizon=126,
+             outcome_excess=0.05 + 0.001 * i, quad_hard_label=None, idx=i)
+        for i in range(15)
+    ]
+    _write_index(tmp_path, rows)
+
+    from engine.neuralweb.kernel import build_estimates
+    df, _ = build_estimates(tmp_path)
+
+    cells = df[df["engine"] == "track_record"]
+    assert not cells.empty
+    assert "outcome_basis" in df.columns, (
+        "outcome_basis must be a real output column of kernel_estimates.parquet, "
+        "not a stripped internal field — decisions/decay/half_life all read it"
+    )
+    assert set(cells["outcome_basis"].unique()) == {"unsigned_mfe_proxy"}
+
+    marginal = cells[cells["regime"] == "__all__"].iloc[0]
+    assert int(marginal["n_eff"]) == 15, "fixture must clear WILSON_MIN_N=12"
+    assert marginal["wilson_ci_low"] is None or pd.isna(marginal["wilson_ci_low"]), (
+        "directional accuracy is undefined against an unsigned MFE proxy — "
+        f"wilson_ci_low must be null, got {marginal['wilson_ci_low']!r}. "
+        "Pre-fix this cell published ~1.0 'accuracy' measured on 'MFE > 0'."
+    )
+    # Magnitude statistics are UNCHANGED — they are still meaningful, merely
+    # labelled by basis. half_life.py's rising-curve measurement reads them.
+    assert float(marginal["mean_raw"]) > 0
+    assert marginal["shrunken_ic"] is not None and pd.notna(marginal["shrunken_ic"])
+    assert pd.notna(marginal["shrunken_ic_sd"])
+    assert float(marginal["reliability"]) > 0
+
+
+def test_signed_cell_still_gets_a_float_wilson(tmp_path):
+    """[OUTCOME BASIS] a signed cell over the floor keeps its Wilson CI.
+
+    The gate must be a basis gate, not a blanket null — otherwise it would
+    delete a real measurement along with the vacuous one.
+    """
+    rows = [
+        _row(engine="us_board", ledger="spine",
+             as_of=f"2026-02-{i + 1:02d}", symbol=f"T{i}", horizon=21,
+             outcome_excess=0.03 if i % 3 else -0.02,
+             quad_hard_label=None, idx=i)
+        for i in range(15)
+    ]
+    _write_index(tmp_path, rows)
+
+    from engine.neuralweb.kernel import build_estimates
+    df, _ = build_estimates(tmp_path)
+
+    marginal = df[(df["engine"] == "us_board") & (df["regime"] == "__all__")].iloc[0]
+    assert marginal["outcome_basis"] == "signed_excess"
+    assert int(marginal["n_eff"]) == 15
+    assert isinstance(float(marginal["wilson_ci_low"]), float)
+    assert pd.notna(marginal["wilson_ci_low"])
+
+
+def test_synthetic_sign_stub_cell_keeps_wilson(tmp_path):
+    """[OUTCOME BASIS] cortex_attention keeps its Wilson CI.
+
+    The ±0.01 values are sign placeholders: the SIGN is a real hit/miss, only
+    the magnitude is fabricated, so directional accuracy is defined.
+    """
+    rows = [
+        _row(engine="reflex.cortex_attention", ledger="cortex_attention",
+             as_of=f"2026-03-{i + 1:02d}", symbol=f"U{i}", horizon=5,
+             outcome_excess=0.01 if i % 4 else -0.01,
+             quad_hard_label=None, idx=i)
+        for i in range(15)
+    ]
+    _write_index(tmp_path, rows)
+
+    from engine.neuralweb.kernel import build_estimates
+    df, _ = build_estimates(tmp_path)
+
+    marginal = df[df["regime"] == "__all__"].iloc[0]
+    assert marginal["outcome_basis"] == "synthetic_sign_stub"
+    assert pd.notna(marginal["wilson_ci_low"])
+
+
+def test_unlabelled_cell_is_fail_closed(tmp_path):
+    """[OUTCOME BASIS] a cell whose rows carry no basis gets a null Wilson.
+
+    Fail-closed: unlabelled is not "assume signed". Reached here via a ledger
+    that carries no outcome mapping at all.
+    """
+    rows = [
+        _row(engine="mystery", ledger="a_ledger_with_no_mapping",
+             as_of=f"2026-04-{i + 1:02d}", symbol=f"V{i}", horizon=21,
+             outcome_excess=0.04, quad_hard_label=None, idx=i)
+        for i in range(15)
+    ]
+    _write_index(tmp_path, rows)
+
+    from engine.neuralweb.kernel import build_estimates
+    df, _ = build_estimates(tmp_path)
+
+    marginal = df[df["regime"] == "__all__"].iloc[0]
+    assert marginal["outcome_basis"] is None or pd.isna(marginal["outcome_basis"])
+    assert marginal["wilson_ci_low"] is None or pd.isna(marginal["wilson_ci_low"])
+
+
+def test_build_estimates_tolerates_index_without_outcome_basis(tmp_path):
+    """[OUTCOME BASIS] a parquet with no outcome_basis column must not crash.
+
+    build_estimates re-stamps after load (cheap, idempotent), so a caller that
+    bypassed the query layer still gets labelled cells rather than a KeyError.
+    """
+    rows = [
+        _row(engine="track_record", ledger="track_record",
+             as_of=f"2026-05-{i + 1:02d}", symbol=f"W{i}", horizon=21,
+             outcome_excess=0.02, quad_hard_label=None, idx=i)
+        for i in range(15)
+    ]
+    out = tmp_path / "data" / "neuralweb"
+    out.mkdir(parents=True, exist_ok=True)
+    legacy_cols = [c for c in _SPINE_COLS if c != "outcome_basis"]
+    legacy = pd.DataFrame(rows, columns=legacy_cols)
+    assert "outcome_basis" not in legacy.columns  # guard the fixture's intent
+    legacy.to_parquet(out / "spine_index.parquet", index=False)
+
+    from engine.neuralweb.kernel import build_estimates
+    df, _ = build_estimates(tmp_path)
+    marginal = df[df["regime"] == "__all__"].iloc[0]
+    assert marginal["outcome_basis"] == "unsigned_mfe_proxy"
+    assert marginal["wilson_ci_low"] is None or pd.isna(marginal["wilson_ci_low"])

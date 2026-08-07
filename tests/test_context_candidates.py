@@ -382,7 +382,12 @@ def test_t2_insufficient_n(fake_root: Path):
     for i in range(10):
         rows.append({
             "signal_id": f"sig_{i}",
-            "engine": "track_record",
+            # ledger='spine' → outcome_basis='signed_excess', so these rows
+            # reach the cell loop and the n-floor is what excludes them (the
+            # subject of this test). A track_record ledger would be dropped
+            # earlier by the outcome_basis gate and prove nothing about n.
+            "engine": "radar",
+            "ledger": "spine",
             "outcome_graded": True,
             "archetype": "high_beta",
             "quad_hard_label": "Q1",
@@ -433,11 +438,17 @@ def _make_t2_pit_spine(
     cell_hit_rate: float = 0.9,
     marginal_hit_rate: float = 0.5,
     n_marginal_extra: int = 200,
+    ledger: str = "spine",
+    extra_rows: list[dict] | None = None,
 ) -> None:
     """Build spine with pit_labels rows for T2 membership null test.
 
     Cell rows have cell_hit_rate.  Marginal pool (same engine, other cells)
     has marginal_hit_rate.  Calendar blocks spread across months.
+
+    ``ledger`` drives the outcome_basis stamp: 'spine'/'qledger' are signed
+    (T2 scores them), the four MFE ledgers are not.  ``extra_rows`` appends
+    arbitrary rows so a test can mix bases in one fixture.
     """
     rows = []
     # Cell rows: archetype=high_beta, quad=Q1, engine=tr
@@ -446,6 +457,7 @@ def _make_t2_pit_spine(
         hit_val = 0.05 if i < int(n_cell * cell_hit_rate) else -0.05
         rows.append({
             "engine": "tr",
+            "ledger": ledger,
             "outcome_graded": True,
             "archetype": "high_beta",
             "quad_hard_label": "Q1",
@@ -459,6 +471,7 @@ def _make_t2_pit_spine(
         hit_val = 0.05 if j < int(n_marginal_extra * marginal_hit_rate) else -0.05
         rows.append({
             "engine": "tr",
+            "ledger": ledger,
             "outcome_graded": True,
             "archetype": "conservative",  # different archetype → in marginal but not cell
             "quad_hard_label": "Q2",
@@ -466,6 +479,7 @@ def _make_t2_pit_spine(
             "outcome_excess": hit_val,
             "personality_basis": "pit_labels",
         })
+    rows.extend(extra_rows or [])
     pd.DataFrame(rows).to_parquet(
         tmp_path / "data" / "neuralweb" / "spine_index.parquet", index=False)
 
@@ -523,6 +537,97 @@ def test_t2_membership_null_low_pctile(fake_root: Path):
         f"F2 regression: cell at marginal hit-rate should emit 0 candidates, "
         f"got {counts['candidates']}."
     )
+
+
+# ---------------------------------------------------------------------------
+# 10b. [OUTCOME BASIS] T2's "hit" is directional — unsigned rows are excluded
+# ---------------------------------------------------------------------------
+# T2 computes hit = outcome_excess > 0 and calls it a hit rate. That is a
+# DIRECTIONAL claim, defined only against a signed excess return. Most
+# pit_labels rows on the live index are track_record, whose outcome_excess is a
+# non-negative fwd_mfe proxy — "hit" there is true ~87% of the time regardless
+# of the archetype × quad cell being tested. Excluding them thins T2 sharply;
+# that is correct: a thin honest T2 beats a thick vacuous one.
+# These tests FAIL pre-fix (unsigned rows were scored).
+# cf. PR #4673 edge_outcomes.py dst_outcome_unsigned_mfe_proxy.
+
+
+def test_t2_excludes_unsigned_rows_and_counts_them(fake_root: Path):
+    """[OUTCOME BASIS] mixed signed + unsigned fixture → unsigned dropped."""
+    # 80 track_record rows in their OWN cell, every one a "hit" (fwd_mfe >= 0).
+    # Pre-fix they were scored; post-fix they never reach the cell loop.
+    unsigned = [
+        {
+            "engine": "tr_mfe",
+            "ledger": "track_record",
+            "outcome_graded": True,
+            "archetype": "high_beta",
+            "quad_hard_label": "Q3",
+            "as_of": f"2026-{(i % 6) + 1:02d}-15",
+            "outcome_excess": 0.05,   # MFE: never negative
+            "personality_basis": "pit_labels",
+        }
+        for i in range(80)
+    ]
+    _make_t2_pit_spine(
+        fake_root,
+        n_cell=60,
+        cell_hit_rate=0.9,
+        marginal_hit_rate=0.5,
+        n_marginal_extra=300,
+        ledger="spine",          # the signed population T2 may legitimately score
+        extra_rows=unsigned,
+    )
+
+    result = _run_t2(fake_root, dry_run=False)
+    counts = result["counts"]
+
+    assert counts["unsigned_rows_excluded"] == 80, (
+        "every track_record row must be dropped before the hit computation; "
+        f"got {counts['unsigned_rows_excluded']}"
+    )
+    assert counts["pit_labels_rows"] == 360, (
+        "the surviving row count must be the SIGNED population only; "
+        f"got {counts['pit_labels_rows']}"
+    )
+    # The unsigned cell (high_beta × Q3 × tr_mfe) must never be examined — it
+    # would have cleared the n=50 floor at 80 rows with a 100% "hit rate".
+    for cand in result["candidates"]:
+        assert "tr_mfe" not in cand["cell"], (
+            f"an unsigned-basis cell reached the candidate list: {cand['cell']}"
+        )
+    # The signed cell still works — the gate is a basis gate, not a kill switch.
+    assert counts["cells_testable"] > 0
+
+
+def test_t2_all_unsigned_yields_honest_null(fake_root: Path):
+    """[OUTCOME BASIS] an all-track_record T2 emits nothing, and says so."""
+    _make_t2_pit_spine(
+        fake_root,
+        n_cell=60,
+        cell_hit_rate=0.9,
+        marginal_hit_rate=0.5,
+        n_marginal_extra=300,
+        ledger="track_record",
+    )
+
+    result = _run_t2(fake_root, dry_run=False)
+    counts = result["counts"]
+
+    assert result["candidates"] == []
+    assert counts["candidates"] == 0
+    assert counts["unsigned_rows_excluded"] == 360
+    assert counts["cells_testable"] == 0
+
+
+def test_t2_unsigned_count_defaults_to_zero(fake_root: Path):
+    """[OUTCOME BASIS] the counter is always present, even at zero."""
+    _make_t2_pit_spine(
+        fake_root, n_cell=60, cell_hit_rate=0.9,
+        marginal_hit_rate=0.5, n_marginal_extra=300, ledger="spine",
+    )
+    counts = _run_t2(fake_root, dry_run=False)["counts"]
+    assert counts["unsigned_rows_excluded"] == 0
 
 
 # ---------------------------------------------------------------------------

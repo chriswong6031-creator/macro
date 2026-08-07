@@ -15776,7 +15776,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       {# Board-order framing footnote (G0.7, china.html.j2 idiom). One line, once —
          the per-card Priority tooltip carries the same arithmetic on Tier 2. #}
       {% if _su and _sg.any %}
-      <p class="pb-fn"><span class="l-en">Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%. It ranks how ready a name is to be acted on, for ordering this board — it is not a win probability. The us_prophet_v1 forward record is accruing separately.{{ _rw_en }}</span><span class="l-zh">优先级＝信号30%＋入场25%＋优势25%＋上行空间10%＋形态质量10%。它衡量的是一只股票的可操作就绪度，用于给本榜排序 — 并非胜率。us_prophet_v1 的前瞻记录将单独积累。{{ _rw_zh }}</span></p>
+      {# The per-card Priority and ★ Featured hover cards were removed (operator
+         2026-08-05: they covered the neighbouring cards and restated what the card
+         already shows). Two statements lived ONLY in those tooltips — that Priority is
+         not a return forecast, and what the Featured gate actually tests — so they move
+         here, to the one place a board-wide constant belongs. The Featured wording is
+         load-bearing: "edge above zero (an absolute floor)" describes the gate the
+         engine runs; the older "above the board's midpoint" described a cross-sectional
+         rank it never ran, and promised the opposite of the real gate on a weak board.
+         tests/test_us_board_priority_ui.py pins both sentences here. #}
+      <p class="pb-fn"><span class="l-en">Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%. It ranks how ready a name is to be acted on, for ordering this board — it is not a win probability or return forecast. Green cards are the picks: a separate gate on top of the order — fresh signal, entry window open, edge above zero (an absolute floor), price not extended, capped at 12 names and 4 per sector. The us_prophet_v1 forward record is accruing separately.{{ _rw_en }}</span><span class="l-zh">优先级＝信号30%＋入场25%＋优势25%＋上行空间10%＋形态质量10%。它衡量的是一只股票的可操作就绪度，用于给本榜排序 — 不是胜率，也不是收益预测。发绿光的卡片是精选：那是排序之上的另一道门槛 —— 信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、价格未过度拉伸，全板最多12只、每个板块最多4只。us_prophet_v1 的前瞻记录将单独积累。{{ _rw_zh }}</span></p>
       {% endif %}
       </div>{# end .nb-grid-section #}
       {% set _has_outcomes = us_board_outcomes and us_board_outcomes.get('rows') %}
@@ -15996,20 +16005,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     })();
     </script>
     {% endif %}
-    {#- THEME TAPE (W2) — relocated BELOW the board (operator order 2026-08-04,
-        "it's obstructing this entire page"). It shipped above the board to build a
-        reading order — here is what the market is heating, here is what these picks
-        do with it, here are the picks — but at 692px it put the product two full
-        screens down to set up a panel that ranks, gates and sizes nothing. Context
-        that changes no decision reads AFTER the decision it contextualises; the
-        two-speed tape band below made the same move for the same reason
-        (operator order 2026-07-11).
-        It is still deliberately NOT a second "themes in favour" strip: that one
-        lives inside the board above, is driven by board names, and by design drops
-        a theme with no names on it — the exact silence this panel prints. Own
-        guard, so the placement survives any re-nesting of the block above. Renders
-        nothing on a dead tape. -#}
-    {% if mode == 'stocks' %}{% include "_theme_tape.html.j2" %}{% endif %}
+    {#- THEME TAPE (W2) moved OUT of this block on 2026-08-06 — it is now the last
+        panel on the page. See the include at the bottom of the stocks page. -#}
     {# TS-U3: Two-speed tape band (mode=stocks only; client-side from live/basket_pulse.json).
        Self-labeling .dtp idiom; relocated BELOW the standout stocks panel
        (operator order 2026-07-11). Carries its own panel chrome; stays hidden
@@ -16481,6 +16478,23 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   </div>
 
   {% endif %}{# /mode != macro — accumulation + holdings/flows #}
+
+  {#- THEME TAPE (W2) — THE LAST PANEL ON THE STOCKS PAGE (operator, 2026-08-06:
+      "make it way smaller in height then move it down to bottom of the page").
+      Third complaint about this panel's footprint. It shipped above the board;
+      #4553 moved it below the board and cut it 692px → 498px; #4605 merged one
+      minute later, added the washout-turn group and a second shelf group, and it
+      measured 680px desktop / 1004px phone against the real artifacts. Trimming
+      it in place is what failed twice, so it is out of the reading order entirely
+      — after #holdings, the last panel this page renders (the data-health strip
+      below is `mode != 'stocks'` and never appears here). It also ships CLOSED,
+      one gist line; templates/_theme_tape.html.j2 carries why that is not the
+      silence the panel exists to fix.
+      Placed OUTSIDE the `mode != 'macro'` block above rather than at the end of
+      it, so it cannot drift back up the page when that block is next re-nested —
+      the failure mode that put it above the board for the first three months.
+      Its own `mode == 'stocks'` guard; renders nothing at all on a dead tape. -#}
+  {% if mode == 'stocks' %}{% include "_theme_tape.html.j2" %}{% endif %}
 
   {% if mode != 'stocks' %}
   {# Link-out strip deleted per audit INT-07dt — the sx-deep-context tray carries these links. #}
