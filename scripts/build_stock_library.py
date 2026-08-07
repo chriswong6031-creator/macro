@@ -62,6 +62,28 @@ from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
 from lib.ticker_popularity import attach_latest_volume, latest_volume_map  # noqa: E402
+from collectors.us_names_zh import load_aliases_zh as _load_us_aliases_zh  # noqa: E402
+from collectors.us_names_zh import load_names_zh as _load_us_names_zh  # noqa: E402
+from collectors.us_names_zh import lookup as _us_name_zh  # noqa: E402
+
+# Loaded once at module level — small committed JSONs, no I/O on re-import.
+# Feed the search manifest so a Chinese query (苹果 / 英伟达) reaches US names, the
+# way chinastockdata / hkstockdata already do for their markets: `z` is the
+# curated name we DISPLAY, `za` a broader search-only alias we never render.
+_US_NAMES_ZH: dict[str, str] = _load_us_names_zh()
+_US_ALIASES_ZH: dict[str, str] = _load_us_aliases_zh()
+
+
+def search_name_zh(ticker: str) -> tuple[str | None, str | None]:
+    """Return (displayed Chinese name, search-only alias) for a US search row.
+
+    Exactly one side is ever populated: a curated name wins outright, and the
+    noisier alias only stands in when there is no curated name to shadow.
+    """
+    name = _us_name_zh(_US_NAMES_ZH, ticker)
+    if name:
+        return name, None
+    return None, _us_name_zh(_US_ALIASES_ZH, ticker)
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("stock_library")
@@ -3428,6 +3450,11 @@ def main() -> int:
         safe = ticker.replace("=", "_").replace("^", "_")
         to_write.append((safe, rec))            # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
+        _zh, _zh_alias = search_name_zh(ticker)
+        if _zh:
+            idx["z"] = _zh              # displayed Chinese name + search key
+        elif _zh_alias:
+            idx["za"] = _zh_alias       # search-only; theme.js matches, never renders
         attach_latest_volume(idx, ticker, latest_volumes)
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
