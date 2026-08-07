@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-08-02"
+updated: "2026-08-07"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -1461,6 +1461,73 @@ checks:
       same job. Its first run surfaced four pre-existing skip-only suites
       (test_marketing_content, test_marketing_live_verify, test_publish_r2,
       test_research_vault), all repaired in the PR that added the guard.
+
+  - law_id: ops.ci_trigger_closure
+    summary: >
+      A guarded suite's TRIGGER PATHS must cover the modules that suite reads.
+      This is the fourth darkness class, past UNRUN and UNTRIGGERABLE
+      (audit_unrun_tests.py) and SKIP-ONLY (check_skip_only_suites.py): the suite
+      is named by a job AND is triggerable, so no existing census calls it dark —
+      but ONE module in its closure is matched by no path filter, and an edit to
+      exactly that module ships without ever running the guard that measures it.
+      audit_unrun_tests.py asks "can ANY edit start this job", an any() over the
+      closure that the test file itself satisfies; the question that decides a
+      merge is whether the guard runs for the module the PR actually touched. A
+      suite that pins engine/foo.py and is reachable only through
+      tests/test_foo.py is a guard with a hole exactly the shape of its subject.
+      The check is static: discover every workflow with an on.pull_request trigger
+      (one with no paths: key starts on every PR, so all it runs is covered
+      unconditionally, and a workflow WITH paths: also governs any job manifest it
+      hands a runner — how all packed legacy jobs inherit ci.yml's single filter),
+      resolve each governed tests/*.py's first-party reads (imports,
+      import_module("..."), repo-relative path literals, and ROOT / "a" / "b.py"
+      segment joins), and FAIL when a module in that closure is reachable by no
+      gate that runs the suite. Reads come from the AST only — a suite naming its
+      subject in a docstring or comment has made a claim, not a read.
+    source_ref:
+      - scripts/check_ci_trigger_closure.py
+      - tests/test_ci_trigger_closure.py
+      - "PR #4649 (guard origin)"
+      - "PR #4559 (fixture-only heal), PR #3488 (half-wired guard, prose-only lesson)"
+    severity: hard
+    check_script: scripts/check_ci_trigger_closure.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: workflow-yaml
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        The gate is DIRECT reads only (depth 1). `--depth N` widens the report to
+        transitive reads and is deliberately NOT gated: past depth 1 the
+        path-literal heuristic starts resolving placeholder strings (config/foo.yml
+        is reached at depth 3 from a docstring example), and a guard that cries
+        wolf gets ignored — the exact failure mode this guard exists to end.
+      - >-
+        Subjects are the tests/*.py suites a governed `run:` step names. A guard
+        invoked directly as a script step, and any read assembled at runtime rather
+        than from an import or a literal path, is out of scope. Only a join base
+        provably derived from __file__ is accepted, so tmp_path / "config" / "x.yml"
+        is correctly not a subject and an exotic spelling under-reports.
+      - >-
+        data/ is excluded from the path-literal roots on purpose: a suite reading a
+        nightly artifact is a different class — those files are rewritten by the
+        pipeline, not edited by a PR — so demanding a trigger entry for each would
+        add 150+ findings no author can act on. Subject = something a human edits.
+      - >-
+        Reachability re-implements GitHub's filter-pattern semantics (exact match;
+        `*` does not cross `/`; `**` crosses directories) rather than calling
+        GitHub's own matcher, and models `paths:` only — `paths-ignore` and negation
+        (`!pattern`) entries are not subtracted.
+    owner_program: null
+    notes: >
+      Third guard in the same workflow-yaml job as ops.workflow_yaml_parses and
+      ops.no_skip_only_suites, closing the last direction of the darkness census:
+      not "is this suite run" but "does it run for the module it guards". Selftest
+      runs first in CI for the same reason as the skip-only detector — a detector
+      that has quietly stopped detecting reports a clean repo forever.
 
   # ── Meta-guard ─────────────────────────────────────────────────────────────
 
