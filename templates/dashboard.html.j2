@@ -302,6 +302,14 @@
 {% include "_aibrief_css.j2" %}{# ABX v2 — shared AI-brief body stylesheet (.aib2-*) #}
 {# _mag7_panel.css.j2 removed (MLC-W2a): .m7p-stale moved to ldb <style>; no .m7p elements rendered #}
 
+  /* help-tip-framework:BEGIN — legacy help() "?" hover framework. Byte-identical
+     twin in templates/dashboard.html.j2 AND templates/_us_act_now_board.html.j2
+     (the shared board include ships it to hosts that have no page-level copy —
+     sector_central leaked the whole tip sentence inline without it, 2026-08-06).
+     Deliberately NOT in theme.css: editing theme.css re-stamps ~176 pages, and
+     its span.help glyph metrics must keep outranking these bare-.help rules.
+     Keep both copies in step — pinned by
+     tests/test_us_act_now.py::test_help_tip_framework_is_byte_identical_in_both_copies. */
   .help { display: inline-flex; align-items: center; justify-content: center;
           width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
           color: var(--muted); font-size: 10px; font-weight: 600; cursor: help;
@@ -330,6 +338,7 @@
   @media (max-width: 640px) {
     .help .tip.tip-wide { width: calc(100vw - 28px); font-size: 11.5px; line-height: 1.45; }
   }
+  /* help-tip-framework:END */
   .tip-map { width: 360px !important; }
   .tip-seas { width: 350px !important; box-sizing: border-box; padding: 11px 14px; }
   .tip.tip-seas table { table-layout: fixed; width: 100%; margin: 0; }
@@ -4048,6 +4057,21 @@ body.page-macro.mx4-grid .mx5-gauge-svg{
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg > text{fill:rgba(10,16,24,.62);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg path:first-of-type{stroke:rgba(10,16,24,.10);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg g[stroke]{stroke:rgba(10,16,24,.20);}
+/* THE NEEDLE. The three rules above repaint track / ticks / scale labels and CANNOT
+   reach it: `> text` is a child selector so it stops at the needle <g>, and `g[stroke]`
+   matches only the tick group (which carries a stroke ATTRIBUTE — the needle group does
+   not). So the pointer kept its dark-mode ink — `stroke="rgba(255,255,255,.30)"` on the
+   soft backing line and `fill="white"` on the blade — and composited to 1.0:1 on the
+   white light-mode .panel: the dial rendered as an arc with no reading on it, which is
+   the one thing on the gauge that has to be legible. Presentation attributes lose to any
+   author rule, so this repaints without touching the markup (the hub ring / core / tip
+   carry inline style="" fills from the state colour and stay as they are — they read
+   fine on white). Same weights as the dark design, inverted: a wide soft backing under a
+   crisp blade. .82 blade = 11.2:1 on white. Twins: body.page-china / .page-canada /
+   .page-hk / .sh-needle carry the identical markup — keep them in step. */
+[data-theme="light"] body.page-macro.mx4-grid #mx5-gauge-needle line{stroke:rgba(10,16,24,.20);}
+[data-theme="light"] body.page-macro.mx4-grid #mx5-gauge-needle polygon{fill:rgba(10,16,24,.82);}
+[data-theme="light"] body.page-macro.mx4-grid #mx5-gauge-needle circle:first-of-type{fill:rgba(10,16,24,.07);}
 /* Regime pill (Order 3: smaller + never clips — sizes to content, no fixed width) */
 body.page-macro.mx4-grid .mx5-regime-pill{
   display:inline-flex;align-items:center;gap:6px;
@@ -7186,25 +7210,42 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% else %}
         {% set _dot_y = 75 %}
         {% endif %}
-        {# Arrow target: center of gaining quadrant #}
-        {% if _qm_gain and not _qvi_deg %}
+        {# Arrow target: centre of the gaining quadrant.
+           An arrow is drawn ONLY for a genuine CROSS-quad drift. When the gaining quad
+           is the one the dot already sits in, the "drift" is a vector to its own tile's
+           centroid — it says nothing the glance line ("…odds are firming behind it")
+           does not already say, and it is the case that shipped as a smudge: dot to own
+           centroid is ~20 units, and the geometry below trims most of that away, leaving
+           a stub shorter than the arrowhead sitting on top of the dot. A firming read is
+           the dot and its pulse; only a move gets an arrow. #}
+        {% if _qm_gain and _qm_gain != _qm_hard and not _qvi_deg %}
         {% set _qm_centers = {'Q1':[112,112],'Q2':[112,38],'Q3':[38,38],'Q4':[38,112]} %}
         {% set _qm_tc = _qm_centers.get(_qm_gain, [75,75]) %}
         {% set _arr_tx = _qm_tc[0] %}
         {% set _arr_ty = _qm_tc[1] %}
-        {# Shorten arrow by 10px from target to keep arrowhead clear of quad center #}
         {% set _arr_dx = _arr_tx - _dot_x %}
         {% set _arr_dy = _arr_ty - _dot_y %}
         {% set _arr_len = ((_arr_dx * _arr_dx + _arr_dy * _arr_dy) ** 0.5) %}
+        {# Trim BOTH ends: 9 units off the tail so the shaft leaves the dot's rim rather
+           than its centre (dot r=4.5), 12 off the head so the arrowhead stops clear of
+           the target tile's odds numeral. Cross-quad distances run ~37–100 units, so the
+           surviving shaft is ~16–79 — always longer than the 7-unit head. #}
         {% if _arr_len > 0 %}
-        {% set _arr_scale = [0, (_arr_len - 10) / _arr_len] | max %}
-        {% set _arr_ex = (_dot_x + _arr_dx * _arr_scale) | round | int %}
-        {% set _arr_ey = (_dot_y + _arr_dy * _arr_scale) | round | int %}
+        {% set _arr_t0 = 9 / _arr_len %}
+        {% set _arr_t1 = [_arr_t0, (_arr_len - 12) / _arr_len] | max %}
+        {% set _arr_sx = (_dot_x + _arr_dx * _arr_t0) | round | int %}
+        {% set _arr_sy = (_dot_y + _arr_dy * _arr_t0) | round | int %}
+        {% set _arr_ex = (_dot_x + _arr_dx * _arr_t1) | round | int %}
+        {% set _arr_ey = (_dot_y + _arr_dy * _arr_t1) | round | int %}
         {% else %}
+        {% set _arr_sx = _dot_x %}
+        {% set _arr_sy = _dot_y %}
         {% set _arr_ex = _dot_x %}
         {% set _arr_ey = _dot_y %}
         {% endif %}
-        {% set _show_arrow = (_arr_len > 8) %}
+        {# Guard, not a working limit: below ~30 raw the two trims leave less shaft than
+           arrowhead, which is the shape that reads as a blob rather than a direction. #}
+        {% set _show_arrow = (_arr_len > 30) %}
         {% else %}
         {% set _show_arrow = false %}
         {% endif %}
@@ -7221,8 +7262,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                Odds live INSIDE each rounded tile (the separate odds list is retired). #}
             <svg viewBox="-6 -4 162 172" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Quad map — current regime position and odds" preserveAspectRatio="xMidYMid meet">
               <defs>
-                <marker id="mxqmArrowHead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-                  <polygon class="mxqm-arrowhead" points="0 0, 6 3, 0 6"/>
+                {# markerUnits="userSpaceOnUse" is load-bearing. The default is
+                   "strokeWidth", which multiplies markerWidth/Height AND the polygon by
+                   .mxqm-arrow's stroke-width (2) — so this 7×6 head painted at 14×12 in
+                   a 150-unit grid, as long as the whole arrow, and every drift read came
+                   out as an amber blob on the dot instead of a direction. Pinned to user
+                   space the head is 7 units whatever the shaft weight becomes. #}
+                <marker id="mxqmArrowHead" markerUnits="userSpaceOnUse"
+                        markerWidth="7" markerHeight="6" refX="6.5" refY="3" orient="auto">
+                  <polygon class="mxqm-arrowhead" points="0 0, 7 3, 0 6"/>
                 </marker>
               </defs>
               {# Rounded quadrant tiles — inset 2.5px from the axis centre so each reads
@@ -7246,7 +7294,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                  elements back below the <text> re-breaks it. #}
               {# Drift arrow toward gaining quad (animated dash-draw) #}
               {% if _show_arrow %}
-              <line class="mxqm-arrow" x1="{{ _dot_x }}" y1="{{ _dot_y }}" x2="{{ _arr_ex }}" y2="{{ _arr_ey }}"/>
+              <line class="mxqm-arrow" x1="{{ _arr_sx }}" y1="{{ _arr_sy }}" x2="{{ _arr_ex }}" y2="{{ _arr_ey }}"/>
               {% endif %}
               {# Current position — soft pulse ring behind a bright dot #}
               <circle class="mxqm-pulse" cx="{{ _dot_x }}" cy="{{ _dot_y }}" r="5"/>
@@ -15776,7 +15824,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       {# Board-order framing footnote (G0.7, china.html.j2 idiom). One line, once —
          the per-card Priority tooltip carries the same arithmetic on Tier 2. #}
       {% if _su and _sg.any %}
-      <p class="pb-fn"><span class="l-en">Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%. It ranks how ready a name is to be acted on, for ordering this board — it is not a win probability. The us_prophet_v1 forward record is accruing separately.{{ _rw_en }}</span><span class="l-zh">优先级＝信号30%＋入场25%＋优势25%＋上行空间10%＋形态质量10%。它衡量的是一只股票的可操作就绪度，用于给本榜排序 — 并非胜率。us_prophet_v1 的前瞻记录将单独积累。{{ _rw_zh }}</span></p>
+      {# The per-card Priority and ★ Featured hover cards were removed (operator
+         2026-08-05: they covered the neighbouring cards and restated what the card
+         already shows). Two statements lived ONLY in those tooltips — that Priority is
+         not a return forecast, and what the Featured gate actually tests — so they move
+         here, to the one place a board-wide constant belongs. The Featured wording is
+         load-bearing: "edge above zero (an absolute floor)" describes the gate the
+         engine runs; the older "above the board's midpoint" described a cross-sectional
+         rank it never ran, and promised the opposite of the real gate on a weak board.
+         tests/test_us_board_priority_ui.py pins both sentences here. #}
+      <p class="pb-fn"><span class="l-en">Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%. It ranks how ready a name is to be acted on, for ordering this board — it is not a win probability or return forecast. Green cards are the picks: a separate gate on top of the order — fresh signal, entry window open, edge above zero (an absolute floor), price not extended, capped at 12 names and 4 per sector. The us_prophet_v1 forward record is accruing separately.{{ _rw_en }}</span><span class="l-zh">优先级＝信号30%＋入场25%＋优势25%＋上行空间10%＋形态质量10%。它衡量的是一只股票的可操作就绪度，用于给本榜排序 — 不是胜率，也不是收益预测。发绿光的卡片是精选：那是排序之上的另一道门槛 —— 信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、价格未过度拉伸，全板最多12只、每个板块最多4只。us_prophet_v1 的前瞻记录将单独积累。{{ _rw_zh }}</span></p>
       {% endif %}
       </div>{# end .nb-grid-section #}
       {% set _has_outcomes = us_board_outcomes and us_board_outcomes.get('rows') %}
@@ -15996,20 +16053,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     })();
     </script>
     {% endif %}
-    {#- THEME TAPE (W2) — relocated BELOW the board (operator order 2026-08-04,
-        "it's obstructing this entire page"). It shipped above the board to build a
-        reading order — here is what the market is heating, here is what these picks
-        do with it, here are the picks — but at 692px it put the product two full
-        screens down to set up a panel that ranks, gates and sizes nothing. Context
-        that changes no decision reads AFTER the decision it contextualises; the
-        two-speed tape band below made the same move for the same reason
-        (operator order 2026-07-11).
-        It is still deliberately NOT a second "themes in favour" strip: that one
-        lives inside the board above, is driven by board names, and by design drops
-        a theme with no names on it — the exact silence this panel prints. Own
-        guard, so the placement survives any re-nesting of the block above. Renders
-        nothing on a dead tape. -#}
-    {% if mode == 'stocks' %}{% include "_theme_tape.html.j2" %}{% endif %}
+    {#- THEME TAPE (W2) moved OUT of this block on 2026-08-06 — it is now the last
+        panel on the page. See the include at the bottom of the stocks page. -#}
     {# TS-U3: Two-speed tape band (mode=stocks only; client-side from live/basket_pulse.json).
        Self-labeling .dtp idiom; relocated BELOW the standout stocks panel
        (operator order 2026-07-11). Carries its own panel chrome; stays hidden
@@ -16481,6 +16526,23 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   </div>
 
   {% endif %}{# /mode != macro — accumulation + holdings/flows #}
+
+  {#- THEME TAPE (W2) — THE LAST PANEL ON THE STOCKS PAGE (operator, 2026-08-06:
+      "make it way smaller in height then move it down to bottom of the page").
+      Third complaint about this panel's footprint. It shipped above the board;
+      #4553 moved it below the board and cut it 692px → 498px; #4605 merged one
+      minute later, added the washout-turn group and a second shelf group, and it
+      measured 680px desktop / 1004px phone against the real artifacts. Trimming
+      it in place is what failed twice, so it is out of the reading order entirely
+      — after #holdings, the last panel this page renders (the data-health strip
+      below is `mode != 'stocks'` and never appears here). It also ships CLOSED,
+      one gist line; templates/_theme_tape.html.j2 carries why that is not the
+      silence the panel exists to fix.
+      Placed OUTSIDE the `mode != 'macro'` block above rather than at the end of
+      it, so it cannot drift back up the page when that block is next re-nested —
+      the failure mode that put it above the board for the first three months.
+      Its own `mode == 'stocks'` guard; renders nothing at all on a dead tape. -#}
+  {% if mode == 'stocks' %}{% include "_theme_tape.html.j2" %}{% endif %}
 
   {% if mode != 'stocks' %}
   {# Link-out strip deleted per audit INT-07dt — the sx-deep-context tray carries these links. #}

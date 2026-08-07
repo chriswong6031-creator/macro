@@ -12,15 +12,29 @@ the four properties the change rests on:
   4. ``young_history`` is stamped on every name below the pre-change 200-bar floor and
      survives the trip to the board row (era law: the population change is labelled).
 
-The measurement basis is a pure business-day index — the WORST case, because holidays give
-a name MORE 2D/3D buckets per daily bar. A floor measured without them is conservative for
-every real ticker.
+MEASUREMENT BASIS (re-measured under the absolute session anchor, R7, era
+abs-session-2026-08-06). Buckets are phased to a fixed reference calendar, so a trailing
+N-bar window yields ``ceil(N/n)`` TF bars when it starts on a bucket boundary and one MORE
+when it straddles — a floor read off ONE alignment is a floor that holds only at that
+alignment. So the basis is REAL NYSE sessions (``lib.nyse_calendar``, real holidays, real
+phases), the window END slid across ``N_PHASE_OFFSETS`` consecutive sessions, and the floor
+is the MAX over offsets of the minimal sufficient N.
+
+Two legs are pinned differently and on purpose. ``wbull``/``htf_2w`` are CALENDAR-week legs:
+their warmup is set by how many weeks a window spans, which moves with HOLIDAY DENSITY rather
+than bucket phase, so on real sessions they measure BELOW the shipped floor
+(``REAL_SESSION_WORST_CASE``). The shipped floor is the no-holiday worst case and is kept —
+over-disclosing a leg as not-yet-knowable costs nothing, under-disclosing asserts a leg is
+live when it is not (the PLTR error class), and neither leg gates a tier. Both numbers are
+pinned here so the gap stays measured rather than assumed.
 """
 from __future__ import annotations
 
 import numpy as np
 import pandas as pd
 import pytest
+
+from datetime import date
 
 from engine import confluence_tiers as ct
 from engine import signal_gate
@@ -32,6 +46,7 @@ from engine.confluence_tiers import (
     MIN_HISTORY,
     RSI_LEN,
     YOUNG_HISTORY_BARS,
+    _completed_resample,
     _null_legs,
     _rsi_macd,
     _stoch_rsi_kd,
@@ -41,13 +56,34 @@ from engine.confluence_tiers import (
     tier_stream,
 )
 from engine.technicals import rsi
+from lib import nyse_calendar
+
+#: Real NYSE sessions — the phases and holidays a production window actually sees.
+_SESSIONS = pd.DatetimeIndex(pd.to_datetime(
+    nyse_calendar.sessions_between(date(2015, 1, 1), date(2026, 8, 4))))
+#: How many consecutive window-END sessions to slide across. 14 covers every 2D/3D phase
+#: (2 and 3), every weekday phase (5) and both fortnight parities (10).
+N_PHASE_OFFSETS = 14
+#: N must hold for N..N+_STABILITY_BAND, so a single lucky alignment cannot set a floor.
+_STABILITY_BAND = 12
+
+#: The CALENDAR-week legs, whose real-session floor sits BELOW the shipped (no-holiday) one.
+CALENDAR_WEEK_LEGS = ("wbull", "htf_2w")
+#: What those two measure on real sessions across the 14 phase offsets. Pinned so a drift in
+#: either direction is loud: the shipped floor stays conservative BY A KNOWN MARGIN.
+REAL_SESSION_WORST_CASE = {"wbull": 376, "htf_2w": 759}
 
 
-def _synth(n: int, seed: int = 7) -> pd.Series:
-    """``n`` pure business days (no holidays = the worst case) ending 2026-07-31."""
-    idx = pd.bdate_range(end="2026-07-31", periods=n)
+def _synth(n: int, seed: int = 7, end_offset: int = 0) -> pd.Series:
+    """``n`` REAL NYSE sessions ending ``end_offset`` sessions before 2026-08-04.
+
+    ``end_offset`` is the phase knob: sliding the window end by one session shifts which
+    absolute bucket the final bar lands in, which is exactly what a floor must survive.
+    """
+    end = len(_SESSIONS) - 1 - end_offset
+    idx = _SESSIONS[end - n + 1: end + 1]
     rng = np.random.default_rng(seed)
-    return pd.Series(100 * np.exp(np.cumsum(rng.normal(0.0, 0.02, n))), index=idx)
+    return pd.Series(100 * np.exp(np.cumsum(rng.normal(0.0, 0.02, len(idx)))), index=idx)
 
 
 # --------------------------------------------------------------------------- #
@@ -97,25 +133,75 @@ def _leg_defined(c: pd.Series, leg: str) -> bool:
         wm, ws = _rsi_macd(c.resample("W-FRI").last().dropna())
         return bool(wm.notna().sum() >= 2 and ws.notna().sum() >= 2)
     if leg == "htf_2w":
-        wm, ws = _rsi_macd(c.resample("2W-FRI").last().dropna())
+        # the PRODUCTION path: the S1/S2 badges read completed 2W buckets, and since the
+        # absolute-fortnight repair (R6) that is no longer what raw resample("2W-FRI") gives.
+        raw, _kn = _completed_resample(c, "2W-FRI")
+        wm, ws = _rsi_macd(raw)
         return bool(wm.notna().sum() >= 2 and ws.notna().sum() >= 2)
     raise AssertionError(f"unmeasured leg in LEG_WARMUP_BARS: {leg}")
 
 
-@pytest.mark.parametrize("leg", sorted(LEG_WARMUP_BARS))
-def test_leg_warmup_is_the_measured_requirement(leg):
-    """At the tabled bar count the leg is computable; ONE bar short it is not.
+def _minimal_n(leg: str, end_offset: int, lo: int, hi: int) -> int | None:
+    """Smallest N at which ``leg`` is computable for every N' in ``N..N+_STABILITY_BAND``,
+    with the window ending ``end_offset`` sessions back. None if unresolved in ``[lo, hi)``."""
+    for n in range(lo, hi):
+        if all(_leg_defined(_synth(m, end_offset=end_offset), leg)
+               for m in range(n, n + _STABILITY_BAND + 1)):
+            return n
+    return None
 
-    Both halves matter. Without the "one short" half the table could list any number
-    above the true warmup and still pass, which would silently raise the floor.
-    """
+
+def _phase_worst_case(leg: str) -> int:
+    """The MAX over reference phases of the minimal sufficient N — the floor's definition
+    under the absolute anchor (R7). A floor measured at one alignment is not a floor."""
     need = LEG_WARMUP_BARS[leg]
-    assert _leg_defined(_synth(need), leg), (
-        f"{leg}: LEG_WARMUP_BARS says {need} daily bars, but the leg is NOT computable "
-        f"there — the table overstates nothing but the floor derived from it is wrong")
-    assert not _leg_defined(_synth(need - 1), leg), (
-        f"{leg}: computable at {need - 1} bars, so {need} OVERSTATES the warmup and the "
-        f"floor locks out names whose legs are already live")
+    lo, hi = max(2, need - 60), need + 60
+    per_offset = [_minimal_n(leg, o, lo, hi) for o in range(N_PHASE_OFFSETS)]
+    assert all(n is not None for n in per_offset), (
+        f"{leg}: warmup unresolved in [{lo},{hi}) at some phase — {per_offset}")
+    return max(per_offset)
+
+
+@pytest.mark.parametrize("leg", sorted(LEG_WARMUP_BARS))
+def test_leg_warmup_is_the_phase_worst_case_measurement(leg):
+    """The tabled floor IS the max-over-phases minimal N — both halves, in one measurement.
+
+    ``worst == need`` pins the table from both sides at once: too LOW and some phase would
+    need more than the table admits (the floor lets a null through as a live leg); too HIGH
+    and no phase would need that many (the floor locks out names whose legs are already live).
+    The old one-alignment form could assert neither under a phased anchor.
+
+    ``CALENDAR_WEEK_LEGS`` are the deliberate exception — see the module docstring: their
+    shipped floor is the conservative no-holiday case, and what real sessions measure is
+    pinned separately so the margin cannot drift unnoticed.
+    """
+    worst = _phase_worst_case(leg)
+    if leg in CALENDAR_WEEK_LEGS:
+        assert worst == REAL_SESSION_WORST_CASE[leg], (
+            f"{leg}: real-session phase-worst-case moved to {worst} (pinned "
+            f"{REAL_SESSION_WORST_CASE[leg]}) — re-measure before editing the table")
+        assert worst < LEG_WARMUP_BARS[leg], (
+            f"{leg}: the shipped floor {LEG_WARMUP_BARS[leg]} is no longer conservative "
+            f"against the real-session measurement {worst} — it now UNDER-discloses")
+        return
+    assert worst == LEG_WARMUP_BARS[leg], (
+        f"{leg}: LEG_WARMUP_BARS says {LEG_WARMUP_BARS[leg]} daily bars, but the phase-worst-"
+        f"case measurement is {worst}. Lower means the table locks out names whose legs are "
+        f"already live; higher means the floor admits names whose leg is still NaN.")
+
+
+def test_the_anchor_did_not_move_any_session_counted_floor():
+    """The era's headline claim, asserted rather than remembered: bucketing by absolute
+    session position changed NO session-counted leg's warmup, so MIN_HISTORY (and with it the
+    graded cohort boundary) is exactly where the 2026-08-05 floor-lift left it.
+
+    The reason is arithmetic: a window starting on a bucket boundary yields ceil(N/n) TF bars
+    under either anchor, and a real session maps to a CONSECUTIVE reference position because
+    holidays are absent from both the series and the reference. If this ever reds, the era
+    stamp needs a new value — a moved floor is a moved graded population.
+    """
+    assert MIN_HISTORY == 159
+    assert LEG_WARMUP_BARS["m3_s3"] == 232      # F6's boundary rides on this one
 
 
 def test_min_history_is_derived_from_the_gating_legs_not_chosen():

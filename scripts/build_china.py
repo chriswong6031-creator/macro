@@ -520,7 +520,7 @@ def _build_sector_pages(env) -> int:
         if len(close) < 60:
             continue
         try:
-            a = analyze(close)
+            a = analyze(close, market="CN")
         except Exception as e:  # noqa: BLE001
             log.warning("china sector page %s analyze failed: %s", fund, e)
             continue
@@ -629,7 +629,7 @@ def _sector_cards(latest: dict) -> list[dict]:
         if len(close) < 60:
             continue
         try:
-            a = analyze(close)
+            a = analyze(close, market="CN")
         except Exception as e:  # noqa: BLE001
             log.warning("china sector analyze failed for %s: %s", t, e)
             continue
@@ -793,7 +793,7 @@ def _benchmark_card() -> dict | None:
     if df is None or "close" not in df.columns:
         return None
     close = df["close"].dropna()
-    a = analyze(close)
+    a = analyze(close, market="CN")
     return {"name": "Shanghai Composite", "ticker": mi,
             "mtf_json": json.dumps(a["mtf"]),
             "state": a["ladder"].get("state"), "label": a["ladder"].get("label"),
@@ -1494,6 +1494,30 @@ def main() -> int:
             log.warning("china hsi_tile failed (%s); skipping", _hsi_e)
             vm["hsi_tile"] = None
         vm.setdefault("hsi_tile", None)
+
+        # Delayed-board disclosure input, hoisted to its own view-model key so it reaches BOTH
+        # renders below. The macro page (china.html) is the surface
+        # scripts/freshness_sentinel.py watches, and it does not render the setups board — so
+        # reading setups.staleness inside the stocks-only block would leave china.html with no
+        # marker and the sentinel's china delay budget with nothing to anchor on.
+        # Recomputed directly when the library is missing or fell back to a persisted artifact:
+        # a board serving yesterday's JSON is precisely when the disclosure must still be
+        # honest, and compute_board_staleness reads the CSI300 anchor independently of it.
+        try:
+            from scripts import build_china_library as _bcl
+            _stale = ((vm.get("setups") or {}).get("staleness")
+                      or _bcl.compute_board_staleness())
+        except Exception as _stale_e:  # noqa: BLE001 — never break the page over a badge
+            log.warning("china board staleness unavailable (%s); disclosure suppressed",
+                        _stale_e)
+            _stale = {"price_through": None, "age_days": None, "delayed": False}
+        vm["board_staleness"] = _stale
+        if _stale.get("delayed"):
+            log.warning(
+                "china board DELAYED — prices as of %s (%s days behind); "
+                "rendering the delayed-board disclosure",
+                _stale.get("price_through"), _stale.get("age_days"),
+            )
 
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)

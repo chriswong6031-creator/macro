@@ -32,7 +32,13 @@
 {% set seo_desc = "Every year of a stock's history drawn as its own thread, not one smoothed average — and an honest answer to whether a calendar window survives the search that found it." %}
 {% set seo_path = "stock_seasonality.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}
+/* Mode is page state, so it lives in the URL query exactly as the symbol does.
+   Applied HERE, in the head, for the same reason theme and language are: the
+   page body ships in calendar mode, and a deep link resolved only once
+   stock_seasonality.js runs at the end of <body> would paint the calendar
+   first and swap it away. */
+try{if(new URL(location.href).searchParams.get('mode')==='catalyst')document.documentElement.setAttribute('data-sx-mode','catalyst');}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="stock_seasonality.css">
 </head>
@@ -43,8 +49,41 @@
 
   <header class="sx-mast">
     <div class="sx-mast-id">
-      <p class="sx-eyebrow">{{ t('Calendar Clock', '日历时钟') }}</p>
+      {# MODE is a higher-order control than a lens: Raw / Vs market / Detrended
+         change how one chart is drawn, mode changes what the page is ABOUT. So
+         it does not join the lens row under the chart — it takes the masthead
+         slot the page's own name used to hold, above the H1, where the eye
+         lands first. Same segmented idiom as the lens rows (one recessed track,
+         one raised selection) so it reads as the same family; a full type step
+         up (13.5px display against the lens rows' 12.5px data face) and a
+         heavier pressed fill are what mark it as the superior control — the
+         first cut claimed seniority at an IDENTICAL size, so placement was
+         carrying the hierarchy alone (adversarial review 2026-08-07).
+
+         The accessible name is a visually-hidden bilingual span, not an
+         aria-label: an aria-label can hold exactly one language (and translated
+         text in an attribute is a CI-guarded house-law violation), so a zh
+         reader was hearing "Page mode". The inactive .l-* span is display:none
+         and therefore excluded from the accessible-name computation, so exactly
+         one language is ever spoken.
+
+         aria-pressed ships CALENDAR-pressed because that is what the body ships
+         as; a ?mode=catalyst deep link paints the catalyst body from <head>,
+         and the two would disagree until stock_seasonality.js runs at the end
+         of <body> — permanently if it never loads. The pressed FILL is keyed off
+         html[data-sx-mode] in CSS so it can never desync, and the inline script
+         below reconciles the ARIA during parse, before first paint. #}
+      <div class="sx-modebar">
+        <span class="sx-sr" id="sx-mode-lab">{{ t('Page mode', '页面模式') }}</span>
+        <span class="sx-seg sx-mode" id="sx-mode" role="group" aria-labelledby="sx-mode-lab">
+          <button type="button" class="gbtn gbtn-sm" data-v="calendar" aria-pressed="true">{{ t('Calendar clock', '日历时钟') }}</button>
+          <button type="button" class="gbtn gbtn-sm" data-v="catalyst" aria-pressed="false">{{ t('Catalyst', '催化剂') }}</button>
+        </span>
+        <script>try{if(document.documentElement.getAttribute('data-sx-mode')==='catalyst'){var _g=document.getElementById('sx-mode'),_b=_g&&_g.getElementsByTagName('button');if(_b){_b[0].setAttribute('aria-pressed','false');_b[1].setAttribute('aria-pressed','true');}}}catch(e){}</script>
+        {{ help('Calendar clock is this symbol’s own recurring calendar structure, drawn from complete years. Catalyst is the event side — clinical, regulatory and financing dates. No event source is connected yet, and that mode says exactly what is missing and what the calendar can answer instead.', '日历时钟：该标的自身的年内重复结构，基于完整年份绘制。催化剂：事件侧——临床、监管与融资日期。目前尚未接入任何事件数据源，该模式会明确说明缺少什么、以及日历时钟能替代回答什么。') }}
+      </div>
       <h1 class="sx-h1"><span class="sx-tick" id="sx-sym">{{ v.symbol }}</span> <span class="sx-name" id="sx-name">{{ v.name }}</span></h1>
+      <p class="sx-sr" id="sx-mode-live" role="status" aria-live="polite"></p>
     </div>
     <div class="sx-pick">
       {# The results list hangs off the FIELD, not off the whole picker: with
@@ -68,7 +107,7 @@
   </header>
 
   {# ── the answer, before any evidence ─────────────────────────────────── #}
-  <p class="sx-verdict" id="sx-verdict">
+  <p class="sx-verdict sx-cal" id="sx-verdict">
     {# §16: for the market benchmark the residual is empty BY CONSTRUCTION, so the
        engine's honest `market` would tell a reader that SPY is "really the market's
        calendar". Override the words, not the state. #}
@@ -79,7 +118,7 @@
     {%- else %}{{ t('Looks strong, but not after counting every window tried. Stand aside.', '看似强势，但计入所有测试窗口后并不成立。建议观望。') }}{% endif %}
   </p>
 
-  <ul class="sx-chips" id="sx-chips">
+  <ul class="sx-chips sx-cal" id="sx-chips">
     <li class="sx-chip" style="animation-delay:300ms"><span class="n">{{ t(v.win.a_en ~ ' → ' ~ v.win.b_en, v.win.a_zh ~ ' → ' ~ v.win.b_zh) }}</span></li>
     <li class="sx-chip sx-chip-expl" id="sx-expl" hidden>{{ t('Your window · exploratory', '自选窗口 · 探索性') }}{{ help('A window you chose after seeing the chart spends testing budget that is not counted here. Presets are counted.', '你在看过图之后自己选的窗口，会消耗这里没有计入的测试预算。预设窗口是计入的。') }}</li>
     <li class="sx-chip" style="animation-delay:340ms"><span class="n">{{ t(v.n ~ ' years', v.n ~ ' 年') }}</span></li>
@@ -98,13 +137,154 @@
   </ul>
 
   {% if v.is_example %}
-  <p class="sx-note" data-on="1">{{ t('Example panel, computed from committed closing prices.', '示例面板，基于已提交的收盘价计算。') }}{{ help('The nightly seasonality artifact for this symbol has not been generated yet. Every number here is computed from the committed adjusted closes in this repository; when the nightly artifact lands, the page reads that instead.', '该代码的每日季节性数据尚未生成。此处每个数字均由本仓库中已提交的复权收盘价计算得出；每日数据生成后，页面将改读该数据。') }}</p>
+  <p class="sx-note sx-cal" data-on="1">{{ t('Example panel, computed from committed closing prices.', '示例面板，基于已提交的收盘价计算。') }}{{ help('The nightly seasonality artifact for this symbol has not been generated yet. Every number here is computed from the committed adjusted closes in this repository; when the nightly artifact lands, the page reads that instead.', '该代码的每日季节性数据尚未生成。此处每个数字均由本仓库中已提交的复权收盘价计算得出；每日数据生成后，页面将改读该数据。') }}</p>
   {% endif %}
-  <p class="sx-note" id="sx-err">{{ t('Seasonality data didn’t load. Reload the page.', '季节性数据未能加载，请重新载入页面。') }}</p>
-  <p class="sx-note" id="sx-nocov">{{ t('We don’t cover that symbol yet.', '暂未覆盖该代码。') }} <a href="methodology.html">{{ t('See what we cover →', '查看覆盖范围 →') }}</a></p>
+  {# Both notices belong to the calendar lane and BOTH carry sx-cal: the picker
+     stays live in catalyst mode, so a 404 printed "We don’t cover that symbol
+     yet." directly above a chip that says coverage here is the same for every
+     symbol, and the loader error announced a seasonality failure in a mode that
+     draws no seasonality (adversarial review 2026-08-07). #}
+  <p class="sx-note sx-cal" id="sx-err">{{ t('Seasonality data didn’t load. Reload the page.', '季节性数据未能加载，请重新载入页面。') }}</p>
+  <p class="sx-note sx-cal" id="sx-nocov">{{ t('We don’t cover that symbol yet.', '暂未覆盖该代码。') }} <a href="methodology.html">{{ t('See what we cover →', '查看覆盖范围 →') }}</a></p>
+
+  {# ── CATALYST MODE — the evidence boundary ────────────────────────────
+     There is no event data: no clinical, regulatory or financing source is
+     connected and the producer contract does not exist yet. So this is not a
+     placeholder and not a "coming soon" splash — both of those reserve space
+     for data and tell the reader nothing. It is a real answer to a real
+     question: where exactly does the evidence stop, why, what can be answered
+     instead, and what would have to change.
+
+     EVERY row below reads site/seasonalitydata/methodology.json's availability
+     block. Nothing is drawn that could be mistaken for an event: no timeline,
+     no axes, no greyed chart, no probability, no date. The one graphic device
+     is the rail — filled where a source is connected, dashed where it is not —
+     so the boundary is countable before a word is read.
+
+     THREE STATES. The rail and the counts describe SOURCES only. `Forecasts`
+     and `Symbol screening` are not feeds we lack — we chose never to build
+     them — so they carry no rail and sit under their own heading. The first cut
+     counted all five and printed "3 not connected", which glances as "40%
+     built" when exactly ONE source is missing (adversarial review 2026-08-07). #}
+  {% set c = v.catalyst %}
+  <div class="sx-cat" id="sx-catalyst">
+    <p class="sx-verdict">
+      {%- if c.event_live %}{{ t('Event coverage is connected, but this page does not draw it yet.', '事件数据已接入，但本页尚未绘制。') }}
+      {%- else %}{{ t('Catalyst coverage is not connected. Nothing here reads a trial or a decision date.', '催化剂数据尚未接入。本页不读取任何临床试验或审批日期。') }}{% endif %}
+    </p>
+    {# The stance line is scoped to the LEDGER or to the METHOD FILE, never to
+       the page: "Nothing on this page is connected right now" shipped one click
+       away from 25 drawn years and a verdict the same page stands behind. #}
+    <p class="sx-cat-act">
+      {%- if c.clock_live %}{{ t('Read the calendar clock instead — connected, and rebuilt nightly.', '改用日历时钟：已接入，每晚重建。') }}
+      {%- elif c.meth_ok %}{{ t('No source below is connected. The calendar clock is still drawn here.', '下方没有任何已接入的数据源。日历时钟仍在本页绘制。') }}
+      {%- else %}{{ t('The method file could not be read. The calendar clock is still drawn here.', '方法文件无法读取。日历时钟仍在本页绘制。') }}{% endif %}
+    </p>
+
+    <ul class="sx-chips">
+      <li class="sx-chip {{ 'sx-chip-ink' if c.n_live else 'sx-chip-thin' }}"><span class="n">{{ t(c.n_live ~ ' connected', '已接入 ' ~ c.n_live ~ ' 项') }}</span></li>
+      <li class="sx-chip sx-chip-thin"><span class="n">{{ t(c.n_dark ~ ' not connected', '未接入 ' ~ c.n_dark ~ ' 项') }}</span></li>
+      <li class="sx-chip sx-chip-muted">{{ t('Same for every symbol', '所有标的均相同') }}{{ help('Coverage is a property of the sources we have connected, not of the symbol on screen. Switching symbols does not change any line in this mode.', '覆盖情况取决于我们接入了哪些数据源，与当前标的无关。切换代码不会改变本模式中的任何一行。') }}</li>
+      {%- if c.asof_en %}
+      {# "Method as of", not "Through": the price-coverage chip two rows up is
+         already "Through Aug 5", and two bare month-day stamps in one masthead —
+         in the same words the seasonal window chips use — is ambiguous on a
+         25-year page. The year is carried so a stale method cannot look fresh. #}
+      <li class="sx-chip sx-chip-muted"><span class="n">{{ t('Method as of ' ~ c.asof_en, '方法更新于 ' ~ c.asof_zh) }}</span></li>
+      {%- endif %}
+    </ul>
+
+    <section class="sx-card sx-ledcard">
+      <h2>{{ t('Where the evidence stops', '证据的边界在哪里') }}</h2>
+      {%- if c.n_live %}
+      <ul class="sx-led">
+        {%- for r in c.rows if r.state == 'on' %}
+        <li class="sx-led-row is-on">
+          <i class="sx-rail" aria-hidden="true"></i>
+          <div class="sx-led-body">
+            <span class="sx-led-name">{{ t(r.en, r.zh) }}</span>
+            <span class="sx-led-why">{{ t(r.why_en, r.why_zh) }}</span>
+          </div>
+          <span class="sx-led-state">{{ t('Connected', '已接入') }}</span>
+        </li>
+        {%- endfor %}
+      </ul>
+      {%- endif %}
+      {%- if c.n_live and c.n_dark %}
+      <p class="sx-led-break"><span>{{ t('The evidence stops here', '证据到此为止') }}</span></p>
+      {%- endif %}
+      {%- if c.n_dark %}
+      <ul class="sx-led">
+        {%- for r in c.rows if r.state == 'off' %}
+        <li class="sx-led-row is-off">
+          <i class="sx-rail" aria-hidden="true"></i>
+          <div class="sx-led-body">
+            <span class="sx-led-name">{{ t(r.en, r.zh) }}</span>
+            <span class="sx-led-why">{{ t(r.why_en, r.why_zh) }}</span>
+          </div>
+          <span class="sx-led-state">{{ t('Not connected', '未接入') }}</span>
+        </li>
+        {%- endfor %}
+      </ul>
+      {# The reader's very next question at the boundary is "then who has trial
+         dates?". BioCatalyst Intelligence is one click away in this page's own
+         nav rail and the first cut never mentioned it, so the honest page-scoped
+         claim above read as a false program-scoped one. The second sentence is
+         load-bearing: it says what that page is NOT, so this is a route and not
+         an upsell. #}
+      <p class="sx-led-route">{{ t('Trial and approval dates live on ', '临床试验与审批日期在') }}<a href="biocatalyst.html">{{ t('BioCatalyst Intelligence', '「生物医药催化剂智能」') }}</a>{{ t('. Nothing there is checked against past years.', '页面；那里的内容不与过往年份对照检验。') }}</p>
+      {%- endif %}
+      {%- if c.n_never %}
+      {# Off the rail on purpose: a choice is not a gap, and marking it on the
+         evidence axis is what made "3 not connected" read as a half-built page. #}
+      <h3 class="sx-led-h3">{{ t('Chosen, not missing', '刻意不做，并非缺失') }}</h3>
+      <ul class="sx-led sx-led-never">
+        {%- for r in c.rows if r.state == 'never' %}
+        <li class="sx-led-row is-never">
+          <div class="sx-led-body">
+            <span class="sx-led-name">{{ t(r.en, r.zh) }}</span>
+            <span class="sx-led-why">{{ t(r.why_en, r.why_zh) }}</span>
+          </div>
+          <span class="sx-led-state">{{ t('Not offered', '不提供') }}</span>
+        </li>
+        {%- endfor %}
+      </ul>
+      {%- endif %}
+    </section>
+
+    <div class="sx-two">
+      <section class="sx-card">
+        <h2>{{ t('What the calendar clock answers', '日历时钟能回答什么') }}</h2>
+        <ul class="sx-list">
+          <li>{{ t('When in the year this name has been strong or weak.', '这只标的在一年中的哪些时段偏强或偏弱。') }}</li>
+          {# CJK takes 破折号 or a colon, never a half-width " — " lifted out of
+             the English typography. #}
+          <li>{{ t('How often that repeated — one complete year at a time.', '这种表现重复过多少次：以完整年份为单位计数。') }}</li>
+          {%- if c.correction_live %}
+          <li>{{ t('Whether it still stands once every window tried is counted.', '在计入所有测试过的窗口后，它是否依然成立。') }}</li>
+          {%- endif %}
+        </ul>
+        <button type="button" class="sx-cta" id="sx-to-cal">{{ t('Open the calendar clock →', '打开日历时钟 →') }}</button>
+      </section>
+
+      <section class="sx-card">
+        <h2>{{ t('What we’re watching', '我们在关注什么') }}</h2>
+        <p class="sx-cat-lead">{{ t('Conditions we watch — not a schedule.', '这些是我们关注的条件，而不是时间表。') }}</p>
+        <ul class="sx-list">
+          <li>{{ t('A decision-date source we can check against past years.', '一个能与过往年份对照检验的审批日期数据源。') }}</li>
+          <li>{{ t('Enough past events per name to count, not just to list.', '每只标的有足够多的历史事件可供计数，而不只是罗列。') }}</li>
+          <li>{{ t('The same search accounting the calendar clock already carries.', '与日历时钟同一套搜索校正。') }}</li>
+        </ul>
+        {# "all three" was a hardcoded count of the list above it — the number
+           goes stale the moment a condition is added or dropped. #}
+        <p class="sx-cat-close">{{ t('Until those hold, this mode stays empty on purpose.', '在这些条件满足之前，本模式会刻意保持空白。') }}</p>
+        <p class="sx-smcap"><a href="seasonalitydata/methodology.json">{{ t('Full method (JSON) →', '完整方法（JSON）→') }}</a></p>
+      </section>
+    </div>
+  </div>
 
   {# ── the strand field ────────────────────────────────────────────────── #}
-  <section class="sx-card sx-fieldcard">
+  <section class="sx-card sx-fieldcard sx-cal">
     <div class="sx-fieldwrap">
       <svg class="sxf" id="sxf" viewBox="0 0 960 372" preserveAspectRatio="none"
            role="img" aria-label="Seasonal year strands with a selected window">
@@ -178,7 +358,7 @@
   </section>
 
   {# ── this window · the years ─────────────────────────────────────────── #}
-  <div class="sx-two">
+  <div class="sx-two sx-cal">
     <section class="sx-card">
       <h2>{{ t('This window', '这个窗口') }}</h2>
       <div class="sx-fig {{ 'up' if v.median_simple > 0 else 'dn' }}" id="sx-fig">{{ pct(v.median_simple) }}</div>
@@ -247,7 +427,7 @@
   </div>
 
   {# ── small multiples ─────────────────────────────────────────────────── #}
-  <details class="sx-card sx-sect" id="sx-more" open>
+  <details class="sx-card sx-sect sx-cal" id="sx-more" open>
     <summary><h2 style="display:inline">{{ t('More views', '更多视角') }}</h2></summary>
     <div class="sx-sm">
       {% for key, ttl_en, ttl_zh, cap_en, cap_zh, unit_en, unit_zh in [
@@ -282,7 +462,7 @@
   </details>
 
   {# ── honesty strip ───────────────────────────────────────────────────── #}
-  <section class="sx-card sx-honesty">
+  <section class="sx-card sx-honesty sx-cal">
     <h2>{{ t('How this is computed', '计算方式') }}</h2>
     <dl>
       <div>

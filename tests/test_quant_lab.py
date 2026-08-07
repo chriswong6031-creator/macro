@@ -272,6 +272,74 @@ def test_universe_gap_records_the_finding_that_decides_integration():
     assert g["fintel_screened"] > g["our_fundamentals_universe"] * 10
 
 
+# ---------------------------------------------------------------------------
+# Coverage chips are CURRENT-STATE claims and must be read, not stamped. They were
+# hardcoded at 1,552 names / 4-of-10 leaders; W2-A (#4688) widened the panel past
+# 2,800, which would have left the shipped page asserting a filings coverage it no
+# longer has and naming CMT/KRT as uncovered when both are now in the panel.
+# ---------------------------------------------------------------------------
+
+def _panel(tmp_path, tickers):
+    d = tmp_path / "edgar"
+    d.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame({"ticker": list(tickers), "fy": [2025] * len(tickers)}).to_parquet(
+        d / "fundamentals_panel.parquet")
+
+
+def test_coverage_chips_follow_a_widened_panel(tmp_path, monkeypatch):
+    from engine.quant_lab import page as page_mod
+    # STRL/IESC/WSM were covered pre-W2-A; CMT/KRT are the two the copy called out
+    # as having no fundamentals at all, and are the two the widening recovered.
+    _panel(tmp_path, ["STRL", "IESC", "WSM", "CMT", "KRT"] + [f"X{i}" for i in range(2821)])
+    monkeypatch.setattr(page_mod.config, "data_dir", lambda: tmp_path)
+    g = page_mod._universe_gap()
+    assert g["our_fundamentals_universe"] == 2826
+    assert g["published_leaders_in_our_fundamentals_panel"] == 5
+    assert page_mod._substrate()["edgar_fundamentals_panel"]["tickers"] == 2826
+
+
+def test_frozen_study_stamps_do_not_move_with_the_panel(tmp_path, monkeypatch):
+    # The study's IC numbers were computed on the 1,552-name panel; those facts are
+    # history and must NOT be rewritten when the live panel grows.
+    from engine.quant_lab import page as page_mod
+    _panel(tmp_path, [f"X{i}" for i in range(2826)])
+    monkeypatch.setattr(page_mod.config, "data_dir", lambda: tmp_path)
+    g = page_mod._universe_gap()
+    assert g["our_fundamentals_universe_at_study"] == 1552
+    assert g["published_leaders_in_our_fundamentals_panel_at_study"] == 3
+    assert specs.UNIVERSE_GAP["our_fundamentals_universe"] == 1552, \
+        "the module constant must not be mutated — it is the fallback"
+
+
+def test_coverage_falls_back_when_the_panel_is_unreadable(tmp_path, monkeypatch):
+    from engine.quant_lab import page as page_mod
+    monkeypatch.setattr(page_mod.config, "data_dir", lambda: tmp_path / "absent")
+    g = page_mod._universe_gap()
+    assert g["our_fundamentals_universe"] == specs.UNIVERSE_GAP["our_fundamentals_universe"]
+    assert page_mod._substrate()["edgar_fundamentals_panel"]["tickers"] == 1552
+
+
+def test_assembled_payload_carries_the_live_coverage_not_the_stamp(tmp_path, monkeypatch):
+    # Pins the WIRING, not just the helper: build_payload() must hand the template the
+    # live-derived gap. Without this, reverting the payload to specs.UNIVERSE_GAP passes
+    # every other test in this block while the page ships the stale chip again.
+    from engine.quant_lab import page as page_mod
+    _panel(tmp_path, ["STRL", "IESC", "WSM", "CMT", "KRT"] + [f"X{i}" for i in range(2821)])
+    monkeypatch.setattr(page_mod.config, "data_dir", lambda: tmp_path)
+    payload = page_mod.build_payload()
+    assert payload["universe_gap"]["our_fundamentals_universe"] == 2826
+    assert payload["universe_gap"]["published_leaders_in_our_fundamentals_panel"] == 5
+    assert payload["substrate"]["edgar_fundamentals_panel"]["tickers"] == 2826
+
+
+def test_published_leaders_list_matches_its_own_denominator():
+    # The numerator counted AMR — an 11th name from a separate article — against a
+    # denominator of 10, which is what made the stamped figure 4 rather than 3.
+    g = specs.UNIVERSE_GAP
+    assert len(g["published_leaders"]) == g["published_leaders_tested"]
+    assert "AMR" not in g["published_leaders"]
+
+
 def test_decile_spread_refuses_a_thin_cross_section():
     sig = pd.Series(np.arange(12.0), index=[f"T{i}" for i in range(12)])
     assert study.decile_spread(sig, sig) is None
@@ -390,3 +458,133 @@ def test_every_model_verdict_has_a_display_label():
     labelled = set(re.findall(r"'([a-z_]+)':\s*\(", block))
     produced = set(study.VERDICTS) | {"degenerate", "per_primitive"}
     assert produced <= labelled, f"verdicts with no display label: {sorted(produced - labelled)}"
+
+
+# ---------------------------------------------------------------------------------------
+# METHOD cards — external proposals that are not per-name rankers
+# ---------------------------------------------------------------------------------------
+REQUIRED_METHOD_FIELDS = (
+    "name", "proposer", "source_kind", "one_line", "shape", "proposal_says",
+    "not_a_ranker_because", "our_test", "result_artifact", "harness",
+    "provenance", "house_rulings", "still_live", "reopen_when",
+)
+
+
+def test_every_method_declares_the_full_contract():
+    for key, spec in specs.METHODS.items():
+        for f in REQUIRED_METHOD_FIELDS:
+            assert spec.get(f), f"method {key} is missing {f!r}"
+
+
+def test_method_provenance_is_named_even_when_there_is_no_url():
+    """A relayed proposal has no public URL. It may still be cited — but only if the
+    publisher is named AND the claim is quoted verbatim, so the thing we tested is on the
+    record beside what we measured. A url=None source with no quote would be an unfalsifiable
+    attribution."""
+    for key, spec in specs.METHODS.items():
+        assert spec["provenance"], f"method {key} has no provenance"
+        for src in spec["provenance"]:
+            assert src in specs.SOURCES, f"method {key} cites unknown source {src!r}"
+            s = specs.SOURCES[src]
+            assert s.get("publisher"), f"source {src} names no publisher"
+            if not s.get("url"):
+                assert len(spec["proposal_says"]) > 120, (
+                    f"method {key} cites URL-less source {src} without quoting the claim")
+                assert s.get("why"), f"URL-less source {src} must explain why it has no URL"
+
+
+def test_method_specs_carry_no_numbers():
+    """THE anti-staleness rule for this shelf. Every measurement lives in the result
+    artifact, written by the harness; a statistic hand-typed into the registry outlives the
+    recompute that would have corrected it and nothing here can tell it went stale."""
+    def scan(node, path):
+        if isinstance(node, bool):
+            return
+        if isinstance(node, (int, float)):
+            raise AssertionError(f"numeric literal {node!r} in METHODS spec at {path} — "
+                                 f"measurements belong in the result artifact")
+        if isinstance(node, dict):
+            for k, v in node.items():
+                scan(v, f"{path}.{k}")
+        elif isinstance(node, (list, tuple)):
+            for i, v in enumerate(node):
+                scan(v, f"{path}[{i}]")
+    for key, spec in specs.METHODS.items():
+        scan(spec, key)
+
+
+def test_method_rulings_name_a_registry_row_and_a_verdict():
+    for key, spec in specs.METHODS.items():
+        for r in spec["house_rulings"]:
+            assert r.get("row") and r.get("verdict") and r.get("why"), (
+                f"method {key} has an unsourced ruling: {r}")
+
+
+def test_method_key_lookup_raises_on_typo():
+    with pytest.raises(KeyError):
+        specs.method("no_such_method")
+
+
+# ---------------------------------------------------------------------------------------
+# METHOD card rendering — each of these defects was caught by rendering the page
+# ---------------------------------------------------------------------------------------
+def _render(payload_overrides: dict | None = None) -> str:
+    from jinja2 import Environment, FileSystemLoader
+    from engine.quant_lab import page as ql_page
+    p = ql_page.build_payload()
+    p.update(payload_overrides or {})
+    env = Environment(loader=FileSystemLoader("templates"))
+    return env.get_template("quant_lab.html.j2").render(**p, generated_utc="2026-01-01T00:00Z")
+
+
+def _method_section(html: str) -> str:
+    i = html.find("Methods that do not pick names")
+    j = html.find("EVIDENCE: the combination rule")
+    assert i != -1, "the methods shelf did not render"
+    return html[i:j if j > i else len(html)]
+
+
+def test_a_small_nonzero_coverage_never_renders_as_zero_percent():
+    """INCIDENT: 0.4% coverage rendered as "0%", which reads as "never recorded" — the
+    opposite of the finding. The axis IS stamped; it is stamped far too thinly to use."""
+    seg = _method_section(_render())
+    assert "0.4%" in seg, "0.4% coverage was rounded away"
+    import re
+    rows = re.findall(r"quad_hard_label.*?</tr>", seg, re.S)
+    assert rows and ">0%<" not in rows[0], "a stamped axis was rendered as 0% coverage"
+
+
+def test_an_axis_seen_in_one_state_says_so_even_when_coverage_fails_first():
+    """The gate fails on coverage first, but "only ever one state" is the deeper
+    disqualifier: a conditional expectation over one observed state is undefined. The page
+    must name that rather than the milder "barely recorded"."""
+    seg = _method_section(_render())
+    import re
+    for axis in ("vol_regime", "rate_pressure"):
+        row = re.findall(rf"{axis}.*?</tr>", seg, re.S)
+        assert row, f"{axis} row missing"
+        assert "Only ever one state" in row[0], f"{axis} did not disclose its single state"
+
+
+def test_a_missing_result_artifact_claims_nothing():
+    """A card whose measurement file is absent must say so — never let the spec's prose
+    imply a measurement that was not made."""
+    from engine.quant_lab import page as ql_page
+    p = ql_page.build_payload()
+    for m in p["methods"]:
+        m["result"], m["has_result"] = {}, False
+    seg = _method_section(_render({"methods": p["methods"]}))
+    assert "nothing is claimed here" in seg
+    assert "What we found" not in seg, "a card with no artifact still showed a finding"
+
+
+def test_method_verdict_uses_the_shared_verdict_vocabulary():
+    """One vocabulary, defined once — a method card must not invent its own verdict words."""
+    seg = _method_section(_render())
+    assert "No signal" in seg and "无信号" in seg
+
+
+def test_the_shelf_states_why_these_methods_are_not_ranked_like_models():
+    seg = _method_section(_render())
+    assert "not scored like the models above" in seg
+    assert "no per-name score" in seg

@@ -380,10 +380,15 @@ ARTIFACT_MANIFEST = [
               "conditionally; 1.2.0 only corrects the contract classification)")},
     {"artifact": "site/data/portfolio_ctx.json",
      "kind": "context",
-     "schema_version": "1.0.0",
+     # 1.1.0 (PSI-W2, 2026-08-07): MINOR — one top-level field ADDED (`market`), every
+     # 1.0.0 field kept with its exact shape and meaning. `market` is unconditional (it is
+     # {} when no tape-context source resolves, exactly like `regime`/`sectors`), so it
+     # belongs in schema_fields as REQUIRED — not in optional_fields, which is for keys the
+     # builder emits only when a data condition holds.
+     "schema_version": "1.1.0",
      "schema_fields": [
-         "asof", "built", "coverage", "gate_go", "regime", "schema", "sectors",
-         "tickers", "v",
+         "asof", "built", "coverage", "gate_go", "market", "regime", "schema",
+         "sectors", "tickers", "v",
      ],
      # W1: nightly-wired (daily.yml engine job, serial step after build_sector_central).
      # 2 trading days = one nightly + a weekend/holiday cushion (same bar as the other
@@ -395,7 +400,12 @@ ARTIFACT_MANIFEST = [
               "research/PORTFOLIO_BRIEF_MASTERPLAN_BY_FABLE.md §2). Re-expresses "
               "existing nightly reads keyed by ticker; the terminal Portfolio page "
               "composes each user's brief on demand off the render path. W1 = "
-              "full-universe nightly bake (daily.yml, after build_sector_central).")},
+              "full-universe nightly bake (daily.yml, after build_sector_central). "
+              "PSI-W2 (schema portfolio_ctx.v2, charter "
+              "research/PORTFOLIO_SUPERINTELLIGENCE_MASTERPLAN_BY_FABLE.md §5.1/§9) is "
+              "ADDITIVE: per-ticker tech/msens/fq/pers/dossier state blocks, the new "
+              "top-level `market` tape-context block, and coverage counts per block. "
+              "Consumers feature-detect on `schema`; every v1 key is unchanged.")},
     {"artifact": "site/regime_timeline.json",
      "kind": "regime",
      "schema_version": "1.0.0",

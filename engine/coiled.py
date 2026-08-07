@@ -25,17 +25,40 @@ WHAT THIS MODULE IS:
 Public API (all functions never raise):
   weekly_d_last(daily_close)          -> float | None
   washout_ctx(daily_close)            -> bool | None
-  bull_div(daily_close)               -> bool
+  bull_div(daily_close, market="US")  -> bool
   cohort_fractions(latest_d, sector_of, d_thresh, min_peers) -> dict[str, float | None]
   assess(washout, cohort_frac, div)   -> dict  (JSON-safe, no NaN)
-  fire_recent(daily_close, within=3)  -> dict  (JSON-safe; fire/ticks/src; never raises)
+  fire_recent(daily_close, within=3, market="US") -> dict  (JSON-safe; never raises)
+
+BUCKET ANCHOR (era ``coiled-mtf-abs-session-2026-08-06``): the 3D/2D grids inside
+``bull_div`` and ``fire_recent`` are cut on the ABSOLUTE session calendar
+(``engine.session_anchor.session_positions // n``), never on pandas ``resample("nB")``
+bins, whose edges anchor to the SERIES' FIRST timestamp. Measured before the repair
+(2026-08-06, 99 deep US names): one dropped leading bar flipped ``bull_div`` on 10/99
+and ``fire_recent`` on 70/99 — and the US standout universe mixes deep ``data/stocks``
+with ROLLING ~3y breadth caches whose window start creeps forward every refresh
+(collectors/breadth.py), so the old grids re-phased build-to-build with ZERO price
+action, minting fake day-over-day ``fire_ticks`` deltas. ``washout_ctx`` (pure daily
+arithmetic, measured 0 flips) and the W-FRI weekly legs (calendar-absolute) are
+untouched. Ruling: research/SIGNAL_QUALITY_SESSION_ANCHOR_ADJUDICATION_BY_FABLE.md
+§Sibling triage chip (2); mechanics mirror signal_quality R-SQ1/R-SQ2.
 """
 from __future__ import annotations
 
 import numpy as np
 import pandas as pd
 
+from engine import session_anchor
 from engine.technicals import rsi  # faithful Wilder RSI (== Pine ta.rsi)
+
+#: Dated graded-population era stamp (DT-R16 family) for the one-time re-draw of the
+#: bull_div / fire_recent grids onto the absolute session calendar. ONE era covers this
+#: module AND engine/mtf_upturn's trend.d3 buckets — they ship in one PR and one graded
+#: surface family (the standout-board display/rank chips); equality is pinned by
+#: tests/test_coiled_mtf_anchor_invariance.py. Emitted on every assess()/fire_recent()
+#: payload so graders (grade_us_board, china_standout_track) and the day-over-day
+#: differs can fence pre-era rows from post-era rows forever.
+ANCHOR_ERA = "coiled-mtf-abs-session-2026-08-06"
 
 # ── bonus constants (on the _combine_key pct + 0.5·w scale) ─────────────────
 # +0.40 max sits just under one full cascade tier, mirroring the CN WASHOUT_BONUS
@@ -85,6 +108,34 @@ def _stoch_rsi_kd(c: pd.Series) -> tuple[pd.Series, pd.Series]:
     k   = rawk.rolling(_SMOOTH_K).mean()
     d   = k.rolling(_SMOOTH_D).mean()
     return k, d
+
+
+def _tf_close(c: pd.Series, n: int, market: str) -> pd.Series:
+    """Bucket closes on the ABSOLUTE n-session grid, indexed by each bucket's LAST
+    traded session — the known date (era ``ANCHOR_ERA``).
+
+    ``bucket(d) = session_anchor.session_positions(d, market) // n`` is a function of
+    ``(reference calendar, date)`` alone, so every window of the same name shares one
+    grid — the whole repair. The retired ``resample("nB")`` anchored its bin edges to
+    the series' first timestamp AND mis-split buckets at market holidays (bdate bins).
+
+    Indexing by the bucket's last traded session IS the known-date mapping both callers
+    used to re-derive per bucket (``x.dropna().index.max()``): the old synthetic
+    bin-edge labels never escaped these functions — only known dates did — so the
+    known-date-indexed form is the same public geometry with one fewer moving part.
+    ``c`` must be NaN-free (both callers ``dropna()`` first); sorting and de-duping are
+    normalized here exactly as ``resample`` did implicitly.
+    """
+    s = c
+    if not s.index.is_monotonic_increasing:
+        s = s.sort_index()
+    if s.index.has_duplicates:
+        s = s[~s.index.duplicated(keep="last")]
+    if len(s) == 0:
+        return pd.Series(dtype="float64")
+    b = session_anchor.session_positions(s.index, market) // n
+    last = np.r_[b[1:] != b[:-1], True]      # final row of each bucket (b is monotonic)
+    return pd.Series(s.to_numpy()[last], index=s.index[last])
 
 
 # ── Public functions ──────────────────────────────────────────────────────────
@@ -153,15 +204,18 @@ def washout_ctx(daily_close: pd.Series) -> bool | None:
         return None
 
 
-def bull_div(daily_close: pd.Series) -> bool:
+def bull_div(daily_close: pd.Series, market: str = "US") -> bool:
     """H3 bullish momentum divergence — price lower-low + 3D RSI-MACD/D higher-low.
 
     Procedure (wave-1 spec, causal, leak-free known-date mapping):
-    1. Resample to 3B .last().dropna() (the "3D grid").
-    2. Map 3D bars back to daily index: each 3D bar's "known date" = the maximum
-       daily date whose close fell into that bucket (same protocol as
-       research/signal_engine/tuning_harness.py to_daily / known-date ffill).
-       Reindex to the full daily index with method="ffill".
+    1. Cut the "3D grid" on the ABSOLUTE session calendar for ``market``
+       (``_tf_close``, era ``ANCHOR_ERA``): bucket close = last close in each
+       3-session bucket, indexed by the bucket's last traded session.
+    2. Map 3D bars back to daily index: each 3D bar sits at its "known date" — the
+       maximum daily date whose close fell into that bucket (same protocol as
+       research/signal_engine/tuning_harness.py to_daily / known-date ffill; the
+       grid index IS that date now).  Reindex to the full daily index with
+       method="ffill".
     3. Find confirmed daily-close swing lows with w=5: position j is a confirmed
        low when c[j] == min(c[j-5 : j+6]) AND there are >=5 bars after j
        (i.e. j <= len(c) - 6).  The last 5 bars can never be pivots.
@@ -170,7 +224,9 @@ def bull_div(daily_close: pd.Series) -> bool:
     5. True iff close[L2] < close[L1]  (price LL)
               AND (macd3[L2] > macd3[L1]  OR  d3[L2] > d3[L1])  (oscillator HL).
 
-    Returns False if fewer than two qualifying lows.  Never raises.
+    ``market`` picks the reference session calendar (session_anchor R1/R3): US
+    default; the CN library passes "CN". Returns False if fewer than two
+    qualifying lows.  Never raises.
     """
     try:
         c = daily_close.dropna()
@@ -180,35 +236,20 @@ def bull_div(daily_close: pd.Series) -> bool:
         if len(c) < 60:
             return False
 
-        # ── 3D grid (resample("3B").last().dropna()) ────────────────────────
-        s3 = c.resample("3B").last().dropna()
+        # ── 3D grid — ABSOLUTE session anchor (era ANCHOR_ERA) ─────────────
+        s3 = _tf_close(c, 3, market)
         if len(s3) < 20:
             return False
 
         macd3, _ = _rsi_macd(s3)
         _, d3     = _stoch_rsi_kd(s3)
 
-        # known-date mapping: each 3B bar → max daily date in its bucket
-        # (same as tuning_harness.to_daily / confluence_tiers._tf_bars)
-        known_raw = c.resample("3B").apply(
-            lambda x: x.dropna().index.max() if len(x.dropna()) > 0 else pd.NaT
-        ).reindex(s3.index)
-        known = pd.Series(
-            pd.to_datetime(known_raw.values), index=s3.index
-        ).dropna()
-        # align macd3/d3 to the same valid-known index
-        macd3 = macd3.reindex(known.index)
-        d3    = d3.reindex(known.index)
-
         di = c.index
 
-        def _to_daily_ffill(tf_vals: pd.Series, kn: pd.Series) -> pd.Series:
-            kd = pd.Series(tf_vals.to_numpy(), index=pd.to_datetime(kn.to_numpy()))
-            kd = kd[~kd.index.duplicated(keep="last")].sort_index()
-            return kd.reindex(di, method="ffill")
-
-        macd3_d = _to_daily_ffill(macd3, known)
-        d3_d    = _to_daily_ffill(d3, known)
+        # s3 is indexed by each bucket's known date (a real traded bar of THIS
+        # series), so the known-date ffill onto daily is a plain reindex.
+        macd3_d = macd3.reindex(di, method="ffill")
+        d3_d    = d3.reindex(di, method="ffill")
 
         arr  = c.to_numpy()
         m3_a = macd3_d.to_numpy()
@@ -301,7 +342,12 @@ def assess(
            + STAR_EXTRA   if star   else 0.0
 
     Returns a JSON-safe dict with no NaN values:
-      {coiled, star, washout_ctx, cohort, div, bonus}
+      {coiled, star, washout_ctx, cohort, div, bonus, anchor_era}
+
+    ``anchor_era`` stamps the bucket-calendar era the ``div`` input (bull_div's 3D
+    grid) was computed under — this dict IS the persisted us_standouts /
+    china_standouts ``coiled`` block, so the stamp is what lets graders and
+    day-over-day differs fence the one-time re-draw at the era boundary.
 
     Never raises.
     """
@@ -316,15 +362,18 @@ def assess(
             "cohort":      round(float(cohort_frac), 3) if cohort_frac is not None else None,
             "div":         bool(div),
             "bonus":       round(bonus, 3),
+            "anchor_era":  ANCHOR_ERA,
         }
     except Exception:
         return {
             "coiled": False, "star": False, "washout_ctx": None,
             "cohort": None, "div": False, "bonus": 0.0,
+            "anchor_era": ANCHOR_ERA,
         }
 
 
-def fire_recent(daily_close: pd.Series, within: int = FIRE_WITHIN) -> dict:
+def fire_recent(daily_close: pd.Series, within: int = FIRE_WITHIN,
+                market: str = "US") -> dict:
     """COILED-FIRE marker — did a fresh C2 (union m1d_s3d ∪ m2d_s3d) fire in the
     last `within` trading bars?
 
@@ -347,14 +396,20 @@ def fire_recent(daily_close: pd.Series, within: int = FIRE_WITHIN) -> dict:
 
     Fire definition (C2):
       m1d fire: RSI-MACD (14/60/5) bull cross on the 1D daily grid (xup of macd over
-        sig on the raw daily series), WHILE the 3D stoch (14/3/3, resample("3B").last())
-        has crossed up from oversold recently (within _CONF_W 2D bars) AND confirm
+        sig on the raw daily series), WHILE the 3D stoch (14/3/3, on the absolute
+        3-session grid — _tf_close, era ANCHOR_ERA) has crossed up from oversold
+        recently (within _CONF_W 2D bars) AND confirm
         (prior-closed-week weekly RSI-MACD bull OR 3D stoch was oversold within window)
         AND rsi_ok (3D RSI14 < 65).
-      m2d fire: same but the MACD cross is on the 2B grid (resample("2B").last()),
-        mapped to the daily index by known-date (same protocol as tuning_harness.to_daily).
+      m2d fire: same but the MACD cross is on the absolute 2-session grid,
+        mapped to the daily index by known-date (same protocol as tuning_harness.to_daily;
+        the grid index IS the known date).
       union fire (any calendar day): m1d OR m2d (same-day counts once).
-      Returns {"fire": bool, "ticks": int|None, "src": "m1d"|"m2d"|"both"|None}.
+      Returns {"fire": bool, "ticks": int|None, "src": "m1d"|"m2d"|"both"|None,
+               "anchor_era": ANCHOR_ERA}.
+
+    ``market`` picks the reference session calendar the 3D/2D buckets are anchored to
+    (session_anchor R1/R3): US default; the CN library passes "CN".
 
     Implementation replicates tuning_harness.build_signals (macd_cross trigger) conditions
     faithfully (same math as the validated harness):
@@ -374,10 +429,11 @@ def fire_recent(daily_close: pd.Series, within: int = FIRE_WITHIN) -> dict:
         "fire":  bool    — True iff any union (m1d OR m2d) fire landed in the last `within` bars,
         "ticks": int|None — bars since the most recent union fire; None if no fire ever occurred,
         "src":   "m1d"|"m2d"|"both"|None — source(s) of the most recent fire; None if never.
+        "anchor_era": str — the bucket-calendar era this payload was computed under.
       }
     All values JSON-safe (no NaN, no numpy scalars).
     """
-    _null = {"fire": False, "ticks": None, "src": None}
+    _null = {"fire": False, "ticks": None, "src": None, "anchor_era": ANCHOR_ERA}
     try:
         c = daily_close.dropna()
         if not isinstance(c.index, pd.DatetimeIndex):
@@ -403,40 +459,25 @@ def fire_recent(daily_close: pd.Series, within: int = FIRE_WITHIN) -> dict:
                              index=cond.index).ffill()
             return pd.Series(pos, index=cond.index) - last
 
-        def _to_daily_ffill(tf_vals: pd.Series, kn: pd.Series) -> pd.Series:
-            kd = pd.Series(tf_vals.to_numpy(), index=pd.to_datetime(kn.to_numpy()))
-            kd = kd[~kd.index.duplicated(keep="last")].sort_index()
-            return kd.reindex(di, method="ffill")
+        def _to_daily_ffill(tf_vals: pd.Series) -> pd.Series:
+            """Known-date ffill onto daily — the TF grid is indexed by known dates."""
+            return tf_vals.reindex(di, method="ffill")
 
-        def _to_daily_event(tf_bool: pd.Series, kn: pd.Series) -> pd.Series:
+        def _to_daily_event(tf_bool: pd.Series) -> pd.Series:
             """Place True on the daily bar at/after the known date of each True TF bar."""
             out = pd.Series(False, index=di)
-            kd = pd.Series(tf_bool.to_numpy(), index=pd.to_datetime(kn.to_numpy()))
-            kd = kd[~kd.index.duplicated(keep="last")].sort_index()
-            for dt, v in kd.items():
+            for dt, v in tf_bool.items():
                 if v:
                     p = int(di.searchsorted(dt, side="left"))
                     if p < len(di):
                         out.iloc[p] = True
             return out
 
-        def _known(tf_grid: pd.Series) -> pd.Series:
-            """known-date series: max daily date in each resample bucket."""
-            raw = c.resample(tf_grid.index.freqstr if hasattr(tf_grid.index, "freqstr")
-                             else "1B").apply(lambda x: x.dropna().index.max()
-                                              if len(x.dropna()) > 0 else pd.NaT)
-            return raw  # placeholder; see per-TF below
-
-        # ── 3D stoch grid (shared by both fire legs; tf=2B used as "2D" proxy for the
-        #    3D stoch, matching tuning_harness m2d_s3d / m1d_s3d where stoch_tf=3) ────
-        # NOTE: the harness uses stoch_tf=3 ("3B") for both m1d_s3d and m2d_s3d.
-        # We use "3B" here to match exactly.
-        s3 = c.resample("3B").last().dropna()
-        s3_known_raw = c.resample("3B").apply(
-            lambda x: x.dropna().index.max() if len(x.dropna()) > 0 else pd.NaT
-        ).reindex(s3.index)
-        s3_known = pd.Series(pd.to_datetime(s3_known_raw.values), index=s3.index).dropna()
-        s3 = s3.reindex(s3_known.index)
+        # ── 3D stoch grid (shared by both fire legs) on the ABSOLUTE session
+        #    calendar (_tf_close, era ANCHOR_ERA); indexed by known dates ──────
+        # NOTE: the harness uses stoch_tf=3 for both m1d_s3d and m2d_s3d.
+        # We use 3-session buckets here to match exactly.
+        s3 = _tf_close(c, 3, market)
 
         k3, d3 = _stoch_rsi_kd(s3)
         sb_cross3 = _xup(k3, d3)
@@ -446,9 +487,9 @@ def fire_recent(daily_close: pd.Series, within: int = FIRE_WITHIN) -> dict:
         r14_3 = rsi(s3, _RSI_LEN)
 
         # Map 3D indicators to daily
-        recent_sb_d  = _to_daily_ffill(recent_sb3.fillna(False), s3_known)
-        b1os_d       = _to_daily_ffill(b1_from_os3.fillna(False), s3_known)
-        r14_3_d      = _to_daily_ffill(r14_3, s3_known)
+        recent_sb_d  = _to_daily_ffill(recent_sb3.fillna(False))
+        b1os_d       = _to_daily_ffill(b1_from_os3.fillna(False))
+        r14_3_d      = _to_daily_ffill(r14_3)
 
         # ── weekly confirm (prior closed week; matches tuning_harness exactly) ─
         wk = c.resample("W-FRI").last().dropna()
@@ -468,17 +509,12 @@ def fire_recent(daily_close: pd.Series, within: int = FIRE_WITHIN) -> dict:
         m1d_fire = (mb1_d & recent_sb_d.reindex(di).fillna(False).astype(bool)
                     & confirm_bull & rsi_ok).fillna(False).astype(bool)
 
-        # ── m2d leg: MACD cross on the 2B grid, mapped by known-date ──────────
-        s2 = c.resample("2B").last().dropna()
-        s2_known_raw = c.resample("2B").apply(
-            lambda x: x.dropna().index.max() if len(x.dropna()) > 0 else pd.NaT
-        ).reindex(s2.index)
-        s2_known = pd.Series(pd.to_datetime(s2_known_raw.values), index=s2.index).dropna()
-        s2 = s2.reindex(s2_known.index)
+        # ── m2d leg: MACD cross on the absolute 2-session grid, known-date-indexed ──
+        s2 = _tf_close(c, 2, market)
 
         macd2, sig2 = _rsi_macd(s2)
         mb2_cross   = _xup(macd2, sig2)
-        mb2_d       = _to_daily_event(mb2_cross.fillna(False), s2_known)
+        mb2_d       = _to_daily_event(mb2_cross.fillna(False))
 
         m2d_fire = (mb2_d & recent_sb_d.reindex(di).fillna(False).astype(bool)
                     & confirm_bull & rsi_ok).fillna(False).astype(bool)
@@ -512,6 +548,7 @@ def fire_recent(daily_close: pd.Series, within: int = FIRE_WITHIN) -> dict:
             "fire":  bool(fired),
             "ticks": ticks,
             "src":   src,
+            "anchor_era": ANCHOR_ERA,
         }
 
     except Exception:

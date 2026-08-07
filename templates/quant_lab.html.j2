@@ -10,6 +10,13 @@
 {% macro pct0(v) -%}
 {%- if v is none -%}<span class="muted">—</span>{%- else -%}{{ '%.0f%%'|format(v*100) }}{%- endif -%}
 {%- endmacro %}
+{#- Percent that keeps a small non-zero value legible. Rounding 0.4% to "0%" would read as
+    "never recorded" when the honest reading is "recorded, but far too thinly to use". -#}
+{% macro pctfine(v) -%}
+{%- if v is none -%}<span class="muted">—</span>
+{%- elif v > 0 and v < 0.01 -%}{{ '%.1f%%'|format(v*100) }}
+{%- else -%}{{ '%.0f%%'|format(v*100) }}{%- endif -%}
+{%- endmacro %}
 {#- verdict -> (css class, EN, ZH). One vocabulary, defined once. -#}
 {% set VERD = {
   'survives_fdr': ('v-ok',   'Ranked forward',   '排序方向正确'),
@@ -347,6 +354,134 @@
 </div>
 {% endfor %}
 
+{# ==================== METHOD CARDS — not name-rankers ==================== #}
+{% if methods %}
+<div class="panel">
+  <h2>{{ t('Methods that do not pick names','不做选股的方法') }}
+    {{ help('The models above rank stocks, so we can score them by whether their ranking sorted the right way. Some published methods make a different kind of claim — about when a strategy tends to work, not about which stock to hold. There is no ranking to check, so each one is tested on its own terms and the test is written out here.',
+            '上方模型对个股排序，因此可用排序方向是否正确来评分。有些公开方法提出的是另一类主张－关于某类策略在什么时候有效，而非该持有哪只股票。没有排序可供检验，因此每项方法按其自身逻辑测试，并在此写明检验方式。') }}
+  </h2>
+</div>
+{% endif %}
+
+{% for x in methods %}
+<div class="panel">
+  <div class="mhead">
+    <h3>{{ t(x.name, x.name_zh or x.name) }}</h3>
+    <span class="vendor">{{ x.proposer }}</span>
+    {% if x.has_result %}
+      {% set mv = VERD.get(x.result.verdict, VERD['no_data']) %}
+      <span class="pill {{ mv[0] }}">{{ t(mv[1], mv[2]) }}</span>
+    {% else %}
+      <span class="pill v-none">{{ t('Not measured yet','尚未实测') }}</span>
+    {% endif %}
+  </div>
+  <p class="sm muted" style="margin:0 0 2px">{{ x.one_line }}</p>
+
+  <div class="quote">
+    {{ t(x.proposal_says, x.proposal_says_zh or x.proposal_says) }}
+    <cite>{{ t('The proposal, as received','原始提案') }}
+      {% for p in x.provenance %} · {% if p.url %}<a href="{{ p.url }}" rel="nofollow noopener" target="_blank">{{ p.publisher }}</a>{% else %}{{ p.publisher }}{% endif %}{% if p.date %}, {{ p.date }}{% endif %}{% endfor %}
+    </cite>
+  </div>
+
+  {% if x.has_result %}
+  {# ---------- the one sentence that matters ---------- #}
+  <p class="sm" style="max-width:88ch; margin:10px 0 2px">
+    <strong>{{ t('What we found','实测结果') }}:</strong>
+    {{ t('Knowing WHICH SIGNAL fired told us '~x.result.decomposition.family_over_regime_ratio~'x more about how the trade went than knowing what the market was doing at the time. The part the proposal wanted to trade on was the smallest of the three, and it did not hold its direction when we split the history in half.',
+          '「哪个信号触发」对结果的解释力，是「当时市场处于什么状态」的 '~x.result.decomposition.family_over_regime_ratio~' 倍。提案想要利用的那一部分在三者中最小，且将历史对半拆分后方向无法保持一致。') }}
+  </p>
+  <p class="sm muted" style="max-width:88ch; margin:0 0 8px">
+    {{ t('Tested on '~'{:,}'.format(x.result.substrate.n_matured)~' completed signals spanning '~x.result.substrate.n_months~' months ('~x.result.substrate.span[0][:4]~'–'~x.result.substrate.span[1][:4]~'), measured on how far each one fell after entry.',
+          '检验样本为 '~'{:,}'.format(x.result.substrate.n_matured)~' 个已完成信号，覆盖 '~x.result.substrate.n_months~' 个月（'~x.result.substrate.span[0][:4]~'–'~x.result.substrate.span[1][:4]~'），以入场后的回撤幅度衡量。') }}
+  </p>
+
+  {# ---------- the reusable half: what the record can support ---------- #}
+  <h2 style="margin-top:14px">{{ t('Could we even answer the question?','这个问题能被回答吗？') }}
+    {{ help('To say a strategy works better in one market state than another, the record has to actually contain both states — and enough separate months of each to tell them apart. This checks that first, before any comparison is made. Months matter, not rows: signals fired in the same month all shared one market, so they are not separate evidence.',
+            '要断言某策略在某种市场状态下更有效，记录中必须真正包含多种状态，且每种状态有足够多的独立月份加以区分。此项在做任何比较之前先行检查。关键是月份而非行数：同月触发的信号面对的是同一个市场，并不构成独立证据。') }}
+  </h2>
+  <div class="scroll">
+  <table>
+    <thead><tr>
+      <th>{{ t('Market-state measure','市场状态口径') }}</th>
+      <th class="r">{{ t('Stamped on','标注覆盖') }}</th>
+      <th class="r">{{ t('States seen','出现状态数') }}</th>
+      <th class="r">{{ t('Months in the thinnest','最少状态月份') }}</th>
+      <th>{{ t('Usable?','可用？') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for a in x.result.estimability.axes %}
+    <tr>
+      <td class="mono xs">{{ a.axis }}
+        {% if a.span %}<div class="xs muted">{{ a.span[0] }} → {{ a.span[1] }}</div>{% endif %}</td>
+      <td class="r mono">{{ pctfine(a.coverage) }}</td>
+      <td class="r mono">{{ a.n_states }}</td>
+      <td class="r mono">{{ a.min_state_months }}</td>
+      <td>
+        {# A single observed state is the more fundamental disqualifier, so it is named even
+           when the coverage gate happens to fail first — otherwise the page would report
+           "barely recorded" for a measure that has never varied at all. #}
+        {% if a.verdict == 'estimable' %}<span class="pill v-ok">{{ t('Yes','可用') }}</span>
+        {% elif a.n_states < 2 %}<span class="pill v-none">{{ t('Only ever one state','只出现过一种状态') }}</span>
+        {% elif a.verdict == 'insufficient_contrast' %}<span class="pill v-none">{{ t('One side too thin','一侧样本过少') }}</span>
+        {% else %}<span class="pill v-none">{{ t('Barely recorded','记录过少') }}</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="foot">
+    {{ t('Only the first measure has enough history to answer the question at all. The richer market-state readings the proposal asks for have only been recorded since July 2026 — and two of them have never yet been seen in more than one state, so there is nothing to compare against.',
+          '只有第一项口径拥有足以回答该问题的历史。提案所要求的更丰富的市场状态读数自 2026 年 7 月才开始记录，其中两项至今只出现过一种状态，无从比较。') }}
+  </p>
+
+  {# ---------- the technical receipt, demoted ---------- #}
+  <details>
+    <summary>{{ t('The measurement, in full','完整测量过程') }}</summary>
+    <p class="sm" style="max-width:88ch">{{ x.our_test }}</p>
+    <table style="margin-top:6px">
+      <tbody>
+      <tr><td>{{ t('Which signal fired (family effect)','信号家族主效应') }}</td>
+          <td class="r mono">{{ num(x.result.decomposition.family_main_effect_pp, 2) }} pp</td></tr>
+      <tr><td>{{ t('What the market was doing (state effect)','市场状态主效应') }}</td>
+          <td class="r mono">{{ num(x.result.decomposition.regime_main_effect_pp, 2) }} pp</td></tr>
+      <tr><td>{{ t('The two combined — what the proposal would trade','两者交互项－提案的交易依据') }}</td>
+          <td class="r mono">{{ num(x.result.decomposition.max_abs_interaction_pp, 2) }} pp</td></tr>
+      <tr><td>{{ t('Combinations that cleared a confidence check','通过置信区间检验的组合') }}</td>
+          <td class="r mono">{{ x.result.bootstrap.cells_ci_excludes_zero }} / {{ x.result.bootstrap.cells_tested }}</td></tr>
+      <tr><td>{{ t('Kept the same direction across two eras','跨两个时代方向一致') }}</td>
+          <td class="r mono">{{ x.result.era_stability.sign_stable }} / {{ x.result.era_stability.cells_compared }}
+            <span class="muted">({{ x.result.era_stability.pct_stable }}%{{ t(', coin-flip is 50%',"，随机为 50%") }})</span></td></tr>
+      </tbody>
+    </table>
+    <p class="xs muted" style="margin-top:6px">
+      {{ t('The two largest apparent effects came from the two smallest groups (','两个最大的表面效应来自两个最小的样本组（') }}n={{ x.result.bootstrap.thinnest_cell_n|join(', ') }}{{ t('), and neither cleared the confidence check.','），且均未通过置信区间检验。') }}
+      {{ t('Run it yourself','可自行复现') }}: <span class="mono xs">{{ x.harness }}</span>
+    </p>
+  </details>
+  {% else %}
+  <p class="sm muted">{{ t('The result file for this method is not present, so nothing is claimed here.',
+                            '该方法的结果文件缺失，因此此处不作任何结论。') }}</p>
+  {% endif %}
+
+  {# ---------- why it is not in the tables above ---------- #}
+  <details>
+    <summary>{{ t('Why this is not scored like the models above','为何不按上方模型的方式评分') }}</summary>
+    <p class="sm" style="max-width:88ch">{{ x.not_a_ranker_because }}</p>
+  </details>
+
+  <p class="sm" style="max-width:88ch; margin:10px 0 0">
+    <strong>{{ t('What still stands','仍然成立的部分') }}:</strong> {{ x.still_live }}
+  </p>
+  <p class="sm muted" style="max-width:88ch; margin:4px 0 0">
+    <strong>{{ t('What would reopen it','何时重启') }}:</strong> {{ x.reopen_when }}
+  </p>
+</div>
+{% endfor %}
+
 {# ==================== EVIDENCE: the combination rule ==================== #}
 {% if rule_fit %}
 <div class="panel">
@@ -387,7 +522,7 @@
 
 {# ==================== EVIDENCE: universe gap ==================== #}
 <div class="panel">
-  <h2>{{ t('Why their winners are mostly invisible to us','为何他们的优选股在我们这里大多看不到') }}</h2>
+  <h2>{{ t('How many of their winners we can even see','其优选股我们能看到多少') }}</h2>
   <div class="chips" style="margin-top:0">
     <span class="chip">{{ t('Their screened universe','其筛选股票池') }} <b class="mono">{{ '{:,}'.format(universe_gap.fintel_screened) }}</b></span>
     <span class="chip">{{ t('Our price coverage','我们的行情覆盖') }} <b class="mono">{{ '{:,}'.format(universe_gap.our_price_universe) }}</b></span>
@@ -396,8 +531,11 @@
       <b class="mono">{{ universe_gap.published_leaders_in_our_fundamentals_panel }}/{{ universe_gap.published_leaders_tested }}</b></span>
   </div>
   <p class="foot">
-    {{ t('This is the finding that matters most. The model is built to find small, overlooked companies, and it is measured against a small-cap index. Our prices reach that far down, but our filings data does not — so most of the companies the model exists to surface are ones we cannot score at all. Closing this needs wider filings coverage, not a better formula.',
-          '这是最关键的发现。该模型的用途是挖掘被忽视的小公司，其业绩也对标小盘指数。我们的行情能覆盖到那个层级，财报数据却不能－因此该模型真正要挖掘的公司，我们大多根本无法评分。要弥补这一点，需要的是更广的财报覆盖，而非更好的公式。') }}
+    {{ t('The model is built to find small, overlooked companies and is measured against a small-cap index — the size band where our filings data used to run out. It no longer does: our filings coverage now follows our prices down into the Russell 2000, and names we once could not score at all are covered.',
+          '该模型的用途是挖掘被忽视的小公司，其业绩也对标小盘指数－而这正是我们财报数据过去覆盖不到的层级。现在不同了：财报覆盖已随行情下探至罗素2000，过去根本无法评分的公司如今已被纳入。') }}
+    <br>
+    {{ t('The measurement below is not that read. It ran on the narrower panel, before the widening — so it judged this small-cap model mostly on names that are not small caps. Re-running it on the wider panel is the test that will actually settle the question, and it has not run yet.',
+          '但下方的测算并非基于新覆盖。它跑在扩容之前的较窄样本上－也就是说，用于评判这个小盘模型的股票大多并非小盘股。在更广样本上重跑，才是真正能定论的检验，而该检验尚未进行。') }}
   </p>
 </div>
 

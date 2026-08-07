@@ -63,6 +63,15 @@ SOURCES = {
         "publisher": "Fintel", "date": "accessed 2026-08-05",
         "url": "https://fintel.io/qvm", "why": "Vendor landing page. Cloudflare-gated.",
     },
+    "chatgpt_regime_reliability": {
+        "title": "Regime reliability and factor-crowding engine (proposal)",
+        "publisher": "External proposal via ChatGPT, relayed by the operator",
+        "date": "2026-08-05",
+        "url": None,                      # a relayed proposal, not a published document
+        "why": ("The proposal this method card adjudicates. No public URL: it reached us as "
+                "operator-relayed text, quoted verbatim in `proposal_says` so the claim we "
+                "tested is on the record next to what we measured."),
+    },
     "fintel_quant_models": {
         "title": "Beat the Market With Advanced Quantitative Models",
         "publisher": "Fintel", "date": "accessed 2026-08-05",
@@ -547,6 +556,90 @@ MODELS: dict[str, dict] = {
 
 
 # =======================================================================================
+# METHODS — external quant proposals that are NOT per-name rankers.
+# =======================================================================================
+# The MODELS registry above scores names: legs -> percentile -> composite -> rank-IC. Some
+# published methods make a claim of a different SHAPE — about when a strategy works, not
+# about which name to hold — and they cannot flow through legs.py/score.py/study.py at all.
+# Forcing one into that pipeline would invent a per-name score the method never had.
+#
+# So a method gets a spec here (what was proposed, by whom, and why it is not a ranker) and
+# its MEASUREMENTS come from a committed result artifact under data/quant_lab/methods/,
+# written by the method's own harness. NUMBERS ARE NEVER TYPED INTO THIS FILE: a hand-copied
+# statistic outlives the recompute that would have corrected it, and this registry has no way
+# to know it went stale. `page.py` reads the artifact; if it is missing the card still renders
+# and says the measurement is unavailable.
+# =======================================================================================
+METHODS: dict[str, dict] = {
+
+    "regime_reliability": {
+        "name": "Regime-reliability engine",
+        "name_zh": "市场状态可靠度引擎",
+        "source_kind": "proposal",
+        "proposer": "External proposal (ChatGPT), 2026-08-05",
+        "one_line": "Score how reliable each signal family is in the regime we are in now.",
+        "shape": "conditional-reliability table",
+        "proposal_says": (
+            "Monitor sixteen signals — realized vol, vol-of-vol, cross-sectional dispersion, "
+            "average pairwise correlation, breadth, credit spreads, yield-curve movement, "
+            "commodity vol, dollar regime, momentum/reversal/size factor returns, "
+            "short-interest regime, options skew, dealer positioning, sector leadership "
+            "concentration — then publish R[s,t] = E[future strategy performance | current "
+            "regime] per signal family, so the product can say: this is a technically bullish "
+            "breakout, but breakout continuation has poor reliability in the present regime."
+        ),
+        "proposal_says_zh": (
+            "监测十六项市场指标，再按信号家族发布「在当前状态下的预期表现」，"
+            "使产品能说明：形态看涨，但在当前状态下该家族的历史可靠度偏低。"
+        ),
+        # Why it cannot use the MODELS pipeline. Stated so a later session does not try.
+        "not_a_ranker_because": (
+            "It emits no per-name score. Its output is one number per signal FAMILY per "
+            "regime, so there is no cross-section to rank, no leg to percentile, and no "
+            "rank-IC to compute. Its substrate is the fired-signal track record, not the "
+            "fundamentals panel every MODELS leg reads."
+        ),
+        # What we did about it. The verdict text lives in the artifact; this is the method.
+        "our_test": (
+            "Rebuilt the claim as an INTERACTION test on the only multi-regime graded signal "
+            "record in the repo, with month fixed effects absorbing the shared market "
+            "condition — because the regime label and the forward drawdown are both functions "
+            "of the same price series, so raw cell means are partly tautological."
+        ),
+        "result_artifact": "regime_reliability.json",
+        "harness": "scripts/regime_reliability_phase0.py",
+        "gate_module": "engine/regime_conditioning_coverage.py",
+        "provenance": ["chatgpt_regime_reliability"],
+        "house_rulings": [
+            {"row": "RRC-R1", "verdict": "REJECT-REDUNDANT + FORBIDDEN fusion path",
+             "what": "the sixteen-signal composite monitor",
+             "why": ("all sixteen inputs already ship and are already composed by "
+                     "risk_radar -> market_state -> regime_vector; four of them are "
+                     "positioning keys, whose fusion into a regime score is ILLEGAL")},
+            {"row": "RRC-R2", "verdict": "KILLED (construction-scoped)",
+             "what": "the per-family reliability table itself",
+             "why": "measured null — see the result artifact"},
+        ],
+        "still_live": (
+            "Regime conditioning as de-escalation CONTEXT is untouched and still ships: "
+            "dispersion.py's selection dial, the style_regime coordinate, and regime_one's "
+            "confidence decay at inflections."
+        ),
+        "reopen_when": (
+            "engine.regime_conditioning_coverage.assess() returns 'estimable' for the axis to "
+            "be conditioned on, plus a fresh pre-registration naming the interaction (not the "
+            "raw cell means) as the primary quantity."
+        ),
+    },
+}
+
+
+def method(key: str) -> dict:
+    """One method spec. KeyError is intentional — a typo'd key must not return {}."""
+    return METHODS[key]
+
+
+# =======================================================================================
 # Substrate ledger — the honest inventory the page prints.
 # =======================================================================================
 SUBSTRATE = {
@@ -604,21 +697,41 @@ SUBSTRATE = {
 }
 
 # The coverage fact that decides the whole assessment.
+#
+# `our_fundamentals_universe` and `published_leaders_in_our_fundamentals_panel` are
+# LIVE-DERIVED at page-build time (engine/quant_lab/page.py:_live_coverage) — they were
+# hardcoded at 1,552/4 and W2-A (#4688) widened the panel to ~2,826, which would have left
+# the page printing a stale coverage chip and the flatly false sentence "CMT and KRT are in
+# our price universe with no fundamentals at all". The values below are FALLBACKS used only
+# when the panel cannot be read. `*_at_study` is the frozen historical fact — the study's IC
+# numbers were computed on the 1,552-name panel and do not change when the panel grows.
 UNIVERSE_GAP = {
     "our_price_universe": 2895,
     "our_price_universe_groups": {"r2000": 1994, "sp600": 633, "sp500": 509, "sp400": 412},
     "our_fundamentals_universe": 1552,
+    "our_fundamentals_universe_at_study": 1552,
     "fintel_screened": 36606,
     "fintel_covered": 75000,
     "published_leaders_tested": 10,
-    "published_leaders_in_our_fundamentals_panel": 4,   # STRL, IESC, WSM, AMR(11th)
+    # EXACTLY the ten QVM leaders published 2023-08-21, so the numerator and the
+    # denominator describe the same set. AMR is deliberately NOT here: it comes from the
+    # separate QVF article and was previously counted INTO the numerator against this
+    # denominator of 10, which is what made the stamped figure 4 rather than 3.
+    "published_leaders": ["STRL", "IESC", "WSM", "CLS", "CMT",
+                          "KRT", "GAMB", "SCPL", "MCEM", "VASO"],
+    "published_leaders_in_our_fundamentals_panel": 3,
+    # Verified against the committed pre-W2-A panel: STRL, IESC, WSM.
+    "published_leaders_in_our_fundamentals_panel_at_study": 3,
     "note": (
-        "Our PRICE universe reaches the Russell 2000, but the EDGAR fundamentals panel — the "
-        "binding universe for any QV recreation — covers 1,552 names. Of the ten QVM leaders "
-        "Fintel published on 2023-08-21, six (CLS, CMT, KRT, GAMB, SCPL, MCEM, VASO) are "
-        "outside it; CMT and KRT are in our price universe with no fundamentals at all. The "
-        "model is explicitly a small-cap 'multi-bagger' finder benchmarked to the Russell "
-        "2000, and that is precisely the size band our fundamentals thin out in."
+        "Our PRICE universe reaches the Russell 2000. The EDGAR fundamentals panel — the "
+        "binding universe for any QV recreation — used to stop at 1,552 names, and only 3 "
+        "of the ten QVM leaders Fintel published on 2023-08-21 were inside it. W2-A widened "
+        "the panel to the full tracked price universe: CMT and KRT, both previously in our "
+        "price universe with no fundamentals at all, are now covered. The measurement on "
+        "this page still ran on the narrower 1,552-name panel — the model is explicitly a "
+        "small-cap 'multi-bagger' finder benchmarked to the Russell 2000, so its re-test on "
+        "the widened panel is the read that will actually judge it, and that re-test has "
+        "not run yet."
     ),
 }
 

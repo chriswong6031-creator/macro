@@ -1,0 +1,6 @@
+# prophet_arena forward ledger — schema prophet_arena.ledger/v1
+# One policy per file. kind=open is the origination stamp, kind=close the graded
+# outcome. Append-only, keep-first on (policy, id, kind). Nightly is the SOLE
+# advancer. SHADOW TIER: nothing here has ever changed a live plan, and the live
+# policy changes only by operator ratification (research/PROPHET_ARENA_REGISTRATION.md).
+{"arena_night": "2026-07-02", "asset": "MSFT", "direction": "BULL", "entry": 420.0, "horizon_days": 45, "id": "MSFT-BULL-20260702", "invalidation": 90.0, "kind": "open", "policy": "C5_align2_gate", "schema": "prophet_arena.ledger/v1", "signal_date": "2026-07-02", "source": "us_standouts_buy_lane", "targets": [915.0, 1410.0]}

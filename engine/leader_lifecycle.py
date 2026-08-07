@@ -45,7 +45,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from engine.cycles import _tf_state  # pinned oscillator math; LR-R7
+from engine.cycles import _anchor_bars, _tf_state  # pinned oscillator math; LR-R7
 
 log = logging.getLogger(__name__)
 
@@ -668,21 +668,26 @@ def basket_correlation_rising(
 
 # ── Radar-local 2D oscillator (LR-R7) ────────────────────────────────────────
 
-def tf_state_2d(daily_close: pd.Series) -> dict:
+def tf_state_2d(daily_close: pd.Series, market: str = "US") -> dict:
     """2D timeframe oscillator state using the pinned _tf_state math from engine.cycles.
 
-    Resamples daily close to 2-business-day bars. The derive_2d_ohlcv helper is
-    NOT used — its contract forbids signal paths (LR-R7).
+    2-session bars on the ABSOLUTE session calendar (`cycles._anchor_bars`, era
+    `cycles.ANCHOR_ERA` — ruling R-CY1/R-CY9 of
+    research/CYCLES_SESSION_ANCHOR_ADJUDICATION_BY_FABLE.md). The previous
+    ``resample("2B")`` phased its bins to the series' first timestamp: one dropped
+    leading bar flipped this state on 93/99 deep US names (mod-2 fingerprint).
+    The derive_2d_ohlcv helper is NOT used — its contract forbids signal paths (LR-R7).
 
     Args:
         daily_close: daily close Series (DatetimeIndex, ascending)
+        market: reference session calendar (the leader-radar callers are US)
 
     Returns:
         dict of oscillator state fields (same schema as _tf_state); empty dict on cold-start.
     """
     if daily_close is None or len(daily_close) < 80:
         return {}
-    bars_2d = daily_close.resample("2B").last().dropna()
+    bars_2d = _anchor_bars(daily_close, "2B", market)
     return _tf_state(bars_2d)
 
 

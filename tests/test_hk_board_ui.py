@@ -527,6 +527,17 @@ def shapes_fixture() -> dict:
     # than carding a real mega-cap the board did not call — the chip payload is the
     # engine's, which is the part under test.
     _hbr.stamp_leadership_chips(su["buy"], _LEADERSHIP, cohort=["8807.HK"])
+    # And one LEADERS row must carry it, for the same reason and by the same
+    # override. The anchor eras (sq/cyc-abs-session-2026-08-06, #4738/#4833)
+    # re-cut the marker stream and the intact-trend reads, and no mega-cap cohort
+    # member survives the leaders admission on the re-pinned 2026-07-31 panel —
+    # so the c-theme column, its 7-column mobile budget, the chip and the
+    # boost-disclosure copy all went dark on the engine lanes. The subject is the
+    # top engine leader chipped with the engine's own payload; membership is the
+    # only thing synthesized.
+    if su["leaders"] and not any(r.get("leadership") for r in su["leaders"]):
+        _hbr.stamp_leadership_chips(su["leaders"], _LEADERSHIP,
+                                    cohort=[su["leaders"][0]["ticker"]])
     su["ran"] = list(su["ran"]) + ran_extra
     su["lane_counts"] = {
         "featured": sum(1 for r in su["buy"] if r.get("featured")),
@@ -1292,15 +1303,19 @@ def test_cohort_chip_tells_the_truth_about_where_it_counts(prio_html):
 def test_six_of_the_seven_witnesses_appear_on_the_production_board(prod_html):
     """G1 at the PAGE, measured on the board the nightly will ship.
 
-    Six of seven, not seven: the old fixture carded any witness the engine placed
-    nowhere, so 9961.HK appeared because the harness put it there.  It is genuinely
-    dark — outside the mega-cap cohort, −12% on the quarter, and its post-marker move
-    does not beat the non-cohort field — and a board that showed it anyway would be
-    showing everything.  The other six reach leaders / ran / vetoed / the watch strip.
+    SEVEN of seven since the anchor eras (sq/cyc-abs-session-2026-08-06,
+    #4738/#4833 — the G1 fixture regen those PRs shipped).  Under the previous
+    bucketing 9961.HK was genuinely dark and this guard pinned six, refusing the
+    old harness's habit of carding any witness the engine placed nowhere.  The
+    re-cut marker stream changes its VERDICT, not the harness: its blocked buy
+    marker now reads weekly-bull, so `veto_admits` — fail-closed on every leg —
+    seats it in the vetoed lane on its own merits.  The guard's job is unchanged:
+    it pins the exact page-level witness count so a board that started "showing
+    everything" (or silently losing names) still fails here.
     """
     seen = [tk for tk in WITNESS_TICKERS if tk in prod_html]
-    assert len(seen) == 6, "page-level witness visibility moved: %r" % seen
-    assert "9961.HK" not in seen, "9961.HK is the honest absence — see the docstring"
+    assert len(seen) == 7, "page-level witness visibility moved: %r" % seen
+    assert "9961.HK" in seen, "9961.HK earns its vetoed-lane seat under the era verdicts"
 
 
 def test_at_least_five_witnesses_carry_a_stance_bearing_row(prio_html):
@@ -1872,3 +1887,103 @@ def test_a_cohort_member_on_a_buy_card_carries_the_chip(prio_html):
         assert row["leadership"]["state_en"]
         assert row["ticker"] in prio_html
     assert "membership earns the card no points and changes nothing in the ranking" in prio_html
+
+
+# --------------------------------------------------------------------------- #
+# Ripening shelf (CN W8-R1 port, 2026-08-07) — rendered contract
+# --------------------------------------------------------------------------- #
+
+def _ripening_fixture() -> dict:
+    """The production board plus two synthetic shelf rows (one per zone).
+
+    Same convention as `shapes_fixture()`: obviously synthetic 88xx.HK "Sample
+    Holdings" lines that can never be read as calls, and `production_fixture()`
+    itself is never touched — the fidelity tests keep the photographed board
+    synthetic-free.
+    """
+    su = dict(production_fixture())
+
+    def _row(ticker: str, name: str, name_zh: str, zone: str, btc, stoch) -> dict:
+        return {
+            "ticker": ticker, "name": name, "name_zh": name_zh,
+            "sector": "Industrials", "sector_zh": "工业",
+            "zone": zone,
+            "evidence": [f"2W MACD cross ~{btc} 2W-bars out"],
+            "evidence_display": [{
+                "en": f"time to turn: ~{btc} wk at this pace",
+                "zh": f"距转向约{btc}周（按当前速度）",
+                "receipt": f"2W MACD cross ~{btc} 2W-bars out"}],
+            "reasons": ["2W stoch washout (stoch=%s)" % stoch],
+            "imminence": btc, "w2_stoch": stoch, "w2_stoch_arrow": 1,
+            "w1_cross_date": "2026-07-24", "w1_cross_bars_since": 1,
+            "w1_d_at_cross": 18.0, "w1_from_washout": True,
+            "spot_pct_in_range": 12.0, "ret_5d": -0.021,
+            "macd_hist_d": 0.05, "macd_hist_slope": 1,
+            "days_in_washout": 9, "price": 42.0,
+            "display_only": True,
+            "stance": "setup forming — no entry signal yet; watch, don't chase",
+            "stance_zh": "形态形成中 — 入场信号未触发；观察，勿追高",
+        }
+
+    su["ripening"] = [
+        _row("8810.HK", "Sample Holdings R", "样本控股丙", "READY", 1.5, 22.0),
+        _row("8811.HK", "Sample Holdings S", "样本控股丁", "BASING", 4.0, 12.0),
+    ]
+    return su
+
+
+@pytest.fixture(scope="module")
+def ripening_html() -> str:
+    return _render(_ripening_fixture())
+
+
+def test_the_shelf_renders_inside_the_setting_up_bucket(ripening_html):
+    """The shelf lives INSIDE the setting-up filter family — the vetoed-inside-
+    blocked precedent — so the chip reveals it and counts it."""
+    assert '<div class="rip-shelf" data-stage="setting_up"' in ripening_html
+    assert ">RIPENING SHELF</span>" in ripening_html
+    assert ">筑底观察区</span>" in ripening_html
+    assert "NOT an entry signal" in ripening_html
+
+
+def test_both_zones_render_with_their_cards(ripening_html):
+    ready = ripening_html.find('<div class="rip-zone rz-ready">')
+    basing = ripening_html.find('<div class="rip-zone rz-basing">')
+    assert ready != -1 and basing != -1 and ready < basing
+    assert 'href="hk_lookup.html#8810.HK"' in ripening_html
+    assert 'href="hk_lookup.html#8811.HK"' in ripening_html
+    assert ">共振形成中</span>" in ripening_html      # READY zh label
+    assert ">筑底中</span>" in ripening_html          # BASING zh label
+
+
+def test_shelf_evidence_is_plain_words_with_the_receipt_on_hover(ripening_html):
+    assert "time to turn: ~1.5 wk at this pace" in ripening_html
+    assert "距转向约1.5周（按当前速度）" in ripening_html
+    assert 'data-tip-en="Technical: 2W MACD cross ~1.5 2W-bars out"' in ripening_html
+
+
+def test_the_setting_up_chip_counts_the_shelf(ripening_html):
+    """Chip counts come from rendered rows: buy-lane setting_up rows + shelf rows."""
+    su = _ripening_fixture()
+    lane_setting_up = sum(1 for r in su["buy"] if r.get("stage") == "setting_up")
+    want = lane_setting_up + len(su["ripening"])
+    m = re.search(
+        r'data-stagepick="setting_up"[^>]*>.*?<span class="pbf-n">(\d+)</span>',
+        ripening_html, re.S)
+    assert m, "the Setting up chip must render when the shelf is populated"
+    assert int(m.group(1)) == want
+
+
+def test_the_shelf_speaks_no_buy_language(ripening_html):
+    start = ripening_html.find('<div class="rip-shelf"')
+    end = ripening_html.find('<div class="pbr"', start)
+    shelf = ripening_html[start:end if end != -1 else None]
+    for banned in ("v-buy", "Buy now", "买入", "BUY"):
+        assert banned not in shelf, f"buy-family language inside the shelf: {banned!r}"
+
+
+def test_fail_soft_without_the_key_and_on_the_legacy_schema(prod_html, legacy_html):
+    """No `ripening` array (every pre-shelf artifact) → the shelf does not exist;
+    the legacy pre-v1 schema renders none of the priority surface either."""
+    assert '<div class="rip-shelf"' not in prod_html
+    assert '<div class="rip-shelf"' not in legacy_html

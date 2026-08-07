@@ -5,6 +5,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "SOX record high ~14,655 marks a cycle top; broad upcycle is in",
+    "claim_zh": "SOX ~14,655 的历史高点就是这轮周期的顶；全面上行的行情已经走完",
     "expires": "2027-06-30",
     "coverage": "partial",
     "dsl": {
@@ -26,6 +27,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "DRAM ASP trough is in; memory upcycle underway",
+    "claim_zh": "DRAM 均价的底已经出来了；存储周期开始往上走",
     "expires": "2027-06-30",
     "coverage": "none",
     "dsl": null,
@@ -42,6 +44,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "Housing cycle has turned; price appreciation and permit issuance confirm upcycle",
+    "claim_zh": "地产周期已经转向；房价涨幅和营建许可一起印证上行",
     "expires": "2027-06-30",
     "coverage": "full",
     "dsl": {
@@ -70,6 +73,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "Business cycle is in expansion; labor market and employment confirm growth regime",
+    "claim_zh": "经济周期还在扩张；就业市场和新增岗位印证仍是增长格局",
     "expires": "2027-06-30",
     "coverage": "partial",
     "dsl": {
@@ -100,6 +104,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "Oil is in a structural range; extreme price moves signal regime shift",
+    "claim_zh": "原油还在结构性区间里；只有极端价格才说明格局要切换",
     "expires": "2027-06-30",
     "coverage": "full",
     "dsl": {
@@ -135,6 +140,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "Copper trough is in; industrial demand recovery supports a new upcycle",
+    "claim_zh": "铜价的底已经出来了；工业需求回暖支撑新一轮上行",
     "expires": "2027-06-30",
     "coverage": "full",
     "dsl": {
@@ -162,6 +168,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "Uranium supply squeeze is structural; spot U3O8 confirms persistent deficit",
+    "claim_zh": "铀的供应紧张是结构性的；U3O8 现货价印证缺口一直没补上",
     "expires": "2027-06-30",
     "coverage": "none",
     "dsl": null,
@@ -178,6 +185,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "Gold secular bull is intact; real-rate repricing and de-dollarization support",
+    "claim_zh": "黄金的长期牛市没走完；实际利率重定价和去美元化在托底",
     "expires": "2027-06-30",
     "coverage": "full",
     "dsl": {
@@ -195,6 +203,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "Bitcoin is in a post-halving bull cycle; on-chain and price structure confirm",
+    "claim_zh": "比特币还在减半后的牛市周期里；链上数据和价格结构互相印证",
     "expires": "2027-06-30",
     "coverage": "full",
     "dsl": {
@@ -220,6 +229,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "Credit cycle is in benign expansion; spreads confirm risk appetite",
+    "claim_zh": "信用周期处在温和扩张；信用利差说明风险偏好还在",
     "expires": "2027-06-30",
     "coverage": "partial",
     "dsl": {
@@ -250,6 +260,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "Shipping cycle is in recovery; BDI and container rates confirm global trade demand",
+    "claim_zh": "航运周期正在复苏；BDI 和集装箱运价印证全球贸易需求",
     "expires": "2027-06-30",
     "coverage": "none",
     "dsl": null,
@@ -266,6 +277,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "Lithium structural deficit is intact; EV demand supports price floor",
+    "claim_zh": "锂的结构性缺口还在；电动车需求托住价格底部",
     "expires": "2027-06-30",
     "coverage": "none",
     "dsl": null,
@@ -282,6 +294,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "Corn/grain complex is in structural upcycle driven by weather and energy costs",
+    "claim_zh": "玉米等谷物处在结构性上行周期，驱动来自天气和能源成本",
     "expires": "2027-06-30",
     "coverage": "full",
     "dsl": {
@@ -299,6 +312,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "Volatility is in a suppressed regime; VIX sub-20 reflects structural calm",
+    "claim_zh": "波动率被压在低位；VIX 长期站在 20 下方，是结构性的平静",
     "expires": "2027-06-30",
     "coverage": "full",
     "dsl": {
@@ -316,6 +330,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "Biotech is in a new upcycle; XBI breadth and M&A pipeline confirm",
+    "claim_zh": "生物科技进入新一轮上行周期；XBI 的上涨宽度和并购储备一起印证",
     "expires": "2027-06-30",
     "coverage": "full",
     "dsl": {
@@ -342,6 +357,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "Long bonds have bottomed; 30yr yield peak and TLT recovery confirm duration is buyable",
+    "claim_zh": "长债已经见底；30 年期收益率见顶、TLT 企稳回升，说明久期可以买了",
     "expires": "2027-06-30",
     "coverage": "full",
     "dsl": {
@@ -372,6 +388,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "Dollar is in a structural bear cycle; DXY below 100 with declining inflation confirms",
+    "claim_zh": "美元处在结构性下行周期；美元指数跌破 100 叠加通胀回落予以印证",
     "expires": "2027-06-30",
     "coverage": "full",
     "dsl": {
@@ -403,6 +420,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "Natural gas is in a seasonal squeeze; summer heat and LNG export demand confirm",
+    "claim_zh": "天然气正在季节性紧张里；夏季高温和 LNG 出口需求一起印证",
     "expires": "2027-06-30",
     "coverage": "partial",
     "dsl": {
@@ -425,6 +443,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "Iron ore demand is supported by China construction recovery; 62% Fe seaborne confirms",
+    "claim_zh": "铁矿石需求靠中国建筑开工回暖托底；62% 品位海运矿价印证这一点",
     "expires": "2027-06-30",
     "coverage": "none",
     "dsl": null,
@@ -441,6 +460,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "Silver is in an industrial+monetary upcycle; gold-silver ratio compression confirms",
+    "claim_zh": "白银处在工业与货币双属性的上行周期；金银比收敛印证这一点",
     "expires": "2027-06-30",
     "coverage": "partial",
     "dsl": {
@@ -462,6 +482,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "EM equities are in a new upcycle; DXY weakness and EM ATH breakout confirm",
+    "claim_zh": "新兴市场股市进入新一轮上行周期；美元走弱和新兴市场创历史新高一起印证",
     "expires": "2027-06-30",
     "coverage": "partial",
     "dsl": {
@@ -491,6 +512,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "Japan is in a structural reflation cycle; Nikkei ATH and weak yen confirm",
+    "claim_zh": "日本处在结构性再通胀周期；日经创历史新高和日元走弱一起印证",
     "expires": "2027-06-30",
     "coverage": "full",
     "dsl": {
@@ -521,6 +543,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "PGMs are in a supply-deficit upcycle; platinum premium vs gold and absolute level confirm",
+    "claim_zh": "铂族金属处在供应缺口驱动的上行周期；铂金对黄金的溢价和绝对价位一起印证",
     "expires": "2027-06-30",
     "coverage": "full",
     "dsl": {
@@ -552,6 +575,7 @@
     "version": 1,
     "direction": "refutes",
     "claim": "SPX is in a durable bull cycle; breadth and momentum confirm expansion regime",
+    "claim_zh": "标普 500 处在可持续的牛市周期；上涨宽度和动量印证扩张格局",
     "expires": "2027-06-30",
     "coverage": "partial",
     "dsl": {

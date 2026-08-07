@@ -58,10 +58,33 @@ from engine import earnings_blackout as _eb  # noqa: E402  — W1.5 earnings-bla
 from engine import earnings_catalyst as _ecat  # noqa: E402  — W4 display-tier catalyst fields
 from engine import us_board_rank  # noqa: E402  — us_prophet_v1 priority score / stages / ran lane
 from engine import washout_turn  # noqa: E402  — WTN-W1 weekly washout-turn watch (display-tier)
+from engine import event_atlas  # noqa: E402  — SEA-W3 matching-episode receipts (display-tier)
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
-from lib import config, store  # noqa: E402
+from lib import config, delisted_symbols, store  # noqa: E402
 from lib.ticker_popularity import attach_latest_volume, latest_volume_map  # noqa: E402
+from collectors.us_names_zh import load_aliases_zh as _load_us_aliases_zh  # noqa: E402
+from collectors.us_names_zh import load_names_zh as _load_us_names_zh  # noqa: E402
+from collectors.us_names_zh import lookup as _us_name_zh  # noqa: E402
+
+# Loaded once at module level — small committed JSONs, no I/O on re-import.
+# Feed the search manifest so a Chinese query (苹果 / 英伟达) reaches US names, the
+# way chinastockdata / hkstockdata already do for their markets: `z` is the
+# curated name we DISPLAY, `za` a broader search-only alias we never render.
+_US_NAMES_ZH: dict[str, str] = _load_us_names_zh()
+_US_ALIASES_ZH: dict[str, str] = _load_us_aliases_zh()
+
+
+def search_name_zh(ticker: str) -> tuple[str | None, str | None]:
+    """Return (displayed Chinese name, search-only alias) for a US search row.
+
+    Exactly one side is ever populated: a curated name wins outright, and the
+    noisier alias only stands in when there is no curated name to shadow.
+    """
+    name = _us_name_zh(_US_NAMES_ZH, ticker)
+    if name:
+        return name, None
+    return None, _us_name_zh(_US_ALIASES_ZH, ticker)
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("stock_library")
@@ -430,9 +453,18 @@ def _feed_freshness(recs) -> tuple[str | None, dict[str, int], int]:
     full = [r for r in recs if r and not r.get("limited")]
     parsed: dict[str, pd.Timestamp] = {}
     n_dark = 0
+    _dead = delisted_symbols.tickers()
     for r in full:
         tk = r.get("ticker")
         if not tk:
+            continue
+        if tk in _dead:
+            # A finished tape is neither fresh nor stale (#4616), so a delisted name
+            # is not assessable here at all: it never enters `parsed`, so it neither
+            # earns a lag-based demotion (it gets an unconditional one downstream,
+            # with truthful copy) nor pads the R2 circuit-breaker denominator. Left
+            # in, two permanently-frozen names would drift the breaker's reading of
+            # how much of the LIVE universe is actually frozen.
             continue
         ts = None
         try:
@@ -508,7 +540,15 @@ def _authority_admits(ticker: str, demote_map: dict) -> bool:
     """B1: True iff `ticker` may enter a SCORING-AUTHORITY collection this run — a
     board/rank/setups/ran-lane admission set, as opposed to a display-only chip map
     (disp_map, coil/donor/hold state, W3 evidence, …, which stay unguarded — see the
-    call-site comments in main()). A demoted ticker (frozen feed, R1) is excluded.
+    call-site comments in main()). A demoted ticker (frozen feed, R1) is excluded,
+    and so is a DELISTED one.
+
+    The delisted check is deliberately independent of `demote_map` rather than
+    relying on a dead name landing in it. `demote_map` is emptied wholesale whenever
+    the R2 circuit breaker trips (a mass-freeze run), which would hand scoring
+    authority back to a security that stopped existing on exactly the run where
+    everything else is already suspect. A delisting is not a lag measurement and
+    must not be gated by one.
 
     Guards `sig_verdict` (site/factordata/signal_gate.json — the discovery board's
     PRIMARY buy gate — AND us_board_rank.build_ran_rows' own admission set, since it
@@ -517,7 +557,7 @@ def _authority_admits(ticker: str, demote_map: dict) -> bool:
     earlier in the per-ticker loop than the profiles/entry_sig/risk_sig demotion
     branch — populating either one before checking this predicate would leak scoring
     authority through a path the later guard never touches."""
-    return ticker not in demote_map
+    return ticker not in demote_map and not delisted_symbols.is_delisted(ticker)
 
 
 def _apply_feed_demotion(rec: dict, behind_days: int, lib_asof: str) -> None:
@@ -540,6 +580,34 @@ def _apply_feed_demotion(rec: dict, behind_days: int, lib_asof: str) -> None:
     engine/stock_view.py's score_view() to suppress both the gauge and its
     rank_note tooltip (see the stock_view.py / stockview.js changes)."""
     rec["feed_stale"] = {"behind_days": int(behind_days), "lib_asof": lib_asof}
+    conv = rec.get("conviction")
+    if isinstance(conv, dict):
+        conv.pop("potential", None)
+        conv["score"] = None
+
+
+def _apply_delisting(rec: dict, disclosure: dict) -> None:
+    """Strip scoring authority from a rec whose SECURITY STOPPED EXISTING, and say
+    what actually happened (config/delisted_symbols.yml, lib/delisted_symbols).
+
+    Same authority strip as `_apply_feed_demotion` — the page, the search entry and
+    the deep links all survive (CSP-R1), the score does not. Two differences, and
+    both are the point:
+
+      * `delisted` is written and `feed_stale` is NOT. They are mutually exclusive
+        claims about the same silence, and shipping both would have the page say
+        "no new data for 91 days" beside "stopped trading 7 May" — one of which is
+        the cause and the other of which denies knowing it. #4616's law, "delisted
+        is not stale", is a statement about the copy as much as the census.
+      * It is unconditional. `_apply_feed_demotion` fires off a lag measurement
+        that a mass-freeze run can disarm (R2); this fires off a resolved fact and
+        cannot be disarmed by anything the collector does tonight.
+
+    The disclosure is the small, user-facing subset (date, acquirer, EN + ZH) —
+    the accession numbers behind it stay in the YAML for the next engineer, not on
+    a stock page."""
+    rec["delisted"] = dict(disclosure)
+    rec.pop("feed_stale", None)
     conv = rec.get("conviction")
     if isinstance(conv, dict):
         conv.pop("potential", None)
@@ -2249,13 +2317,14 @@ def main() -> int:
     # confirmer we can build for $0 — no trade tape / NBBO signing needed). Computed once over
     # the freshest per-strike chain snapshot; graceful {} when the GEX chain store is absent.
     # DISPLAY-ONLY context until scripts/validate_options_ivspread earns a verdict.
+    from lib import nyse_calendar          # adjacency test for the ivspread delta below
     try:
-        _ivs_chain = options_ivspread._latest_chain()
+        _ivs_chain, _ivs_asof = options_ivspread._latest_chain_dated()
         ivspread_map = options_ivspread.ivspread_map(_ivs_chain) if _ivs_chain is not None else {}
         ivspread_prior = options_ivspread.prior_spread_map() if ivspread_map else {}
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.debug("ivspread map skipped: %s", e)
-        ivspread_map, ivspread_prior = {}, {}
+        ivspread_map, ivspread_prior, _ivs_asof = {}, {}, None
     if ivspread_map:
         log.info("IV-spread confirmer: %d optionable names", len(ivspread_map))
     # contrarian crowding/fragility flags (DISPLAY-ONLY, gated OUT of the score by
@@ -2992,10 +3061,20 @@ def main() -> int:
         _ivs = ivspread_map.get(ticker)
         if _ivs:
             rec["iv_spread"] = _ivs
-            _prior = ivspread_prior.get(ticker.upper())
+            # GAP DISCIPLINE — COMPARE (lib/nyse_calendar, 2026-08-06). `assess` narrates
+            # this delta as richness "building/fading vs the prior session", so it is only
+            # honest when the stored reading IS the immediately-prior session. The chain
+            # store gaps (07-31 -> 08-06 is four sessions), and the old code could not even
+            # ask — prior_spread_map discarded the date. No adjacency, no delta: `assess`
+            # then renders the level alone, which is the honest reading.
+            _pr = ivspread_prior.get(ticker.upper())
+            _prior = _pr.get("ivspread") if isinstance(_pr, dict) else None
+            _prior_d = _pr.get("date") if isinstance(_pr, dict) else None
             _cur = _ivs.get("ivspread")
+            _adjacent = (_ivs_asof is not None and _prior_d is not None
+                         and nyse_calendar.is_prior_session(_prior_d, _ivs_asof))
             _chg = (round(float(_cur) - _prior, 5)
-                    if _prior is not None and _cur is not None else None)
+                    if _adjacent and _prior is not None and _cur is not None else None)
             _ic = options_ivspread.assess(_ivs, chg=_chg)
             if _ic:
                 rec["iv_spread_confirm"] = _ic
@@ -3149,6 +3228,19 @@ def main() -> int:
                 rec["washout_turn"] = wt
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("washout-turn for %s failed (%s)", ticker, e)
+        # ---- Matching past episodes (engine/event_atlas) — the SO-WHAT --------
+        # The chip above says the name IS in a washout turn. This says what the
+        # matching historical episodes of the SAME CLASS did — on this name, and
+        # on its archetype cohort, blended by event count so a name with n=3 shows
+        # its 3 episodes AND inherits the cohort curve with the weight printed.
+        # No per-name indicator selection (DNR §2 row 69) — one frozen construction.
+        # `close` is already in scope: passing it avoids re-loading the series.
+        try:
+            ea = event_atlas.live_state(ticker, close=close)
+            if ea:
+                rec["event_atlas"] = ea
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("event-atlas for %s failed (%s)", ticker, e)
         # ---- Confluence cascade verdict (T1->T4) on the per-stock JSON ---------
         # The owner's MACD-2D x StochRSI-3D gate (already computed above as sig_verdict),
         # persisted per name so the theme/basket-detail Holdings table can surface a fresh
@@ -3192,8 +3284,14 @@ def main() -> int:
         # defense. LIMITED recs are never in _demote_map (I4, _feed_freshness excludes
         # them). The JSON write below still happens for every rec (I1) — search + deep
         # links stay alive (CSP-R1), now carrying an honest `feed_stale` disclosure.
+        # A resolved delisting outranks the lag read: the name never reaches
+        # _demote_map (_feed_freshness skips it), and it is demoted here regardless
+        # of how far behind the tape is or whether the R2 breaker disarmed the gate.
+        _delisted_note = delisted_symbols.disclosure(ticker)
         _demoted_days = _demote_map.get(ticker)
-        if _demoted_days is not None:
+        if _delisted_note is not None:
+            _apply_delisting(rec, _delisted_note)
+        elif _demoted_days is not None:
             _apply_feed_demotion(rec, _demoted_days, _lib_asof)
         else:
             profiles[ticker] = prof
@@ -3349,6 +3447,10 @@ def main() -> int:
                 # the record can forever separate the pre/post-change populations.
                 "young_history": bool(_sv.get("young_history", False)),
                 "history_bars": _sv.get("history_bars"),
+                # Bucketing-era cohort label (abs-session-2026-08-06, adjudication R5):
+                # travels exactly like young_history so the board-row record can forever
+                # separate pre/post-anchor populations.
+                "anchor_era": _sv.get("anchor_era"),
                 "asof": _sv.get("asof"),
             }
         except Exception:  # noqa: BLE001 — additive; never fatal
@@ -3356,6 +3458,8 @@ def main() -> int:
                                  "bars_to_cross": None, "provisional": False,
                                  "not_topped": True, "htf_s1": False, "htf_s2": False,
                                  "young_history": False, "history_bars": None,
+                                 # a blank persisted post-era is still a post-era row (R5)
+                                 "anchor_era": signal_gate.confluence_tiers.ANCHOR_ERA,
                                  "asof": None}
         # ---- sniper pre-compute (frozen Terminal contract, 2026-07-06) -----------
         # Compute w2_washout/w2_stoch_d + days_since_63d_low here (close is in scope).
@@ -3422,6 +3526,11 @@ def main() -> int:
         safe = ticker.replace("=", "_").replace("^", "_")
         to_write.append((safe, rec))            # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
+        _zh, _zh_alias = search_name_zh(ticker)
+        if _zh:
+            idx["z"] = _zh              # displayed Chinese name + search key
+        elif _zh_alias:
+            idx["za"] = _zh_alias       # search-only; theme.js matches, never renders
         attach_latest_volume(idx, ticker, latest_volumes)
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
@@ -5309,7 +5418,7 @@ def main() -> int:
                 import pandas as _plab_pd
                 _plab_d12_df = _plab_pd.DataFrame()  # empty fallback
                 try:
-                    _plab_d12_df = _plab_s1d.compute_grids(_ext_closes)
+                    _plab_d12_df = _plab_s1d.compute_grids(_ext_closes, market="US")
                 except Exception as _plab_d12_e:
                     log.warning("pick_lab: 1D/2D grid skipped (%s)", _plab_d12_e)
 
@@ -5318,9 +5427,14 @@ def main() -> int:
                 # macd/k/d scalars in its return; re-run close-only (no I/O).
                 _plab_d3: dict[str, dict] = {}
                 _OS3, _OB3, _CONF_W3 = 20, 80, 8
+                from engine import session_anchor as _plab_sa
                 for _plab_t3, _plab_c3 in _ext_closes.items():
                     try:
-                        _sf3 = _plab_sf(_plab_c3.dropna())
+                        # 3D buckets anchored to the ticker's own market calendar (R-SQ1);
+                        # this library is US, so market_for_ticker returns "US" for every
+                        # name here — inferring it keeps that a FACT rather than a guess.
+                        _sf3 = _plab_sf(_plab_c3.dropna(),
+                                        market=_plab_sa.market_for_ticker(_plab_t3))
                         if _sf3.empty or len(_sf3) < 2:
                             continue
                         _last3 = _sf3.iloc[-1]

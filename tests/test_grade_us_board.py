@@ -99,21 +99,31 @@ def test_merge_accumulates_new_date(tmp_path, monkeypatch):
 
 
 def test_merge_deduplicates_on_key(tmp_path, monkeypatch):
-    """Re-grading the same (as_of, ticker, lane, horizon) replaces the stored row."""
+    """Re-grading the same (as_of, ticker, lane, horizon) yields ONE row, and does not
+    restate its price-derived measurement.
+
+    INVERTED 2026-08-06. This asserted `excess_spy` took the fresh value, which is the
+    behaviour that let a re-based breadth cache silently rewrite published returns: 75
+    shipped rows moved on a re-run, 19 materially. Dedup-to-one-row is still the
+    contract; the measurement is now write-once (see _FROZEN_PRICE_COLS)."""
     monkeypatch.setattr("scripts.grade_us_board.LEDGER_DIR", tmp_path)
     pq = tmp_path / "retro_grades.parquet"
     monkeypatch.setattr("scripts.grade_us_board.RETRO_PARQUET", pq)
 
     first = _minimal_grade_df(as_of="2026-01-02", n=3)
     _merge_into_store(first)
+    # each seeded row carries a DIFFERENT excess_spy, so compare per ticker rather than
+    # against one scalar — a scalar comparison would pass on a single-row fixture and
+    # hide a merge that collapsed every row onto the same value.
+    original = first.set_index("ticker")["excess_spy"]
 
-    # Re-grade same keys with updated excess_spy value
     updated = first.copy()
     updated["excess_spy"] = 0.99
     result = _merge_into_store(updated)
-    # De-dup should keep fresh (0.99), not the old value
-    assert len(result) == 3
-    assert (result["excess_spy"] == 0.99).all()
+    assert len(result) == 3, "dedup must still collapse to one row per key"
+    got = result.set_index("ticker")["excess_spy"]
+    assert got.reindex(original.index).equals(original), (
+        "a published excess return was restated by a re-grade")
 
 
 def test_merge_with_empty_fresh_returns_stored(tmp_path, monkeypatch):
@@ -151,6 +161,16 @@ def test_merge_idempotent(tmp_path, monkeypatch):
 # build_track tests
 # ---------------------------------------------------------------------------
 
+# build_track applies the file's ONE era rule (G3 2026-08-06): rows dated before
+# LEDGER_HISTORY_FROM describe the 120-name broad-screen board, not the product that
+# ships today, and are excluded here exactly as emit_ledger already excluded them.
+# These fixtures therefore date IN-ERA. The date is a fixed constant, not a
+# wall-clock offset, so it cannot expire; the exclusion itself is pinned separately
+# in TestOneEraRule below.
+_IN_ERA = "2026-06-30"
+_PRE_ERA = "2026-06-16"
+
+
 def _boards_stub(*as_ofs):
     return [{"as_of": a, "rows": []} for a in as_ofs]
 
@@ -161,16 +181,16 @@ def _names_stub():
 
 def test_build_track_never_empty_with_rows():
     """build_track must not emit empty:true when df has rows — the core regression."""
-    df = _minimal_grade_df(n=5)
-    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    df = _minimal_grade_df(as_of=_IN_ERA, n=5)
+    track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
     assert "empty" not in track, "build_track emitted empty:true with non-empty df"
     assert track["graded_rows_total"] == 5
 
 
 def test_build_track_hit_rate_in_range():
     """Hit rate is between 0 and 1; n matches input."""
-    df = _minimal_grade_df(n=10, lane="buy")
-    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    df = _minimal_grade_df(as_of=_IN_ERA, n=10, lane="buy")
+    track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
     buy_h5 = track["per_horizon"]["h5"]["buy_lane"]["vs_spy"]
     assert 0.0 <= buy_h5["hit_rate"] <= 1.0
     assert buy_h5["n"] == 10
@@ -185,8 +205,8 @@ def test_build_track_empty_df_emits_empty_flag():
 
 def test_build_track_precision_at_k_present():
     """precision_at_k keys exist for the buy lane at each horizon."""
-    df = _minimal_grade_df(n=6, lane="buy")
-    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    df = _minimal_grade_df(as_of=_IN_ERA, n=6, lane="buy")
+    track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
     buy_h5 = track["per_horizon"]["h5"]["buy_lane"]
     assert "precision_at_k_board_order_vs_spy" in buy_h5
     assert "precision_at_k_alpha_order_vs_spy" in buy_h5
@@ -211,8 +231,8 @@ def test_graded_df_carries_tier_cascade():
 def test_build_track_by_tier_cascade_present():
     """W0.2b: build_track emits by_tier_cascade in the buy_lane block so downstream
     consumers can stratify graded results by T1/T2/T3/T4 cascade tier."""
-    df = _minimal_grade_df(n=4, lane="buy")
-    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    df = _minimal_grade_df(as_of=_IN_ERA, n=4, lane="buy")
+    track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
     buy_h5 = track["per_horizon"]["h5"]["buy_lane"]
     assert "by_tier_cascade" in buy_h5, "by_tier_cascade missing from buy_lane output"
     # the strata should be non-empty (the df has T1/T2/T3/T4 with n=1 each)
@@ -221,8 +241,8 @@ def test_build_track_by_tier_cascade_present():
 
 def test_by_tier_cascade_hit_stats_are_bounded():
     """W0.2b: per-tier hit_rate in by_tier_cascade is between 0 and 1 (sanity)."""
-    df = _minimal_grade_df(n=8, lane="buy")
-    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    df = _minimal_grade_df(as_of=_IN_ERA, n=8, lane="buy")
+    track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
     by_tier = track["per_horizon"]["h5"]["buy_lane"]["by_tier_cascade"]
     for tier, stats in by_tier.items():
         if "hit_rate" in stats:
@@ -387,8 +407,8 @@ def test_63d_lane_in_horizons():
 
 def test_63d_lane_graded_in_build_track():
     """W0.1 B-b: build_track processes h63 rows and emits per_horizon.h63 block."""
-    df = _minimal_grade_df_with_h63(n=4, lane="buy")
-    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    df = _minimal_grade_df_with_h63(as_of=_IN_ERA, n=4, lane="buy")
+    track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
     assert "h63" in track.get("per_horizon", {}), "h63 block missing from per_horizon"
     h63_block = track["per_horizon"]["h63"]
     assert h63_block.get("overall_vs_spy", {}).get("n", 0) == 4
@@ -559,24 +579,31 @@ def test_schema_union_legacy_rows_get_nulls(tmp_path, monkeypatch):
     assert new_rows["fwd_mfe_5"].notna().all(), "new rows should have non-null fwd_mfe_5"
 
 
-def test_schema_union_keep_fresh_replaces_stored_row(tmp_path, monkeypatch):
-    """W0.1 B-b: keep-FIRST — dedup on (as_of, ticker, lane, horizon) never overwrites
-    stored non-null with null (fresh takes precedence on the full row)."""
+def test_schema_union_freezes_prices_but_still_accrues_annotations(tmp_path, monkeypatch):
+    """W0.1 B-b schema-union still works; the PRICE half of the row is now write-once.
+
+    INVERTED 2026-08-06 (was: fresh replaces the stored row wholesale). `fwd_mfe_5` is
+    computed off the close panel, and the panel is re-based in place, so replacing it on
+    every run restates history. Annotations must still land, or the regime/archetype
+    backfills stop reaching historical rows."""
     monkeypatch.setattr("scripts.grade_us_board.LEDGER_DIR", tmp_path)
     pq = tmp_path / "retro_grades.parquet"
     monkeypatch.setattr("scripts.grade_us_board.RETRO_PARQUET", pq)
 
-    # First insert: rows with spine values
     first = _grade_df_with_spine(n=2, as_of="2026-01-02", horizon=5)
     _merge_into_store(first)
+    original_mfe = float(first["fwd_mfe_5"].iloc[0])
 
-    # Second insert (same keys): fresh rows should REPLACE stored rows (fresh takes precedence)
     second = first.copy()
-    second["fwd_mfe_5"] = 0.99
+    second["fwd_mfe_5"] = 0.99                       # price-derived  -> frozen
+    second["archetype"] = "coiled"                   # annotation     -> accrues
     result = _merge_into_store(second)
+
     assert len(result) == 2, "dedup should yield 2 rows"
-    # fresh wins -> new value 0.99
-    assert (result["fwd_mfe_5"] == 0.99).all(), "fresh row should replace stored row"
+    assert (result["fwd_mfe_5"] == original_mfe).all(), (
+        "a price-derived spine column was restated")
+    assert (result["archetype"] == "coiled").all(), (
+        "annotations must still reach historical rows")
 
 
 # ---------------------------------------------------------------------------

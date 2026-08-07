@@ -156,6 +156,37 @@ VETOED_LABEL_ZH = "受阻"
 _VETOED_QUALITIES = frozenset(("block",))
 _BUY_MARKERS = frozenset(("buy", "rebuy"))
 
+# ---- ripening shelf (CN W8-R1 port, 2026-08-07) ----------------------------- #
+# THE LANE THAT GIVES THE BOARD A BODY BETWEEN FRESH CROSSES.  Measured on the
+# 2026-08-06 panel: 158 names, THREE cascade-eligible — the buy board printed two
+# cards, which is the operator's "ridiculous thing".  The other 155 were not
+# borderline: 79 held takes aged past FRESH_TICKS (the June-July rally is weeks
+# old), 61 buys blocked on the next-bar hold, 12 flat.  A 156-name universe times
+# a fresh-cross-only admission is structurally a single-digit board most nights,
+# and the page had NO shelf for "the setup is forming — get ready", which is
+# exactly what China Prophet built as the W8-R1 ripening shelf
+# (engine/setup_tier.assign_ripening_zone + build_china_library step 5).
+#
+# This is that machinery, parameterised for HK.  Same zone classifier, same
+# Article-2 ordering law, same watch-words-only stance.  DISPLAY-TIER by
+# construction: rows carry no entry claim, no priority score, never enter the
+# graded ledger (graded_board_rows is buy+watch only), and admission of the BUY
+# lane is untouched.  Caps are HK's own: READY 6 / total 12 against CN's 16/32 —
+# a 156-name universe against CN's ~1,665, so proportionally a much wider net,
+# same as the FEATURED_CAP note above.  CN's FALLING sink (cap 8) is deliberately
+# NOT ported: the laggards strip already holds the "weakest — avoid" story here,
+# and a second falling list on a 156-name page is noise, not information.
+RIPENING_CAP = 12
+RIPENING_READY_CAP = 6
+# CN rule-3 boundary: a name whose last buy marker is within this many SESSIONS is
+# recent-cross territory (the ran/vetoed lanes own that story) and must not ripen.
+RIPENING_RECENT_CROSS_SESSIONS = 15
+RIPENING_STANCE = "setup forming — no entry signal yet; watch, don't chase"
+RIPENING_STANCE_ZH = "形态形成中 — 入场信号未触发；观察，勿追高"
+ZONE_READY = "READY"
+ZONE_BASING = "BASING"
+ZONE_FALLING = "FALLING"
+
 # Plain-word reason copy.  The verdict's own `reason` strings are internal
 # vocabulary ("counter-trend, no 200-reclaim/hold"); the glance tier gets these
 # instead, and the raw string rides along as `reason_raw` for the detail view.
@@ -431,7 +462,7 @@ def ranking_block(
 
 # Lanes that carry NO entry claim and no priority score.  Named in the artifact so
 # a consumer cannot mistake a context strip for a graded call.
-DISPLAY_TIER_LANES = ("leaders", "ran", "vetoed")
+DISPLAY_TIER_LANES = ("leaders", "ran", "vetoed", "ripening")
 
 
 # --------------------------------------------------------------------------- #
@@ -813,7 +844,19 @@ def confirmation_move(
     daily = pd.Series(values.to_numpy(), index=index).sort_index()
     daily = daily[~daily.index.duplicated(keep="last")]
     daily = daily[daily.index.notna()]
-    confirmed = confirmation_date(daily, marker_date)
+    # market="HK": the marker was LABELLED on the Hong Kong session calendar (session_anchor
+    # R-SQ1), and confirmation_date must walk the same grid or the label lookup misses and
+    # the lane prints a null. This helper takes closes, not a ticker — but it is only ever
+    # reached from the HK board, so the calendar is a property of the module, not the row.
+    try:
+        confirmed = confirmation_date(daily, marker_date, market="HK")
+    except FileNotFoundError:
+        # session_anchor RAISES rather than silently bucketing HK on NYSE sessions (the
+        # no-fallback-chain law). A checkout without data/hk/_HSI.parquet therefore cannot
+        # derive this anchor at all — which is precisely the disclosed-null case this
+        # function already documents, not a new kind of answer. Narrow on purpose: only
+        # the missing-reference failure degrades; every other error still surfaces.
+        return None
     if confirmed is None:
         return None
     stamp = str(confirmed.date())
@@ -1016,6 +1059,248 @@ def build_vetoed_rows(
     return cohort_rows + other_rows[:room]
 
 
+# --------------------------------------------------------------------------- #
+# ripening shelf (CN W8-R1 port) — the bench between fresh crosses
+# --------------------------------------------------------------------------- #
+def ripening_admits(
+    verdict: Mapping[str, Any] | None,
+    *,
+    recent_cross_sessions: int = RIPENING_RECENT_CROSS_SESSIONS,
+) -> bool:
+    """True when a name may be CONSIDERED for the ripening shelf.
+
+    The mirror of CN's step-5 pre-filter (build_china_library), stated as a
+    predicate so it is testable on its own:
+
+    * cascade-eligible names are OUT — they are the buy board's story;
+    * a name whose last marker is a ``buy``/``rebuy`` within
+      ``recent_cross_sessions`` sessions is OUT — that is recent-cross territory
+      and the ran/vetoed lanes own it;
+    * a buy marker whose age is UNKNOWN (``fresh_bars`` None) is OUT, fail-closed:
+      "possibly just crossed" must not ripen, for the same reason an unknown
+      turnover never passes the featured floor;
+    * a name with NO verdict at all may ripen (CN semantics): the w_setup floor
+      (120 daily bars) is the real gate for those, and a thin series returns no
+      setup rather than a crash.
+
+    Setup evidence (``setup_live``) is NOT tested here — it needs the close
+    series, which is :func:`build_ripening_rows`'s job.
+    """
+    v = verdict or {}
+    if v.get("eligible") is True:
+        return False
+    last = v.get("last") or {}
+    if str(last.get("type") or "").strip().lower() in _BUY_MARKERS:
+        fresh = _finite_int(v.get("fresh_bars"))
+        if fresh is None or fresh <= int(recent_cross_sessions):
+            return False
+    return True
+
+
+def build_ripening_rows(
+    verdict_by: Mapping[str, Mapping[str, Any]],
+    *,
+    meta_by: Mapping[str, Mapping[str, Any]] | None = None,
+    close_of: Callable[[str], tuple[Sequence[Any], Sequence[Any]] | None] | None = None,
+    exclude: Iterable[str] = (),
+    universe: Iterable[str] | None = None,
+    board_asof: Any = None,
+    cap: int = RIPENING_CAP,
+    ready_cap: int = RIPENING_READY_CAP,
+    recent_cross_sessions: int = RIPENING_RECENT_CROSS_SESSIONS,
+) -> list[dict]:
+    """Build the HK ripening shelf — CN's W8-R1 zone machinery on the HK tape.
+
+    WHY THIS LANE EXISTS.  The buy board admits fresh confluence crosses only
+    (FRESH_TICKS ≈ 6 sessions), so on a 156-name universe the board is
+    structurally thin whenever the tape is between waves — measured 2026-08-06:
+    3 eligible of 158, two cards rendered.  China Prophet solved the identical
+    product problem with a lifecycle shelf: names that are NOT eligible but whose
+    weekly setups are LIVE (2W washout + imminent MACD cross, fresh 1W washout
+    cross...) are shown as "setup forming — get ready", zoned READY / BASING by
+    :func:`engine.setup_tier.assign_ripening_zone`.  This is that shelf for HK.
+
+    SAME LAWS AS CN:
+
+    * zone precedence is the classifier's (FALLING veto first — those rows are
+      dropped here, see the constants note), READY evidence, else BASING;
+    * ordering inside each zone is Article-2: 2W-MACD bars-to-cross ascending
+      (None → 999), then 1W cross age ascending (None → 99), then 2W stoch
+      ascending — imminence first, zones group READY before BASING;
+    * quota: READY up to ``ready_cap``, BASING fills the remainder to ``cap``.
+
+    DISPLAY-TIER, NO ENTRY CLAIM.  Rows carry ``display_only`` and watch-words
+    stance; they never enter the graded ledger and never touch buy-lane
+    membership.  Everything is fail-closed: no close series, a series the setup
+    floor refuses, or a classifier exception each just drop the candidate.
+
+    pandas and the setup engine are imported lazily, exactly like
+    :func:`confirmation_move`: this module and :mod:`engine.us_board_rank` stay
+    pure stdlib at import time.
+    """
+    try:
+        import pandas as pd
+
+        from engine.cycles import _tf_state
+        from engine.cycles import macd_parts as _macd_parts
+        from engine.confluence_tiers import _stoch_rsi_kd
+        from engine import setup_tier as _st
+    except ImportError:  # pragma: no cover — pandas is always present in-tree
+        return []
+
+    skip = {str(t or "").strip().upper() for t in exclude}
+    meta_by = meta_by or {}
+    verdict_by = verdict_by or {}
+    tickers = list(universe) if universe is not None else list(verdict_by)
+
+    candidates: list[dict] = []
+    for ticker in tickers:
+        key = str(ticker or "").strip()
+        if not key or key.upper() in skip:
+            continue
+        if not ripening_admits(verdict_by.get(key),
+                               recent_cross_sessions=recent_cross_sessions):
+            continue
+        series = close_of(key) if close_of is not None else None
+        if not series:
+            continue
+        dates, closes = series
+        try:
+            index = pd.to_datetime(list(dates), errors="coerce")
+            values = pd.to_numeric(pd.Series(list(closes)), errors="coerce")
+            daily = pd.Series(values.to_numpy(), index=index).sort_index()
+            daily = daily[daily.index.notna()].dropna()
+            daily = daily[~daily.index.duplicated(keep="last")]
+        except (TypeError, ValueError):
+            continue
+        try:
+            wsetup = _st.w_setup(daily)
+        except Exception:  # noqa: BLE001 — one bad series must not empty the shelf
+            continue
+        if not wsetup or not wsetup.get("setup_live"):
+            continue
+        w2 = wsetup.get("w2") or {}
+        w1x = wsetup.get("w1_cross") or {}
+        bars_to_cross = _finite_float(w2.get("macd_bars_to_cross"))
+        stoch_2w = _finite_float(w2.get("stoch"))
+
+        # ---- per-name classifier inputs (CN step-5, verbatim math) ---------- #
+        ret_5d = None
+        macd_hist_last = None
+        macd_hist_prev = None
+        price = None
+        days_in_washout = None
+        try:
+            if len(daily) >= 6:
+                price = round(float(daily.iloc[-1]), 3)
+                ret_5d = round(float(daily.iloc[-1] / daily.iloc[-6] - 1.0), 4)
+            if len(daily) >= 35:
+                hist = _macd_parts(daily)["hist"].dropna()
+                if len(hist) >= 2:
+                    macd_hist_last = round(float(hist.iloc[-1]), 4)
+                    macd_hist_prev = round(float(hist.iloc[-2]), 4)
+            if stoch_2w is not None and stoch_2w <= 35:
+                k14, _d14 = _stoch_rsi_kd(daily.tail(60))
+                in_wash = (k14 <= 35).values.tolist()
+                run = 0
+                for flag in reversed(in_wash):
+                    if not flag:
+                        break
+                    run += 1
+                days_in_washout = run or None
+        except Exception:  # noqa: BLE001 — metrics are card garnish, not admission
+            pass
+
+        # 2W stoch one bucket back, for the reclaim arrow (CN's exact read).
+        stoch_prev = None
+        try:
+            two_w = daily.resample("2W-FRI").last().dropna()
+            if len(two_w) >= 2:
+                prev_state = _tf_state(two_w.iloc[:-1])
+                stoch_prev = _finite_float((prev_state or {}).get("stoch"))
+        except Exception:  # noqa: BLE001
+            stoch_prev = None
+        if w2.get("stoch_cross_up"):
+            stoch_arrow = 1
+        elif stoch_prev is not None and stoch_2w is not None and stoch_2w > stoch_prev:
+            stoch_arrow = 1
+        elif stoch_prev is not None and stoch_2w is not None and stoch_2w < stoch_prev:
+            stoch_arrow = -1
+        else:
+            stoch_arrow = 0
+
+        try:
+            zone_result = _st.assign_ripening_zone(
+                ret_5d=ret_5d,
+                macd_hist_d=macd_hist_last,
+                macd_hist_prev_d=macd_hist_prev,
+                w1_cross_bars_since=w1x.get("bars_since"),
+                w1_from_washout=bool(w1x.get("from_washout")),
+                macd_bars_to_cross_2w=bars_to_cross,
+                stoch_2w=stoch_2w,
+                stoch_2w_prev=stoch_prev,
+            )
+        except Exception:  # noqa: BLE001 — classifier failure drops the candidate
+            continue
+        zone = zone_result.get("zone")
+        if zone == _st.ZONE_FALLING:
+            continue
+
+        meta = meta_by.get(key) or {}
+        verdict = verdict_by.get(key) or {}
+        candidates.append({
+            "ticker": key,
+            "name": meta.get("name") or key,
+            "name_zh": meta.get("name_zh"),
+            "sector": meta.get("sector"),
+            "sector_zh": meta.get("sector_zh"),
+            "zone": zone,
+            "evidence": zone_result.get("evidence") or [],
+            "evidence_display": zone_result.get("evidence_display") or [],
+            "reasons": wsetup.get("setup_reasons") or [],
+            "imminence": bars_to_cross,
+            "w2_stoch": stoch_2w,
+            "w2_stoch_arrow": stoch_arrow,
+            "w1_cross_date": w1x.get("cross_date"),
+            "w1_cross_bars_since": w1x.get("bars_since"),
+            "w1_d_at_cross": w1x.get("d_at_cross"),
+            "w1_from_washout": bool(w1x.get("from_washout")),
+            "spot_pct_in_range": (wsetup.get("base") or {}).get("spot_pct_in_range"),
+            "ret_5d": ret_5d,
+            "macd_hist_d": macd_hist_last,
+            "macd_hist_slope": (
+                1 if (macd_hist_last is not None and macd_hist_prev is not None
+                      and macd_hist_last > macd_hist_prev)
+                else -1 if (macd_hist_last is not None and macd_hist_prev is not None
+                            and macd_hist_last < macd_hist_prev)
+                else 0
+            ),
+            "days_in_washout": days_in_washout,
+            "price": price,
+            # 2D/3D histogram glyphs off the verdict, like CN (may be absent).
+            "macd_d2": verdict.get("hist_d2"),
+            "macd_d3": verdict.get("hist_d3"),
+            "display_only": True,
+            "stance": RIPENING_STANCE,
+            "stance_zh": RIPENING_STANCE_ZH,
+            "_sort_btc": bars_to_cross if bars_to_cross is not None else 999.0,
+            "_sort_bars": (float(w1x["bars_since"])
+                           if w1x.get("bars_since") is not None else 99.0),
+            "_sort_stoch": stoch_2w if stoch_2w is not None else 999.0,
+        })
+
+    candidates.sort(key=lambda r: (r["_sort_btc"], r["_sort_bars"], r["_sort_stoch"]))
+    ready = [r for r in candidates if r["zone"] == _st.ZONE_READY][:max(0, int(ready_cap))]
+    basing_room = max(0, int(cap) - len(ready))
+    basing = [r for r in candidates if r["zone"] == _st.ZONE_BASING][:basing_room]
+    rows = ready + basing
+    for row in rows:
+        row.pop("_sort_btc", None)
+        row.pop("_sort_bars", None)
+        row.pop("_sort_stoch", None)
+    return rows
+
+
 def lane_counts(
     *,
     buy: Sequence[Mapping[str, Any]] = (),
@@ -1024,6 +1309,7 @@ def lane_counts(
     vetoed: Sequence[Mapping[str, Any]] = (),
     watch: Sequence[Mapping[str, Any]] = (),
     laggards: Sequence[Mapping[str, Any]] = (),
+    ripening: Sequence[Mapping[str, Any]] = (),
     featured: int = 0,
 ) -> dict[str, int]:
     """Per-lane counts for the artifact's ``lane_counts`` block.
@@ -1040,6 +1326,7 @@ def lane_counts(
         "vetoed_lane": len(vetoed),
         "watch": len(watch),
         "laggards": len(laggards),
+        "ripening": len(ripening),
         "featured": int(featured),
     })
     return counts
