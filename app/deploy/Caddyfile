@@ -101,6 +101,36 @@
 	# the /api/* proxy so a ws upgrade never reaches the HTML gate matchers.
 	reverse_proxy /ws/tape 127.0.0.1:8000
 
+	# ── Supabase auth/REST proxy — the GFW hole ───────────────────────────────
+	# *.supabase.co is fronted by CLOUDFLARE (verified: `server: cloudflare`,
+	# 172.64.149.246 / 104.18.38.10), whose ranges are throttled in mainland China.
+	# Everything ELSE here was hardened for that years ago — supabase.js is vendored
+	# same-origin, fonts are self-hosted, no CDN <script> survives — but the auth
+	# ENDPOINT was never brought inside the perimeter, so a China visitor loads the
+	# site through EdgeOne and then fails every auth call: sign-in, sign-up, password
+	# reset, magic link. (The "/sb Supabase proxy" the /ws/tape comment above refers
+	# to did not exist until this block; probing the live host returned the site
+	# gate's 401 for both /sb/* and /auth/v1/*.)
+	#
+	# handle_path strips the /sb prefix, so browser_url = https://www.mastermind-x.com/sb
+	# and supabase-js's own ${url}/auth/v1/… concatenation lands on the real paths.
+	# The droplet is DigitalOcean (outside China) and makes the supabase.co hop.
+	#
+	# This grants the browser NOTHING it did not already have — it could call the
+	# same project directly with the same public anon key; RLS is what isolates
+	# users, and it is unchanged. Two things to know:
+	#   * every proxied request reaches Supabase from the DROPLET's IP, so any
+	#     per-IP rate limiting upstream now sees one client. X-Forwarded-For is
+	#     forwarded (Caddy default) so gotrue can still bucket per real client.
+	#   * auth responses must never be cached — no-store below, and EdgeOne needs a
+	#     matching cache-bypass rule for /sb/* (docs/ops/site-access.md).
+	handle_path /sb/* {
+		reverse_proxy https://fsldfzlxyavsuwqbceod.supabase.co {
+			header_up Host fsldfzlxyavsuwqbceod.supabase.co
+			header_down Cache-Control "no-store"
+		}
+	}
+
 	# VPS live plane — artifacts are owned by systemd lanes and published by
 	# atomic rename outside both the git work-tree and site.served. This prevents
 	# a main-branch pull/rsync from rolling a fresh tick back to the last commit.
@@ -223,57 +253,35 @@
 		respond "Not found" 404
 	}
 
-	# Protected HTML navigations: IP gate -> registration -> paid feature gate.
-	@reg_html {
-		path *.html
-		not path /api/* /ws/tape /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /stock_seasonality.html /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /_mockup_ccw_credit_desk.html /_mockup_research_vault.html /qa_bottom_sensors.html /status.html
-	}
-
-	handle @reg_html {
-		route {
-			# Stage 1 — IP/country gate (deliberately fail-open).
-			reverse_proxy 127.0.0.1:8000 {
-				method GET
-				rewrite /api/gate/check
-				@allow status 2xx
-				handle_response @allow {
-				}
-			}
-			# Stage 2 — registration wall (fail-closed).
-			reverse_proxy 127.0.0.1:8000 {
-				method GET
-				rewrite /api/regwall/check
-				header_up X-Original-Uri {http.request.uri}
-				header_up X-Original-Kind document
-				@rallow status 2xx
-				handle_response @rallow {
-				}
-			}
-			# Stage 3 — paid entitlement wall (disabled until launch prerequisites
-			# pass; the endpoint still exists and fails closed if miswired).
-			reverse_proxy 127.0.0.1:8000 {
-				method GET
-				rewrite /api/paywall/check
-				header_up X-Original-Uri {http.request.uri}
-				header_up X-Original-Kind document
-				@pallow status 2xx
-				handle_response @pallow {
-				}
-			}
-			header Cache-Control "private, no-store"
-			header Vary "Cookie"
-			header X-Robots-Tag "noindex, noarchive"
-			file_server {
-				index index.html
-			}
-		}
-	}
+	# ── HTML documents are OPEN (operator 2026-08-04) ─────────────────────────
+	#
+	# The registration wall used to 302 every non-funnel *.html to
+	# /?signin=1&ret=<path>, so an unregistered visitor — and Googlebot, which
+	# never has a session — bounced off ~239 member pages. That wall is gone:
+	# EVERY page shell is now readable by anyone, and the @reg_html matcher that
+	# used to enforce it has been retired along with its handler.
+	#
+	# What did NOT change, and is the whole reason this is safe: the paid product
+	# is not the page, it is the PAYLOAD. @reg_asset below is unchanged and still
+	# default-deny for every non-HTML path, so the graded rows keep their gates:
+	#   * premium.enforced_early — /premiumdata/*, /capital-structure-data/*,
+	#     /allocationdata/special_situations.json, /chinaspecialdata/special.json
+	#     — 403 for anonymous AND Free, ahead of the PAYWALL_ENABLED switch;
+	#   * every per-ticker <market>stockdata/*.json graded emit;
+	#   * every other data payload not named in config/site_access.yml.
+	# So an anonymous visitor gets the shell, the methodology and the honest
+	# totals, and tier_preview.js paints the locked slots + upgrade wall where the
+	# paid rows would be. That is the house tier-preview pattern
+	# (docs/TIER_PREVIEW_PATTERN.md) applied estate-wide instead of page by page.
+	#
+	# Internal surfaces are NOT affected: @never_site above still 404s the
+	# mockups, QA and research-tool pages, and it is matched before this block.
 
 	# Protected non-HTML and extensionless paths. This is the closure of the
 	# original leak: direct JSON/JS/model-output URLs no longer bypass auth.
 	# PUBLIC-BOUNDARY-START
 	@reg_asset {
-		not path /api/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /factordata/tech_lab.json /stock_seasonality.css /stock_seasonality.html /stock_seasonality.js /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
+		not path /api/* /sb/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /factordata/tech_lab.json /stock_seasonality.css /stock_seasonality.html /stock_seasonality.js /fundamental_forensics.css /fundamental_forensics.js /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
 	}
 	# PUBLIC-BOUNDARY-END
 	handle @reg_asset {
@@ -341,17 +349,48 @@
 		}
 	}
 
-	handle_errors {
-		# Protected documents fail CLOSED on gate-upstream failure.
-		@reg_html_err {
-			path *.html
-			not path /api/* /ws/tape /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /stock_seasonality.html /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /_mockup_ccw_credit_desk.html /_mockup_research_vault.html /qa_bottom_sensors.html /status.html
-		}
-		handle @reg_html_err {
-			header Cache-Control "no-store"
+	# Every remaining *.html — the ~239 pages the registration wall used to 302.
+	# Same fail-open IP/country gate as the funnel above, then the file.
+	#
+	# These are READABLE but deliberately still NOT INDEXABLE: opening the wall is
+	# an access decision, and handing Google 239 new URLs in the same change would
+	# be an SEO decision nobody made. The X-Robots-Tag below preserves the posture
+	# these pages already had while they were gated. Dropping the header (or
+	# folding these paths into @gate_html above) is the one-line follow-up that
+	# opts them into the index — do it deliberately, per page family, with the
+	# sitemap (lib/seo.py) updated in the same change.
+	@open_html {
+		path *.html
+		not path /api/* /sb/* /ws/tape
+	}
+
+	handle @open_html {
+		route {
+			reverse_proxy 127.0.0.1:8000 {
+				method GET
+				rewrite /api/gate/check
+				@allow status 2xx
+				handle_response @allow {
+				}
+			}
+			header Cache-Control "public, max-age=60, must-revalidate"
 			header X-Robots-Tag "noindex, noarchive"
-			redir * /?signin=1 302
+			file_server {
+				index index.html
+			}
 		}
+	}
+
+	handle_errors {
+		# NOTE: the @reg_html_err block that used to live here is GONE. It was the
+		# thing that actually emitted `302 -> /?signin=1&ret=<path>`: HTML
+		# documents were fail-CLOSED, so an unregistered visitor (or a gate-upstream
+		# blip) bounced off the page instead of reading it. HTML is no longer
+		# registration-gated, so there is nothing left to fail closed ON, and a
+		# missing/erroring page must surface as its real status code.
+		#
+		# Assets still fail closed below — that is deliberate and is what keeps the
+		# paid payloads from leaking on an upstream failure.
 
 		# Protected assets fail CLOSED too. The JSON response is intentionally
 		# small and non-cacheable; never substitute the requested static file.
@@ -368,7 +407,7 @@
 		# tests/test_regwall_json_gate.py), so content is still only ever served
 		# from inside `handle @reg_asset` after the gate returns 2xx.
 		@reg_asset_err {
-			not path /api/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /live/wires.json /live/intelligence.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /factordata/tech_lab.json /stock_seasonality.css /stock_seasonality.html /stock_seasonality.js /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
+			not path /api/* /sb/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /live/wires.json /live/intelligence.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /factordata/tech_lab.json /stock_seasonality.css /stock_seasonality.html /stock_seasonality.js /fundamental_forensics.css /fundamental_forensics.js /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
 		}
 		handle @reg_asset_err {
 			header Cache-Control "private, no-store"
@@ -388,7 +427,6 @@
 				index index.html
 			}
 		}
-
 	}
 
 	# Only explicit public assets can reach this direct file server.

@@ -106,6 +106,19 @@ Namespace convention: block-prefixed snake_case (`theme_`, `relay_`, `regime_`,
 `<dimension>__<field>` names `context_api` itself emits — a column's name should say
 which producer owns it.
 
+- **coverage tier** (added 2026-08-05, US-side only — roadmap §4.5) — `tier` ∈
+  {`curated`, `scan`}. `curated` is the graded population: board admission,
+  gates, scores, ranks and plan intake read this set and only this set, exactly
+  as before. `scan` is liquidity-floored coverage over the whole-market daily
+  store (`engine/us_scan_universe.py`), stamped and counted but never admitted.
+  The two are disjoint by construction (the scan resolver removes curated names)
+  and `tier` is deliberately **not** in the dedupe key — adding it would keep a
+  both-tiers name twice and double-count it in every cohort; leaving it out makes
+  keep-first the precedence rule, so the curated row (written first, and the one
+  carrying board legs, lane and near-miss) wins. Recorded here per the §7
+  cross-market discipline; **no CN file was touched** and no CN coordination is
+  implied — if CN ever wants a coverage tier it adopts the column name, not this
+  lane's floor.
 - **identity/board** — `stamp_date`, `ticker`, `name`, `sector`, `board_definition`,
   `lane`, `eligible`, `buyable`, `tier_cascade`, `tier_sub`, `ticks`,
   `bars_to_cross`, `fresh_bars`, `gate_weight`, `gate_state`, `gate_reason`,
@@ -120,7 +133,11 @@ which producer owns it.
 - **event** — `days_to_report`, `reports_within_7`, `post_earnings_move_pct`,
   `post_earnings_sessions_since`, `earnings_stale`, `in_blackout`,
   `eightk_recent_days`
-- **flow** — `turnover_pctile_20d`, `turnover_window_20d`, `turnover_pctile_60d`
+- **flow** — `turnover_pctile_20d`, `turnover_window_20d`, `turnover_pctile_60d`,
+  `mdv20_usd` (median close×volume over the trailing 20 sessions — the value the
+  §4.5 liquidity floor was applied on. Populated on `scan` rows; **null on
+  `curated` rows**, because that lane never reads the whole-market store — an
+  unmeasured value, never a zero, per invariant 7)
 - **regime** (one value per night) — `regime_dispersion_state`, `regime_gate_go`,
   `regime_market_quad`, `regime_quad_name`, `regime_vol_regime`
 - **risk** — `ext_z`, `antichase_shadow_blocked`
@@ -133,7 +150,9 @@ each market's own call.
 
 Per-column provenance, measured coverage and the three named debts live in
 `data/us_prophet_rank/README.md`. The schema is pinned by
-`tests/test_us_context_vector.py::TestSchemaContract`.
+`tests/test_us_context_vector.py::TestSchemaContract`, wired into the
+`unrun-picks-boards` CI pack 2026-08-04 (dark before that — the suite was in no
+run list).
 
 ## §5 What this note does NOT do
 

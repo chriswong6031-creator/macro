@@ -436,6 +436,46 @@ def make_call(
 # Usage capture helper (called on every successful make_call)
 # --------------------------------------------------------------------------- #
 
+#: provider-descriptor ``name`` → (ai_costs provider, cost_basis).
+#:
+#: The ledger row must name the rung that ACTUALLY served the call.  This used
+#: to be an if/elif chain whose ``else`` branch charged EVERY unmapped provider
+#: to ("claude_oauth", "subscription"), which is how free local-Ollama calls
+#: (config/marketing.yml `cold_read`, `breaking.llm`) landed in the ledger as
+#: Claude-subscription spend and inflated that lane (2026-08-07).  A rung that
+#: is not in this table now records ITSELF — see :func:`ledger_provider_for`.
+#:
+#: "local" is the cost_basis for a private endpoint on hardware we already own:
+#: not "subscription" (no plan is being consumed) and not "metered" (there is no
+#: per-token price).  lib.ai_costs._cost_basis_bucketname keeps it out of both
+#: money buckets on the AI Cost page.
+LEDGER_PROVIDER: dict[str, tuple[str, str]] = {
+    "oauth":     ("claude_oauth", "subscription"),
+    "anthropic": ("claude_api",   "metered"),
+    "deepseek":  ("deepseek",     "metered"),
+    "codex":     ("codex",        "subscription"),
+    "ollama":    ("ollama",       "local"),
+}
+
+#: cost_basis values that carry no per-token price — est_cost_usd is pinned to
+#: 0.0 rather than left to the pricing table (an unpriced model yields None,
+#: which reads as "unknown spend" instead of the truth, "free").
+_FREE_COST_BASES: frozenset[str] = frozenset({"local"})
+
+
+def ledger_provider_for(name: str | None) -> tuple[str, str]:
+    """Return (ai_costs provider, cost_basis) for a provider descriptor name.
+
+    An unknown name records itself with a "metered" basis: a new rung must
+    never be silently billed to the Claude subscription lane.  Never raises.
+    """
+    key = str(name or "").strip() or "unknown"
+    mapped = LEDGER_PROVIDER.get(key)
+    if mapped is not None:
+        return mapped
+    return key, "metered"
+
+
 def _capture_usage(p: dict, usage_obj, context: str) -> None:
     """Record one AI usage row to lib.ai_costs.  NEVER raises.
 
@@ -461,23 +501,11 @@ def _capture_usage(p: dict, usage_obj, context: str) -> None:
         cr_tok = int(getattr(usage_obj, "cache_read_input_tokens", 0) or 0)
         cc_tok = int(getattr(usage_obj, "cache_creation_input_tokens", 0) or 0)
 
+        # `p` IS the rung that served this call (make_call passes the descriptor
+        # it succeeded on), so the ledger names the real provider — never a lane
+        # default.  See LEDGER_PROVIDER for why the old `else` branch was a bug.
         name = p.get("name", "unknown")
-        # Map provider name → provider vocabulary
-        if name in ("oauth",):
-            ai_provider = "claude_oauth"
-            cost_basis = "subscription"
-        elif name == "anthropic":
-            ai_provider = "claude_api"
-            cost_basis = "metered"
-        elif name == "deepseek":
-            ai_provider = "deepseek"
-            cost_basis = "metered"
-        elif name == "codex":
-            ai_provider = "codex"
-            cost_basis = "subscription"
-        else:
-            ai_provider = "claude_oauth"
-            cost_basis = "subscription"
+        ai_provider, cost_basis = ledger_provider_for(name)
 
         lane = p.get("usage_lane") or p.get("_usage_lane") or "unknown"
         cap_id = p.get("cap_id")
@@ -506,6 +534,9 @@ def _capture_usage(p: dict, usage_obj, context: str) -> None:
             cost_basis=cost_basis,
             cycle_id=cycle_id,
             stage=stage,
+            # A free rung states $0.00 outright; leaving it to the pricing table
+            # would emit null ("unpriced"), which is not the same claim.
+            **({"est_cost_usd": 0.0} if cost_basis in _FREE_COST_BASES else {}),
         )
     except Exception as exc:  # noqa: BLE001
         log.debug("llm_auth: _capture_usage failed: %s", exc)

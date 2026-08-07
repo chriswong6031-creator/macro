@@ -409,3 +409,63 @@ def test_healthy_laggard_stays_positive(monkeypatch):
     assert by["BROKE"]["state"] == "POSITIVE_DIVERGENCE"
     assert by["BROKE"]["lifecycle"] == "forming"
     assert by["BROKE"]["rs_vs_spy_60d"] == 3.0            # rs still populated from the spine
+
+
+# --------------------------------------------------------------------------- #
+# 2026-08-05 audit: attributed-row state docks
+# --------------------------------------------------------------------------- #
+def test_attributed_confirmed_and_broken_docked(monkeypatch):
+    """CONFIRMED_UP attribution ('the move is priced' per its own note) and
+    BROKEN_LAGGARD (an explicit warning, not a call) must not out-rank real
+    divergence attributions from the same basket."""
+    from engine import radar_ticker as rt
+    from engine import radar_plus as rp
+
+    radar = {"flags": [{"basket": "housing", "name": "Housing",
+                        "state": "POSITIVE_DIVERGENCE", "edge_score": 80}]}
+    baskets = {"baskets": [{"id": "housing", "members": [
+        {"symbol": "LAG", "ret_20d": -0.05},
+        {"symbol": "MID1", "ret_20d": 0.01}, {"symbol": "MID2", "ret_20d": 0.02},
+        {"symbol": "MID3", "ret_20d": 0.03},
+        {"symbol": "LEAD", "ret_20d": 0.20},
+    ]}]}
+    monkeypatch.setattr(rp, "_load",
+                        lambda rel: radar if "radar.json" in rel
+                        else baskets if "baskets.json" in rel else {})
+
+    out = rt._basket_attributed(set(), date(2026, 6, 20))
+    by = {r["ticker"]: r for r in out}
+    # Leader (CONFIRMED_UP) edge = base attribution × the 0.40 dock
+    undocked_lead = round(80 * (0.45 + 0.45 * 0.3))
+    assert by["LEAD"]["edge_score"] == round(undocked_lead * rt._ATTR_STATE_MULT["CONFIRMED_UP"])
+    # Laggard divergence stays undocked and far above the priced leader
+    assert by["LAG"]["edge_score"] > 2 * by["LEAD"]["edge_score"]
+
+
+def test_signal_confirmed_up_docked_vs_divergence(monkeypatch):
+    """Direct-signal rows: a CONFIRMED_UP (hot signal on an already-leading
+    price) must score below a POSITIVE_DIVERGENCE with the same activity-price
+    gap — corroboration is not edge."""
+    from engine import radar_ticker as rt
+    from engine import radar_plus as rp
+
+    # Two names, same |act - pr| gap = 1.5:
+    #   DIV : act=+1.5 (score 87.5), pr=0.0   → POSITIVE_DIVERGENCE
+    #   CONF: act=+2.0 (score 100),  pr=+0.5·8=+4% → wait, CONFIRMED_UP needs pr>=0.5
+    mm = {"signals": [
+        {"ticker": "DIV", "signal_score": 87.5, "rs_vs_spy_60d": 0.0},
+        {"ticker": "CONF", "signal_score": 100.0, "rs_vs_spy_60d": 4.0},  # act=2.0, pr=0.5
+    ]}
+    monkeypatch.setattr(rp, "_load",
+                        lambda rel: mm if "mastermind.json" in rel else {})
+    monkeypatch.setattr(rp, "_regime", lambda: {"mult": 1.0, "quad": None,
+                                                "quad_name": None, "liquidity": None})
+
+    out = rt.build(today=date(2026, 6, 20))
+    by = {r["ticker"]: r for r in out["tickers"]}
+    assert by["DIV"]["state"] == "POSITIVE_DIVERGENCE"
+    assert by["CONF"]["state"] == "CONFIRMED_UP"
+    assert by["CONF"]["edge_score"] < by["DIV"]["edge_score"], (
+        "equal-gap CONFIRMED_UP must dock below the divergence row: "
+        f"{by['CONF']['edge_score']} vs {by['DIV']['edge_score']}"
+    )

@@ -149,7 +149,7 @@ def _section_role() -> str:
         "HARD LAWS you MUST respect (a proposal violating any of these is dropped at ingest):\n"
         "  - A chain NEVER emits an alpha score, gate, size, rank, or escalation. It only\n"
         "    describes an observable cascade state (display/context tier). Do NOT add any\n"
-        "    scoring / weight / signal / conviction field. (DNR row 45 / TXI Article 1/2.)\n"
+        "    scoring / weight / signal / conviction field. (DNR:KILL-CAUSAL-DAG-ALPHA / TXI Article 1/2.)\n"
         "  - Every node.test MUST bind to a REAL, collected artifact through one of the six\n"
         "    registered source adapters below. A node whose series/path is not in the live\n"
         "    inventory is UNRESOLVABLE and its whole chain is REJECTED — never invent a\n"

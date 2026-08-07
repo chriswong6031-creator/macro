@@ -1,6 +1,7 @@
 """Authenticated transport tests for member Earnings Wire records."""
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 
 import pytest
@@ -185,6 +186,73 @@ def test_production_app_mounts_private_earnings_route() -> None:
     import app.main as main_mod
 
     assert "/api/earnings/v1/records/{slug}" in main_mod.app.openapi().get("paths", {})
+
+
+# Every paid route this router owns, in the form a client actually requests.
+# The private catch-all is deliberately include_in_schema=False, so the OpenAPI
+# assertion above can never see it: only a real request proves it is mounted.
+_MOUNTED_PAID_PATHS = (
+    "/api/earnings/v1/records/aapl-2026q1-call-record",
+    "/api/earnings/v1/records/malformed/extra/segments",
+)
+
+
+def test_every_paid_route_is_mounted_on_the_assembled_production_app() -> None:
+    """A dropped router presents only as a 404 on a paid endpoint, never as an error.
+
+    Mounting used to be wrapped in ``except ImportError: pass``, so a renamed
+    dependency or a package missing on the VPS deleted both entitled routes with
+    no startup failure and no log line.  Assert what production proves:
+    unauthenticated requests reach the entitlement boundary (401) instead of
+    falling through to the app's 404.
+    """
+    import app.main as main_mod
+
+    # No context manager on purpose: mounting is import-time state, and running
+    # the app's lifespan here would start its background warm threads.
+    client = TestClient(main_mod.app, raise_server_exceptions=False)
+    statuses = {path: client.get(path).status_code for path in _MOUNTED_PAID_PATHS}
+    assert statuses == dict.fromkeys(_MOUNTED_PAID_PATHS, 401)
+
+    # Control: 404 must still be reachable on this prefix, or the assertion
+    # above would pass for a reason that has nothing to do with mounting.
+    assert client.get("/api/earnings/not-a-route").status_code == 404
+
+
+def test_router_wiring_fails_startup_loudly_instead_of_swallowing_importerror() -> None:
+    """Pin the wiring shape, not just today's happy import.
+
+    The route test above only fails once the import is genuinely broken.  This
+    one fails the moment the mount is put back inside a ``try``: paid product
+    contracts fail startup loudly here, exactly as the BioCatalyst block does.
+    """
+    module = ast.parse((ROOT / "app" / "main.py").read_text(encoding="utf-8"))
+
+    top_level_import = [
+        node
+        for node in module.body
+        if isinstance(node, ast.ImportFrom) and node.module == "app.earnings"
+    ]
+    top_level_include = [
+        node
+        for node in module.body
+        if isinstance(node, ast.Expr)
+        and isinstance(node.value, ast.Call)
+        and isinstance(node.value.func, ast.Attribute)
+        and node.value.func.attr == "include_router"
+        and any(
+            isinstance(arg, ast.Name) and arg.id == "earnings_router"
+            for arg in node.value.args
+        )
+    ]
+    assert top_level_import, (
+        "app/main.py must import app.earnings at module level; an import nested "
+        "in a try/except can be swallowed into a silent 404 on a paid route"
+    )
+    assert top_level_include, (
+        "app/main.py must call app.include_router(earnings_router) at module "
+        "level so a wiring error fails startup instead of dropping both paid routes"
+    )
 
 
 def test_public_client_fetches_api_with_supabase_bearer() -> None:

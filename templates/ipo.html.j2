@@ -333,7 +333,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 
     <!-- 3) issuance froth -->
     <div class="tcard {{ 'warn' if pipeline.froth_flags and 'spac' in pipeline.froth_flags else 'acc' }}">
-      <div class="tc-eyebrow">{{ t('Issuance froth','发行热度') }}{{ qtip('How busy and how speculative the new-issue tape is: deals priced in 90 days, the blank-check (SPAC) share, and the share of filed deals later pulled. A high SPAC share + a busy pace = a frothy, promotional tape to stand aside from.','新股发行的繁忙度与投机度：90天定价交易数、空白支票（SPAC）占比、以及已申报后撤回的比例。高SPAC占比＋繁忙节奏＝泡沫化、炒作型盘面，应靠边站。') }}</div>
+      <div class="tc-eyebrow">{{ t('Issuance froth','发行热度') }}{{ qtip('How busy and how speculative the new-issue tape is: deals priced in 90 days, the blank-check (SPAC) share, and the share of filed deals later pulled. A high SPAC share + a busy pace = a frothy, promotional tape to stand aside from.','新股发行的繁忙度与投机度：90天定价交易数、空白支票（SPAC）占比、以及已披露后撤回的比例。高SPAC占比＋繁忙节奏＝泡沫化、炒作型盘面，应靠边站。') }}</div>
       <div class="tc-state">{% if pipeline.available %}{{ t(pipeline.pace|capitalize, pipeline.pace_zh) }}{% else %}—{% endif %}</div>
       {% if pipeline.available and pipeline.spac_pct_90d is not none %}
       <svg class="arc" viewBox="0 0 130 74" aria-hidden="true">

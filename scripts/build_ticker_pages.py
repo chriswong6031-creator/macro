@@ -38,7 +38,8 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from lib import config  # noqa: E402
-from lib.pages import rendered_ticker_pages, write_page  # noqa: E402
+from lib.pages import (rendered_basket_pages, rendered_ticker_pages,  # noqa: E402
+                       write_page)
 from lib.seo import SITE_BASE as _SITE_BASE  # noqa: E402
 
 log = logging.getLogger(__name__)
@@ -77,7 +78,20 @@ MAX_LOGO_FETCH_PER_RUN = 300
 _LOGO_NEGATIVE_CACHE_DAYS = 30
 
 # Plain-word sector display names
+# data/universe/membership.parquet carries TWO sector vocabularies — GICS
+# ("Information Technology", "Health Care", "Financials", "Consumer
+# Discretionary", "Consumer Staples", "Materials") and Yahoo/FMP ("Technology",
+# "Healthcare", "Financial", "Consumer Cyclical", "Consumer Defensive", "Basic
+# Materials") — 17 distinct strings for 11 real sectors, because the membership
+# rows are stitched from more than one vendor.
+#
+# Mapping only the GICS half left the other half falling through `.get(raw, raw)`
+# unchanged, which is why the index page printed both "Tech" AND "Technology" as
+# separate filter chips: picking either one silently hid the ~half of the sector
+# filed under the other vendor's name. Both vocabularies now land on one display
+# name, so a sector filter means the whole sector.
 _SECTOR_DISPLAY = {
+    # GICS
     "Information Technology": "Tech",
     "Health Care": "Health Care",
     "Financials": "Financials",
@@ -89,7 +103,36 @@ _SECTOR_DISPLAY = {
     "Materials": "Materials",
     "Real Estate": "Real Estate",
     "Utilities": "Utilities",
+    # Yahoo / FMP aliases for the same eleven
+    "Technology": "Tech",
+    "Healthcare": "Health Care",
+    "Financial": "Financials",
+    "Financial Services": "Financials",
+    "Consumer Cyclical": "Consumer Disc.",
+    "Consumer Defensive": "Staples",
+    "Basic Materials": "Materials",
 }
+
+# Display name → 中文. Keyed on the DISPLAY name (the output of
+# _sector_display), so both vendor vocabularies inherit one translation.
+_SECTOR_ZH = {
+    "Tech": "信息技术",
+    "Health Care": "医疗保健",
+    "Financials": "金融",
+    "Consumer Disc.": "非必需消费",
+    "Comm. Services": "通信服务",
+    "Industrials": "工业",
+    "Staples": "必需消费",
+    "Energy": "能源",
+    "Materials": "原材料",
+    "Real Estate": "房地产",
+    "Utilities": "公用事业",
+}
+
+
+def _sector_zh(display: str | None) -> str:
+    """中文 for a display sector name; falls back to the EN label."""
+    return _SECTOR_ZH.get(display or "", display or "")
 
 # Stance → chip CSS class
 _STANCE_CLASS = {
@@ -1545,6 +1588,159 @@ def _bar_close(bar: Any) -> float | None:
         return None
 
 
+def _build_hub_context(site: Path, rows: list[dict]) -> dict:
+    """Assemble everything the /stocks/ market hub renders.
+
+    Fail-soft by design: every block is independently optional and the template
+    skips what is absent. A missing heatmap payload costs the page its treemap
+    and sector ledger, not its existence — the boards, search and the A-Z index
+    all come from `rows`, which the render loop just built.
+
+    Two scopes, deliberately not blended (engine/stocks_hub.py docstring):
+    breadth/spine/boards/search span the full coverage universe; the sector
+    ledger and treemap are S&P 500, where real market-cap weights live.
+    """
+    from engine import market_heatmap as _hm
+    from engine import stocks_hub as _hub
+
+    ctx: dict[str, Any] = {"hub": None}
+    try:
+        # Search and the A-Z index depend only on `rows`, so they are built
+        # first and unconditionally: a data outage upstream may cost the page
+        # its boards, but it must never cost the crawl hub its 1,544 links.
+        hub: dict[str, Any] = {
+            "search": _hub.search_index(rows),
+            "directory": _hub.directory(rows),
+            "sector_keys": [
+                {"key": s, "en": s, "zh": _sector_zh(s)}
+                for s in sorted({r["sector"] for r in rows if r.get("sector")})
+            ],
+            "breadth": None, "stance": None, "spine": None, "boards": {},
+            "sectors": [], "treemap": None, "top": None, "bot": None,
+            "best": None, "worst": None, "map_asof": None,
+        }
+        ctx["hub"] = hub
+
+        rets = [r["chg"] for r in rows if r.get("chg") is not None]
+        br = _hub.breadth(rets)
+        if not br:
+            print("::warning title=stocks_hub::no day-change data on any covered "
+                  "name — pulse, spine and mover boards skipped", flush=True)
+            return ctx
+
+        payload = _load_json(site / "marketdata" / "sp500_heatmap.json")
+        summary = None
+        try:
+            summary = _hm.page_summary(payload) if payload else None
+        except Exception as e:  # noqa: BLE001
+            print(f"::warning title=stocks_hub::heatmap summary failed: {e}", flush=True)
+
+        linkable = frozenset(r["ticker"] for r in rows)
+        best = max(rows, key=lambda r: r.get("chg") if r.get("chg") is not None else -1e9)
+        worst = min(rows, key=lambda r: r.get("chg") if r.get("chg") is not None else 1e9)
+
+        n_vol = sum(1 for r in rows if r.get("dvol"))
+        n_52 = sum(1 for r in rows if r.get("pos52") is not None)
+        # The board session, taken from the bars themselves rather than the wall
+        # clock: these are SETTLED DAILY CLOSES from the nightly build, not an
+        # intraday feed, and the page must not imply otherwise.
+        sessions = [r["asof"] for r in rows if r.get("asof")]
+        board_asof = max(sessions) if sessions else None
+        log.info("[stocks_hub] %d names, %d with volume, %d with 52w range, "
+                 "session=%s, heatmap=%s", len(rows), n_vol, n_52,
+                 board_asof or "unknown", "yes" if payload else "no")
+        if sessions and len(set(sessions)) > 1:
+            behind = sum(1 for s in sessions if s != board_asof)
+            if behind > len(sessions) * 0.15:
+                print(f"::warning title=stocks_hub::{behind}/{len(sessions)} names "
+                      f"carry a bar older than {board_asof} — boards mix sessions",
+                      flush=True)
+
+        hub.update({
+            "breadth": br,
+            "stance": _hub.stance(br["pct_up"], br.get("median")),
+            "spine": _hub.day_shape(rets, pct_up=br["pct_up"]),
+            "best": ({"t": best["ticker"], "pc": f'{best["chg"]:+.1f}%'}
+                     if best.get("chg") is not None else None),
+            "worst": ({"t": worst["ticker"], "pc": f'{worst["chg"]:+.1f}%'}
+                      if worst.get("chg") is not None else None),
+            "boards": _hub.boards(rows),
+            "sectors": _hub.sector_ledger(summary),
+            "treemap": _hub.treemap(payload, linkable=linkable),
+            "top": (summary or {}).get("top"),
+            "bot": (summary or {}).get("bot"),
+            # The map/ledger carry the heatmap payload's OWN as-of, which is a
+            # different (often older) stamp than the nightly dossier build. Two
+            # scopes, two stamps, both printed — never one borrowed for the other.
+            "map_asof": (summary or {}).get("asof") or (payload or {}).get("asof"),
+            "board_asof": board_asof,
+        })
+    except Exception as e:  # noqa: BLE001
+        print(f"::warning title=stocks_hub::hub context failed: {e}", flush=True)
+    return ctx
+
+
+def _bar_volume(bar: Any) -> float | None:
+    """Share volume off either ohlc bar shape (build_chart_data.py:21-22).
+
+        candles    ["YYYY-MM-DD", o, h, l, c, v]   -> index 5
+        close-only ["YYYY-MM-DD", close, v]        -> index 2
+
+    Reading index 5 unconditionally would silently drop every close-only name
+    from the volume boards — and that is most of the long tail, since only the
+    deep-history sources ship candles. Anything shorter carries no volume, and
+    returning None there (never 0) keeps such a name OUT of the boards rather
+    than pinning it to the bottom of all of them as a phantom zero.
+    """
+    try:
+        n = len(bar)
+        if n >= 6:
+            v = float(bar[5])
+        elif n == 3:
+            v = float(bar[2])
+        else:
+            return None
+        return v if math.isfinite(v) and v > 0 else None
+    except (TypeError, ValueError, IndexError):
+        return None
+
+
+def _bar_date(bar: Any) -> str | None:
+    """The session a bar belongs to — both shapes put it at index 0."""
+    try:
+        s = str(bar[0])[:10]
+        return s if len(s) == 10 and s[4] == "-" else None
+    except (TypeError, ValueError, IndexError):
+        return None
+
+
+def _volume_stats(bars: list) -> dict | None:
+    """Latest dollar volume + how it compares to this name's own recent normal.
+
+    Raw volume ranks the same megacaps every session; the ratio against the
+    trailing 20-session MEDIAN is the part that says something new each day.
+    Median, not mean, so one prior spike does not suppress today's.
+    """
+    try:
+        if not bars or len(bars) < 2:
+            return None
+        last_v = _bar_volume(bars[-1])
+        last_c = _bar_close(bars[-1])
+        if last_v is None or last_c is None or last_c <= 0:
+            return None
+        prior = [v for v in (_bar_volume(b) for b in bars[-21:-1]) if v is not None]
+        rvol = None
+        if len(prior) >= 10:
+            prior.sort()
+            mid = len(prior) // 2
+            med = prior[mid] if len(prior) % 2 else (prior[mid - 1] + prior[mid]) / 2.0
+            if med > 0:
+                rvol = last_v / med
+        return {"vol": last_v, "dvol": last_v * last_c, "rvol": rvol}
+    except Exception:  # noqa: BLE001 — board decoration, never fatal
+        return None
+
+
 def _day_change(bars: list) -> dict | None:
     """Last close vs previous close → hero day-change pill."""
     try:
@@ -2664,13 +2860,41 @@ def _build_peers(
     return rows or None
 
 
-def _build_themes(blob: dict | None, member_ctx_list: list, baskets_map: dict) -> list | None:
+def _build_themes(blob: dict | None, member_ctx_list: list, baskets_map: dict,
+                  linkable_baskets: frozenset[str] | None = None) -> list | None:
+    """`linkable_baskets`: basket ids that ship a basket/<id>.html page.
+
+    A row whose id is absent still RENDERS — the name, the charter sentence and
+    the band are worth reading on their own — it just does not become a link to
+    a page that was never built. Membership is curated by hand; page-building is
+    gated on 3+ members having price history (engine/baskets.py), so a freshly
+    curated basket is linkable-looking and unbuilt for at least a night. None
+    means "unknown, link everything", which preserves every existing caller.
+    """
     if not blob and not member_ctx_list:
         return None
     rows = []
 
-    # From blob.baskets_membership (direct basket membership)
-    bm = (blob or {}).get("baskets_membership") or []
+    # From blob.baskets_membership (direct basket membership).
+    #
+    # Gated on baskets_map, which is loaded from site/basketdata/baskets.json — the
+    # basket builder's OWN output, so it is exactly the set of baskets that produced
+    # a site/basket/<id>.html page (47 ids, 47 pages, zero ids without one). Membership
+    # is the wider set: engine/baskets.py drops a basket resolving fewer than 3 members,
+    # and that basket stays in membership.json while its page is never written.
+    #
+    # Ungated, every member's dossier then linked ../basket/<slug>.html into a 404 —
+    # and check_site_asset_refs treats a dangling link as a live 404 and FAILS the
+    # render, so the whole site stops re-baking. That is not hypothetical: silver_miners
+    # (#4607, created 2026-08-05, 2 of 10 members resolving) took the render lane down
+    # for ~18h via stocks/HL.html and stocks/SSRM.html. #4607 even predicted the page
+    # would be "absent from the site for one build cycle" — what it missed is that the
+    # link would still be emitted, turning an expected absence into a hard stop.
+    #
+    # Filter BEFORE the [:5] slice, so a member still gets up to five LINKABLE baskets
+    # rather than five candidates minus whatever was unbuilt.
+    bm = [b for b in ((blob or {}).get("baskets_membership") or [])
+          if _clean_str(b.get("slug") or "") in baskets_map]
     for b in bm[:5]:
         slug = _clean_str(b.get("slug") or "")
         name = _clean_str(b.get("name") or slug)
@@ -2695,6 +2919,10 @@ def _build_themes(blob: dict | None, member_ctx_list: list, baskets_map: dict) -
                 if r["id"] == bid:
                     r["band_en"] = _clean_str(mc.get("band_en") or "")
                     r["band_zh"] = _clean_str(mc.get("band_zh") or "")
+            continue
+        # Same gate as the membership loop above: member_context can name a basket the
+        # builder skipped, and this row becomes the same ../basket/<id>.html 404.
+        if bid not in baskets_map:
             continue
         basket_info = baskets_map.get(bid) or {}
         bname = _clean_str(mc.get("basket") or basket_info.get("name") or bid)
@@ -2744,6 +2972,11 @@ def _build_themes(blob: dict | None, member_ctx_list: list, baskets_map: dict) -
             "rank": sp.get("rank"),
             "n_themes": sp.get("n_themes"),
         }
+
+    # Link only what ships. Done once here, after both row sources have merged,
+    # so neither can slip a row past the gate.
+    for r in rows:
+        r["linked"] = (linkable_baskets is None) or (r["id"] in linkable_baskets)
 
     if not rows and not basket_alloc and not sector_pulse:
         return None
@@ -2952,12 +3185,14 @@ def build_page_context(
     all_groups: set[str] | None = None,
     dow30_set: set[str] | None = None,
     linkable_tickers: frozenset[str] | None = None,
+    linkable_baskets: frozenset[str] | None = None,
 ) -> dict:
     """Build the full v2 context dict for one ticker. Pure — no I/O.
 
     `linkable_tickers`: tickers that ship a stocks/<T>.html page, passed in
     rather than read here so this stays pure. None = link every peer (the
     pre-filter behaviour). See _build_peers.
+    `linkable_baskets`: the same contract for basket/<id>.html. See _build_themes.
     """
     blob = per.get("blob")
     ohlc_bars = per.get("ohlc_bars") or []
@@ -3045,7 +3280,7 @@ def build_page_context(
         self_cap_hint=profile.get("mktcap_bn"),
         linkable=linkable_tickers,
     )
-    themes_raw = _build_themes(blob, member_ctx_list, baskets_map)
+    themes_raw = _build_themes(blob, member_ctx_list, baskets_map, linkable_baskets)
     signal_history = _build_signal_history(blob)
     seasonality = _build_seasonality_section(season_this, season_this_zh, season_next, season_next_zh, monthly_data)
     profile_extras = _build_profile_extras(blob)
@@ -3256,6 +3491,8 @@ def run(
     # sound (never links a 404), one night behind for a brand-new ticker.
     linkable_tickers = rendered_ticker_pages(site)
     log.info("Peer links restricted to %d shipped ticker page(s)", len(linkable_tickers))
+    linkable_baskets = rendered_basket_pages(site)
+    log.info("Basket links restricted to %d shipped basket page(s)", len(linkable_baskets))
 
     n_rendered = 0
     n_skipped = 0
@@ -3342,6 +3579,7 @@ def run(
                 ticker, name, sector, per, agg, generated_utc,
                 group=group, all_groups=_all_groups, dow30_set=dow30_set,
                 linkable_tickers=linkable_tickers,
+                linkable_baskets=linkable_baskets,
             )
 
             # ── Share card (og:image) ─────────────────────────────────────
@@ -3474,6 +3712,27 @@ def run(
             _ytd = _ytd_row.get("ticker_ret") if _ytd_row else None
             _ytd_pos = _ytd_row.get("positive") if _ytd_row else None
 
+            # --- Market-hub fields (engine/stocks_hub.py) ------------------
+            # All four come from artifacts this loop has already loaded, so the
+            # boards cost no extra I/O on the render path.
+            _bars = per.get("ohlc_bars") or []
+            _chg_f = None
+            _chg = _hero.get("chg") if isinstance(_hero, dict) else None
+            if isinstance(_chg, dict):
+                try:                             # "+2.93%" -> 2.93
+                    _chg_f = float(str(_chg.get("pct", "")).rstrip("%"))
+                except (ValueError, TypeError):
+                    _chg_f = None
+            _vol = _volume_stats(_bars) or {}
+            _r52 = _hero.get("range52") if isinstance(_hero, dict) else None
+            _pos52 = _r52.get("pos_pct") if isinstance(_r52, dict) else None
+            try:
+                _cap_bn = float(((blob or {}).get("profile") or {}).get("mktcap_bn"))
+                if not math.isfinite(_cap_bn) or _cap_bn <= 0:
+                    _cap_bn = None
+            except (TypeError, ValueError):
+                _cap_bn = None
+
             index_rows.append({
                 "ticker": ticker,
                 "name": name,
@@ -3481,7 +3740,16 @@ def run(
                 "state_chip": state_chip,
                 "state_chip_zh": state_chip_zh,
                 "stance_class": ctx["stance_class"],
+                "stance_key": stance_key,
                 "price": f"${_price_f:,.2f}" if _price_f is not None else None,
+                "price_f": _price_f,
+                "chg": _chg_f,
+                "vol": _vol.get("vol"),
+                "dvol": _vol.get("dvol"),
+                "rvol": _vol.get("rvol"),
+                "pos52": _pos52,
+                "cap_bn": _cap_bn,
+                "asof": _bar_date(_bars[-1]) if _bars else None,
                 "ytd": _ytd,
                 "ytd_pos": _ytd_pos,
             })
@@ -3492,15 +3760,17 @@ def run(
             n_skipped += 1
             continue
 
-    # --- Index page ---
+    # --- Index page (the market hub) ---
     if not context_only and tmpl_index:
         try:
             index_rows_sorted = sorted(index_rows, key=lambda r: r["ticker"])
+            hub = _build_hub_context(site, index_rows_sorted)
             index_html = tmpl_index.render(
                 rows=index_rows_sorted,
                 n_total=len(index_rows_sorted),
                 generated_utc=generated_utc,
                 canonical_url=f"{CANONICAL_BASE}/stocks/index.html",
+                **hub,
             )
             write_page(out / "index.html", index_html)
             index_written = True

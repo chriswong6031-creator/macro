@@ -7,6 +7,7 @@ import inspect
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -32,6 +33,7 @@ from engine.capital_structure.source_identity import (
     manifest_id_for,
     validate_manifest_retained_bytes_binding,
 )
+import scripts.compile_capital_structure_document_terms as compile_capital_structure_document_terms
 from scripts.compile_capital_structure_document_terms import (
     DOCUMENT_TERM_COLUMNS,
     compile_from_disk,
@@ -53,6 +55,23 @@ def _write_ledger(path, records):
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests/fixtures/capital_structure/document_terms/registration_fee_table_submission.txt"
+# EDGAR writes the opener with its own ``.hdr.sgml`` payload; a bare
+# ``<SEC-HEADER>`` is a grammar it never emits. Every synthetic fixture below
+# must therefore use the real form, or the suite goes green against bytes that
+# cannot occur -- which is exactly how the 100% production rejection hid.
+HEADER_OPEN = b"<SEC-HEADER>0000000001-26-000001.hdr.sgml : 20260801\n"
+# Headers below are VERBATIM bytes served by EDGAR; only the document payload is
+# a placeholder. The filing-agent fixture was transmitted by Edgar Agents LLC
+# (accession prefix 0001213900) for registrant CIK 0001534154 -- the two differ,
+# as they do for 387 of the 400 filings in the production ledger.
+REAL_AGENT_FIXTURE = (
+    ROOT
+    / "tests/fixtures/capital_structure/document_terms/real_edgar_filing_agent_submission.txt"
+)
+REAL_MULTI_FILER_FIXTURE = (
+    ROOT
+    / "tests/fixtures/capital_structure/document_terms/real_edgar_multi_filer_submission.txt"
+)
 SUPPORTED_RUNTIME_EXECUTABLES = (
     pytest.param(sys.executable, id="active-reviewed-runtime"),
     pytest.param(
@@ -808,7 +827,7 @@ def test_cold_tracked_source_export_import_is_repeatable_without_bytecode(tmp_pa
     assert outputs == [outputs[0]] * 3
     assert outputs[0] == (
         "263 d47515272069bfc3f3f768b84b94a218f7f66e7c746e36a8702efd97c26af645 "
-        "3650894df320e83771b1d9c0de6fd658cde50e2d7533cb958fc835837c32a18c "
+        "a5f1ef92d101b0028d234219247613b7812350e9938a768f606ceade9d3db4ba "
         "7adefd79136224d8c0ca0c84cd4ef41bd206690f9ec28622cdf95f682c811b28"
     )
     assert not list(export_root.rglob("__pycache__"))
@@ -819,12 +838,12 @@ def test_released_authority_policy_has_independent_golden_closure():
     manifest, manifest_sha256, implementation_sha256 = document_terms._semantic_closure(
         policy.entrypoints,
     )
-    assert len(manifest) == 421
+    assert len(manifest) == 426
     assert manifest_sha256 == (
-        "de327cf44e5e00e5a43e36f0f26ddc4ba71d3f2ea662a93c303d9af3a46142fa"
+        "52b07cecee3990eba3d059ad5cce51f5d1b75a1d278af06db13a56bacbaee23a"
     )
     assert implementation_sha256 == (
-        "3650894df320e83771b1d9c0de6fd658cde50e2d7533cb958fc835837c32a18c"
+        "a5f1ef92d101b0028d234219247613b7812350e9938a768f606ceade9d3db4ba"
     )
     assert len(manifest) == policy.dependency_count
     assert manifest_sha256 == policy.dependency_manifest_sha256
@@ -1335,12 +1354,12 @@ def test_complete_submission_header_binds_exact_source_id_and_form():
     with pytest.raises(ManifestIdentityError, match="filing.form is detached"):
         validate_manifest_retained_bytes_binding(rewritten_form, raw)
 
-    absent_header = raw.replace(b"<SEC-HEADER>\n", b"")
+    absent_header = raw.replace(HEADER_OPEN, b"")
     with pytest.raises(ManifestIdentityError, match="canonical SEC-HEADER opener"):
         validate_manifest_retained_bytes_binding(_manifest(absent_header), absent_header)
 
     multiple_headers = raw.replace(
-        b"<SEC-HEADER>\n", b"<SEC-HEADER>\n<SEC-HEADER>\n",
+        HEADER_OPEN, HEADER_OPEN + HEADER_OPEN,
     )
     with pytest.raises(ManifestIdentityError, match="canonical SEC-HEADER opener"):
         validate_manifest_retained_bytes_binding(_manifest(multiple_headers), multiple_headers)
@@ -1367,9 +1386,9 @@ def test_complete_submission_header_binds_exact_source_id_and_form():
         (lambda raw: raw.replace(b".txt\n", b"0.txt\n", 1), "SEC-DOCUMENT"),
         (lambda raw: raw.replace(raw.splitlines(keepends=True)[0], raw.splitlines(keepends=True)[0] * 2, 1), "SEC-DOCUMENT"),
         (lambda raw: raw.replace(raw.splitlines(keepends=True)[0], raw.splitlines(keepends=True)[0] + b"<SEC-DOCUMENT>0000000002-26-000002.txt\n", 1), "SEC-DOCUMENT"),
-        (lambda raw: raw.replace(b"<SEC-HEADER>\n", b"junk<SEC-HEADER>\n", 1), "SEC-HEADER"),
-        (lambda raw: raw.replace(b"<SEC-HEADER>\n", b"<SEC-HEADER>evil\n", 1), "SEC-HEADER"),
-        (lambda raw: raw.replace(b"<SEC-HEADER>\n", b"<SEC-HEADER evil>\n", 1), "SEC-HEADER"),
+        (lambda raw: raw.replace(HEADER_OPEN, b"junk" + HEADER_OPEN, 1), "SEC-HEADER"),
+        (lambda raw: raw.replace(HEADER_OPEN, b"<SEC-HEADER>evil\n", 1), "SEC-HEADER"),
+        (lambda raw: raw.replace(HEADER_OPEN, b"<SEC-HEADER evil>\n", 1), "SEC-HEADER"),
         (lambda raw: raw.replace(b"<DOCUMENT>\n", b"junk<DOCUMENT>evil\n", 1), "DOCUMENT opener"),
         (lambda raw: raw.replace(b"<DOCUMENT>\n", b"<DOCUMENT evil>\n", 1), "DOCUMENT opener"),
         (lambda raw: raw.replace(b"<DOCUMENT>\n", b"</SEC-HEADER>evil\n<DOCUMENT>\n", 1), "SEC-HEADER closer"),
@@ -1387,8 +1406,14 @@ def test_complete_submission_header_binds_exact_source_id_and_form():
         (lambda raw: raw.replace(b"CENTRAL INDEX KEY: 1", b"CENTRAL INDEX KEY: 10000000001", 1), "CENTRAL INDEX KEY"),
         (lambda raw: raw.replace(b"CENTRAL INDEX KEY: 1", b"CENTRAL INDEX KEY: 1evil", 1), "CENTRAL INDEX KEY"),
         (lambda raw: raw.replace(b"CENTRAL INDEX KEY: 1\n", b"", 1), "CENTRAL INDEX KEY"),
-        (lambda raw: raw.replace(b"CENTRAL INDEX KEY: 1\n", b"CENTRAL INDEX KEY: 1\nCENTRAL INDEX KEY: 1\n", 1), "CENTRAL INDEX KEY"),
-        (lambda raw: raw.replace(b"CENTRAL INDEX KEY: 1\n", b"CENTRAL INDEX KEY: 1\nCENTRAL INDEX KEY: 2\n", 1), "CENTRAL INDEX KEY"),
+        # Co-registrant CIK lines are legal (see the multi-filer test below), so
+        # arity alone is not the defense. What must still hold is that the
+        # manifest issuer is named by the retained header: re-pointing the sole
+        # FILER at another company must not carry the manifest's issuer with it.
+        (lambda raw: raw.replace(b"CENTRAL INDEX KEY: 1\n", b"CENTRAL INDEX KEY: 2\n", 1), "issuer.cik is detached"),
+        (lambda raw: raw.replace(b"CENTRAL INDEX KEY: 1\n", b"CENTRAL INDEX KEY: 2\nCENTRAL INDEX KEY: 3\n", 1), "issuer.cik is detached"),
+        # The opener payload is pinned to this submission's own accession.
+        (lambda raw: raw.replace(HEADER_OPEN, b"<SEC-HEADER>0000000002-26-000002.hdr.sgml : 20260801\n", 1), "SEC-HEADER opener accession conflicts"),
     ],
 )
 def test_complete_submission_rejects_structural_and_header_lookalikes(mutation, error):
@@ -1397,10 +1422,99 @@ def test_complete_submission_rejects_structural_and_header_lookalikes(mutation, 
         validate_manifest_retained_bytes_binding(_manifest(raw), raw)
 
 
+def _real_manifest(raw: bytes, *, accession: str, cik: str, form: str) -> dict:
+    """Manifest for a fixture whose header is verbatim EDGAR, not hand-written."""
+    record = deepcopy(_manifest(raw, form=form))
+    digest = sha256(raw).hexdigest()
+    record["filing"]["accession"] = accession
+    record["filing"]["form"] = form
+    record["document"]["document_type"] = form
+    record["document"]["content_sha256"] = digest
+    record["document"]["byte_length"] = len(raw)
+    record["document"]["root_locator"] = f"sha256:{digest}"
+    record["source_id"] = f"{accession}:0:complete-submission.txt"
+    record["issuer"] = {
+        "issuer_id": f"sec:cik:{cik.zfill(10)}", "cik": cik, "ticker": "AUID",
+        "aliases": ["Fixture Issuer"],
+    }
+    record["storage"]["object_key"] = (
+        f"capital_structure/sec/sha256/{digest[:2]}/{digest}"
+    )
+    record["spans"] = [{
+        "span_id": f"root:{digest}", "locator_type": "document",
+        "locator": f"bytes:0-{len(raw)}", "text_sha256": digest,
+    }]
+    record["manifest_id"] = manifest_id_for(record)
+    return record
+
+
+def test_real_edgar_filing_agent_submission_is_accepted():
+    """A filing agent's accession prefix is NOT the registrant's CIK.
+
+    Every byte from ``<SEC-DOCUMENT>`` through ``</SEC-HEADER>`` here is what
+    EDGAR served for authID Inc.'s S-1/A. Edgar Agents LLC transmitted it, so
+    the accession prefix is 0001213900 while the registrant is 0001534154.
+    Anchoring issuer identity to the accession prefix rejected 387 of the 400
+    filings in the production ledger; anchoring it to the header FILER block
+    accepts them. This fixture fails closed if that anchor ever regresses.
+    """
+    raw = REAL_AGENT_FIXTURE.read_bytes()
+    assert raw.startswith(b"<SEC-DOCUMENT>0001213900-26-080882.txt : 20260723\n")
+    assert b"\n<SEC-HEADER>0001213900-26-080882.hdr.sgml : 20260723\n" in raw
+    assert b"CENTRAL INDEX KEY:\t\t\t0001534154\n" in raw
+    validate_manifest_retained_bytes_binding(
+        _real_manifest(
+            raw, accession="0001213900-26-080882", cik="1534154", form="S-1/A",
+        ),
+        raw,
+    )
+
+
+def test_real_edgar_multi_filer_submission_binds_any_co_registrant():
+    """Co-registrant submissions declare several FILER blocks, all legitimate."""
+    raw = REAL_MULTI_FILER_FIXTURE.read_bytes()
+    header_ciks = re.findall(
+        rb"^[ \t]*CENTRAL[ \t]+INDEX[ \t]+KEY[ \t]*:[ \t]*([0-9]{1,10})[ \t]*$",
+        raw, re.MULTILINE,
+    )
+    assert len(header_ciks) == 6, header_ciks
+
+    for cik in (b"0000230211", b"0001048911"):
+        assert cik in header_ciks
+        validate_manifest_retained_bytes_binding(
+            _real_manifest(
+                raw,
+                accession="0001104659-26-085422",
+                cik=cik.decode().lstrip("0"),
+                form="S-3ASR",
+            ),
+            raw,
+        )
+
+    # A company absent from every FILER block still cannot claim the filing.
+    outsider = _real_manifest(
+        raw, accession="0001104659-26-085422", cik="9999999", form="S-3ASR",
+    )
+    with pytest.raises(ManifestIdentityError, match="issuer.cik is detached"):
+        validate_manifest_retained_bytes_binding(outsider, raw)
+
+
+def test_bare_sec_header_opener_is_not_accepted():
+    """The grammar EDGAR never emits must not be the grammar we accept.
+
+    The suite was previously written entirely against ``<SEC-HEADER>\\n``. That
+    fiction is what let a validator that rejected 100% of real filings ship
+    green, so the bare form is now explicitly refused.
+    """
+    raw = FIXTURE.read_bytes().replace(HEADER_OPEN, b"<SEC-HEADER>\n", 1)
+    with pytest.raises(ManifestIdentityError, match="canonical SEC-HEADER opener"):
+        validate_manifest_retained_bytes_binding(_manifest(raw), raw)
+
+
 def _move_header_before_sec_document(raw: bytes) -> bytes:
     first_line = raw.splitlines(keepends=True)[0]
-    without_lines = raw.replace(first_line, b"", 1).replace(b"<SEC-HEADER>\n", b"", 1)
-    return b"<SEC-HEADER>\n" + first_line + without_lines
+    without_lines = raw.replace(first_line, b"", 1).replace(HEADER_OPEN, b"", 1)
+    return HEADER_OPEN + first_line + without_lines
 
 
 def _move_outer_close_before_first_document(raw: bytes) -> bytes:
@@ -1426,8 +1540,8 @@ def _move_child_close_before_first_document(raw: bytes) -> bytes:
         (lambda raw: raw + b"\ntransport trailer", "must terminate"),
         (
             lambda raw: raw.replace(
-                b"<SEC-HEADER>\n",
-                b"<DOCUMENT>\n</DOCUMENT>\n<SEC-HEADER>\n",
+                HEADER_OPEN,
+                b"<DOCUMENT>\n</DOCUMENT>\n" + HEADER_OPEN,
                 1,
             ),
             "precedes the canonical SEC header",
@@ -1597,6 +1711,91 @@ def test_disk_compiler_resolves_mixed_manifest_namespaces_independently(tmp_path
     assert set(ledger["issuer_id"]) == {"sec:cik:0000000001", "sec:cik:0000000002"}
 
 
+def _root_span_only_fixture() -> tuple[bytes, dict]:
+    """A deferral row: the whole document is the only evidence span.
+
+    Declaring form ``S-3`` against an ``S-3/A`` primary document makes
+    ``_eligible_documents`` return nothing, so every row defers with
+    ``eligible_document_not_found`` -- no child document, and the manifest root
+    as its single span. That is the shape the 2026-08-06 nightly aborted on.
+    """
+    raw = FIXTURE.read_bytes().replace(b"<TYPE>S-3", b"<TYPE>S-3/A")
+    return raw, _manifest(raw, form="S-3")
+
+
+def test_disk_compiler_binds_root_span_only_rows_against_their_retained_bytes(tmp_path):
+    """Regression: run 31067383446 aborted the whole nightly on this shape.
+
+    ``_validate_observation_lineage`` used to read source bytes only for rows
+    carrying a child document or a span narrower than the document, and pass
+    ``None`` for the rest. ``validate_observation_source_binding`` re-derives
+    manifest identity from the submission envelope first, so it requires the
+    bytes for every row -- the deferral rows below made it raise
+    ``ManifestIdentityError("retained source bytes are required")`` and the
+    collect job exited 1 with no ledger written.
+    """
+    raw, manifest = _root_span_only_fixture()
+    _write_ledger(source_ledger_path(tmp_path), [manifest])
+
+    class Store:
+        store_id = "r2_shared"
+
+        def get_verified(self, object_key: str, expected_sha256: str) -> bytes | None:
+            return raw
+
+    result = compile_from_disk(
+        root=tmp_path, generated_at="2026-08-03T00:00:00Z", source_store=Store()
+    )
+    assert result["status"] == "ok"
+    assert result["new_observations"] == 5
+
+    ledger = pd.read_parquet(tmp_path / "document_term_observations.parquet")
+    assert len(ledger) == 5
+    observations = [json.loads(value) for value in ledger["observation_json"]]
+    # Pin the SHAPE too. Without this the fixture could drift into carrying a
+    # child document or a table span, and the test would keep passing while no
+    # longer exercising the path that broke.
+    assert {row["state"]["reason"] for row in observations} == {"eligible_document_not_found"}
+    assert all(row["document"]["child_document_type"] is None for row in observations)
+    assert all(
+        {span["locator_type"] for span in row["evidence"]["spans"]} == {"document"}
+        for row in observations
+    )
+
+
+def test_lineage_validation_reads_retained_bytes_for_every_row_shape(tmp_path):
+    """The lineage pass must ASK for the bytes, not decide the row is exempt.
+
+    Pinned on the reader rather than on the outcome: the compiler's memoized
+    reader means a byte read is a dict hit by the time lineage runs, so a
+    re-introduced shortcut would be invisible to timing or to a store call
+    count. Asking is the behaviour under test.
+    """
+    raw, manifest = _root_span_only_fixture()
+    observations = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z"
+    )["observations"]
+    assert observations, "fixture must produce rows"
+
+    asked: list[str] = []
+
+    def spy(record):
+        asked.append(str(record["manifest_id"]))
+        return raw
+
+    compile_capital_structure_document_terms._validate_observation_lineage(
+        observations, [manifest], _contract(), source_reader=spy,
+    )
+    assert asked == [str(manifest["manifest_id"])]
+
+    # Genuinely absent bytes stay a hard, named refusal -- the all-or-nothing
+    # law: no partial ledger, and never a quiet pass on unbound evidence.
+    with pytest.raises(ValueError, match="source bytes are unavailable"):
+        compile_capital_structure_document_terms._validate_observation_lineage(
+            observations, [manifest], _contract(), source_reader=lambda record: None,
+        )
+
+
 def test_debt_and_unit_rows_have_safe_explicit_dimensions_not_share_defaults():
     raw = FIXTURE.read_bytes()
     raw = raw.replace(b"Common stock", b"Senior notes")
@@ -1685,8 +1884,8 @@ def test_ex_filing_fees_child_is_selected_with_exact_child_provenance():
         b"<TEXT><html><body>No fee table in the primary document.</body></html></TEXT>"
     )
     raw = (
-        b"<SEC-DOCUMENT>0000000001-26-000001.txt\n<SEC-HEADER>\n"
-        b"CONFORMED SUBMISSION TYPE: S-3\nCENTRAL INDEX KEY: 1\n"
+        b"<SEC-DOCUMENT>0000000001-26-000001.txt\n" + HEADER_OPEN
+        + b"CONFORMED SUBMISSION TYPE: S-3\nCENTRAL INDEX KEY: 1\n"
         b"ACCESSION NUMBER: 0000000001-26-000001\n<DOCUMENT>\n" + primary
         + b"</DOCUMENT>\n<DOCUMENT>\n" + fee_child + b"</DOCUMENT>\n</SEC-DOCUMENT>"
     )

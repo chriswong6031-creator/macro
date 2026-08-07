@@ -1,19 +1,43 @@
 name: marketing-earnings-wire
 # ─────────────────────────────────────────────────────────────────────────────
-# THE EARNINGS POST TYPE, ARMED. It has never run.
+# THE EARNINGS POST TYPE, ARMED. This workflow is what runs it, and it does run:
+# the cron below has fired on every reporting window since it shipped
+# (`gh run list --workflow=marketing-earnings-wire.yml`).
 #
-# WHAT THIS FIXES. `engine/marketing/fastlane.py` builds a complete earnings
-# post — copy plus a branded card from `chart_render.render_earnings_card` — and
-# NOTHING INVOKES IT. `scripts/marketing_fastlane_daemon.py --lane earnings` has
-# no systemd unit, no workflow and no cron; the only unit that exists
-# (app/deploy/marketing-press-feeds.service) drives `--lane press`. No `earnings`
-# item has ever reached the outbox. An entire kind, with its own illustration,
-# dark since the day it was written.
-#
-# Driven by hand on 2026-07-31 it worked first time, and its copy was six figures
-# with an emoji lead and no point of view — because a dark lane is frozen at the
+# WHAT THIS ORIGINALLY FIXED. `engine/marketing/fastlane.py` builds a complete
+# earnings post — copy plus a branded card from
+# `chart_render.render_earnings_card` — and NOTHING INVOKED IT.
+# `scripts/marketing_fastlane_daemon.py --lane earnings` had no systemd unit, no
+# workflow and no cron; the only unit that existed
+# (app/deploy/marketing-press-feeds.service) drives `--lane press`. An entire
+# kind, with its own illustration, dark since the day it was written. Driven by
+# hand on 2026-07-31 it worked first time, and its copy was six figures with an
+# emoji lead and no point of view — because a dark lane is frozen at the
 # standard of the day it shipped while every copy law around it moved on. That
 # copy was rewritten in the same change; this workflow is what makes it run.
+#
+# WHAT WAS STILL BROKEN, AND WHAT FIXED IT (R0-B, 2026-08-06). Running is not
+# the same as working. The `sparse-checkout` cone below listed every path this
+# lane WRITES and missed the one that decides whether it may write anything:
+# `site/marketdata`. `fastlane.UNIVERSE_PATH` reads
+# site/marketdata/sp500_heatmap.json for the eligible-ticker set; with the
+# directory coned out `_load_universe` returned None, `run_tick` fell to its
+# fail-closed branch, and EVERY candidate was skipped "universe unavailable".
+# The lane therefore ran on schedule, emitted nothing it was ever capable of
+# emitting, and exited 0 saying "nothing queued this pass" — for as long as
+# nobody diffed the cone against the code. Run 31113734214 (2026-08-06T15:00Z,
+# conclusion `success`) is the receipt: `[fastlane] tick | emitted=0 skipped=0
+# quarantined=0`, which is byte-identical to a genuinely quiet reporting hour.
+#
+# Two changes, and neither of them weakens the fail-closed universe (that
+# behaviour is correct and is pinned):
+#   1. `site/marketdata` is in the cone, pinned against the code constant by
+#      tests/test_marketing_fastlane.py::TestTheEarningsLaneIsActuallyArmed.
+#   2. A zero-emission pass now NAMES ITS CAUSE. The daemon's per-pass line
+#      carries events_in, the universe state, and skip/quarantine counts broken
+#      down by reason, and an unreadable universe raises a line-start
+#      ::warning — because with zero candidates in the window a broken universe
+#      produces no skip record at all, and three zeroes read as a healthy lane.
 #
 # SAME SHAPE AS marketing-press-wire.yml, and for the same reason: the VPS daemon
 # emits with spool=True into the GITIGNORED items-host.jsonl, which the publisher
@@ -77,6 +101,16 @@ jobs:
         # wire's): `earnings_feed` reads earnings.parquet to know who reports,
         # which is the whole input to this lane. That is also why this job
         # installs pandas and the press lane refuses to.
+        #
+        # site/marketdata IS THE ELIGIBILITY GATE and was missing from this cone
+        # from the day the workflow shipped. `fastlane.UNIVERSE_PATH` reads
+        # site/marketdata/sp500_heatmap.json; with the directory coned out,
+        # _load_universe returns None and run_tick fails CLOSED — every candidate
+        # skipped "universe unavailable", nothing queued, exit 0. Coning it out
+        # does not degrade the lane, it switches the lane off, silently. Proved
+        # in run 31113734214 (2026-08-06). Pinned against the constant by
+        # tests/test_marketing_fastlane.py::TestTheEarningsLaneIsActuallyArmed,
+        # so moving the read path without moving this line turns that test red.
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
@@ -89,6 +123,7 @@ jobs:
             data/marketing
             data/earnings
             site/live
+            site/marketdata
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: setup python

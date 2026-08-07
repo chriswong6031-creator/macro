@@ -16,7 +16,7 @@ the regime engine write. It emits two artifacts:
     each channel carrying its universe count + percentile cuts + full ticker array + an
     unevaluable bucket), and ``base_rates`` (W3).
 
-DISCIPLINE — display / LLM-context ONLY, NEVER scored (masterplan §4; DNR row 45 / TXI
+DISCIPLINE — display / LLM-context ONLY, NEVER scored (masterplan §4; DNR:KILL-CAUSAL-DAG-ALPHA / TXI
 Article 1/2). A chain state is a WATCH item with (eventually) printed conditional base
 rates; it NEVER emits an alpha score, gates a trade, sizes anything, or escalates an
 alert. There is no LLM anywhere in this module — only compiled deterministic detectors
@@ -234,7 +234,7 @@ def load_chains(root: Path | None = None, *, include_killed: bool = False,
     until a human PR promotes them out). They are loaded here through the SAME validate
     path as top-level seeds — so W1 auto-compiles their state and W3 auto-backtests them
     on the next cycle — but are tagged ``_proposed`` and stay hypothesis-tier display-only
-    (TXI-R5 / DNR row 45: authority only ever via the gauntlet, humans stay at library
+    (TXI-R5 / DNR:KILL-CAUSAL-DAG-ALPHA: authority only ever via the gauntlet, humans stay at library
     review + promotion). A proposed file with a schema-violating / unresolvable node is
     still skipped-or-raised exactly like a top-level file.
     """
@@ -892,7 +892,7 @@ CAVEATS = [
 # whose screen fields are missing is NEVER silently safe or unsafe.
 #
 # DISCIPLINE: display-only, deterministic, LLM-free. A screen never scores/ranks/sizes; it
-# is a WATCH-grade membership flag with the field receipt (masterplan §4; DNR row 45).
+# is a WATCH-grade membership flag with the field receipt (masterplan §4; DNR:KILL-CAUSAL-DAG-ALPHA).
 # --------------------------------------------------------------------------- #
 _ARMED_STATES = {"arming", "propagating", "expressed"}
 

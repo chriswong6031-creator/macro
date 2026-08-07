@@ -125,3 +125,17 @@ MSFT 789019, Alphabet 1652044, Amazon 1018724, Meta 1326801, NVIDIA 1045810.
 **Timing caveat (worked case):** this engine is a **watchlist-builder / thesis-confirmer,
 NOT an entry-timer** — 13D was right and ~9mo early; defer the buy to the dislocation
 overlay rather than chasing the first rally.
+
+## 5. Era breaks (membership / coverage repairs)
+
+The desk's ledger (`data/foresight/log.jsonl`) snapshots theme membership **at flag
+time**, so a membership change never rewrites a logged row — but it does mean rows
+before and after the change describe different populations. Any grade, null or
+base rate quoted across such a boundary must say which era it covers.
+
+| Date | Theme | Change | What may NOT be cited across it |
+|---|---|---|---|
+| 2026-08-05 | `space_satellite` | Members 6 → 11: the launch-and-constellation cohort (RKLB, ASTS, LUNR, PL, RDW) added alongside the six defense primes (IRDM, GD, LHX, RTX, HWM, BWXT). Defect D15 — the desk was keyed entirely on prime contractors, so new-space could load and re-rate with the desk holding no opinion. | Any pre-2026-08-05 reading of this theme is a read of the **defense primes**, not of space. Its stage history, its grades, and its silence on the 2026-07 new-space washout are all evidence about the prime-contractor supply chain only, and none of it may be cited as the desk having been tested on new-space. Coverage falls at the break (2/6 → 2/11 analyst-covered) because the added names carry no revision data — an honest widening of the denominator, not a loss of signal: `breadth`, `breadth_cov`, `level_state` and `broadening_state` are unchanged across it (pinned in `tests/test_foresight_space_membership.py`). |
+
+Charter for this row: `research/PROPHET_US_MISSED_IGNITIONS_MASTERPLAN_BY_FABLE.md`
+§W-D.2, gate G0.6.

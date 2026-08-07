@@ -438,6 +438,8 @@ _ARTIFACT_KEYS = {
     "top63_excluder_hist", "top63_excluder_family_hist", "top21_excluder_hist",
     "veto_leg_hist", "runner_sector_hist", "eligible_today_sector_hist",
     "conversion", "themes", "basket_misses", "name_score_scorecard",
+    "scan_tier",
+    "priority_score_scorecard",
     "top63_runners", "top21_runners", "eligible_today", "degraded",
 }
 _SUMMARY_KEYS = {
@@ -1199,8 +1201,26 @@ def test_scorecard_measurement_never_raises_an_alarm(capsys, tmp_path, monkeypat
 def test_no_module_outside_the_runner_imports_the_audit():
     """ZERO AUTHORITY (masterplan W0): no rank/gate/size path may read this instrument."""
     root = Path(__file__).resolve().parent.parent
+    # The §4.5 scan lane is the SAME instrument over a wider seeing set, at the
+    # same tier (ops telemetry, zero authority) — so its runner and test join the
+    # allowlist rather than forking the excluder attribution into a second module.
+    # The guard keeps its teeth: no engine scoring path, app, admin or collector
+    # may still name this module.
     allowed = {"engine/prophet_miss_audit.py", "scripts/run_prophet_miss_audit.py",
-               "tests/test_prophet_miss_audit.py"}
+               "tests/test_prophet_miss_audit.py",
+               "scripts/run_us_scan_tier.py", "tests/test_us_scan_tier.py",
+               # W7: the priority_score_scorecard block reads the full-population grade
+               # store, and its tests live beside that store's suite (which is wired into a
+               # CI pack) rather than here. A TEST importing the audit is not an authority
+               # path — the fence is about production modules — so the allowance is scoped
+               # to that one file, not widened to tests/*.
+               "tests/test_us_prophet_grades.py",
+               # 2026-08-06: the off-engine-lane suite names this module because the audit
+               # is one of the four steps it pins into the us_prophet_ledgers job, and it
+               # imports ARTIFACT_REL/FORWARD_LOG_REL so the commit step's `git add` list
+               # is DERIVED from the writer rather than copied out of the workflow. Same
+               # scoping as above: one named test file, no authority path.
+               "tests/test_prophet_off_engine_lane.py"}
     offenders = []
     for d in ("engine", "scripts", "app", "admin", "collectors", "lib", "tools", "tests"):
         for p in (root / d).rglob("*.py"):

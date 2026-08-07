@@ -1,12 +1,33 @@
 # config/site_access.yml — reviewed serving boundary for www.mastermind-x.com.
 #
-# Caddy is DEFAULT-DENY for static content: anything not in `public` is routed
-# through the registration wall, then through app/paywall.py.  The paywall is
-# independently feature-flagged; registration protection is live regardless.
+# Caddy is DEFAULT-DENY for static ASSETS: any non-HTML path not in `public` is
+# routed through the registration wall, then through app/paywall.py. The paywall
+# is independently feature-flagged; registration protection is live regardless.
 #
-# Moving a path into `public` is a security-sensitive product change. Keep the
-# matching list in app/deploy/Caddyfile byte-for-byte aligned; the boundary test
-# fails if the two drift.
+# HTML DOCUMENTS ARE NOT IN THAT CLASS ANY MORE (operator 2026-08-04). Every
+# *.html page shell is served to anonymous visitors — the registration wall that
+# used to 302 ~239 member pages to /?signin=1&ret=<path> was removed, along with
+# the @reg_html / @reg_html_err matchers that enforced it. See the block comment
+# in app/deploy/Caddyfile above @reg_asset.
+#
+# So this file's `public` list no longer decides whether a PAGE is reachable —
+# it decides whether an ASSET is. The .html entries below are retained because
+# the Caddy @reg_asset exclusion list is compared against this file byte-for-byte
+# by tests/test_site_access_boundary.py; they are now belt-and-braces, not the
+# thing holding a page open.
+#
+# The paid product is the PAYLOAD, not the page. What still gates:
+#   * everything under `premium.enforced_early` (/premiumdata/,
+#     /capital-structure-data/, and the two named snapshots) — 403 for anonymous
+#     AND Free, ahead of the PAYWALL_ENABLED switch;
+#   * every per-ticker <market>stockdata/*.json graded emit;
+#   * every other data path not named under `public` below.
+# An anonymous visitor therefore reads the shell, the methodology and the honest
+# totals, and tier_preview.js paints the locked slot where the paid rows sit.
+#
+# Moving an ASSET into `public` is still a security-sensitive product change.
+# Keep the matching list in app/deploy/Caddyfile byte-for-byte aligned; the
+# boundary test fails if the two drift.
 schema: site_access.v1
 
 public:
@@ -273,6 +294,24 @@ public:
     - /stock_seasonality.html
     - /stock_seasonality.css
     - /stock_seasonality.js
+    # Filing Forensics presentation + client. The SHELL was opened to anonymous
+    # visitors by the 2026-08-04 *.html change, but these two were never
+    # promoted with it, so the page served a 200 whose stylesheet and script
+    # both 401'd: an unstyled, non-functional skeleton of a paid product, which
+    # is the worst of both boundaries — it protects nothing a stranger wanted
+    # and advertises nothing we sell.
+    #
+    # Safe because the split is already where it belongs. Neither file carries a
+    # finding, a company row, a receipt field or any embedded payload: the CSS
+    # is presentation, and the JS is a pure fetcher whose only two network calls
+    # are /api/forensics/state and /api/forensics/v1/attested-history. Both of
+    # those routes stay untouched behind require_site_full_user (401 signed out,
+    # 403 unentitled), so promoting the client changes who can read the
+    # WORKBENCH, never who can read the WORK. The page's own preview shell is
+    # server-rendered into fundamental_forensics.html and contains only product
+    # anatomy, methodology and the SEC basis — no rows to protect.
+    - /fundamental_forensics.css
+    - /fundamental_forensics.js
     # Existing Terminal ingest compatibility. Remove after the separate
     # Terminal session moves these fetches behind authenticated transport.
     - /factordata/tech_lab.json

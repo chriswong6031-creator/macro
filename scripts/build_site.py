@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -34,6 +35,43 @@ from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_site")
+
+
+# --- per-section timing ledger (masterplan W2: budget telemetry) -----------
+# Checkpoint marks: _tmark("label") records the wall time since the previous
+# mark under that label. Written nightly to data/nightly_timings/ (rides the
+# engine job's `git add data/`) + logged as a table so the run log carries it.
+_T_START = time.perf_counter()
+_T_LAST = _T_START
+_T_SECTIONS: list[tuple[str, float]] = []
+
+
+def _tmark(label: str) -> None:
+    global _T_LAST
+    now = time.perf_counter()
+    _T_SECTIONS.append((label, now - _T_LAST))
+    _T_LAST = now
+
+
+def _write_timing_ledger() -> None:
+    try:
+        rows = sorted(_T_SECTIONS, key=lambda kv: -kv[1])
+        total = time.perf_counter() - _T_START
+        for lab, secs in rows:
+            log.info("timing: %-34s %7.1fs", lab, secs)
+        log.info("timing: %-34s %7.1fs", "TOTAL", total)
+        led = config.data_dir() / "nightly_timings"
+        led.mkdir(parents=True, exist_ok=True)
+        rec = {
+            "utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "total_s": round(total, 1),
+            "sections": {lab: round(secs, 1) for lab, secs in _T_SECTIONS},
+        }
+        with open(led / "build_site.jsonl", "a") as fh:
+            fh.write(json.dumps(rec, separators=(",", ":")) + "\n")
+    except Exception as e:  # noqa: BLE001 — telemetry must never break the render
+        log.warning("timing ledger write failed (%s); skipped", e)
+
 
 QUAD_COLORS = {"Q1": "#2e9e4f", "Q2": "#d4a017", "Q3": "#d04545", "Q4": "#3f78d8"}
 # Charts render on a TRANSPARENT surface so they sit on whatever card colour the
@@ -4409,6 +4447,7 @@ def main() -> int:
     (site / "regime_timeline.json").write_text(
         json.dumps(regime_timeline(hist), separators=(",", ":")))
     f = build_features()
+    _tmark("features+imports")
     from engine.conditions import conditions_frame
     _cf = conditions_frame(f)  # shared by the integrated index risk-model panel
 
@@ -4426,18 +4465,22 @@ def main() -> int:
     alpha_data = None
     try:
         alpha_data = build_alpha_data(site)
+        _tmark("alpha_data")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("alpha data failed: %s", e)
     try:
         build_insider_data(site)               # confirmer-chip map; read by sector pages + library
+        _tmark("insider_data")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("insider data failed: %s", e)
     try:
         build_attention_data(site)             # offshore-attention chip map (display-only); read by discovery
+        _tmark("attention_data")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("attention data failed: %s", e)
     try:
         build_smartmoney_data(site)               # 13F super-investor holdings (CONTEXT)
+        _tmark("smartmoney_data")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("smart-money data failed: %s", e)
     try:
@@ -4454,24 +4497,29 @@ def main() -> int:
         log.error("sector pages failed: %s", e)
     try:
         build_etf_page(env, site, generated)
+        _tmark("etf_page")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("etf page failed: %s", e)
     factor_leadership = None
     try:
         _fac = build_factors_page(env, site, generated)
+        _tmark("factors_page")
         factor_leadership = (_fac or {}).get("leadership")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("factors page failed: %s", e)
     try:
         build_signal_lab_page(env, site, generated)
+        _tmark("signal_lab_page")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("signal lab page failed: %s", e)
     try:
         build_quant_lab_page(env, site, generated)
+        _tmark("quant_lab_page")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("quant lab page failed: %s", e)
     try:
         build_alerts_page(env, site, generated)
+        _tmark("alerts_page")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("alerts page failed: %s", e)
     try:
@@ -4484,6 +4532,7 @@ def main() -> int:
         log.error("support page failed: %s", e)
     try:
         build_unsubscribe_page(env, site, generated)
+        _tmark("plans_support_unsub_pages")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("unsubscribe page failed: %s", e)
     # Quant Lab (advanced analytics): cross-asset concentration + risk budgeting +
@@ -4493,6 +4542,7 @@ def main() -> int:
     try:
         cross_asset_snap = build_advanced_page(env, site, generated, latest, f,
                                                confirming, contradicting)
+        _tmark("advanced_page")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("advanced page failed: %s", e)
     # Supabase account config (public URL + publishable anon key) is BAKED into
@@ -4559,6 +4609,7 @@ def main() -> int:
     try:
         from scripts.build_rr_banner import build as build_rr_banner
         build_rr_banner(site)
+        _tmark("rr_banner")
     except Exception as e:  # noqa: BLE001 — additive, never block the build
         log.warning("rr_banner.json skipped: %s", e)
     # per-ticker factor betas for the watchlist's Portfolio Exposure panel — the
@@ -4660,6 +4711,7 @@ def main() -> int:
                     log.warning("foresight_cascade.json unreadable (%s)", e)
             theme_tape = build_theme_tape(
                 json.loads(_rot_p.read_text()), us_standouts, foresight=_fsight)
+            _tmark("theme_tape")
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("theme tape unavailable (%s)", e)
 
@@ -4884,12 +4936,26 @@ def main() -> int:
                 _sector_setup_lookup[_sr["ticker"]] = _sr
     _ab = action_board(sector_timing, notable, basket_action_items(site),
                        sector_setup_lookup=_sector_setup_lookup)
+    _tmark("action_board+sector_timing")
     # Attach two_reads_chip to sector items across all lanes.
     if _two_reads_lookup:
         for _lane in ("buy_now", "buy_soon", "on_the_run", "take_profits", "hold", "avoid", "notable"):
             for _item in (_ab.get(_lane) or []):
                 if _item.get("kind") == "sector" and _item.get("ticker") in _two_reads_lookup:
                     _item["two_reads_chip"] = _two_reads_lookup[_item["ticker"]]
+
+    # Persist the fully-assembled board so build_sector_central can render the SAME
+    # server-side 5-lane board on the US Sector Intelligence Overview (reader pattern —
+    # build_site runs earlier than build_sector_central in the engine job). The US board
+    # pre-merges every per-item field (sector_setup, EW overlay, two-reads) onto each row,
+    # so the shared include is self-sufficient from action_board alone — no lookup dict.
+    try:
+        _ab_json = site / "basketdata" / "action_board.json"
+        _ab_json.parent.mkdir(parents=True, exist_ok=True)
+        _ab_json.write_text(json.dumps({"action_board": _ab}, ensure_ascii=False),
+                            encoding="utf-8")
+    except Exception as _abe:  # noqa: BLE001 — additive persistence, never fatal
+        log.warning("action_board.json persist failed (%s)", _abe)
 
     # Mag 7 regime panel (data/mag7_regime/latest.json — DISPLAY-ONLY context read).
     # Injected into latest so the template accesses it as latest.mag7_regime.
@@ -5638,6 +5704,7 @@ def main() -> int:
     # US Stock Dashboard — same VM, the "looking for stocks" half of the split.
     out_st = site / "us_stocks.html"
     write_page(out_st, env.get_template("dashboard.html.j2").render(**vm, mode="stocks"))
+    _tmark("dashboard_vm+render")
     log.info("wrote %s (%.0f KB)", out_st, out_st.stat().st_size / 1024)
 
     # Macro Signals — the dense data page that holds every gauge OFFLOADED from
@@ -5735,6 +5802,7 @@ def main() -> int:
     try:
         from scripts.build_sp500_heatmap import build as build_sp500_heatmap
         build_sp500_heatmap(site, generated_utc=generated)
+        _tmark("sp500_heatmap")
         # Finviz themes treemap (theme → subsector tiles, members on hover) —
         # the second map-type on the same page; offline from the committed
         # Finviz snapshot (refresh via scripts/fetch_finviz_themes.py).
@@ -5761,6 +5829,7 @@ def main() -> int:
         from engine.market_heatmap import sibling_markets as _hm_siblings
         from lib.seo import is_public_path as _is_public
         _hm_payloads = build_market_heatmaps(site, generated_utc=generated)
+        _tmark("intl_heatmaps")
         _hm_tmpl = env.get_template("market_heatmap.html.j2")
         for _m, _mk in _HM_MK.items():
             out_mh = site / f"{_m}_heatmap.html"
@@ -5847,6 +5916,7 @@ def main() -> int:
                 log.error("China subsector detail pages failed: %s", e)
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("China subsector rotation failed: %s", e)
+    _tmark("subsector_rotation")
 
     # Subsector Confluence — the ENTRY-NOW desk: each S&P-500 sub-industry (+ the curated
     # thematic baskets) as an equal-weight synthetic index, read through the T1-T4 confluence
@@ -5857,6 +5927,7 @@ def main() -> int:
     try:
         from scripts.build_subsector_confluence import build as build_subsector_confluence
         n_sc = build_subsector_confluence(site, generated_utc=generated)
+        _tmark("subsector_confluence_us")
         log.info("wrote subsectors.html + %d subsector confluence detail pages", n_sc)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("subsector confluence render failed: %s", e)
@@ -5868,6 +5939,7 @@ def main() -> int:
     try:
         from scripts.build_subsector_confluence import build_china as build_subsector_confluence_china
         n_cn = build_subsector_confluence_china(site, generated_utc=generated)
+        _tmark("subsector_confluence_cn")
         log.info("wrote subsectors_china.html + %d China THS confluence detail pages", n_cn)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("china subsector confluence render failed: %s", e)
@@ -5881,6 +5953,7 @@ def main() -> int:
         from scripts.build_subsector_confluence import build_nasdaq, build_russell
         n_ndx = build_nasdaq(site, generated_utc=generated)
         n_rut = build_russell(site, generated_utc=generated)
+        _tmark("nasdaq_russell")
         log.info("wrote %d Nasdaq-100 + %d Russell-2000 subsector confluence detail pages", n_ndx, n_rut)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("nasdaq/russell subsector confluence render failed: %s", e)
@@ -5893,6 +5966,7 @@ def main() -> int:
     try:
         from scripts.build_index_leadership import build as build_index_leadership
         build_index_leadership(site, generated_utc=generated)
+        _tmark("index_leadership")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("index leadership build failed: %s", e)
 
@@ -5940,6 +6014,7 @@ def main() -> int:
                 state_styles=STATE_STYLES, generated_utc=generated,
                 state_display_json=sd_json,
                 ticker_alert_meta_json=_json.dumps(_ta.edge_meta())))
+        _tmark("stock_page")
         # refresh the cached 中文 translations of the (English-sourced) company blurbs
         # BEFORE building the library, so the per-stock JSON carries description_zh.
         # Gated + cached + degrade-never-raise: a no-op without the configured key, and
@@ -5949,8 +6024,10 @@ def main() -> int:
             translate_profiles()
         except Exception as e:  # noqa: BLE001 — translation is optional, never break the build
             log.warning("profile translation step failed (%s); blurbs stay English", e)
+        _tmark("profile_translation")
         from scripts.build_stock_library import main as build_library
         build_library()
+        _tmark("stock_library")
 
         # One-build-lag fix (us_stocks staleness banner): build_library() just wrote
         # THIS build's fresh factordata/us_standouts.json + setups.json, but macro.html
@@ -6022,6 +6099,7 @@ def main() -> int:
                     (_fresh_su.get("staleness") or {}).get("delayed"))
         except Exception as _rr_e:  # noqa: BLE001 — additive, never fatal
             log.warning("one-build-lag re-render skipped (%s)", _rr_e)
+        _tmark("one_build_lag_rerender")
 
         # Bespoke single-stock chart data: a compact per-ticker OHLC JSON
         # (site/ohlc/<T>.json) read client-side by chart.js. Pure serialisation of
@@ -6034,6 +6112,7 @@ def main() -> int:
             n_chart, n_candle = build_chart_data(site)
             log.info("chart data: %d ohlc files (%d candle-capable)", n_chart, n_candle)
             log.info("chart data: %d US intraday (4H) files", emit_intraday(site))
+            _tmark("chart_data")
         except Exception as e:  # noqa: BLE001
             log.warning("chart data step failed (%s); stock charts degrade to no-data", e)
 
@@ -6066,6 +6145,7 @@ def main() -> int:
                     supabase_cfg_json=site_assets.supabase_cfg_json(),
                     wri_regime_json=_json.dumps(_wri_regime),
                     starters_json=_json.dumps(wl.get("suggested", []))))
+            _tmark("watchlist")
             log.info("wrote %s", site / "watchlist.html")
 
         # 🧠 AI stock briefs (LLM "Option 2") — DEFAULT-OFF LEAF. The bounded target
@@ -6189,6 +6269,7 @@ def main() -> int:
             supabase_cfg_json=site_assets.supabase_cfg_json(),
         )
         write_page(site / "committee.html", committee_html)
+        _tmark("committee+neuralwebdata")
         log.info("wrote %s", site / "committee.html")
     except Exception as _nwe:  # noqa: BLE001 — additive; never break main build
         log.warning("committee.html render failed (%s); page skipped", _nwe)
@@ -6201,6 +6282,7 @@ def main() -> int:
             generated_utc=generated,
         )
         write_page(site / "neural_web.html", neural_web_html)
+        _tmark("neural_web_page")
         log.info("wrote %s", site / "neural_web.html")
     except Exception as _nw_public_e:  # noqa: BLE001 — additive; never break main build
         log.warning("neural_web.html render failed (%s); page skipped", _nw_public_e)
@@ -6214,6 +6296,7 @@ def main() -> int:
         log.info("wrote %s", _ff_page)
     except Exception as _ff_e:  # noqa: BLE001 — additive; never break main build
         log.warning("fundamental_forensics.html render failed (%s); page skipped", _ff_e)
+    _tmark("fundamental_forensics")
 
     # BioCatalyst Intelligence — render only the registered preview shell. Trial
     # facts stay in the authenticated, site-full BioCatalyst API; the static
@@ -6224,6 +6307,7 @@ def main() -> int:
         log.info("wrote %s", _bci_page)
     except Exception as _bci_e:  # noqa: BLE001 — additive; never break main build
         log.warning("biocatalyst.html render failed (%s); page skipped", _bci_e)
+    _tmark("biocatalyst")
 
     # Capital Structure Intelligence — data-free premium observed-filing-state
     # shell. Its browser reads stay inside the authenticated API; this render
@@ -6247,6 +6331,7 @@ def main() -> int:
         _sot_ctx = _sot.compose(config.ROOT)
         _sot_html = _sot.render(config.ROOT, _sot_ctx)
         write_page(site / "state_of_themes.html", _sot_html)
+        _tmark("state_of_themes")
         log.info("wrote %s", site / "state_of_themes.html")
         _sot.write_theme_lanes(_sot_ctx, config.ROOT)
     except Exception as _sot_e:  # noqa: BLE001 — additive; never break main build
@@ -6257,6 +6342,7 @@ def main() -> int:
         import scripts.build_market_structure_page as _msp
         _msp_html = _msp.render(config.ROOT)
         write_page(site / "market_structure.html", _msp_html)
+        _tmark("market_structure")
         log.info("wrote %s", site / "market_structure.html")
     except Exception as _msp_e:  # noqa: BLE001 — additive; never break main build
         log.warning("market_structure.html render failed (%s); page skipped", _msp_e)
@@ -6292,6 +6378,7 @@ def main() -> int:
         # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
         print(f"::warning title=sitemap::core sitemap regeneration failed: {_sm_e}", flush=True)
 
+    _write_timing_ledger()
     return 0
 
 

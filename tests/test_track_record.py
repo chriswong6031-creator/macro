@@ -64,8 +64,12 @@ def _write_prices(stocks_dir: Path, ticker: str, close: pd.Series) -> Path:
     return path
 
 
-def _write_signals(signals_dir: Path, ticker: str, asof: str, markers: list[dict]) -> Path:
-    """Write a site/signals/<TICKER>.json following the §7 contract."""
+def _write_signals(signals_dir: Path, ticker: str, asof: str, markers: list[dict],
+                   anchor_era: str | None = None) -> Path:
+    """Write a site/signals/<TICKER>.json following the §7 contract.
+
+    ``anchor_era`` is omitted unless given, so every pre-existing caller keeps writing the
+    exact pre-era payload — which is itself the fixture the era-floor tests need."""
     payload = {
         "ticker": ticker,
         "asof": asof,
@@ -75,6 +79,8 @@ def _write_signals(signals_dir: Path, ticker: str, asof: str, markers: list[dict
         "weekly_bull": True,
         "markers": markers,
     }
+    if anchor_era is not None:
+        payload["anchor_era"] = anchor_era
     path = signals_dir / f"{ticker}.json"
     path.write_text(json.dumps(payload))
     return path
@@ -225,32 +231,45 @@ class TestAppendOnlyFreeze:
             "first-observed quality 'take' was overwritten by later 'block'")
 
     def test_new_marker_appended_without_disturbing_existing(self, tmp_path):
+        """A genuinely new marker in a later run is appended; the first row is frozen.
+
+        DATED POST-FLOOR ON PURPOSE (R-SQ8, 2026-08-06). Everything else in this module
+        uses the 2021 fixture dates, but this is the one test whose subject is a SECOND
+        run discovering a marker the first run had not seen — and the §7 anchor-era floor
+        refuses a PRE-floor key for a ticker that already carries logged rows, because on
+        the live ledger such a key can only be the re-dated image of an event already in
+        the store (the grid re-anchored; a genuinely new fire always arrives with a
+        current date). Keeping 2021 dates here would test the floor, not the append-only
+        law. The floor's own behaviour has its own tests in TestAnchorEraFloor below.
+        """
         stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
         signals_dir = tmp_path / "signals"; signals_dir.mkdir()
         arch = tmp_path / "track_record.parquet"
 
-        close = _daily_close(500)
+        entry, sell = "2026-08-10", "2026-09-07"
+        close = _daily_close(1800)          # 2020-01-01 -> well past the floor
+        assert str(close.index[-1].date()) > sell
         _write_prices(stocks_dir, "AMZN", close)
 
         # Run 1
-        _write_signals(signals_dir, "AMZN", ENTRY_DATE, [
-            {"date": ENTRY_DATE, "type": "buy", "quality": "take", "reason": "held"},
+        _write_signals(signals_dir, "AMZN", entry, [
+            {"date": entry, "type": "buy", "quality": "take", "reason": "held"},
         ])
-        _run(signals_dir, stocks_dir, arch, asof=ENTRY_DATE)
+        _run(signals_dir, stocks_dir, arch, asof=entry)
         df1 = pd.read_parquet(arch)
         assert len(df1) == 1
 
         # Run 2: new sell marker appears
-        _write_signals(signals_dir, "AMZN", SELL_DATE, [
-            {"date": ENTRY_DATE, "type": "buy", "quality": "take", "reason": "held"},
-            {"date": SELL_DATE, "type": "sell"},
+        _write_signals(signals_dir, "AMZN", sell, [
+            {"date": entry, "type": "buy", "quality": "take", "reason": "held"},
+            {"date": sell, "type": "sell"},
         ])
-        _run(signals_dir, stocks_dir, arch, asof=SELL_DATE)
+        _run(signals_dir, stocks_dir, arch, asof=sell)
         df2 = pd.read_parquet(arch)
         assert len(df2) == 2, "new sell marker was not appended"
 
         # Original row is untouched
-        orig = df2[(df2["ticker"] == "AMZN") & (df2["date"] == ENTRY_DATE) & (df2["type"] == "buy")]
+        orig = df2[(df2["ticker"] == "AMZN") & (df2["date"] == entry) & (df2["type"] == "buy")]
         assert orig.iloc[0]["quality"] == "take"
 
 
@@ -1656,3 +1675,152 @@ class TestNearMissCapture:
         row = pd.read_parquet(arch).iloc[0]
         assert pd.isna(row["primary_rejection_reason"])
         assert pd.isna(row["reason_detail"])
+
+
+# ---------------------------------------------------------------------------
+# 9. R-SQ8 — the §7 anchor-era floor
+# ---------------------------------------------------------------------------
+
+ERA = "sq-abs-session-2026-08-06"
+
+
+class TestAnchorEraFloor:
+    """This ledger's identity is (ticker, MARKER DATE, type), keep-FIRST, append-only.
+
+    On 2026-08-06 the §7 marker engine's bucketing grid was re-anchored, which re-dates
+    most historical markers by a session or two (ruling: research/SIGNAL_QUALITY_SESSION_
+    ANCHOR_ADJUDICATION_BY_FABLE.md, R-SQ8). With no guard, the first post-cutover run
+    would mint a NEW row beside every pre-era row whose date moved — permanent
+    double-counting of the same physical fire, in the one store whose whole value is that
+    a fire is logged exactly once. These pin the guard from both sides: nothing that is a
+    re-dating gets in, and nothing that is genuinely new gets refused.
+    """
+
+    def _dirs(self, tmp_path):
+        stocks = tmp_path / "stocks"; stocks.mkdir()
+        signals = tmp_path / "signals"; signals.mkdir()
+        return signals, stocks, tmp_path / "track_record.parquet"
+
+    def test_a_fully_re_dated_history_adds_zero_rows(self, tmp_path):
+        """THE CUTOVER NIGHT. Every marker moves; not one of them is a new event."""
+        signals, stocks, arch = self._dirs(tmp_path)
+        _write_prices(stocks, "AMZN", _daily_close(1800))
+        pre = [{"date": "2021-01-04", "type": "buy", "quality": "take", "reason": "held"},
+               {"date": "2021-03-01", "type": "sell"},
+               {"date": "2021-06-01", "type": "buy", "quality": "block", "reason": "x"}]
+        _write_signals(signals, "AMZN", "2021-06-10", pre)          # pre-era file: no stamp
+        _run(signals, stocks, arch, asof="2021-06-10")
+        before = pd.read_parquet(arch)
+        assert len(before) == 3
+
+        # tonight: the SAME three prints, every one re-dated by the new grid, plus one the
+        # re-draw invented deep in history — the shape the ±4-day guard alone cannot catch.
+        redrawn = [{"date": "2021-01-06", "type": "buy", "quality": "take", "reason": "held"},
+                   {"date": "2021-02-24", "type": "sell"},
+                   {"date": "2021-05-27", "type": "buy", "quality": "block", "reason": "x"},
+                   {"date": "2020-11-02", "type": "sell"}]
+        _write_signals(signals, "AMZN", "2026-08-06", redrawn, anchor_era=ERA)
+        out = _run(signals, stocks, arch, asof="2026-08-06")
+        after = pd.read_parquet(arch)
+        assert len(after) == 3, "a re-dated history must not mint a single new row"
+        assert out["new_rows"] == 0
+        assert out["skipped_pre_era"] == 4
+        assert set(after["date"]) == {"2021-01-04", "2021-03-01", "2021-06-01"}, (
+            "pre-era rows keep their own dates — no backfill, no retro-edit")
+
+    def test_a_fresh_post_floor_marker_is_appended_once_and_carries_the_era(self, tmp_path):
+        signals, stocks, arch = self._dirs(tmp_path)
+        _write_prices(stocks, "AMZN", _daily_close(1800))
+        _write_signals(signals, "AMZN", "2021-01-10",
+                       [{"date": "2021-01-04", "type": "buy", "quality": "take"}])
+        _run(signals, stocks, arch, asof="2021-01-10")
+
+        live = [{"date": "2021-01-04", "type": "buy", "quality": "take"},
+                {"date": "2026-09-07", "type": "sell"}]
+        _write_signals(signals, "AMZN", "2026-09-07", live, anchor_era=ERA)
+        out = _run(signals, stocks, arch, asof="2026-09-07")
+        df = pd.read_parquet(arch)
+        assert out["new_rows"] == 1 and len(df) == 2
+        fresh = df[df["date"] == "2026-09-07"].iloc[0]
+        assert fresh["anchor_era"] == ERA, "a post-era row must be fenceable forever"
+        old = df[df["date"] == "2021-01-04"].iloc[0]
+        assert pd.isna(old["anchor_era"]), "a pre-era row is never retro-stamped"
+
+        # ...and running the same night twice adds nothing (idempotent under the floor)
+        again = _run(signals, stocks, arch, asof="2026-09-07")
+        assert again["new_rows"] == 0 and len(pd.read_parquet(arch)) == 2
+
+    def test_the_boundary_week_is_guarded_across_the_floor(self, tmp_path):
+        """A marker logged just UNDER the floor that re-dates just OVER it.
+
+        The date test alone would wave this through as new — its date really is on or
+        after the floor. The ±4-day same-(ticker, type) leg is what catches it, and it is
+        the reason R-SQ8 mirrors marker_integrity's TOL_DAYS rather than inventing a
+        second tolerance.
+        """
+        signals, stocks, arch = self._dirs(tmp_path)
+        _write_prices(stocks, "AMZN", _daily_close(1800))
+        _write_signals(signals, "AMZN", "2026-08-05",
+                       [{"date": "2026-08-04", "type": "buy", "quality": "take"}])
+        _run(signals, stocks, arch, asof="2026-08-05")
+
+        _write_signals(signals, "AMZN", "2026-08-07",
+                       [{"date": "2026-08-07", "type": "buy", "quality": "take"}],
+                       anchor_era=ERA)          # +3 days, POST-floor, same (ticker, type)
+        out = _run(signals, stocks, arch, asof="2026-08-07")
+        df = pd.read_parquet(arch)
+        assert len(df) == 1 and out["new_rows"] == 0
+        assert out["era_floor_skips"] == {"boundary_week_duplicate": 1}
+        assert df.iloc[0]["date"] == "2026-08-04", "the logged date wins; keep-FIRST"
+
+    def test_a_genuinely_separate_print_outside_the_window_still_appends(self, tmp_path):
+        """The guard must not become a blanket "one row per (ticker, type)" rule."""
+        signals, stocks, arch = self._dirs(tmp_path)
+        _write_prices(stocks, "AMZN", _daily_close(1800))
+        _write_signals(signals, "AMZN", "2026-08-10",
+                       [{"date": "2026-08-10", "type": "buy", "quality": "take"}])
+        _run(signals, stocks, arch, asof="2026-08-10")
+        _write_signals(signals, "AMZN", "2026-09-07",
+                       [{"date": "2026-08-10", "type": "buy", "quality": "take"},
+                        {"date": "2026-08-24", "type": "buy", "quality": "take"}],
+                       anchor_era=ERA)
+        out = _run(signals, stocks, arch, asof="2026-09-07")
+        assert out["new_rows"] == 1 and len(pd.read_parquet(arch)) == 2
+
+    def test_a_from_scratch_build_still_logs_history(self, tmp_path):
+        """The floor is a DUPLICATION guard, and an empty ledger has nothing to duplicate.
+
+        Read literally, "no pre-floor key is ever appended" would make this store
+        impossible to reconstruct and would silently zero every backtest fixture. The
+        guard is therefore scoped to its own premise — a ticker that ALREADY carries
+        logged rows — which is exactly the population R-SQ8's reasoning is about.
+        """
+        signals, stocks, arch = self._dirs(tmp_path)
+        _write_prices(stocks, "AMZN", _daily_close(1800))
+        _write_signals(signals, "AMZN", "2026-08-06",
+                       [{"date": "2021-01-04", "type": "buy", "quality": "take"},
+                        {"date": "2021-03-01", "type": "sell"}], anchor_era=ERA)
+        out = _run(signals, stocks, arch, asof="2026-08-06")
+        assert out["new_rows"] == 2, "a first build must be able to log the past"
+        assert set(pd.read_parquet(arch)["anchor_era"]) == {ERA}
+
+    def test_existing_rows_keep_maturing_across_the_cutover(self, tmp_path):
+        """Fills touch only NULL maturation columns — the floor gates APPENDS, not fills."""
+        signals, stocks, arch = self._dirs(tmp_path)
+        # run 1 sees only a few bars past the marker, so fwd_ret_20 cannot be filled yet
+        _write_prices(stocks, "AMZN", _daily_close(270))
+        _write_signals(signals, "AMZN", "2021-01-10",
+                       [{"date": "2021-01-04", "type": "buy", "quality": "take"}])
+        _run(signals, stocks, arch, asof="2021-01-10")
+        assert pd.isna(pd.read_parquet(arch).iloc[0]["fwd_ret_20"]), "not matured yet"
+
+        _write_prices(stocks, "AMZN", _daily_close(1800))     # forward data has printed
+        _write_signals(signals, "AMZN", "2026-08-06",
+                       [{"date": "2021-01-06", "type": "buy", "quality": "take"}],
+                       anchor_era=ERA)          # re-dated: refused as an append...
+        out = _run(signals, stocks, arch, asof="2026-08-06")
+        df = pd.read_parquet(arch)
+        assert out["new_rows"] == 0 and len(df) == 1
+        row = df.iloc[0]
+        assert row["date"] == "2021-01-04"
+        assert pd.notna(row["fwd_ret_20"]), "...but the row it already had must still mature"

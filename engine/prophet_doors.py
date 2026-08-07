@@ -17,7 +17,7 @@ laggard-cross cell was the one positive (+1.44% per-name). So neither door loose
   eligible ∧ :func:`engine.signal_gate.is_buyable`, tiers T1/T2/T3), fired on a member of a
   top-5 heating theme. The only new thing is candidacy ROUTING — theme heat conditions WHICH
   validated fires get recorded, never WHETHER a fire is a fire. Theme state is a
-  cross-sectional context, so this claims nothing per-name (DNR rows 114-115).
+  cross-sectional context, so this claims nothing per-name (DNR:KILL-ONSET-FINGERPRINTS / DNR:KILL-VOLUME-FINGERPRINTS).
 
   **Door R (re-arm).** The MSFT/PLTR-class re-entry: a name whose trend is intact
   (above200 ∧ weekly_bull) but whose master cross has gone stale (3-15 ticks) and is
@@ -42,8 +42,10 @@ the PSS prospective-accrual charters. Every row is a real forward call made with
 RECORDED FEATURES ARE NOT FIRE CONDITIONS
 -----------------------------------------
 Each flag carries an analysis-only feature block (relay position, admission-day turnover,
-Foresight Desk stage — :data:`FEATURE_KEYS`, prereg §9 addendum 2026-08-04). They exist so the
-promotion read can test the CN-measured relay hypothesis on US forward data from day one.
+Foresight Desk stage — :data:`FEATURE_KEYS`, prereg §9 addendum 2026-08-04; plus the W8
+ignition states, coil and theme thrust, §10 addendum 2026-08-05). They exist so the promotion
+read can test the CN-measured relay hypothesis and the W8 stand-in findings on US forward data
+from day one.
 **They have ZERO effect on fire / cap / dedupe / grading**: :class:`_RecordedFeatures` is
 queried only AFTER a night's kept rows are already decided, and it degrades to nulls on any
 failure. `tests/test_prophet_doors.py::TestFireInvariance` pins that the fire set is identical
@@ -74,10 +76,12 @@ from typing import Any
 import pandas as pd
 
 from engine import confluence_tiers as ct
+from engine import ignition_features as ig
 from engine import signal_gate
 # Reuse the VALIDATED tier math — never reimplement it here (masterplan P1: rewire before
 # invent). These are the same helpers `cascade()` and the §2 audit instruments run on.
 from engine.confluence_tiers import _rsi_macd, _stoch_rsi_kd, _tf_bars, _xup
+from engine.session_anchor import session_positions
 from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 
 log = logging.getLogger("prophet_doors")
@@ -127,6 +131,17 @@ CLOSES_CACHE_NAME = "_closes_cache.parquet"
 VOLUME_CACHE_NAME = "_volume_cache.parquet"
 FORESIGHT_ARTIFACT = ("site", "basketdata", "foresight_cascade.json")
 
+# W8 ignition sensors (prereg §10 addendum, 2026-08-05). The CONSTRUCTIONS live in
+# `engine/ignition_features.py` — a port of the frozen W8 stand-in battery whose fidelity is
+# pinned by `tests/test_ignition_features.py::TestPortFidelity`. Nothing is re-derived here.
+#
+# Frame: `data/baskets/ohlcv/*.parquet` — the SAME panel PR #4564 measured on, and the only
+# local source deep enough. The three breadth `_high_cache`/`_low_cache` parquets carry a
+# MEDIAN of 51 non-null sessions against the 293 an ATR21-percentile-over-252d read needs
+# (measured 2026-08-05: 33 of ~1,550 columns clear 252), so reading high/low from there would
+# null the coil on ~98% of flags. The ohlcv store covers 1,190 of the 1,495 universe names.
+OHLCV_DIR = ("data", "baskets", "ohlcv")
+
 #: Every recorded-feature key. Present on EVERY flag row (null when uncomputable) so a null is
 #: always a disclosed null and never an absent field.
 FEATURE_KEYS = (
@@ -137,11 +152,28 @@ FEATURE_KEYS = (
     "turnover_window",
     "foresight_stage",
     "foresight_covered",
+    "coil_compressed",
+    "coil_bars_compressed",
+    "coil_reason",
+    "theme_thrust_state",
+    "theme_thrust_frac",
+    "theme_thrust_reason",
 )
+
+#: Reason slugs a null coil / thrust block discloses. A feature that could not be computed says
+#: WHY in its own field; it never degrades to `False`, which would read as a measured negative.
+COIL_REASONS = ("ohlcv_absent", "no_bar_on_flag_date", "short_history", "read_failed")
+THRUST_REASONS = ("no_theme", "no_covered_member", "thin_membership", "short_history")
 
 
 def null_features() -> dict[str, Any]:
-    """The all-null feature block. Every failure path returns exactly this shape."""
+    """The all-null feature block. Every failure path returns exactly this shape.
+
+    ``coil_compressed`` and ``theme_thrust_state`` are ``None`` here, never ``False``/``"quiet"``:
+    an uncomputable coil is not an uncompressed name and an unreadable theme is not a quiet
+    theme. ``foresight_covered`` is the one deliberate ``False`` — it is a COVERAGE flag, not a
+    feature, and its companion ``foresight_stage`` carries that block's null.
+    """
     out: dict[str, Any] = {k: None for k in FEATURE_KEYS}
     out["foresight_covered"] = False
     return out
@@ -432,26 +464,33 @@ def theme_membership(root: Path | None = None, *, asof: pd.Timestamp | None = No
 # --------------------------------------------------------------------------- #
 # completed-bucket helper (PIT: never fire off the in-progress resample tail)
 # --------------------------------------------------------------------------- #
-def completed_tf(c: pd.Series, n: int) -> tuple[pd.Series, pd.Series]:
+def completed_tf(c: pd.Series, n: int, market: str = "US") -> tuple[pd.Series, pd.Series]:
     """``confluence_tiers._tf_bars(c, n)`` with the IN-PROGRESS tail bucket dropped.
 
-    `_tf_bars` resamples on an ``{n}B`` grid whose bins are labelled by bin START, so the
-    right-label truncation `confluence_tiers._completed_resample` uses for W-FRI / 2W-FRI
-    (labelled by period END) does not transfer. A bin is provably CLOSED whenever a LATER bin
-    already holds data, so only the FINAL bin needs a test: it closed once the tape printed
-    through its last business day (label + n-1 business days). A holiday inside that bin makes
-    the test conservative — the bin is held open one extra session rather than fired early,
-    which is the correct direction for a point-in-time gate.
+    Every bucket but the last is provably CLOSED (a LATER bucket already holds data), so only
+    the FINAL one needs a test. Under the ABSOLUTE session anchor (era abs-session-2026-08-06)
+    that test is exact arithmetic rather than a calendar guess: a bucket spans reference
+    positions ``[b*n, b*n+n-1]``, so it has closed exactly when the tape's last session sits on
+    its LAST position — ``session_positions(last_obs) % n == n - 1``.
+
+    THIS FUNCTION READS ``_tf_bars``' INDEX. Before the anchor repair that index was pandas'
+    ``{n}B`` bin LABEL (the bin START), and the closing test was "label + n-1 business days
+    <= last_obs". It is now each bucket's LAST OBSERVED SESSION, which would make that same
+    expression drop a bucket that had in fact closed — silently delaying every Door R fire by
+    a session. Pinned by tests/test_prophet_doors.py::test_closed_tail_bucket_is_kept.
+
+    Still conservative in the same direction as before: a name that did not trade on its
+    bucket's final reference session keeps that bucket provisional one extra session rather
+    than firing early, which is the correct side for a point-in-time gate.
 
     This is the guard behind `cascade()`'s ``provisional`` flag (T3 repaints at a measured
     23.8% US because it IS read off the incomplete tail). Door R refuses to repaint.
     """
-    s, known = _tf_bars(c, n)
+    s, known = _tf_bars(c, n, market)
     if len(s) == 0:
         return s, known
-    last_obs = c.index.max()
-    tail_close = s.index[-1] + pd.tseries.offsets.BDay(n - 1)
-    if last_obs < tail_close:
+    last_pos = int(session_positions(c.index[-1:], market)[0])
+    if last_pos % n != n - 1:                 # the final bucket is still taking sessions
         return s.iloc[:-1], known.iloc[:-1]
     return s, known
 
@@ -587,6 +626,17 @@ class _RecordedFeatures:
         Admission-day share volume against the name's OWN recent history.
     ``foresight_stage`` / ``foresight_covered``
         The Thematic Foresight Desk's stage for the flag's theme, when the desk covers it.
+    ``coil_compressed`` / ``coil_bars_compressed`` / ``coil_reason``
+        The W8 S-COIL compression state for the flag's own name at the flag bar, and the
+        compressed-session count in the trailing 21. Null + a reason slug when uncomputable.
+    ``theme_thrust_state`` / ``theme_thrust_frac`` / ``theme_thrust_reason``
+        The W8 S-THRUST-LAG thrust reading for the flag's own theme at the flag bar.
+
+    RUNTIME, ignition. The two W8 features read `data/baskets/ohlcv/<ticker>.parquet` lazily,
+    once per ticker per run, and each theme's thrust is computed once and shared by every flag
+    in it. A night is bounded by (flags) + (members of the <= TOP_K_THEMES hot themes) distinct
+    reads; measured 2026-08-05 at ~3.3 ms/ticker and ~200 tickers worst case, i.e. under a
+    second on top of a run whose universe pass already dominates it.
     """
 
     def __init__(self, root: Path, px: pd.DataFrame, members: dict[str, dict],
@@ -601,6 +651,12 @@ class _RecordedFeatures:
         self._relay_disc: dict[str, Any] = {"consulted": False}
         self._vol_disc: dict[str, Any] = {"consulted": False}
         self._fs_disc: dict[str, Any] = {"consulted": False}
+        self._asof = px.index[-1] if px is not None and len(px.index) else None
+        # Per-run caches. The OHLC frames are shared by BOTH ignition features (a theme's
+        # thrust re-reads the same members a coil read may already have loaded) and the thrust
+        # answer is identical for every flag in a theme, so each theme is computed once.
+        self._ohlcv_cache: dict[str, tuple[pd.DataFrame | None, str | None]] = {}
+        self._thrust_cache: dict[str, dict[str, Any]] = {}
 
     # ---- inputs (lazy) ---------------------------------------------------- #
     def _breakouts(self) -> pd.DataFrame:
@@ -737,6 +793,168 @@ class _RecordedFeatures:
             out["turnover_pctile"] = round(float((w <= float(w.iloc[-1])).mean()), 4)
         return out
 
+    # ---- W8 ignition sensors (prereg §10 addendum, 2026-08-05) ------------- #
+    def _ohlcv(self, ticker: str) -> tuple[pd.DataFrame | None, str | None]:
+        """``(close/high/low frame ending ON the flag bar, None)`` or ``(None, reason)``.
+
+        NEVER IMPUTED, same rule as :meth:`_turnover`. A store that stops before the flag bar
+        has no ignition state to report FOR the flag bar, and carrying the last available
+        session forward would date-shift the feature onto a bar the name did not trade. That is
+        a disclosed ``no_bar_on_flag_date``, not a silent stale read.
+
+        HOLES ARE DROPPED, NOT HELD — a stated delta from the stand-in, which read a panel where
+        a hole stayed NaN. Held as NaN, every rolling window covering the hole returns NaN, and
+        because :func:`ignition_features.coil_compression` is a boolean AND that lands as
+        ``False`` — a fabricated "not compressed" for a name nobody measured. Dropping instead
+        computes over the bars the name actually traded, at the cost of a window that spans more
+        calendar time than sessions. Neither is free; this one cannot manufacture a negative.
+        (The W8 frame is survivor-lean — 119 of 120 sampled names carry bars to the final
+        session — so this bites rarely, but it is stated rather than assumed away.)
+        """
+        key = str(ticker)
+        if key in self._ohlcv_cache:
+            return self._ohlcv_cache[key]
+        res: tuple[pd.DataFrame | None, str | None]
+        p = Path(self._root).joinpath(*OHLCV_DIR, f"{key}.parquet")
+        if self._asof is None:
+            res = (None, "no_bar_on_flag_date")
+        elif not p.exists():
+            res = (None, "ohlcv_absent")
+        else:
+            try:
+                d = pd.read_parquet(p, columns=["close", "high", "low"])
+                d.index = pd.to_datetime(d.index)
+                d = d.sort_index().dropna()
+                d = d.loc[d.index <= self._asof]
+                res = (d, None) if (len(d) and d.index[-1] == self._asof) \
+                    else (None, "no_bar_on_flag_date")
+            except Exception as e:  # noqa: BLE001 — an unreadable store is a null, not a crash
+                log.debug("prophet_doors: ohlcv read failed for %s (%s)", key, e)
+                res = (None, "read_failed")
+        self._ohlcv_cache[key] = res
+        return res
+
+    def _coil(self, ticker: str) -> dict[str, Any]:
+        """S-COIL compression state for the flag's own name, at the flag bar.
+
+        ``coil_compressed`` is the INSTANTANEOUS state — ATR21 percentile against its own 252d
+        history below p25, price above a RISING 50dMA. That is exactly the leg S-THRUST-LAG
+        used to pick its candidates (``comp_np[i, j]`` on the thrust bar), so a recorded pair
+        reproduces that sensor's candidate test.
+
+        ``coil_bars_compressed`` is the compressed-session count inside the trailing
+        ``COMP_LOOKBACK`` (21). ``count >= COMP_MIN`` (10) is S-COIL's own ARMED run, so the
+        count reconstructs that state as well while keeping the distance from the threshold a
+        boolean would have thrown away.
+
+        WHAT THIS IS NOT: the flag bar is not S-COIL's graded event. S-COIL grades the RELEASE
+        bar (first close above the prior 21d high out of an armed run); a door flag is its own
+        trigger and coincides with a release only by accident. This records the ARMING state,
+        which ESX §9 / DT-R5 ban as a standalone SURFACED or GRADED read — hence no surface, no
+        rank, no grade, ledger only (prereg §10.3).
+
+        Below ``COIL_MIN_SESSIONS`` the block is null with ``short_history``. That floor is not
+        cosmetic: :func:`ignition_features.coil_compression` returns BOOLEANS, so a bar whose
+        ATR percentile is still warming up reads ``False`` rather than NaN — a short name would
+        otherwise record a confident "not compressed, 0 bars" that nobody measured.
+        """
+        out: dict[str, Any] = {"coil_compressed": None, "coil_bars_compressed": None,
+                               "coil_reason": None}
+        d, reason = self._ohlcv(ticker)
+        if d is None:
+            out["coil_reason"] = reason
+            return out
+        tail = d.tail(ig.COIL_MIN_SESSIONS)
+        if len(tail) < ig.COIL_MIN_SESSIONS:
+            out["coil_reason"] = "short_history"
+            return out
+        key = str(ticker)
+        # One shared column label per frame — `coil_compression` combines the three frames
+        # elementwise, and pandas aligns on COLUMNS first, so "close"/"high"/"low" labels would
+        # align to nothing and silently produce an all-NaN (i.e. all-False) result.
+        c = tail[["close"]].rename(columns={"close": key})
+        h = tail[["high"]].rename(columns={"high": key})
+        lo = tail[["low"]].rename(columns={"low": key})
+        comp = ig.coil_compression(c, h, lo)
+        bars = ig.compressed_bars(comp)
+        out["coil_compressed"] = bool(comp[key].iloc[-1])
+        out["coil_bars_compressed"] = int(bars[key].iloc[-1])
+        return out
+
+    def _thrust(self, theme: Any) -> dict[str, Any]:
+        """S-THRUST-LAG thrust state for the flag's OWN theme, at the flag bar.
+
+        ``theme_thrust_frac`` — the fraction of the theme's covered members trading above their
+        own 20d high on the flag bar. ``theme_thrust_state`` — ``"thrusting"`` when that
+        fraction fires the stand-in's thrust event on the flag bar (above ``THRUST_HI`` now,
+        below ``THRUST_LO`` within the prior ``THRUST_WIN``, de-bounced to the run's first
+        bar), else ``"quiet"``.
+
+        MOST FLAGS WILL READ "quiet", and that is the point rather than a defect: the surviving
+        S-THRUST-LAG arm measured coiled members of a theme ON ITS THRUST BAR (n=228) against
+        coiled names in non-thrusting themes. Recording a standing "frac is high" condition
+        instead would accrue a population #4564 never graded, and the forward comparison would
+        not be a comparison.
+
+        COVERAGE IS STRICT, matching :meth:`_breakouts`: a member counts only when its close
+        AND high are complete across the whole trailing window. A hole would make the 20d-high
+        comparison read False and quietly deflate the fraction for a name nobody could measure.
+        ``n < THRUST_MIN_MEMBERS`` (6) is a disclosed ``thin_membership`` null — the stand-in's
+        own readability floor.
+
+        PIT DELTA, disclosed. The stand-in honoured each basket's ``added``/``removed`` dates.
+        `site/marketdata/subsector_rotation.json` is a nightly SNAPSHOT carrying no membership
+        history, so the fraction is read over the theme's CURRENT member set across the trailing
+        window. The shipped relay feature already has this property; it is stated, not fixed
+        here, because inventing membership dates the artifact never recorded would be worse.
+        """
+        out: dict[str, Any] = {"theme_thrust_state": None, "theme_thrust_frac": None,
+                               "theme_thrust_reason": None}
+        if not theme:
+            out["theme_thrust_reason"] = "no_theme"      # Door R name in no hot theme
+            return out
+        key = str(theme)
+        if key in self._thrust_cache:
+            return dict(self._thrust_cache[key])
+        res = self._thrust_uncached(key)
+        self._thrust_cache[key] = res
+        return dict(res)
+
+    def _thrust_uncached(self, theme: str) -> dict[str, Any]:
+        out: dict[str, Any] = {"theme_thrust_state": None, "theme_thrust_frac": None,
+                               "theme_thrust_reason": None}
+        need = ig.THRUST_MIN_SESSIONS
+        if self._asof is None or len(self._px.index) < need:
+            out["theme_thrust_reason"] = "short_history"
+            return out
+        # The doors' own price index is the canonical session calendar for this lane; members
+        # are reindexed onto it so a member's private holiday cannot lengthen the window.
+        idx = self._px.index[-need:]
+        closes: dict[str, pd.Series] = {}
+        highs: dict[str, pd.Series] = {}
+        for m in self._by_theme.get(theme, ()):
+            d, _ = self._ohlcv(m)
+            if d is None:
+                continue
+            closes[m] = d["close"].reindex(idx)
+            highs[m] = d["high"].reindex(idx)
+        if not closes:
+            out["theme_thrust_reason"] = "no_covered_member"
+            return out
+        close = pd.DataFrame(closes, index=idx)
+        high = pd.DataFrame(highs, index=idx)
+        covered = [c for c in close.columns
+                   if bool(close[c].notna().all()) and bool(high[c].notna().all())]
+        if len(covered) < ig.THRUST_MIN_MEMBERS:
+            out["theme_thrust_reason"] = "thin_membership"
+            return out
+        a20 = ig.above_20d_high(close.loc[:, covered], high.loc[:, covered])
+        frac = a20.sum(axis=1) / float(len(covered))
+        fired = ig.thrust_fired(frac)
+        out["theme_thrust_frac"] = round(float(frac.iloc[-1]), 4)
+        out["theme_thrust_state"] = "thrusting" if bool(fired.iloc[-1]) else "quiet"
+        return out
+
     def _stage(self, theme: Any) -> dict[str, Any]:
         """Foresight Desk stage for the flag's theme, or a disclosed non-coverage."""
         out: dict[str, Any] = {"foresight_stage": None, "foresight_covered": False}
@@ -753,7 +971,8 @@ class _RecordedFeatures:
         if not self._enabled:
             return {}
         try:
-            return {**self._relay(ticker, theme), **self._turnover(ticker), **self._stage(theme)}
+            return {**self._relay(ticker, theme), **self._turnover(ticker), **self._stage(theme),
+                    **self._coil(ticker), **self._thrust(theme)}
         except Exception as e:  # noqa: BLE001 — an analysis feature may never break the lane
             log.warning("prophet_doors: recorded features failed for %s (%s)", ticker, e)
             return null_features()
@@ -762,7 +981,35 @@ class _RecordedFeatures:
         """What each feature source actually offered tonight — the "nulls printed" receipt."""
         return {"enabled": self._enabled, "keys": list(FEATURE_KEYS),
                 "relay": dict(self._relay_disc), "turnover": dict(self._vol_disc),
-                "foresight": dict(self._fs_disc)}
+                "foresight": dict(self._fs_disc), "ignition": self._ignition_disclosure()}
+
+    def _ignition_disclosure(self) -> dict[str, Any]:
+        """Per-run receipt for the W8 ignition features: what the OHLCV store actually offered.
+
+        Built from the caches the night's own reads populated, so it counts the names that were
+        ASKED for rather than a store-wide statistic that no flag depended on.
+        """
+        asked = len(self._ohlcv_cache)
+        reasons: dict[str, int] = {}
+        for _, reason in self._ohlcv_cache.values():
+            if reason:
+                reasons[reason] = reasons.get(reason, 0) + 1
+        disc: dict[str, Any] = {
+            "consulted": bool(asked),
+            "source": "/".join(OHLCV_DIR) + "/<ticker>.parquet",
+            "tickers_read": asked,
+            "tickers_ok": asked - sum(reasons.values()),
+            "null_reasons": reasons,
+            "coil_min_sessions": ig.COIL_MIN_SESSIONS,
+            "thrust_min_sessions": ig.THRUST_MIN_SESSIONS,
+            "thrust_min_members": ig.THRUST_MIN_MEMBERS,
+            "themes_read": {t: dict(v) for t, v in self._thrust_cache.items()},
+            "reason": None,
+        }
+        if asked and disc["tickers_ok"] == 0:
+            disc["reason"] = ("no flagged name resolved in the OHLCV store — "
+                              "coil and thrust null on every flag tonight")
+        return disc
 
 
 # --------------------------------------------------------------------------- #

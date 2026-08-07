@@ -17,7 +17,14 @@ import pandas as pd
 
 
 KNOWLEDGE_CLOCK_COLUMNS: tuple[str, ...] = ("known_at", "first_seen_at", "_first_seen_at")
-EFFECTIVE_CLOCK_COLUMNS: tuple[str, ...] = ("effective_at", "action_date", "base_obligation_date")
+# The effective clock is the source's own "when did this state take effect"
+# assertion: ``effective_at`` on a snapshot, ``action_date`` on an action
+# version (the collector sets the former from the latter).  ``base_obligation_date``
+# is a DIFFERENT official fact — the award's original obligation date — and
+# coalescing it here silently gave every clockless row a years-old effective
+# date instead of excluding it, which is exactly what this filter documents
+# itself as refusing to do.
+EFFECTIVE_CLOCK_COLUMNS: tuple[str, ...] = ("effective_at", "action_date")
 _DATE_ONLY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 

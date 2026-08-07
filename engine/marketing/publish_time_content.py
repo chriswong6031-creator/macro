@@ -62,6 +62,7 @@ from engine.marketing import (
     movers_source,
     outbox,
     sentinel,
+    theme_proxy,
 )
 
 log = logging.getLogger(__name__)
@@ -95,6 +96,22 @@ _DEFAULTS: dict[str, Any] = {
     # the BIGGEST MOVERS in the theme's direction — if we only name three, they
     # should be the three that are the story.
     "max_theme_cashtags_in_text": 3,
+    # ── The theme's own ticker (operator, live post 2026-08-05) ───────────────
+    # When a group trades as one, the sector ETF or the underlying asset is a far
+    # bigger cashtag than any member: $GDX trades 3.7x and $GLD 6.5x the biggest
+    # name the post that prompted this was going to name.
+    #
+    #   "for this kind of theme, shouldnt u be prioritizing tagging the underlying
+    #   major ETF or even the underlying commodity/asset class ... these are much
+    #   larger tickers that are able to get much more reach"
+    #
+    # Default ON, and the safety is in the GATE rather than in this flag: the
+    # operator's own bound ("some themes ETFS arent that popular ... its case by
+    # case basis") is what engine.marketing.theme_proxy enforces, and it refuses
+    # every theme whose names out-reach the fund or whose members do not move
+    # together. OFF is the kill switch if a tag ever reads wrong on a live post —
+    # it restores exactly the member-only behaviour, with no other side effect.
+    "theme_proxy_enabled": True,
     # A ticker post ships a picture or it does not ship (see the module
     # docstring). Default ON. The OFF setting is NOT a production escape hatch —
     # it exists so an operator can exercise the copy path on a host with no
@@ -184,9 +201,19 @@ def _has_first_person(text: str) -> bool:
 #:
 #: What the two halves must still agree on, and what the session/consistency
 #: checks below enforce: the THEME, the COUNT ("8 names higher") and the AVERAGE.
-#: Naming 3 of 8 is a summary. Naming a name the card omits is the actual lie —
-#: which is why the named cashtags are always a PREFIX of the card's rows (both
-#: come from the same direction-sorted member list).
+#: Naming 3 of 8 is a summary. Naming a MEMBER the card omits is the actual lie,
+#: which is why ``_theme_text_cashtags`` slices its pool to this constant: the
+#: named members are a SUBSET of the card's rows. They stopped being a PREFIX of
+#: them on 2026-08-05, when the ordering moved from |move| to watchedness — see
+#: that function for why prefix-ness was never the honesty property.
+#:
+#: THE ONE THING THE TEXT MAY NAME THAT THE CARD DOES NOT SHOW is the theme's
+#: proxy — the sector ETF or the underlying asset ($GDX, $GLD), added 2026-08-05.
+#: That is not a member and it is not held to the subset rule, because it is not a
+#: claim about an individual name at all: it is the instrument the group IS, and
+#: ``engine.marketing.theme_proxy`` will not release one until the fund provably
+#: holds a majority of these very rows (or, for a declared commodity link, until
+#: the rows provably move as one). The receipt lives on the outbox item.
 _CARD_MAX_ROWS = 8
 
 
@@ -550,31 +577,77 @@ def _radar_tier_map(root: Path, cfg: dict | None) -> dict | None:
     return None
 
 
-def _theme_text_cashtags(members: list[dict], cap: int) -> list[str]:
-    """The member cashtags the POST TEXT may name — biggest movers, capped.
+def _theme_text_cashtags(members: list[dict], cap: int,
+                         tiers: dict[str, Any] | None = None) -> list[str]:
+    """The member cashtags the POST TEXT may name — MOST-WATCHED first, capped.
 
     DEFECT 1. The lane used to hand copywriter ``members[:10]``, so a theme post
     enumerated every name the card shows and shipped eight cashtags in one line
-    — the spam fingerprint. The text now names at most `cap` of them.
+    — the spam fingerprint. The text names at most `cap` of them.
 
-    WHICH ones is not arbitrary: sorted by |move| descending (ticker as the
-    tiebreak, so the choice is deterministic across runs), because the names we
-    do name should be the ones that are the story. ``theme_lists`` already
-    returns members most-extreme-first in the theme's direction, so this is
-    normally a no-op re-sort — it is written explicitly anyway so the guarantee
-    belongs to THIS function rather than to an upstream ordering nobody here
-    would notice changing.
+    WHICH ones was |move| descending, and that was a systematic reach leak
+    (operator, 2026-08-05). Ranking by |move| is ranking by SMALLNESS: a small
+    float moves further on the same dollar flow, so the three biggest movers in a
+    group are reliably three of its least-watched tickers — and the lane spent its
+    entire 3-cashtag budget on them while its OWN CARD listed bigger names it
+    never said out loud:
 
-    The result is a PREFIX-equivalent subset of the card's rows by construction
-    (same list, same order), which is what keeps "naming 3 of 8" a summary
-    rather than a post that names a name the picture omits.
+        Smart Home     named $AEIS ($201M ADV) — card also listed a $14,706M name
+        Commodities    named $GFI  ($117M ADV) — card also listed $HL at $599M
+        Quantum        named $QUBT           — card also listed $IBM at $3,267M
+
+        "the biggest movers are almost always the smallest floats, just due to
+        small caps moving more, this is a big problem eh? we need to use the more
+        watched ticker at all times, not the biggest mover."
+
+    So the order is ADV20 descending (``theme_proxy.adv20_musd``), ticker as the
+    tiebreak so the choice is deterministic across runs. Every candidate is still
+    a name the card SHOWS — the pick is a re-ordering inside the card's own rows,
+    never a widening past them, so "naming 3 of 8" stays a summary of the picture.
+
+    WHY THIS DOES NOT NAME A NAME THAT ISN'T THE STORY. The obvious objection to
+    ranking by size is that it could tag a mega-cap that barely moved, for reach —
+    which is the piggybacking the cashtag cap exists to prevent. It cannot, because
+    of what is already in the pool: ``theme_lists`` hands over the theme's top
+    members BY ABSOLUTE MOVE IN THE THEME'S OWN DIRECTION, so every candidate here
+    has already qualified as a mover on the right side. Watchedness re-orders an
+    already-material set; it never admits a name to it. Measured on the 2026-08-02
+    board, the two picks this rule changed most were $MSFT at +3.02% inside a
+    Smart Home theme averaging +1.81%, and $NVDA at +2.93% inside a Biometrics
+    theme averaging +1.19% — both ABOVE their theme's average, i.e. both part of
+    the story by the post's own headline number. The copy also names cashtags
+    bare, without per-name percentages, so the text makes no claim about any named
+    name beyond membership in a group that moved.
+
+    THE INVARIANT WEAKENED, DELIBERATELY, AND WHAT REPLACED IT. The named set used
+    to be a PREFIX of the card's rows (both came from one |move|-sorted list). It
+    is now a SUBSET but not a prefix — we may name row 5 while row 1 goes unnamed.
+    The honesty property was never prefix-ness; it was that the text names nothing
+    the picture omits, and ``members`` is sliced to :data:`_CARD_MAX_ROWS` here so
+    that holds by construction rather than by upstream coincidence (``theme_lists``
+    happens to return at most 8 today — this function no longer depends on it).
+
+    ``tiers``: the cashtag_tiers ``tickers`` block. Absent or ADV-less → falls
+    back to the old |move| ordering, because an unranked pick is worse than the
+    previous rule, not better.
     """
-    ordered = sorted(
-        (m for m in (members or []) if m.get("ticker")),
-        key=lambda m: (-abs(float(m.get("pct") or 0.0)), str(m.get("ticker"))),
-    )
+    pool = [m for m in (members or [])[:_CARD_MAX_ROWS] if m.get("ticker")]
+    by_move = sorted(
+        pool, key=lambda m: (-abs(float(m.get("pct") or 0.0)), str(m.get("ticker"))))
     n = max(0, int(cap))
-    return [f"${m['ticker']}" for m in ordered[:n]]
+    if not tiers:
+        return [f"${m['ticker']}" for m in by_move[:n]]
+
+    from engine.marketing.theme_proxy import adv20_musd  # noqa: PLC0415
+
+    scored = [(adv20_musd(tiers, str(m["ticker"])), m) for m in pool]
+    if not any(a > 0 for a, _ in scored):
+        # Nothing in this cohort is priced. Ordering by a column that is zero
+        # everywhere would silently degrade to insertion order — take the rule we
+        # can still defend instead.
+        return [f"${m['ticker']}" for m in by_move[:n]]
+    ordered = sorted(scored, key=lambda am: (-am[0], str(am[1]["ticker"])))
+    return [f"${m['ticker']}" for _, m in ordered[:n]]
 
 
 def _build_candidates(overlaid: dict, root: Path, cfg: dict, pt: dict,
@@ -648,6 +721,16 @@ def _build_candidates(overlaid: dict, root: Path, cfg: dict, pt: dict,
         })
 
     text_cap = int(pt["max_theme_cashtags_in_text"])
+    # The full tiers rows (not movers_source's flattened {ticker: tier}) — both the
+    # watchedness ordering and the proxy's reach leg are denominated in
+    # proxies.adv20_musd, which the flattened map throws away.
+    # `.get` with the in-code default, not `pt[...]`: `_pt_cfg` always supplies the
+    # key, but this function is also called directly with hand-built `pt` dicts, and
+    # a KeyError there would take out the whole candidate build over a knob that has
+    # a documented default sitting right next to it.
+    proxy_on = bool(pt.get("theme_proxy_enabled", _DEFAULTS["theme_proxy_enabled"]))
+    proxy_tiers = theme_proxy.load_tiers(root) if proxy_on else {}
+    proxy_map = theme_proxy.load_map(root) if proxy_on else {}
     theme_items: list[dict] = []
     for tl in tl_result:
         members = tl.get("members") or []
@@ -657,14 +740,45 @@ def _build_candidates(overlaid: dict, root: Path, cfg: dict, pt: dict,
         # WHOLE — the card enumerates it, and the copy's "N names higher" count
         # and average are computed from it, so truncating it here would make the
         # picture and the breadth fact disagree with each other.
-        cashtags = _theme_text_cashtags(members, text_cap)
+        cashtags = _theme_text_cashtags(members, text_cap, proxy_tiers)
         if not cashtags:
             continue
+
+        # ── The theme's own ticker, when the group trades as one ──────────────
+        #
+        # A sector ETF or the underlying asset is routinely a far bigger cashtag
+        # than any member: on the post that prompted this, $GDX trades 3.7x and
+        # $GLD 6.5x the biggest name the text was going to name. The gate in
+        # theme_proxy decides whether this theme is one of those — see that module
+        # for why all three legs are load-bearing (in short: reach alone would tag
+        # $XBI on biotech, whose names do not move together at all).
+        #
+        # The proxy takes ONE slot and the members keep the rest. The cap is the
+        # account-safety limit, not a budget to spend on funds: a theme post that
+        # names no names is not a theme post, and stacking $GLD + $GDX would burn
+        # two of three slots restating the same idea.
+        proxy = None
+        if proxy_map:
+            proxy = theme_proxy.resolve(
+                str(tl.get("theme") or ""),
+                [str(m.get("ticker") or "") for m in members[:_CARD_MAX_ROWS]],
+                [c.lstrip("$") for c in cashtags],
+                pmap=proxy_map, tiers=proxy_tiers, root=root)
+        if proxy:
+            cashtags = [proxy["cashtag"]] + cashtags[:max(0, text_cap - 1)]
+
         lead = members[0]
         theme_items.append({
             "type": "theme_list",
             "ticker": "",
             "cashtags": cashtags,
+            #: The tagging ARM, stamped so this stops being an unfalsifiable
+            #: distribution prior. ADV is a proxy for X reach, not a measurement
+            #: of it (theme_proxy.adv20_musd says so where it is read), so the
+            #: only way to learn whether proxy-led posts actually travel further
+            #: is to label them and let post_metrics compare impressions.
+            "_tag_arm": ("proxy_lead" if proxy else "members_only"),
+            "_tag_proxy": (dict(proxy) if proxy else None),
             "_theme_data": tl,
             "_theme_facts": movers_source.theme_facts(
                 tl, now=now, asof=tl.get("asof")),
@@ -985,110 +1099,21 @@ def _cand_session(cand: dict) -> str | None:
 # local copy would silently reopen.
 # ─────────────────────────────────────────────────────────────────────────────
 
-#: A weekday name as published copy writes it ("on Friday", "Friday's move").
-#: CASE-SENSITIVE on the capitalised form: these are proper nouns in a headline,
-#: and a case-insensitive match would be a needless invitation for a lower-case
-#: false positive to kill a good post (the quarantine here is terminal).
-_WEEKDAY_CLAIM_RE = re.compile(
-    r"(?<![\w'])(" + "|".join(market_clock._WEEKDAYS_EN) + r")(?![\w])")
+#: THE CLAIM RESOLVER LIVES IN market_clock, NOT HERE (generalised 2026-08-06).
+#: This lane wrote the weekday / month-day / "today" resolver first, and the
+#: publisher's new session-freshness gate needs exactly the same answers for
+#: every OTHER lane. A second copy is how two gates start disagreeing about
+#: which session "on Friday" names, so the tables and the walk moved next to the
+#: calendar they depend on and this name is now an alias. The lookback constants
+#: are re-exported because this module's tests pin them by name.
+_WEEKDAY_LOOKBACK_DAYS = market_clock._WEEKDAY_LOOKBACK_DAYS
+_MONTH_DAY_LOOKBACK_DAYS = market_clock._MONTH_DAY_LOOKBACK_DAYS
+_WEEKDAY_CLAIM_RE = market_clock._WEEKDAY_CLAIM_RE
+_MONTH_DAY_CLAIM_RE = market_clock._MONTH_DAY_CLAIM_RE
 
-#: "on July 31", "Aug 1" — the shape `market_clock.temporal_vocab` degrades to
-#: once a weekday name would be ambiguous. Two deliberate narrowings:
-#:   * a BARE month name is NOT matched. "May" is also an ordinary English word,
-#:     and a month with no day number names no session anyway.
-#:   * the alternation lists the FULL names and their 3-letter abbreviations
-#:     EXPLICITLY, longest-first, instead of `Mar[a-z]*`-style prefixing. A
-#:     wildcard suffix makes "Market 5" a March date, and a false positive here
-#:     kills a good post (the refusal is terminal).
-_MONTH_ALTS: tuple[str, ...] = tuple(
-    sorted({m for name in market_clock._MONTHS_EN for m in (name, name[:3])}
-           | {"Sept"},
-           key=len, reverse=True))
-_MONTH_DAY_CLAIM_RE = re.compile(
-    r"(?<![\w'])(" + "|".join(_MONTH_ALTS) + r")\.?\s+(\d{1,2})(?![\d])")
-
-#: How far back a weekday / month-day phrase is resolved. 7 days covers every
-#: phrase this lane's banks can emit (the vocab switches to month-day past 6
-#: days); a month-day gets a year, because that is the range over which a
-#: "July 31" in a live post could still be honest.
-_WEEKDAY_LOOKBACK_DAYS = 7
-_MONTH_DAY_LOOKBACK_DAYS = 366
-
-
-def _session_claims(text: str, *, now: datetime) -> tuple[set[date], list[str]]:
-    """(sessions the text claims, unresolvable claims) for copy said at `now`.
-
-    Every claim is resolved to a SESSION DATE so two differently-worded claims
-    about the same session ("today" on Monday and "on Monday") compare equal, and
-    two claims about different sessions compare unequal no matter how they were
-    phrased. That is the whole point: the check is about sessions, not strings.
-
-    An unresolvable claim (a "today" word on a day with no session in progress; a
-    weekday or month-day naming no session in the lookback) is returned SEPARATELY
-    rather than dropped, because "we cannot tell which session this names" is a
-    refusal, not a pass.
-    """
-    body = str(text or "")
-    claims: set[date] = set()
-    unresolved: list[str] = []
-    if not body.strip():
-        return claims, unresolved
-
-    et_today = market_clock.et_date(now)
-
-    # "today" / "this session" / "at the close" … → the session in progress NOW.
-    if market_clock._TODAY_RE.search(body):
-        cur = market_clock.current_session(now)
-        if cur is None:
-            # No session in progress (weekend / holiday) — a "today" word here
-            # names nothing at all. market_clock.temporal_violations reports the
-            # same condition; it is repeated as an unresolved CLAIM so the two
-            # halves of this check share one refusal path.
-            unresolved.append(
-                f"today-word with no session in progress at "
-                f"{et_today.isoformat()}")
-        else:
-            claims.add(cur)
-
-    for m in _WEEKDAY_CLAIM_RE.finditer(body):
-        name = m.group(1)
-        hit: date | None = None
-        for back in range(_WEEKDAY_LOOKBACK_DAYS + 1):
-            d = et_today - timedelta(days=back)
-            if market_clock.weekday_name(d) == name:
-                # session_of walks back off a non-session day, so "on Friday"
-                # said about a Good Friday resolves to the Thursday that
-                # actually traded — the same normalisation temporal_vocab uses.
-                hit = market_clock.session_of(d)
-                break
-        if hit is None:
-            unresolved.append(f"weekday '{name}' names no session in the last "
-                              f"{_WEEKDAY_LOOKBACK_DAYS} days")
-        else:
-            claims.add(hit)
-
-    for m in _MONTH_DAY_CLAIM_RE.finditer(body):
-        mon = m.group(1)
-        try:
-            day = int(m.group(2))
-            month = next(i + 1 for i, name in enumerate(market_clock._MONTHS_EN)
-                         if name.startswith(mon))
-        except (ValueError, StopIteration):  # pragma: no cover - regex-guarded
-            unresolved.append(f"unparseable date '{m.group(0)}'")
-            continue
-        hit = None
-        for back in range(_MONTH_DAY_LOOKBACK_DAYS + 1):
-            d = et_today - timedelta(days=back)
-            if d.month == month and d.day == day:
-                hit = market_clock.session_of(d)
-                break
-        if hit is None:
-            unresolved.append(f"date '{m.group(0)}' is not in the last "
-                              f"{_MONTH_DAY_LOOKBACK_DAYS} days")
-        else:
-            claims.add(hit)
-
-    return claims, unresolved
+#: (sessions the text claims, unresolvable claims). See
+#: :func:`engine.marketing.market_clock.session_claims`.
+_session_claims = market_clock.session_claims
 
 
 def _session_conflict(text: str, *, now: datetime, row_session: str | None,
@@ -1984,7 +2009,7 @@ def _build_source(cand: dict, slot: str, now: datetime, quote_source: str) -> di
             "ticker": cand["ticker"],
             "baseline_pct": (cand.get("_mover_data") or {}).get("pct"),
         }
-    return {
+    out = {
         "lane": "publish_time",
         "slot_run": slot,
         "generated_at": _iso_now(now),
@@ -1994,7 +2019,18 @@ def _build_source(cand: dict, slot: str, now: datetime, quote_source: str) -> di
         "baseline_pct": cand.get("_lead_pct"),
         "theme": cand.get("_theme_name", ""),
         "agg_pct": cand.get("_agg_pct"),
+        # THE TAGGING ARM, and the receipt behind it. Stamped on EVERY theme item,
+        # including the members-only ones — an arm label that only appears on the
+        # treated arm gives post_metrics a treatment group and no control, which is
+        # not a comparison. ADV is a proxy for X reach and not a measurement of it
+        # (theme_proxy.adv20_musd), so this stamp is the only route from "the
+        # bigger ticker should travel further" to something impressions can grade.
+        "tag_arm": cand.get("_tag_arm", "members_only"),
     }
+    proxy = cand.get("_tag_proxy")
+    if proxy:
+        out["tag_proxy"] = proxy
+    return out
 
 
 # ─────────────────────────────────────────────────────────────────────────────

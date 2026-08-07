@@ -1,0 +1,111 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "APD-2026-06-30-buy",
+  "ticker": "APD",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "APD",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "APD",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "mixed",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Materials",
+    "excess_spy": -0.0392681940768963,
+    "excess_sector": -0.026001111771700947,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "DEAD_MONEY",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "APD became dead money and underperformed SPY under a mixed cause assignment, while the process remained clean. Materials regime, sector rotation, and company-specific weakness are unresolved competing mechanisms.",
+    "root_cause": "APD became dead money and underperformed SPY under a mixed cause assignment, while the process remained clean. Materials regime, sector rotation, and company-specific weakness are unresolved competing mechanisms.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The buy process was clean, but the Materials, macro-regime, and company-alpha books did not provide enough recorded discrimination.",
+    "engines_credit": "The execution organ is not implicated; the regime, Materials-rotation, and alpha books require comparative research before any laggard is named conclusively.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "macro_regime",
+        "factor": "",
+        "mechanism": "An unfavorable cyclical or macro environment may have reduced demand for Materials exposure.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "A supportive entry-date Materials regime would weaken the macro explanation.",
+        "evidence_refs": [
+          "Pick 9 sector=Materials",
+          "Pick 9 outcome_cause=mixed"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "APD may have lacked sufficient company-specific strength to overcome the broader environment.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Strong peer-relative performance would contradict company weakness as the primary mechanism.",
+        "evidence_refs": [
+          "Pick 9 terminal_state=DEAD_MONEY",
+          "Pick 9 excess_spy=-0.0392681940768963"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "counterfactual",
+        "factor": "",
+        "mechanism": "Conditioning the setup on Materials breadth and macro cyclicality may separate productive from dead-money environments.",
+        "evidence_status": "unknown",
+        "timing_status": "known_at_entry",
+        "counterfactual": "Test the same setup across entry-date regime cells without tightening the selection gate.",
+        "evidence_refs": [
+          "Pick 9 process_fault=clean",
+          "Pick 9 lane=buy"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "APD-specific execution or fundamental concerns may have dominated.",
+      "The negative excess return may reflect unusually strong SPY performance rather than a large absolute decline."
+    ],
+    "missing_evidence": [
+      "APD absolute and peer-relative returns",
+      "Materials breadth and rotation state",
+      "Entry-date macro indicators",
+      "Company fundamentals, news, and catalysts"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "materials_cycle_alignment",
+        "feature": "Alignment between Materials setups and the contemporaneous cyclical regime",
+        "measurement": "Compare matured outcomes by entry-date Materials breadth, commodity sensitivity, and macro-cycle indicators.",
+        "expected_direction": "Aligned cyclical and sector conditions should be associated with better relative outcomes.",
+        "falsifier": "Regime alignment has no relationship with subsequent Materials performance.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T13:34:17+00:00"
+}

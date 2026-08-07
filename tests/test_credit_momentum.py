@@ -10,8 +10,14 @@ Coverage:
   - divergence quadrant classification
   - alerts debounce (credit_market_turn + credit_theme_stress)
   - JSON emission null-safety on EMPTY stores (every input missing → valid JSON, no crash)
+  - forward ledger session stamp: as_of is the BAR that fired, never the calendar
 
 Zero network calls; all inputs are synthetic (tmp_path fixtures).
+
+NO TEST IN THIS FILE MAY READ THE WALL CLOCK (forward-ledger calendar-asof audit
+2026-08-05). Every fixture date is a pinned weekday literal: a clock-fed fixture
+cannot see a clock-stamp defect, because the defect and the fixture agree by
+construction.
 """
 from __future__ import annotations
 
@@ -23,6 +29,16 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+
+# ---------------------------------------------------------------------------
+# Pinned weekday literals (no wall-clock reads — see module docstring)
+# ---------------------------------------------------------------------------
+
+_THURSDAY     = date(2026, 7, 30)   # a lagging leg's last bar
+_FRIDAY       = date(2026, 7, 31)   # the last bar a frozen store holds
+_MONDAY       = date(2026, 8, 3)    # the calendar day a run would happen on
+_THURSDAY_STR = "2026-07-30"
+_FRIDAY_STR   = "2026-07-31"
 
 # ---------------------------------------------------------------------------
 # Helpers — synthetic data factories
@@ -338,20 +354,20 @@ class TestKofNTagLogic:
 class TestForwardLedger:
     def test_keep_first_no_duplicate(self, tmp_path, monkeypatch):
         """Keep-FIRST: same event_id written twice → only one row stored.
-        Requires COLLECT_LANE=nightly and as_of==today (Fix 3 guards)."""
+        Requires COLLECT_LANE=nightly and as_of in data_sessions (Fix 3 guards)."""
         from engine.credit_momentum import _make_ledger_event, _upsert_forward_log
         monkeypatch.setenv("COLLECT_LANE", "nightly")
 
         root = tmp_path / "data"
-        today = date.today()
-        ev1 = _make_ledger_event("hy_oas", "velocity_threshold", today,
+        sessions = {_FRIDAY_STR}
+        ev1 = _make_ledger_event("hy_oas", "velocity_threshold", _FRIDAY,
                                   {"vel21_pctile": 87.0, "orientation": "spread"})
         # First write
-        n1 = _upsert_forward_log([ev1], root)
+        n1 = _upsert_forward_log([ev1], root, sessions)
         assert n1 == 1
 
         # Second write with same event_id → should NOT add new row
-        n2 = _upsert_forward_log([ev1], root)
+        n2 = _upsert_forward_log([ev1], root, sessions)
         assert n2 == 0
 
         # Read back and verify single row
@@ -360,16 +376,15 @@ class TestForwardLedger:
         assert len(lines) == 1
 
     def test_different_event_ids_both_written(self, tmp_path, monkeypatch):
-        """Two distinct events for today → both written.
-        Requires COLLECT_LANE=nightly (Fix 3). Both events use today's date."""
+        """Two distinct events on the same session → both written.
+        Requires COLLECT_LANE=nightly (Fix 3)."""
         from engine.credit_momentum import _make_ledger_event, _upsert_forward_log
         monkeypatch.setenv("COLLECT_LANE", "nightly")
 
         root = tmp_path / "data"
-        today = date.today()
-        ev1 = _make_ledger_event("hy_oas", "velocity_threshold", today, {"val": 1})
-        ev2 = _make_ledger_event("quality_spread", "velocity_threshold", today, {"val": 2})
-        n = _upsert_forward_log([ev1, ev2], root)
+        ev1 = _make_ledger_event("hy_oas", "velocity_threshold", _FRIDAY, {"val": 1})
+        ev2 = _make_ledger_event("quality_spread", "velocity_threshold", _FRIDAY, {"val": 2})
+        n = _upsert_forward_log([ev1, ev2], root, {_FRIDAY_STR})
         assert n == 2
 
         log_path = root / "corp_bonds" / "forward_log.jsonl"
@@ -584,10 +599,11 @@ class TestAlertsDebounce:
         }
         data = {
             "organ": "credit_momentum.v1",
-            # as_of must share the date.today() anchor of the debounce-history
-            # builders below: the engine counts consecutive prior events looking
-            # back from as_of, so a literal date rots once the calendar advances.
-            "as_of": str(date.today()),
+            # as_of must share the anchor of the debounce-history builders below:
+            # the engine counts consecutive prior events looking back from THIS
+            # as_of (bonds_alerts._count_consecutive_active reads ts.date(), never
+            # the wall clock), so a pinned literal is safe and clock-free.
+            "as_of": str(_MONDAY),
             "authority": {"rank": False, "size": False, "gate": False, "escalate": False},
             "tags": {
                 "credit_market_turn": {
@@ -626,7 +642,7 @@ class TestAlertsDebounce:
         # Build 5 prior active events on consecutive business days
         prior_events = []
         for i in range(_DEBOUNCE_MARKET_TURN):
-            d = date.today() - timedelta(days=i + 1)
+            d = _MONDAY - timedelta(days=i + 1)
             prior_events.append({
                 "id": f"bonds:credit:credit_market_turn:{d}:active",
                 "ts": str(d) + "T00:00:00",
@@ -650,7 +666,7 @@ class TestAlertsDebounce:
         theme = "hyperscaler_credit"
         prior_events = []
         for i in range(_DEBOUNCE_THEME_STRESS):
-            d = date.today() - timedelta(days=i + 1)
+            d = _MONDAY - timedelta(days=i + 1)
             prior_events.append({
                 "id": f"bonds:credit:credit_theme_stress:{theme}:{d}:active",
                 "ts": str(d) + "T00:00:00",
@@ -922,9 +938,9 @@ class TestForwardLedgerPIT:
         monkeypatch.delenv("COLLECT_LANE", raising=False)
 
         root = tmp_path / "data"
-        ev = _make_ledger_event("hy_oas", "velocity_threshold", date.today(),
+        ev = _make_ledger_event("hy_oas", "velocity_threshold", _FRIDAY,
                                  {"vel21_pctile": 87.0})
-        n = _upsert_forward_log([ev], root)
+        n = _upsert_forward_log([ev], root, {_FRIDAY_STR})
         assert n == 0, "Should write 0 rows when COLLECT_LANE is not 'nightly'"
         assert not (root / "corp_bonds" / "forward_log.jsonl").exists()
 
@@ -934,35 +950,39 @@ class TestForwardLedgerPIT:
         monkeypatch.setenv("COLLECT_LANE", "nightly")
 
         root = tmp_path / "data"
-        ev = _make_ledger_event("hy_oas", "velocity_threshold", date.today(),
+        ev = _make_ledger_event("hy_oas", "velocity_threshold", _FRIDAY,
                                  {"vel21_pctile": 87.0})
-        n = _upsert_forward_log([ev], root)
+        n = _upsert_forward_log([ev], root, {_FRIDAY_STR})
         assert n == 1, "Should write 1 row when COLLECT_LANE == 'nightly'"
 
     def test_historical_events_not_written(self, tmp_path, monkeypatch):
-        """Events with as_of != today should NOT be written (current-bar-only, Fix 3)."""
+        """Events on a bar this run did not read are NOT written (current-bar-only, Fix 3).
+
+        The law is unchanged by the 2026-08-05 audit — only its clock. 'Current'
+        now means 'a session in data_sessions', so a backfill attempt for an older
+        bar is still refused while a store that lags the calendar still writes.
+        """
         from engine.credit_momentum import _make_ledger_event, _upsert_forward_log
         monkeypatch.setenv("COLLECT_LANE", "nightly")
 
         root = tmp_path / "data"
-        # Historical event (yesterday)
-        yesterday = date.today() - timedelta(days=1)
-        ev_hist = _make_ledger_event("hy_oas", "velocity_threshold", yesterday, {"x": 1})
-        # Today's event
-        ev_today = _make_ledger_event("hy_oas", "velocity_threshold", date.today(), {"x": 2})
+        # Historical event: an older bar, not among the sessions this run read
+        ev_hist = _make_ledger_event("hy_oas", "velocity_threshold", _THURSDAY, {"x": 1})
+        # Current event: the bar this run read
+        ev_curr = _make_ledger_event("hy_oas", "velocity_threshold", _FRIDAY, {"x": 2})
 
-        n = _upsert_forward_log([ev_hist, ev_today], root)
-        assert n == 1, "Should only write today's event, not historical"
+        n = _upsert_forward_log([ev_hist, ev_curr], root, {_FRIDAY_STR})
+        assert n == 1, "Should only write the read session's event, not the backfill"
 
         log_path = root / "corp_bonds" / "forward_log.jsonl"
         rows = [json.loads(l) for l in log_path.read_text().splitlines() if l.strip()]
         assert len(rows) == 1
-        assert rows[0]["as_of"] == str(date.today())
+        assert rows[0]["as_of"] == _FRIDAY_STR
 
     def test_ledger_event_has_registered_at_and_source(self, tmp_path):
         """ledger events must have registered_at and source='live' (Fix 3)."""
         from engine.credit_momentum import _make_ledger_event
-        ev = _make_ledger_event("hy_oas", "velocity_threshold", date.today(), {})
+        ev = _make_ledger_event("hy_oas", "velocity_threshold", _FRIDAY, {})
         assert "registered_at" in ev, "ledger event must have registered_at"
         assert ev["source"] == "live", "ledger event must have source='live'"
 
@@ -1063,7 +1083,7 @@ class TestBondsAlertsDebounce:
     def _make_credit_json_fired(self, tmp_path: Path, theme: str = "test_theme") -> Path:
         data = {
             "organ": "credit_momentum.v1",
-            "as_of": str(date.today()),
+            "as_of": str(_MONDAY),
             "authority": {"rank": False, "size": False, "gate": False, "escalate": False},
             "tags": {
                 "credit_market_turn": {
@@ -1185,3 +1205,397 @@ class TestOwnStoreBreadthDuplicateIsins:
         # Nonpositive par must be dropped (guards the 100*mv/par division).
         bad = pd.DataFrame([{"isin": "US0001", "par_value": 0.0, "market_value": 5.0, "fund": "JNK"}])
         assert _collapse_holdings_by_isin(bad, hy_funds={"JNK"}).empty
+
+
+# ---------------------------------------------------------------------------
+# Test 16: FORWARD LEDGER SESSION STAMP — the bar that fired, not the calendar
+# ---------------------------------------------------------------------------
+# Forward-ledger calendar-asof audit 2026-08-05 (basket_turn_watch #4568 pattern).
+# PRE-EMPTIVE: data/corp_bonds/forward_log.jsonl does not exist yet — no event has
+# ever fired here — so this is the stamp getting fixed before the first row lands,
+# with no heal to perform.
+#
+# The defect had two coupled halves:
+#   (1) every ledger event's as_of was the run's own calendar date, and as_of is
+#       baked into the stable event_id — so a re-run against a frozen store minted
+#       a NEW id every calendar day, re-describing the same unchanged tape and
+#       defeating the keep-first upsert;
+#   (2) _upsert_forward_log's current-bar-only guard ALSO read the wall clock, so
+#       stamping from bar dates without fixing the filter would have silently
+#       dropped every event whenever the store lags the calendar — an evening run,
+#       a weekend, or a collection outage, i.e. the normal case.
+# A test that pins only (1) would pass against a build that writes nothing at all,
+# so the coupling is pinned explicitly below.
+
+def _ramped_series(last_bar: date, n: int = 700, base: float = 400.0, seed: int = 11,
+                   ramp_bars: int = 40, ramp_per_bar: float = 10.0,
+                   name: str = "v") -> pd.Series:
+    """Calm random walk + a sharp trailing widening ramp, ending exactly on last_bar.
+
+    The ramp drives vel21_pctile to the top of its 10y window so velocity_threshold
+    events and the credit_market_turn legs actually fire; the pinned end date is
+    what the ledger stamp must read.
+    """
+    idx = pd.bdate_range(end=pd.Timestamp(last_bar), periods=n)
+    rng = np.random.default_rng(seed)
+    vals = base + rng.normal(0, 1.0, n).cumsum()
+    ramp = np.zeros(n)
+    ramp[-ramp_bars:] = ramp_per_bar * np.arange(1, ramp_bars + 1)
+    return pd.Series(vals + ramp, index=idx, name=name)
+
+
+def _frozen_store(tmp_path: Path, hy_last: date = _FRIDAY,
+                  ccc_last: date | None = None) -> Path:
+    """Data root whose newest bar is a pinned weekday, never the wall clock.
+
+    hy_oas ramps (leg 1 + quality_spread widening); ig_oas stays calm so the
+    HY-IG quality spread widens; ccc/bb ramp so ccc_bb widens too. ccc_last
+    defaults to hy_last; pass an earlier date to give one leg a lagging bar.
+    """
+    ccc_last = ccc_last or hy_last
+    root = tmp_path / "data"
+    _write_series_parquet(_ramped_series(hy_last, base=400.0, seed=11, name="hy_oas"),
+                          root / "archive" / "BAMLH0A0HYM2.parquet")
+    _write_series_parquet(_ramped_series(hy_last, base=100.0, seed=12, ramp_per_bar=0.0,
+                                         name="ig_oas"),
+                          root / "archive" / "BAMLC0A0CM.parquet")
+    _write_series_parquet(_ramped_series(ccc_last, base=800.0, seed=13, name="ccc_oas"),
+                          root / "archive" / "BAMLH0A3HYC.parquet")
+    _write_series_parquet(_ramped_series(ccc_last, base=250.0, seed=14, ramp_per_bar=0.0,
+                                         name="bb_oas"),
+                          root / "archive" / "BAMLH0A1HYBB.parquet")
+    reg_path = root / "corp_bonds" / "issuer_themes.json"
+    reg_path.parent.mkdir(parents=True, exist_ok=True)
+    reg_path.write_text(json.dumps({"themes": {}}))
+    return root
+
+
+def _add_stressed_theme(root: Path, last_bar: date = _FRIDAY, n: int = 700,
+                        theme: str = "hyperscaler_credit") -> None:
+    """Add a theme_daily whose spread widens and whose price falls into last_bar.
+
+    n >= 600 daily bars unlocks the 3B grid (the tag's leg 2/3 source); n_bonds=12
+    with matched_n=10 holds the density gate open.
+    """
+    idx = pd.bdate_range(end=pd.Timestamp(last_bar), periods=n)
+    spread = _ramped_series(last_bar, n=n, base=150.0, seed=21, ramp_bars=20, ramp_per_bar=3.0)
+    price  = _ramped_series(last_bar, n=n, base=100.0, seed=22, ramp_bars=20, ramp_per_bar=-0.5)
+    _write_parquet(
+        pd.DataFrame({
+            "as_of": idx, "theme": theme,
+            "g_spread_bp_pw": spread.values, "price_clean_pw": price.values,
+            "n_bonds": 12, "matched_n": 10,
+        }),
+        root / "corp_bonds" / "series" / "theme_daily.parquet",
+    )
+
+
+def _ledger_rows(root: Path) -> list[dict]:
+    path = root / "corp_bonds" / "forward_log.jsonl"
+    if not path.exists():
+        return []
+    return [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
+
+
+class TestForwardLedgerSessionStamp:
+    # -- the stamp source ---------------------------------------------------
+    def test_series_last_bar_reads_the_tape(self):
+        """_series_last_bar returns the series' own last bar — never a clock date."""
+        from engine.credit_momentum import _series_last_bar
+        s = _ramped_series(_FRIDAY, n=100)
+        assert _series_last_bar(s) == _FRIDAY_STR
+
+    def test_series_last_bar_is_none_when_no_usable_bar(self):
+        """No usable bar → None, so the caller SKIPS rather than clock-stamps."""
+        from engine.credit_momentum import _series_last_bar
+        assert _series_last_bar(None) is None
+        assert _series_last_bar(pd.Series([], dtype=float)) is None
+        all_nan = pd.Series([np.nan, np.nan],
+                            index=pd.bdate_range(end=pd.Timestamp(_FRIDAY), periods=2))
+        assert _series_last_bar(all_nan) is None
+
+    # -- the defect, pinned -------------------------------------------------
+    def test_event_is_stamped_friday_when_the_store_ends_friday(self, tmp_path, monkeypatch):
+        """Store frozen at a pinned Friday → as_of AND event_id carry Friday.
+
+        This is the defect: the pre-fix code stamped the run's own calendar date,
+        so a Monday (or any later) run re-described Friday's tape under that date.
+        The run's calendar day is now never read at all, which is why this test
+        does not have to simulate one.
+        """
+        from engine.credit_momentum import snapshot
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+        root = _frozen_store(tmp_path)
+        snapshot(root=root)
+
+        rows = _ledger_rows(root)
+        assert rows, "expected at least one ledger event from the ramped store"
+        for r in rows:
+            assert r["as_of"] == _FRIDAY_STR, f"{r['event_id']} stamped {r['as_of']}"
+            assert r["event_id"].endswith(_FRIDAY_STR), (
+                f"event_id must be session-keyed, got {r['event_id']}"
+            )
+        assert any(r["event_type"] == "velocity_threshold" for r in rows)
+
+    def test_lagging_store_still_writes(self, tmp_path, monkeypatch):
+        """THE COUPLING REGRESSION: bar-stamped events survive the current-bar guard.
+
+        Two distinct sessions are written in one call on purpose. Under the pre-fix
+        as_of-equals-the-run's-calendar-date filter at most ONE of them could ever
+        match, on any day the suite runs, so this assertion fails against pre-fix
+        behavior 365 days a year — no wall-clock read required to prove it.
+        """
+        from engine.credit_momentum import _make_ledger_event, _upsert_forward_log
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+        root = tmp_path / "data"
+        ev_thu = _make_ledger_event("ccc_bb", "velocity_threshold", _THURSDAY, {"x": 1})
+        ev_fri = _make_ledger_event("hy_oas", "velocity_threshold", _FRIDAY, {"x": 2})
+        n = _upsert_forward_log([ev_thu, ev_fri], root,
+                                {_THURSDAY_STR, _FRIDAY_STR})
+        assert n == 2, (
+            "both sessions this run read must be writable; a today-filter can match "
+            "at most one of two distinct bar dates"
+        )
+        assert {r["as_of"] for r in _ledger_rows(root)} == {_THURSDAY_STR, _FRIDAY_STR}
+
+    def test_snapshot_writes_ledger_from_a_store_that_lags(self, tmp_path, monkeypatch):
+        """End-to-end: a frozen store still produces rows (naive fix would write 0)."""
+        from engine.credit_momentum import snapshot
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+        root = _frozen_store(tmp_path)
+        payload = snapshot(root=root)
+        assert payload["_n_ledger_new"] > 0, (
+            "stamping from bars while the guard still compared to the wall clock "
+            "would drop every event whenever the store lags the calendar"
+        )
+
+    # -- session-keyed idempotency -----------------------------------------
+    def test_rerun_against_frozen_store_writes_zero_and_does_not_mutate(self, tmp_path, monkeypatch):
+        """Second run on the same tape → 0 new rows, byte-identical ledger (keep-first)."""
+        from engine.credit_momentum import snapshot
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+        root = _frozen_store(tmp_path)
+        first = snapshot(root=root)
+        assert first["_n_ledger_new"] > 0
+        path = root / "corp_bonds" / "forward_log.jsonl"
+        before = path.read_bytes()
+
+        second = snapshot(root=root)
+        assert second["_n_ledger_new"] == 0, (
+            "a re-run against a frozen store must re-derive the same event_ids"
+        )
+        assert path.read_bytes() == before, "keep-first must not rewrite existing rows"
+
+    # -- the backfill guard still bites ------------------------------------
+    def test_event_outside_data_sessions_is_refused(self, tmp_path, monkeypatch):
+        """as_of not among the bars this run read → refused (no historical backfill)."""
+        from engine.credit_momentum import _make_ledger_event, _upsert_forward_log
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+        root = tmp_path / "data"
+        ev = _make_ledger_event("hy_oas", "velocity_threshold", _THURSDAY, {"x": 1})
+        assert _upsert_forward_log([ev], root, {_FRIDAY_STR}) == 0
+        assert _ledger_rows(root) == []
+
+    def test_empty_data_sessions_writes_nothing(self, tmp_path, monkeypatch):
+        """No readable bar anywhere → no session is current → 0 rows."""
+        from engine.credit_momentum import _make_ledger_event, _upsert_forward_log
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+        root = tmp_path / "data"
+        ev = _make_ledger_event("hy_oas", "velocity_threshold", _FRIDAY, {"x": 1})
+        assert _upsert_forward_log([ev], root, set()) == 0
+        assert not (root / "corp_bonds" / "forward_log.jsonl").exists()
+
+    def test_series_without_a_bar_date_emits_no_event(self, tmp_path, monkeypatch):
+        """A missing series emits NOTHING rather than a clock-stamped event."""
+        from engine.credit_momentum import snapshot
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+        # ccc/bb absent → ccc_bb is None → no last bar → no ccc_bb event
+        root = tmp_path / "data"
+        _write_series_parquet(_ramped_series(_FRIDAY, base=400.0, seed=11, name="hy_oas"),
+                              root / "archive" / "BAMLH0A0HYM2.parquet")
+        reg_path = root / "corp_bonds" / "issuer_themes.json"
+        reg_path.parent.mkdir(parents=True, exist_ok=True)
+        reg_path.write_text(json.dumps({"themes": {}}))
+
+        snapshot(root=root)
+        rows = _ledger_rows(root)
+        assert all(r["series_id"] != "ccc_bb" for r in rows), (
+            "a series with no usable bar must emit nothing, not a clock-stamped row"
+        )
+        for r in rows:
+            assert r["as_of"] == _FRIDAY_STR
+
+    # -- K-of-N tag stamps --------------------------------------------------
+    def test_market_turn_tag_fire_stamps_the_newest_leg_bar(self, tmp_path, monkeypatch):
+        """credit_market_turn is K-of-N over three series → max of the legs' bars."""
+        from engine.credit_momentum import snapshot
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+        # hy/quality end Friday, ccc_bb lags at Thursday
+        root = _frozen_store(tmp_path, hy_last=_FRIDAY, ccc_last=_THURSDAY)
+        snapshot(root=root)
+
+        rows = _ledger_rows(root)
+        turn = [r for r in rows if r["series_id"] == "credit_market_turn"]
+        assert turn, f"expected a credit_market_turn tag_fire, got {[r['series_id'] for r in rows]}"
+        assert turn[0]["as_of"] == _FRIDAY_STR, "newest bar any leg read"
+        # The lagging leg keeps its OWN bar — both sessions are writable.
+        ccc = [r for r in rows if r["series_id"] == "ccc_bb"]
+        assert ccc and ccc[0]["as_of"] == _THURSDAY_STR
+
+    def test_theme_stress_tag_carries_its_reference_bar(self):
+        """credit_theme_stress echoes its reference bar for the ledger to stamp from."""
+        from engine.credit_momentum import _compute_credit_theme_stress_tag
+        tag = _compute_credit_theme_stress_tag(
+            "test_theme", {"vel21_pctile": 90.0}, None, None,
+            series_as_of=pd.Timestamp(_FRIDAY),
+        )
+        assert tag["as_of"] == _FRIDAY_STR
+
+    def test_theme_tag_fire_is_stamped_from_the_tag_s_own_bar(self, tmp_path, monkeypatch):
+        """End-to-end: the theme row is stamped from the THEME's reference bar.
+
+        That bar is the 3B grid's last COMPLETED bucket, which sits one session
+        behind the daily spread series (2026-07-30 vs 2026-07-31 in this fixture).
+        So the writable-session set cannot be just the three spread series' last
+        bars — if the theme's own bar is missing from it, the backfill guard eats
+        every theme tag_fire the ledger will ever emit.
+        """
+        from engine.credit_momentum import snapshot
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+        root = _frozen_store(tmp_path)
+        _add_stressed_theme(root)
+        payload = snapshot(root=root)
+
+        tags = [t for t in payload["tags"]["credit_theme_stress"] if t.get("fired")]
+        assert tags, "fixture must fire credit_theme_stress for this test to mean anything"
+        tag = tags[0]
+        assert tag["as_of"], "a fired theme tag must carry its reference bar"
+
+        rows = [r for r in _ledger_rows(root) if r["event_type"] == "tag_fire"
+                and r["series_id"].startswith("credit_theme_stress:")]
+        assert rows, "the theme tag_fire must survive the current-bar guard"
+        assert rows[0]["as_of"] == tag["as_of"]
+        assert rows[0]["event_id"].endswith(tag["as_of"])
+
+    def test_theme_stress_tag_as_of_is_none_without_a_reference_bar(self):
+        """No reference bar → None, and the ledger skips the event."""
+        from engine.credit_momentum import _compute_credit_theme_stress_tag
+        tag = _compute_credit_theme_stress_tag(
+            "test_theme", {"vel21_pctile": 90.0}, None, None, series_as_of=None,
+        )
+        assert tag["as_of"] is None
+
+    # -- registered_at stays a clock read ----------------------------------
+    def test_registered_at_is_independent_of_as_of(self):
+        """registered_at records WHEN THE RUN registered the event, not the tape."""
+        from engine.credit_momentum import _make_ledger_event
+        ev = _make_ledger_event("hy_oas", "velocity_threshold", _FRIDAY, {},
+                                registered_at=str(_MONDAY))
+        assert ev["as_of"] == _FRIDAY_STR, "as_of is the bar"
+        assert ev["registered_at"] == str(_MONDAY), "registered_at is the run"
+        # Default: a real ISO date string (the run's clock), never copied from as_of.
+        ev_default = _make_ledger_event("hy_oas", "velocity_threshold", _FRIDAY, {})
+        assert date.fromisoformat(ev_default["registered_at"])
+
+    # -- artifact provenance ------------------------------------------------
+    def test_artifact_carries_data_session_and_keeps_display_as_of(self, tmp_path, monkeypatch):
+        """data_session is the honest tape date; the display as_of key is untouched."""
+        from engine.credit_momentum import snapshot
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+        root = _frozen_store(tmp_path)
+        payload = snapshot(root=root)
+        assert payload["data_session"] == _FRIDAY_STR
+        assert "as_of" in payload, "display as_of must not be renamed or removed"
+        written = json.loads((root / "corp_bonds" / "credit_momentum.json").read_text())
+        assert written["data_session"] == _FRIDAY_STR
+
+    def test_data_session_is_null_on_an_empty_store(self, tmp_path, monkeypatch):
+        """No readable series → data_session is null, printed not hidden."""
+        from engine.credit_momentum import snapshot
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+        root = tmp_path / "data"
+        reg_path = root / "corp_bonds" / "issuer_themes.json"
+        reg_path.parent.mkdir(parents=True, exist_ok=True)
+        reg_path.write_text(json.dumps({"themes": {}}))
+
+        payload = snapshot(root=root)
+        assert payload["data_session"] is None
+        assert payload["_n_ledger_new"] == 0
+
+    # -- FROZEN: fire conditions unchanged by the stamp fix ------------------
+    def test_credit_market_turn_k_of_n_is_unchanged(self):
+        """2-of-3 at pctile >= 85 / vel21 > 0 — breaks if any threshold or leg moves."""
+        from engine.credit_momentum import _compute_credit_market_turn_tag
+        # 1-of-3 → not fired
+        one = _compute_credit_market_turn_tag(
+            {"vel21_pctile": 90.0, "vel21": 1.0}, {"vel21": -1.0}, {"vel21": -1.0})
+        assert (one["score"], one["fired"]) == (1, False)
+        # 2-of-3 → fired
+        two = _compute_credit_market_turn_tag(
+            {"vel21_pctile": 90.0, "vel21": 1.0}, {"vel21": 5.0}, {"vel21": -1.0})
+        assert (two["score"], two["fired"]) == (2, True)
+        # the leg-1 threshold itself: 84.9 fails, 85.0 passes
+        below = _compute_credit_market_turn_tag(
+            {"vel21_pctile": 84.9}, {"vel21": -1.0}, {"vel21": -1.0})
+        assert below["legs"]["hy_vel21_pctile_ge85"] is False
+        at = _compute_credit_market_turn_tag(
+            {"vel21_pctile": 85.0}, {"vel21": -1.0}, {"vel21": -1.0})
+        assert at["legs"]["hy_vel21_pctile_ge85"] is True
+        # vel21 == 0 is NOT widening
+        flat = _compute_credit_market_turn_tag(
+            {"vel21_pctile": 0.0}, {"vel21": 0.0}, {"vel21": 0.0})
+        assert flat["score"] == 0
+
+    def test_credit_theme_stress_k_of_n_is_unchanged(self):
+        """2-of-3 with the severity inversion intact (spread BULL cross = widening)."""
+        from engine.credit_momentum import _compute_credit_theme_stress_tag
+        n = 40
+        idx = pd.bdate_range(end=pd.Timestamp(_FRIDAY), periods=n)
+        bull = pd.Series(np.zeros(n, dtype=bool), index=idx)
+        bull.iloc[-1] = True
+        bear = pd.Series(np.zeros(n, dtype=bool), index=idx)
+        bear.iloc[-1] = True
+
+        # leg1 alone → 1-of-3, not fired
+        only1 = _compute_credit_theme_stress_tag(
+            "t", {"vel21_pctile": 90.0}, None, None, series_as_of=pd.Timestamp(_FRIDAY))
+        assert (only1["score"], only1["fired"]) == (1, False)
+        # leg1 + leg2 (spread BULL cross — inversion, not bear) → fired
+        two = _compute_credit_theme_stress_tag(
+            "t", {"vel21_pctile": 90.0}, {"bull_cross": bull}, None,
+            series_as_of=pd.Timestamp(_FRIDAY))
+        assert two["legs"]["spread_3b_bull_cross_widening_secondary"] is True
+        assert (two["score"], two["fired"]) == (2, True)
+        # a BEAR cross on the spread series is NOT leg 2 (inversion pinned)
+        not2 = _compute_credit_theme_stress_tag(
+            "t", {"vel21_pctile": 90.0}, {"bear_cross": bear}, None,
+            series_as_of=pd.Timestamp(_FRIDAY))
+        assert not2["legs"]["spread_3b_bull_cross_widening_secondary"] is False
+        assert not2["fired"] is False
+        # leg1 + leg3 (price BEAR cross) → fired
+        two_b = _compute_credit_theme_stress_tag(
+            "t", {"vel21_pctile": 90.0}, None, {"bear_cross": bear},
+            series_as_of=pd.Timestamp(_FRIDAY))
+        assert (two_b["score"], two_b["fired"]) == (2, True)
+
+    def test_oscillator_crosses_stay_out_of_the_ledger(self, tmp_path, monkeypatch):
+        """Exclusion rule frozen: only velocity_threshold + tag_fire reach the ledger."""
+        from engine.credit_momentum import snapshot
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+        root = _frozen_store(tmp_path)
+        snapshot(root=root)
+        types = {r["event_type"] for r in _ledger_rows(root)}
+        assert types, "expected events"
+        assert types <= {"velocity_threshold", "tag_fire"}, f"unexpected types: {types}"

@@ -10,6 +10,7 @@ Tests:
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -555,10 +556,30 @@ class TestLiveConformance:
         )
         assert collect["continue-on-error"] is True
         assert collect["env"]["COLLECT_LANE"] == "government-revenue-live"
-        assert collect["run"] == (
+        # SCOPE, not line count. #4601 wrapped the command in a schedule-hour
+        # quota gate (shared ~10/day SAM key, radar-first allocation), so the body
+        # is no longer a bare one-liner. What this pin exists for is unchanged and
+        # is asserted directly: exactly ONE collector invocation, and it is the
+        # narrow SAM one. A prelude may only narrow the cadence — it can never add
+        # a second collector, because there is no second invocation to add it to.
+        collect_run = collect["run"]
+        invocations = [
+            line.strip()
+            for line in collect_run.splitlines()
+            if re.search(r"\bpython3?\s+-m\b", line)
+        ]
+        assert invocations == [
             "python -m scripts.collect --only sam_gov_opportunities "
             "--skip-quality --skip-shadow-importance"
-        )
+        ], f"collect must run exactly the bounded SAM fast path; got {invocations}"
+        # A quiet-skip may only ever apply to the SCHEDULED cadence. If the gate
+        # were to fire on workflow_call or push, the projection lane would skip
+        # its own collector in silence and the publish gate would never see it.
+        if "exit 0" in collect_run:
+            assert 'GITHUB_EVENT_NAME}" = "schedule"' in collect_run, (
+                "a quiet-skip in the collect body must be gated on the scheduled "
+                "event alone"
+            )
         assert "default historical sweep is 1,826 days" in text
         assert "--only usaspending_awards" not in collect["run"], (
             "The bounded SAM fast path must not turn the long-lookback USAspending "

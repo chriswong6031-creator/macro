@@ -112,7 +112,7 @@ def test_cold_theme_never_reaches_the_tape():
 
 
 def test_dead_tape_renders_nothing():
-    """DO_NOT_REBUILD row 151 — no forced ranking when nothing is heating."""
+    """DNR:HOLD-IGNITION-SURFACES — no forced ranking when nothing is heating."""
     cold = _rotation()
     for theme in cold["themes"]:
         theme["emerging_score"] = -1.0
@@ -379,6 +379,241 @@ def test_a_group_reason_takes_exactly_one_separator():
         "a group-level reason already has the previous name's trailing separator")
 
 
+def test_no_fixed_track_is_sized_to_a_sub_12px_label():
+    """The 2026-08-04 break: 10px labels inside flat px tracks.
+
+    `.tt-k` and `.tt-fs` are 10px, and 10px is below the browser's
+    minimum-font-size setting — a user preference (commonly 12–16px) that raises
+    the RENDERED size while the track stays where the CSS put it. So the width of
+    that text is not a function of this stylesheet, and a track sized to fit it at
+    the authored size has no guarantee at all. Sized to clear "setting up" at 10px
+    the columns were 58px with 4.1px of slack: at a 12px clamp "watching" overran
+    its column and the shelf's "loading up" chip overran the 74px label column and
+    printed across the theme names beside it, which is what the operator
+    screenshotted. Same class as the score-ring caption in #4357.
+
+    These assertions are STRUCTURAL on purpose. A clearance check measured in a
+    default render passes on the broken build — it cannot reach the state that
+    breaks it — so what gets pinned is the two properties that make the layout
+    hold at any rendered label width:
+      · the label column can GROW (minmax → max-content), so a clamped chip widens
+        its track instead of painting over the column beside it, and
+      · a clamped column label WRAPS inside its own track (overflow-wrap).
+    """
+    css = _panel_css()
+
+    # 1. the three widths are declared once, so the grids cannot drift apart
+    assert "--tt-col:" in css and "--tt-quiet:" in css and "--tt-gk:" in css, (
+        "the header row, the theme rows and the member groups must read their "
+        "column widths from one declaration — three inline copies drift")
+    ladder = css.split(".tt-row{")[1].split("}")[0]
+    assert "repeat(5,var(--tt-col))" in ladder and "var(--tt-quiet)" in ladder, (
+        "the ladder must size from the shared properties, not inline px")
+    assert "repeat(5,58px)" not in css, "the pre-#4357-ruling magic number is back"
+
+    # 2. the label column grows rather than overflowing — the chip overlap fix
+    gk = css.split(".tt-g{")[1].split("}")[0]
+    assert "minmax(var(--tt-gk),max-content)" in gk, (
+        "a flat label track is what let the 'loading up' chip print across the "
+        "theme names; it must be free to widen when the chip is clamped larger")
+    assert not re.search(r"grid-template-columns:\d+px", gk), (
+        "a fixed px label column cannot report that its chip no longer fits")
+
+    # 3. containment is a guarantee, not a margin — no label paints out of its cell
+    k = css.split(".tt-k{")[1].split("}")[0]
+    assert "overflow-wrap:break-word" in k, (
+        "past any track width a column label must wrap inside its OWN column; "
+        "without this it silently paints over its neighbour")
+    assert "overflow:hidden" not in k and "text-overflow:ellipsis" not in k, (
+        "clipping the label to 'watchin…' is the worse fix (#4357 ruling)")
+
+
+def test_the_glance_row_is_one_line_and_the_stance_is_the_exception():
+    """Doctrine Law 4: a per-row constant belongs in one place, once.
+
+    `_stance_for` is a lookup on the five counts printed on the row beside it, so
+    the stance sentence carries no information the ladder has not already given —
+    and on a normal night four of five rows print the identical sentence. Three
+    lines per theme is what made the panel 692px. The row that has live names is
+    the one row whose stance asks for something today, so it keeps it on the
+    glance tier; the rest carry it inside the disclosure.
+    """
+    src = (TMPL / "_theme_tape.html.j2").read_text()
+    summary = src.split('<summary class="tt-s">')[1].split("</summary>")[0]
+    detail = src.split('<div class="tt-det">')[1].split("{%- endfor %}")[0]
+
+    assert 'class="tt-say"' in summary, "the actionable row keeps its stance"
+    say_at = summary.index('class="tt-say"')
+    gate = summary.rfind("_c.get('live')", 0, say_at)
+    assert gate != -1, (
+        "the glance-tier stance must be gated on the live count — ungated it is "
+        "the repeated constant Law 4 forbids")
+
+    assert 'class="tt-heat"' not in summary, (
+        "rank/heat is Tier-3 reference, not a second glance line per theme")
+    assert 'class="tt-heat"' in detail and "say_en" in detail, (
+        "what leaves the glance tier has to land somewhere — rank, heat and the "
+        "stance for every non-live row belong in the expanded row")
+
+
+def _gist(tape):
+    """The closed tier's one line, sliced out of the rendered panel."""
+    return _render(tape).split('class="tt-gist"')[1].split("</span>\n      </summary>")[0]
+
+
+def _with_off_list(tape):
+    """Give a tape the two groups that fold into the gist's off-list figure.
+
+    The base fixture has neither, which is a legitimate night — and it is exactly
+    why the off-list clause has to be tested against a tape that HAS them: an
+    assertion written against the bare fixture passes on a template that never
+    emits the clause at all.
+    """
+    tape = dict(tape)
+    tape["washout_turns"] = [{
+        "name": "Space Tech", "name_zh": "太空科技", "rank": 28,
+        "turn_1w": 2.03, "turn_1m": -14.17, "n_members": 12, "n_on_board": 1,
+        "counts": {"live": 0, "setting_up": 1, "ran": 0, "leading": 0,
+                   "watching": 0, "quiet": 11},
+        "members": {}, "quiet_sample": [],
+    }]
+    tape["foresight_shelf"] = [
+        {"label_en": "loading up", "label_zh": "蓄势",
+         "names_en": ["Medical Devices", "Nuclear & SMR Power"],
+         "names_zh": ["医疗器械", "核能与小型模块堆"], "more": 1},
+        {"label_en": "re-rating", "label_zh": "重估",
+         "names_en": ["AI Semiconductors"], "names_zh": ["AI 半导体"], "more": 0},
+    ]
+    return tape
+
+
+def test_the_whole_panel_is_one_closed_disclosure():
+    """Operator, 2026-08-06: "way smaller in height."
+
+    680px desktop / 1004px phone against the real artifacts, after two separate
+    compaction passes. The closed height is now the budget, so the structure that
+    delivers it is pinned: ONE <details> with no `open` attribute wrapping
+    everything except the eyebrow and the gist. A future section added outside
+    `.tt-body` is the re-inflation this guard exists to catch.
+    """
+    src = (TMPL / "_theme_tape.html.j2").read_text()
+    assert '<details class="tt-all">' in src, "the panel is one disclosure"
+    assert '<details class="tt-all" open' not in src and \
+           '<details open class="tt-all"' not in src, "it ships CLOSED"
+
+    head, body = src.split('<div class="tt-body">', 1)
+    summary = head.split('<summary class="tt-all-s">')[1]
+    # everything heavy lives behind the fold
+    for heavy in ('class="tt-cols"', 'class="tt-i"', 'class="tt-turn"',
+                  'class="tt-shelf"', 'class="tt-foot"'):
+        assert heavy not in summary, f"{heavy} must sit inside .tt-body, not the summary"
+        assert heavy in body, f"{heavy} went missing from the disclosure body"
+    # the summary is the eyebrow + the gist, and nothing else
+    assert 'class="tt-eyebrow"' in summary and 'class="tt-gist"' in summary
+    assert 'class="tt-sub"' not in src, (
+        "the standing subtitle described the panel instead of reading it; the gist "
+        "replaced it")
+
+
+def test_the_gist_carries_every_folded_section_in_words():
+    """The charter's rule is NARRATION, not enumeration — and folding must not
+    reintroduce the detection-without-narration defect the panel exists to close.
+
+    A reader who never opens the panel must still be told: what is hottest, whether
+    anything is live on this board, and that there is more off the heat list (the
+    turn group + the shelf, which were the always-visible sections before the
+    fold). Plus the stance, because closed is the default state and Law 1 is
+    answered on the tier the reader is actually on.
+    """
+    gist = _gist(_with_off_list(_build()))
+
+    assert "Software" in gist and "软件" in gist, "the hottest theme is named"
+    assert "live name" in gist and "可操作" in gist, "the board's live count"
+    assert "off the heat list" in gist and "不在热度榜上" in gist, (
+        "the turn group and the shelf both fold — the gist is where a reader is "
+        "told they exist")
+    for stance in ("where to look, not what to buy", "而非买入对象"):
+        assert stance in gist, f"Law 1 stance missing from the closed tier: {stance}"
+
+    # …and stays silent about it on a night with neither (honest null, not "0 more")
+    bare = _gist(_build())
+    assert "off the heat list" not in bare and "不在热度榜上" not in bare
+
+
+def test_the_gist_counts_agree_with_the_ladder_it_folds():
+    """One source, two renderings. The closed line and the open ladder are the same
+    figures, so a fixture where they can disagree is the bug this pins."""
+    tape = _with_off_list(_build())
+    gist = _gist(tape)
+
+    live = sum((r.get("counts") or {}).get("live") or 0 for r in tape["rows"])
+    off = sum(len(g["names_en"]) + (g.get("more") or 0)
+              for g in (tape.get("foresight_shelf") or []))
+    off += len(tape.get("washout_turns") or [])
+    assert live and off, "fixture must exercise both clauses, not skip them"
+
+    assert f'is-live">{live}<' in gist, f"live total {live} not printed"
+    assert f'"tt-gf">{off}<' in gist, f"off-list total {off} not printed"
+
+    # the shelf's `more` overflow counts — it is names the shelf did not print,
+    # and dropping it would under-report the very thing the gist is standing in for
+    assert off == 2 + 1 + 1 + 1, "3 loading-up + 1 re-rating + 1 turn row"
+
+
+def test_a_zero_live_night_still_says_so_on_the_closed_tier():
+    """Law 5 — printed absence is this panel's whole argument, and the closed line
+    is the only tier most readers see. A gist that simply omitted the live clause
+    would read as 'nothing to report' on exactly the night it matters."""
+    tape = _build()
+    for r in tape["rows"]:
+        r["counts"]["live"] = 0
+    gist = _render(tape).split('class="tt-gist"')[1].split("</span>\n      </summary>")[0]
+    assert "nothing live on the board today" in gist
+    assert "本榜今日无可操作" in gist
+    assert "is-live" not in gist, "no colour on a night with nothing live"
+
+
+def test_no_user_facing_copy_bakes_in_a_page_direction():
+    """Law 4 (one footnote) + direction-proof copy.
+
+    This panel has moved twice — above the board, below the board, and now last on
+    the page — and BOTH times the move left copy behind that still pointed the old
+    way. #4553 caught the footnote ("the picks below") and fixed it to "above";
+    that word went stale again on 2026-08-06 when the panel moved to the bottom,
+    and three more strings were still saying "below" that #4553 never touched: the
+    `?` tip ("the board below is unchanged by it") and the two per-row hovers
+    ("this changes no ranking below"), en and zh.
+    So the guard is no longer "says above, not below" — it is that NO user-facing
+    string on this panel names a direction at all. A relative word is a claim about
+    where the panel sits, and this panel does not sit still. Say "on this page".
+    """
+    src = (TMPL / "_theme_tape.html.j2").read_text()
+    # strip {# … #} comments: they discuss placement history on purpose
+    body = re.sub(r"\{#.*?#\}", "", src, flags=re.S)
+    for word in ("picks below", "picks above", "board below", "board above",
+                 "ranking below", "ranking above",
+                 "下方选股", "上方选股", "下方看板", "上方看板",
+                 "不改变下方", "不改变上方"):
+        assert word not in body, (
+            f"{word!r} bakes a page position into user-facing copy — the panel has "
+            f"already moved twice and this is the third time it went stale")
+    foot = src.split('<p class="tt-foot">')[1].split("</p>")[0]
+    assert "picks on this page" in foot and "本页选股" in foot
+    assert "more than one line" not in foot, (
+        "duplicated from the ? tip — a second copy on the always-visible tier is "
+        "the stacked footnote Law 4 forbids")
+    # Law 1 — the panel's own stance survives even when the `measuring` clause dark
+    for lang, stance in (("l-en", "where to look, not at what to buy"),
+                         ("l-zh", "而非买入对象")):
+        span = foot.split(f'class="{lang}"')[1].split("</span>")[0]
+        # what a reader gets when `measuring` is False: drop the whole conditional
+        unconditional = re.sub(r"\{%\s*if\b.*?\{%\s*endif\s*%\}", "", span, flags=re.S)
+        assert stance in unconditional, (
+            f"[{lang}] the stance must sit outside the measuring conditional — on a "
+            "night with no live row this is the panel's only answer to 'so what "
+            "do I do'")
+
+
 def test_mobile_break_matches_the_board_and_hides_the_header_row():
     """#4344 — primary decisions never x-scroll on a phone."""
     src = (TMPL / "_theme_tape.html.j2").read_text()
@@ -388,24 +623,45 @@ def test_mobile_break_matches_the_board_and_hides_the_header_row():
     assert ".tt-c.is-zero-cell{display:none}" in block.replace(" ", "")
 
 
-def test_the_page_includes_the_partial_above_the_board():
+def test_the_page_includes_the_partial_last_of_all():
+    """Operator order 2026-08-06: "move it down to bottom of the page."
+
+    Third complaint about this panel's footprint. It shipped ABOVE the board;
+    #4553 moved it below the board and cut it 692px → 498px; #4605 merged one
+    minute later, added the washout-turn group and a second shelf group, and it
+    measured 680px desktop / 1004px phone against the real artifacts — bigger than
+    the state that drew the first complaint. Trimming it in place failed twice, so
+    it leaves the reading order: after every board panel, and folded shut.
+
+    Pinned against `id="holdings"` — the last panel us_stocks renders (the data
+    health strip after it is `mode != 'stocks'`) — not merely against the board,
+    which is what the previous version of this guard checked and which the panel
+    satisfied while still sitting six panels above the bottom.
+    """
     dash = (TMPL / "dashboard.html.j2").read_text()
     assert '{% include "_theme_tape.html.j2" %}' in dash
-    assert dash.index("_theme_tape.html.j2") < dash.index('id="us-standouts"')
+    inc = dash.index("_theme_tape.html.j2")
+    for anchor in ('id="us-standouts"', 'id="equity-scoreboard"', 'id="sectors"',
+                   'id="accumulation"', 'id="holdings"'):
+        assert inc > dash.index(anchor), f"the tape must render after {anchor}"
 
 
 def test_full_page_renders_the_panel_on_stocks_and_never_on_macro():
     """Integration: the real dashboard template, both modes, one shared view-model.
 
     A partial can parse perfectly and still never reach the page — this is the
-    assertion that the include actually fires, in the right mode, above the board.
+    assertion that the include actually fires, in the right mode, and renders
+    after every other panel. Source order is what the template guard above pins;
+    this one pins the RENDERED order, which is what a reader scrolls.
     """
     from tests.test_dashboard_template_render import _base_vm, _env
     vm = dict(_base_vm(), theme_tape=_build())
 
     stocks = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
     assert 'id="theme-tape"' in stocks
-    assert stocks.index('id="theme-tape"') < stocks.index('id="us-standouts"')
+    at = stocks.index('id="theme-tape"')
+    for anchor in ('id="us-standouts"', 'id="holdings"'):
+        assert at > stocks.index(anchor), f"rendered tape must follow {anchor}"
     assert STANCES["act"][0] in stocks
 
     macro = _env().get_template("dashboard.html.j2").render(**vm, mode="macro")
@@ -906,3 +1162,244 @@ def test_the_page_carries_the_desk_read_on_every_render_path():
     missing = [c for c in calls if "foresight" not in c]
     assert missing == [], (
         f"a build_theme_tape call renders without the desk read: {missing}")
+
+
+# ── the washout-turn group (W-D) ────────────────────────────────────────────
+# The floor that picks the heat rows is a MOMENTUM floor, so the one shape it can
+# never show is the one that matters most on a turn: down hard on the month, up on
+# the week. Space Tech sat 28th of 41 and "lagging" on 2026-08-02 while its
+# Satellites sleeve ran +2.03% against the market on the week after −14.17% on the
+# month. These tests pin the group that fixes that, and — just as hard — pin that
+# it changed nothing above it.
+
+def _washed(theme_rs=None, sub_rs=None, name="Space Tech", zh="太空科技",
+            sub="Satellites", sub_zh="卫星", **over):
+    """A rotation with one hot theme and one washed-out floor-FAILER.
+
+    `theme_rs` puts the turn shape on the theme itself; `sub_rs` puts it on the
+    named subsector only — the two grains the group reads.
+    """
+    doc = _rotation()
+    doc["themes"] = [
+        doc["themes"][0],
+        {"theme": name, "theme_zh": zh, "emerging_score": -0.485,
+         "quadrant": "lagging", "rs": theme_rs or {"1W": -0.92, "1M": -15.05}},
+    ]
+    doc["subsectors"] = [
+        doc["subsectors"][0],
+        {"theme": name, "name": sub, "name_zh": sub_zh,
+         "rs": sub_rs or {"1W": -3.16, "1M": -2.54},
+         "members": [{"t": "RKLB"}, {"t": "ASTS"}, {"t": "APPF"}]},
+    ]
+    doc.update(over)
+    return doc
+
+
+TURN_SHAPE = {"1W": 4.5, "1M": -14.17}
+
+
+def test_a_floor_failer_with_the_turn_shape_gets_a_row():
+    """The whole point: a theme the momentum floor rejects becomes visible."""
+    tape = build_theme_tape(_washed(theme_rs=TURN_SHAPE), _standouts(), today=TODAY)
+    turns = tape["washout_turns"]
+    assert [t["name"] for t in turns] == ["Space Tech"]
+    assert turns[0]["name_zh"] == "太空科技"
+    assert (turns[0]["turn_1w"], turns[0]["turn_1m"]) == (4.5, -14.17)
+    # It carries its place on the ladder it just failed — the row's own admission.
+    assert turns[0]["rank"] == 2 and tape["rank_of"] == 2
+    # The theme's own figures earned it, so no sleeve is named.
+    assert turns[0]["lead_en"] is None and turns[0]["lead_zh"] is None
+
+
+def test_a_sleeve_can_earn_the_row_and_is_named_when_it_does():
+    """Space Tech's real 2026-08-02 shape: the THEME's 1W is negative.
+
+    A theme rolls up as the mean of its subsectors, so two sleeves still falling
+    average the turning one away — measured over the 25 archived rotation days the
+    theme-grain test alone never once selects Space Tech. Reading the sleeves is
+    what makes the group able to see the case it was built for, and NAMING the
+    sleeve is what stops the row overstating one fifth of a theme as the whole.
+    """
+    tape = build_theme_tape(
+        _washed(theme_rs={"1W": -0.92, "1M": -15.05}, sub_rs={"1W": 2.03, "1M": -14.17}),
+        _standouts(), today=TODAY)
+    row = tape["washout_turns"][0]
+    assert row["name"] == "Space Tech"
+    assert row["lead_en"] == "Satellites" and row["lead_zh"] == "卫星"
+    assert (row["turn_1w"], row["turn_1m"]) == (2.03, -14.17)
+
+
+def test_both_legs_of_the_shape_are_required():
+    """Down-and-still-down is not a turn; up-and-never-washed-out is not a washout."""
+    for rs in ({"1W": -0.92, "1M": -15.05},      # washed out, not turning
+               {"1W": 4.5, "1M": 3.0},           # turning, never washed out
+               {"1W": 4.5, "1M": None},          # a missing leg is not a pass
+               {"1W": None, "1M": -14.17}):
+        tape = build_theme_tape(_washed(theme_rs=rs), _standouts(), today=TODAY)
+        assert tape["washout_turns"] == [], rs
+
+
+def test_the_thresholds_are_exclusive_at_the_boundary():
+    """A guard that fires AT its own threshold is a different guard.
+
+    Pinned because these two numbers are the group's entire selectivity: at the
+    briefed thresholds exactly one theme-grain hit occurred in the 25 archived
+    rotation days, so a silent slide from `>` to `>=` would not show up as an
+    empty group — it would show up as a slightly fuller one nobody questions.
+    """
+    from engine.theme_tape import TURN_1M_MAX, TURN_1W_MIN
+
+    exact = build_theme_tape(
+        _washed(theme_rs={"1W": TURN_1W_MIN, "1M": TURN_1M_MAX}), _standouts(), today=TODAY)
+    assert exact["washout_turns"] == []
+    inside = build_theme_tape(
+        _washed(theme_rs={"1W": TURN_1W_MIN + 0.01, "1M": TURN_1M_MAX - 0.01}),
+        _standouts(), today=TODAY)
+    assert [t["name"] for t in inside["washout_turns"]] == ["Space Tech"]
+
+
+def test_the_group_is_capped_and_sorted_by_the_strongest_turn():
+    from engine.theme_tape import TURN_N
+
+    doc = _rotation()
+    doc["themes"] = [doc["themes"][0]] + [
+        {"theme": f"T{i}", "theme_zh": f"T{i}", "emerging_score": -1.0 - i,
+         "quadrant": "lagging", "rs": {"1W": 2.5 + i, "1M": -14.0}}
+        for i in range(5)
+    ]
+    doc["subsectors"] = [doc["subsectors"][0]] + [
+        {"theme": f"T{i}", "name": "S", "members": [{"t": "APPF"}]} for i in range(5)
+    ]
+    turns = build_theme_tape(doc, _standouts(), today=TODAY)["washout_turns"]
+    assert len(turns) == TURN_N == 3
+    assert [t["name"] for t in turns] == ["T4", "T3", "T2"]      # 1W desc
+    assert [t["turn_1w"] for t in turns] == [6.5, 5.5, 4.5]
+
+
+def test_a_theme_on_the_heat_list_is_never_repeated_in_the_group():
+    """A hot theme with the shape is ALREADY visible; printing it twice says
+    the opposite of what the group means."""
+    doc = _rotation()
+    doc["themes"][0]["rs"] = {"1W": 9.0, "1M": -20.0}
+    tape = build_theme_tape(doc, _standouts(), today=TODAY)
+    assert [r["name"] for r in tape["rows"]] == ["Software"]
+    assert [t["name"] for t in tape["washout_turns"]] == []
+
+
+def test_no_qualifying_theme_means_no_group_at_all():
+    """Honest-null: [] on the payload and NOTHING in the markup — no header,
+    no empty box. A group that printed a best-available row on a night with no
+    turn would be the forced ranking the Ignition Radar suspension forbids."""
+    tape = _build()
+    assert tape["washout_turns"] == []
+    html = _render(tape)
+    assert 'class="tt-turn"' not in html
+    for token in ("Turning from washout", "洗盘转折"):
+        assert token not in html, token
+
+
+def test_a_dead_tape_still_prints_nothing_even_with_a_turn():
+    """The panel's own floor outranks the group. No heat row → no panel, and a
+    washout-turn cannot resurrect one on a tape that has nothing to say."""
+    doc = _washed(theme_rs=TURN_SHAPE)
+    doc["themes"][0]["emerging_score"] = -9.0       # kill the one hot theme
+    doc["themes"][0]["quadrant"] = "lagging"
+    assert build_theme_tape(doc, _standouts(), today=TODAY) is None
+
+
+def test_the_group_cannot_touch_the_heat_rows():
+    """The TOP_N selection is byte-identical with and without a qualifying turn.
+
+    This is the fence that makes the group display-tier: it is computed AFTER the
+    rows are final and reads nothing but the set of names already shown.
+    """
+    plain = build_theme_tape(_washed(), _standouts(), today=TODAY)
+    turned = build_theme_tape(_washed(theme_rs=TURN_SHAPE), _standouts(), today=TODAY)
+    assert plain["washout_turns"] == [] and turned["washout_turns"] != []
+    assert plain["rows"] == turned["rows"]
+    assert plain["rank_of"] == turned["rank_of"]
+
+
+def test_the_row_narrates_members_through_the_same_machinery():
+    """Same partition, same buckets, same total — one implementation, so the two
+    groups cannot drift into describing the board differently."""
+    tape = build_theme_tape(_washed(theme_rs=TURN_SHAPE), _standouts(), today=TODAY)
+    row = tape["washout_turns"][0]
+    assert set(row["counts"]) == set(BUCKETS)
+    assert sum(row["counts"].values()) == row["n_members"] == 3
+    assert row["n_on_board"] == row["n_members"] - row["counts"]["quiet"]
+    # APPF is live on the fixture board; RKLB/ASTS are on no lane at all.
+    assert [m["t"] for m in row["members"]["live"]] == ["APPF"]
+    assert row["quiet_sample"] == ["RKLB", "ASTS"]
+
+
+# ── the group's surface ─────────────────────────────────────────────────────
+def _turned_html():
+    return _render(build_theme_tape(
+        _washed(theme_rs={"1W": -0.92, "1M": -15.05}, sub_rs={"1W": 2.03, "1M": -14.17}),
+        _standouts(), today=TODAY))
+
+
+def test_the_group_renders_its_label_and_figures_in_both_languages():
+    html = _turned_html()
+    assert 'class="tt-turn"' in html
+    for token in ("Turning from washout — early, unconfirmed", "洗盘转折——早期，未确认",
+                  "Satellites", "卫星", "+2.0%", "past week", "近一周"):
+        assert token in html, token
+    # The true minus, never the hyphen-minus, on a figure.
+    assert "−14.2%" in html and "-14.2%" not in html
+
+
+def test_the_group_carries_the_null_and_the_stance_once():
+    """Law 5 + Law 1, and Law 4's "a constant belongs in one place": every row
+    here is early for the same reason, so the reason is stated once."""
+    text = _visible_text(_turned_html())
+    assert text.count("Watch — don’t chase.") == 1
+    assert text.count("观望，勿追高。") == 1
+    for token in ("no measured edge", "没有经检验的优势证据"):
+        assert token in text, token
+
+
+def test_no_row_in_the_group_carries_a_buy_verb():
+    """P2 — watch-lanes, never buy claims. The heat rows' stance table tops out
+    at "act per row"; no row here has earned a verb, and the construction behind
+    the group is a measured null."""
+    # Bound the slice to the group itself: the panel FOOTNOTE below it legitimately
+    # says "not at what to buy" / "而非买入对象", and a greedy split would read that
+    # negation as a buy word and make this gate fail for the wrong reason.
+    html = _turned_html()
+    group = html.split('<div class="tt-turn">')[1].split('<hr class="tt-rule">')[0]
+    for verb in ("act per row", "按行操作", "Buy", "买入", "get ready", "做好准备"):
+        assert verb not in group, f"the washout-turn group must not say {verb!r}"
+    assert "tt-stance" not in group
+
+
+def test_the_group_leaks_no_machine_vocabulary():
+    html = _turned_html()
+    text = _visible_text(html) + " " + _tip_text(html)
+    hits = [b for b in BANNED_ON_ANY_TIER if b in text]
+    assert hits == [], f"banned vocabulary reached the reader: {hits}"
+    for slug in ("washout_turns", "emerging_score", "lagging", "quadrant",
+                 "turn_1w", "rs_1m", "osc_slope", "Trough"):
+        assert slug not in text, f"machine vocabulary reached the reader: {slug}"
+
+
+def test_the_group_reuses_the_row_idiom_rather_than_inventing_a_second_one():
+    """A turn row must be the SAME object as a heat row — same seven-column grid
+    under the same header, same member groups — or the two halves of one panel
+    drift apart. Only the label, the figures line and the reason are new."""
+    src = (TMPL / "_theme_tape.html.j2").read_text()
+    group = src.split('<div class="tt-turn">')[1].split("{#- THE SHELF")[0]
+    for shared in ("tt-i", "tt-s", "tt-row", "tt-det", "tt-g", "tt-gk",
+                   "tt-names", "tt-sym", "tt-quiet", "tt-c", "tt-v"):
+        assert shared in group, f"the turn row must reuse .{shared}"
+
+
+def test_the_group_takes_no_state_ink():
+    """It is the least-confirmed thing on the panel; it must not be the loudest.
+    The same argument that keeps the foresight word grey."""
+    css = _panel_css()
+    for cls in ("tt-turn{", "tt-turn-hd{", "tt-turn-line{", "tt-turn-why{"):
+        block = css.split(cls)[1].split("}")[0]
+        for coloured in ("--ink-up", "--ink-down", "var(--up)", "var(--down)"):
+            assert coloured not in block, f".{cls[:-1]} must carry no state ink"

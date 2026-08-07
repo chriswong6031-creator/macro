@@ -600,8 +600,11 @@ CADDY = (ROOT / "app" / "deploy" / "Caddyfile").read_text(encoding="utf-8")
 #: served or bounced to sign-in. The three `_err` twins are the handle_errors mirrors: if
 #: the gate upstream blips, THOSE decide, and a page missing from them 302s exactly when
 #: the estate is already having a bad day.
-MATCHERS = ("@reg_html", "@reg_asset", "@gate_html",
-            "@reg_html_err", "@reg_asset_err", "@gate_html_err")
+# @reg_html / @reg_html_err are retired (operator 2026-08-04: every HTML shell
+# is served to anonymous visitors, so no document matcher carries a public
+# exemption list any more). The asset + funnel matchers still do.
+MATCHERS = ("@reg_asset", "@gate_html",
+            "@reg_asset_err", "@gate_html_err")
 
 
 def _matcher_block(name: str) -> str:
@@ -691,6 +694,17 @@ PUBLIC_EXACT = frozenset({
     # whole point of this frozen set: widening the public boundary is an
     # explicit, reviewed act, never a side effect of shipping a page.
     "/stock_seasonality.html", "/stock_seasonality.css", "/stock_seasonality.js",
+    # Filing Forensics presentation + client (Calcbench parity Wave 0C). The
+    # 2026-08-04 change opened every *.html shell to anonymous visitors but never
+    # promoted these two with it, so the page served a 200 whose stylesheet and
+    # script both 401'd — an unstyled, non-functional skeleton of a paid product.
+    # Ratified here deliberately, per this set's own rule: neither file carries a
+    # finding, a company row, a receipt field, or any embedded payload. The CSS is
+    # presentation and the JS is a pure fetcher whose only network calls are
+    # /api/forensics/state and /api/forensics/v1/attested-history — both still
+    # behind require_site_full_user (401 signed out, 403 unentitled). This changes
+    # who can read the WORKBENCH, never who can read the WORK.
+    "/fundamental_forensics.css", "/fundamental_forensics.js",
     "/onboard.css", "/onboard.js", "/tier_preview.css", "/tier_preview.js",
     "/landing.css", "/scene-motion.css", "/scene-motion.js",
     "/chat.css",

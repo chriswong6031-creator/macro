@@ -62,6 +62,12 @@
         "ticker": {"type": "string", "minLength": 1},
         "asof": {"$ref": "#/$defs/date"},
         "tf": {"type": "string", "minLength": 1, "description": "Timeframe label, e.g. 3D."},
+        "anchor_era": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The BUCKETING ERA this marker stream was drawn under (signal_quality.ANCHOR_ERA; ruling research/SIGNAL_QUALITY_SESSION_ANCHOR_ADJUDICATION_BY_FABLE.md R-SQ3). `sq-abs-session-2026-08-06` = 2D/3D buckets anchored to an ABSOLUTE per-market session calendar and labelled by each bucket's OPEN date; before it, the grid was phased to whatever leading history the caller passed, so the same name graded differently from two loaders on the same night. A graded record must be able to fence cohorts on this field forever — and marker_integrity reads it to cross the era exactly once (R-SQ7). Distinct from the CASCADE's era (confluence_tiers.ANCHOR_ERA), which rides on the gate verdict, not on this file.",
+          "examples": ["sq-abs-session-2026-08-06"]
+        },
         "state": {"$ref": "#/$defs/state"},
         "above200": {"type": "boolean"},
         "weekly_bull": {"type": "boolean"},

@@ -25,6 +25,7 @@
   'nominal_only': ('v-weak', 'Weak',             '偏弱'),
   'insufficient': ('v-none', 'Not enough data',  '数据不足'),
   'degenerate':   ('v-none', 'Not the model',    '并非该模型'),
+  'per_primitive':('v-none', 'Read part by part','逐项解读'),
   'no_data':      ('v-none', 'No data',          '无数据')
 } %}
 {% set FID = {
@@ -302,6 +303,16 @@
   {% if not m.buildable %}
   <p class="foot"><strong>{{ t('Cannot be rebuilt here','此处无法复刻') }}.</strong>
     {% for leg in m.legs if leg.fidelity == 'absent' %}{{ leg.distortion }}{% endfor %}</p>
+  {% elif m.fidelity.absent %}
+  {# A model that DOES build but still carries absences: the absences are a boundary of the
+     data, not a failure to rebuild, so they get their own heading and one line each rather
+     than being run together under "cannot be rebuilt". #}
+  <p class="foot" style="margin-bottom:2px"><strong>{{ t('What we cannot measure, printed rather than dropped','无法测量的部分，如实列出而非略去') }}:</strong></p>
+  <ul class="foot" style="margin:0 0 0 18px; padding:0">
+    {% for leg in m.legs if leg.fidelity == 'absent' %}
+    <li style="margin-bottom:3px"><strong>{{ leg.label }}</strong> — {{ leg.distortion }}</li>
+    {% endfor %}
+  </ul>
   {% endif %}
 
   <details style="margin-top:8px">
@@ -511,7 +522,7 @@
 
 {# ==================== EVIDENCE: universe gap ==================== #}
 <div class="panel">
-  <h2>{{ t('Why their winners are mostly invisible to us','为何他们的优选股在我们这里大多看不到') }}</h2>
+  <h2>{{ t('How many of their winners we can even see','其优选股我们能看到多少') }}</h2>
   <div class="chips" style="margin-top:0">
     <span class="chip">{{ t('Their screened universe','其筛选股票池') }} <b class="mono">{{ '{:,}'.format(universe_gap.fintel_screened) }}</b></span>
     <span class="chip">{{ t('Our price coverage','我们的行情覆盖') }} <b class="mono">{{ '{:,}'.format(universe_gap.our_price_universe) }}</b></span>
@@ -520,8 +531,11 @@
       <b class="mono">{{ universe_gap.published_leaders_in_our_fundamentals_panel }}/{{ universe_gap.published_leaders_tested }}</b></span>
   </div>
   <p class="foot">
-    {{ t('This is the finding that matters most. The model is built to find small, overlooked companies, and it is measured against a small-cap index. Our prices reach that far down, but our filings data does not — so most of the companies the model exists to surface are ones we cannot score at all. Closing this needs wider filings coverage, not a better formula.',
-          '这是最关键的发现。该模型的用途是挖掘被忽视的小公司，其业绩也对标小盘指数。我们的行情能覆盖到那个层级，财报数据却不能－因此该模型真正要挖掘的公司，我们大多根本无法评分。要弥补这一点，需要的是更广的财报覆盖，而非更好的公式。') }}
+    {{ t('The model is built to find small, overlooked companies and is measured against a small-cap index — the size band where our filings data used to run out. It no longer does: our filings coverage now follows our prices down into the Russell 2000, and names we once could not score at all are covered.',
+          '该模型的用途是挖掘被忽视的小公司，其业绩也对标小盘指数－而这正是我们财报数据过去覆盖不到的层级。现在不同了：财报覆盖已随行情下探至罗素2000，过去根本无法评分的公司如今已被纳入。') }}
+    <br>
+    {{ t('The measurement below is not that read. It ran on the narrower panel, before the widening — so it judged this small-cap model mostly on names that are not small caps. Re-running it on the wider panel is the test that will actually settle the question, and it has not run yet.',
+          '但下方的测算并非基于新覆盖。它跑在扩容之前的较窄样本上－也就是说，用于评判这个小盘模型的股票大多并非小盘股。在更广样本上重跑，才是真正能定论的检验，而该检验尚未进行。') }}
   </p>
 </div>
 
@@ -565,6 +579,17 @@
               '十二个季度的读数偏少。临界结果应视为未定论，而非已定论。') }}</li>
     <li>{{ t('We are testing our rebuild, not their model. Where a part is a stand-in, a poor result may be our substitute failing rather than their idea.',
               '我们检验的是自己的复刻件，而非厂商的模型。凡使用替代口径之处，结果不佳可能是替代口径失效，而非其思路有误。') }}</li>
+    {# The bullets above describe the quarterly fundamentals panel. The options family sits on
+       a different substrate entirely, so its limits are keyed off its own stamps rather than
+       letting a reader carry "three years / twelve quarters" across to a six-week panel. #}
+    {% if study_meta.limits.options_regime %}
+    <li>{{ t('The options family is a different panel: six weeks of a single market regime, which at a five-day horizon is about six independent windows. Every significance number on it is empty by construction — read those rows as directions to watch, not as measured effects.',
+              '期权族系所用面板完全不同：仅六周、单一市场状态，按五日前瞻计算约为六个独立窗口。其上任何显著性数字在构造上都不成立－该部分应视为待观察的方向，而非已测得的效应。') }}</li>
+    {% endif %}
+    {% if study_meta.limits.options_stamp %}
+    <li>{{ t("Options rows carry the date our collector ran, not the trading session it read: 9 of 41 stamps simply repeated the session before them. We collapse those before scoring, but the change-based rows still rest on about 13 usable dates.",
+              '期权数据行标注的是采集程序的运行日期，而非其读取的交易时段：41个标记中有9个只是重复了前一时段。计分前已合并重复项，但基于变化量的行仍仅依赖约13个可用日期。') }}</li>
+    {% endif %}
   </ul>
   {% if study_meta.generated_utc %}
   <p class="xs muted" style="margin:9px 0 0">{{ t('Measured','实测时间') }} {{ study_meta.generated_utc }} ·

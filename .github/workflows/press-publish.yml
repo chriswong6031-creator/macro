@@ -46,7 +46,9 @@ name: press-publish
 # feed.xml the free-content builder renders from them, one append-only row per
 # piece in data/press/published.jsonl, and (W1.5) the per-publication property
 # trees under properties/ plus, after cutover, the routed .md under
-# content/press/. The commit step's `git add` names those five paths EXPLICITLY.
+# content/press/, plus (#4549) the content-hashed site/assets/{css,js} those
+# pages link once externalize_css has lifted their inline CSS out. The commit
+# step's `git add` names those seven paths EXPLICITLY.
 # site/sitemap.xml is never staged — the nightly owns it, and
 # scripts/run_press.py raises if an emit changed it. (The property trees carry
 # their own sitemap.xml on their own domains; those ARE this lane's to write.)
@@ -289,11 +291,32 @@ jobs:
           # pipeline for the file every night. The press properties carry their
           # OWN sitemap.xml inside properties/<pub>/, which is a different file
           # on a different domain and is owned by this lane.
+          # normalize the pages this step stages (P0 2026-08-04, 9a997e9da3f): a lane
+          # that commits site/ HTML without the shim/externalize/stamp chain publishes
+          # RAW pages — inline <style>, no assets/css/<hash>.css ref, stale ?v= — and
+          # holds them until the next full-tree render re-bakes site/blog. It also keeps
+          # this lane honest with its own gate: `build_free_content --check` (the step
+          # above) renders to a temp dir, REPLAYS these three sweeps, and byte-compares
+          # against committed site/, so an estate committed pre-sweep is an estate whose
+          # own drift check can never converge. All three passes are idempotent (~20s)
+          # and non-blocking. Ordered before the staging below so what gets committed is
+          # the post-sweep image the check compares against.
+          python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+          python -m scripts.externalize_css || echo "::warning title=externalize::pre-commit css externalize FAILED — pages may ship un-externalized (9a997e9da3f)"
+          python -m scripts.optimize_assets || echo "::warning title=stamp::asset optimize FAILED — ?v= stamps may be stale"
+
           git add content/seo/blog 2>/dev/null || true
           git add site/blog 2>/dev/null || true
           git add data/press/published.jsonl 2>/dev/null || true
           git add content/press 2>/dev/null || true
           git add properties 2>/dev/null || true
+          # ...and the content-hashed assets those pages now link: externalize_css
+          # rewrites each article to <link> site/assets/css/<hash>.css, so staging the
+          # page without the asset ships a 404 stylesheet. --ignore-removal never stages
+          # a DELETION — the orphan prune reasons only from pages it can see, and this
+          # lane has no post-rebase normalize to re-mint an asset a sibling still links.
+          git add --ignore-removal site/assets/css 2>/dev/null || true
+          git add --ignore-removal site/assets/js 2>/dev/null || true
 
           if git diff --cached --name-only | grep -q '^site/sitemap.xml$'; then
             echo "::error title=press_sitemap_guard::press-publish staged site/sitemap.xml — the nightly owns it. Refusing to commit."

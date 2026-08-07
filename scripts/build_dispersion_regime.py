@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import dispersion  # noqa: E402
 from lib import config  # noqa: E402
+from lib.closes_panel import disclose_merge, merge_close_caches  # noqa: E402
 
 log = logging.getLogger("build_dispersion_regime")
 
@@ -51,7 +52,6 @@ def _load_closes() -> pd.DataFrame:
 
     Returns an empty DataFrame when no cache exists (builder degrades gracefully).
     """
-    frame: pd.DataFrame | None = None
     for tier in _TIERS:
         p = config.data_dir() / tier / "_closes_cache.parquet"
         if not p.exists():
@@ -61,25 +61,12 @@ def _load_closes() -> pd.DataFrame:
                   f"{tier} ({p}) — tier skipped; regime universe thinner than the "
                   "board's", flush=True)
             log.warning("close cache missing for tier %s — skipped", tier)
-            continue
-        try:
-            d = pd.read_parquet(p)
-        except Exception as e:  # noqa: BLE001
-            print(f"::warning title=dispersion_regime::{tier}/_closes_cache unreadable "
-                  f"({e}) — tier skipped; regime universe thinner than the board's",
-                  flush=True)
-            log.warning("%s/_closes_cache unreadable (%s) — skipped", tier, e)
-            continue
-        d = d.loc[:, ~d.columns.duplicated()]
-        if frame is None:
-            frame = d
-        else:
-            new_cols = [c for c in d.columns if c not in frame.columns]
-            if new_cols:
-                frame = frame.join(d[new_cols], how="outer")
-    if frame is None:
-        return pd.DataFrame()
-    return frame.sort_index().loc[:, lambda x: ~x.columns.duplicated()]
+    # Freshest column per ticker (lib/closes_panel.py) — tier order alone hands an index
+    # migrant the column from the tier it LEFT, which is NaN at the tip and so drops the
+    # name out of the cross-section entirely. Unreadable tiers are skipped in there.
+    panel, meta = merge_close_caches(_TIERS)
+    disclose_merge(meta, "dispersion_regime")
+    return panel
 
 
 # ---------------------------------------------------------------------------

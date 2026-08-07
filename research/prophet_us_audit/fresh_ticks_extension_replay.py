@@ -75,10 +75,27 @@ import pandas as pd
 
 REPO = str(Path(__file__).resolve().parents[2])
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, "fresh_ticks_extension_replay_results.json")
 SB_FROZEN = os.path.join(HERE, "superintelligence_standins_results.json")
 os.chdir(REPO)
 sys.path.insert(0, REPO)
+sys.path.insert(0, HERE)
+
+# PRICE-ADJUSTMENT AUDIT (2026-08-06). This packet prices NAMES from the breadth close
+# caches (raw, re-based only at an infrequent full rebuild) and the BENCHMARK from
+# data/yahoo/SPY.parquet (back-adjusted), so a name that goes ex-distribution inside a
+# measurement window books its own payout as a loss against an unaffected SPY. Basis is
+# now switchable so the frozen result and its adjusted-first correction are BOTH
+# reproducible; `cache` is the default and reproduces the shipped JSON unchanged.
+# See PRICE_ADJUSTMENT_AUDIT_2026-08-06.md.
+import price_ladder  # noqa: E402  (needs HERE on the path)
+
+PRICE_BASIS = os.environ.get("PRICE_BASIS", "cache").strip().lower()
+if PRICE_BASIS not in ("cache", "adjusted"):
+    raise SystemExit(f"PRICE_BASIS must be 'cache' or 'adjusted', got {PRICE_BASIS!r}")
+OUT = os.path.join(HERE, "fresh_ticks_extension_replay_results.json"
+                   if PRICE_BASIS == "cache"
+                   else "fresh_ticks_extension_replay_adjusted_rerun.json")
+PANEL_PROVENANCE: dict = {}
 
 from engine import confluence_tiers as ct  # noqa: E402
 from engine.confluence_tiers import (  # noqa: E402
@@ -115,13 +132,62 @@ def _r(x, nd=2):
 # --------------------------------------------------------------------------- #
 # loaders
 # --------------------------------------------------------------------------- #
-def load_panel() -> pd.DataFrame:
-    """Full-universe close panel from the three breadth caches (the S-D panel), pinned."""
+def _cache_panel() -> pd.DataFrame:
+    """The frozen basis: raw closes straight from the three breadth caches."""
     px = pd.concat([pd.read_parquet(f"data/{g}/_closes_cache.parquet") for g in GROUPS],
                    axis=1, sort=False)
     px = px.loc[:, ~px.columns.duplicated()].sort_index()
     px.index = pd.to_datetime(px.index)
     return px[px.index <= FRAME_ASOF]
+
+
+def load_panel() -> pd.DataFrame:
+    """Full-universe close panel, pinned at :data:`FRAME_ASOF`.
+
+    ``PRICE_BASIS`` selects the adjustment basis and NOTHING else:
+
+    ``cache`` (default)
+        The frozen basis this packet shipped on — raw closes from the breadth caches.
+        Byte-reproduces ``fresh_ticks_extension_replay_results.json``.
+
+    ``adjusted``
+        The same names on the same calendar, re-priced adjusted-first through
+        ``price_ladder`` (baskets/ohlcv → yahoo → data_stocks → cache). The benchmark leg
+        (``data/yahoo/SPY.parquet``) is already adjusted, so this is the run where both
+        legs of every excess number share one basis.
+
+    The universe, the session calendar AND the observed-cell mask are all held FIXED
+    across the two bases, so a delta between the runs is attributable to the price basis
+    and to nothing else. The mask is load-bearing, not defensive: the ``breadth``
+    (large-cap) cache only starts 2025-03-18 while ``data/baskets/ohlcv`` carries the
+    same names back to 2014, so an unmasked swap silently hands ~500 large caps two extra
+    years of warm-up and grows the admitted population by ~31% — a COVERAGE change
+    masquerading as a basis effect. Every cell that is NaN in the cache panel is forced
+    NaN here (memory: ``comparing-across-measures-manufactures-results``).
+
+    Names absent from every adjusted store fall through to the cache and are counted in
+    :data:`PANEL_PROVENANCE`, never dropped.
+    """
+    base = _cache_panel()
+    if PRICE_BASIS == "cache":
+        PANEL_PROVENANCE.clear()
+        PANEL_PROVENANCE.update({"basis": "cache", "ladder": ["closes_cache_UNADJUSTED"],
+                                 "panel_names": int(base.shape[1]),
+                                 "panel_sessions": int(base.shape[0])})
+        return base
+
+    px, prov = price_ladder.close_panel(list(base.columns), asof=FRAME_ASOF,
+                                        start=base.index.min())
+    px = px.reindex(index=base.index, columns=base.columns)   # fix calendar + universe
+    px = px.where(base.notna())                               # fix the observed cells
+    prov["basis"] = "adjusted"
+    prov["held_fixed"] = ("universe, session calendar AND observed-cell mask taken from "
+                          "the cache panel; only the price VALUES differ between runs")
+    prov["cells_observed"] = int(base.notna().to_numpy().sum())
+    prov["cells_masked_out"] = int((px.isna() & base.notna()).to_numpy().sum())
+    PANEL_PROVENANCE.clear()
+    PANEL_PROVENANCE.update(prov)
+    return px
 
 
 def load_spy(index: pd.DatetimeIndex) -> pd.Series:
@@ -533,8 +599,12 @@ def main() -> None:
                             "matching engine.grading.forward_metrics"),
     }
     px = load_panel()
+    res["price_basis"] = PRICE_BASIS
+    res["panel_provenance"] = dict(PANEL_PROVENANCE)
     print(f"[1/6] panel {px.shape[1]} names x {px.shape[0]} sessions, pinned at "
-          f"{FRAME_ASOF.date()}", flush=True)
+          f"{FRAME_ASOF.date()} (basis={PRICE_BASIS}, "
+          f"{PANEL_PROVENANCE.get('names_on_unadjusted_basis', 0)} names still unadjusted)",
+          flush=True)
 
     # ---- reproduction gate (runs BEFORE anything new is printed) ----
     res["reproduction_gate"] = reproduce_sb(px)

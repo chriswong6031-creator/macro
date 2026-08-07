@@ -639,14 +639,21 @@ def _handoff_verdict(runs: list[dict[str, Any]]) -> tuple[str, list[str]]:
 
     Returns ``(verdict, names)``:
 
-      ``unproven`` — no non-spurious check run exists on the head. The sweeper
-        will never merge such a pull request (nothing proves it), so releasing
-        the session here would ORPHAN the work. Falls through to `unmerged`.
+      ``unproven`` — nothing on the head affirmatively passed AND nothing is still
+        running, so no non-spurious check ever will. The sweeper will never merge
+        such a pull request (nothing proves it), so releasing the session here
+        would ORPHAN the work. Falls through to `unmerged`. Two shapes: no
+        non-spurious check run exists at all, or — #4779 — every one that exists
+        concluded `skipped`/`neutral`, which proves exactly as much. This tracks
+        `decide_verdict`'s affirmative-pass rule in scripts/merge_on_green.py on
+        purpose: the guard must not release a session on a head the sweeper is
+        going to refuse, and the pair silently disagreeing is how work is lost.
       ``red`` — a non-spurious check CONCLUDED outside {success, neutral,
         skipped}. The sweeper never merges a red, so the session must fix it or
         pull the label; naming the checks is the whole value of blocking here.
-      ``armed`` — everything that concluded is clean; anything else is still
-        running. The sweeper is a valid owner of the rest.
+      ``armed`` — everything that concluded is clean, and either something passed
+        or something is still running. The sweeper is a valid owner of the rest;
+        a head still being proven is precisely what the handoff exists to hand off.
 
     Red OUTRANKS pending here, the reverse of `decide_verdict` in
     scripts/merge_on_green.py. The difference is deliberate: this verdict only
@@ -665,6 +672,18 @@ def _handoff_verdict(runs: list[dict[str, Any]]) -> tuple[str, list[str]]:
     ]
     if red:
         return "red", red
+    # An absence of red is not a pass — see the #4779 measurement in
+    # `decide_verdict`. Gated on nothing PENDING, which is the one place this
+    # differs from the sweeper's copy: there the pending branch has already
+    # returned by the time the affirmative-pass rule is reached, whereas `armed`
+    # deliberately covers a head whose packs are still running. A queued ci-pack
+    # with no success yet is exactly what the sweeper is for and must stay `armed`;
+    # only a head that has FINISHED proving nothing may pin the session.
+    still_running = any(run.get("status") != "completed" for run in considered)
+    if not still_running and not any(
+        run.get("conclusion") == "success" for run in considered
+    ):
+        return "unproven", []
     return "armed", []
 
 

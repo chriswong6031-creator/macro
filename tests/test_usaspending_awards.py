@@ -1,11 +1,16 @@
 """Hermetic tests for official USAspending award/action ingestion."""
 from __future__ import annotations
 
+import hashlib
 import json
+from pathlib import Path
 
 import pandas as pd
+import pyarrow.parquet as pq
+import pytest
 
 import collectors.usaspending_awards as usaspending_awards
+import engine.government_revenue.award_events as award_events
 from engine.government_revenue.award_events import build_award_change_events
 from scripts.ci.validate_government_revenue_award_event_bundle import validate_bundle
 from collectors.usaspending_awards import (
@@ -250,6 +255,135 @@ def test_snapshot_transition_ledger_retains_state_reversion():
     assert ledger["total_obligated"].tolist() == [100.0, 150.0, 100.0]
     assert ledger["snapshot_content_sha256"].iloc[0] == ledger["snapshot_content_sha256"].iloc[2]
     assert ledger["known_at"].is_unique
+
+
+def test_accrued_snapshot_ledger_predating_the_hash_column_still_backfills(tmp_path):
+    """The exact production shape that failed the 2026-08-06 nightly persistence.
+
+    ``award_snapshots.parquet`` was committed before ``snapshot_content_sha256``
+    joined ``SNAPSHOT_COLUMNS``, so every accrued row reaches the backfill with
+    that column materialized by ``reindex`` as an all-null ``float64`` block.
+    Writing hashes into it raised ``TypeError: Invalid value ... for dtype
+    'float64'`` under pandas 3 and the whole run was lost before any artifact
+    was written.
+    """
+    legacy_columns = [
+        column for column in SNAPSHOT_COLUMNS if column != "snapshot_content_sha256"
+    ]
+    rows = []
+    for index, amount in enumerate((100.0, 150.0, 100.0)):
+        award = normalize_award(
+            _raw_award(amount), "LMT", f"2026-08-0{index + 1}T10:00:00+00:00"
+        )
+        award["first_seen_at"] = "2026-08-01T10:00:00+00:00"
+        rows.append(
+            snapshot_rows(
+                pd.DataFrame([award], columns=AWARD_COLUMNS),
+                f"2026-08-0{index + 1}T10:00:00+00:00",
+            ).iloc[0].to_dict()
+        )
+    accrued = pd.DataFrame(rows, columns=legacy_columns)
+    accrued.to_parquet(tmp_path / "award_snapshots.parquet", index=False)
+    reloaded = pd.read_parquet(tmp_path / "award_snapshots.parquet")
+
+    assert "snapshot_content_sha256" not in reloaded.columns
+    # Pin the placeholder dtype: if a future reindex stopped producing a numeric
+    # block this test would still pass while no longer covering the defect.
+    assert reloaded.reindex(columns=SNAPSHOT_COLUMNS)["snapshot_content_sha256"].dtype == "float64"
+
+    healed = usaspending_awards._ensure_snapshot_hashes(reloaded)
+    hashes = healed["snapshot_content_sha256"].tolist()
+
+    assert len(hashes) == 3
+    assert all(isinstance(value, str) and len(value) == 64 for value in hashes)
+    assert all(set(value) <= set("0123456789abcdef") for value in hashes)
+    # The reverted third observation must reproduce the first row's content hash.
+    assert hashes[0] == hashes[2] != hashes[1]
+
+
+def test_accrued_award_ledger_predating_award_key_still_backfills_identity(tmp_path):
+    """The same defect at a second site: ``award_key`` on a pre-award_key ledger.
+
+    ``_ensure_award_keys`` exists precisely to run against an accrued store that
+    lacks the column, and ``merge_awards``/``persist`` reach it through
+    ``reindex(columns=AWARD_COLUMNS)`` -- which is what types the absent column
+    ``float64`` and makes the ``.at[]`` identity write raise under pandas 3.
+    """
+    legacy_columns = [column for column in AWARD_COLUMNS if column != "award_key"]
+    accrued = pd.DataFrame(
+        [normalize_award(_raw_award(100.0), "LMT", OBSERVED)],
+        columns=legacy_columns,
+    )
+    accrued.to_parquet(tmp_path / "awards.parquet", index=False)
+    reloaded = pd.read_parquet(tmp_path / "awards.parquet")
+
+    assert "award_key" not in reloaded.columns
+    # Pin the placeholder dtype so this test cannot go vacuous.
+    assert reloaded.reindex(columns=AWARD_COLUMNS)["award_key"].dtype == "float64"
+
+    healed = usaspending_awards._ensure_award_keys(reloaded.reindex(columns=AWARD_COLUMNS))
+
+    assert healed["award_key"].tolist() == ["generated:CONT_AWD_N0001"]
+    # The whole caller path, not just the helper, must survive the same shape.
+    merged = merge_awards(
+        reloaded.reindex(columns=AWARD_COLUMNS),
+        pd.DataFrame(
+            [normalize_award(_raw_award(150.0), "LMT", "2026-08-02T12:00:00+00:00")],
+            columns=AWARD_COLUMNS,
+        ),
+    )
+    assert merged["award_key"].tolist() == ["generated:CONT_AWD_N0001"]
+    assert merged["total_obligated"].tolist() == [150.0]
+    # first_seen_at is restored through the same coerced frame.
+    assert merged["first_seen_at"].tolist() == [OBSERVED]
+
+
+def test_object_column_guard_covers_every_non_numeric_ledger_column():
+    """A column added to any canonical list must inherit the dtype guard."""
+    canonical = dict.fromkeys([*AWARD_COLUMNS, *ACTION_COLUMNS, *SNAPSHOT_COLUMNS])
+    assert set(usaspending_awards._OBJECT_COLS) | set(
+        usaspending_awards._NUMERIC_LEDGER_COLS
+    ) == set(canonical)
+    assert not set(usaspending_awards._OBJECT_COLS) & set(
+        usaspending_awards._NUMERIC_LEDGER_COLS
+    )
+    assert "snapshot_content_sha256" in usaspending_awards._OBJECT_COLS
+    assert "award_key" in usaspending_awards._OBJECT_COLS
+    assert "current_award_amount_observed_at" in usaspending_awards._OBJECT_COLS
+    # A reindex types every absent column float64 -- the production shape.
+    # The guard must widen exactly the text columns and leave the numbers alone.
+    frame = pd.DataFrame({"ticker": ["LMT"]}).reindex(columns=list(canonical))
+    assert all(frame[column].dtype == "float64" for column in canonical if column != "ticker")
+    coerced = usaspending_awards._coerce_object_cols(frame)
+    assert all(
+        coerced[column].dtype == "float64"
+        for column in usaspending_awards._NUMERIC_LEDGER_COLS
+    )
+    assert all(
+        coerced[column].dtype == object
+        for column in usaspending_awards._OBJECT_COLS
+    )
+
+
+def test_safe_error_keeps_the_dtype_bearing_tail_of_a_long_exception():
+    """The suffix names the cause; head-only truncation is what hid it."""
+    payload = ", ".join(f"'{index:064x}'" for index in range(1936))
+    message = f"Invalid value '[{payload}]' for dtype 'float64'"
+    trimmed = usaspending_awards._safe_error(TypeError(message))
+
+    assert len(message) > 800
+    assert len(trimmed) <= 800
+    assert trimmed.startswith("Invalid value '[")
+    assert trimmed.endswith("for dtype 'float64'")
+    assert "chars elided" in trimmed
+    # Redaction still applies to a message short enough to survive intact.
+    assert usaspending_awards._safe_error(
+        RuntimeError("upstream api_key=super-secret, retrying")
+    ) == "upstream api_key=[redacted], retrying"
+    # A credential in the elided middle cannot reappear via the retained tail.
+    assert "super-secret" not in usaspending_awards._safe_error(
+        RuntimeError(f"{payload} token=super-secret for dtype 'float64'")
+    )
 
 
 def test_same_day_award_change_creates_new_snapshot_and_preserves_prior_enrichment(tmp_path):
@@ -880,16 +1014,23 @@ def test_award_event_projection_generation_rejects_mixed_or_tampered_ledgers(
         baseline_actions.iloc[::-1].reset_index(drop=True),
     )
 
-    original_atomic_parquet = usaspending_awards._atomic_parquet
+    # ``persist`` now stages and verifies every artifact before committing any of
+    # them, so a mixed pair can no longer originate inside the collector.  The
+    # interruption window that survives is the commit itself: a process can still
+    # die between two ``os.replace`` calls.  Injecting there reproduces the exact
+    # on-disk mixture this test defends against, and pins the only remaining way
+    # to reach it.
+    original_commit_staged = usaspending_awards._commit_staged
 
-    def fail_after_snapshot_replace(frame, path):
-        if path.name == "award_action_versions.parquet":
-            raise OSError("simulated action-version replace failure")
-        return original_atomic_parquet(frame, path)
+    def fail_after_snapshot_replace(staged):
+        for tmp, path in staged:
+            if path.name == "award_action_versions.parquet":
+                raise OSError("simulated action-version replace failure")
+            original_commit_staged([(tmp, path)])
 
     monkeypatch.setattr(
         usaspending_awards,
-        "_atomic_parquet",
+        "_commit_staged",
         fail_after_snapshot_replace,
     )
     clock[0] = "2026-08-01T12:00:00+00:00"
@@ -919,7 +1060,7 @@ def test_award_event_projection_generation_rejects_mixed_or_tampered_ledgers(
 
     # A later partial run cannot silently rebind the old live state to this
     # interrupted pair.  Only a full receipt-bound reconciliation can repair it.
-    monkeypatch.setattr(usaspending_awards, "_atomic_parquet", original_atomic_parquet)
+    monkeypatch.setattr(usaspending_awards, "_commit_staged", original_commit_staged)
     entities_path = data_dir / "entities.json"
     entities = json.loads(entities_path.read_text())
     entities["entities"]["NOC"] = {
@@ -946,6 +1087,168 @@ def test_award_event_projection_generation_rejects_mixed_or_tampered_ledgers(
         tampered_snapshots,
         old_actions,
     )
+
+
+def test_interrupted_triad_persistence_leaves_every_last_good_artifact_untouched(
+    tmp_path,
+    monkeypatch,
+):
+    """A failure at the last staged write must advance no member of the triad.
+
+    ``persist`` used to replace five artifacts one at a time, so a failure at
+    the final write left the legacy ledgers and the event snapshots advanced
+    while the action versions and the activation state stayed last-good -- a
+    mixture no reader can undo.  Staging and verifying everything before any
+    replacement makes the commit a single decision.
+    """
+    data_dir = _write_entities(tmp_path)
+    clock = ["2026-08-01T10:00:00+00:00"]
+    monkeypatch.setattr(
+        "collectors.usaspending_awards._utc_iso",
+        lambda value=None: clock[0] if value is None else str(value),
+    )
+
+    def collect(session):
+        return UsaspendingAwardsCollector(
+            root=tmp_path,
+            session=session,
+            max_pages=1,
+            max_action_awards_per_entity=1,
+            request_pacing_seconds=0,
+        ).collect(["LMT"], as_of="2026-08-01", lookback_days=30)
+
+    assert collect(_EventSession(current_amount=100.0, action_obligation=12.0))["status"] == "ok"
+    last_good = {
+        path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in sorted(data_dir.iterdir())
+    }
+    assert "award_action_versions.parquet" in last_good
+
+    # Fail the final staged artifact.  Both the old per-artifact ordering and
+    # the staged ordering write the activation state through this same call, so
+    # the injection is valid against either implementation.
+    original_write_text = Path.write_text
+
+    def fail_state_write(self, *args, **kwargs):
+        if AWARD_EVENT_PROJECTION_STATE_FILENAME in self.name:
+            raise OSError("simulated activation-state write failure")
+        return original_write_text(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "write_text", fail_state_write)
+
+    persist_errors = []
+    original_persist = UsaspendingAwardsCollector.persist
+
+    def recording_persist(self, *args, **kwargs):
+        try:
+            return original_persist(self, *args, **kwargs)
+        except Exception as exc:  # noqa: BLE001 - the test asserts this propagated
+            persist_errors.append(exc)
+            raise
+
+    monkeypatch.setattr(UsaspendingAwardsCollector, "persist", recording_persist)
+    clock[0] = "2026-08-01T12:00:00+00:00"
+    failed = collect(_EventSession(current_amount=150.0, action_obligation=25.0))
+
+    assert len(persist_errors) == 1
+    assert isinstance(persist_errors[0], OSError)
+    assert failed["status"] == "failed"
+    assert any(error["reason"] == "ledger_write_failed" for error in failed["errors"])
+
+    after = {
+        path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in sorted(data_dir.iterdir())
+    }
+    # Receipts are append-only and are written before any ledger moves; the
+    # status file records the failure itself.  Nothing else may have changed.
+    assert set(after) == set(last_good)
+    assert {
+        name for name, digest in after.items() if digest != last_good[name]
+    } == {"collection_receipts.jsonl", "ingest_status.json"}
+    assert not [path.name for path in data_dir.iterdir() if path.name.endswith(".tmp")]
+
+
+def test_first_baseline_persists_a_bound_triad_and_emits_zero_candidates(tmp_path, monkeypatch):
+    """A first baseline is evidence, never a catalyst.  Zero is the success condition."""
+    data_dir = _write_entities(tmp_path)
+    monkeypatch.setattr(
+        "collectors.usaspending_awards._utc_iso",
+        lambda value=None: "2026-08-01T10:00:00+00:00" if value is None else str(value),
+    )
+    status = UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=_EventSession(current_amount=100.0, action_obligation=12.0),
+        max_pages=1,
+        max_action_awards_per_entity=1,
+        request_pacing_seconds=0,
+    ).collect(["LMT"], as_of="2026-08-01", lookback_days=30)
+
+    snapshot_path = data_dir / "award_event_snapshots.parquet"
+    version_path = data_dir / "award_action_versions.parquet"
+    state_path = data_dir / AWARD_EVENT_PROJECTION_STATE_FILENAME
+
+    assert status["status"] == "ok"
+    assert snapshot_path.exists() and version_path.exists() and state_path.exists()
+
+    snapshots = pd.read_parquet(snapshot_path)
+    versions = pd.read_parquet(version_path)
+    state = json.loads(state_path.read_text())
+
+    assert len(snapshots) == 1
+    assert len(versions) == 1
+    # The state binds the exact pair a reader will load, not the pair this
+    # process happened to hold in memory.
+    assert award_event_projection_generation_matches(state, snapshots, versions)
+    assert all(
+        state[field] == award_event_projection_generation(snapshots, versions)[field]
+        for field in AWARD_EVENT_PROJECTION_GENERATION_FIELDS
+    )
+
+    # Zero candidates is the correct baseline result.  Baseline rows are
+    # persisted as evidence and are explicitly ineligible to become events.
+    assert status["award_event_spine"]["event_eligible_snapshots_seen"] == 0
+    assert status["award_event_spine"]["event_eligible_action_versions_seen"] == 0
+    assert snapshots["event_eligible"].tolist() == [False]
+    assert versions["event_eligible"].tolist() == [False]
+    assert build_award_change_events(snapshots, versions, as_of="2026-08-01") == []
+
+
+def test_event_ledger_schema_is_declared_not_inferred_from_the_rows_present(tmp_path):
+    """An empty ledger and a populated one must write the same column types."""
+    empty = usaspending_awards._normalize_event_ledger(
+        pd.DataFrame(columns=AWARD_ACTION_VERSION_COLUMNS),
+        AWARD_ACTION_VERSION_COLUMNS,
+    )
+    populated = usaspending_awards._normalize_event_ledger(
+        pd.DataFrame(
+            [{
+                "award_key": "generated:CONT_AWD_N0001",
+                "action_id": "TX1",
+                "federal_action_obligation": 80.0,
+                "receipt_verified": True,
+                # A source object and a truthy string are both real response
+                # shapes; neither has a valid Arrow type in a mixed column.
+                "action_semantic": {"code": "X", "description": "modification"},
+                "is_retraction": "true",
+            }],
+            columns=AWARD_ACTION_VERSION_COLUMNS,
+        ),
+        AWARD_ACTION_VERSION_COLUMNS,
+    )
+    empty_path = tmp_path / "empty.parquet"
+    populated_path = tmp_path / "populated.parquet"
+    empty.to_parquet(empty_path, index=False)
+    populated.to_parquet(populated_path, index=False)
+
+    assert list(empty.dtypes.astype(str)) == list(populated.dtypes.astype(str))
+    assert (
+        pq.read_schema(empty_path).types == pq.read_schema(populated_path).types
+    )
+    row = pd.read_parquet(populated_path).iloc[0]
+    assert isinstance(row["action_semantic"], str)
+    # A truthy string is never promoted into a source-asserted boolean flag.
+    assert row["is_retraction"] is None or pd.isna(row["is_retraction"])
+    assert bool(row["receipt_verified"]) is True
 
 
 def test_event_snapshot_presence_carries_source_omissions_but_retains_explicit_nulls():
@@ -1569,3 +1872,775 @@ def test_collect_registry_exposes_usaspending_awards_adapter():
 
     registry = all_adapters()
     assert registry["usaspending_awards"] is UsaspendingAwardsAdapter
+
+
+# ---------------------------------------------------------------------------
+# Wave 9C — activation observability.
+#
+# The 2026-08-06 production run qualified for baseline activation and was
+# stopped only by the persistence crash, yet three persisted fields
+# (rails.*.completeness.bounded_sample_complete, award_event_spine.
+# bounded_sample_complete, award_event_spine.full_receipt_bound_baseline_this_run)
+# all read false, because the spine block is populated from previous_event_state
+# when persist fails.  An operator reading those fields concludes coverage is
+# insufficient and asks for a higher page cap — the opposite of the true cause.
+# ---------------------------------------------------------------------------
+
+# 19 entities whose award query hit the declared 2-page cap with hasNext=true,
+# one that reached explicit hasNext=false with awards, and one that reached
+# hasNext=false with none.  That is 21 requested / 20 with awards, exactly the
+# committed 2026-08-06 shape.
+_CAPPED_TICKERS = (
+    "LMT", "RTX", "NOC", "GD", "LHX", "HII", "BA", "TDG", "HWM", "AVAV",
+    "KTOS", "GE", "LDOS", "TXT", "CW", "TDY", "HEI", "VSAT", "PLTR",
+)
+_EXHAUSTED_TICKER = "BAH"
+_EMPTY_TICKER = "CACI"
+_PRODUCTION_TICKERS = (*_CAPPED_TICKERS, _EXHAUSTED_TICKER, _EMPTY_TICKER)
+_AWARDS_PER_PAGE = 8
+
+
+def _write_production_entities(tmp_path):
+    data_dir = tmp_path / "data" / "government_revenue"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    (data_dir / "entities.json").write_text(json.dumps({
+        "entities": {
+            ticker: {
+                "name": f"{ticker} Corp",
+                "recipient_search_text": f"RECIPIENT {ticker}",
+            }
+            for ticker in _PRODUCTION_TICKERS
+        }
+    }))
+    return data_dir
+
+
+class _ProductionShapeSession(_Session):
+    """Replay the 2026-08-06 run's collection shape at test scale.
+
+    Entity/award-detail/action denominators are the production ones (21 / 160 /
+    160); only the per-page award volume is smaller, because the gate reads
+    pagination outcomes, never row counts.
+    """
+
+    def __init__(self, *, capped=_CAPPED_TICKERS, page_two_failures=()):
+        super().__init__()
+        self.capped = set(capped)
+        self.page_two_failures = set(page_two_failures)
+
+    @staticmethod
+    def _ticker_from_query(query: str) -> str:
+        return str(query).split()[-1]
+
+    @staticmethod
+    def _ticker_from_generated(generated: str) -> str:
+        return generated.removeprefix("CONT_AWD_")[:-2]
+
+    def _award_page(self, ticker: str, page: int) -> list[dict]:
+        if ticker == _EMPTY_TICKER:
+            return []
+        first = (page - 1) * _AWARDS_PER_PAGE
+        return [
+            _raw_award_for(
+                f"{ticker}{first + index + 1:02d}",
+                f"{ticker} CORP",
+                1000.0 - first - index,
+            )
+            for index in range(_AWARDS_PER_PAGE)
+        ]
+
+    def post(self, url, json, headers, timeout):
+        self.calls.append((url, json, headers, timeout))
+        if url == AWARDS_URL:
+            ticker = self._ticker_from_query(
+                json["filters"]["recipient_search_text"][0]
+            )
+            page = int(json["page"])
+            if page == 2 and ticker in self.page_two_failures:
+                raise RuntimeError(f"simulated upstream failure for {ticker} page 2")
+            capped = ticker in self.capped
+            return _Response({
+                "results": self._award_page(ticker, page),
+                # A capped entity keeps promising more at the declared cap; the
+                # other two answer the pagination question explicitly.
+                "page_metadata": {"hasNext": bool(capped and page < 3)},
+            })
+        assert url == TRANSACTIONS_URL
+        generated = str(json["award_id"])
+        return _Response({
+            "results": [{
+                "id": f"TX-{generated}",
+                "action_date": "2026-07-30",
+                "action_type": "B",
+                "action_type_description": "SUPPLEMENTAL AGREEMENT",
+                "modification_number": "P1",
+                "federal_action_obligation": 25.0,
+                "description": "Official award action",
+            }],
+            "page_metadata": {"hasNext": False},
+        })
+
+    def get(self, url, headers, timeout):
+        self.calls.append((url, None, headers, timeout))
+        generated = url.rstrip("/").split("/")[-1]
+        ticker = self._ticker_from_generated(generated)
+        award_id = generated.removeprefix("CONT_AWD_")
+        return _Response({
+            "generated_unique_award_id": generated,
+            "piid": award_id,
+            "total_obligation": 800.0,
+            "total_outlay": 600.0,
+            "base_exercised_options": 1000.0,
+            "base_and_all_options": 1500.0,
+            "period_of_performance": {
+                "start_date": "2025-01-01",
+                "end_date": "2027-01-01",
+                "last_modified_date": "2026-07-31",
+            },
+            "recipient": {
+                "recipient_name": f"{ticker} CORP",
+                "recipient_uei": f"UEI-{award_id}",
+            },
+            "latest_transaction_contract_data": {
+                "dod_acquisition_program_description": "Test acquisition program"
+            },
+        })
+
+
+def _collect_production_shape(tmp_path, session):
+    return UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=session,
+        page_size=_AWARDS_PER_PAGE,
+        max_pages=2,
+        max_action_awards_per_entity=8,
+        request_pacing_seconds=0,
+    ).collect(list(_PRODUCTION_TICKERS), as_of="2026-08-06", lookback_days=1826)
+
+
+def _boom_persist(*args, **kwargs):
+    # The 2026-08-06 shape: persist raises before any ledger is replaced, so the
+    # run records `ledger_write_failed` and nothing advances.
+    raise RuntimeError("simulated ledger write failure")
+
+
+def test_persist_failure_reports_a_qualified_collection_not_thin_coverage(
+    tmp_path,
+    monkeypatch,
+):
+    """The 2026-08-06 shape: collection qualified, only persistence failed."""
+
+    _write_production_entities(tmp_path)
+    monkeypatch.setattr(
+        "collectors.usaspending_awards._utc_iso",
+        lambda value=None: "2026-08-06T07:29:00.411636+00:00" if value is None else str(value),
+    )
+    monkeypatch.setattr(UsaspendingAwardsCollector, "persist", _boom_persist)
+    status = _collect_production_shape(tmp_path, _ProductionShapeSession())
+
+    # The committed artifact's denominators, reproduced.  These are the only
+    # honest record in today's status and every activation-gate input is met.
+    assert status["status"] == "failed"
+    assert status["entities_requested"] == 21
+    assert status["entities_with_awards"] == 20
+    assert status["full_configured_universe"] is True
+    awards = status["rails"]["awards"]["denominators"]
+    assert awards["queries_bounded_sample_complete"] == 21
+    assert awards["entities_requested"] == 21
+    assert awards["queries_partial"] == 19
+    assert awards["queries_complete"] == 2
+    assert awards["queries_truncated_by_safety_cap"] == 19
+    assert awards["normalization_failures"] == 0
+    assert awards["records_rejected_without_identity"] == 0
+    detail = status["rails"]["award_detail"]["denominators"]
+    assert detail["succeeded"] == detail["candidate_awards"] == 160
+    assert detail["skipped_missing_generated_award_id"] == 0
+    actions = status["rails"]["actions"]["denominators"]
+    assert actions["queries_bounded_sample_complete"] == 160
+    assert actions["queries_not_requested"] == 0
+    assert actions["identity_failures"] == 0
+    assert actions["normalization_failures"] == 0
+    reasons = [error.get("reason") for error in status["errors"]]
+    assert reasons.count("max_pages_reached_with_has_next") == 19
+    assert reasons.count("ledger_write_failed") == 1
+    assert not any(reason == "ticker_not_in_entity_map" for reason in reasons)
+
+    # NEW: the status now says, in as many words, that the collection qualified
+    # and that persistence is the sole reason nothing activated.
+    activation = status["baseline_activation"]
+    assert activation["collection_qualified_this_run"] is True
+    assert activation["persisted_this_run"] is False
+    assert activation["activated_this_run"] is False
+    assert activation["blocked_by"] == "persistence"
+    assert activation["persistence_failure_reason"] == "ledger_write_failed"
+    assert activation["unsatisfied_conditions"] == []
+    assert activation["conditions_agree_with_gate"] is True
+    assert "Persistence failed" in activation["summary"]
+    assert "Coverage is not the blocker" in activation["summary"]
+    # The 19 capped queries are a complete bounded sample, not a gate failure.
+    capped_condition = next(
+        entry for entry in activation["conditions"]
+        if entry["name"] == "award_bounded_complete_entities_equals_requested_entities"
+    )
+    assert capped_condition["satisfied"] is True
+    assert capped_condition["detail"] == (
+        "award_bounded_complete_entities 21 == requested_entities 21"
+    )
+    assert "not an activation blocker" in activation["safety_cap_note"]
+
+    # NEW: this run's own measurement, carried separately from the published state.
+    spine = status["award_event_spine"]
+    assert spine["collection_full_receipt_bound_baseline"] is True
+    assert spine["collection_bounded_sample_complete"] is True
+    assert spine["state_source"] == "previous_state"
+    assert spine["state_reflects_this_run"] is False
+    assert spine["state_is_stale_because"] == "ledger_write_failed"
+    for rail in ("awards", "award_detail", "actions"):
+        completeness = status["rails"][rail]["completeness"]
+        assert completeness["collection_bounded_sample_complete"] is True
+        assert completeness["published_this_run"] is False
+        assert completeness["collection_state"] != "failed"
+
+    # FENCE: published/authority fields keep their existing fail-closed values.
+    assert spine["bounded_sample_complete"] is False
+    assert spine["full_receipt_bound_baseline_this_run"] is False
+    assert spine["activation_state"] == "baseline"
+    assert status["last_successful_observed_at"] is None
+    for rail in ("awards", "award_detail", "actions"):
+        assert status["rails"][rail]["state"] == "failed"
+        assert status["rails"][rail]["completeness"]["bounded_sample_complete"] is False
+
+
+def test_incomplete_collection_names_the_failing_condition_with_both_numbers(
+    tmp_path,
+    monkeypatch,
+):
+    """A genuinely incomplete collection must not read as qualified."""
+
+    _write_production_entities(tmp_path)
+    monkeypatch.setattr(
+        "collectors.usaspending_awards._utc_iso",
+        lambda value=None: "2026-08-07T07:29:00+00:00" if value is None else str(value),
+    )
+    # The failing page is retried with a real backoff; skip the wall-clock wait.
+    monkeypatch.setattr(usaspending_awards.time, "sleep", lambda *_args: None)
+    # One entity's second page fails outright: 20 of 21 bounded-complete.
+    status = _collect_production_shape(
+        tmp_path,
+        _ProductionShapeSession(page_two_failures={"RTX"}),
+    )
+
+    assert status["rails"]["awards"]["denominators"]["queries_bounded_sample_complete"] == 20
+    activation = status["baseline_activation"]
+    assert activation["persisted_this_run"] is True
+    assert activation["collection_qualified_this_run"] is False
+    assert activation["activated_this_run"] is False
+    assert activation["blocked_by"] == "collection"
+    assert activation["persistence_failure_reason"] is None
+    assert activation["conditions_agree_with_gate"] is True
+    assert activation["unsatisfied_conditions"] == [
+        "award_bounded_complete_entities_equals_requested_entities"
+    ]
+    failing = next(
+        entry for entry in activation["conditions"]
+        if entry["name"] == "award_bounded_complete_entities_equals_requested_entities"
+    )
+    assert failing["satisfied"] is False
+    assert failing["observed"] == {"name": "award_bounded_complete_entities", "value": 20}
+    assert failing["required"] == {"name": "requested_entities", "value": 21}
+    assert failing["detail"] == (
+        "award_bounded_complete_entities 20 != requested_entities 21"
+    )
+    assert activation["unsatisfied_details"] == [failing["detail"]]
+    assert failing["detail"] in activation["summary"]
+
+    # Persistence succeeded, so the spine block IS this run's measurement — and
+    # it still must not claim a baseline.
+    spine = status["award_event_spine"]
+    assert spine["state_source"] == "this_run"
+    assert spine["state_reflects_this_run"] is True
+    assert spine["state_is_stale_because"] is None
+    assert spine["collection_full_receipt_bound_baseline"] is False
+    assert spine["full_receipt_bound_baseline_this_run"] is False
+    assert spine["activation_state"] == "baseline"
+
+
+def test_persist_failure_advances_nothing_and_leaves_the_triad_untouched(
+    tmp_path,
+    monkeypatch,
+):
+    """The fence: new reporting must not move one byte of published state."""
+
+    data_dir = _write_production_entities(tmp_path)
+    clock = ["2026-08-06T07:00:00+00:00"]
+    monkeypatch.setattr(
+        "collectors.usaspending_awards._utc_iso",
+        lambda value=None: clock[0] if value is None else str(value),
+    )
+    # A fully source-exhausted first run establishes a live baseline to protect.
+    good = _collect_production_shape(tmp_path, _ProductionShapeSession(capped=()))
+    assert good["status"] == "ok"
+    assert good["last_successful_observed_at"] == clock[0]
+    assert good["baseline_activation"]["activated_this_run"] is True
+    assert good["baseline_activation"]["blocked_by"] is None
+    assert good["award_event_spine"]["activation_state"] == "live"
+    assert good["award_event_spine"]["state_source"] == "this_run"
+
+    tracked = [
+        "awards.parquet",
+        "award_actions.parquet",
+        "award_snapshots.parquet",
+        "award_event_snapshots.parquet",
+        "award_action_versions.parquet",
+        AWARD_EVENT_PROJECTION_STATE_FILENAME,
+    ]
+    before = {name: (data_dir / name).read_bytes() for name in tracked}
+    rail_last_good = {
+        rail: good["rails"][rail]["last_successful_observed_at"]
+        for rail in ("awards", "award_detail", "actions")
+    }
+
+    clock[0] = "2026-08-07T07:00:00+00:00"
+    monkeypatch.setattr(UsaspendingAwardsCollector, "persist", _boom_persist)
+    failed = _collect_production_shape(tmp_path, _ProductionShapeSession(capped=()))
+
+    assert failed["status"] == "failed"
+    assert failed["observed_at"] == clock[0]
+    # Nothing advanced: every accrued artifact is byte-identical.
+    for name in tracked:
+        assert (data_dir / name).read_bytes() == before[name], name
+    # The last-good clocks do not move.
+    assert failed["last_successful_observed_at"] == good["last_successful_observed_at"]
+    assert failed["freshness"]["last_good_at"] == good["last_successful_observed_at"]
+    assert failed["freshness"]["state"] == "failed"
+    for rail, expected in rail_last_good.items():
+        assert failed["rails"][rail]["last_successful_observed_at"] == expected
+        assert failed["rails"][rail]["state"] == "failed"
+        assert failed["rails"][rail]["completeness"]["bounded_sample_complete"] is False
+    # The live marker survives untouched and is labelled as carried forward.
+    assert failed["award_event_spine"]["activation_state"] == "live"
+    assert failed["award_event_spine"]["last_observed_at"] == good["observed_at"]
+    assert failed["award_event_spine"]["state_source"] == "previous_state"
+    assert failed["award_event_spine"]["full_receipt_bound_baseline_this_run"] is False
+    # ...while the run's own verdict is still readable.
+    assert failed["baseline_activation"]["collection_qualified_this_run"] is True
+    assert failed["baseline_activation"]["blocked_by"] == "persistence"
+
+
+def test_activation_conditions_never_outrank_the_gate():
+    """Every gate input owns exactly one named, two-number condition."""
+
+    clean = {
+        "requested_entities": 21,
+        "award_bounded_complete_entities": 21,
+        "unknown_tickers": [],
+        "award_normalization_failures": 0,
+        "award_rejected_without_key": 0,
+        "full_configured_universe": True,
+        "max_action_awards_per_entity": 8,
+        "detail_candidates": 160,
+        "detail_succeeded": 160,
+        "detail_skipped_missing_identifier": 0,
+        "action_awards_bounded_complete": 160,
+        "action_awards_not_requested": 0,
+        "event_snapshot_failures": 0,
+        "event_action_failures": 0,
+        "event_action_identity_failures": 0,
+        "action_normalization_failures": 0,
+    }
+    baseline = usaspending_awards._baseline_activation_conditions(**clean)
+    assert [entry["name"] for entry in baseline] == [
+        "entities_requested_positive",
+        "award_bounded_complete_entities_equals_requested_entities",
+        "no_unknown_tickers",
+        "award_normalization_failures_zero",
+        "records_rejected_without_identity_zero",
+        "full_configured_universe",
+        "detail_succeeded_equals_detail_candidates",
+        "detail_skipped_missing_generated_award_id_zero",
+        "action_awards_bounded_complete_equals_detail_candidates",
+        "action_awards_not_requested_zero",
+        "event_snapshot_failures_zero",
+        "event_action_failures_zero",
+        "event_action_identity_failures_zero",
+        "action_normalization_failures_zero",
+    ]
+    assert all(entry["satisfied"] for entry in baseline)
+    assert all(entry["applicable"] for entry in baseline)
+
+    breakages = {
+        "entities_requested_positive": {
+            "requested_entities": 0,
+            "award_bounded_complete_entities": 0,
+        },
+        "award_bounded_complete_entities_equals_requested_entities": {
+            "award_bounded_complete_entities": 20
+        },
+        "no_unknown_tickers": {"unknown_tickers": ["ZZZZ"]},
+        "award_normalization_failures_zero": {"award_normalization_failures": 3},
+        "records_rejected_without_identity_zero": {"award_rejected_without_key": 1},
+        "full_configured_universe": {"full_configured_universe": False},
+        "detail_succeeded_equals_detail_candidates": {"detail_succeeded": 159},
+        "detail_skipped_missing_generated_award_id_zero": {
+            "detail_skipped_missing_identifier": 2
+        },
+        "action_awards_bounded_complete_equals_detail_candidates": {
+            "action_awards_bounded_complete": 158
+        },
+        "action_awards_not_requested_zero": {"action_awards_not_requested": 4},
+        "event_snapshot_failures_zero": {"event_snapshot_failures": 1},
+        "event_action_failures_zero": {"event_action_failures": 1},
+        "event_action_identity_failures_zero": {"event_action_identity_failures": 1},
+        "action_normalization_failures_zero": {"action_normalization_failures": 1},
+    }
+    for name, override in breakages.items():
+        conditions = usaspending_awards._baseline_activation_conditions(
+            **{**clean, **override}
+        )
+        unsatisfied = [entry["name"] for entry in conditions if not entry["satisfied"]]
+        assert unsatisfied == [name], (name, unsatisfied)
+        entry = next(item for item in conditions if item["name"] == name)
+        assert str(entry["observed"]["value"]).lower() in entry["detail"].lower()
+        assert str(entry["required"]["value"]).lower() in entry["detail"].lower()
+
+    # Disabling the sample marks the four sampled-rail conditions inapplicable
+    # rather than silently satisfying them.
+    disabled = usaspending_awards._baseline_activation_conditions(
+        **{**clean, "max_action_awards_per_entity": 0, "detail_succeeded": 0}
+    )
+    inapplicable = [entry["name"] for entry in disabled if not entry["applicable"]]
+    assert inapplicable == [
+        "detail_succeeded_equals_detail_candidates",
+        "detail_skipped_missing_generated_award_id_zero",
+        "action_awards_bounded_complete_equals_detail_candidates",
+        "action_awards_not_requested_zero",
+    ]
+    assert all(entry["satisfied"] for entry in disabled)
+
+
+# ---------------------------------------------------------------------------
+# Wave 9C collector defects B1/B2/B3 — wrong-candidate-class regressions.
+# ---------------------------------------------------------------------------
+
+
+def _detail_receipt(receipt_id: str, response_sha: str) -> dict:
+    return {
+        "receipt_id": receipt_id,
+        "rail": "award_detail",
+        "endpoint": AWARD_DETAIL_URL.format(award_id="CONT_AWD_N0001"),
+        "response_sha256": response_sha,
+    }
+
+
+def _unclocked_detail(ceiling: float) -> dict:
+    """An award-detail body that never asserts a modification clock."""
+    return {
+        "generated_unique_award_id": "CONT_AWD_N0001",
+        "piid": "N0001",
+        "base_exercised_options": 100_000_000.0,
+        "base_and_all_options": ceiling,
+        "base_obligation_date": "2020-01-15",
+        "period_of_performance": {"start_date": "2020-02-01", "end_date": "2027-01-01"},
+    }
+
+
+def test_b1_absent_source_modification_clock_is_absent_not_substituted():
+    """An omitted ``last_modified_date`` must never borrow another official date.
+
+    ``base_obligation_date`` and ``start_date`` are separate official facts, not
+    a modification clock.  Substituting one stamps a change observed today with
+    a years-old ``effective_at`` the source never asserted, and publishes it as
+    an ``official`` date fact.
+    """
+    award = normalize_award(_raw_award(), "LMT", OBSERVED)
+
+    unclocked = normalize_award_event_snapshot(
+        _unclocked_detail(500_000_000.0),
+        award,
+        _detail_receipt("receipt-detail-unclocked", "a" * 64),
+        "2026-08-05T12:00:00+00:00",
+        event_eligible=True,
+    )
+    assert unclocked["effective_at"] is None
+    assert "effective_at" not in json.loads(unclocked["source_field_presence"])
+    # The separate official dates are still persisted under their own names, so
+    # nothing the source did assert is lost by refusing the substitution.
+    assert unclocked["base_obligation_date"] == "2020-01-15"
+    assert unclocked["start_date"] == "2020-02-01"
+
+    clocked = normalize_award_event_snapshot(
+        {
+            **_unclocked_detail(500_000_000.0),
+            "period_of_performance": {
+                "start_date": "2020-02-01",
+                "end_date": "2027-01-01",
+                "last_modified_date": "2026-08-05",
+            },
+        },
+        award,
+        _detail_receipt("receipt-detail-clocked", "b" * 64),
+        "2026-08-05T12:00:00+00:00",
+        event_eligible=True,
+    )
+    # A clock the source did assert is carried AND declared in the manifest, so
+    # a reader can tell an asserted clock from an absent one.
+    assert clocked["effective_at"] == "2026-08-05"
+    assert "effective_at" in json.loads(clocked["source_field_presence"])
+
+
+def _project_ceiling_move(second_detail: dict) -> list[dict]:
+    """Project a 100M -> 500M ceiling move observed four days after baseline."""
+    award = normalize_award(_raw_award(), "LMT", OBSERVED)
+    first = normalize_award_event_snapshot(
+        {
+            **_unclocked_detail(100_000_000.0),
+            "period_of_performance": {
+                "start_date": "2020-02-01",
+                "end_date": "2027-01-01",
+                "last_modified_date": "2026-08-01",
+            },
+        },
+        award,
+        _detail_receipt("receipt-detail-baseline", "c" * 64),
+        "2026-08-01T12:00:00+00:00",
+        event_eligible=True,
+    )
+    second = normalize_award_event_snapshot(
+        second_detail,
+        award,
+        _detail_receipt("receipt-detail-move", "d" * 64),
+        "2026-08-05T12:00:00+00:00",
+        event_eligible=True,
+    )
+    return build_award_change_events(
+        pd.DataFrame([first, second], columns=AWARD_EVENT_SNAPSHOT_COLUMNS),
+        pd.DataFrame(columns=AWARD_ACTION_VERSION_COLUMNS),
+        as_of="2026-08-05",
+    )
+
+
+def test_b1_unclocked_ceiling_move_never_publishes_a_borrowed_official_date():
+    """No published fact may carry a clock the award-detail response omitted."""
+    borrowed_events = _project_ceiling_move(_unclocked_detail(500_000_000.0))
+
+    assert [
+        event["change"]["effective_at"]
+        for event in borrowed_events
+        if str(event["change"]["effective_at"]).startswith("2020")
+    ] == []
+    assert [
+        fact
+        for event in borrowed_events
+        for fact in event["dates"]
+        if fact["id"] == "effective_at" and str(fact["value"]).startswith("2020")
+    ] == []
+    assert [
+        fact["as_of"]
+        for event in borrowed_events
+        for fact in event["amounts"]
+        if str(fact.get("as_of")).startswith("2020")
+    ] == []
+
+    # Control: the identical move WITH the source's own clock still projects, so
+    # the assertions above are not passing merely because nothing was emitted.
+    clocked_events = _project_ceiling_move({
+        **_unclocked_detail(500_000_000.0),
+        "period_of_performance": {
+            "start_date": "2020-02-01",
+            "end_date": "2027-01-01",
+            "last_modified_date": "2026-08-05",
+        },
+    })
+    ceiling_moves = [
+        event for event in clocked_events if event["change"]["type"] == "ceiling_changed"
+    ]
+    assert len(ceiling_moves) == 1
+    assert ceiling_moves[0]["change"]["effective_at"].startswith("2026-08-05")
+    assert all(event["change"]["effective_at"] for event in clocked_events)
+
+
+def test_b1_absent_effective_clock_defaults_in_neither_the_sort_nor_late_discovery():
+    """The two downstream consumers of the clock must not substitute a default."""
+    borrowed_only = {
+        "known_at": "2026-08-05T12:00:00+00:00",
+        "base_obligation_date": "2020-01-15",
+        "start_date": "2020-02-01",
+        "end_date": "2027-01-01",
+        "source_receipt_id": "receipt-detail-unclocked",
+        "source_response_sha256": "a" * 64,
+        "source_url": AWARD_DETAIL_URL.format(award_id="CONT_AWD_N0001"),
+        "receipt_verified": True,
+    }
+
+    # 1. The shared clock reader refuses to coalesce a different official date.
+    assert award_events._effective_at(borrowed_only) is None
+    assert award_events._effective_at({"effective_at": "2026-08-05"}) == "2026-08-05T00:00:00+00:00"
+    assert award_events._effective_at({"action_date": "2026-08-05"}) == "2026-08-05T00:00:00+00:00"
+
+    # 2. Late discovery cannot be decided from a borrowed date.  With the
+    #    substitution in place this row reads as a ~2,400-day lag and is typed
+    #    a fresh award; with no source clock it refuses to assert freshness.
+    assert award_events._is_late_discovery(borrowed_only, late_discovery_days=3650) is True
+
+    # 3. The feed sort keys on ``change.effective_at or ""``.  That fallback is
+    #    unreachable for a published event: no receipt forms without a
+    #    source-asserted clock, and no event forms without a receipt.
+    assert award_events._receipt(borrowed_only, mode="snapshot") is None
+    assert award_events._receipt(
+        {**borrowed_only, "effective_at": "2026-08-05"}, mode="snapshot"
+    ) is not None
+
+
+def test_b2_baseline_generation_tear_is_refused_exactly_like_a_live_one(
+    tmp_path,
+    monkeypatch,
+):
+    """A torn triad is not re-blessed merely because activation is baseline.
+
+    ``activation_state`` short-circuited the refusal, so during the whole
+    baseline period an interrupted write was accepted, merged, and rebound to a
+    fresh generation that every downstream verifier then reported as matching.
+    """
+    data_dir = _write_entities(tmp_path)
+    entities = json.loads((data_dir / "entities.json").read_text())
+    entities["entities"]["NOC"] = {
+        "name": "Northrop Grumman",
+        "recipient_search_text": "NORTHROP GRUMMAN",
+    }
+    (data_dir / "entities.json").write_text(json.dumps(entities))
+    clock = ["2026-08-01T10:00:00+00:00"]
+    monkeypatch.setattr(
+        "collectors.usaspending_awards._utc_iso",
+        lambda value=None: clock[0] if value is None else str(value),
+    )
+
+    def collect(session):
+        return UsaspendingAwardsCollector(
+            root=tmp_path,
+            session=session,
+            max_pages=1,
+            max_action_awards_per_entity=1,
+            request_pacing_seconds=0,
+        ).collect(["LMT"], as_of="2026-08-01", lookback_days=30)
+
+    # A single-ticker run of a two-entity universe can never claim the full
+    # configured universe, so the spine stays in its baseline period.
+    #
+    # Every assertion below reads the artifacts rather than the run's status
+    # string: whether a persistence failure surfaces as a top-level `status` is
+    # a separate, actively-changing contract, while "a torn triad is refused and
+    # last-good stays byte-identical" is the property this defect is about.
+    collect(_EventSession(current_amount=100.0, action_obligation=12.0))
+    state_path = data_dir / AWARD_EVENT_PROJECTION_STATE_FILENAME
+    state = json.loads(state_path.read_text())
+    assert state["activation_state"] == "baseline"
+    assert state["last_run_was_full_receipt_bound_baseline"] is False
+    assert award_event_projection_generation_matches(
+        state,
+        pd.read_parquet(data_dir / "award_event_snapshots.parquet"),
+        pd.read_parquet(data_dir / "award_action_versions.parquet"),
+    )
+
+    last_good_actions = (data_dir / "award_action_versions.parquet").read_bytes()
+    last_good_state = state_path.read_bytes()
+
+    # Hand-tear the triad rather than injecting a write failure: the tear is
+    # what the guard must react to, and constructing it directly keeps this
+    # test independent of the order in which persist() replaces the three
+    # files.  A second healthy run advances all three; restoring the previous
+    # action ledger and state leaves snapshots at generation N+1 with actions
+    # and a baseline state still bound to N — exactly what an interrupted
+    # write leaves behind.
+    clock[0] = "2026-08-01T12:00:00+00:00"
+    collect(_EventSession(current_amount=150.0, action_obligation=25.0))
+    (data_dir / "award_action_versions.parquet").write_bytes(last_good_actions)
+    state_path.write_bytes(last_good_state)
+
+    torn_snapshots = pd.read_parquet(data_dir / "award_event_snapshots.parquet")
+    torn_actions = pd.read_parquet(data_dir / "award_action_versions.parquet")
+    torn_state = json.loads(state_path.read_text())
+    assert torn_state == state
+    assert torn_state["activation_state"] == "baseline"
+    assert not award_event_projection_generation_matches(
+        torn_state,
+        torn_snapshots,
+        torn_actions,
+    )
+
+    snapshot_bytes = (data_dir / "award_event_snapshots.parquet").read_bytes()
+    action_bytes = (data_dir / "award_action_versions.parquet").read_bytes()
+    state_bytes = state_path.read_bytes()
+
+    # The later run offers a genuinely newer observation (175.0 / 30.0).  It
+    # must still refuse.
+    clock[0] = "2026-08-01T14:00:00+00:00"
+    later = collect(_EventSession(current_amount=175.0, action_obligation=30.0))
+
+    # A refusal must be VISIBLE.  Accepting the tear reports a healthy-looking
+    # bounded `partial` with an empty `errors` list, which is indistinguishable
+    # from a normal single-ticker collection — a fail-soft with its signal gone.
+    # The refusal travels the ordinary persist try/except, so `persisted` stays
+    # False and the run is `failed` with a persist-stage error whose message
+    # names the refusal.  (The `reason` taxonomy is deliberately not asserted:
+    # every persist exception is tagged `ledger_write_failed` by a pre-existing
+    # generic handler that predates this change and is owned elsewhere.)
+    assert later["status"] == "failed"
+    assert later["rails"]["awards"]["state"] == "failed"
+    refusals = [
+        error
+        for error in later["errors"]
+        if error.get("stage") == "persist"
+        and "full receipt-bound reconciliation" in str(error.get("error"))
+    ]
+    assert len(refusals) == 1, later["errors"]
+
+    # ...and the last-good triad stays byte-identical.
+    assert (data_dir / "award_event_snapshots.parquet").read_bytes() == snapshot_bytes
+    assert (data_dir / "award_action_versions.parquet").read_bytes() == action_bytes
+    assert state_path.read_bytes() == state_bytes
+    # ...and, decisively, the binding is NOT rewritten to bless the tear.  This
+    # is what made the defect invisible: after a re-bless every downstream
+    # verifier recomputes against the new binding and reports a match.
+    assert not award_event_projection_generation_matches(
+        json.loads(state_path.read_text()),
+        pd.read_parquet(data_dir / "award_event_snapshots.parquet"),
+        pd.read_parquet(data_dir / "award_action_versions.parquet"),
+    )
+
+
+def test_b3_absent_projection_state_beside_populated_ledgers_fails_closed(tmp_path):
+    """An absent state file must not cold-start a spine that already has rows.
+
+    ``_read_json`` returns ``{}`` for a missing path, so a loader documented as
+    failing closed on corruption failed OPEN on absence: a live spine regressed
+    to baseline and stamped ``event_eligible`` False on every row observed
+    during the regressed run, permanently, in an append-only ledger.
+    """
+    data_dir = tmp_path / "data" / "government_revenue"
+    data_dir.mkdir(parents=True)
+    state_path = data_dir / AWARD_EVENT_PROJECTION_STATE_FILENAME
+    snapshot_path = data_dir / "award_event_snapshots.parquet"
+    action_path = data_dir / "award_action_versions.parquet"
+
+    # A genuine first deployment has no ledgers to contradict, and still starts.
+    cold = usaspending_awards._load_award_event_projection_state(state_path)
+    assert cold["activation_state"] == "baseline"
+    assert cold["baseline_completed_at"] is None
+
+    # Empty ledgers are equally uncontradicted.
+    pd.DataFrame(columns=AWARD_EVENT_SNAPSHOT_COLUMNS).to_parquet(snapshot_path, index=False)
+    pd.DataFrame(columns=AWARD_ACTION_VERSION_COLUMNS).to_parquet(action_path, index=False)
+    assert usaspending_awards._load_award_event_projection_state(state_path)["activation_state"] == "baseline"
+
+    # Populated ledgers with no state are the workflow's `present == 0 &&
+    # tracked != 0` shape: an external deletion, not a first deployment.
+    snapshot_row = {column: None for column in AWARD_EVENT_SNAPSHOT_COLUMNS}
+    snapshot_row.update({"award_key": "LMT|CONT_AWD_N0001", "known_at": OBSERVED})
+    action_row = {column: None for column in AWARD_ACTION_VERSION_COLUMNS}
+    action_row.update({"award_key": "LMT|CONT_AWD_N0001", "action_id": "TX1", "known_at": OBSERVED})
+    pd.DataFrame([snapshot_row], columns=AWARD_EVENT_SNAPSHOT_COLUMNS).to_parquet(snapshot_path, index=False)
+    pd.DataFrame([action_row], columns=AWARD_ACTION_VERSION_COLUMNS).to_parquet(action_path, index=False)
+    assert not state_path.exists()
+
+    with pytest.raises(RuntimeError, match="cold-start"):
+        usaspending_awards._load_award_event_projection_state(state_path)

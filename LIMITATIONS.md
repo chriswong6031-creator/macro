@@ -26,10 +26,27 @@ the consequence, not just the cause.
   ladder/regime are calibrated on the **deep** stock/index panel (1997–2026), and
   the sector ETFs are rendered through the same engine but not independently
   calibrated. Labeled on the page footer.
-- **Stock Connect northbound froze Aug-2024 + southbound parsing is imperfect.**
-  Regulators curtailed real-time northbound disclosure, so `northbound_cum` goes
-  flat (expected, not a bug); the southbound leg parsing is best-effort and
-  non-load-bearing. Connect flows are context only, not a regime input.
+- **Stock Connect northbound is partly RETIRED, not broken — per column.** The
+  Apr-2024 CSRC rule amendment ended SSE/SZSE daily northbound flow disclosure, so
+  `net`, `buy` **and** `sell` all stop at 2024-08-16 (all three died together, not
+  just `net`). This is permanent and not repairable: `northbound_cum` goes flat and
+  self-truncates, which is expected, not a bug. `turnover` was untouched and is
+  still posted daily. `hold_mktcap` went **quarter-end-only** from 2024-09 —
+  upstream emits a literal `0` on every non-disclosure day in between, and since a
+  cumulative holdings level can never be zero, those 450 fake rows were healed out
+  of the store on 2026-08-04 and the collector now coerces `0 → NaN` at the source
+  (`store.upsert` merges `new.combine_first(old)`, so a stored zero would otherwise
+  be permanent). Southbound is fully live daily on all five columns; its leg parsing
+  is best-effort and non-load-bearing. Connect flows are context only, not a regime
+  input.
+- **Column-grain staleness alarms now guard the Connect store.** The frame-grain
+  frozen-tail check could not see any of the above: one live column (`turnover`)
+  kept the northbound frame looking fresh while three dead ones hid inside it for
+  ~2 years. Each column now carries a `ColumnContract`
+  (`collectors/base.py`), so a live column past its horizon raises a `::warning`
+  and a **retired** column that starts reporting again raises a `::notice` (upstream
+  resumed — a human adjudicates un-retiring it). A retired column in its expected
+  all-null state stays silent, so the alarm is worth reading.
 - **SHIBOR series is shallow** (the rates report returns only a short recent
   window), so the liquidity overlay anchors on M2-YoY; SHIBOR is a secondary tilt.
 - **Constituent stock names are tickers** (no free Chinese-name map wired yet) —

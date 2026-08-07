@@ -1,12 +1,13 @@
 """engine.neuralweb.context_api — Context Snapshot PIT API (NW-CI W2, R-CI4).
 
-CLASSIFICATION: research-side query API — no nightly caller by design.
-Consumers are future pre-registered context studies (analogous to
-engine/neuralweb/alpha_grammar.py and engine/neuralweb/alpha_overlap.py which
-are likewise query-only research utilities with zero nightly import paths).
-This module is NOT wired into daily.yml and does NOT appear in the nightly
-engine job.  It is imported directly by ad-hoc research notebooks, study
-scripts, and future context-layer analysis pipelines when needed.
+CLASSIFICATION: research-side query API.  The snapshot/frame surface has no
+nightly caller by design (analogous to engine/neuralweb/alpha_grammar.py and
+engine/neuralweb/alpha_overlap.py, likewise query-only research utilities);
+it is imported directly by ad-hoc research notebooks, study scripts, and
+context-layer analysis pipelines.  ONE nightly consumer exists as of 2026-08-04:
+scripts/grade_us_board.py lazy-imports ``archetype_asof`` to stamp the ledger's
+``archetype`` context column.  That is a read-only context lookup — this module
+still produces no artifact and still computes no signal, score, rank, or gate.
 
 TIER: display/context — READ-ONLY.  Never computes new signals, scores,
 ranks, sizes, gates, or raises attention floors.  This is the "amassed
@@ -23,6 +24,10 @@ context_snapshot(ticker, date=None, root=None) -> dict
 
 context_frame(tickers, date=None, root=None) -> pd.DataFrame
     Vectorised version: one row per ticker, one column per dimension field.
+
+archetype_asof(ticker, date, root=None) -> str | None
+    Single-field convenience over the archetype dimension: the PIT archetype
+    label alone (greatest asof_date <= date), None when absent.
 
 DIMENSIONS (11 total)
 ---------------------
@@ -359,6 +364,20 @@ def _archetype_dim(ticker: str, date_ts: pd.Timestamp, root: Path) -> dict:
         as_of=str(row["_asof_dt"].date()) if pd.notna(row["_asof_dt"]) else None,
         basis="pit_labels",
     )
+
+
+def archetype_asof(ticker: str, date, root: Path | None = None) -> str | None:
+    """PIT archetype label for *ticker*: greatest asof_date <= date from
+    data/archetypes/history.parquet; None when the store, ticker, or a
+    PIT-eligible row is absent. Read-only context (module tier law)."""
+    try:
+        ts = pd.Timestamp(date)
+    except (ValueError, TypeError):
+        return None
+    dim = _archetype_dim(str(ticker), ts, root)
+    if dim.get("absent"):
+        return None
+    return (dim.get("value") or {}).get("archetype")
 
 
 # ---------------------------------------------------------------------------
@@ -861,19 +880,34 @@ def _options_dim(ticker: str, date_ts: pd.Timestamp, root: Path) -> dict:
     if gex_path.exists():
         try:
             gex_df = pd.read_parquet(gex_path)
-            date_col = "date" if "date" in gex_df.columns else None
-            if date_col:
-                gex_df = gex_df.copy()
-                gex_df["_dt"] = pd.to_datetime(gex_df[date_col], errors="coerce")
-                valid = gex_df[gex_df["_dt"] <= date_ts].sort_values("_dt")
-                if not valid.empty:
-                    row = valid.iloc[-1]
-                    gex_result = {
-                        k: (None if isinstance(v, float) and pd.isna(v) else v)
-                        for k, v in row.to_dict().items()
-                        if not k.startswith("_") and k != date_col
-                    }
-                    gex_result["as_of"] = str(row["_dt"].date()) if pd.notna(row["_dt"]) else None
+            # The session stamp lives on the INDEX, not in a column: lib.store
+            # .upsert writes these summaries with a bare DatetimeIndex that it
+            # coerces, normalize()s, de-duplicates and sort_index()es, and no
+            # writer has ever emitted a 'date' column.  This block used to look
+            # for that column, so `if date_col:` was unreachable and gex was
+            # None for every call ever made — silently, since the dimension
+            # stays "present" whenever skew alone resolves.
+            stamps = (
+                gex_df.index if isinstance(gex_df.index, pd.DatetimeIndex)
+                # Anything else is parsed as a date STRING rather than coerced
+                # numerically, so a positional index degrades to NaT instead of
+                # fabricating an epoch stamp.
+                else pd.to_datetime(pd.Index(gex_df.index).astype("string"), errors="coerce")
+            )
+            # Greatest stamp at or before the as-of.  Stamps ARE the NYSE session
+            # the snapshot describes (2026-08-06 session-stamp migration), so this
+            # is a face-value join — never offset a day in either direction to
+            # compensate for the retired UTC-run-date stamping.
+            at_or_before = stamps.notna() & (stamps <= date_ts)
+            if at_or_before.any():
+                valid = gex_df[at_or_before].set_axis(stamps[at_or_before]).sort_index()
+                row, stamp = valid.iloc[-1], valid.index[-1]
+                gex_result = {
+                    k: (None if isinstance(v, float) and pd.isna(v) else v)
+                    for k, v in row.to_dict().items()
+                    if not str(k).startswith("_")
+                }
+                gex_result["as_of"] = str(stamp.date())
         except Exception as e:  # noqa: BLE001
             log.debug("context_api: polygon_gex read failed for %s: %s", ticker, e)
 

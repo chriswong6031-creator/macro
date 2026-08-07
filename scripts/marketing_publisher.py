@@ -60,6 +60,9 @@ _CODE_ROOT = str(Path(__file__).resolve().parent.parent)
 if _CODE_ROOT not in sys.path:
     sys.path.insert(0, _CODE_ROOT)
 from engine.marketing.copywriter import banned_language as _banned_language  # noqa: E402
+from engine.marketing.media_publish import (  # noqa: E402
+    card_ticker_mismatch as _card_ticker_mismatch,
+)
 from engine.marketing.copywriter import headline_fragments as _headline_fragments  # noqa: E402
 from engine.marketing.copywriter import queued_voice_violations as _queued_voice_violations  # noqa: E402
 from engine.marketing.copywriter import queued_relay_violations as _queued_relay_violations  # noqa: E402
@@ -500,16 +503,33 @@ def _item_fact_day(it: dict) -> object:
 
 
 def _clock_violations(it: dict, text: str, now: datetime) -> list[str]:
-    """Temporal-vocabulary and dead-date reasons this item must not post NOW.
+    """Temporal-vocabulary, dead-date and STALE-SESSION reasons not to post NOW.
 
     (a) and (b) of the publish-time gate. Fail-SOFT: any internal error returns
     no violations, because a broken clock must never wedge the whole queue — the
     generators and the sentinel are still upstream of this.
+
+    THE THIRD LEG (operator 2026-08-06): "you cant post yesterdays action today,
+    or todays action tomorrow. no human would post stale data like that." The
+    two checks above ask whether a WORD in the copy is false; neither asks
+    whether the whole post has been overtaken by a new session. A theme_list
+    planned for 2026-08-05T12:00Z reading "+1.9% avg on Tuesday" passed both of
+    them on Wednesday night at 35 hours old, because "on Tuesday" was true — it
+    was just no longer worth saying. Two siblings reached 60h.
+
+    IT BELONGS HERE, IN THE PUBLISHER, and nowhere earlier. An item can be
+    approved at any hour, so a generation-time freshness check answers the
+    question at the wrong moment; this function is the last thing between the
+    queue and the network. `market_clock.stale_session_violations` owns the law
+    itself (and the four boundaries it must not break); this call is the wiring.
     """
     try:
         reasons = _clock.temporal_violations(
             text, now=now, fact_asof=_item_fact_day(it))
         reasons += _clock.dead_date_future_tense(text, now=now)
+        reasons += _clock.stale_session_violations(
+            text, now=now, fact_asof=_item_fact_day(it),
+            kind=str(it.get("kind") or ""))
         return reasons
     except Exception as exc:  # noqa: BLE001
         log.warning("clock gate unavailable for %s (%s) — passing",
@@ -525,7 +545,8 @@ _ANCHOR_OWNER_RANK: dict[str, int] = {
 
 
 def _fact_anchor_owners(state: dict, now: datetime,
-                        days: int = _FACT_ANCHOR_WINDOW_DAYS
+                        days: int = _FACT_ANCHOR_WINDOW_DAYS,
+                        windows: dict | None = None,
                         ) -> dict[str, str]:
     """anchor key -> the ONE item id entitled to it, over the trailing window.
 
@@ -547,11 +568,31 @@ def _fact_anchor_owners(state: dict, now: datetime,
     breadth family are held RIGHT NOW, which would have blocked every breadth
     post for five days on the first run of this gate. Same reasoning as the dead
     statuses: not competing for the slot, not entitled to the fact.
+
+    PER-FAMILY COOLDOWNS (operator 2026-08-06, the 203k defect). A tape fact and
+    a weekly macro print perish on completely different clocks: five days is
+    right for "$AMZN +15.3%", and it is why the SAME 203k jobless-claims number
+    could be re-planned on five separate days and still look new to this gate on
+    day six. `windows` (config `publish.fact_cooldown_days`) sets the window per
+    key family; the scan runs over the LONGEST of them and each key is then held
+    to its own, so widening the macro window cannot silently widen the tape one.
     """
-    cutoff = _clock.et_date(now) - timedelta(days=days)
+    # THE MERGED TABLE, NOT THE OVERRIDE (round-2 review, m3). Iterating only
+    # the families PRESENT IN THE CONFIG truncated the scan for any family the
+    # config never mentions: `fact_cooldown_days` always starts from
+    # FACT_COOLDOWN_DAYS_DEFAULT, so `{default: 3}` left macro's own window at 7
+    # while the scan ran to max(5, 3) = 5 — rows six and seven days old were
+    # dropped from `rows` before the per-key filter ever saw them, and the macro
+    # cooldown silently became five days. The scan must cover the longest window
+    # any key can RESOLVE to, which is a property of the merged table.
+    scan_days = max([days] + [
+        _clock.fact_cooldown_days(f"{fam}:x", windows)
+        for fam in (set(_clock.FACT_COOLDOWN_DAYS_DEFAULT) | set(windows or {}))])
+    today = _clock.et_date(now)
+    cutoff = today - timedelta(days=scan_days)
     statuses = state.get("status") or {}
     held = state.get("held") or set()
-    rows: list[tuple[int, str, str, str]] = []
+    rows: list[tuple[int, str, str, str, date]] = []
     for iid, it in (state.get("items") or {}).items():
         st = str(statuses.get(iid, "queued"))
         if st not in _LIVE_STATUSES or iid in held:
@@ -563,14 +604,23 @@ def _fact_anchor_owners(state: dict, now: datetime,
         if when < cutoff:
             continue
         rows.append((_ANCHOR_OWNER_RANK.get(st, 9), str(iid),
-                     str(it.get("text") or ""), str(it.get("kind") or "")))
+                     str(it.get("text") or ""), str(it.get("kind") or ""), when))
     owners: dict[str, str] = {}
-    for _rank, iid, text, kind in sorted(rows, key=lambda r: (r[0], r[1])):
+    for _rank, iid, text, kind, when in sorted(rows, key=lambda r: (r[0], r[1])):
         try:
-            keys = _clock.fact_anchor_keys(text, kind)
+            # THE LEAD FACT, NOT EVERY NUMBER IN THE POST (ruling R1,
+            # 2026-08-06). Ownership is claimed on exactly the keys refusal is
+            # tested against below, so a post that recites 203k as framing in
+            # its third line cannot claim that anchor and starve the post whose
+            # LEAD it is. See `market_clock.lead_fact_keys`.
+            keys = _clock.lead_fact_keys(text, kind)
         except Exception:  # noqa: BLE001
             continue
         for key in keys:
+            # The key's OWN window, measured from the claimant's session. An
+            # item outside it never held that fact in the first place.
+            if (today - when).days > _clock.fact_cooldown_days(key, windows):
+                continue
             owners.setdefault(key, iid)
     return owners
 
@@ -776,6 +826,43 @@ def _deferral_covers(it: dict) -> bool:
     return kind in _CHART_BEARING_KINDS or kind in _TICKER_ROLLUP_KINDS
 
 
+def _card_withheld_for_value(it: dict) -> bool:
+    """Did a lane draw this post a card and then deliberately not print it?
+
+    THE THIRD STATE OF THE MEDIA QUESTION (2026-08-06). `media == []` reads the
+    same for a post no lane ever illustrated and for a post whose card was
+    rendered, measured against the copy and withheld because it only restated
+    it. Those are opposite facts about the post's evidence and this publisher
+    used to collapse them, which is how the card-value law came to quarantine
+    the posts it had just tidied.
+
+    Set by engine/marketing/press_lane._emit_outbox_item on the item's `source`,
+    which is the dict make_item persists into items.jsonl — so the flag survives
+    the queue and is readable here, in a process that never sees the card.
+    Absent/unparseable reads as False: the gate stays armed by default and only
+    an explicit, positively-stamped decision stands it down.
+
+    SCOPED BY KIND, AND THE SCOPE IS THE OPERATOR'S (ruling 2026-08-06 —
+    "charts yes, text cards no"; review F6 found the hole). The 2026-07-30 rule
+    this stands down is a PER-KIND rule — "these kinds always carry their chart"
+    — and reading a bare boolean off `source` let any producer buy an exemption
+    from it. The narrowing the operator granted covers exactly one line, the wire
+    flash that merely mentions a ticker; a price or rollup post is where "a chart
+    is DATA" applies and it is untouched. `breaking`
+    and `earnings` sit outside both media-owing sets on purpose and are the only
+    kinds whose lanes draw this card, so the flag is honoured only where the
+    rule it relaxes was never absolute. A future lane stamping the flag on a
+    `signal`/`chart`/`watchlist`/`receipt`/`theme_list`/`mover` item gets
+    nothing: those kinds owe a picture by their own definition. Derived from the
+    same frozensets as everything else here, so widening one widens this.
+    """
+    src = it.get("source")
+    if not (isinstance(src, dict) and src.get("card_withheld_for_value")):
+        return False
+    kind = str(it.get("kind") or "")
+    return kind not in (_CHART_BEARING_KINDS | _TICKER_ROLLUP_KINDS)
+
+
 def _bare_cashtag_post(it: dict, pub_cfg: dict, media_paths: list[str]) -> str:
     """A post that names tickers and ships no picture. Returns the tickers, or "".
 
@@ -783,6 +870,29 @@ def _bare_cashtag_post(it: dict, pub_cfg: dict, media_paths: list[str]) -> str:
     account: "YOU WILL NOT SHIP THESE TEXT ONLY, ID RATHER YOU DESTROY THE
     ENTIRE ENGINE THAN SHIP TEXT ONLY, CUZ NO ONE CARES ABOUT THESE TICKER POSTS
     IF UR GOING TO SHIP THEM NAKED WITH NO CHARTS."
+
+    …AND THE OPERATOR NARROWED IT, 2026-08-06, IN ONE PLACE: "CHARTS YES, TEXT
+    CARDS NO." A WIRE FLASH that merely mentions a ticker MAY ship text-only when
+    its card was drawn, MEASURED, and found to only restate the post. The
+    operator's reasoning, recorded here because it is the whole argument: A CHART
+    IS DATA; A TEXT CARD IS A SCREENSHOT OF THE POST. Withholding a screenshot of
+    the post is not shipping naked — there was nothing under the clothes.
+
+    THE 2026-07-30 LAW KEEPS ITS FULL FORCE EVERYWHERE ELSE, unchanged: the
+    price/rollup posts it was written about — every kind in
+    ``_CHART_BEARING_KINDS`` and ``_TICKER_ROLLUP_KINDS``, i.e. `signal`,
+    `chart`, `watchlist`, `receipt`, `theme_list`, `mover` — carry a real chart
+    or they do not ship, withheld stamp or no withheld stamp. That scoping is
+    :func:`_card_withheld_for_value`'s kind test, and it is pinned both ways by
+    tests/test_marketing_card_earns_pixels.py::
+    test_the_withheld_exemption_does_not_reach_a_chart_bearing_kind and
+    ::test_a_real_press_emission_relabelled_to_a_rollup_kind_is_still_quarantined.
+
+    THIS IS A NARROWING BY THE OPERATOR, NOT BY A BUILDER. The engineering
+    argument (the lane drew a card, measured it against the copy, and found it
+    said nothing the copy did not) was made in this docstring for one day with no
+    ruling cited, and the round-3 review was right to refuse to merge on it. It
+    is cited now.
 
     :func:`_missing_required_media` could not enforce that. It keys on
     ``_CHART_BEARING_KINDS`` (signal/chart/watchlist/receipt) AND requires a
@@ -834,6 +944,33 @@ def _bare_cashtag_post(it: dict, pub_cfg: dict, media_paths: list[str]) -> str:
         # would wedge every ticker post, same reasoning as the deferral gate.
         return ""
     _built_a_card = any(isinstance(m, dict) for m in (it.get("media") or []))
+    if not _built_a_card and _card_withheld_for_value(it):
+        # THE PICTURE WAS DRAWN AND DELIBERATELY NOT PRINTED. This gate asks
+        # "does this post owe a picture it never got?" — and here the lane got
+        # one, measured it against the copy, and found it said nothing the post
+        # did not already say (breaking_summary.card_earns_attachment). Holding
+        # the post for review on that basis quarantines it for being TOO tidy:
+        # the reviewer's only available action is to approve the very text that
+        # is already in the queue. Measured 2026-08-05: every cashtag-bearing
+        # press flash whose card was withheld landed here, terminal.
+        #
+        # THIS IS NOT A HOLE IN THE 2026-07-30 RULE. The 19 posts that outage
+        # quarantined carried no `media` and no lane-set withholding decision;
+        # they simply shipped bare. Nothing sets this flag except a card gate
+        # that has SEEN a rendered card and read back what it DREW, so a lane
+        # cannot buy an exemption by skipping the render. That premise was false
+        # when first written — earnings_call_lane decided before rendering, and
+        # scored a 190-char string against a 129-char box — and is enforced now
+        # by tests/test_marketing_card_earns_pixels.py::
+        # test_every_card_drawing_lane_judges_what_the_card_drew, which walks
+        # each lane's AST and fails on a gate call that does not read the fit
+        # report. A renderer that fell through its fail-soft is NOT this case in
+        # either lane: it returns the transient `media_unhosted` /
+        # `card_render_degraded` refusal and never stamps the flag.
+        #
+        # AND IT IS SCOPED BY KIND — see _card_withheld_for_value. A `signal` or
+        # `watchlist` item stamping the flag gets nothing.
+        return ""
     if not _built_a_card and str(it.get("kind") or "") not in _BARE_CASHTAG_KINDS:
         # Prose that mentions a ticker in passing and never claimed a picture.
         return ""
@@ -1988,13 +2125,28 @@ def main(argv: list[str] | None = None) -> int:
     # See the block comment above _FACT_ANCHOR_WINDOW_DAYS. `_fact_owners` is
     # resolved ONCE, before the loop, so ownership of a shared fact cannot
     # depend on which item this sweep happens to reach first.
-    _fact_owners = _fact_anchor_owners(state, now)
+    _fact_cooldowns = pub_cfg.get("fact_cooldown_days") or {}
+    if not isinstance(_fact_cooldowns, dict):
+        log.warning("publish.fact_cooldown_days is %r, not a mapping — using the "
+                    "shipped defaults", type(_fact_cooldowns).__name__)
+        _fact_cooldowns = {}
+    # CORRECTION C2's bound, from the same config block as the windows so the
+    # two knobs that decide "is this the same fact again?" sit together.
+    _ride_max = _clock.fact_ride_along_max(pub_cfg.get("fact_ride_along_max"))
+    _fact_owners = _fact_anchor_owners(state, now, windows=_fact_cooldowns)
     quarantined_clock = 0
     quarantined_fact_fanout = 0
+    # The RESOLVED window table, not the module constant: the per-family
+    # cooldowns are config-driven, so a log naming one number was wrong for
+    # every family that is not the default.
+    _window_table = ", ".join(
+        f"{_fam}={_clock.fact_cooldown_days(f'{_fam}:x', _fact_cooldowns)}d"
+        for _fam in sorted(
+            set(_clock.FACT_COOLDOWN_DAYS_DEFAULT) | set(_fact_cooldowns)))
     log.info("publish-time clock gate | session_day=%s pre_open=%s | "
-             "%d fact anchors held over the trailing %dd",
+             "%d LEAD-fact anchors held | windows: %s",
              _clock.current_session(now) is not None, _clock.is_pre_open(now),
-             len(_fact_owners), _FACT_ANCHOR_WINDOW_DAYS)
+             len(_fact_owners), _window_table)
 
     # ── Per-account cadence resolver (XG-W2) ─────────────────────────────────
     # config/marketing.yml keeps sentinel.max_posts_per_account_per_day: -1 as
@@ -2111,6 +2263,33 @@ def main(argv: list[str] | None = None) -> int:
                 # Dry-run parks nothing, so it announces nothing (and does not
                 # spend the next live run's annotation budget).
                 _warn_dark_park(account)
+            _parked_post.append(iid)
+            continue
+
+        # -- card/ticker agreement: never post another company's chart --------
+        # THE DEFECT (live, flagship, 2026-08-05): "$DVN 45.1. Signals are lining
+        # up..." shipped over an RMBS chart. The item was right and the FILE at
+        # its chart_id was another company's, because content_studio's id counter
+        # restarted at 1 each run while the media key is per-DAY, so a second run
+        # overwrote the first run's charts at the same public URLs.
+        # `_next_chart_id` closes that cause. This closes the CLASS: a reader
+        # caught the DVN post, and the audit it prompted then found eight more
+        # nobody had caught, across flagship, sophia and meagan. Posting the
+        # wrong company's chart under a ticker is the single worst thing this
+        # pipeline can do, so it is checked here, at the last gate before the
+        # network, against the artifact itself rather than against metadata that
+        # was correct the whole time.
+        # Abstains on an absent file, an unlabelled card, and a multi-name card
+        # (see card_ticker_mismatch) — it fires only on a card that names a
+        # symbol and not the claimed one.
+        _card_bad = _card_ticker_mismatch(it.get("media"), root=root)
+        if _card_bad:
+            log.error("item %s (%s) QUARANTINED — %s", iid, account, _card_bad)
+            print(f"::error title=card-ticker-mismatch::{iid} ({account}): "
+                  f"{_card_bad}", flush=True)
+            if live:
+                _outbox.transition(iid, "quarantined", actor="publisher",
+                                   root=root, note=_card_bad)
             _parked_post.append(iid)
             continue
 
@@ -2308,8 +2487,16 @@ def main(argv: list[str] | None = None) -> int:
         # sibling inherits (pinned by
         # test_a_quarantined_owner_hands_the_fact_to_the_next_sweep).
         _anchor_hit = None
+        _ride_hit: list[str] | None = None
         try:
-            _my_keys = sorted(_clock.fact_anchor_keys(
+            # THE LEAD FACT ONLY (ruling R1, 2026-08-06). Reading every number
+            # in the body and breaking on the first one a sibling owned refused
+            # a post whose lead was NEW because its framing quoted last week —
+            # macro 0/6, event 0/2, mover 0/2 on the measured sweep, and the new
+            # GDPNow 5.9% print shipped on no carrier at all. Reciting a prior
+            # number to frame a new one is what a human analyst does; the defect
+            # is the same number being the WHOLE post, five days running.
+            _my_keys = sorted(_clock.lead_fact_keys(
                 text, str(it.get("kind") or "")))
             # DECIDE OVER ALL KEYS BEFORE CLAIMING ANY. Claiming as we go would
             # leave a refused post holding the anchors it passed, silently
@@ -2320,20 +2507,69 @@ def main(argv: list[str] | None = None) -> int:
                     _anchor_hit = (_owner, _akey)
                     break
             if _anchor_hit is None:
-                # Anchors nothing has claimed yet (a publish-time-generated item
-                # is not in the folded snapshot) belong to this post.
-                for _akey in _my_keys:
-                    _fact_owners.setdefault(_akey, iid)
+                # CORRECTION C2: BOUND THE STALE RIDE-ALONG. A new lead is a
+                # licence to quote a prior print for FRAMING, not a licence to
+                # carry last week's whole paragraph. A post whose lead fact
+                # refreshes daily (a breadth ratio moves nearly every session)
+                # otherwise walks the same 203k/5.0%/2.1% recital through the
+                # 7-day window every night, on every account. One owned
+                # supporting fact is framing; two is a recital with a fresh
+                # headline.
+                #
+                # A NEGATIVE BOUND IS "UNBOUNDED", the documented off switch
+                # (config/marketing.yml, `fact_ride_along_max`). Without the
+                # `>= 0` guard `len(...) > -1` is true for EVERY post, so the
+                # setting that turns the correction off would refuse the entire
+                # queue instead — the outbox copy of this check carries the same
+                # guard and the two must not disagree.
+                _owned_ride = [
+                    _rk for _rk in sorted(_clock.ride_along_keys(
+                        text, str(it.get("kind") or "")))
+                    if _fact_owners.get(_rk) and _fact_owners.get(_rk) != iid]
+                if _ride_max >= 0 and len(_owned_ride) > _ride_max:
+                    _ride_hit = _owned_ride
+                else:
+                    # Anchors nothing has claimed yet (a publish-time-generated
+                    # item is not in the folded snapshot) belong to this post.
+                    for _akey in _my_keys:
+                        _fact_owners.setdefault(_akey, iid)
         except Exception as _fa_exc:  # noqa: BLE001
             log.warning("fact-anchor gate unavailable for %s (%s) — passing",
                         iid, _fa_exc)
+        if _ride_hit is not None:
+            # The receipt NAMES the owned facts. The operator reads these, and
+            # "too many stale numbers" without the numbers is not a receipt.
+            reason = ("fact recital: " + str(len(_ride_hit)) + " supporting "
+                      "facts are already owned by live siblings (" +
+                      ", ".join(f"{_rk}->{_fact_owners.get(_rk)}"
+                                for _rk in _ride_hit) +
+                      f"); at most {_ride_max} may ride along with a new lead")
+            print(f"::warning title=marketing-fact-recital::item {iid} "
+                  f"({account}/{it.get('kind')}) quarantined — {len(_ride_hit)} "
+                  f"already-owned supporting facts ride behind a new lead "
+                  f"({', '.join(_ride_hit)}); the bound is {_ride_max}",
+                  flush=True)
+            log.warning("item %s (%s) QUARANTINED by fact recital bound: %s",
+                        iid, account, reason)
+            if live:
+                _outbox.transition(iid, "quarantined", actor="publisher",
+                                   root=root, note=reason)
+            quarantined += 1
+            quarantined_fact_fanout += 1
+            continue
         if _anchor_hit is not None:
             _oid, _akey = _anchor_hit
-            reason = (f"fact fan-out: {_akey} already anchors {_oid} in the "
-                      f"trailing {_FACT_ANCHOR_WINDOW_DAYS} days")
+            # THE KEY'S OWN WINDOW, not the module constant. A macro key is held
+            # for 7 days and the receipt used to say 5 — an item refused on day
+            # six showed a reason its own arithmetic contradicted, and the
+            # operator reads these receipts.
+            _akey_days = _clock.fact_cooldown_days(_akey, _fact_cooldowns)
+            reason = (f"fact fan-out: {_akey} is the LEAD fact of {_oid} in the "
+                      f"trailing {_akey_days} days")
             print(f"::warning title=marketing-fact-fanout::item {iid} "
-                  f"({account}/{it.get('kind')}) quarantined — same source fact "
-                  f"({_akey}) as {_oid}; one fact, one post", flush=True)
+                  f"({account}/{it.get('kind')}) quarantined — same LEAD fact "
+                  f"({_akey}) as {_oid} inside its {_akey_days}d cooldown; "
+                  f"one fact, one post", flush=True)
             log.warning("item %s (%s) QUARANTINED by fact fan-out gate: %s",
                         iid, account, reason)
             if live:

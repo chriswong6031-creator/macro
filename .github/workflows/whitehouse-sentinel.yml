@@ -68,10 +68,29 @@ jobs:
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
+          # normalize the page this step stages (P0 2026-08-04, 9a997e9da3f): a lane
+          # that commits site/ HTML without the shim/externalize/stamp chain publishes
+          # a RAW page — inline <style>, no assets/css/<hash>.css ref, stale ?v= — and
+          # holds it until the next full-tree render re-bakes whitehouse.html. An alert
+          # page is the one that gets read the same hour it lands, so it is the worst
+          # one to ship raw. All three passes are idempotent (~20s over the tree, well
+          # inside this job's 10m budget) and non-blocking: a sweep failure must never
+          # cost an activated alert its publish.
+          python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+          python -m scripts.externalize_css || echo "::warning title=externalize::pre-commit css externalize FAILED — pages may ship un-externalized (9a997e9da3f)"
+          python -m scripts.optimize_assets || echo "::warning title=stamp::asset optimize FAILED — ?v= stamps may be stale"
           # data/qledger: the W5 adapter appends each activated alert's claim to the
           # TRACKED data/qledger/claims.jsonl — it must ship with the alert, and any
           # unstaged tracked change would abort the rebase below.
           git add data/ai_costs/usage.d data/whitehouse data/qledger site/wh_banner.json site/whitehouse.html site/whdata 2>/dev/null || true
+          # ...and the content-hashed assets the page now links: externalize_css rewrites
+          # whitehouse.html to <link> site/assets/css/<hash>.css, so staging the page
+          # without the asset ships a 404 stylesheet. --ignore-removal never stages a
+          # DELETION — the orphan prune reasons only from pages it can see, and this lane
+          # has no post-rebase normalize to re-mint an asset a sibling still links.
+          # Separate lines: `git add a b` exits 128 when either pathspec matches nothing.
+          git add --ignore-removal site/assets/css 2>/dev/null || true
+          git add --ignore-removal site/assets/js 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "no White House changes this run"
             exit 0

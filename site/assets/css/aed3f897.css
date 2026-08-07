@@ -1,0 +1,162 @@
+
+  /* Keep the two strongest existing surfaces exactly as designed:
+     #action-board first, then the Prophet #us-standouts scorecards. Remove only
+     the duplicated research boards that pushed both below the fold. */
+  body.page-stocks #sector-heat,
+  body.page-stocks #sentiment-regime,
+  body.page-stocks #cross-asset-macro,
+  body.page-stocks #dash-tape-band,
+  body.page-stocks #equity-scoreboard,
+  body.page-stocks #sectors,
+  body.page-stocks #dash-mtf-section,
+  body.page-stocks #accumulation,
+  body.page-stocks #holdings{display:none!important}
+/* ══════════════════════════════════════════════════════════════════════════
+     LIGHT MODE — designed, not inherited (2026-08-03)
+     This board was drawn dark-first and light arrived as a token swap: panel and
+     canvas landed within one step of each other (#f5f5f7 on #eceef1), so the
+     five action lanes stopped being lanes, the gated teasers turned into beige
+     smudges, and the sign-up bands bleached into pastel. Light gets its own
+     three-level depth recipe here:
+
+         canvas #e8ebf1  →  panel #ffffff  →  card / lane wash
+
+     Rules of the port: (1) every selector is guarded on html[data-theme="light"]
+     AND scoped to body.page-stocks, so the dark render stays byte-identical and
+     the macro page is untouched; (2) theme.js injects
+     html.soft-contrast[data-theme="light"] LATE in <head> at specificity (0,2,1)
+     — every rule below clears it on SPECIFICITY, never on source order;
+     (3) directional colour goes through the estate's --ink-* twins so 红涨绿跌
+     still flips; only non-directional state hues (amber) are pinned as hex.
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  /* 1 · canvas — a step deeper than the estate default so white reads as material */
+  html[data-theme="light"] body.page-stocks{ background:#e8ebf1; }
+
+  /* 2 · panels — white material, hairline edge, one soft lift */
+  html[data-theme="light"] body.page-stocks .panel{
+    background:#fff; border-color:#dde2ea;
+    box-shadow:0 1px 2px rgba(23,32,55,.05), 0 8px 24px -12px rgba(23,32,55,.10);
+  }
+  html[data-theme="light"] body.page-stocks #stocks-header{
+    background:
+      radial-gradient(900px 180px at 12% -40%,color-mix(in srgb,var(--link) 9%,transparent),transparent 60%),
+      #fff;
+  }
+  html[data-theme="light"] body.page-stocks .stk-status{ background:#f4f6fa; border-color:#dde2ea; }
+
+  /* 3 · the action board — in light the five lane containers vanished into the
+     panel, so the board read as one undifferentiated list instead of five
+     stances side by side. Each lane gets a wash and an edge in its OWN accent,
+     so the column IS the stance before a single word is read. */
+  html[data-theme="light"] body.page-stocks .actcol{
+    background:color-mix(in srgb, var(--act-accent) 4%, #fff);
+    border-color:color-mix(in srgb, var(--act-accent) 14%, #dde2ea);
+    box-shadow:0 1px 2px rgba(23,32,55,.05), 0 8px 22px -15px rgba(23,32,55,.20);
+  }
+  html[data-theme="light"] body.page-stocks .acth{
+    border-bottom-color:color-mix(in srgb, var(--act-accent) 16%, #dde2ea);
+  }
+  html[data-theme="light"] body.page-stocks .actitem{
+    border-bottom-color:color-mix(in srgb, var(--act-accent) 10%, #e3e8f0);
+  }
+  html[data-theme="light"] body.page-stocks .actitem:hover,
+  html[data-theme="light"] body.page-stocks .actitem:focus{ background:rgba(255,255,255,.72); }
+  html[data-theme="light"] body.page-stocks .actitem.hovered{ background:rgba(255,255,255,.9); }
+
+  /* 4 · gated teasers — a blurred colour chip on white smears into a dirty beige
+     stain. Desaturating first makes the same rows read as what they are: a
+     deliberate skeleton of content that is there, just not yours yet. */
+  html[data-theme="light"] body.page-stocks .mx-tier-blurred{
+    filter:blur(5px) saturate(.35); opacity:.46;
+  }
+
+  /* 5 · RECENTLY FIRED — the "theme just confirmed" row. On ink a warm gradient
+     reads as a whisper; on white the same gradient shouts a cream band across
+     the panel. Light gets the quiet-notice form instead: near-white wash, one
+     amber rail, amber headline. */
+  html[data-theme="light"] body.page-stocks .pbr-r{
+    background:#f7f9fc; border-color:#e3e8f0;
+  }
+  html[data-theme="light"] body.page-stocks .pbr-r.pbr-warm{
+    background:color-mix(in srgb,#b98a2b 7%,#fff);
+    border-color:color-mix(in srgb,#b98a2b 26%,#dde2ea);
+    border-left:3px solid #b98a2b;
+  }
+  html[data-theme="light"] body.page-stocks .pbr-wl{ color:#7a5a14; }
+
+  /* 6 · entry chips — "pullback zone …" + "extended" sat as two abutting heavy
+     tints, reading as one double-highlighted blob. Thinner washes and a hairline
+     ring make them two chips again. The green keeps --ink-up (not a hex) so the
+     红涨绿跌 flip still swaps it to red; amber is a non-directional state hue and
+     is pinned. */
+  html[data-theme="light"] body.page-stocks .ent-good{
+    color:var(--ink-up, var(--up));
+    background:color-mix(in srgb, var(--ink-up, var(--up)) 9%, #fff);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--ink-up, var(--up)) 24%, transparent);
+  }
+  html[data-theme="light"] body.page-stocks .ent-warn{
+    color:#8a6410;
+    background:color-mix(in srgb,#b98a2b 10%,#fff);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,#b98a2b 26%,transparent);
+  }
+
+  /* 7 · the "?" affordance — a filled pill tuned for ink reads as a dark blob on
+     white. It is a hint, not a control: hollow ring, muted glyph. */
+  html[data-theme="light"] body.page-stocks span.help,
+  html[data-theme="light"] body.page-stocks span.help.help-upgraded{
+    background:transparent; color:var(--muted);
+    border:1px solid color-mix(in srgb, var(--muted) 55%, transparent);
+  }
+  html[data-theme="light"] body.page-stocks span.help:hover,
+  html[data-theme="light"] body.page-stocks span.help.help-upgraded:hover{
+    border-color:var(--muted); color:var(--text);
+  }
+
+  /* 8 · the sign-up bands stay DARK ISLANDS. Everything else on this page went
+     white, which is exactly why these two must not: they are the one place the
+     page asks for something, and a pastel band on a white page is furniture.
+     Buttons keep their vivid accent — unchanged from dark. */
+  html[data-theme="light"] body.page-stocks .mx-tier-gate{
+    background:linear-gradient(118deg,#233254 0%,#182034 62%,#151b2c 100%);
+    border-color:#2f3f63;
+    box-shadow:0 18px 44px -26px rgba(20,30,58,.55);
+  }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate--prophet{
+    background:linear-gradient(118deg,#2b2550 0%,#1d1c37 62%,#17172b 100%);
+    border-color:#3b3268;
+  }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate::before{ background:color-mix(in srgb,#8fb4f2 15%,transparent); }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate--prophet::before{ background:color-mix(in srgb,#a996ff 15%,transparent); }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate::after{
+    background:linear-gradient(90deg,transparent,color-mix(in srgb,#8fb4f2 85%,transparent),transparent);
+  }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate--prophet::after{
+    background:linear-gradient(90deg,transparent,color-mix(in srgb,#a996ff 85%,transparent),transparent);
+  }
+  html[data-theme="light"] body.page-stocks .mx-tier-eyebrow{ color:#8fb4f2; }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate--prophet .mx-tier-eyebrow{ color:#a996ff; }
+  html[data-theme="light"] body.page-stocks .mx-tier-mark{
+    background:color-mix(in srgb,#8fb4f2 16%,transparent);
+    border-color:color-mix(in srgb,#8fb4f2 34%,transparent);
+  }
+  html[data-theme="light"] body.page-stocks .mx-tier-gate--prophet .mx-tier-mark{
+    background:color-mix(in srgb,#a996ff 16%,transparent);
+    border-color:color-mix(in srgb,#a996ff 34%,transparent);
+  }
+  html[data-theme="light"] body.page-stocks .mx-tier-copy b{ color:#f2f5fa; }
+  html[data-theme="light"] body.page-stocks .mx-tier-copy small{ color:rgba(224,232,245,.74); }
+  html[data-theme="light"] body.page-stocks .mx-tier-signin{ color:rgba(224,232,245,.66); }
+  html[data-theme="light"] body.page-stocks .mx-tier-signin:hover{ color:#fff; }
+
+  /* 9 · level 3 — the containers that live INSIDE a white panel. They must sit
+     just off white, or the hierarchy collapses back to one flat sheet. */
+  html[data-theme="light"] body.page-stocks .pbt,
+  html[data-theme="light"] body.page-stocks .pbf-bar{
+    background:#f4f6fa; border-color:#e3e8f0;
+  }
+  html[data-theme="light"] body.page-stocks .pbf-bar button[aria-pressed="true"]{
+    background:#fff; border-color:#dde2ea; box-shadow:0 1px 2px rgba(23,32,55,.10);
+  }
+  html[data-theme="light"] body.page-stocks .chip{ border-color:#dde2ea; }
+  

@@ -112,14 +112,31 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      # The sweeper needs one tracked Python file, not the repository's ~53k-file
+      # The sweeper needs a handful of tracked files, not the repository's ~53k-file
       # working tree. The old full checkout took ~100 seconds before the first
       # API call and made a two-minute control-plane action a four-minute one.
+      #
+      # `.github/workflows/` is here because the tested-surface gate reads every
+      # `on.pull_request` workflow's `paths:` filter to decide whether main has moved
+      # under a pull request's proof (#4583). The whole directory, never a hardcoded
+      # ci.yml/fences.yml pair: a new PR-triggered workflow must be seen the day it
+      # is added, not the day someone remembers to edit this list. If it stops being
+      # fetched the sweep aborts loudly (`Could not establish the tested-surface
+      # gate`) rather than merging on undated greens.
       - uses: actions/checkout@v4
         with:
           filter: blob:none
-          sparse-checkout: scripts/merge_on_green.py
+          sparse-checkout: |
+            scripts/merge_on_green.py
+            scripts/gh_path_filter.py
+            .github/workflows
           sparse-checkout-cone-mode: false
+
+      # PyYAML parses those path filters. Installed EXPLICITLY rather than assumed:
+      # whether the runner image ships it is not a contract, and the failure mode of
+      # guessing wrong is a sweep that aborts on every run.
+      - name: install the yaml parser
+        run: python3 -m pip install --quiet --disable-pip-version-check pyyaml
 
       - name: sweep merge-on-green pull requests
         env:
@@ -138,4 +155,14 @@ jobs:
           # main plus the nightly scope=all re-render still deliver it — degraded,
           # not broken, which is why the fallback is allowed to exist at all.
           MERGE_TOKEN: ${{ secrets.ADMIN_GH_TOKEN || secrets.GITHUB_TOKEN }}
+          # The head the workflow_run that woke this sweep concluded on. The sweeper
+          # now evaluates at most MAX_PULLS_PER_SWEEP pull requests per run (the
+          # READ_TOKEN quota is 1,000/hr PER REPOSITORY and an uncapped pass of this
+          # backlog costs ~121 of them — 28 sweeps/hr emptied the bucket and every
+          # later sweep 403'd on its first call, 03:34Z-04:38Z on 2026-08-07). This
+          # puts the pull request the trigger is ABOUT first inside that cap, so the
+          # cap costs no latency in the case the workflow_run trigger exists to
+          # serve. Empty for schedule/workflow_dispatch, which is harmless — it only
+          # reorders within the cap and never passes a gate.
+          TRIGGER_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: python3 scripts/merge_on_green.py

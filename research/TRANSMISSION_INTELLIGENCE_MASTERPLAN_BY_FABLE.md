@@ -7,7 +7,7 @@ names"; generalize transmission chains (oil→inflation→yields→duration dera
 permanent, self-improving causal knowledge store feeding watchlist risk, Terminal research
 desk, Prophet context, rotation/WTBN, Neural Web lobes, and portfolio bots.
 Registries consulted: `docs/ACTIVE_BUILD_MAP.md` (no colliding open lane),
-`research/DO_NOT_REBUILD.md` rows 44/45/104/106, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`
+`research/DO_NOT_REBUILD.md` DNR:KILL-FUSED-COMPOSITE / DNR:KILL-CAUSAL-DAG-ALPHA / DNR:KILL-VOLUME-FINGERPRINTS / DNR:KILL-FORCED-CALLS, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`
 (CHF-R1..R17 — TXI RIDES this case law, §4), `PORTFOLIO_RISK_DESK_MASTERPLAN_BY_FABLE.md`,
 `WATCHLIST_RISK_INTELLIGENCE_MASTERPLAN_BY_FABLE.md` (WRI), transmission engine suite (§2).
 
@@ -70,7 +70,7 @@ chain to **which tickers are in the blast radius via which named channel**.
 - **CHF-R1/R2 (ride, don't re-register):** TXI is a PROGRAM composing existing organs. New
   chain proposals ride CHF's already-adjudicated brainstorm/proposal lane and its
   autonomy gate (CHF-R8/R17) — TXI builds NO second LLM loop, no new registration family.
-- **DNR row 45 (CHF Article 1/2):** no causal graph ever emits an alpha score, gates a
+- **DNR:KILL-CAUSAL-DAG-ALPHA (CHF Article 1/2):** no causal graph ever emits an alpha score, gates a
   trade, or sizes anything. Chain states are display/context tier; any single chain's
   promotion to authority (rank/gate/alert escalation) requires its own pre-registered
   gauntlet, entering as a CONFLUENCE INPUT, never standalone (confluence law).
@@ -80,7 +80,7 @@ chain to **which tickers are in the blast radius via which named channel**.
   tier and never arms.
 - **PRD-R2/WRI-R2 (no fused score):** no "transmission risk score." Surfaces show named
   chains, staged states, printed hop base-rates, and per-name channel flags + counts.
-- **DNR row 106 (forced-call law):** an armed chain is a WATCH item with printed
+- **DNR:KILL-FORCED-CALLS (forced-call law):** an armed chain is a WATCH item with printed
   conditional base rates — never a directional call pinned to a signal surface.
 - **Nulls first-class:** hop calibrations that come back null print as null (the
   rate/inflation engine's own scored-gate honesty is the template); a chain that fails
@@ -285,5 +285,5 @@ is the SOLE remaining lock in the current repo. It ships FALSE so wiring the wee
 never auto-activate the lane — the runner no-ops (writes nothing, exit 0) until an operator
 flips `enabled` on in a one-line PR (and if `auto_loop` is ever set back to false, the lane
 no-ops again regardless). This is not a second LLM loop and grants no new authority: proposals
-are display/context tier only (DNR row 45 / Article 1/2), and LLMs de-escalate only (CHF-R17)
+are display/context tier only (DNR:KILL-CAUSAL-DAG-ALPHA / Article 1/2), and LLMs de-escalate only (CHF-R17)
 — a chain earns authority solely via a human promotion + its own pre-registered gauntlet.

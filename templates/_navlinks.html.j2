@@ -83,7 +83,7 @@
            old URLs, same pattern as the retired vector-allocation page); Confluence
            stays — it is the stock-entry funnel the merged page links to. #}
         <a href="{{ NP }}sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span>{{ t('Sector Intelligence', '行业智慧') }}<span class="d">{{ t('Sectors, themes & rotation in one read · lanes · cycle map · graded', '板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分') }}</span></a>
-        <a href="{{ NP }}subsectors.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span>{{ t('Subsector Confluence', '子行业汇聚') }}<span class="d">{{ t('Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts', 'S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图') }}</span></a>
+        <a href="{{ NP }}sector_central.html#confluence"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span>{{ t('Subsector Confluence', '子行业汇聚') }}<span class="d">{{ t('Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts', 'S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图') }}</span></a>
         <a href="{{ NP }}strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span>{{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
         <a href="{{ NP }}news.html"><span class="submenu-icon submenu-icon-news" aria-hidden="true"></span>{{ t('News Feed', '新闻流') }}<span class="d">{{ t('Macro headlines · catalysts · sentiment', '宏观头条 · 日程 · 情绪') }}</span></a>
         <a href="{{ NP }}alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span>{{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>
@@ -116,9 +116,22 @@
         {# 2026-08 China Sector Intelligence consolidation: the 5-entry Sector Central flyout
            (Sector Central / Thematic Baskets & Rotation / Subsector Rotation / Subsector
            Confluence / Market Heatmap) collapsed to three flat rows — Baskets + Subsector
-           Rotation merged INTO sector_central_china.html, mirroring the US collapse above. #}
+           Rotation merged INTO sector_central_china.html, mirroring the US collapse above.
+           Subsector Confluence is now the merged page's #confluence rail VIEW too (2026-08
+           rail-view addition — "lives on the one consolidated page"): this row deep-links there.
+           The standalone subsectors_china.html survives as its SEO twin (own SEO head, still
+           linked from china_intel/chat) but is no longer the nav target. (US parity shipped
+           later: "Subsector Confluence" deep-links sector_central.html#confluence the same
+           way, and the standalone subsectors.html is likewise KEPT, not stubbed. The SEO-twin
+           reason is real but only became so on 2026-08-06: before #4519 opened the page shells
+           both pages 302'd Googlebot to sign-in, and a page a crawler cannot fetch has no SEO
+           to protect. Post-#4519 a crawler gets 200 with a real title and no noindex, and —
+           the load-bearing half — a #hash is NOT a distinct URL to an index, so the merged
+           page cannot rank for these queries in the standalone's place however good the rail
+           view is. Both still sit outside sitemap.xml, so they are discovered by internal
+           link only. Re-check this before stubbing either: the answer flipped once already. #}
         <a href="{{ NP }}sector_central_china.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span>{{ t('Sector Intelligence', '行业智慧') }}<span class="d">{{ t('Gated board · cycle map · whole-market rotation · theme baskets — one page', '门控研判 · 周期图谱 · 全市场轮动 · 主题篮子 — 一页尽览') }}</span></a>
-        <a href="{{ NP }}subsectors_china.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span>{{ t('Subsector Confluence', '子行业汇聚') }}<span class="d">{{ t('Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts', '同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图') }}</span></a>
+        <a href="{{ NP }}sector_central_china.html#confluence"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span>{{ t('Subsector Confluence', '子行业汇聚') }}<span class="d">{{ t('Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts', '同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图') }}</span></a>
         <a href="{{ NP }}china_heatmap.html"><span class="submenu-icon submenu-icon-heatmap" aria-hidden="true"></span>{{ t('Market Heatmap', '市场热力图') }}<span class="d">{{ t('Every A-share · sector treemap · market-cap', '全部A股 · 板块树图 · 按市值') }}</span></a>
         <a href="{{ NP }}china_strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span>{{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
         <a href="{{ NP }}china_news.html"><span class="submenu-icon submenu-icon-news" aria-hidden="true"></span>{{ t('China News Feed', '中国新闻流') }}<span class="d">{{ t('Policy tone · official sources · market tags', '政策基调 · 官方来源 · 市场标签') }}</span></a>
@@ -207,6 +220,12 @@
             <h2 class="section-label nav-mega-h">{{ t('Core Research', '核心研究') }}</h2>
             <div class="item-grid nav-mega-item-grid">
               <a class="mega-item nm-feat" href="{{ NP }}intelligence_hub.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 12 24 3l18 9v23l-18 10L6 35Z"/><path d="m24 9 12 7v15l-12 7-12-7V16Z"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 20V9M28 24h8M24 28v10M20 24h-8M21 21l-6-5M27 21l6-5M21 27l-6 5M27 27l6 5"/><circle cx="24" cy="9" r="1.5"/><circle cx="36" cy="24" r="1.5"/><circle cx="24" cy="38" r="1.5"/><circle cx="12" cy="24" r="1.5"/></svg></span><span class="nm-tx"><span class="item-title nm-t">{{ t('Intelligence Hub', '情报中心') }}</span><span class="item-desc d">{{ t('Your complete market command center', '你的完整市场指挥中心') }}</span></span></a>
+              {# Mastermind Portfolio — the user's own book (watchlist.html). Reachable
+                 only from the settings drawer until now, which is why it read as missing.
+                 Icon: an allocation donut with one slice called out + two position bars.
+                 Deliberately NOT a briefcase (Smart Money owns that glyph) and not
+                 concentric rings (Cycle Intelligence owns those). #}
+              <a class="mega-item nm-feat" href="{{ NP }}watchlist.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M25 7a17 17 0 0 1 16 16"/><circle cx="21" cy="26" r="14"/><circle class="ghost" cx="21" cy="26" r="6"/><path class="accent" d="M21 12a14 14 0 0 1 12.1 7L21 26Z"/><path d="M21 12v14l12.1-7"/><circle class="soft-fill" cx="21" cy="26" r="3.2"/><path class="accent" d="M39 41v-9M44 41v-15"/></svg></span><span class="nm-tx"><span class="item-title nm-t">{{ t('Mastermind Portfolio', 'Mastermind 组合') }}</span><span class="item-desc d">{{ t('Your holdings with tonight’s signals', '你的持仓与今晚信号') }}</span></span></a>
               <a class="mega-item nm-feat" href="{{ NP }}reports.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t">{{ t('Research Reports', '研究报告') }}</span><span class="item-desc d">{{ t('Deep dives and market calls', '深度研究与市场判断') }}</span></span></a>
               <a class="mega-item nm-feat" href="{{ NP }}research_vault.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t">{{ t('Research Vault', '研报库') }}</span><span class="item-desc d">{{ t('Search every published research note', '搜索所有已发布研究') }}</span></span></a>
               <a class="mega-item nm-feat" data-nav-file="earnings_wire" href="{{ NP }}stocks/earnings/index.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 7h25l7 7v27H8z"/><path d="M6 5h25l7 7v27H6zM31 5v8h7"/><path class="accent" d="M12 29h5l3-7 5 12 4-9 3 4h3"/><path d="M12 16h14M12 20h9"/><circle class="soft-fill" cx="34" cy="29" r="3"/></svg></span><span class="nm-tx"><span class="item-title nm-t">{{ t('Earnings Wire', '财报情报线') }}</span><span class="item-desc d">{{ t('Verified calls, weekly intelligence and company context', '已核验电话会、每周情报与公司语境') }}</span></span></a>

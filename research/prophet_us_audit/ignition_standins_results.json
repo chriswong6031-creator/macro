@@ -1,0 +1,1000 @@
+{
+ "meta": {
+  "repro_asof": "2026-07-31",
+  "status": "RESEARCH / SHADOW TIER \u2014 measurements only; no admission, rank, size, gate, or site surface anywhere in this file",
+  "frame": "data/baskets/ohlcv/*.parquet (split+dividend-adjusted close, verified equal to data/yahoo adjusted close on AAPL/KO/XOM)",
+  "benchmark": "data/yahoo/SPY.parquet close",
+  "panel": {
+   "names": 2768,
+   "sessions": 3163,
+   "first": "2014-01-02",
+   "last": "2026-07-31"
+  },
+  "coverage_delta": "The #4561 close_panel() over data/massive_stock_day (~2,252 cols) is NOT merged (branch origin/claude/prophet-us-scan-tier, tip 5bb16b514f1) and the store's parquets are R2-only (.gitignore:246 \u2014 the checkout holds only _manifest.json + _backfill_state.json). This frame is therefore WIDER and far DEEPER than the merged alternatives: 2,768 names x 3,163 sessions from 2014-01-02, vs the 3-tier breadth union's 1,540 names from 2023-06-27 (1,897 with the yahoo overlay).",
+  "survivorship": "SURVIVOR-LEAN and stated, not resolved: of 120 sampled names, 119 carry bars to the final session. Same debt W4 carried.",
+  "horizons": [
+   10,
+   21,
+   63
+  ],
+  "loser_def": "excess < -3.0pp at H",
+  "ruler": "W4 gate-matched matched-set delta; month-block bootstrap (atom = the matched set) + ticker-cluster bootstrap; full-population effect sizes are NOT cited (W4 adjudication).",
+  "no_composite": "Each sensor is reported alone. The intersection is a cohort filter with its own n, never a weight or a score.",
+  "seed": 20260805,
+  "n_boot": 2000
+ },
+ "S_COIL": {
+  "construction": "compression = ATR21 percentile vs own 252d < p25 AND close > 50dMA AND 50dMA rising over 10d; event = first close above the prior 21d high after >= 10 compressed sessions in the trailing 21. Compression read at t-1 so the release bar cannot enter the ATR window that admits it.",
+  "controls": "GATE-MATCHED: same-session names printing the same first-close-above-prior-21d-high WITHOUT the compression run.",
+  "kills_check": "Release-bar-only by construction \u2014 the compressed/'armed' state is never surfaced or graded standalone (ESX section 9 / DT-R5 ban the arming variant). Volume carries no leg (ESX RUL-1, H4). UPTREND coil (above a RISING 50dMA), which is neither the bottom-radar PRIMED durable-bottom gate (DNR section 2) nor DURABLE_BOTTOM H2's post-washout calm base. Species S16 (S-SQ squeeze-release) OWNS this construction and is already accruing; this is a stand-in on a different frame, not a parallel authority.",
+  "fire_counts": {
+   "compressed_name_days": 523778,
+   "comp_run_name_days": 467892,
+   "breakout_name_days": 437494,
+   "first_breakout_name_days": 287665,
+   "events": 25277,
+   "gate_matched_controls": 262388
+  },
+  "grades": {
+   "H10": {
+    "raw": {
+     "n": 25243,
+     "names": 2468,
+     "median_pp": 0.18,
+     "mean_pp": 0.45,
+     "per_name_median_pp": -0.0,
+     "win_pct": 51.7,
+     "loser_rate_pct": 25.6
+    },
+    "excess_spy": {
+     "n": 25243,
+     "names": 2468,
+     "median_pp": -0.31,
+     "mean_pp": 0.08,
+     "per_name_median_pp": -0.5,
+     "win_pct": 47.1,
+     "loser_rate_pct": 27.1
+    },
+    "excess_med": {
+     "n": 25243,
+     "names": 2468,
+     "median_pp": 0.1,
+     "mean_pp": 0.49,
+     "per_name_median_pp": -0.09,
+     "win_pct": 50.9,
+     "loser_rate_pct": 24.0
+    },
+    "matched_delta_vs_controls": {
+     "n_matched": 25241,
+     "names": 2468,
+     "months": 136,
+     "delta_pp": 0.12,
+     "per_name_delta_pp": -0.02,
+     "month_block_ci_pp": [
+      -0.02,
+      0.27
+     ],
+     "ticker_cluster_ci_pp": [
+      0.06,
+      0.2
+     ],
+     "excludes_zero": false,
+     "event_median_pp": -0.31
+    },
+    "half_split": {
+     "first_half": {
+      "n": 12641,
+      "delta_pp": 0.06,
+      "ci_pp": [
+       -0.12,
+       0.25
+      ]
+     },
+     "second_half": {
+      "n": 12600,
+      "delta_pp": 0.21,
+      "ci_pp": [
+       0.0,
+       0.42
+      ]
+     }
+    }
+   },
+   "H21": {
+    "raw": {
+     "n": 25198,
+     "names": 2467,
+     "median_pp": 0.22,
+     "mean_pp": 0.48,
+     "per_name_median_pp": -0.05,
+     "win_pct": 51.3,
+     "loser_rate_pct": 32.8
+    },
+    "excess_spy": {
+     "n": 25198,
+     "names": 2467,
+     "median_pp": -0.72,
+     "mean_pp": -0.21,
+     "per_name_median_pp": -1.03,
+     "win_pct": 45.8,
+     "loser_rate_pct": 37.1
+    },
+    "excess_med": {
+     "n": 25198,
+     "names": 2467,
+     "median_pp": 0.18,
+     "mean_pp": 0.76,
+     "per_name_median_pp": -0.06,
+     "win_pct": 51.1,
+     "loser_rate_pct": 31.5
+    },
+    "matched_delta_vs_controls": {
+     "n_matched": 25196,
+     "names": 2467,
+     "months": 136,
+     "delta_pp": 0.24,
+     "per_name_delta_pp": -0.0,
+     "month_block_ci_pp": [
+      -0.0,
+      0.53
+     ],
+     "ticker_cluster_ci_pp": [
+      0.12,
+      0.38
+     ],
+     "excludes_zero": false,
+     "event_median_pp": -0.72
+    },
+    "half_split": {
+     "first_half": {
+      "n": 12641,
+      "delta_pp": 0.1,
+      "ci_pp": [
+       -0.23,
+       0.47
+      ]
+     },
+     "second_half": {
+      "n": 12555,
+      "delta_pp": 0.45,
+      "ci_pp": [
+       0.07,
+       0.84
+      ]
+     }
+    }
+   },
+   "H63": {
+    "raw": {
+     "n": 24991,
+     "names": 2453,
+     "median_pp": 0.99,
+     "mean_pp": 1.59,
+     "per_name_median_pp": 0.48,
+     "win_pct": 53.1,
+     "loser_rate_pct": 38.6
+    },
+    "excess_spy": {
+     "n": 24991,
+     "names": 2453,
+     "median_pp": -1.91,
+     "mean_pp": -0.34,
+     "per_name_median_pp": -2.49,
+     "win_pct": 44.4,
+     "loser_rate_pct": 46.7
+    },
+    "excess_med": {
+     "n": 24991,
+     "names": 2453,
+     "median_pp": 1.14,
+     "mean_pp": 2.82,
+     "per_name_median_pp": 0.73,
+     "win_pct": 53.7,
+     "loser_rate_pct": 37.2
+    },
+    "matched_delta_vs_controls": {
+     "n_matched": 24989,
+     "names": 2453,
+     "months": 133,
+     "delta_pp": 0.98,
+     "per_name_delta_pp": 0.53,
+     "month_block_ci_pp": [
+      0.42,
+      1.55
+     ],
+     "ticker_cluster_ci_pp": [
+      0.68,
+      1.26
+     ],
+     "excludes_zero": true,
+     "event_median_pp": -1.91
+    },
+    "half_split": {
+     "first_half": {
+      "n": 12641,
+      "delta_pp": 0.42,
+      "ci_pp": [
+       -0.36,
+       1.23
+      ]
+     },
+     "second_half": {
+      "n": 12348,
+      "delta_pp": 1.62,
+      "ci_pp": [
+       0.83,
+       2.39
+      ]
+     }
+    }
+   }
+  }
+ },
+ "S_RANKVEL": {
+  "construction": "RS percentile = cross-sectional PIT rank of the 63d return; event = percentile gains >= +20 points over 5 sessions AND crosses above p70.",
+  "controls": "LEVEL-MATCHED: same-session names within +/-5 percentile points of the event's own level that did NOT accelerate (5d change < +5 points) \u2014 the axis under test is the DERIVATIVE.",
+  "kills_check": "R-4 (rs zero-sum tautology) is scoped to member-DISPERSION gates and donor/recipient rotation pairs, not to a per-name rank derivative graded against level-matched controls; nothing here gates. Nearest measured prior is W4's rs_turn_21_63 NULL (alpha/m [-0.175, +0.222]) \u2014 a different construction, and a null here would be a second strike on the rs-derivative family.",
+  "fire_counts": {
+   "pct_covered_name_days": 6819291,
+   "accel_name_days": 340634,
+   "at_level_name_days": 2047419,
+   "crossed_level_name_days": 368208,
+   "events": 151474,
+   "level_matched_pool": 1448260
+  },
+  "grades": {
+   "H10": {
+    "raw": {
+     "n": 150814,
+     "names": 2728,
+     "median_pp": -0.12,
+     "mean_pp": 0.53,
+     "per_name_median_pp": 0.0,
+     "win_pct": 48.6,
+     "loser_rate_pct": 36.3
+    },
+    "excess_spy": {
+     "n": 150814,
+     "names": 2728,
+     "median_pp": -0.82,
+     "mean_pp": 0.01,
+     "per_name_median_pp": -0.67,
+     "win_pct": 45.4,
+     "loser_rate_pct": 38.4
+    },
+    "excess_med": {
+     "n": 150814,
+     "names": 2728,
+     "median_pp": -0.52,
+     "mean_pp": 0.34,
+     "per_name_median_pp": -0.38,
+     "win_pct": 47.0,
+     "loser_rate_pct": 36.4
+    },
+    "matched_delta_vs_controls": {
+     "n_matched": 150814,
+     "names": 2728,
+     "months": 148,
+     "delta_pp": -0.57,
+     "per_name_delta_pp": -0.44,
+     "month_block_ci_pp": [
+      -0.8,
+      -0.35
+     ],
+     "ticker_cluster_ci_pp": [
+      -0.65,
+      -0.49
+     ],
+     "excludes_zero": true,
+     "event_median_pp": -0.82
+    },
+    "half_split": {
+     "first_half": {
+      "n": 75752,
+      "delta_pp": -0.71,
+      "ci_pp": [
+       -1.03,
+       -0.44
+      ]
+     },
+     "second_half": {
+      "n": 75062,
+      "delta_pp": -0.38,
+      "ci_pp": [
+       -0.74,
+       -0.03
+      ]
+     }
+    }
+   },
+   "H21": {
+    "raw": {
+     "n": 150260,
+     "names": 2726,
+     "median_pp": 0.0,
+     "mean_pp": 1.47,
+     "per_name_median_pp": 0.18,
+     "win_pct": 49.4,
+     "loser_rate_pct": 40.2
+    },
+    "excess_spy": {
+     "n": 150260,
+     "names": 2726,
+     "median_pp": -1.34,
+     "mean_pp": 0.25,
+     "per_name_median_pp": -1.02,
+     "win_pct": 45.0,
+     "loser_rate_pct": 44.0
+    },
+    "excess_med": {
+     "n": 150260,
+     "names": 2726,
+     "median_pp": -0.72,
+     "mean_pp": 0.95,
+     "per_name_median_pp": -0.44,
+     "win_pct": 47.2,
+     "loser_rate_pct": 41.4
+    },
+    "matched_delta_vs_controls": {
+     "n_matched": 150260,
+     "names": 2726,
+     "months": 148,
+     "delta_pp": -0.8,
+     "per_name_delta_pp": -0.59,
+     "month_block_ci_pp": [
+      -1.15,
+      -0.47
+     ],
+     "ticker_cluster_ci_pp": [
+      -0.93,
+      -0.68
+     ],
+     "excludes_zero": true,
+     "event_median_pp": -1.34
+    },
+    "half_split": {
+     "first_half": {
+      "n": 75752,
+      "delta_pp": -0.96,
+      "ci_pp": [
+       -1.42,
+       -0.57
+      ]
+     },
+     "second_half": {
+      "n": 74508,
+      "delta_pp": -0.6,
+      "ci_pp": [
+       -1.16,
+       -0.04
+      ]
+     }
+    }
+   },
+   "H63": {
+    "raw": {
+     "n": 147470,
+     "names": 2707,
+     "median_pp": 0.24,
+     "mean_pp": 5.73,
+     "per_name_median_pp": 1.02,
+     "win_pct": 50.4,
+     "loser_rate_pct": 44.0
+    },
+    "excess_spy": {
+     "n": 147470,
+     "names": 2707,
+     "median_pp": -3.39,
+     "mean_pp": 2.15,
+     "per_name_median_pp": -2.72,
+     "win_pct": 43.6,
+     "loser_rate_pct": 50.8
+    },
+    "excess_med": {
+     "n": 147470,
+     "names": 2707,
+     "median_pp": -1.48,
+     "mean_pp": 3.97,
+     "per_name_median_pp": -0.93,
+     "win_pct": 47.0,
+     "loser_rate_pct": 47.0
+    },
+    "matched_delta_vs_controls": {
+     "n_matched": 147470,
+     "names": 2707,
+     "months": 145,
+     "delta_pp": -1.98,
+     "per_name_delta_pp": -1.37,
+     "month_block_ci_pp": [
+      -2.57,
+      -1.4
+     ],
+     "ticker_cluster_ci_pp": [
+      -2.26,
+      -1.69
+     ],
+     "excludes_zero": true,
+     "event_median_pp": -3.39
+    },
+    "half_split": {
+     "first_half": {
+      "n": 75752,
+      "delta_pp": -1.82,
+      "ci_pp": [
+       -2.45,
+       -1.14
+      ]
+     },
+     "second_half": {
+      "n": 71718,
+      "delta_pp": -2.19,
+      "ci_pp": [
+       -3.18,
+       -1.14
+      ]
+     }
+    }
+   }
+  }
+ },
+ "S_THRUST_LAG": {
+  "construction": "theme = curated basket (us_sector_ excluded, PIT added/removed honored, >= 6 covered active members); thrust = member fraction above own 20d high crosses from < 0.3 to > 0.5 within 5 sessions; candidate = member BELOW its own 20d high carrying S-COIL compression at thrust.",
+  "controls": "(a) already-moved members of the SAME basket at thrust; (b) compressed below-20d-high names in NON-thrusting themes, same day.",
+  "kills_check": "Composes the measured laggard-cross positive (RESULTS_2026-08-03: same cross on RS63<=0.40 laggards +0.33% pooled / +1.44% per-name vs leader-reset -1.50% / -2.12%) with theme context. Creates no rotation surface (DNR section 1 sector_rotation_schedule.v1 DO-NOT-BUILD) and no parallel authority beside the suspended Ignition Radar (DNR section 4) \u2014 charter section 4 reconciles the two ignition definitions.",
+  "fire_counts": {
+   "baskets_read": 35,
+   "thrust_events": 466,
+   "candidates_coiled_laggard": 228,
+   "control_already_moved": 4294,
+   "control_coiled_nonthrust": 23544
+  },
+  "grades_vs_already_moved": {
+   "H10": {
+    "raw": {
+     "n": 228,
+     "names": 144,
+     "median_pp": 1.23,
+     "mean_pp": 1.64,
+     "per_name_median_pp": 1.42,
+     "win_pct": 59.6,
+     "loser_rate_pct": 21.5
+    },
+    "excess_spy": {
+     "n": 228,
+     "names": 144,
+     "median_pp": 0.39,
+     "mean_pp": 0.81,
+     "per_name_median_pp": 0.46,
+     "win_pct": 52.6,
+     "loser_rate_pct": 21.5
+    },
+    "excess_med": {
+     "n": 228,
+     "names": 144,
+     "median_pp": 1.29,
+     "mean_pp": 1.47,
+     "per_name_median_pp": 1.04,
+     "win_pct": 63.2,
+     "loser_rate_pct": 18.9
+    },
+    "matched_delta_vs_controls": {
+     "n_matched": 228,
+     "names": 144,
+     "months": 31,
+     "delta_pp": 0.24,
+     "per_name_delta_pp": 0.12,
+     "month_block_ci_pp": [
+      -0.4,
+      0.97
+     ],
+     "ticker_cluster_ci_pp": [
+      -0.35,
+      0.95
+     ],
+     "excludes_zero": false,
+     "event_median_pp": 0.39
+    },
+    "half_split": {
+     "first_half": {
+      "n": 122,
+      "delta_pp": 0.81,
+      "ci_pp": [
+       -0.29,
+       1.58
+      ]
+     },
+     "second_half": {
+      "n": 106,
+      "delta_pp": -0.32,
+      "ci_pp": [
+       -1.86,
+       0.71
+      ]
+     }
+    }
+   },
+   "H21": {
+    "raw": {
+     "n": 226,
+     "names": 144,
+     "median_pp": 2.43,
+     "mean_pp": 3.38,
+     "per_name_median_pp": 2.65,
+     "win_pct": 67.3,
+     "loser_rate_pct": 19.0
+    },
+    "excess_spy": {
+     "n": 226,
+     "names": 144,
+     "median_pp": 0.96,
+     "mean_pp": 1.96,
+     "per_name_median_pp": 1.24,
+     "win_pct": 56.6,
+     "loser_rate_pct": 23.5
+    },
+    "excess_med": {
+     "n": 226,
+     "names": 144,
+     "median_pp": 2.87,
+     "mean_pp": 3.55,
+     "per_name_median_pp": 3.39,
+     "win_pct": 66.8,
+     "loser_rate_pct": 17.7
+    },
+    "matched_delta_vs_controls": {
+     "n_matched": 226,
+     "names": 144,
+     "months": 30,
+     "delta_pp": -0.22,
+     "per_name_delta_pp": 0.15,
+     "month_block_ci_pp": [
+      -1.04,
+      0.9
+     ],
+     "ticker_cluster_ci_pp": [
+      -1.12,
+      1.0
+     ],
+     "excludes_zero": false,
+     "event_median_pp": 0.96
+    },
+    "half_split": {
+     "first_half": {
+      "n": 122,
+      "delta_pp": 0.27,
+      "ci_pp": [
+       -0.5,
+       1.39
+      ]
+     },
+     "second_half": {
+      "n": 104,
+      "delta_pp": -0.54,
+      "ci_pp": [
+       -1.52,
+       0.95
+      ]
+     }
+    }
+   },
+   "H63": {
+    "raw": {
+     "n": 221,
+     "names": 143,
+     "median_pp": 4.19,
+     "mean_pp": 6.5,
+     "per_name_median_pp": 4.53,
+     "win_pct": 65.2,
+     "loser_rate_pct": 27.1
+    },
+    "excess_spy": {
+     "n": 221,
+     "names": 143,
+     "median_pp": 0.15,
+     "mean_pp": 2.19,
+     "per_name_median_pp": -0.74,
+     "win_pct": 50.7,
+     "loser_rate_pct": 36.7
+    },
+    "excess_med": {
+     "n": 221,
+     "names": 143,
+     "median_pp": 4.79,
+     "mean_pp": 6.73,
+     "per_name_median_pp": 4.35,
+     "win_pct": 67.4,
+     "loser_rate_pct": 24.9
+    },
+    "matched_delta_vs_controls": {
+     "n_matched": 221,
+     "names": 143,
+     "months": 28,
+     "delta_pp": 0.39,
+     "per_name_delta_pp": -0.38,
+     "month_block_ci_pp": [
+      -1.37,
+      2.42
+     ],
+     "ticker_cluster_ci_pp": [
+      -1.43,
+      2.09
+     ],
+     "excludes_zero": false,
+     "event_median_pp": 0.15
+    },
+    "half_split": {
+     "first_half": {
+      "n": 122,
+      "delta_pp": 0.21,
+      "ci_pp": [
+       -1.92,
+       2.82
+      ]
+     },
+     "second_half": {
+      "n": 99,
+      "delta_pp": 0.68,
+      "ci_pp": [
+       -2.17,
+       3.26
+      ]
+     }
+    }
+   }
+  },
+  "grades_vs_coiled_nonthrust": {
+   "H10": {
+    "raw": {
+     "n": 228,
+     "names": 144,
+     "median_pp": 1.23,
+     "mean_pp": 1.64,
+     "per_name_median_pp": 1.42,
+     "win_pct": 59.6,
+     "loser_rate_pct": 21.5
+    },
+    "excess_spy": {
+     "n": 228,
+     "names": 144,
+     "median_pp": 0.39,
+     "mean_pp": 0.81,
+     "per_name_median_pp": 0.46,
+     "win_pct": 52.6,
+     "loser_rate_pct": 21.5
+    },
+    "excess_med": {
+     "n": 228,
+     "names": 144,
+     "median_pp": 1.29,
+     "mean_pp": 1.47,
+     "per_name_median_pp": 1.04,
+     "win_pct": 63.2,
+     "loser_rate_pct": 18.9
+    },
+    "matched_delta_vs_controls": {
+     "n_matched": 228,
+     "names": 144,
+     "months": 31,
+     "delta_pp": 1.31,
+     "per_name_delta_pp": 1.17,
+     "month_block_ci_pp": [
+      0.64,
+      1.95
+     ],
+     "ticker_cluster_ci_pp": [
+      0.64,
+      1.95
+     ],
+     "excludes_zero": true,
+     "event_median_pp": 0.39
+    },
+    "half_split": {
+     "first_half": {
+      "n": 122,
+      "delta_pp": 1.54,
+      "ci_pp": [
+       0.53,
+       2.21
+      ]
+     },
+     "second_half": {
+      "n": 106,
+      "delta_pp": 1.07,
+      "ci_pp": [
+       0.1,
+       1.73
+      ]
+     }
+    }
+   },
+   "H21": {
+    "raw": {
+     "n": 226,
+     "names": 144,
+     "median_pp": 2.43,
+     "mean_pp": 3.38,
+     "per_name_median_pp": 2.65,
+     "win_pct": 67.3,
+     "loser_rate_pct": 19.0
+    },
+    "excess_spy": {
+     "n": 226,
+     "names": 144,
+     "median_pp": 0.96,
+     "mean_pp": 1.96,
+     "per_name_median_pp": 1.24,
+     "win_pct": 56.6,
+     "loser_rate_pct": 23.5
+    },
+    "excess_med": {
+     "n": 226,
+     "names": 144,
+     "median_pp": 2.87,
+     "mean_pp": 3.55,
+     "per_name_median_pp": 3.39,
+     "win_pct": 66.8,
+     "loser_rate_pct": 17.7
+    },
+    "matched_delta_vs_controls": {
+     "n_matched": 226,
+     "names": 144,
+     "months": 30,
+     "delta_pp": 2.04,
+     "per_name_delta_pp": 2.51,
+     "month_block_ci_pp": [
+      0.79,
+      4.21
+     ],
+     "ticker_cluster_ci_pp": [
+      0.83,
+      3.11
+     ],
+     "excludes_zero": true,
+     "event_median_pp": 0.96
+    },
+    "half_split": {
+     "first_half": {
+      "n": 122,
+      "delta_pp": 2.47,
+      "ci_pp": [
+       0.64,
+       4.77
+      ]
+     },
+     "second_half": {
+      "n": 104,
+      "delta_pp": 1.69,
+      "ci_pp": [
+       0.29,
+       4.49
+      ]
+     }
+    }
+   },
+   "H63": {
+    "raw": {
+     "n": 221,
+     "names": 143,
+     "median_pp": 4.19,
+     "mean_pp": 6.5,
+     "per_name_median_pp": 4.53,
+     "win_pct": 65.2,
+     "loser_rate_pct": 27.1
+    },
+    "excess_spy": {
+     "n": 221,
+     "names": 143,
+     "median_pp": 0.15,
+     "mean_pp": 2.19,
+     "per_name_median_pp": -0.74,
+     "win_pct": 50.7,
+     "loser_rate_pct": 36.7
+    },
+    "excess_med": {
+     "n": 221,
+     "names": 143,
+     "median_pp": 4.79,
+     "mean_pp": 6.73,
+     "per_name_median_pp": 4.35,
+     "win_pct": 67.4,
+     "loser_rate_pct": 24.9
+    },
+    "matched_delta_vs_controls": {
+     "n_matched": 221,
+     "names": 143,
+     "months": 28,
+     "delta_pp": 4.67,
+     "per_name_delta_pp": 4.54,
+     "month_block_ci_pp": [
+      2.29,
+      6.41
+     ],
+     "ticker_cluster_ci_pp": [
+      2.41,
+      6.25
+     ],
+     "excludes_zero": true,
+     "event_median_pp": 0.15
+    },
+    "half_split": {
+     "first_half": {
+      "n": 122,
+      "delta_pp": 4.97,
+      "ci_pp": [
+       1.61,
+       9.69
+      ]
+     },
+     "second_half": {
+      "n": 99,
+      "delta_pp": 4.05,
+      "ci_pp": [
+       -2.18,
+       5.34
+      ]
+     }
+    }
+   }
+  }
+ },
+ "S_INSIDER": {
+  "status": "NAMED GAP \u2014 detector built and censused, outcomes deliberately NOT graded",
+  "reason": "collides with esx_insider_sponsor / RUL-18..29 (21d entry-time insider cluster, REFUTED 3-for-3; adversity attributed to the washout state by the I1w within-washout contrast). Sector-matched controls do not hold the co-occurring state fixed, which is the exact error that study diagnosed.",
+  "lawful_reentry": [
+   "63/126d holdability lane coordinated with esx_ql_overlay/S-QL (RUL-20)",
+   "252d long_hold.insider_sponsor_lh Ruler-H (~2027-H2)",
+   "display-only sponsor_present context (no ranking authority)"
+  ],
+  "pit_basis": "filing_date, never trans_date (RUL-23 known-date law; the store's median filing lag is 2 trading days)",
+  "buy_definition": "code == 'P' (open-market purchase); the collector keeps only P/S and drops grants/exercises/gifts (config.yml open_market_codes)",
+  "distinct_buyer_key": "rptownercik \u2014 the same distinct-insider key engine/insider_factor.py uses; context_api._insider_dim does NOT dedupe by insider and is therefore not the right reader here",
+  "coverage": {
+   "panel_rows": 2314291,
+   "panel_tickers": 16834,
+   "filing_date_range": [
+    "2006-01-03",
+    "2026-03-31"
+   ],
+   "buy_rows": 402006,
+   "cluster_events": 35797,
+   "cluster_event_names": 9435,
+   "cluster_events_on_price_panel": 10916,
+   "cluster_event_names_on_price_panel": 2086,
+   "event_date_range": [
+    "2006-01-03",
+    "2026-03-31"
+   ],
+   "insider_panel_ends": "2026-03-31 \u2014 four months short of the price panel's 2026-07-31, a coverage debt any future prereg inherits"
+  }
+ },
+ "FORESIGHT_LEADTIME_CENSUS": {
+  "question": "does theme-stage lead theme price, and by how much",
+  "history_exists": true,
+  "store": "data/foresight/log.jsonl",
+  "rows": 122,
+  "distinct_asof": 25,
+  "span": [
+   "2026-07-01",
+   "2026-08-04"
+  ],
+  "themes": 18,
+  "stage_transitions": 39,
+  "member_tickers": 123,
+  "member_tickers_on_price_panel": 115,
+  "matured_by_horizon": {
+   "H10": {
+    "last_date_with_matured_window": "2026-07-17",
+    "matured_transitions": 33
+   },
+   "H21": {
+    "last_date_with_matured_window": "2026-07-01",
+    "matured_transitions": 0
+   },
+   "H63": {
+    "last_date_with_matured_window": "2026-04-30",
+    "matured_transitions": 0
+   }
+  },
+  "verdict": "SPEC ONLY \u2014 DO NOT RUN YET. The history EXISTS (correcting the brief's assumption), but it is ~5 weeks deep: only H=10 has any matured transitions and H=21 / H=63 have ZERO. 33 transitions across 17 themes is below any inferential floor here \u2014 the month-block bootstrap this battery uses needs >= 3 distinct months and the log spans about one. The log is already accruing, so the clock is real rather than blocked."
+ },
+ "INTERSECTION": {
+  "definition": "name-days where >= 2 distinct sensors fired within +/- 5 sessions; runs of the same (ticker, sensor-set) collapsed to the first session",
+  "n": 4039,
+  "by_set": {
+   "S_COIL+S_RANKVEL": 3953,
+   "S_COIL+S_THRUST_LAG": 59,
+   "S_RANKVEL+S_THRUST_LAG": 21,
+   "S_COIL+S_RANKVEL+S_THRUST_LAG": 6
+  },
+  "law": "A filter, not a weight. No composite score is formed anywhere.",
+  "grades": {
+   "H10": {
+    "raw": {
+     "n": 4033,
+     "names": 1960,
+     "median_pp": 0.0,
+     "mean_pp": 0.61,
+     "per_name_median_pp": 0.0,
+     "win_pct": 50.0,
+     "loser_rate_pct": 32.2
+    },
+    "excess_spy": {
+     "n": 4033,
+     "names": 1960,
+     "median_pp": -0.5,
+     "mean_pp": 0.33,
+     "per_name_median_pp": -0.52,
+     "win_pct": 46.6,
+     "loser_rate_pct": 33.2
+    },
+    "excess_med": {
+     "n": 4033,
+     "names": 1960,
+     "median_pp": -0.03,
+     "mean_pp": 0.75,
+     "per_name_median_pp": -0.03,
+     "win_pct": 49.7,
+     "loser_rate_pct": 30.6
+    }
+   },
+   "H21": {
+    "raw": {
+     "n": 4026,
+     "names": 1959,
+     "median_pp": 0.0,
+     "mean_pp": 0.71,
+     "per_name_median_pp": 0.0,
+     "win_pct": 50.0,
+     "loser_rate_pct": 37.6
+    },
+    "excess_spy": {
+     "n": 4026,
+     "names": 1959,
+     "median_pp": -0.72,
+     "mean_pp": 0.15,
+     "per_name_median_pp": -0.67,
+     "win_pct": 46.5,
+     "loser_rate_pct": 40.3
+    },
+    "excess_med": {
+     "n": 4026,
+     "names": 1959,
+     "median_pp": 0.08,
+     "mean_pp": 1.13,
+     "per_name_median_pp": 0.11,
+     "win_pct": 50.3,
+     "loser_rate_pct": 35.9
+    }
+   },
+   "H63": {
+    "raw": {
+     "n": 3993,
+     "names": 1945,
+     "median_pp": 0.09,
+     "mean_pp": 2.57,
+     "per_name_median_pp": 0.31,
+     "win_pct": 50.1,
+     "loser_rate_pct": 43.1
+    },
+    "excess_spy": {
+     "n": 3993,
+     "names": 1945,
+     "median_pp": -3.06,
+     "mean_pp": 0.3,
+     "per_name_median_pp": -2.44,
+     "win_pct": 43.1,
+     "loser_rate_pct": 50.1
+    },
+    "excess_med": {
+     "n": 3993,
+     "names": 1945,
+     "median_pp": 0.29,
+     "mean_pp": 3.29,
+     "per_name_median_pp": 0.78,
+     "win_pct": 50.6,
+     "loser_rate_pct": 42.0
+    }
+   }
+  }
+ }
+}

@@ -204,7 +204,9 @@ def all_adapters() -> dict:
         ("clinicaltrials", "collectors.clinicaltrials", "ClinicalTrialsAdapter"),  # keyless ClinicalTrials.gov Phase-3 starts/halts -> clinical_phase3_start channel
         ("finnhub_altdata", "collectors.finnhub_altdata", "FinnhubAltdataAdapter"),  # analyst trends + insider MSPR + earnings surprises (existing FINNHUB key) -> 3 convergence channels
         ("finra_short_volume", "collectors.finra_short_volume", "FinraShortVolumeAdapter"),  # keyless daily consolidated short-VOLUME (fresher than bi-monthly short interest) -> stock-page short_flow confirmer
+        ("ibkr_borrow", "collectors.ibkr_borrow", "IbkrBorrowAdapter"),  # keyless IBKR ftp shortable file: borrow FEE + lendable AVAILABILITY, universe + hard-to-borrow tail. NO backfill exists (snapshot-only) so every missed night is unrecoverable -> data/ibkr_borrow/panel.parquet (display/context tier; fee is near-constant in-universe, a rare-event flag not a ranking leg)
         ("finra_ats_transparency", "collectors.finra_ats_transparency", "FinraAtsTransparencyAdapter"),  # keyless FINRA OTC Transparency weekly per-ATS venue breakdown (T2e; 2-4wk lag; partition-aware POST fetch, 2026-07 repair) -> darkpool.html venue table
+        ("finra_otc_nonats", "collectors.finra_ats_transparency", "FinraOtcNonAtsAdapter"),  # same endpoint, OTC_W_SMBL_FIRM: NON-ATS wholesaler internalization (the BIGGER half of off-exchange volume; ATS is only 16-31% per name) -> darkpool ats_frac institutional-vs-retail split
         ("finnhub_transcripts", "collectors.finnhub_transcripts", "FinnhubTranscriptsAdapter"),  # Finnhub transcript LIST metadata (same-day latency; body fetch deferred; GATED: plan-gated 403 -> no-op) -> data/finnhub/transcripts.parquet
         ("stocktwits", "collectors.stocktwits", "StockTwitsAdapter"),  # StockTwits public stream bullish/bearish ratios + watchlist_count (keyless, ~200/hr) -> data/stocktwits/sentiment.parquet
         ("google_trends", "collectors.google_trends", "GoogleTrendsAdapter"),  # SGA-W4: pytrends weekly relative search-interest for brand-name tickers (~20/night rotating) -> data/google_trends/<T>.parquet (display-only fade-risk chip; 'blocked' when pytrends absent)
@@ -830,6 +832,11 @@ def main() -> int:
         try:
             from scripts.build_polygon_gex import accrue as accrue_polygon_gex
             log.info("=== accruing Polygon options OI (GEX foundation) ===")
+            # Passing an INSTANT (not a date) is load-bearing: accrue() reads a datetime
+            # as "snapshot now" and files the result under the SESSION that snapshot
+            # describes (nyse_calendar.expected_last_session), never under the UTC run
+            # date. A 01:24 UTC run therefore stores the prior ET session it actually
+            # holds, and a Friday-evening ET run is no longer refused as "Saturday".
             _polygon_gex_status = accrue_polygon_gex(datetime.now(timezone.utc))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             _polygon_gex_status = {"status": "failed", "error": str(e)}
@@ -930,6 +937,23 @@ def main() -> int:
             check_yahoo_freshness()
         except Exception as e:  # noqa: BLE001 — a tripwire's crash must not abort the run
             log.warning("yahoo freshness tripwire crashed (non-fatal): %s", e)
+
+    # Side-store freshness audit (R4, research/ADJUDICATION_20260803_UNIVERSE_SIDE_STORE_FRESHNESS.md):
+    # check_yahoo_freshness above only covers the 3-name ENGINE_CRITICAL_SERIES tuple;
+    # this audits every ticker the yahoo group is asked to maintain (~740 names) — the
+    # class that let CTRA/TPH/TCNNF/CWEN-A freeze silently for weeks as ordinary side-
+    # store extras. Own try/except with a bare ::warning (not log.warning) so an audit
+    # crash surfaces as a loud annotation instead of dying silently or aborting the run.
+    if "yahoo" in registry:
+        try:
+            from collectors.yahoo import YahooAdapter, audit_store_freshness
+            # maintained_tickers(), NOT all_tickers(): a delisted name is dropped from
+            # the FETCH list but its store still exists and still has to be audited —
+            # that is the only check that would catch a wrong exit row or a reused
+            # ticker refilling under a dead name.
+            audit_store_freshness(YahooAdapter().maintained_tickers(), group="yahoo")
+        except Exception as e:  # noqa: BLE001 — a tripwire's crash must not abort the run
+            print(f"::warning title=yahoo store audit crashed::{e}", flush=True)
 
     ok = sum(1 for r in results if r.status in ("ok", "stale"))
     log.info("collection done: %d/%d sources usable", ok, len(results))

@@ -713,9 +713,16 @@ class TestEdges:
 
     def _make_spine_for_cofiring(
         self, tmp: Path,
-        engine_a: str, engine_b: str, n_cofiring: int, n_exclusive: int = 5
+        engine_a: str, engine_b: str, n_cofiring: int, n_exclusive: int = 5,
+        ledger_a: str = "spine", ledger_b: str = "spine",
     ) -> None:
-        """Make spine with n_cofiring rows where both engines fire same event."""
+        """Make spine with n_cofiring rows where both engines fire same event.
+
+        ``ledger_a``/``ledger_b`` drive outcome_basis (backfilled from the
+        ledger by query.stamp_outcome_basis — the fixture writes no
+        outcome_basis column, exactly like the legacy production parquet).
+        """
+        ledger_for = {engine_a: ledger_a, engine_b: ledger_b}
         rows = []
         # Co-firing rows (same symbol/as_of/direction/horizon for both engines)
         for i in range(n_cofiring):
@@ -723,7 +730,7 @@ class TestEdges:
                 rows.append({
                     "signal_id": f"sig_{i}_{eng}",
                     "engine": eng, "family": eng,
-                    "ledger": "spine", "as_of": f"2026-0{(i%6)+1}-01",
+                    "ledger": ledger_for[eng], "as_of": f"2026-0{(i%6)+1}-01",
                     "symbol": f"SYM{i}", "scope_type": "entity",
                     "universe": "us", "horizon": 21, "direction": 1,
                     "size_binding": False, "fill_basis": "close",
@@ -742,7 +749,7 @@ class TestEdges:
             rows.append({
                 "signal_id": f"excl_{i}",
                 "engine": engine_a, "family": engine_a,
-                "ledger": "spine", "as_of": f"2026-0{(i%3)+1}-01",
+                "ledger": ledger_a, "as_of": f"2026-0{(i%3)+1}-01",
                 "symbol": f"EXCL{i}", "scope_type": "entity",
                 "universe": "us", "horizon": 21, "direction": 1,
                 "size_binding": False, "fill_basis": "close",
@@ -794,6 +801,91 @@ class TestEdges:
         assert edge["n"] == 5
         assert edge["lift"] is None, f"Expected lift=null for n<10; got {edge['lift']}"
         assert "MIN_N" in edge["note"] or "insufficient" in edge["note"].lower()
+
+    # ----------------------------------------------------------------------
+    # [OUTCOME BASIS] co-firing lift is a difference of outcome_excess MEANS.
+    # track_record / board_hk / board_ca / board_cn fill outcome_excess from an
+    # unsigned forward-MFE proxy, so differencing it against a signed excess
+    # (or against another MFE, whose scale is set by realised volatility rather
+    # than by being right) yields a number with no interpretation. Pre-fix these
+    # pairs published a float lift. These tests FAIL pre-fix.
+    # cf. PR #4673 edge_outcomes.py dst_outcome_unsigned_mfe_proxy.
+    # ----------------------------------------------------------------------
+
+    def test_confirms_lift_null_when_one_engine_unsigned(self, tmp_path):
+        """[OUTCOME BASIS] one unsigned engine → n printed, lift=null."""
+        _make_synapse(tmp_path)
+        self._make_spine_for_cofiring(
+            tmp_path, "eng_signed", "eng_mfe", n_cofiring=12,
+            ledger_a="spine", ledger_b="track_record",
+        )
+        graph = build_graph(root=tmp_path, now=_NOW)
+        confirms = [e for e in graph["edges"] if e["edge_type"] == "confirms"]
+        pair = [e for e in confirms
+                if ("eng_signed" in e["src"] and "eng_mfe" in e["dst"])
+                or ("eng_mfe" in e["src"] and "eng_signed" in e["dst"])]
+        assert len(pair) >= 1, f"Expected the confirms edge to survive; got {confirms}"
+        edge = pair[0]
+        # The co-firing COUNT is a real fact and must still be printed.
+        assert edge["n"] == 12
+        assert edge["lift"] is None, (
+            "co-firing lift differences an unsigned MFE magnitude against a "
+            f"signed excess — it must be null, got {edge['lift']!r} "
+            "(n=12 clears MIN_N, so pre-fix this published a float)"
+        )
+        assert "unsigned" in edge["note"].lower(), (
+            f"the note must say WHY the lift is null; got {edge['note']!r}"
+        )
+        assert "eng_mfe" in edge["note"], "the note should name the offending engine"
+
+    def test_confirms_lift_null_when_both_engines_unsigned(self, tmp_path):
+        """[OUTCOME BASIS] two MFE ledgers are not commensurable either."""
+        _make_synapse(tmp_path)
+        self._make_spine_for_cofiring(
+            tmp_path, "eng_hk", "eng_ca", n_cofiring=12,
+            ledger_a="board_hk", ledger_b="board_ca",
+        )
+        graph = build_graph(root=tmp_path, now=_NOW)
+        confirms = [e for e in graph["edges"] if e["edge_type"] == "confirms"]
+        pair = [e for e in confirms
+                if ("eng_hk" in e["src"] and "eng_ca" in e["dst"])
+                or ("eng_ca" in e["src"] and "eng_hk" in e["dst"])]
+        assert len(pair) >= 1
+        assert pair[0]["n"] == 12
+        assert pair[0]["lift"] is None
+
+    def test_confirms_unsigned_pairs_counted_in_gaps(self, tmp_path):
+        """[OUTCOME BASIS] the nulled pairs are counted in a summary gap note."""
+        _make_synapse(tmp_path)
+        self._make_spine_for_cofiring(
+            tmp_path, "eng_signed2", "eng_mfe2", n_cofiring=12,
+            ledger_a="spine", ledger_b="board_cn",
+        )
+        graph = build_graph(root=tmp_path, now=_NOW)
+        gaps = graph.get("gaps") or []
+        matching = [
+            g for g in gaps
+            if "confirms edges" in str(g) and "unsigned outcome basis" in str(g)
+        ]
+        assert matching, (
+            "nulled pairs must be counted in a gap note (nulls printed, not "
+            f"hidden); gaps={gaps}"
+        )
+
+    def test_confirms_lift_survives_for_all_signed_pairs(self, tmp_path):
+        """[OUTCOME BASIS] the gate is a basis gate, not a blanket null."""
+        _make_synapse(tmp_path)
+        self._make_spine_for_cofiring(
+            tmp_path, "eng_s1", "eng_s2", n_cofiring=12,
+            ledger_a="spine", ledger_b="qledger",
+        )
+        graph = build_graph(root=tmp_path, now=_NOW)
+        confirms = [e for e in graph["edges"] if e["edge_type"] == "confirms"]
+        pair = [e for e in confirms
+                if ("eng_s1" in e["src"] and "eng_s2" in e["dst"])
+                or ("eng_s2" in e["src"] and "eng_s1" in e["dst"])]
+        assert len(pair) >= 1
+        assert isinstance(pair[0]["lift"], float)
 
     def test_contradicts_edges(self, tmp_path):
         """Contradiction records become contradicts edges."""

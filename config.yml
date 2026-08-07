@@ -1292,6 +1292,19 @@ engine_residual_alpha:
   min_sector: 6                   # min names for a sector to get its own leader list
   min_names: 20                   # min universe to compute at all
 
+engine_residual_momentum:
+  # RESEARCH/DIAGNOSTIC generalization of engine_residual_alpha above
+  # (engine/residual_momentum.py, research/RESIDUAL_MOMENTUM_TREND_QUALITY.md): the
+  # same beta-stripped residual, but with the size/value/quality/low-vol factor legs
+  # added to the market+sector regression and computed over a TABLE of formation
+  # windows instead of one. Ranks, sizes and gates NOTHING live — the shipped leg
+  # remains engine_residual_alpha. Measured by scripts/residual_momentum_phase0.py.
+  beta_win: 252                   # rolling beta window (d)
+  shrink: 0.66                    # Vasicek-lite beta shrink toward the cross-section
+  top_n: 15                       # leaders listed per window
+  min_names: 20                   # min universe to score a window at all
+  winsor_z: 3.0                   # z-score clip on the sector-neutral score
+
 # Theme Trac-lite: curated narrow thematic baskets for the discovery "Themes" tab.
 # Each basket is ranked by the mean sector-neutral alpha-z of its members + the
 # share sitting in the universe-wide top quintile (build_discovery.py). A CURRENT-
@@ -1350,7 +1363,15 @@ themes:
     tickers: [CF, MOS, CTVA, FMC, SMG, DE, AGCO]
   space_satellite:
     name: "Space & Satellites"
-    tickers: [IRDM, GD, LHX, RTX, HWM, BWXT]
+    # The six defense primes were the whole theme until 2026-08-05, which made the
+    # Foresight Desk structurally blind to new-space: a desk keyed on GD/LHX/RTX
+    # reads the prime contractors' supply chain, not the launch-and-constellation
+    # build-out, so the RKLB/ASTS cohort could load and re-rate without the desk
+    # holding an opinion at all. The five names below are that cohort. Legs with no
+    # coverage for a name (EDGAR language, FRED bands, revision breadth) return null
+    # for it and the theme reads on the names that do have data — no leg errors on a
+    # name it cannot see. Charter: PROPHET_US_MISSED_IGNITIONS_MASTERPLAN §W-D.2.
+    tickers: [IRDM, GD, LHX, RTX, HWM, BWXT, RKLB, ASTS, LUNR, PL, RDW]
   grid_electrification:
     name: "Grid & Electrification"
     tickers: [NEE, AEP, D, PWR, PNR, GEV, XYL, ITRI]
@@ -2002,16 +2023,30 @@ breadth:
   lookback_days_live: 1100        # ~3y: 200DMA/NH-NL plus cycle analysis for stock search
   ma_windows: [50, 200]
   nhnl_window: 252
-  # Repair known-bad Wikipedia symbols before they reach the universe. The list is
-  # community-edited and intermittently ships a plausible-but-wrong ticker —
-  # vandalism (Marsh & McLennan as the non-existent "MRSH") or a stale pre-rename
-  # ticker (Fiserv as "FISV", renamed "FI" in 2023). Map bad -> real current
-  # ticker; pricing is best-effort (an unpriceable repaired symbol is skipped, no
-  # worse than the garbage it replaced, and it builds once the feed serves it).
+  # Pin the UNIVERSE KEY for names whose scraped symbol differs from the one this repo
+  # stores them under. Wikipedia is community-edited and intermittently ships junk, but
+  # both entries below are RENAMES, not vandalism: map scraped -> the key the rest of the
+  # stack already uses. Pricing is best-effort (an unpriceable repaired symbol is skipped,
+  # no worse than what it replaced, and it builds once the feed serves it).
+  #
+  # These rows are load-bearing, NOT cosmetic. They keep one join key per company across
+  # data/qledger claims, data/name_score, the stock library and data/baskets/membership.json.
+  # Do not "correct" a row to the current exchange symbol on its own: flipping the key
+  # splits a company's history across two symbols (open forward claims strand under the old
+  # key, and the breadth close-cache column for the new one carries a months-long hole that
+  # the 1mo nightly window can never backfill, silently voiding its 50/200DMA). That flip is
+  # a migration, not an edit — see research/ before attempting it.
+  #
+  # The VENDOR-side counterpart lives in lib/ticker_aliases (config ticker -> the symbol the
+  # price feed serves it under). Same fact, opposite direction; keep them consistent.
   # Extend as the "constituents churn" / "dropping non-ticker row" log surfaces more.
   ticker_fixups:
-    MRSH: MMC     # Marsh & McLennan — page vandalised to a non-existent symbol
-    FISV: FI      # Fiserv — page shows the pre-2023 ticker
+    MRSH: MMC     # Marsh McLennan renamed MMC->MRSH on the NYSE 2026-01-14 (real symbol
+                  # change; Yahoo followed, so lib/ticker_aliases fetches under MRSH). MMC
+                  # stays the stored key — 13 open qledger claims and the baskets membership
+                  # are keyed on it.
+    FISV: FI      # Fiserv renamed FISV->FI in 2023 — the page still shows the OLD symbol
+                  # (Yahoo does too, hence the inverse entry in lib/ticker_aliases)
 
 # Small-cap participation, computed exactly like S&P 500 breadth but over the
 # S&P SmallCap 600 — a free, well-defined small-cap universe (Wikipedia, same
@@ -2155,9 +2190,10 @@ stock_search:
     # library" and stock.html#<T> 404'd. All are liquid US lines > $100M mcap
     # (smallest enCore ~$320M). A handful (MMC, HEI, LNG, FI, DKNG, POOL) ARE
     # economically S&P 500 but don't resolve through the Wikipedia constituents
-    # table (garbled/aliased ticker, e.g. Marsh shows as "MRSH"), so they ride the
-    # extras hook here too. universe()'s `seen` set dedups, so this is a no-op for
-    # any name the index already resolves.
+    # table under the symbol stored here (a RENAME the page already followed — Marsh
+    # lists as "MRSH" since 2026-01-14; breadth.ticker_fixups pins it back to MMC), so
+    # they ride the extras hook here too. universe()'s `seen` set dedups, so this is a
+    # no-op for any name the index already resolves.
     # Uranium & nuclear fuel cycle
     - CCJ    # Cameco
     - UEC    # Uranium Energy
@@ -2353,7 +2389,10 @@ stock_search:
     - CSGP   # CoStar Group
     - CSW    # CSW Industrials
     - CSX    # CSX Corp
-    - CTRA   # Coterra Energy
+    - CTRA   # Coterra Energy — DELISTED 2026-05-07 (acquired by Devon Energy, 0.70 DVN
+             # per share; that is a different pre-existing security, so nothing
+             # continues this price line). Membership kept for the same reason as TPH
+             # below — see config/delisted_symbols.yml before touching this line.
     - CTSH   # Cognizant
     - CVNA   # Carvana
     - CVR    # CVR Energy
@@ -2493,15 +2532,29 @@ stock_search:
     - SYF    # Synchrony Financial
     - T      # AT&T
     - TCBI   # Texas Capital Bancshares
-    - TCNNF  # Trulieve Cannabis
     - TECH   # Bio-Techne
     - TEL    # TE Connectivity
     - TFC    # Truist Financial
     - THC    # Tenet Healthcare
     - TJX    # TJX Companies
     - TMUS   # T-Mobile US
-    - TPH    # Tri Pointe Homes
+    - TPH    # Tri Pointe Homes — DELISTED 2026-05-14 (acquired by Sumitomo Forestry,
+             # US$47.00 cash; last session 05-13). Membership is KEPT on purpose: the
+             # page, its search entry and its deep links stay alive (CSP-R1) and the
+             # history stays readable. The exit row in config/delisted_symbols.yml is
+             # what stops the nightly fetch requesting it and swaps the page's
+             # cause-neutral "no new data" note for the truth. Do NOT delete this line
+             # to "clean up" — that removes the name from universe() and 404s the page.
     - TPR    # Tapestry
+    - TRLV   # Trulieve Cannabis — KEY MIGRATION from TCNNF (2026-08-06). Trulieve
+             # uplisted from the OTC quote TCNNF to NYSE:TRLV on 2026-06-09 (Form
+             # 8-A12B + NYSE listing certification, CIK 1754195); Yahoo stopped serving
+             # TCNNF on 2026-07-17 and the store froze there. Same security, same basis
+             # — TRLV and TCNNF closes agree to the cent on all 19 overlapping sessions
+             # — so data/yahoo/TCNNF.parquet was re-keyed, not re-based. The ticker
+             # here, the store filename and the extra_names label move TOGETHER or the
+             # library mints a duplicate company.
+             # research/RESOLUTION_20260806_SIDE_STORE_SYMBOLS.md
     - TSCO   # Tractor Supply
     - TTD    # The Trade Desk
     - TTWO   # Take-Two Interactive
@@ -2706,6 +2759,16 @@ stock_search:
     DKNG:  {name: "DraftKings", sector: "Consumer Discretionary"}
     POOL:  {name: "Pool Corp", sector: "Consumer Discretionary"}
     OSCR:  {name: "Oscar Health", sector: "Health Care"}
+    # Trulieve had no label under its old OTC ticker, so search showed a bare "TCNNF /
+    # ETF / macro" for a real operating company. GICS Health Care per SEC SIC 2833
+    # (medicinal chemicals & botanical products).
+    TRLV:  {name: "Trulieve Cannabis", sector: "Health Care"}
+    # CTRA and TPH keep their labels while their pages stand (both delisted 2026-05,
+    # config/delisted_symbols.yml): the page still has to name the company it is
+    # showing, and a name that renders as "CTRA / ETF / macro" is a worse page than
+    # one that says Coterra Energy stopped trading.
+    CTRA:  {name: "Coterra Energy", sector: "Energy"}
+    TPH:   {name: "Tri Pointe Homes", sector: "Consumer Discretionary"}
     # ADR sensor mini-set (W0-4 — INTL-49; collected in yahoo.adr_sensors)
     ASML:  {name: "ASML Holding (ADR)", sector: "Information Technology"}
     LVMUY: {name: "LVMH (ADR)", sector: "Consumer Discretionary"}
@@ -2726,6 +2789,21 @@ watchlist:
   supabase:
     url: "https://fsldfzlxyavsuwqbceod.supabase.co"
     anon_key: "sb_publishable_f33VG8fZuyIZPl_lZIDX3w_RFuuZtpv"   # publishable key — PUBLIC by design (RLS enforces isolation)
+    # BROWSER-facing origin for the auth/REST calls (GFW). *.supabase.co is fronted by
+    # Cloudflare, whose ranges are throttled in mainland China, so a China visitor can
+    # load the site (Tencent EdgeOne) and still fail EVERY auth call — sign-in, sign-up,
+    # password reset, magic link. Setting this points the browser SDK at our own origin,
+    # where Caddy reverse-proxies /auth/v1/* and /rest/v1/* to the project; the DO
+    # droplet (outside China) makes the supabase.co hop.
+    #
+    # EMPTY = direct to `url` (today's behaviour). Fill it ONLY after the Caddy route is
+    # confirmed live — pointing the browser at a route that 404s breaks auth GLOBALLY,
+    # not just in China. Verify first:  curl https://www.mastermind-x.com/auth/v1/health
+    #
+    # Server-side callers (app/*.py, SUPABASE_URL env) must keep talking to supabase.co
+    # DIRECTLY — they run on the droplet, and routing service-role traffic back through
+    # the public proxy would be both pointless and a needless exposure.
+    browser_url: ""
 
 # -----------------------------------------------------------------------------
 # Regime engine
@@ -6734,6 +6812,7 @@ yahoo:
     extras: [SMH, IWM, RSP, SPY, QQQ, "^DJI", "^RUT", IJH,   # ^RUT = true Russell 2000 index level; IJH = S&P MidCap 400 (mid-cap leg of the size spectrum)
              SOXX, IGV, XBI, IBB, GDX, GDXJ, KRE, KBE, ITB, XHB, XME, XOP, OIH, XRT, TAN,  # deep-history thematic ETFs (directional model — narrow purer-driver exposures)
              MAGS,                # Roundhill Magnificent Seven ETF — mega-cap leadership concentration tracker (hk_context_chips em_dm_rs / HKRV-W4)
+             GLD,                 # SPDR Gold Shares — the gold leg of the GDX/GDXJ miners complex (miners-vs-metal RS) and the bullion tape scripts/research/hs2_event_reactions reads. Same failure as ^GSPC below: seeded once by a research pass (#2569, 2026-07-14), in NO group here, so it froze that day while GDX/GDXJ/GC=F stayed current
              "^KS11",             # KOSPI composite (Korea) — EM-Asia bellwether; hk_context_chips complement
              "^GSPC"]             # S&P 500 price index — intl_performance US-vs-world benchmark + cycle_proxies/equity_alloc/intl_claims/lab/live_overlay/signal_lab. Store was seeded once by scripts/spvector_baseline.py (2026-06-14) and froze at 2026-06-12 because the ticker was never in ANY group here; freshness now guarded by collectors.yahoo.check_yahoo_freshness
     style: [IWF, IWD]             # Russell 1000 Growth / Value — style-rotation read (growth vs value leadership)

@@ -15,9 +15,10 @@ without them:
 
   survivorship  the close panel serves currently-listed names, so delisted losers are
                 absent and every read here is an OPTIMISTIC bound.
-  universe      the fundamentals panel is ~1,552 names. Fintel's QV is a small-cap
-                "multi-bagger" finder benchmarked to the Russell 2000; we are testing it
-                on the wrong end of the size distribution.
+  universe      this study ran on a 1,552-name fundamentals panel. Fintel's QV is a
+                small-cap "multi-bagger" finder benchmarked to the Russell 2000, so it was
+                tested on the wrong end of the size distribution. W2-A (#4688) has since
+                widened the panel past 2,800 names; re-running the study on it is open work.
   history       the in-tree close caches run ~3 years. That is a handful of independent
                 quarterly rebalances, not a regime sample.
 """
@@ -37,14 +38,39 @@ log = logging.getLogger(__name__)
 DEFAULT_HORIZON = 63          # ~one quarter, matching the factor IC scorecard
 MIN_NAMES = 30                # below this a cross-sectional IC is noise dressed as a number
 
+# The options-dislocation family samples DAILY, not quarterly, so it gets its own horizon.
+# 5 days is the horizon engine/options_dislocation.py ran its own raw-vs-neutralised
+# diagnostics at; at h=21 the panel is ~1 window and nothing is measurable at all.
+OPTIONS_HORIZON = 5
+
 STANDING_LIMITS = {
     "survivorship": ("Close panel serves currently-listed names only; delisted losers are "
                      "absent. Every number here is an optimistic bound."),
-    "universe": ("~1,552 fundamentals-covered names, concentrated above the size band this "
-                 "model targets. 6 of Fintel's 10 published QVM leaders are not in it."),
+    # Past tense on purpose: this describes the panel THIS STUDY RAN ON, which is frozen.
+    # W2-A (#4688) has since widened the panel past 2,800 names — a limit that silently
+    # re-read as a present-tense claim would be false the night the panel grew.
+    "universe": ("The study ran on a 1,552-name fundamentals panel, concentrated above the "
+                 "size band this model targets — 7 of Fintel's 10 published QVM leaders "
+                 "were outside it. The panel has since been widened; this is not a re-test."),
     "history": ("In-tree close caches run ~3 years — a handful of independent quarterly "
                 "rebalances, not a regime sample."),
     "tier": "Display-tier research. Nothing here promotes a score to rank/size/gate authority.",
+}
+
+# Same mechanism, same shape, stamped under the same `limits` key — these are merged into
+# the artifact's standing limits by scripts/build_quant_lab.py whenever the options family
+# is studied, so the page's existing "What these results cannot tell you" panel carries them
+# without a second caveat vocabulary.
+OPTIONS_LIMITS = {
+    "options_regime": ("The options chain panel is ONE regime — 32 distinct market sessions "
+                       "across six weeks. At a 5-day horizon that is ~6 independent windows, "
+                       "so every t-statistic here is vacuous by construction and no number on "
+                       "this family separates a real effect from zero."),
+    "options_stamp": ("Ledger rows are stamped with the collector's RUN date, not the session "
+                      "they read: 9 of 41 stamps repeated the prior session and the first 6 "
+                      "carried too few names to neutralise. Duplicate sessions are collapsed "
+                      "before scoring, but the change primitives still rest on ~13 usable "
+                      "dates."),
 }
 
 
@@ -272,4 +298,158 @@ def study_model(model_key: str, *, horizon: int = DEFAULT_HORIZON,
         "fdr_alpha": 0.10,
         "limits": STANDING_LIMITS,
         "verdict": composite_res["verdict"],
+    }
+
+
+# =======================================================================================
+# Options dislocation — a DAILY family, scored against its own pre-registration
+# =======================================================================================
+def options_sessions(hist) -> list:
+    """Collapse the ledger's RUN-date stamps down to distinct market sessions.
+
+    The chain collector stamps each snapshot with the date it RAN, not the session it read.
+    Weekend and Monday runs re-read the same Friday chain, so on the first ledger 9 of 41
+    stamps repeated their predecessor byte-for-byte (spot equal to 1e-9 across all ~370
+    names; Sunday==Saturday and Monday==Sunday, while Saturday differed from Friday because
+    the Friday file already held Thursday's chain).
+
+    Scoring those as separate dates would enter one Friday cross-section up to three times,
+    shrinking every standard error on a panel whose standard errors are already meaningless.
+    Detect by value rather than by weekday: a bank holiday produces the same duplicate and
+    carries no weekend marker.
+    """
+    import numpy as np
+    import pandas as pd
+    keep, prev = [], None
+    for d, g in hist.groupby("date", sort=True):
+        v = pd.to_numeric(g.set_index("underlying")["spot"], errors="coerce").dropna()
+        if prev is not None and len(v):
+            common = v.index.intersection(prev.index)
+            if len(common) >= 5 and float(
+                    np.isclose(v[common].to_numpy(), prev[common].to_numpy(),
+                               rtol=1e-9, atol=1e-9).mean()) > 0.99:
+                continue                      # same session, merely re-stamped
+        keep.append(str(d))
+        if len(v):
+            prev = v
+    return keep
+
+
+def study_options_dislocation(*, horizon: int = OPTIONS_HORIZON,
+                              min_names: int = MIN_NAMES) -> dict:
+    """Score the NEUTRALISED options primitives against their own pre-registered signs.
+
+    `PREREG_SIGNS` is IMPORTED, never restated: the pre-registration lives in
+    engine/options_dislocation.py, was fixed before the dormant gate could ever run, and a
+    second copy here would be free to drift away from the one the gate tests. Each column is
+    ORIENTED by its sign before scoring (`n_col * sign`), which is what lets `_verdict`'s
+    existing sign-awareness read correctly: a positive IC means the primitive moved the way
+    it was pre-registered to move, and a significant negative one lands as `inverted` — it
+    ran against its own pre-registration, which is a finding, not a win.
+
+    There is deliberately NO composite. RO-2 / Signal Commons R3 forbids a fused pre-gate
+    score, so this returns per-primitive results only and the caller has nothing to lift.
+
+    Forward returns are SPY-relative over `horizon` SESSIONS (not calendar days), taken from
+    the ledger's own spot series after duplicate stamps are collapsed — the same construction
+    engine/options_dislocation.py ran its raw-vs-neutralised diagnostics with.
+    """
+    import numpy as np
+    import pandas as pd
+
+    from engine.options_dislocation import PREREG_SIGNS, load_history
+
+    hist = load_history()
+    if hist is None or getattr(hist, "empty", True):
+        return {"model": "options_dislocation", "verdict": "no_data",
+                "limits": {**STANDING_LIMITS, **OPTIONS_LIMITS},
+                "note": "No options dislocation ledger on disk."}
+
+    hist = hist.copy()
+    hist["date"] = hist["date"].astype(str)
+    hist["underlying"] = hist["underlying"].astype(str).str.upper()
+
+    stamps = sorted(hist["date"].unique())
+    sessions = options_sessions(hist)
+    P = hist[hist["date"].isin(set(sessions))]
+
+    px = (P.pivot_table(index="date", columns="underlying", values="spot", aggfunc="last")
+            .sort_index())
+    bench = px["SPY"] if "SPY" in px.columns else None
+
+    fwd_by: dict = {}
+    for i, d in enumerate(px.index):
+        j = i + horizon
+        if j >= len(px.index):
+            break
+        f = px.iloc[j] / px.iloc[i] - 1.0
+        if bench is not None and np.isfinite(bench.iloc[i]) and bench.iloc[i]:
+            f = f - (bench.iloc[j] / bench.iloc[i] - 1.0)
+        fwd_by[d] = f.replace([np.inf, -np.inf], np.nan).dropna()
+
+    per_leg: dict = {}
+    coverage: dict = {}
+    for col, sign in PREREG_SIGNS.items():
+        ncol = f"n_{col}"
+        if ncol not in P.columns:
+            per_leg[col] = {"n_dates": 0, "verdict": "no_data",
+                            "note": f"{ncol} is not in the ledger."}
+            continue
+        sig_by, cov = {}, []
+        for d, g in P.groupby("date", sort=True):
+            if d not in fwd_by:
+                continue
+            s = pd.to_numeric(g.set_index("underlying")[ncol], errors="coerce").dropna()
+            if len(s) < min_names:
+                continue
+            sig_by[d] = s * sign               # orient by the IMPORTED pre-registration
+            cov.append(len(s) / max(1, len(g)))
+        # periods_per_year: daily sampling. hac_lags: the measured overlap (horizon / step),
+        # which ic_summary's own docstring asks callers to pass whenever the grid is sampled
+        # finer than the forward window — it is, 5-deep, here.
+        res = study_signal(sig_by, fwd_by, periods_per_year=252, hac_lags=horizon)
+        res["prereg_sign"] = int(sign)
+        res["mean_coverage"] = round(float(np.mean(cov)), 4) if cov else None
+        coverage[col] = res["mean_coverage"]
+        per_leg[col] = res
+
+    pvals = {k: (v.get("p_hac") or v.get("p")) for k, v in per_leg.items()
+             if v.get("n_dates", 0) >= 8 and (v.get("p_hac") or v.get("p")) is not None}
+    fdr = benjamini_hochberg(pvals) if pvals else {}
+
+    for k, v in per_leg.items():
+        v["q"] = (fdr.get(k) or {}).get("q")
+        # `_verdict` reads n_dates as a count of INDEPENDENT observations — true of the
+        # quarterly EDGAR grid it was written for, false here: consecutive daily
+        # cross-sections share 4 of their 5 forward days. Hand it the independent-window
+        # count so the harness's OWN insufficiency floor (n < 8) sees the panel as it really
+        # is, rather than inventing a second rule that says the same thing.
+        n_ind = int(v.get("n_dates", 0) // horizon)
+        v["n_independent_windows"] = n_ind
+        # Printed, not hidden: what the SAME harness would have said had the overlap gone
+        # uncorrected. On the first ledger every primitive came back `survives_fdr` that way
+        # — seven significant-looking factors out of six weeks of a single regime. Keeping
+        # the counterfactual in the artifact is what makes the correction auditable instead
+        # of merely asserted.
+        v["verdict_uncorrected"] = _verdict(v, v["q"])
+        v["verdict"] = _verdict({**v, "n_dates": n_ind}, v["q"])
+
+    return {
+        "model": "options_dislocation",
+        "name": "Options information dislocation",
+        "horizon_d": horizon,
+        "cadence": "daily",
+        "rule": "none_categorical",
+        "n_stamps": len(stamps),
+        "n_sessions": len(sessions),
+        "n_duplicate_stamps": len(stamps) - len(sessions),
+        "n_scored_dates": len(fwd_by),
+        "spec_legs": list(PREREG_SIGNS),
+        "legs": per_leg,
+        "coverage": coverage,
+        "fdr_alpha": 0.10,
+        "limits": {**STANDING_LIMITS, **OPTIONS_LIMITS},
+        # No composite, and no top-level verdict that could stand in for one: RO-2 forbids a
+        # fused pre-gate score, and a single headline verdict over seven primitives IS one.
+        "verdict": "per_primitive",
     }
