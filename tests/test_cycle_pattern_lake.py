@@ -9,6 +9,7 @@ separate test asserts the driver writes byte-deterministic parquet.
 """
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -21,12 +22,27 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from engine.cycle_pattern import lake, registry  # noqa: E402
 from lib import config  # noqa: E402
 
-# Expected family cardinalities (the enumerated universe).
-_EXPECTED_FAMILIES = {
-    "us_sector": 11, "us_basket": 47, "nasdaq_group": 8, "russell_group": 11,
-    "cn_sector": 31, "cn_basket": 22, "country": 24, "bloc": 7,
-    "flagship_band": 20,
+# Families the registry reads out of a data artifact, and the artifact each one is
+# read from. The contract is FAITHFULNESS — one entity per member of the source, no
+# drops and no duplicates — not a frozen universe size.
+#
+# It used to be a dict of literals ({"us_basket": 47, ...}), and that rotted exactly
+# the way a literal over a growing store must: the code comment still said 46, the
+# literal said 47, and data/baskets/membership.json had reached 48, so the suite was
+# red on main. Nothing caught it because the suite is named by no CI job. Bumping the
+# number would only buy time until the next basket lands; measuring the registry
+# against its own source is the assertion that was meant all along, and it FAILS on
+# the thing worth failing on (a family silently losing or doubling members).
+_ARTIFACT_FAMILIES = {
+    "us_basket": ("baskets/membership.json", "baskets"),
+    "cn_basket": ("baskets_china/membership.json", "baskets"),
+    "nasdaq_group": ("baskets_nasdaq/membership.json", "amalgamations"),
+    "russell_group": ("baskets_russell/membership.json", "amalgamations"),
 }
+
+# Blocs are the curated split of the country-cycles universe (registry._COUNTRY_BLOC_IDS);
+# country is its complement. Both are pinned against that split, not against a literal.
+_MIN_TOTAL_ENTITIES = 140
 _BACKFILL_TOTAL = 1881 + 5738 + 4900  # 12_519
 _BASKET_FAMILIES = ["us_basket", "nasdaq_group", "russell_group", "cn_basket", "bloc"]
 
@@ -44,11 +60,36 @@ def state() -> pd.DataFrame:
 # --------------------------------------------------------------------------- #
 # entity registry
 # --------------------------------------------------------------------------- #
+def _artifact_members(rel: str, key: str) -> set[str]:
+    payload = json.loads((Path(config.data_dir()) / rel).read_text(encoding="utf-8"))
+    return set(payload[key])
+
+
 def test_entity_count_and_families(entities):
-    assert len(entities) >= 140
+    assert len(entities) >= _MIN_TOTAL_ENTITIES
     counts = entities["family"].value_counts().to_dict()
-    for fam, n in _EXPECTED_FAMILIES.items():
-        assert counts.get(fam, 0) == n, f"{fam}: {counts.get(fam, 0)} != {n}"
+
+    # Every family the registry enumerates is present and non-empty.
+    for fam in (*_ARTIFACT_FAMILIES, "us_sector", "cn_sector",
+                "country", "bloc", "flagship_band"):
+        assert counts.get(fam, 0) > 0, f"family {fam} vanished from the registry"
+
+    # Artifact-backed families: exactly one entity per member, by NATIVE ID —
+    # a count alone would pass if one member were dropped and another doubled.
+    for fam, (rel, key) in _ARTIFACT_FAMILIES.items():
+        got = set(entities.loc[entities["family"] == fam, "native_id"])
+        assert got == _artifact_members(rel, key), (
+            f"{fam} does not mirror data/{rel}: "
+            f"missing={sorted(_artifact_members(rel, key) - got)} "
+            f"extra={sorted(got - _artifact_members(rel, key))}"
+        )
+
+    # country/bloc are one universe split on a curated bloc list; the split must be
+    # exact and exhaustive, which is the part a per-family literal never checked.
+    blocs = set(entities.loc[entities["family"] == "bloc", "native_id"])
+    countries = set(entities.loc[entities["family"] == "country", "native_id"])
+    assert blocs == set(registry._COUNTRY_BLOC_IDS)
+    assert not (blocs & countries)
 
 
 def test_entity_id_stable_and_sorted(entities):

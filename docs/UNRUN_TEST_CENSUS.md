@@ -843,3 +843,91 @@ different blast radii (bar derivation, breadth divergence, CN cycle grading, the
 snapshot producer) and each needs its own dep measurement, so they belong in their own
 staged batch per this census's wire-in-blast-radius-order rule rather than riding along
 with a reclaim-veto PR. Recorded here so the next pass starts from a list, not a re-audit.
+
+## 2026-08-06: the P4/P5 red-on-arrival re-drain — 959 suites re-run, 8 red
+
+Nine days after the 2026-07-27 sweep measured the then-870 unrun suites, the leak had
+refilled to **963 unrun of 2,015** (`audit_unrun_tests.py`: P1 13, P3 9, P4 469, P5 472).
+All **959** files the pack harvester finds unnamed were executed again, one pytest process
+per suite, in the exact CI-minimal venv (`pytest pandas numpy pyarrow pyyaml jinja2 plotly
+requests beautifulsoup4 openpyxl scikit-learn`).
+
+| outcome | n |
+|---|---|
+| green but dark | 951 |
+| **red on `main`** | **8** |
+| total re-run | 959 |
+
+**0.83% red**, against 1.1% at the last sweep — the rate is stable, so the class is a
+standing leak and not a one-off backlog.
+
+### The measurement trap this pass added to the list
+
+**Running the census in parallel manufactures reds, and they look real.** `MM_DATA_GUARD`
+is a *session-level* tripwire over the repo's whole `data/`+`site/` tree, so when six
+pytest processes share one checkout, one suite's stray write fails every session that
+spans it. Five suites reported red that way and are green run alone:
+`test_country_cycles`, `test_country_fx`, `test_dashboard_template_render`,
+`test_dislocation_accrual`, `test_dislocation_honesty`. The tell is a tail that reads
+`N passed` *above* the guard banner — all tests green, non-zero exit.
+
+The write was real, though, and the culprit is one of the eight: `test_deterioration_cascade`
+writes `data/deterioration_cascade/{forward_log.jsonl,latest.json}` from a clean tree.
+**Re-verify every red serially, from `git checkout -- data/ site/`, before triaging it** —
+the same shape as the `-x`-hides-siblings note from the last sweep.
+
+### The eight
+
+| suite | tier | one-line diagnosis | class |
+|---|---|---|---|
+| `test_dnr_registry_keys` | P3 | §4 row carries a `KILL-` key (§4 is `HOLD-`); appended by #4617 | real bug (registry) |
+| `test_levels_engine` | P5 | 2 tests assert the retired `_flip_from_rows` reconstruction; the engine renders an honest null | stale assertion |
+| `test_cycle_pattern_lake` | P5 | `us_basket: 47` literal vs 48 in `data/baskets/membership.json` (code comment still says 46) | stale assertion over a growing store |
+| `test_deterioration_cascade` | P5 | 28/28 tests pass; the suite writes the real `data/deterioration_cascade/` forward ledger and `MM_DATA_GUARD` fails the session | non-hermetic |
+| `test_admin_server` | P5 | expected-key set never learned `key_alerts` (#4612) | stale assertion — **owned by #4824** |
+| `test_china_continuation_watch` | P5 | block-marker strings drifted from the live buy-filter copy | stale assertion — **owned by #4775** |
+| `test_calibration_frame` | P5 | drawdown snapshot passport reads `partial`, test asserts `measured` — asserted against the live store, so the verdict moves with coverage | non-hermetic by design |
+| `test_china_analyst_ticker` | P5 | committed stores carry Beijing `92xxxx` codes on a `.SS` suffix (510 rows in `china_lhb/detail`, 2,674 in `china_lhb/events`) | real bug (data + mapper) |
+
+Three shipped in the batch below. `test_deterioration_cascade` (isolate a forward-ledger
+writer), `test_calibration_frame` (a live-store passport assertion) and
+`test_china_analyst_ticker` (a data repair plus a mapper audit) each need their own PR and
+their own judgement call; they are recorded here so the next pass starts from a list.
+
+### Batch D — the three cheap unclaimed reds
+
+Wired into the job whose `pip install` line already carries their import closure, so no
+batch adds a wheel:
+
+| suite | host job | why that job | added cost |
+|---|---|---|---|
+| `test_dnr_registry_keys` | `capability-broker` | already runs `check_blocklist_drift.py` over the same two files | 1.8 s |
+| `test_levels_engine` | `unrun-market-plumbing` | already runs the four Level Report Card grader suites; this is the engine they grade | 0.9 s |
+| `test_cycle_pattern_lake` | `unrun-neuralweb-cortex` | already runs `test_build_cycle_pattern_state.py`, which builds on this substrate | 27 s |
+
+Host jobs staged green as units in the CI-minimal venv (a pack is one check):
+`unrun-market-plumbing` 1,425 passed / 70 s against a 6-min cap; `unrun-neuralweb-cortex`
+238 passed / 35 s against a 4-min cap. The three land in packs 1 and 3, so no single pack
+absorbs the whole increment; pack weights stay balanced at 808 each.
+
+### What the dark set costs in ci-pack minutes — measure before wiring the remainder
+
+The 959 suites are **not** uniformly cheap. Wall-clock from the census run:
+
+- median **3.9 s**
+- **15** suites over 60 s, **7** over 120 s
+- worst: `test_country_fx` **309 s** (serial, clean tree), `test_build_cycle` 185 s,
+  `test_radar` 170 s, `test_rerun_options_gates` 157 s, `test_thetadata_store` 150 s,
+  `test_fund_followability` 141 s, `test_country_cycles` 128 s
+
+`unrun-*` caps run 3–8 minutes. `test_country_fx` alone would consume most of any of them,
+and a hosted ubuntu runner is slower than this box — so the >120 s suites need either their
+own job with its own cap or an explicit cap raise in the same PR. Do not append one to an
+existing step and assume the cap absorbs it.
+
+### Still true, and still the root cause
+
+There is no broad `pytest tests/` anywhere in this repo, `tests/**` is deliberately not in
+`ci.yml`'s paths filter, and `check_house_law_registry.py` only censuses
+`scripts/check_*.py` — so a guard-shaped pytest file arrives dark by default and stays
+dark until someone runs this census. P4 (~466) and P5 (~469) remain the deliberate backlog.
