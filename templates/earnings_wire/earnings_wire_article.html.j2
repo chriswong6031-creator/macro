@@ -50,7 +50,7 @@
 
   <div class="ew-wrap ewa-layout">
     <aside class="ewa-rail" aria-label="Record details">
-      <div class="ewa-rail-block"><span>{{ t('Scope', '范围') }}</span><strong>{{ t('Transcript only', '仅电话会文本') }}</strong><p>{{ t('No release, filing, slides, consensus, or price-reaction join is implied here.', '此处不包含新闻稿、申报文件、演示材料、一致预期或股价反应的合并信息。') }}</p></div>
+      <div class="ewa-rail-block"><span>{{ t('Scope', '范围') }}</span><strong>{{ t('Transcript only', '仅电话会文本') }}</strong><p>{{ t('No release, filing, slides, consensus, or price-reaction join is implied here.', '此处不包含新闻稿、披露文件、演示材料、一致预期或股价反应的合并信息。') }}</p></div>
       <div class="ewa-rail-block"><span>{{ t('Source body', '来源正文') }}</span><strong class="mono">sha256:{{ article.source.body_sha256[:12] }}…</strong><p class="mono">{{ article.source.body_bytes }} bytes</p></div>
       <div class="ewa-rail-block"><span>{{ t('Verification boundary', '核验边界') }}</span><strong>{{ t('Receipt verified; raw body not publicly linked', '回执已核验；原始正文未公开链接') }}</strong><p>{{ t('The hash and byte coordinates bind this page to the captured source snapshot; they are an audit receipt, not a public transcript URL.', '哈希与字节坐标将本页绑定到已捕获的来源快照；它们是审计回执，并非公开电话会链接。') }}</p></div>
       <a class="ewa-terminal" href="https://app.mastermind-x.com/terminal?sym={{ article.event.ticker }}&amp;pane=transcripts&amp;tx={{ article.event.transcript_id }}&amp;utm_source=earnings_wire&amp;utm_medium=organic_research&amp;utm_campaign=company_intelligence" target="_blank" rel="noopener noreferrer">{{ t('Continue in Terminal', '在终端继续研究') }} <span aria-hidden="true">↗</span></a>
@@ -89,7 +89,7 @@
         </tbody></table></div>
       </details>
 
-      <aside class="ewa-disclosure"><span>{{ t('Source completeness', '来源完整性') }}</span><p>{{ t('Transcript: present. Release, filing and slides: not ingested. Consensus: unlicensed/absent. Market reaction: not joined. This page does not fill those gaps with inference.', '电话会文本：已具备。新闻稿、申报文件和演示材料：未接入。一致预期：未授权/缺失。市场反应：未合并。本页不会用推断填补这些空白。') }}</p></aside>
+      <aside class="ewa-disclosure"><span>{{ t('Source completeness', '来源完整性') }}</span><p>{{ t('Transcript: present. Release, filing and slides: not ingested. Consensus: unlicensed/absent. Market reaction: not joined. This page does not fill those gaps with inference.', '电话会文本：已具备。新闻稿、披露文件和演示材料：未接入。一致预期：未授权/缺失。市场反应：未合并。本页不会用推断填补这些空白。') }}</p></aside>
     </div>
   </div>
 </article>

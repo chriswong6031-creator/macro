@@ -35,17 +35,81 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib import config  # noqa: E402
+from lib import config, nyse_calendar  # noqa: E402
 
 MIN_PER_BUCKET = 30        # honest power floor before any verdict
 HORIZONS = (5, 10)
 N_BOOT = 2000
 
 
-def _fwd_rv(spot: pd.Series, h: int) -> pd.Series:
-    """Forward h-day realized vol (annualized), aligned to day t (uses t+1..t+h)."""
-    r = np.log(pd.to_numeric(spot, errors="coerce")).diff()
-    return r.rolling(h).std().shift(-h) * np.sqrt(252)
+MAX_WINDOW_STRETCH = 2.0   # a forward window may span at most 2× its nominal sessions
+
+
+def _fwd_rv(spot: pd.Series, h: int, dates: list | None = None) -> pd.Series:
+    """Forward h-SESSION realized vol (annualized), aligned to day t (uses t+1..t+h).
+
+    GAP DISCIPLINE — FIT/WINDOW (lib/nyse_calendar, 2026-08-06).  This is not a
+    two-endpoint difference: every return in the window carries information, so
+    refusing on any gap would throw the sample away.  Re-weight instead, two ways:
+
+      * PER-STEP SCALING.  ``log(spot).diff()`` treats each row-to-row move as one
+        session, so a return spanning a collection gap (2026-07-31 → 08-06 is FOUR
+        sessions) enters the standard deviation at its full multi-session size and
+        then gets annualized by √252 as if it were one day.  Variance scales with
+        elapsed sessions, so each return is divided by √Δsessions to bring it back to
+        a per-session quantity before the rolling std.
+      * SPAN CAP.  Even scaled, a window whose h rows span far more than h sessions is
+        measuring a different horizon than the one labelled.  Windows stretching beyond
+        ``MAX_WINDOW_STRETCH × h`` sessions are dropped to NaN rather than reported as
+        an h-day forward vol.
+
+    Both matter here because this function is the DEPENDENT variable of the gate that
+    decides whether GEX may ever touch the per-stock ladder score: a gap-inflated RV
+    lands in whichever regime bucket happens to precede the outage, which manufactures
+    (or hides) exactly the short>long difference the gate tests for.  ``dates`` is the
+    row-aligned session list; when omitted the series index is used, and when neither
+    yields usable dates the function degrades to the old row-step behaviour.
+    """
+    px = pd.to_numeric(spot, errors="coerce")
+    r = np.log(px).diff()
+    steps = _session_steps(dates if dates is not None else list(spot.index), len(r))
+    if steps is not None:
+        with np.errstate(invalid="ignore", divide="ignore"):
+            r = r / np.sqrt(steps)
+    rv = r.rolling(h).std().shift(-h) * np.sqrt(252)
+    if steps is not None:
+        # Span of the h returns that END at t+h — the same rows the rolling std used.
+        span = pd.Series(steps, index=r.index).rolling(h).sum().shift(-h)
+        rv = rv.where(span <= MAX_WINDOW_STRETCH * h)
+    return rv
+
+
+def _session_steps(raw, n: int):
+    """Per-row elapsed SESSIONS since the previous row (first row NaN), or None.
+
+    None when the labels are not usable dates — the caller then keeps the old
+    row-step behaviour rather than silently dividing by garbage.  A plain RangeIndex is
+    the common case here (several callers and tests build frames without dates), and it
+    MUST land in that branch: `pd.Timestamp(0)` returns 1970-01-01, so coercing integers
+    would turn an undated frame into epoch dates and NaN out every window.
+    `nyse_calendar.as_day` rejects numbers for exactly that reason.
+    """
+    try:
+        ds = []
+        for v in raw:
+            d = nyse_calendar.as_day(v)
+            if d is None:
+                return None
+            ds.append(d)
+        if len(ds) != n or len(ds) < 2:
+            return None
+        out = [np.nan]
+        for a, b in zip(ds, ds[1:]):
+            k = nyse_calendar.sessions_apart(a, b)
+            out.append(np.nan if k is None or k <= 0 else float(k))
+        return np.asarray(out, dtype=float)
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def _regime(d: pd.DataFrame):
@@ -69,6 +133,14 @@ def _boot(longg: np.ndarray, shortg: np.ndarray):
 
 def evaluate(name: str, d: pd.DataFrame, store_label: str = "") -> list[str]:
     prefix = f"[{store_label}] " if store_label else ""
+    # SESSION GUARD (#3721 class) — this module called NO session helper at all, so it
+    # was unprotected even against the simpler weekend-row defect: both stores accrue
+    # rows on non-session days (~11 of 39 dates in polygon_gex, 13 of 39 in cboe/gex),
+    # and those rows RECOMPUTE spot off a stale carried-forward price. A fabricated spot
+    # enters `_fwd_rv` as a ~zero return, which deflates realized vol in whichever regime
+    # bucket the weekend followed — directly biasing the gate's own test statistic.
+    # One choke point here so both store readers inherit it. Fail-open by contract.
+    d = nyse_calendar.session_rows(d, label=f"{store_label or 'gex'}/{name}")
     if "spot" not in d.columns or len(d) < 5:
         return [f"{prefix}{name}: n={len(d)} — building history"]
     reg = _regime(d)
@@ -76,9 +148,11 @@ def evaluate(name: str, d: pd.DataFrame, store_label: str = "") -> list[str]:
         return [f"{prefix}{name}: no regime column"]
     d = d.copy()
     d["reg"] = np.asarray(reg, dtype=float)
+    dates = list(d.index)
     out = []
     for h in HORIZONS:
-        df = pd.DataFrame({"reg": d["reg"].values, "rv": _fwd_rv(d["spot"], h).values}).dropna()
+        df = pd.DataFrame({"reg": d["reg"].values,
+                           "rv": _fwd_rv(d["spot"], h, dates).values}).dropna()
         longg = df[df["reg"] > 0]["rv"].to_numpy()
         shortg = df[df["reg"] < 0]["rv"].to_numpy()
         if len(longg) < MIN_PER_BUCKET or len(shortg) < MIN_PER_BUCKET:

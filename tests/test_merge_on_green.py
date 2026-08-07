@@ -27,6 +27,38 @@ WORKFLOW = ROOT / ".github" / "workflows" / "merge-on-green.yml"
 BASELINE_WORKFLOW = ROOT / ".github" / "workflows" / "integration-baseline.yml"
 
 
+@pytest.fixture(autouse=True)
+def _no_unstubbed_http(monkeypatch):
+    """No test in this pack may reach api.github.com.
+
+    Added 2026-08-07, because the budget work introduced two NEW network entry
+    points into `main()` — `core_rate_limit` and `main_clean_check_names` — and both
+    swallow their own errors by design (fail-open and fail-closed respectively). A
+    test that forgot to stub them would therefore still PASS, silently making a real
+    HTTP call, taking a 30-second timeout on an offline runner, and asserting about a
+    code path it never exercised. A test that needs HTTP overrides this with its own
+    `monkeypatch.setattr(MOG, "_request", ...)`, which lands after this fixture.
+    """
+
+    def refuse(method, url, *_a, **_k):
+        raise AssertionError(
+            f"unstubbed HTTP {method} {url} — stub MOG._request (or the helper that "
+            "calls it) rather than letting a test reach the network"
+        )
+
+    monkeypatch.setattr(MOG, "_request", refuse)
+    # `core_rate_limit` propagates its caller's exceptions, so without a neutral
+    # default every pre-budget `main()` test would die on the guard above rather than
+    # on what it is about. A healthy budget is the pre-2026-08-07 behaviour; tests
+    # that are ABOUT the budget override this.
+    #
+    # `main_clean_check_names` deliberately gets NO default: it swallows every error
+    # by design, so the refusing `_request` above already gives it its neutral
+    # fail-closed answer (the empty set) without a real call — and leaving the real
+    # function in place keeps the tests that exercise it exercising it.
+    monkeypatch.setattr(MOG, "core_rate_limit", lambda _token: (1000, 1000))
+
+
 def _workflow() -> dict:
     return yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
 
@@ -287,6 +319,74 @@ def test_a_head_carrying_only_the_spurious_check_is_also_unproven():
         "unproven",
         [],
     )
+
+
+def test_the_4779_shape_is_unproven_not_clean():
+    """PR #4779's exact head, measured 2026-08-06 during the Actions major outage.
+
+    The `pull_request` webhook was dropped, so ci.yml scheduled NO run and the head
+    carried only these two checks. The spurious filter knows the Cloudflare X but
+    not `Supabase Preview`, so `considered` was non-empty and the `unproven` branch
+    above never fired; nothing was pending, and `skipped` is in CLEAN_CONCLUSIONS,
+    so `bad` was empty. This returned `clean` and the sweeper would have
+    squash-merged a head with ZERO CI evidence.
+    """
+    assert MOG.decide_verdict(
+        [
+            {"name": "Supabase Preview", "status": "completed", "conclusion": "skipped"},
+            {"name": "Workers Builds: macro", "status": "completed", "conclusion": "failure"},
+        ]
+    ) == ("unproven", [])
+
+
+def test_an_all_skipped_head_is_unproven_whatever_the_integration_is_called():
+    """The rule is an affirmative pass, NOT a longer list of names to ignore.
+
+    Widening `is_spurious_check` would have fixed #4779 and lost to the next
+    integration someone installs, so no third-party name appears here.
+    """
+    assert MOG.decide_verdict(
+        [_run("Some Future Preview", conclusion="skipped"), _run("inert", conclusion="neutral")]
+    ) == ("unproven", [])
+
+
+def test_one_success_beside_a_skipped_pack_still_merges():
+    """The boundary the affirmative-pass rule must not cross.
+
+    An ordinary path-filtered PR — one pack ran and passed, another skipped on its
+    `paths:` filter — is genuinely proven and must stay mergeable. `skipped` keeps
+    its place in CLEAN_CONCLUSIONS; it just no longer PROVES anything by itself.
+    """
+    assert MOG.decide_verdict(
+        [_run("ci-pack-1", conclusion="success"), _run("ci-pack-2", conclusion="skipped")]
+    ) == ("clean", [])
+
+
+def test_a_pending_pack_beside_a_skip_waits_rather_than_reading_unproven():
+    """Ordering: the affirmative-pass rule sits BELOW the pending branch.
+
+    Above it, a head whose real packs are merely still running would be annotated
+    "nothing proves it — the sweeper will never merge it", which is both wrong and
+    a noisy notice on every sweep of a perfectly healthy PR.
+    """
+    verdict, names = MOG.decide_verdict(
+        [_run("Supabase Preview", conclusion="skipped"), _run("ci-pack-1", "in_progress")]
+    )
+    assert verdict == "pending"
+    assert names == ["ci-pack-1"]
+
+
+def test_a_red_beside_a_skip_is_still_named_as_blocked():
+    """Ordering: the affirmative-pass rule sits BELOW the blocked branch too.
+
+    This head has no success either, but reporting it as `unproven` would swallow
+    the red — `blocked` names the offender and posts the explanatory comment.
+    """
+    verdict, names = MOG.decide_verdict(
+        [_run("Supabase Preview", conclusion="skipped"), _run("ci-pack-1", conclusion="failure")]
+    )
+    assert verdict == "blocked"
+    assert names == ["ci-pack-1 (failure)"]
 
 
 # --- the sweep itself, with HTTP mocked ---------------------------------------
@@ -763,9 +863,36 @@ def test_a_red_main_blocks_ordinary_pulls_and_allows_one_explicit_repair(
 
     monkeypatch.setattr(MOG, "sweep_pull", record)
     assert MOG.main() == 0
-    assert swept == [2], "a broken baseline admits exactly one explicit repair per pass"
+    # The invariant is the COUNT, not the identity. Which of two armed repairs wins
+    # the slot is now decided by the anti-starvation rotation (see the companion
+    # test below); pinning #2 here pinned nothing but GitHub's listing order.
+    assert len(swept) == 1, "a broken baseline admits exactly one explicit repair per pass"
+    assert swept[0] in {2, 3}, "and the one it admits must be a labelled repair"
     out = capsys.readouterr().out
     assert "circuit breaker" in out and "2 baseline-blocked" in out
+
+
+def test_two_armed_repairs_take_turns_instead_of_one_starving_the_other():
+    """A repair that is permanently red must not hold the single repair slot forever.
+
+    Before the rotation the slot went to whichever repair GitHub's listing happened
+    to return first, every sweep, so a second repair could wait indefinitely behind a
+    first one that could never merge — a deadlock inside the deadlock's own escape
+    hatch.
+    """
+    repairs = [
+        _pull(number, labels=("merge-on-green", "main-red-repair")) for number in (2, 3)
+    ]
+    others = [_pull(number) for number in range(10, 40)]
+    first_choice = {
+        MOG.sweep_order(others + repairs, now=bucket * MOG.ROTATION_BUCKET_SECONDS)[0][
+            "number"
+        ]
+        for bucket in range(12)
+    }
+    assert first_choice == {2, 3}, (
+        f"only {first_choice} ever won the repair slot across 12 rotations"
+    )
 
 
 def test_an_unavailable_baseline_aborts_without_touching_pulls(monkeypatch, capsys):
@@ -1228,8 +1355,13 @@ def test_an_unbuildable_gate_aborts_the_sweep_instead_of_re_proving_everything(
         MOG, "sweep_pull", lambda *_a: pytest.fail("no pull may be touched")
     )
     assert MOG.main() == 1
-    out = capsys.readouterr().out
-    assert out.startswith("::error") and "tested-surface gate" in out
+    # The annotation must START its line (house law, tests/test_gh_annotation_line_start.py)
+    # — asserted per-line rather than on the first byte of stdout, because the sweep
+    # legitimately logs its API budget before it gets this far.
+    assert any(
+        line.startswith("::error") and "tested-surface gate" in line
+        for line in capsys.readouterr().out.splitlines()
+    )
 
 
 def test_the_commit_classification_is_shared_across_pull_requests(monkeypatch):
@@ -1343,6 +1475,344 @@ def test_re_proving_never_labels_a_pull_request_a_concurrent_sweep_just_merged(
     )
 
 
+# --- the API budget: the deadlock that killed this lane ------------------------
+#
+# Measured 2026-08-07. READ_TOKEN is the job's own GITHUB_TOKEN, whose Actions
+# quota is 1,000 requests/hour PER REPOSITORY. Sweep 31148157570 evaluated 93 armed
+# pull requests for ~121 calls in 82 seconds; the workflow_run trigger produced
+# 23-28 non-skipped sweeps in the 02Z hour. 28 x 121 = ~3,400 calls against a
+# 1,000/hr bucket, so the bucket emptied, every later sweep 403'd on its FIRST call,
+# and because sweeps kept firing they kept eating each hourly refill. Continuous
+# failure 03:34Z-04:38Z, recovery at 04:39Z — one clean hourly window, which is the
+# primary-quota signature rather than a secondary/burst throttle.
+#
+# A big backlog makes each sweep expensive -> the token starves -> nothing merges ->
+# the backlog stays big. These tests pin the three places that loop is now cut.
+
+
+def _main_harness(monkeypatch, pulls, *, readings=(1000,), verdict="pending"):
+    """Run `main()` with everything but the budget and the ordering stubbed out.
+
+    `readings` is what successive `core_rate_limit` polls return (remaining), the
+    first being the preflight. The last value repeats forever.
+    """
+    monkeypatch.setenv("GH_REPO", "acme/widgets")
+    monkeypatch.setenv("READ_TOKEN", "read")
+    monkeypatch.setenv("MERGE_TOKEN", "write")
+    monkeypatch.delenv("TRIGGER_HEAD_SHA", raising=False)
+    polls: list[int] = []
+
+    def fake_limit(_token):
+        index = min(len(polls), len(readings) - 1)
+        polls.append(index)
+        return readings[index], 1000
+
+    monkeypatch.setattr(MOG, "core_rate_limit", fake_limit)
+    monkeypatch.setattr(MOG, "labeled_pulls", lambda *_a: list(pulls))
+    monkeypatch.setattr(MOG, "integration_baseline_state", lambda *_a: ("green", "ok"))
+    monkeypatch.setattr(
+        MOG.ProofFreshness, "build", classmethod(lambda _cls, *_a, **_k: _freshness())
+    )
+    monkeypatch.setattr(MOG, "main_clean_check_names", lambda *_a: set())
+    seen: list[int] = []
+
+    def fake_sweep(_repo, pull, *_rest):
+        seen.append(pull["number"])
+        return verdict
+
+    monkeypatch.setattr(MOG, "sweep_pull", fake_sweep)
+    return seen
+
+
+def test_a_starved_sweep_defers_with_a_notice_instead_of_going_red(monkeypatch, capsys):
+    """(1) The preflight. `GET /rate_limit` does not count against the core budget,
+    so asking "can I afford this" is free — and a sweep that cannot afford a useful
+    pass must NOT spend its one call discovering that with a 403.
+
+    Exit 0, deliberately. 17 consecutive red runs is how this outage buried its own
+    diagnosis: a red here is indistinguishable from a genuinely broken sweeper, and
+    it masks the real failures this lane also reports.
+    """
+
+    def forbidden(*_a, **_k):
+        pytest.fail("a starved sweep must not spend a single call on the backlog")
+
+    monkeypatch.setattr(MOG, "labeled_pulls", forbidden)
+    monkeypatch.setenv("GH_REPO", "acme/widgets")
+    monkeypatch.setenv("READ_TOKEN", "read")
+    monkeypatch.setattr(
+        MOG, "core_rate_limit", lambda _t: (MOG.RATE_LIMIT_FLOOR - 1, 1000)
+    )
+    assert MOG.main() == 0, "a quota deferral is not a broken sweep"
+    assert any(
+        line.startswith("::notice") and "deferred" in line.lower()
+        for line in capsys.readouterr().out.splitlines()
+    ), "the no-op must be logged, never silent"
+
+
+def test_a_healthy_budget_still_sweeps(monkeypatch):
+    """The preflight must not be a lock. At the floor exactly, the sweep proceeds."""
+    seen = _main_harness(monkeypatch, [_pull(1)], readings=(MOG.RATE_LIMIT_FLOOR,))
+    assert MOG.main() == 0
+    assert seen == [1]
+
+
+def test_an_unreadable_rate_limit_fails_OPEN_and_still_sweeps(monkeypatch):
+    """The one deliberately fail-OPEN gate in this file.
+
+    Every fail-CLOSED gate here protects a merge; this one protects only a budget,
+    and a budget check that wedges the lane whenever GitHub hiccups would be a worse
+    outage than the one it prevents. The 403 handling on the real calls is the
+    backstop.
+    """
+    seen = _main_harness(monkeypatch, [_pull(1)])
+    monkeypatch.setattr(MOG, "core_rate_limit", lambda _t: None)
+    assert MOG.main() == 0
+    assert seen == [1]
+
+
+def test_the_per_sweep_cap_bounds_the_work_and_names_what_it_deferred(
+    monkeypatch, capsys
+):
+    """(2) The cap. NO SILENT CAPS — a sweep that quietly evaluated a quarter of the
+    backlog would look identical in the log to one that evaluated all of it, and that
+    difference is the entire reason the lane stopped working."""
+    armed = [_pull(number) for number in range(1, MOG.MAX_PULLS_PER_SWEEP + 8)]
+    seen = _main_harness(monkeypatch, armed)
+    assert MOG.main() == 0
+
+    assert len(seen) == MOG.MAX_PULLS_PER_SWEEP, (
+        f"expected at most {MOG.MAX_PULLS_PER_SWEEP} pull requests per sweep, "
+        f"got {len(seen)}"
+    )
+    expected = MOG.sweep_order(armed)
+    assert seen == [pull["number"] for pull in expected[: MOG.MAX_PULLS_PER_SWEEP]]
+
+    deferred = sorted(pull["number"] for pull in expected[MOG.MAX_PULLS_PER_SWEEP :])
+    notices = [
+        line
+        for line in capsys.readouterr().out.splitlines()
+        if line.startswith("::notice") and "Per-sweep cap" in line
+    ]
+    assert notices, "the cap must announce itself"
+    assert f"{MOG.MAX_PULLS_PER_SWEEP} of {len(armed)}" in notices[0]
+    for number in deferred[:3]:
+        assert f"#{number}" in notices[0], f"deferred #{number} must be named"
+
+
+def test_the_sweep_stops_cleanly_when_the_budget_runs_out_mid_pass(monkeypatch, capsys):
+    """(3) Spend the budget as you go, not only at the start.
+
+    Other lanes read main with the same per-repository GITHUB_TOKEN bucket, so a
+    budget that was healthy at preflight can be gone thirty seconds later. Dying
+    half-way through on a 403 spends calls the NEXT sweep needed — the loop that
+    made this outage self-sustaining.
+    """
+    armed = [_pull(number) for number in range(1, MOG.MAX_PULLS_PER_SWEEP + 1)]
+    # Poll 0 is the preflight, poll 1 is pull request index 0, poll 2 is index
+    # BUDGET_RECHECK_EVERY — and by then the budget is gone.
+    seen = _main_harness(
+        monkeypatch, armed, readings=(1000, 1000, MOG.RATE_LIMIT_RESERVE - 1)
+    )
+    assert MOG.main() == 0, "running out of budget is not a broken sweep"
+    assert len(seen) == MOG.BUDGET_RECHECK_EVERY, (
+        "the sweep must stop at the recheck that saw the budget gone, "
+        f"got {len(seen)} pull requests"
+    )
+    out = capsys.readouterr().out
+    assert any(
+        line.startswith("::warning") and "Stopping after" in line
+        for line in out.splitlines()
+    ), "a truncated sweep must say so"
+    assert "budget-deferred" in out, "and must account for what it did not reach"
+
+
+def test_a_rate_limited_listing_defers_the_sweep_rather_than_reddening_it(
+    monkeypatch, capsys
+):
+    """The exact 2026-08-07 failure: `labeled_pulls` 403s on call #1.
+
+    That produced `##[error]Could not list pull requests: ... HTTP 403` on 17
+    consecutive runs. It is a deferral, not a fault.
+    """
+    _main_harness(monkeypatch, [_pull(1)])
+
+    def starved(*_a, **_k):
+        raise MOG.RateLimited("HTTP 403: primary API quota reached")
+
+    monkeypatch.setattr(MOG, "labeled_pulls", starved)
+    assert MOG.main() == 0
+    assert any(
+        line.startswith("::warning") and "deferred" in line.lower()
+        for line in capsys.readouterr().out.splitlines()
+    )
+
+
+def test_a_403_that_is_NOT_a_rate_limit_still_fails_the_run_loudly(monkeypatch, capsys):
+    """The fail-closed half of the classifier.
+
+    A 403 with no rate-limit evidence is far more likely a permissions regression.
+    Downgrading that to "deferred, exit 0" would hide a genuinely broken lane behind
+    a notice — worse than the outage this whole section documents.
+    """
+    _main_harness(monkeypatch, [_pull(1)])
+
+    def forbidden(*_a, **_k):
+        raise MOG._read_failed(
+            403, {"message": "Resource not accessible"}, "listing failed"
+        )
+
+    monkeypatch.setattr(MOG, "labeled_pulls", forbidden)
+    assert MOG.main() == 1
+    assert any(
+        line.startswith("::error") and "Resource not accessible" in line
+        for line in capsys.readouterr().out.splitlines()
+    ), "GitHub's own message must reach the log, not a bare status code"
+
+
+# --- classifying the 403 -------------------------------------------------------
+#
+# For the whole outage the operator saw `pull-request listing failed: HTTP 403`,
+# which reads identically whether the quota is gone, a burst tripped a SECONDARY
+# limit, or the token lost a scope. `_request` discarded the body and the headers,
+# which are the only place that evidence ever arrives.
+
+
+def test_an_exhausted_primary_quota_is_recognised_from_the_headers():
+    refusal = MOG.rate_limit_refusal(
+        403,
+        {"message": "API rate limit exceeded for installation ID 1."},
+        {"X-RateLimit-Remaining": "0", "X-RateLimit-Limit": "1000"},
+    )
+    assert isinstance(refusal, MOG.RateLimited)
+    assert refusal.secondary is False
+    assert "0 of 1000 requests left" in str(refusal)
+
+
+def test_a_secondary_burst_limit_is_recognised_and_reports_its_retry_after():
+    """Named separately because the remedy differs: a secondary limit is about
+    request RATE, which a per-sweep cap alone would not fix."""
+    refusal = MOG.rate_limit_refusal(
+        403,
+        {"message": "You have exceeded a secondary rate limit."},
+        {"Retry-After": "60"},
+    )
+    assert isinstance(refusal, MOG.RateLimited)
+    assert refusal.secondary is True and refusal.retry_after == 60
+    assert "secondary (burst) rate limit" in str(refusal)
+
+
+def test_a_403_with_no_rate_limit_evidence_is_not_classified_as_one():
+    """Positive evidence only. A permissions 403 must stay a hard error."""
+    assert (
+        MOG.rate_limit_refusal(403, {"message": "Resource not accessible by integration"})
+        is None
+    )
+    assert MOG.rate_limit_refusal(403, None, {"x-ratelimit-remaining": "412"}) is None
+    assert MOG.rate_limit_refusal(404, {"message": "Not Found"}) is None
+
+
+def test_a_rate_limited_read_raises_RateLimited_not_a_bare_runtime_error():
+    """`_read_failed` is the single funnel, so the distinction holds everywhere."""
+    assert isinstance(
+        MOG._read_failed(
+            429, {"message": "You have exceeded a secondary rate limit."}, "x"
+        ),
+        MOG.RateLimited,
+    )
+    plain = MOG._read_failed(500, {"message": "Server Error"}, "check-run listing failed")
+    assert type(plain) is RuntimeError
+    assert str(plain) == "check-run listing failed: HTTP 500 (Server Error)"
+
+
+# --- the order: fair, and useful ----------------------------------------------
+
+
+def test_the_rotation_reaches_every_pull_request_so_none_can_be_starved():
+    """A cap without rotation is a permanent exclusion for the tail of the backlog.
+
+    This script keeps NO state between runs — that property is load-bearing for the
+    overlapping-sweep safety argument — so the wall clock is the cursor. The window
+    start advances by `cap` each bucket, which tiles the whole ring.
+    """
+    armed = [_pull(number) for number in range(1, 94)]  # the measured backlog
+    buckets = -(-len(armed) // MOG.MAX_PULLS_PER_SWEEP)  # ceil
+    reached: set[int] = set()
+    for bucket in range(buckets):
+        window = MOG.sweep_order(armed, now=bucket * MOG.ROTATION_BUCKET_SECONDS)
+        reached.update(pull["number"] for pull in window[: MOG.MAX_PULLS_PER_SWEEP])
+    assert reached == {pull["number"] for pull in armed}, (
+        f"{len(armed) - len(reached)} pull request(s) were starved across "
+        f"{buckets} rotations"
+    )
+
+
+def test_a_main_red_repair_pull_request_is_never_deferred_by_the_cap():
+    """The circuit breaker admits exactly ONE repair per sweep when main is red, so
+    a repair pushed outside the cap defers the whole repo with it."""
+    armed = [_pull(number) for number in range(1, 94)]
+    repair = _pull(500, labels=("merge-on-green", "main-red-repair"))
+    for bucket in range(12):
+        window = MOG.sweep_order(
+            armed + [repair], now=bucket * MOG.ROTATION_BUCKET_SECONDS
+        )
+        assert window[0]["number"] == 500, (
+            f"the repair fell to position {[p['number'] for p in window].index(500)}"
+        )
+
+
+def test_the_pull_request_the_trigger_woke_us_for_is_swept_first():
+    """`workflow_run` fires because some run went green; that run's own pull request
+    is the likeliest merge in the backlog. Putting it first is what stops the cap
+    from adding latency to the case the trigger exists to serve."""
+    armed = [_pull(number) for number in range(1, 94)]
+    hot = _pull(777)
+    hot["head"]["sha"] = "f" * 40
+    ordered = MOG.sweep_order(armed + [hot], trigger_head_sha="F" * 40, now=0)
+    assert ordered[0]["number"] == 777, "case-insensitively, and ahead of the rotation"
+
+
+def test_the_trigger_head_never_outranks_a_main_red_repair():
+    armed = [_pull(1)]
+    hot = _pull(777)
+    hot["head"]["sha"] = "f" * 40
+    repair = _pull(500, labels=("merge-on-green", "main-red-repair"))
+    ordered = MOG.sweep_order(armed + [hot, repair], trigger_head_sha="f" * 40, now=0)
+    assert [pull["number"] for pull in ordered[:2]] == [500, 777]
+
+
+def test_the_workflow_hands_the_sweeper_its_triggering_head():
+    step = _sweep_step(_workflow())
+    assert step["env"]["TRIGGER_HEAD_SHA"] == "${{ github.event.workflow_run.head_sha }}"
+
+
+def test_the_budget_floor_can_actually_fund_a_capped_sweep():
+    """A floor below what a capped pass costs would defer forever; a cap above what
+    the hourly bucket affords would starve the lane again.
+
+    The fixed overhead is ~12, NOT the ~6 this arithmetic originally used: since
+    #4854, `main_clean_check_names` walks main newest->oldest until it finds a commit
+    that published checks (measured 5 back, so ~7 calls) instead of reading the tip
+    once. So a capped pass costs ~12 + 25 = ~37, sustainable up to floor(1000/37) =
+    27 sweeps/hour. The worst hour ever observed was 28, which overshoots by ~4% —
+    absorbed by RATE_LIMIT_RESERVE, which stops the pass mid-sweep rather than
+    letting it 403. Compare the uncapped cost that caused the outage: ~121/sweep.
+    """
+    fixed = 12
+    worst_case = fixed + MOG.MAX_PULLS_PER_SWEEP * 5 + MOG.MAX_REFRESHES_PER_SWEEP
+    assert MOG.RATE_LIMIT_FLOOR >= worst_case * 0.9, (
+        f"floor {MOG.RATE_LIMIT_FLOOR} cannot fund a {MOG.MAX_PULLS_PER_SWEEP}-PR pass"
+    )
+    assert MOG.RATE_LIMIT_FLOOR < 1000, "a floor at the whole bucket never opens"
+    typical = fixed + MOG.MAX_PULLS_PER_SWEEP
+    assert typical * 27 <= 1000, (
+        f"{MOG.MAX_PULLS_PER_SWEEP} pull requests x 27 sweeps/hour costs "
+        f"{typical * 27} of a 1,000/hr budget"
+    )
+    assert typical * 3 < 121, "the cap must be a real reduction on the measured cost"
+    assert MOG.RATE_LIMIT_RESERVE < MOG.RATE_LIMIT_FLOOR
+
+
 # --- base-inherited reds: the thing that regenerated the backlog ---------------
 #
 # Every time main went red, every armed PR inherited the failure, and `sweep_pull`
@@ -1449,6 +1919,11 @@ def test_main_clean_check_names_walks_past_commits_that_published_no_checks(monk
     at all and the tip had none either, with the newest proved commit five back.
     Reading only the tip returned a set with no packs in it, which would have left
     the base-inherited-red refresh inert while looking like it worked.
+
+    The fake HONOURS `per_page`, which is what makes this test pin MAIN_PROOF_WALK
+    itself rather than only the loop around it. A stub that returns three commits no
+    matter what was asked for stays green with `per_page=1` — i.e. with the walk
+    degenerated back to a tip read, the exact regression this test is named for.
     """
     checks = {
         "b" * 40: {  # the proved commit, two back
@@ -1462,7 +1937,12 @@ def test_main_clean_check_names_walks_past_commits_that_published_no_checks(monk
 
     def fake(method, url, token, payload=None):
         if "/commits?" in url:
-            return 200, _commits("a" * 40, "c" * 40, "b" * 40)
+            asked = int(url.rsplit("per_page=", 1)[1].split("&")[0])
+            assert asked >= 3, (
+                f"the walk asked for {asked} commit(s); it must reach past the "
+                "check-less tip commits this repo pushes every few minutes"
+            )
+            return 200, _commits("a" * 40, "c" * 40, "b" * 40)[:asked]
         if "/check-runs" in url:
             sha = url.split("/commits/")[1].split("/")[0]
             page = int(url.rsplit("page=", 1)[1].split("&")[0])
@@ -1522,3 +2002,145 @@ def test_main_clean_check_names_ignores_the_spurious_check_and_pending_runs(monk
 
     monkeypatch.setattr(MOG, "_request", fake)
     assert MOG.main_clean_check_names("acme/widgets", "read") == {"ci-pack-0"}
+
+
+# --- the two halves interact: refreshes cost budget AND CI runs ---------------
+
+
+def test_the_refresh_budget_is_capped_because_each_one_launches_a_ci_run(
+    monkeypatch, capsys
+):
+    """Uncapped, the first sweep after the base-inherited-red fix shipped would have
+    queued 84 pack runs onto an already-saturated pool from a single sweep — and
+    spent 84 write calls out of a 1,000/hr bucket doing it."""
+    pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-3", conclusion="failure")]}}
+    calls = _fake_api(monkeypatch, check_pages=pages, update_status=202)
+    budget = MOG.SweepBudget("read", max_refreshes=2)
+
+    verdicts = [
+        MOG.sweep_pull(
+            "acme/widgets",
+            _pull(number),
+            "read",
+            "write",
+            _freshness(),
+            {"ci-pack-3"},
+            budget,
+        )
+        for number in (1, 2, 3, 4)
+    ]
+    assert verdicts == ["rebased", "rebased", "refresh-deferred", "refresh-deferred"]
+    assert len([c for c in calls if c[1].endswith("/update-branch")]) == 2
+    assert budget.refreshes_used == 2
+
+
+def test_the_DEFAULT_budget_caps_refreshes_at_the_constant(monkeypatch):
+    """The cap that actually ships is the DEFAULT one, and `main()` builds its budget
+    with no `max_refreshes` argument.
+
+    Pinned separately because every other test in this section passes an explicit
+    `max_refreshes=`, so raising the default to something absurd would leave all of
+    them green while the shipped sweeper refreshed the whole backlog in one pass —
+    which is the exact 84-CI-runs-from-one-sweep failure this cap exists to prevent.
+    """
+    assert MOG.SweepBudget("read").max_refreshes == MOG.MAX_REFRESHES_PER_SWEEP
+
+    pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-3", conclusion="failure")]}}
+    calls = _fake_api(monkeypatch, check_pages=pages, update_status=202)
+    budget = MOG.SweepBudget("read")
+    verdicts = [
+        MOG.sweep_pull(
+            "acme/widgets",
+            _pull(number),
+            "read",
+            "write",
+            _freshness(),
+            {"ci-pack-3"},
+            budget,
+        )
+        # deliberately more armed pull requests than the cap, as in the real backlog
+        for number in range(1, MOG.MAX_REFRESHES_PER_SWEEP + 6)
+    ]
+    refreshed = [c for c in calls if c[1].endswith("/update-branch")]
+    assert len(refreshed) == MOG.MAX_REFRESHES_PER_SWEEP, (
+        f"a default sweep launched {len(refreshed)} CI runs; the cap is "
+        f"{MOG.MAX_REFRESHES_PER_SWEEP}"
+    )
+    assert verdicts.count("refresh-deferred") == 5
+
+
+def test_a_refresh_deferred_pull_request_is_never_labeled_or_accused(
+    monkeypatch, capsys
+):
+    """It did nothing wrong — this sweep merely ran out of slots. `mark_blocked`'s
+    comment is one-shot, so a false accusation here is the one that sticks."""
+    pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-3", conclusion="failure")]}}
+    calls = _fake_api(monkeypatch, check_pages=pages, update_status=202)
+    verdict = MOG.sweep_pull(
+        "acme/widgets",
+        _pull(),
+        "read",
+        "write",
+        _freshness(),
+        {"ci-pack-3"},
+        MOG.SweepBudget("read", max_refreshes=0),
+    )
+    assert verdict == "refresh-deferred"
+    posts = [call for call in calls if call[0] == "POST"]
+    assert not [c for c in posts if c[1].endswith("/labels")]
+    assert not [c for c in posts if c[1].endswith("/comments")]
+    assert not [c for c in calls if c[1].endswith("/update-branch")]
+    assert any(
+        line.startswith("::notice") and "update-branch` slots" in line
+        for line in capsys.readouterr().out.splitlines()
+    ), "the deferral must be logged, never silent"
+
+
+def test_a_stale_proof_refresh_also_draws_on_the_capped_slots(monkeypatch, capsys):
+    """The clean-but-stale path calls `update-branch` too, and it is the same
+    saturated pool. A cap that bounded only one of the two callers would not bound
+    the CI runs at all."""
+    pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}}
+    calls = _fake_api(
+        monkeypatch,
+        check_pages=pages,
+        update_status=202,
+        # main took a source commit AFTER the proof, inside the PR's surface.
+        main_commits=(("2026-08-05T13:00:00Z", ["engine/signal_quality.py"]),),
+    )
+    verdict = MOG.sweep_pull(
+        "acme/widgets",
+        _pull(),
+        "read",
+        "write",
+        _freshness(commits=(("2026-08-05T13:00:00Z", ["engine/signal_quality.py"]),)),
+        set(),
+        MOG.SweepBudget("read", max_refreshes=0),
+    )
+    assert verdict == "refresh-deferred"
+    assert not [c for c in calls if c[1].endswith("/update-branch")]
+    assert not [c for c in calls if c[0] == "POST" and c[1].endswith("/labels")], (
+        "a stale proof with no slot left must not be blamed for a conflict"
+    )
+
+
+def test_the_refresh_cap_does_not_change_behaviour_when_no_budget_is_passed(
+    monkeypatch, capsys
+):
+    """`budget=None` must reproduce the pre-cap behaviour exactly, so every existing
+    caller and test keeps its meaning."""
+    pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-3", conclusion="failure")]}}
+    calls = _fake_api(monkeypatch, check_pages=pages, update_status=202)
+    for number in range(1, 30):
+        assert (
+            MOG.sweep_pull(
+                "acme/widgets",
+                _pull(number),
+                "read",
+                "write",
+                _freshness(),
+                {"ci-pack-3"},
+            )
+            == "rebased"
+        )
+    assert len([c for c in calls if c[1].endswith("/update-branch")]) == 29

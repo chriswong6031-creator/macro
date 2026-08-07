@@ -1,0 +1,77 @@
+{
+ "schema": "dead_name_prices_splice_quarantine.v1",
+ "generated_utc": "2026-08-06T06:03:55.623921+00:00",
+ "applied": true,
+ "splice_gap_days": 45,
+ "detector": "collectors.edgar_deadname_prices.split_identity_seam",
+ "n_registry_names_before": 419,
+ "n_registry_rows_before": 297048,
+ "n_names_spliced": 2,
+ "n_rows_quarantined": 224,
+ "n_registry_rows_after": 296824,
+ "findings": [
+  {
+   "ticker": "ALTM",
+   "tenure_start": "2024-01-02",
+   "n_rows_total": 453,
+   "n_quarantined": 161,
+   "n_retained": 292,
+   "foreign_span": [
+    "2021-07-06",
+    "2022-02-22"
+   ],
+   "foreign_close_range": [
+    60.96,
+    89.3
+   ],
+   "retained_span": [
+    "2024-01-04",
+    "2025-03-05"
+   ],
+   "retained_close_range": [
+    2.26,
+    7.11
+   ],
+   "seam_gap_days": 681
+  },
+  {
+   "ticker": "FI",
+   "tenure_start": "2023-06-07",
+   "n_rows_total": 673,
+   "n_quarantined": 63,
+   "n_retained": 610,
+   "foreign_span": [
+    "2021-07-06",
+    "2021-10-01"
+   ],
+   "foreign_close_range": [
+    15.24,
+    19.5
+   ],
+   "retained_span": [
+    "2023-06-07",
+    "2025-11-10"
+   ],
+   "retained_close_range": [
+    61.63,
+    237.79
+   ],
+   "seam_gap_days": 614
+  }
+ ],
+ "post_heal_overlap_checks": [
+  {
+   "ticker": "ALTM",
+   "n_overlap_with_live_store": 0,
+   "ret_corr_vs_live": null,
+   "verdict": "no_live_overlap"
+  },
+  {
+   "ticker": "FI",
+   "n_overlap_with_live_store": 610,
+   "ret_corr_vs_live": 1.0,
+   "verdict": "same_instrument"
+  }
+ ],
+ "not_contamination_note": "The reused-ticker tripwire's 126 `registry_mismatch` names are NOT healed here and are NOT contaminated: dead_universe() selects on a CLOSED S&P membership (an INDEX EXIT, not a death), so those names are still-listed companies whose registry rows are their own genuine prices, truncated at the fetch bound. Trimming them to a 'death date' would delete real market data. The universe-basis caveat is stamped on _dead_name_price_coverage instead."
+}

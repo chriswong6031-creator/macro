@@ -1,0 +1,657 @@
+{
+ "era": "cyc-abs-session-2026-08-06",
+ "generated": "2026-08-07T01:47Z",
+ "universes": {
+  "data/stocks (deep US)": {
+   "graded": 238,
+   "errors": 0,
+   "state_flips": 7,
+   "signal_date_rekeys": 6,
+   "tier_flips": 9,
+   "admission_flips": 6,
+   "score_moves": 7,
+   "asof": "2026-08-05",
+   "state_flip_examples": [
+    {
+     "name": "ANET",
+     "old": "TURN SIGNALED",
+     "new": "FRESH BUY"
+    },
+    {
+     "name": "CRWD",
+     "old": "TOP WATCH",
+     "new": "FRESH BUY"
+    },
+    {
+     "name": "EQR",
+     "old": "TURN SIGNALED",
+     "new": "TOP WATCH"
+    },
+    {
+     "name": "EQT",
+     "old": "COUNTERTREND BOUNCE",
+     "new": "TURN SIGNALED"
+    },
+    {
+     "name": "EXR",
+     "old": "FRESH BUY",
+     "new": "TURN SIGNALED"
+    },
+    {
+     "name": "JPM",
+     "old": "TOP WATCH",
+     "new": "TURN SIGNALED"
+    },
+    {
+     "name": "PPG",
+     "old": "TURN SIGNALED",
+     "new": "RALLY ON"
+    }
+   ],
+   "admission_flip_examples": [
+    {
+     "name": "AZO",
+     "old": "PRIME",
+     "new": "APPROACHING"
+    },
+    {
+     "name": "EQT",
+     "old": null,
+     "new": "PRIME"
+    },
+    {
+     "name": "EXR",
+     "old": "ARMED",
+     "new": "APPROACHING"
+    },
+    {
+     "name": "MCD",
+     "old": "PRIME",
+     "new": "APPROACHING"
+    },
+    {
+     "name": "MS",
+     "old": "ARMED",
+     "new": "APPROACHING"
+    },
+    {
+     "name": "PG",
+     "old": "ARMED",
+     "new": "APPROACHING"
+    }
+   ]
+  },
+  "data/baskets/ohlcv (2014-start US)": {
+   "graded": 2698,
+   "errors": 0,
+   "state_flips": 89,
+   "signal_date_rekeys": 109,
+   "tier_flips": 98,
+   "admission_flips": 50,
+   "score_moves": 89,
+   "asof": "2026-08-05",
+   "state_flip_examples": [
+    {
+     "name": "AIT",
+     "old": "TOP WATCH",
+     "new": "TURN SIGNALED"
+    },
+    {
+     "name": "ALK",
+     "old": "FRESH BUY",
+     "new": "TURN SIGNALED"
+    },
+    {
+     "name": "AMCX",
+     "old": "TURN SIGNALED",
+     "new": "FRESH BUY"
+    },
+    {
+     "name": "AME",
+     "old": "TOP WATCH",
+     "new": "FRESH BUY"
+    },
+    {
+     "name": "ANET",
+     "old": "TURN SIGNALED",
+     "new": "FRESH BUY"
+    },
+    {
+     "name": "APOG",
+     "old": "FRESH BUY",
+     "new": "TURN SIGNALED"
+    },
+    {
+     "name": "BKD",
+     "old": "TURN SIGNALED",
+     "new": "COUNTERTREND BOUNCE"
+    },
+    {
+     "name": "BLZE",
+     "old": "TOP WATCH",
+     "new": "TURN SIGNALED"
+    }
+   ],
+   "admission_flip_examples": [
+    {
+     "name": "ADNT",
+     "old": null,
+     "new": "PRIME"
+    },
+    {
+     "name": "AURA",
+     "old": "PRIME",
+     "new": null
+    },
+    {
+     "name": "AVNT",
+     "old": "ARMED",
+     "new": "APPROACHING"
+    },
+    {
+     "name": "AZO",
+     "old": "PRIME",
+     "new": "APPROACHING"
+    },
+    {
+     "name": "BLBD",
+     "old": "ARMED",
+     "new": "APPROACHING"
+    },
+    {
+     "name": "BMI",
+     "old": "APPROACHING",
+     "new": "ARMED"
+    },
+    {
+     "name": "CIX",
+     "old": "ARMED",
+     "new": null
+    },
+    {
+     "name": "CMT",
+     "old": "PRIME",
+     "new": "APPROACHING"
+    }
+   ]
+  },
+  "breadth _closes_cache (~345-bar rolling)": {
+   "graded": 500,
+   "errors": 0,
+   "state_flips": 6,
+   "signal_date_rekeys": 12,
+   "tier_flips": 27,
+   "admission_flips": 13,
+   "score_moves": 6,
+   "asof": "2026-07-31",
+   "state_flip_examples": [
+    {
+     "name": "F",
+     "old": "TURN SIGNALED",
+     "new": "COUNTERTREND BOUNCE"
+    },
+    {
+     "name": "GE",
+     "old": "COUNTERTREND BOUNCE",
+     "new": "TURN SIGNALED"
+    },
+    {
+     "name": "HST",
+     "old": "FRESH BUY",
+     "new": "TOP WATCH"
+    },
+    {
+     "name": "XOM",
+     "old": "TOP WATCH",
+     "new": "COUNTERTREND BOUNCE"
+    },
+    {
+     "name": "IEX",
+     "old": "TURN SIGNALED",
+     "new": "FRESH BUY"
+    },
+    {
+     "name": "NTAP",
+     "old": "TOP WATCH",
+     "new": "FRESH BUY"
+    }
+   ],
+   "admission_flip_examples": [
+    {
+     "name": "AZO",
+     "old": "PRIME",
+     "new": "APPROACHING"
+    },
+    {
+     "name": "DAL",
+     "old": "APPROACHING",
+     "new": "ARMED"
+    },
+    {
+     "name": "FANG",
+     "old": null,
+     "new": "PRIME"
+    },
+    {
+     "name": "EQT",
+     "old": null,
+     "new": "PRIME"
+    },
+    {
+     "name": "EXR",
+     "old": "APPROACHING",
+     "new": "ARMED"
+    },
+    {
+     "name": "F",
+     "old": "ARMED",
+     "new": null
+    },
+    {
+     "name": "GE",
+     "old": null,
+     "new": "ARMED"
+    },
+    {
+     "name": "ORLY",
+     "old": "PRIME",
+     "new": null
+    }
+   ]
+  },
+  "china_search closes (2021-start CN)": {
+   "graded": 1744,
+   "errors": 0,
+   "state_flips": 21,
+   "signal_date_rekeys": 28,
+   "tier_flips": 37,
+   "admission_flips": 31,
+   "score_moves": 21,
+   "asof": "2026-08-06",
+   "state_flip_examples": [
+    {
+     "name": "300750.SZ",
+     "old": "TURN SIGNALED",
+     "new": "COUNTERTREND BOUNCE"
+    },
+    {
+     "name": "601233.SS",
+     "old": "FRESH BUY",
+     "new": "TURN SIGNALED"
+    },
+    {
+     "name": "688336.SS",
+     "old": "TURN SIGNALED",
+     "new": "COUNTERTREND BOUNCE"
+    },
+    {
+     "name": "000933.SZ",
+     "old": "TURN SIGNALED",
+     "new": "FRESH BUY"
+    },
+    {
+     "name": "600219.SS",
+     "old": "COUNTERTREND BOUNCE",
+     "new": "TURN SIGNALED"
+    },
+    {
+     "name": "000921.SZ",
+     "old": "COUNTERTREND BOUNCE",
+     "new": "TURN SIGNALED"
+    },
+    {
+     "name": "600157.SS",
+     "old": "FRESH BUY",
+     "new": "TURN SIGNALED"
+    },
+    {
+     "name": "002779.SZ",
+     "old": "COUNTERTREND BOUNCE",
+     "new": "TURN SIGNALED"
+    }
+   ],
+   "admission_flip_examples": [
+    {
+     "name": "600919.SS",
+     "old": "APPROACHING",
+     "new": "ARMED"
+    },
+    {
+     "name": "601898.SS",
+     "old": null,
+     "new": "PRIME"
+    },
+    {
+     "name": "605117.SS",
+     "old": "PRIME",
+     "new": "APPROACHING"
+    },
+    {
+     "name": "600027.SS",
+     "old": null,
+     "new": "PRIME"
+    },
+    {
+     "name": "688336.SS",
+     "old": "PRIME",
+     "new": null
+    },
+    {
+     "name": "600219.SS",
+     "old": null,
+     "new": "PRIME"
+    },
+    {
+     "name": "601216.SS",
+     "old": "APPROACHING",
+     "new": "PRIME"
+    },
+    {
+     "name": "000921.SZ",
+     "old": null,
+     "new": "ARMED"
+    }
+   ]
+  },
+  "data/hk index store (HK)": {
+   "graded": 9,
+   "errors": 0,
+   "state_flips": 0,
+   "signal_date_rekeys": 0,
+   "tier_flips": 0,
+   "admission_flips": 0,
+   "score_moves": 0,
+   "asof": "2026-08-06",
+   "state_flip_examples": [],
+   "admission_flip_examples": []
+  },
+  "data/canada index store (CA)": {
+   "graded": 16,
+   "errors": 0,
+   "state_flips": 1,
+   "signal_date_rekeys": 1,
+   "tier_flips": 1,
+   "admission_flips": 1,
+   "score_moves": 1,
+   "asof": "2026-08-06",
+   "state_flip_examples": [
+    {
+     "name": "XIC.TO",
+     "old": "TURN SIGNALED",
+     "new": "TOP WATCH"
+    }
+   ],
+   "admission_flip_examples": [
+    {
+     "name": "XEG.TO",
+     "old": "APPROACHING",
+     "new": "PRIME"
+    }
+   ]
+  }
+ },
+ "cross_loader": {
+  "deep \u2229 data/baskets/ohlcv (2014-start US)": {
+   "shared": 237,
+   "lagging_pairs": 215,
+   "old": {
+    "state_disagreements": 7,
+    "tier_disagreements": 6,
+    "state_examples": [
+     "EQR",
+     "EQT",
+     "JPM",
+     "LYV",
+     "PANW",
+     "PG",
+     "TGT"
+    ]
+   },
+   "new": {
+    "state_disagreements": 1,
+    "tier_disagreements": 0,
+    "state_examples": [
+     "JPM"
+    ]
+   }
+  },
+  "deep \u2229 breadth _closes_cache (~345-bar rolling)": {
+   "shared": 235,
+   "lagging_pairs": 235,
+   "old": {
+    "state_disagreements": 8,
+    "tier_disagreements": 7,
+    "state_examples": [
+     "ANET",
+     "GS",
+     "HON",
+     "HWM",
+     "PGR",
+     "T",
+     "WMB",
+     "XOM"
+    ]
+   },
+   "new": {
+    "state_disagreements": 5,
+    "tier_disagreements": 2,
+    "state_examples": [
+     "GS",
+     "HON",
+     "HWM",
+     "T",
+     "WMB"
+    ]
+   }
+  }
+ },
+ "fixed_vs_slid": {
+  "names": 12,
+  "old": {
+   "agree": 2034,
+   "total": 2087,
+   "pct": 97.46
+  },
+  "new": {
+   "agree": 2087,
+   "total": 2087,
+   "pct": 100.0
+  }
+ },
+ "calibrate_drift": {
+  "BOTTOM WATCH": {
+   "n": [
+    1821,
+    1821
+   ],
+   "hit_pct": [
+    59.0,
+    59.0
+   ],
+   "avg_fwd_pct": [
+    1.85,
+    1.85
+   ],
+   "dd_med_pct": [
+    -2.76,
+    -2.76
+   ]
+  },
+  "BOTTOM WATCH +early-bull": {
+   "n": [
+    60,
+    60
+   ],
+   "hit_pct": [
+    63.3,
+    63.3
+   ],
+   "avg_fwd_pct": [
+    2.81,
+    2.81
+   ],
+   "dd_med_pct": [
+    -2.33,
+    -2.33
+   ]
+  },
+  "BOTTOM WATCH no-early": {
+   "n": [
+    1761,
+    1761
+   ],
+   "hit_pct": [
+    58.9,
+    58.9
+   ],
+   "avg_fwd_pct": [
+    1.82,
+    1.82
+   ],
+   "dd_med_pct": [
+    -2.78,
+    -2.78
+   ]
+  },
+  "COUNTERTREND BOUNCE": {
+   "n": [
+    6763,
+    6750
+   ],
+   "hit_pct": [
+    59.6,
+    59.5
+   ],
+   "avg_fwd_pct": [
+    1.83,
+    1.83
+   ],
+   "dd_med_pct": [
+    -2.95,
+    -2.95
+   ]
+  },
+  "DECLINE": {
+   "n": [
+    3340,
+    3340
+   ],
+   "hit_pct": [
+    63.1,
+    63.1
+   ],
+   "avg_fwd_pct": [
+    2.44,
+    2.44
+   ],
+   "dd_med_pct": [
+    -3.26,
+    -3.26
+   ]
+  },
+  "FRESH BUY": {
+   "n": [
+    1888,
+    1877
+   ],
+   "hit_pct": [
+    61.4,
+    61.2
+   ],
+   "avg_fwd_pct": [
+    1.59,
+    1.6
+   ],
+   "dd_med_pct": [
+    -2.63,
+    -2.69
+   ]
+  },
+  "RALLY ON": {
+   "n": [
+    1878,
+    1882
+   ],
+   "hit_pct": [
+    59.1,
+    59.1
+   ],
+   "avg_fwd_pct": [
+    1.88,
+    1.88
+   ],
+   "dd_med_pct": [
+    -2.53,
+    -2.53
+   ]
+  },
+  "ROLLING OVER": {
+   "n": [
+    131,
+    131
+   ],
+   "hit_pct": [
+    58.8,
+    58.8
+   ],
+   "avg_fwd_pct": [
+    1.84,
+    1.84
+   ],
+   "dd_med_pct": [
+    -2.31,
+    -2.31
+   ]
+  },
+  "TOP WATCH": {
+   "n": [
+    5549,
+    5569
+   ],
+   "hit_pct": [
+    57.3,
+    57.2
+   ],
+   "avg_fwd_pct": [
+    1.13,
+    1.13
+   ],
+   "dd_med_pct": [
+    -2.79,
+    -2.79
+   ]
+  },
+  "TURN SIGNALED": {
+   "n": [
+    7724,
+    7724
+   ],
+   "hit_pct": [
+    58.3,
+    58.6
+   ],
+   "avg_fwd_pct": [
+    1.51,
+    1.5
+   ],
+   "dd_med_pct": [
+    -2.88,
+    -2.87
+   ]
+  }
+ },
+ "ladder_cutover": {
+  "seed": "real_store_copy",
+  "log_rows_before": 27257,
+  "candidate_rows": 238,
+  "appended_with_guard": 6,
+  "appended_without_guard": 11,
+  "phantom_rows_prevented": 5,
+  "exact_duplicates": 227
+ },
+ "invariance": {
+  "names": 238,
+  "movers": 0,
+  "mover_names": []
+ }
+}

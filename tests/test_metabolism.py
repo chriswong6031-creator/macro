@@ -1114,6 +1114,150 @@ class TestMinNFloor:
 
 
 # ============================================================
+# H-pre. OUTCOME BASIS — unsigned-MFE rows must never score a hypothesis
+# ============================================================
+
+def _write_spine_index_mixed_basis(root: Path) -> None:
+    """Spine index with 10 unsigned track_record rows + 4 signed spine rows.
+
+    Written WITHOUT an outcome_basis column on purpose: the evaluator must
+    backfill it from the ledger (the committed production parquet predates the
+    column, so this is the real-world shape, not a contrived one).
+
+    The two populations disagree by construction.  Unsigned rows are all
+    positive (an MFE cannot be negative — that is the whole trap); the signed
+    rows are 1 win / 3 losses.  Pre-fix the evaluator pools them and reads
+    hit_rate = 11/14 ≈ 0.79; post-fix it scores the 4 signed rows alone at 0.25.
+    """
+    import pandas as pd
+
+    rows = []
+    for i in range(10):
+        rows.append({
+            "signal_id": f"track_record:2026-07-0{i % 9 + 1}:TESTCO:21",
+            "engine": "track_record", "family": "track_record",
+            "ledger": "track_record", "as_of": f"2026-07-0{i % 9 + 1}",
+            "symbol": "TESTCO", "scope_type": "entity",
+            "universe": "us_track_record", "horizon": 21, "direction": 1,
+            "size_binding": False, "fill_basis": "next_bar", "score": 1.0,
+            # unsigned MFE proxy — never negative
+            "outcome_excess": 0.05 + i * 0.01,
+            "outcome_graded": True, "graded_at": "2026-07-20",
+        })
+    for i, excess in enumerate([0.04, -0.03, -0.05, -0.02]):
+        rows.append({
+            "signal_id": f"spine:2026-07-1{i}:TESTCO:21",
+            "engine": "radar", "family": "radar",
+            "ledger": "spine", "as_of": f"2026-07-1{i}",
+            "symbol": "TESTCO", "scope_type": "entity",
+            "universe": "us_1500", "horizon": 21, "direction": 1,
+            "size_binding": False, "fill_basis": "next_bar", "score": 1.0,
+            "outcome_excess": excess,   # genuinely signed
+            "outcome_graded": True, "graded_at": "2026-07-20",
+        })
+    df = pd.DataFrame(rows)
+    assert "outcome_basis" not in df.columns
+    df.to_parquet(root / "data" / "neuralweb" / "spine_index.parquet", index=False)
+
+
+def _mixed_basis_hypothesis(threshold: float = 0.6) -> dict:
+    """Registry row whose spine_query matches BOTH populations by subject."""
+    return {
+        "schema": "neuralweb.machine_registry.v1",
+        "id": "cortex-2026-07-04-unsigned-basis-cc9012",
+        "kind": "cortex_hypothesis",
+        "status": "registered",
+        "registered_at": "2026-06-01T00:00:00+00:00",
+        "registered_by": "cortex",
+        "fdr_family": "cortex",
+        "claim_shape": "lead_lag",
+        "hypothesis": "TESTCO outperforms after the trigger",
+        "spine_query": {"subject": "TESTCO"},
+        "pre_committed_gate": {
+            "metric": "hit_rate", "threshold": threshold,
+            "min_n": 1, "horizon_d": 21,
+        },
+        "horizon_d": 21,
+        "come_back": "2026-06-20",
+        "is_context_only": True,
+    }
+
+
+class TestOutcomeBasisFilter:
+    """A hypothesis must never be scored on unsigned max-favorable-excursion rows.
+
+    track_record / board_hk / board_ca / board_cn fill outcome_excess from
+    fwd_mfe_<h>, which is non-negative by construction with direction pinned
+    to +1, so hit_rate over them measures "the name traded up at least once",
+    not the hypothesis.  cf. PR #4673 dst_outcome_unsigned_mfe_proxy.
+    """
+
+    def _run(self, threshold: float = 0.6) -> dict:
+        from scripts.evaluate_cortex_hypotheses import evaluate_due
+        from datetime import date as _date
+
+        root = _tmp_root()
+        _write_spine_index_mixed_basis(root)
+        reg_path = root / "data" / "neuralweb" / "machine_registry.jsonl"
+        with reg_path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(_mixed_basis_hypothesis(threshold)) + "\n")
+
+        summary = evaluate_due(root=str(root), dry_run=True, today=_date(2026, 8, 1))
+        results = summary["results"]
+        assert len(results) == 1, f"expected 1 result, got {results}"
+        return results[0]
+
+    def test_unsigned_rows_are_excluded_and_counted(self):
+        result = self._run()
+        detail = result.get("detail") or {}
+        assert detail.get("unsigned_excluded_rows") == 10, (
+            "the 10 unsigned track_record rows must be excluded and COUNTED "
+            f"(nulls printed, not hidden); detail={detail}"
+        )
+        assert detail.get("post_reg_n") == 4, (
+            f"only the 4 signed spine rows may be scored; detail={detail}"
+        )
+
+    def test_verdict_comes_from_signed_rows_only(self):
+        """The unsigned rows would flip the verdict — proving they were dropped."""
+        result = self._run(threshold=0.6)
+        detail = result.get("detail") or {}
+        # Signed-only: 1 win of 4 = 0.25, below the 0.6 gate.
+        # Pooled with the unsigned rows it would be 11/14 ≈ 0.79 and PASS.
+        assert detail.get("metric_value") == pytest.approx(0.25), (
+            f"metric must be computed on signed rows alone; detail={detail}"
+        )
+        assert result["verdict"] != "passed", (
+            "ATTACK SUCCEEDED — hypothesis passed on unsigned MFE rows whose "
+            "'hit rate' is ~1.0 by construction"
+        )
+
+    def test_all_signed_population_is_untouched(self):
+        """No unsigned rows → no exclusions, and the count key stays absent."""
+        import pandas as pd
+        from scripts.evaluate_cortex_hypotheses import evaluate_due
+        from datetime import date as _date
+
+        root = _tmp_root()
+        _write_spine_index_mixed_basis(root)
+        p = root / "data" / "neuralweb" / "spine_index.parquet"
+        df = pd.read_parquet(p)
+        df = df[df["ledger"] == "spine"].reset_index(drop=True)
+        df.to_parquet(p, index=False)
+
+        reg_path = root / "data" / "neuralweb" / "machine_registry.jsonl"
+        with reg_path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(_mixed_basis_hypothesis()) + "\n")
+
+        summary = evaluate_due(root=str(root), dry_run=True, today=_date(2026, 8, 1))
+        detail = summary["results"][0].get("detail") or {}
+        assert "unsigned_excluded_rows" not in detail, (
+            f"an all-signed population must not report exclusions; detail={detail}"
+        )
+        assert detail.get("post_reg_n") == 4
+
+
+# ============================================================
 # H. EXPERIMENTS REGISTRY INTEGRATION
 # ============================================================
 
