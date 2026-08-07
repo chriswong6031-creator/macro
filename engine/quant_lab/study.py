@@ -15,9 +15,10 @@ without them:
 
   survivorship  the close panel serves currently-listed names, so delisted losers are
                 absent and every read here is an OPTIMISTIC bound.
-  universe      the fundamentals panel is ~1,552 names. Fintel's QV is a small-cap
-                "multi-bagger" finder benchmarked to the Russell 2000; we are testing it
-                on the wrong end of the size distribution.
+  universe      this study ran on a 1,552-name fundamentals panel. Fintel's QV is a
+                small-cap "multi-bagger" finder benchmarked to the Russell 2000, so it was
+                tested on the wrong end of the size distribution. W2-A (#4688) has since
+                widened the panel past 2,800 names; re-running the study on it is open work.
   history       the in-tree close caches run ~3 years. That is a handful of independent
                 quarterly rebalances, not a regime sample.
 """
@@ -45,8 +46,12 @@ OPTIONS_HORIZON = 5
 STANDING_LIMITS = {
     "survivorship": ("Close panel serves currently-listed names only; delisted losers are "
                      "absent. Every number here is an optimistic bound."),
-    "universe": ("~1,552 fundamentals-covered names, concentrated above the size band this "
-                 "model targets. 6 of Fintel's 10 published QVM leaders are not in it."),
+    # Past tense on purpose: this describes the panel THIS STUDY RAN ON, which is frozen.
+    # W2-A (#4688) has since widened the panel past 2,800 names — a limit that silently
+    # re-read as a present-tense claim would be false the night the panel grew.
+    "universe": ("The study ran on a 1,552-name fundamentals panel, concentrated above the "
+                 "size band this model targets — 7 of Fintel's 10 published QVM leaders "
+                 "were outside it. The panel has since been widened; this is not a re-test."),
     "history": ("In-tree close caches run ~3 years — a handful of independent quarterly "
                 "rebalances, not a regime sample."),
     "tier": "Display-tier research. Nothing here promotes a score to rank/size/gate authority.",

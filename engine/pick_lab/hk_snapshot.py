@@ -117,9 +117,11 @@ _HK_OSC_D2 = [
     "d2_ob",
 ]
 
-# 3D MACD (3-business-day) — used by hklab_1d_blastoff
+# 3D MACD (3-session bars) — used by hklab_1d_blastoff
 _HK_OSC_D3 = [
     "d3_macd_xup_bars",     # bars since 3D MACD cross-up (null if no cross within 15)
+    "pl_anchor_era",        # session-anchor era of the d2 AND d3 buckets on this row
+                            # (signals_1d.ANCHOR_ERA); null = pre-era resample bins
 ]
 
 # Stale-cross diagnostic (spec §3 — the "based but didn't blast off" cohort)
@@ -325,6 +327,7 @@ def build_hk_core_rows(
             "d2_ob": osc.get("d2_ob"),
             # 3D MACD (for hklab_1d_blastoff)
             "d3_macd_xup_bars": osc.get("d3_macd_xup_bars"),
+            "pl_anchor_era": osc.get("pl_anchor_era"),
             # Stale-cross diagnostic
             "sessions_since_23d_cross": sessions_since_23d_cross_by.get(ticker),
             "ret_since_23d_cross": ret_since_23d_cross_by.get(ticker),

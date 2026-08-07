@@ -210,7 +210,7 @@ def _benchmark_card() -> dict | None:
     if df is None or "close" not in df.columns:
         return None
     close = df["close"].dropna()
-    a = analyze(close)
+    a = analyze(close, market="HK")
     return {"name": "Hang Seng Index", "ticker": mi,
             "mtf_json": json.dumps(a["mtf"]),
             "state": a["ladder"].get("state"), "label": a["ladder"].get("label"),

@@ -696,15 +696,24 @@ def test_the_same_item_posts_on_the_session_it_describes(monkeypatch, tmp_path):
 #: Each line below names a print with its number, so every copy gate passes and
 #: the ONLY thing left that can refuse them is the one property they share: four
 #: desks, four genuinely different sentences, one Friday breadth read.
+#:
+#: THE BREADTH READ LEADS EVERY LINE, and since ruling R1 (2026-08-06) that is
+#: load-bearing rather than incidental. The cooldown keys a post's LEAD fact —
+#: the first numeric claim in its first line — so a family that shares a read
+#: has to LEAD on the shared read to be one family. It is also the live shape:
+#: all five verbatim FAMILY_C items above open on "4 of 11 sectors", and the
+#: earlier ordering here (a different macro print in front of each) described a
+#: post nobody wrote. Four posts each leading on a DIFFERENT print are four
+#: different lead facts and are supposed to ship.
 FAMILY_C_ANCHORED: tuple[tuple[str, str], ...] = (
-    ("macro", "Jobless claims printed 214,000 and 4 of 11 sectors closed green. "
-              "I am not leaning on a tape this split."),
-    ("event", "Claims at 214,000 barely moved the board: only 4 of 11 sectors "
-              "managed green. I am watching, not deciding."),
-    ("macro", "GDPNow sits at 2.1% and 4 of 11 sectors finished higher. "
+    ("macro", "4 of 11 sectors closed green while jobless claims printed "
+              "214,000. I am not leaning on a tape this split."),
+    ("event", "Only 4 of 11 sectors managed green; claims at 214,000 barely "
+              "moved the board. I am watching, not deciding."),
+    ("macro", "4 of 11 sectors finished higher with GDPNow at 2.1%. "
               "Too split for me to size anything on."),
-    ("event", "Median CPI came in at 3.2%; 4 of 11 sectors closed green behind "
-              "it. I would rather wait for one side to win a day."),
+    ("event", "4 of 11 sectors closed green behind a 3.2% median CPI print. "
+              "I would rather wait for one side to win a day."),
 )
 
 
@@ -731,7 +740,62 @@ def test_publisher_lets_exactly_one_of_the_fanned_family_through(monkeypatch, tm
     assert len(posted) == 1, [(i, statuses[i]) for i in ids]
     assert len(held) == 3, [(i, statuses[i]) for i in ids]
     note = _ledger_note(tmp_path, held[0])
-    assert "fact fan-out" in note and "ratio:4of11:sector" in note, note
+    # THE OUTCOME IS THE CLAIM; the key NAMED in the receipt is not. These four
+    # lines share the breadth ratio AND (since the 2026-08-06 numeric-fact
+    # fingerprint) the "214,000 claims" print, so which anchor the receipt quotes
+    # is now decided by sorted-key order. Pinning one literal made this test
+    # report a regression for a gate that had got STRICTER; it pins the refusal
+    # class and the shared anchor instead.
+    assert "fact fan-out" in note, note
+    assert ("ratio:4of11:sector" in note or "macro:claims:214k" in note), note
+
+
+def test_the_fanout_receipt_names_the_keys_OWN_cooldown(monkeypatch, tmp_path):
+    """The quarantine note used to interpolate the module constant (5) whatever
+    family the key belonged to, so a macro key held for SEVEN days reported "in
+    the trailing 5 days" — an item refused on day six showed a reason its own
+    arithmetic contradicted, and the operator reads these receipts."""
+    from engine.marketing import outbox
+    _publish_cfg(tmp_path)
+    a = _bypass_queue(tmp_path, text=(
+        "Claims printed 214,000 this month while 4 of 11 sectors closed green. "
+        "I am not leaning on a tape this split."),
+        as_of="2026-08-03", kind="macro", now=MONDAY_RTH)
+    b = _bypass_queue(tmp_path, text=(
+        "214,000 jobless claims, and only 4 of 11 sectors managed green. "
+        "I would rather wait for one side to win a day."),
+        as_of="2026-08-03", kind="macro", account="kelly", now=MONDAY_RTH)
+    backend = _FakeBackend()
+    assert _run(monkeypatch, tmp_path, "2026-08-03T18:00:00Z", backend) == 0
+    statuses = outbox.current_statuses(tmp_path)
+    dead = [i for i in (a, b) if statuses[i] == "quarantined"]
+    assert len(dead) == 1, statuses
+    note = _ledger_note(tmp_path, dead[0])
+    assert "macro:claims:214k" in note, note
+    assert "trailing 7 days" in note, note
+
+
+def test_a_new_lead_fact_posts_beside_the_older_one_it_quotes(monkeypatch, tmp_path):
+    """RULING R1 at the exit. The second post's LEAD is a number nobody has
+    carried; it quotes the first post's print only to frame it. Reading the whole
+    body refused it, and on the live corpus that took macro to 0/6 and shipped
+    the new GDPNow print on no carrier at all."""
+    from engine.marketing import outbox
+    _publish_cfg(tmp_path)
+    a = _bypass_queue(tmp_path, text=(
+        "Claims printed 214,000 this month while 4 of 11 sectors closed green. "
+        "I am not leaning on a tape this split."),
+        as_of="2026-08-03", kind="macro", now=MONDAY_RTH)
+    b = _bypass_queue(tmp_path, text=(
+        "GDPNow just moved to a 5.9% annual rate.\n"
+        "Claims are still printing 214,000 a week.\n"
+        "That is a faster economy than I was positioned for."),
+        as_of="2026-08-03", kind="macro", account="kelly", now=MONDAY_RTH)
+    backend = _FakeBackend()
+    assert _run(monkeypatch, tmp_path, "2026-08-03T18:00:00Z", backend) == 0
+    statuses = outbox.current_statuses(tmp_path)
+    assert statuses[a] == "posted" and statuses[b] == "posted", (
+        statuses, _ledger_note(tmp_path, b))
 
 
 def test_the_fan_out_gate_leaves_unrelated_posts_alone(monkeypatch, tmp_path):
@@ -918,3 +982,173 @@ def test_a_held_sibling_does_not_stop_the_approved_post(monkeypatch, tmp_path):
     assert _run(monkeypatch, tmp_path, "2026-08-03T18:00:00Z", backend) == 0
     assert outbox.current_statuses(tmp_path)[fresh] == "posted", (
         _ledger_note(tmp_path, fresh))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Corrections C1/C2 at the exit: the publisher's per-item loop, end to end
+#
+# The round-2 review found the fan-out refusal pinned only through the OWNERS
+# MAP (m7) — a regression that broke `main()`'s `for _akey in _my_keys: ...
+# break` loop while leaving ownership intact stayed green. These drive the real
+# publisher and read the ledger note the operator reads.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: The genuinely NEW print and a second desk reaching for it the same night,
+#: after ob-2026-08-06-96202a0efb / -981729f9e1.
+NEW_PRINT_CARRIER = (
+    "Growth: 5.9% annual rate this quarter\n"
+    "Inflation: 2.1% annual rate\n"
+    "I kept waiting for the economy to cool. It has not obliged.")
+SECOND_CARRIER = (
+    "GDPNow has growth at 5.9%\n\n"
+    "The economy is firm and the board is narrow. I would rather see the rest "
+    "of it join before I size anything up.")
+
+
+#: A new lead in front of TWO already-owned prints, inside the voice law's
+#: three-number budget so the recital bound is the only gate that can refuse it.
+RECITAL_TWO_OWNED = (
+    "GDPNow has growth at 5.9%\n\n"
+    "Jobless claims printed 214,000 and median CPI is 3.2%. Same story as "
+    "last week.")
+
+
+def _seed_two_owned_facts(tmp_path) -> None:
+    """Two live siblings, each LEADING on one of the recital's supporting facts."""
+    for text in ("Jobless claims printed 214,000 this week.",
+                 "Median CPI is running 3.2% annual inflation."):
+        _bypass_queue(tmp_path, text=text, as_of="2026-08-03", kind="macro",
+                      now=MONDAY_RTH, account="flagship")
+
+
+def test_the_publisher_quarantines_the_second_carrier_of_one_lead_fact(
+        monkeypatch, tmp_path):
+    """ONE FACT, ONE POST — and exactly one, never zero.
+
+    MUTATION: in `scripts/marketing_publisher`, delete the `_anchor_hit =
+    (_owner, _akey)` / `break` pair so ownership still resolves but nothing is
+    refused. RED here (both carriers post). Restore IN PLACE — a `git checkout`
+    restores HEAD, not your fix.
+    """
+    from engine.marketing import outbox
+    _publish_cfg(tmp_path)
+    first = _bypass_queue(tmp_path, text=NEW_PRINT_CARRIER, as_of="2026-08-03",
+                          kind="macro", now=MONDAY_RTH)
+    second = _bypass_queue(tmp_path, text=SECOND_CARRIER, as_of="2026-08-03",
+                           kind="macro", now=MONDAY_RTH, account="kelly")
+    backend = _FakeBackend()
+    assert _run(monkeypatch, tmp_path, "2026-08-03T18:00:00Z", backend) == 0
+
+    statuses = outbox.current_statuses(tmp_path)
+    posted = [i for i in (first, second) if statuses.get(i) == "posted"]
+    assert len(posted) == 1, (statuses, _ledger_note(tmp_path, first),
+                              _ledger_note(tmp_path, second))
+    loser = second if posted == [first] else first
+    assert statuses[loser] == "quarantined", statuses
+    note = _ledger_note(tmp_path, loser)
+    assert "fact fan-out: macro:gdpnow:5.9pct is the LEAD fact of" in note, note
+
+
+def test_the_publisher_refuses_a_recital_behind_a_fresh_lead(
+        monkeypatch, tmp_path):
+    """CORRECTION C2, end to end. A lead that refreshes every session in front
+    of a paragraph of already-owned prints is a recital, not a post.
+
+    MUTATION: in `scripts/marketing_publisher`, delete the
+    `if len(_owned_ride) > _ride_max:` branch so every post claims and none is
+    refused for a recital. RED here. Restore IN PLACE.
+    """
+    from engine.marketing import outbox
+    _publish_cfg(tmp_path)
+    # Three live owners, one per supporting fact, each LEADING on its own print.
+    for text, acct in (
+            ("Jobless claims printed 214,000 this week.", "flagship"),
+            ("GDPNow has growth at 2.1% this quarter.", "kelly"),
+            ("Median CPI is running 3.2% annual inflation.", "flagship"),
+    ):
+        _bypass_queue(tmp_path, text=text, as_of="2026-08-03", kind="macro",
+                      now=MONDAY_RTH, account=acct)
+    recital = _bypass_queue(
+        tmp_path, account="kelly", kind="macro", as_of="2026-08-03",
+        now=MONDAY_RTH,
+        text=("4 of 11 sectors closed green\n\n"
+              "Jobless claims printed 214,000. GDPNow has growth at 2.1%. "
+              "Median CPI is 3.2%. Same story as last week."))
+    backend = _FakeBackend()
+    assert _run(monkeypatch, tmp_path, "2026-08-03T18:00:00Z", backend) == 0
+
+    statuses = outbox.current_statuses(tmp_path)
+    assert statuses[recital] == "quarantined", (
+        statuses, _ledger_note(tmp_path, recital))
+    note = _ledger_note(tmp_path, recital)
+    assert note.startswith("fact recital: 3 supporting facts"), note
+    assert "at most 1 may ride along with a new lead" in note, note
+
+
+def test_a_negative_bound_turns_the_recital_check_off(monkeypatch, tmp_path):
+    """THE DOCUMENTED OFF SWITCH, and it has to switch the right way.
+
+    `fact_ride_along_max: -1` means unbounded. A first cut wrote the publisher
+    branch as `len(_owned_ride) > _ride_max` with no `>= 0` guard, which is true
+    for EVERY post at -1 — the setting that disables the correction would have
+    quarantined the whole queue. MUTATION: drop the `_ride_max >= 0 and` guard
+    in `scripts/marketing_publisher`. RED here. Restore IN PLACE.
+
+    The copy carries THREE numbers rather than the five of the sibling test
+    above: with the recital bound off the next gate down the line is the voice
+    law's number budget, and a fixture that dies THERE would prove nothing about
+    this one. Paired with
+    test_two_owned_supporting_facts_are_refused_at_the_shipped_bound, which runs
+    the identical copy at the shipped bound — without that pair, "it posted"
+    would be indistinguishable from "the gate never looked at this fixture".
+    """
+    from engine.marketing import outbox
+    _publish_cfg(tmp_path)
+    cfg = tmp_path / "config" / "marketing.yml"
+    cfg.write_text(cfg.read_text(encoding="utf-8").replace(
+        "publish:\n", "publish:\n  fact_ride_along_max: -1\n"), encoding="utf-8")
+    _seed_two_owned_facts(tmp_path)
+    recital = _bypass_queue(
+        tmp_path, account="kelly", kind="macro", as_of="2026-08-03",
+        now=MONDAY_RTH, text=RECITAL_TWO_OWNED)
+    backend = _FakeBackend()
+    assert _run(monkeypatch, tmp_path, "2026-08-03T18:00:00Z", backend) == 0
+    assert outbox.current_statuses(tmp_path)[recital] == "posted", (
+        _ledger_note(tmp_path, recital))
+
+
+def test_two_owned_supporting_facts_are_refused_at_the_shipped_bound(
+        monkeypatch, tmp_path):
+    """The other half of the pair above: identical copy, shipped bound of 1."""
+    from engine.marketing import outbox
+    _publish_cfg(tmp_path)
+    _seed_two_owned_facts(tmp_path)
+    recital = _bypass_queue(
+        tmp_path, account="kelly", kind="macro", as_of="2026-08-03",
+        now=MONDAY_RTH, text=RECITAL_TWO_OWNED)
+    backend = _FakeBackend()
+    assert _run(monkeypatch, tmp_path, "2026-08-03T18:00:00Z", backend) == 0
+    assert outbox.current_statuses(tmp_path)[recital] == "quarantined", (
+        _ledger_note(tmp_path, recital))
+    assert _ledger_note(tmp_path, recital).startswith(
+        "fact recital: 2 supporting facts"), _ledger_note(tmp_path, recital)
+
+
+def test_one_owned_supporting_fact_still_ships(monkeypatch, tmp_path):
+    """THE OTHER DIRECTION, and it is the half that keeps C2 from being a mute
+    button. "GDPNow 5.9%, up from 5.0% last week" is what an analyst writes:
+    ONE owned number quoted to frame a new one. The bound is 1 for exactly this.
+    """
+    from engine.marketing import outbox
+    _publish_cfg(tmp_path)
+    _bypass_queue(tmp_path, text="GDPNow has growth at 2.1% this quarter.",
+                  as_of="2026-08-03", kind="macro", now=MONDAY_RTH)
+    framing = _bypass_queue(
+        tmp_path, account="kelly", kind="macro", as_of="2026-08-03",
+        now=MONDAY_RTH,
+        text=("GDPNow 5.9% this quarter\n\n"
+              "Up from 2.1% last week. The economy did not get the memo."))
+    backend = _FakeBackend()
+    assert _run(monkeypatch, tmp_path, "2026-08-03T18:00:00Z", backend) == 0
+    assert outbox.current_statuses(tmp_path)[framing] == "posted", (
+        _ledger_note(tmp_path, framing))

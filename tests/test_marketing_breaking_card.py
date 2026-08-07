@@ -97,9 +97,21 @@ def test_no_script_tag():
 # 4–8. Source chip — credibility signature (anti-laundering law)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def test_source_name_in_chip():
+def test_source_name_never_reaches_the_chip():
+    """REWRITTEN 2026-08-05 — it asserted the exact opposite, and was right then.
+
+    The old law printed "<publication> · <TIER>" because a real masthead was
+    held to be a second fact worth the reader's attention. Operator law
+    2026-08-05 reverses it: we are a markets desk, and another publication's
+    name in our own card art advertises them and claims a relationship with a
+    newsroom we do not have. Three live RADAR cards shipped "ZeroHedge",
+    "CNBC" and "ForexLive" before anyone noticed the chip had no way to say no.
+
+    The ADMISSION survives — see test_wire_tier_distinct — only the NAME goes.
+    """
     svg = render_breaking_card(_CPI, "Reuters", "wire", "2026-07-19T14:32:00Z")
-    assert "Reuters" in svg
+    assert "Reuters" not in svg
+    assert "WIRE SERVICE" in svg
 
 
 def test_tier_marker_distinguishable_official():
@@ -125,10 +137,14 @@ def test_official_vs_aggregator_differ():
     # by two words — they differ by one word plus the tier CLASS, which is the
     # assertion that was always carrying the anti-laundering property anyway.
     assert "OFFICIAL SOURCE" in off
-    assert "AGGREGATOR" not in agg
-    # ...and the aggregator chip still names its source, so dropping the badge
-    # cost the reader nothing they were relying on.
-    assert "SomeBlog" in agg
+    assert "AGGREGATOR" not in agg.replace("bc-tier-aggregator", "")
+    # ...and the aggregator chip carries NO name and NO invented caption
+    # (operator law 2026-08-05, never brand the source). This assertion used to
+    # read `assert "SomeBlog" in agg`, then briefly `"RELAYED REPORT" in agg` —
+    # a positive claim printed for a tier that is also where every UNKNOWN
+    # source routes, including primary artefacts.
+    assert "SomeBlog" not in agg
+    assert "RELAYED" not in agg.upper()
     # Different tier classes.
     assert "bc-tier-official" in off
     assert "bc-tier-aggregator" in agg
@@ -472,18 +488,29 @@ def test_no_card_prints_the_word_aggregator(tier):
         f"tier {tier!r} still prints the AGGREGATOR badge word")
 
 
-def test_the_badge_word_removal_did_not_cost_the_source_name(tier=None):
-    """Dropping the badge must not drop the attribution with it.
+def test_the_badge_word_removal_did_not_cost_the_attribution(tier=None):
+    """Dropping the badge must not leave the card's closing seal blank.
 
-    The source NAME is the provenance the reader actually needs (and the thing
-    the wire-attribution gates exist to keep honest); the tier word was our own
-    internal grade. Losing the name here would be a real regression wearing the
-    same diff.
+    REWRITTEN TWICE. It first asserted the source NAME survived, on the
+    reasoning that the name is the provenance a reader needs and the tier word
+    was our own internal grade. The name is now forbidden too (never brand the
+    source, operator 2026-08-05). The second pass filled the gap with an
+    invented "RELAYED REPORT" caption, which is a positive CLAIM about a tier
+    that also receives every unknown source — a company's own transcript, a
+    direct quote — and was therefore false on exactly the cards it printed on.
+
+    THE SEAL IS THE ATTRIBUTION NOW. The chip degrades to the tier-inked dot
+    with the `bc-tier-*` class still on it, so the closing mark is present and
+    the trust weight still reads, while nothing is claimed in words. That is
+    what this test pins: not blank, not branded, not asserting.
     """
     svg = render_breaking_card(
         _CPI, "Some Obscure Blog", "aggregator", "2026-07-19T14:32:00Z")
-    assert "Some Obscure Blog" in svg
-    assert "bc-tier-aggregator" in svg
+    assert "Some Obscure Blog" not in svg
+    assert "RELAYED" not in svg.upper()
+    # The seal survives as a DRAWN MARK, not just a class on nothing.
+    assert re.search(r'<circle[^>]*class="bc-tier bc-tier-aggregator"', svg), \
+        "the label-less tier lost its seal entirely"
 
 
 def test_a_labelless_tier_leaves_no_dangling_separator():
