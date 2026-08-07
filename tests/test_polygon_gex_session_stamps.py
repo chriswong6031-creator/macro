@@ -39,6 +39,7 @@ sys.path.insert(0, str(ROOT))
 from lib import config, nyse_calendar  # noqa: E402
 
 import scripts.build_polygon_gex as bpg  # noqa: E402
+import scripts.complete_polygon_gex_session_stamps as comp  # noqa: E402
 import scripts.migrate_polygon_gex_session_stamps as mig  # noqa: E402
 
 
@@ -254,21 +255,36 @@ class TestTheMigratedStore:
         assert not bad, f"asof column disagrees with the filename: {bad}"
 
     def test_the_store_spans_the_adjudicated_window(self):
-        """24 CLEAN survivors, 2026-06-15..2026-07-30 (the 2026-08-06 adjudication).
+        """24 CLEAN survivors 2026-06-15..2026-07-30, plus the one session re-adjudicated
+        afterwards by ``complete_polygon_gex_session_stamps`` (2026-08-06).
 
         Session 2026-08-05 is deliberately ABSENT: its only coverage was the 08-06 file,
         accrued 09:57Z = 05:57 ET pre-open during the emergency morning run, whose spot
         column is a live pre-market tape (median error 0.14%, 59% of names disagreeing
         with 08-05's closes). Quarantined — an honest gap beats a fabricated row.
+
+        Session 2026-08-06 IS present, and the distinction matters: the run-date STAMP
+        "2026-08-06" is gone (that was the quarantined pre-market file), while the SESSION
+        08-06 is carried by the 08-07-stamped accrual, which landed 2026-08-07T04:06:20Z =
+        00:06 ET — after the 08-06 close — and matches that close exactly to the cent for
+        every one of its 283 checkable underlyings. The #4807 manifest was frozen ~4h
+        before that file existed, so it is a completion of the adjudication under its own
+        CLEAN rule, not an exception to it.
         """
         files = _chain_files()
         if not files:
             pytest.skip("polygon_gex chains absent on this runner")
         stems = [p.stem for p in files]
-        assert stems[0] == "2026-06-15" and stems[-1] == "2026-07-30", stems[:3] + stems[-3:]
+        assert stems[0] == "2026-06-15" and stems[-1] == "2026-08-06", stems[:3] + stems[-3:]
         assert "2026-08-05" not in stems, (
             "session 08-05 is quarantined — its only snapshot was a pre-market tape")
-        assert "2026-08-06" not in stems, "08-06 was a run date, never a stored session"
+        # Every stamp in the store is a SESSION; the run-date stamps that both migrations
+        # existed to remove must never reappear as filenames.
+        assert "2026-08-07" not in stems, (
+            "2026-08-07 is a run-date stamp — the 08-07 accrual describes session 08-06. "
+            "Its reappearance means the writer regressed to UTC run-date stamping")
+        assert not [s for s in stems
+                    if not nyse_calendar.is_session(date.fromisoformat(s))], stems
 
 
 class TestTheAdjudicationOutcomes:
@@ -509,15 +525,26 @@ def test_the_migrated_spots_match_the_cboe_sibling_on_the_SAME_session():
         f"sibling on their OWN session: {mismatched[:5]} — the store is shifted again")
 
 
-def test_the_committed_chains_files_are_the_24_the_adjudication_kept():
+def test_the_committed_chains_files_are_the_ones_the_adjudications_kept():
+    """The store is exactly the union of the two pinned rulings — nothing absorbed silently.
+
+    #4807 adjudicated the 42 run-date files that existed when its manifest was frozen and
+    refuses to widen itself past them ("re-adjudicate before migrating — do NOT widen this
+    script to absorb them"). ``complete_polygon_gex_session_stamps.PINNED_COMPLETION`` is
+    that re-adjudication for the one file that arrived afterwards, measured under the same
+    CLEAN rule. A chains file belonging to neither ruling is an un-adjudicated snapshot.
+    """
     files = sorted(p.stem for p in _chain_files())
     if not files:
         pytest.skip("polygon_gex chains absent on this runner")
-    expected = sorted(session for session, _cls, disp
-                      in mig.PINNED_ADJUDICATION.values() if disp == mig.KEEP)
+    expected = sorted(
+        [session for session, _cls, disp in mig.PINNED_ADJUDICATION.values()
+         if disp == mig.KEEP]
+        + [session for session, _cls, disp in comp.PINNED_COMPLETION.values()
+           if disp == mig.KEEP])
     assert files == expected, (
-        f"the store holds {len(files)} chains files; the adjudication kept "
-        f"{len(expected)}")
+        f"the store holds {len(files)} chains files; the two adjudications kept "
+        f"{len(expected)} — {sorted(set(files) ^ set(expected))} is ruled on by neither")
 
 
 def test_no_stray_files_shadow_the_chains_glob():
