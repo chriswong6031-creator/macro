@@ -742,6 +742,24 @@ on:
       # their globs; the test file needs an explicit path so a test-only re-pin still
       # re-runs the rot-sweep step that carries it.
       - "tests/test_stock_personality_w4_surfaces.py"
+      # Earnings & Company Event suite, Wave 1B: the canonical EDGAR filing key
+      # (cik, accession) and the Exhibit 99.1 release binding. Both readers and
+      # both new modules are named, plus the fixtures — tests/** is deliberately
+      # NOT a catch-all here, and BOTH EDGAR reader suites were measured
+      # strictly dark (named by zero `run:` steps, matched by no glob) before
+      # this block and the earnings-release-identity job were added together.
+      - "engine/earnings_release/**"
+      - "collectors/edgar_earnings_8k.py"
+      - "engine/marketing/edgar_earnings_wire.py"
+      - "tests/fixtures/earnings_release/**"
+      - "tests/test_edgar_filing_identity_join.py"
+      - "tests/test_earnings_release_binding.py"
+      - "tests/test_edgar_earnings_8k.py"
+      - "tests/test_marketing_edgar_earnings_wire.py"
+      # The release binding normalizes through the disclosure-diff source-text
+      # engine, so a change there must also start the Wave 1B pack; the glob
+      # below already covers it.
+      #
       # Filing Forensics v1: immutable SEC lineage kernel + display-only workbench.
       # Keep every contract, fixture, page, collector, and context test wired even
       # when a PR changes only its config/schema/test side.

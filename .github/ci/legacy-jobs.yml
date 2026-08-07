@@ -6016,3 +6016,37 @@ jobs:
         run: python3 scripts/check_zh_filing_term.py
       - name: zh-filing-term guard suite (allowlist narrowness + pending ratchet)
         run: python -m pytest tests/test_zh_filing_term.py -q
+
+  earnings-release-identity:
+    # Wave 1B of the Earnings & Company Event suite: the EDGAR identity join and
+    # the release binding.
+    #
+    # TWO OF THESE FOUR SUITES WERE STRICTLY DARK before this job existed —
+    # tests/test_edgar_earnings_8k.py and tests/test_marketing_edgar_earnings_wire.py
+    # were named by ZERO `run:` steps anywhere in this file and matched by no path
+    # glob in ci.yml, so 133 assertions about the two EDGAR readers could not fail
+    # a pull request. They guard the exact-token Item-2.02 match (the difference
+    # between 2.02 and 12.02), the store's dedup key, the basis check that stops a
+    # GAAP figure being posted against an adjusted estimate, and the provider's
+    # fail-soft-never-fail-silent annotations. They are wired here.
+    #
+    # `requests` is in the install line because collectors/edgar_earnings_8k.py
+    # imports it at module scope; without it the collector suite errors on import
+    # rather than running, which reads as a pack failure rather than a missing dep.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml requests
+      - name: EDGAR filing identity join + release binding (Wave 1B)
+        run: >-
+          python -m pytest
+          tests/test_edgar_filing_identity_join.py
+          tests/test_earnings_release_binding.py
+          tests/test_edgar_earnings_8k.py
+          tests/test_marketing_edgar_earnings_wire.py -q -rs
