@@ -1,0 +1,113 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "IRT-2026-06-30-watch",
+  "ticker": "IRT",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "IRT",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "IRT",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_break",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Real Estate",
+    "excess_spy": -0.03258880808019127,
+    "excess_sector": -0.0510306691489395,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "DEAD_MONEY",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "IRT underperformed SPY and ended DEAD_MONEY, with an idiosyncratic break recorded and no process fault. The clean-process failure calls for company and regime conditioning research rather than tighter gating.",
+    "root_cause": "IRT underperformed SPY and ended DEAD_MONEY, with an idiosyncratic break recorded and no process fault. The clean-process failure calls for company and regime conditioning research rather than tighter gating.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The company-break and Real Estate conditioning books missed or could not anticipate the weak outcome, while the process book remained clean.",
+    "engines_credit": "The process engine is not at fault; company-alpha, Real Estate rotation, and catalyst organs require attribution work.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "A company-specific break is the recorded primary cause of relative underperformance.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Without the idiosyncratic break, sector or macro conditions would need to explain the dead-money result.",
+        "evidence_refs": [
+          "outcome_cause=idio_break",
+          "excess_spy=-0.03258880808019127"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "sector",
+        "factor": "",
+        "mechanism": "Real Estate conditions may have amplified the break or prevented recovery.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Supportive Real Estate and apartment-industry breadth might have cushioned the company weakness.",
+        "evidence_refs": [
+          "sector=Real Estate"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "Persistent failure to regain relative momentum matured into DEAD_MONEY.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "A timely recovery in relative strength could have prevented the terminal state.",
+        "evidence_refs": [
+          "terminal_state=DEAD_MONEY",
+          "process_fault=clean"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Adverse rate-regime effects on Real Estate",
+      "Apartment-industry weakness",
+      "A failed breakout visible at entry",
+      "Post-entry company news"
+    ],
+    "missing_evidence": [
+      "Entry-date company thesis and breakout structure",
+      "Real Estate and apartment-peer relative returns",
+      "Rate-regime and credit-spread data",
+      "Dated company news and estimate revisions",
+      "Intraperiod price-volume path"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "reit_idio_break_regime",
+        "feature": "Company residual deterioration conditioned on Real Estate breadth and rate regime",
+        "measurement": "Interact timestamp-safe residual trend change with sector breadth and rate direction.",
+        "expected_direction": "Residual deterioration during unsupportive sector and rate conditions should associate with dead money.",
+        "falsifier": "The interaction does not improve separation of dead-money outcomes in held-out data.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T23:44:21+00:00"
+}
