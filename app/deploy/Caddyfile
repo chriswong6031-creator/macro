@@ -790,22 +790,30 @@ admin.mastermind-x.com {
 		reverse_proxy 127.0.0.1:8787 {
 			# {remote_host} is the verified TCP peer and header_up REPLACES any
 			# caller-supplied X-Admin-Client-IP, so this value cannot be spoofed.
-			# That half still holds. What does NOT hold is the claim this comment
-			# carried until 2026-08-07 — that admin.* is "grey-cloud /
-			# direct-to-origin (no CDN), so the TCP peer IS the real client". It is
-			# edge-proxied (see the block header), so for every visitor arriving
-			# through the edge the peer is an EDGE IP: a probe fired from a
-			# residential Mac landed here as 43.175.104.236.
+			# That half is deliberately UNCHANGED by the lockout fix below: it is what
+			# stops a brute-forcer rotating buckets, and every identity decision in the
+			# admin app is built on top of it.
 			#
-			# LIVE DEFECT, deliberately not fixed in this comment-only change:
-			# admin/auth.py keys its per-client login lockout (5 fails -> escalating
-			# lock, 300s cap) on this value, so all edge-borne traffic now shares ONE
-			# bucket. That inverts the property auth.py documents — "one attacker can
-			# only lock out *themselves*" — into an anonymous operator lockout. The
-			# X-Forwarded-For fallback collapses identically (Caddy appends the same
-			# peer). Recovering per-client identity means trusting EO-Client-IP only
-			# when the peer is inside the edge ranges, which is a real behaviour
-			# change with its own spoofing risk and belongs in its own PR.
+			# What does NOT hold is the claim this comment carried until 2026-08-07 —
+			# that admin.* is "grey-cloud / direct-to-origin (no CDN), so the TCP peer
+			# IS the real client". It is edge-proxied (see the block header), so for
+			# every visitor arriving through the edge the peer is an EDGE IP: a probe
+			# fired from a residential Mac landed here as 43.175.104.236.
+			#
+			# The live defect that followed — admin/auth.py keying its per-client login
+			# lockout on this value, so ALL edge-borne traffic shared ONE bucket and any
+			# anonymous client could lock the operator out of their own console — is
+			# FIXED IN THE APP, not here. admin/edge_trust.py resolves the visitor behind
+			# an ATTESTED edge peer and falls back to this peer otherwise, so nothing in
+			# this block had to change.
+			#
+			# READ THAT MODULE BEFORE ADDING A header_up HERE. Probing the live host
+			# through the edge on 2026-08-07 (headers captured off the :8787 loopback hop)
+			# found EO-Connecting-IP is the ONLY header the edge overwrites; EO-Client-IP,
+			# True-Client-IP, X-Real-IP and CF-Connecting-IP all arrived carrying the
+			# forged values a caller sent, and a clean edge request carries no
+			# EO-Client-IP at all. Forwarding any of those as identity would reopen the
+			# hole in the other direction — unlimited bucket rotation.
 			header_up X-Admin-Client-IP {remote_host}
 		}
 	}

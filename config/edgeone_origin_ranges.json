@@ -1,0 +1,37 @@
+{
+  "_what": "TencentEdgeOne origin-pull (回源) IP ranges — the addresses the CDN edge connects FROM when it fetches admin.mastermind-x.com and the rest of the estate from this origin. Consumed by admin/edge_trust.py to decide whether a request's verified TCP peer is the edge (and therefore whether EO-Connecting-IP may be believed) or a direct-to-origin caller (whose every forwarded header is a forgery).",
+
+  "_why_empty": "Because as of 2026-08-07 there is no authoritative list this infrastructure can obtain. Shipping a guess would be worse than shipping nothing: a range that is too narrow merely degrades to peer keying, but a range that is too broad lets anyone inside it forge EO-Connecting-IP and defeat the admin login lockout entirely. Prefer ADMIN_EDGE_SECRET (admin/edge_trust.py mechanism 1), which needs no list at all.",
+
+  "_sources": {
+    "public_endpoint": {
+      "url": "https://api.edgeone.ai/ips",
+      "status": "DEPRECATED — DO NOT INGEST",
+      "checked": "2026-08-07",
+      "observed_response": "HTTP 200, Server: TencentEdgeOne, 257 bytes: a two-line deprecation notice ('This interface stopped serving on 2026-07-31 and will be officially offline on 2026-08-31') followed by the literal payload '0.0.0.0/0' and '::/0'.",
+      "hazard": "It answers 200 with a DEFAULT ROUTE. A refresh job that trusts the status code and skips the '#' comment lines will build a trust-everything allowlist. admin/edge_trust.py::_safe_network refuses blanket/private/non-routable entries unconditionally so this cannot land here, but any OTHER consumer (a ufw builder, a Caddy trusted_proxies generator) must make the same refusal itself.",
+      "note": "Tencent also documents this endpoint as mutually exclusive with the per-zone Origin Protection feature, so even before deprecation it was the coarse global list, not this zone's ACL."
+    },
+    "successor_api": {
+      "action": "DescribeOriginACL",
+      "service": "teo.tencentcloudapi.com",
+      "version": "2022-09-01",
+      "replaces": "DescribeOriginProtection (deprecated 2025-06-27)",
+      "payload_field": "CurrentOriginACL.EntireAddresses (live) / NextOriginACL.EntireAddresses (pending rotation; non-null means a change is queued)",
+      "credentials": "REQUIRED — Tencent Cloud SecretId/SecretKey, TC3-HMAC-SHA256. This infrastructure holds none: no TENCENT/EDGEONE/QCLOUD key exists in any /etc/macro-*.env on 146.190.142.17 and tccli is not installed (both verified 2026-08-07).",
+      "rotation": "Tencent documents ~3-6 month rotation with T-14/T-7/T-3/T-1 notifications and a 14-day confirmation window; their guidance is to poll every 3 days for a non-null NextOriginACL."
+    },
+    "whois_is_not_a_source": "The observed peers resolve to AS139341 (ACEVILLE PTE. LTD., listed in PeeringDB as 'Tencent Global CDN Platform - EdgeONE'), inside APNIC blocks such as 43.175.104.0/24. A WHOIS allocation proves who owns an address block, NOT that the block is used for origin-pull or that it holds nothing else. Those /16s also carry rentable Tencent Cloud instances, and none of the 378 observed peers has a PTR record to tell an edge node from a neighbour. Never derive this list from WHOIS."
+  },
+
+  "_observed_only_do_not_trust": {
+    "_what": "Reference evidence, NOT an allowlist. 5,179 origin-pull requests in Caddy's JSON access log over 14 days to 2026-08-07 came from 378 distinct addresses in 42 distinct /24s. Recorded so a future maintainer can sanity-check a real list against reality — an authoritative list that does not cover these is the wrong list.",
+    "distinct_addresses": 378,
+    "distinct_24s": 42,
+    "observed_16s": ["43.175.0.0/16", "43.174.0.0/16", "43.152.0.0/16", "101.33.0.0/16", "43.159.0.0/16", "43.132.0.0/16", "43.168.0.0/16", "43.146.0.0/16"]
+  },
+
+  "_how_to_populate": "Pull CurrentOriginACL.EntireAddresses from DescribeOriginACL with operator credentials and paste the CIDRs into 'ranges' below (or set ADMIN_EDGE_ORIGIN_CIDRS as a comma-separated list, which wins over this file). Entries broader than /16 (v4) or /32 (v6), and any private/loopback/link-local/multicast/reserved/unspecified block, are dropped by the loader — if a range you paste stops working, that floor is why. Re-check after every Tencent rotation notice.",
+
+  "ranges": []
+}
