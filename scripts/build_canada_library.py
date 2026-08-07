@@ -953,6 +953,7 @@ def main(alpha: dict | None = None) -> dict | None:
         to_write[ticker] = (safe, rec)           # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
         attach_latest_volume(idx, ticker, latest_volumes)
+        stock_technicals.attach_chg_1d(idx, rec.get("tech"))   # `c1` — mirrors tech.chg_1d
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]
         index.append(idx)
