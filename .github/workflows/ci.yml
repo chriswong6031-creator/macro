@@ -2742,6 +2742,11 @@ on:
       - "tests/test_gex_engine.py"
       - "tests/test_gex_model.py"
       - "tests/test_polygon_gex.py"
+      # polygon_gex session stamping (2026-08-06), same two-halves law: the subject
+      # modules ride the scripts/*.py catch-all, so these entries are the OTHER half —
+      # a suite-only or migration-only edit must still be able to START ci.yml.
+      - "tests/test_polygon_gex_session_stamps.py"
+      - "scripts/migrate_polygon_gex_session_stamps.py"
       # OIP E3 positioning persistence (2026-07-29), wired into unrun-market-plumbing.
       # engine/** already covers engine/positioning_persistence.py, engine/gex_state.py
       # and engine/market_gamma.py, and scripts/build_index_gex_history.py rides the

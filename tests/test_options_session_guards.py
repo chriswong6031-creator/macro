@@ -16,6 +16,16 @@ of a day that never traded.  Measured on the real stores, 2026-07-29:
      options_entry/state 0 of 3, market_structure/ledger 0 of 6;
      index_gex_history/SPY 1 of 2388, dated 2019-02-02)
 
+SUPERSEDED FOR THE TWO polygon_gex LINES (2026-08-06).  Those rows were not weekend
+recomputes of a session that had passed — they were the UTC RUN date, one session AHEAD
+of the closing chain each file actually held, so no reader filter could recover the right
+date.  ``scripts/migrate_polygon_gex_session_stamps.py`` re-stamped the store to the
+session each snapshot describes; it now holds 24 chains files and 8,062 summary rows with
+ZERO non-session stamps.  The guards below therefore split into two properties — the raw
+store is session-clean at the SOURCE, and the readers would still drop a planted
+non-session row — because "the reader drops something" is no longer a premise the real
+store can supply.
+
 Left in, one weekend row corrupts THREE things at once:
   1. ``.iloc[-1]`` — the "latest" reading can be a Saturday recompute;
   2. percentile / quantile windows — fabricated points inside the distribution a
@@ -394,14 +404,26 @@ class TestStampFunnelDropsWeekendRows:
         assert sdf is not None and len(sdf) >= 6
         idx = [pd.Timestamp(d).date() for d in sdf.index]
 
-        # (1) The premise: the raw store really does carry fabricated rows, so the
-        # filter under test is not decoration and (2) below cannot go vacuous.
-        raw = [pd.Timestamp(d).date() for d in pd.read_parquet(p).index]
+        # (1) The premise, INVERTED by the 2026-08-06 session-stamp migration. This used
+        # to assert the store still carried fabricated rows, because that was what kept
+        # (2) non-vacuous. The migration re-stamped every file and row to the session it
+        # describes and dropped the non-session ones, so the store is now clean BY
+        # CONTRACT — a fabricated row reappearing means the writer regressed to run-date
+        # stamping. Non-vacuity moves off the store and onto a direct probe: the same
+        # filter, handed a fabricated Saturday row, must still drop it.
+        raw_df = pd.read_parquet(p)
+        raw = [pd.Timestamp(d).date() for d in raw_df.index]
         fabricated = [d for d in raw if not nyse_calendar.is_session(d)]
-        assert fabricated, (
-            f"{p.name} carries NO non-session rows any more — good news, but the "
-            "premise these guards are written against is gone; update it before "
-            "trusting them")
+        assert not fabricated, (
+            f"{p.name} carries non-session rows {fabricated}. Since the 2026-08-06 "
+            "migration every polygon_gex stamp is the SESSION the snapshot describes; a "
+            "new non-session stamp means scripts/build_polygon_gex.py went back to "
+            "stamping the UTC run date")
+        probe = pd.concat([raw_df, raw_df.iloc[[-1]].set_axis(
+            pd.DatetimeIndex([pd.Timestamp(SAT)]), axis=0)])
+        assert len(nyse_calendar.session_rows(probe, label="probe")) == len(raw_df), (
+            "session_rows let a fabricated Saturday row through — the filter every "
+            "assertion below leans on is a no-op")
 
         # (2) The reader's contract on the REAL store: exactly the session rows,
         # in order, nothing else dropped. A neutralised filter fails here.
@@ -465,20 +487,48 @@ class TestLedgerPathReadersDropWeekendRows:
             assert not bad, f"summary_{sym} returned non-session rows {bad}"
         assert checked, "no summaries were actually checked"
 
-    def test_the_reader_actually_drops_something_on_the_real_store(self):
-        """Guard the guard: if the store stopped carrying weekend rows the assertion above
-        would pass vacuously."""
-        from engine.options_stamp import _default_read_summary
-        from lib import config
-        p = config.data_dir() / "polygon_gex" / "summary_AAPL.parquet"
-        if not p.exists():
+    def test_the_reader_still_drops_a_non_session_row(self, tmp_path, monkeypatch):
+        """Guard the guard: the assertion above would pass vacuously on a clean store.
+
+        It USED to prove non-vacuity from the real store, which carried weekend rows.
+        The 2026-08-06 session-stamp migration removed them, so the proof moves to a
+        planted row: a fabricated Saturday written into a stand-in store must not come
+        back out of ``_default_read_summary``. A neutralised filter fails here.
+        """
+        from engine import options_stamp as os_mod
+        real = config.data_dir() / "polygon_gex" / "summary_AAPL.parquet"
+        if not real.exists():
             pytest.skip("summary_AAPL absent")
-        raw = pd.read_parquet(p)
-        out = _default_read_summary("AAPL")
-        assert len(out) < len(raw), (
-            f"the reader dropped nothing ({len(raw)} -> {len(out)}); either the store is "
-            "clean now (update this test's premise) or the filter is a no-op"
-        )
+        raw = pd.read_parquet(real)
+        planted = pd.concat([raw, raw.iloc[[-1]].set_axis(
+            pd.DatetimeIndex([pd.Timestamp(SAT)]), axis=0)])
+        (tmp_path / "polygon_gex").mkdir(parents=True)
+        planted.to_parquet(tmp_path / "polygon_gex" / "summary_AAPL.parquet")
+        monkeypatch.setattr(os_mod.config, "data_dir", lambda: tmp_path)
+        out = os_mod._default_read_summary("AAPL")
+        assert len(out) == len(raw), (
+            f"the reader dropped nothing ({len(planted)} -> {len(out)}) — the session "
+            "filter is a no-op")
+        assert pd.Timestamp(SAT) not in out.index
+
+    def test_the_real_store_carries_no_non_session_rows(self):
+        """The migration's standing invariant, asserted where the readers live.
+
+        Before 2026-08-06 the polygon_gex summaries were stamped with the UTC RUN date,
+        so ~26% of rows were weekends and every stamp sat one session ahead of the market
+        state it held. Both are gone; this fails the moment either comes back.
+        """
+        import glob
+        files = sorted(glob.glob(str(config.data_dir() / "polygon_gex"
+                                     / "summary_*.parquet")))
+        if not files:
+            pytest.skip("polygon_gex summaries absent")
+        bad = []
+        for f in files:
+            for d in pd.read_parquet(f).index:
+                if not nyse_calendar.is_session(pd.Timestamp(d).date()):
+                    bad.append((Path(f).name, str(pd.Timestamp(d).date())))
+        assert not bad, f"non-session summary rows are back: {bad[:10]}"
 
     def test_the_two_snapshot_loaders_return_only_sessions(self):
         from engine.options_stamp import (_default_read_skew_snapshots,
@@ -498,26 +548,55 @@ class TestScreenerGexSummaryDropsWeekendRows:
     output sets each row's `asof` and drives iv_rank's n_obs."""
 
     def test_load_gex_summary_returns_only_sessions(self):
+        """Two properties, split apart by the 2026-08-06 session-stamp migration.
+
+        This used to prove non-vacuity with ``assert dropped_any`` — the real store
+        carried weekend rows, so the lookup had to drop some. The migration removed them
+        at the SOURCE, so the honest statement of the contract is now stronger and comes
+        in two halves: the RAW store carries zero non-session rows (asserted here,
+        before any filtering), and the lookup would still drop one if it appeared
+        (asserted on a synthetic frame in the next test, non-vacuous by construction).
+        """
         import scripts.build_options_screener as bos
         from lib import config
         import glob
         files = sorted(glob.glob(str(config.data_dir() / "polygon_gex" / "summary_*.parquet")))
         if not files:
             pytest.skip("polygon_gex summaries absent")
-        dropped_any = False
+        checked = 0
         for f in files[:25]:
             sym = Path(f).stem.replace("summary_", "")
+            raw = pd.read_parquet(f)
+            dirty = [pd.Timestamp(d).date() for d in raw.index
+                     if not nyse_calendar.is_session(pd.Timestamp(d).date())]
+            assert not dirty, (
+                f"summary_{sym} carries non-session rows {dirty} at the SOURCE — the "
+                "writer regressed to UTC run-date stamping")
             out = bos._load_gex_summary(sym)
             if out is None or out.empty:
                 continue
+            checked += 1
             idx = pd.to_datetime(out.index)
             bad = [d.date() for d in idx if not nyse_calendar.is_session(d.date())]
             assert not bad, f"summary_{sym} lookup returned non-session rows {bad}"
-            if len(out) < len(pd.read_parquet(f)):
-                dropped_any = True
-        assert dropped_any, (
-            "the lookup dropped nothing across 25 names — vacuous pass; check the premise"
-        )
+        assert checked, "no summaries were actually checked"
+
+    def test_the_lookup_still_drops_a_planted_non_session_row(self, tmp_path, monkeypatch):
+        """The filter half, non-vacuous by construction: a planted Saturday must not
+        survive ``_load_gex_summary`` even though the real store no longer has one."""
+        import scripts.build_options_screener as bos
+        real = config.data_dir() / "polygon_gex" / "summary_AAPL.parquet"
+        if not real.exists():
+            pytest.skip("summary_AAPL absent")
+        raw = pd.read_parquet(real)
+        planted = pd.concat([raw, raw.iloc[[-1]].set_axis(
+            pd.DatetimeIndex([pd.Timestamp(SAT)]), axis=0)])
+        planted.to_parquet(tmp_path / "summary_AAPL.parquet")
+        monkeypatch.setattr(bos, "GEX_DIR", tmp_path)
+        out = bos._load_gex_summary("AAPL")
+        assert len(out) == len(raw), (
+            f"the lookup dropped nothing ({len(planted)} -> {len(out)}) — it is a no-op")
+        assert pd.Timestamp(SAT) not in pd.to_datetime(out.index)
 
     def test_the_emitted_asof_is_always_a_session(self):
         """The #F3-17 shape verbatim: a Sunday stamped as a row's asof."""
@@ -603,6 +682,19 @@ class TestCboeCollectorSessionGate:
 
 
 class TestPolygonChainsSessionGate:
+    """The gate, and what 2026-08-06 changed underneath it.
+
+    The gate was written against `asof = datetime.now(timezone.utc).date()` — the RUN
+    date — and in that world it fired constantly, including on every Saturday/Sunday UTC.
+    But a run at 01:24 UTC Saturday is a FRIDAY-EVENING ET accrual holding Friday's
+    closing chain, so the gate was rejecting real sessions: 2026-07-31 was permanently
+    lost that way (runs fired on 08-01 and 08-02, both refused before the fetch, and
+    polygon OI cannot be backfilled). `asof` is now the SESSION the snapshot describes
+    (`_resolve_session` -> `expected_last_session`), so on the datetime path the gate is
+    always true and never fires — THAT is what restores the Fridays. It still guards the
+    explicit `--date` path, where a caller can name a day the market never opened.
+    """
+
     def test_a_non_session_asof_writes_nothing(self, monkeypatch, tmp_path):
         import scripts.build_polygon_gex as bpg
 
@@ -638,10 +730,96 @@ class TestPolygonChainsSessionGate:
         assert 'print(f"::notice title=polygon-session-gate::' in block
         assert "flush=True" in block
 
+    def test_the_stamp_is_the_session_not_the_utc_run_date(self):
+        """The 2026-08-06 contract, pinned against the AST so a revert is loud.
+
+        A reversion to `datetime.now(timezone.utc).date()` — or to `session_date()`, which
+        calls the whole ET calendar day "the session" and so returns Wednesday for a
+        02:24 ET Wednesday snapshot carrying Tuesday's close — puts the store back one
+        session ahead of the market and re-arms the Friday refusal.
+
+        THIS SCANS CODE, NOT TEXT, and that is load-bearing. The module's docstring names
+        BOTH defects on purpose (it is what stops the next reader from "simplifying"
+        `_resolve_session` back to a run-date stamp), so a `str in src` grep matches its
+        own explanation and either goes permanently red or forces the documentation out.
+        Walking `ast.Call` nodes sees calls only: docstrings are `Constant` expressions
+        and comments are not in the tree at all. It also survives reformatting.
+
+        VERIFIED BY MUTATION (2026-08-06) — every assertion below was watched to fail,
+        not assumed. Four mutations, each applied to the real module and then reverted:
+        (1) `_resolve_session` reverted to `return datetime.now(timezone.utc).date()` and
+        (2) `expected_last_session` swapped for `session_date` both go red on the helper
+        assertion; (3) the isinstance branches reordered goes red on the order assertion;
+        (4) a stray `datetime.now(timezone.utc).date()` added elsewhere in the module with
+        `_resolve_session` left intact goes red on the stray-call assertion — the case a
+        function-scoped check alone would miss.
+        """
+        import ast
+        src = (ROOT / "scripts" / "build_polygon_gex.py").read_text()
+        tree = ast.parse(src)
+
+        def _called(node) -> set[str]:
+            return {ast.unparse(c.func) for c in ast.walk(node)
+                    if isinstance(c, ast.Call)}
+
+        fn = next((n for n in ast.walk(tree)
+                   if isinstance(n, ast.FunctionDef) and n.name == "_resolve_session"),
+                  None)
+        assert fn is not None, (
+            "the accrual must resolve a SESSION from the accrual instant, not stamp the "
+            "run date")
+
+        assert "nyse_calendar.expected_last_session" in _called(fn), (
+            "a datetime is an accrual INSTANT — the session it describes is "
+            "expected_last_session(instant), not its calendar date")
+        stray = {c for c in _called(tree)
+                 if c.endswith("session_date") or c == "datetime.now(timezone.utc).date"}
+        assert not stray, (
+            f"{sorted(stray)} is called in build_polygon_gex. Stamping the UTC run date "
+            "is the defect this replaced, and session_date() returns the ET calendar day "
+            "— one session ahead for any post-midnight-UTC accrual. The only correct "
+            "helper here is expected_last_session.")
+
+        # datetime subclasses date: the wrong order silently takes every accrual INSTANT
+        # as an explicit session, which is the defect wearing the fix's name.
+        order = sorted((c.lineno, ast.unparse(c.args[1])) for c in ast.walk(fn)
+                       if isinstance(c, ast.Call) and ast.unparse(c.func) == "isinstance")
+        assert [t for _ln, t in order] == ["datetime", "date"], (
+            f"isinstance checks run in the order {[t for _ln, t in order]}; datetime is a "
+            "subclass of date, so the datetime branch must come first")
+
+    def test_an_already_stored_session_is_not_overwritten(self):
+        """FIRST WRITER WINS. Session stamping makes Friday-evening, Saturday, Sunday and
+        Monday-pre-open runs all resolve to Friday; without this guard each would
+        overwrite Friday's file with a staler and eventually PRE-MARKET snapshot —
+        manufacturing exactly the mixed-tape rows the 2026-08-06 migration quarantined.
+        """
+        src = (ROOT / "scripts" / "build_polygon_gex.py").read_text()
+        assert '"status": "already_present"' in src, (
+            "a repeat run for a stored session must report its own status, not re-write")
+        block = src.split('"status": "already_present"', 1)[0]
+        assert "if path.exists() and not force:" in block
+        # ahead of the fetch, so a repeat run spends no API quota either
+        assert src.index("if path.exists() and not force:") < src.index(
+            "client.snapshot(symbols, asof)")
+        assert 'print(f"::notice title=polygon-session-present::' in src
+        assert "--force" in src, "the guard needs a documented override"
+
 
 def test_the_writers_do_not_rewrite_history():
-    """The gates are forward-only by design: no backfill, no delete, no rewrite. Readers
-    filter the historical rows, so touching them would be churn with a migration risk."""
+    """The WRITERS are forward-only by design: no backfill, no delete, no rewrite.
+
+    RULING 2026-08-06 — this law now has one named exception, and it is deliberately not
+    here. The historical polygon_gex stamps were not merely non-session: they were the
+    UTC RUN date, one session AHEAD of the market state each file held, and no reader can
+    filter its way out of a wrong stamp. That history was rewritten exactly ONCE, under
+    cross-section verification against an independent price store and against a pinned
+    adjudication, by the dedicated audited script
+    ``scripts/migrate_polygon_gex_session_stamps.py`` (manifest:
+    ``docs/polygon_gex_session_stamp_migration.json``; precedent: #4207's repair of the
+    dated GEX archive). The accrual writers below stay forward-only, and this test is
+    what keeps them that way.
+    """
     for rel in ("collectors/cboe.py", "scripts/build_polygon_gex.py"):
         src = (ROOT / rel).read_text()
         for banned in ("unlink(", "shutil.rmtree", "drop_duplicates(subset=[\"date\"], keep=\"first\")"):
