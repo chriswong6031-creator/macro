@@ -3183,6 +3183,25 @@ on:
       # needs an entry.
       # billing-offers
       - "tests/test_billing_offers.py"
+      # ── RED-on-arrival sweep, batch D: the P4/P5 re-drain (2026-08-06) ──────
+      # A fresh census re-ran all 959 currently-unrun suites one process each. 951
+      # pass; 8 are genuinely red on main, and these three are the cheap unclaimed
+      # ones. Every subject rides a catch-all above — engine/** for levels_engine
+      # and cycle_pattern, research/DO_NOT_REBUILD.md + scripts/*.py for the kill
+      # registry and its compiler — so only the test halves need entries, and
+      # tests/** is deliberately NOT broad.
+      #
+      # The registry pair is why the test half matters most here: the DNR guard's
+      # subject is a MARKDOWN FILE that agents append to, and an append is precisely
+      # the edit that must run it. That half was already listed (the compiled-registry
+      # cluster above); this adds the guard's own half so a fix to the GUARD is
+      # covered too — the "both halves on purpose" rule this list keeps re-learning.
+      # capability-broker
+      - "tests/test_dnr_registry_keys.py"
+      # unrun-market-plumbing
+      - "tests/test_levels_engine.py"
+      # unrun-neuralweb-cortex
+      - "tests/test_cycle_pattern_lake.py"
       # ── Stripe object bootstrap (tier rename, Phase 2) ──────────────────────
       # scripts/stripe_bootstrap.py reaches this workflow by NO other path, and
       # its renamed-product adoption is the step that decides whether a live
