@@ -2942,6 +2942,19 @@ on:
       - "scripts/stripe_bootstrap.py"
       - "tests/test_stripe_bootstrap_offers.py"
       - "tests/test_stripe_bootstrap_products.py"
+      # ── Government Revenue Wave 9G prospective grader (2026-08-06) ──────────
+      # Job: unrun-government-revenue-grader (.github/ci/legacy-jobs.yml, tail).
+      # Deliberately a separate block from the Government Revenue cluster near
+      # the top of this list: PR #4776 is concurrently editing that cluster, and
+      # a grader whose own tests cannot start CI is exactly the darkness that PR
+      # is fixing. engine/** already reaches the module itself; the test half and
+      # the PREREGISTRATION are named because tests/** and research/** are not
+      # catch-alls here. The prereg entry is load-bearing, not decorative — the
+      # suite reads that document and fails if the registered horizons, kill
+      # condition, or expiry drift from the code, so an edit to the registration
+      # must re-run the guard that binds it.
+      - "tests/test_government_revenue_candidate_grader.py"
+      - "research/GOVERNMENT_REVENUE_CANDIDATE_GRADER_PREREG.md"
   workflow_dispatch:
 
 permissions:
