@@ -77,8 +77,23 @@
     var host = document.getElementById('wri_conds');
     if (!host) return;
     var b = activeBook();
+    /* Scope to the SAME names the verdict above is about. The line sits inside the
+       verdict block, so counting a wider set (every name with a per-name read) would
+       print two different "names" totals one line apart — "Your 3 names move as about
+       4 bets" over "3 of 5 names in review or worse". Same book, same denominator. */
+    var hero = document.getElementById('wri_hero');
+    var st = hero && hero.__wri;
+    var held = null;
+    if (st && st.RR) {
+      var active = (st.RR.hasStress ? st.RR.stress : st.RR.calm);
+      if (active && active.ok && active.held) {
+        held = {};
+        active.held.forEach(function (t) { held[t] = 1; });
+      }
+    }
     var names = Object.keys(CARD_JSON).filter(function (t) {
       if (!CARD_JSON[t] || !isModeled(t)) return false;
+      if (held) return !!held[t];
       if (b === 'all') return true;
       return window.MB && window.MB.marketOf(t) === b;
     });

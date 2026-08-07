@@ -764,8 +764,10 @@
       </div>
     </details>
 
-    <!-- as-of footnote -->
-    <small id="pf_foot" class="muted">{{ t('Prices are the last nightly close (as of ', '价格为最近夜间收盘（截至 ') }}<span id="pf_asof">—</span>{{ t('). Holdings are stored privately in your account.', '）。持仓仅保存在你的账户中。') }}</small>
+    <!-- as-of footnote. The privacy clause is filled by portfolio.js: a signed-out
+         visitor's book lives in this browser, NOT in an account — saying otherwise
+         would be false for the anonymous local book. -->
+    <small id="pf_foot" class="muted">{{ t('Prices are the last nightly close (as of ', '价格为最近夜间收盘（截至 ') }}<span id="pf_asof">—</span>{{ t(').', '）。') }} <span id="pf_priv"></span></small>
   </div>
 
   <!-- Portfolio factor exposure — your book's hidden bet (factor_exposure.js fills

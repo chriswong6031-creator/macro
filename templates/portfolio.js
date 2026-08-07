@@ -56,6 +56,8 @@
       book: 'book',
       signinKeep: 'Sign in to keep this book tracked across devices — free.',
       signIn: 'Sign in',
+      privLocal: 'Holdings stay in this browser until you sign in.',
+      privAccount: 'Holdings are stored privately in your account.',
       noEntryRead: 'No entry read tonight',
       notInLibrary: "This name isn't in tonight's library — value shown at cost.",
       dossier: 'Full dossier →',
@@ -89,11 +91,16 @@
       book: '账本',
       signinKeep: '登录即可跨设备保存并追踪——免费。',
       signIn: '登录',
+      privLocal: '持仓保存在本浏览器中，登录后同步。',
+      privAccount: '持仓仅保存在你的账户中。',
       noEntryRead: '今晚无入场读数',
       notInLibrary: '该名称不在今晚的库中——数值按成本显示。',
       dossier: '完整档案 →',
       terminal: '在终端查看图表 →',
-      lblStage: '阶段', lblExtension: '拉伸度'
+      // 偏离度, NOT 拉伸度: the existing Stretch lane already owns 拉伸度, and two
+      // drawer rows carrying the same zh label with different readings is unreadable.
+      // 偏离 is the house word for distance-from-a-norm (偏离200日均线 / 极端偏离).
+      lblStage: '阶段', lblExtension: '偏离度'
     }
   };
   function L(k) { return (T[lang()] || T.en)[k]; }
@@ -501,11 +508,21 @@
   }
 
   // ---- the signed-out "keep this book" line --------------------------------
+  function isLocalMode() {
+    return !!(window.WatchStore && window.WatchStore.portfolio &&
+      window.WatchStore.portfolio.isLocal && window.WatchStore.portfolio.isLocal());
+  }
   function renderLocalNote() {
+    // the footnote's privacy clause must match where the book ACTUALLY lives
+    var priv = el('pf_priv');
+    if (priv) {
+      priv.innerHTML = isLocalMode()
+        ? te(T.en.privLocal, T.zh.privLocal)
+        : te(T.en.privAccount, T.zh.privAccount);
+    }
     var host = el('pf_localnote');
     if (!host) return;
-    var isLocal = !!(window.WatchStore && window.WatchStore.portfolio &&
-      window.WatchStore.portfolio.isLocal && window.WatchStore.portfolio.isLocal());
+    var isLocal = isLocalMode();
     if (!isLocal || !rows || !rows.length) { host.style.display = 'none'; host.innerHTML = ''; return; }
     host.style.display = '';
     host.innerHTML = '<span class="muted">' + te(T.en.signinKeep, T.zh.signinKeep) + '</span> ' +
