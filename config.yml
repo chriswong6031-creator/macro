@@ -2597,6 +2597,36 @@ stock_search:
     - EQX    # Equinox Gold
     - EGO    # Eldorado Gold
     - BTG    # B2Gold
+    # ---- Precious-metals parity (W1-C, added 2026-08-07) -----------------------
+    # The gold sleeve above shipped 2026-07-30; the SILVER complex never did, so the
+    # whole silver/streaming/PGM side of the precious-metals trade was outside the
+    # graded population while it rallied 10-19% (2026-07-20..08-06). Membership in the
+    # S&P Composite 1500 was checked per name against data/universe/membership.parquet
+    # on 2026-08-07: HL, CDE, SSRM and RGLD already resolve through the index pipeline
+    # and are deliberately NOT duplicated here; every name below does not.
+    # Silver producers (silver_miners basket members, off-index)
+    - PAAS   # Pan American Silver
+    - AG     # First Majestic Silver
+    - FSM    # Fortuna Mining
+    - EXK    # Endeavour Silver
+    - SVM    # Silvercorp Metals
+    # Royalty / streaming (WPM is listed above; RGLD resolves through the S&P 1500)
+    - FNV    # Franco-Nevada
+    # Platinum-group metals (pgm_miners basket members). SBSW/PLG are US-exchange
+    # listed and SEC-registered; IMPUY (OTCQX) and ANGPY (Pink) are ADRs of JSE-listed
+    # producers — the same OTC-ADR shape obesity_glp1 already carries with RHHBY.
+    - SBSW   # Sibanye Stillwater (ADR, NYSE)
+    - PLG    # Platinum Group Metals (NYSE American)
+    - IMPUY  # Impala Platinum (ADR, OTCQX)
+    - ANGPY  # Valterra Platinum (ADR, Pink; renamed from Anglo American Platinum 2025)
+    # DELIBERATELY ABSENT: MAG (MAG Silver) and GATO (Gatos Silver). Both stopped
+    # trading long before the silver_miners basket was curated on 2026-08-05 — MAG
+    # 25-NSE 2025-09-04 + 15-12G 2025-09-17 (acquired by PAAS), GATO 25-NSE 2025-01-16
+    # + 15-12G 2025-01-27 (acquired by AG) — and both are absent from the SEC
+    # company_tickers directory. Listing a dead symbol here would request it nightly
+    # forever and park a permanent entry in the missing-symbol warning, which is the
+    # exact failure config/delisted_symbols.yml exists to prevent. Their disclosure
+    # lives on their membership rows (`removed` + receipts) instead.
     # Additional intel-hub off-desk discovery names found post-build
     - HPE    # Hewlett Packard Enterprise
     - ROST   # Ross Stores
@@ -2646,6 +2676,16 @@ stock_search:
     EQX:  {name: "Equinox Gold", sector: "Materials"}
     EGO:  {name: "Eldorado Gold", sector: "Materials"}
     BTG:  {name: "B2Gold", sector: "Materials"}
+    PAAS: {name: "Pan American Silver", sector: "Materials"}
+    AG:   {name: "First Majestic Silver", sector: "Materials"}
+    FSM:  {name: "Fortuna Mining", sector: "Materials"}
+    EXK:  {name: "Endeavour Silver", sector: "Materials"}
+    SVM:  {name: "Silvercorp Metals", sector: "Materials"}
+    FNV:  {name: "Franco-Nevada", sector: "Materials"}
+    SBSW: {name: "Sibanye Stillwater (ADR)", sector: "Materials"}
+    PLG:  {name: "Platinum Group Metals", sector: "Materials"}
+    IMPUY: {name: "Impala Platinum (ADR)", sector: "Materials"}
+    ANGPY: {name: "Valterra Platinum (ADR)", sector: "Materials"}
     TSM:  {name: "Taiwan Semiconductor (ADR)", sector: "Information Technology"}
     SE:   {name: "Sea Limited (ADR)", sector: "Communication Services"}
     NU:   {name: "Nu Holdings", sector: "Financials"}
