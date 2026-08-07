@@ -3570,17 +3570,29 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install pytest pyyaml
+        # numpy + pandas + pyarrow joined 2026-08-06. #4646 ("tag the theme's own
+        # ticker, and name the most-watched member") added nine theme-proxy tests
+        # to test_marketing_publish_time_content whose fixture builds correlated
+        # bars — `rng.normal` + `pd.DataFrame(...).to_parquet(...)` under the tree
+        # theme_proxy.cohesion reads — so this lane is NOT pandas-free any more.
+        # The pack runner gives each dependency group a CLEAN `python -m venv`, so
+        # the closure has to be complete or the red just moves: measured on main,
+        # `pytest pyyaml` → 9 red on numpy, +numpy → 9 red on pandas, +pandas → 23
+        # red because the 14 test_marketing_weekend_levels tests that used to
+        # importorskip now WAKE UP and want pyarrow, +pyarrow → 450 pass, 0 skip.
+        # Do not trim this back to numpy alone, and do not importorskip the nine —
+        # this pack is the only job that runs #4646's guard suite.
+        run: pip install pytest pyyaml numpy pandas pyarrow
       - name: social publisher + outbox + wiring-layer unit tests
         # test_marketing_live_verify is co-run: the post-time tape gate ships
-        # inside the publisher loop (pandas-free here — its earnings guard is
-        # fail-soft and the one pandas-dependent test importorskips).
+        # inside the publisher loop (its earnings guard is fail-soft).
         # test_marketing_metrics_poll: the per-post metrics poller + admin join +
-        # publisher media-attach gate — stdlib+pyyaml only (Buffer transport mocked).
+        # publisher media-attach gate (Buffer transport mocked).
         # test_marketing_weekend_levels joins (2026-07-27): it was named by NO
         # run step anywhere (unrun-suite rot) while its lane shipped the $AVGO
         # "POC held" post. Covers the cited-level chart contract + the floor
-        # copy's language bar; its one pandas test importorskips here.
+        # copy's language bar; its pandas tests used to importorskip here and now
+        # run for real on the deps above.
         # test_marketing_publish_time_read joins 2026-07-28 (XG-W1). It was named
         # by NO job — an unrun suite guarding the daily-read lane's account
         # eligibility. XG-W1 changed exactly that code path (per-call lanes now
@@ -3588,7 +3600,7 @@ jobs:
         # allowlist), and the suite went red locally on the first run: two of its
         # multi-account tests were asserting behaviour the fix deliberately
         # narrows. Unrun, that would have been a silent rot. Same deps as the
-        # rest of this lane (pytest + pyyaml), verified green.
+        # rest of this lane, verified green.
         run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py tests/test_marketing_publish_time_read.py tests/test_marketing_outbox_garbage.py tests/test_marketing_metrics_poll.py tests/test_marketing_weekend_levels.py -q
 
   marketing-media-pipeline:
