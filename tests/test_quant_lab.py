@@ -272,6 +272,74 @@ def test_universe_gap_records_the_finding_that_decides_integration():
     assert g["fintel_screened"] > g["our_fundamentals_universe"] * 10
 
 
+# ---------------------------------------------------------------------------
+# Coverage chips are CURRENT-STATE claims and must be read, not stamped. They were
+# hardcoded at 1,552 names / 4-of-10 leaders; W2-A (#4688) widened the panel past
+# 2,800, which would have left the shipped page asserting a filings coverage it no
+# longer has and naming CMT/KRT as uncovered when both are now in the panel.
+# ---------------------------------------------------------------------------
+
+def _panel(tmp_path, tickers):
+    d = tmp_path / "edgar"
+    d.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame({"ticker": list(tickers), "fy": [2025] * len(tickers)}).to_parquet(
+        d / "fundamentals_panel.parquet")
+
+
+def test_coverage_chips_follow_a_widened_panel(tmp_path, monkeypatch):
+    from engine.quant_lab import page as page_mod
+    # STRL/IESC/WSM were covered pre-W2-A; CMT/KRT are the two the copy called out
+    # as having no fundamentals at all, and are the two the widening recovered.
+    _panel(tmp_path, ["STRL", "IESC", "WSM", "CMT", "KRT"] + [f"X{i}" for i in range(2821)])
+    monkeypatch.setattr(page_mod.config, "data_dir", lambda: tmp_path)
+    g = page_mod._universe_gap()
+    assert g["our_fundamentals_universe"] == 2826
+    assert g["published_leaders_in_our_fundamentals_panel"] == 5
+    assert page_mod._substrate()["edgar_fundamentals_panel"]["tickers"] == 2826
+
+
+def test_frozen_study_stamps_do_not_move_with_the_panel(tmp_path, monkeypatch):
+    # The study's IC numbers were computed on the 1,552-name panel; those facts are
+    # history and must NOT be rewritten when the live panel grows.
+    from engine.quant_lab import page as page_mod
+    _panel(tmp_path, [f"X{i}" for i in range(2826)])
+    monkeypatch.setattr(page_mod.config, "data_dir", lambda: tmp_path)
+    g = page_mod._universe_gap()
+    assert g["our_fundamentals_universe_at_study"] == 1552
+    assert g["published_leaders_in_our_fundamentals_panel_at_study"] == 3
+    assert specs.UNIVERSE_GAP["our_fundamentals_universe"] == 1552, \
+        "the module constant must not be mutated — it is the fallback"
+
+
+def test_coverage_falls_back_when_the_panel_is_unreadable(tmp_path, monkeypatch):
+    from engine.quant_lab import page as page_mod
+    monkeypatch.setattr(page_mod.config, "data_dir", lambda: tmp_path / "absent")
+    g = page_mod._universe_gap()
+    assert g["our_fundamentals_universe"] == specs.UNIVERSE_GAP["our_fundamentals_universe"]
+    assert page_mod._substrate()["edgar_fundamentals_panel"]["tickers"] == 1552
+
+
+def test_assembled_payload_carries_the_live_coverage_not_the_stamp(tmp_path, monkeypatch):
+    # Pins the WIRING, not just the helper: build_payload() must hand the template the
+    # live-derived gap. Without this, reverting the payload to specs.UNIVERSE_GAP passes
+    # every other test in this block while the page ships the stale chip again.
+    from engine.quant_lab import page as page_mod
+    _panel(tmp_path, ["STRL", "IESC", "WSM", "CMT", "KRT"] + [f"X{i}" for i in range(2821)])
+    monkeypatch.setattr(page_mod.config, "data_dir", lambda: tmp_path)
+    payload = page_mod.build_payload()
+    assert payload["universe_gap"]["our_fundamentals_universe"] == 2826
+    assert payload["universe_gap"]["published_leaders_in_our_fundamentals_panel"] == 5
+    assert payload["substrate"]["edgar_fundamentals_panel"]["tickers"] == 2826
+
+
+def test_published_leaders_list_matches_its_own_denominator():
+    # The numerator counted AMR — an 11th name from a separate article — against a
+    # denominator of 10, which is what made the stamped figure 4 rather than 3.
+    g = specs.UNIVERSE_GAP
+    assert len(g["published_leaders"]) == g["published_leaders_tested"]
+    assert "AMR" not in g["published_leaders"]
+
+
 def test_decile_spread_refuses_a_thin_cross_section():
     sig = pd.Series(np.arange(12.0), index=[f"T{i}" for i in range(12)])
     assert study.decile_spread(sig, sig) is None

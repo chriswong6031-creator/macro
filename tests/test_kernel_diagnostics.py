@@ -166,8 +166,14 @@ def _minimal_spine(
     as_of: str = "2026-06-30",
     n: int = 5,
     outcome_excess: float = 0.02,
+    ledger: str = "test",
 ) -> list[dict]:
-    """Minimal spine rows for recency_trend testing."""
+    """Minimal spine rows for recency_trend testing.
+
+    ``ledger`` drives outcome_basis at read time (query.OUTCOME_BASIS_FOR_LEDGER,
+    stamped by load_index).  The default 'test' is unmapped → null basis, so
+    decay falls back to half_life._OUTCOME_UNIT_MAP as it did pre-column.
+    """
     cols = {c: None for c in [
         "signal_id", "engine", "family", "ledger", "as_of", "symbol",
         "scope_type", "universe", "horizon", "direction", "size_binding",
@@ -183,7 +189,7 @@ def _minimal_spine(
         r.update({
             "signal_id": f"{engine}:{as_of}:SYM{i}:5",
             "engine": engine,
-            "ledger": "test",
+            "ledger": ledger,
             "as_of": as_of,
             "symbol": f"SYM{i}",
             "scope_type": "entity",
@@ -498,6 +504,94 @@ class TestDecayShortRecencyWindows:
         assert stats_21["n_eff"] == 1
         stats_63 = _window_stats("eng", rows, 63, today)
         assert stats_63["n_eff"] == 2
+
+
+# ---------------------------------------------------------------------------
+# decay: [OUTCOME BASIS] outcome_unit derived structurally; unsigned → no Wilson
+# ---------------------------------------------------------------------------
+# Pre-fix, outcome_unit came ONLY from half_life._OUTCOME_UNIT_MAP, which had no
+# board entries — so kernel_families.json published outcome_unit='signed_excess'
+# for hk_board and ca_board even though both fill outcome_excess from the same
+# unsigned fwd_mfe proxy as track_record (measured 2026-08-05: 0.0% negatives on
+# both). These tests FAIL pre-fix.
+# cf. PR #4673 edge_outcomes.py dst_outcome_unsigned_mfe_proxy.
+
+class TestDecayOutcomeBasis:
+
+    @pytest.mark.parametrize("engine,ledger", [
+        ("hk_board", "board_hk"),
+        ("ca_board", "board_ca"),
+        ("cn_board", "board_cn"),
+    ])
+    def test_board_family_outcome_unit_is_magnitude(self, tmp_path, engine, ledger):
+        """[OUTCOME BASIS] a board family derives magnitude_nonneg from its rows."""
+        root = _make_root(
+            tmp_path,
+            estimates_rows=_minimal_estimates(engine),
+            spine_rows=_minimal_spine(engine=engine, ledger=ledger, n=15,
+                                      outcome_excess=0.04),
+        )
+        fam = build_families(root)["families"][engine]
+        assert fam["outcome_unit"] == "magnitude_nonneg", (
+            f"{engine} fills outcome_excess from a non-negative fwd_mfe proxy; "
+            f"kernel_families must not label it signed_excess. "
+            f"got {fam['outcome_unit']!r}"
+        )
+
+    def test_unsigned_family_recency_wilson_is_null(self, tmp_path):
+        """[OUTCOME BASIS] recency wilson_ci_low is null for a magnitude family.
+
+        n_eff=15 clears WILSON_MIN_N=12, so pre-fix this window published a
+        float 'directional accuracy' computed on 'MFE > 0'.
+        """
+        root = _make_root(
+            tmp_path,
+            estimates_rows=_minimal_estimates("hk_board"),
+            spine_rows=_minimal_spine(engine="hk_board", ledger="board_hk",
+                                      n=15, outcome_excess=0.04),
+        )
+        fam = build_families(root)["families"]["hk_board"]
+        all_window = fam["recency_trend"]["all"]
+        assert all_window["n_eff"] == 15, "fixture must clear WILSON_MIN_N=12"
+        assert all_window["wilson_ci_low"] is None, (
+            "directional accuracy is undefined against an unsigned MFE proxy; "
+            f"got {all_window['wilson_ci_low']!r}"
+        )
+        # The mean survives — it is a labelled magnitude, and outcome_unit
+        # sits beside it in the artifact saying exactly that.
+        assert all_window["mean"] is not None
+        assert abs(all_window["mean"] - 0.04) < 1e-9
+
+    def test_signed_family_recency_wilson_survives(self, tmp_path):
+        """[OUTCOME BASIS] a signed family keeps its recency Wilson CI."""
+        root = _make_root(
+            tmp_path,
+            estimates_rows=_minimal_estimates("us_board"),
+            spine_rows=_minimal_spine(engine="us_board", ledger="spine",
+                                      n=15, outcome_excess=0.04),
+        )
+        fam = build_families(root)["families"]["us_board"]
+        assert fam["outcome_unit"] == "signed_excess"
+        all_window = fam["recency_trend"]["all"]
+        assert all_window["n_eff"] == 15
+        assert isinstance(all_window["wilson_ci_low"], float)
+
+    def test_basis_overrides_a_stale_engine_map_entry(self, tmp_path):
+        """[OUTCOME BASIS] the row's ledger beats the hand-maintained map.
+
+        'radar' is mapped to signed_excess in half_life._OUTCOME_UNIT_MAP. If
+        its rows arrive from an unsigned ledger, the STRUCTURAL fact wins —
+        that is the whole point of deriving the unit rather than listing it.
+        """
+        root = _make_root(
+            tmp_path,
+            estimates_rows=_minimal_estimates("radar"),
+            spine_rows=_minimal_spine(engine="radar", ledger="track_record",
+                                      n=15, outcome_excess=0.04),
+        )
+        fam = build_families(root)["families"]["radar"]
+        assert fam["outcome_unit"] == "magnitude_nonneg"
+        assert fam["recency_trend"]["all"]["wilson_ci_low"] is None
 
 
 # ---------------------------------------------------------------------------

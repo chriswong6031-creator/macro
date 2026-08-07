@@ -1,0 +1,210 @@
+{
+  "era": "display-grid-abs-session-2026-08-06",
+  "generated_utc": "2026-08-07T00:22Z",
+  "universe": {
+    "store": "data/stocks",
+    "names_in_store": 238,
+    "window_bars": 1300
+  },
+  "A_client_grid": {
+    "phases": {
+      "0": {
+        "names_probed": 235,
+        "markers_in_window": 8317,
+        "hops_today": 154,
+        "names_affected_today": 6,
+        "hops_trim_only": 68,
+        "names_affected_trim_only": 4,
+        "gapped_names": 7,
+        "pct_today": 1.9,
+        "pct_trim_only": 0.8
+      },
+      "1": {
+        "names_probed": 235,
+        "markers_in_window": 8319,
+        "hops_today": 8272,
+        "names_affected_today": 233,
+        "hops_trim_only": 0,
+        "names_affected_trim_only": 0,
+        "gapped_names": 1,
+        "pct_today": 99.4,
+        "pct_trim_only": 0.0
+      },
+      "2": {
+        "names_probed": 235,
+        "markers_in_window": 8334,
+        "hops_today": 8287,
+        "names_affected_today": 233,
+        "hops_trim_only": 44,
+        "names_affected_trim_only": 1,
+        "gapped_names": 0,
+        "pct_today": 99.4,
+        "pct_trim_only": 0.5
+      }
+    },
+    "skipped": {
+      "no committed \u00a77 payload": 9
+    },
+    "worst": {
+      "0": [
+        [
+          "EA",
+          43
+        ],
+        [
+          "SATS",
+          43
+        ],
+        [
+          "HOOD",
+          24
+        ],
+        [
+          "CEG",
+          23
+        ],
+        [
+          "KVUE",
+          12
+        ],
+        [
+          "GEV",
+          9
+        ]
+      ],
+      "1": [
+        [
+          "DHR",
+          53
+        ],
+        [
+          "EQR",
+          51
+        ],
+        [
+          "SYK",
+          51
+        ],
+        [
+          "XOM",
+          50
+        ],
+        [
+          "AZO",
+          49
+        ],
+        [
+          "PG",
+          47
+        ],
+        [
+          "TTWO",
+          47
+        ],
+        [
+          "V",
+          47
+        ],
+        [
+          "CNP",
+          46
+        ],
+        [
+          "TXN",
+          46
+        ]
+      ],
+      "2": [
+        [
+          "DHR",
+          53
+        ],
+        [
+          "EQR",
+          51
+        ],
+        [
+          "SYK",
+          51
+        ],
+        [
+          "XOM",
+          50
+        ],
+        [
+          "AZO",
+          49
+        ],
+        [
+          "PG",
+          47
+        ],
+        [
+          "TTWO",
+          47
+        ],
+        [
+          "V",
+          47
+        ],
+        [
+          "CNP",
+          46
+        ],
+        [
+          "TXN",
+          46
+        ]
+      ]
+    },
+    "escapes_the_trim": {
+      "gap in window": [
+        "EA",
+        "SATS"
+      ],
+      "short history (no row precedes the window)": [
+        "CEG",
+        "GEV",
+        "HOOD",
+        "KVUE",
+        "SNDK"
+      ]
+    }
+  },
+  "B_engine_grid": {
+    "names_probed": 238,
+    "names_3d_bucket_count_changed": 238,
+    "names_2d_bucket_count_changed": 238,
+    "holiday_mis_split_buckets_healed": 79568,
+    "k_drop_invariance_violations_under_new_grid": 0
+  },
+  "C_payload": {
+    "names": 238,
+    "b3_bytes_raw_mean": 1835,
+    "b3_bytes_gzip_mean": 904,
+    "payload_bytes_raw_typical": 50000,
+    "trim_distribution": {
+      "0": 236,
+      "1": 1,
+      "2": 1
+    }
+  },
+  "D_coverage": {
+    "ships_anchor": [
+      "site/ohlc (US)",
+      "site/chinaohlc (CN)",
+      "site/canadaohlc (CA)",
+      "site/intlohlc (intl)",
+      "site/hkohlc + hk_lookup inline (HK)",
+      "site/subsectorohlc + CN concept desk"
+    ],
+    "consumes_anchor": [
+      "site/chart.js resample() 3D buckets",
+      "site/chart.js mapMarkers() snap-forward (exact under the shared grid)"
+    ],
+    "not_applicable": [
+      "4H (epoch-absolute)",
+      "1W/1M (calendar-absolute)"
+    ]
+  }
+}

@@ -1,0 +1,4129 @@
+{
+ "rev_a": "ca9251861b4",
+ "rev_b": "361136284f2",
+ "drop_k": 4,
+ "panels": {
+  "A (rev-a)": {
+   "start": "2023-06-27",
+   "end": "2026-07-31",
+   "n": 777,
+   "cols": 1540
+  },
+  "B (rev-b)": {
+   "start": "2023-07-03",
+   "end": "2026-08-05",
+   "n": 776,
+   "cols": 1542
+  },
+  "B' (B \u22124 leading)": {
+   "start": "2023-07-10",
+   "end": "2026-08-05",
+   "n": 772,
+   "cols": 1542
+  }
+ },
+ "diffs": {
+  "NATURAL (A vs B)": {
+   "n_matured_both": 275,
+   "n_exit_bar_moved": 99,
+   "n_pnl_moved": 99,
+   "n_exit_reason_moved": 28,
+   "n_excess_moved": 98,
+   "pnl_abs_median_pp": 1.8,
+   "pnl_abs_mean_pp": 2.49,
+   "pnl_abs_max_pp": 14.2,
+   "pnl_signed_sum_pp": -79.9,
+   "exit_bar_moves": [
+    {
+     "t": "FOXF",
+     "d": "2026-07-15",
+     "from": 10,
+     "to": 7
+    },
+    {
+     "t": "GPI",
+     "d": "2026-07-15",
+     "from": 6,
+     "to": 4
+    },
+    {
+     "t": "HOG",
+     "d": "2026-07-15",
+     "from": 3,
+     "to": 10
+    },
+    {
+     "t": "MATW",
+     "d": "2026-07-15",
+     "from": 3,
+     "to": 4
+    },
+    {
+     "t": "NX",
+     "d": "2026-07-15",
+     "from": 6,
+     "to": 4
+    },
+    {
+     "t": "PEN",
+     "d": "2026-07-15",
+     "from": 9,
+     "to": 10
+    },
+    {
+     "t": "TNDM",
+     "d": "2026-07-15",
+     "from": 9,
+     "to": 7
+    },
+    {
+     "t": "TRN",
+     "d": "2026-07-15",
+     "from": 3,
+     "to": 4
+    },
+    {
+     "t": "CG",
+     "d": "2026-07-14",
+     "from": 4,
+     "to": 1
+    },
+    {
+     "t": "FCPT",
+     "d": "2026-07-14",
+     "from": 1,
+     "to": 5
+    },
+    {
+     "t": "NWN",
+     "d": "2026-07-14",
+     "from": 1,
+     "to": 5
+    },
+    {
+     "t": "OGE",
+     "d": "2026-07-14",
+     "from": 1,
+     "to": 5
+    },
+    {
+     "t": "TR",
+     "d": "2026-07-14",
+     "from": 10,
+     "to": 5
+    },
+    {
+     "t": "AHCO",
+     "d": "2026-07-13",
+     "from": 5,
+     "to": 6
+    },
+    {
+     "t": "ARLO",
+     "d": "2026-07-13",
+     "from": 10,
+     "to": 9
+    },
+    {
+     "t": "BURL",
+     "d": "2026-07-13",
+     "from": 5,
+     "to": 3
+    },
+    {
+     "t": "NWE",
+     "d": "2026-07-13",
+     "from": 1,
+     "to": 10
+    },
+    {
+     "t": "SBRA",
+     "d": "2026-07-13",
+     "from": 5,
+     "to": 9
+    },
+    {
+     "t": "TRN",
+     "d": "2026-07-13",
+     "from": 5,
+     "to": 6
+    },
+    {
+     "t": "BJ",
+     "d": "2026-07-10",
+     "from": 6,
+     "to": 7
+    },
+    {
+     "t": "BKH",
+     "d": "2026-07-10",
+     "from": 3,
+     "to": 10
+    },
+    {
+     "t": "BSY",
+     "d": "2026-07-10",
+     "from": 10,
+     "to": 1
+    },
+    {
+     "t": "CTRE",
+     "d": "2026-07-10",
+     "from": 6,
+     "to": 4
+    },
+    {
+     "t": "GATX",
+     "d": "2026-07-10",
+     "from": 3,
+     "to": 10
+    },
+    {
+     "t": "HR",
+     "d": "2026-07-10",
+     "from": 9,
+     "to": 10
+    },
+    {
+     "t": "NJR",
+     "d": "2026-07-10",
+     "from": 3,
+     "to": 4
+    },
+    {
+     "t": "OHI",
+     "d": "2026-07-10",
+     "from": 3,
+     "to": 7
+    },
+    {
+     "t": "TR",
+     "d": "2026-07-10",
+     "from": 10,
+     "to": 7
+    },
+    {
+     "t": "WPC",
+     "d": "2026-07-10",
+     "from": 9,
+     "to": 10
+    },
+    {
+     "t": "AN",
+     "d": "2026-07-09",
+     "from": 4,
+     "to": 2
+    },
+    {
+     "t": "CVSA",
+     "d": "2026-07-09",
+     "from": 1,
+     "to": 2
+    },
+    {
+     "t": "EGP",
+     "d": "2026-07-09",
+     "from": 4,
+     "to": 2
+    },
+    {
+     "t": "ENOV",
+     "d": "2026-07-09",
+     "from": 4,
+     "to": 2
+    },
+    {
+     "t": "REZI",
+     "d": "2026-07-09",
+     "from": 1,
+     "to": 2
+    },
+    {
+     "t": "VCTR",
+     "d": "2026-07-09",
+     "from": 7,
+     "to": 5
+    },
+    {
+     "t": "AN",
+     "d": "2026-07-07",
+     "from": 6,
+     "to": 4
+    },
+    {
+     "t": "HE",
+     "d": "2026-07-07",
+     "from": 3,
+     "to": 4
+    },
+    {
+     "t": "HOG",
+     "d": "2026-07-07",
+     "from": 9,
+     "to": 10
+    },
+    {
+     "t": "NJR",
+     "d": "2026-07-07",
+     "from": 6,
+     "to": 7
+    },
+    {
+     "t": "TR",
+     "d": "2026-07-07",
+     "from": 1,
+     "to": 10
+    },
+    {
+     "t": "CLH",
+     "d": "2026-07-06",
+     "from": 7,
+     "to": 5
+    },
+    {
+     "t": "CNMD",
+     "d": "2026-07-06",
+     "from": 7,
+     "to": 5
+    },
+    {
+     "t": "JXN",
+     "d": "2026-07-06",
+     "from": 7,
+     "to": 5
+    },
+    {
+     "t": "MTCH",
+     "d": "2026-07-06",
+     "from": 1,
+     "to": 2
+    },
+    {
+     "t": "ATMU",
+     "d": "2026-07-02",
+     "from": 10,
+     "to": 1
+    },
+    {
+     "t": "CVSA",
+     "d": "2026-07-02",
+     "from": 5,
+     "to": 6
+    },
+    {
+     "t": "FG",
+     "d": "2026-07-02",
+     "from": 5,
+     "to": 6
+    },
+    {
+     "t": "OGE",
+     "d": "2026-07-02",
+     "from": 1,
+     "to": 10
+    },
+    {
+     "t": "RITM",
+     "d": "2026-07-02",
+     "from": 8,
+     "to": 3
+    },
+    {
+     "t": "TRNO",
+     "d": "2026-07-02",
+     "from": 5,
+     "to": 3
+    },
+    {
+     "t": "ADT",
+     "d": "2026-07-01",
+     "from": 3,
+     "to": 4
+    },
+    {
+     "t": "BSY",
+     "d": "2026-07-01",
+     "from": 10,
+     "to": 4
+    },
+    {
+     "t": "CLH",
+     "d": "2026-07-01",
+     "from": 9,
+     "to": 7
+    },
+    {
+     "t": "CPK",
+     "d": "2026-07-01",
+     "from": 1,
+     "to": 7
+    },
+    {
+     "t": "DAR",
+     "d": "2026-07-01",
+     "from": 9,
+     "to": 10
+    },
+    {
+     "t": "FCPT",
+     "d": "2026-07-01",
+     "from": 6,
+     "to": 10
+    },
+    {
+     "t": "GKOS",
+     "d": "2026-07-01",
+     "from": 3,
+     "to": 10
+    },
+    {
+     "t": "NYT",
+     "d": "2026-07-01",
+     "from": 6,
+     "to": 10
+    },
+    {
+     "t": "PRDO",
+     "d": "2026-07-01",
+     "from": 6,
+     "to": 4
+    },
+    {
+     "t": "STC",
+     "d": "2026-07-01",
+     "from": 3,
+     "to": 1
+    },
+    {
+     "t": "STRA",
+     "d": "2026-07-01",
+     "from": 6,
+     "to": 1
+    },
+    {
+     "t": "VIR",
+     "d": "2026-07-01",
+     "from": 1,
+     "to": 4
+    },
+    {
+     "t": "GTY",
+     "d": "2026-06-30",
+     "from": 1,
+     "to": 5
+    },
+    {
+     "t": "LKQ",
+     "d": "2026-06-30",
+     "from": 1,
+     "to": 2
+    },
+    {
+     "t": "NEOG",
+     "d": "2026-06-30",
+     "from": 7,
+     "to": 1
+    },
+    {
+     "t": "NWE",
+     "d": "2026-06-30",
+     "from": 7,
+     "to": 10
+    },
+    {
+     "t": "OGE",
+     "d": "2026-06-30",
+     "from": 1,
+     "to": 10
+    },
+    {
+     "t": "OTTR",
+     "d": "2026-06-30",
+     "from": 1,
+     "to": 2
+    },
+    {
+     "t": "REZI",
+     "d": "2026-06-30",
+     "from": 7,
+     "to": 8
+    },
+    {
+     "t": "AN",
+     "d": "2026-06-29",
+     "from": 10,
+     "to": 9
+    },
+    {
+     "t": "FAF",
+     "d": "2026-06-29",
+     "from": 5,
+     "to": 6
+    },
+    {
+     "t": "FCN",
+     "d": "2026-06-29",
+     "from": 5,
+     "to": 3
+    },
+    {
+     "t": "GME",
+     "d": "2026-06-29",
+     "from": 10,
+     "to": 3
+    },
+    {
+     "t": "SPNT",
+     "d": "2026-06-29",
+     "from": 2,
+     "to": 3
+    },
+    {
+     "t": "STWD",
+     "d": "2026-06-29",
+     "from": 10,
+     "to": 9
+    },
+    {
+     "t": "DINO",
+     "d": "2026-06-26",
+     "from": 9,
+     "to": 10
+    },
+    {
+     "t": "ELS",
+     "d": "2026-06-26",
+     "from": 3,
+     "to": 2
+    },
+    {
+     "t": "FNF",
+     "d": "2026-06-26",
+     "from": 6,
+     "to": 7
+    },
+    {
+     "t": "FR",
+     "d": "2026-06-26",
+     "from": 9,
+     "to": 10
+    },
+    {
+     "t": "IRT",
+     "d": "2026-06-26",
+     "from": 10,
+     "to": 4
+    },
+    {
+     "t": "MTCH",
+     "d": "2026-06-26",
+     "from": 6,
+     "to": 7
+    },
+    {
+     "t": "PPLI",
+     "d": "2026-06-26",
+     "from": 6,
+     "to": 4
+    },
+    {
+     "t": "PRDO",
+     "d": "2026-06-26",
+     "from": 9,
+     "to": 7
+    },
+    {
+     "t": "RBC",
+     "d": "2026-06-26",
+     "from": 1,
+     "to": 10
+    },
+    {
+     "t": "RGA",
+     "d": "2026-06-26",
+     "from": 3,
+     "to": 1
+    },
+    {
+     "t": "SRPT",
+     "d": "2026-06-26",
+     "from": 6,
+     "to": 7
+    },
+    {
+     "t": "STC",
+     "d": "2026-06-26",
+     "from": 6,
+     "to": 4
+    },
+    {
+     "t": "STRA",
+     "d": "2026-06-26",
+     "from": 9,
+     "to": 4
+    },
+    {
+     "t": "TR",
+     "d": "2026-06-26",
+     "from": 6,
+     "to": 10
+    },
+    {
+     "t": "YELP",
+     "d": "2026-06-26",
+     "from": 6,
+     "to": 7
+    },
+    {
+     "t": "ACHC",
+     "d": "2026-06-25",
+     "from": 7,
+     "to": 5
+    },
+    {
+     "t": "CSW",
+     "d": "2026-06-25",
+     "from": 10,
+     "to": 5
+    },
+    {
+     "t": "JLL",
+     "d": "2026-06-25",
+     "from": 4,
+     "to": 5
+    },
+    {
+     "t": "MMI",
+     "d": "2026-06-25",
+     "from": 10,
+     "to": 5
+    },
+    {
+     "t": "OTTR",
+     "d": "2026-06-25",
+     "from": 4,
+     "to": 5
+    },
+    {
+     "t": "PBF",
+     "d": "2026-06-25",
+     "from": 4,
+     "to": 5
+    },
+    {
+     "t": "PNFP",
+     "d": "2026-06-25",
+     "from": 10,
+     "to": 3
+    },
+    {
+     "t": "SF",
+     "d": "2026-06-25",
+     "from": 10,
+     "to": 8
+    },
+    {
+     "t": "SPNT",
+     "d": "2026-06-25",
+     "from": 4,
+     "to": 5
+    }
+   ],
+   "pnl_moves": [
+    {
+     "t": "FOXF",
+     "d": "2026-07-15",
+     "from": -8.8,
+     "to": -4.9,
+     "held_from": 10,
+     "held_to": 7,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "GPI",
+     "d": "2026-07-15",
+     "from": -0.2,
+     "to": -1.1,
+     "held_from": 6,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "HOG",
+     "d": "2026-07-15",
+     "from": 6.1,
+     "to": -8.1,
+     "held_from": 3,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "MATW",
+     "d": "2026-07-15",
+     "from": -1.6,
+     "to": -0.8,
+     "held_from": 3,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "NX",
+     "d": "2026-07-15",
+     "from": 0.2,
+     "to": -0.5,
+     "held_from": 6,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "PEN",
+     "d": "2026-07-15",
+     "from": 0.2,
+     "to": 0.1,
+     "held_from": 9,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "TNDM",
+     "d": "2026-07-15",
+     "from": 14.1,
+     "to": 5.4,
+     "held_from": 9,
+     "held_to": 7,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "TRN",
+     "d": "2026-07-15",
+     "from": -0.6,
+     "to": -2.9,
+     "held_from": 3,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "CG",
+     "d": "2026-07-14",
+     "from": -3.3,
+     "to": 1.1,
+     "held_from": 4,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "FCPT",
+     "d": "2026-07-14",
+     "from": 4.8,
+     "to": 4.3,
+     "held_from": 1,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "NWN",
+     "d": "2026-07-14",
+     "from": 2.3,
+     "to": 2.4,
+     "held_from": 1,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "OGE",
+     "d": "2026-07-14",
+     "from": 1.2,
+     "to": 1.1,
+     "held_from": 1,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "TR",
+     "d": "2026-07-14",
+     "from": 2.2,
+     "to": 1.8,
+     "held_from": 10,
+     "held_to": 5,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "AHCO",
+     "d": "2026-07-13",
+     "from": 10.0,
+     "to": 6.8,
+     "held_from": 5,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "ARLO",
+     "d": "2026-07-13",
+     "from": 7.9,
+     "to": 5.2,
+     "held_from": 10,
+     "held_to": 9,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "BURL",
+     "d": "2026-07-13",
+     "from": 6.1,
+     "to": 3.3,
+     "held_from": 5,
+     "held_to": 3,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "NWE",
+     "d": "2026-07-13",
+     "from": -1.6,
+     "to": -0.9,
+     "held_from": 1,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "SBRA",
+     "d": "2026-07-13",
+     "from": 11.6,
+     "to": 13.4,
+     "held_from": 5,
+     "held_to": 9,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "TRN",
+     "d": "2026-07-13",
+     "from": 2.8,
+     "to": 0.4,
+     "held_from": 5,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "BJ",
+     "d": "2026-07-10",
+     "from": 2.5,
+     "to": 2.0,
+     "held_from": 6,
+     "held_to": 7,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "BKH",
+     "d": "2026-07-10",
+     "from": 0.0,
+     "to": -1.5,
+     "held_from": 3,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "BSY",
+     "d": "2026-07-10",
+     "from": 6.2,
+     "to": -1.9,
+     "held_from": 10,
+     "held_to": 1,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "CTRE",
+     "d": "2026-07-10",
+     "from": 7.6,
+     "to": 6.3,
+     "held_from": 6,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "GATX",
+     "d": "2026-07-10",
+     "from": 0.5,
+     "to": 1.9,
+     "held_from": 3,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "HR",
+     "d": "2026-07-10",
+     "from": 2.8,
+     "to": 3.5,
+     "held_from": 9,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "NJR",
+     "d": "2026-07-10",
+     "from": 0.1,
+     "to": -1.0,
+     "held_from": 3,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "OHI",
+     "d": "2026-07-10",
+     "from": 3.0,
+     "to": 4.5,
+     "held_from": 3,
+     "held_to": 7,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "TR",
+     "d": "2026-07-10",
+     "from": 1.5,
+     "to": 3.7,
+     "held_from": 10,
+     "held_to": 7,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "WPC",
+     "d": "2026-07-10",
+     "from": 5.7,
+     "to": 5.1,
+     "held_from": 9,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "AN",
+     "d": "2026-07-09",
+     "from": 6.7,
+     "to": 0.2,
+     "held_from": 4,
+     "held_to": 2,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "CVSA",
+     "d": "2026-07-09",
+     "from": 1.7,
+     "to": 0.9,
+     "held_from": 1,
+     "held_to": 2,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "EGP",
+     "d": "2026-07-09",
+     "from": 6.6,
+     "to": 0.8,
+     "held_from": 4,
+     "held_to": 2,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "ENOV",
+     "d": "2026-07-09",
+     "from": 9.0,
+     "to": -4.3,
+     "held_from": 4,
+     "held_to": 2,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "REZI",
+     "d": "2026-07-09",
+     "from": 4.3,
+     "to": 8.6,
+     "held_from": 1,
+     "held_to": 2,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "VCTR",
+     "d": "2026-07-09",
+     "from": 6.2,
+     "to": 6.8,
+     "held_from": 7,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "AN",
+     "d": "2026-07-07",
+     "from": 11.4,
+     "to": 4.6,
+     "held_from": 6,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "HE",
+     "d": "2026-07-07",
+     "from": -0.3,
+     "to": -0.1,
+     "held_from": 3,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "HOG",
+     "d": "2026-07-07",
+     "from": 12.2,
+     "to": 8.9,
+     "held_from": 9,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "NJR",
+     "d": "2026-07-07",
+     "from": 2.9,
+     "to": 1.7,
+     "held_from": 6,
+     "held_to": 7,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "TR",
+     "d": "2026-07-07",
+     "from": -0.6,
+     "to": 3.0,
+     "held_from": 1,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "CLH",
+     "d": "2026-07-06",
+     "from": 4.2,
+     "to": 2.4,
+     "held_from": 7,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "CNMD",
+     "d": "2026-07-06",
+     "from": 31.5,
+     "to": 21.9,
+     "held_from": 7,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "JXN",
+     "d": "2026-07-06",
+     "from": 15.0,
+     "to": 11.6,
+     "held_from": 7,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "MTCH",
+     "d": "2026-07-06",
+     "from": -2.1,
+     "to": 0.4,
+     "held_from": 1,
+     "held_to": 2,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "ATMU",
+     "d": "2026-07-02",
+     "from": -2.8,
+     "to": -2.3,
+     "held_from": 10,
+     "held_to": 1,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "CVSA",
+     "d": "2026-07-02",
+     "from": 2.8,
+     "to": 2.0,
+     "held_from": 5,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "FG",
+     "d": "2026-07-02",
+     "from": 8.7,
+     "to": 6.6,
+     "held_from": 5,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "OGE",
+     "d": "2026-07-02",
+     "from": 1.6,
+     "to": 0.6,
+     "held_from": 1,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "RITM",
+     "d": "2026-07-02",
+     "from": 2.2,
+     "to": -0.2,
+     "held_from": 8,
+     "held_to": 3,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "TRNO",
+     "d": "2026-07-02",
+     "from": 2.8,
+     "to": 0.2,
+     "held_from": 5,
+     "held_to": 3,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "ADT",
+     "d": "2026-07-01",
+     "from": -1.5,
+     "to": -2.6,
+     "held_from": 3,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "BSY",
+     "d": "2026-07-01",
+     "from": 0.2,
+     "to": -2.0,
+     "held_from": 10,
+     "held_to": 4,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "CLH",
+     "d": "2026-07-01",
+     "from": 6.7,
+     "to": 4.8,
+     "held_from": 9,
+     "held_to": 7,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "CPK",
+     "d": "2026-07-01",
+     "from": -2.4,
+     "to": 4.9,
+     "held_from": 1,
+     "held_to": 7,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "DAR",
+     "d": "2026-07-01",
+     "from": 8.2,
+     "to": 11.6,
+     "held_from": 9,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "FCPT",
+     "d": "2026-07-01",
+     "from": 0.3,
+     "to": 4.9,
+     "held_from": 6,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "GKOS",
+     "d": "2026-07-01",
+     "from": 3.1,
+     "to": 5.7,
+     "held_from": 3,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "NYT",
+     "d": "2026-07-01",
+     "from": 1.9,
+     "to": 3.1,
+     "held_from": 6,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "PRDO",
+     "d": "2026-07-01",
+     "from": 6.2,
+     "to": 3.5,
+     "held_from": 6,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "STC",
+     "d": "2026-07-01",
+     "from": -0.9,
+     "to": -0.1,
+     "held_from": 3,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "STRA",
+     "d": "2026-07-01",
+     "from": 5.9,
+     "to": 1.6,
+     "held_from": 6,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "VIR",
+     "d": "2026-07-01",
+     "from": -0.2,
+     "to": 3.0,
+     "held_from": 1,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "GTY",
+     "d": "2026-06-30",
+     "from": 2.2,
+     "to": 2.0,
+     "held_from": 1,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "LKQ",
+     "d": "2026-06-30",
+     "from": 1.5,
+     "to": -0.6,
+     "held_from": 1,
+     "held_to": 2,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "NEOG",
+     "d": "2026-06-30",
+     "from": 3.7,
+     "to": 0.3,
+     "held_from": 7,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "NWE",
+     "d": "2026-06-30",
+     "from": 2.4,
+     "to": 2.5,
+     "held_from": 7,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "OGE",
+     "d": "2026-06-30",
+     "from": 2.4,
+     "to": 3.0,
+     "held_from": 1,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "OTTR",
+     "d": "2026-06-30",
+     "from": 1.9,
+     "to": 0.9,
+     "held_from": 1,
+     "held_to": 2,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "REZI",
+     "d": "2026-06-30",
+     "from": 13.8,
+     "to": 18.4,
+     "held_from": 7,
+     "held_to": 8,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "AN",
+     "d": "2026-06-29",
+     "from": 9.6,
+     "to": 5.6,
+     "held_from": 10,
+     "held_to": 9,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "FAF",
+     "d": "2026-06-29",
+     "from": 2.1,
+     "to": 2.4,
+     "held_from": 5,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "FCN",
+     "d": "2026-06-29",
+     "from": 4.9,
+     "to": 4.5,
+     "held_from": 5,
+     "held_to": 3,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "GME",
+     "d": "2026-06-29",
+     "from": 0.8,
+     "to": 3.1,
+     "held_from": 10,
+     "held_to": 3,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "SPNT",
+     "d": "2026-06-29",
+     "from": 2.6,
+     "to": 2.3,
+     "held_from": 2,
+     "held_to": 3,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "STWD",
+     "d": "2026-06-29",
+     "from": 1.7,
+     "to": 1.4,
+     "held_from": 10,
+     "held_to": 9,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "DINO",
+     "d": "2026-06-26",
+     "from": 15.4,
+     "to": 17.4,
+     "held_from": 9,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "ELS",
+     "d": "2026-06-26",
+     "from": 2.4,
+     "to": 0.5,
+     "held_from": 3,
+     "held_to": 2,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "FNF",
+     "d": "2026-06-26",
+     "from": 2.6,
+     "to": 3.3,
+     "held_from": 6,
+     "held_to": 7,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "FR",
+     "d": "2026-06-26",
+     "from": 3.5,
+     "to": 3.0,
+     "held_from": 9,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "IRT",
+     "d": "2026-06-26",
+     "from": -1.4,
+     "to": 2.1,
+     "held_from": 10,
+     "held_to": 4,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "MTCH",
+     "d": "2026-06-26",
+     "from": -0.4,
+     "to": 2.1,
+     "held_from": 6,
+     "held_to": 7,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "PPLI",
+     "d": "2026-06-26",
+     "from": 2.1,
+     "to": 1.9,
+     "held_from": 6,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "PRDO",
+     "d": "2026-06-26",
+     "from": 13.5,
+     "to": 10.7,
+     "held_from": 9,
+     "held_to": 7,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "RBC",
+     "d": "2026-06-26",
+     "from": 1.5,
+     "to": -7.3,
+     "held_from": 1,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "RGA",
+     "d": "2026-06-26",
+     "from": 2.9,
+     "to": -1.0,
+     "held_from": 3,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "SRPT",
+     "d": "2026-06-26",
+     "from": 18.7,
+     "to": 20.6,
+     "held_from": 6,
+     "held_to": 7,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "STC",
+     "d": "2026-06-26",
+     "from": 0.6,
+     "to": 1.4,
+     "held_from": 6,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "STRA",
+     "d": "2026-06-26",
+     "from": 11.2,
+     "to": 6.7,
+     "held_from": 9,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "SXT",
+     "d": "2026-06-26",
+     "from": -4.2,
+     "to": -4.6,
+     "held_from": 10,
+     "held_to": 10,
+     "exit_from": "horizon",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "TR",
+     "d": "2026-06-26",
+     "from": -3.0,
+     "to": -3.3,
+     "held_from": 6,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "ACHC",
+     "d": "2026-06-25",
+     "from": 12.1,
+     "to": 13.4,
+     "held_from": 7,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "CSW",
+     "d": "2026-06-25",
+     "from": 0.1,
+     "to": -1.0,
+     "held_from": 10,
+     "held_to": 5,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "JLL",
+     "d": "2026-06-25",
+     "from": 3.9,
+     "to": 4.7,
+     "held_from": 4,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "MMI",
+     "d": "2026-06-25",
+     "from": -3.0,
+     "to": 1.8,
+     "held_from": 10,
+     "held_to": 5,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "OTTR",
+     "d": "2026-06-25",
+     "from": 0.8,
+     "to": -0.2,
+     "held_from": 4,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "PBF",
+     "d": "2026-06-25",
+     "from": 10.9,
+     "to": 14.3,
+     "held_from": 4,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "PNFP",
+     "d": "2026-06-25",
+     "from": -0.9,
+     "to": -0.2,
+     "held_from": 10,
+     "held_to": 3,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "SF",
+     "d": "2026-06-25",
+     "from": 8.6,
+     "to": 9.3,
+     "held_from": 10,
+     "held_to": 8,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "SPNT",
+     "d": "2026-06-25",
+     "from": 3.3,
+     "to": 2.9,
+     "held_from": 4,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    }
+   ],
+   "exit_reason_moves": [
+    {
+     "t": "FOXF",
+     "d": "2026-07-15",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "HOG",
+     "d": "2026-07-15",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "TR",
+     "d": "2026-07-14",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "ARLO",
+     "d": "2026-07-13",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "NWE",
+     "d": "2026-07-13",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "BKH",
+     "d": "2026-07-10",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "BSY",
+     "d": "2026-07-10",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "TR",
+     "d": "2026-07-10",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "HOG",
+     "d": "2026-07-07",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "ATMU",
+     "d": "2026-07-02",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "OGE",
+     "d": "2026-07-02",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "BSY",
+     "d": "2026-07-01",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "FCPT",
+     "d": "2026-07-01",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "BKH",
+     "d": "2026-06-30",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "GATX",
+     "d": "2026-06-30",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "NWE",
+     "d": "2026-06-30",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "OGE",
+     "d": "2026-06-30",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "PLUS",
+     "d": "2026-06-30",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "AN",
+     "d": "2026-06-29",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "GME",
+     "d": "2026-06-29",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "STWD",
+     "d": "2026-06-29",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "IRT",
+     "d": "2026-06-26",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "RBC",
+     "d": "2026-06-26",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "TR",
+     "d": "2026-06-26",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "CSW",
+     "d": "2026-06-25",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "CVSA",
+     "d": "2026-06-25",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "MMI",
+     "d": "2026-06-25",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "PNFP",
+     "d": "2026-06-25",
+     "from": "horizon",
+     "to": "target"
+    }
+   ]
+  },
+  "CONTROLLED (B vs B')": {
+   "n_matured_both": 359,
+   "n_exit_bar_moved": 127,
+   "n_pnl_moved": 126,
+   "n_exit_reason_moved": 40,
+   "n_excess_moved": 125,
+   "pnl_abs_median_pp": 1.9,
+   "pnl_abs_mean_pp": 2.97,
+   "pnl_abs_max_pp": 28.9,
+   "pnl_signed_sum_pp": 126.0,
+   "exit_bar_moves": [
+    {
+     "t": "ABR",
+     "d": "2026-07-21",
+     "from": 3,
+     "to": 2
+    },
+    {
+     "t": "FMC",
+     "d": "2026-07-21",
+     "from": 3,
+     "to": 5
+    },
+    {
+     "t": "OLN",
+     "d": "2026-07-21",
+     "from": 7,
+     "to": 2
+    },
+    {
+     "t": "PLAB",
+     "d": "2026-07-21",
+     "from": 6,
+     "to": 10
+    },
+    {
+     "t": "POST",
+     "d": "2026-07-21",
+     "from": 3,
+     "to": 2
+    },
+    {
+     "t": "PTON",
+     "d": "2026-07-21",
+     "from": 6,
+     "to": 10
+    },
+    {
+     "t": "RRC",
+     "d": "2026-07-21",
+     "from": 6,
+     "to": 5
+    },
+    {
+     "t": "SFBS",
+     "d": "2026-07-21",
+     "from": 9,
+     "to": 1
+    },
+    {
+     "t": "VNOM",
+     "d": "2026-07-21",
+     "from": 10,
+     "to": 2
+    },
+    {
+     "t": "WPC",
+     "d": "2026-07-21",
+     "from": 3,
+     "to": 2
+    },
+    {
+     "t": "FIVE",
+     "d": "2026-07-20",
+     "from": 4,
+     "to": 6
+    },
+    {
+     "t": "GPK",
+     "d": "2026-07-20",
+     "from": 4,
+     "to": 1
+    },
+    {
+     "t": "HLI",
+     "d": "2026-07-20",
+     "from": 4,
+     "to": 3
+    },
+    {
+     "t": "HLX",
+     "d": "2026-07-20",
+     "from": 4,
+     "to": 3
+    },
+    {
+     "t": "ITGR",
+     "d": "2026-07-20",
+     "from": 1,
+     "to": 9
+    },
+    {
+     "t": "MORN",
+     "d": "2026-07-20",
+     "from": 7,
+     "to": 9
+    },
+    {
+     "t": "MPT",
+     "d": "2026-07-20",
+     "from": 4,
+     "to": 3
+    },
+    {
+     "t": "SMG",
+     "d": "2026-07-20",
+     "from": 4,
+     "to": 10
+    },
+    {
+     "t": "UVV",
+     "d": "2026-07-20",
+     "from": 4,
+     "to": 6
+    },
+    {
+     "t": "WT",
+     "d": "2026-07-20",
+     "from": 10,
+     "to": 1
+    },
+    {
+     "t": "AEO",
+     "d": "2026-07-17",
+     "from": 5,
+     "to": 10
+    },
+    {
+     "t": "AKR",
+     "d": "2026-07-17",
+     "from": 8,
+     "to": 7
+    },
+    {
+     "t": "GBX",
+     "d": "2026-07-17",
+     "from": 5,
+     "to": 4
+    },
+    {
+     "t": "HR",
+     "d": "2026-07-17",
+     "from": 5,
+     "to": 4
+    },
+    {
+     "t": "KEX",
+     "d": "2026-07-17",
+     "from": 2,
+     "to": 1
+    },
+    {
+     "t": "PB",
+     "d": "2026-07-17",
+     "from": 10,
+     "to": 1
+    },
+    {
+     "t": "PTON",
+     "d": "2026-07-17",
+     "from": 8,
+     "to": 10
+    },
+    {
+     "t": "TALO",
+     "d": "2026-07-17",
+     "from": 10,
+     "to": 7
+    },
+    {
+     "t": "FOXF",
+     "d": "2026-07-15",
+     "from": 7,
+     "to": 10
+    },
+    {
+     "t": "GPI",
+     "d": "2026-07-15",
+     "from": 4,
+     "to": 6
+    },
+    {
+     "t": "HOG",
+     "d": "2026-07-15",
+     "from": 10,
+     "to": 3
+    },
+    {
+     "t": "MATW",
+     "d": "2026-07-15",
+     "from": 4,
+     "to": 3
+    },
+    {
+     "t": "NX",
+     "d": "2026-07-15",
+     "from": 4,
+     "to": 6
+    },
+    {
+     "t": "PEN",
+     "d": "2026-07-15",
+     "from": 10,
+     "to": 9
+    },
+    {
+     "t": "TNDM",
+     "d": "2026-07-15",
+     "from": 7,
+     "to": 9
+    },
+    {
+     "t": "TRN",
+     "d": "2026-07-15",
+     "from": 4,
+     "to": 3
+    },
+    {
+     "t": "CG",
+     "d": "2026-07-14",
+     "from": 1,
+     "to": 4
+    },
+    {
+     "t": "FCPT",
+     "d": "2026-07-14",
+     "from": 5,
+     "to": 1
+    },
+    {
+     "t": "NWN",
+     "d": "2026-07-14",
+     "from": 5,
+     "to": 1
+    },
+    {
+     "t": "OGE",
+     "d": "2026-07-14",
+     "from": 5,
+     "to": 1
+    },
+    {
+     "t": "TR",
+     "d": "2026-07-14",
+     "from": 5,
+     "to": 10
+    },
+    {
+     "t": "AHCO",
+     "d": "2026-07-13",
+     "from": 6,
+     "to": 5
+    },
+    {
+     "t": "ARLO",
+     "d": "2026-07-13",
+     "from": 9,
+     "to": 10
+    },
+    {
+     "t": "BURL",
+     "d": "2026-07-13",
+     "from": 3,
+     "to": 5
+    },
+    {
+     "t": "NWE",
+     "d": "2026-07-13",
+     "from": 10,
+     "to": 1
+    },
+    {
+     "t": "SBRA",
+     "d": "2026-07-13",
+     "from": 9,
+     "to": 5
+    },
+    {
+     "t": "TRN",
+     "d": "2026-07-13",
+     "from": 6,
+     "to": 5
+    },
+    {
+     "t": "BJ",
+     "d": "2026-07-10",
+     "from": 7,
+     "to": 6
+    },
+    {
+     "t": "BKH",
+     "d": "2026-07-10",
+     "from": 10,
+     "to": 3
+    },
+    {
+     "t": "BSY",
+     "d": "2026-07-10",
+     "from": 1,
+     "to": 10
+    },
+    {
+     "t": "CTRE",
+     "d": "2026-07-10",
+     "from": 4,
+     "to": 6
+    },
+    {
+     "t": "GATX",
+     "d": "2026-07-10",
+     "from": 10,
+     "to": 3
+    },
+    {
+     "t": "HR",
+     "d": "2026-07-10",
+     "from": 10,
+     "to": 9
+    },
+    {
+     "t": "NJR",
+     "d": "2026-07-10",
+     "from": 4,
+     "to": 3
+    },
+    {
+     "t": "OHI",
+     "d": "2026-07-10",
+     "from": 7,
+     "to": 9
+    },
+    {
+     "t": "TR",
+     "d": "2026-07-10",
+     "from": 7,
+     "to": 10
+    },
+    {
+     "t": "WPC",
+     "d": "2026-07-10",
+     "from": 10,
+     "to": 9
+    },
+    {
+     "t": "AN",
+     "d": "2026-07-09",
+     "from": 2,
+     "to": 4
+    },
+    {
+     "t": "CVSA",
+     "d": "2026-07-09",
+     "from": 2,
+     "to": 1
+    },
+    {
+     "t": "EGP",
+     "d": "2026-07-09",
+     "from": 2,
+     "to": 4
+    },
+    {
+     "t": "ENOV",
+     "d": "2026-07-09",
+     "from": 2,
+     "to": 4
+    },
+    {
+     "t": "REZI",
+     "d": "2026-07-09",
+     "from": 2,
+     "to": 1
+    },
+    {
+     "t": "VCTR",
+     "d": "2026-07-09",
+     "from": 5,
+     "to": 7
+    },
+    {
+     "t": "AN",
+     "d": "2026-07-07",
+     "from": 4,
+     "to": 6
+    },
+    {
+     "t": "HE",
+     "d": "2026-07-07",
+     "from": 4,
+     "to": 3
+    },
+    {
+     "t": "HOG",
+     "d": "2026-07-07",
+     "from": 10,
+     "to": 9
+    },
+    {
+     "t": "NJR",
+     "d": "2026-07-07",
+     "from": 7,
+     "to": 6
+    },
+    {
+     "t": "TR",
+     "d": "2026-07-07",
+     "from": 10,
+     "to": 1
+    },
+    {
+     "t": "CLH",
+     "d": "2026-07-06",
+     "from": 5,
+     "to": 7
+    },
+    {
+     "t": "CNMD",
+     "d": "2026-07-06",
+     "from": 5,
+     "to": 7
+    },
+    {
+     "t": "JXN",
+     "d": "2026-07-06",
+     "from": 5,
+     "to": 7
+    },
+    {
+     "t": "MTCH",
+     "d": "2026-07-06",
+     "from": 2,
+     "to": 1
+    },
+    {
+     "t": "ATMU",
+     "d": "2026-07-02",
+     "from": 1,
+     "to": 10
+    },
+    {
+     "t": "CVSA",
+     "d": "2026-07-02",
+     "from": 6,
+     "to": 5
+    },
+    {
+     "t": "FG",
+     "d": "2026-07-02",
+     "from": 6,
+     "to": 5
+    },
+    {
+     "t": "OGE",
+     "d": "2026-07-02",
+     "from": 10,
+     "to": 1
+    },
+    {
+     "t": "RITM",
+     "d": "2026-07-02",
+     "from": 3,
+     "to": 8
+    },
+    {
+     "t": "TRNO",
+     "d": "2026-07-02",
+     "from": 3,
+     "to": 5
+    },
+    {
+     "t": "ADT",
+     "d": "2026-07-01",
+     "from": 4,
+     "to": 3
+    },
+    {
+     "t": "BSY",
+     "d": "2026-07-01",
+     "from": 4,
+     "to": 10
+    },
+    {
+     "t": "CLH",
+     "d": "2026-07-01",
+     "from": 7,
+     "to": 9
+    },
+    {
+     "t": "CPK",
+     "d": "2026-07-01",
+     "from": 7,
+     "to": 1
+    },
+    {
+     "t": "DAR",
+     "d": "2026-07-01",
+     "from": 10,
+     "to": 9
+    },
+    {
+     "t": "FCPT",
+     "d": "2026-07-01",
+     "from": 10,
+     "to": 6
+    },
+    {
+     "t": "GKOS",
+     "d": "2026-07-01",
+     "from": 10,
+     "to": 3
+    },
+    {
+     "t": "NYT",
+     "d": "2026-07-01",
+     "from": 10,
+     "to": 6
+    },
+    {
+     "t": "PRDO",
+     "d": "2026-07-01",
+     "from": 4,
+     "to": 6
+    },
+    {
+     "t": "STC",
+     "d": "2026-07-01",
+     "from": 1,
+     "to": 3
+    },
+    {
+     "t": "STRA",
+     "d": "2026-07-01",
+     "from": 1,
+     "to": 6
+    },
+    {
+     "t": "VIR",
+     "d": "2026-07-01",
+     "from": 4,
+     "to": 1
+    },
+    {
+     "t": "GTY",
+     "d": "2026-06-30",
+     "from": 5,
+     "to": 1
+    },
+    {
+     "t": "LKQ",
+     "d": "2026-06-30",
+     "from": 2,
+     "to": 1
+    },
+    {
+     "t": "NEOG",
+     "d": "2026-06-30",
+     "from": 1,
+     "to": 7
+    },
+    {
+     "t": "NWE",
+     "d": "2026-06-30",
+     "from": 10,
+     "to": 7
+    },
+    {
+     "t": "OGE",
+     "d": "2026-06-30",
+     "from": 10,
+     "to": 1
+    },
+    {
+     "t": "OTTR",
+     "d": "2026-06-30",
+     "from": 2,
+     "to": 1
+    },
+    {
+     "t": "REZI",
+     "d": "2026-06-30",
+     "from": 8,
+     "to": 7
+    },
+    {
+     "t": "AN",
+     "d": "2026-06-29",
+     "from": 9,
+     "to": 10
+    },
+    {
+     "t": "FAF",
+     "d": "2026-06-29",
+     "from": 6,
+     "to": 5
+    },
+    {
+     "t": "FCN",
+     "d": "2026-06-29",
+     "from": 3,
+     "to": 5
+    },
+    {
+     "t": "GME",
+     "d": "2026-06-29",
+     "from": 3,
+     "to": 10
+    },
+    {
+     "t": "SPNT",
+     "d": "2026-06-29",
+     "from": 3,
+     "to": 2
+    },
+    {
+     "t": "STWD",
+     "d": "2026-06-29",
+     "from": 9,
+     "to": 10
+    },
+    {
+     "t": "DINO",
+     "d": "2026-06-26",
+     "from": 10,
+     "to": 9
+    },
+    {
+     "t": "ELS",
+     "d": "2026-06-26",
+     "from": 2,
+     "to": 3
+    },
+    {
+     "t": "FNF",
+     "d": "2026-06-26",
+     "from": 7,
+     "to": 6
+    },
+    {
+     "t": "FR",
+     "d": "2026-06-26",
+     "from": 10,
+     "to": 9
+    },
+    {
+     "t": "IRT",
+     "d": "2026-06-26",
+     "from": 4,
+     "to": 10
+    },
+    {
+     "t": "MTCH",
+     "d": "2026-06-26",
+     "from": 7,
+     "to": 6
+    },
+    {
+     "t": "PPLI",
+     "d": "2026-06-26",
+     "from": 4,
+     "to": 6
+    },
+    {
+     "t": "PRDO",
+     "d": "2026-06-26",
+     "from": 7,
+     "to": 9
+    },
+    {
+     "t": "RBC",
+     "d": "2026-06-26",
+     "from": 10,
+     "to": 1
+    },
+    {
+     "t": "RGA",
+     "d": "2026-06-26",
+     "from": 1,
+     "to": 3
+    },
+    {
+     "t": "SRPT",
+     "d": "2026-06-26",
+     "from": 7,
+     "to": 6
+    },
+    {
+     "t": "STC",
+     "d": "2026-06-26",
+     "from": 4,
+     "to": 6
+    },
+    {
+     "t": "STRA",
+     "d": "2026-06-26",
+     "from": 4,
+     "to": 9
+    },
+    {
+     "t": "TR",
+     "d": "2026-06-26",
+     "from": 10,
+     "to": 6
+    },
+    {
+     "t": "YELP",
+     "d": "2026-06-26",
+     "from": 7,
+     "to": 6
+    },
+    {
+     "t": "ACHC",
+     "d": "2026-06-25",
+     "from": 5,
+     "to": 7
+    },
+    {
+     "t": "CSW",
+     "d": "2026-06-25",
+     "from": 5,
+     "to": 10
+    },
+    {
+     "t": "JLL",
+     "d": "2026-06-25",
+     "from": 5,
+     "to": 4
+    },
+    {
+     "t": "MMI",
+     "d": "2026-06-25",
+     "from": 5,
+     "to": 10
+    },
+    {
+     "t": "OTTR",
+     "d": "2026-06-25",
+     "from": 5,
+     "to": 4
+    },
+    {
+     "t": "PBF",
+     "d": "2026-06-25",
+     "from": 5,
+     "to": 4
+    },
+    {
+     "t": "PNFP",
+     "d": "2026-06-25",
+     "from": 3,
+     "to": 10
+    },
+    {
+     "t": "SF",
+     "d": "2026-06-25",
+     "from": 8,
+     "to": 10
+    },
+    {
+     "t": "SPNT",
+     "d": "2026-06-25",
+     "from": 5,
+     "to": 4
+    }
+   ],
+   "pnl_moves": [
+    {
+     "t": "ABR",
+     "d": "2026-07-21",
+     "from": 0.8,
+     "to": -1.0,
+     "held_from": 3,
+     "held_to": 2,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "FMC",
+     "d": "2026-07-21",
+     "from": -5.6,
+     "to": -15.0,
+     "held_from": 3,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "stop"
+    },
+    {
+     "t": "OLN",
+     "d": "2026-07-21",
+     "from": -23.6,
+     "to": -4.3,
+     "held_from": 7,
+     "held_to": 2,
+     "exit_from": "stop",
+     "exit_to": "target"
+    },
+    {
+     "t": "PLAB",
+     "d": "2026-07-21",
+     "from": -5.3,
+     "to": 2.3,
+     "held_from": 6,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "POST",
+     "d": "2026-07-21",
+     "from": 0.3,
+     "to": -0.1,
+     "held_from": 3,
+     "held_to": 2,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "PTON",
+     "d": "2026-07-21",
+     "from": 1.9,
+     "to": 4.2,
+     "held_from": 6,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "RRC",
+     "d": "2026-07-21",
+     "from": 2.1,
+     "to": 3.0,
+     "held_from": 6,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "SFBS",
+     "d": "2026-07-21",
+     "from": 4.9,
+     "to": 0.5,
+     "held_from": 9,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "VNOM",
+     "d": "2026-07-21",
+     "from": -8.5,
+     "to": -0.3,
+     "held_from": 10,
+     "held_to": 2,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "WPC",
+     "d": "2026-07-21",
+     "from": 1.0,
+     "to": 1.7,
+     "held_from": 3,
+     "held_to": 2,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "FIVE",
+     "d": "2026-07-20",
+     "from": 1.7,
+     "to": 2.8,
+     "held_from": 4,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "GPK",
+     "d": "2026-07-20",
+     "from": 2.3,
+     "to": 1.9,
+     "held_from": 4,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "HLI",
+     "d": "2026-07-20",
+     "from": 1.0,
+     "to": 0.3,
+     "held_from": 4,
+     "held_to": 3,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "HLX",
+     "d": "2026-07-20",
+     "from": -0.6,
+     "to": 2.2,
+     "held_from": 4,
+     "held_to": 3,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "ITGR",
+     "d": "2026-07-20",
+     "from": 0.3,
+     "to": 29.2,
+     "held_from": 1,
+     "held_to": 9,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "MORN",
+     "d": "2026-07-20",
+     "from": 16.5,
+     "to": 20.1,
+     "held_from": 7,
+     "held_to": 9,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "MPT",
+     "d": "2026-07-20",
+     "from": -1.6,
+     "to": -0.6,
+     "held_from": 4,
+     "held_to": 3,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "SMG",
+     "d": "2026-07-20",
+     "from": 1.9,
+     "to": -3.1,
+     "held_from": 4,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "UVV",
+     "d": "2026-07-20",
+     "from": 1.5,
+     "to": 3.8,
+     "held_from": 4,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "WT",
+     "d": "2026-07-20",
+     "from": 8.2,
+     "to": -3.7,
+     "held_from": 10,
+     "held_to": 1,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "AEO",
+     "d": "2026-07-17",
+     "from": 1.3,
+     "to": 1.9,
+     "held_from": 5,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "AKR",
+     "d": "2026-07-17",
+     "from": 0.3,
+     "to": 1.2,
+     "held_from": 8,
+     "held_to": 7,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "GBX",
+     "d": "2026-07-17",
+     "from": 1.5,
+     "to": 5.2,
+     "held_from": 5,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "HR",
+     "d": "2026-07-17",
+     "from": 1.3,
+     "to": 0.7,
+     "held_from": 5,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "KEX",
+     "d": "2026-07-17",
+     "from": 3.2,
+     "to": 2.9,
+     "held_from": 2,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "PB",
+     "d": "2026-07-17",
+     "from": 3.1,
+     "to": 0.2,
+     "held_from": 10,
+     "held_to": 1,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "PTON",
+     "d": "2026-07-17",
+     "from": -2.1,
+     "to": -1.1,
+     "held_from": 8,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "TALO",
+     "d": "2026-07-17",
+     "from": 4.6,
+     "to": 0.2,
+     "held_from": 10,
+     "held_to": 7,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "FOXF",
+     "d": "2026-07-15",
+     "from": -4.9,
+     "to": -8.8,
+     "held_from": 7,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "GPI",
+     "d": "2026-07-15",
+     "from": -1.1,
+     "to": -0.2,
+     "held_from": 4,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "HOG",
+     "d": "2026-07-15",
+     "from": -8.1,
+     "to": 6.1,
+     "held_from": 10,
+     "held_to": 3,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "MATW",
+     "d": "2026-07-15",
+     "from": -0.8,
+     "to": -1.6,
+     "held_from": 4,
+     "held_to": 3,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "NX",
+     "d": "2026-07-15",
+     "from": -0.5,
+     "to": 0.2,
+     "held_from": 4,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "PEN",
+     "d": "2026-07-15",
+     "from": 0.1,
+     "to": 0.2,
+     "held_from": 10,
+     "held_to": 9,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "TNDM",
+     "d": "2026-07-15",
+     "from": 5.4,
+     "to": 14.1,
+     "held_from": 7,
+     "held_to": 9,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "TRN",
+     "d": "2026-07-15",
+     "from": -2.9,
+     "to": -0.6,
+     "held_from": 4,
+     "held_to": 3,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "CG",
+     "d": "2026-07-14",
+     "from": 1.1,
+     "to": -3.3,
+     "held_from": 1,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "FCPT",
+     "d": "2026-07-14",
+     "from": 4.3,
+     "to": 4.8,
+     "held_from": 5,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "NWN",
+     "d": "2026-07-14",
+     "from": 2.4,
+     "to": 2.3,
+     "held_from": 5,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "OGE",
+     "d": "2026-07-14",
+     "from": 1.1,
+     "to": 1.2,
+     "held_from": 5,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "TR",
+     "d": "2026-07-14",
+     "from": 1.8,
+     "to": 2.2,
+     "held_from": 5,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "AHCO",
+     "d": "2026-07-13",
+     "from": 6.8,
+     "to": 10.0,
+     "held_from": 6,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "ARLO",
+     "d": "2026-07-13",
+     "from": 5.2,
+     "to": 7.9,
+     "held_from": 9,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "BURL",
+     "d": "2026-07-13",
+     "from": 3.3,
+     "to": 6.1,
+     "held_from": 3,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "NWE",
+     "d": "2026-07-13",
+     "from": -0.9,
+     "to": -1.6,
+     "held_from": 10,
+     "held_to": 1,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "SBRA",
+     "d": "2026-07-13",
+     "from": 13.4,
+     "to": 11.6,
+     "held_from": 9,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "TRN",
+     "d": "2026-07-13",
+     "from": 0.4,
+     "to": 2.8,
+     "held_from": 6,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "BJ",
+     "d": "2026-07-10",
+     "from": 2.0,
+     "to": 2.5,
+     "held_from": 7,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "BKH",
+     "d": "2026-07-10",
+     "from": -1.5,
+     "to": 0.0,
+     "held_from": 10,
+     "held_to": 3,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "BSY",
+     "d": "2026-07-10",
+     "from": -1.9,
+     "to": 6.2,
+     "held_from": 1,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "CTRE",
+     "d": "2026-07-10",
+     "from": 6.3,
+     "to": 7.6,
+     "held_from": 4,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "GATX",
+     "d": "2026-07-10",
+     "from": 1.9,
+     "to": 0.5,
+     "held_from": 10,
+     "held_to": 3,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "HR",
+     "d": "2026-07-10",
+     "from": 3.5,
+     "to": 2.8,
+     "held_from": 10,
+     "held_to": 9,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "NJR",
+     "d": "2026-07-10",
+     "from": -1.0,
+     "to": 0.1,
+     "held_from": 4,
+     "held_to": 3,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "OHI",
+     "d": "2026-07-10",
+     "from": 4.5,
+     "to": 6.8,
+     "held_from": 7,
+     "held_to": 9,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "TR",
+     "d": "2026-07-10",
+     "from": 3.7,
+     "to": 1.5,
+     "held_from": 7,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "WPC",
+     "d": "2026-07-10",
+     "from": 5.1,
+     "to": 5.7,
+     "held_from": 10,
+     "held_to": 9,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "AN",
+     "d": "2026-07-09",
+     "from": 0.2,
+     "to": 6.7,
+     "held_from": 2,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "CVSA",
+     "d": "2026-07-09",
+     "from": 0.9,
+     "to": 1.7,
+     "held_from": 2,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "EGP",
+     "d": "2026-07-09",
+     "from": 0.8,
+     "to": 6.6,
+     "held_from": 2,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "ENOV",
+     "d": "2026-07-09",
+     "from": -4.3,
+     "to": 9.0,
+     "held_from": 2,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "REZI",
+     "d": "2026-07-09",
+     "from": 8.6,
+     "to": 4.3,
+     "held_from": 2,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "VCTR",
+     "d": "2026-07-09",
+     "from": 6.8,
+     "to": 6.2,
+     "held_from": 5,
+     "held_to": 7,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "AN",
+     "d": "2026-07-07",
+     "from": 4.6,
+     "to": 11.4,
+     "held_from": 4,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "HE",
+     "d": "2026-07-07",
+     "from": -0.1,
+     "to": -0.3,
+     "held_from": 4,
+     "held_to": 3,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "HOG",
+     "d": "2026-07-07",
+     "from": 8.9,
+     "to": 12.2,
+     "held_from": 10,
+     "held_to": 9,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "NJR",
+     "d": "2026-07-07",
+     "from": 1.7,
+     "to": 2.9,
+     "held_from": 7,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "TR",
+     "d": "2026-07-07",
+     "from": 3.0,
+     "to": -0.6,
+     "held_from": 10,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "CLH",
+     "d": "2026-07-06",
+     "from": 2.4,
+     "to": 4.2,
+     "held_from": 5,
+     "held_to": 7,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "CNMD",
+     "d": "2026-07-06",
+     "from": 21.9,
+     "to": 31.5,
+     "held_from": 5,
+     "held_to": 7,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "JXN",
+     "d": "2026-07-06",
+     "from": 11.6,
+     "to": 15.0,
+     "held_from": 5,
+     "held_to": 7,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "MTCH",
+     "d": "2026-07-06",
+     "from": 0.4,
+     "to": -2.1,
+     "held_from": 2,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "ATMU",
+     "d": "2026-07-02",
+     "from": -2.3,
+     "to": -2.8,
+     "held_from": 1,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "CVSA",
+     "d": "2026-07-02",
+     "from": 2.0,
+     "to": 2.8,
+     "held_from": 6,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "FG",
+     "d": "2026-07-02",
+     "from": 6.6,
+     "to": 8.7,
+     "held_from": 6,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "OGE",
+     "d": "2026-07-02",
+     "from": 0.6,
+     "to": 1.6,
+     "held_from": 10,
+     "held_to": 1,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "RITM",
+     "d": "2026-07-02",
+     "from": -0.2,
+     "to": 2.2,
+     "held_from": 3,
+     "held_to": 8,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "TRNO",
+     "d": "2026-07-02",
+     "from": 0.2,
+     "to": 2.8,
+     "held_from": 3,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "ADT",
+     "d": "2026-07-01",
+     "from": -2.6,
+     "to": -1.5,
+     "held_from": 4,
+     "held_to": 3,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "BSY",
+     "d": "2026-07-01",
+     "from": -2.0,
+     "to": 0.2,
+     "held_from": 4,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "CLH",
+     "d": "2026-07-01",
+     "from": 4.8,
+     "to": 6.7,
+     "held_from": 7,
+     "held_to": 9,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "CPK",
+     "d": "2026-07-01",
+     "from": 4.9,
+     "to": -2.4,
+     "held_from": 7,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "DAR",
+     "d": "2026-07-01",
+     "from": 11.6,
+     "to": 8.2,
+     "held_from": 10,
+     "held_to": 9,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "FCPT",
+     "d": "2026-07-01",
+     "from": 4.9,
+     "to": 0.3,
+     "held_from": 10,
+     "held_to": 6,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "GKOS",
+     "d": "2026-07-01",
+     "from": 5.7,
+     "to": 3.1,
+     "held_from": 10,
+     "held_to": 3,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "NYT",
+     "d": "2026-07-01",
+     "from": 3.1,
+     "to": 1.9,
+     "held_from": 10,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "PRDO",
+     "d": "2026-07-01",
+     "from": 3.5,
+     "to": 6.2,
+     "held_from": 4,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "STC",
+     "d": "2026-07-01",
+     "from": -0.1,
+     "to": -0.9,
+     "held_from": 1,
+     "held_to": 3,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "STRA",
+     "d": "2026-07-01",
+     "from": 1.6,
+     "to": 5.9,
+     "held_from": 1,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "VIR",
+     "d": "2026-07-01",
+     "from": 3.0,
+     "to": -0.2,
+     "held_from": 4,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "GTY",
+     "d": "2026-06-30",
+     "from": 2.0,
+     "to": 2.2,
+     "held_from": 5,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "LKQ",
+     "d": "2026-06-30",
+     "from": -0.6,
+     "to": 1.5,
+     "held_from": 2,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "NEOG",
+     "d": "2026-06-30",
+     "from": 0.3,
+     "to": 3.7,
+     "held_from": 1,
+     "held_to": 7,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "NWE",
+     "d": "2026-06-30",
+     "from": 2.5,
+     "to": 2.4,
+     "held_from": 10,
+     "held_to": 7,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "OGE",
+     "d": "2026-06-30",
+     "from": 3.0,
+     "to": 2.4,
+     "held_from": 10,
+     "held_to": 1,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "OTTR",
+     "d": "2026-06-30",
+     "from": 0.9,
+     "to": 1.9,
+     "held_from": 2,
+     "held_to": 1,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "REZI",
+     "d": "2026-06-30",
+     "from": 18.4,
+     "to": 13.8,
+     "held_from": 8,
+     "held_to": 7,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "AN",
+     "d": "2026-06-29",
+     "from": 5.6,
+     "to": 9.6,
+     "held_from": 9,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "FAF",
+     "d": "2026-06-29",
+     "from": 2.4,
+     "to": 2.1,
+     "held_from": 6,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "FCN",
+     "d": "2026-06-29",
+     "from": 4.5,
+     "to": 4.9,
+     "held_from": 3,
+     "held_to": 5,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "GME",
+     "d": "2026-06-29",
+     "from": 3.1,
+     "to": 0.8,
+     "held_from": 3,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "SPNT",
+     "d": "2026-06-29",
+     "from": 2.3,
+     "to": 2.6,
+     "held_from": 3,
+     "held_to": 2,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "STWD",
+     "d": "2026-06-29",
+     "from": 1.4,
+     "to": 1.7,
+     "held_from": 9,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "DINO",
+     "d": "2026-06-26",
+     "from": 17.4,
+     "to": 15.4,
+     "held_from": 10,
+     "held_to": 9,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "ELS",
+     "d": "2026-06-26",
+     "from": 0.5,
+     "to": 2.4,
+     "held_from": 2,
+     "held_to": 3,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "FNF",
+     "d": "2026-06-26",
+     "from": 3.3,
+     "to": 2.6,
+     "held_from": 7,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "FR",
+     "d": "2026-06-26",
+     "from": 3.0,
+     "to": 3.5,
+     "held_from": 10,
+     "held_to": 9,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "IRT",
+     "d": "2026-06-26",
+     "from": 2.1,
+     "to": -1.4,
+     "held_from": 4,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "MTCH",
+     "d": "2026-06-26",
+     "from": 2.1,
+     "to": -0.4,
+     "held_from": 7,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "PPLI",
+     "d": "2026-06-26",
+     "from": 1.9,
+     "to": 2.1,
+     "held_from": 4,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "PRDO",
+     "d": "2026-06-26",
+     "from": 10.7,
+     "to": 13.5,
+     "held_from": 7,
+     "held_to": 9,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "RBC",
+     "d": "2026-06-26",
+     "from": -7.3,
+     "to": 1.5,
+     "held_from": 10,
+     "held_to": 1,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "RGA",
+     "d": "2026-06-26",
+     "from": -1.0,
+     "to": 2.9,
+     "held_from": 1,
+     "held_to": 3,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "SRPT",
+     "d": "2026-06-26",
+     "from": 20.6,
+     "to": 18.7,
+     "held_from": 7,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "STC",
+     "d": "2026-06-26",
+     "from": 1.4,
+     "to": 0.6,
+     "held_from": 4,
+     "held_to": 6,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "STRA",
+     "d": "2026-06-26",
+     "from": 6.7,
+     "to": 11.2,
+     "held_from": 4,
+     "held_to": 9,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "TR",
+     "d": "2026-06-26",
+     "from": -3.3,
+     "to": -3.0,
+     "held_from": 10,
+     "held_to": 6,
+     "exit_from": "horizon",
+     "exit_to": "target"
+    },
+    {
+     "t": "ACHC",
+     "d": "2026-06-25",
+     "from": 13.4,
+     "to": 12.1,
+     "held_from": 5,
+     "held_to": 7,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "CSW",
+     "d": "2026-06-25",
+     "from": -1.0,
+     "to": 0.1,
+     "held_from": 5,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "JLL",
+     "d": "2026-06-25",
+     "from": 4.7,
+     "to": 3.9,
+     "held_from": 5,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "MMI",
+     "d": "2026-06-25",
+     "from": 1.8,
+     "to": -3.0,
+     "held_from": 5,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "OTTR",
+     "d": "2026-06-25",
+     "from": -0.2,
+     "to": 0.8,
+     "held_from": 5,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "PBF",
+     "d": "2026-06-25",
+     "from": 14.3,
+     "to": 10.9,
+     "held_from": 5,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "PNFP",
+     "d": "2026-06-25",
+     "from": -0.2,
+     "to": -0.9,
+     "held_from": 3,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "horizon"
+    },
+    {
+     "t": "SF",
+     "d": "2026-06-25",
+     "from": 9.3,
+     "to": 8.6,
+     "held_from": 8,
+     "held_to": 10,
+     "exit_from": "target",
+     "exit_to": "target"
+    },
+    {
+     "t": "SPNT",
+     "d": "2026-06-25",
+     "from": 2.9,
+     "to": 3.3,
+     "held_from": 5,
+     "held_to": 4,
+     "exit_from": "target",
+     "exit_to": "target"
+    }
+   ],
+   "exit_reason_moves": [
+    {
+     "t": "ASH",
+     "d": "2026-07-21",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "FMC",
+     "d": "2026-07-21",
+     "from": "target",
+     "to": "stop"
+    },
+    {
+     "t": "OLN",
+     "d": "2026-07-21",
+     "from": "stop",
+     "to": "target"
+    },
+    {
+     "t": "PLAB",
+     "d": "2026-07-21",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "VNOM",
+     "d": "2026-07-21",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "SMG",
+     "d": "2026-07-20",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "WT",
+     "d": "2026-07-20",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "AEO",
+     "d": "2026-07-17",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "PB",
+     "d": "2026-07-17",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "PTON",
+     "d": "2026-07-17",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "RNG",
+     "d": "2026-07-17",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "TALO",
+     "d": "2026-07-17",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "FOXF",
+     "d": "2026-07-15",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "HOG",
+     "d": "2026-07-15",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "TR",
+     "d": "2026-07-14",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "ARLO",
+     "d": "2026-07-13",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "NWE",
+     "d": "2026-07-13",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "BKH",
+     "d": "2026-07-10",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "BSY",
+     "d": "2026-07-10",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "TR",
+     "d": "2026-07-10",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "HOG",
+     "d": "2026-07-07",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "ATMU",
+     "d": "2026-07-02",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "OGE",
+     "d": "2026-07-02",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "BSY",
+     "d": "2026-07-01",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "FCPT",
+     "d": "2026-07-01",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "BKH",
+     "d": "2026-06-30",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "GATX",
+     "d": "2026-06-30",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "NWE",
+     "d": "2026-06-30",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "OGE",
+     "d": "2026-06-30",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "PLUS",
+     "d": "2026-06-30",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "AN",
+     "d": "2026-06-29",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "GME",
+     "d": "2026-06-29",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "STWD",
+     "d": "2026-06-29",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "IRT",
+     "d": "2026-06-26",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "RBC",
+     "d": "2026-06-26",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "TR",
+     "d": "2026-06-26",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "CSW",
+     "d": "2026-06-25",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "CVSA",
+     "d": "2026-06-25",
+     "from": "horizon",
+     "to": "target"
+    },
+    {
+     "t": "MMI",
+     "d": "2026-06-25",
+     "from": "target",
+     "to": "horizon"
+    },
+    {
+     "t": "PNFP",
+     "d": "2026-06-25",
+     "from": "target",
+     "to": "horizon"
+    }
+   ]
+  }
+ },
+ "summaries": {
+  "A": {
+   "n_matured": 275,
+   "win_pct": 62.2,
+   "expectancy_pct": 1.12,
+   "median_pct": 1.35,
+   "profit_factor": 1.62,
+   "avg_win_pct": 4.72,
+   "avg_loss_pct": -4.79,
+   "median_hold": 10,
+   "capture": 0.71,
+   "ci_lo_pct": 56.2,
+   "ci_hi_pct": 67.6
+  },
+  "B": {
+   "n_matured": 359,
+   "win_pct": 61.8,
+   "expectancy_pct": 0.94,
+   "median_pct": 1.14,
+   "profit_factor": 1.49,
+   "avg_win_pct": 4.64,
+   "avg_loss_pct": -5.05,
+   "median_hold": 9,
+   "capture": 0.6,
+   "ci_lo_pct": 56.4,
+   "ci_hi_pct": 66.6
+  },
+  "B'": {
+   "n_matured": 359,
+   "win_pct": 62.7,
+   "expectancy_pct": 1.29,
+   "median_pct": 1.35,
+   "profit_factor": 1.7,
+   "avg_win_pct": 4.99,
+   "avg_loss_pct": -4.93,
+   "median_hold": 9,
+   "capture": 0.68,
+   "ci_lo_pct": 57.3,
+   "ci_hi_pct": 67.4
+  }
+ },
+ "price_revisions": {
+  "n_shared_dates": 773,
+  "n_shared_tickers": 1540,
+  "n_tickers_with_revised_price": 37,
+  "n_revised_cells": 4158,
+  "n_tickers_whose_start_moved": 975
+ },
+ "mask_census": {
+  "n_graded": 1492,
+  "n_mask_changed": 974,
+  "pct_mask_changed": 65.3,
+  "n_flipped_daily_flags": 64121
+ }
+}

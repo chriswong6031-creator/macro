@@ -24,11 +24,12 @@ THE RULE (frozen here; do not tune in the builder)
 A candidate is a scored CN name where ALL of:
 
   1. the ``signal_gate`` verdict is INELIGIBLE, and its reason names the
-     counter-trend / 200-reclaim / reclaim-and-hold family — the exact block
-     §2.7 attributes the never-eligible cohort to.  The strings come from
-     ``engine.signal_quality._buy_filter`` (lines 220/225: "counter-trend, no
-     200-reclaim/hold", "failed reclaim-and-hold"), reaching the verdict via
-     ``engine.signal_gate.verdict`` line 144 as "buy blocked by filter: ...";
+     counter-trend / 200-reclaim family — the exact block §2.7 attributes the
+     never-eligible cohort to.  The strings come from the ``CT_*`` constants in
+     ``engine.signal_quality`` ("counter-trend, no 200-reclaim/hold", "... held
+     but no 200-reclaim", "... reclaimed 200 but no next-bar hold"), reaching
+     the verdict via ``engine.signal_gate.verdict`` as "buy blocked by
+     filter: ...";
   2. close > the 50-session mean — the "already trending" half of a
      continuation shape, which is what separates this cohort from the washout
      cohort ``china_reversal_watch`` already logs;
@@ -67,10 +68,20 @@ MA_WINDOW = 50
 TRAIL_WINDOW = 63
 
 #: Substrings that identify the counter-trend / 200-reclaim block family in a
-#: gate verdict reason.  Sourced from engine/signal_quality.py:220,225 — NOT
-#: invented here.  "failed next-bar hold" (line 224) is deliberately absent: it
-#: is the reclaim_veto=False branch, which tests no reclaim at all, so it is not
-#: the §2.7 block.
+#: gate verdict reason.  Sourced from ``engine.signal_quality``'s ``CT_*``
+#: constants — NOT invented here; tests/test_china_continuation_watch.py drives
+#: the live filter and asserts every one of them still lands in this tuple.
+#:
+#: ``signal_quality.HOLD_FAIL`` ("failed next-bar hold") is deliberately absent:
+#: it is the block for a name that failed ONLY the next-bar hold — the main
+#: branch, plus the reclaim_veto=False counter-trend branch — neither of which
+#: tests a reclaim, so neither is the §2.7 block.
+#:
+#: ``reclaim-and-hold`` is the RETIRED pre-#4583 spelling of that same hold-only
+#: block, corrected because it named a reclaim it never evaluated
+#: (research/cn_prophet_audit/CN_RECLAIM_HOLD_AUDIT.md §10/§11).  The live engine
+#: can no longer emit it, so this entry matches nothing; THE RULE above is
+#: frozen, so it is pinned as dead rather than tuned out.
 BLOCK_REASON_MARKERS: tuple[str, ...] = (
     "counter-trend", "200-reclaim", "reclaim-and-hold",
 )

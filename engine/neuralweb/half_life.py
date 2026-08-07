@@ -21,6 +21,12 @@ B2 — Exponential / power-law half-life is ill-posed when the curve RISES.
 B3 — outcome_excess unit incommensurability: track_record outcome_excess is
      a non-negative magnitude (0% negatives); radar outcome_excess is a signed
      excess (≈45% negatives).  outcome_unit is mandatory in the schema.
+     The unit is now derived STRUCTURALLY from the spine index's outcome_basis
+     column (query.OUTCOME_BASIS_FOR_LEDGER) with _OUTCOME_UNIT_MAP as the
+     fallback — the hand-maintained map had no board entries, so hk_board /
+     ca_board / cn_board silently defaulted to 'signed_excess' despite using
+     the same unsigned fwd_mfe proxy as track_record.
+     cf. PR #4673 edge_outcomes.py dst_outcome_unsigned_mfe_proxy.
 
 B4 — Insufficient horizon points: radar has only h=5 graded rows; us_board
      only h=5,10.  Both are CLASS-B (< 3 admissible horizons → NaN always).
@@ -213,8 +219,23 @@ _CELL_FLOOR_N: int = WILSON_MIN_N
 # track_record outcome_excess is a NON-NEGATIVE magnitude (0% negatives).
 # radar outcome_excess is a SIGNED excess (≈45% negatives).
 # This mapping is sourced from Fable pre-reg review findings.
+#
+# FALLBACK ONLY as of the outcome_basis cure: _outcome_unit_for() now prefers
+# the spine index's per-row outcome_basis column when the caller can supply it
+# (query.OUTCOME_BASIS_FOR_LEDGER — the ledger decides, not this list). The map
+# still answers for engines with no graded rows in the index.
 _OUTCOME_UNIT_MAP: dict[str, str] = {
     "track_record": "magnitude",  # non-negative favorable-excursion
+    # The three boards fill outcome_excess from the SAME fwd_mfe_<h> proxy as
+    # track_record and pin direction=1 — they were simply missing from this map,
+    # so they defaulted to signed_excess and kernel_families.json published that
+    # mislabel. Measured 2026-08-05: board_hk 509 graded rows 0.0% negative;
+    # board_ca 330 rows 0.0% negative; board_cn 0 graded rows today (structurally
+    # identical — no empirical probe can see it, which is why the label is
+    # structural). cf. PR #4673 edge_outcomes.py dst_outcome_unsigned_mfe_proxy.
+    "hk_board": "magnitude",
+    "ca_board": "magnitude",
+    "cn_board": "magnitude",
     "radar": "signed_excess",
     "us_board": "signed_excess",
     "altdata": "signed_excess",
@@ -257,8 +278,46 @@ def _load_index(root: Path | str | None) -> pd.DataFrame:
         return pd.DataFrame()
 
 
-def _outcome_unit_for(engine_key: str) -> str:
-    """Return outcome_unit for a family engine key."""
+def _basis_mode(graded_df: Any) -> str | None:
+    """Mode of outcome_basis over a family's graded spine-index rows.
+
+    Returns None when the frame is empty, has no outcome_basis column (a
+    legacy parquet that escaped the read-time backfill), or the column is
+    all-null. Never raises — the caller falls back to the engine map.
+    """
+    if graded_df is None:
+        return None
+    try:
+        if getattr(graded_df, "empty", True):
+            return None
+        if "outcome_basis" not in graded_df.columns:
+            return None
+        vals = graded_df["outcome_basis"].dropna().astype(str)
+        vals = vals[~vals.isin(("", "nan", "None"))]
+        if vals.empty:
+            return None
+        return str(vals.value_counts().idxmax())
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _outcome_unit_for(engine_key: str, graded_df: Any = None) -> str:
+    """Return outcome_unit for a family engine key.
+
+    STRUCTURAL FIRST: when ``graded_df`` is supplied and its rows carry an
+    outcome_basis label (query.OUTCOME_BASIS_FOR_LEDGER), the ledger the rows
+    actually came from decides — 'unsigned_mfe_proxy' → 'magnitude', any other
+    labelled basis → 'signed_excess'. This is what stops the map from drifting
+    when a new ledger lands (the hk/ca/cn boards sat mislabelled for exactly
+    that reason). _OUTCOME_UNIT_MAP is the fallback for families with no graded
+    rows in the index; _DEFAULT_OUTCOME_UNIT is the fallback for those.
+    """
+    basis = _basis_mode(graded_df)
+    if basis is not None:
+        from engine.neuralweb.query import (  # noqa: PLC0415
+            OUTCOME_BASIS_UNSIGNED_MFE,
+        )
+        return "magnitude" if basis == OUTCOME_BASIS_UNSIGNED_MFE else "signed_excess"
     return _OUTCOME_UNIT_MAP.get(engine_key, _DEFAULT_OUTCOME_UNIT)
 
 
@@ -490,7 +549,9 @@ def _estimate_family(
     -------
     A dict matching the per-family schema.
     """
-    outcome_unit = _outcome_unit_for(engine_key)
+    # Structural basis first (the ledger the graded rows came from), engine map
+    # only as fallback — see _outcome_unit_for.
+    outcome_unit = _outcome_unit_for(engine_key, graded_df)
 
     # CLASS-C: zero graded outcomes
     total_graded = int(len(graded_df))

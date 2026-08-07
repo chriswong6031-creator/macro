@@ -300,11 +300,28 @@ def _snap_path():
     return p / "snapshots.parquet"
 
 
-def _latest_chain():
+def _latest_chain_dated():
+    """``(frame, as_of_date)`` for the freshest SESSION chain snapshot, or ``(None, None)``.
+
+    SESSION GUARD (#3721 class): the chains directory carries a file per CALENDAR day, so
+    `files[-1]` could be a weekend byte-copy of the prior session. The date is returned
+    alongside the frame because callers comparing this reading against a stored one need
+    to know WHICH session it is — see `prior_spread_map`. Fail-open on the filter.
+    """
     import glob
+    from pathlib import Path
     import pandas as pd
-    files = sorted(glob.glob(str(config.data_dir() / "polygon_gex" / "chains" / "*.parquet")))
-    return pd.read_parquet(files[-1]) if files else None
+    from lib import nyse_calendar
+    files = nyse_calendar.session_dates(
+        sorted(glob.glob(str(config.data_dir() / "polygon_gex" / "chains" / "*.parquet"))),
+        key=lambda f: Path(f).stem, keep_unparseable=True, label="polygon_gex/chains")
+    if not files:
+        return None, None
+    return pd.read_parquet(files[-1]), nyse_calendar.as_day(Path(files[-1]).stem)
+
+
+def _latest_chain():
+    return _latest_chain_dated()[0]
 
 
 def snapshot(today: date | None = None, chain=None) -> int:
@@ -344,17 +361,45 @@ def load_history():
     return pd.read_parquet(p) if p.exists() else None
 
 
-def prior_spread_map() -> dict[str, float]:
-    """{UPPER underlying: most-recent PRIOR ledger ivspread}. Loaded ONCE so a caller enriching
-    many names can read 'call demand building' (current − prior) without re-reading the ledger
-    per name. Empty {} when the ledger is absent."""
+def prior_spread_map() -> dict[str, dict]:
+    """{UPPER underlying: {"ivspread": float, "date": date}} — the latest ledger reading.
+
+    GAP DISCIPLINE — COMPARE (lib/nyse_calendar, 2026-08-06). This used to return a bare
+    float, DISCARDING the row's date, while the copy it feeds says "vs the prior session"
+    (`assess`, both chg branches). Those are only the same thing when the ledger's last
+    row really is the session before the live chain — and the chain store takes collection
+    outages, so on 2026-08-06 the newest stored session was 2026-07-31, FOUR sessions
+    back. Without the date the caller could not tell, so a four-session drift in call-over
+    -put richness was narrated as "building vs the prior session".
+
+    Returning the date does not by itself fix that: the ADJACENCY test belongs to the
+    caller, which is the only party that knows the current reading's own session. This
+    function's job is to stop throwing away the fact needed to run it — see
+    `scripts/build_stock_library.py`, which now refuses the delta when the two sessions
+    are not adjacent.
+
+    Empty {} when the ledger is absent. Non-session rows are dropped first: a weekend row
+    is a recompute off a stale carried-forward chain and would masquerade as "yesterday".
+    """
     try:
+        from lib import nyse_calendar
         led = load_history()
         if led is None or led.empty:
             return {}
-        last = (led.sort_values("date")
-                .groupby(led["underlying"].astype(str).str.upper())["ivspread"].last())
-        return {str(k): float(v) for k, v in last.items()}
+        led = nyse_calendar.session_rows(led, "date", label="options_ivspread/snapshots")
+        led = led.sort_values("date")
+        key = led["underlying"].astype(str).str.upper()
+        out: dict[str, dict] = {}
+        for tk, grp in led.groupby(key, sort=False):
+            row = grp.iloc[-1]
+            d = nyse_calendar.as_day(row.get("date"))
+            try:
+                v = float(row.get("ivspread"))
+            except (TypeError, ValueError):
+                continue
+            if v == v and d is not None:
+                out[str(tk)] = {"ivspread": v, "date": d}
+        return out
     except Exception:  # noqa: BLE001
         return {}
 
