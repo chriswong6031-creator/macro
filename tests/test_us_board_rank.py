@@ -1753,6 +1753,18 @@ class TestCommittedArtifactIntegration:
 
         The non-buy lanes are asserted as OBJECTS, not counts: score_rows is never
         handed watch/leaders/laggards/ran, and this is the test that says so.
+
+        The witness is chosen by the PROPERTY under test, not by position.  It used to
+        be `raw[-1]`, which silently assumed the board carried no row with a hard
+        entry verdict: `stage_for` consults the entry status FIRST and returns
+        `blocked` outright for {blocked, exit, avoid}, so such a row can never route
+        to `basing` however it is relabelled — deliberately, since that verdict is a
+        decision about the name and outranks the cycle read.  The assumption held for
+        the #4609 vintage this guard was written against (0 of 59 buy rows carried
+        one) and broke on the 2026-08-07 re-bake (ORA, 1 of 68, sorted last), which
+        landed the witness on the one row in the whole board where the split is
+        unreachable.  Selecting by reachability keeps the guard deterministic and
+        re-bake proof, and the emptiness of that pool is asserted rather than skipped.
         """
         board, _rows = scored
         from pathlib import Path
@@ -1764,10 +1776,18 @@ class TestCommittedArtifactIntegration:
         def _pool():
             raw = [json.loads(json.dumps(r)) for r in board["buy"]]
             assert len(raw) >= 2, "committed board must have room for a witness"
-            raw[-1].update({"state": "BOTTOM WATCH", "label": "NEARING A LOW",
+            reachable = [
+                i for i, r in enumerate(raw)
+                if ubr._status_of(r.get("entry_signal")) not in ubr._BLOCKED_STATUSES]
+            assert reachable, (
+                "every committed buy row carries a blocked/exit/avoid entry status, "
+                "so the basing shelf is unreachable from this board and the split "
+                "below would prove nothing")
+            witness = raw[reachable[-1]]
+            witness.update({"state": "BOTTOM WATCH", "label": "NEARING A LOW",
                             "dir": "down"})
-            raw[-1].pop("label_zh", None)
-            return raw, raw[-1]["ticker"]
+            witness.pop("label_zh", None)
+            return raw, witness["ticker"]
 
         lanes_before = json.dumps(
             {lane: board.get(lane) for lane in
@@ -1785,6 +1805,15 @@ class TestCommittedArtifactIntegration:
         by_after = {r["ticker"]: r for r in after}
         assert by_before[witness]["stage"] == "blocked", (
             "witness must be blocked without the opt-in or this proves nothing")
+        # ...and blocked BY THE DEFAULT ROUTING, not by an entry verdict.  The
+        # assertion above is satisfied by a blocked/exit/avoid status too, so when the
+        # re-bake moved the witness onto such a row it kept passing while the split it
+        # fences had already become unreachable — the anti-vacuity tripwire itself
+        # succeeding for the wrong cause.  This pins the reason, not just the value.
+        assert ubr._status_of(
+            by_before[witness].get("entry_signal")) not in ubr._BLOCKED_STATUSES, (
+            "witness must reach `blocked` through the BOTTOM WATCH default, not "
+            "through an entry status that short-circuits the basing clause")
         assert by_after[witness]["stage"] == "basing"
 
         moved = {t for t in by_before
