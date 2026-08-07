@@ -602,3 +602,314 @@ def test_a_loop_over_an_unknowable_domain_binds_nothing():
         'total = float(weights.sum()) + float(frame["total_outlays"].sum())\n'
     )
     assert guard.scan_python(PY, source) == []
+
+
+# ---------------------------------- the scoping rule, pinned in BOTH directions
+#
+# THE RULE: a name proved inside a function does not carry its class out of that
+# function.  An inner scope may READ an enclosing binding; it may only WRITE into its
+# own, unless it declares ``global``/``nonlocal``.
+#
+# Before scoping, ``_name_class`` was ONE FLAT DICT for the whole module, and the
+# never-clobber-on-class-neutral-rebind rule above made that permanent.  Measured on the
+# real metrics.py: ``_backlog``'s ``current_total``/``funded_total`` floats stayed classed
+# for ~1,000 further lines, so an expression injected into ``_catalysts`` — a different
+# function, where neither name exists — was REPORTED as a ceiling added to a transaction
+# delta.  Every test below is paired with its non-vacuity proof: the same shape placed
+# where the names really live must still go RED, or "silent" would mean "the tracker died"
+# rather than "the tracker learned where the name lives".
+
+
+_CATALYSTS_SITE = '    agency = metrics.get("agency_concentration") or {}\n'
+_BACKLOG_SITE = "    funding_pct = 100.0 * funded_total / current_total if current_total > 0 else None\n"
+_MODIFICATION_SITE = "    denom = float(trailing[trailing > 0].sum())\n"
+
+
+def _inject(source: str, anchor: str, statement: str) -> str:
+    """Insert ``statement`` immediately BEFORE an anchor that must exist exactly once."""
+    return _mutate(source, anchor, f"{statement}{anchor}")
+
+
+@pytest.mark.parametrize("leaked", ["current_total", "funded_total"])
+def test_a_backlog_local_is_not_still_classed_a_thousand_lines_later(leaked):
+    """``float(current_total) + float(denom)`` inside ``_catalysts`` is NOT a finding.
+
+    Both measured false positives, pinned at the real site the reviewer measured them at.
+    ``current_total`` and ``funded_total`` are ``_backlog``'s guard floats; ``denom`` is
+    ``_modification_metrics``' denominator.  None of the three is a name of ``_catalysts``,
+    so the expression names nothing and mixes nothing — the guard was inventing a
+    ceiling-plus-delta out of two locals it could not see.
+    """
+    source = _metrics_source()
+    assert guard.scan_python(METRICS, source) == [], "shipped metrics.py is not clean"
+    injected = _inject(source, _CATALYSTS_SITE, f"    _leak = float({leaked}) + float(denom)\n")
+    findings = guard.scan_python(METRICS, injected)
+    assert findings == [], [str(f) for f in findings]
+
+
+def test_those_backlog_locals_are_still_tracked_where_they_actually_live():
+    """Non-vacuity for the two tests above: silence must be SCOPE, not a dead tracker.
+
+    ``current_total`` is a ceiling total and ``funded_total`` an obligation total, both
+    proved inside ``_backlog``.  Added to each other IN ``_backlog`` they are exactly the
+    mix this file refuses, so this must go red — otherwise the negative tests above would
+    keep passing after a change that simply stopped tracking either name.
+    """
+    source = _metrics_source()
+    injected = _inject(
+        _metrics_source(), _BACKLOG_SITE, "    _probe = float(current_total) + float(funded_total)\n"
+    )
+    findings = guard.scan_python(METRICS, injected)
+    assert _rules(findings) == {"mixed_class_sum"}, [str(f) for f in findings]
+    detail = " ".join(f.detail for f in findings)
+    assert "ceiling" in detail and "award_cumulative" in detail, detail
+    assert guard.scan_python(METRICS, source) == []
+
+
+def test_the_modification_denominator_is_still_tracked_where_it_actually_lives():
+    """Non-vacuity for ``denom``, the other half of both false positives."""
+    injected = _inject(
+        _metrics_source(),
+        _MODIFICATION_SITE,
+        '    _probe = float(trailing.sum()) + float(pd.to_numeric(frame["total_outlays"]).sum())\n',
+    )
+    findings = guard.scan_python(METRICS, injected)
+    assert _rules(findings) == {"mixed_class_sum"}, [str(f) for f in findings]
+    detail = " ".join(f.detail for f in findings)
+    assert "outlay" in detail and "transaction_delta" in detail, detail
+
+
+@pytest.mark.parametrize(
+    "leaked",
+    ["current_total", "funded_total", "obligated", "current", "potential", "denom", "weights", "shares"],
+)
+def test_no_function_local_survives_into_module_scope(leaked):
+    """The leak itself, asserted structurally rather than only through its symptoms.
+
+    Each of these is a local of exactly one function in metrics.py.  If any is visible at
+    module scope after the whole file is traversed, every later function in the file has
+    inherited it and the two false positives above are back.
+    """
+    import ast
+
+    tree = ast.parse(_metrics_source())
+    scanner = guard._PythonScanner(METRICS, guard._first_wins_readers(tree))
+    scanner.visit(tree)
+    assert len(scanner._scopes) == 1, "the scope stack did not unwind"
+    assert scanner._scopes[0].classes.get(leaked) is None
+
+
+def test_an_inner_scope_reads_an_enclosing_binding():
+    """Scoping narrows WRITES, not reads — a closure really does see the outer name."""
+    source = (
+        'LADDER = ("total_obligated", "award_amount")\n'
+        "def outer():\n"
+        "    obligated = _first_number(row, LADDER)\n"
+        "    def inner():\n"
+        '        return obligated + row["potential_award_amount"]\n'
+        "    return inner\n"
+    )
+    assert _rules(guard.scan_python(PY, source)) == {"mixed_class_sum"}
+
+
+def test_an_inner_scope_does_not_write_into_an_enclosing_one():
+    source = (
+        "def proves_it():\n"
+        '    obligated = row["total_obligated"]\n'
+        "def elsewhere():\n"
+        '    return obligated + row["potential_award_amount"]\n'
+    )
+    assert guard.scan_python(PY, source) == []
+
+
+def test_a_local_shadows_an_enclosing_binding_of_the_same_name():
+    """A name a function assigns is that function's own; it must not inherit outward."""
+    source = (
+        'obligated = row["total_obligated"]\n'
+        "def f():\n"
+        "    obligated = compute()\n"
+        '    return obligated + row["potential_award_amount"]\n'
+    )
+    assert guard.scan_python(PY, source) == []
+
+
+def test_global_and_nonlocal_write_outward_as_python_does():
+    """``metrics.py`` really uses ``nonlocal`` (the recipient-graph loader), so the
+    declaration cannot be treated as a no-op."""
+    with_global = (
+        "def f():\n"
+        "    global obligated\n"
+        '    obligated = row["total_obligated"]\n'
+        "def g():\n"
+        '    return obligated + row["potential_award_amount"]\n'
+    )
+    assert _rules(guard.scan_python(PY, with_global)) == {"mixed_class_sum"}
+    with_nonlocal = (
+        "def outer():\n"
+        "    obligated = None\n"
+        "    def inner():\n"
+        "        nonlocal obligated\n"
+        '        obligated = row["total_obligated"]\n'
+        "    inner()\n"
+        '    return obligated + row["potential_award_amount"]\n'
+    )
+    assert _rules(guard.scan_python(PY, with_nonlocal)) == {"mixed_class_sum"}
+
+
+def test_a_comprehension_does_not_write_into_the_scope_around_it():
+    source = (
+        "def f():\n"
+        '    rows = [obligated for obligated in frame["total_obligated"]]\n'
+        '    return obligated + row["potential_award_amount"]\n'
+    )
+    assert guard.scan_python(PY, source) == []
+
+
+# ------------------------------ the value-position rule, pinned in BOTH directions
+#
+# THE RULE: a class describes what a figure is a measurement OF, so it is read only from
+# the parts of an expression that can BE the value — never from a part that merely decides
+# which value is taken, and never past a call whose result is a different KIND of thing.
+#
+# Measured on the real award_events.py, the tracker had classed ``event_type``, ``verb``,
+# ``kind`` and ``amount_type`` — STRING LABELS, every one — as ``transaction_delta``,
+# because it read the TEST of the conditional that chose between two words.  ``len(...)``
+# was the other vector: the reviewer's ``len(value_items) + len(changes)`` was reported as
+# a ceiling added to a delta, and two counts are dimensionless.
+#
+# What this rule deliberately does NOT do is refuse provenance through an opaque helper
+# call (``changes = _changed_fields(prior, current, ...)``).  The result KIND of a call
+# this guard has never heard of is unknown, and the module's law is that an unknown is not
+# reclassified — refusing there would also refuse
+# ``pd.to_numeric(active.get("total_obligated"), errors="coerce")``, the binding both
+# mutation tests above rest on.
+
+
+def test_a_conditions_class_does_not_become_the_chosen_values_class():
+    """``verb`` is a WORD.  ``amount`` chooses between two words; it is not the word."""
+    source = (
+        'amount = row["federal_action_obligation"]\n'
+        'verb = "deobligation" if amount < 0 else "positive contract action"\n'
+        'label = verb + str(row["potential_award_amount"])\n'
+    )
+    assert guard.scan_python(PY, source) == []
+
+
+def test_a_conditional_still_carries_the_class_of_the_VALUE_it_chooses():
+    """Non-vacuity: only the TEST is pruned.  Both branches are still read."""
+    source = (
+        'amount = row["current_award_amount"] if flag else row["potential_award_amount"]\n'
+        'total = amount + row["total_obligated"]\n'
+    )
+    assert _rules(guard.scan_python(PY, source)) == {"mixed_class_sum"}
+
+
+def test_two_counts_are_not_two_amounts():
+    """The reviewer's ``len(value_items) + len(changes)``, reduced to its shape.
+
+    It fired on the guard as first committed.  A count of ceiling-valued facts plus a
+    count of change records is a cardinality, and cardinality is the same 'thing' on both
+    sides — nothing about it double-counts a dollar.
+    """
+    source = (
+        'ceilings = row["current_award_amount"]\n'
+        'deltas = row["federal_action_obligation"]\n'
+        "n = len(ceilings) + len(deltas)\n"
+    )
+    assert guard.scan_python(PY, source) == []
+
+
+def test_the_same_two_names_added_WITHOUT_len_still_go_red():
+    """Non-vacuity for the test above: the prune is ``len``, not the two names."""
+    source = (
+        'ceilings = row["current_award_amount"]\n'
+        'deltas = row["federal_action_obligation"]\n'
+        "n = ceilings + deltas\n"
+    )
+    assert _rules(guard.scan_python(PY, source)) == {"mixed_class_sum"}
+
+
+def test_a_container_is_not_one_figure():
+    """``value_items = [...]`` is a LIST of facts; classing it says a list is a dollar."""
+    source = (
+        'value_items = [by_name[n] for n in ("current_award_amount", "potential_award_amount")]\n'
+        'total = value_items + row["total_obligated"]\n'
+    )
+    assert guard.scan_python(PY, source) == []
+
+
+def test_a_total_over_a_container_still_reads_inside_it():
+    """Non-vacuity: refusing to class the CONTAINER never stops a rule that folds it."""
+    source = 'exposure = sum([row["total_obligated"], row["potential_award_amount"]])\n'
+    assert _rules(guard.scan_python(PY, source)) == {"mixed_class_sum"}
+
+
+def test_provenance_still_travels_through_a_numeric_coercion():
+    """The accepted residual, stated as a test: an unknown call keeps its provenance.
+
+    This is the binding both mutation tests rest on, so a future narrowing that decided
+    'a call result is unknown, therefore unclassed' would blind the guard again.
+    """
+    source = (
+        'obligated = pd.to_numeric(active.get("total_obligated"), errors="coerce")\n'
+        'total = obligated + row["current_award_amount"]\n'
+    )
+    assert _rules(guard.scan_python(PY, source)) == {"mixed_class_sum"}
+
+
+# ------------------- the reader-result rule, the twin of the loop-variable rule
+#
+# A ladder handed to a first-present-wins reader RETURNS one of its rungs, so the reader's
+# result carries the ladder's class on exactly the terms ``visit_For`` gives a loop
+# variable.  Without this, hoisting a ladder to a constant would hide every downstream
+# mix — a container's own NAME carries no class (a list is not a dollar figure), so the
+# class has to be recovered from the ladder at the point the rung is taken.
+
+
+def test_a_reader_over_a_single_class_ladder_yields_that_class():
+    source = (
+        'LADDER = ("total_obligated", "award_amount")\n'
+        "v = _first_number(row, LADDER)\n"
+        'total = v + row["total_outlay"]\n'
+    )
+    assert _rules(guard.scan_python(PY, source)) == {"mixed_class_sum"}
+
+
+def test_a_reader_over_a_MIXED_ladder_yields_no_class():
+    """The call is already a mixed_class_fallback; picking one rung's class would be a
+    coin-flip attributed to everything the result touches."""
+    source = (
+        'LADDER = ("total_obligated", "current_award_amount")\n'
+        "v = _first_number(row, LADDER)\n"
+        'total = v + row["total_outlay"]\n'
+    )
+    findings = guard.scan_python(PY, source)
+    assert _rules(findings) == {"mixed_class_fallback"}, [str(f) for f in findings]
+
+
+def test_a_parameter_carries_no_class_the_known_limit_of_scoping():
+    """The measured price of scoping, pinned so it stays a KNOWN limit.
+
+    This file does no interprocedural analysis, so a function parameter's class is
+    genuinely unknown.  Before scoping, ``_impact``'s ``amount`` parameter was classed —
+    from a local of a DIFFERENT function that happened to share the name — and three
+    numbers derived from it (``source_amount``, ``attributable_amount``, ``ratio``)
+    inherited that guess.  Recovering them would mean restoring exactly the leak that
+    reported ``float(current_total) + float(denom)`` a thousand lines from either name.
+
+    Differential sweep over all 33 subjects, injecting ``<name> + row["total_outlay"]``
+    after every assignment: 24 sites reported by both trackers, 0 by the scoped one alone,
+    35 by the flat one alone — 32 of them names holding no dollar figure, 3 of them this.
+    """
+    source = (
+        "def uses_a_parameter(amount):\n"
+        '    return amount + row["total_outlay"]\n'
+    )
+    assert guard.scan_python(PY, source) == []
+    # ... and the same function is seen the moment the class is proved INSIDE it.
+    proved = (
+        "def proves_it_locally(row):\n"
+        '    amount = row["federal_action_obligation"]\n'
+        '    return amount + row["total_outlay"]\n'
+    )
+    assert _rules(guard.scan_python(PY, proved)) == {"mixed_class_sum"}

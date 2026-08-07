@@ -46,6 +46,21 @@ WHAT IS DELIBERATELY *NOT* A VIOLATION
   "unknown", not "compatible".  Guessing would manufacture findings, and the point of
   this file is that its findings are real.
 
+  A name proved inside ANOTHER function.  ``metrics._backlog``'s ``current_total`` really
+  is a ceiling total — and it is a local of ``_backlog``.  An expression a thousand lines
+  later that happens to use the same word names nothing, so bindings are SCOPED
+  (``_Scope`` / ``_PythonScanner._binding_scope``): an inner scope may read an enclosing
+  binding, it may only write its own, and a class does not leave the function that proved
+  it.  The flat tracker this replaced reported ``float(current_total) + float(denom)``
+  inside ``_catalysts``, where neither name exists.
+
+  A count, a label, or a container.  ``len(value_items) + len(changes)`` adds two
+  cardinalities, and ``verb = "deobligation" if amount < 0 else "positive contract
+  action"`` is a WORD that a delta merely chose.  A class is read only from an
+  expression's VALUE positions (``_PythonScanner._value_fields``) — never from the
+  condition that picks the value, and never past a call whose result is a different KIND
+  of thing.
+
   Two figures of different classes rendered SIDE BY SIDE.  The dossier's
   Obligated / Current value / Potential ceiling row is the honest presentation, not the
   defect.  Only a single figure built from more than one class is a finding, which is why
@@ -63,7 +78,7 @@ import ast
 import json
 import re
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Iterator, Sequence
 
@@ -122,6 +137,53 @@ class Finding:
 
 _LADDER_NAME_HINT = re.compile(r"(^_?first_|_first_|fallback|coalesce)", re.IGNORECASE)
 
+# Calls whose RESULT is a different KIND of thing from whatever it was derived from: a
+# count, a string, a boolean, a container.  A class describes a dollar figure, so it
+# stops at these — ``len(obligations) + len(ceilings)`` adds two counts, and a count is
+# dimensionless.  Deliberately a list of KIND-CHANGERS, never a list of amount-preserving
+# calls: the whitelist reading would drop the class at every helper this lobe has not
+# heard of, and the binding the whole fix rests on is a call
+# (``pd.to_numeric(active.get("total_obligated"), errors="coerce")``).
+_KIND_CHANGING_CALLS = frozenset({
+    "len", "str", "repr", "bool", "format", "join", "split", "splitlines",
+    "sorted", "list", "set", "dict", "tuple", "frozenset",
+    "any", "all", "keys", "values", "items",
+    "isoformat", "strftime", "strip", "lower", "upper",
+})
+
+
+# One field name per class, used to say "this local is an X" in a finding's wording.
+# First declaration wins, matching the order of ``AMOUNT_CLASSES``.
+_REPRESENTATIVE_FIELD: dict[AmountClass, str] = {
+    cls: name for name, cls in reversed(list(AMOUNT_CLASSES.items()))
+}
+
+
+def _callee_name(node: ast.Call) -> str:
+    """``f(...)`` -> ``f``; ``a.b.f(...)`` -> ``f``; anything else -> ``""``."""
+    func = node.func
+    if isinstance(func, ast.Name):
+        return func.id
+    if isinstance(func, ast.Attribute):
+        return func.attr
+    return ""
+
+
+@dataclass
+class _Scope:
+    """One Python name-binding scope: a module, function, class body, or comprehension.
+
+    ``classes`` maps a name to its class, or to ``None`` meaning "bound HERE and carrying
+    no class" — an explicit shadow, so a local that re-measures or loses the class does
+    not fall through to an enclosing binding of the same name.
+    """
+
+    kind: str
+    classes: dict[str, AmountClass | None] = field(default_factory=dict)
+    ladders: dict[str, list[str] | None] = field(default_factory=dict)
+    global_names: set[str] = field(default_factory=set)
+    nonlocal_names: set[str] = field(default_factory=set)
+
 
 def _first_wins_readers(tree: ast.Module) -> frozenset[str]:
     """Functions in THIS module that read a names sequence first-present-wins.
@@ -172,42 +234,237 @@ class _PythonScanner(ast.NodeVisitor):
     Local names are tracked when an assignment's right-hand side mentions exactly ONE
     declared amount field (``obligated = pd.to_numeric(active.get("total_obligated"))``);
     all-string collections are tracked by their member list so a ladder hoisted to a
-    constant is still resolved at its call site.  Two shapes that hid real mixes from the
+    constant is still resolved at its call site.  Three shapes that hid real mixes from the
     first draft are tracked as well, each stated as a rule where it is implemented:
     a class-neutral RE-BIND does not clobber a class the name already proved
-    (``_bind_class``), and a LOOP VARIABLE walking a known field ladder carries that
-    ladder's class (``visit_For``).
+    (``_bind_class``), a LOOP VARIABLE walking a known field ladder carries that ladder's
+    class (``visit_For``), and every binding is SCOPED to the function that made it
+    (``_Scope``/``_binding_scope``) so a name proved inside one function does not stay
+    classed for the rest of the module.
+
+    What a tracked class means is PROVENANCE — which declared field this value came from —
+    read only through the expression's own VALUE positions (``_value_fields``), never
+    through a position that merely decides the value.  Both halves are load-bearing and
+    both are stated where they are implemented.
     """
 
     def __init__(self, path: str, readers: frozenset[str]) -> None:
         self.path = path
         self.findings: list[Finding] = []
         self._readers = readers
-        self._name_class: dict[str, AmountClass] = {}
-        self._name_ladder: dict[str, list[str]] = {}
+        self._scopes: list[_Scope] = [_Scope("module")]
+
+    # -- scopes -----------------------------------------------------------------
+    #
+    # THE SCOPING RULE, stated once:
+    #
+    #   A name proved inside a function does not carry its class out of that function.
+    #   An inner scope may READ an enclosing binding; it may only WRITE into its own,
+    #   unless it declares ``global``/``nonlocal``, which this lobe really does use
+    #   (metrics.py:535).
+    #
+    # Before this, ``_name_class`` was ONE FLAT DICT for the whole module, and the
+    # never-clobber-on-class-neutral-rebind rule above made that permanent: ``_backlog``'s
+    # ``current_total``/``funded_total`` floats (metrics.py:1264-1265) stayed classed for
+    # ~1,000 further lines, so injecting ``float(current_total) + float(denom)`` a thousand
+    # lines away — in a different function, where neither name exists — was REPORTED as a
+    # ceiling added to a transaction delta.  Neither expression touches a ceiling or a
+    # delta; the guard was inventing the mix out of two names it could not see.
+    #
+    # THE PRICE, measured rather than assumed.  Injecting ``<name> + row["total_outlay"]``
+    # after every assignment in all 33 subjects: 24 sites are reported by the flat tracker
+    # and by this one, 0 by this one alone, and 35 by the flat tracker alone.  Thirty-two
+    # of those 35 are names that hold no dollar figure at all — string labels, booleans,
+    # dicts, lists, and the 0.8/0.6/0.35 weight in workspace.py — i.e. the same noise the
+    # value-position rule below removes.  The other three are ``_impact``'s
+    # ``source_amount``/``attributable_amount``/``ratio``, whose class the flat tracker
+    # borrowed from a DIFFERENT function's local through the parameter ``amount``.  That
+    # is the known limit and it is stated rather than papered over: this file does no
+    # interprocedural analysis, so a PARAMETER carries no class, and recovering those
+    # three would mean restoring exactly the leak that produced the false positives.
+    def _visible_scopes(self) -> Iterator[_Scope]:
+        """Scopes a name READ may reach, innermost first.
+
+        Python's own chain: the innermost scope, then every enclosing FUNCTION (and the
+        module), skipping enclosing CLASS bodies — a class body's names are not visible to
+        code nested inside it, which is why only the innermost scope may be a class one.
+        """
+        scopes = list(reversed(self._scopes))
+        yield scopes[0]
+        for scope in scopes[1:]:
+            if scope.kind != "class":
+                yield scope
+
+    def _binding_scope(self, name: str) -> _Scope:
+        """The scope a WRITE to ``name`` lands in — its own, unless declared otherwise."""
+        current = self._scopes[-1]
+        if name in current.global_names:
+            return self._scopes[0]
+        if name in current.nonlocal_names:
+            for scope in reversed(self._scopes[:-1]):
+                if scope.kind == "function":
+                    return scope
+        return current
+
+    def _lookup_class(self, name: str) -> AmountClass | None:
+        for scope in self._visible_scopes():
+            if name in scope.classes:
+                return scope.classes[name]
+        return None
+
+    def _lookup_ladder(self, name: str) -> list[str] | None:
+        for scope in self._visible_scopes():
+            if name in scope.ladders:
+                return scope.ladders[name]
+        return None
+
+    def _scoped(self, kind: str, node: ast.AST) -> None:
+        self._scopes.append(_Scope(kind))
+        try:
+            self.generic_visit(node)
+        finally:
+            self._scopes.pop()
+
+    # A function/lambda body, a class body, and a comprehension each own their bindings.
+    # (Decorators and parameter defaults are evaluated in the ENCLOSING scope; they are
+    # visited inside the new one here because neither can contain a binding, so the only
+    # thing it could affect is a read, and a mis-scoped read of a decorator argument
+    # cannot produce a figure.)
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        self._scoped("function", node)
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        self._scoped("function", node)
+
+    def visit_Lambda(self, node: ast.Lambda) -> None:
+        self._scoped("function", node)
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        self._scoped("class", node)
+
+    def visit_ListComp(self, node: ast.ListComp) -> None:
+        self._scoped("comprehension", node)
+
+    def visit_SetComp(self, node: ast.SetComp) -> None:
+        self._scoped("comprehension", node)
+
+    def visit_DictComp(self, node: ast.DictComp) -> None:
+        self._scoped("comprehension", node)
+
+    def visit_GeneratorExp(self, node: ast.GeneratorExp) -> None:
+        self._scoped("comprehension", node)
+
+    def visit_Global(self, node: ast.Global) -> None:
+        self._scopes[-1].global_names.update(node.names)
+
+    def visit_Nonlocal(self, node: ast.Nonlocal) -> None:
+        self._scopes[-1].nonlocal_names.update(node.names)
 
     # -- helpers ----------------------------------------------------------------
-    def _literal_fields(self, node: ast.AST) -> list[str]:
-        """Declared amount field names appearing as string literals in a subtree."""
+    def _value_fields(self, node: ast.AST) -> list[str]:
+        """Declared amount fields reachable through this expression's VALUE positions.
+
+        THE VALUE-POSITION RULE, stated once:
+
+          A class describes what a figure IS a measurement of, so it is read only from
+          the parts of an expression that can BE the value — never from a part that
+          merely decides which value is taken, and never past a call whose result is a
+          different KIND of thing.
+
+        Two pruned positions, each measured on real source:
+
+          * the TEST of a conditional, a comparison, and ``not``.  ``verb =
+            "deobligation" if amount < 0 else "positive contract action"`` is a WORD;
+            ``amount`` chooses between two words, it is not the word.  Reading the test
+            is how ``event_type``, ``kind``, ``verb`` and ``amount_type`` — string
+            labels, every one — came to be classed ``transaction_delta``.
+          * a call in ``_KIND_CHANGING_CALLS``.  ``len(value_items) + len(changes)``
+            adds two counts; a count carries no class no matter what was counted.
+
+        Everything else propagates, INCLUDING an opaque helper call
+        (``_changed_fields(prior, current, ...)``).  That is deliberate and is the
+        residual this rule accepts: the result KIND of a call this file has never heard
+        of is unknown, and the module's own law is that an unknown is not reclassified —
+        so refusing there would also refuse ``pd.to_numeric(active.get("total_obligated"))``,
+        the binding both mutation tests rest on.  What survives is a name whose
+        PROVENANCE is right and whose runtime type is unknown; it can only produce a
+        finding by being ADDED to a differently-classed name, and for a non-number that
+        means string or list concatenation between two such names — which fails toward a
+        report a reader can dismiss, not toward the blindness that shipped.
+        """
+        found: list[str] = []
+        if isinstance(node, ast.Constant):
+            if isinstance(node.value, str) and classify(node.value) is not None:
+                found.append(node.value)
+            return found
+        if isinstance(node, ast.Name):
+            cls = self._lookup_class(node.id)
+            if cls is not None:
+                found.append(_REPRESENTATIVE_FIELD[cls])
+            return found
+        if isinstance(node, (ast.Compare, ast.JoinedStr)):
+            return found
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
+            return found
+        if isinstance(node, ast.IfExp):
+            return self._value_fields(node.body) + self._value_fields(node.orelse)
+        if isinstance(node, ast.Attribute):
+            if classify(node.attr) is not None:
+                found.append(node.attr)
+            return found + self._value_fields(node.value)
+        if isinstance(node, ast.Call):
+            name = _callee_name(node)
+            if name in _KIND_CHANGING_CALLS:
+                return found
+            if name in _TOTALLING_CALLS:
+                # A total over a collection IS one figure built from every member, so
+                # this one call reads INSIDE the container it is handed.  ``series.sum()``
+                # takes no argument at all — its collection is the RECEIVER, which is how
+                # ``float(weights.sum())`` reaches the class ``weights`` carries.
+                found = [f for child in node.args for f in self._collection_fields(child)]
+                if isinstance(node.func, ast.Attribute):
+                    found.extend(self._value_fields(node.func.value))
+                return found
+            if name in self._readers or _LADDER_NAME_HINT.search(name):
+                # A first-present-wins reader RETURNS one rung of the ladder it is handed,
+                # so its value carries that ladder's class — the exact twin of the loop
+                # variable rule in ``visit_For``, and stated the same way: a single-class
+                # ladder yields that class, a ladder spanning classes yields none, because
+                # the call is ALREADY a mixed_class_fallback finding and giving its result
+                # one of the two classes would be a coin-flip dressed as knowledge.
+                for argument in (*node.args, *(kw.value for kw in node.keywords)):
+                    members = self._ladder_members(argument)
+                    if not members:
+                        continue
+                    rung_classes = classes_of(members)
+                    if len(rung_classes) == 1:
+                        return [_REPRESENTATIVE_FIELD[next(iter(rung_classes))]]
+                    return found
+            if isinstance(node.func, ast.Attribute):
+                found.extend(self._value_fields(node.func.value))
+            for argument in (*node.args, *(kw.value for kw in node.keywords)):
+                found.extend(self._value_fields(argument))
+            return found
+        for child in ast.iter_child_nodes(node):
+            found.extend(self._value_fields(child))
+        return found
+
+    def _collection_fields(self, node: ast.AST) -> list[str]:
+        """Every declared field in a subtree — the reading for a container being TOTALLED."""
         return [
             child.value
             for child in ast.walk(node)
             if isinstance(child, ast.Constant)
             and isinstance(child.value, str)
             and classify(child.value) is not None
-        ]
-
-    def _name_fields(self, node: ast.AST) -> list[str]:
-        """Amount fields reached through locals bound to exactly one class."""
-        representative = {cls: field for field, cls in reversed(list(AMOUNT_CLASSES.items()))}
-        return [
-            representative[self._name_class[child.id]]
+        ] + [
+            _REPRESENTATIVE_FIELD[self._lookup_class(child.id)]
             for child in ast.walk(node)
-            if isinstance(child, ast.Name) and child.id in self._name_class
+            if isinstance(child, ast.Name) and self._lookup_class(child.id) is not None
         ]
 
     def _fields(self, node: ast.AST) -> list[str]:
-        return self._literal_fields(node) + self._name_fields(node)
+        return self._value_fields(node)
 
     def _classes(self, node: ast.AST) -> frozenset[AmountClass]:
         return frozenset(c for c in (classify(f) for f in self._fields(node)) if c is not None)
@@ -236,7 +493,7 @@ class _PythonScanner(ast.NodeVisitor):
         if members is not None:
             return members
         if isinstance(node, ast.Name):
-            return self._name_ladder.get(node.id)
+            return self._lookup_ladder(node.id)
         return None
 
     # -- name tracking ----------------------------------------------------------
@@ -281,30 +538,49 @@ class _PythonScanner(ast.NodeVisitor):
         The ladder map below keeps last-wins on purpose: a ladder's members are a property
         of the VALUE, and a re-bind to a non-literal leaves genuinely unknown members, so
         there is nothing to preserve.
+
+        SCOPING closes the third gap.  "Existing" is now read from the scope the write
+        lands in, and every outcome WRITES there — ``None`` meaning "bound here, carrying
+        no class".  That explicit shadow is what stops a local from silently inheriting an
+        enclosing binding of the same name: in Python a name a function assigns is that
+        function's own from its first line, so a re-measured or class-less local must not
+        fall through to the module.  Preservation therefore stays what it always was — a
+        property of ONE name in ONE scope — instead of a property of the whole file.
         """
+        scope = self._binding_scope(name)
         if len(classes) == 1:
-            self._name_class[name] = next(iter(classes))
+            scope.classes[name] = next(iter(classes))
         elif classes:
-            self._name_class.pop(name, None)
+            scope.classes[name] = None
+        else:
+            scope.classes.setdefault(name, None)
 
     def visit_Assign(self, node: ast.Assign) -> None:
-        classes = self._classes(node.value)
+        # A CONTAINER is not one figure.  ``value_items = [by_name[n] for n in
+        # ("current_award_amount", "potential_award_amount") if n in by_name]`` is a LIST
+        # of facts, and ``impacts = {i["ticker"]: i for i in ...}`` is a dict; classing
+        # either says a collection is a dollar amount.  The members' classes are still
+        # read wherever the collection is TOTALLED or used as a ladder — those rules look
+        # inside a collection on purpose — so nothing is lost by refusing to put a class
+        # on the container's own name.
+        container = isinstance(node.value, (
+            ast.Dict, ast.List, ast.Tuple, ast.Set,
+            ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp,
+        ))
+        classes = frozenset() if container else self._classes(node.value)
         members = self._string_members(node.value)
         for target in node.targets:
             if not isinstance(target, ast.Name):
                 continue
             self._bind_class(target.id, classes)
-            if members is not None:
-                self._name_ladder[target.id] = members
-            else:
-                self._name_ladder.pop(target.id, None)
+            self._binding_scope(target.id).ladders[target.id] = members
         self.generic_visit(node)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         if node.value is not None and isinstance(node.target, ast.Name):
             members = self._string_members(node.value)
             if members is not None:
-                self._name_ladder[node.target.id] = members
+                self._binding_scope(node.target.id).ladders[node.target.id] = members
         self.generic_visit(node)
 
     # -- rules ------------------------------------------------------------------
@@ -731,6 +1007,64 @@ _SELFTEST_CASES: tuple[tuple[str, bool, str, str], ...] = (
         "for col in frame.columns:\n"
         "    weights = frame[col]\n"
         'total = float(weights.sum()) + float(frame["total_outlays"].sum())\n',
+    ),
+    (
+        "a class proved in one function does not leak into the next",
+        False,
+        "engine/government_revenue/_selftest.py",
+        "def backlog():\n"
+        '    current_total = float(active["current_award_amount"].sum())\n'
+        "def catalysts():\n"
+        '    return float(current_total) + float(row["federal_action_obligation"])\n',
+    ),
+    (
+        "the same two names ADDED where they were both proved is still a finding",
+        True,
+        "engine/government_revenue/_selftest.py",
+        "def backlog():\n"
+        '    current_total = float(active["current_award_amount"].sum())\n'
+        '    funded_total = float(active["total_obligated"].sum())\n'
+        "    return float(current_total) + float(funded_total)\n",
+    ),
+    (
+        "an inner scope still READS an enclosing binding",
+        True,
+        "engine/government_revenue/_selftest.py",
+        "def outer():\n"
+        '    obligated = row["total_obligated"]\n'
+        "    def inner():\n"
+        '        return obligated + row["potential_award_amount"]\n',
+    ),
+    (
+        "two counts are not two amounts",
+        False,
+        "engine/government_revenue/_selftest.py",
+        'ceilings = row["current_award_amount"]\n'
+        'deltas = row["federal_action_obligation"]\n'
+        "n = len(ceilings) + len(deltas)\n",
+    ),
+    (
+        "the same two names added WITHOUT len() still fires",
+        True,
+        "engine/government_revenue/_selftest.py",
+        'ceilings = row["current_award_amount"]\n'
+        'deltas = row["federal_action_obligation"]\n'
+        "n = ceilings + deltas\n",
+    ),
+    (
+        "a condition's class does not become the chosen WORD's class",
+        False,
+        "engine/government_revenue/_selftest.py",
+        'amount = row["federal_action_obligation"]\n'
+        'verb = "deobligation" if amount < 0 else "positive contract action"\n'
+        'label = verb + str(row["potential_award_amount"])\n',
+    ),
+    (
+        "a conditional still carries the class of the VALUE it chooses",
+        True,
+        "engine/government_revenue/_selftest.py",
+        'amount = row["current_award_amount"] if flag else row["potential_award_amount"]\n'
+        'total = amount + row["total_obligated"]\n',
     ),
     (
         "unparseable source FAILS CLOSED",
