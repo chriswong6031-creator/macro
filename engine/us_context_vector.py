@@ -841,6 +841,15 @@ STAMP_FORBIDDEN_COLUMNS = frozenset({
 STAMP_REVIEWED_NONSCALAR_COLUMNS = frozenset({
     "spine__records",
     "options__skew",
+    # 2026-08-07: the guard did its job — this one appeared in the 2026-08 part
+    # while this PR was open and failed the sweep as unclassified, which is
+    # exactly the recurrence path forensics took. Classified REVIEWED, not
+    # forbidden, on evidence rather than on its sibling's name: it is derived
+    # options-market structure (spot, net_gex_bn, gamma_regime, magnets, iv30)
+    # read from data/polygon_gex/, a store ALREADY tracked in this public repo
+    # (433 files), and no app/ route gates gex or skew behind an entitlement
+    # dependency. Nothing here is served only to require_site_full_user holders.
+    "options__gex",
 })
 
 
