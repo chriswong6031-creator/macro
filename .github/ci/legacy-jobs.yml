@@ -3348,6 +3348,8 @@ jobs:
           tests/test_sector_intelligence_contracts.py
           tests/test_launch_slo_evidence_verifier.py
           tests/test_biocatalyst_d0a_design_contract.py
+          tests/test_biocatalyst_acceptance_v2.py
+          tests/test_biocatalyst_browser_verifier.py
           tests/test_biocatalyst_transcript_adapter.py
           tests/test_biocatalyst_trial_screen.py
           tests/test_biocatalyst_clinicaltrials_discovery.py
