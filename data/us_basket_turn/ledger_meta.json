@@ -3,8 +3,8 @@
   "producer": "engine/us_basket_turn.py",
   "ship_date": "2026-08-07",
   "advance_gate": "COLLECT_LANE=nightly (engine.ledger_lane.nightly_advance_enabled)",
-  "stamp_source": "data plane — the newest member bar the organ read (data_session), never the wall clock",
-  "idempotency": "keep-first per (date, basket_id)",
+  "stamp_source": "data plane, PER BASKET — the newest bar in that basket's own equal-weight level series (baskets[<id>].data_session in the artifact), never the wall clock and never the universe-wide as_of header",
+  "idempotency": "keep-first per (date, basket_id), where date is the basket's own session — so a basket whose tape did not advance re-derives a key that already exists and the row is refused",
   "quarantine": {
     "file": null,
     "n_rows": 0,
@@ -19,6 +19,18 @@
     {
       "from": "2026-08-07",
       "note": "Member coverage is carried per row (members_read/members_total). silver_miners reads 8/10 at ship — MAG and GATO have no store file (W1-C owns that fill). A row scored on a fraction of its basket is not evidence about the basket; read the coverage counts before grading any row."
+    },
+    {
+      "from": "2026-08-07",
+      "note": "PRE-FIRST-ROW AMENDMENT (post-merge review of #4924, landed before any production row existed). v1 stamped EVERY basket with a universe-wide max() over the whole US ticker estate, so a basket whose members froze at 2026-07-31 accrued rows dated 08-05/08-06/08-07 carrying byte-identical dd_252 and ret_5d and self-promoted to CONFIRMED on the third — CONFIRMED_MIN_DAYS satisfied by calendar repetition of ONE stale bar — while coverage read 3/3 because it counted store files. Rows are now stamped per basket from that basket's own last level session; keep-first therefore refuses a frozen basket's re-derived row and days_in_state does not advance. NO row in this file was written under the defect: ledger.jsonl did not exist when the fix landed, so there is no quarantine and no era break to read around."
+    },
+    {
+      "from": "2026-08-07",
+      "note": "days_in_state is counted only across ADJACENT sessions from this date on: a prior row that does not sit on the basket's immediately preceding available session resets the run-length to 1 instead of counting across the gap. A nightly outage therefore costs a CONFIRMED rather than manufacturing one."
+    },
+    {
+      "from": "2026-08-07",
+      "note": "members_read now counts members with a BAR on the row's date; members_with_store carries the older store-file count beside it. Rows written before this note do not exist (see the pre-first-row amendment above), so both fields are on-contract from the first row."
     }
   ]
 }

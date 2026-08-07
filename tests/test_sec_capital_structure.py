@@ -1426,7 +1426,10 @@ def test_manifest_record_with_a_nan_scope_encodes_canonically(tmp_path):
 
     # The sentinel is recorded as the JSON null the contract declares...
     assert record["filing"]["collection_scope"] is None
-    assert sanitized == ["filing.collection_scope"]
+    # ...and BOTH conversions are named.  ``issuer.aliases`` used to sanitize
+    # silently, so a NaN company name dropped the alias with nothing in the run
+    # output to say which field went missing.
+    assert sanitized == ["issuer.aliases", "filing.collection_scope"]
     # ...never as a fabricated 0/"" value.
     assert record["filing"]["collection_scope"] != 0
     # NaN is truthy, so the raw value used to publish the alias ["nan"].
@@ -1486,11 +1489,11 @@ def test_repeatedly_failing_filing_is_parked_and_leaves_the_retrieval_queue():
     ])], ignore_index=True)
     assert sec.parked_accessions(attempts) == {"aaa"}
 
-    # Retained bytes are not a failure: those states close the item via
-    # ``have_complete`` and must never count toward the bound.
+    # ``stored`` closes the item via ``have_complete``, so it never counts toward
+    # the bound however many times it is recorded.
     retained = pd.DataFrame([
         {"accession": "ccc", "state": "stored"},
-        {"accession": "ccc", "state": "stored_parser_deferred"},
+        {"accession": "ccc", "state": "stored"},
         {"accession": "ccc", "state": "stored"},
     ])
     assert sec.parked_accessions(retained) == set()
@@ -1519,3 +1522,185 @@ def test_repeatedly_failing_filing_is_parked_and_leaves_the_retrieval_queue():
     # The receipt must not keep counting a parked filing as pending work.
     assert bounded.attrs["retrieval_queue_receipt"]["selected_count"] == 1
     assert bounded.attrs["retrieval_queue_receipt"]["deferred_count"] == 0
+
+
+def _parser_deferred_manifest(accession: str) -> dict:
+    """A retained-but-parser-deferred complete submission, as the collector writes it."""
+    return {
+        "filing": {
+            "accession": accession,
+            "file_number_provenance": {"state": "unavailable", "observations": []},
+        },
+        "document": {"document_role": "complete_submission"},
+        "parser": {"eligibility": "deferred", "corruption_state": "suspect"},
+    }
+
+
+def test_parser_deferred_filing_counts_toward_the_bound_because_it_never_closes():
+    """Retained bytes are not a closed queue item, and the bound must see that.
+
+    ``_eligible_complete_accessions`` admits only ``eligible``/``clean`` manifests,
+    so a ``stored_parser_deferred`` filing is BY DEFINITION never in
+    ``have_complete``: it re-enters the retrieval queue every night, forever.  The
+    shipped rationale said its retained bytes closed the queue item and therefore
+    excluded it from the bound — which reopened the exact unbounded backlog the
+    bound exists to close, for the WORST class of filing (an SEC error page, a
+    corrupt bundle, suspect bytes).  It was latent only because every committed
+    manifest today is eligible/clean.
+    """
+    # The premise, asserted rather than assumed: retained bytes do NOT close it.
+    assert sec._eligible_complete_accessions([_parser_deferred_manifest("ddd")]) == set()
+
+    attempts = pd.DataFrame(
+        [{"accession": "ddd", "state": "stored_parser_deferred"}]
+        * sec.MAX_RETRIEVAL_ATTEMPTS
+    )
+    assert sec.parked_accessions(attempts) == {"ddd"}
+
+    # One short of the bound is still retried — parking is the ceiling, not a rule
+    # that suspect bytes get one look.
+    assert sec.parked_accessions(attempts.head(sec.MAX_RETRIEVAL_ATTEMPTS - 1)) == set()
+
+    # Mixed unclosed states share one counter: the queue item stayed open either way.
+    mixed = pd.DataFrame([
+        {"accession": "eee", "state": "transient_error"},
+        {"accession": "eee", "state": "stored_parser_deferred"},
+        {"accession": "eee", "state": "storage_deferred"},
+    ])
+    assert sec.parked_accessions(mixed) == {"eee"}
+
+    # The control: ``stored`` closes the item via ``have_complete``, so it never
+    # counts however many times it is recorded.
+    stored = pd.DataFrame(
+        [{"accession": "fff", "state": "stored"}] * (sec.MAX_RETRIEVAL_ATTEMPTS + 2)
+    )
+    assert sec.parked_accessions(stored) == set()
+
+    # And a parked parser-deferred filing actually leaves the queue.
+    discovery = pd.DataFrame([{
+        "accession": "ddd", "cik": "1234567", "ticker": "ACME",
+        "company_name": "Acme Corp", "form": "S-3", "filing_date": "2026-08-01",
+        "file_path": "p", "canonical_url": "https://example.test/x.txt",
+        "collection_scope": sec.DISCOVERY_SCOPE_REGISTRATION,
+        "_first_seen": "2026-08-01T12:00:00Z",
+    }])
+    bounded = select_retrieval_queue(
+        discovery,
+        have_complete=sec._eligible_complete_accessions([_parser_deferred_manifest("ddd")]),
+        max_filings=10,
+        now=datetime(2026, 8, 7, 12, 0, tzinfo=timezone.utc),
+        parked=sec.parked_accessions(attempts),
+    )
+    assert bounded.empty
+
+
+def test_attempt_bound_env_override_is_the_real_unpark_lever(monkeypatch):
+    """``CS_MAX_RETRIEVAL_ATTEMPTS`` exists, and is read at the point of use.
+
+    The shipped prose promised "a later ``--rebuild`` or a raised bound" would pick
+    a parked filing back up.  There is no ``--rebuild`` flag on this collector and
+    the bound was a frozen literal, so the documented lever did not exist at all —
+    an operator following the docstring had nothing to pull.
+    """
+    attempts = pd.DataFrame(
+        [{"accession": "ggg", "state": "transient_error"}] * sec.MAX_RETRIEVAL_ATTEMPTS
+    )
+    monkeypatch.delenv(sec.MAX_RETRIEVAL_ATTEMPTS_ENV, raising=False)
+    assert sec._max_retrieval_attempts() == sec.MAX_RETRIEVAL_ATTEMPTS
+    assert sec.parked_accessions(attempts) == {"ggg"}
+
+    # The lever: raising the bound picks the parked filing straight back up, with
+    # no edit, no deploy, and nothing to rebuild.
+    monkeypatch.setenv(sec.MAX_RETRIEVAL_ATTEMPTS_ENV, "10")
+    assert sec._max_retrieval_attempts() == 10
+    assert sec.parked_accessions(attempts) == set()
+
+    # Garbage, zero, and negative fall back to the default WITHOUT raising: a typo
+    # in a workflow variable may neither abort the night nor uncap the backlog.
+    for raw in ("", "   ", "three", "0", "-1", "2.5", "10x"):
+        monkeypatch.setenv(sec.MAX_RETRIEVAL_ATTEMPTS_ENV, raw)
+        assert sec._max_retrieval_attempts() == sec.MAX_RETRIEVAL_ATTEMPTS
+        assert sec.parked_accessions(attempts) == {"ggg"}
+
+
+class SeededDiscoveryAdapter(SecCapitalStructureAdapter):
+    """Retrieval-only run: the queue comes from a pre-existing discovery ledger."""
+
+    def _fetch_index(self, value, ua):
+        raise AssertionError("seeded-discovery run must not fetch a daily index")
+
+    def _fetch_submission(self, url, ua):
+        return SUBMISSION
+
+
+def test_legacy_null_scope_survives_the_retrieval_loop_unlaundered(
+    tmp_path, monkeypatch, capsys
+):
+    """The retrieval loop must hand the manifest writer ``None``, not a NaN.
+
+    A discovery row written before Wave 2C added ``collection_scope`` carries a
+    legitimate ``None``.  ``iterrows()`` builds a per-row Series and that build
+    substitutes ``float('nan')``; ``to_dict("records")`` does not.  Both shapes now
+    produce a schema-valid manifest — ``_manifest_scalar`` nulls the sentinel — so
+    the only thing that still separates them is the DISCLOSURE: under ``iterrows``
+    the collector reports a sanitized field for a value that was never a sentinel,
+    which is precisely the conflation ``_manifest_scalar`` documents as forbidden
+    ("sanitized" must never mean "legitimately absent").  Asserting the annotation's
+    ABSENCE is therefore the fence on the ``to_dict("records")`` hunk; reverting
+    that hunk turns this test red.
+    """
+    monkeypatch.setattr(sec, "_data_dir", lambda: tmp_path / "capital_structure")
+    monkeypatch.setattr(sec, "_cik_map", lambda: {})
+    monkeypatch.setattr(sec, "_ua", lambda: "test@example.com")
+    monkeypatch.setattr(sec, "PACE_SECONDS", 0)
+    # No index is due: this run is the retrieval half of the night, nothing else.
+    monkeypatch.setattr(sec, "due_index_dates", lambda *args, **kwargs: [])
+
+    root = tmp_path / "capital_structure"
+    root.mkdir(parents=True)
+    # Seeded exactly as the legacy ledger is on disk — the column simply is not
+    # there — so ``_read_table`` performs the real production migration to ``None``.
+    legacy_columns = [
+        column for column in sec._DISCOVERY_COLUMNS if column != "collection_scope"
+    ]
+    pd.DataFrame([{
+        "accession": "0001234567-26-000001",
+        "cik": "0001234567",
+        "ticker": "ACME",
+        "company_name": "ACME CORP",
+        "form": "S-3",
+        "filing_date": "2026-08-01",
+        "file_path": "edgar/data/1234567/0001234567-26-000001.txt",
+        "canonical_url": (
+            "https://www.sec.gov/Archives/edgar/data/1234567/"
+            "0001234567-26-000001.txt"
+        ),
+        "_first_seen": "2026-08-01T12:00:00Z",
+    }])[legacy_columns].to_parquet(root / "discovery.parquet", index=False)
+
+    store = ContentAddressedSourceStore(LocalStore(tmp_path / "objects"), backend="local")
+    adapter = SeededDiscoveryAdapter(
+        source_store=store,
+        now_fn=lambda: datetime(2026, 8, 1, 13, 0, tzinfo=timezone.utc),
+        max_filings_per_run=10,
+    )
+
+    heartbeat = adapter.fetch()["sec_evidence__ingest"]
+    captured = capsys.readouterr().out
+
+    # The filing really was retrieved through the loop under test.
+    assert int(heartbeat.iloc[0]["retrieved"]) == 1
+    manifests = read_source_ledger(source_ledger_path(root))
+    assert manifests
+    for record in manifests:
+        assert record["filing"]["collection_scope"] is None
+        assert json.dumps(record["filing"]["collection_scope"]) == "null"
+    # The alias survives, so nothing else in this row was a sentinel either.
+    assert manifests[0]["issuer"]["aliases"] == ["ACME CORP"]
+
+    # THE FENCE.  A legitimately-absent scope was never converted, so the collector
+    # must report no sanitized field at all.  Under ``iterrows()`` the same row
+    # arrives as NaN, ``_manifest_scalar`` converts it, and this annotation fires
+    # for every manifest in the bundle.
+    assert "capital-structure-manifest-null-fields" not in captured
+    assert "filing.collection_scope" not in captured
