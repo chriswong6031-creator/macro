@@ -62,6 +62,9 @@ DEFAULT_USER_AGENT = "MastermindX Government Revenue Foresight contact@mastermin
 INGEST_STATUS_SCHEMA = "government_revenue.ingest_status.v2"
 COLLECTION_RECEIPT_SCHEMA = "government_revenue.collection_receipt.v1"
 COLLECTION_RECEIPTS_FILENAME = "collection_receipts.jsonl"
+BASELINE_ACTIVATION_DIAGNOSTICS_SCHEMA = (
+    "government_revenue.baseline_activation_diagnostics.v1"
+)
 AWARD_EVENT_PROJECTION_STATE_SCHEMA = "government_revenue.award_event_projection_state.v1"
 AWARD_EVENT_PROJECTION_STATE_FILENAME = "award_event_projection_state.json"
 AWARD_EVENT_COVERAGE_MANIFEST_SCHEMA = "government_revenue.award_event_coverage_manifest.v1"
@@ -1703,6 +1706,295 @@ def _load_award_event_projection_state(path: Path) -> dict[str, Any]:
     return payload
 
 
+def _activation_condition(
+    name: str,
+    *,
+    satisfied: bool,
+    observed_name: str,
+    observed: Any,
+    required_name: str,
+    required: Any,
+    comparison: str = "==",
+    applicable: bool = True,
+    not_applicable_because: str | None = None,
+    items: list[str] | None = None,
+) -> dict[str, Any]:
+    """Describe one named input to the receipt-bound baseline gate.
+
+    Every entry carries both of its numbers so an operator never has to open
+    this module to learn why the spine did not activate.  These records are
+    explanatory only: the gate's authority stays with the boolean computed in
+    ``collect``, and ``conditions_agree_with_gate`` makes any drift visible in
+    the artifact rather than letting a diagnostic quietly outrank the gate.
+    """
+
+    if not applicable:
+        detail = f"{observed_name} not applicable: {not_applicable_because}"
+    elif required_name == "zero":
+        detail = f"{observed_name} {observed} {'==' if satisfied else '!='} 0"
+    elif isinstance(required, bool):
+        detail = (
+            f"{observed_name} {str(observed).lower()} "
+            f"{'==' if satisfied else '!='} {str(required).lower()}"
+        )
+    elif comparison == ">":
+        detail = (
+            f"{observed_name} {observed} > {required}"
+            if satisfied
+            else f"{observed_name} {observed} is not > {required}"
+        )
+    else:
+        detail = (
+            f"{observed_name} {observed} "
+            f"{'==' if satisfied else '!='} {required_name} {required}"
+        )
+    entry: dict[str, Any] = {
+        "name": name,
+        "applicable": bool(applicable),
+        "satisfied": bool(satisfied),
+        "comparison": comparison,
+        "observed": {"name": observed_name, "value": observed},
+        "required": {"name": required_name, "value": required},
+        "detail": detail,
+    }
+    if items is not None:
+        entry["items"] = list(items)
+    return entry
+
+
+def _baseline_activation_conditions(
+    *,
+    requested_entities: int,
+    award_bounded_complete_entities: int,
+    unknown_tickers: list[str],
+    award_normalization_failures: int,
+    award_rejected_without_key: int,
+    full_configured_universe: bool,
+    max_action_awards_per_entity: int,
+    detail_candidates: int,
+    detail_succeeded: int,
+    detail_skipped_missing_identifier: int,
+    action_awards_bounded_complete: int,
+    action_awards_not_requested: int,
+    event_snapshot_failures: int,
+    event_action_failures: int,
+    event_action_identity_failures: int,
+    action_normalization_failures: int,
+) -> list[dict[str, Any]]:
+    """Enumerate, in gate order, every condition the baseline gate requires.
+
+    The list mirrors ``awards_bounded_sample_complete`` (the awards rail),
+    ``detail_bounded_sample_complete``/``actions_bounded_sample_complete`` (the
+    sampled rails), and the event-normalization counters folded in by
+    ``bounded_sample_complete``.  A declared page cap that was retrieved cleanly
+    is deliberately absent: it is a complete bounded sample, not an unmet gate
+    condition, and reading it as a blocker is the exact wrong conclusion.
+    """
+
+    samples_detail = max_action_awards_per_entity > 0
+    disabled_because = (
+        "award-detail sampling is disabled "
+        f"(max_action_awards_per_entity {max_action_awards_per_entity})"
+    )
+    conditions = [
+        _activation_condition(
+            "entities_requested_positive",
+            satisfied=requested_entities > 0,
+            observed_name="requested_entities",
+            observed=int(requested_entities),
+            required_name="zero",
+            required=0,
+            comparison=">",
+        ),
+        _activation_condition(
+            "award_bounded_complete_entities_equals_requested_entities",
+            satisfied=award_bounded_complete_entities == requested_entities,
+            observed_name="award_bounded_complete_entities",
+            observed=int(award_bounded_complete_entities),
+            required_name="requested_entities",
+            required=int(requested_entities),
+        ),
+        _activation_condition(
+            "no_unknown_tickers",
+            satisfied=not unknown_tickers,
+            observed_name="unknown_tickers",
+            observed=len(unknown_tickers),
+            required_name="zero",
+            required=0,
+            items=list(unknown_tickers),
+        ),
+        _activation_condition(
+            "award_normalization_failures_zero",
+            satisfied=award_normalization_failures == 0,
+            observed_name="award_normalization_failures",
+            observed=int(award_normalization_failures),
+            required_name="zero",
+            required=0,
+        ),
+        _activation_condition(
+            "records_rejected_without_identity_zero",
+            satisfied=award_rejected_without_key == 0,
+            observed_name="records_rejected_without_identity",
+            observed=int(award_rejected_without_key),
+            required_name="zero",
+            required=0,
+        ),
+        _activation_condition(
+            "full_configured_universe",
+            satisfied=bool(full_configured_universe),
+            observed_name="full_configured_universe",
+            observed=bool(full_configured_universe),
+            required_name="true",
+            required=True,
+        ),
+        _activation_condition(
+            "detail_succeeded_equals_detail_candidates",
+            satisfied=(not samples_detail) or detail_succeeded == detail_candidates,
+            observed_name="detail_succeeded",
+            observed=int(detail_succeeded),
+            required_name="detail_candidates",
+            required=int(detail_candidates),
+            applicable=samples_detail,
+            not_applicable_because=disabled_because,
+        ),
+        _activation_condition(
+            "detail_skipped_missing_generated_award_id_zero",
+            satisfied=(not samples_detail) or detail_skipped_missing_identifier == 0,
+            observed_name="skipped_missing_generated_award_id",
+            observed=int(detail_skipped_missing_identifier),
+            required_name="zero",
+            required=0,
+            applicable=samples_detail,
+            not_applicable_because=disabled_because,
+        ),
+        _activation_condition(
+            "action_awards_bounded_complete_equals_detail_candidates",
+            satisfied=(
+                (not samples_detail)
+                or action_awards_bounded_complete == detail_candidates
+            ),
+            observed_name="action_awards_bounded_complete",
+            observed=int(action_awards_bounded_complete),
+            required_name="detail_candidates",
+            required=int(detail_candidates),
+            applicable=samples_detail,
+            not_applicable_because=disabled_because,
+        ),
+        _activation_condition(
+            "action_awards_not_requested_zero",
+            satisfied=(not samples_detail) or action_awards_not_requested == 0,
+            observed_name="action_awards_not_requested",
+            observed=int(action_awards_not_requested),
+            required_name="zero",
+            required=0,
+            applicable=samples_detail,
+            not_applicable_because=disabled_because,
+        ),
+        _activation_condition(
+            "event_snapshot_failures_zero",
+            satisfied=event_snapshot_failures == 0,
+            observed_name="event_snapshot_failures",
+            observed=int(event_snapshot_failures),
+            required_name="zero",
+            required=0,
+        ),
+        _activation_condition(
+            "event_action_failures_zero",
+            satisfied=event_action_failures == 0,
+            observed_name="event_action_failures",
+            observed=int(event_action_failures),
+            required_name="zero",
+            required=0,
+        ),
+        _activation_condition(
+            "event_action_identity_failures_zero",
+            satisfied=event_action_identity_failures == 0,
+            observed_name="event_action_identity_failures",
+            observed=int(event_action_identity_failures),
+            required_name="zero",
+            required=0,
+        ),
+        _activation_condition(
+            "action_normalization_failures_zero",
+            satisfied=action_normalization_failures == 0,
+            observed_name="action_normalization_failures",
+            observed=int(action_normalization_failures),
+            required_name="zero",
+            required=0,
+        ),
+    ]
+    return conditions
+
+
+def _baseline_activation_diagnostics(
+    *,
+    conditions: list[dict[str, Any]],
+    collection_qualified: bool,
+    persisted: bool,
+    persistence_failure_reason: str | None,
+    truncated_by_safety_cap: bool,
+) -> dict[str, Any]:
+    """Separate what the collection achieved from what was actually published.
+
+    Publishing authority is untouched: a failed persist still advances nothing.
+    This block exists because the published fields alone cannot tell an operator
+    whether the run fell short of the gate or cleared it and lost the write.
+    """
+
+    unsatisfied = [entry for entry in conditions if not entry["satisfied"]]
+    derived = not unsatisfied
+    if collection_qualified and persisted:
+        blocked_by = None
+        summary = (
+            "Collection met every receipt-bound baseline condition and persistence "
+            "succeeded; the award-event spine advanced on this run."
+        )
+    elif collection_qualified:
+        blocked_by = "persistence"
+        summary = (
+            "Collection met every receipt-bound baseline condition on this run. "
+            "Persistence failed, so nothing advanced and the published award-event "
+            "spine still reports the previous state, not this run's measurement. "
+            "Coverage is not the blocker; the failed write is."
+        )
+    elif persisted:
+        blocked_by = "collection"
+        summary = (
+            "Collection did not meet every receipt-bound baseline condition, so no "
+            "baseline activated even though persistence succeeded. Unmet: "
+            + "; ".join(entry["detail"] for entry in unsatisfied)
+            + "."
+        )
+    else:
+        blocked_by = "collection_and_persistence"
+        summary = (
+            "Collection did not meet every receipt-bound baseline condition and "
+            "persistence also failed, so nothing advanced. Unmet: "
+            + "; ".join(entry["detail"] for entry in unsatisfied)
+            + "."
+        )
+    diagnostics: dict[str, Any] = {
+        "schema_version": BASELINE_ACTIVATION_DIAGNOSTICS_SCHEMA,
+        "collection_qualified_this_run": bool(collection_qualified),
+        "persisted_this_run": bool(persisted),
+        "activated_this_run": bool(collection_qualified and persisted),
+        "blocked_by": blocked_by,
+        "persistence_failure_reason": persistence_failure_reason,
+        "summary": summary,
+        "unsatisfied_conditions": [entry["name"] for entry in unsatisfied],
+        "unsatisfied_details": [entry["detail"] for entry in unsatisfied],
+        "conditions": conditions,
+        "conditions_agree_with_gate": bool(derived == bool(collection_qualified)),
+    }
+    if truncated_by_safety_cap:
+        diagnostics["safety_cap_note"] = (
+            "A declared page cap that was retrieved cleanly counts as a complete "
+            "bounded sample and is not an activation blocker; raising the cap "
+            "would widen coverage but would not have changed this run's verdict."
+        )
+    return diagnostics
+
+
 def _next_award_event_projection_state(
     previous: dict[str, Any],
     *,
@@ -2753,6 +3045,27 @@ class UsaspendingAwardsCollector:
         full_receipt_bound_baseline = (
             bounded_sample_complete
         )
+        # Explanatory only — the gate above keeps its authority.  Recording each
+        # named condition with both of its numbers is what stops a failed run
+        # from implying a cause it does not have.
+        activation_conditions = _baseline_activation_conditions(
+            requested_entities=requested_entities,
+            award_bounded_complete_entities=award_bounded_complete_entities,
+            unknown_tickers=unknown_tickers,
+            award_normalization_failures=award_normalization_failures,
+            award_rejected_without_key=award_rejected_without_key,
+            full_configured_universe=bool(full_configured_universe),
+            max_action_awards_per_entity=self.max_action_awards_per_entity,
+            detail_candidates=detail_candidates,
+            detail_succeeded=detail_succeeded,
+            detail_skipped_missing_identifier=detail_skipped_missing_identifier,
+            action_awards_bounded_complete=action_awards_bounded_complete,
+            action_awards_not_requested=action_awards_not_requested,
+            event_snapshot_failures=event_snapshot_failures,
+            event_action_failures=event_action_failures,
+            event_action_identity_failures=event_action_identity_failures,
+            action_normalization_failures=action_normalization_failures,
+        )
         next_event_state = _next_award_event_projection_state(
             previous_event_state,
             observed_at=observed_at,
@@ -2870,13 +3183,27 @@ class UsaspendingAwardsCollector:
         # Rail state describes what the product can safely publish, not merely
         # what upstream returned.  If receipt binding or atomic persistence
         # failed, none of the newly fetched pages advances a current rail even
-        # when its source pagination was otherwise complete.
+        # when its source pagination was otherwise complete.  The pre-force-set
+        # values are retained separately so the status can still report what the
+        # collection itself achieved without ever presenting it as published.
+        collection_awards_state = awards_state
+        collection_detail_state = detail_state
+        collection_actions_state = actions_state
         if not persisted:
             awards_state = "failed"
             if detail_state != "not_requested":
                 detail_state = "failed"
             if actions_state != "not_requested":
                 actions_state = "failed"
+
+        if persisted:
+            persistence_failure_reason = None
+        elif receipt_failure:
+            persistence_failure_reason = "collection_receipt_or_event_binding_failed"
+        elif award_pages_succeeded <= 0:
+            persistence_failure_reason = "no_award_pages_succeeded"
+        else:
+            persistence_failure_reason = "ledger_write_failed"
 
         active_event_state = next_event_state if persisted else previous_event_state
         event_spine = {
@@ -2905,6 +3232,18 @@ class UsaspendingAwardsCollector:
                 incoming_action_versions.get("event_eligible", pd.Series(dtype=bool)).fillna(False).astype(bool).sum()
             ),
             "full_receipt_bound_baseline_this_run": bool(full_receipt_bound_baseline and persisted),
+            # Everything above this line is the ACTIVE (published) state.  When
+            # persistence failed, that state came from the previous run, so it
+            # must be labelled rather than presented as this run's measurement.
+            "state_source": "this_run" if persisted else "previous_state",
+            "state_reflects_this_run": bool(persisted),
+            "state_is_stale_because": persistence_failure_reason,
+            # This run's own collection measurement, which the published state
+            # above cannot carry when nothing was written.
+            "collection_bounded_sample_complete": bool(bounded_sample_complete),
+            "collection_full_receipt_bound_baseline": bool(full_receipt_bound_baseline),
+            "collection_source_exhausted": bool(source_exhausted),
+            "collection_truncated_by_safety_cap": bool(truncated_by_safety_cap),
         }
         event_spine.update({
             field: active_event_state.get(field)
@@ -2950,6 +3289,14 @@ class UsaspendingAwardsCollector:
                     "bounded_sample_complete": bool(awards_bounded_sample_complete and persisted),
                     "source_exhausted": bool(awards_source_exhausted and persisted),
                     "truncated_by_safety_cap": bool(awards_truncated_by_safety_cap),
+                    # The fields above describe what this rail can publish; the
+                    # `collection_*` fields below describe what the collection
+                    # itself achieved, so a failed persist can no longer read as
+                    # thin coverage.  Publishing authority stays with the former.
+                    "published_this_run": bool(persisted),
+                    "collection_state": collection_awards_state,
+                    "collection_bounded_sample_complete": bool(awards_bounded_sample_complete),
+                    "collection_source_exhausted": bool(awards_source_exhausted),
                     "scope": "recipient-query contract awards in the configured time window only",
                     "claim": "source exhausted only when every mapped recipient query returned explicit hasNext=false; a fully retrieved declared page cap is a complete bounded sample, not corpus completion",
                 },
@@ -2984,6 +3331,12 @@ class UsaspendingAwardsCollector:
                         detail_state in {"complete", "not_requested"} and persisted
                     ),
                     "truncated_by_safety_cap": False,
+                    "published_this_run": bool(persisted),
+                    "collection_state": collection_detail_state,
+                    "collection_bounded_sample_complete": bool(detail_bounded_sample_complete),
+                    "collection_source_exhausted": bool(
+                        collection_detail_state in {"complete", "not_requested"}
+                    ),
                     "scope": "top reported-obligation awards among source rows returned for each entity",
                     "claim": "bounded award-detail sample; never a full award-detail corpus",
                     "sample_is_globally_ranked": awards_source_exhausted,
@@ -3027,6 +3380,12 @@ class UsaspendingAwardsCollector:
                     "bounded_sample_complete": bool(actions_bounded_sample_complete and persisted),
                     "source_exhausted": bool(actions_source_exhausted and persisted),
                     "truncated_by_safety_cap": bool(actions_truncated_by_safety_cap),
+                    "published_this_run": bool(persisted),
+                    "collection_state": collection_actions_state,
+                    "collection_bounded_sample_complete": bool(actions_bounded_sample_complete),
+                    "collection_source_exhausted": bool(
+                        collection_actions_state in {"complete", "not_requested"}
+                    ),
                     "scope": "complete transaction history only for the bounded award-detail sample",
                     "claim": "actions reach source exhaustion only at explicit hasNext=false; an otherwise complete declared page cap is a bounded sample, not complete source history",
                 },
@@ -3035,6 +3394,13 @@ class UsaspendingAwardsCollector:
         }
         receipt_summary["run_id"] = run_id
         receipt_summary["receipt_payloads_sha256"] = _sha256_json(receipts)
+        baseline_activation = _baseline_activation_diagnostics(
+            conditions=activation_conditions,
+            collection_qualified=bool(full_receipt_bound_baseline),
+            persisted=persisted,
+            persistence_failure_reason=persistence_failure_reason,
+            truncated_by_safety_cap=bool(truncated_by_safety_cap),
+        )
         status = {
             "schema_version": INGEST_STATUS_SCHEMA,
             "observed_at": observed_at,
@@ -3070,6 +3436,7 @@ class UsaspendingAwardsCollector:
             "actions_total": _as_int(totals.get("actions_total")),
             "snapshots_total": _as_int(totals.get("snapshots_total")),
             "award_event_spine": event_spine,
+            "baseline_activation": baseline_activation,
             "rails": rails,
             "collection_receipts": receipt_summary,
             "errors": errors,
