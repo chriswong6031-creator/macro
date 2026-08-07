@@ -1,15 +1,15 @@
 {
-  "checked_at": "2026-08-07T10:08:16+00:00",
+  "checked_at": "2026-08-07T11:21:22+00:00",
   "expected_session": "2026-08-07",
   "stores": {
     "cache": {
-      "asof": "2026-08-06",
-      "lag_days": 1,
+      "asof": "2026-08-07",
+      "lag_days": 0,
       "state": "fresh"
     },
     "bellwether": {
-      "asof": "2026-08-06",
-      "lag_days": 1,
+      "asof": "2026-08-07",
+      "lag_days": 0,
       "state": "fresh"
     },
     "standouts": {
@@ -18,13 +18,13 @@
       "state": "fresh"
     },
     "regime": {
-      "asof": "2026-08-06",
-      "lag_days": 1,
+      "asof": "2026-08-07",
+      "lag_days": 0,
       "state": "fresh"
     },
     "southbound": {
-      "asof": "2026-08-05",
-      "lag_days": 2,
+      "asof": "2026-08-06",
+      "lag_days": 1,
       "state": "fresh"
     }
   },
@@ -37,7 +37,7 @@
   },
   "regression": {
     "ok": true,
-    "prev_cache_max": "2026-08-06",
+    "prev_cache_max": "2026-08-07",
     "curr_cache_max": "2026-08-07",
     "note": null
   },
