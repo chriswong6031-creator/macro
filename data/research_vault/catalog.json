@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T04:59:46.762685+00:00",
-  "count": 919,
+  "generated_at": "2026-08-07T06:04:04.896108+00:00",
+  "count": 922,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -202,6 +202,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-8oiln7iftk4-7a081f",
+      "title": "What We Are Monitoring in US Credit",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:21Z",
+      "summary_points": [
+        "**CDX HY Spread Expansion & NAV Basis Widening**: CDX HY spread at 302.3 (+4.0 bps 1m), NAV Basis at -9.5 (+7.2 bps 1d), signaling acute high-yield credit stress.",
+        "**IG vs HY Spread Divergence**: CDX IG spread (51.1, +1.4 bps 1m) vs CDX HY spread (302.3, +4.0 bps 1m); HY 1y Pctl 11% (worse) vs IG 1y Pctl 43% (relatively better).",
+        "**Relative HY Stress Severity**: HY spread widening (4.0 bps 1m) significantly outpaces IG (1.4 bps 1m), with HY at 11th percentile (worse) versus IG at 43rd percentile (better).",
+        "**NAV Basis Pressure**: Negative NAV Basis widening (-9.5, +7.2 bps 1d) indicates deteriorating liquidity and pricing dislocation in HY assets."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-j2hd6edol6n-2cd226",
       "title": "IC STORIES",
       "institution": "LSEG",
@@ -261,6 +281,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 24,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-yb5vivh1hy7-a32c74",
+      "title": "JPM Oil Markets Weekly M",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T01:42:42Z",
+      "summary_points": [
+        "**Non-OPEC supply growth exceeds expectations**: H1 2026 non-OPEC supply surged 2.44 mbd (decade high), led by US (0.9 mbd), Brazil (0.8 mbd), Guyana (0.3 mbd), and Canada (0.2 mbd), suppressing inventory impacts and altering price dynamics.",
+        "**Brent forward curve bears structural shift**: 2027 Brent forecast revised downward to $63 (vs.",
+        "$77), signaling sustained bearish market sentiment and long-term price pressure.",
+        "**Supply-demand surplus widens structurally**: 2027F shows supply (109.4–111.7 mb/d) exceeding demand (104.9–107.5 mb/d) by 4.5–4.2 mb/d, driving inventory buildup (+4.5 to +3.5 mb/d) and downward price pressure.",
+        "**OPEC+ overproduction risks amplified**: Persistent overproduction (e.g., Angola +67k bpd Jan 2025) and excluded major producers (Libya, Iran, Venezuela) create unmonitored geopolitical supply gaps and volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 31,
       "language": "en",
       "needs_metadata": false
     },
@@ -1551,6 +1592,27 @@
         "**EU Funds as Fiscal Anchor**: Unblocked RRF funds (€10bn, 3% GDP) and Cohesion Funds (~8-9% of 2025 GDP) represent critical near-term support; disbursement limited to Q4 2024, offsetting energy price impacts.",
         "**EUR/HUF Correlation Drivers**: Oil (10% rise → +0.8% EUR/HUF, R²=0.34) and gas (10% rise → +0.5% EUR/HUF, R²=0.24) explain 34%/24% of daily volatility since Iran conflict; energy prices key near-term HUF direction.",
         "**Inflation Target & FX Risk**: Lowering MNB inflation target to 2% could narrow EUR/HUF differentials, but high FX pass-through (>3%) and energy price volatility create two-sided risks during Euro adoption (Oct/Nov)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jkaisdii5gi-7e75c8",
+      "title": "Americas Brokers & Crypto Key takeaways post earnings CRCL & GLXY",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:01Z",
+      "summary_points": [
+        "**CRCL Earnings & Guidance**: Q2 EPS beat ($184 vs $174) but guidance lowered 6% due to $27.5mn Arc token gain reversal, signaling near-term margin pressure.",
+        "**Hyperliquid Partnership Revenue Impact**: 90% USDC migration to CRCL platform reduced net revenue by $68.5m (9% of 2027E adjusted profit), a critical revenue stream risk.",
+        "**USDC Resilience vs Crypto Downturn**: USDC market cap up 12% YoY vs crypto market down 42% YoY; 70% stablecoin transaction share (June), driven by non-crypto adoption.",
+        "**Revenue & EPS Revisions**: 2026E/27E net revenue revised +12%/-2% and EPS +27%/-8% due to Arc token impact and expense increases, reflecting fundamental adjustment.",
+        "**Valuation & Target**: 12-month price target cut to $71 (from $82) with Neutral rating, P/E reduced to 29.5x, reflecting revised earnings and Hyperliquid revenue risk."
       ],
       "tags": [],
       "tickers": [],
