@@ -320,7 +320,12 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install jsonschema pytest pandas numpy pyyaml requests
+        # jinja2 joined 2026-08-07 for the forensic detector cross-pin below: that
+        # suite imports scripts/build_fundamental_forensics.py, whose module-level
+        # `from jinja2 import Environment, FileSystemLoader` is unavoidable. Verified
+        # in a clean venv — without it the suite ERRORS at collection (red), it does
+        # not skip, so the guard cannot go dark by losing a dependency.
+        run: pip install jsonschema pytest pandas numpy pyyaml requests jinja2
       # test_signal_quality_no_leak.py joined 2026-08-05 — dark from birth, named
       # by no run: step in any workflow.  It belongs HERE and not in a new job:
       # it pins the §7 contract this job already owns, one layer down.  The
@@ -380,6 +385,19 @@ jobs:
           tests/test_fundamental_forensics_normalize.py
           tests/test_fundamental_forensics_detectors.py
           tests/test_fundamental_forensics_contract.py -q
+      # Four detector ids exist as byte-identical strings in THREE implementations
+      # with three separate threshold stores: scripts/build_fundamental_forensics.py
+      # (inline FRACTION literals, Filing Forensics workbench),
+      # engine/moat_falsifiers.py (pp module constants, PRODUCTION ticker pages), and
+      # config/fundamental_forensics.yml (registry Decimal strings, SEC lineage
+      # kernel). Nothing cross-pinned them, so a threshold edited in one store left
+      # the same named detector answering differently on two live surfaces. This
+      # suite reads each store's own numbers — it hardcodes none of them — and pins
+      # the six disagreements that already ship. It belongs in THIS job because the
+      # step above already owns the detector contracts and already imports both
+      # engine.fundamental_forensics and engine.moat_falsifiers.
+      - name: forensic detector cross-pin (three implementations, one detector id)
+        run: python -m pytest tests/test_forensic_detector_crosspin.py -q
 
   session-anchor-era:
     # Absolute session-calendar anchor, both eras. The confluence 2D/3D + fortnight
