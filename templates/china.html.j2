@@ -1499,6 +1499,30 @@
 
 <div class="grid">
 
+  {# ── Delayed-board disclosure ────────────────────────────────────────────────
+     The CN twin of the US board's staleness banner (templates/dashboard.html.j2,
+     `_su.staleness.delayed`). Engine-driven: scripts/build_china_library.py's
+     compute_board_staleness() decides `delayed` from the CSI300 settled-session anchor
+     against lib/cn_calendar, so this never renders on a healthy bake — weekends and
+     mainland holidays included.
+
+     Deliberately OUTSIDE the mode split. china.html (macro) is the surface
+     scripts/freshness_sentinel.py watches, and it renders no setups board; a disclosure
+     nested in the stocks-only block would leave the watched page silent during exactly the
+     freeze it exists to announce. Both pages read the same prices, so both disclose.
+
+     The English "prices as of YYYY-MM-DD" wording is load-bearing, not decorative — it is the
+     string the sentinel parses to measure the board's self-reported lag against the china
+     delay budget. Keep that phrase in the l-en span if this copy is ever revised.
+     Fail-soft: absent key or delayed=False renders nothing. Bilingual via l-en/l-zh spans;
+     no translated text in attributes (check_title_i18n). #}
+  {% set _cn_stale = board_staleness if board_staleness is defined else none %}
+  {% if _cn_stale and _cn_stale.get('delayed') and _cn_stale.get('price_through') %}
+  <div class="panel span12" style="border-left:3px solid var(--warn);background:color-mix(in srgb,var(--warn) 7%,var(--panel));padding:9px 13px;font-size:12px;line-height:1.55">
+    <span class="l-en"><strong>⚠ BOARD DELAYED</strong> — prices as of {{ _cn_stale.get('price_through') }}{% if _cn_stale.get('age_days') is not none %} ({{ _cn_stale.get('age_days') }}d behind){% endif %}. Data is stale; {{ 'entry signals' if mode == 'stocks' else 'readings on this page' }} may not reflect latest prices. Check a live quote before acting.</span><span class="l-zh"><strong>⚠ 数据延迟</strong> — 价格截至 {{ _cn_stale.get('price_through') }}{% if _cn_stale.get('age_days') is not none %}（落后 {{ _cn_stale.get('age_days') }} 天）{% endif %}。当前数据过期，{{ '入场信号' if mode == 'stocks' else '本页读数' }}可能不反映最新价格，操作前请确认最新报价。</span>
+  </div>
+  {% endif %}
+
   {% if mode == 'stocks' %}
   <!-- ===================== A-SHARE STOCK DASHBOARD HEADER ===================== -->
   {# Header geometry is the SHARED stock-board head — identical partial the US
@@ -1507,15 +1531,20 @@
      boards move together. #}
   {% include "_stocks_header_css.html.j2" %}
   <div class="panel span12" id="stocks-header">
-    {# Freshness pill — the CN analogue of the US board's staleness chip. There is
-       no CN exchange calendar in lib/, so this claims NO session-count verdict:
-       the degrade is driven only by facts the board already publishes — a partial
-       collection session (setups.coverage.partial_session) or the W0.7 coverage
-       outage flag (setups.data_outage.flag) — and the stamped date is the board's
-       own settled-session anchor (coverage.data_through = CSI300 last bar). #}
+    {# Freshness pill — the CN analogue of the US board's staleness chip. It now DOES carry a
+       session-count verdict: lib/cn_calendar.py supplies the A-share session calendar this
+       comment used to say was missing, and build_china_library.compute_board_staleness turns
+       it into board_staleness.delayed. Three degrade sources, most severe first: a delayed
+       board (>= 2 sessions behind, or past the calendar-day backstop), a partial collection
+       session (setups.coverage.partial_session), or the W0.7 coverage outage flag
+       (setups.data_outage.flag). The stamped date stays the board's own settled-session
+       anchor (coverage.data_through = CSI300 last bar).
+       The `delayed` leg is what keeps this pill from reading "Fresh" directly above the
+       delayed-board banner at the top of the grid — one page, one verdict. #}
     {% set _cn_cov = setups.coverage if (setups and setups.coverage is defined) else none %}
     {% set _cn_outage = (setups.get('data_outage') or {}) if setups else {} %}
-    {% set _cn_degraded = (_cn_cov.partial_session if _cn_cov else false) or _cn_outage.get('flag') %}
+    {% set _cn_delayed = _cn_stale.get('delayed') if _cn_stale else false %}
+    {% set _cn_degraded = _cn_delayed or (_cn_cov.partial_session if _cn_cov else false) or _cn_outage.get('flag') %}
     {% set _cn_through = (_cn_cov.data_through if _cn_cov else none) or (setups.as_of if setups else none) or latest.date %}
     <div class="stk-headline">
       <h1>🇨🇳 {{ t('A-Share Stock Dashboard', 'A股个股看板') }}
@@ -1523,7 +1552,7 @@
       <div class="stk-head-meta">
         <span class="stk-status{{ ' is-delayed' if _cn_degraded else '' }}">
           <span class="stk-fresh-dot" aria-hidden="true"></span>
-          <span class="l-en">{{ 'Partial data' if _cn_degraded else 'Fresh' }}</span><span class="l-zh">{{ '数据不全' if _cn_degraded else '新鲜' }}</span>
+          <span class="l-en">{{ 'Delayed' if _cn_delayed else ('Partial data' if _cn_degraded else 'Fresh') }}</span><span class="l-zh">{{ '数据延迟' if _cn_delayed else ('数据不全' if _cn_degraded else '新鲜') }}</span>
           {% if _cn_through %}<strong>{{ _cn_through }}</strong>{% endif %}
         </span>
       {# Regime + Posture header pills, aligned with the US stock dashboard #}
