@@ -22,13 +22,21 @@ passed the 12 missing pages, and the other one-way check would have passed the
 from __future__ import annotations
 
 import re
+import shutil
 from pathlib import Path
 
 import pytest
 from jinja2 import Environment, FileSystemLoader
 from markupsafe import Markup, escape
 
-from scripts.sync_chat_nav import check, extract_nav, render_canonical, selftest
+from scripts.sync_chat_nav import (
+    PAGE,
+    check,
+    extract_nav,
+    harvest_decorations,
+    render_canonical,
+    selftest,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = ROOT / "templates"
@@ -69,6 +77,79 @@ def test_the_gate_fires_on_drift() -> None:
     The selftest hand-edits a link into a fixture copy and requires a red.
     """
     assert selftest() == 0
+
+
+def test_fix_applies_drift_without_stripping_optimizer_decorations(tmp_path: Path) -> None:
+    """--fix must carry ``?v=``/``defer`` across the splice, not just heal links.
+
+    The splice re-renders _site_nav.html.j2, and a fresh render is UNDECORATED:
+    scripts/optimize_assets.py stamps ``?v=<8hex>`` and adds ``defer`` after the
+    fact. A --fix that simply pasted the render in would drop both — and
+    normalize() deliberately ignores exactly those two decorations, so the gate
+    reads GREEN over the damage instead of failing.
+
+    That is a live bug on this page specifically, not a cosmetic one. chat.html
+    is a plain-copy page with no render lane to re-stamp it, and its nav assets
+    (navigation-refresh.css, live.js, …) are on the Caddyfile `immutable,
+    max-age=1y` list — a dropped stamp pins every warm browser to the old bytes
+    for a year, and the dropped defers make four scripts render-blocking.
+
+    So: drift the page the way it drifts in the wild (a menu href gone stale),
+    run --fix, and require BOTH halves — the link healed AND every decoration
+    that was there still there, with the same hash.
+    """
+    root = tmp_path / "repo"
+    shutil.copytree(TEMPLATES, root / "templates")
+    (root / "site").mkdir(parents=True)
+    shutil.copy2(ROOT / "site" / PAGE, root / "site" / PAGE)
+    page = root / "templates" / PAGE
+
+    before_nav = extract_nav(page.read_text(encoding="utf-8"), "fixture")
+    before_stamps, before_defers = harvest_decorations(before_nav)
+    # Guard against a vacuous pass: if the committed header carried no stamps or
+    # no defers, every assertion below would hold for a splice that strips them.
+    assert before_stamps, (
+        "fixture header carries no ?v= stamps — this test cannot prove they "
+        "survive --fix. Has templates/chat.html been shipped unstamped?"
+    )
+    assert before_defers, (
+        "fixture header carries no deferred scripts — this test cannot prove "
+        "defer survives --fix"
+    )
+
+    # Reproduce the drift shape that reddened main three times: a menu link
+    # pointing at a page the partial no longer routes to. Chosen from the page
+    # itself rather than hard-coded, so this does not rot with the nav roster.
+    live_href = re.search(r'<a href="([a-z_]+\.html[^"]*)"', before_nav).group(1)
+    stale = "__retired_page__.html"
+    page.write_text(
+        page.read_text(encoding="utf-8").replace(f'<a href="{live_href}"',
+                                                 f'<a href="{stale}"', 1),
+        encoding="utf-8",
+    )
+    assert not check(root), "the synthetic drift did not trip the gate"
+
+    assert check(root, fix=True), "--fix failed on the drifted fixture"
+    healed = page.read_text(encoding="utf-8")
+    healed_nav = extract_nav(healed, "fixture")
+
+    assert stale not in healed_nav, "--fix left the stale menu link in the header"
+    assert f'<a href="{live_href}"' in healed_nav, (
+        f"--fix did not restore the canonical link {live_href!r}"
+    )
+
+    after_stamps, after_defers = harvest_decorations(healed_nav)
+    assert {k: after_stamps.get(k) for k in before_stamps} == before_stamps, (
+        "--fix changed or dropped ?v= stamps in the header. Those assets are "
+        "served `immutable, max-age=1y` and this page has no render lane to "
+        "re-stamp them — every warm browser would keep the old bytes."
+    )
+    assert before_defers <= after_defers, (
+        f"--fix stripped defer from {sorted(before_defers - after_defers)}; "
+        "those scripts become render-blocking on a live page"
+    )
+    # The mirrored site copy is what actually ships — decorations and all.
+    assert (root / "site" / PAGE).read_text(encoding="utf-8") == healed
 
 
 @pytest.mark.parametrize("page", PAGES, ids=lambda p: f"{p.parent.name}/{p.name}")

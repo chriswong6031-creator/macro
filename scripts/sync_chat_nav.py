@@ -41,6 +41,21 @@ optimizer's to own and they change whenever an asset's content changes, so the
 comparison normalizes exactly those two decorations and nothing else. Anything
 else that differs is real drift and fails.
 
+…AND ``--fix`` CARRIES THEM ACROSS THE SPLICE. A freshly rendered partial is
+undecorated, so a naive splice would silently strip every ``?v=`` and ``defer``
+inside the header — and ``normalize()`` ignores exactly those two things, so the
+gate would read GREEN over the damage. That is not cosmetic here: chat.html is a
+plain-copy page with no render lane to re-stamp it, and its nav assets
+(navigation-refresh.css, logo_config.js, stock-logos.js, live_config.js,
+live.js) sit on the Caddyfile ``immutable, max-age=1y`` list — a dropped stamp
+pins every warm browser to the old bytes indefinitely, and four dropped
+``defer``s turn a live page's scripts render-blocking. So ``--fix`` harvests the
+OUTGOING header's decorations, keyed by asset, and re-applies them to the newly
+rendered one in the optimizer's own byte placement. An asset the outgoing page
+did not decorate simply gets nothing; the next optimizer run owns it either way.
+The comparison stays exactly as narrow as it was — widening ``normalize()`` would
+be fixing the wrong half, since the splice is what loses the data.
+
 Usage:
     python -m scripts.sync_chat_nav              # report + exit 1 on drift
     python -m scripts.sync_chat_nav --fix        # re-splice from the partial
@@ -52,7 +67,7 @@ from __future__ import annotations
 
 import re
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -67,6 +82,94 @@ _NAV_RE = re.compile(r'<nav class="site-nav">.*?</nav>', re.DOTALL)
 #   lib.pages.optimize_assets_text -> defer on non-async, non-module scripts
 _STAMP_RE = re.compile(r"\?v=[0-9a-f]{8}")
 _DEFER_RE = re.compile(r"(<script\b[^>]*?)\s+defer(\s*/?>)", re.IGNORECASE)
+
+# Tag/attribute shapes mirrored from lib.pages.optimize_assets_text so that what
+# --fix re-applies is byte-identical to what the optimizer would have written.
+# Deliberately COPIES rather than imports: the no-fix live check must stay a
+# pure jinja2+stdlib run (CI packs install minimal deps, and lib.pages pulls
+# lib.config with it), and these four patterns are pinned by
+# tests/test_chat_nav_sync.py against the optimizer's real output.
+_OPEN_TAG_RE = re.compile(r"<(script|link)\b([^>]*)>", re.IGNORECASE)
+_SRC_ATTR_RE = re.compile(r'\b(src|href)\s*=\s*"([^"]*)"', re.IGNORECASE)
+_HAS_DEFER_ASYNC_RE = re.compile(r"\b(defer|async)\b", re.IGNORECASE)
+# The optimizer's own stamp, and only it: `?v=<8 hex>` as the whole query.
+_URL_STAMP_RE = re.compile(r"^([^?#]+)\?v=([0-9a-f]{8})$")
+
+
+def _loaded_asset(kind: str, attrs: str):
+    """``(url, attr_match)`` for the asset this tag LOADS, else ``None``.
+
+    Same discrimination as the optimizer: ``src`` on ``<script>``, ``href`` on
+    ``<link>``, and nothing for an inline script or a mismatched pair.
+    """
+    am = _SRC_ATTR_RE.search(attrs)
+    if not am:
+        return None
+    if (kind == "script") != (am.group(1).lower() == "src"):
+        return None
+    return am.group(2), am
+
+
+def harvest_decorations(block: str) -> tuple[dict[str, str], set[str]]:
+    """``({asset: 8hex stamp}, {scripts wearing defer})`` as worn by `block`.
+
+    Assets are keyed BOTH by their URL as written and by bare filename, so a
+    header whose ``nav_prefix`` changed still carries its stamps across. A
+    filename that appeared with two DIFFERENT hashes is ambiguous — re-applying
+    either would pin the edge to the wrong bytes for a year — so it is dropped
+    and that ref ships unstamped for the optimizer to fix.
+    """
+    seen: dict[str, set[str]] = {}
+    defers: set[str] = set()
+    for m in _OPEN_TAG_RE.finditer(block):
+        kind, attrs = m.group(1).lower(), m.group(2)
+        ref = _loaded_asset(kind, attrs)
+        if ref is None:
+            continue
+        url = ref[0]
+        stamped = _URL_STAMP_RE.match(url)
+        bare = stamped.group(1) if stamped else url
+        keys = {bare, PurePosixPath(bare).name}
+        if stamped:
+            for key in keys:
+                seen.setdefault(key, set()).add(stamped.group(2))
+        if kind == "script" and _HAS_DEFER_ASYNC_RE.search(attrs):
+            defers |= keys
+    return {k: next(iter(v)) for k, v in seen.items() if len(v) == 1}, defers
+
+
+def redecorate(fresh: str, outgoing: str) -> str:
+    """`fresh` wearing the ``?v=``/``defer`` decorations `outgoing` wore.
+
+    Adds ONLY the two things ``normalize()`` ignores, so the result still
+    compares equal to the undecorated render — this restores data the splice
+    would drop, it can never mask drift.
+    """
+    stamps, defers = harvest_decorations(outgoing)
+
+    def _redecorate(m: "re.Match[str]") -> str:
+        kind, attrs = m.group(1).lower(), m.group(2)
+        ref = _loaded_asset(kind, attrs)
+        if ref is None:
+            return m.group(0)
+        url, am = ref
+        if "?" in url or "#" in url:
+            return m.group(0)  # already stamped, or an authored query — leave it
+        name = PurePosixPath(url).name
+        new_attrs = attrs
+        stamp = stamps.get(url) or stamps.get(name)
+        if stamp:
+            new_attrs = (
+                attrs[: am.start()]
+                + f'{am.group(1)}="{url}?v={stamp}"'
+                + attrs[am.end():]
+            )
+        if (kind == "script" and (url in defers or name in defers)
+                and not _HAS_DEFER_ASYNC_RE.search(new_attrs)):
+            new_attrs = new_attrs.rstrip() + " defer"
+        return f"<{m.group(1)}{new_attrs}>"
+
+    return _OPEN_TAG_RE.sub(_redecorate, fresh)
 
 
 def render_canonical(templates: Path) -> str:
@@ -135,8 +238,12 @@ def check(root: Path, fix: bool = False) -> bool:
         )
         return False
 
-    # Splice, preserving everything outside the wrapper byte-for-byte.
-    updated = page_text.replace(current, canonical, 1)
+    # Splice, preserving everything outside the wrapper byte-for-byte — and the
+    # optimizer's decorations INSIDE it, which the fresh render does not carry
+    # and normalize() would not have missed. See the STAMPS note in the module
+    # docstring: these assets are served `immutable, max-age=1y` and this page
+    # has no render lane to re-stamp them.
+    updated = page_text.replace(current, redecorate(canonical, current), 1)
 
     # These writes are raw write_text, not lib.pages.write_page, and are listed in
     # tests/test_site_shim._ALLOW for it. That is deliberate and it is the same
@@ -195,6 +302,7 @@ def selftest() -> int:
         # The exact 2026-08-01 shape: a link the partial does not carry.
         page = tmp / "templates" / PAGE
         text = page.read_text(encoding="utf-8")
+        before_stamps, before_defers = harvest_decorations(extract_nav(text, "fixture"))
         page.write_text(
             text.replace('<div class="nav-links">',
                          '<div class="nav-links">\n    <a href="whitehouse.html">X</a>', 1),
@@ -217,14 +325,30 @@ def selftest() -> int:
             print("selftest FAIL: --fix did not mirror the site copy")
             return 1
 
+        # The splice must not eat what normalize() is blind to. A fresh render
+        # is undecorated, so a --fix that does not carry the outgoing stamps and
+        # defers across strips them AND reports green — leaving warm browsers
+        # pinned to `immutable, max-age=1y` copies of the old assets on a page
+        # with no render lane to re-stamp it.
+        after_stamps, after_defers = harvest_decorations(extract_nav(healed, "fixture"))
+        lost_stamps = sorted(k for k, v in before_stamps.items() if after_stamps.get(k) != v)
+        lost_defers = sorted(before_defers - after_defers)
+        if lost_stamps or lost_defers:
+            print(f"selftest FAIL: --fix stripped optimizer decorations the "
+                  f"outgoing header carried — lost ?v= on {lost_stamps}, lost "
+                  f"defer on {lost_defers}. normalize() ignores both, so the "
+                  f"gate would report green over the damage.")
+            return 1
+
         stamped = healed.replace("navigation-refresh.css", "navigation-refresh.css?v=deadbeef", 1)
         page.write_text(stamped, encoding="utf-8")
         if not check(tmp):
             print("selftest FAIL: an optimizer ?v= stamp was reported as drift")
             return 1
 
-        print("selftest PASS: drift detected, --fix heals both copies, and the "
-              "optimizer's stamps are not mistaken for drift")
+        print("selftest PASS: drift detected, --fix heals both copies and keeps "
+              "the optimizer's stamps/defers, and those stamps are not mistaken "
+              "for drift")
         return 0
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
