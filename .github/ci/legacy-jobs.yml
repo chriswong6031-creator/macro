@@ -5730,3 +5730,43 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: prospective candidate grader — issuance log, no-leakage, denominators, coverage
         run: python -m pytest tests/test_government_revenue_candidate_grader.py -q
+
+  research-price-panel:
+    if: ${{ false }}
+    # The versioned FROZEN research price panel (data/research_panels/).  Two audits
+    # measured that our evidence base is not reproducible: the breadth close caches are
+    # re-based at a full rebuild and accrue RAW closes after it, so PNC's 2026-06-22 close
+    # read 234.71 on 2026-07-01 and 232.8536 on 2026-08-06 with nothing recording the
+    # change.  Frozen->cache-today drift moves a decision statistic up to 0.24pp against
+    # 0.26-0.98pp decision boundaries, so the infrastructure noise is now the LARGER term.
+    #
+    # This lane pins the two properties the artifact exists for, both of which are silent
+    # failures — a broken freeze looks exactly like a working one until someone re-derives
+    # a published number a year later:
+    #   1. an existing version is byte-stable across a rebuild whose underlying store MOVED
+    #   2. a reader given an unknown version raises instead of quietly resolving elsewhere
+    # Every case runs against a synthetic store built in tmp_path (adjusted per-name files
+    # shadowing a wide close cache, cache-only names, and a name no source carries), so the
+    # job checks out no data fixtures and cannot touch the real data/ tree.
+    #
+    # Both halves are wired in ci.yml per #3488 — the suite AND the modules it measures
+    # (price_panel.py, the vendored price_ladder.py, and the migrated instrument) — so an
+    # edit to either can start the job that proves the freeze still holds.
+    #
+    # Deps: pyarrow is load-bearing (the artifact IS a parquet; a fixture cannot stand in
+    # for the bytes under test).  The install string is byte-identical to the
+    # trial-budgets/outcome-spine family so the pack runner shares their venv rather than
+    # provisioning another.  Measured with exactly this line: 27 passed in ~1.9s, zero
+    # skips.  The #4698-ref comparison SKIPS rather than passes when that ref is
+    # unfetchable, so a checkout that cannot see the PR branch reads 26 passed / 1 skipped
+    # — an unverifiable pin must not report itself green.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: frozen price panel — write-once bytes + a reader that never falls back
+        run: python -m pytest tests/test_research_price_panel.py -q
