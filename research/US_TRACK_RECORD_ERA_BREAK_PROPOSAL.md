@@ -1,49 +1,117 @@
 # US track record — era break proposal (`_ob_mask` start-anchor)
 
-**Status: PROPOSAL. Not a ruling, and nothing here has been executed.** No history has been
-re-graded; `site/factordata/us_track_ledger.json` is untouched by the PR that carries this
-document. What follows is the measured case for an era boundary and the pre-registration
-that should be fixed *before* any recompute.
+**Status: RULED — EXECUTED (PR #4942).** Ruled by the Fable main-loop adjudication of
+2026-08-07 (session `us-board-mining-detection`) and executed in the same PR: the record was
+re-measured on the real panel, `site/factordata/us_track_ledger.json` now carries
+`meta.anchor_era` and the frozen pre-era headline, both surfaces show the old numbers beside
+the new ones, and a permanent fail-closed guard refuses any future unstamped re-bake.
 
 Sibling of `research/SESSION_ANCHOR_ABSOLUTE_CALENDAR_ADJUDICATION_BY_FABLE.md`
 (era `abs-session-2026-08-06`, PR #4732).
 
-> **TRIGGER FIRED 2026-08-07 — this proposal is now DUE and still UNEXECUTED.** #4732 merged
-> as `2a0c5e27184` (00:11:05), and #4747 — which carries this document and the tripwire —
-> merged as `4b98aeb7123` **28 seconds later** (00:11:33). Each was green against a base
-> that did not contain the other, so the tripwire never spent a day armed: it went red on
-> main on arrival and pinned the `unrun-picks-boards` CI job for the whole fleet. The
-> `xfail` marker was therefore dropped by the CI-heal PR rather than by the era-stamp PR
-> (§0.5 amended below). **No gate in §0 has been satisfied and nothing has been recomputed.**
-> `us_track_ledger.json` still carries no `meta.anchor_era`.
->
-> What keeps this safe for the moment is that the shipped artifact is FROZEN at
-> `as_of 2026-07-31` on PRE-anchor numbers (`expectancy_pct 1.19`, `win_pct 63.6`). The
-> exposure is on the unfreeze: the first nightly that re-grades the US board lane will move
-> every published number in that file under the new grid with no era stamp — the silent
-> re-bake §3 forbids. §0.1 needs an operator/Fable ruling before that happens.
+> **RULING (Fable, 2026-08-07):** The `abs-session-2026-08-06` anchor era extends to
+> `site/factordata/us_track_ledger.json`. The incumbent exit leg (`_ob_mask` on
+> `resample("3B")` over a rolling-start close cache) re-phases the entire published history
+> whenever the cache's first date rolls — the realised P&L of long-closed episodes mutates
+> nightly with no new information about those episodes. That is not a preserved track
+> record; it is a moving target already in breach of measurement stability. Adopting the
+> ratified absolute session anchor restores stability; refusing the break would preserve the
+> instability, not the numbers. Conditions binding per §0: (2) `meta.anchor_era =
+> "abs-session-2026-08-06"` carried in the artifact; (3) the pre-era headline (as_of
+> 2026-07-31: expectancy_pct 1.19, win_pct 63.6, and its CI) is preserved in the artifact and
+> SHOWN alongside the new numbers with the reason, on every consuming surface (full
+> side-by-side on the Track-record page; a Tier-2 receipt/hover is acceptable for the
+> dashboard chip); (4) the re-measurement runs on the real panel post-#4732 and lands in the
+> SAME PR as this ruling's execution; (6) the direction of the move (disclosed up, expectancy
+> 0.94 → 1.29 measured pre-ruling) is stated in the PR body ahead of any quality claim.
+> Additionally ruled: a permanent fail-closed guard ships in the same PR — any future write
+> of `us_track_ledger.json` whose headline numbers move beyond a small tolerance without a
+> matching `meta.anchor_era` for the active grading construction must refuse to publish and
+> print a line-start ::error annotation. Operator retains veto: nothing pre-era is deleted,
+> so a reversal is a re-render away.
+
+> **THE PRE-REGISTERED DIRECTION DID NOT SURVIVE THE RE-MEASUREMENT — §4 was wrong about the
+> sign.** The ruling records §4's pre-ruling finding that the era arm moved the headline UP
+> (`expectancy_pct` 0.94 → 1.29). Measured on the real panel and the real published cohort
+> (gate §0.4), it moves **DOWN**, and so does the published level. Full attribution in
+> `reports/us_track_ledger_era_recompute_2026-08-07.md`; the numbers are in the §4 addendum
+> below. This is exactly what a pre-registration is for: the direction was fixed in writing
+> before the recompute, so the flip is a finding rather than a negotiation. The case for the
+> break never rested on the numbers being better — it rested on them being well-defined —
+> and it reads identically now that they are worse.
+
+> **HISTORY — how the trigger fired.** #4732 merged as `2a0c5e27184` (00:11:05), and #4747 —
+> which carries this document and the tripwire — merged as `4b98aeb7123` **28 seconds later**
+> (00:11:33). Each was green against a base that did not contain the other, so the tripwire
+> never spent a day armed: it went red on main on arrival and pinned the `unrun-picks-boards`
+> CI job for the whole fleet. The `xfail` marker was therefore dropped by the CI-heal PR
+> rather than by the era-stamp PR (§0.5, closed early). Until this PR the shipped artifact
+> was FROZEN at `as_of 2026-07-31` on PRE-anchor numbers (`expectancy_pct 1.19`,
+> `win_pct 63.6`), which is the only reason the exposure stayed theoretical: the first
+> nightly to re-grade the US board lane would have moved every published number under the new
+> grid with no era stamp — the silent re-bake §3 forbids.
 
 ---
 
-## §0 Acceptance gates — this is not done unless
+## §0 Acceptance gates — ALL SATISFIED 2026-08-07 (PR #4942)
 
-1. The era boundary is **ruled on** (Fable/operator) before any recompute of
+1. **SATISFIED.** The era boundary is **ruled on** (Fable/operator) before any recompute of
    `us_track_ledger.json`. A recompute that lands without a ruling is the silent re-bake
    R5 forbids.
-2. The era string is **carried in the artifact** (`meta.anchor_era`), not only in a commit
-   message, so a reader can tell which anchor produced the numbers in front of them.
-3. The pre-era headline is **preserved and shown**, not overwritten — the old and new
-   numbers appear side by side with the reason for the change.
-4. The re-measurement is run **after** #4732 merges, on the real panel, and its output is
-   committed alongside the recompute in one PR.
+   → Ruling quoted verbatim in the Status block above; Fable main-loop adjudication
+   2026-08-07, session `us-board-mining-detection`. The recompute is in the same PR, after
+   the ruling, never before it.
+2. **SATISFIED.** The era string is **carried in the artifact** (`meta.anchor_era`), not only
+   in a commit message, so a reader can tell which anchor produced the numbers in front of
+   them.
+   → `meta.anchor_era = "abs-session-2026-08-06"`, `meta.era_from = "2026-08-07"`, written
+   through `emit_ledger`'s `extra_meta` on EVERY return path including the degenerate one
+   (`engine/track_era.py::us_era_meta`, `scripts/grade_us_board.py`). Pinned by
+   `tests/test_track_ledger_era.py::test_shipped_artifact_carries_the_active_era_stamp` and
+   `::test_emit_path_stamps_the_era_on_the_degenerate_return_too`.
+3. **SATISFIED.** The pre-era headline is **preserved and shown**, not overwritten — the old
+   and new numbers appear side by side with the reason for the change.
+   → Preserved: `meta.pre_era` carries the full frozen pre-era summary, and the last pre-era
+   artifact is committed whole (rows included) at
+   `reports/us_track_ledger_pre_era_2026-07-31.json`. It is a frozen CONSTANT, not a copy of
+   the outgoing file — the obvious "copy the outgoing summary" implementation self-erases
+   after one night, pinned by `::test_pre_era_block_is_byte_stable_across_repeated_recomputes`.
+   Shown: full side-by-side on the Track-record page (`templates/us_track_record.html.j2`
+   `.tr-basis`) and in the Track-record dialog (`templates/_track_record_dlg.html.j2`
+   `.trd-basis`); Tier-2 hover receipt on the dashboard chip (`.trd-basis-chip`,
+   `data-tip-en`/`data-tip-zh`). EN + ZH, glance-tier wording, no grid/anchor vocabulary
+   front-facing. Pinned by the surface tests in `tests/test_track_ledger_era.py`.
+4. **SATISFIED.** The re-measurement is run **after** #4732 merges, on the real panel, and
+   its output is committed alongside the recompute in one PR.
+   → `scripts/recompute_us_track_ledger.py` (writes only this artifact — no snapshot append,
+   no `retro_grades.parquet` write, per §6) over the committed panel `2023-07-03..2026-08-06`
+   (777 sessions, 32 board dates, 1,555 priced tickers). Attribution measured by
+   `scripts/measure_us_track_era_recompute.py` → `reports/us_track_ledger_era_recompute_2026-08-07.md`
+   + `.json`, all in this PR.
 5. ~~`tests/test_ob_mask_start_invariance.py::test_start_invariance` has its `xfail` marker
-   dropped in the same PR that stamps the era~~ — **AMENDED 2026-08-07, gate spent early.**
-   The 28-second merge race (see Status) fired the tripwire before any era-stamp PR could
+   dropped in the same PR that stamps the era~~ — **CLOSED EARLY 2026-08-07, gate spent.**
+   The 28-second merge race (see History) fired the tripwire before any era-stamp PR could
    exist, so the marker was dropped by the CI heal instead; the test now stands as a live
-   regression guard on start-invariance. This gate is CLOSED and can no longer serve as the
-   reminder that the other five are open — that job now belongs to the Status block above.
-6. The direction of the move (§4) is disclosed in the PR body **before** anyone argues the
-   new numbers are better.
+   regression guard on start-invariance.
+6. **SATISFIED — and it flipped.** The direction of the move (§4) is disclosed in the PR body
+   **before** anyone argues the new numbers are better.
+   → The PR body opens with the disclosure. It reports the OPPOSITE of §4's pre-registered
+   direction: measured on the real cohort the move is **down**, on both legs. See the §4
+   addendum.
+
+**Additionally ruled — the permanent guard. SATISFIED.** `engine.track_ledger.atomic_write`
+(the one path every ledger writer takes; house law forbids `open('w')` truncation) calls
+`engine.track_era.check_publish`. A write of `us_track_ledger.json` whose published headline
+moves beyond a small per-key tolerance without carrying the active construction's
+`meta.anchor_era` is REFUSED — the previously published file is left in place and a
+line-start `::error title=track-ledger-era::` annotation is printed by a bare `print(...,
+flush=True)`, never a logger. Fail-closed in both directions: a guard that cannot RUN also
+refuses, for this artifact only, so a broken US guard cannot wedge the CN/HK/CA nightly.
+Sample counts are excluded from the moved-check (they grow nightly by ordinary accrual).
+Mutation-verified: disabling the guard call reds exactly
+`::test_guard_refuses_an_unstamped_write_that_moves_the_headline`,
+`::test_guard_refuses_a_stale_stamp_that_moves_the_headline`, and
+`::test_guard_fails_closed_when_it_cannot_run`, and nothing else.
 
 ---
 
@@ -162,13 +230,59 @@ history available at `origin/main` (275–359 matured), so it measures **movemen
 published level. The published level must be re-measured after #4732 lands and the board
 lane is unfrozen; that is gate §0.4.
 
+### §4a ADDENDUM — the re-measurement (gate §0.4, executed 2026-08-07). The sign flipped.
+
+Full report: `reports/us_track_ledger_era_recompute_2026-08-07.md`; regenerate with
+`scripts/measure_us_track_era_recompute.py`. Three arms over ONE cohort (32 board dates) and
+ONE panel (`2023-07-03..2026-08-06`, 777 sessions):
+
+| | SHIPPED (frozen) | LEGACY grid | NEW absolute anchor |
+|---|---:|---:|---:|
+| what it is | the artifact as published, `as_of 2026-07-31` | the FULL current cohort on the pre-#4732 series-first grid | the same cohort, same prices, same rule, on the absolute anchor |
+| `n_matured` | 173 | 374 | 374 |
+| `n_board_days` | 8 | 18 | 18 |
+| `win_pct` | 63.6 | 61.5 | **59.4** |
+| `expectancy_pct` | 1.19 | 0.92 | **0.75** |
+| `profit_factor` | 1.70 | 1.49 | **1.38** |
+| `capture` | 0.71 | 0.43 | **0.38** |
+| `exp_lo_pct` | 0.21 | 0.14 | **−0.10** |
+
+SHIPPED → LEGACY is the **unfreeze** (201 episodes that matured because time passed — real
+new information). LEGACY → NEW is the **era**, isolated: identical boards, admissions, and
+prices; only the bucket grid differs.
+
+**Both legs move down, and so the published level moves down: `expectancy_pct` 1.19 → 0.75,
+`win_pct` 63.6 → 59.4.** §4's controlled arm measured the era going UP on a smaller cohort at
+an older panel vintage; on the real published cohort the same arm goes DOWN
+(0.92 → 0.75). An isolated-arm direction does not survive to the published level, and the
+pre-registration is what makes that legible instead of arguable.
+
+Era effect at row level: **122 of 374** episodes matured in both arms had their P&L move
+(32.6%), median |Δ| 2.00 pp, max |Δ| 19.10 pp; 123 exit bars and 58 exit reasons moved. Every
+one of those is a trade that had already closed — under the retired grid they would keep
+moving as leading history rolled off, and under the absolute anchor they are fixed.
+
+One consequence worth naming: `exp_lo_pct` is now **−0.10**, so the honest range for what a
+trade returns spans a loss. The dialog's `_confident` gate already reads that field and
+withholds the green accent and the "worth following" line on its own. The Track-record page's
+hero stance did NOT — it keyed only on the win-rate interval, so at `ci_lo 52.6` it would
+have printed "more winners than losers" over an average-trade range reaching below zero. That
+page now applies the same interval rule the dialog does. Not a scope expansion: the numbers
+this PR publishes are what put that branch in reach.
+
 ---
 
 ## §5 Proposed form
 
-1. **Era string** `us-track-abs-session-2026-08-06` — its own string, not a reuse of
+1. ~~**Era string** `us-track-abs-session-2026-08-06` — its own string, not a reuse of
    `abs-session-2026-08-06`, per A3 (one charter, one era) and because the boundary date in
-   this stream is the date this leg's buckets changed.
+   this stream is the date this leg's buckets changed.~~ — **SUPERSEDED BY THE RULING.** The
+   ruling names the string explicitly: `meta.anchor_era = "abs-session-2026-08-06"`, i.e. the
+   ratified era EXTENDS here rather than forking a per-consumer one. The proposal's A3
+   reading is not wrong in general, but this leg inherits the anchor by direct import of
+   `_tf_bars` — it is the same construction, not a sibling of it — so a second string would
+   have named a boundary that does not exist. `meta.era_from = "2026-08-07"` carries the date
+   this stream crossed it, which is the fact the separate string was reaching for.
 2. **Carried as** `meta.anchor_era` on `us_track_ledger.json`, written through the existing
    `extra_meta` channel in `engine.track_ledger.build_shell` (already used for `exit_rule`,
    `history`, `continuity`) — no schema surgery, and the field's first appearance in the
@@ -187,8 +301,16 @@ lane is unfrozen; that is gate §0.4.
 
 ## §6 Explicitly NOT proposed
 
-- **No re-grade in this PR.** The artifact is untouched; only the docstring, the
-  measurement tooling, the report, and the tripwire ship.
+> **Scope note, 2026-08-07.** §6 was written for the PROPOSAL PR (#4747), which deliberately
+> shipped no re-grade. The first bullet is therefore spent: the execution PR #4942 *is* the
+> re-grade, run under the ruling. Every other bullet below still binds and was honoured —
+> no grading rule changed, `retro_grades.parquet` and `us_board_track.json` were not
+> written (which is why the recompute has its own entrypoint instead of
+> `grade_us_board --nightly`), no local patch was made to `_ob_mask`, and the vendor-revision
+> drift source remains out of this charter's fence.
+
+- ~~**No re-grade in this PR.** The artifact is untouched; only the docstring, the
+  measurement tooling, the report, and the tripwire ship.~~ — spent; see the scope note.
 - **No change to any grading rule** — entry, stop, horizon, fill offset, and the overbought
   threshold are all unchanged. This is about *which bucket grid* the existing rule reads.
 - **No change to `retro_grades.parquet` or `us_board_track.json`** — they do not read
@@ -224,6 +346,14 @@ that owes the work — the obligation is now carried by this document's Status b
 
 The marker is gone; the test remains as a live regression guard, so a revert of the absolute
 anchor on this path fails loudly rather than silently moving published P&L.
+
+**The lesson is now implemented, 2026-08-07.** "Prefer a form whose failure is scoped to the
+artifact or lane that owes the work" is exactly what the permanent guard is:
+`engine.track_era.check_publish`, fired from the shared writer, refuses the ONE artifact whose
+record is at stake and leaves the previously published file in place. It cannot be lost to a
+merge race — it is not armed against a specific in-flight PR, it evaluates the actual write —
+and its blast radius is one file, not every open PR in the repo. An `xfail(strict=True)` bets
+on merge ORDER; a writer-side refusal does not bet on anything.
 
 Its sibling `test_causal_trailing_truncation_never_moves_past_flags` is green in both eras
 and stays green — it pins the half of the docstring that was always true, so a future change

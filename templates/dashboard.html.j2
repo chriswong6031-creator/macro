@@ -15872,6 +15872,21 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       {% set _sm = (_tl.get('summary') if _tl else none) or {} %}
       {% set _trd_state = _tl.get('state') if _tl else 'accruing' %}
       {% set _trd_series = us_track_series if (us_track_series is defined and us_track_series) else none %}
+      {# MEASUREMENT CHANGE (era break ruled 2026-08-07,
+         research/US_TRACK_RECORD_ERA_BREAK_PROPOSAL.md §0.3). meta.pre_era carries the
+         frozen headline this record replaced; the chip gets a Tier-2 hover receipt and the
+         dialog a full side-by-side, so the old numbers are shown rather than overwritten.
+         `is mapping` before .get(): a non-dict pre_era would raise inside the partial. #}
+      {% set _tmeta = (_tl.get('meta') if _tl else none) or {} %}
+      {% set _pe_raw = _tmeta.get('pre_era') if _tmeta.get('pre_era') is mapping else none %}
+      {% set _pe_sum = _pe_raw.get('summary') if (_pe_raw and _pe_raw.get('summary') is mapping) else none %}
+      {% set _trd_prior_era = {
+        'as_of': _pe_raw.get('as_of'),
+        'era_from': _tmeta.get('era_from'),
+        'win_pct': _pe_sum.get('win_pct'),
+        'expectancy_pct': _pe_sum.get('expectancy_pct'),
+        'n_matured': _pe_sum.get('n_matured'),
+      } if (_pe_sum and _pe_raw.get('as_of')) else none %}
       {% set trd = {
         'market': 'us', 'state': _trd_state,
         'stats': _sm,
@@ -15879,6 +15894,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         'eyebrow_en': 'US buy board · vs S&P 500', 'eyebrow_zh': '美股买入榜 · 对比标普500',
         'bench_en': 'S&P 500', 'bench_zh': '标普500',
         'series': _trd_series, 'as_of': (_tl.get('as_of') if _tl else none) or _oc.get('as_of'),
+        'prior_era': _trd_prior_era,
         'deep_link': 'us_track_record.html', 'up_class': 'az-up', 'dn_class': 'az-dn',
         'note_en': 'Every pick is bought at the next session\'s close and sold ' ~ (_sm.get('horizon') or 10) ~ ' sessions later, or sooner if it runs hot or breaks its base. Picks too recent to have finished are listed but not scored.',
         'note_zh': '每个标的均以次日收盘价买入，持有 ' ~ (_sm.get('horizon') or 10) ~ ' 个交易日后卖出；若提前冲高或跌破底部则提早离场。尚未走完的标的会列出但不计分。',

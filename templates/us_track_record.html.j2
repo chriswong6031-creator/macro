@@ -52,6 +52,44 @@
   .tr-hero-stance{flex:1;min-width:220px}
   .tr-hero-stance .stance-main{font-size:14.5px;font-weight:700;line-height:1.5}
   .tr-hero-stance .stance-sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+  /* ── measurement-change comparison (era break, 2026-08-07) ──────────────────
+     Two readings of the SAME trades, so the visual job is the opposite of the
+     hero's: invite comparison, refuse a verdict. Three rules follow from that —
+       1. the "before" column is muted with a hairline rail, NOT struck through.
+          A strikethrough reads as retracted, and these numbers were never wrong;
+          they were measured on a grid that moved. The visual must not contradict
+          the sentence above it;
+       2. neither column takes .val's 28px or the up/down inks — the hero above
+          still owns the headline, and colouring a comparison turns a measurement
+          note into a performance claim;
+       3. one plain sentence carries the reason, and a second says how much of the
+          move is simply more trades finishing. Without it a reader reads the whole
+          drop as the measurement change, which is false. */
+  /* background is var(--panel) FLAT, not a muted wash over it. The wash reads fine on
+     dark (panel #181b21 lifts off canvas #0f1115) but in light it lands on
+     rgb(247,248,250) — the page canvas itself — so the whole block dissolved into the
+     page while the hero above it stayed white. That is the panel≈bg flatness bug the
+     doctrine names (§5.8). The block still reads quieter than the hero, but through
+     type and the rail, not through a background that only works in one theme. */
+  .tr-basis{margin:-8px 0 26px;padding:16px 18px;border:1px solid var(--line);
+    border-left:3px solid color-mix(in srgb,var(--muted) 45%,transparent);
+    border-radius:12px;background:var(--panel)}
+  .tr-basis-hd{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;margin-bottom:8px}
+  .tr-basis-tag{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--muted)}
+  .tr-basis-dt{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .tr-basis-line{margin:0 0 14px;font-size:12.5px;line-height:1.55;color:var(--text);max-width:80ch}
+  .tr-basis-cmp{display:flex;flex-wrap:wrap;gap:10px 28px;align-items:flex-start}
+  .tr-basis-col{min-width:170px;padding-left:11px;
+    border-left:1px solid color-mix(in srgb,var(--muted) 30%,transparent)}
+  .tr-basis-col-k{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px}
+  .tr-basis-row{display:flex;justify-content:space-between;gap:14px;font-size:13px;line-height:1.75}
+  .tr-basis-row .n{font-weight:700;font-variant-numeric:tabular-nums}
+  .tr-basis-row .w{color:var(--muted);font-size:12px}
+  .tr-basis-then{color:var(--muted)}
+  .tr-basis-ft{margin:12px 0 0;font-size:11.5px;line-height:1.5;color:var(--muted);max-width:80ch}
+  @media (max-width:560px){ .tr-basis-cmp{gap:14px} .tr-basis-col{min-width:0;flex:1 1 140px} }
+
   .accruing-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;
     border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));
     color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent);
@@ -171,6 +209,11 @@
             loss, no win rate — however high — earns a following verdict. -#}
         {% if hero_ci and hero_ci[0] is not none and hero_ci[0] < 50 %}
         {{ t('More often right than wrong so far — but on a record this short the honest range still reaches below a coin flip.', '目前胜多于负——但记录尚短，诚实的区间仍低于五五开。') }}
+        {% elif hero_exp_lo is defined and hero_exp_lo is not none and hero_exp_lo <= 0 %}
+        {#- The interval governs, not the point estimate: while the honest range for what a
+            trade returns still spans a loss, no win rate earns a following verdict. Same
+            rule the Track-record dialog applies. -#}
+        {{ t('More winners than losers so far — but the honest range for what a trade returns still reaches below zero. Watch, don\'t chase.', '目前盈多于亏——但单笔回报的诚实区间仍可能低于零。观察，勿追。') }}
         {% elif win_rate_pct is not none and win_rate_pct >= 55 %}
         {{ t('More winners than losers — watch, do not chase new entries.', '盈多于亏——观察，勿追新入场机会。') }}
         {% else %}
@@ -187,6 +230,39 @@
   </div>
   {% if win_rate_pct is not none %}
   <p style="font-size:11.5px;color:var(--muted);margin:-12px 0 20px"><span class="l-en">Each pick is bought at the next session&#39;s close and sold {{ hero_horizon or 10 }} sessions later, or sooner if it runs hot or breaks its base.{% if hero_ci and hero_ci[0] is not none %} The win rate is likely between {{ hero_ci[0] }}% and {{ hero_ci[1] }}%{% if hero_board_days %} — {{ n_outcomes }} trades, but only {{ hero_board_days }} separate board days behind them{% endif %}.{% endif %}{% if hero_inflight %} {{ hero_inflight }} picks are still running and are not counted.{% endif %}</span><span class="l-zh">每个标的以次日收盘价买入，持有 {{ hero_horizon or 10 }} 个交易日后卖出；若提前冲高或跌破底部则提早离场。{% if hero_ci and hero_ci[0] is not none %}胜率大致介于 {{ hero_ci[0] }}% 与 {{ hero_ci[1] }}% 之间{% if hero_board_days %}——共 {{ n_outcomes }} 笔交易，但仅来自 {{ hero_board_days }} 个不同上榜日{% endif %}。{% endif %}{% if hero_inflight %} 另有 {{ hero_inflight }} 个标的仍在进行中，不计入。{% endif %}</span></p>
+  {% endif %}
+
+  {#- ── Measurement-change comparison (era break ruled 2026-08-07) ──────────────
+      The record was re-measured on a corrected timeframe grid. Nothing pre-change is
+      deleted: the previous headline sits beside the current one with the reason, so a
+      reader who saw the old numbers can reconcile them. Glance-tier wording only — the
+      grid, the anchor, and the attribution split live in
+      reports/us_track_ledger_era_recompute_2026-08-07.md, not on this page. -#}
+  {% if prior_era is defined and prior_era and win_rate_pct is not none %}
+  <div class="tr-basis">
+    <div class="tr-basis-hd">
+      <span class="tr-basis-tag">{{ t('Measurement updated', '计量方式已更新') }}</span>
+      {% if era_from is defined and era_from %}<span class="tr-basis-dt">{{ era_from }}</span>{% endif %}
+    </div>
+    <p class="tr-basis-line"><span class="l-en">The timing used to decide when a trade is sold used to shift as older price history rolled out of our window — which moved the results of trades that had already closed. It no longer shifts. How picks are chosen, bought and sold has not changed.</span><span class="l-zh">判断卖出时点所用的时间刻度，过去会随着更早的价格数据滚出窗口而移动，令已经结束的交易的成绩也跟着改变。现在不会了。选股、买入和卖出的规则没有任何改动。</span></p>
+    <div class="tr-basis-cmp">
+      <div class="tr-basis-col tr-basis-then">
+        <div class="tr-basis-col-k"><span class="l-en">Before · to {{ prior_era.as_of }}</span><span class="l-zh">此前 · 截至 {{ prior_era.as_of }}</span></div>
+        <div class="tr-basis-row"><span class="w">{{ t('made money', '盈利占比') }}</span><span class="n">{{ prior_era.win_pct|round|int }}%</span></div>
+        <div class="tr-basis-row"><span class="w">{{ t('average trade', '每笔平均') }}</span><span class="n">{{ '%+.1f'|format(prior_era.expectancy_pct) }}%</span></div>
+        <div class="tr-basis-row"><span class="w">{{ t('finished trades', '已完成交易') }}</span><span class="n">{{ prior_era.n_matured }}</span></div>
+      </div>
+      <div class="tr-basis-col">
+        <div class="tr-basis-col-k">{{ t('Now', '现在') }}</div>
+        <div class="tr-basis-row"><span class="w">{{ t('made money', '盈利占比') }}</span><span class="n">{{ win_rate_pct|round|int }}%</span></div>
+        <div class="tr-basis-row"><span class="w">{{ t('average trade', '每笔平均') }}</span><span class="n">{% if avg_pct is not none %}{{ '%+.1f'|format(avg_pct) }}%{% else %}—{% endif %}</span></div>
+        <div class="tr-basis-row"><span class="w">{{ t('finished trades', '已完成交易') }}</span><span class="n">{{ n_outcomes if n_outcomes is not none else '—' }}</span></div>
+      </div>
+    </div>
+    {% if n_outcomes is not none and prior_era.n_matured is not none and n_outcomes != prior_era.n_matured %}
+    <p class="tr-basis-ft"><span class="l-en">More than the measurement separates these two columns: {{ n_outcomes }} trades have finished now against {{ prior_era.n_matured }} on {{ prior_era.as_of }}, so part of the move is simply more results, not a different ruler.</span><span class="l-zh">两列之间的差异不止来自计量方式：现已走完 {{ n_outcomes }} 笔交易，而 {{ prior_era.as_of }} 时为 {{ prior_era.n_matured }} 笔，因此部分变化只是结果变多，并非换了尺子。</span></p>
+    {% endif %}
+  </div>
   {% endif %}
 
   <!-- ── Section 2: Record over time ── -->

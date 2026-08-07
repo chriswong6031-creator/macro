@@ -1,0 +1,70 @@
+{
+ "n_boards": 32,
+ "first_board": "2026-06-15",
+ "last_board": "2026-07-31",
+ "panel_start": "2023-07-03",
+ "panel_end": "2026-08-06",
+ "panel_sessions": 777,
+ "arms": {
+  "shipped": {
+   "n_matured": 173,
+   "n_inflight": 281,
+   "n_board_days": 8,
+   "win_pct": 63.6,
+   "expectancy_pct": 1.19,
+   "median_pct": 1.74,
+   "profit_factor": 1.7,
+   "avg_win_pct": 4.54,
+   "avg_loss_pct": -4.67,
+   "ci_lo_pct": 55.6,
+   "ci_hi_pct": 69.8,
+   "exp_lo_pct": 0.21,
+   "exp_hi_pct": 1.98,
+   "median_hold": 9,
+   "capture": 0.71
+  },
+  "legacy": {
+   "n_matured": 374,
+   "n_inflight": 200,
+   "n_board_days": 18,
+   "win_pct": 61.5,
+   "expectancy_pct": 0.92,
+   "median_pct": 1.13,
+   "profit_factor": 1.49,
+   "avg_win_pct": 4.56,
+   "avg_loss_pct": -4.89,
+   "ci_lo_pct": 55.3,
+   "ci_hi_pct": 67.0,
+   "exp_lo_pct": 0.14,
+   "exp_hi_pct": 1.54,
+   "median_hold": 10,
+   "capture": 0.43
+  },
+  "new": {
+   "n_matured": 374,
+   "n_inflight": 200,
+   "n_board_days": 18,
+   "win_pct": 59.4,
+   "expectancy_pct": 0.75,
+   "median_pct": 0.9,
+   "profit_factor": 1.38,
+   "avg_win_pct": 4.61,
+   "avg_loss_pct": -4.88,
+   "ci_lo_pct": 52.6,
+   "ci_hi_pct": 64.9,
+   "exp_lo_pct": -0.1,
+   "exp_hi_pct": 1.46,
+   "median_hold": 10,
+   "capture": 0.38
+  }
+ },
+ "row_diff": {
+  "n_both": 374,
+  "n_pnl_moved": 122,
+  "pct_pnl_moved": 32.6,
+  "median_abs_pp": 2.0,
+  "max_abs_pp": 19.1,
+  "n_exit_bar_moved": 123,
+  "n_exit_reason_moved": 58
+ }
+}
