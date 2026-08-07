@@ -1858,12 +1858,15 @@ app.include_router(company_intelligence_router)
 
 # Filing Forensics private state transport. The public page is only a shell;
 # this route enforces the same authenticated site_full entitlement as the paid
-# site before reading the private Research Vault bucket.
-try:
-    from app.forensics import router as forensics_router  # noqa: E402
-    app.include_router(forensics_router)
-except ImportError:
-    pass  # additive route remains unavailable if its module is absent
+# site before reading the private Research Vault bucket. These are paid product
+# contracts, so router wiring errors fail startup loudly — the same rule the
+# BioCatalyst block below states. A swallowed ImportError here deleted all five
+# entitled routes (/api/forensics/state plus the four attested-history receipt
+# routes) at once and presented only as a 404 on a paid endpoint: no startup
+# error, no log line, nothing anybody would attribute to a renamed dependency
+# or a missing optional package on the VPS.
+from app.forensics import router as forensics_router  # noqa: E402
+app.include_router(forensics_router)
 
 # BioCatalyst Intelligence serves only the worker's pointer-bound normalized
 # product projection. Its router performs early site_full enforcement before

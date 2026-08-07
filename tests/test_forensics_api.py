@@ -1,6 +1,7 @@
 """Authenticated API tests for the private Filing Forensics state route."""
 from __future__ import annotations
 
+import ast
 import gzip
 import importlib.util
 import json
@@ -937,6 +938,77 @@ def test_production_openapi_mounts_every_attested_history_route() -> None:
     import app.main as main_mod
 
     paths = main_mod.app.openapi().get("paths", {})
+    assert "/api/forensics/state" in paths
     assert "/api/forensics/v1/attested-history/latest" in paths
     assert "/api/forensics/v1/attested-history/snapshots/{snapshot_id}/roots" in paths
     assert "/api/forensics/v1/attested-history/snapshots/{snapshot_id}/roots/{root_cell_id}" in paths
+
+
+# Every paid route this router owns, in the form a client actually requests.
+# The private catch-all is deliberately include_in_schema=False, so the OpenAPI
+# assertion above can never see it: only a real request proves it is mounted.
+_MOUNTED_PAID_PATHS = (
+    "/api/forensics/state",
+    "/api/forensics/v1/attested-history/latest",
+    f"/api/forensics/v1/attested-history/snapshots/{SNAPSHOT_ID}/roots",
+    f"/api/forensics/v1/attested-history/snapshots/{SNAPSHOT_ID}/roots/{ROOT_ALL}",
+    "/api/forensics/v1/attested-history/malformed/extra/segments",
+)
+
+
+def test_every_paid_route_is_mounted_on_the_assembled_production_app() -> None:
+    """A dropped router presents only as a 404 on a paid endpoint, never as an error.
+
+    Mounting used to be wrapped in ``except ImportError: pass``, so a renamed
+    dependency or a package missing on the VPS deleted all five entitled routes
+    with no startup failure and no log line.  Assert what production proves:
+    unauthenticated requests reach the entitlement boundary (401) instead of
+    falling through to the router's 404.
+    """
+    import app.main as main_mod
+
+    # No context manager on purpose: mounting is import-time state, and running
+    # the app's lifespan here would start its background warm threads.
+    client = TestClient(main_mod.app, raise_server_exceptions=False)
+    statuses = {path: client.get(path).status_code for path in _MOUNTED_PAID_PATHS}
+    assert statuses == dict.fromkeys(_MOUNTED_PAID_PATHS, 401)
+
+    # Control: 404 must still be reachable on this prefix, or the assertion
+    # above would pass for a reason that has nothing to do with mounting.
+    assert client.get("/api/forensics/not-a-route").status_code == 404
+
+
+def test_router_wiring_fails_startup_loudly_instead_of_swallowing_importerror() -> None:
+    """Pin the wiring shape, not just today's happy import.
+
+    The route test above only fails once the import is genuinely broken.  This
+    one fails the moment the mount is put back inside a ``try``: paid product
+    contracts fail startup loudly here, exactly as the BioCatalyst block does.
+    """
+    module = ast.parse((ROOT / "app" / "main.py").read_text(encoding="utf-8"))
+
+    top_level_import = [
+        node
+        for node in module.body
+        if isinstance(node, ast.ImportFrom) and node.module == "app.forensics"
+    ]
+    top_level_include = [
+        node
+        for node in module.body
+        if isinstance(node, ast.Expr)
+        and isinstance(node.value, ast.Call)
+        and isinstance(node.value.func, ast.Attribute)
+        and node.value.func.attr == "include_router"
+        and any(
+            isinstance(arg, ast.Name) and arg.id == "forensics_router"
+            for arg in node.value.args
+        )
+    ]
+    assert top_level_import, (
+        "app/main.py must import app.forensics at module level; an import nested "
+        "in a try/except can be swallowed into a silent 404 on a paid route"
+    )
+    assert top_level_include, (
+        "app/main.py must call app.include_router(forensics_router) at module "
+        "level so a wiring error fails startup instead of dropping five paid routes"
+    )
