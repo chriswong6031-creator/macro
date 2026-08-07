@@ -1,0 +1,221 @@
+
+  /* ── CN THEME TAPE (W-C) ───────────────────────────────────────────────────
+     Every value resolves from an existing theme.css token. No new hex, theme.css
+     untouched, so light / dark / zh all repaint at color-mix time with nothing to
+     keep in sync. Light is a design target here, not a translation (DOCTRINE
+     §5.8): the two things that would break on white are the rail's inactive
+     segments (a neutral fill vanishes) and the panel-on-canvas depth, so the rail
+     segments carry a mixed INK rather than a tint, and the panel keeps the page's
+     own .panel chrome instead of inventing a surface. */
+
+  /* THE TRACK WIDTHS, DECLARED ONCE. The header row and every theme row are
+     separate grid containers that must agree on their column edges; the only
+     thing making them agree is that these numbers are identical. Sized for the
+     CLAMPED label, not the authored one: these labels are 10px, below the
+     browser's minimum-font-size preference (commonly 12–16px), which raises the
+     rendered text while the track stays where the CSS put it. The US tape shipped
+     that exact defect (#4553) — "watching" overran its 58px track at a 12px
+     clamp. `overflow-wrap` below makes containment a guarantee rather than a
+     margin, whatever the clamp. Reproduce with
+     `.ctt-k{font-size:13px!important}` before changing anything here. */
+  body.page-china-stocks #cn-theme-tape{padding:15px 18px 14px;
+    --ctt-col:70px;--ctt-quiet:74px;--ctt-cyc:150px;--ctt-gk:78px}
+  body.page-china-stocks .ctt-hd{display:flex;align-items:baseline;gap:6px 12px;
+    flex-wrap:wrap;margin:0 0 4px}
+  body.page-china-stocks .ctt-eyebrow{margin:0;font-size:11px;font-weight:800;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--muted);line-height:1.2}
+  /* zh Hanzi read wrong under Latin display tracking — theme.css makes the same
+     call for headings; the eyebrow keeps its rhythm from weight and colour. */
+  html[data-lang="zh"] body.page-china-stocks .ctt-eyebrow{letter-spacing:.06em}
+  body.page-china-stocks .ctt-asof{margin-left:auto;font-family:var(--font-mono,monospace);
+    font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  body.page-china-stocks .ctt-sub{font-size:11.5px;line-height:1.5;color:var(--muted);
+    margin:0 0 10px;max-width:74ch}
+
+  /* THE LADDER GRID. One template shared by the header and every row, so the
+     columns cannot drift apart. Fixed numeric widths (not max-content) are what
+     make a column a COLUMN: the header holds WORDS and the rows hold single
+     digits, so max-content would size the two grids from different content and
+     the figures would never line up under their labels. */
+  body.page-china-stocks .ctt-cols,
+  body.page-china-stocks .ctt-row{display:grid;
+    grid-template-columns:minmax(0,1fr) var(--ctt-cyc) repeat(4,var(--ctt-col)) var(--ctt-quiet);
+    gap:0 6px;align-items:baseline}
+  /* end-aligned, not baseline: a label that wraps under a clamp hangs its second
+     line BELOW a first baseline, straight through the rule this row sits on. */
+  body.page-china-stocks .ctt-cols{padding:0 0 5px;border-bottom:1px solid var(--line);
+    margin:0 0 2px;align-items:end}
+  body.page-china-stocks .ctt-k{font-size:10px;font-weight:700;letter-spacing:.05em;
+    color:var(--muted);text-align:right;line-height:1.25;min-width:0;overflow-wrap:break-word}
+  html[data-lang="zh"] body.page-china-stocks .ctt-k{letter-spacing:0}
+  body.page-china-stocks .ctt-k-cyc{text-align:left}
+
+  /* Each theme is one <details>. The summary holds BOTH glance lines, so the whole
+     row is the disclosure control — a large, obvious tap target on a phone, and a
+     native one, so there is no hover dependency and nothing to trap a popover. */
+  body.page-china-stocks .ctt-i{border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+  body.page-china-stocks .ctt-i:last-of-type{border-bottom:0}
+  body.page-china-stocks .ctt-s{list-style:none;cursor:pointer;padding:9px 0 8px}
+  body.page-china-stocks .ctt-s::-webkit-details-marker{display:none}
+  body.page-china-stocks .ctt-s:focus-visible{outline:2px solid var(--ink-link,var(--link,var(--text)));
+    outline-offset:2px;border-radius:3px}
+  body.page-china-stocks .ctt-nm{font-size:13px;font-weight:700;color:var(--text);min-width:0}
+  /* The caret is a pseudo, so it stays out of any copy a vocabulary scan reads and
+     needs no translation. It rotates by being REPLACED, not by a transform, so
+     there is nothing here for reduced-motion to gate and no containing block. */
+  body.page-china-stocks .ctt-s .ctt-nm::before{content:"▸";color:var(--muted);font-size:10px;
+    margin-right:6px;display:inline-block;vertical-align:1px}
+  body.page-china-stocks .ctt-i[open] .ctt-s .ctt-nm::before{content:"▾"}
+
+  /* ── THE CYCLE RAIL — the panel's signature ────────────────────────────────
+     Five segments in cycle order, one marked. Position, not magnitude: the
+     segments are equal and fixed, so nothing here can read as a quantity, which
+     is what separates this from the vetoed fake-magnitude bars (#2232).
+     It is monochrome BY DESIGN — see the header note. The inactive segments take
+     a mixed INK (not an opacity on a tint) because a neutral tint is exactly what
+     vanishes against white in light mode (DOCTRINE §5.8), and the 2px gaps are
+     the same ruling's "add 1px gaps" made a little more generous at this size.
+     The whole rail is aria-hidden: the state word beside it carries the identical
+     fact, so a screen reader gets it once, in words, rather than as five boxes. */
+  body.page-china-stocks .ctt-cyc{display:flex;align-items:center;gap:7px;min-width:0}
+  body.page-china-stocks .ctt-rail{display:inline-flex;gap:2px;flex:0 0 auto}
+  body.page-china-stocks .ctt-rail i{display:block;width:7px;height:4px;border-radius:1px;
+    background:color-mix(in srgb,var(--text) 20%,transparent)}
+  body.page-china-stocks .ctt-rail i.on{background:var(--text);height:8px}
+  body.page-china-stocks .ctt-state{font-size:11px;color:var(--muted);line-height:1.3;
+    min-width:0;overflow-wrap:break-word}
+  /* The flow chip rides the theme NAME, not the cycle column: it is a fact about
+     money moving, not about where the cycle sits, and the two must not read as one
+     reading. Outline, no fill, no hue — same restraint as the rail, and for the
+     same reason (it is context, and it is the least confirmed thing on the row). */
+  body.page-china-stocks .ctt-flow{display:inline-block;vertical-align:1px;margin-left:7px;
+    padding:1px 5px;border:1px solid color-mix(in srgb,var(--line) 80%,transparent);
+    border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.05em;
+    color:var(--muted);white-space:nowrap}
+  html[data-lang="zh"] body.page-china-stocks .ctt-flow{letter-spacing:0}
+
+  /* THE FIGURES. Mono + tabular so the digits stack; the body face would ripple the
+     column, and the house rule is mono for FIGURES, never for words — the header
+     above stays body-face. The right edge is set on the CELL, which is the grid
+     item; setting it on the figure inside would align nothing, because the figure
+     is only as wide as it needs to be. */
+  body.page-china-stocks .ctt-c{text-align:right;min-width:0}
+  body.page-china-stocks .ctt-v{font-family:var(--font-mono,monospace);font-size:13px;
+    font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap}
+  /* The ONLY colour on the panel, and only ever on a non-zero `live` count — the one
+     cell that means "there is something to do today". --ink-up is the text-grade form
+     of the state palette (raw --up is fill-grade and misses the contrast floor as
+     light-theme text); the var() fallback keeps a cache-stale theme.css rendering
+     today's colour rather than an invalid declaration. */
+  body.page-china-stocks .ctt-v.is-live{color:var(--ink-up,var(--up))}
+  /* A printed absence, at the weight of an absence. */
+  body.page-china-stocks .ctt-v.is-zero{color:var(--muted);opacity:.5;font-weight:600}
+  body.page-china-stocks .ctt-quiet{font-family:var(--font-mono,monospace);font-size:12.5px;
+    font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+  body.page-china-stocks .ctt-say{font-size:12.5px;line-height:1.5;color:var(--text);
+    padding-left:16px;margin-top:3px}
+  body.page-china-stocks .ctt-stance{font-weight:650}
+
+  /* Tier 3 — the member lists. Indented under the row they belong to, and quiet:
+     this is a reference list, not a second board. */
+  body.page-china-stocks .ctt-det{padding:2px 0 12px 16px}
+  /* The stance for a row that did not earn the glance-tier line — the opening line of
+     an EXPANDED row, so it takes .ctt-det's indent and adds none of its own. */
+  body.page-china-stocks .ctt-heat{display:block;font-size:11.5px;font-weight:400;
+    color:var(--muted);margin:0 0 7px;line-height:1.5}
+  /* The label column GROWS rather than overflows — `minmax(k, max-content)` keeps
+     the alignment in every normal render and lets the track widen in the clamped
+     state that would otherwise paint a label across the names beside it. Bounding
+     it instead (max-width + overflow:hidden) is worse: it clips a two-word label. */
+  body.page-china-stocks .ctt-g{display:grid;
+    grid-template-columns:minmax(var(--ctt-gk),max-content) minmax(0,1fr);gap:0 10px;
+    align-items:baseline;padding:3px 0}
+  body.page-china-stocks .ctt-gk{font-size:10.5px;font-weight:700;color:var(--muted);
+    text-align:right;line-height:1.5}
+  /* FLEX, and this is load-bearing — an inline run here loses members. The .ctt-n
+     spans are emitted adjacent with no whitespace between them and a ticker is
+     nowrap, so as an inline run the whole list is ONE unbreakable word with no
+     break opportunity: on a 390px phone it overruns the viewport and the tail is
+     sheared off — members silently deleted from a shipped surface (the US tape's
+     own #4488 fix-up commit). `overflow-wrap:anywhere` is the WRONG patch: it
+     breaks INSIDE tokens and tears "+4" apart. A flex line box takes its break
+     opportunities between ITEMS, so every member wraps whole. */
+  body.page-china-stocks .ctt-names{display:flex;flex-wrap:wrap;align-items:baseline;
+    row-gap:2px;font-size:12px;line-height:1.6;color:var(--text);min-width:0;
+    overflow-wrap:break-word}
+  body.page-china-stocks .ctt-n{min-width:0}
+  /* The separator TRAILS its name rather than leading the next one, so a wrapped
+     line never opens with an orphan middot. :not(:last-child) keeps it off the end
+     while still printing before a group-level reason, which is a sibling here. */
+  body.page-china-stocks .ctt-names > .ctt-n:not(:last-child)::after{content:"·";
+    color:var(--muted);padding:0 5px 0 6px;opacity:.6}
+  body.page-china-stocks .ctt-sym{font-family:var(--font-mono,monospace);font-weight:700;
+    letter-spacing:.02em;white-space:nowrap}
+  body.page-china-stocks .ctt-zh{color:var(--muted);font-size:11px;padding-left:5px}
+  /* The reason hangs off the name behind a middot, not a dash: several reasons carry
+     their own em-dash, and two dashes in one phrase read as one muddled clause. A
+     middot needs no translation, so both languages take the same rule, and it is a
+     pseudo so it keeps its spacing however the markup wraps. */
+  body.page-china-stocks .ctt-why{color:var(--muted);font-size:11px}
+  body.page-china-stocks .ctt-why::before{content:"·";padding:0 5px 0 4px;opacity:.5}
+  /* A GROUP-level reason is a sibling of the names, so the last name's trailing
+     separator has already printed and this one would double it. A PER-NAME reason
+     lives inside its .ctt-n, where no separator precedes it, so it keeps its own. */
+  body.page-china-stocks .ctt-names > .ctt-why::before{content:none}
+  body.page-china-stocks .ctt-more{color:var(--muted);font-weight:600;white-space:nowrap}
+
+  /* THE THEME VEHICLE. The panel's one genuinely CN-specific object, and the honest
+     answer to "so what do I do" on a theme whose members are all still waiting: the
+     basket trades as one instrument, and naming it is not the same as recommending
+     it. Reads as a sentence, at the weight of a note — deliberately NOT a chip or a
+     button, because a chip is an affordance and this is a fact. */
+  body.page-china-stocks .ctt-veh{margin:6px 0 0;font-size:11px;line-height:1.55;
+    color:var(--muted);max-width:74ch}
+  body.page-china-stocks .ctt-veh .ctt-sym{color:var(--text)}
+  body.page-china-stocks .ctt-more-link{display:block;margin:7px 0 0;font-size:11px}
+  body.page-china-stocks .ctt-more-link a{color:var(--muted);text-decoration:underline;
+    text-underline-offset:2px}
+
+  body.page-china-stocks .ctt-rule{border:0;border-top:1px solid var(--line);margin:8px 0 10px}
+  body.page-china-stocks .ctt-foot{margin:0;font-size:12px;line-height:1.55;color:var(--muted);
+    max-width:74ch}
+  /* The link is one token. Left to break, the zh label split after 主 and stranded
+     "题 →" on its own line, which reads as a fragment rather than a destination; the
+     line breaks BEFORE it instead. Same reason the stance is held whole below. */
+  body.page-china-stocks .ctt-foot a{color:inherit;text-decoration:underline;
+    text-underline-offset:2px;white-space:nowrap}
+  /* The stance is one token, like a count chip is: broken across a line, "— don't
+     chase." reads as a fragment rather than an instruction. */
+  body.page-china-stocks .ctt-nb{white-space:nowrap}
+
+  @media (max-width:900px){
+    body.page-china-stocks #cn-theme-tape .ctt-asof{margin-left:0}
+    body.page-china-stocks #cn-theme-tape{--ctt-cyc:126px;--ctt-col:62px;--ctt-quiet:66px}
+  }
+  /* ── phones (≤680px, the board's own mobile break) ─────────────────────────
+     The seven-column alignment is a desktop luxury: it exists so a reader can scan
+     one column down eight themes. On a phone you read one theme at a time, so the
+     ladder becomes a flowing line of "N label" pairs and the header row — whose
+     only job was to label those columns — is dropped. Each cell then shows its own
+     label, and a ZERO cell is removed entirely: a printed en-dash is honest inside
+     a column, but "0 blocked" in a sentence is just noise. Nothing here scrolls
+     sideways; the row wraps. */
+  @media (max-width:680px){
+    body.page-china-stocks #cn-theme-tape{padding:13px 14px}
+    body.page-china-stocks .ctt-cols{display:none}
+    body.page-china-stocks .ctt-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
+    body.page-china-stocks .ctt-nm{flex:1 0 100%}
+    body.page-china-stocks .ctt-cyc{flex:1 0 100%;margin:1px 0 2px}
+    body.page-china-stocks .ctt-c{display:inline-flex;align-items:baseline;gap:4px}
+    body.page-china-stocks .ctt-c.is-zero-cell{display:none}
+    body.page-china-stocks .ctt-c .ctt-ik{font-size:10.5px;font-weight:600;color:var(--muted);
+      font-style:normal}
+    body.page-china-stocks .ctt-v,body.page-china-stocks .ctt-quiet{text-align:left;font-size:12.5px}
+    body.page-china-stocks .ctt-g{grid-template-columns:minmax(0,1fr);gap:0}
+    body.page-china-stocks .ctt-gk{text-align:left}
+  }
+  /* The per-cell label is redundant wherever the header row is visible. */
+  @media (min-width:681px){
+    body.page-china-stocks .ctt-c .ctt-ik{display:none}
+  }
+  

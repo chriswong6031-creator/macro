@@ -3095,6 +3095,81 @@ function nwMapLabel(label) {
     .trim();
 }
 
+/* ── Observatory map switch ──────────────────────────────────────────────────
+   Two genuinely different pictures of the same brain, so this is a toggle and
+   not a replacement:
+     · lobes   — nwSystemMap's computed radial dendrogram: which lobe sits WHERE,
+                 a deterministic structural map that looks the same all day.
+     · synapse — committee.html's living canvas map: which signals are FIRING
+                 right now, with pulses travelling real confluence edges.
+
+   The synapse map is EMBEDDED, never re-implemented here. It is ~200 lines of
+   canvas simulation (pulses, dust, pan/zoom, hover cards) over a 616KB
+   confluence_graph payload; a second copy in this file would drift from the
+   original the first time either side changed, and the drift would be invisible
+   because both would still render something.
+
+   The embed is same-origin, which is what makes it presentable: Caddy serves
+   /research-tools/* from THIS host (admin.mastermind-x.com, handle_path +
+   forward_auth to /api/auth-check), so we can reach into the frame and hide the
+   donor page's own hero/nav/footer rather than living with them in a panel. */
+const NW_MAP_VIEWS = [["lobes", "Lobe map"], ["synapse", "Synapse map"]];
+const NW_MAP_KEY = "nw_map_view";
+
+function nwMapView() {
+  try { return localStorage.getItem(NW_MAP_KEY) === "synapse" ? "synapse" : "lobes"; }
+  catch (e) { return "lobes"; }
+}
+function nwSetMapView(v) { try { localStorage.setItem(NW_MAP_KEY, v); } catch (e) {} }
+
+function nwMapSwitch(d) {
+  const cur = nwMapView();
+  const tabs = NW_MAP_VIEWS.map(([id, label]) =>
+    `<button class="an-tab${cur === id ? " active" : ""}" data-nwmap="${id}">${label}</button>`).join("");
+  return `<div class="an-tabs" style="margin:14px 0 10px;width:max-content">${tabs}</div>
+    <div id="nw-map-body">${cur === "synapse" ? nwSynapseEmbed() : nwSystemMap(d)}</div>`;
+}
+
+function nwSynapseEmbed() {
+  return `<div class="card" style="padding:0;overflow:hidden">
+    <iframe id="nw-synapse-frame" src="/research-tools/committee.html"
+      title="Synapse map — Neural Web confluence graph" loading="lazy"
+      style="width:100%;height:760px;border:0;display:block"></iframe>
+  </div>`;
+}
+
+/* Strip the donor page down to its graph by HIDING, never removing.
+   The map's own script keeps live references (#graph_loading, the chips, the
+   control buttons) and runs a rAF loop against them, so deleting nodes would
+   throw inside a frame whose errors we never see. Hiding leaves every reference
+   resolvable. Fail-soft in both directions: a cross-origin frame or moved donor
+   markup leaves the page whole and scrolled to the map rather than blank. */
+function nwWireSynapseFrame(root) {
+  const f = root.querySelector("#nw-synapse-frame");
+  if (!f) return;
+  f.addEventListener("load", () => {
+    let doc = null;
+    try { doc = f.contentDocument; } catch (e) { doc = null; }
+    if (!doc || !doc.body) return;
+    const wrap = doc.getElementById("graph_wrap");
+    if (!wrap) { try { f.contentWindow.location.hash = "#graph_wrap"; } catch (e) {} return; }
+
+    const KEEP = { graph_legend: 1, graph_subset_note: 1, graph_wrap: 1 };
+    for (let el = wrap; el && el !== doc.documentElement; el = el.parentElement) {
+      const p = el.parentElement;
+      if (!p) break;
+      Array.prototype.forEach.call(p.children, (c) => {
+        if (c === el || KEEP[c.id] || c.tagName === "SCRIPT" || c.tagName === "STYLE" || c.tagName === "LINK") return;
+        c.style.display = "none";
+      });
+      if (p === doc.body) break;
+    }
+    doc.body.style.background = "transparent";
+    doc.body.style.padding = "10px 12px";
+    doc.documentElement.style.background = "transparent";
+  });
+}
+
 /* Radial dendrogram: core → group hubs → named lobe leaves, with curved
    hue-coloured synapse links. Deterministic layout (angle from index). */
 function nwSystemMap(d) {
@@ -3223,7 +3298,7 @@ RENDER.neural_web = async () => {
     <div class="lobe-grid">${'<div class="skeleton skeleton-card"></div>'.repeat(8)}</div>`;
   const d = await api("/api/neural_web/lobes");
   if (!d.ok) { v.innerHTML = nwEmpty("Could not load the lobe map", d.error || "panel error"); return; }
-  let html = nwHero(d) + mbHeroCard(d.orchestrator_hero) + nwSystemMap(d);
+  let html = nwHero(d) + mbHeroCard(d.orchestrator_hero) + nwMapSwitch(d);
   (d.groups || []).forEach(g => {
     if (!g.lobes || !g.lobes.length) return;
     html += `<div class="section">${esc(g.label)} <span class="cnt">${g.lobes.length}</span></div>
@@ -3239,10 +3314,26 @@ RENDER.neural_web = async () => {
 
   v.innerHTML = html;
   const mbBtn = $("#mb-open"); if (mbBtn) mbBtn.onclick = () => go("orchestrator");
-  v.querySelectorAll(".map-node[data-lobe]").forEach(el => {
+
+  /* The map switch swaps only #nw-map-body — re-rendering the whole view would
+     refetch /api/neural_web/lobes and throw away the lobe cards and the open
+     Operator HQ details for a change that touches one panel. */
+  const wireMapNodes = () => v.querySelectorAll(".map-node[data-lobe]").forEach(el => {
     el.addEventListener("click", () => gotoLobe(el.dataset.lobe));
     wireLobeTipNode(el);
   });
+  v.querySelectorAll("[data-nwmap]").forEach(btn => btn.addEventListener("click", () => {
+    const want = btn.dataset.nwmap;
+    if (want === nwMapView()) return;
+    nwSetMapView(want);
+    v.querySelectorAll("[data-nwmap]").forEach(b => b.classList.toggle("active", b.dataset.nwmap === want));
+    const body = v.querySelector("#nw-map-body");
+    if (!body) return;
+    body.innerHTML = want === "synapse" ? nwSynapseEmbed() : nwSystemMap(d);
+    if (want === "synapse") nwWireSynapseFrame(body); else wireMapNodes();
+  }));
+  if (nwMapView() === "synapse") nwWireSynapseFrame(v); else wireMapNodes();
+
   loadLegacyOps();
 };
 /* Section G — Evidence Clock (EC-R5) */

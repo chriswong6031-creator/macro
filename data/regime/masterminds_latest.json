@@ -1,8 +1,8 @@
 {
   "schema": "masterminds.latest.v2",
   "n": 3,
-  "built": "2026-08-05 15:39 UTC",
-  "asof": "2026-08-04",
+  "built": "2026-08-06 22:45 UTC",
+  "asof": "2026-08-05",
   "stale_after_min": 1440,
   "cards": [
     {
@@ -11,7 +11,7 @@
       "cagr": 7.92,
       "sharpe": 1.13,
       "maxdd": -17.3,
-      "asof": "2026-08-04",
+      "asof": "2026-08-05",
       "gross_now": 0.49,
       "alloc": [
         {
@@ -46,32 +46,32 @@
       "cagr": 11.48,
       "sharpe": 1.07,
       "maxdd": -24.1,
-      "asof": "2026-08-04",
-      "gross_now": 0.88,
+      "asof": "2026-08-05",
+      "gross_now": 0.87,
       "alloc": [
         {
           "asset": "SPY",
           "label_en": "S&P 500",
           "label_zh": "\u6807\u666e500",
-          "weight": 24.0
+          "weight": 24.1
         },
         {
           "asset": "HYG",
           "label_en": "High-yield credit",
           "label_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528",
-          "weight": 24.0
+          "weight": 24.1
         },
         {
           "asset": "QQQ",
           "label_en": "Nasdaq 100",
           "label_zh": "\u7eb3\u6307100",
-          "weight": 20.2
+          "weight": 19.7
         },
         {
           "asset": "HG=F",
           "label_en": "Copper",
           "label_zh": "\u94dc",
-          "weight": 19.4
+          "weight": 19.0
         }
       ]
     },
@@ -81,32 +81,32 @@
       "cagr": 17.32,
       "sharpe": 1.0,
       "maxdd": -34.9,
-      "asof": "2026-08-04",
-      "gross_now": 1.73,
+      "asof": "2026-08-05",
+      "gross_now": 1.71,
       "alloc": [
         {
           "asset": "SPY",
           "label_en": "S&P 500",
           "label_zh": "\u6807\u666e500",
-          "weight": 53.9
+          "weight": 54.0
         },
         {
           "asset": "HYG",
           "label_en": "High-yield credit",
           "label_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528",
-          "weight": 53.9
+          "weight": 54.0
         },
         {
           "asset": "QQQ",
           "label_en": "Nasdaq 100",
           "label_zh": "\u7eb3\u6307100",
-          "weight": 33.0
+          "weight": 32.2
         },
         {
           "asset": "HG=F",
           "label_en": "Copper",
           "label_zh": "\u94dc",
-          "weight": 31.7
+          "weight": 31.0
         }
       ]
     }

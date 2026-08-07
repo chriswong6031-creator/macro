@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "COIN-BULL-20260702",
-  "asof": "2026-08-05",
+  "asof": "2026-08-06",
   "phase": "invalidated",
   "detection_phase": "invalidated",
   "management_confidence": 12.0,
@@ -17,14 +17,14 @@
     "overlay": 53.0
   },
   "geometry": {
-    "dist_to_stop_r": -0.685,
+    "dist_to_stop_r": -0.367,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 75.6,
-    "p1": -1.1232,
-    "p2": -0.5616,
+    "horizon_pct_used": 77.8,
+    "p1": -0.9113,
+    "p2": -0.4557,
     "p3": null,
-    "move_r": -1.685,
+    "move_r": -1.367,
     "mfe_r": 0.906,
     "mae_r": -1.685
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-21",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 34,
-  "tau": 0.7556
+  "days_elapsed": 35,
+  "tau": 0.7778
 }

@@ -201,6 +201,17 @@ _SCHEMA = [
     # column existed reads as legacy, and a market that never stamps it (CA today)
     # keeps its historical all-row behaviour byte for byte.
     "board_definition",
+    # BUCKETING-ERA fences (cascade R5 + §7 R-SQ3; SIGNAL_QUALITY_SESSION_ANCHOR
+    # _ADJUDICATION_BY_FABLE.md §Consumer surfaces). A verdict is jointly produced
+    # by TWO bucketing grids — confluence_tiers' cascade and signal_quality's §7
+    # marker stream — and each moved to the absolute session anchor in its own era
+    # ("abs-session-2026-08-06" / "sq-abs-session-2026-08-06"). gate_ver /
+    # board_definition fence the SELECTION instrument; these fence the grids under
+    # the verdict fields (gate_tier, entry_state), so grading can place every row
+    # against both. NULLABLE on purpose: rows written pre-fence — and rows whose
+    # caller carried no verdict dict (CA watch strip) — read as the pre-fence
+    # cohort and keep their own pool.
+    "anchor_era", "sq_anchor_era",
     *_US_STAMP_COLS,
     *_SPINE_COLS,
 ]
@@ -222,7 +233,7 @@ _GATE_STAMPS = ("placement_flag",)
 _OBJECT_COLS = (
     "primary_rejection_reason", "block_reason", "knife_demoted",
     "species_id", "archetype", "own_market_regime", "own_market_regime_note", "gate_ver",
-    "board_definition",
+    "board_definition", "anchor_era", "sq_anchor_era",
     "us_rate_pressure", "us_quad_hard_label", "us_fused_risk_label",
     "us_vol_regime", "us_risk_radar_state", "us_regime_vector_degraded",
     "vector_asof",
@@ -331,6 +342,10 @@ def append_board(
         board_definition — the selection instrument that produced this board_pos
                         (str, optional; None = legacy/unversioned). HK stamps
                         'hk_prophet_v1'; see _latest_definition and scorecard().
+        anchor_era    — the cascade's bucketing era off the row's signal_gate
+                        verdict (str, optional; None = pre-fence or no verdict).
+        sq_anchor_era — the §7 marker stream's bucketing era, same sourcing
+                        (str, optional; None = pre-fence or no verdict).
 
     Keep-FIRST per (date, ticker): a price already stamped for a given date is
     never overwritten — point-in-time integrity.
@@ -408,6 +423,12 @@ def append_board(
             # Era fence (see _SCHEMA). Absent → None → the row pools with legacy.
             "board_definition": (str(c.get("board_definition"))
                                  if c.get("board_definition") else None),
+            # BUCKETING-ERA fences (see _SCHEMA) — threaded off the signal_gate
+            # verdict by the board builders. Absent → None → pre-fence cohort.
+            "anchor_era": (str(c.get("anchor_era"))
+                           if c.get("anchor_era") else None),
+            "sq_anchor_era": (str(c.get("sq_anchor_era"))
+                              if c.get("sq_anchor_era") else None),
             # W0 Stage B-c: species/archetype — always null (documented; no registry binding)
             "species_id": None,
             "archetype": None,

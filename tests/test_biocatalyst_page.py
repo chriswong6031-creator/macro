@@ -66,8 +66,26 @@ def test_biocatalyst_shell_has_one_accessible_three_pane_trial_intelligence_work
             "bci-window-control",
             "bci-mode-control",
             "bci-mode-milestones",
+            "bci-mode-screen",
+            "bci-mode-peers",
             "bci-mode-changes",
             "bci-mode-prospective",
+            "bci-decision-stance",
+            "bci-decision-why",
+            "bci-braid",
+            "bci-braid-plot",
+            "bci-braid-foot",
+            "bci-query-chips",
+            "bci-panel-foot",
+            "bci-facets",
+            "bci-cohort-input",
+            "bci-cohort-run",
+            "bci-sponsor-filter",
+            "bci-intervention-filter",
+            "bci-study-type-filter",
+            "bci-pc-from",
+            "bci-pc-to",
+            "bci-review-filter",
             "bci-field-filter",
             "bci-change-kind-filter",
             "bci-search",
@@ -89,27 +107,21 @@ def test_biocatalyst_shell_has_one_accessible_three_pane_trial_intelligence_work
     assert 'role="tablist"' in html
     assert 'role="tab"' in html
     assert 'id="bci-queue-pane" role="tabpanel" aria-labelledby="bci-mode-milestones"' in html
-    assert html.count('aria-controls="bci-queue-pane"') == 3
+    assert html.count('aria-controls="bci-queue-pane"') == 5
     assert "Dates and field updates are recorded by ClinicalTrials.gov" in html
     assert "A registry listing is not government validation" in html
     assert "Review the source record—no trade call." in html
     assert "请查看来源记录，不作交易判断。" in html
     js = (TEMPLATES / "biocatalyst.js").read_text(encoding="utf-8")
+    # The Change Tape surface is keyed by the replay-verified field classes the
+    # /trials/change-tape route actually serves.
     for kind in (
-        "endpoint_added",
-        "endpoint_removed",
-        "endpoint_role_changed",
-        "endpoint_measure_changed",
-        "endpoint_time_frame_changed",
-        "endpoint_description_changed",
-        "enrollment_changed",
-        "registry_status_changed",
-        "study_date_changed",
-        "site_listing_changed",
-        "lead_sponsor_text_changed",
-        "intervention_added",
-        "intervention_removed",
-        "intervention_changed",
+        "registry_status",
+        "enrollment",
+        "milestone_date_constraint",
+        "site_list",
+        "intervention",
+        "endpoint_record_delta",
     ):
         assert f"'{kind}'" in js
     assert 'id="bci-change-kind-filter" aria-label="Updated field"' in html
@@ -122,7 +134,10 @@ def test_biocatalyst_client_uses_authenticated_source_fact_pages_and_current_dos
     for token in (
             "/api/biocatalyst/v1/trials",
             "/api/biocatalyst/v1/trials/milestones",
-            "/api/biocatalyst/v1/trials/changes",
+            "/api/biocatalyst/v1/trials/change-tape",
+            "/api/biocatalyst/v1/trials:screen",
+            "/api/biocatalyst/v1/trials:screen/facets",
+            "/api/biocatalyst/v1/trial-peer-sets:resolve",
             "headers.Authorization = 'Bearer ' + token",
         "window.MDXAuth.client",
         "credentials: 'same-origin'",
@@ -152,23 +167,19 @@ def test_biocatalyst_client_uses_authenticated_source_fact_pages_and_current_dos
             "milestone_kind",
             "next_30d",
             "last_30d",
-            "CHANGE_WINDOWS",
             "change_kind",
-            "registry_change",
             "before_display_version",
             "after_display_version",
-            "source_submitted_at",
-            "version_url",
-            "history_url",
-            "history_coverage",
+            "change_tape_coverage",
             "protocol_change_asserted",
             "materiality_assessed",
+            "correction_assessed",
             "validateChangeEnvelope(payload)",
-            "validateChangePage(payload.changes, existingRows)",
+            "validateChangePage(payload.change_tape, existingRows)",
             "validateChangePagination(payload, existingRows, cursor",
             "makeChangeRow",
-            "bci-change-preview",
-            "bci-change-version",
+            "bci-tape-delta",
+            "bci-tape-path",
             "Change Tape",
             "AbortController",
             "generation-restarted",
@@ -221,8 +232,12 @@ def test_biocatalyst_assets_have_responsive_motion_and_focus_guards():
         ".bci-inspector-close,.bci-scrim { display: none !important; }",
         ".bci-window-options",
         ".bci-mode-control",
-        ".bci-change-card",
-        ".bci-change-preview",
+        ".bci-tape-card",
+        ".bci-tape-delta",
+        ".bci-braid-lag",
+        ".bci-stamp-mark",
+        ".bci-peer-cell.is-uncovered",
+        ".bci-facet.is-active",
         ".bci-load-more",
         ".bci-evidence-strip",
         ".bci-date-type.is-actual",
@@ -256,7 +271,7 @@ def test_biocatalyst_modes_default_to_milestones_and_preserve_verified_pages():
     assert "WINDOW_VALUES[windowName] ? windowName : '90'" in js
     assert "change_kind: '', prospective_change_kind: '', window: '90', q: '', phase: '', status: '', condition: ''" in js
     assert "MILESTONE_WINDOWS = { '30': 'next_30d', '90': 'next_90d'" in js
-    assert "CHANGE_WINDOWS = { '30': 'last_30d', '90': 'last_90d'" in js
+    assert "PROSPECTIVE_WINDOWS = { '30': 'last_30d', '90': 'last_90d'" in js
 
     for token in (
         "function isAccessError(error)",
@@ -287,7 +302,8 @@ def test_biocatalyst_modes_default_to_milestones_and_preserve_verified_pages():
         "data-date-type",
         "Registry date type:",
         "Retry loading more ' + noun",
-        "window.addEventListener('resize', syncInspectorDialog)",
+        "window.addEventListener('resize', function () {",
+        "syncInspectorDialog();",
         "closeInspector({ restoreFocus: false, writeUrl: false, render: false })",
         "abort('detailController'); state.detailToken += 1",
         "function paintLockedWorkspace()",
@@ -323,24 +339,26 @@ def test_biocatalyst_modes_default_to_milestones_and_preserve_verified_pages():
 
 
 def test_biocatalyst_change_tape_client_contract_is_mode_bound_and_fail_closed():
-    """Change Tape may show only exact, display-safe registry facts.
+    """Change Tape reads the replay-verified tape, and only what it actually carries.
 
-    This is deliberately source-level: it keeps a future visual refactor from
-    accepting an unsigned/mismatched cursor page, treating a source update as
-    a protocol or materiality conclusion, or allowing an old list/detail
-    response to repaint after the operator changes mode or loses entitlement.
+    The tape route serves a field-class ledger: which registry field changed,
+    between which submitted versions, and when the replay verified it. It does
+    NOT carry the field's before/after values, so the browser must render the
+    recorded state transition and route to the dossier for values instead of
+    inventing them. It must also keep an endpoint-alignment candidate at
+    needs_review rather than calling it a protocol change or a material event.
     """
 
     js = (TEMPLATES / "biocatalyst.js").read_text(encoding="utf-8")
     html = _render()
 
     for token in (
-        "function validChangeEvidence(evidence, id, afterVersion)",
-        "function validRegistryChange(change)",
-        "function validChange(item)",
+        "var CHANGE_API = '/api/biocatalyst/v1/trials/change-tape'",
+        "function validTapeChange(change)",
+        "function validTapeItem(item)",
         "function validateChangeEnvelope(payload)",
         "function changeQueryMatchesCurrentFilters(query)",
-        "function effectiveChangeWindowIsSane(window, apiWindow)",
+        "function tapeNctFilter()",
         "function changeIdentity(item)",
         "function validateChangePage(items, existingRows)",
         "function validateChangePagination(payload, existingRows, requestedCursor, previousPayload)",
@@ -354,22 +372,41 @@ def test_biocatalyst_change_tape_client_contract_is_mode_bound_and_fail_closed()
         "activeWindow()",
         "setMode(button.getAttribute('data-mode'), button)",
         "ArrowRight",
-        "exactHistoryUrl",
-        "exactHistoryRootUrl",
         "safeJson",
         "fullTimestamp",
-        "source_submitted_at",
-        "record_history_complete",
-        "registry_record_changed",
+        "replay_verified_record_history",
+        "committed_trial_record",
+        "unavailable_without_retained_activation_proofs",
+        "source_versions",
+        "exact_operation_index",
+        "semantic_resolution",
+        "registry_field_class_only",
         "protocol_change_asserted') === false",
         "materiality_assessed') === false",
-        "isChangeMode() ? validateChangePage",
-            "if (isProspectiveMode()) validateProspectiveEnvelope(payload); else if (isChangeMode()) validateChangeEnvelope(payload); else validateMilestoneEnvelope(payload);",
-            "if (isProspectiveMode()) validateProspectivePagination(payload, existingRows, cursor, append ? state.payload : null); else if (isChangeMode()) validateChangePagination(payload, existingRows, cursor, append ? state.payload : null);",
+        "correction_assessed') === false",
+        "isChangeMode()) { rows = validateChangePage(payload.change_tape, existingRows);",
     ):
         assert token in js
     assert js.count("function validateChangeEnvelope(payload)") == 1
     assert "function validChangeEnvelope(payload)" not in js
+
+    # The legacy derived-change feed and its display-version diff vocabulary are
+    # gone from the tape lane; nothing may quietly read the unverified endpoint.
+    assert "'/api/biocatalyst/v1/trials/changes'" not in js
+    assert "function validRegistryChange(change)" not in js
+    assert "total_display_safe_changes" not in js
+
+    # A needs_review row is labelled as unchecked, never as a protocol change or
+    # a business event, and an endpoint delta may only ever be needs_review.
+    assert "Not checked yet" in js
+    assert "尚未核对" in js
+    assert "fieldClass === 'endpoint_record_delta' ? (reviewState === 'needs_review' && resolution === 'unresolved')" in js
+
+    # The tape carries no field values, so the row states the recorded transition
+    # and sends the reader to the dossier rather than printing an invented value.
+    assert "Open a row to read the recorded values." in js
+    assert "function recordStateLabel(name)" in js
+    assert "not on the record" in js
 
     assert "localStorage" not in js
     assert "sessionStorage" not in js
@@ -390,33 +427,24 @@ def test_biocatalyst_change_tape_client_contract_is_mode_bound_and_fail_closed()
         "Array.from(key).length <= 256",
         "depth > 12",
         "JSON.stringify(value)",
-        "Registry value preview; open the dossier for the full exact value",
-        "History coverage: ",
-        "knowledge_cutoff",
-        "History retrieved through ",
-        "clean(valueAt(window, 'date_basis')) !== 'source_submitted_at'",
         "data-row-key",
         "state.selectedKey",
         "rowKey === state.selectedKey",
-        "kindNames.slice(0, 3)",
         "ui.queuePane.setAttribute('aria-labelledby', button.id)",
         "AUTHORITY_ALLOWED_USES = ['display', 'context', 'explain']",
         "AUTHORITY_FORBIDDEN_USES = ['originate_signal', 'rank_security', 'select_security', 'size_position', 'gate_decision', 'execute_trade', 'raise_authority']",
         "Object.keys(authority).sort().join('|') === 'allowed_uses|classification|decision_authority|forbidden_uses'",
         "validAuthority(payload.authority)",
-        "changes.length <= 2000",
         "!fullTimestamp(payloadAsOf)",
         "var activeRow = selectedRow();",
         "state.selectedKey && rowIdentity(item) === state.selectedKey",
-            "function activeSingularNoun()",
-            "if (isProspectiveMode()) return tr('first-seen observation', '首次观测记录');",
+        "function activeSingularNoun()",
+        "if (isProspectiveMode()) return tr('first-seen observation', '首次观测记录');",
     ):
         assert token in js
     assert "Choose a registry milestone to read the current trial record" not in js
     assert "Choose a registry milestone when full access is confirmed" not in js
     assert "clean(String(value))" not in js
-    assert "changes.length <= 40" not in js
-    assert "changes.forEach(function (change) { line.appendChild" not in js
     assert "var selectedRow = state.rows.filter(function (item) { return nctOf(item.trial) === state.selectedId; })[0];" not in js
 
 
@@ -436,7 +464,7 @@ def test_biocatalyst_first_seen_tape_is_prospective_current_only_and_never_recas
     assert 'data-mode="prospective"' in html
     assert 'data-label-en="First-seen Tape"' in html
     assert 'data-label-zh="首次观测记录"' in html
-    assert html.count('aria-controls="bci-queue-pane"') == 3
+    assert html.count('aria-controls="bci-queue-pane"') == 5
 
     for token in (
         "/api/biocatalyst/v1/trials/prospective-changes",
@@ -505,15 +533,15 @@ def test_biocatalyst_first_seen_tape_is_prospective_current_only_and_never_recas
     assert "state.filters.prospective_change_kind" in js
     assert "state.mode === 'prospective' && PROSPECTIVE_CHANGE_KIND_VALUES[changeKind] ? changeKind : ''" in js
     assert "assign('change_kind', (isChangeMode() || isProspectiveMode()) ? activeChangeKind() : '', true);" in js
-    assert "if (isChangeMode() || isProspectiveMode())" in js
+    assert "if (isProspectiveMode()) {" in js
     assert "if (activeChangeKind()) params.set('change_kind', activeChangeKind());" in js
     assert "ui.changeKindControl.hidden = !(isChangeMode() || isProspectiveMode());" in js
     assert "function paintChangeKindOptions()" in js
     assert "All observed fields" in js
-    assert "All display-safe fields" in js
+    assert "All registry fields" in js
     assert "Observed field" in js
-    assert "Updated field" in js
-    prospective_catalog = js[js.index("var PROSPECTIVE_CHANGE_KIND_CATALOG") : js.index("var CHANGE_WINDOWS")]
+    assert "Registry field" in js
+    prospective_catalog = js[js.index("var PROSPECTIVE_CHANGE_KIND_CATALOG") : js.index("var PROSPECTIVE_WINDOWS")]
     for kind in (
         "registry_status",
         "enrollment_target",
@@ -538,7 +566,7 @@ def test_biocatalyst_first_seen_tape_is_prospective_current_only_and_never_recas
         assert historical_kind not in prospective_catalog
     set_mode_body = js[js.index("function setMode(value, trigger)") : js.index("function openBrain")]
     assert "state.filters.change_kind = '';" not in set_mode_body
-    assert "else if (!isProspectiveMode()) params.set('milestone_kind', state.filters.field);" in js
+    assert "} else params.set('milestone_kind', state.filters.field);" in js
 
     for forbidden in (
         "probability",
@@ -552,7 +580,7 @@ def test_biocatalyst_first_seen_tape_is_prospective_current_only_and_never_recas
         assert forbidden not in js.lower()
 
     for token in (
-        ".bci-mode-control { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));",
+        ".bci-mode-control { display: grid; grid-template-columns: minmax(0, 1fr);",
         ".bci-mode-prospective.is-active",
         ".bci-prospective-card",
         ".bci-observation-receipt",

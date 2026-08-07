@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-08-06T09:16:44.597380+00:00",
+  "generated_at": "2026-08-07T03:35:46.806896+00:00",
   "ok": true,
   "fail_reasons": [],
   "warnings": [],
   "detail": {
-    "today_utc": "2026-08-06",
-    "last_trading_day": "2026-08-06",
+    "today_utc": "2026-08-07",
+    "last_trading_day": "2026-08-07",
     "chains_dir": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/polygon_gex/chains",
-    "chains_latest_date": "2026-08-06",
-    "chains_count": 42,
+    "chains_latest_date": "2026-08-07",
+    "chains_count": 43,
     "chains_age_trading_days": 0,
     "options_flow_creds_present": true,
     "options_flow_summary_count": 386
