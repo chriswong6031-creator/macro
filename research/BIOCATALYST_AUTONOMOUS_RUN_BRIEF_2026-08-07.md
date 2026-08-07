@@ -21,7 +21,33 @@ If these are not on `main` yet, fetch them:
 `git fetch origin claude/biocatalyst-remaining-waves-5704a2` then
 `git show origin/claude/biocatalyst-remaining-waves-5704a2:<path>`.
 
-## 1 — Land the open work first
+## 1 — STATE AS OF 2026-08-07 ~04:15 PDT (read this before assuming anything)
+
+**All seven original PRs are MERGED** — 4796 (first, as required), 4810, 4814, 4820, 4822,
+4825, 4831. The fleet drained from 95 open PRs to 13. Do not go looking for them.
+
+**Authoritative baseline on current `origin/main`: `1061 passed, 0 failed`**
+(`pytest tests/ -k biocatalyst -q -p no:randomly`, 362s). This is a CONSTANT — hand it to
+builders, do not re-measure it, and note the selector is `-k biocatalyst`, not
+`-k "biocatalyst or clinicaltrials"`.
+
+**Live verification passed.** `https://www.mastermind-x.com/biocatalyst.html` is 200 and grew
+61,226 → 69,127 bytes, carrying Trial Screen, Peer Matrix, Change Tape, `bci-facet` and the
+braid under its user-facing name `WHEN IT WAS TRUE · WHEN WE KNEW`. `biocatalyst.js` and
+`.css` return **401 + `{"locked":true,"reason":"authentication_required"}`** to anonymous —
+that is the entitlement boundary working, NOT a break; only the HTML shell is public. The
+private API still returns 401 with `private, no-store` and `Vary: Authorization`.
+
+**In flight when this brief was last updated** (check `gh pr list` for their real state):
+#4937 strategy docs; and build lanes for O1b forward clock, theme_clinical PIT feed,
+sponsor→ticker candidate map, Change Tape exact values, and B1S4 coverage epochs.
+
+**A decision is waiting for the operator:** the sponsor→ticker map ships every row as
+`candidate_unreviewed`, and a test forbids any committed row from being `reviewed_admitted`.
+Admission is a human act. Until a human admits rows, the reader refuses to resolve them and
+post-selection context stays unavailable. Do not self-admit — that is the whole point.
+
+## 1a — Land whatever is still open
 
 Seven PRs are open, all already reviewed with evidence in their bodies:
 
