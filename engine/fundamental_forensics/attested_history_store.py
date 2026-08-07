@@ -59,6 +59,15 @@ ATTESTED_HISTORY_CHILD_SCOPE = "object-read-only"
 ATTESTED_HISTORY_CHILD_ACTIONS = ("GetObject", "HeadObject")
 DEFAULT_REFRESH_MARGIN_SECONDS = 300
 
+# The minted child is a JWT whose ``exp`` claim Cloudflare evaluates against
+# real wall-clock time, so this store's clock MUST be epoch seconds.  Swapping
+# the default to ``time.monotonic`` — a plausible "harden against clock steps"
+# edit — would keep every renewal test green while minting credentials R2
+# rejects outright, presenting as a total receipt-route outage misdiagnosed as
+# bad credentials.  1_600_000_000 is 2020-09-13; any real deployment clock is
+# far past it and no monotonic clock reaches it.
+_MIN_PLAUSIBLE_EPOCH_SECONDS = 1_600_000_000
+
 
 class AttestedHistoryStoreError(RuntimeError):
     """The dedicated attested-history reader refused an operation."""
@@ -172,10 +181,13 @@ class DedicatedAttestedHistoryStore:
         if (
             isinstance(refresh_margin_seconds, bool)
             or not isinstance(refresh_margin_seconds, int)
-            or refresh_margin_seconds < 0
+            or refresh_margin_seconds < 1
             or refresh_margin_seconds >= ttl_seconds
         ):
             # A margin at or above the TTL would re-mint on every single read.
+            # A margin of ZERO is the opposite failure: the store would hand a
+            # caller a backing whose credential expires during the very request
+            # it was handed to, so the read 403s instead of being renewed.
             raise AttestedHistoryStoreError(
                 "dedicated attested-history refresh margin is invalid"
             )
@@ -233,6 +245,10 @@ class DedicatedAttestedHistoryStore:
         """Return a backing store whose child credential is not near expiry."""
         with self._lock:
             now = self._clock()
+            if not isinstance(now, (int, float)) or now < _MIN_PLAUSIBLE_EPOCH_SECONDS:
+                raise AttestedHistoryStoreError(
+                    "dedicated attested-history clock is not epoch seconds"
+                )
             expires_at = self._child_expires_at
             fresh = (
                 self._backing is not None
@@ -243,6 +259,14 @@ class DedicatedAttestedHistoryStore:
                 return self._backing  # type: ignore[return-value]
             first = self._backing is None
             try:
+                # ``issued_at`` is passed explicitly so the mint and the
+                # freshness comparison above read the SAME clock.  Left to its
+                # default the minter stamps expiry from its own
+                # ``time.time()``, and an injected non-epoch ``clock`` (say
+                # ``time.monotonic``) would then compare a small ``now``
+                # against a ~1.8e9 expiry, making ``fresh`` permanently true:
+                # the store would pin its first child forever and keep serving
+                # an expired session token with no self-heal.
                 credentials = self._minter(
                     endpoint=self.endpoint,
                     parent_access_key_id=self._parent_access_key_id,
@@ -252,24 +276,44 @@ class DedicatedAttestedHistoryStore:
                     actions=ATTESTED_HISTORY_CHILD_ACTIONS,
                     ttl_seconds=self.ttl_seconds,
                     prefix=R2_ATTESTED_HISTORY_PREFIX,
+                    issued_at=int(now),
                 )
             except R2TemporaryCredentialError as exc:
                 raise AttestedHistoryStoreError(
                     "dedicated attested-history parent credential cannot mint a scoped child"
                 ) from exc
+            except AttestedHistoryStoreError:
+                raise
+            except Exception as exc:  # noqa: BLE001 - the class advertises one error type
+                raise AttestedHistoryStoreError(
+                    "dedicated attested-history child could not be minted"
+                ) from exc
             minted_expires_at = credentials.expires_at
-            if isinstance(minted_expires_at, bool) or not isinstance(minted_expires_at, int):
-                # Without an integer expiry the renewal comparison silently
-                # degrades into "re-mint on every read" or a TypeError.
+            if (
+                isinstance(minted_expires_at, bool)
+                or not isinstance(minted_expires_at, int)
+                or not now < minted_expires_at <= now + self.ttl_seconds
+            ):
+                # Range, not just type.  An expiry outside this window means the
+                # minter answered on a different clock, and the renewal
+                # comparison would silently degrade into "re-mint on every
+                # read" or "never re-mint again".
                 raise AttestedHistoryStoreError(
                     "dedicated attested-history child expiry is invalid"
                 )
-            client = self._client_factory(
-                endpoint=self.endpoint,
-                access_key_id=credentials.access_key_id,
-                secret_access_key=credentials.secret_access_key,
-                session_token=credentials.session_token,
-            )
+            try:
+                client = self._client_factory(
+                    endpoint=self.endpoint,
+                    access_key_id=credentials.access_key_id,
+                    secret_access_key=credentials.secret_access_key,
+                    session_token=credentials.session_token,
+                )
+            except AttestedHistoryStoreError:
+                raise
+            except Exception as exc:  # noqa: BLE001 - the class advertises one error type
+                raise AttestedHistoryStoreError(
+                    "dedicated attested-history reader client could not be built"
+                ) from exc
             backing = R2Store(self.bucket, client=client)
             if not isinstance(backing, StrictBoundedReadStore):  # defensive contract guard
                 raise AttestedHistoryStoreError(

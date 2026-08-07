@@ -30,6 +30,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 import app.forensics as forensics_api  # noqa: E402
 from engine.fundamental_forensics.attested_history_credentials import (  # noqa: E402
     R2_ATTESTED_HISTORY_PREFIX,
+    R2TemporaryCredentialError,
     R2TemporaryCredentials,
 )
 from engine.fundamental_forensics.attested_history_store import (  # noqa: E402
@@ -231,7 +232,18 @@ def test_dedicated_reader_never_falls_back_to_research_vault_credentials(
 
     forensics_api._reset_store_cache()
     try:
-        assert forensics_api._build_store() is None
+        built = forensics_api._build_store()
+        # Assert the TYPE, not merely falsiness.  app/forensics.py catches
+        # Exception broadly, so the _explode tripwire above cannot by itself
+        # fail this test: a fallback that RETURNS a store (LocalStore via
+        # RESEARCH_LOCAL_STORE, or an R2Store on the Research Vault bucket)
+        # would sail past `is None`.  Only this admits nothing but the
+        # dedicated reader.
+        assert built is None or isinstance(built, DedicatedAttestedHistoryStore), (
+            f"the receipt API built a {type(built).__name__} — the only store it may "
+            "ever construct is the dedicated attested-history reader"
+        )
+        assert built is None
         with _entitled_client() as client:
             response = client.get("/api/forensics/v1/attested-history/latest")
         assert response.status_code == 503
@@ -433,7 +445,7 @@ def test_default_minter_signs_a_read_only_child_jwt() -> None:
 # ---------------------------------------------------------------------------
 
 def test_child_is_renewed_exactly_once_per_expiry_crossing() -> None:
-    clock = _Clock(1_000_000)
+    clock = _Clock(1_700_000_000)
     minter = _RecordingMinter(clock)
     factory = _RecordingClientFactory()
     store = _store(
@@ -445,25 +457,25 @@ def test_child_is_renewed_exactly_once_per_expiry_crossing() -> None:
     )
 
     assert store.get_bytes_strict_bounded("k", 64) == RECEIPT_BYTES
-    assert store.child_expires_at == 1_001_800
+    assert store.child_expires_at == 1_700_001_800
     assert store.refresh_count == 0
     assert len(minter.calls) == 1
     assert len(factory.clients) == 1
 
     # One tick before (expiry - margin): the same child and the same client.
-    clock.value = 1_001_499.0
+    clock.value = 1_700_001_499.0
     assert store.get_bytes_strict_bounded("k", 64) == RECEIPT_BYTES
     assert len(minter.calls) == 1
     assert len(factory.clients) == 1
     assert store.refresh_count == 0
 
     # At (expiry - margin): a new child and a NEW client.
-    clock.value = 1_001_500.0
+    clock.value = 1_700_001_500.0
     assert store.get_bytes_strict_bounded("k", 64) == RECEIPT_BYTES
     assert len(minter.calls) == 2
     assert len(factory.clients) == 2
     assert store.refresh_count == 1
-    assert store.child_expires_at == 1_003_300
+    assert store.child_expires_at == 1_700_003_300
     assert factory.clients[1].calls, "the read must use the renewed client"
 
     # Still inside the NEW window: the crossing is not re-counted per read.
@@ -474,12 +486,12 @@ def test_child_is_renewed_exactly_once_per_expiry_crossing() -> None:
 
 
 def test_many_reads_inside_the_validity_window_mint_exactly_once() -> None:
-    clock = _Clock(1_000_000)
+    clock = _Clock(1_700_000_000)
     minter = _RecordingMinter(clock)
     factory = _RecordingClientFactory()
     store = _store(clock=clock, minter=minter, client_factory=factory)
     for offset in range(0, 1_200, 100):
-        clock.value = 1_000_000 + offset
+        clock.value = 1_700_000_000 + offset
         assert store.get_bytes_strict_bounded("k", 64) == RECEIPT_BYTES
     assert len(minter.calls) == 1
     assert len(factory.clients) == 1
@@ -491,7 +503,7 @@ def test_many_reads_inside_the_validity_window_mint_exactly_once() -> None:
 # ---------------------------------------------------------------------------
 
 def test_concurrent_cold_reads_mint_exactly_one_child() -> None:
-    clock = _Clock(1_000_000)
+    clock = _Clock(1_700_000_000)
     minter = _RecordingMinter(clock, delay=0.02)
     factory = _RecordingClientFactory()
     store = _store(clock=clock, minter=minter, client_factory=factory)
@@ -519,12 +531,215 @@ def test_concurrent_cold_reads_mint_exactly_one_child() -> None:
     assert store.refresh_count == 0
 
 
+def test_reads_run_concurrently_because_the_lock_is_not_held_across_the_get() -> None:
+    """The renewal lock must cover the mint ONLY, never the network read.
+
+    This is the load-bearing performance property of the whole adapter: this
+    store sits on a request path, so holding ``self._lock`` across the boto3
+    GET would serialize every receipt request in the process behind one mutex.
+    Folding the call at the end of ``get_bytes_strict_bounded`` into
+    ``_active_backing``'s ``with`` block looks like a harmless simplification
+    and every other test in this file still passes when you make it — so
+    without this test, nothing catches it.
+    """
+    entered = threading.Semaphore(0)
+    release = threading.Event()
+    peak = {"current": 0, "max": 0}
+    guard = threading.Lock()
+
+    class _BlockingClient(_FakeS3Client):
+        def get_object(self, **kwargs):
+            with guard:
+                peak["current"] += 1
+                peak["max"] = max(peak["max"], peak["current"])
+            entered.release()
+            release.wait(timeout=5)
+            with guard:
+                peak["current"] -= 1
+            return super().get_object(**kwargs)
+
+    class _BlockingFactory(_RecordingClientFactory):
+        def __call__(self, **kwargs) -> _FakeS3Client:
+            self.calls.append(dict(kwargs))
+            client = _BlockingClient(self.payload)
+            self.clients.append(client)
+            return client
+
+    store = _store(client_factory=_BlockingFactory())
+    # Warm the credential so all three threads race on the READ, not the mint.
+    store.get_bytes_strict_bounded("warm", 64)
+
+    errors: list[BaseException] = []
+
+    def read() -> None:
+        try:
+            store.get_bytes_strict_bounded("k", 64)
+        except BaseException as exc:  # noqa: BLE001 - surfaced below
+            errors.append(exc)
+
+    threads = [threading.Thread(target=read) for _ in range(3)]
+    for thread in threads:
+        thread.start()
+    for _ in range(3):
+        assert entered.acquire(timeout=5), (
+            "readers did not all reach get_object: the renewal lock is being held "
+            "across the network read, which serializes every receipt request"
+        )
+    release.set()
+    for thread in threads:
+        thread.join(timeout=10)
+
+    assert not errors
+    assert peak["max"] == 3
+
+
+def test_a_failed_refresh_keeps_the_previous_child_and_recovers() -> None:
+    """A mint that raises mid-refresh must not strand the store."""
+    clock = _Clock(1_700_000_000)
+    working = _RecordingMinter(clock)
+    calls = {"n": 0}
+
+    def flaky(**kwargs):
+        calls["n"] += 1
+        if calls["n"] == 2:
+            raise R2TemporaryCredentialError("transient signing failure")
+        return working(**kwargs)
+
+    factory = _RecordingClientFactory()
+    store = _store(clock=clock, minter=flaky, client_factory=factory)
+    assert store.get_bytes_strict_bounded("k", 64) == RECEIPT_BYTES
+    first_expiry = store.child_expires_at
+
+    clock.value = 1_700_000_000 + 1_800 - 300  # cross the refresh boundary
+    with pytest.raises(AttestedHistoryStoreError):
+        store.get_bytes_strict_bounded("k", 64)
+    # The previous child survives the failure rather than being torn down.
+    assert store.child_expires_at == first_expiry
+    assert store.refresh_count == 0
+
+    # And the very next call recovers instead of staying broken forever.
+    assert store.get_bytes_strict_bounded("k", 64) == RECEIPT_BYTES
+    assert store.refresh_count == 1
+
+
+def test_a_child_expiry_from_a_foreign_clock_is_refused() -> None:
+    """Expiry is range-checked, not merely type-checked.
+
+    If the minter answers on a different clock than the store's, the freshness
+    comparison degrades into either "re-mint every read" or "never re-mint
+    again" — the latter serving an expired token silently.
+    """
+    clock = _Clock(1_700_000_000)
+
+    def foreign(**kwargs):
+        del kwargs
+        return R2TemporaryCredentials(
+            access_key_id=FAKE_ACCESS_KEY_ID,
+            secret_access_key="fake-child-secret",
+            session_token="fake-child-token",
+            expires_at=1_900_000_000,  # wall-clock epoch, not this store's clock
+        )
+
+    store = _store(clock=clock, minter=foreign, client_factory=_explode)
+    with pytest.raises(AttestedHistoryStoreError, match="child expiry is invalid"):
+        store.get_bytes_strict_bounded("k", 64)
+
+
+def test_a_non_epoch_clock_is_refused_before_a_child_is_minted() -> None:
+    """The minted child is a JWT R2 validates against real wall-clock time.
+
+    Swapping the default clock to ``time.monotonic`` keeps every renewal test
+    green — the store and the minter would agree with each other — while
+    minting an ``exp`` claim Cloudflare rejects, which presents as a total
+    receipt-route outage misdiagnosed as bad credentials.  Fail loudly instead.
+    """
+    store = _store(clock=_Clock(12_345.0), minter=_explode, client_factory=_explode)
+    with pytest.raises(AttestedHistoryStoreError, match="not epoch seconds"):
+        store.get_bytes_strict_bounded("k", 64)
+
+
+def test_a_zero_refresh_margin_is_refused() -> None:
+    """A zero margin hands out a credential that expires during the request."""
+    with pytest.raises(AttestedHistoryStoreError, match="refresh margin is invalid"):
+        _store(refresh_margin_seconds=0)
+
+
+def test_a_non_credential_mint_failure_still_raises_the_advertised_error() -> None:
+    """The class advertises one error type; every mint path must honour it."""
+
+    def broken(**kwargs):
+        del kwargs
+        raise RuntimeError("boto internals blew up")
+
+    store = _store(minter=broken, client_factory=_explode)
+    with pytest.raises(AttestedHistoryStoreError, match="could not be minted"):
+        store.get_bytes_strict_bounded("k", 64)
+
+
 # ---------------------------------------------------------------------------
 # (i)/(j) protocol admission and verbatim bounded-read forwarding
 # ---------------------------------------------------------------------------
 
 def test_store_satisfies_the_strict_bounded_read_protocol() -> None:
     assert isinstance(_store(), StrictBoundedReadStore)
+
+
+def test_the_production_client_factory_builds_against_the_dedicated_endpoint() -> None:
+    """Smoke-test the ONE code path every other test replaces with a fake.
+
+    `_default_client_factory` is injected away everywhere else, so a typo in
+    its `Config(...)` or `boto3.client(...)` keywords would surface only on the
+    VPS, as an unbounded 503 nobody can attribute.
+    """
+    boto3 = pytest.importorskip("boto3")
+    del boto3
+    from engine.fundamental_forensics.attested_history_store import (
+        _default_client_factory,
+    )
+
+    client = _default_client_factory(
+        endpoint=FAKE_ENDPOINT,
+        access_key_id=FAKE_ACCESS_KEY_ID,
+        secret_access_key="fake-child-secret",
+        session_token="fake-child-token",
+    )
+    assert client.meta.endpoint_url == FAKE_ENDPOINT
+    # No network call is made here; only that the client was constructible and
+    # exposes the two operations the child credential is scoped to.
+    assert hasattr(client, "get_object")
+    assert hasattr(client, "head_object")
+
+
+def test_the_read_hop_actually_targets_the_dedicated_bucket_and_exact_key() -> None:
+    """The defect this whole change exists to fix must be detectable.
+
+    Every other test here proves the CREDENTIAL is scoped to the dedicated
+    bucket.  None of them proved the actual S3 call goes there: build the
+    wrapped R2Store against ``R2_RESEARCH_BUCKET`` and the credential
+    assertions, the minter assertions, and the protocol assertions all still
+    pass.  This asserts the one thing that was missing — the Bucket and Key
+    that reach the client — so a wrong-bucket or key-mangling regression is
+    caught here rather than in production silence.
+    """
+    factory = _RecordingClientFactory()
+    store = _store(client_factory=factory)
+    key = f"{R2_ATTESTED_HISTORY_PREFIX}latest.json"
+    assert store.get_bytes_strict_bounded(key, 64) == RECEIPT_BYTES
+
+    client = factory.clients[0]
+    assert client.calls, "the bounded read never reached the S3 client"
+    _op, kwargs = client.calls[0]
+    assert kwargs["Bucket"] == FAKE_BUCKET
+    assert kwargs["Key"] == key
+
+    # And the exact-length mode takes the same hop, so a prefix rewrite cannot
+    # hide in the second code path.
+    factory2 = _RecordingClientFactory()
+    store2 = _store(client_factory=factory2)
+    store2.get_bytes_strict_bounded(key, expected_byte_length=len(RECEIPT_BYTES), max_byte_length=64)
+    for _op, kwargs in factory2.clients[0].calls:
+        assert kwargs["Bucket"] == FAKE_BUCKET
+        assert kwargs["Key"] == key
 
 
 def test_positional_cap_is_forwarded_unchanged_to_the_wrapped_store() -> None:
@@ -562,11 +777,16 @@ def test_bounded_read_modes_stay_mutually_exclusive() -> None:
 # (m) store failure is a bounded, private 503 — never a 500 or a traceback
 # ---------------------------------------------------------------------------
 
-def test_unmintable_credential_becomes_a_bounded_private_503(monkeypatch) -> None:
+def test_unbuildable_store_becomes_a_bounded_private_503(monkeypatch) -> None:
+    # Named for what it actually exercises: an invalid bucket is rejected by
+    # DedicatedAttestedHistoryStore.__init__, so the store never builds and no
+    # minter is ever reached.  Request-time mint failures are covered
+    # separately by test_a_non_credential_mint_failure_still_raises_the_
+    # advertised_error and test_a_failed_refresh_keeps_the_previous_child_and_
+    # recovers.  Either way the route contract is one bounded 503 with the
+    # private headers.
     for name, value in FAKE_ENV.items():
         monkeypatch.setenv(name, value)
-    # A parent that cannot sign a scoped child is a configuration failure; the
-    # route contract is still one bounded 503 with the private headers.
     monkeypatch.setenv("FF_ATTESTED_R2_READONLY_BUCKET", "Not_A_Valid_Bucket")
     forensics_api._reset_store_cache()
     try:
@@ -630,10 +850,48 @@ def test_macro_admin_step_receives_no_attested_history_variable() -> None:
             encoding="utf-8"
         )
     )
-    steps = workflow["jobs"]["deploy"]["steps"]
+    job = workflow["jobs"]["deploy"]
+    steps = job["steps"]
     assert len(steps) == 2
     api_env = steps[0]["env"]
     admin_step = steps[1]
     assert [name for name in api_env if "ATTESTED" in name]
     assert not [name for name in admin_step.get("env", {}) if "ATTESTED" in name]
     assert "ATTESTED" not in admin_step["run"]
+
+    # A credential declared at JOB level is inherited by BOTH steps, so a
+    # writer secret hidden there would reach macro-admin while every
+    # step-scoped assertion above still passed.
+    assert not [
+        name
+        for name, value in (job.get("env") or {}).items()
+        if "ATTESTED" in name or "ATTESTED" in str(value)
+    ], "attested-history credentials must be step-scoped, never job-scoped"
+    assert not [
+        name
+        for name, value in (workflow.get("env") or {}).items()
+        if "ATTESTED" in name or "ATTESTED" in str(value)
+    ], "attested-history credentials must never be workflow-scoped"
+
+    # Allow-list, not presence: asserting merely that SOME attested name exists
+    # lets a NEW writer variable (say R2_ATTESTED_HISTORY_WRITE_ACCESS_KEY_ID)
+    # be added to the macro-api step invisibly.  Exactly these four, no more.
+    delivered = {
+        name: str(value)
+        for name, value in api_env.items()
+        if "ATTESTED" in name or "ATTESTED" in str(value)
+    }
+    assert set(delivered) == {
+        "FF_ATTESTED_EP",
+        "FF_ATTESTED_BUCKET_NAME",
+        "FF_ATTESTED_RO_AK",
+        "FF_ATTESTED_RO_SK",
+    }, f"unexpected attested-history variable in the VPS delivery step: {sorted(delivered)}"
+    assert sorted(
+        value.split("secrets.")[1].rstrip(" }") for value in delivered.values()
+    ) == [
+        "R2_ATTESTED_HISTORY_BUCKET",
+        "R2_ATTESTED_HISTORY_ENDPOINT",
+        "R2_ATTESTED_HISTORY_READONLY_ACCESS_KEY_ID",
+        "R2_ATTESTED_HISTORY_READONLY_SECRET_ACCESS_KEY",
+    ]
