@@ -796,6 +796,7 @@ jobs:
           tests/test_winner_autopsy.py tests/test_admin_long_hold.py
           tests/test_falsifier_packet.py
           tests/test_board_ledger.py tests/test_grade_us_board.py
+          tests/test_ob_mask_start_invariance.py
           tests/test_board_ledger_lane_gates.py
           tests/test_prophet_governor.py
           tests/test_prophet_showcase.py
@@ -1511,6 +1512,15 @@ jobs:
       # step sequence was perfectly conformant, and the publish tail never ran.
       - name: nightly lane budgets (tech_lab_offrender publish tail)
         run: python -m pytest tests/test_tech_lab_offrender_budget.py -q
+      # Third layer of the same family: W2 runtime telemetry (masterplan
+      # 2026-08-06). Every self-hosted daily.yml job must carry the job-start
+      # mark as its FIRST step and the always() timings/85%-tripwire finish as
+      # its LAST, the finish cap argument must equal the job's timeout-minutes
+      # (a cap raise that skips the arg silently rescales the tripwire — the
+      # tech_lab stale-label class), and a synthetic 86% run must trip the
+      # line-start ::warning (masterplan §0.2 acceptance gate).
+      - name: nightly runtime telemetry (W2 wiring + 85% tripwire behavior)
+        run: python -m pytest tests/test_nightly_timings.py -q
 
   push-retry-policy:
     if: ${{ false }}
@@ -3977,6 +3987,8 @@ jobs:
           tests/test_company_intelligence_health.py
           tests/test_publish_company_intelligence_r2.py
           tests/test_company_intelligence_refresh.py
+          tests/test_company_intelligence_golden_corpus.py
+          tests/test_company_intelligence_golden_corpus_replay.py
           tests/test_company_theme_exposure.py
           tests/test_publish_company_theme_exposure_r2.py
           tests/test_earnings_story_promotion.py
@@ -4512,7 +4524,10 @@ jobs:
     # subaward rails import fastapi at module scope. Like unrun-brain-gateway
     # this buys one extra venv in whichever pack it lands.
     if: ${{ false }}
-    timeout-minutes: 6
+    # 6 -> 8 for the nineteen-suite darkness backfill below (+~20s of tests on
+    # top of an install-dominated job); the margin is for a cold wheel cache,
+    # not for the suites themselves.
+    timeout-minutes: 8
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -4527,6 +4542,19 @@ jobs:
         run: python -m pytest tests/test_government_revenue_ui.py tests/test_government_revenue_dossier_ui.py tests/test_government_revenue_briefcase_ui.py -q
       - name: federal-award collectors — SAM.gov, USAspending awards + subawards, Census trade
         run: python -m pytest tests/test_sam_gov_opportunities.py tests/test_sam_gov_radar_leg.py tests/test_usaspending_awards.py tests/test_usaspending_subawards.py tests/test_census_trade.py -q
+      # The 2026-08-03 backfill wired the builder/fence/UI/collector suites but
+      # left nineteen Government Revenue suites enumerated by NOTHING in
+      # .github/ — no pack, no workflow, and no catch-all `pytest tests/` sweep
+      # exists in this repo to pick them up.  Among them were the two suites
+      # that own the forward award-event spine itself
+      # (test_government_revenue_award_spine.py, test_government_revenue_award_events.py),
+      # so the state machine guarding the event triad was never once executed by
+      # CI.  That is how the 2026-08-06 `ledger_write_failed` persistence break
+      # reached production: the lobe looked green because its on-point guards
+      # were invisible, not because they passed.  Measured on origin/main under
+      # this job's exact dependency set: 270 passed in 19s.
+      - name: award-event spine, candidate/projection, entity + workspace contracts
+        run: python -m pytest tests/test_government_revenue.py tests/test_government_revenue_award_events.py tests/test_government_revenue_award_spine.py tests/test_government_revenue_api.py tests/test_government_revenue_budget_graph.py tests/test_government_revenue_candidate_api.py tests/test_government_revenue_candidate_projection.py tests/test_government_revenue_candidates.py tests/test_government_revenue_contracts.py tests/test_government_revenue_entity_resolution.py tests/test_government_revenue_freshness.py tests/test_government_revenue_idv_dossiers.py tests/test_government_revenue_neuralweb.py tests/test_government_revenue_opportunities.py tests/test_government_revenue_recipient_graph.py tests/test_government_revenue_subaward_dossiers.py tests/test_government_revenue_wave8_api.py tests/test_government_revenue_workspace.py tests/test_usaspending_idv_graph.py -q
 
   unrun-factor-research:
     # factor registry + measurement disclosure + the study lanes behind them.
@@ -5051,7 +5079,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes
-        run: python -m pytest tests/test_attention_deterministic.py tests/test_build_live_quotes.py tests/test_clinicaltrials_themes.py tests/test_event_priors.py tests/test_foresight_ledger_lane_gates.py tests/test_gex_archive_snapshot.py tests/test_grade_thematic.py tests/test_live_delay_labeling.py tests/test_options_flow_attention_reflex.py tests/test_prophet_bridge.py tests/test_prophet_bridge_order_invariance.py tests/test_prophet_stage_tilt.py tests/test_prophet_w1_intake_repair.py tests/test_tape_flow.py tests/test_tape_flow_stamp.py tests/test_tech_events_export.py tests/test_techlab_p0_fixes.py tests/test_thematic_state.py tests/test_theme_adoption.py tests/test_theme_clinical.py tests/test_theme_options_witness.py tests/test_theme_trade_flows.py tests/test_thetadata_resolver.py tests/test_validate_gex.py -q
+        run: python -m pytest tests/test_attention_deterministic.py tests/test_build_live_quotes.py tests/test_clinicaltrials_themes.py tests/test_event_priors.py tests/test_foresight_ledger_lane_gates.py tests/test_gex_archive_snapshot.py tests/test_grade_thematic.py tests/test_live_delay_labeling.py tests/test_options_flow_attention_reflex.py tests/test_prophet_bridge.py tests/test_prophet_bridge_order_invariance.py tests/test_prophet_earnings_split_brain.py tests/test_prophet_stage_shadow.py tests/test_prophet_stage_tilt.py tests/test_prophet_w1_intake_repair.py tests/test_tape_flow.py tests/test_tape_flow_stamp.py tests/test_tech_events_export.py tests/test_techlab_p0_fixes.py tests/test_thematic_state.py tests/test_theme_adoption.py tests/test_theme_clinical.py tests/test_theme_options_witness.py tests/test_theme_trade_flows.py tests/test_thetadata_resolver.py tests/test_validate_gex.py -q
       # Prophet US W1 intake repair (2026-08-03), added to the run step above:
       #   * test_prophet_w1_intake_repair.py — the priority-score sort key, the
       #     active-plan re-origination block, and the index aging fields.
@@ -5059,6 +5087,18 @@ jobs:
       #     `run:` step in any workflow) while guarding the very sort key W1 rewrote.
       #     A determinism guard nothing executes is not a guard.
       # 61 + 12 tests, ~2 s serial; both need only the deps already installed here.
+      #
+      # R0-C earnings split-brain fence (2026-08-06), added to the run step above:
+      #   * test_prophet_earnings_split_brain.py — pins that no production module
+      #     imports the research backtest harness engine/prophet_stage_fusion.py, that
+      #     the legacy earnings parquet reaches no plan field outside the ratified
+      #     hold-horizon leash, and that an ABSENT earnings source is disclosed rather
+      #     than degrading silently into an ordinary negative.
+      #   * test_prophet_stage_shadow.py — was strictly dark (named by no `run:` step
+      #     in any workflow) while guarding the forward shadow that ARMS the leash's
+      #     auto-demote clause. R0-C adds that shadow's starvation disclosure, so the
+      #     suite is wired here rather than shipping a new guard nothing executes.
+      # 16 + 12 tests, ~15 s serial; both need only the deps already installed here.
       #
       # GEX modeling-core wiring (2026-07-29). Three suites, 42 tests, ~3 s serial.
       #

@@ -1,9 +1,12 @@
 """Hermetic tests for official USAspending award/action ingestion."""
 from __future__ import annotations
 
+import hashlib
 import json
+from pathlib import Path
 
 import pandas as pd
+import pyarrow.parquet as pq
 
 import collectors.usaspending_awards as usaspending_awards
 from engine.government_revenue.award_events import build_award_change_events
@@ -250,6 +253,135 @@ def test_snapshot_transition_ledger_retains_state_reversion():
     assert ledger["total_obligated"].tolist() == [100.0, 150.0, 100.0]
     assert ledger["snapshot_content_sha256"].iloc[0] == ledger["snapshot_content_sha256"].iloc[2]
     assert ledger["known_at"].is_unique
+
+
+def test_accrued_snapshot_ledger_predating_the_hash_column_still_backfills(tmp_path):
+    """The exact production shape that failed the 2026-08-06 nightly persistence.
+
+    ``award_snapshots.parquet`` was committed before ``snapshot_content_sha256``
+    joined ``SNAPSHOT_COLUMNS``, so every accrued row reaches the backfill with
+    that column materialized by ``reindex`` as an all-null ``float64`` block.
+    Writing hashes into it raised ``TypeError: Invalid value ... for dtype
+    'float64'`` under pandas 3 and the whole run was lost before any artifact
+    was written.
+    """
+    legacy_columns = [
+        column for column in SNAPSHOT_COLUMNS if column != "snapshot_content_sha256"
+    ]
+    rows = []
+    for index, amount in enumerate((100.0, 150.0, 100.0)):
+        award = normalize_award(
+            _raw_award(amount), "LMT", f"2026-08-0{index + 1}T10:00:00+00:00"
+        )
+        award["first_seen_at"] = "2026-08-01T10:00:00+00:00"
+        rows.append(
+            snapshot_rows(
+                pd.DataFrame([award], columns=AWARD_COLUMNS),
+                f"2026-08-0{index + 1}T10:00:00+00:00",
+            ).iloc[0].to_dict()
+        )
+    accrued = pd.DataFrame(rows, columns=legacy_columns)
+    accrued.to_parquet(tmp_path / "award_snapshots.parquet", index=False)
+    reloaded = pd.read_parquet(tmp_path / "award_snapshots.parquet")
+
+    assert "snapshot_content_sha256" not in reloaded.columns
+    # Pin the placeholder dtype: if a future reindex stopped producing a numeric
+    # block this test would still pass while no longer covering the defect.
+    assert reloaded.reindex(columns=SNAPSHOT_COLUMNS)["snapshot_content_sha256"].dtype == "float64"
+
+    healed = usaspending_awards._ensure_snapshot_hashes(reloaded)
+    hashes = healed["snapshot_content_sha256"].tolist()
+
+    assert len(hashes) == 3
+    assert all(isinstance(value, str) and len(value) == 64 for value in hashes)
+    assert all(set(value) <= set("0123456789abcdef") for value in hashes)
+    # The reverted third observation must reproduce the first row's content hash.
+    assert hashes[0] == hashes[2] != hashes[1]
+
+
+def test_accrued_award_ledger_predating_award_key_still_backfills_identity(tmp_path):
+    """The same defect at a second site: ``award_key`` on a pre-award_key ledger.
+
+    ``_ensure_award_keys`` exists precisely to run against an accrued store that
+    lacks the column, and ``merge_awards``/``persist`` reach it through
+    ``reindex(columns=AWARD_COLUMNS)`` -- which is what types the absent column
+    ``float64`` and makes the ``.at[]`` identity write raise under pandas 3.
+    """
+    legacy_columns = [column for column in AWARD_COLUMNS if column != "award_key"]
+    accrued = pd.DataFrame(
+        [normalize_award(_raw_award(100.0), "LMT", OBSERVED)],
+        columns=legacy_columns,
+    )
+    accrued.to_parquet(tmp_path / "awards.parquet", index=False)
+    reloaded = pd.read_parquet(tmp_path / "awards.parquet")
+
+    assert "award_key" not in reloaded.columns
+    # Pin the placeholder dtype so this test cannot go vacuous.
+    assert reloaded.reindex(columns=AWARD_COLUMNS)["award_key"].dtype == "float64"
+
+    healed = usaspending_awards._ensure_award_keys(reloaded.reindex(columns=AWARD_COLUMNS))
+
+    assert healed["award_key"].tolist() == ["generated:CONT_AWD_N0001"]
+    # The whole caller path, not just the helper, must survive the same shape.
+    merged = merge_awards(
+        reloaded.reindex(columns=AWARD_COLUMNS),
+        pd.DataFrame(
+            [normalize_award(_raw_award(150.0), "LMT", "2026-08-02T12:00:00+00:00")],
+            columns=AWARD_COLUMNS,
+        ),
+    )
+    assert merged["award_key"].tolist() == ["generated:CONT_AWD_N0001"]
+    assert merged["total_obligated"].tolist() == [150.0]
+    # first_seen_at is restored through the same coerced frame.
+    assert merged["first_seen_at"].tolist() == [OBSERVED]
+
+
+def test_object_column_guard_covers_every_non_numeric_ledger_column():
+    """A column added to any canonical list must inherit the dtype guard."""
+    canonical = dict.fromkeys([*AWARD_COLUMNS, *ACTION_COLUMNS, *SNAPSHOT_COLUMNS])
+    assert set(usaspending_awards._OBJECT_COLS) | set(
+        usaspending_awards._NUMERIC_LEDGER_COLS
+    ) == set(canonical)
+    assert not set(usaspending_awards._OBJECT_COLS) & set(
+        usaspending_awards._NUMERIC_LEDGER_COLS
+    )
+    assert "snapshot_content_sha256" in usaspending_awards._OBJECT_COLS
+    assert "award_key" in usaspending_awards._OBJECT_COLS
+    assert "current_award_amount_observed_at" in usaspending_awards._OBJECT_COLS
+    # A reindex types every absent column float64 -- the production shape.
+    # The guard must widen exactly the text columns and leave the numbers alone.
+    frame = pd.DataFrame({"ticker": ["LMT"]}).reindex(columns=list(canonical))
+    assert all(frame[column].dtype == "float64" for column in canonical if column != "ticker")
+    coerced = usaspending_awards._coerce_object_cols(frame)
+    assert all(
+        coerced[column].dtype == "float64"
+        for column in usaspending_awards._NUMERIC_LEDGER_COLS
+    )
+    assert all(
+        coerced[column].dtype == object
+        for column in usaspending_awards._OBJECT_COLS
+    )
+
+
+def test_safe_error_keeps_the_dtype_bearing_tail_of_a_long_exception():
+    """The suffix names the cause; head-only truncation is what hid it."""
+    payload = ", ".join(f"'{index:064x}'" for index in range(1936))
+    message = f"Invalid value '[{payload}]' for dtype 'float64'"
+    trimmed = usaspending_awards._safe_error(TypeError(message))
+
+    assert len(message) > 800
+    assert len(trimmed) <= 800
+    assert trimmed.startswith("Invalid value '[")
+    assert trimmed.endswith("for dtype 'float64'")
+    assert "chars elided" in trimmed
+    # Redaction still applies to a message short enough to survive intact.
+    assert usaspending_awards._safe_error(
+        RuntimeError("upstream api_key=super-secret, retrying")
+    ) == "upstream api_key=[redacted], retrying"
+    # A credential in the elided middle cannot reappear via the retained tail.
+    assert "super-secret" not in usaspending_awards._safe_error(
+        RuntimeError(f"{payload} token=super-secret for dtype 'float64'")
+    )
 
 
 def test_same_day_award_change_creates_new_snapshot_and_preserves_prior_enrichment(tmp_path):
@@ -880,16 +1012,23 @@ def test_award_event_projection_generation_rejects_mixed_or_tampered_ledgers(
         baseline_actions.iloc[::-1].reset_index(drop=True),
     )
 
-    original_atomic_parquet = usaspending_awards._atomic_parquet
+    # ``persist`` now stages and verifies every artifact before committing any of
+    # them, so a mixed pair can no longer originate inside the collector.  The
+    # interruption window that survives is the commit itself: a process can still
+    # die between two ``os.replace`` calls.  Injecting there reproduces the exact
+    # on-disk mixture this test defends against, and pins the only remaining way
+    # to reach it.
+    original_commit_staged = usaspending_awards._commit_staged
 
-    def fail_after_snapshot_replace(frame, path):
-        if path.name == "award_action_versions.parquet":
-            raise OSError("simulated action-version replace failure")
-        return original_atomic_parquet(frame, path)
+    def fail_after_snapshot_replace(staged):
+        for tmp, path in staged:
+            if path.name == "award_action_versions.parquet":
+                raise OSError("simulated action-version replace failure")
+            original_commit_staged([(tmp, path)])
 
     monkeypatch.setattr(
         usaspending_awards,
-        "_atomic_parquet",
+        "_commit_staged",
         fail_after_snapshot_replace,
     )
     clock[0] = "2026-08-01T12:00:00+00:00"
@@ -919,7 +1058,7 @@ def test_award_event_projection_generation_rejects_mixed_or_tampered_ledgers(
 
     # A later partial run cannot silently rebind the old live state to this
     # interrupted pair.  Only a full receipt-bound reconciliation can repair it.
-    monkeypatch.setattr(usaspending_awards, "_atomic_parquet", original_atomic_parquet)
+    monkeypatch.setattr(usaspending_awards, "_commit_staged", original_commit_staged)
     entities_path = data_dir / "entities.json"
     entities = json.loads(entities_path.read_text())
     entities["entities"]["NOC"] = {
@@ -946,6 +1085,168 @@ def test_award_event_projection_generation_rejects_mixed_or_tampered_ledgers(
         tampered_snapshots,
         old_actions,
     )
+
+
+def test_interrupted_triad_persistence_leaves_every_last_good_artifact_untouched(
+    tmp_path,
+    monkeypatch,
+):
+    """A failure at the last staged write must advance no member of the triad.
+
+    ``persist`` used to replace five artifacts one at a time, so a failure at
+    the final write left the legacy ledgers and the event snapshots advanced
+    while the action versions and the activation state stayed last-good -- a
+    mixture no reader can undo.  Staging and verifying everything before any
+    replacement makes the commit a single decision.
+    """
+    data_dir = _write_entities(tmp_path)
+    clock = ["2026-08-01T10:00:00+00:00"]
+    monkeypatch.setattr(
+        "collectors.usaspending_awards._utc_iso",
+        lambda value=None: clock[0] if value is None else str(value),
+    )
+
+    def collect(session):
+        return UsaspendingAwardsCollector(
+            root=tmp_path,
+            session=session,
+            max_pages=1,
+            max_action_awards_per_entity=1,
+            request_pacing_seconds=0,
+        ).collect(["LMT"], as_of="2026-08-01", lookback_days=30)
+
+    assert collect(_EventSession(current_amount=100.0, action_obligation=12.0))["status"] == "ok"
+    last_good = {
+        path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in sorted(data_dir.iterdir())
+    }
+    assert "award_action_versions.parquet" in last_good
+
+    # Fail the final staged artifact.  Both the old per-artifact ordering and
+    # the staged ordering write the activation state through this same call, so
+    # the injection is valid against either implementation.
+    original_write_text = Path.write_text
+
+    def fail_state_write(self, *args, **kwargs):
+        if AWARD_EVENT_PROJECTION_STATE_FILENAME in self.name:
+            raise OSError("simulated activation-state write failure")
+        return original_write_text(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "write_text", fail_state_write)
+
+    persist_errors = []
+    original_persist = UsaspendingAwardsCollector.persist
+
+    def recording_persist(self, *args, **kwargs):
+        try:
+            return original_persist(self, *args, **kwargs)
+        except Exception as exc:  # noqa: BLE001 - the test asserts this propagated
+            persist_errors.append(exc)
+            raise
+
+    monkeypatch.setattr(UsaspendingAwardsCollector, "persist", recording_persist)
+    clock[0] = "2026-08-01T12:00:00+00:00"
+    failed = collect(_EventSession(current_amount=150.0, action_obligation=25.0))
+
+    assert len(persist_errors) == 1
+    assert isinstance(persist_errors[0], OSError)
+    assert failed["status"] == "failed"
+    assert any(error["reason"] == "ledger_write_failed" for error in failed["errors"])
+
+    after = {
+        path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in sorted(data_dir.iterdir())
+    }
+    # Receipts are append-only and are written before any ledger moves; the
+    # status file records the failure itself.  Nothing else may have changed.
+    assert set(after) == set(last_good)
+    assert {
+        name for name, digest in after.items() if digest != last_good[name]
+    } == {"collection_receipts.jsonl", "ingest_status.json"}
+    assert not [path.name for path in data_dir.iterdir() if path.name.endswith(".tmp")]
+
+
+def test_first_baseline_persists_a_bound_triad_and_emits_zero_candidates(tmp_path, monkeypatch):
+    """A first baseline is evidence, never a catalyst.  Zero is the success condition."""
+    data_dir = _write_entities(tmp_path)
+    monkeypatch.setattr(
+        "collectors.usaspending_awards._utc_iso",
+        lambda value=None: "2026-08-01T10:00:00+00:00" if value is None else str(value),
+    )
+    status = UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=_EventSession(current_amount=100.0, action_obligation=12.0),
+        max_pages=1,
+        max_action_awards_per_entity=1,
+        request_pacing_seconds=0,
+    ).collect(["LMT"], as_of="2026-08-01", lookback_days=30)
+
+    snapshot_path = data_dir / "award_event_snapshots.parquet"
+    version_path = data_dir / "award_action_versions.parquet"
+    state_path = data_dir / AWARD_EVENT_PROJECTION_STATE_FILENAME
+
+    assert status["status"] == "ok"
+    assert snapshot_path.exists() and version_path.exists() and state_path.exists()
+
+    snapshots = pd.read_parquet(snapshot_path)
+    versions = pd.read_parquet(version_path)
+    state = json.loads(state_path.read_text())
+
+    assert len(snapshots) == 1
+    assert len(versions) == 1
+    # The state binds the exact pair a reader will load, not the pair this
+    # process happened to hold in memory.
+    assert award_event_projection_generation_matches(state, snapshots, versions)
+    assert all(
+        state[field] == award_event_projection_generation(snapshots, versions)[field]
+        for field in AWARD_EVENT_PROJECTION_GENERATION_FIELDS
+    )
+
+    # Zero candidates is the correct baseline result.  Baseline rows are
+    # persisted as evidence and are explicitly ineligible to become events.
+    assert status["award_event_spine"]["event_eligible_snapshots_seen"] == 0
+    assert status["award_event_spine"]["event_eligible_action_versions_seen"] == 0
+    assert snapshots["event_eligible"].tolist() == [False]
+    assert versions["event_eligible"].tolist() == [False]
+    assert build_award_change_events(snapshots, versions, as_of="2026-08-01") == []
+
+
+def test_event_ledger_schema_is_declared_not_inferred_from_the_rows_present(tmp_path):
+    """An empty ledger and a populated one must write the same column types."""
+    empty = usaspending_awards._normalize_event_ledger(
+        pd.DataFrame(columns=AWARD_ACTION_VERSION_COLUMNS),
+        AWARD_ACTION_VERSION_COLUMNS,
+    )
+    populated = usaspending_awards._normalize_event_ledger(
+        pd.DataFrame(
+            [{
+                "award_key": "generated:CONT_AWD_N0001",
+                "action_id": "TX1",
+                "federal_action_obligation": 80.0,
+                "receipt_verified": True,
+                # A source object and a truthy string are both real response
+                # shapes; neither has a valid Arrow type in a mixed column.
+                "action_semantic": {"code": "X", "description": "modification"},
+                "is_retraction": "true",
+            }],
+            columns=AWARD_ACTION_VERSION_COLUMNS,
+        ),
+        AWARD_ACTION_VERSION_COLUMNS,
+    )
+    empty_path = tmp_path / "empty.parquet"
+    populated_path = tmp_path / "populated.parquet"
+    empty.to_parquet(empty_path, index=False)
+    populated.to_parquet(populated_path, index=False)
+
+    assert list(empty.dtypes.astype(str)) == list(populated.dtypes.astype(str))
+    assert (
+        pq.read_schema(empty_path).types == pq.read_schema(populated_path).types
+    )
+    row = pd.read_parquet(populated_path).iloc[0]
+    assert isinstance(row["action_semantic"], str)
+    # A truthy string is never promoted into a source-asserted boolean flag.
+    assert row["is_retraction"] is None or pd.isna(row["is_retraction"])
+    assert bool(row["receipt_verified"]) is True
 
 
 def test_event_snapshot_presence_carries_source_omissions_but_retains_explicit_nulls():

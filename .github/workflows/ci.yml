@@ -585,6 +585,30 @@ on:
       - "tests/test_usaspending_awards.py"
       - "tests/test_usaspending_subawards.py"
       - "tests/test_census_trade.py"
+      # Darkness backfill 2026-08-06: these nineteen suites were named by NO
+      # pack, NO workflow, and no catch-all sweep, so editing one could not even
+      # fire ci.yml.  They include the forward award-event spine's own state
+      # machine — the surface whose persistence break shipped to production on
+      # 2026-08-06 precisely because nothing ran its guards.
+      - "tests/test_government_revenue.py"
+      - "tests/test_government_revenue_award_events.py"
+      - "tests/test_government_revenue_award_spine.py"
+      - "tests/test_government_revenue_api.py"
+      - "tests/test_government_revenue_budget_graph.py"
+      - "tests/test_government_revenue_candidate_api.py"
+      - "tests/test_government_revenue_candidate_projection.py"
+      - "tests/test_government_revenue_candidates.py"
+      - "tests/test_government_revenue_contracts.py"
+      - "tests/test_government_revenue_entity_resolution.py"
+      - "tests/test_government_revenue_freshness.py"
+      - "tests/test_government_revenue_idv_dossiers.py"
+      - "tests/test_government_revenue_neuralweb.py"
+      - "tests/test_government_revenue_opportunities.py"
+      - "tests/test_government_revenue_recipient_graph.py"
+      - "tests/test_government_revenue_subaward_dossiers.py"
+      - "tests/test_government_revenue_wave8_api.py"
+      - "tests/test_government_revenue_workspace.py"
+      - "tests/test_usaspending_idv_graph.py"
       # W3 CNH part B: the five native flash wires + the forward calendar organ.
       # engine/** is NOT a blanket trigger here, so each of these must be named or a
       # parser/aggregator edit merges with the suite unrun. test_cn_newswires.py was
@@ -773,6 +797,14 @@ on:
       # .github/workflows/daily.yml (already covered above); this entry is the other
       # half — a PR editing only the budget test must reach its own guard.
       - "tests/test_tech_lab_offrender_budget.py"
+      # W2 nightly runtime telemetry, run in the same dag-conformance job. daily.yml
+      # itself is covered by ".github/workflows/**" above; these entries are the
+      # other half — a PR editing only the timings module, its finish wrapper, or
+      # the test must still reach the wiring + tripwire guard.
+      - "scripts/nightly_timings.py"
+      - "scripts/nightly_timings_report.py"
+      - "scripts/ci/nightly_timings_finish.sh"
+      - "tests/test_nightly_timings.py"
       # TXI W1 transmission chains: the chain library, the compiler/engine, the runner, and
       # the test file must all trigger the chain suite so a bad edit reds the PR (the #3357
       # vacuous-green trap needs BOTH the paths entry here AND the job below).
@@ -831,6 +863,13 @@ on:
       - "tests/test_admin_research_tools.py"
       - "tests/test_earnings_worker_terminal.py"
       - "tests/test_earnings_worker_launchd.py"
+      # test_earnings_worker_launchd.py pins the plist's EARNINGS_LLM_MODEL to
+      # this file's openai_compat.model, because the plist env var OVERRIDES it
+      # and a drift 404s every local call while the run completes on the paid
+      # fallback (R0-A, 2026-08-06). ops/** starts the pack for the plist side;
+      # without this line an edit to the CONFIG side could not start the pack
+      # that runs the guard over it — the #3488 shape.
+      - "config/earnings_qual.yml"
       - "tests/test_china_board_watch_lane.py"
       - "tests/test_risk_state_live_session_floor.py"
       # Hosted-runner packing contract: changes to the orchestrator or its
@@ -875,6 +914,15 @@ on:
       - "contracts/government_revenue/government_revenue_candidate.v1.schema.json"
       - "contracts/government_revenue/government_revenue_candidate_queue.v1.schema.json"
       - "contracts/government_revenue/government_revenue_dossiers.v1.schema.json"
+      # Subjects of the nineteen suites this PR un-darkens. They were not
+      # triggers before because no job ran the suites that read them, so
+      # check_ci_trigger_closure.py had nothing to close over. Wiring the suites
+      # is what makes these reachable — and the closure guard failed until they
+      # were named, which is the guard doing its job.
+      - "contracts/government_revenue/government_procurement_event.v2.schema.json"
+      - "contracts/government_revenue/government_procurement_workspace.v2.schema.json"
+      - "contracts/government_revenue/government_subaward_dossiers.v1.schema.json"
+      - "config/government_revenue/idv_discovery.v1.json"
       - "contracts/marketing_publication_receipt.schema.json"
       - "research/DISLOCATION_VALIDATION.md"
       - "research/MARKETING_REPLY_DOCTRINE_BY_FABLE.md"
@@ -2706,6 +2754,16 @@ on:
       - "tests/test_earnings_private_store.py"
       - "tests/test_prophet_bridge.py"
       - "engine/company_intelligence/**"
+      # Company Intelligence golden corpus (Earnings/Company Event Suite R0-D): the
+      # frozen benchmark Wave 1 is graded against. BOTH halves are listed on purpose —
+      # the suites so a test-only edit re-runs them, AND the corpus itself (manifest +
+      # fixtures) so an edit to the benchmark runs its own guard rather than shipping a
+      # manifest that claims coverage it no longer has. The builder is already reachable
+      # through the scripts/**/*.py entry below.
+      - "research/company_intelligence/**"
+      - "tests/fixtures/company_intelligence/**"
+      - "tests/test_company_intelligence_golden_corpus.py"
+      - "tests/test_company_intelligence_golden_corpus_replay.py"
       - "engine/company_theme_exposure/**"
       - "engine/earnings_transcript_intake.py"
       - "scripts/build_company_intelligence.py"
@@ -2813,6 +2871,15 @@ on:
       # pack that executes it. test_prophet_bridge_order_invariance.py was strictly
       # dark before this: no `run:` step and no path pattern named it.
       - "tests/test_prophet_bridge_order_invariance.py"
+      # R0-C earnings split-brain fence (2026-08-06). Both suites guard
+      # engine/prophet_bridge.py, engine/prophet_stage_shadow.py and the new
+      # engine/prophet_stage_inputs.py, all of which the broad "engine/**" entry above
+      # already reaches — these lines are the OTHER half, so a suite-only edit can start
+      # the pack that executes them. test_prophet_stage_shadow.py was strictly dark
+      # before this (no `run:` step, no path pattern) while guarding the forward shadow
+      # that arms the hold-leash's auto-demote clause.
+      - "tests/test_prophet_earnings_split_brain.py"
+      - "tests/test_prophet_stage_shadow.py"
       - "tests/test_prophet_stage_tilt.py"
       - "tests/test_prophet_w1_intake_repair.py"
       - "tests/test_tape_flow.py"

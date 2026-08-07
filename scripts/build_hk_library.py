@@ -2093,7 +2093,7 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         _osc_d3_map: dict[str, float | None] = {}
         if closes is not None and not closes.empty:
             try:
-                _osc_df = _compute_grids(closes)
+                _osc_df = _compute_grids(closes, market="HK")
                 # Rename kd_xup_bars → stoch_xup_bars for hk.py compatibility before storing
                 for _t in _osc_df.index:
                     _od: dict = {}
@@ -2102,13 +2102,21 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                                      "kd_xup_bars", "from_os", "ob"):
                             _od[f"{_g}_{_sfx}"] = _osc_df.at[_t, f"{_g}_{_sfx}"] \
                                 if f"{_g}_{_sfx}" in _osc_df.columns else None
+                    # Bucket-geometry era stamp (covers this row's d2 AND d3 grids —
+                    # both bucket on the HK session anchor below).
+                    if "pl_anchor_era" in _osc_df.columns:
+                        _od["pl_anchor_era"] = _osc_df.at[_t, "pl_anchor_era"]
                     _osc_d12_map[_t] = _od
-                # 3D MACD: resample to 3B bars and compute MACD cross
+                # 3D MACD: 3-session buckets on the HK session anchor (same absolute
+                # calendar as the d2 grid above; replaces resample("3B"), whose bins
+                # phased to the cache's rolling start — and this field IS a live gate
+                # input: hklab_1d_blastoff requires d3_macd_xup_bars null).
                 try:
                     from engine.pick_lab.signals_1d import (
-                        _rsi_macd as _rm, _xup as _xu, _since as _sn, XBAR_WIN as _XW
+                        _rsi_macd as _rm, _xup as _xu, _since as _sn, XBAR_WIN as _XW,
+                        session_bucket_last as _sbl,
                     )
-                    _p3 = closes.resample("3B").last()
+                    _p3 = _sbl(closes, 3, market="HK")
                     for _t in closes.columns:
                         try:
                             _c3 = _p3[_t].dropna()

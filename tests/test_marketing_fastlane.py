@@ -1096,6 +1096,10 @@ class TestTheEarningsLaneIsActuallyArmed:
         assert fields[4] == "1-5", "weekend passes poll a calendar that cannot move"
         assert "11-13" in fields[1] and "20-22" in fields[1], fields[1]
 
+    def _cone(self):
+        job = self._wf()["jobs"]["earnings"]
+        return job["steps"][0]["with"]["sparse-checkout"].split()
+
     def test_the_earnings_calendar_is_in_the_checkout_cone(self):
         """earnings.parquet IS the input. Coning it out makes the lane blind."""
         job = self._wf()["jobs"]["earnings"]
@@ -1103,6 +1107,53 @@ class TestTheEarningsLaneIsActuallyArmed:
         assert "data/earnings" in cone
         install = next(s for s in job["steps"] if s.get("name") == "install deps")
         assert "pandas" in install["run"], "the parquet cannot be read without it"
+
+    def test_the_universe_file_is_in_the_checkout_cone(self):
+        """THE COMPANION DEFECT, AND THE WORSE ONE (R0-B, 2026-08-06).
+
+        data/earnings decides WHO reported. site/marketdata decides whether this
+        lane is allowed to say anything about them, and it was missing from this
+        cone from the day the workflow shipped. `fastlane._load_universe` reads
+        site/marketdata/sp500_heatmap.json; the file is not there in a checkout
+        that cones the directory out, the loader returns None, and `run_tick`
+        takes its fail-closed branch — EVERY candidate skipped "universe
+        unavailable", nothing queued, job exits 0.
+
+        The failure is total and it is silent: the lane keeps running on its cron
+        36 times a day, keeps concluding `success`, and keeps printing "nothing
+        queued this pass" — indistinguishable from a quiet reporting hour. Run
+        31113734214 (2026-08-06T15:00Z) is the receipt.
+        """
+        assert "site/marketdata" in self._cone(), (
+            "site/marketdata is coned out of this lane's checkout, so "
+            "sp500_heatmap.json is absent, the eligibility universe fails "
+            "CLOSED, and every earnings candidate is skipped 'universe "
+            "unavailable'. The symptom is not a slow lane or a partial lane: "
+            "the workflow runs on schedule, exits 0, and can never queue a "
+            "single post"
+        )
+
+    def test_the_cone_covers_the_file_the_universe_loader_actually_reads(self):
+        """A cone entry and a hard-coded read path drift apart in silence.
+
+        Asserting the literal "site/marketdata" only pins today's spelling: move
+        the universe read to another directory and the literal assertion stays
+        green while the lane goes dark again in exactly the same way. This reads
+        the path from the code (`fastlane.UNIVERSE_PATH`) and demands the cone
+        cover it, so EITHER half moving alone is red.
+        """
+        from engine.marketing.fastlane import UNIVERSE_PATH
+
+        rel = UNIVERSE_PATH.as_posix()
+        cone = self._cone()
+        covered = [c for c in cone
+                   if rel == c or rel.startswith(c.rstrip("/") + "/")]
+        assert covered, (
+            f"fastlane.UNIVERSE_PATH reads {rel!r}, which no entry in the "
+            f"checkout cone {cone!r} covers — the universe file will be absent "
+            f"at runtime, eligibility fails closed, and the lane queues nothing "
+            f"while still exiting 0"
+        )
 
     def test_the_daemon_exposes_the_no_spool_flag(self):
         """The workflow's command is only honest if the flag exists."""
@@ -1113,3 +1164,245 @@ class TestTheEarningsLaneIsActuallyArmed:
         src = inspect.getsource(D)
         assert '"--no-spool"' in src
         assert "spool=args.spool" in src, "the flag is parsed but never threaded"
+
+
+class TestAZeroEmissionPassNamesItsCause:
+    """R0-B. A green pass that queued nothing must say WHY it queued nothing.
+
+    `emitted=0 skipped=0 quarantined=0` was the entire readout, and it is the
+    same three zeroes for two opposite states:
+
+        nobody reported in this window      -> correct, healthy, nothing to do
+        the universe file was not readable  -> the lane is off and cannot emit
+
+    They are not distinguishable from the counts because the fail-closed skip
+    record only exists once there IS a candidate to skip. With an empty window a
+    broken universe leaves no trace at all — which is precisely how run
+    31113734214 (2026-08-06) reported success on a lane that had been coned out
+    of its own eligibility file. The universe state is therefore reported
+    unconditionally, and an unreadable one raises a GitHub annotation.
+    """
+
+    def _broken_root(self, tmp_path: Path) -> Path:
+        """A root with NO site/marketdata — i.e. the coned-out checkout."""
+        return tmp_path
+
+    def test_a_pass_with_no_candidates_still_reports_a_dead_universe(
+        self, tmp_path: Path
+    ) -> None:
+        """THE EXACT AMBIGUITY. Zero events, no universe: every count is zero,
+        so the counts cannot carry the answer — the universe state must."""
+        from engine.marketing.fastlane import run_tick
+
+        result = run_tick([], root=self._broken_root(tmp_path), now=_NOW,
+                          universe=None)
+        summary = result["summary"]
+
+        assert summary["emitted"] == 0
+        assert summary["skipped"] == 0
+        assert summary["quarantined"] == 0
+        assert summary["events_in"] == 0
+        assert summary["universe_available"] is False, (
+            "a pass with no candidates reported the same three zeroes as a "
+            "healthy quiet hour — the broken universe left no trace, which is "
+            "the whole defect"
+        )
+        assert "sp500_heatmap" in summary["universe_source"], summary
+
+    def test_a_healthy_pass_with_no_candidates_does_not_cry_wolf(
+        self, tmp_path: Path
+    ) -> None:
+        """The counterpart: a genuinely quiet window must NOT report a fault, or
+        the alarm is noise and stops being read."""
+        from engine.marketing.fastlane import run_tick
+
+        result = run_tick([], root=tmp_path, now=_NOW, universe=_UNIVERSE)
+        summary = result["summary"]
+        assert summary["universe_available"] is True
+        assert summary["events_in"] == 0
+        assert summary["skipped_by_reason"] == {}
+
+    def test_skips_are_broken_down_by_reason_not_just_counted(
+        self, tmp_path: Path
+    ) -> None:
+        """"skipped=3" is not attribution. Three ineligible tickers, one already
+        seen, and three candidates the lane was forbidden to judge are three
+        different operator actions."""
+        from engine.marketing.fastlane import run_tick
+
+        events = [
+            _make_event("AAPL"),                                # eligible -> emits
+            _make_event("ZZZZ", event_id="evt-zzzz-1"),         # not in universe
+            _make_event("YYYY", event_id="evt-yyyy-1"),         # not in universe
+        ]
+        result = run_tick(events, root=tmp_path, now=_NOW, universe=_UNIVERSE)
+        summary = result["summary"]
+
+        assert summary["events_in"] == 3
+        assert summary["skipped_by_reason"].get("ticker not in universe") == 2, (
+            f"reason breakdown missing or wrong: {summary['skipped_by_reason']}"
+        )
+        # Re-running the same batch: the two ineligible ones skip for the same
+        # reason, the emitted one now skips for a DIFFERENT one. A flat count
+        # would read as "3 skipped" both times and hide the change.
+        again = run_tick(events, root=tmp_path, now=_NOW, universe=_UNIVERSE)
+        assert again["summary"]["skipped_by_reason"].get("dedupe") == 1, (
+            again["summary"]["skipped_by_reason"]
+        )
+
+    def test_the_unavailable_universe_reason_is_its_own_bucket(
+        self, tmp_path: Path
+    ) -> None:
+        """Fail-closed skips must not be filed under the ordinary ineligibility
+        reason — that would make a dead lane look like a picky one."""
+        from engine.marketing.fastlane import run_tick
+
+        result = run_tick([_make_event("AAPL")], root=self._broken_root(tmp_path),
+                          now=_NOW, universe=None)
+        summary = result["summary"]
+        assert summary["skipped_by_reason"] == {"universe unavailable": 1}, summary
+        assert summary["universe_available"] is False
+
+    def test_an_EMPTY_universe_is_not_an_UNAVAILABLE_one(
+        self, tmp_path: Path
+    ) -> None:
+        """A readable file with zero tiles is a data problem upstream; a missing
+        file is a checkout problem here. Collapsing them into one reason would
+        send an operator to the wrong repository."""
+        import json as _json
+        from engine.marketing.fastlane import UNIVERSE_PATH, run_tick
+
+        path = tmp_path / UNIVERSE_PATH
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(_json.dumps({"tiles": []}), encoding="utf-8")
+
+        result = run_tick([_make_event("AAPL")], root=tmp_path, now=_NOW,
+                          universe=None)
+        summary = result["summary"]
+        assert summary["universe_available"] is True, (
+            "an empty-but-readable universe was reported as unavailable — the "
+            "annotation would now point at the checkout cone for an upstream "
+            "data fault"
+        )
+        assert summary["universe_size"] == 0
+        assert summary["skipped_by_reason"] == {"ticker not in universe": 1}, summary
+
+    def test_the_universe_stays_FAIL_CLOSED_never_permissive(
+        self, tmp_path: Path
+    ) -> None:
+        """B3. The reporting change must not soften the behaviour it reports.
+
+        An unreadable universe still skips EVERY event — including tickers that
+        are unambiguously in the real S&P universe — emits nothing, quarantines
+        nothing, and writes no seen-ledger row, so the events retry once the
+        universe is back. A permissive default here would post unvetted tickers
+        every time a checkout hiccuped.
+        """
+        from engine.marketing.fastlane import run_tick
+
+        events = [_make_event(t, event_id=f"evt-{t.lower()}-fc")
+                  for t in ("AAPL", "MSFT", "NVDA")]
+        result = run_tick(events, root=self._broken_root(tmp_path), now=_NOW,
+                          universe=None)
+
+        assert result["emitted"] == []
+        assert result["quarantined"] == []
+        assert len(result["skipped"]) == 3
+        assert {s["reason"] for s in result["skipped"]} == {"universe unavailable"}
+        assert not (tmp_path / "data" / "marketing" / "fastlane_seen.jsonl").exists(), (
+            "a fail-closed skip must not consume the event — it has to retry "
+            "once the universe is readable again"
+        )
+        outbox = tmp_path / "data" / "marketing" / "outbox"
+        queued = list(outbox.glob("items*.jsonl")) if outbox.exists() else []
+        assert queued == [], (
+            f"a fail-closed pass wrote to the outbox ({queued}) — the universe "
+            f"gate is no longer closed"
+        )
+
+    # ── The daemon surface: the log line and the annotation ──────────────────
+
+    def test_the_daemon_annotates_a_dead_universe_at_LINE_START(
+        self, tmp_path: Path, capsys
+    ) -> None:
+        """The only trace this fault left was a `logger.warning`, and this repo's
+        log format prefixes the level, so GitHub drops the annotation and the
+        Actions summary shows nothing (house law; five prior repeats). The alarm
+        has to be a bare print that STARTS the line."""
+        from datetime import datetime, timezone
+
+        import scripts.marketing_fastlane_daemon as d
+        from engine.marketing.fastlane import run_tick
+
+        result = run_tick([], root=tmp_path, now=_NOW, universe=None)
+        d._log_tick(result, datetime(2026, 8, 6, 15, 1, tzinfo=timezone.utc),
+                    dry_run=False)
+
+        out = capsys.readouterr().out
+        hits = [ln for ln in out.splitlines() if "marketing-earnings-wire" in ln]
+        assert hits, f"no annotation was raised for a dead universe; stdout={out!r}"
+        assert hits[0].startswith("::warning title=marketing-earnings-wire::"), (
+            f"the annotation does not start its line, so GitHub silently drops "
+            f"it and the run reports nothing at all: {hits[0]!r}"
+        )
+        assert "universe unavailable" in hits[0]
+
+    def test_the_daemon_stays_silent_on_a_healthy_pass(
+        self, tmp_path: Path, capsys
+    ) -> None:
+        from datetime import datetime, timezone
+
+        import scripts.marketing_fastlane_daemon as d
+        from engine.marketing.fastlane import run_tick
+
+        result = run_tick([], root=tmp_path, now=_NOW, universe=_UNIVERSE)
+        d._log_tick(result, datetime(2026, 8, 6, 15, 1, tzinfo=timezone.utc),
+                    dry_run=False)
+        out = capsys.readouterr().out
+        assert "::warning" not in out, (
+            f"a quiet window raised the dead-universe alarm; the alarm stops "
+            f"being read: {out!r}"
+        )
+
+    def test_the_daemon_line_carries_the_reason_breakdown(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        """The summary has to reach the JOB LOG, not just the return value."""
+        import logging
+        from datetime import datetime, timezone
+
+        import scripts.marketing_fastlane_daemon as d
+        from engine.marketing.fastlane import run_tick
+
+        events = [_make_event("ZZZZ", event_id="evt-zzzz-log")]
+        result = run_tick(events, root=tmp_path, now=_NOW, universe=_UNIVERSE)
+        with caplog.at_level(logging.INFO):
+            d._log_tick(result, datetime(2026, 8, 6, 15, 1, tzinfo=timezone.utc),
+                        dry_run=False)
+        text = caplog.text
+        assert "events_in=1" in text, text
+        assert "ticker not in universe" in text, text
+        assert "universe=ok" in text, text
+
+    def test_the_log_helper_tolerates_a_result_with_no_attribution_block(
+        self, capsys
+    ) -> None:
+        """`_log_tick` runs BEFORE `_touch_heartbeat`, so anything it can raise
+        on presents as a DEAD DAEMON. A pre-R0-B result shape (a queued legacy
+        dict, a test stub) must log and must not cry wolf."""
+        from datetime import datetime, timezone
+
+        import scripts.marketing_fastlane_daemon as d
+
+        d._log_tick({"emitted": [], "skipped": [], "quarantined": []},
+                    datetime(2026, 8, 6, 15, 1, tzinfo=timezone.utc), dry_run=True)
+        assert "::warning" not in capsys.readouterr().out
+
+        # ...but the fail-closed skip reason still speaks for itself when the
+        # block is absent, so an old shape cannot hide a dead universe either.
+        d._log_tick({"emitted": [], "quarantined": [],
+                     "skipped": [{"id": "e1", "ticker": "AAPL",
+                                  "reason": "universe unavailable"}]},
+                    datetime(2026, 8, 6, 15, 1, tzinfo=timezone.utc), dry_run=True)
+        out = capsys.readouterr().out
+        assert out.startswith("::warning title=marketing-earnings-wire::"), out

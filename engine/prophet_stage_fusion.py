@@ -54,25 +54,42 @@ import pandas as pd
 
 from engine import confluence_tiers, grading, weinstein_stage
 
+# R0-C: the point-in-time INPUTS this harness shares with production (the hold-leash in
+# engine/prophet_bridge.py and the forward shadow in engine/prophet_stage_shadow.py) now
+# live in engine/prophet_stage_inputs.py, and are re-exported here unchanged. Production
+# no longer imports this research harness; both sides still read ONE definition of each
+# constant and each PIT lookup, so every published PSF/PSQ result remains reproducible
+# against identical code. Do not fork a second copy of any name below.
+from engine.prophet_stage_inputs import (  # noqa: F401 — re-exported research surface
+    BENCH_TICKER,
+    EC_SENT_GATE,
+    FRESH_WEEKS_MAX,
+    FWD_HORIZONS,
+    PARAM_CLEAN8_21,
+    PARAM_CLEAN15_126,
+    STAGE2,
+    _read_ohlcv,
+    ec_index,
+    ec_sent_at_entry,
+    load_bench_close,
+    load_ec_table,
+    load_ec_table_with_source,
+    load_ticker_prices,
+    resolve_ec_source,
+    stage_at_entry,
+)
+
 log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
 # Frozen constants (mirror the pre-registration §2-§4; do not change without an  #
 # amendment row in research/PROPHET_STAGE_FUSION_PREREG.md).                     #
+# The §2 shared constants (STAGE2 / FRESH_WEEKS_MAX / EC_SENT_GATE / BENCH_TICKER) #
+# and the §3/§4 ruler + horizon parameters are imported above from                #
+# engine.prophet_stage_inputs — same values, one definition.                      #
 # --------------------------------------------------------------------------- #
 FRESH_FIRE_TIERS = ("T1", "T2")           # §2 base event = a T1/T2 fresh fire
-STAGE2 = 2                                 # Weinstein Stage-2 (advancing)
-FRESH_WEEKS_MAX = 10                       # §2 B-fresh: weeks_in_stage <= 10
-EC_SENT_GATE = 24                          # §2 arm C: earnings_call_sent >= 24 (published gate)
 MIN_COMPLETED_WEEKS = 45                   # §7 late-IPO exclusion (< 45 completed weeks -> counted, excluded)
-BENCH_TICKER = "SPY"                       # §2 bench
-
-# §3 two ruler parameterizations.
-PARAM_CLEAN15_126 = dict(liftoff_mult=grading.LIFTOFF_15, liftoff_horizon=grading.LIFTOFF_HORIZON_126)
-PARAM_CLEAN8_21 = dict(liftoff_mult=grading.LIFTOFF_8, liftoff_horizon=grading.LIFTOFF_HORIZON_21)
-
-# §4 forward-metric horizons.
-FWD_HORIZONS = (21, 63, 126)
 
 # §4 regime split (bear / bull / recent). Inclusive start, exclusive end.
 REGIMES = {
@@ -166,28 +183,9 @@ def fresh_fire_dates(close: pd.Series) -> pd.DatetimeIndex:
 
 # --------------------------------------------------------------------------- #
 # PIT stage lookup at an entry date (look-ahead-safe).                          #
+# ``stage_at_entry`` — the audited truncating guard — is imported from           #
+# engine.prophet_stage_inputs above; the fast per-fire path stays here.          #
 # --------------------------------------------------------------------------- #
-def stage_at_entry(close: pd.Series, volume: pd.Series | None,
-                   bench_close: pd.Series, entry_date) -> tuple[int, int, int]:
-    """PIT (stage, weeks_in_stage, n_completed_weeks) at ``entry_date``.
-
-    LOOK-AHEAD GUARD (§7): inputs are TRUNCATED to the entry bar — the close (and bench,
-    and volume) are sliced to ``<= entry_date`` before classification, so the weekly stage
-    can only see completed weeks on-or-before the entry. Returns (0, 0, n_weeks) for a
-    too-young name (< 45 completed weeks). Never raises.
-    """
-    try:
-        ed = pd.Timestamp(entry_date)
-        c = close[close.index <= ed]
-        v = volume[volume.index <= ed] if volume is not None and len(volume) else None
-        b = bench_close[bench_close.index <= ed] if bench_close is not None and len(bench_close) else bench_close
-        res = weinstein_stage.classify(c, v, b)
-        return int(res.get("stage", 0) or 0), int(res.get("weeks_in_stage", 0) or 0), int(res.get("n_weeks", 0) or 0)
-    except Exception as e:  # noqa: BLE001
-        log.warning("psf: stage_at_entry failed (%s)", e)
-        return 0, 0, 0
-
-
 def _stage_lookup_from_series(stage_ser: pd.Series, entry_date) -> tuple[int, int]:
     """Fast (stage, weeks_in_stage) at ``entry_date`` from a precomputed per-week
     ``stage_series`` (PIT-equivalent: stage_series only uses completed weeks, so the label
@@ -220,62 +218,10 @@ def _stage_lookup_from_series(stage_ser: pd.Series, entry_date) -> tuple[int, in
 
 # --------------------------------------------------------------------------- #
 # EC join — most-recent earnings-call sentiment with call_date < entry_date.    #
-# --------------------------------------------------------------------------- #
-def load_ec_table(ec_path: str | Path | None = None) -> pd.DataFrame:
-    """Load the earnings-call backfill table, or an EMPTY frame if absent (fail-open, §5).
-
-    Columns kept: ticker (from ``document_ticker``), call_date (datetime), earnings_call_sent.
-    When the local gitignored parquet is missing, returns an empty frame so arm C simply
-    yields n=0 (the harness must degrade, never crash — the fail-open-on-absent-EC test).
-    """
-    from lib import config
-    p = Path(ec_path) if ec_path is not None else (
-        config.data_dir() / "stage_analysis" / "backfill" / "earnings_calls.parquet")
-    cols = ["ticker", "call_date", "earnings_call_sent"]
-    if not p.exists():
-        log.warning("psf: earnings_calls parquet absent (%s) — arm C degrades to n=0", p)
-        return pd.DataFrame(columns=cols)
-    try:
-        df = pd.read_parquet(p, columns=["document_ticker", "call_date", "earnings_call_sent"])
-    except Exception as e:  # noqa: BLE001
-        log.warning("psf: earnings_calls unreadable (%s) — arm C degrades to n=0", e)
-        return pd.DataFrame(columns=cols)
-    out = pd.DataFrame({
-        "ticker": df["document_ticker"].astype(str),
-        "call_date": pd.to_datetime(df["call_date"], errors="coerce"),
-        "earnings_call_sent": pd.to_numeric(df["earnings_call_sent"], errors="coerce"),
-    }).dropna(subset=["call_date"])
-    return out.sort_values("call_date").reset_index(drop=True)
-
-
-def ec_sent_at_entry(ec_by_ticker: dict[str, pd.DataFrame], ticker: str, entry_date) -> float | None:
-    """Most-recent ``earnings_call_sent`` with ``call_date < entry_date`` for ``ticker``.
-
-    STRICTLY-BEFORE (call_date < entry_date, §7 look-ahead control): a call printed on the
-    entry day itself is NOT usable (its sentiment would not be known pre-fill). Returns None
-    when the ticker has no prior call (arm C then excludes the fire). Never raises.
-    """
-    g = ec_by_ticker.get(str(ticker))
-    if g is None or g.empty:
-        return None
-    ed = pd.Timestamp(entry_date)
-    prior = g[g["call_date"] < ed]
-    if prior.empty:
-        return None
-    v = prior["earnings_call_sent"].iloc[-1]  # g is call_date-sorted → last is most-recent
-    return float(v) if pd.notna(v) else None
-
-
-def ec_index(ec_df: pd.DataFrame) -> dict[str, pd.DataFrame]:
-    """{ticker -> call_date-sorted frame} for fast per-fire most-recent lookup."""
-    if ec_df is None or ec_df.empty:
-        return {}
-    out: dict[str, pd.DataFrame] = {}
-    for tk, g in ec_df.groupby("ticker"):
-        out[str(tk)] = g.sort_values("call_date").reset_index(drop=True)
-    return out
-
-
+# ``load_ec_table`` / ``ec_sent_at_entry`` / ``ec_index`` are imported from      #
+# engine.prophet_stage_inputs above (same code, one definition). The backing     #
+# parquet is a local-only EquityDesk backfill: absent on CI/deploy, where the    #
+# join fails open to n=0 — see that module's header before reading an EC null.   #
 # --------------------------------------------------------------------------- #
 # Per-fire record + arm membership.                                            #
 # --------------------------------------------------------------------------- #
@@ -1292,40 +1238,10 @@ def deoverlap_robustness(fires: list[Fire], param: str = "clean15_126",
 
 
 # --------------------------------------------------------------------------- #
-# Universe construction (§2 — baskets/ohlcv ∪ data/stocks) + price loaders.     #
+# Universe construction (§2 — baskets/ohlcv ∪ data/stocks). The price loaders    #
+# (``_read_ohlcv`` / ``load_ticker_prices`` / ``load_bench_close``) are imported  #
+# from engine.prophet_stage_inputs above — same code, one definition.             #
 # --------------------------------------------------------------------------- #
-def _read_ohlcv(path: Path) -> pd.DataFrame | None:
-    try:
-        df = pd.read_parquet(path)
-    except Exception:  # noqa: BLE001
-        return None
-    if df is None or df.empty or "close" not in df.columns:
-        return None
-    if not isinstance(df.index, pd.DatetimeIndex):
-        try:
-            df.index = pd.to_datetime(df.index)
-        except Exception:  # noqa: BLE001
-            return None
-    return df
-
-
-def load_ticker_prices(ticker: str, data_root: Path) -> tuple[pd.Series | None, pd.Series | None]:
-    """(close, volume) daily series for a ticker, preferring baskets/ohlcv then data/stocks
-    (the §2 union; the deep stocks store extends late-IPO history). Fail-open → (None, None)."""
-    for sub in ("baskets/ohlcv", "stocks"):
-        p = data_root / sub / f"{ticker}.parquet"
-        if not p.exists():
-            continue
-        df = _read_ohlcv(p)
-        if df is None:
-            continue
-        close = df["close"].dropna()
-        vol = df["volume"].dropna() if "volume" in df.columns else None
-        if len(close):
-            return close, vol
-    return None, None
-
-
 def _live_globbed_tickers(data_root: Path) -> set[str]:
     """Tickers present in the live price globs (baskets/ohlcv ∪ data/stocks), minus bench."""
     tickers: set[str] = set()
@@ -1398,24 +1314,6 @@ def survivorship_disclosure(data_root: Path, dead_prices: dict[str, pd.Series] |
             "win-rates ~symmetrically, so the null on the delta is robust to the residual "
             "lean, while absolute win-rates are upward-biased."),
     }
-
-
-def load_bench_close(data_root: Path) -> pd.Series | None:
-    """SPY daily close (data/yahoo/SPY.parquet) — the single §2 benchmark. Fail-open → None."""
-    p = data_root / "yahoo" / "SPY.parquet"
-    if not p.exists():
-        return None
-    try:
-        df = pd.read_parquet(p)
-    except Exception:  # noqa: BLE001
-        return None
-    if df is None or df.empty:
-        return None
-    col = "close" if "close" in df.columns else ("close_price" if "close_price" in df.columns else None)
-    if col is None:
-        return None
-    s = df[col].dropna()
-    return s if len(s) else None
 
 
 # --------------------------------------------------------------------------- #

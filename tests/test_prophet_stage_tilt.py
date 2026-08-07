@@ -34,7 +34,7 @@ if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
 import engine.prophet_bridge as pb
-import engine.prophet_stage_fusion as psf
+import engine.prophet_stage_inputs as psi
 import engine.prophet_stage_shadow as pss
 
 
@@ -42,11 +42,17 @@ import engine.prophet_stage_shadow as pss
 # Fixtures — a tilt_inputs bundle the per-pick compute reads.
 # ---------------------------------------------------------------------------
 def _tilt_inputs(stage=2, ec_sent=30.0, ec_call_date="2026-06-01",
-                 bear=False, demoted=False, ec_load_ok=True):
+                 bear=False, demoted=False, ec_load_ok=True,
+                 ec_source_state=None):
     """Build a fake tilt_inputs dict that _compute_stage_tilt consumes.
 
-    We monkeypatch psf.stage_at_entry / psf.load_ticker_prices / psf.ec_sent_at_entry
-    via a stub psf object so no real parquet is needed. The bench/root are inert.
+    We substitute the point-in-time interface (stage_at_entry / load_ticker_prices /
+    ec_sent_at_entry) with a stub object so no real parquet is needed. The bench/root
+    are inert.
+
+    R0-C: the interface came from engine.prophet_stage_fusion (a RESEARCH BACKTEST
+    HARNESS) and now comes from engine.prophet_stage_inputs, so the bundle key is
+    ``stage_inputs`` rather than ``psf``. Mechanical rename — no assertion changed.
     """
     ec_by_ticker: dict = {}
     if ec_sent is not None and ec_call_date is not None:
@@ -58,8 +64,8 @@ def _tilt_inputs(stage=2, ec_sent=30.0, ec_call_date="2026-06-01",
             })
         }
 
-    class _StubPSF:
-        EC_SENT_GATE = psf.EC_SENT_GATE
+    class _StubPIT:
+        EC_SENT_GATE = psi.EC_SENT_GATE
 
         @staticmethod
         def load_ticker_prices(ticker, root):
@@ -76,11 +82,18 @@ def _tilt_inputs(stage=2, ec_sent=30.0, ec_call_date="2026-06-01",
         def ec_sent_at_entry(ec_map, ticker, entry_date):
             return ec_sent
 
+    # The fixture's EC rows stand in for a present source unless a caller says otherwise.
+    state = ec_source_state or psi.EC_SOURCE_AVAILABLE
     return {
         "root": Path("/nonexistent"),
-        "psf": _StubPSF,
+        "stage_inputs": _StubPIT,
         "ec_by_ticker": ec_by_ticker,
         "ec_load_ok": ec_load_ok,
+        "ec_source": {
+            "state": state,
+            "path": "data/stage_analysis/backfill/earnings_calls.parquet",
+            "reason": None if state == psi.EC_SOURCE_AVAILABLE else psi.EC_ABSENT_REASON,
+        },
         "bench": None,
         "bear": bear,
         "demoted": demoted,
@@ -272,7 +285,7 @@ def test_stage_classify_exception_degrades_to_1():
     def _boom(*a, **k):
         raise RuntimeError("classify blew up")
 
-    ti["psf"].stage_at_entry = staticmethod(_boom)
+    ti["stage_inputs"].stage_at_entry = staticmethod(_boom)
     hd, st = pb._compute_stage_tilt("AAA", "2026-07-01", ti)
     assert st["leash"] == 1.0
     assert hd == 45
@@ -282,7 +295,7 @@ def test_stage_classify_exception_degrades_to_1():
 def test_ticker_prices_missing_degrades_to_1():
     """No price series -> stage None -> not eligible -> leash 1.0."""
     ti = _tilt_inputs()
-    ti["psf"].load_ticker_prices = staticmethod(lambda t, r: (None, None))
+    ti["stage_inputs"].load_ticker_prices = staticmethod(lambda t, r: (None, None))
     hd, st = pb._compute_stage_tilt("AAA", "2026-07-01", ti)
     assert st["leash"] == 1.0
     assert st["stage_at_entry"] is None
@@ -359,15 +372,42 @@ def test_ledger_row_schema_still_12_keys():
 # ---------------------------------------------------------------------------
 def test_stage_tilt_present_in_plan_and_no_validated():
     """A plan dict from _compute_stage_tilt carries the full stage_tilt block with
-    plain-word EN and no 'validated' token."""
+    plain-word EN and no 'validated' token.
+
+    R0-C added three DISCLOSURE keys (ec_source_state / ec_source_path /
+    ec_source_reason). They are the only additions and they never enter the
+    eligibility test — the leash-matrix tests above pin that the numbers did not move.
+    """
     _hd, st = pb._compute_stage_tilt("AAA", "2026-07-01", _tilt_inputs())
     expected_keys = {
         "leash", "eligible", "stage_at_entry", "ec_sent", "ec_call_date",
+        "ec_source_state", "ec_source_path", "ec_source_reason",
         "bear_gate", "provisional", "demoted", "basis",
     }
     assert set(st.keys()) == expected_keys
     blob = json.dumps(st).lower()
     assert "validated" not in blob
+
+
+def test_stage_tilt_separates_a_starved_ec_null_from_an_honest_one():
+    """R0-C: 'no positive earnings call' and 'no earnings-call data on this host' must
+    not be the same output. Both still resolve to leash 1.0 — this is disclosure, and
+    it changes no number."""
+    honest = pb._compute_stage_tilt(
+        "AAA", "2026-07-01",
+        _tilt_inputs(ec_sent=None, ec_call_date=None))[1]
+    starved = pb._compute_stage_tilt(
+        "AAA", "2026-07-01",
+        _tilt_inputs(ec_sent=None, ec_call_date=None,
+                     ec_source_state=psi.EC_SOURCE_UNAVAILABLE))[1]
+
+    assert honest["ec_sent"] is None and starved["ec_sent"] is None
+    assert honest["leash"] == starved["leash"] == 1.0
+    assert honest["ec_source_state"] == psi.EC_SOURCE_AVAILABLE
+    assert starved["ec_source_state"] == psi.EC_SOURCE_UNAVAILABLE
+    assert honest["ec_source_reason"] is None
+    assert starved["ec_source_reason"]
+    assert honest != starved, "a starved EC null must be distinguishable from an honest one"
 
 
 def test_index_projection_includes_stage_tilt():
