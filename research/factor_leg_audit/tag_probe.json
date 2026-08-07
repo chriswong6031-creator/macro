@@ -1,0 +1,61 @@
+{
+ "fy": 2025,
+ "concepts": {
+  "PaymentsOfDividends": {
+   "kind": "flow",
+   "frame_n": 860,
+   "recovers_of_missing_dividends": 363,
+   "missing_total": 946,
+   "watch": {
+    "KO": 8779000000.0,
+    "SBUX": 2771400000.0,
+    "PG": 9872000000.0,
+    "AAPL": 15421000000.0
+   }
+  },
+  "PaymentsOfDividendsCommonStockAndPreferredStock": {
+   "kind": "flow",
+   "frame_n": 0,
+   "recovers_of_missing_dividends": 0,
+   "missing_total": 946,
+   "watch": {}
+  },
+  "LongTermDebt": {
+   "kind": "balance",
+   "frame_n": 2416,
+   "recovers_of_missing_debt_lt": 314,
+   "missing_total": 792,
+   "watch": {
+    "MCD": 39973000000.0,
+    "SBUX": 16080400000.0,
+    "JNJ": 41438000000.0,
+    "AAPL": 88500000000.0,
+    "HD": 49397000000.0
+   }
+  },
+  "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest": {
+   "kind": "balance",
+   "frame_n": 2323,
+   "recovers_of_missing_equity": 71,
+   "missing_total": 72,
+   "watch": {
+    "KO": 34275000000.0,
+    "SBUX": -8381300000.0,
+    "JNJ": 81544000000.0,
+    "PG": 53317000000.0
+   }
+  },
+  "CostOfRevenue": {
+   "kind": "flow",
+   "frame_n": 1422,
+   "recovers_of_missing_gross_profit": 73,
+   "missing_total": 914
+  },
+  "CostOfGoodsAndServicesSold": {
+   "kind": "flow",
+   "frame_n": 1550,
+   "recovers_of_missing_gross_profit": 198,
+   "missing_total": 914
+  }
+ }
+}

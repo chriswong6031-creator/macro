@@ -275,7 +275,7 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     # China net-liquidity is a single market-wide regime applying to every A-share
     # name (mirrors the US build); the CN regime carries no macro_risk/VIX leg, so
     # liquidity is the only macro conviction modifier threaded into the ladder.
-    res = analyze(c, high, kind="equity", liquidity=liquidity)
+    res = analyze(c, high, kind="equity", liquidity=liquidity, market="CN")
     if not res.get("ladder"):
         return _limited_rec(ticker, c, name, sector) if allow_limited else None
     month = int(c.index.max().month)
@@ -4290,11 +4290,14 @@ def main(alpha: dict | None = None) -> dict | None:
                             <= pd.Timestamp(_cnpl_asof_date)
                         )
                     ]
-                    _cnpl_osc_df = _cnpl_grids(_cnpl_panel)
+                    _cnpl_osc_df = _cnpl_grids(_cnpl_panel, market="CN")
                     for _cpl_t, _cpl_row in _cnpl_osc_df.iterrows():
                         _cnpl_osc_by[str(_cpl_t)] = _cpl_row.to_dict()
             except Exception as _cnpl_osc_e:  # noqa: BLE001 — additive, never fatal
-                log.debug("china pick_lab: 1D/2D grid skipped (%s)", _cnpl_osc_e)
+                # warning, not debug: since the d2 buckets anchor on the CN session
+                # reference (data/china/000001.SS.parquet), a missing/broken reference
+                # nulls every osc column for the night — that absence must be loud.
+                log.warning("china pick_lab: 1D/2D grid skipped (%s)", _cnpl_osc_e)
 
             # ── 4. Collect tech (rsi5/rsi10 etc) from per-stock JSON files ────
             _cnpl_tech_by: dict[str, dict] = {}

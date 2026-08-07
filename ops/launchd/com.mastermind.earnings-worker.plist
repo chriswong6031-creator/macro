@@ -33,13 +33,22 @@
     The PC opens a restricted reverse-SSH bridge onto Mac loopback only.
     run_earnings_worker.sh detects this complete pair and selects
     openai_compat,deepseek so Qwen is primary and DeepSeek is the fallback.
+
+    EARNINGS_LLM_MODEL OVERRIDES config/earnings_qual.yml's openai_compat.model,
+    so a value the bridged server does not serve 404s every local call and the
+    run silently completes on the DeepSeek rung instead. This carried
+    "qwen3:14b" while the endpoint served only "qwen3.5:9b" — verified
+    2026-08-06 against http://127.0.0.1:11435/v1/models, whose whole catalogue
+    is one entry. tests/test_earnings_worker_launchd.py now pins this string to
+    the config default so the two cannot drift apart again, and
+    run_earnings_worker.sh logs a preflight line naming the served ids.
   -->
   <key>EnvironmentVariables</key>
   <dict>
     <key>EARNINGS_LLM_BASE_URL</key>
     <string>http://127.0.0.1:11435/v1</string>
     <key>EARNINGS_LLM_MODEL</key>
-    <string>qwen3:14b</string>
+    <string>qwen3.5:9b</string>
   </dict>
 
   <key>StartCalendarInterval</key>

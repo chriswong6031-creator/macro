@@ -42,7 +42,7 @@ as labelled context. Passing any of them as the verdict `metric=` raises `ValueE
 
 ```bash
 # Run the gold-standard test: does the validated buy-filter cut the STOP-OUT rate
-# vs raw confluence buys, across the 110 US names in data/stocks/?
+# vs raw confluence buys, across the US names in data/stocks/ (238 as of 2026-08)?
 python3 research/signal_engine/walk_forward.py --gold
 ```
 
@@ -179,37 +179,52 @@ close-based stop.
 
 ## The gold-standard finding (what `--gold` shows)
 
+> **Geometry era note (2026-08-06).** The table below is the re-measurement after repairing
+> `tf_bars`' 3D known-date geometry. The original table (#631, 2026-06-28, 110 names) was a
+> valid measurement of its era — one day later confluence.py retired `resample("3B")` for
+> session-grouped 3D bars (b7be0352d6a) and every `--gold` run in between silently dropped
+> **67.3–67.6%** of 3D bars to a label mismatch (known-dates reindexed NaN; ~14 trades/name
+> instead of ~47 — subsample artifacts, not measurements). `tf_bars` now delegates to
+> `confluence._3d_groups`, so the harness and the signal engine share one label system by
+> construction. Pre-fix figures are kept in (parens); the **verdict is unchanged in every
+> era: kill-rule REJECT** — independently confirmed by the sq-abs-session-2026-08-06
+> adjudication's own locally-fixed gold arms, which land on these same numbers.
+
 Run on the validated buy-filter (`buy_filters` / `engine.signal_quality` / `diagnose_v2`)
-vs raw confluence buys, 110 US names, −5% stop, full sample:
+vs raw confluence buys, 237 US names (pre-fix era: 110), −5% stop, full sample
+(run `gold_20260806_130741_de8c05`):
 
 | metric (full sample) | RAW buys | FILTERED (tradeable) |
 |---|---:|---:|
-| **stop-out rate %** (PRIMARY, per-name mean) | **39.5** | **38.5** |
-| stop-out rate % (trade-weighted pooled) | 39.2 | 37.7 |
-| avg loss % | −4.0 | −4.0 |
-| worst trade % | −6.5 | −5.4 |
-| win rate % | 40.9 | 42.9 |
-| trades / name | 49 | 19 |
-| _[ctx] with-stop strat max-DD %_ | _−35.9_ | _−24.3_ |
-| _[ctx] no-stop loose-hold max-DD %_ | _−40.9_ | _−29.0_ |
+| **stop-out rate %** (PRIMARY, per-name mean) | **41.9** (39.5) | **39.6** (38.5) |
+| stop-out rate % (trade-weighted pooled) | 40.8 (39.2) | 38.5 (37.7) |
+| avg loss % | −4.1 (−4.0) | −4.0 (−4.0) |
+| worst trade % | −6.5 (−6.5) | −5.2 (−5.4) |
+| win rate % | 38.7 (40.9) | 42.1 (42.9) |
+| trades / name | 47 (49) | 18 (19) |
+| _[ctx] with-stop strat max-DD %_ | _−37.1 (−35.9)_ | _−24.5 (−24.3)_ |
+| _[ctx] no-stop loose-hold max-DD %_ | _−42.6 (−40.9)_ | _−30.0 (−29.0)_ |
 
-- The filter lowers the stop-out rate on only **54%** of names (OOS **51%**) → **kill rule
-  REJECT**. The context-only **no-stop loose-hold max-DD reproduces the old win** (−40.9% →
-  −29.0%, ~30% shallower) — but that win **does not survive an actual stop**: with the −5%
-  stop in place, the stop-out rate barely moves and the per-trade losses are already capped
-  for *both* arms (avg ≈ −4.0%, worst ≈ −5 to −6.5% on gap-throughs).
+- The filter lowers the stop-out rate on only **58%** of names (OOS **59%**; pre-fix 54%/51%)
+  → **kill rule REJECT**. The context-only **no-stop loose-hold max-DD reproduces the old
+  win** (−42.6% → −30.0%, ~30% shallower) — but that win **does not survive an actual stop**:
+  with the −5% stop in place, the stop-out rate barely moves and the per-trade losses are
+  already capped for *both* arms (avg ≈ −4.0%, worst ≈ −5 to −6.5% on gap-throughs).
 - **Attribution** (a non-tradeable diagnostic the test also prints): the take *subset*
-  entered at the raw bar gives **29.4%** (improves 90% of names) — so the filter's
-  **selection** genuinely picks lower-fakeout entries. But the only leak-free way to trade
-  it is to wait for the reclaim-and-hold confirmation, which buys **~2.4% later/higher**
-  (closer to the stop); that timing cost **pays the selection benefit back**, leaving the
-  tradeable filter at 38.5%. (Much of the 29.4% is itself look-ahead — `reclaim_and_hold`
-  conditions on the next bar being up — which is exactly why it isn't tradeable.)
+  entered at the raw bar gives **31.3%** (improves 85% of names; pre-fix 29.4%/90%) — so the
+  filter's **selection** genuinely picks lower-fakeout entries. But the only leak-free way to
+  trade it is to wait for the reclaim-and-hold confirmation, which buys **later/higher**
+  (~2.4% in the pre-fix measurement; not yet re-measured) — that timing cost **pays the
+  selection benefit back**, leaving the tradeable filter at 39.6%. (Much of the 31.3% is
+  itself look-ahead — `reclaim_and_hold` conditions on the next bar being up — which is
+  exactly why it isn't tradeable.)
 - **The metric is sensitive, not saturated.** Sweeping the stop, the stop-out rate spans
-  59% (−3%) → 39.5% (−5%) → 22% (−8%); an *oracle* entry filter (cheating) drives the −5%
-  rate to ~19% on 99% of names. So an entry edge *can* move it — the buy-filter simply
-  lacks one once traded leak-free. (The OOS read here measures temporal/regime **stability**
-  of a fixed causal rule, not parameter-overfit decay — there is nothing fitted per window.)
+  59% (−3%) → ~40% (−5%) → 22% (−8%), and an *oracle* entry filter (cheating) drives the −5%
+  rate to ~19% on 99% of names — **pre-fix-era measurements, flagged for re-measurement if a
+  verdict ever leans on them** (the sweep and oracle arms were not re-run 2026-08-06). So an
+  entry edge *can* move it — the buy-filter simply lacks one once traded leak-free. (The OOS
+  read here measures temporal/regime **stability** of a fixed causal rule, not
+  parameter-overfit decay — there is nothing fitted per window.)
 
 **Takeaway for the engine (stop-conditional):** at the owner's **−5% stop**, the buy-filter's
 celebrated drawdown win is a *loose-hold artifact the stop already neutralizes*. As an entry

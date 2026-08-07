@@ -120,6 +120,58 @@ def _shakeout_recovery(
     return pd.Series(prices, index=idx, dtype=float)
 
 
+def _geometric_leg(start_px: float, end_px: float, periods: int) -> np.ndarray:
+    """Constant-log-step leg from start_px (exclusive) to end_px (inclusive)."""
+    step = (end_px / start_px) ** (1.0 / periods)
+    return start_px * step ** np.arange(1, periods + 1)
+
+
+def _crash_then_ma50_wobble(
+    peak: float = 100.0,
+    lead: int = 320,
+    lead_drift: float = 0.0006,
+    crash_periods: int = 10,
+    dd_bottom: float = -33.0,
+    rebound_periods: int = 24,
+    dd_rebound_top: float = -11.3,
+    pullback_periods: int = 3,
+    dd_pullback: float = -17.0,
+    hold_periods: int = 8,
+    hold_drift: float = 0.002,
+    start: str = "2019-01-01",
+) -> pd.Series:
+    """Quiet lead -> fast crash -> V-rebound through MA50 -> pullback back under it.
+
+    The point of this shape is the pullback.  A fresh rebound off a crash low
+    pokes above MA50 (repair_entry fires, state becomes ``recovery``), then a
+    routine pullback drops price back *under* MA50 while it is still above
+    MA20 — MA20 has not yet crossed up through MA50 this early in a repair.
+    That kills ``repair_entry`` (which demands ``above_ma50``) while leaving
+    every piece of repair evidence intact: above MA20, positive 20-session
+    momentum, improving 10-session drawdown, positive MACD.  Only
+    ``repair_hold`` can carry those sessions.
+
+    Drawdowns are expressed against ``peak``, which is the 252-session high
+    for the whole post-peak stretch, so the ``dd_*`` arguments are the
+    literal ``dd_pct`` values the engine will see on the last day of each leg.
+    """
+    lead_px = peak * np.exp(-np.cumsum(np.full(lead, np.log(1 + lead_drift)))[::-1])
+    bottom = peak * (1 + dd_bottom / 100.0)
+    rebound_top = peak * (1 + dd_rebound_top / 100.0)
+    pullback_low = peak * (1 + dd_pullback / 100.0)
+
+    prices = np.concatenate([
+        lead_px,                                                   # quiet drift up to the high
+        np.array([peak]),                                          # the 252d high itself
+        _geometric_leg(peak, bottom, crash_periods),               # fast crash (ret20 <= -15%)
+        _geometric_leg(bottom, rebound_top, rebound_periods),      # V-rebound up through MA50
+        _geometric_leg(rebound_top, pullback_low, pullback_periods),  # pullback back under MA50
+        pullback_low * (1 + hold_drift) ** np.arange(1, hold_periods + 1),  # slow grind
+    ])
+    idx = _bdate_range(start, len(prices))
+    return pd.Series(prices, index=idx, dtype=float)
+
+
 # ---------------------------------------------------------------------------
 # Test 1: Parabola → crash — events include parabolic_enter + exactly one crash_20d
 # ---------------------------------------------------------------------------
@@ -623,6 +675,172 @@ class TestHSIRepairReplay:
         above200 = self.frame["above_ma200"].astype(bool)
         assert above200.loc[self.states == "uptrend"].all()
         assert not above200.loc[self.states == "recovery"].any()
+
+
+# ---------------------------------------------------------------------------
+# Test 6b: repair_hold hysteresis — SYNTHETIC, drift-proof
+#
+# TestHSIRepairReplay above guards the same rule against the live HSI parquet,
+# and that is exactly why it cannot be trusted to guard it forever: the live
+# data drifted until repair_entry alone carried 2026-07-23/24, so deleting
+# `repair_hold` left the whole suite green.  This class pins the hold clause to
+# a constructed series that no nightly collection can move.
+# ---------------------------------------------------------------------------
+
+def _crash_gate_inputs(frame: pd.DataFrame, states: pd.Series, i: int) -> dict:
+    """Re-derive the clause-1 crash-gate inputs the engine sees on row ``i``.
+
+    Mirrors the NaN handling in ``_resolve_state_series`` (non-finite numerics
+    are read as 0.0; a non-finite ``dd_vel_10d`` is read as None).  This is a
+    *locator* only — every assertion below is made against the engine's own
+    state output, never against these re-derived values.
+    """
+    row = frame.iloc[i]
+
+    def _num(key: str) -> float:
+        val = float(row[key])
+        return val if np.isfinite(val) else 0.0
+
+    dd = _num("dd_pct")
+    dd_min30 = _num("dd_min30")
+    mom20 = _num("mom20_pct")
+    ret20 = _num("ret20_pct")
+    dd_vel_raw = float(row["dd_vel_10d"])
+    dd_vel = dd_vel_raw if np.isfinite(dd_vel_raw) else None
+    macd_positive = bool(float(row["macd_hist"]) > 0.0)  # NaN > 0 is False
+    above_ma20 = bool(row["above_ma20"])
+    above_ma50 = bool(row["above_ma50"])
+    previous_state = states.iloc[i - 1] if i > 0 else None
+
+    repair_entry = (
+        above_ma20
+        and above_ma50
+        and mom20 >= 5.0
+        and dd_vel is not None
+        and dd_vel >= 0.0
+        and macd_positive
+    )
+    repair_hold = (
+        previous_state == "recovery"
+        and above_ma20
+        and mom20 > 0.0
+        and (dd_vel is None or dd_vel > -1.0)
+        and macd_positive
+    )
+    return {
+        "damage_memory": dd_min30 <= -18.0 and dd <= -10.0,
+        "velocity_crash": ret20 <= -15.0,
+        "repair_entry": repair_entry,
+        "repair_hold": repair_hold,
+        "previous_state": previous_state,
+        "dd": dd,
+        "dd_min30": dd_min30,
+        "mom20": mom20,
+        "dd_vel": dd_vel,
+        "macd_positive": macd_positive,
+        "above_ma20": above_ma20,
+        "above_ma50": above_ma50,
+    }
+
+
+class TestRepairHoldHysteresis:
+    """`repair_hold` alone must keep a repairing market out of `crash`.
+
+    The constructed series rebounds off a -33% crash, crosses back above MA50
+    (repair_entry fires -> `recovery`), then pulls back *under* MA50 while MA20
+    is still below it.  On those pullback sessions the damage-memory crash test
+    is live (dd_min30 <= -18 and dd <= -10), the velocity crash test is not
+    (ret20 well above -15), and `repair_entry` is dead because price sits below
+    MA50 — so `repair_hold` is the only thing standing between `recovery` and a
+    threshold-wobble flip to `crash`.
+
+    Deleting the `or repair_hold` term from `repair_confirmed` turns every one
+    of those sessions into `crash`.
+    """
+
+    def setup_method(self):
+        self.close = _crash_then_ma50_wobble()
+        self.frame = _compute_components(self.close)
+        self.states = _resolve_state_series(self.frame)
+        self.hold_only = [
+            i
+            for i in range(1, len(self.frame))
+            if (
+                (g := _crash_gate_inputs(self.frame, self.states, i))["damage_memory"]
+                and not g["velocity_crash"]
+                and not g["repair_entry"]
+                and g["repair_hold"]
+            )
+        ]
+
+    def test_series_reaches_the_hold_only_regime(self):
+        """The series must actually exercise the clause — else this file is decoration.
+
+        This is the anti-rot assertion: if a future change to the state machine
+        or to the component maths stops this shape from reaching a
+        hold-only session, the guard below would silently stop guarding.
+        """
+        assert self.hold_only, (
+            "constructed series never reaches a session where damage-memory crash "
+            "is live, velocity crash is not, and repair_entry is False while "
+            "repair_hold is True — the hysteresis clause is untested"
+        )
+
+    def test_repair_hold_alone_prevents_the_crash_flip(self):
+        """The mutation guard: hold-only sessions stay `recovery`, never `crash`.
+
+        Removing `or repair_hold` from `repair_confirmed` makes each of these
+        sessions fail the damage-memory gate and resolve to `crash`.
+        """
+        for i in self.hold_only:
+            g = _crash_gate_inputs(self.frame, self.states, i)
+            assert self.states.iloc[i] == "recovery", (
+                f"session {i} ({self.states.index[i].date()}) must stay in recovery on "
+                f"the hold clause alone; got {self.states.iloc[i]!r}. "
+                f"dd={g['dd']:.2f} dd_min30={g['dd_min30']:.2f} mom20={g['mom20']:.2f} "
+                f"dd_vel={g['dd_vel']:.2f} macd_positive={g['macd_positive']} "
+                f"above_ma20={g['above_ma20']} above_ma50={g['above_ma50']}"
+            )
+
+    def test_hold_only_sessions_have_no_other_repair_evidence(self):
+        """Document *why* those sessions are decisive: only the hold gate is open."""
+        for i in self.hold_only:
+            g = _crash_gate_inputs(self.frame, self.states, i)
+            assert g["damage_memory"], f"session {i} is not under damage memory"
+            assert not g["velocity_crash"], f"session {i} is a velocity crash"
+            assert not g["repair_entry"], f"session {i} still satisfies repair_entry"
+            assert not g["above_ma50"], (
+                f"session {i} is above MA50 — repair_entry would carry it"
+            )
+            assert g["previous_state"] == "recovery"
+
+    def test_entry_gate_opens_the_repair_before_the_hold_carries_it(self):
+        """The first repair session is won by `repair_entry`, not by the hold clause.
+
+        `repair_hold` requires a prior `recovery`, so it can never *start* one.
+        A series where the hold clause opened the repair would be testing
+        nothing about hysteresis.
+        """
+        first_recovery = int(np.argmax((self.states == "recovery").to_numpy()))
+        assert self.states.iloc[first_recovery] == "recovery"
+        g = _crash_gate_inputs(self.frame, self.states, first_recovery)
+        assert g["repair_entry"], "first recovery session should be won by repair_entry"
+        assert not g["repair_hold"]
+        assert first_recovery < min(self.hold_only)
+
+    def test_velocity_crash_still_overrides_the_hold(self):
+        """A live -15%/20-session waterfall stays `crash` no matter what."""
+        velocity_days = self.frame.index[self.frame["ret20_pct"] <= -15.0]
+        assert len(velocity_days) > 0, "series should contain a real velocity crash"
+        assert (self.states.loc[velocity_days] == "crash").all()
+
+    def test_hold_expires_when_the_evidence_does(self):
+        """The clause is hysteresis, not a latch — it lets go once evidence fails."""
+        last_hold = max(self.hold_only)
+        tail = self.states.iloc[last_hold + 1:]
+        assert (tail == "recovery").sum() < len(tail), (
+            "repair_hold never released — a permanent recovery latch would be a bug"
+        )
 
 
 # ---------------------------------------------------------------------------

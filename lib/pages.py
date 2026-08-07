@@ -140,6 +140,32 @@ def rendered_ticker_pages(site_dir: Path) -> frozenset[str]:
     return frozenset(on_disk | _committed_ticker_pages(stocks_dir))
 
 
+def rendered_basket_pages(site_dir: Path) -> frozenset[str]:
+    """Basket ids that have a `basket/<id>.html` page in the shipped tree.
+
+    Same union-of-disk-and-committed rule as rendered_ticker_pages, and for the
+    same reason — a partial checkout must not un-link every basket it merely did
+    not fetch.
+
+    WHY THIS EXISTS (2026-08-06). A basket page is only built for a basket that
+    clears engine/baskets.py's floor of 3 members present in the returns cache;
+    a ticker page links `basket/<slug>.html` for every membership row it holds,
+    and those two sets are not the same set. `silver_miners` was curated on
+    2026-08-05 with 10 members, went into membership.json, and got linked from
+    stocks/HL.html and stocks/SSRM.html — while its own page was skipped for
+    want of price history. That is a live 404 on two shipping pages, and it
+    failed `check_site_asset_refs` on EVERY render from 03:24Z on 2026-08-06,
+    which wedged the whole render lane: no site/*.html body was rebuilt for
+    ~28h, so merged UI work sat in templates/ and never reached the VPS.
+    Membership is curated by hand and page-building is gated on market data, so
+    the two will diverge again on the next new basket. Gate the LINK, not the
+    curation.
+    """
+    basket_dir = Path(site_dir) / "basket"
+    on_disk = {p.stem for p in basket_dir.glob("*.html") if p.stem != "index"}
+    return frozenset(on_disk | _committed_ticker_pages(basket_dir))
+
+
 # --- asset optimization (content-hash cache-busting + defer) -----------------
 # A post-render sweep (scripts/optimize_assets.py) rewrites every local .js/.css
 # reference to carry a ?v=<content-hash> query and marks non-critical <script>s

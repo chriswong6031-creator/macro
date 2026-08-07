@@ -29,6 +29,7 @@ from pathlib import Path
 
 import numpy as np
 
+from engine import bar_derive          # the display-grid anchor era + b3 boundaries (DG-R3/R6)
 from engine import subsector_confluence as sc
 from lib import config
 from lib.pages import write_page
@@ -108,15 +109,25 @@ def _prune_orphan_details(out_dir: Path, live_keys: set[str]) -> int:
     return removed
 
 
-def _emit_group_files(site: Path, g: dict, ohlc_dir: str = OHLC_DIR, sig_dir: str = SIG_DIR) -> None:
+def _emit_group_files(site: Path, g: dict, ohlc_dir: str = OHLC_DIR, sig_dir: str = SIG_DIR,
+                      market: str = "US") -> None:
     """Write a group's chart OHLC + §7 signal file into the given desk dirs; mutate g to drop the
-    heavy series and record the keys the detail page chart will mount."""
+    heavy series and record the keys the detail page chart will mount.
+
+    ``market`` is the reference session calendar the payload's ``anchor`` block is cut on
+    (DG-R1) — the synthetic index inherits its members' calendar, so the US / Nasdaq /
+    Russell desks are NYSE-indexed and the 同花顺 concept desk is CN-indexed (its members
+    load from ``data/china_stocks``, whose index IS the A-share session set). The whole
+    series ships (no window cap), so no DG-R4 trim applies here: row 0 is the group's first
+    bar and opens its bucket by construction."""
     key = _detail_key(g)
     cand = g.pop("_candle", None)
     markers = g.pop("_markers", None) or {}
     if cand is not None:
-        _write_json(site / ohlc_dir / f"{key}.json", {"t": key, "o": 1, "src": "subsector",
-                                                      "bars": _bars_from_candle(cand)})
+        bars = _bars_from_candle(cand)
+        _write_json(site / ohlc_dir / f"{key}.json",
+                    {"t": key, "o": 1, "src": "subsector", "bars": bars,
+                     "anchor": bar_derive.chart_anchor([b[0] for b in bars], market)})
         g["chart_key"] = key
     if markers.get("markers"):
         # RC-R2 append-only marker law: merge with the previously RENDERED file so a
@@ -252,7 +263,7 @@ def main_china() -> dict:
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     cn = sc.compute_china_ths_confluence()
     for g in cn.get("baskets", []):
-        _emit_group_files(site, g, ohlc_dir=CN_OHLC_DIR, sig_dir=CN_SIG_DIR)
+        _emit_group_files(site, g, ohlc_dir=CN_OHLC_DIR, sig_dir=CN_SIG_DIR, market="CN")
     cn["generated_utc"] = generated
     # Validated sleeve-size chip (W6-CN Fix 1) — thread risk_radar_intl gross_factor into the
     # subsectors_china JSON header as a DISPLAY chip. Regime sizes sleeves, never vetoes names.

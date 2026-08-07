@@ -36,11 +36,18 @@ _AS_OF = "2026-07-19"
 
 def _seed_approved_item(tmp_path: Path, *, text: str = "$PLTR reclaimed the 50-day. Watching the soldiers now.",
                         account: str = "flagship", as_of: str = _AS_OF,
-                        scheduled_at: str = "immediate") -> str:
-    """Enqueue one item and drive it to 'approved'. Returns its id."""
+                        scheduled_at: str = "immediate",
+                        kind: str = "signal") -> str:
+    """Enqueue one item and drive it to 'approved'. Returns its id.
+
+    `kind` is settable because the session-freshness gate (2026-08-06) refuses a
+    stale item of a TAPE kind before most of the publisher's other rules are
+    reached. A test about one of those later rules seeds a non-tape kind so its
+    subject is the rule it names.
+    """
     from engine.marketing.outbox import make_item, enqueue, transition
     item = make_item(
-        account=account, kind="signal", text=text, as_of=as_of,
+        account=account, kind=kind, text=text, as_of=as_of,
         scheduled_at=scheduled_at, provenance="content_studio", now=_FIXED_NOW,
     )
     # Raise the ENQUEUE-time cap (the outbox's weeks_1_2 floor is 2/account/day)
@@ -810,7 +817,18 @@ def test_no_channel_old_item_expires_to_quarantined(monkeypatch, tmp_path):
     _write_publish_cfg_no_channel(tmp_path)
     now = "2026-07-19T13:00:00Z"
     # as_of 5 days before now → past the 3-day expiry.
-    item_id = _seed_approved_item(tmp_path, as_of="2026-07-14")
+    #
+    # THE TEXT CARRIES NO TAPE CLAIM ON PURPOSE (2026-08-06). The default seed
+    # copy ("$PLTR reclaimed the 50-day…") is a market-action claim, and the
+    # session-freshness gate now refuses a 5-day-old one several hundred lines
+    # EARLIER than this expiry — the item still ends up quarantined, but with the
+    # stale-session receipt instead of `expired_no_channel`, so the assertion
+    # below would be testing the wrong rule. A method post with no session claim
+    # reaches the expiry, which is the rule this test is about.
+    item_id = _seed_approved_item(
+        tmp_path, as_of="2026-07-14", kind="education",
+        text="Sizing off the stop instead of the conviction is the habit I "
+             "keep having to relearn.")
 
     fake = _FakePublisher(ok=True)
     rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
