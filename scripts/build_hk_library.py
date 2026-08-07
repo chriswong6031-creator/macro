@@ -1715,6 +1715,7 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
             "name": e.get("name") or e["ticker"],
             "name_zh": e.get("name_zh"),
             "sector": e.get("sector"),
+            "sector_zh": e.get("sector_zh"),
             "price": e.get("price"),
             "off_high": e.get("off_high"),
             "dir": e.get("dir"),
@@ -1814,14 +1815,46 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     if _n_chipped:
         log.info("hk leadership chips: stamped %d buy row(s) in the mega-cap cohort",
                  _n_chipped)
+    # Ripening shelf (CN W8-R1 port, 2026-08-07): non-eligible names whose WEEKLY
+    # setups are live, zoned READY/BASING — the bench that gives the board a body
+    # between fresh crosses (measured 2026-08-06: 3 eligible of 158 → a two-card
+    # board; this shelf held 12 real rows the same night). LAST in the claim chain:
+    # every other lane takes its tickers first, so a name has exactly one home on
+    # the page. Display-tier — never enters graded_board_rows, never touches buy
+    # membership (masterplan fences; DISPLAY_TIER_LANES names it in the artifact).
+    ripening = hk_board_rank.build_ripening_rows(
+        sig_verdict,
+        meta_by=_lane_meta,
+        close_of=_lane_close_of,
+        exclude=(_claimed
+                 | {r["ticker"] for r in leaders}
+                 | {r["ticker"] for r in ran}
+                 | {r["ticker"] for r in vetoed}),
+        board_asof=as_of,
+    )
+    # Spark garnish for the shelf cards, colored by daily-MACD sign like CN's —
+    # builder-side because _spark_svg is this module's helper; a missing chart just
+    # ships no spark (the card renders without it).
+    for _rr in ripening:
+        _rc = _lane_closes.get(_rr.get("ticker"))
+        if _rc:
+            _rr_hist = _rr.get("macd_hist_d")
+            _rr["spark_svg"] = _spark_svg(
+                list(_rc[-32:]),
+                color=("var(--up)" if _rr_hist is not None and _rr_hist >= 0
+                       else "var(--down)" if _rr_hist is not None
+                       else "var(--muted)"))
     log.info("hk display lanes: leaders %d (cap %d, %d cohort) · ran %d (cap %d, "
-             "ticks %d-%d) · vetoed %d (cap %d, %d cohort)",
+             "ticks %d-%d) · vetoed %d (cap %d, %d cohort) · ripening %d (cap %d, "
+             "READY %d)",
              len(leaders), hk_board_rank.LEADERS_CAP,
              sum(1 for r in leaders if r.get("in_leadership_cohort")),
              len(ran), hk_board_rank.RAN_CAP,
              hk_board_rank.RAN_TICKS_MIN, hk_board_rank.RAN_TICKS_MAX,
              len(vetoed), hk_board_rank.VETOED_CAP,
-             sum(1 for r in vetoed if r.get("in_leadership_cohort")))
+             sum(1 for r in vetoed if r.get("in_leadership_cohort")),
+             len(ripening), hk_board_rank.RIPENING_CAP,
+             sum(1 for r in ripening if r.get("zone") == hk_board_rank.ZONE_READY))
 
     # board-level fragility gauge over the top conviction cohort (display-only sizing context)
     cohort = ext_eng.cohort_stretch([ext_map[e["ticker"]] for e in ranked[:24]
@@ -1966,12 +1999,13 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
            "buy": buys, "watch": watch, "laggards": laggards,
            # hk_prophet_v1 display lanes — no entry claim, no priority score.
            "leaders": leaders, "ran": ran, "vetoed": vetoed,
+           "ripening": ripening,
            "rank_by": hk_board_rank.BOARD_DEFINITION,
            "board_definition": hk_board_rank.BOARD_DEFINITION,
            "ranking": _ranking,
            "lane_counts": hk_board_rank.lane_counts(
                buy=buys, leaders=leaders, ran=ran, vetoed=vetoed,
-               watch=watch, laggards=laggards,
+               watch=watch, laggards=laggards, ripening=ripening,
                featured=_ranking["featured_count"]),
            "southbound_summary": out_sb,
            "liquidity_regime": liquidity_regime,   # H5 ACCRUE conditioner — deskhero chip
