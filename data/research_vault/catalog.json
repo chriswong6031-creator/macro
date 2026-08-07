@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T10:32:09.489255+00:00",
-  "count": 935,
+  "generated_at": "2026-08-07T10:40:40.570031+00:00",
+  "count": 936,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -59,6 +59,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-hymi33ivzjz-7af1ff",
+      "title": "JPM International Market Intelligence Morning Briefing Aug 7",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T10:31:57Z",
+      "summary_points": [
+        "**US-Japan EPS Divergence**: US companies beat EPS 88% (vs Japan 71%), but Japan’s EPS growth (64%) exceeds US (25%), signaling structural shift—US focus on beat frequency, Japan on growth magnitude.",
+        "**Big Tech Debt Vulnerability**: Amazon/Alphabet dominate $350B+ multi-currency borrowing (2025+), exposing FX risk and capital allocation strain amid Yen weakness.",
+        "**Hormuz Supply Shock**: 12.6 mbd supply loss (Mar-Jul) vs 5.2 mbd demand loss, with 644M bbl inventory draws, driving immediate energy tightness and price pressure.",
+        "**Geopolitical Inflation Floor**: Conflict (energy/supply shocks), rearmament (fiscal demand), and fragmentation (trade frictions) collectively create persistent inflation floor.",
+        "**Eurozone Demand Deterioration**: Household consumption forecast decline (Q2-Q4 2026) signals weakening demand and potential economic slowdown."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-bcjktsbzuwe-b4ec6e",
       "title": "Global Markets Comment A Few Follow Up Questions on Yen Intervention",
