@@ -233,7 +233,7 @@ def test_preregistration_document_is_committed_and_binds_the_code():
     family, digest = grader.load_family_declaration(PREREG_PATH)
     assert family is GRV_FA1
     assert len(digest) == 64
-    assert family.version == "2.0.0"
+    assert family.version == "3.0.0"
 
 
 def test_preregistration_declares_kill_expiry_and_thresholds():
@@ -1788,3 +1788,368 @@ def test_the_preregistration_states_its_power_calculation():
     assert str(GRV_FA1.planning_n_required) in text
     assert "minimum interesting effect" in text.lower()
     assert GRV_FA1.accrual_expiry_date in text
+
+
+# ---------------------------------------------------------------------------
+# GATE — earnings-window and subsequent-filings disclosure labels (§11)
+#
+# Wave 9G's build list asks for "earnings-window and subsequent-filings outcome
+# labels where available". The trap this section is built around is the third
+# word of the answer: "where available" is where a label layer lies, because the
+# natural implementation returns an empty list for an issuer nobody has data
+# for, and an empty list reads as a clean, uncontaminated window. Every issuer
+# with the WORST data would score as the CLEANEST. So the split between
+# "looked and found nothing" and "could not look" is what these tests defend,
+# alongside the two point-in-time clamps.
+# ---------------------------------------------------------------------------
+
+
+def _event(
+    calendar: SessionCalendar,
+    index: int,
+    *,
+    kind: str = "earnings",
+    ticker: str = "PLTR",
+    known_offset_days: int = -1,
+    reference: str = "acc-0001",
+) -> "grader.DisclosureEvent":
+    """A disclosure on session ``index``, knowable ``known_offset_days`` from it."""
+    day = calendar.sessions[index]
+    known = datetime.combine(day, datetime.min.time(), tzinfo=timezone.utc) + timedelta(
+        days=known_offset_days
+    )
+    return grader.DisclosureEvent(
+        kind=kind, ticker=ticker, event_date=day, known_at=known.isoformat(), reference=reference
+    )
+
+
+def _disclosure(events, *, covered=("PLTR",), outage=()) -> "grader.DisclosureCalendar":
+    return grader.DisclosureCalendar.build(
+        events,
+        calendar_id="disclosure-2026-08-07",
+        covered_tickers=covered,
+        outage_tickers=outage,
+    )
+
+
+def _label(calendar, *, events, as_of=None, covered=("PLTR",), outage=(), horizon="h5"):
+    row = _row(calendar)
+    grade = grader.grade_row(
+        row,
+        horizon,
+        panel=_panel(calendar, {"PLTR": _flat(calendar, 100.0)}),
+        calendar=calendar,
+        as_of=_as_of(calendar),
+    )
+    return grader.label_disclosures(
+        grade,
+        disclosure=_disclosure(events, covered=covered, outage=outage),
+        as_of=as_of or _as_of(calendar),
+    )
+
+
+def test_a_disclosure_inside_the_graded_window_is_labelled(calendar):
+    """The h5 window is [ENTRY, ENTRY+5]; an earnings print at ENTRY+3 is in it."""
+    label = _label(calendar, events=[_event(calendar, _ENTRY_INDEX + 3)])
+    assert label.state == "observed"
+    assert label.earnings_in_window == 1
+    assert label.filings_in_window == 0
+    assert [event["reference"] for event in label.events] == ["acc-0001"]
+
+
+def test_earnings_and_filings_are_counted_separately(calendar):
+    label = _label(
+        calendar,
+        events=[
+            _event(calendar, _ENTRY_INDEX + 1, kind="earnings", reference="acc-earn"),
+            _event(calendar, _ENTRY_INDEX + 2, kind="filing", reference="acc-10q"),
+            _event(calendar, _ENTRY_INDEX + 4, kind="filing", reference="acc-8k"),
+        ],
+    )
+    assert label.state == "observed"
+    assert (label.earnings_in_window, label.filings_in_window) == (1, 2)
+
+
+def test_a_disclosure_after_the_exit_session_is_not_labelled(calendar):
+    """Clamp 1 — the window clamp. ENTRY+6 is one session past h5's exit."""
+    label = _label(calendar, events=[_event(calendar, _ENTRY_INDEX + 6)])
+    assert label.state == "none_in_window"
+    assert label.earnings_in_window == 0
+    assert label.events == ()
+
+
+def test_a_disclosure_before_the_entry_session_is_not_labelled(calendar):
+    """The window is closed on both ends: a print before entry did not touch it."""
+    label = _label(calendar, events=[_event(calendar, _ENTRY_INDEX - 2)])
+    assert label.state == "none_in_window"
+    assert label.earnings_in_window == 0
+
+
+def test_widening_the_disclosure_window_by_one_session_changes_the_label(calendar, monkeypatch):
+    """MUTATION PROOF that the window clamp above is not vacuous.
+
+    The honest label for a print at ENTRY+6 is ``none_in_window``. Extend the
+    one seam that computes the window by a single session and the same fixture
+    must flip to ``observed`` — if it did not, the clamp test would be asserting
+    nothing about the code.
+    """
+    events = [_event(calendar, _ENTRY_INDEX + 6)]
+    assert _label(calendar, events=events).state == "none_in_window"
+
+    real_window = grader._disclosure_window
+
+    def widened(grade):
+        window = real_window(grade)
+        if window is None:
+            return None
+        start, end = window
+        return start, calendar.sessions[calendar.index_of(end) + 1]
+
+    with monkeypatch.context() as patched:
+        patched.setattr(grader, "_disclosure_window", widened)
+        leaked = _label(calendar, events=events)
+    assert leaked.state == "observed", "the widened window must reach the post-exit print"
+    assert leaked.earnings_in_window == 1
+
+
+def test_a_disclosure_not_yet_published_is_not_labelled(calendar):
+    """Clamp 2 — the availability clamp.
+
+    The print is dated inside the window, but the index that carries it does not
+    publish until after ``as_of``. Reading it would be tomorrow's data
+    describing a window already graded.
+    """
+    day = calendar.sessions[_ENTRY_INDEX + 3]
+    late = grader.DisclosureEvent(
+        kind="earnings",
+        ticker="PLTR",
+        event_date=day,
+        known_at=datetime(2099, 1, 1, tzinfo=timezone.utc).isoformat(),
+        reference="acc-late",
+    )
+    assert _label(calendar, events=[late]).state == "none_in_window"
+
+
+def test_moving_as_of_past_the_publication_reveals_the_disclosure(calendar):
+    """MUTATION PROOF for the availability clamp, by behavior rather than patch.
+
+    Same event, same window, two evaluation points. The label is ``none_in_window``
+    before the index publishes and ``observed`` after, so the clamp is doing work.
+    """
+    day = calendar.sessions[_ENTRY_INDEX + 3]
+    published = datetime(2026, 6, 1, tzinfo=timezone.utc)
+    event = grader.DisclosureEvent(
+        kind="earnings",
+        ticker="PLTR",
+        event_date=day,
+        known_at=published.isoformat(),
+        reference="acc-lagged",
+    )
+    before = _label(calendar, events=[event], as_of=published - timedelta(seconds=1))
+    after = _label(calendar, events=[event], as_of=published)
+    assert before.state == "none_in_window"
+    assert after.state == "observed"
+
+
+def test_an_uncovered_issuer_is_unavailable_and_never_reads_as_clean(calendar):
+    """The whole reason ``covered_tickers`` exists.
+
+    A calendar that carries no PLTR coverage must not answer "no disclosures" —
+    that converts missing data into a clean window and flatters the cohort
+    exactly where coverage is worst.
+    """
+    label = _label(calendar, events=[], covered=("XYZ",))
+    assert label.state == "unavailable"
+    assert label.unavailable_reason == "issuer_not_in_calendar"
+    assert label.state != "none_in_window"
+    assert label.earnings_in_window is None, "an uncovered issuer has no count, not a zero"
+
+
+def test_a_source_outage_is_named_separately_from_missing_coverage(calendar):
+    label = _label(calendar, events=[], covered=(), outage=("PLTR",))
+    assert label.state == "unavailable"
+    assert label.unavailable_reason == "source_outage"
+
+
+def test_with_no_calendar_every_label_is_unavailable(calendar):
+    """Today's actual state: no disclosure calendar is wired anywhere."""
+    row = _row(calendar)
+    grade = grader.grade_row(
+        row, "h5", panel=_panel(calendar, {"PLTR": _flat(calendar, 100.0)}),
+        calendar=calendar, as_of=_as_of(calendar),
+    )
+    label = grader.label_disclosures(grade, disclosure=None, as_of=_as_of(calendar))
+    assert label.state == "unavailable"
+    assert label.unavailable_reason == "no_disclosure_calendar"
+    assert (label.earnings_in_window, label.filings_in_window) == (None, None)
+
+
+def test_an_ungraded_row_is_labelled_not_dropped(calendar):
+    """A row with no window keeps its slot in the label census."""
+    row = _row(calendar, ticker="NOPX", candidate_id="grc1-000000000000000000000009")
+    grade = grader.grade_row(
+        row, "h5", panel=_panel(calendar, {"PLTR": _flat(calendar, 100.0)}),
+        calendar=calendar, as_of=_as_of(calendar),
+    )
+    assert grade.state == "ungraded"
+    label = grader.label_disclosures(
+        grade, disclosure=_disclosure([], covered=("NOPX",)), as_of=_as_of(calendar)
+    )
+    assert label.state == "unavailable"
+    assert label.unavailable_reason == "row_ungraded"
+
+
+def test_every_unavailable_reason_is_named(calendar, monkeypatch):
+    """The vocabulary is closed, and the guard that closes it is live.
+
+    Mutation: drop ``issuer_not_in_calendar`` from the registered vocabulary and
+    the path that emits it must RAISE rather than ship an unnamed state. A
+    label layer whose reasons are free text is one edit away from
+    ``assume_clean``.
+    """
+    assert set(grader.DISCLOSURE_UNAVAILABLE_REASONS) == {
+        "no_disclosure_calendar",
+        "issuer_not_in_calendar",
+        "row_ungraded",
+        "source_outage",
+    }
+    assert _label(calendar, events=[], covered=("XYZ",)).unavailable_reason == (
+        "issuer_not_in_calendar"
+    )
+
+    trimmed = tuple(
+        reason
+        for reason in grader.DISCLOSURE_UNAVAILABLE_REASONS
+        if reason != "issuer_not_in_calendar"
+    )
+    with monkeypatch.context() as patched:
+        patched.setattr(grader, "DISCLOSURE_UNAVAILABLE_REASONS", trimmed)
+        with pytest.raises(GraderError, match="unnamed disclosure-unavailable reason"):
+            _label(calendar, events=[], covered=("XYZ",))
+
+
+def test_a_calendar_cannot_carry_an_event_for_an_issuer_it_does_not_cover(calendar):
+    """Coverage and contents cannot disagree — that disagreement is the bug."""
+    with pytest.raises(GraderError, match="does not declare it covered"):
+        _disclosure([_event(calendar, _ENTRY_INDEX + 1)], covered=("XYZ",))
+
+
+def test_a_ticker_cannot_be_both_covered_and_in_outage(calendar):
+    with pytest.raises(GraderError, match="both covered and in outage"):
+        _disclosure([], covered=("PLTR",), outage=("PLTR",))
+
+
+def test_a_disclosure_event_refuses_a_datetime_and_an_unknown_kind(calendar):
+    with pytest.raises(GraderError, match="must be a date"):
+        grader.DisclosureEvent(
+            kind="earnings", ticker="PLTR",
+            event_date=datetime(2025, 6, 2, tzinfo=timezone.utc),
+            known_at="2025-06-01T00:00:00+00:00", reference="acc-1",
+        )
+    with pytest.raises(GraderError, match="disclosure kind"):
+        grader.DisclosureEvent(
+            kind="whisper", ticker="PLTR", event_date=date(2025, 6, 2),
+            known_at="2025-06-01T00:00:00+00:00", reference="acc-1",
+        )
+
+
+def test_the_label_block_counts_every_row_and_carries_outcome_coverage(calendar):
+    """Three states, and they sum to the cohort — no row is silently dropped."""
+    log, panel = _mixed_cohort(calendar)
+    report = _report(
+        calendar, log, panel,
+        disclosure=_disclosure(
+            [_event(calendar, _ENTRY_INDEX + 3)], covered=("PLTR",),
+        ),
+    )
+    block = report["outcome_by_horizon"]["h5"]["disclosure_labels"]
+    issued = report["admission"]["issued"]
+    assert sum(block["counts"].values()) == issued
+    assert set(block["counts"]) == set(grader.DISCLOSURE_LABEL_STATES)
+    # LOSR and NOPX are not covered; the unmatured PLTR row cannot be graded.
+    assert block["counts"]["observed"] == 1
+    assert block["unavailable_reasons"]["issuer_not_in_calendar"] == 1
+
+    coverage = block["earnings_window_rate"]["coverage"]
+    assert coverage["kind"] == "outcome", "a cohort statistic may not cite identity coverage"
+    assert coverage["universe"] == issued, "the universe is the FIXED issuance cohort"
+    assert coverage["observed"] == block["counts"]["observed"] + block["counts"]["none_in_window"]
+
+
+def test_disclosure_rates_are_conditioned_on_computable_rows_only(calendar):
+    log, panel = _mixed_cohort(calendar)
+    report = _report(
+        calendar, log, panel,
+        disclosure=_disclosure([_event(calendar, _ENTRY_INDEX + 3)], covered=("PLTR",)),
+    )
+    rate = report["outcome_by_horizon"]["h5"]["disclosure_labels"]["earnings_window_rate"]
+    assert rate["denominator"] == report["outcome_by_horizon"]["h5"]["disclosure_labels"]["counts"][
+        "observed"
+    ] + report["outcome_by_horizon"]["h5"]["disclosure_labels"]["counts"]["none_in_window"]
+    assert rate["numerator"] <= rate["denominator"]
+    # The walker still passes over the enlarged report.
+    grader.assert_rates_carry_coverage(report)
+
+
+def test_disclosure_labels_cannot_reach_the_verdict(calendar):
+    """The structural guarantee, pinned by comparison rather than by comment.
+
+    §7.2 derives N = 545 for the paired market-relative mean. If a label could
+    enter the decision rule, the registered N would describe a statistic the
+    instrument no longer computes. ``build_cohort_report`` therefore calls
+    ``evaluate_verdict`` BEFORE attaching the labels — so a disclosure calendar
+    that changes every label must leave the verdict byte-identical.
+    """
+    log, panel = _mixed_cohort(calendar)
+    without = _report(calendar, log, panel)
+    with_labels = _report(
+        calendar, log, panel,
+        disclosure=_disclosure(
+            [
+                _event(calendar, _ENTRY_INDEX + 1, kind="earnings", reference="acc-a"),
+                _event(calendar, _ENTRY_INDEX + 2, kind="filing", reference="acc-b"),
+            ],
+            covered=("PLTR",),
+        ),
+    )
+    # The labels genuinely differ...
+    assert (
+        without["outcome_by_horizon"]["h5"]["disclosure_labels"]["counts"]
+        != with_labels["outcome_by_horizon"]["h5"]["disclosure_labels"]["counts"]
+    )
+    # ...and the verdict does not move by one byte.
+    assert grader.canonical_bytes(with_labels["verdict"]) == grader.canonical_bytes(
+        without["verdict"]
+    )
+    assert with_labels["verdict_state"] == without["verdict_state"]
+
+
+def test_the_zero_candidate_state_labels_cleanly(calendar):
+    """Zero candidates plus a calendar is an empty label census, not a crash."""
+    report = _report(
+        calendar,
+        _log([]),
+        _panel(calendar, {"PLTR": _flat(calendar, 100.0)}),
+        disclosure=_disclosure([_event(calendar, _ENTRY_INDEX + 3)]),
+    )
+    block = report["outcome_by_horizon"]["h63"]["disclosure_labels"]
+    assert block["counts"] == {"observed": 0, "none_in_window": 0, "unavailable": 0}
+    assert block["labels"] == []
+    assert block["earnings_window_rate"]["value"] is None, "an empty census has no rate"
+    assert block["filing_window_rate"]["value"] is None
+    assert block["earnings_window_rate"]["coverage"]["fraction"] is None
+
+
+def test_the_registration_registers_the_disclosure_layer_before_observation():
+    """§11 exists, is versioned, and the code/document drift guard reads it."""
+    text = PREREG_PATH.read_text(encoding="utf-8")
+    assert "## 11. Disclosure labels" in text
+    for state in grader.DISCLOSURE_LABEL_STATES:
+        assert f"`{state}`" in text, f"{state} must be registered, not merely implemented"
+    for reason in grader.DISCLOSURE_UNAVAILABLE_REASONS:
+        assert f"`{reason}`" in text
+    family, _digest = grader.load_family_declaration(PREREG_PATH)
+    assert family.version == "3.0.0"
+    # Still pre-observation, which is what makes this amendment legal at all.
+    live = ROOT / "data" / "government_revenue" / grader.ISSUANCE_LOG_FILENAME
+    assert not live.exists() or live.stat().st_size == 0
