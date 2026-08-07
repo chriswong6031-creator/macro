@@ -1031,3 +1031,94 @@ def test_backfill_archetype_noop_without_the_column():
     out, n = _backfill_archetype(df)
     assert n == 0
     assert "archetype" not in out.columns
+
+
+# ── disclosed null eras: the hole that must NOT be repaired by backfilling ────
+#
+# data/us_board_ledger/snapshots.jsonl has no rows for 2026-08-03..08-06. That
+# looks exactly like an outage someone should fix, and the obvious fix — backfill
+# the dates — is the WRONG action, because the board published on those days but
+# ranked on factors frozen at 2026-07-31.
+#
+# scripts/build_stock_library.py:3850 ranks by alpha
+# (`rank_setups(cand, as_of=alpha_asof, rank_by="alpha", ...)`), and every
+# site/factordata/alpha.json revision from 2026-07-31T20:35Z to 2026-08-06T16:36Z
+# carries as_of=2026-07-31 — one distinct value across the whole window. So those
+# boards ordered names by six-day-stale factors while pricing entry zones off
+# current data. Grading them would teach Prophet from that hybrid.
+#
+# Operator adjudication 2026-08-07: disclosed null era, no graded entries. These
+# tests are what make the disclosure load-bearing rather than prose — filling the
+# window turns them red and forces a conscious decision.
+
+import json as _json  # noqa: E402
+
+_LEDGER_DIR = Path(__file__).resolve().parents[1] / "data" / "us_board_ledger"
+_DISCLOSED_GAPS = _LEDGER_DIR / "disclosed_gaps.json"
+_SNAPSHOTS = _LEDGER_DIR / "snapshots.jsonl"
+
+
+def _gaps() -> list[dict]:
+    doc = _json.loads(_DISCLOSED_GAPS.read_text())
+    assert doc.get("schema_version"), "disclosed_gaps.json must carry a schema_version"
+    return doc.get("gaps") or []
+
+
+def _snapshot_dates() -> set[str]:
+    out = set()
+    for line in _SNAPSHOTS.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            out.add(str(_json.loads(line).get("as_of"))[:10])
+        except Exception:  # noqa: BLE001 — a malformed line is not this test's subject
+            continue
+    return out
+
+
+def test_the_disclosed_null_era_is_declared_with_its_reason():
+    """A gap with no stated reason is indistinguishable from an unnoticed outage."""
+    gaps = _gaps()
+    assert gaps, "disclosed_gaps.json lists no gaps — did the file get truncated?"
+    frozen = [g for g in gaps if g.get("id") == "us-board-frozen-alpha-2026-08"]
+    assert frozen, "the 2026-08 frozen-alpha era must stay declared"
+    g = frozen[0]
+    assert g["gradeable"] is False
+    assert g["backfillable"] is False
+    assert g["missing_trading_days"] == [
+        "2026-08-03", "2026-08-04", "2026-08-05", "2026-08-06"
+    ]
+    # the reason must name the MECHANISM, not just assert badness
+    assert "rank_by" in g["why_not_gradeable"] or "alpha" in g["why_not_gradeable"]
+    assert g["adjudication"]["by"] == "operator"
+
+
+def test_no_graded_rows_were_backfilled_into_a_disclosed_null_era():
+    """THE load-bearing assertion: the hole must stay a hole.
+
+    If a future session 'repairs' the gap by backfilling snapshots for those dates,
+    this goes red. That is the point — the window is not missing data, it is data
+    that must not be graded, and reopening it needs a NEW board_definition era (a
+    re-ranked board is a different admission rule from the one that published).
+    """
+    dates = _snapshot_dates()
+    for g in _gaps():
+        if g.get("gradeable") is not False:
+            continue
+        intruders = sorted(set(g["missing_trading_days"]) & dates)
+        assert not intruders, (
+            f"snapshots.jsonl now carries rows for {intruders}, which sit inside the "
+            f"disclosed null era {g['id']!r} ({g['headline']}). Those days are not "
+            f"gradeable: {g['why_not_gradeable'][:160]}... If this backfill is "
+            f"deliberate, it needs a NEW board_definition era stamp and this gap "
+            f"record must be amended in the same change — do not just delete the test."
+        )
+
+
+def test_the_disclosed_window_is_still_absent_from_the_ledger():
+    """Guards the guard: if snapshots.jsonl ever loses its 07-31 anchor the test above
+    could pass vacuously against an empty file."""
+    dates = _snapshot_dates()
+    assert len(dates) >= 17, f"snapshots.jsonl shrank to {len(dates)} dates — read it before trusting the gap assertions"
+    assert "2026-07-31" in dates, "the pre-gap anchor date is missing; the ledger changed shape"
