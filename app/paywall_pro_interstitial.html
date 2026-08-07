@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,noarchive">
+  <title>Mastermind Bot · Pro</title>
+  <!-- Served by FastAPI on bot.mastermind-x.com, a DIFFERENT host from the site's
+       assets, so this file is fully self-contained: inline CSS, no fonts, no
+       scripts, no images. Every link is absolute for the same reason — a relative
+       /plans.html would 404 into the bot app.
+
+       Visual language is deliberately identical to app/paywall_interstitial.html
+       (its Insider sibling): one visitor can meet both, and two different-looking
+       403s would read as two different products. The one thing added here is the
+       PRO pill, which repeats the mark from the Research menu card that sent them
+       — the badge you clicked is the badge you land on. -->
+  <style>
+    :root{color-scheme:light;--ink:#111827;--muted:#667085;--line:#dfe4ea;--blue:#2463eb}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;
+    font:15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;color:var(--ink);
+    background:radial-gradient(circle at 25% 10%,#eaf1ff 0,transparent 34%),#f7f8fa}
+    main{width:min(92vw,620px);padding:42px;border:1px solid var(--line);border-radius:22px;
+    background:rgba(255,255,255,.92);box-shadow:0 22px 70px rgba(16,24,40,.12)}
+    .eyebrow{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:800;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--blue)}
+    .tier{padding:1px 6px;border:1px solid rgba(36,99,235,.3);border-radius:4px;
+    background:rgba(36,99,235,.1);font-size:10px;letter-spacing:.09em}
+    h1{margin:.6rem 0 .7rem;font-size:clamp(30px,6vw,48px);line-height:1.04;letter-spacing:-.04em}
+    p{margin:.55rem 0;color:var(--muted)}.zh{padding-top:.65rem;border-top:1px solid var(--line)}
+    nav{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}a{padding:11px 16px;border-radius:10px;
+    text-decoration:none;font-weight:750;border:1px solid var(--line);color:var(--ink);background:white}
+    a.primary{color:white;background:var(--blue);border-color:var(--blue)}
+    a:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  </style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Mastermind Bot <span class="tier">Pro</span></div>
+  <h1>Mastermind Bot comes with Pro.</h1>
+  <p>An autonomous AI desk running a $1M paper account in the open — every position it takes, every exit, and the reason it gave at the time.</p>
+  <p><strong>Paper only.</strong> The desk never places a real order.</p>
+  <p class="zh" lang="zh">Mastermind Bot 包含在 Pro 方案中。自主 AI 交易台用 100 万美元模拟账户公开运作：每一次建仓、平仓，以及当时给出的理由。<strong>纯模拟</strong>——该交易台不会发出任何真实委托。</p>
+  <nav>
+    <a class="primary" href="https://www.mastermind-x.com/plans.html?upgrade=1&amp;plan=pro">See Pro plans · 查看 Pro 方案</a>
+    <a href="https://www.mastermind-x.com/?signin=1">Use another account · 切换账户</a>
+  </nav>
+</main>
+</body>
+</html>

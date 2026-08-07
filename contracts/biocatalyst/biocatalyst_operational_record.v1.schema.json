@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_operational_record.v1.schema.json",
+  "title": "BioCatalyst Operational Record v1",
+  "description": "One durable record in the private BC-O1a operational store. Operational records carry receipts, review queue items, review decisions, correction lineage, and replay metadata only. They never carry a forecast, an outcome, a model registration, an evaluation, a score, a ranking, or a security identity join.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "record_schema_version", "record_kind", "idempotency_key", "recorded_at", "corrects_record_id", "authority", "payload", "hash_scope", "record_id"],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_operational_record.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "record_schema_version": {"type": "string", "pattern": "^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$"},
+    "record_kind": {
+      "enum": [
+        "source_run_receipt",
+        "soak_receipt",
+        "identity_review_queue_item",
+        "endpoint_alignment_review_queue_item",
+        "correction_lineage",
+        "review_decision",
+        "replay_metadata"
+      ]
+    },
+    "idempotency_key": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,127}$"},
+    "recorded_at": {"type": "string", "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"},
+    "corrects_record_id": {"oneOf": [{"$ref": "#/$defs/record_id"}, {"type": "null"}]},
+    "authority": {"const": "facts_and_context_only"},
+    "hash_scope": {"const": "canonical_payload_excluding_record_id"},
+    "record_id": {"$ref": "#/$defs/record_id"},
+    "payload": {"type": "object"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"record_kind": {"const": "source_run_receipt"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "corrects_record_id": {"type": "null"},
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source_id", "run_id", "started_at", "finished_at", "run_state", "evidence_sha256"],
+            "properties": {
+              "source_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"},
+              "run_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,95}$"},
+              "started_at": {"$ref": "#/$defs/utc_timestamp"},
+              "finished_at": {"$ref": "#/$defs/utc_timestamp"},
+              "run_state": {"enum": ["complete", "incomplete", "failed", "skipped"]},
+              "evidence_sha256": {"$ref": "#/$defs/sha256"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_kind": {"const": "soak_receipt"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "corrects_record_id": {"type": "null"},
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["soak_id", "window_start", "window_end", "observed_state", "evidence_sha256"],
+            "properties": {
+              "soak_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,95}$"},
+              "window_start": {"$ref": "#/$defs/utc_timestamp"},
+              "window_end": {"$ref": "#/$defs/utc_timestamp"},
+              "observed_state": {"enum": ["within_slo", "outside_slo", "insufficient_observation"]},
+              "evidence_sha256": {"$ref": "#/$defs/sha256"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_kind": {"const": "identity_review_queue_item"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["queue_item_id", "subject_ref", "review_state", "blocker"],
+            "properties": {
+              "queue_item_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,95}$"},
+              "subject_ref": {"$ref": "#/$defs/internal_subject_ref"},
+              "review_state": {"enum": ["open", "in_review", "deferred", "closed"]},
+              "blocker": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-z][a-z0-9_]*$"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_kind": {"const": "endpoint_alignment_review_queue_item"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["queue_item_id", "nct_id", "candidate_ref", "review_state", "blocker"],
+            "properties": {
+              "queue_item_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,95}$"},
+              "nct_id": {"type": "string", "pattern": "^NCT[0-9]{8}$"},
+              "candidate_ref": {"$ref": "#/$defs/internal_subject_ref"},
+              "review_state": {"enum": ["open", "in_review", "deferred", "closed"]},
+              "blocker": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-z][a-z0-9_]*$"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_kind": {"const": "correction_lineage"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "corrects_record_id": {"type": "null"},
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["superseded_record_id", "superseding_record_id", "correction_reason"],
+            "properties": {
+              "superseded_record_id": {"$ref": "#/$defs/record_id"},
+              "superseding_record_id": {"$ref": "#/$defs/record_id"},
+              "correction_reason": {"enum": ["operator_correction", "source_correction", "policy_correction", "duplicate_merge"]}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_kind": {"const": "review_decision"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["decision_id", "queue_item_id", "decision_state", "decided_by_kind", "rationale_ref"],
+            "properties": {
+              "decision_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,95}$"},
+              "queue_item_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,95}$"},
+              "decision_state": {"enum": ["accepted", "rejected", "deferred", "needs_more_evidence"]},
+              "decided_by_kind": {"enum": ["deterministic_policy", "analyst", "adjudication_panel"]},
+              "rationale_ref": {"$ref": "#/$defs/internal_subject_ref"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_kind": {"const": "replay_metadata"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "corrects_record_id": {"type": "null"},
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["replay_id", "replayed_kind", "from_cursor", "to_cursor", "entry_count", "replay_sha256"],
+            "properties": {
+              "replay_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,95}$"},
+              "replayed_kind": {
+                "enum": [
+                  "source_run_receipt",
+                  "soak_receipt",
+                  "identity_review_queue_item",
+                  "endpoint_alignment_review_queue_item",
+                  "correction_lineage",
+                  "review_decision",
+                  "replay_metadata"
+                ]
+              },
+              "from_cursor": {"oneOf": [{"$ref": "#/$defs/cursor"}, {"type": "null"}]},
+              "to_cursor": {"oneOf": [{"$ref": "#/$defs/cursor"}, {"type": "null"}]},
+              "entry_count": {"type": "integer", "minimum": 0, "maximum": 1000000},
+              "replay_sha256": {"$ref": "#/$defs/sha256"}
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "record_id": {"type": "string", "pattern": "^bcop_[a-f0-9]{32}$"},
+    "cursor": {"type": "string", "pattern": "^[0-9]{8}T[0-9]{12}Z__bcop_[a-f0-9]{32}$"},
+    "utc_timestamp": {"type": "string", "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$"},
+    "internal_subject_ref": {"type": "string", "pattern": "^(?:nct:NCT[0-9]{8}|internal:[a-z0-9_.-]{1,64})$"}
+  }
+}

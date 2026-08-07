@@ -423,7 +423,7 @@ def run_quality_audits(cfg: dict | None = None, audit_fns: list | None = None) -
     if audit_fns is None:
         from scripts import (audit_prices, audit_macro, audit_universe,
                              audit_fred_groups, audit_massive_store, audit_price_basis,
-                             audit_stocks_freshness)
+                             audit_reused_tickers, audit_stocks_freshness)
         audit_fns = [
             ("prices", lambda: audit_prices.run(cfg=cfg)),
             ("macro", lambda: audit_macro.run(cfg=cfg)),
@@ -442,6 +442,12 @@ def run_quality_audits(cfg: dict | None = None, audit_fns: list | None = None) -
             # gaps only) and check_price_store_freshness (SPY/yahoo only). Per-name
             # stale-tip tripwire; flags-only, never gates this run.
             ("stocks_freshness", lambda: audit_stocks_freshness.run(cfg=cfg)),
+            # 2026-08-06 ECHO identity swap: a dead name's key (Echo Global Logistics,
+            # taken private 2021) silently filled with EchoStar's full history after
+            # its SATS->ECHO rename — invisible to every gap/freshness check because
+            # the file is fresh, continuous, and internally consistent. Dead-registry
+            # cross-reference + NASDAQ-directory presence tripwire; flags-only.
+            ("reused_tickers", lambda: audit_reused_tickers.run(cfg=cfg)),
         ]
 
     docs: list[tuple[str, dict]] = []
@@ -832,6 +838,11 @@ def main() -> int:
         try:
             from scripts.build_polygon_gex import accrue as accrue_polygon_gex
             log.info("=== accruing Polygon options OI (GEX foundation) ===")
+            # Passing an INSTANT (not a date) is load-bearing: accrue() reads a datetime
+            # as "snapshot now" and files the result under the SESSION that snapshot
+            # describes (nyse_calendar.expected_last_session), never under the UTC run
+            # date. A 01:24 UTC run therefore stores the prior ET session it actually
+            # holds, and a Friday-evening ET run is no longer refused as "Saturday".
             _polygon_gex_status = accrue_polygon_gex(datetime.now(timezone.utc))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             _polygon_gex_status = {"status": "failed", "error": str(e)}
@@ -942,7 +953,11 @@ def main() -> int:
     if "yahoo" in registry:
         try:
             from collectors.yahoo import YahooAdapter, audit_store_freshness
-            audit_store_freshness(YahooAdapter().all_tickers(), group="yahoo")
+            # maintained_tickers(), NOT all_tickers(): a delisted name is dropped from
+            # the FETCH list but its store still exists and still has to be audited —
+            # that is the only check that would catch a wrong exit row or a reused
+            # ticker refilling under a dead name.
+            audit_store_freshness(YahooAdapter().maintained_tickers(), group="yahoo")
         except Exception as e:  # noqa: BLE001 — a tripwire's crash must not abort the run
             print(f"::warning title=yahoo store audit crashed::{e}", flush=True)
 

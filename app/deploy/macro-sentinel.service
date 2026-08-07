@@ -1,0 +1,49 @@
+# External freshness sentinel — the dead-man switch that lives OUTSIDE GitHub
+# (masterplan W1, research/NIGHTLY_RESILIENCE_AND_LIVE_TRANSITION_MASTERPLAN_2026-08-06.md
+# §0.1). The 2026-08-06 outage froze the boards for six days because every alarm
+# lived inside GitHub Actions — the thing that was failing. This pass fetches the
+# LIVE pages' bake stamps (us_stocks / china / intelligence_hub), parses their
+# newest in-body "as of" data dates, HEADs the R2 massive_stock_day manifest,
+# compares each against its freshness budget (26h bakes), alerts the operator
+# (Telegram / Discord / email via app.mailer) on breach, and publishes the
+# machine-readable staleness state to /var/lib/macro-live/public/live/
+# staleness.json by atomic rename — the input a later wave's on-site banner reads.
+#
+# Stdlib-only script on purpose: the observer of last resort must not depend on
+# the venv contents or the engine tree being healthy. The interpreter is still
+# the box venv for parity with the sibling lanes; a bare python3 works too.
+#
+# Env files: macro-api.env carries the MAIL_SMTP_*/MAIL_SUPPORT_TO mail creds and
+# Supabase key the mailer path uses; macro-sentinel.env is the operator's slot
+# for TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID or DISCORD_WEBHOOK_URL (read last, so
+# it can override). All are optional — with no transport configured the sentinel
+# still publishes staleness.json and fails the unit visibly on breach.
+#
+# Resource caps: the pass is 4 HTTPS fetches (~2 MB total) + two small JSON
+# writes; 128M/256M and 30% CPU bound a runaway, not the work. TimeoutStartSec
+# 300 covers four 20s fetch timeouts plus alert transports with slack, well
+# inside the 30-minute timer period, so passes can never overlap.
+[Unit]
+Description=Mastermind external freshness sentinel (dead-man switch, masterplan W1)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/macro
+EnvironmentFile=-/etc/macro-api.env
+EnvironmentFile=-/etc/macro-live.env
+EnvironmentFile=-/etc/macro-sentinel.env
+ExecStart=/opt/macro/.venv/bin/python -m scripts.freshness_sentinel
+TimeoutStartSec=300
+Nice=10
+CPUWeight=20
+CPUQuota=30%
+MemoryHigh=128M
+MemoryMax=256M
+IOWeight=20
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

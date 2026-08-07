@@ -1840,7 +1840,8 @@ class TestLedgerIsTheGradedBoardOnly:
     def _lanes(self):
         return [{"ticker": "9988.HK", "group": "leaders", "close_asof": 1.0},
                 {"ticker": "0700.HK", "group": "ran", "close_asof": 1.0},
-                {"ticker": "1810.HK", "group": "vetoed", "close_asof": 1.0}]
+                {"ticker": "1810.HK", "group": "vetoed", "close_asof": 1.0},
+                {"ticker": "0027.HK", "group": "ripening", "close_asof": 1.0}]
 
     def _calls(self):
         from scripts.build_hk_library import _board_ledger_calls
@@ -2133,3 +2134,206 @@ class TestG1FixtureIsNotStale:
             frozen = board["verdicts"][ticker]
             for key in ("eligible", "ticks", "fresh_bars", "above200", "weekly_bull"):
                 assert live.get(key) == frozen[key], f"{ticker}.{key} drifted"
+
+
+# --------------------------------------------------------------------------- #
+# Ripening shelf (CN W8-R1 port, 2026-08-07) — the bench between fresh crosses
+# --------------------------------------------------------------------------- #
+class TestRipeningAdmits:
+    """The admission predicate, leg by leg — every unknown reads OUT, never IN."""
+
+    def test_a_cascade_eligible_name_never_ripens(self):
+        assert hbr.ripening_admits({"eligible": True}) is False
+
+    def test_a_recent_buy_marker_is_ran_lane_territory(self):
+        v = {"eligible": False, "last": {"type": "buy"}, "fresh_bars": 3}
+        assert hbr.ripening_admits(v) is False
+
+    def test_the_recent_cross_boundary_is_inclusive(self):
+        at = {"eligible": False, "last": {"type": "buy"},
+              "fresh_bars": hbr.RIPENING_RECENT_CROSS_SESSIONS}
+        past = {"eligible": False, "last": {"type": "buy"},
+                "fresh_bars": hbr.RIPENING_RECENT_CROSS_SESSIONS + 1}
+        assert hbr.ripening_admits(at) is False
+        assert hbr.ripening_admits(past) is True
+
+    def test_an_unknown_age_buy_marker_is_out_fail_closed(self):
+        """"Possibly just crossed" must not ripen — same law as the unknown
+        turnover never passing the featured floor."""
+        v = {"eligible": False, "last": {"type": "buy"}, "fresh_bars": None}
+        assert hbr.ripening_admits(v) is False
+
+    def test_a_sell_marker_and_a_missing_verdict_may_ripen(self):
+        assert hbr.ripening_admits({"eligible": False, "last": {"type": "sell"}}) is True
+        assert hbr.ripening_admits(None) is True
+
+    def test_zone_vocabulary_matches_the_classifier(self):
+        """The module-level zone words exist for templates/tests; they must be the
+        classifier's own — a drifted copy would silently empty a zone split."""
+        from engine import setup_tier
+        assert hbr.ZONE_READY == setup_tier.ZONE_READY
+        assert hbr.ZONE_BASING == setup_tier.ZONE_BASING
+        assert hbr.ZONE_FALLING == setup_tier.ZONE_FALLING
+
+    def test_the_lane_is_declared_display_tier(self):
+        assert "ripening" in hbr.DISPLAY_TIER_LANES
+
+    def test_lane_counts_carries_the_shelf(self):
+        counts = hbr.lane_counts(buy=[], ripening=[{"ticker": "0027.HK"}])
+        assert counts["ripening"] == 1
+
+
+class TestBuildRipeningRows:
+    """Lane mechanics — admission, exclusion, zoning, caps, ordering, carriage.
+
+    The zone CLASSIFIER is engine/setup_tier's and is pinned there; these tests
+    monkeypatch it (and w_setup) at the module the lane lazily imports, so what is
+    under test is exactly the lane's own behaviour.  One unpatched integration
+    test at the end runs the real engines end to end.
+    """
+
+    @staticmethod
+    def _series(n: int = 600, seed: int = 5):
+        """A seeded noisy grind-down into a sideways base — enough history for
+        w_setup's 2W floor (40 bins ≈ 400 daily bars) and enough texture for the
+        StochRSI legs (a noiseless ramp degenerates them to None).  Seed 5 is
+        pinned because it produces a LIVE washout setup zoned READY through the
+        real engines; the mechanics tests below never depend on the seed."""
+        import numpy as np
+        import pandas as pd
+        rng = np.random.default_rng(seed)
+        idx = pd.bdate_range("2024-01-02", periods=n)
+        steps = np.concatenate([rng.normal(-0.0012, 0.012, n - 130),
+                                rng.normal(0.0, 0.010, 130)])
+        vals = 100 * np.exp(np.cumsum(steps))
+        return [str(d.date()) for d in idx], list(vals)
+
+    def _close_of(self, tickers):
+        table = {t: self._series() for t in tickers}
+        return lambda t: table.get(t)
+
+    def _patch(self, monkeypatch, zones):
+        """w_setup always live; zone assignment read from the `zones` map."""
+        from engine import setup_tier
+
+        def fake_wsetup(daily):
+            return {"setup_live": True, "setup_reasons": ["2W stoch washout (stoch=20.0)"],
+                    "w2": {"stoch": 20.0, "macd_bars_to_cross": 2.0,
+                           "stoch_cross_up": False},
+                    "w1_cross": {"cross_date": "2026-07-24", "bars_since": 2,
+                                 "d_at_cross": 18.0, "from_washout": True},
+                    "base": {"spot_pct_in_range": 12.5}}
+
+        calls = {"n": 0}
+
+        def fake_zone(**kwargs):
+            ticker_zone = zones[calls["n"] % len(zones)]
+            calls["n"] += 1
+            return {"zone": ticker_zone, "evidence": ["e"],
+                    "evidence_display": [{"en": "e", "zh": "e", "receipt": "e"}]}
+
+        monkeypatch.setattr(setup_tier, "w_setup", fake_wsetup)
+        monkeypatch.setattr(setup_tier, "assign_ripening_zone", fake_zone)
+
+    def test_eligible_excluded_and_claimed_names_never_land(self, monkeypatch):
+        self._patch(monkeypatch, ["BASING"])
+        verdicts = {
+            "0001.HK": {"eligible": True},                       # buy board's story
+            "0002.HK": {"eligible": False, "last": {"type": "buy"}, "fresh_bars": 4},
+            "0003.HK": {"eligible": False},                      # claimed by leaders
+            "0004.HK": {"eligible": False},                      # should land
+        }
+        rows = hbr.build_ripening_rows(
+            verdicts, close_of=self._close_of(verdicts), exclude={"0003.HK"})
+        assert [r["ticker"] for r in rows] == ["0004.HK"]
+
+    def test_no_close_series_drops_the_candidate(self, monkeypatch):
+        self._patch(monkeypatch, ["BASING"])
+        rows = hbr.build_ripening_rows({"0004.HK": {"eligible": False}},
+                                       close_of=lambda t: None)
+        assert rows == []
+
+    def test_falling_zone_rows_are_dropped(self, monkeypatch):
+        self._patch(monkeypatch, ["FALLING"])
+        rows = hbr.build_ripening_rows({"0004.HK": {"eligible": False}},
+                                       close_of=self._close_of(["0004.HK"]))
+        assert rows == []
+
+    def test_ready_groups_before_basing_and_caps_hold(self, monkeypatch):
+        self._patch(monkeypatch, ["READY", "BASING"])   # alternating by call order
+        verdicts = {f"{i:04d}.HK": {"eligible": False} for i in range(1, 9)}
+        rows = hbr.build_ripening_rows(
+            verdicts, close_of=self._close_of(verdicts), cap=4, ready_cap=2)
+        assert len(rows) == 4
+        zones = [r["zone"] for r in rows]
+        assert zones == ["READY", "READY", "BASING", "BASING"]
+
+    def test_rows_carry_the_watch_stance_and_no_sort_keys(self, monkeypatch):
+        self._patch(monkeypatch, ["BASING"])
+        meta = {"0004.HK": {"name": "Sample Holdings", "name_zh": "样本控股",
+                            "sector": "Industrials", "sector_zh": "工业"}}
+        rows = hbr.build_ripening_rows({"0004.HK": {"eligible": False}},
+                                       meta_by=meta,
+                                       close_of=self._close_of(["0004.HK"]))
+        (row,) = rows
+        assert row["display_only"] is True
+        assert row["stance"] == hbr.RIPENING_STANCE
+        assert row["stance_zh"] == hbr.RIPENING_STANCE_ZH
+        assert row["name"] == "Sample Holdings"
+        assert row["name_zh"] == "样本控股"
+        assert row["sector_zh"] == "工业"
+        assert not any(k.startswith("_sort") for k in row)
+        # the shelf never speaks the buy language
+        assert "entry_signal" not in row and "priority_score" not in row
+
+    def test_article2_ordering_within_a_zone(self, monkeypatch):
+        """Imminence first: 2W bars-to-cross asc, then 1W cross age, then stoch."""
+        from engine import setup_tier
+
+        specs = {
+            "0001.HK": {"btc": 5.0, "bars": 1, "stoch": 10.0},
+            "0002.HK": {"btc": 1.0, "bars": 9, "stoch": 90.0},
+            "0003.HK": {"btc": None, "bars": 0, "stoch": 5.0},
+        }
+
+        def fake_wsetup_for(t):
+            s = specs[t]
+            return {"setup_live": True, "setup_reasons": ["r"],
+                    "w2": {"stoch": s["stoch"], "macd_bars_to_cross": s["btc"],
+                           "stoch_cross_up": False},
+                    "w1_cross": {"cross_date": "2026-07-24", "bars_since": s["bars"],
+                                 "d_at_cross": 18.0, "from_washout": True},
+                    "base": {"spot_pct_in_range": 50.0}}
+
+        table = {t: self._series() for t in specs}
+        order_seen = []
+
+        def fake_wsetup(daily):
+            # close_of is called per ticker in dict order; recover the ticker by
+            # tracking the call sequence (dict order == iteration order).
+            t = order_seen.pop(0)
+            return fake_wsetup_for(t)
+
+        real_close_of = self._close_of(specs)
+
+        def tracking_close_of(t):
+            order_seen.append(t)
+            return real_close_of(t)
+
+        monkeypatch.setattr(setup_tier, "w_setup", fake_wsetup)
+        monkeypatch.setattr(
+            setup_tier, "assign_ripening_zone",
+            lambda **k: {"zone": "BASING", "evidence": [], "evidence_display": []})
+        rows = hbr.build_ripening_rows(
+            {t: {"eligible": False} for t in specs}, close_of=tracking_close_of)
+        assert [r["ticker"] for r in rows] == ["0002.HK", "0001.HK", "0003.HK"]
+
+    def test_real_engines_end_to_end_on_a_washout_series(self):
+        """No monkeypatch: a long decline into a washout must land on the shelf
+        through the real w_setup + zone classifier, zoned READY or BASING."""
+        rows = hbr.build_ripening_rows(
+            {"0004.HK": {"eligible": False, "last": {"type": "sell"}}},
+            close_of=self._close_of(["0004.HK"]))
+        assert len(rows) == 1
+        assert rows[0]["zone"] in (hbr.ZONE_READY, hbr.ZONE_BASING)
+        assert rows[0]["reasons"], "the shelf must say WHY the setup is live"

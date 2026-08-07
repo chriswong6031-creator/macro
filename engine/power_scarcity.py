@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import datetime, timezone
 
 from engine.bottleneck import _band, _series, _yoy, _z
 from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
@@ -61,6 +62,27 @@ def _queue_pull() -> float | None:
     if yoy is None:
         return None
     return round(min(2.0, max(-2.0, float(yoy) / 20.0)), 2)   # ~+20%/yr queue growth ≈ +1 z
+
+
+def _queue_vintage() -> int | None:
+    """The EDITION YEAR the queue leg is actually quoting, or None when absent.
+
+    Disclosure, not decoration (2026-08-06). `_queue_pull()` above returns a number
+    with no age attached, and the collector that refreshes it has failed every night
+    since it was written (dead URL pattern — collectors/lbnl_queue.py). So the leg has
+    been averaged into the live composite off a hand-seeded 2023 edition, three
+    editions old, with nothing on the surface saying so. The leg is NOT dropped here:
+    an annual buildout number does not become meaningless because it is a year old,
+    and silently changing the composite's leg count is a bigger lie than a stale leg.
+    It is labelled instead, and the label rides in the payload."""
+    p = config.data_dir() / "eia" / "interconnection_queue.json"
+    if not p.exists():
+        return None
+    try:
+        v = json.loads(p.read_text()).get("asof_year")
+        return int(v) if v is not None else None
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def compute_power_scarcity(write_ledger: bool = True) -> dict | None:
@@ -104,6 +126,16 @@ def compute_power_scarcity(write_ledger: bool = True) -> dict | None:
                  "momentum (+ LBNL interconnection-queue buildout when present). The physical "
                  "correlate the FRED semis/metals bottleneck cannot give power/grid/nuclear/solar."),
     }
+    if "queue_buildout" in present:
+        vintage = _queue_vintage()
+        payload["queue_buildout_asof_year"] = vintage
+        # UTC year, matching collectors/lbnl_queue.py's own as-of basis.
+        if vintage is not None and vintage < datetime.now(timezone.utc).year - 1:
+            payload["queue_buildout_stale"] = (
+                f"the interconnection-queue leg quotes the LBNL {vintage} edition; "
+                f"newer editions exist but the collector's download URL is dead "
+                f"(see collectors/lbnl_queue.py). Leg kept and labelled, not dropped.")
+            log.warning("power_scarcity: queue_buildout leg is the %s LBNL edition", vintage)
     if write_ledger:
         try:
             _append_ledger(payload)

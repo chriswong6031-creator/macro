@@ -26,8 +26,10 @@ pure-``pytest`` W1 job never reds on this file.
 """
 from __future__ import annotations
 
+import ast
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 
@@ -40,6 +42,9 @@ from engine.research_vault import catalog as catalog_mod  # noqa: E402
 from engine.research_vault import corpus as corpus_mod  # noqa: E402
 from engine.research_vault import download_quota, view_ratelimit  # noqa: E402
 from engine.research_vault.r2_store import LocalStore  # noqa: E402
+
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 # ===========================================================================
@@ -913,3 +918,94 @@ def test_corpus_conn_nonblocking_refresh(monkeypatch, tmp_path):
                 break
         _time.sleep(0.05)
     assert fetches["n"] == 2
+
+
+# ===========================================================================
+# PRODUCTION MOUNT — the router is wired into the assembled app, loudly
+# ===========================================================================
+
+# Every paid route this router owns, in the form a client actually requests.
+# The two PUBLIC read-throughs (catalog + search) are deliberately excluded:
+# they answer 200 for anyone, so they cannot distinguish "mounted" from
+# "reached some other handler". Only a route that must answer 401 does.
+_MOUNTED_PAID_ROUTES = (
+    ("GET", f"/api/research/view/{_DOC_ID}"),
+    ("POST", f"/api/research/download/{_DOC_ID}"),
+    ("GET", "/api/research/quota"),
+)
+
+
+def test_every_paid_route_is_mounted_on_the_assembled_production_app() -> None:
+    """A dropped router presents only as a 404 on a paid endpoint, never as an error.
+
+    Mounting used to be wrapped in ``except ImportError: pass``, so a renamed
+    dependency or a package missing on the VPS deleted all three entitled routes
+    with no startup failure and no log line.  Assert what production proves:
+    unauthenticated requests reach the entitlement boundary (401) instead of
+    falling through to the app's 404.
+
+    Deliberately does NOT use the ``client`` fixture — that fixture overrides the
+    auth dependency and monkeypatches the store, so it proves the router works,
+    not that app/main.py mounted it.  This drives the app exactly as assembled.
+    """
+    import app.main as main_mod
+
+    # No context manager on purpose: mounting is import-time state, and running
+    # the app's lifespan here would start its background warm threads.
+    client = TestClient(main_mod.app, raise_server_exceptions=False)
+    statuses = {
+        (method, path): client.request(method, path).status_code
+        for method, path in _MOUNTED_PAID_ROUTES
+    }
+    assert statuses == dict.fromkeys(_MOUNTED_PAID_ROUTES, 401)
+
+    # Control: 404 must still be reachable on this prefix, or the assertion
+    # above would pass for a reason that has nothing to do with mounting.
+    assert client.get("/api/research/not-a-route").status_code == 404
+
+
+def test_router_wiring_fails_startup_loudly_instead_of_swallowing_importerror() -> None:
+    """Pin the wiring shape, not just today's happy import.
+
+    The route test above only fails once the import is genuinely broken.  This
+    one fails the moment the mount is put back inside a ``try``: paid product
+    contracts fail startup loudly here, exactly as the BioCatalyst block does.
+
+    Both filters key off the ``research_router`` binding rather than the module
+    name alone.  app/main.py imports ``app.research`` TWICE — the router here,
+    and ``_build_store`` in the best-effort corpus-warm block further down, which
+    is legitimately inside a ``try`` because a cold cache is optional.  A check
+    that only matched ``node.module == "app.research"`` would be satisfied by the
+    warm block if it were ever hoisted, while the router mount stayed swallowed.
+    """
+    module = ast.parse((ROOT / "app" / "main.py").read_text(encoding="utf-8"))
+
+    top_level_import = [
+        node
+        for node in module.body
+        if isinstance(node, ast.ImportFrom)
+        and node.module == "app.research"
+        and any(alias.asname == "research_router" for alias in node.names)
+    ]
+    top_level_include = [
+        node
+        for node in module.body
+        if isinstance(node, ast.Expr)
+        and isinstance(node.value, ast.Call)
+        and isinstance(node.value.func, ast.Attribute)
+        and node.value.func.attr == "include_router"
+        and any(
+            isinstance(arg, ast.Name) and arg.id == "research_router"
+            for arg in node.value.args
+        )
+    ]
+    assert top_level_import, (
+        "app/main.py must import the app.research router at module level; an "
+        "import nested in a try/except can be swallowed into a silent 404 on a "
+        "paid route"
+    )
+    assert top_level_include, (
+        "app/main.py must call app.include_router(research_router) at module "
+        "level so a wiring error fails startup instead of dropping all three "
+        "paid routes"
+    )

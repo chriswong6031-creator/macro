@@ -19,8 +19,18 @@ Provider vocabulary (cost_basis meaning):
                       est_cost_usd is the API-EQUIVALENT value, not billed USD
     "claude_api"    — metered API key;          cost_basis = "metered"
     "deepseek"      — DeepSeek API (metered);   cost_basis = "metered"
+    "codex"         — Codex subscription lane;  cost_basis = "subscription"
+    "ollama"        — private local endpoint;   cost_basis = "local"
+                      est_cost_usd = 0.0 — hardware we already own, no plan
+                      consumed and no per-token price.  NOT "subscription":
+                      counting it there inflates the Claude lane it is there
+                      to relieve (2026-08-07 postmortem).
     "claude_cli"    — Claude Code CLI channel;  cost_basis = "subscription"
                       when tokens are parsed; "estimated" when guessed
+
+The name→(provider, cost_basis) table for waterfall calls lives in
+engine.llm_auth.LEDGER_PROVIDER; use engine.llm_auth.ledger_provider_for()
+rather than re-deriving it at a call site.
 
 Schema: ai_costs.usage.v1
 """
@@ -481,15 +491,28 @@ def _rank(mapping: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _cost_basis_bucketname(row: dict) -> str:
-    """Group a row into 'subscription' (OAuth/CLI flat-fee) or 'metered' (API/DeepSeek)."""
+    """Group a row into 'subscription' (OAuth/CLI flat-fee), 'metered'
+    (API/DeepSeek), or 'local' (private endpoint — no plan, no per-token price).
+
+    'local' is deliberately its OWN bucket rather than folded into either money
+    bucket: a free call is not subscription burn (the whole point of routing to
+    it) and not metered spend.  Its rows carry est_cost_usd 0.0, so the
+    subscription+metered USD cards still reconcile with the all-sources total.
+    """
     cb = str(row.get("cost_basis") or "").lower()
     if cb in ("subscription", "estimated"):
         return "subscription"
     if cb == "metered":
         return "metered"
+    if cb == "local":
+        return "local"
     # Fall back on provider when cost_basis is missing/unknown.
     prov = str(row.get("provider") or "").lower()
-    return "subscription" if prov in ("claude_oauth", "claude_cli") else "metered"
+    if prov in ("claude_oauth", "claude_cli"):
+        return "subscription"
+    if prov == "ollama":
+        return "local"
+    return "metered"
 
 
 def summarize(root: Path | None = None) -> dict[str, Any]:

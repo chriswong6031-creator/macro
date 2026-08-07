@@ -2373,13 +2373,11 @@ def _extract_citations(messages: list[dict]) -> list[str]:
 # here.  Without this, ask-brain Claude-OAuth spend never reaches the ledger.
 # ---------------------------------------------------------------------------
 
-# Provider-name → (ledger provider, cost_basis).  Mirrors llm_auth._capture_usage.
-_ASK_PROVIDER_MAP: dict[str, tuple[str, str]] = {
-    "oauth": ("claude_oauth", "subscription"),
-    "anthropic": ("claude_api", "metered"),
-    "deepseek": ("deepseek", "metered"),
-    "codex": ("codex", "subscription"),
-}
+# Provider-name → (ledger provider, cost_basis) comes from llm_auth's own table
+# (llm_auth.ledger_provider_for).  This was a hand-copied mirror that drifted:
+# it never learned the `ollama` rung, so a local call recorded here landed as
+# Claude-subscription spend — the same defect fixed in _capture_usage on
+# 2026-08-07.  Importing the table is what keeps it from drifting again.
 
 
 def _new_usage_tot() -> dict[str, int]:
@@ -2411,8 +2409,10 @@ def _record_ask_usage(
     try:
         if not usage_tot or usage_tot.get("calls", 0) <= 0:
             return
-        provider, cost_basis = _ASK_PROVIDER_MAP.get(
-            prov_name or "oauth", ("claude_oauth", "subscription"))
+        from engine.llm_auth import ledger_provider_for  # noqa: PLC0415
+        # ask_brain's own default rung is oauth, so a missing name resolves
+        # there; an UNKNOWN name records itself rather than the OAuth lane.
+        provider, cost_basis = ledger_provider_for(prov_name or "oauth")
         from lib import ai_costs as _ac  # noqa: PLC0415
         _ac.record_usage(
             lane="ask-brain",
@@ -2426,6 +2426,8 @@ def _record_ask_usage(
             cost_basis=cost_basis,
             stage="ask-brain",
             note=f"{usage_tot.get('calls', 0)} turns",
+            # Match _capture_usage: a free rung states $0.00, not null.
+            **({"est_cost_usd": 0.0} if cost_basis == "local" else {}),
         )
     except Exception as exc:  # noqa: BLE001
         log.debug("ask_brain: usage record failed (%s)", exc)
