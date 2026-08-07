@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-07T08:44:44Z",
+  "produced_at": "2026-08-07T17:52:56Z",
   "as_of": "2026-08-07",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 8,
-    "passed": 8,
+    "items": 5,
+    "passed": 5,
     "quarantined": 0,
     "quarantined_policy": 0,
     "quarantined_overflow": 0,
@@ -27,65 +27,41 @@
       "headline": ""
     },
     {
-      "id": "post-conf-flagship-009",
-      "account": "flagship",
-      "slot": "CONF-09",
-      "type": "signal",
-      "cashtag": "$PLTR",
-      "headline": "$PLTR just lined up a pattern we track."
-    },
-    {
-      "id": "post-theme-003",
-      "account": "flagship",
-      "slot": "D1-S3",
-      "type": "theme_list",
-      "cashtag": "$TDUP",
-      "headline": "Consumer Goods selling off, -2.4% avg on Thursday"
-    },
-    {
-      "id": "post-founder-027",
+      "id": "post-founder-001",
       "account": "founder",
-      "slot": "D1-S27",
-      "type": "watchlist",
-      "cashtag": "$NSSC",
-      "headline": ""
-    },
-    {
-      "id": "post-kelly-009",
-      "account": "kelly",
-      "slot": "D1-S9",
-      "type": "macro",
+      "slot": "D1-S1",
+      "type": "event",
       "cashtag": "",
       "headline": ""
     },
     {
-      "id": "post-theme-005",
-      "account": "kelly",
-      "slot": "D1-S5",
-      "type": "theme_list",
-      "cashtag": "$FOUR",
-      "headline": "FinTech selling off, -2.0% avg on Thursday"
-    },
-    {
-      "id": "post-housepick-003",
-      "account": "kelly",
-      "slot": "D1-S16",
-      "type": "watchlist",
-      "cashtag": "$HII",
+      "id": "post-founder-013",
+      "account": "founder",
+      "slot": "D1-S13",
+      "type": "chart",
+      "cashtag": "$PI",
       "headline": ""
     },
     {
-      "id": "post-theme-006",
-      "account": "cici",
-      "slot": "D1-S5",
-      "type": "theme_list",
+      "id": "post-founder-024",
+      "account": "founder",
+      "slot": "D1-S24",
+      "type": "chart",
+      "cashtag": "$APH",
+      "headline": ""
+    },
+    {
+      "id": "post-mover-002",
+      "account": "sophia",
+      "slot": "D1-S6",
+      "type": "mover",
       "cashtag": "$UTI",
-      "headline": "Education Technology selling off, -4.0% avg on Thursday"
+      "headline": "$UTI -34.2% on Thursday"
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 22,
+      "pairs_checked": 7,
       "hits": 0,
       "shared_media_hits": 0
     },
