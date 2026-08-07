@@ -2308,6 +2308,14 @@ on:
       # unrun-data-plane — R2 transport, accrual audits and the ledger-advance guards
       - "tests/test_audit_options_accrual.py"
       - "tests/test_audit_r2.py"
+      # The 2026-08-03 store-freshness program's four suites (added 2026-08-06).
+      # Their SUBJECTS were already triggerable — collectors/** and scripts/*.py
+      # below both match — so only the test-file half of the census was missing:
+      # editing a suite to weaken it started no run that could see it do so.
+      - "tests/test_audit_stocks_freshness.py"
+      - "tests/test_collector_freshness_disclosure.py"
+      - "tests/test_stock_library_freshness.py"
+      - "tests/test_stock_price_retention.py"
       - "tests/test_audit_thetadata_accrual.py"
       - "tests/test_build_polygon_universe.py"
       - "tests/test_builder_failstreaks.py"

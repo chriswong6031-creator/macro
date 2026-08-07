@@ -4671,6 +4671,25 @@ jobs:
       # failure. Lives here because the collector's own suite already does.
       - name: subsector rotation track record + significance guard + session-stamp heal
         run: python -m pytest tests/test_subsector_track_record.py tests/test_subsector_significance_guard.py tests/test_heal_subsector_rotation_ledgers.py -q
+      # Enumerated in NO workflow before this (2026-08-06). The whole 2026-08-03
+      # store-freshness program — #4632's data/stocks retention fetch and per-name
+      # tip audit, #4643's yahoo/breadth never-silent disclosure and the scan-side
+      # demotion — shipped its guards DARK: 4 suites, 77 tests, named by no `run:`
+      # step in any of the 51 workflows nor in this file. The triggerable-but-unrun
+      # half is the worse one: `collectors/**` and `scripts/*.py` DO start ci.yml, so
+      # a PR refactoring _fetch_universe or _report_missing_symbols went green while
+      # executing none of the tests written to stop exactly that. Three land here
+      # because the dead-name registry they read through _dead_tickers() is already
+      # this job's subject (test_fetch_dead_name_prices_polygon.py, one step up) and
+      # they pass on the shared install BYTE-FOR-BYTE — verified, not assumed. The
+      # fourth (test_collector_freshness_disclosure) imports collectors/breadth.py,
+      # whose yfinance import is module-scope, so it would ERROR at collection here;
+      # it lives in unrun-russell-breadth, which already declares that wheel and owns
+      # the breadth collector as its subject.
+      - name: data/stocks retention fetch + per-name freshness audit
+        run: python -m pytest tests/test_stock_price_retention.py tests/test_audit_stocks_freshness.py -q
+      - name: stock-library freshness demotion (frozen-feed scan admission)
+        run: python -m pytest tests/test_stock_library_freshness.py -q
 
   unrun-government-revenue:
     # Government Revenue Foresight — builder envelope, publication fence,
@@ -5275,8 +5294,20 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn yfinance
-      - name: the Russell-2000 breadth collector — the one P1 suite needing a wheel the shared set lacks
+      - name: the Russell-2000 breadth collector — a P1 suite needing a wheel the shared set lacks
         run: python -m pytest tests/test_russell_breadth.py -q
+      # Enumerated in NO workflow before 2026-08-06 (the 2026-08-03 store-freshness
+      # program shipped all four of its suites dark — see the sibling note in
+      # unrun-data-plane). This one belongs HERE rather than there for two reasons
+      # that agree: collectors/breadth.py imports yfinance at module scope, so it
+      # ERRORS at collection under the shared unrun-* install; and this lane already
+      # owns the breadth collector as its subject, which is half of what the suite
+      # covers (collectors/breadth.py's current-constituent stale-column disclosure,
+      # plus collectors/yahoo.py's requested-vs-returned reconciliation). Adding the
+      # wheel to unrun-data-plane instead would have split that job off the shared
+      # venv for all twenty-one unrun-* jobs.
+      - name: collector never-silent disclosure — yahoo reconciliation + breadth stale columns
+        run: python -m pytest tests/test_collector_freshness_disclosure.py -q
 
   unrun-brain-gateway:
     # the Mastermind brain gateway — routing, quota ledger, tool allowlist, SSE order.
