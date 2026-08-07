@@ -3183,6 +3183,15 @@ on:
       # must re-run the guard that binds it.
       - "tests/test_government_revenue_candidate_grader.py"
       - "research/GOVERNMENT_REVENUE_CANDIDATE_GRADER_PREREG.md"
+      # ── Price-basis census (2026-08-07) ─────────────────────────────────────
+      # Job: price-basis-census (.github/ci/legacy-jobs.yml). Same two-halves law
+      # as the blocks above: every module the census SCANS rides a catch-all
+      # already (engine/** and scripts/*.py are exactly the two trees it walks),
+      # so this entry is the OTHER half — the suite carries a frozen registry as
+      # its own source, and editing that registry is the single most likely way
+      # to make it wrong. A registry edit that cannot START ci.yml is the darkness
+      # this whole job exists to end.
+      - "tests/test_price_basis_graders.py"
   workflow_dispatch:
 
 permissions:

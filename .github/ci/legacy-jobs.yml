@@ -5363,6 +5363,36 @@ jobs:
       - name: import-time logging.disable + warnings-filter ratchet over engine, lib, scripts, research
         run: python -m pytest tests/test_no_module_level_logging_disable.py -q
 
+  price-basis-census:
+    # PRICE-BASIS guard: no production grader may difference an UNADJUSTED name leg against
+    # an ADJUSTED benchmark leg (a name's own dividend books as a loss).  An AST walk over
+    # engine and scripts holding a FROZEN registry of every module that pairs the two
+    # families, fail-closed in BOTH directions — a new pairing fails, and so does a
+    # registry line that no longer describes anything.
+    #
+    # STANDS ALONE ON PURPOSE.  #4715 shipped this suite wired into no workflow, and one
+    # day later pristine main already carried three drifts: two unregistered pairings and
+    # one registered module the detector had gone blind to when the tier-merging cache
+    # accessor moved into lib/closes_panel.py (#4711) — read as "this module was fixed"
+    # when nothing had been fixed.  Giving it its own job is the fix for the ROT, not just
+    # for the drift: run_ci_pack returns on a job's first failing step, so a step appended
+    # to a shared job stops running the moment any earlier suite in that job goes red — a
+    # second, quieter way to be dark, and both jobs this could have ridden are red on main
+    # today.  A pack continues past a failing JOB, so a job boundary is what actually keeps
+    # this eye open.  Same install line as its neighbours, so it shares their venv.
+    if: ${{ false }}
+    timeout-minutes: 6
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: "price-basis census: raw name leg vs adjusted bench (frozen registry, both directions)"
+        run: python -m pytest tests/test_price_basis_graders.py -q
+
   # ── RED-ON-ARRIVAL SWEEP, BATCH A (2026-07-27) ─────────────────────────────
   # The 2026-07-26 census wired the P0–P3 tiers but left P4/P5 (861 suites) as
   # declared backlog, so nobody had measured how many of them were already RED.
