@@ -753,7 +753,9 @@ def test_attested_history_missing_or_corrupt_private_reader_maps_to_private_503(
 
 
 def test_private_store_factory_is_singleton_until_explicit_test_reset(monkeypatch) -> None:
-    from engine.research_vault import r2_store
+    # The receipt API builds the DEDICATED attested-history reader, never the
+    # generic Research Vault store: the sealed receipts live in their own bucket.
+    from engine.fundamental_forensics import attested_history_store
 
     calls: list[object] = []
     first = object()
@@ -764,7 +766,7 @@ def test_private_store_factory_is_singleton_until_explicit_test_reset(monkeypatc
         return first if len(calls) == 1 else second
 
     forensics_api._reset_store_cache()
-    monkeypatch.setattr(r2_store, "build_store", build_once)
+    monkeypatch.setattr(attested_history_store, "build_attested_history_store", build_once)
     assert forensics_api._build_store() is first
     assert forensics_api._build_store() is first
     assert len(calls) == 1
@@ -774,9 +776,40 @@ def test_private_store_factory_is_singleton_until_explicit_test_reset(monkeypatc
     forensics_api._reset_store_cache()
 
 
+def test_absent_and_failing_dedicated_store_are_both_cached_until_reset(monkeypatch) -> None:
+    """A 503 must stay bounded: neither None nor a raise may retry per request."""
+    from engine.fundamental_forensics import attested_history_store
+
+    calls: list[str] = []
+
+    def build_none():
+        calls.append("none")
+        return None
+
+    def build_raises():
+        calls.append("raise")
+        raise attested_history_store.AttestedHistoryStoreError("misconfigured bucket")
+
+    forensics_api._reset_store_cache()
+    monkeypatch.setattr(attested_history_store, "build_attested_history_store", build_none)
+    assert forensics_api._build_store() is None
+    assert forensics_api._build_store() is None
+    assert calls == ["none"]
+
+    forensics_api._reset_store_cache()
+    monkeypatch.setattr(attested_history_store, "build_attested_history_store", build_raises)
+    # The factory's exception is absorbed into the same bounded absent-store
+    # state rather than escaping as a 500.
+    assert forensics_api._build_store() is None
+    assert forensics_api._build_store() is None
+    assert calls == ["none", "raise"]
+    forensics_api._reset_store_cache()
+
+
 def test_attested_history_auth_and_entitlement_denial_happen_before_store(monkeypatch) -> None:
     import app.main as main_mod
     import app.paywall as paywall_mod
+    from engine.fundamental_forensics import attested_history_store
 
     reads: list[object] = []
     monkeypatch.setattr(main_mod, "require_user", lambda _authorization: {"id": "free-user"})
@@ -785,19 +818,58 @@ def test_attested_history_auth_and_entitlement_denial_happen_before_store(monkey
         assert always is True
         raise HTTPException(402, "site_full required")
 
+    def factory_must_not_run():
+        raise AssertionError("entitlement denial must precede store construction")
+
     monkeypatch.setattr(paywall_mod, "enforce_site_full", deny)
     monkeypatch.setattr(forensics_api, "_build_store", lambda: reads.append(object()))
+    # Belt and braces: even the dedicated factory beneath _build_store must be
+    # unreachable, so a future refactor cannot open the private bucket first.
+    monkeypatch.setattr(
+        attested_history_store, "build_attested_history_store", factory_must_not_run
+    )
+    forensics_api._reset_store_cache()
     app = FastAPI()
     app.include_router(forensics_api.router)
-    with TestClient(app) as client:
-        response = client.get(
-            "/api/forensics/v1/attested-history/latest",
-            headers={"Authorization": "Bearer signed-in-free-user"},
-        )
+    try:
+        with TestClient(app) as client:
+            response = client.get(
+                "/api/forensics/v1/attested-history/latest",
+                headers={"Authorization": "Bearer signed-in-free-user"},
+            )
+    finally:
+        forensics_api._reset_store_cache()
     assert response.status_code == 402
     assert response.json() == {"detail": "site_full required"}
     _assert_private_headers(response)
     assert reads == []
+
+
+def test_attested_history_unauthenticated_request_never_constructs_the_store(monkeypatch) -> None:
+    import app.main as main_mod
+    from engine.fundamental_forensics import attested_history_store
+
+    def deny_auth(_authorization):
+        raise HTTPException(401, "missing bearer token")
+
+    def factory_must_not_run():
+        raise AssertionError("authentication denial must precede store construction")
+
+    monkeypatch.setattr(main_mod, "require_user", deny_auth)
+    monkeypatch.setattr(
+        attested_history_store, "build_attested_history_store", factory_must_not_run
+    )
+    forensics_api._reset_store_cache()
+    app = FastAPI()
+    app.include_router(forensics_api.router)
+    try:
+        with TestClient(app) as client:
+            response = client.get("/api/forensics/v1/attested-history/latest")
+    finally:
+        forensics_api._reset_store_cache()
+    assert response.status_code == 401
+    assert response.json() == {"detail": "missing bearer token"}
+    _assert_private_headers(response)
 
 
 def test_authentication_error_cannot_weaken_route_private_headers(monkeypatch) -> None:
