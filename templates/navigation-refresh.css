@@ -746,6 +746,33 @@ html:not([data-theme="light"]) .signal-status.status-bounce { color: #ffc47c; ba
   text-align: center;
 }
 
+/* Honest empty state: a market that failed to load says so here instead of
+   being silently reported as "no matches". Muted, one line, with the one
+   action that can fix it. */
+.search-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 22px 18px;
+  color: var(--muted, #8d97a8);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.search-notice button {
+  padding: 4px 11px;
+  border: 1px solid color-mix(in srgb, var(--link, #5b79ff) 40%, var(--nr-line));
+  border-radius: 999px;
+  color: var(--link, #5b79ff);
+  background: color-mix(in srgb, var(--link, #5b79ff) 9%, var(--nr-soft));
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
 .logo-dev-attribution {
   padding: 0 18px 13px;
   color: var(--muted, #8d97a8);
