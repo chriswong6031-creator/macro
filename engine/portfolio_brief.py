@@ -576,7 +576,7 @@ def _filings_section(ctx: dict, covered: list[str], today: str) -> dict | None:
         _SIDE_ZH = {"buy": "购入", "sell": "售出", "other": "交易"}
         for filed, t, side in cong_lines[:3]:
             en = f"This week: a Congress {_SIDE_EN[side]} in {t} (filed {filed})."
-            zh = f"本周：{t} 出现一笔国会{_SIDE_ZH[side]}披露（申报于 {filed}）。"
+            zh = f"本周：{t} 出现一笔国会{_SIDE_ZH[side]}披露（{filed}）。"
             lines.append({"en": en, "zh": zh})
 
     # Insider tape for held names with buyers+sellers>0, top 2 by |net_mn|.
@@ -647,7 +647,7 @@ def _filings_section(ctx: dict, covered: list[str], today: str) -> dict | None:
     if not lines:
         return None
     return {"key": "filings", "title_en": "Filings desk",
-            "title_zh": "监管申报", "lines": lines}
+            "title_zh": "监管披露", "lines": lines}
 
 
 # ── public composer ──────────────────────────────────────────────────────────
