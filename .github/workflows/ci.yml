@@ -2314,6 +2314,16 @@ on:
       - "scripts/freshness_sentinel.py"
       - "app/deploy/macro-sentinel.service"
       - "app/deploy/macro-sentinel.timer"
+      # The china half of that dead-man switch: the board-lag disclosure the
+      # sentinel's china surface anchors on, and the A-share session calendar the
+      # engine computes `delayed` from. Both halves listed for the same reason as
+      # above — a PR retuning the CN holiday table or rewording the banner must be
+      # able to START this workflow, or the contract test tying the template's
+      # English wording to the sentinel's regex guards nothing. china.html.j2 and
+      # the two builders already match via templates/** and scripts/**.
+      - "tests/test_china_delayed_board_disclosure.py"
+      - "tests/test_cn_calendar.py"
+      - "lib/cn_calendar.py"
       - "tests/test_ei_f1d_shadow.py"
       - "tests/test_exit_tax_scenarios.py"
       - "tests/test_expanding_mean_benchmark.py"

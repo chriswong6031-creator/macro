@@ -795,6 +795,13 @@ jobs:
           tests/test_china_library_limited.py
           tests/test_china_standouts_serialization.py
           tests/test_china_stocks_w1c_render.py
+          # China delayed-board disclosure + the A-share session calendar behind it.
+          # Belongs in this fat lane: the disclosure suite renders the real
+          # china.html.j2 end to end (jinja2) and imports build_china_library
+          # (pandas/pyarrow), and it is the only guard tying the template's English
+          # wording to the regex scripts/freshness_sentinel.py parses.
+          tests/test_china_delayed_board_disclosure.py
+          tests/test_cn_calendar.py
           tests/test_china_stocks_copy_w09.py
           tests/test_china_board_track_render.py
           tests/test_china_alpha_w2a.py
