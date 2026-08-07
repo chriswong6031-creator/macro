@@ -1112,9 +1112,14 @@ def _rejection_reason(
     # this guard protects — one fact, one post per day — becomes one fact, one
     # alert plus its one brief. Any OTHER trigger dressing the same fact is
     # still refused.
+    # THE LEAD FACT, same unit as the publisher's cooldown (ruling R1,
+    # 2026-08-06). Reading every number in the body refused a post whose LEAD
+    # fact was new because its framing quoted an older print, and the two gates
+    # answering "is this the same fact?" differently is how a post gets refused
+    # here and would have shipped there.
     anchors = ctx.get("fact_anchors")
     if anchors is not None and trigger != BRIEF_TRIGGER:
-        for key in _clock.fact_anchor_keys(str(text or ""), kind):
+        for key in _clock.lead_fact_keys(str(text or ""), kind):
             owner = anchors.get((as_of, key))
             if owner and owner != item_id:
                 log.warning(
@@ -1157,8 +1162,8 @@ def _enqueue_ctx(root: Path | str | None, as_of: object, cfg: dict | None) -> di
         iid = str(i.get("id") or "")
         if iid in dead:
             continue
-        for ak in _clock.fact_anchor_keys(str(i.get("text") or ""),
-                                          str(i.get("kind") or "")):
+        for ak in _clock.lead_fact_keys(str(i.get("text") or ""),
+                                        str(i.get("kind") or "")):
             ctx["fact_anchors"].setdefault((i.get("as_of"), ak), iid)
     return ctx
 
@@ -1366,7 +1371,7 @@ def enqueue(
             # collapse to the first, not just across nights. Three of the six
             # posts in the 2026-08-01 family were emitted in a single run.
             _anchors = ctx.setdefault("fact_anchors", {})
-            for _ak in _clock.fact_anchor_keys(
+            for _ak in _clock.lead_fact_keys(
                     str(item.get("text") or ""), str(item.get("kind") or "")):
                 _anchors.setdefault((as_of, _ak), item_id)
             return "queued"

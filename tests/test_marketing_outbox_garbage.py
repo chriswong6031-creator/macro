@@ -494,6 +494,383 @@ class TestD4NumericFactCooldown:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# R1 — the cooldown keys the LEAD fact, not every number in the post
+#
+# The round-1 blocker, measured on the live outbox at 2026-08-06: the gate broke
+# on the first anchor key any live sibling owned, so macro survived 0/6, event
+# 0/2 and mover 0/2, and BOTH carriers of the genuinely new 5.0 -> 5.9 GDPNow
+# print were refused — one of them on `macro:claims:203k`, owned by a post four
+# days older. The new number reached the network on no carrier at all.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: The live carriers, verbatim (ob-2026-08-06-96202a0efb / -981729f9e1).
+NEW_PRINT_MACRO = (
+    "Growth: 5.9% annual rate this quarter\n"
+    "Inflation: 2.1% annual rate\n"
+    "Jobless claims: 203 thousand a week this month\n"
+    "I kept waiting for the economy to cool. It hasn't obliged.")
+NEW_PRINT_EVENT = (
+    "GDPNow has growth at 5.9%. AI and chips are carrying a narrow tape.\n\n"
+    "I respect the strength, but I'm not chasing leadership this thin.")
+
+
+class TestR1LeadFact:
+    """MUTATION CHECK: in `scripts/marketing_publisher`, swap both
+    `_clock.lead_fact_keys(` calls back to `_clock.fact_anchor_keys(` —
+    `test_a_new_lead_fact_ships_although_its_body_recites_last_weeks_numbers`
+    and `test_a_recited_number_claims_no_anchor` fail. In
+    `market_clock.lead_fact_keys`, return `frozenset(k for _p, k in hits)`
+    (ignore the lead span) — the same two fail. Restore by editing the lines
+    back IN PLACE; a `git checkout` restores HEAD, not your fix."""
+
+    def test_a_new_lead_fact_ships_although_its_body_recites_last_weeks_numbers(self):
+        """THE BLOCKER. The lead is a number nobody has posted; lines two and
+        three quote last week's prints to frame it, which is what a human
+        analyst does. Reading the whole body refused it on `macro:claims:203k`."""
+        lead = mc.lead_fact_keys(NEW_PRINT_MACRO, "macro")
+        assert lead == frozenset({"macro:gdpnow:5.9pct"}), lead
+        assert "macro:claims:203k" in mc.fact_anchor_keys(NEW_PRINT_MACRO, "macro"), (
+            "the fixture no longer recites the older print, so it cannot pin "
+            "the defect")
+
+    def test_the_rulings_own_worked_example(self):
+        """"GDPNow 5.9%, up from 5.0% last week" is a good post and must ship.
+        A gate that keys the 5.0% as well refuses it on a number it quoted only
+        to say the new one is different."""
+        keys = mc.lead_fact_keys("GDPNow 5.9%, up from 5.0% last week.", "macro")
+        assert keys == frozenset({"macro:gdpnow:5.9pct"}), keys
+
+    def test_a_recited_number_claims_no_anchor(self):
+        """SYMMETRY, and it is the half that is easy to miss. If the new print's
+        post CLAIMED `macro:claims:203k` on the way through, it would starve the
+        post whose lead that number actually is — the fan-out gate would have
+        moved the outage rather than fixed it."""
+        import scripts.marketing_publisher as pub
+
+        state = {
+            "items": {"ob-new": {"as_of": "2026-08-06", "kind": "macro",
+                                 "text": NEW_PRINT_MACRO}},
+            "status": {"ob-new": "queued"},
+            "held": set(),
+        }
+        owners = pub._fact_anchor_owners(
+            state, datetime(2026, 8, 6, 18, 0, tzinfo=timezone.utc))
+        assert owners.get("macro:gdpnow:5.9pct") == "ob-new", owners
+        assert "macro:claims:203k" not in owners, owners
+
+    def test_the_same_lead_five_days_running_still_collapses(self):
+        """A3. The defect the operator reported was never a post that MENTIONS a
+        number, it was the same number being the WHOLE post, five days running.
+        Every member of the measured family leads on it."""
+        leads = [mc.lead_fact_keys(t, "macro") for t in CLAIMS_FAMILY]
+        for text, keys in zip(CLAIMS_FAMILY, leads):
+            assert "macro:claims:203k" in keys, (text[:60], keys)
+
+    def test_a_headline_carrying_no_number_has_no_lead_fact(self):
+        """ob-2026-08-06-33dbf95911 verbatim. Its subject is narrow leadership;
+        the 5% GDPNow print underneath is framing, and keying it took the post
+        down on a number that is not what it is about."""
+        text = ("AI and chip stocks are doing almost all the lifting today\n\n"
+                "The Atlanta Fed has the economy growing at 5% this quarter, "
+                "but stock leadership is still narrow.")
+        assert mc.lead_fact_keys(text, "event") == frozenset()
+        assert "macro:gdpnow:5pct" in mc.fact_anchor_keys(text, "event")
+
+    def test_the_lead_span_is_the_first_non_empty_line(self):
+        assert mc.lead_segment("") == (0, 0)
+        body = "\n\n  \nlead line\nsecond"
+        lo, hi = mc.lead_segment(body)
+        assert body[lo:hi] == "lead line", (lo, hi)
+
+    def test_the_publisher_refuses_the_second_carrier_and_ships_the_first(self):
+        """Two desks reach for the same NEW print in one night. Exactly one
+        carries it — first-claim by rank then id — and the other is refused.
+        Zero carriers is the failure this whole ruling exists to undo."""
+        import scripts.marketing_publisher as pub
+
+        state = {
+            "items": {
+                "ob-2026-08-02-25d1738564": {
+                    "as_of": "2026-08-02", "kind": "macro",
+                    "text": CLAIMS_FAMILY[0]},
+                "ob-2026-08-06-96202a0efb": {
+                    "as_of": "2026-08-06", "kind": "macro",
+                    "text": NEW_PRINT_MACRO},
+                "ob-2026-08-06-981729f9e1": {
+                    "as_of": "2026-08-06", "kind": "event",
+                    "text": NEW_PRINT_EVENT},
+            },
+            "status": {k: "queued" for k in (
+                "ob-2026-08-02-25d1738564", "ob-2026-08-06-96202a0efb",
+                "ob-2026-08-06-981729f9e1")},
+            "held": set(),
+        }
+        owners = pub._fact_anchor_owners(
+            state, datetime(2026, 8, 6, 18, 0, tzinfo=timezone.utc),
+            windows={"macro": 7})
+        assert owners["macro:gdpnow:5.9pct"] == "ob-2026-08-06-96202a0efb", owners
+        assert owners["macro:claims:203k"] == "ob-2026-08-02-25d1738564", owners
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# R2 — kind exclusion wins over the percent heuristic
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestR2KindExclusion:
+    """MUTATION CHECK: delete the `if k in NON_ACTION_KINDS: return ""` branch
+    in `market_clock.market_action_claim` — every test in this class fails.
+    Restore by editing the line back IN PLACE."""
+
+    #: One string carrying BOTH route-2 triggers: a move phrase and a bare
+    #: percent. Anything on the exclusion list has to survive it.
+    LOUD = ("203k claims a week this month, 8.6% below a year ago. "
+            "Meanwhile the Atlanta Fed is printing 5.0% growth and the tape "
+            "closed green.")
+
+    @pytest.mark.parametrize(
+        "kind", sorted(mc.NON_ACTION_KINDS))
+    def test_an_excluded_kind_is_never_judged_whatever_the_copy_says(self, kind):
+        """The docstring named six kinds it does not own and then a second route
+        re-admitted them on any percent. Measured on the live outbox: 157/224
+        breaking, 10/20 macro, 7/20 event and 1/20 education items came back
+        with a non-empty action claim, so a WEEKLY jobless-claims print died at
+        the next open with a receipt calling it "a percent move claim"."""
+        assert mc.market_action_claim(self.LOUD, kind) == ""
+        assert mc.stale_session_violations(
+            self.LOUD, now=WED_MORNING, fact_asof="2026-08-04", kind=kind) == []
+
+    def test_the_exclusion_list_is_the_one_the_docstring_names(self):
+        assert mc.NON_ACTION_KINDS == frozenset(
+            {"macro", "event", "education", "insider", "congress", "breaking"})
+        assert not (mc.NON_ACTION_KINDS & mc.ACTION_KINDS), (
+            "a kind cannot be both a tape read and exempt from the tape clock")
+
+    def test_route_two_still_admits_the_kinds_it_was_written_for(self):
+        """The percent/move-phrase route may only ADMIT kinds this gate has no
+        opinion about. A `reply` or an unlabelled item reporting a move is still
+        a tape read and still perishes on the session clock."""
+        text = "$WDC falls -4.03% right now to $522.86."
+        for kind in ("", "reply", "quote"):
+            assert mc.market_action_claim(text, kind), kind
+            assert mc.stale_session_violations(
+                text, now=WED_MORNING, fact_asof="2026-08-04", kind=kind), kind
+
+    def test_a_wire_retry_across_a_session_roll_still_ships(self):
+        """Live path since 91b0877057f made a Buffer rate limit RETRY instead of
+        delete: a `breaking` flash re-attempted after midnight ET must not be
+        stale because a session rolled. The reaper's 3h TTL owns that clock."""
+        assert mc.stale_session_violations(
+            "Western Digital falls -4.03% right now to $522.86.",
+            now=WED_MORNING, fact_asof="2026-08-04", kind="breaking") == []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# D1 leg two — the leg that does all the live work (round-1 finding 9)
+#
+# Leg one fired ZERO times across the whole 492-item corpus on on-time dispatch,
+# because `as_of` is stamped to the scheduled day by construction. Leg two is
+# the gate in production and it was pinned by exactly one test.
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestD1LegTwo:
+    """MUTATION CHECK: in `market_clock._stale_claim_in_copy`, restore the
+    amnesty `if _TODAY_RE.search(body) and current_session(now) == live: return
+    None` — the two today-word tests and the live-defect test fail. Replace the
+    whole function body with `return None` — every test in this class fails.
+    Restore by editing the lines back IN PLACE."""
+
+    #: Every weekday name, each judged from a session it is genuinely BEHIND.
+    #: The Friday case is the one that has to walk back across a weekend, which
+    #: a lookback that only understood "this week" would get wrong.
+    FRI = datetime(2026, 8, 7, 18, 0, tzinfo=timezone.utc)    # Fri 14:00 ET
+    MON_NEXT = datetime(2026, 8, 10, 18, 0, tzinfo=timezone.utc)  # Mon 14:00 ET
+
+    @pytest.mark.parametrize("day,now,claimed", [
+        ("Monday", FRI, "2026-08-03"),
+        ("Tuesday", FRI, "2026-08-04"),
+        ("Wednesday", FRI, "2026-08-05"),
+        ("Thursday", FRI, "2026-08-06"),
+        ("Friday", MON_NEXT, "2026-08-07"),
+    ])
+    def test_every_weekday_name_is_a_session_claim(self, day, now, claimed):
+        out = mc.stale_session_violations(
+            f"Cloud Computing is +1.7% on average on {day}.",
+            now=now, fact_asof=mc.et_date(now).isoformat(), kind="theme_list")
+        assert any(v.startswith(f"stale_session_claim:{claimed}") for v in out), out
+
+    def test_the_live_weekday_is_not_a_stale_claim(self):
+        """The boundary the parametrization above cannot state: naming TODAY'S
+        session is a current report, not a stale one."""
+        assert mc.stale_session_violations(
+            "Cloud Computing is +1.7% on average on Thursday.",
+            now=datetime(2026, 8, 6, 18, 0, tzinfo=timezone.utc),
+            fact_asof="2026-08-06", kind="theme_list") == []
+
+    def test_a_month_day_form_is_a_session_claim(self):
+        out = mc.stale_session_violations(
+            "Cloud Computing ran +1.7% on August 4.",
+            now=WED_MORNING, fact_asof="2026-08-05", kind="theme_list")
+        assert any(v.startswith("stale_session_claim:2026-08-04") for v in out), out
+
+    def test_a_today_word_is_not_an_amnesty(self):
+        """THE ROUND-1 DEFECT. The copy claiming BOTH the live session and a past
+        one is not exempt, it is internally contradictory — and the theme_list
+        generator emits exactly this wording, so the survivor was the internally
+        FALSE one."""
+        both = ("Cloud Computing is ripping across the board today\n\n"
+                "$AAA $BBB\n"
+                "Cloud Computing is +1.7% on average on Tuesday.")
+        out = mc.stale_session_violations(
+            both, now=WED_MORNING, fact_asof="2026-08-05", kind="theme_list")
+        assert out, "a today-word disarmed leg two"
+        assert "claims today AND Tuesday" in out[0], out
+
+    def test_the_live_theme_list_defect_in_both_generator_wordings(self):
+        """A4. ob-2026-08-03-7faca980f7 verbatim is the today-word wording; the
+        operator quoted the other one. Both are the same false post."""
+        plain = "Cloud Computing ripping, +1.7% avg on Tuesday"
+        live = ("Virtual & Augmented Reality is up across the board today\n\n"
+                "$COHR $LITE $AXON $META $RBLX $MSFT $GOOGL $U\n"
+                "Virtual & Augmented Reality is +3.7% on average on Friday "
+                "(8 names higher).")
+        assert mc.stale_session_violations(
+            plain, now=WED_MORNING, fact_asof="2026-08-04", kind="theme_list")
+        out = mc.stale_session_violations(
+            live, now=MON, fact_asof="2026-08-03", kind="theme_list")
+        assert any(v.startswith("stale_session_claim:2026-07-31") for v in out), out
+
+    def test_leg_two_is_asserted_INDEPENDENTLY_of_leg_one(self):
+        """The item's stamp is right and its SENTENCE is wrong. An as_of-only
+        check cannot see this post, which is why leg two is the whole gate."""
+        out = mc.stale_session_violations(
+            "Cloud Computing is +1.7% on average on Tuesday.",
+            now=WED_MORNING, fact_asof="2026-08-05", kind="theme_list")
+        assert len(out) == 1 and out[0].startswith("stale_session_claim:"), out
+
+    def test_leg_one_is_asserted_INDEPENDENTLY_of_leg_two(self):
+        """And the mirror: a stale stamp with copy that names no session."""
+        out = mc.stale_session_violations(
+            "Cloud Computing is ripping, +1.7% on average.",
+            now=WED_MORNING, fact_asof="2026-08-04", kind="theme_list")
+        assert len(out) == 1 and out[0].startswith("stale_session:"), out
+
+    def test_a_citation_survives_the_lost_amnesty(self):
+        """The suppression that keeps leg two off historical copy is
+        `_claim_is_cited`, NOT the today-word. Removing the amnesty must not
+        start eating "its all-time high of 340.08 set on July 28"."""
+        assert mc.stale_session_violations(
+            "$WDC is -11.06% from its all-time high of 340.08 set on July 28.",
+            now=WED_MORNING, fact_asof="2026-08-05", kind="mover") == []
+
+    def test_a_claim_past_the_lookback_is_history_not_a_freshness_claim(self):
+        assert mc.stale_session_violations(
+            "Cloud Computing is +1.7% on average on July 6.",
+            now=WED_MORNING, fact_asof="2026-08-05", kind="theme_list") == []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# M2 / m4 — which indicator a number belongs to
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestMacroNameAssignment:
+    """MUTATION CHECK: in `market_clock._macro_fact_hits`, delete the
+    `if not _name_is_attached(...): continue` line — the value-first and
+    two-print tests fail. Delete the `if unit not in _MACRO_UNITS...` line —
+    `test_a_count_never_takes_a_rate_indicator` fails. Restore IN PLACE."""
+
+    def test_the_three_live_shapes(self):
+        """`<value> <indicator>`, `<indicator> at <value>`, `<indicator>:
+        <value>`. A symmetric nearest-name metric got the first one wrong."""
+        assert mc.macro_fact_keys("203k jobless claims this month") == frozenset(
+            {"macro:claims:203k"})
+        assert mc.macro_fact_keys("GDPNow has growth at 5.9%.") == frozenset(
+            {"macro:gdpnow:5.9pct"})
+        assert mc.macro_fact_keys("Growth: 5.9% annual rate") == frozenset(
+            {"macro:gdpnow:5.9pct"})
+
+    def test_the_cpi_value_does_not_take_the_gdpnow_name(self):
+        """ob-2026-08-04-8f018b6dbf verbatim. The 2.1% CPI print keyed to GDPNow
+        because "GDPNow" sat two characters behind it and "CPI" eight ahead —
+        two phrasings of one fact that could never collide, which is the exact
+        dedup failure the fingerprint exists to fix."""
+        keys = mc.macro_fact_keys("203k jobless claims, 5.0% GDPNow, 2.1% median CPI")
+        assert keys == frozenset(
+            {"macro:claims:203k", "macro:gdpnow:5pct", "macro:cpi:2.1pct"}), keys
+
+    def test_two_prints_at_one_value_keep_both_names(self):
+        """Nearest-wins made the claims print DISAPPEAR: both 203k values took
+        "Payrolls" and the set collapsed to one key."""
+        keys = mc.macro_fact_keys("Jobless claims at 203k. Payrolls at 203k.")
+        assert keys == frozenset(
+            {"macro:claims:203k", "macro:payrolls:203k"}), keys
+        keys = mc.macro_fact_keys("Claims: 203k Payrolls: 198k")
+        assert keys == frozenset(
+            {"macro:claims:203k", "macro:payrolls:198k"}), keys
+
+    def test_a_count_never_takes_a_rate_indicator(self):
+        """ob-2026-08-04-45e4653200 emitted `macro:gdpnow:203k`. GDPNow is an
+        annualised rate; 203 thousand is a headcount. No key is the honest
+        answer, and it is the permissive one."""
+        keys = mc.macro_fact_keys(
+            "203 thousand a week this month, 8.6% below a year ago.\n"
+            "GDPNow just ticked up to 5.0%.")
+        assert "macro:gdpnow:203k" not in keys, keys
+        assert keys == frozenset({"macro:gdpnow:5pct"}), keys
+
+    def test_the_unit_decides_when_BOTH_names_are_attached(self):
+        """The case attachment alone cannot reach: "Payroll growth of 203
+        thousand" has "growth" nearer than "Payroll" and both in the same
+        clause, so proximity hands a HEADCOUNT to the GDP tracker. The unit
+        table is the only thing standing between that and a real GDPNow print
+        colliding with a payrolls number."""
+        keys = mc.macro_fact_keys("Payroll growth of 203 thousand last month.")
+        assert keys == frozenset({"macro:payrolls:203k"}), keys
+
+    def test_company_copy_without_a_cashtag_is_not_macro_keyed(self):
+        """The no-cashtag scope closed this class only when a cashtag was
+        present. A post naming the company in WORDS could still collide with a
+        genuine GDPNow print at the same number and be terminally quarantined."""
+        assert mc.macro_fact_keys(
+            "Revenue growth of 12% at the cloud unit") == frozenset()
+        assert mc.macro_fact_keys(
+            "Guidance implies 12% growth next year") == frozenset()
+        assert mc.macro_fact_keys("Growth: 12% annual rate") == frozenset(
+            {"macro:gdpnow:12pct"}), "the macro print itself must still key"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# m6 — the diary guard is about a filing cabinet, not about the word "record"
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestDiaryVoiceScope:
+    """MUTATION CHECK: in `copywriter._CLERICAL_OBJECT`, widen the alternation
+    back to `(?:it|that|the|this)` — `test_ordinary_factual_copy_is_not_a_diary`
+    fails. Restore IN PLACE."""
+
+    @pytest.mark.parametrize("text", [
+        "We recorded the biggest weekly gain since March.",
+        "We recorded this quarter as the strongest.",
+        "I keep a record of every level we publish and this one held.",
+    ])
+    def test_ordinary_factual_copy_is_not_a_diary(self, text):
+        """The last line is the exact "we for the shop and the track record"
+        register config/marketing.yml asks for. This refusal is terminal."""
+        assert cw.diary_voice_violations(text) == [], text
+
+    @pytest.mark.parametrize("text", [
+        "$N's CEO opened a new 25,477-share stake at $19.6. I log the buy and "
+        "leave the motive blank.",
+        "1. I write down the market's current story.\n"
+        "2. I note the fact that would make me reconsider it.",
+        "Klein opened a 350,000-share position in $XIIIU. I log the filing and wait.",
+        "I record it and move on.",
+        "I keep a log of these.",
+    ])
+    def test_the_operator_quoted_lines_are_still_refused(self, text):
+        assert cw.diary_voice_violations(text), text
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # House rules that apply to everything this change wrote
 # ─────────────────────────────────────────────────────────────────────────────
 

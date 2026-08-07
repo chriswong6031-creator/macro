@@ -696,15 +696,24 @@ def test_the_same_item_posts_on_the_session_it_describes(monkeypatch, tmp_path):
 #: Each line below names a print with its number, so every copy gate passes and
 #: the ONLY thing left that can refuse them is the one property they share: four
 #: desks, four genuinely different sentences, one Friday breadth read.
+#:
+#: THE BREADTH READ LEADS EVERY LINE, and since ruling R1 (2026-08-06) that is
+#: load-bearing rather than incidental. The cooldown keys a post's LEAD fact —
+#: the first numeric claim in its first line — so a family that shares a read
+#: has to LEAD on the shared read to be one family. It is also the live shape:
+#: all five verbatim FAMILY_C items above open on "4 of 11 sectors", and the
+#: earlier ordering here (a different macro print in front of each) described a
+#: post nobody wrote. Four posts each leading on a DIFFERENT print are four
+#: different lead facts and are supposed to ship.
 FAMILY_C_ANCHORED: tuple[tuple[str, str], ...] = (
-    ("macro", "Jobless claims printed 214,000 and 4 of 11 sectors closed green. "
-              "I am not leaning on a tape this split."),
-    ("event", "Claims at 214,000 barely moved the board: only 4 of 11 sectors "
-              "managed green. I am watching, not deciding."),
-    ("macro", "GDPNow sits at 2.1% and 4 of 11 sectors finished higher. "
+    ("macro", "4 of 11 sectors closed green while jobless claims printed "
+              "214,000. I am not leaning on a tape this split."),
+    ("event", "Only 4 of 11 sectors managed green; claims at 214,000 barely "
+              "moved the board. I am watching, not deciding."),
+    ("macro", "4 of 11 sectors finished higher with GDPNow at 2.1%. "
               "Too split for me to size anything on."),
-    ("event", "Median CPI came in at 3.2%; 4 of 11 sectors closed green behind "
-              "it. I would rather wait for one side to win a day."),
+    ("event", "4 of 11 sectors closed green behind a 3.2% median CPI print. "
+              "I would rather wait for one side to win a day."),
 )
 
 
@@ -739,6 +748,54 @@ def test_publisher_lets_exactly_one_of_the_fanned_family_through(monkeypatch, tm
     # class and the shared anchor instead.
     assert "fact fan-out" in note, note
     assert ("ratio:4of11:sector" in note or "macro:claims:214k" in note), note
+
+
+def test_the_fanout_receipt_names_the_keys_OWN_cooldown(monkeypatch, tmp_path):
+    """The quarantine note used to interpolate the module constant (5) whatever
+    family the key belonged to, so a macro key held for SEVEN days reported "in
+    the trailing 5 days" — an item refused on day six showed a reason its own
+    arithmetic contradicted, and the operator reads these receipts."""
+    from engine.marketing import outbox
+    _publish_cfg(tmp_path)
+    a = _bypass_queue(tmp_path, text=(
+        "Claims printed 214,000 this month while 4 of 11 sectors closed green. "
+        "I am not leaning on a tape this split."),
+        as_of="2026-08-03", kind="macro", now=MONDAY_RTH)
+    b = _bypass_queue(tmp_path, text=(
+        "214,000 jobless claims, and only 4 of 11 sectors managed green. "
+        "I would rather wait for one side to win a day."),
+        as_of="2026-08-03", kind="macro", account="kelly", now=MONDAY_RTH)
+    backend = _FakeBackend()
+    assert _run(monkeypatch, tmp_path, "2026-08-03T18:00:00Z", backend) == 0
+    statuses = outbox.current_statuses(tmp_path)
+    dead = [i for i in (a, b) if statuses[i] == "quarantined"]
+    assert len(dead) == 1, statuses
+    note = _ledger_note(tmp_path, dead[0])
+    assert "macro:claims:214k" in note, note
+    assert "trailing 7 days" in note, note
+
+
+def test_a_new_lead_fact_posts_beside_the_older_one_it_quotes(monkeypatch, tmp_path):
+    """RULING R1 at the exit. The second post's LEAD is a number nobody has
+    carried; it quotes the first post's print only to frame it. Reading the whole
+    body refused it, and on the live corpus that took macro to 0/6 and shipped
+    the new GDPNow print on no carrier at all."""
+    from engine.marketing import outbox
+    _publish_cfg(tmp_path)
+    a = _bypass_queue(tmp_path, text=(
+        "Claims printed 214,000 this month while 4 of 11 sectors closed green. "
+        "I am not leaning on a tape this split."),
+        as_of="2026-08-03", kind="macro", now=MONDAY_RTH)
+    b = _bypass_queue(tmp_path, text=(
+        "GDPNow just moved to a 5.9% annual rate.\n"
+        "Claims are still printing 214,000 a week.\n"
+        "That is a faster economy than I was positioned for."),
+        as_of="2026-08-03", kind="macro", account="kelly", now=MONDAY_RTH)
+    backend = _FakeBackend()
+    assert _run(monkeypatch, tmp_path, "2026-08-03T18:00:00Z", backend) == 0
+    statuses = outbox.current_statuses(tmp_path)
+    assert statuses[a] == "posted" and statuses[b] == "posted", (
+        statuses, _ledger_note(tmp_path, b))
 
 
 def test_the_fan_out_gate_leaves_unrelated_posts_alone(monkeypatch, tmp_path):

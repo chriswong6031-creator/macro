@@ -2520,12 +2520,28 @@ def no_reaction_violations(text: str) -> list[str]:
 # SCOPED TO THE FIRST PERSON. "The filing was logged", "record high", "on
 # record" are all ordinary English about the world; only "I log it" narrates the
 # author's clerical work, and only that is banned.
+#
+# AND SCOPED TO A CLERICAL OBJECT (round-1 review, 2026-08-06). `record… the`
+# and a bare `keep a record` swept in two registers that are not this defect:
+# an ordinary factual report in the first-person plural ("We recorded the
+# biggest weekly gain since March.") and the TRACK-RECORD line config/marketing
+# .yml explicitly asks for ("I keep a record of every level we publish and this
+# one held."). Neither narrates a filing cabinet, and this refusal is terminal,
+# so the object has to be clerical for the verb to count: a pronoun standing in
+# for the fact just stated, or the paperwork itself.
+#: "it" and not "this"/"that": a bare `this` is a determiner far more often than
+#: a pronoun, and "We recorded this quarter as the strongest" is a fact, not a
+#: filing note.
+_CLERICAL_OBJECT = (
+    r"(?:it|the\s+(?:buy|sell|sale|trade|fill|entry|exit|filing|"
+    r"position|order)s?)")
 _DIARY_VERBS = (
     r"log(?:ging|ged)?", r"writ(?:e|ing)\s+down", r"wrote\s+down",
     r"not(?:e|ing|ed)\s+(?:it|that|the|this|down)", r"jot(?:ting|ted)?\s+down",
     r"mark(?:ing|ed)?\s+it\s+down", r"fil(?:e|ing)\s+it\s+away",
-    r"record(?:ing|ed)?\s+(?:it|that|the|this)",
-    r"keep(?:ing)?\s+a\s+(?:note|log|tab|record)",
+    r"record(?:ing|ed)?\s+" + _CLERICAL_OBJECT,
+    r"keep(?:ing)?\s+a\s+(?:note|log|tab)\b",
+    r"keep(?:ing)?\s+a\s+record\s+of\s+" + _CLERICAL_OBJECT,
     r"add(?:ing)?\s+it\s+to\s+(?:my|the)\s+(?:list|notes?|log)",
 )
 _DIARY_RE = re.compile(

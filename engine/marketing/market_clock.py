@@ -30,8 +30,10 @@ ONE authority for three questions, used by BOTH generators and validators:
   * validators ask :func:`temporal_violations` which words already in a text are
     dishonest, and :func:`dead_date_future_tense` whether a past date is wearing
     a future-tense verb;
-  * the fan-out gates ask :func:`fact_anchor_keys` which source fact a post is
-    anchored on, so one fact cannot wear six posts.
+  * the fan-out gates ask :func:`lead_fact_keys` which source fact a post LEADS
+    on, so one fact cannot wear six posts while a post that merely quotes a
+    prior number to frame a new one still ships (:func:`fact_anchor_keys` is the
+    whole-body form, kept for callers asking "what does this post touch").
 
 The exchange calendar is NOT reimplemented here: :mod:`lib.nyse_calendar` is the
 estate's existing authority (pure rule arithmetic, stdlib only, holidays + Good
@@ -737,14 +739,26 @@ def _claim_is_cited(body: str, start: int) -> bool:
 def _stale_claim_in_copy(body: str, *, now: datetime, live: date) -> date | None:
     """The past session this copy REPORTS, or None. See `_claim_is_cited`.
 
-    Returns None the moment the copy also claims the live session: a post that
-    says "so far today" is a report on today whatever else it cites, and that
-    single condition is what separates the wire lane's anchor-heavy copy from
-    the theme_list defect.
+    A TODAY-WORD IS NOT AN AMNESTY (round-1 review, 2026-08-06). The first cut
+    returned None the moment the copy said "today" while the session was live,
+    on the theory that a post reporting today is a report on today whatever else
+    it cites. Measured, that disarmed the whole leg: `_clock_violations` refused
+    "Cloud Computing ripping, +1.7% avg on Tuesday" posted Wednesday and PASSED
+    "Cloud Computing is ripping across the board today … +1.7% on average on
+    Tuesday", which is the operator's defect in the generator's OTHER wording and
+    is live in the corpus as ob-2026-08-03-7faca980f7. Leg one cannot cover it —
+    it fired zero times across the whole 492-item corpus on on-time dispatch,
+    because `as_of` is stamped to the scheduled day by construction.
+
+    A post that claims BOTH the live session and a past one is not exempt, it is
+    INTERNALLY CONTRADICTORY, and that is strictly worse than the plain stale
+    read. `stale_session_violations` says so in the receipt.
+
+    The wire lane's anchor-heavy copy — the thing the amnesty was protecting — is
+    now protected where it belongs: `market_action_claim` no longer judges
+    `breaking` (or any other kind that perishes on its own clock) at all.
     """
     today = et_date(now)
-    if _TODAY_RE.search(body) and current_session(now) == live:
-        return None
 
     best: date | None = None
     for m in _WEEKDAY_CLAIM_RE.finditer(body):
@@ -778,6 +792,25 @@ def _stale_claim_in_copy(body: str, *, now: datetime, live: date) -> date | None
 ACTION_KINDS: frozenset[str] = frozenset(
     {"mover", "theme_list", "chart", "signal", "watchlist"})
 
+#: The exclusion the docstring above promised, made EXECUTABLE (round-1 review,
+#: 2026-08-06). Naming these kinds in prose and then re-admitting them through
+#: the percent/move-phrase route below is how the freshness gate came to judge
+#: the exact lanes it says it does not own: measured on the live outbox,
+#: 157/224 `breaking`, 10/20 `macro`, 7/20 `event` and 1/20 `education` items
+#: returned a non-empty action claim, so a WEEKLY jobless-claims print was
+#: quarantined for being one session old with a receipt reading "a percent move
+#: claim", and a wire flash retried across a session boundary died with it — a
+#: live path since 91b0877057f made a Buffer rate limit retry instead of delete.
+#:
+#: THE RULE (commissioning ruling R2): kind exclusion WINS over the percent
+#: heuristic. If the kind is on this list the freshness gate does not judge it,
+#: whatever the text looks like; route 2 may only ADMIT kinds that are not
+#: already excluded. A weekly macro print is not a tape read, and a wire retry
+#: is not stale because a session rolled — both perish on their own clocks (the
+#: reaper's 3h TTL, the numeric-fact cooldown).
+NON_ACTION_KINDS: frozenset[str] = frozenset(
+    {"macro", "event", "education", "insider", "congress", "breaking"})
+
 #: Phrases that report a PRICE MOVE. Used to answer "does this post claim market
 #: action" for kinds outside ACTION_KINDS.
 #:
@@ -810,10 +843,16 @@ def market_action_claim(text: str, kind: str = "") -> str:
     Two routes, because the two live shapes of the defect look nothing alike:
     a `kind` whose whole job is a price read, and a post of some other kind
     whose sentence reports a move ("$WDC falls -4.03%").
+
+    KIND EXCLUSION IS CHECKED FIRST AND IS FINAL. See :data:`NON_ACTION_KINDS`:
+    route 2 exists to ADMIT kinds this gate has no opinion about, never to
+    re-admit one it has already excluded.
     """
     k = str(kind or "").strip().lower()
     if k in ACTION_KINDS:
         return f"kind '{k}' is a tape read"
+    if k in NON_ACTION_KINDS:
+        return ""
     body = str(text or "")
     m = _ACTION_RE.search(body)
     if m is not None:
@@ -853,7 +892,8 @@ def stale_session_violations(text: str, *, now: datetime, fact_asof: object,
         dies on Monday's open. That is the honest reading of "the next session
         kills it".
       * A POST THAT CLAIMS NO MARKET ACTION IS NOT JUDGED. An education post or
-        a filing summary has no session to be stale about.
+        a filing summary has no session to be stale about — and neither is any
+        kind in :data:`NON_ACTION_KINDS`, whatever numbers its copy carries.
     """
     body = str(text or "")
     if not body.strip():
@@ -878,9 +918,19 @@ def stale_session_violations(text: str, *, now: datetime, fact_asof: object,
 
     claimed = _stale_claim_in_copy(body, now=now, live=live)
     if claimed is not None:
-        out.append(
-            f"stale_session_claim:{claimed.isoformat()}!={live.isoformat()} "
-            f"(copy names {weekday_name(claimed)}'s tape)")
+        # The two shapes get two receipts, because they are two different
+        # defects and the operator reads these strings. A post that says only
+        # "on Tuesday" on Wednesday is one session late; a post that says
+        # "today … on Tuesday" is claiming two sessions at once, which is false
+        # on its face whatever the clock says.
+        if _TODAY_RE.search(body) and current_session(now) == live:
+            out.append(
+                f"stale_session_claim:{claimed.isoformat()}!={live.isoformat()} "
+                f"(copy claims today AND {weekday_name(claimed)}'s tape)")
+        else:
+            out.append(
+                f"stale_session_claim:{claimed.isoformat()}!={live.isoformat()} "
+                f"(copy names {weekday_name(claimed)}'s tape)")
 
     return out
 
@@ -957,6 +1007,39 @@ _MACRO_NAME_ALIASES: tuple[tuple[str, str], ...] = (
 _MACRO_NAME_RES: tuple[tuple[str, "re.Pattern[str]"], ...] = tuple(
     (slug, re.compile(pat, re.IGNORECASE)) for slug, pat in _MACRO_NAME_ALIASES)
 
+#: The units each indicator is actually QUOTED in (round-1 review, 2026-08-06).
+#: A weekly claims print is a count of people; GDPNow is an annualised rate. So
+#: ``macro:gdpnow:203k`` is not a near-miss, it is impossible — and it was live:
+#: ob-2026-08-04-45e4653200 ("203 thousand a week this month … GDPNow just ticked
+#: up to 5.0%") emitted exactly that, because the only indicator name in range
+#: was the wrong one. Filtering candidate names by unit costs nothing when the
+#: copy is well-formed and deletes the whole nonsense-key class when it is not.
+#: A count indicator keeps `pct` because the desks quote it both ways ("203k
+#: claims, 8.6% below a year ago").
+_MACRO_UNITS: dict[str, frozenset[str]] = {
+    "claims": frozenset({"k", "m", "pct"}),
+    "payrolls": frozenset({"k", "m", "pct"}),
+    "gdpnow": frozenset({"pct"}),
+    "cpi": frozenset({"pct"}),
+    "unemployment": frozenset({"pct"}),
+    "pce": frozenset({"pct"}),
+    "ism": frozenset({"pct"}),
+    "retail_sales": frozenset({"pct"}),
+}
+
+#: What ends a clause. A name on the far side of one of these is not THIS
+#: number's name: "203k jobless claims, 5.0% GDPNow" hands 5.0% to GDPNow and not
+#: to the claims two characters to its left. A colon is deliberately absent — it
+#: is how a label is attached to its value ("Growth: 5.9%", "Jobless claims: 203
+#: thousand"), which is one of the three shapes this has to get right.
+_CLAUSE_BREAK_RE = re.compile(r"[,;.!?\n|·—–/]|\bmeanwhile\b", re.IGNORECASE)
+
+#: Weight on a name that FOLLOWS its value, used only to break ties between two
+#: equally-attached candidates. English attaches a label to what precedes it more
+#: often than not ("Claims: 203k Payrolls: 198k"), so a following name has to be
+#: strictly nearer to win.
+_FOLLOWING_NAME_PENALTY = 2
+
 #: The value shapes a macro print is quoted in. A BARE integer is deliberately
 #: absent: ordinary copy counts things ("the 4th time", "23 sessions") and
 #: fingerprinting those would collapse unrelated posts onto one key.
@@ -978,6 +1061,93 @@ _MACRO_PROXIMITY_CHARS = 70
 #: cooldown window without re-parsing the key.
 MACRO_KEY_PREFIX = "macro:"
 
+#: Vocabulary that says the number belongs to a COMPANY, not to the economy
+#: (round-1 review, 2026-08-06). The no-cashtag scope below closes the "revenue
+#: growth of 12%" class only when a cashtag is present, so copy that names a
+#: company in WORDS — an education post, an event recap, a wire summary — still
+#: keyed as ``macro:gdpnow:12pct`` and could terminally quarantine a genuine
+#: GDPNow print at the same number. Kept TIGHT on purpose: "quarter", "annual"
+#: and "growth" are all ordinary macro words, and suppressing on those would
+#: delete "Growth: 5.9% annual rate this quarter", which is the print this whole
+#: mechanism exists to let through. Suppression is the PERMISSIVE direction (a
+#: post ships rather than dies), which is the right way for this to be wrong.
+_COMPANY_SCOPE_RE = re.compile(
+    r"(?<![\w])(?:revenue|revenues|earnings per share|\beps\b|gross margin|"
+    r"operating margin|guidance|bookings|backlog|subscribers|billings|"
+    r"same-?store|free cash flow|buybacks?|share repurchase|"
+    r"the (?:cloud|ads?|services|data ?cent(?:re|er)) (?:unit|segment|business))"
+    r"(?![\w])",
+    re.IGNORECASE,
+)
+
+
+def _name_is_attached(body: str, v_lo: int, v_hi: int,
+                      n_lo: int, n_hi: int) -> bool:
+    """Is the indicator name at [n_lo, n_hi) in the same CLAUSE as the value?
+
+    "203k jobless claims, 5.0% GDPNow, 2.1% median CPI" is the shape that broke
+    the symmetric nearest-wins metric: 5.0% sits two characters from "claims"
+    and one from "GDPNow", and only the comma says which one is its name.
+    """
+    if n_lo >= v_hi:
+        between = body[v_hi:n_lo]
+    else:
+        between = body[n_hi:v_lo]
+        # Another number between the name and this value means the name has
+        # already been spent: in "Claims: 203k Payrolls: 198k", "Claims" belongs
+        # to 203k and cannot also reach across it to 198k.
+        if any(ch.isdigit() for ch in between):
+            return False
+    return _CLAUSE_BREAK_RE.search(between) is None
+
+
+def _macro_fact_hits(body: str) -> list[tuple[int, str]]:
+    """(value offset, key) for every macro print in `body`. See `macro_fact_keys`."""
+    if not body.strip() or _CASHTAG_RE.search(body):
+        return []
+    if _COMPANY_SCOPE_RE.search(body):
+        return []
+
+    names: list[tuple[str, int, int]] = []
+    for slug, rx in _MACRO_NAME_RES:
+        for m in rx.finditer(body):
+            names.append((slug, m.start(), m.end()))
+    if not names:
+        return []
+
+    hits: list[tuple[int, str]] = []
+    for unit, rx in _MACRO_VALUE_RES:
+        for m in rx.finditer(body):
+            try:
+                val = float(m.group(1))
+            except (TypeError, ValueError):  # pragma: no cover - regex-guarded
+                continue
+            lo, hi = m.start(), m.end()
+            best: tuple[int, int, str] | None = None
+            for slug, n_lo, n_hi in names:
+                if unit not in _MACRO_UNITS.get(slug, frozenset()):
+                    continue
+                follows = n_lo >= hi
+                gap = n_lo - hi if follows else lo - n_hi
+                if gap > _MACRO_PROXIMITY_CHARS:
+                    continue
+                # ATTACHMENT IS REQUIRED, not merely preferred. A number whose
+                # only candidate name sits across a full stop has no name that
+                # can be read off the page, and GUESSING one is what produced
+                # `macro:gdpnow:203k` and split one 8.6% claims print across two
+                # keys that could never collide. No key is the honest answer and
+                # the permissive one: the caller treats an empty set as "cannot
+                # judge" and lets the post through.
+                if not _name_is_attached(body, lo, hi, n_lo, n_hi):
+                    continue
+                rank = (gap * (_FOLLOWING_NAME_PENALTY if follows else 1),
+                        1 if follows else 0, slug)
+                if best is None or rank < best:
+                    best = rank
+            if best is not None:
+                hits.append((lo, f"{MACRO_KEY_PREFIX}{best[2]}:{val:g}{unit}"))
+    return hits
+
 
 def macro_fact_keys(text: str) -> frozenset[str]:
     """(indicator, value) fingerprints of the macro prints a post quotes.
@@ -988,46 +1158,31 @@ def macro_fact_keys(text: str) -> frozenset[str]:
     ``macro:gdpnow:12pct`` — a terminal quarantine earned by a coincidence. Every
     post in the measured 203k family is cashtag-free, because a macro print is
     not about a ticker; requiring that costs the gate nothing real and closes the
-    whole false-positive class.
+    whole false-positive class. :data:`_COMPANY_SCOPE_RE` closes the half of it
+    that names the company in words instead of a cashtag.
 
-    A number takes the NEAREST indicator name within
-    :data:`_MACRO_PROXIMITY_CHARS`, and one only. Pairing every name in range
-    was the first cut and it manufactured a cross product — "203k claims … 2.1%
-    median CPI" emitted ``macro:cpi:203k`` and ``macro:claims:2.1pct`` as well as
-    the two real keys, so an unrelated post quoting 2.1% claims would have
-    collided with it. The alias table is what makes nearest-wins safe: "GDPNow
-    has growth at 5.9%" resolves through `growth`, a bare "Growth: 5.9%" through
-    the same alias, and both land on ``macro:gdpnow:5.9pct``.
+    A number takes ONE indicator name, and which one is decided in this order:
+
+      1. the name has to be quoted in the value's UNIT (:data:`_MACRO_UNITS`) —
+         GDPNow is never 203 thousand;
+      2. names in the same CLAUSE beat names across a comma or a full stop
+         (:func:`_name_is_attached`);
+      3. then nearest wins, with a following name weighted by
+         :data:`_FOLLOWING_NAME_PENALTY`, and a preceding name breaking the tie.
+
+    ONE NAME, NOT ALL OF THEM. Pairing every name in range was the first cut and
+    it manufactured a cross product — "203k claims … 2.1% median CPI" emitted
+    ``macro:cpi:203k`` and ``macro:claims:2.1pct`` as well as the two real keys,
+    so an unrelated post quoting 2.1% claims would have collided with it.
+
+    THE THREE SHAPES THAT HAVE TO WORK, all live in the corpus and all pinned:
+    ``"203k jobless claims"`` (value first), ``"GDPNow has growth at 5.9%"``
+    (name first), ``"Growth: 5.9%"`` (label). A plain symmetric gap got the first
+    one wrong — it handed "2.1% median CPI" to the GDPNow two characters behind
+    it — which is how one 2.1% CPI print ended up on two keys that could never
+    collide, the exact dedup failure this fingerprint exists to fix.
     """
-    body = str(text or "")
-    if not body.strip() or _CASHTAG_RE.search(body):
-        return frozenset()
-
-    names: list[tuple[str, int, int]] = []
-    for slug, rx in _MACRO_NAME_RES:
-        for m in rx.finditer(body):
-            names.append((slug, m.start(), m.end()))
-    if not names:
-        return frozenset()
-
-    keys: set[str] = set()
-    for unit, rx in _MACRO_VALUE_RES:
-        for m in rx.finditer(body):
-            try:
-                val = float(m.group(1))
-            except (TypeError, ValueError):  # pragma: no cover - regex-guarded
-                continue
-            lo, hi = m.start(), m.end()
-            best: tuple[int, str] | None = None
-            for slug, n_lo, n_hi in names:
-                gap = n_lo - hi if n_lo >= hi else lo - n_hi
-                if gap > _MACRO_PROXIMITY_CHARS:
-                    continue
-                if best is None or (gap, slug) < best:
-                    best = (gap, slug)
-            if best is not None:
-                keys.add(f"{MACRO_KEY_PREFIX}{best[1]}:{val:g}{unit}")
-    return frozenset(keys)
+    return frozenset(k for _pos, k in _macro_fact_hits(str(text or "")))
 
 
 def fact_anchor_keys(text: str, kind: str = "") -> frozenset[str]:
@@ -1045,15 +1200,20 @@ def fact_anchor_keys(text: str, kind: str = "") -> frozenset[str]:
     Empty set = no extractable anchor; callers must treat that as "cannot judge"
     and let the post through, never as "no duplicate".
     """
+    return frozenset(k for _pos, k in _fact_anchor_hits(text, kind))
+
+
+def _fact_anchor_hits(text: str, kind: str = "") -> list[tuple[int, str]]:
+    """(offset of the numeric claim, key) for every anchor in `text`."""
     body = str(text or "")
     k = str(kind or "").strip().lower()
-    keys: set[str] = set()
+    hits: list[tuple[int, str]] = []
 
     for m in _RATIO_RE.finditer(body):
         n, total, noun = m.group(1), m.group(2), _stem(m.group(3))
         if n == total:
             continue  # saturated: a definition, not a read (market_facts law)
-        keys.add(f"ratio:{int(n)}of{int(total)}:{noun}")
+        hits.append((m.start(), f"ratio:{int(n)}of{int(total)}:{noun}"))
 
     tickers = {m.group(1) for m in _CASHTAG_RE.finditer(body)}
     if len(tickers) == 1:
@@ -1064,12 +1224,77 @@ def fact_anchor_keys(text: str, kind: str = "") -> frozenset[str]:
             except ValueError:
                 val = None  # type: ignore[assignment]
             if val is not None:
-                keys.add(f"pct:{k}:{next(iter(tickers))}:{val:g}")
+                hits.append((lead.start(),
+                             f"pct:{k}:{next(iter(tickers))}:{val:g}"))
 
     if k not in _MACRO_KEY_EXEMPT_KINDS:
-        keys |= macro_fact_keys(body)
+        hits += _macro_fact_hits(body)
 
-    return frozenset(keys)
+    return hits
+
+
+def lead_segment(text: str) -> tuple[int, int]:
+    """The span of `text` the LEAD fact may live in: the FIRST NON-EMPTY LINE.
+
+    A post here is a single text field, so its headline and its first line are
+    the same span — "the first numeric claim in the headline, or failing that in
+    the first line" names one place to look, not two.
+
+    DELIBERATELY NOT EXTENDED to the line under a non-numeric headline. That was
+    the first cut and it re-refused the class the ruling protects: "AI and chip
+    stocks are doing almost all the lifting today / The Atlanta Fed has the
+    economy growing at 5% this quarter, but leadership is still narrow"
+    (ob-2026-08-06-33dbf95911) took the 5% GDPNow print as its lead and died on a
+    number that is FRAMING for a post about narrow leadership. A post whose
+    headline carries no number has no lead fact, the cooldown has nothing to say
+    about it, and it ships — the permissive direction, which is the one this gate
+    has to fail in.
+    """
+    body = str(text or "")
+    pos = 0
+    for raw in body.split("\n"):
+        start, end = pos, pos + len(raw)
+        pos = end + 1
+        if raw.strip():
+            return (start, end)
+    return (0, len(body))
+
+
+def lead_fact_keys(text: str, kind: str = "") -> frozenset[str]:
+    """The post's LEAD fact, as anchor keys. The cooldown's unit (ruling R1).
+
+    THE DEFECT THIS EXISTS FOR (round-1 review, 2026-08-06). The fan-out gate
+    read :func:`fact_anchor_keys` over the WHOLE body and refused on the first
+    key any live sibling owned, so a post whose lead fact was brand new but
+    which also recited last week's numbers as framing died whole. Measured on
+    the live outbox that night: macro 0/6 survivors, event 0/2, mover 0/2, and
+    BOTH carriers of the genuinely new 5.0 -> 5.9 GDPNow print refused — one on
+    ``macro:claims:203k`` owned by a post four days older. Zero posts carrying
+    the new number reached the network, which is the precise opposite of the law
+    the fingerprint was built to serve ("a NEW number is news and ships").
+
+    THE RULE. The cooldown keys the LEAD fact — the first numeric claim in the
+    headline, or failing that in the first line (:func:`lead_segment`).
+    Supporting numbers later in the body are CONTEXT: they neither trigger the
+    cooldown nor claim an anchor of their own. "GDPNow 5.9%, up from 5.0% last
+    week" is what a human analyst writes and it ships; a post whose LEAD is the
+    same 203k that shipped on 08-02 does not. The defect the operator reported
+    was never a post that mentioned a number, it was the same number being the
+    WHOLE post, five days running.
+
+    SYMMETRIC BY CONSTRUCTION. Ownership is claimed on the same keys refusal is
+    tested against, so a post that merely cites 203k in its third line cannot
+    quietly claim that anchor and starve the post whose lead it actually is.
+    """
+    hits = _fact_anchor_hits(text, kind)
+    if not hits:
+        return frozenset()
+    lo, hi = lead_segment(text)
+    in_lead = [(pos, key) for pos, key in hits if lo <= pos < hi]
+    if not in_lead:
+        return frozenset()
+    first = min(pos for pos, _k in in_lead)
+    return frozenset(key for pos, key in in_lead if pos == first)
 
 
 #: Kinds the numeric-fact cooldown does NOT apply to. A relayed wire flash is a

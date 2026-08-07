@@ -600,7 +600,12 @@ def _fact_anchor_owners(state: dict, now: datetime,
     owners: dict[str, str] = {}
     for _rank, iid, text, kind, when in sorted(rows, key=lambda r: (r[0], r[1])):
         try:
-            keys = _clock.fact_anchor_keys(text, kind)
+            # THE LEAD FACT, NOT EVERY NUMBER IN THE POST (ruling R1,
+            # 2026-08-06). Ownership is claimed on exactly the keys refusal is
+            # tested against below, so a post that recites 203k as framing in
+            # its third line cannot claim that anchor and starve the post whose
+            # LEAD it is. See `market_clock.lead_fact_keys`.
+            keys = _clock.lead_fact_keys(text, kind)
         except Exception:  # noqa: BLE001
             continue
         for key in keys:
@@ -2033,10 +2038,17 @@ def main(argv: list[str] | None = None) -> int:
     _fact_owners = _fact_anchor_owners(state, now, windows=_fact_cooldowns)
     quarantined_clock = 0
     quarantined_fact_fanout = 0
+    # The RESOLVED window table, not the module constant: the per-family
+    # cooldowns are config-driven, so a log naming one number was wrong for
+    # every family that is not the default.
+    _window_table = ", ".join(
+        f"{_fam}={_clock.fact_cooldown_days(f'{_fam}:x', _fact_cooldowns)}d"
+        for _fam in sorted(
+            set(_clock.FACT_COOLDOWN_DAYS_DEFAULT) | set(_fact_cooldowns)))
     log.info("publish-time clock gate | session_day=%s pre_open=%s | "
-             "%d fact anchors held over the trailing %dd",
+             "%d LEAD-fact anchors held | windows: %s",
              _clock.current_session(now) is not None, _clock.is_pre_open(now),
-             len(_fact_owners), _FACT_ANCHOR_WINDOW_DAYS)
+             len(_fact_owners), _window_table)
 
     # ── Per-account cadence resolver (XG-W2) ─────────────────────────────────
     # config/marketing.yml keeps sentinel.max_posts_per_account_per_day: -1 as
@@ -2378,7 +2390,14 @@ def main(argv: list[str] | None = None) -> int:
         # test_a_quarantined_owner_hands_the_fact_to_the_next_sweep).
         _anchor_hit = None
         try:
-            _my_keys = sorted(_clock.fact_anchor_keys(
+            # THE LEAD FACT ONLY (ruling R1, 2026-08-06). Reading every number
+            # in the body and breaking on the first one a sibling owned refused
+            # a post whose lead was NEW because its framing quoted last week —
+            # macro 0/6, event 0/2, mover 0/2 on the measured sweep, and the new
+            # GDPNow 5.9% print shipped on no carrier at all. Reciting a prior
+            # number to frame a new one is what a human analyst does; the defect
+            # is the same number being the WHOLE post, five days running.
+            _my_keys = sorted(_clock.lead_fact_keys(
                 text, str(it.get("kind") or "")))
             # DECIDE OVER ALL KEYS BEFORE CLAIMING ANY. Claiming as we go would
             # leave a refused post holding the anchors it passed, silently
@@ -2398,11 +2417,17 @@ def main(argv: list[str] | None = None) -> int:
                         iid, _fa_exc)
         if _anchor_hit is not None:
             _oid, _akey = _anchor_hit
-            reason = (f"fact fan-out: {_akey} already anchors {_oid} in the "
-                      f"trailing {_FACT_ANCHOR_WINDOW_DAYS} days")
+            # THE KEY'S OWN WINDOW, not the module constant. A macro key is held
+            # for 7 days and the receipt used to say 5 — an item refused on day
+            # six showed a reason its own arithmetic contradicted, and the
+            # operator reads these receipts.
+            _akey_days = _clock.fact_cooldown_days(_akey, _fact_cooldowns)
+            reason = (f"fact fan-out: {_akey} is the LEAD fact of {_oid} in the "
+                      f"trailing {_akey_days} days")
             print(f"::warning title=marketing-fact-fanout::item {iid} "
-                  f"({account}/{it.get('kind')}) quarantined — same source fact "
-                  f"({_akey}) as {_oid}; one fact, one post", flush=True)
+                  f"({account}/{it.get('kind')}) quarantined — same LEAD fact "
+                  f"({_akey}) as {_oid} inside its {_akey_days}d cooldown; "
+                  f"one fact, one post", flush=True)
             log.warning("item %s (%s) QUARANTINED by fact fan-out gate: %s",
                         iid, account, reason)
             if live:
