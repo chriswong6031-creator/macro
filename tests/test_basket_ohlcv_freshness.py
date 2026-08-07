@@ -233,6 +233,48 @@ def test_bld_is_stamped_removed_in_live_membership():
             "price series, so an un-removed BLD row is a permanent staleness red line")
         assert "DELIST" in (m.get("rationale") or "").upper(), (
             "BLD's exit must DISCLOSE the delisting, not read as a curation swap")
+
+
+# ------------------------ delisted BEFORE anyone curated the row (MAG/GATO, 2026-08-07)
+# BLD above is the ordinary shape: a live member whose security later stopped existing, so
+# its history is real and worth repairing — which is why the FETCH universe deliberately
+# keeps removed members. MAG and GATO are the other shape. Both had already been acquired
+# when silver_miners was curated on 2026-08-05 (MAG: Pan American Silver, Form 25-NSE
+# 2025-09-04; GATO: First Majestic Silver, Form 25-NSE 2025-01-16 — and both acquirers are
+# themselves members of the sleeve). There is no history on disk to repair and the vendor
+# can never return one, so keeping them in the fetch universe would request two dead
+# symbols nightly forever. They were also the ONLY two members of any basket with no price
+# series on any rung, which is why the all-rungs census was screaming about a hole no
+# fetch could ever fill.
+def test_a_member_delisted_before_curation_leaves_the_fetch_universe(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    _write_membership_rows(tmp_path, {"silver_miners": [
+        {"ticker": "LIVE"},
+        # ordinary exit: removed, but its tape existed — stays in the FETCH universe
+        {"ticker": "GONE", "removed": "2026-07-01"},
+        # never traded as a member: out of BOTH universes
+        {"ticker": "DEAD", "removed": "2025-09-04", "delisted_before_curation": True},
+    ]})
+    assert _membership_tickers(active_only=True) == ["LIVE"]
+    assert _membership_tickers() == ["GONE", "LIVE"]
+    assert _resolve_universe([], [], False) == ["GONE", "LIVE"]
+
+
+def test_mag_and_gato_are_stamped_delisted_in_live_membership():
+    """Un-stamping either row silently puts a dead symbol back on the nightly request
+    list and re-arms the all-rungs coverage alarm on a hole nothing can fill."""
+    p = Path(__file__).resolve().parent.parent / "data" / "baskets" / "membership.json"
+    rows = {m["ticker"]: m for b in json.loads(p.read_text())["baskets"].values()
+            for m in b.get("members", []) if m.get("ticker") in {"MAG", "GATO"}}
+    assert set(rows) == {"MAG", "GATO"}
+    for t, m in rows.items():
+        assert m.get("removed"), f"{t} lost its exit stamp"
+        assert m.get("delisted_before_curation") is True
+        assert "25-NSE" in (m.get("rationale") or ""), (
+            f"{t}'s exit must carry its SEC exchange-delisting receipt")
+    # the LIVE file, not a fixture: neither symbol may reach the nightly request list
+    live_universe = set(_membership_tickers())
+    assert not ({"MAG", "GATO"} & live_universe)
 # ------------------------------------------------- absent from ALL rungs (2026-08-05)
 # Absence from THIS store is graceful degradation — engine/basket_index falls through to
 # data/stocks, data/china_stocks and data/yahoo. Absence from every rung is data loss: the
