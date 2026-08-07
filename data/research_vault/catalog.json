@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T06:04:04.896108+00:00",
-  "count": 922,
+  "generated_at": "2026-08-07T06:30:28.201370+00:00",
+  "count": 923,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -1701,6 +1701,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ona6alnfny9-b93e96",
+      "title": "Capri Holdings (CPRI) F1Q27 Earnings Review Michael Kors recovery still in focus as EMEA softens",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:01:43Z",
+      "summary_points": [
+        "**Q1 Results & Guidance**: FY27 revenue guidance reduced to $3.4bn (vs.",
+        "$3.525bn) due to EMEA softness (-$50mn), inventory delays (-$50mn), and FX headwinds (-$35mn); Q1 EPS beat ($0.67 vs.",
+        "$0.41) but gross margins missed.",
+        "**Brand Performance & Risks**: Jimmy Choo drove 10.5% Y/Y revenue growth (exceeding expectations), while Michael Kors faces outlet channel softness and inventory delays; sustained outlet growth remains a key debate.",
+        "**Valuation & Key Risks**: Price target cut to $18 (from $21) with P/E 13.4 below forward 15.7; downside risks include delayed sales, margin compression, and balance sheet/FCF deterioration."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
