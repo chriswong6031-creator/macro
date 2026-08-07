@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T05:30:16.623769+00:00",
-  "count": 921,
+  "generated_at": "2026-08-07T06:04:04.896108+00:00",
+  "count": 922,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -1592,6 +1592,27 @@
         "**EU Funds as Fiscal Anchor**: Unblocked RRF funds (€10bn, 3% GDP) and Cohesion Funds (~8-9% of 2025 GDP) represent critical near-term support; disbursement limited to Q4 2024, offsetting energy price impacts.",
         "**EUR/HUF Correlation Drivers**: Oil (10% rise → +0.8% EUR/HUF, R²=0.34) and gas (10% rise → +0.5% EUR/HUF, R²=0.24) explain 34%/24% of daily volatility since Iran conflict; energy prices key near-term HUF direction.",
         "**Inflation Target & FX Risk**: Lowering MNB inflation target to 2% could narrow EUR/HUF differentials, but high FX pass-through (>3%) and energy price volatility create two-sided risks during Euro adoption (Oct/Nov)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jkaisdii5gi-7e75c8",
+      "title": "Americas Brokers & Crypto Key takeaways post earnings CRCL & GLXY",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T04:02:01Z",
+      "summary_points": [
+        "**CRCL Earnings & Guidance**: Q2 EPS beat ($184 vs $174) but guidance lowered 6% due to $27.5mn Arc token gain reversal, signaling near-term margin pressure.",
+        "**Hyperliquid Partnership Revenue Impact**: 90% USDC migration to CRCL platform reduced net revenue by $68.5m (9% of 2027E adjusted profit), a critical revenue stream risk.",
+        "**USDC Resilience vs Crypto Downturn**: USDC market cap up 12% YoY vs crypto market down 42% YoY; 70% stablecoin transaction share (June), driven by non-crypto adoption.",
+        "**Revenue & EPS Revisions**: 2026E/27E net revenue revised +12%/-2% and EPS +27%/-8% due to Arc token impact and expense increases, reflecting fundamental adjustment.",
+        "**Valuation & Target**: 12-month price target cut to $71 (from $82) with Neutral rating, P/E reduced to 29.5x, reflecting revised earnings and Hyperliquid revenue risk."
       ],
       "tags": [],
       "tickers": [],
