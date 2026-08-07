@@ -45,6 +45,7 @@ import pandas as pd
 from engine.smart_money import (NOTE, _read_all, diff_snapshots, full_cusip_map,
                                 name_ticker_map, resolve_tickers)
 from lib import config
+from lib.closes_panel import disclose_merge, merge_close_caches
 
 log = logging.getLogger(__name__)
 
@@ -195,20 +196,14 @@ def _breadth_panel() -> pd.DataFrame | None:
     """Combined date×ticker close panel from the breadth caches (S&P large/small/mid),
     deduped on ticker. None if none are present (then the tracker degrades to yahoo-only
     coverage)."""
-    frames = []
-    for grp in ("breadth", "smallcap_breadth", "midcap_breadth"):
-        p = config.data_dir() / grp / "_closes_cache.parquet"
-        if p.exists():
-            try:
-                frames.append(pd.read_parquet(p))
-            except Exception:  # noqa: BLE001
-                continue
-    if not frames:
+    # Freshest column per ticker (lib/closes_panel.py). The SINCE return runs to the
+    # column's last bar, so a tier-order pick of an index migrant's frozen column would
+    # publish a "since the trade" number that silently stopped on the migration date.
+    panel, meta = merge_close_caches(("breadth", "smallcap_breadth", "midcap_breadth"))
+    if panel.empty:
         return None
-    panel = pd.concat(frames, axis=1, sort=False)    # union of dates; sorted explicitly below
-    panel = panel.loc[:, ~panel.columns.duplicated()]
-    panel.index = pd.to_datetime(panel.index)
-    return panel.sort_index()
+    disclose_merge(meta, "manager_trades")
+    return panel
 
 
 # --------------------------------------------------------------------------- #
