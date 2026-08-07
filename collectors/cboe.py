@@ -34,6 +34,16 @@ log = logging.getLogger(__name__)
 # extra attempt after a real cooldown beats more rapid-fire retries.
 CHAIN_429_COOLDOWN_S = 60.0
 
+# 2026-07-30 proved 60s is not enough. The CDN held the 429 CONTINUOUSLY for ≥3 minutes
+# (23:42:32Z → 23:45:33Z+, run 30590845976) — past the 3/6/12s per-request ladder AND
+# past the single 60s cooldown above — so putcall + gex/gex_SPX/gex_SPY/gex_QQQ/gex_IWM
+# all lost the session; the single names only landed because the window lifted later in
+# the sweep. A chain snapshot is unrecoverable after tonight (delayed_quotes serves the
+# LIVE snapshot only), so the cost asymmetry is extreme: 5 idle minutes on a bad night
+# versus a permanent hole. Escalate to a spaced LADDER — 60s, then 300s — which spans
+# the measured 07-30 window with margin. Both adapters walk the same ladder.
+CHAIN_429_COOLDOWN_LADDER_S: tuple[float, ...] = (CHAIN_429_COOLDOWN_S, 300.0)
+
 
 # ── WRITE-SIDE SESSION GATE (M7, review 2026-07-29) ───────────────────────────
 # Both adapters below stamp their one-row snapshot with `pd.Timestamp(date.today())`
@@ -81,15 +91,32 @@ class PutCallAdapter(Adapter):
         vol = pd.to_numeric(options["volume"], errors="coerce").fillna(0)
         return float(vol[cp == "P"].sum()), float(vol[cp == "C"].sum())
 
+    def _spx_after_cooldowns(self, first_err: Exception) -> tuple[float, float]:
+        """Walk CHAIN_429_COOLDOWN_LADDER_S on the all-or-nothing _SPX leg.
+
+        putcall is whole-frame dependent on _SPX (index_pc_ratio has no other source),
+        so this leg failing costs the WHOLE session — that is how 07-27 and 07-30 both
+        died. One 60s cooldown cleared the ~1-min 07-27 flap; the ≥3-min 07-30 window
+        outlasted it, so a second spaced attempt at 300s follows. Re-raises the LAST
+        error when the ladder is exhausted, so the source still reports FAILED and the
+        coverage tripwire makes the resulting hole loud."""
+        err = first_err
+        for cooldown in CHAIN_429_COOLDOWN_LADDER_S:
+            log.warning("putcall: _SPX chain failed (%s); cooling down %.0fs for one "
+                        "spaced retry", err, cooldown)
+            time.sleep(cooldown)
+            try:
+                return self._chain_volumes("_SPX", retries=1)
+            except Exception as e:  # noqa: BLE001 — walk the ladder, then fail the source
+                err = e
+        raise err
+
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         from datetime import date
         try:
             put_idx, call_idx = self._chain_volumes("_SPX")
-        except Exception as e:  # noqa: BLE001 — one spaced retry, then fail the source
-            log.warning("putcall: _SPX chain failed (%s); cooling down %.0fs for one "
-                        "spaced retry", e, CHAIN_429_COOLDOWN_S)
-            time.sleep(CHAIN_429_COOLDOWN_S)
-            put_idx, call_idx = self._chain_volumes("_SPX", retries=1)
+        except Exception as e:  # noqa: BLE001 — spaced retries, then fail the source
+            put_idx, call_idx = self._spx_after_cooldowns(e)
         put_eq = call_eq = 0.0
         for sym in ("SPY", "QQQ", "IWM"):
             try:
@@ -220,16 +247,26 @@ class GexAdapter(Adapter):
             except Exception as e:  # noqa: BLE001 — partial coverage still useful
                 failed.append(sym)
                 log.warning("gex: %s failed: %s", sym, e)
-        if failed:
-            # A chain snapshot is unrecoverable after tonight — spend one cooldown on a
-            # single-attempt second sweep before accepting a permanent per-symbol hole.
-            time.sleep(CHAIN_429_COOLDOWN_S)
+        # A chain snapshot is unrecoverable after tonight — spend the cooldown ladder on
+        # single-attempt recovery sweeps before accepting a permanent per-symbol hole.
+        # Each pass re-sweeps only what is STILL failing and stops as soon as the set
+        # empties, so a clean night never sleeps and the 07-27 shape (recovered on the
+        # first 60s pass) never reaches the 300s pass. Only the ≥3-min 07-30 window does.
+        for cooldown in CHAIN_429_COOLDOWN_LADDER_S:
+            if not failed:
+                break
+            time.sleep(cooldown)
+            still: list[str] = []
             for sym in failed:
                 try:
                     self._collect_symbol(sym, gcfg, ecfg, out, retries=1)
-                    log.info("gex: %s recovered on the post-cooldown sweep", sym)
+                    log.info("gex: %s recovered on the %.0fs post-cooldown sweep",
+                             sym, cooldown)
                 except Exception as e:  # noqa: BLE001 — coverage tripwire makes this loud
-                    log.warning("gex: %s failed after cooldown too: %s", sym, e)
+                    still.append(sym)
+                    log.warning("gex: %s failed after the %.0fs cooldown too: %s",
+                                sym, cooldown, e)
+            failed = still
         # #3721 weekend-row gate stays the LAST thing this adapter does, so the
         # post-cooldown recovery sweep (#4014) is gated too — a Saturday recovery row
         # is as fabricated as a Saturday first-pass row.
@@ -253,11 +290,71 @@ CORE_CHAIN_SERIES: tuple[str, ...] = ("putcall", "gex", "gex_SPX")
 # the disclosure entry here is the accepted terminal state (never fabricate a row).
 # The coverage tripwire stays loud about an unregistered hole until it is either
 # healed (impossible for chains) or explicitly registered here with its cause.
+#
+# TWO CAUSES LIVE IN HERE, AND THEY HAVE DIFFERENT FIXES (2026-08-06 postmortem).
+# The 07-27 entry taught every later reader to blame the CBOE CDN, and for a week
+# nobody found the bigger half: MOST of the lost sessions were collected perfectly
+# and then thrown away by our own pipeline.
+#   * SOURCE loss  — the CDN 429'd the chain endpoint through the retry window.
+#     Nothing was ever on disk. Unfixable after the fact; mitigate with retries.
+#   * COMMIT loss  — the adapter wrote the row, the collect job then died at a LATER
+#     step, `commit data` was skipped, and the next night's `actions/checkout` reset
+#     the tracked parquet. The row EXISTED and we deleted it.
+# Telling them apart is one command — the store advances only on nights that
+# committed, so compare the run log's `cboe_putcall -> ok (1 rows, last <date>)`
+# against `git log --format='%ad %s' --date=short -- data/cboe/putcall.parquet`.
+# "ok" in the log with no commit that evening is COMMIT loss, not a CBOE outage.
+#
+# The registry is date-keyed and DATE-GLOBAL — one entry silences every series for that
+# date — so each string carries the per-series nuance the key cannot.
 KNOWN_PERMANENT_GAPS: dict[date, str] = {
-    date(2026, 7, 27): "CBOE CDN rate-limited (HTTP 429) the delayed_quotes chain "
+    date(2026, 7, 27): "SOURCE loss — CBOE CDN rate-limited (HTTP 429) the delayed_quotes chain "
                        "endpoint through the whole retry window of the 07-27 evening "
                        "collect (run 30314534128): putcall + gex/gex_SPX/gex_SPY/"
                        "gex_MSFT lost the session; snapshots are unrecoverable.",
+    date(2026, 7, 30): "SOURCE loss — CBOE CDN held a continuous HTTP 429 on delayed_quotes for ≥3 "
+                       "minutes (23:42:32Z→23:45:33Z+, run 30590845976), outlasting "
+                       "both the 3/6/12s per-request ladder and the single 60s "
+                       "cooldown of the day: putcall + gex/gex_SPX/gex_SPY/gex_QQQ/"
+                       "gex_IWM lost the session (single names landed once the window "
+                       "lifted mid-sweep). PARTIALLY HEALED: gex_SPY/gex_QQQ/gex_IWM "
+                       "were cross-filled from the same-session polygon archive by "
+                       "scripts/backfill_cboe_gex_20260730_from_polygon.py (same "
+                       "engine.gex_engine.compute_gex, identical 16-col schema; the "
+                       "polygon accrual stamps UTC now(), so the 07-30 session is the "
+                       "row stamped 07-31 — pinned by spot==yahoo 07-30 close). "
+                       "putcall + gex + gex_SPX STAY LOST: no archive anywhere carries "
+                       "SPX options, and putcall is all-or-nothing on its _SPX leg. "
+                       "This 429 is what escalated the cooldown to a 60s/300s ladder.",
+    date(2026, 7, 31): "SOURCE loss — same 429 flap shape later in the 07-31 evening sweep (run "
+                       "30673008620): gex_META + gex_MSFT lost the session; the other "
+                       "ten series landed. NOT recoverable — the polygon archive has "
+                       "no 07-31 row at all: that Friday-evening accrual crossed into "
+                       "Saturday 2026-08-01 UTC and build_polygon_gex's is_session "
+                       "gate correctly refused to stamp a non-session date.",
+    date(2026, 8, 3): "COMMIT loss — scripts/collect.py crashed mid-run (run 30862763261): "
+                      "AttributeError 'NYGamingAdapter' object has no attribute "
+                      "'fetch_result_status', then 'expected_failure'. The night's "
+                      "single checkpoint commit never ran, so CBOE parquet rows that "
+                      "had ALREADY been fetched were discarded by the next checkout — "
+                      "all 12 chain series lost the session. Crash class fixed by "
+                      "#4534 (duck-typed run_adapter); the commit-loss WINDOW itself "
+                      "closed by #4731 (split checkpoint — market data commits before "
+                      "the capital-structure chain can fail). No archive: the polygon "
+                      "rows died in the same dead commit.",
+    date(2026, 8, 4): "COMMIT loss — compile_capital_structure_events raised ManifestIdentityError "
+                      "(source ledger row 0 manifest mismatch, run 30960328285) → step "
+                      "exit 1 → the same single-checkpoint commit loss as 08-03: all 12 "
+                      "chain series lost the session. Fixed by #4600; commit-loss "
+                      "window closed by #4731. No archive (same dead commit).",
+    date(2026, 8, 5): "COMMIT loss — compile_capital_structure_document_terms exited 2 degraded on a "
+                      "mass 'SEC complete-submission must contain exactly 1 canonical "
+                      "SEC-HEADER opener line(s)' (run 31056495943) → the same commit "
+                      "loss: all 12 chain series lost the session. Fixed by #4640; "
+                      "commit-loss window closed by #4731. No archive (same dead "
+                      "commit) — the polygon row stamped 08-06 is a LIVE intraday "
+                      "snapshot, not the 08-05 close (its spot matches no 08-05 close), "
+                      "so it is not an honest cross-fill source.",
 }
 
 
@@ -321,16 +418,36 @@ def check_chain_session_coverage(lookback_sessions: int = 5) -> list[dict]:
         print(f"::warning title=cboe-session-miss::{len(problems)} of "
               f"{len(CHAIN_FAMILY_SERIES)} cboe delayed-chain series missing session "
               f"rows: {affected} — chain snapshots are unrecoverable; investigate "
-              f"TODAY or register the gap in collectors/cboe.py KNOWN_PERMANENT_GAPS",
-              flush=True)
+              f"TODAY or register the gap in collectors/cboe.py KNOWN_PERMANENT_GAPS. "
+              f"FIRST check WHICH failure this is, because they have different fixes: "
+              f"grep that evening's collect log for `cboe_putcall -> ` / `cboe_gex -> `. "
+              f"`-> ok` means the row was COLLECTED and the pipeline then dropped it "
+              f"(the collect job died before `commit data`, and the next checkout reset "
+              f"the parquet) — look at the job's failing STEP, not at CBOE. `-> failed` "
+              f"or `gex: <sym> failed: HTTP 429` is a genuine source loss. "
+              f"For a gex_<name> hole ONLY: if data/polygon_gex/summary_<name>.parquet "
+              f"carries the same session (same engine, identical schema), it can be "
+              f"honestly cross-filled — see "
+              f"scripts/backfill_cboe_gex_20260730_from_polygon.py for the pattern. "
+              f"ASSUME NO FIXED STAMP OFFSET: the store spans two eras — rows written "
+              f"before the session-stamp fix (#4807, 2026-08-07) are stamped UTC "
+              f"run-date, i.e. session+1; rows written after it carry the session they "
+              f"describe, no shift; and a pre-market-tape row matches no session's "
+              f"close at all. Pin the session on the DATA, never on the stamp: the "
+              f"row's spot must match the yahoo close of the TARGET session, and match "
+              f"it closer than either neighbouring session, before copying — never "
+              f"fabricate a row", flush=True)
         core_missing = set.intersection(
             *(set(missing_by_series.get(s, [])) for s in CORE_CHAIN_SERIES))
         if core_missing:
             days = ", ".join(map(str, sorted(core_missing)))
             print(f"::error title=cboe-session-miss::whole-family miss — putcall + gex "
-                  f"+ gex_SPX all lack session(s) {days} (the 2026-07-27 shape); the "
-                  f"board regime panel, conditions P/C and the gex_flip_cross alert "
-                  f"are all running without that session", flush=True)
+                  f"+ gex_SPX all lack session(s) {days} (the 2026-07-27 shape: every "
+                  f"board-critical series losing the SAME session, from either a CDN "
+                  f"429 or a skipped `commit data` — see KNOWN_PERMANENT_GAPS for how "
+                  f"to tell them apart); the board regime panel, conditions P/C and "
+                  f"the gex_flip_cross alert are all running without that session",
+                  flush=True)
     else:
         log.info("chain coverage: all %d series carry the last %d sessions "
                  "(through %s)", len(CHAIN_FAMILY_SERIES), lookback_sessions, expected)

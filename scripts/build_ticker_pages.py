@@ -2875,8 +2875,26 @@ def _build_themes(blob: dict | None, member_ctx_list: list, baskets_map: dict,
         return None
     rows = []
 
-    # From blob.baskets_membership (direct basket membership)
-    bm = (blob or {}).get("baskets_membership") or []
+    # From blob.baskets_membership (direct basket membership).
+    #
+    # Gated on baskets_map, which is loaded from site/basketdata/baskets.json — the
+    # basket builder's OWN output, so it is exactly the set of baskets that produced
+    # a site/basket/<id>.html page (47 ids, 47 pages, zero ids without one). Membership
+    # is the wider set: engine/baskets.py drops a basket resolving fewer than 3 members,
+    # and that basket stays in membership.json while its page is never written.
+    #
+    # Ungated, every member's dossier then linked ../basket/<slug>.html into a 404 —
+    # and check_site_asset_refs treats a dangling link as a live 404 and FAILS the
+    # render, so the whole site stops re-baking. That is not hypothetical: silver_miners
+    # (#4607, created 2026-08-05, 2 of 10 members resolving) took the render lane down
+    # for ~18h via stocks/HL.html and stocks/SSRM.html. #4607 even predicted the page
+    # would be "absent from the site for one build cycle" — what it missed is that the
+    # link would still be emitted, turning an expected absence into a hard stop.
+    #
+    # Filter BEFORE the [:5] slice, so a member still gets up to five LINKABLE baskets
+    # rather than five candidates minus whatever was unbuilt.
+    bm = [b for b in ((blob or {}).get("baskets_membership") or [])
+          if _clean_str(b.get("slug") or "") in baskets_map]
     for b in bm[:5]:
         slug = _clean_str(b.get("slug") or "")
         name = _clean_str(b.get("name") or slug)
@@ -2901,6 +2919,10 @@ def _build_themes(blob: dict | None, member_ctx_list: list, baskets_map: dict,
                 if r["id"] == bid:
                     r["band_en"] = _clean_str(mc.get("band_en") or "")
                     r["band_zh"] = _clean_str(mc.get("band_zh") or "")
+            continue
+        # Same gate as the membership loop above: member_context can name a basket the
+        # builder skipped, and this row becomes the same ../basket/<id>.html 404.
+        if bid not in baskets_map:
             continue
         basket_info = baskets_map.get(bid) or {}
         bname = _clean_str(mc.get("basket") or basket_info.get("name") or bid)

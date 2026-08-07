@@ -93,22 +93,87 @@ licensed sources are inputs; competitor workflows are product research only.
 
 ### Canonical wave status
 
-| Wave | Status at 2026-08-06 | Owner | Hard prerequisite | Latest evidence | Next action / exit evidence |
+Statuses are one of: **live verified**, **code complete, not live**, **externally
+blocked**, **planned**, **not started**. Every row carries an OBSERVATION, never
+an intent. Re-verified against the repository on 2026-08-07 (§1.1 records what
+that re-verification corrected).
+
+Keep three states apart when reading any row, because this program has already
+been bitten by conflating them: **code exists** ≠ **wired into production** ≠
+**run against real data**. Wave 0A was exactly that failure — the receipt-serving
+code existed and 666 tests passed while it addressed the wrong bucket.
+
+| Wave | Status at 2026-08-07 | Owner | Hard prerequisite | Observed evidence | Next action / exit evidence |
 |---|---|---|---|---|---|
-| 0A dedicated reader | Not started | Claude | Fresh `origin/main`; lane/collision audit | API/store mismatch found in source audit | Merge and deploy dedicated fail-closed reader; then bind read-only VPS secrets |
-| 0B B4F activation | Externally blocked | Claude + operator | 0A reader code; six dedicated secrets; protected approval | #4431/#4445 code; zero workflow runs; no packet | Approved seed, four reviewed artifacts, packet PR, zero-write replay |
-| 0C paid preview | Not started; parallel | Claude | 0A underway; design doctrine/skill | Live 401/403 funnel audit | Anonymous/free/paid browser and visual gates |
-| 1 first v2 publication | Blocked by 0B | Claude + operator | Reviewed canonical packet | B4D/B4E machinery #4381/#4398 | One manual AAPL `ffqsv2_`; API/UI live acceptance |
-| 2 corpus + gold QA | Planned | Claude | Wave 1 proof and stable receipt contracts | 12-name Wave 2 slice; local AAPL evidence | Partitioned cohort then 200-issuer blinded gates |
-| 3 production query plane | Planned | Claude | Wave 2 evidence/catalog contracts | 50-metric bitemporal kernel #4261/#4267 | Authenticated PIT/as-reported/normalized query acceptance |
-| 4 analyst cockpit | Planned | Claude | Stable Wave 3 query contract | Existing workbench #4184/#4210/#4410 | Company, filings, multi-company, disclosure, revision workflows |
-| 5 specialist intelligence | Planned | Claude + domain review | Wave 2 gold process; Wave 3 semantics | Five quantitative and five qualitative review detectors | Registered verticals and calibrated detector families |
-| 6 API/export/Excel | Planned | Claude | Wave 3 query and tenant contracts | No analyst delivery plane | Cross-surface receipt/value round trips |
-| 7 Neural Web/Prophet | Partial context only | Claude + authority review | Receipt-bearing PIT packets; outcome ledger | Current v1 context seam | Leakage-safe context accrual; separately governed promotion |
-| 8 parity closure | Not earned | Program owner | Waves 0-7 acceptance | Canonical parity ledger | Independent clean-room, security, temporal, UX, and operations audit |
+| 0A dedicated reader | **live verified** (code half) | Claude | — | PR #4806 merged `c868c1a77c3`; `/api/health` `commit` advanced `1bef90743ae`→`d260b4fac65`, which contains the merge, with `checkout`==`commit`; live `app/forensics.py` has **0** `research_vault` refs; both receipt routes 401 with `private, no-store` + `nosniff` and no 500 | Credential-binding half remains: provision the six secrets, then dispatch `deploy-api-secrets.yml` (it is `workflow_dispatch` ONLY — merging ships code, not credentials) |
+| 0B B4F activation | **externally blocked** | operator, then Claude | six secrets; protected approval | `gh secret list` → none of the six at repo scope OR in env `attested-history-seed`; both workflows have **zero** runs ever; `config/fundamental_forensics/attested_history_operator.v1.json` absent from `git ls-files`; env exists with `required_reviewers`+`branch_policy` | Approved seed, four reviewed artifacts, packet PR, zero-write replay |
+| 0C paid preview | **code complete, not live** | Claude | — | PR #4830 open, armed. Defect measured live pre-fix: `fundamental_forensics.html` 200 anonymous while its own `.css`/`.js` 401 | Merge; then re-measure both assets anonymously for 200 |
+| 1 first v2 publication | **externally blocked** | operator, then Claude | reviewed canonical packet | **Correction:** the publisher LIBRARY is complete — `attested_query_snapshots.py:2498` `publish_attested_query_snapshot`, pointer-last CAS `:2542-2551`. Only a single-writer DRIVER is missing; every current caller is a test | Build the driver — but it cannot be exercised or proven without the six secrets, so it would ship as untestable code until 0B lands |
+| 2 corpus + gold QA | **planned** | Claude | Wave 1 proof | 12-name slice hard-coded at `daily.yml:1223-1236`; issuer ceiling 32 (`collectors/fundamental_forensics_acquisition.py:51`); retained bytes **default** 256 MiB with **hard ceiling 512 MiB** (`:62`,`:55`) — the handoff previously called 256 MiB the cap. "Run against real data" is **unprovable from this repo**: the stores are gitignored | Partitioned cohort, then 200-issuer blinded gates |
+| 3 production query plane | **planned** | Claude | Wave 2 evidence | Catalog is exactly 50 and schema-enforced (`metric_registry.py:1598-1599` hard-fails on ≠50); bounds 50×50×32/10,000 (`query.py:86-90`). **No production route reaches it** — `load_core_metric_registry` has ZERO non-test callers | Authenticated PIT/as-reported/normalized query acceptance |
+| 4 analyst cockpit | **planned** | Claude | Wave 3 query contract | Seven-tab workbench is live and nightly-rebuilt, but no as-reported surface exists (`grep -niE "as.?reported"` → 0 hits) and "compare" is one-issuer period compare only | Company, filings, multi-company, disclosure, revision workflows |
+| 5 specialist intelligence | **planned** | Claude + domain review | Wave 2 gold; Wave 3 semantics | Ten detectors live (5 quantitative `build_fundamental_forensics.py:68-119`, 5 qualitative `disclosure_diff.py:2416-2428`). **Correction:** four of the five quantitative are independently reimplemented at `engine/moat_falsifiers.py:16-42` with identical thresholds off a DIFFERENT source, shipping to production ticker pages, with no test cross-pinning the two | Reconcile the duplicate implementations BEFORE commissioning new families |
+| 6 API/export/Excel | **not started** | Claude | Wave 3 query/tenant contracts | No export code on the forensics plane (0 hits for xlsx/openpyxl/export in `app/forensics.py`) | Cross-surface receipt/value round trips |
+| 7 Neural Web/Prophet | **planned** | Claude + authority review | receipt-bearing PIT packets; outcome ledger | **Correction: TWO seams, not one.** (a) entitlement-gated Brain chat `brain_gateway.py:2050-2085`; (b) a server-side Context Snapshot dimension `context_api.py:963-1032` with NO entitlement check, stamped nightly into a Prophet store. The authority claim HOLDS — zero forensics references in `us_board_rank`, `signal_gate`, `prophet_bridge`, `prophet_stage_fusion`, `prophet_governor`, `us_prophet_grades`, `build_prophet` — but "no live integration" was wrong: data has been flowing. No outcome ledger exists (`data/us_prophet_rank/grades/` absent) | Receipt-bearing PIT context; leakage-safe outcome ledger; separately governed promotion |
+| 8 parity closure | **not started** | Program owner | Waves 0-7 | No parity ledger artifact exists | Independent clean-room, security, temporal, UX, operations audit |
 
 Update this table after each merged/live-verified wave. “Code complete,”
-“externally blocked,” and “live verified” are different states.
+“externally blocked,” and “live verified” are different states — and a row that
+says one while meaning another is how this program lost a bucket binding for a
+week.
+
+### 1.1 What the 2026-08-07 re-verification corrected
+
+Every claim in the table above was re-checked against the repository rather than
+carried forward. Five were stale or wrong:
+
+1. **A confidentiality defect nobody had recorded.** Entitlement-gated Filing
+   Forensics findings for **722 tickers** were committed to the PUBLIC repo in
+   `data/us_prophet_rank/candidates/2026-07.parquet` — tracked, not gitignored.
+   `context_api.context_frame` flattens a dimension's whole `value` dict with no
+   allowlist; `us_context_vector.context_dimension_frame` merges every resulting
+   column into the committed row. `git clone` bypassed both the paywall and the
+   Brain tier gate. Contained in PR #4865 (seam fix + purge + a classification
+   guard). **The seam fix alone was insufficient**: `append_candidates` unions
+   its schema with the prior part on purpose, so a column retired tonight is
+   re-added from prior and the published body survives — the purge had to ship
+   in the same change.
+2. **Wave 1 needs less than stated.** The publisher library is complete; only a
+   single-writer driver is missing.
+3. **Wave 7's "no live governed integration" was wrong** as written. Authority
+   is genuinely absent from every ranking/gating module, but the forensics
+   dimension has been stamped into a Prophet store nightly.
+4. **Wave 5's detector inventory was wrong.** Four of five quantitative
+   detectors exist twice, off different sources, with nothing pinning them
+   together.
+5. **Wave 2's "256 MiB cap" is a default**, not a cap; the hard ceiling is
+   512 MiB.
+
+### 1.2 Wave 0A credential binding — the exact remaining sequence
+
+Wave 0A's code half is live. The credential half is one operator act plus one
+dispatch, and NOTHING downstream moves until it happens.
+
+1. Operator provisions, in the GitHub UI (never in chat, never in a PR):
+   - repository scope: `R2_ATTESTED_HISTORY_ENDPOINT`,
+     `R2_ATTESTED_HISTORY_BUCKET`,
+     `R2_ATTESTED_HISTORY_READONLY_ACCESS_KEY_ID`,
+     `R2_ATTESTED_HISTORY_READONLY_SECRET_ACCESS_KEY`
+   - protected `attested-history-seed` environment:
+     `R2_ATTESTED_HISTORY_SEED_ACCESS_KEY_ID`,
+     `R2_ATTESTED_HISTORY_SEED_SECRET_ACCESS_KEY`
+2. Dispatch `deploy-api-secrets.yml`. It is **`workflow_dispatch` only** — a
+   merge ships code but never credentials. It writes the four read-only values
+   to `/etc/macro-api.env` and restarts `macro-api`; the two SEED writer secrets
+   appear nowhere in that path (verified: zero occurrences).
+   `deploy-analytics.yml` also writes that file but appends-if-absent, so it
+   will not clobber them.
+3. Confirm binding WITHOUT reading values: an entitled receipt request should
+   stop returning the fail-closed 503. If a value is missing or malformed, the
+   API now names the absent variable, or the specific cause, in its log — that
+   diagnostic exists precisely because five different misconfigurations used to
+   collapse into one indistinguishable line behind a permanent 503.
+4. Only then does Wave 0B's run order in §6 apply.
 
 ---
 

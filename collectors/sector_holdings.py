@@ -213,6 +213,49 @@ def _fetch_universe(current: list[str], stored: list[str], dead: frozenset[str])
     return sorted(set(current) | (set(stored) - dead))
 
 
+def _report_missing_symbols(requested: list[str], returned, current) -> list[str]:
+    """Requested-vs-returned reconciliation for one StockPriceAdapter.fetch() run —
+    the collectors/yahoo.py::_report_missing_symbols idiom applied to the data/stocks
+    lane (R4 never-silent collectors,
+    research/ADJUDICATION_20260803_UNIVERSE_SIDE_STORE_FRESHNESS.md §3 chip (1)).
+
+    `_pull()` drops a requested-but-unreturned ticker through a log-only
+    `except KeyError`, and the ONLY aggregate backstop is fetch()'s 0.7 floor — so up
+    to 30% of the fetch set can return nothing on a given night with no per-name trace
+    anywhere in the Actions summary (a logger-prefixed line is not an annotation; see
+    the annotation law and tests/test_gh_annotation_line_start.py). _fetch_universe's
+    retention makes that hole WIDER, not narrower: the fetch set now carries every
+    name still on disk, so without this the store-tip audit's stale_live flag is the
+    only thing that would ever notice — one whole night later, and without the reason.
+
+    The union/retained SPLIT is the actionable part, and it is the one thing the yahoo
+    lane has no need of. A ticker in TODAY's top-N union that returns nothing is a live
+    provider failure against a name the desk is actively holding. A RETAINED ticker
+    (still on disk, already out of the union) that returns nothing is the
+    delisted-or-renamed candidate set — #4616's law is that delisted is not stale, and
+    the exit path for those names is the dead-name registry / the #4622 symbol
+    resolution protocol (a rename is a KEY MIGRATION), never an in-place refetch.
+    Naming the two apart is what lets the next reader route them correctly instead of
+    re-diagnosing the whole list from scratch.
+
+    Bare ::warning at line start (annotation law — never through the logger); returns
+    the missing list so a caller/test can assert on it without re-parsing the text."""
+    have = set(returned)
+    missing = [t for t in requested if t not in have]
+    if missing:
+        union = set(current)
+        n_union = sum(1 for t in missing if t in union)
+        n_retained = len(missing) - n_union
+        shown = missing[:15]
+        more = len(missing) - len(shown)
+        print(f"::warning title=stocks collector missing symbols::{len(missing)} of "
+              f"{len(requested)} requested ticker(s) returned no data ({n_union} in "
+              f"today's top-N union, {n_retained} retained off-union — "
+              f"delisted/renamed candidates): {', '.join(shown)}"
+              f"{f', +{more} more' if more > 0 else ''}", flush=True)
+    return missing
+
+
 class StockPriceAdapter(Adapter):
     """Daily closes for the union of top-N holdings (cycle engine fuel)."""
 
@@ -346,6 +389,11 @@ class StockPriceAdapter(Adapter):
             except Exception as e:  # noqa: BLE001 — skip tonight; the guard re-flags next run
                 log.warning("stocks: basis refetch failed for %d name(s) (%s) — "
                             "kept out of this run", len(rebase), e)
+        # Never-silent: disclose the per-name requested-vs-returned gap BEFORE the
+        # aggregate floor decides whether to raise — a run that dies on the floor is
+        # exactly the run whose per-name detail is worth having, and a run that
+        # survives it can still be hiding up to 30% silent drops.
+        _report_missing_symbols(tickers, frames, current)
         if len(frames) < len(tickers) * 0.7:
             raise RuntimeError(f"stocks: only {len(frames)}/{len(tickers)} returned")
         return frames

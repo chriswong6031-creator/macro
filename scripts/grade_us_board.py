@@ -172,6 +172,17 @@ _TROUGH_TOL = 0.97  # BROKEN below trough × 0.97 — engine/hold.py TROUGH_TOL
 # The excluded count ships in meta.history so the cut is auditable, never silent.
 LEDGER_HISTORY_FROM = "2026-06-25"
 
+# The era cut, in one sentence, so every artifact that applies it says the same thing.
+# ONE RULE, ONE FILE (G3 2026-08-06): emit_ledger and build_track both read it — the
+# grader used to exclude the broad-screen era from the ledger and pool it into the
+# track record, publishing two records over two different products from one file.
+_ERA_BASIS = (
+    f"boards before {LEDGER_HISTORY_FROM} published ~120 names on the buy key against "
+    "~780 eligible — a broad screen, not a selection, whose own labels included "
+    "DOWNTREND and TOPPING names. Grading them would grade recommendations the board "
+    "never made, so they are excluded here and in the episode ledger by the same rule."
+)
+
 # SA-W5: v2 parallel lane (sibling files, ISOLATED from main lane)
 # These files NEVER touch retro_grades.parquet / us_board_track.json.
 # Decision: sibling files (not co-tenancy) because the v2 board schema diverges
@@ -499,6 +510,97 @@ def warn_if_stale(cont: dict) -> bool:
 
 
 # --------------------------------------------------------------------------- #
+# ZERO-ACCRUAL — a grader that records nothing must say so, and say why
+# --------------------------------------------------------------------------- #
+# Measured outage 2026-07-31 -> 2026-08-06: the store sat at 2,282 rows for nine days
+# while the step concluded `success` every night. Nothing was broken in this module —
+# the breadth close caches (engine.equity_factors._closes) froze at 2026-07-31 when the
+# collect lane's "data: daily collection" commit wedged, so no horizon could mature and
+# the grader correctly emitted nothing. Correct, and invisible.
+#
+# The trap that makes a naive alarm vacuous: grade_boards re-computes EVERY matured row
+# on EVERY run and _merge_into_store is keep-fresh, so `len(df)` is re-grades, not
+# accrual. The nightly of 2026-08-04 printed "[grade] 1332 new matured rows this run"
+# while the store went 2282 -> 2282. A zero-row alarm keyed on the fresh frame would
+# never have fired through the entire outage. It must be keyed on STORE GROWTH.
+def _panel_reach(names: pd.DataFrame, boards: list[dict]) -> str | None:
+    """Modal last-close date across the tickers the boards actually name.
+
+    NOT ``names.index.max()``. extend_prices_to_admitted splices in yahoo-sourced
+    columns that run ahead of the breadth caches, so the frame's index max reads fresh
+    while almost every column is stale — measured on origin/main 2026-08-06, index.max()
+    was 2026-08-04 while 1498 of 1540 columns ended 2026-07-31. An index-level max is
+    exactly the number that let this outage look healthy."""
+    if names is None or getattr(names, "empty", True) or not boards:
+        return None
+    tickers = {r["ticker"] for b in boards for r in b["rows"] if r.get("ticker")}
+    cols = [t for t in tickers if t in names.columns]
+    if not cols:
+        return None
+    lasts = [names[c].last_valid_index() for c in cols]
+    lasts = [str(d)[:10] for d in lasts if d is not None]
+    if not lasts:
+        return None
+    return max(set(lasts), key=lasts.count)  # modal, not max
+
+
+def no_accrual_reason(*, boards: list[dict], names: pd.DataFrame, cont: dict,
+                      ungraded: list[str], skipped_no_price: int) -> tuple[str, str]:
+    """(slug, human clause) naming WHY a nightly added no rows. Pure — no I/O.
+
+    The benign case (weekend, or a horizon that simply has not come round yet) and the
+    malignant case (the price lane died) are indistinguishable from the board's own
+    panel — a build that never ran leaves board and prices frozen together and reads as
+    perfectly fresh. They are told apart by the SAME independent clock continuity_block
+    already uses: the benchmark ETF close, refreshed by a different lane than the board.
+    Panel behind that clock = starved. Level with it = genuinely nothing to grade.
+
+    That is also why the alarm is never suppressed on the benign branch: the two cases
+    are one branch apart, so a silent 'probably just the weekend' path would re-open the
+    exact hole it is here to close. The reason slug is what makes it filterable."""
+    n_board_rows = sum(len(b["rows"]) for b in boards)
+    reach = _panel_reach(names, boards)
+    last_session = cont.get("last_session")
+    if not boards:
+        return ("no_boards",
+                "no board could be reconstructed at all (snapshots and git history "
+                "both came back empty)")
+    if n_board_rows and skipped_no_price >= n_board_rows:
+        return ("no_priceable_names",
+                f"not one of the {n_board_rows} board rows resolved to a price series "
+                "(live cache and dead-name store both missed every name)")
+    if reach and last_session and reach < last_session:
+        return ("price_panel_stale",
+                f"the price panel's modal last close is {reach} but the last completed "
+                f"session is {last_session} — no horizon can mature past a frozen panel, "
+                "so the collect lane is what has to move, not this grader")
+    return ("no_new_maturity",
+            f"the panel is level with the session clock ({reach or 'n/a'}) and no "
+            "horizon came round this run — nothing to record")
+
+
+def warn_if_no_accrual(n_added: int, *, nightly: bool, boards: list[dict],
+                       names: pd.DataFrame, cont: dict, ungraded: list[str],
+                       skipped_no_price: int) -> bool:
+    """Emit the line-start annotation when a nightly grades but records NOTHING.
+
+    Returns True when it fired. Bare ``print`` with ``flush=True`` per the repo's
+    annotation law. `n_added` is store growth, never the fresh frame's length."""
+    if not nightly or n_added > 0:
+        return False
+    slug, why = no_accrual_reason(boards=boards, names=names, cont=cont,
+                                  ungraded=ungraded, skipped_no_price=skipped_no_price)
+    newest = boards[-1]["as_of"] if boards else None
+    print("::warning title=us-board-ledger-no-accrual::"
+          f"the nightly added 0 rows to {RETRO_PARQUET.name} [{slug}] — {why}; "
+          f"newest board on file {newest}, {len(ungraded)} board date(s) still awaiting "
+          f"a first grade, {skipped_no_price} board row(s) skipped for no price. "
+          "The missing days stay missing — they are disclosed, never backfilled",
+          flush=True)
+    return True
+
+
+# --------------------------------------------------------------------------- #
 # board reconstruction (git archaeology + snapshot union)
 # --------------------------------------------------------------------------- #
 def _git_revisions() -> list[tuple[str, str]]:
@@ -526,10 +628,35 @@ def _git_revisions() -> list[tuple[str, str]]:
 
 
 def _load_blob(sha: str) -> dict | None:
-    blob = subprocess.run(
+    """One board revision, or None when that revision genuinely has no board.
+
+    LOUD on a git FAILURE, for the same reason :func:`_git_revisions` is (G2).  This
+    used to read `.stdout` without ever looking at the return code, so `git show`
+    failing — a corrupt object, a missing pack, an interrupted checkout — produced an
+    empty string, which read as "this commit had no board" and dropped the revision
+    silently.  Enough dropped revisions and the track record ships a Wilson CI computed
+    over a SINGLE date while still calling itself the history.  A truncated history is
+    the one thing a track record may never be quiet about: an empty stdout WITH rc=0 is
+    a real absence, an empty stdout with rc!=0 is a broken read, and only the first is
+    a None.
+    """
+    proc = subprocess.run(
         ["git", "show", f"{sha}:{BOARD_PATH}"],
         cwd=ROOT, capture_output=True, text=True,
-    ).stdout
+    )
+    if proc.returncode != 0:
+        stderr = (proc.stderr or "").strip()
+        # A path that does not exist in this revision is a legitimate absence, not a
+        # failure: the board was added at some commit, and every earlier revision
+        # answers "does not exist" with rc=128.  Everything else is a broken read.
+        if "does not exist" in stderr or "exists on disk, but not in" in stderr:
+            return None
+        raise RuntimeError(
+            f"git show {sha}:{BOARD_PATH} failed (rc={proc.returncode}): "
+            f"{stderr[:300]} — refusing to grade on a silently truncated history; "
+            "re-run once the object store is readable."
+        )
+    blob = proc.stdout
     if not blob.strip():
         return None
     try:
@@ -654,11 +781,19 @@ def _num(x):
         return None
 
 
-def collect_boards() -> list[dict]:
+def collect_boards(receipt: dict | None = None) -> list[dict]:
     """Union git-history boards with snapshot JSONL, de-dup on (as_of).
 
     Each element: {as_of: 'YYYY-MM-DD', dispersion_state, rank_by, rows: [ {lane, position, **features} ]}.
-    Position = 0-based order within lane as published (this IS the ranking under test)."""
+    Position = 0-based order within lane as published (this IS the ranking under test).
+
+    `receipt`, when supplied, is filled with the PROVENANCE SPLIT — how many board
+    dates each of the two legs actually contributed, and how many revisions of the
+    board artifact git could see.  _git_revisions() is LOUD when git *errors*, but a
+    truncated history is not an error: on a shallow checkout `git log -- <path>`
+    exits 0 and returns one revision, so the retro half degrades to nothing while
+    every other number in the run looks normal.  The split is what makes that
+    visible (see warn_if_history_truncated)."""
     boards: dict[str, dict] = {}
 
     # 1) snapshots (forward-accruing source) — take precedence (exact bytes at build time)
@@ -674,9 +809,11 @@ def collect_boards() -> list[dict]:
             b = _board_to_record(snap)
             if b:
                 boards[b["as_of"]] = b
+    n_from_snapshots = len(boards)
 
     # 2) git history (retro source) — fills any as_of not already present
-    for sha in _git_revisions():
+    revisions = _git_revisions()
+    for sha in revisions:
         d = _load_blob(sha)
         if not d:
             continue
@@ -684,7 +821,51 @@ def collect_boards() -> list[dict]:
         if b and b["as_of"] not in boards:
             boards[b["as_of"]] = b
 
+    if receipt is not None:
+        receipt.update({
+            "n_git_revisions": len(revisions),
+            "n_from_snapshots": n_from_snapshots,
+            "n_from_git": len(boards) - n_from_snapshots,
+            "n_boards": len(boards),
+        })
     return sorted(boards.values(), key=lambda x: x["as_of"])
+
+
+def warn_if_history_truncated(receipt: dict) -> bool:
+    """Emit the line-start annotation when the retro (git-archaeology) leg is DARK.
+
+    Returns True when it fired.  Bare ``print`` with ``flush=True`` per the repo's
+    annotation law (a logger prefixes the line and GitHub drops the annotation).
+
+    WHY THIS EXISTS (measured 2026-08-06).  `_git_revisions` is loud on a git *error*,
+    which closed the 2026-07-26 class where a failing subprocess silently halved the
+    ledger.  It cannot see the other way this half dies: `actions/checkout@v4` defaults
+    to ``fetch-depth: 1``, so on the nightly runner `git log -- site/factordata/
+    us_standouts.json` exits 0 with ONE revision and the archaeology leg contributes
+    nothing.  Evidence from the nightlies' own logs — the grader printed
+    ``[boards] 13 distinct as_of dates`` (2026-07-27) and ``[boards] 17`` (2026-08-05),
+    both exactly the snapshot count, while the same code over a full local checkout
+    reads 524 revisions and 32 board dates.  The 15 archaeology-only dates
+    (2026-06-15..06-29, 07-07, 07-08, 07-13, 07-22, 07-23) are therefore invisible to
+    every nightly: 8 of them have never had a single graded row, and 2026-06-17..06-24
+    are frozen at the 5d horizon because no later run could re-reach them.
+
+    The trigger is deliberately narrow — one revision or none, while the ledger already
+    knows about more than one board date. A repo that genuinely holds a single revision
+    of a single board cannot trip it, and a healthy full checkout is nowhere near it."""
+    n_rev = int(receipt.get("n_git_revisions") or 0)
+    n_boards = int(receipt.get("n_boards") or 0)
+    if n_rev > 1 or n_boards <= 1:
+        return False
+    print("::warning title=us-board-ledger-history-truncated::"
+          f"git log over {BOARD_PATH} returned {n_rev} revision(s) but the ledger knows "
+          f"{n_boards} board date(s) — this checkout is too shallow to reconstruct any "
+          f"history, so the retro half of the ledger contributed "
+          f"{int(receipt.get('n_from_git') or 0)} board date(s) and every board that "
+          "exists only in git history is ungraded and unreachable from this run; "
+          "the fix is fetch-depth: 0 on this job's checkout, not a backfill",
+          flush=True)
+    return True
 
 
 def _board_to_record(d: dict) -> dict | None:
@@ -1085,28 +1266,60 @@ def _hit_stats(sub: pd.DataFrame, col: str = "excess_spy") -> dict:
 
 
 def _precision_at_k(sub: pd.DataFrame, col: str = "excess_spy",
-                    rank_col: str = "position", ascending: bool = True) -> dict:
-    """P(excess>0) among the top-k by `rank_col` (published board position by default;
-    position ascending = higher rank). Set rank_col='alpha', ascending=False to score the
-    counterfactual alpha-ordered board. Averaged across boards so each day contributes
-    equally (mitigates n-heavy days)."""
+                    rank_col: str = "position", ascending: bool = True,
+                    published: bool = True) -> dict:
+    """P(excess>0) among the top-k by `rank_col`.
+
+    PUBLISHED TOP-K, NOT TOP-K-OF-THE-SURVIVORS (G1, 2026-08-06)
+    ------------------------------------------------------------
+    `precision@k` is a claim about the k names a reader actually saw at the top of the
+    board.  `head(k)` of the GRADED subset is a different question: every published row
+    that failed to grade (no price, not yet matured, delisted) is skipped and the row
+    BELOW it is promoted into the top-k.  On a board where position 1 is the one that
+    delisted, `head(3)` scores published #2, #4 and #5 and calls the answer P@3.
+    Promotion by absence is not a ranking result.
+
+    So for the as-published order (`rank_col="position"`, the ranking under test) the
+    top-k is defined by the PUBLISHED RANK — `position` is 0-based within the lane, so
+    the published top-k is `position < k` — and rows missing from the graded frame are
+    simply absent, never backfilled from below.  Each cell then discloses
+    `published_topk_rows` / `graded_topk_rows` / `coverage`, so a thin cell is visible
+    as thin rather than reported at full confidence.
+
+    `published=False` is the honest fallback and the ONLY mode available to a
+    COUNTERFACTUAL ordering (`rank_col='alpha'` / `'composite_z'`): those orders exist
+    only over the rows that graded, so head-of-the-graded-subset IS their definition.
+    Such cells are stamped `basis="graded_subset"` with the same coverage counts, so
+    the reader can never mistake one basis for the other.
+    """
     out = {}
+    use_published = bool(published) and rank_col == "position"
     for k in K_LIST:
         per_board_hit = []
         per_board_mean = []
-        for as_of, g in sub.groupby("as_of"):
-            g = g.sort_values(rank_col, ascending=ascending)
-            topk = g.head(k)[col].dropna()
+        pooled_frames = []
+        published_rows = 0
+        graded_rows = 0
+        for _as_of, g in sub.groupby("as_of"):
+            if use_published:
+                # `position` is the published 0-based rank inside the lane, so the
+                # published top-k is a LEVEL test, not a head() of what survived.
+                pos = pd.to_numeric(g[rank_col], errors="coerce")
+                topk_rows = g[pos < k]
+                published_rows += k          # what the board actually showed at this k
+            else:
+                topk_rows = g.sort_values(rank_col, ascending=ascending).head(k)
+                published_rows += min(k, len(g))
+            topk = topk_rows[col].dropna()
+            graded_rows += len(topk)
             if len(topk) == 0:
                 continue
+            pooled_frames.append(topk)
             per_board_hit.append(float((topk > 0).mean()))
             per_board_mean.append(float(topk.mean()))
+        basis = "published_rank" if use_published else "graded_subset"
         if per_board_hit:
-            # pooled across (board, name) too, for the Wilson CI
-            pooled = pd.concat([
-                sub[sub["as_of"] == a].sort_values(rank_col, ascending=ascending).head(k)[col].dropna()
-                for a in sub["as_of"].unique()
-            ])
+            pooled = pd.concat(pooled_frames)
             kk = int((pooled > 0).sum())
             nn = len(pooled)
             lo, hi = wilson_ci(kk, nn)
@@ -1116,9 +1329,21 @@ def _precision_at_k(sub: pd.DataFrame, col: str = "excess_spy",
                 "pooled_precision": round(kk / nn, 4) if nn else None,
                 "wilson_lo": round(lo, 4), "wilson_hi": round(hi, 4),
                 "mean_excess_topk": round(float(np.mean(per_board_mean)), 5),
+                # G1 disclosure — how much of the top-k this cell could actually see.
+                "basis": basis,
+                "published_topk_rows": published_rows,
+                "graded_topk_rows": graded_rows,
+                "coverage": (round(graded_rows / published_rows, 4)
+                             if published_rows else None),
             }
         else:
-            out[f"k{k}"] = {"n_boards": 0, "n_rows": 0}
+            out[f"k{k}"] = {
+                "n_boards": 0, "n_rows": 0, "basis": basis,
+                "published_topk_rows": published_rows,
+                "graded_topk_rows": graded_rows,
+                "coverage": (round(graded_rows / published_rows, 4)
+                             if published_rows else None),
+            }
     return out
 
 
@@ -1196,7 +1421,31 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
     survivorship = _survivorship_block(boards, names)
     if df.empty:
         return {"generated": dt.datetime.now(dt.timezone.utc).isoformat(), "empty": True,
-                "note": "no matured graded rows", "survivorship": survivorship}
+                "note": "no matured graded rows", "survivorship": survivorship,
+                "history": {"era_from": LEDGER_HISTORY_FROM, "n_rows_excluded": 0,
+                            "basis": _ERA_BASIS}}
+    # ── ONE ERA RULE (G3, 2026-08-06) ────────────────────────────────────────
+    # `emit_ledger` already refuses to score anything before LEDGER_HISTORY_FROM: the
+    # 2026-06-15..06-24 boards published 120 names on the `buy` key against ~780
+    # eligible — a broad screen, not a selection, whose own labels included DOWNTREND
+    # and TOPPING names.  `build_track` pooled them anyway, so the SAME FILE published
+    # two different track records over two different products and the headline one
+    # described a board nobody can follow.  A track record is a claim about a specific
+    # instrument; two era rules in one file means at least one of them is wrong.
+    #
+    # The excluded count ships in `history` so the cut is auditable, never silent —
+    # and note that INCLUDING the old era is the choice that flatters the desk, which
+    # is the reason to leave it out rather than a reason to keep it.
+    _n_before = int(len(df))
+    df = df[df["as_of"].astype(str) >= LEDGER_HISTORY_FROM]
+    _n_excluded = _n_before - int(len(df))
+    if df.empty:
+        return {"generated": dt.datetime.now(dt.timezone.utc).isoformat(), "empty": True,
+                "note": (f"no matured graded rows on or after {LEDGER_HISTORY_FROM} "
+                         f"({_n_excluded} pre-era row(s) excluded)"),
+                "survivorship": survivorship,
+                "history": {"era_from": LEDGER_HISTORY_FROM,
+                            "n_rows_excluded": _n_excluded, "basis": _ERA_BASIS}}
     board_dates = sorted({b["as_of"] for b in boards})
     graded_dates = sorted(df["as_of"].unique().tolist())
     per_horizon = {}
@@ -1261,14 +1510,19 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
                 },
             },
         }
-        # P(fwd>0 | top-5) vs base rate for the buy lane
+        # P(fwd>0 | top-5) vs base rate for the buy lane.  G1: the top-5 is the
+        # PUBLISHED top-5 (`position < 5`, 0-based), not head(5) of whatever graded —
+        # `head()` promotes row 6 into the top-5 whenever a published top name has no
+        # price, which reports a ranking result produced by absence.
         base = buy["excess_spy"].dropna()
-        top5_frames = [buy[buy["as_of"] == a].sort_values("position").head(5)["excess_spy"].dropna()
+        _pos = pd.to_numeric(buy["position"], errors="coerce")
+        top5_frames = [buy[(buy["as_of"] == a) & (_pos < 5)]["excess_spy"].dropna()
                        for a in buy["as_of"].unique()]
         top5 = pd.concat(top5_frames) if top5_frames else pd.Series(dtype=float)
         block["buy_lane"]["p_fwd_pos_top5_vs_base"] = {
             "top5_p": round(float((top5 > 0).mean()), 4) if len(top5) else None,
             "top5_n": int(len(top5)),
+            "top5_basis": "published_rank (position < 5)",
             "base_p": round(float((base > 0).mean()), 4) if len(base) else None,
             "base_n": int(len(base)),
             "lift": round(float((top5 > 0).mean() - (base > 0).mean()), 4)
@@ -1283,6 +1537,13 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
         "board_dates_range": [board_dates[0], board_dates[-1]] if board_dates else None,
         "graded_dates": graded_dates,
         "graded_rows_total": int(len(df)),
+        # G3 — the ONE era rule this file applies, and what it cost, stated where the
+        # numbers are (not only in emit_ledger's own meta block).
+        "history": {
+            "era_from": LEDGER_HISTORY_FROM,
+            "n_rows_excluded": _n_excluded,
+            "basis": _ERA_BASIS,
+        },
         "price_source": ("engine.equity_factors._closes('broad') + engine.grading.resolve_series "
                          "(extends with edgar dead-name terminals) + data/yahoo/{SPY,XL*}"),
         "price_coverage_note": (
@@ -1724,8 +1985,8 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
     - Collect every ticker that appeared on the BUY lane within the last
       OUTCOMES_LOOKBACK_BOARDS board dates.
     - Find tickers that are ABSENT from the CURRENT (most-recent) buy board.
-    - For each such exited ticker, compute pct change from the close on their
-      first_surfaced date to the most-recent available close.
+    - For each such exited ticker, compute pct change from the NEXT session's close
+      after first_surfaced to the close on the date it left the board.
     - Skip rows with missing prices (never fabricate) — but COUNT them: the broad
       cache is current-membership only, so a name that left the board BECAUSE it
       collapsed and got delisted is exactly the name with no price here. Silently
@@ -1736,6 +1997,24 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
 
     Returns the dict to be serialised as us_board_outcomes.json.
     Degrades to {"empty": True, ...} only when genuinely no exited names exist.
+
+    THREE CONVENTION FIXES (G4, 2026-08-06) — all of them lowered the headline
+    ---------------------------------------------------------------------------
+    1. NEXT-BAR FILL.  The buy price was the close ON first_surfaced — the bar the
+       board is computed from and published that evening.  It is unbuyable.  Worth
+       +3.4pp of win rate and 66% of the reported average return, measured on the
+       shipped artifact.  Entry is now the next session's close, the same convention
+       `build_track`, `engine.grading.fill_index` and `track_scoring` already use;
+       a name whose next bar has not printed is skipped and counted, never filled.
+    2. MARK AT THE EXIT BAR.  Every row is an EXITED name, and each was marked at
+       TODAY's close — so a name that left the board in June kept accruing July's
+       move under the board's name.  The strip claims "surfaced → outcome", and the
+       outcome ends when the board stopped saying it.
+    3. FLATS STAY IN THE DENOMINATOR.  `win_rate` divided by running+stopped only,
+       deleting every |move| <= 2% row (96 of 321 on the shipped artifact).  A flat
+       is a real outcome of a buy call — it is simply not a win — and a denominator
+       conditioned on the size of the result is the resolution-conditioned
+       denominator that deletes exactly the rows a reader wants counted.
     """
     if not boards:
         return {"empty": True, "as_of": str(dt.date.today()), "reason": "no boards"}
@@ -1806,19 +2085,23 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
         except Exception:
             continue
 
-        # Close on or after first_surfaced (next available bar at or after that date)
-        idx_first = ser.index.searchsorted(first_dt, side="left")
+        # G4.1 NEXT-BAR FILL: side="right" lands on the first bar STRICTLY AFTER
+        # first_surfaced.  side="left" returned the surfaced bar itself whenever that
+        # date was a session — the close the board was computed from, published after
+        # the bell.  Where first_surfaced is not a session both sides agree, so this
+        # only ever moves the fill off an unbuyable bar.
+        idx_first = ser.index.searchsorted(first_dt, side="right")
         if idx_first >= len(ser):
+            # The next bar has not printed yet — in flight, not fillable. Counted as a
+            # skip rather than filled at the signal bar (which is the defect above).
             skipped_no_price.append(tk)
             continue
         surfaced_price = float(ser.iloc[idx_first])
         if surfaced_price <= 0:
             continue
 
-        last_price = float(ser.iloc[-1])
-        pct_since = (last_price / surfaced_price - 1.0) * 100.0
-
-        # Determine exit_date: first board date in window where this ticker is absent
+        # Determine exit_date: first board date in window where this ticker is absent.
+        # Computed BEFORE the mark, because it IS the mark date (G4.2).
         exit_date_str = current_as_of  # fallback: use current as_of as exit date
         appeared_before = False
         for b in window:
@@ -1830,6 +2113,22 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
             elif appeared_before:
                 exit_date_str = b.get("as_of", current_as_of)
                 break
+
+        # G4.2 MARK AT THE EXIT BAR: the last close at or before the date the name
+        # left the board, never today's.  Falls back to the last available close only
+        # when the exit date is unreadable or precedes the fill (never silently
+        # extends the window past the exit).
+        exit_idx = len(ser) - 1
+        try:
+            _exit_dt = pd.Timestamp(exit_date_str)
+            _pos = ser.index.searchsorted(_exit_dt, side="right") - 1
+            if _pos >= idx_first:
+                exit_idx = min(_pos, len(ser) - 1)
+        except Exception:
+            pass
+        last_price = float(ser.iloc[exit_idx])
+        mark_date_str = ser.index[exit_idx].date().isoformat()
+        pct_since = (last_price / surfaced_price - 1.0) * 100.0
 
         # days_on_board: count of board dates the ticker appeared on the buy lane
         days_on_board = sum(
@@ -1854,6 +2153,10 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
             "pct_since": round(pct_since, 1),
             "days_on_board": days_on_board,
             "exit_date": exit_date_str,
+            # The bar `last_price` was actually read from (G4.2). Equal to the last
+            # session at or before exit_date; present so a reader can check the mark
+            # is not today's close on a name that left the board weeks ago.
+            "mark_date": mark_date_str,
             "status": status,
             "lane": meta.get("lane") or "buy",
         })
@@ -1875,7 +2178,11 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
     n_running = sum(1 for r in rows_out if r["status"] == "running")
     n_stopped = sum(1 for r in rows_out if r["status"] == "stopped")
     n_flat = sum(1 for r in rows_out if r["status"] == "flat")
-    _denom = n_running + n_stopped
+    # G4.3: EVERY priced exited name is in the denominator. `n_running + n_stopped`
+    # deleted the flats — 96 of 321 rows on the shipped artifact — and a flat is not a
+    # missing outcome, it is a buy call that went nowhere. Conditioning the denominator
+    # on the SIZE of the result is the same shape as conditioning it on the direction.
+    _denom = n_running + n_stopped + n_flat
     win_rate = round(n_running / _denom, 3) if _denom > 0 else None
     _all_pcts = [r["pct_since"] for r in rows_out]
     avg_pct = round(sum(_all_pcts) / len(_all_pcts), 1) if _all_pcts else None
@@ -1906,6 +2213,13 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
             # full-set metrics (over all exited rows, before the display cut)
             "win_rate": win_rate,
             "avg_pct": avg_pct,
+            # G4 conventions, stated where the numbers are.
+            "conventions": {
+                "entry": "next session's close after first_surfaced (the surfaced "
+                         "bar is the bar the board is computed from — unbuyable)",
+                "mark": "close on the date the name left the buy board, not today's",
+                "win_rate_denominator": "every priced exited name, flats included",
+            },
         },
     }
 
@@ -2438,10 +2752,18 @@ def main() -> None:
             print(f"[v2_snapshot] as_of={snap_v2} → {V2_SNAPSHOTS_JSONL.name}")
 
     names, etfs = _load_prices()
-    boards = collect_boards()
+    _board_receipt: dict = {}
+    boards = collect_boards(_board_receipt)
     if not args.quiet:
         print(f"[boards] {len(boards)} distinct as_of dates "
-              f"({boards[0]['as_of']}..{boards[-1]['as_of']})" if boards else "[boards] none")
+              f"({boards[0]['as_of']}..{boards[-1]['as_of']}; "
+              f"{_board_receipt.get('n_from_snapshots')} from snapshots, "
+              f"{_board_receipt.get('n_from_git')} from "
+              f"{_board_receipt.get('n_git_revisions')} git revision(s))"
+              if boards else "[boards] none")
+    # A shallow checkout kills the retro half silently — git log exits 0 and returns one
+    # revision, so the count above degrades with nothing else in the run to say so.
+    warn_if_history_truncated(_board_receipt)
 
     # Price what the board ADMITTED, not just what the breadth caches carry — otherwise
     # every curated-extras admission (ADRs, recent IPOs) is ungradeable forever.
@@ -2477,6 +2799,13 @@ def main() -> None:
 
     # P2: load existing store BEFORE grading so _board_tenure can look up history
     _pre_existing = pd.read_parquet(RETRO_PARQUET) if RETRO_PARQUET.exists() else None
+    _n_stored_before = 0 if _pre_existing is None else len(_pre_existing)
+    _graded_before = (set(_pre_existing["as_of"].astype(str))
+                      if _pre_existing is not None and "as_of" in _pre_existing.columns
+                      else set())
+    _ungraded = [b["as_of"] for b in boards if b["as_of"] not in _graded_before]
+    # price_sources arrives from #4715's adjusted-first ladder; the zero-accrual
+    # bookkeeping above is #4727's. Both legs are required — keep them together.
     df = grade_boards(boards, names, etfs, _stored_df=_pre_existing,
                       price_sources=_basis_prov["price_source"])
     LEDGER_DIR.mkdir(parents=True, exist_ok=True)
@@ -2485,13 +2814,23 @@ def main() -> None:
     # whenever no *new* rows mature in a given nightly run (the store still holds
     # all previously-graded rows and must not be discarded).
     full_df = _merge_into_store(df)
+    # ACCRUAL is store growth, not the size of the fresh frame. grade_boards re-computes
+    # every matured row every run and the merge is keep-fresh, so len(df) counts
+    # re-grades: the nightly of 2026-08-04 emitted 1332 "new matured rows" while the
+    # store went 2282 -> 2282. Reporting len(df) as accrual is what made a nine-day
+    # outage read as nine normal nights.
+    _n_added = max(0, len(full_df) - _n_stored_before)
     if not args.quiet:
-        new_rows = len(df) if not df.empty else 0
         dead_n = df.attrs.get("dead_price_store_tickers", 0)
-        print(f"[grade] {new_rows} new matured rows this run "
-              f"(skipped {df.attrs.get('skipped_no_price', 0)} no-price rows, "
+        print(f"[grade] {_n_added} rows ADDED to the store this run "
+              f"({len(df)} matured rows re-graded, skipped "
+              f"{df.attrs.get('skipped_no_price', 0)} no-price rows, "
               f"dead_name_store_tickers={dead_n}); "
               f"store total -> {len(full_df)} rows in {RETRO_PARQUET.name}")
+    # A nightly that records nothing for nine days is the defect underneath the defect.
+    warn_if_no_accrual(_n_added, nightly=args.nightly, boards=boards, names=names,
+                       cont=_cont, ungraded=_ungraded,
+                       skipped_no_price=int(df.attrs.get("skipped_no_price", 0) or 0))
 
     # W0.1 B-b: backfill null regime stamps on historical rows where the persisted
     # regime_vector covers the as_of date (PIT-safe: reads only persisted rows ≤ as_of)

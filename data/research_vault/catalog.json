@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T07:16:31.528078+00:00",
-  "count": 926,
+  "generated_at": "2026-08-07T09:01:44.787836+00:00",
+  "count": 931,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -33,6 +33,7 @@
     "Nordea",
     "Nuveen",
     "Other",
+    "PNC",
     "Prime",
     "RBC",
     "Rabobank",
@@ -202,6 +203,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-k6z2ylp7amo-dac91c",
+      "title": "Infineon (IFXGn)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:32Z",
+      "summary_points": [
+        "**Infineon FY26 Revenue & CRAs**: €16.3bn (11% yoy) forecast with multi-year CRAs securing AI data center revenue (HSD billions cumulative commitments), offsetting Q3 EBIT 2% below consensus.",
+        "**Backlog-Driven FY27 Visibility**: €30bn order backlog (June), ~2/3 converting to revenue in 12m, supporting FY27 revenue (Vara Consensus: €19.2bn).",
+        "**Pricing & Margin Expansion**: Two price increases implemented (July), Q4 segment margin guided at c.23%, incremental margin flow-through >50% in Q4.",
+        "**Goldman Sachs Buy Rating**: **Buy** with €91.00 target (50.9% upside from €60.32), based on 15x EV/EBITDA applied to updated EBITDA estimates."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-8oiln7iftk4-7a081f",
       "title": "What We Are Monitoring in US Credit",
       "institution": "Goldman Sachs",
@@ -264,6 +285,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-0091uhxpt4p-c93cc6",
+      "title": "PNC Economics Research Claims 6 August 2026",
+      "institution": "PNC",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T01:44:14Z",
+      "summary_points": [
+        "**Labor Market Cooling**: Initial claims unchanged at 199k, four-week avg below 200k (first since Oct 2022), signaling moderation in labor market strength.",
+        "**Persistent Low Stress**: Insured unemployment rate held at 1.2% for 13 consecutive weeks, indicating minimal labor market distress.",
+        "**Stabilization Forecast**: PNC projects July nonfarm payrolls +72k (vs.",
+        "June’s 57k), unemployment rate steady at 4.2%, reflecting sustained but non-accelerating job growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-alnraqdv0az-2f1bf5",
       "title": "JPM US Weekly Prospects",
       "institution": "J.P. Morgan",
@@ -281,6 +322,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 24,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ghet4olm8u8-0b2b56",
+      "title": "JPM US Market Intelligence Macro Week Ahead",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T01:42:43Z",
+      "summary_points": [
+        "**US Data & Fed Policy Catalysts**: ADP (Aug 11), CPI/Real Earnings (Aug 12), Jobless Claims/PPI (Aug 13), Retail Sales (Aug 14), and Fed dates (Sep 16, Oct 28, Dec 9) dominate near-term monetary policy expectations and market volatility.",
+        "**Global Macro Policy Shifts**: Germany CPI revision (Aug 12), UK GDP/Private Consumption (Aug 13), and Eurozone IP (Aug 13) drive cross-border policy adjustments and risk sentiment across major economies.",
+        "**Geopolitical Risk Triggers**: US-China AI talks (Sep), Brazil election (Oct), and Trump-Xi trade truce expiration (Nov 1) amplify geopolitical volatility and portfolio repositioning risks.",
+        "**AI Tech Catalysts**: Google Gemini 3.5 Pro (Jul), Z-AI GLM 5.5 (Aug), Meta Connect (Sep), and AWS re:Invent (Nov-Dec) shape sector-specific sentiment and capital flows in tech."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
@@ -2033,6 +2094,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-vr55d5yck4i-f6a11c",
+      "title": "Space Exploration Technologies Corp. (SPCX) Q2'26 Review Inaugural Earnings Report Reinforces Multiple Large Addressable Ma...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T11:07:25Z",
+      "summary_points": [
+        "**Earnings Beat & Segment Momentum**: Q2 revenue +17% (vs 15% est), GAAP operating income +92% (vs 91% est); Starlink subscribers exceeded forecasts, AI segment revenue/operating income beat, Starship launches driving reusability cadence.",
+        "**Valuation Upside Catalysts**: $220 price target (75.5% upside), $1T market cap; SOTP model shows 146% base-case upside (Connectivity/AI: 50.0x/47.0x EV/EBIT; Space: 15.0x EV/Sales).",
+        "**Core Growth Drivers**: Starship launch cadence (14th launch imminent), Starlink market penetration, AI compute scaling via hyperscaler partnerships; $100bn ARR target by Dec 2026.",
+        "**Critical Risks**: Governance concentration (founder control), execution risk in unproven tech (AI/orbital compute), regulatory delays, supply chain reliance (NVIDIA GPUs), high capital burn.",
+        "**Institutional Flow Support**: 65% Buy rating in banking relationships vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-gomginq62xf-cdab0e",
       "title": "Wayfair Inc. (W) Q2'26 Review Strong Revenue Momentum Across US & Luxury Category As Industry Share Gains Sustain",
       "institution": "Goldman Sachs",
@@ -2085,6 +2167,26 @@
         "**Labor Share Depression**: Labor share of national income hit all-time low in Q2 2026, reflecting genuine decline in labor bargaining power (not measurement error); AI models predict further decline, threatening corporate margins and labor costs.",
         "**Reliable Proxy Metric**: Net capital share (QFR data) mirrors labor share trends despite 2017 tax act distortions, providing a critical alternative metric for portfolio analysis.",
         "**Elevated Capital Returns**: Nonfinancial corporate sector’s rate of return (before/after tax) remains above historical norms through Q2 2026, indicating persistent capital returns post-pandemic."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qdqvvh2r7z7-56cb45",
+      "title": "Forward Misguidance",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-05T11:01:14Z",
+      "summary_points": [
+        "**Forward Guidance Rejection**: Warsh’s rejection of forward guidance heightens short-term volatility amid geopolitical uncertainty, clashing with market need for policy clarity (per document’s \"implications\" and Chart 1).",
+        "**Neutral-Rate Unreliability**: Model-based neutral-rate estimates (r*) have wide confidence intervals, rendering them unhelpful for policy; market signals (e.g., long-term yields) now better reflect policy-relevant information amid supply shocks.",
+        "**Policy Focus Divergence**: Fed’s dot-implied inflation outlook (Chart 5) diverges from market-implied two-year rate changes, highlighting misalignment between central bank signals and market expectations.",
+        "**Flexible Framework Shift**: Central banks adopting \"framework guidance\" (e.g., ECB, BoE) with multiple scenarios to address supply shocks, moving beyond rigid forward guidance to capture evolving market dynamics."
       ],
       "tags": [],
       "tickers": [],

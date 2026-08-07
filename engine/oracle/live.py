@@ -48,7 +48,9 @@ OUTPUT SCHEMA (oracle_state.json)
       "pair": str | null,               # paired episode_id if two_sided
       "survivorship_flagged": bool,
       "base_rate_context": dict | null, # from memory_base_rates.json if present
-      "analogues": list | null,         # from memory_active_analogues.json if present
+      "analogues": dict | null,         # per-episode analogue block (query_*, analogues[],
+                                        # aggregate{.description}, thin, tier) keyed by
+                                        # episode_id in memory_active_analogues.json (v2)
       "personality": str | null         # B1 personality class for this node if available
     }, ...
   ],

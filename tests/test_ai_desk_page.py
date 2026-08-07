@@ -44,8 +44,18 @@ def test_page_has_chrome_and_mount_and_assets():
     # was already unreachable from the navigation; the pill only ever said "you
     # are here". Giving it a real home in the menu is a product decision, not a
     # chrome fix.
-    assert 'href="https://app.mastermind-x.com"' in html
-    assert 'href="https://bot.mastermind-x.com"' not in html
+    #
+    # Scoped to `.nav-ctrls` since 2026-08-07: the guard was written when NO Bot
+    # link existed anywhere, so a whole-page substring read as "the header has no
+    # Bot pill". The Bot now has a legitimate Research mega-menu card, and the
+    # header contract is what this line always meant. theme.js:1492 strips any
+    # `.nav-ctrls a[href*="bot.mastermind-x.com"]` at runtime; the SOURCE must not
+    # lean on that, so the control cluster ships without one.
+    ctrls = html[html.find('<div class="nav-ctrls">'):]
+    ctrls = ctrls[:ctrls.find("</nav>")]
+    assert ctrls, "the shared header lost its .nav-ctrls control cluster"
+    assert 'href="https://app.mastermind-x.com"' in ctrls
+    assert "bot.mastermind-x.com" not in ctrls
 
 
 def test_renderer_covers_the_key_surfaces():

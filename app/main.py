@@ -1831,13 +1831,18 @@ except Exception as _government_revenue_exc:  # noqa: BLE001
 # ---------------------------------------------------------------------------
 # Research Vault serving tier (RV W2 — app/research.py)
 # /api/research/* : public catalog+search read-throughs + paid view/download gate.
-# Wrapped in try/except so this file stays green if research.py lands later.
+# The paid half is a product contract, so router wiring errors fail startup
+# loudly — the same rule the BioCatalyst block below states.  A swallowed
+# ImportError here deleted all three entitled routes (the inline PDF view, the
+# metered watermarked download, and the quota read that tells a paying
+# subscriber what is left today) at once and presented only as a 404 on a paid
+# endpoint: no startup error, no log line, nothing anybody would attribute to a
+# renamed dependency or a missing optional package on the VPS.  It also took the
+# two PUBLIC read-throughs (catalog + search) with it, so the vault page went
+# empty in the same silence.
 # ---------------------------------------------------------------------------
-try:
-    from app.research import router as research_router  # noqa: E402
-    app.include_router(research_router)
-except ImportError:
-    pass  # app/research.py not yet present — vault routes unavailable until RV W2
+from app.research import router as research_router  # noqa: E402
+app.include_router(research_router)
 
 # Earnings Wire member continuations are never static objects.  The public page
 # carries only its redacted preview; this authenticated route reads the complete

@@ -24,6 +24,8 @@ _REPO = Path(__file__).resolve().parent.parent
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
+from tests.workflow_staging import staged_paths  # noqa: E402
+
 _WF = _REPO / ".github" / "workflows" / "press-publish.yml"
 _CI = _REPO / ".github" / "workflows" / "ci.yml"
 _LEGACY = _REPO / ".github" / "ci" / "legacy-jobs.yml"
@@ -256,9 +258,9 @@ def test_git_add_names_exactly_the_owned_paths():
     genuinely owned here: this lane mints them, for its own pages, in this step.
     """
     step = _commit_step()
-    # skip flags (`--ignore-removal`) — pathspecs only
-    added = {p for p in re.findall(r"^\s*git add\s+(?:--\S+\s+)*([^\s]+)", step,
-                                   re.MULTILINE)}
+    # Flags (`-f`, `--ignore-removal`) and redirections are not pathspecs; see
+    # tests/workflow_staging.py for why this is shared rather than inline.
+    added = staged_paths(step)
     assert added == {"content/seo/blog", "site/blog", "data/press/published.jsonl",
                      "content/press", "properties",
                      "site/assets/css", "site/assets/js"}
