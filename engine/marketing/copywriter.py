@@ -5162,9 +5162,12 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "hold on the first pullback or the breakout was noise.",
         ),
         (
-            "{cashtag} turned my entry into support",
+            # NOT "turned my entry into support" — AM-R1 reads "my entry" as a
+            # first-person POSITION claim, and this desk holds none. The level
+            # was PUBLISHED, not taken.
+            "{cashtag} turned that level into support",
             "{top_fact} A breakout that never retests is a breakout on one day's "
-            "buyers. The retest is the trade worth taking.",
+            "buyers. The retest is where the setup exists again.",
         ),
         (
             "The {cashtag} level did its job",
