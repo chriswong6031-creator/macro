@@ -10,6 +10,9 @@ Guards:
      the store is missing, stale (>8d), or thin (<10 alive ETFs).
   3. Composite UNCHANGED when the leg is absent — the Tier-A sub-scores that ORIGINATE the
      US state are byte-identical with and without the global leg (it is purely additive).
+     The 'global' scare itself is NOT deleted when the leg goes absent: since #2188 it also
+     carries jpy_carry (0.3), so subscore_series renormalises the scare onto that one leg and
+     the PUBLISHED state may still move via the ordinary Tier-B escalator. Both halves pinned.
   4. Tier-B contract: 'global' is Tier-B; it can ESCALATE a hot Tier-A read but can NEVER
      originate a US state from calm (identical guardrail to the vol Tier-B scare).
   5. The leg is labelled + carries its C3 validation ref on the firing-leg dict.
@@ -120,19 +123,79 @@ def test_leading_signals_omits_leg_when_absent():
 # --------------------------------------------------------------------------- #
 # 3. composite UNCHANGED when the leg is absent
 # --------------------------------------------------------------------------- #
+def _tierA_originated_state(out: dict) -> str:
+    """The state Tier-A ALONE originates: the worst band across the Tier-A scares.
+
+    compute() derives `state` from exactly this loop and only THEN lets a hot Tier-B scare
+    escalate it one step, so this — not the published `state` — is the quantity that has to be
+    invariant to a Tier-B leg."""
+    return max((s["band"] for s in out["scares"] if s["tier"] == "A"),
+               key=rr._STATE_ORDER.index, default="calm")
+
+
 def test_tierA_composite_identical_with_and_without_global_leg():
     """The Tier-A sub-scores that ORIGINATE the state must be byte-identical whether or not the
-    global-breadth leg is present — the leg is purely additive (Tier-B)."""
+    global-breadth leg is present — the leg is purely additive (Tier-B).
+
+    RE-PINNED 2026-08-07. This also asserted `with_gb["state"] == without_gb["state"]`, which was
+    a true invariant only while `global` had ONE leg — at this test's birth (#987, 6ddd692b47a)
+    the registry read `"global": {"tier": "B", "legs": [("global_breadth", 1.0)]}`, so dropping
+    the column deleted the whole scare and Tier-B had nothing left to escalate with. #2188
+    (dbb1145e1e0) added `("jpy_carry", 0.3)` alongside `("global_breadth", 0.7)` and did not
+    revisit this file. Dropping the column now RE-WEIGHTS the scare to 100% jpy_carry rather
+    than removing it, so the published state may legitimately differ through the documented
+    Tier-B escalator. Measured on the live stores: that divergence condition (blend and
+    jpy_carry-alone landing on opposite sides of the caution band while Tier-A is non-calm)
+    holds on 2260 of 8186 sessions since 1994 — 27.6%, in every year from 1997 on — so the old
+    assertion had been passing on the day's data, not on an invariant. The Tier-A origination
+    that guard 3 is actually about is asserted here; the re-weighting is pinned by the test
+    below. This is NOT a leak: the Tier-A sub-scores stay byte-identical."""
     sigs = rr.leading_signals()
     if "global_breadth" not in sigs.columns:      # store present in this env; guard anyway
         sigs = sigs.assign(global_breadth=0.99)
     with_gb = rr.compute(sigs=sigs)
     without_gb = rr.compute(sigs=sigs.drop(columns=["global_breadth"]))
-    a_with = {s["scare"]: s["score"] for s in with_gb["scares"] if s["tier"] == "A"}
-    a_no = {s["scare"]: s["score"] for s in without_gb["scares"] if s["tier"] == "A"}
+    # score AND band — the band is what originates the state, so pinning the score alone would
+    # let a Tier-A band move silently underneath an unchanged number.
+    a_with = {s["scare"]: (s["score"], s["band"]) for s in with_gb["scares"] if s["tier"] == "A"}
+    a_no = {s["scare"]: (s["score"], s["band"]) for s in without_gb["scares"] if s["tier"] == "A"}
     assert a_with == a_no
-    # the state itself is originated by Tier-A only → identical
-    assert with_gb["state"] == without_gb["state"]
+    # the state ORIGINATED by Tier-A is identical — the global leg never leaks into it
+    assert _tierA_originated_state(with_gb) == _tierA_originated_state(without_gb)
+
+
+def test_absent_breadth_leg_reweights_global_scare_onto_jpy_carry():
+    """Guard 3's other half, made explicit and deterministic (#2188 is what moved it).
+
+    When global_breadth is ABSENT — the documented degrade path: store missing, stale >8d, or
+    thin <10 ETFs — subscore_series renormalises `global` over its remaining registered leg, so
+    jpy_carry alone carries 100% of the weight it registered 0.3 for. Tier-A is untouched, but
+    the PUBLISHED state may still move one step, because Tier-B is allowed to escalate a
+    non-calm Tier-A read (that is the same path test_global_leg_escalates_hot_tierA asserts).
+
+    The renormalisation is deliberate and disclosed, not a bug to fix here: see
+    subscore_series' docstring and tests/test_macro_radar_audit_2026_07_29.py, where excluding
+    partially-resolved legs was implemented and reverted the same day because promoting partial
+    evidence to full confidence originates a signal. `weight_coverage`/`partial_composition` are
+    the disclosure. This test pins the arithmetic so any future change to it is a visible,
+    reviewed diff rather than a silent renumbering of the live US state."""
+    sigs = _sigs(growth_defensives=0.60, growth_cyc_def=0.60,
+                 global_breadth=0.20, jpy_carry=0.95)
+    with_gb = rr.compute(sigs=sigs, gate={"met": True})
+    without_gb = rr.compute(sigs=sigs.drop(columns=["global_breadth"]), gate={"met": True})
+    g_with = next(s for s in with_gb["scares"] if s["scare"] == "global")
+    g_no = next(s for s in without_gb["scares"] if s["scare"] == "global")
+    # 0.7*20 + 0.3*95 = 42.5 blended; with the 0.7 leg gone jpy_carry renormalises to the full 95
+    assert g_with["score"] == 42.5 and g_with["weight_coverage"] == 1.0
+    assert g_no["score"] == 95.0 and g_no["weight_coverage"] == 0.3
+    assert g_with["partial_composition"] is False and g_no["partial_composition"] is True
+    # Tier-A is byte-identical — the re-weighting stays inside Tier-B
+    assert ({s["scare"]: (s["score"], s["band"]) for s in with_gb["scares"] if s["tier"] == "A"}
+            == {s["scare"]: (s["score"], s["band"]) for s in without_gb["scares"] if s["tier"] == "A"})
+    assert _tierA_originated_state(with_gb) == _tierA_originated_state(without_gb) == "watch"
+    # ...and the published state moves exactly ONE step, via the Tier-B escalator
+    assert with_gb["state"] == "watch"
+    assert without_gb["state"] == "caution"
 
 
 # --------------------------------------------------------------------------- #
