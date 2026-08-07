@@ -1427,10 +1427,14 @@ def test_a_head_already_current_falls_through_and_cannot_loop(monkeypatch, capsy
     ), "and then blocked exactly as before"
 
 
+def _commits(*shas):
+    return [{"sha": sha} for sha in shas]
+
+
 def test_main_clean_check_names_is_fail_closed_on_an_unreadable_main(monkeypatch):
-    """Any error reading main yields an EMPTY set — never a permissive one."""
+    """Any error walking main yields an EMPTY set — never a permissive one."""
     def boom(method, url, token, payload=None):
-        if url.endswith("/commits/main"):
+        if "/commits?" in url:
             return 500, {}
         return 200, {}
 
@@ -1438,11 +1442,69 @@ def test_main_clean_check_names_is_fail_closed_on_an_unreadable_main(monkeypatch
     assert MOG.main_clean_check_names("acme/widgets", "read") == set()
 
 
+def test_main_clean_check_names_walks_past_commits_that_published_no_checks(monkeypatch):
+    """The tip is usually a `[skip ci]` wire tick or a research_vault catalog.
+
+    Measured 2026-08-07: NINE of main's last fourteen commits carried no check runs
+    at all and the tip had none either, with the newest proved commit five back.
+    Reading only the tip returned a set with no packs in it, which would have left
+    the base-inherited-red refresh inert while looking like it worked.
+    """
+    checks = {
+        "b" * 40: {  # the proved commit, two back
+            "total_count": 2,
+            "check_runs": [
+                _run("ci-pack-0", conclusion="success"),
+                _run("ci-pack-1", conclusion="failure"),
+            ],
+        }
+    }
+
+    def fake(method, url, token, payload=None):
+        if "/commits?" in url:
+            return 200, _commits("a" * 40, "c" * 40, "b" * 40)
+        if "/check-runs" in url:
+            sha = url.split("/commits/")[1].split("/")[0]
+            page = int(url.rsplit("page=", 1)[1].split("&")[0])
+            if page > 1:
+                return 200, {"total_count": 0, "check_runs": []}
+            return 200, checks.get(sha, {"total_count": 0, "check_runs": []})
+        return 200, {}
+
+    monkeypatch.setattr(MOG, "_request", fake)
+    # walks past the two check-less commits and answers from the proved one alone
+    assert MOG.main_clean_check_names("acme/widgets", "read") == {"ci-pack-0"}
+
+
+def test_main_clean_check_names_answers_from_one_commit_never_a_union(monkeypatch):
+    """A union would let a pass four commits ago excuse a red introduced since."""
+    checks = {
+        "a" * 40: {"total_count": 1, "check_runs": [_run("ci-pack-0", conclusion="failure")]},
+        "b" * 40: {"total_count": 1, "check_runs": [_run("ci-pack-0", conclusion="success")]},
+    }
+
+    def fake(method, url, token, payload=None):
+        if "/commits?" in url:
+            return 200, _commits("a" * 40, "b" * 40)
+        if "/check-runs" in url:
+            sha = url.split("/commits/")[1].split("/")[0]
+            page = int(url.rsplit("page=", 1)[1].split("&")[0])
+            if page > 1:
+                return 200, {"total_count": 0, "check_runs": []}
+            return 200, checks.get(sha, {"total_count": 0, "check_runs": []})
+        return 200, {}
+
+    monkeypatch.setattr(MOG, "_request", fake)
+    # newest PROVED commit is red on ci-pack-0 -> it is NOT clean, and the older
+    # commit's success must not rescue it
+    assert MOG.main_clean_check_names("acme/widgets", "read") == set()
+
+
 def test_main_clean_check_names_ignores_the_spurious_check_and_pending_runs(monkeypatch):
     """Only CONCLUDED, non-spurious, clean names may widen what a red PR can do."""
     def fake(method, url, token, payload=None):
-        if url.endswith("/commits/main"):
-            return 200, {"sha": "a" * 40}
+        if "/commits?" in url:
+            return 200, _commits("a" * 40)
         if "/check-runs" in url:
             page = int(url.rsplit("page=", 1)[1].split("&")[0])
             if page > 1:
