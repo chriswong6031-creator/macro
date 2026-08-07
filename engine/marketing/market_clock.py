@@ -719,10 +719,27 @@ _FUTURE_CUES: tuple[str, ...] = (
     "due", "due out", "ahead of", "expected", "coming", "upcoming", "next",
     "scheduled", "slated", "lands", "land", "on deck", "watch for", "eyes on",
     "will", "reports",
-    # sign-offs and forward pointers to our own next post
-    "see you", "come back", "back on", "more on", "recap", "tune in",
-    "catch you", "join me", "join us", "post the", "posting the",
+    # Sign-offs and forward pointers to our own next post. UNAMBIGUOUSLY
+    # FORWARD ONLY - see below.
+    "see you", "come back", "tune in", "catch you", "join me", "join us",
+    "post the", "posting the",
 )
+
+#: A CUE THAT CAN POINT BACKWARDS IS NOT A FUTURE CUE (2026-08-06).
+#:
+#: "recap", "back on" and "more on" were added here as forward pointers and they
+#: re-opened the exact defect this module exists to stop: `_claim_is_cited`
+#: treats a hit anywhere in the 52 characters before a weekday as "this date is
+#: being referenced, not claimed", so "Recap: Tuesday's move" made the operator's
+#: live theme_list post ship on Wednesday again.
+#:
+#: The cost here is ONE-SIDED. A false positive costs one forward-looking post,
+#: which the next run re-plans. A false negative ships yesterday's tape as
+#: today's, which is the thing the operator is angriest about: "you can't post
+#: yesterday's action today... no human would post stale data like that." So a
+#: cue earns its place only if it CANNOT be read as pointing at a past session.
+#: "see you Tuesday" cannot. "back on Tuesday" and "more on Tuesday's move" can.
+_BACKWARD_CAPABLE_NON_CUES: tuple[str, ...] = ("recap", "back on", "more on")
 
 #: How much text before a date token is inspected for a cue. One clause: "now
 #: -11.06% from its all-time high of 340.08 set on " is 46 characters between

@@ -1435,3 +1435,53 @@ def test_no_em_dash_in_any_line_this_change_added_to_a_bank():
     lines += list(ms._TAIL_DOWN) + list(ms._TAIL_UP)
     bad = [x for x in lines if "—" in x or re.search(r"\s–\s", x)]
     assert not bad, bad
+
+
+class TestBackwardCapableCuesAreNotFutureCues:
+    """A cue that can point at a PAST session must not disarm the stale gate.
+
+    THE REGRESSION (fourth adversarial pass, 2026-08-06). A minor fix widened
+    `_FUTURE_CUES` with "recap", "back on" and "more on" as forward pointers to
+    our own next post. `_claim_is_cited` treats a hit anywhere in the 52
+    characters before a weekday as "this date is referenced, not claimed", so
+    "Recap: Tuesday's move..." made the operator's live theme_list defect ship on
+    Wednesday again - the exact post this module was written to stop.
+
+    THE COST IS ONE-SIDED, which is why the bar is "cannot be read as past" and
+    not "usually means future": a false positive costs one forward-looking post
+    that the next run re-plans, a false negative ships yesterday's tape as
+    today's.
+    """
+
+    def test_the_backward_capable_words_are_not_future_cues(self):
+        from engine.marketing import market_clock as mc
+
+        for word in mc._BACKWARD_CAPABLE_NON_CUES:
+            assert word not in mc._FUTURE_CUES, (
+                f"{word!r} can point at a past session, so it must not disarm "
+                "the staleness check")
+
+    def test_a_recap_of_a_past_session_is_still_refused(self):
+        from datetime import datetime, timezone
+
+        from engine.marketing import market_clock as mc
+
+        wed = datetime(2026, 8, 5, 18, 0, tzinfo=timezone.utc)
+        for lead in ("Recap:", "Back on", "More on"):
+            text = f"{lead} Tuesday, Cloud Computing ripped +1.7% on average."
+            got = mc.stale_session_violations(
+                text, now=wed, fact_asof="2026-08-05", kind="theme_list")
+            assert got, (
+                f"{lead!r} must not disarm the gate - this is the live defect")
+
+    def test_a_genuine_forward_sign_off_still_ships(self):
+        from datetime import datetime, timezone
+
+        from engine.marketing import market_clock as mc
+
+        wed = datetime(2026, 8, 5, 18, 0, tzinfo=timezone.utc)
+        for text in ("Cloud Computing ripped +1.7% today. See you Thursday.",
+                     "Cloud Computing ripped +1.7% today. Join us Thursday."):
+            assert mc.stale_session_violations(
+                text, now=wed, fact_asof="2026-08-05",
+                kind="theme_list") == [], text
