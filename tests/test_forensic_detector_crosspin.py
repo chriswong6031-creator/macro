@@ -68,12 +68,18 @@ THE TESTS
    unresolved operator questions rather than silently tolerated.
 
 Section 5 (``KNOWN_DIVERGENCES``) was RETIRED in the same PR that added section
-6, not relaxed. Five of its six rows described the absent-input defect above and
-stopped being disagreements once it was fixed; every input it carried is now a
-row of the section-6 table, which pins all THREE implementations instead of two
-and asserts the exact disagreement SET instead of a ">= 5 observable" floor.
-The sixth row (moat gates CURRENT capex, the projection builder gates PRIOR
-capex) survives as a pinned row in 6b.
+6, not relaxed. Every one of its six rows described a defect that PR fixed, so
+none of them is a disagreement any more; every input it carried is now a row of
+the section-6 table, which pins all THREE implementations instead of two and
+asserts the exact disagreement SET instead of a ">= 5 observable" floor.
+
+Its sixth row is the cautionary one. It pinned "moat gates CURRENT capex, the
+projection builder gates PRIOR capex" as tolerable because the projection
+builder published CLEAR rather than a false fire. That reasoning was wrong: a
+permanent clear drawn from evidence that cannot support one is the same defect
+as a false fire with the sign flipped, and it was suppressing coverage counts on
+4 live tickers. Both directions of "answering without evidence" are in scope
+here — the guard tests verdicts, not just fires.
 
 NO THRESHOLD NUMBER IS WRITTEN INTO THIS FILE. A guard carrying its own copy of
 the thresholds passes happily while all three implementations drift together,
@@ -550,15 +556,57 @@ _MUTATIONS = (
 # non-vacuity anchor (all four detectors must FIRE three ways on it, proving the
 # harness reaches the detector code at all), and it is the control that every
 # mutated row is read against.
-SCENARIOS: list[tuple[str, str | None, tuple[str, ...], object]] = [
-    ("baseline", None, (), None)
+# A scenario is an id plus a tuple of EDITS, each (field, periods, value).
+#
+# Most rows carry exactly one edit. The COMBINED rows exist because single-field
+# mutation cannot reach some real filings, and a gate that looks redundant in
+# isolation stops being redundant at the intersection. Measured while
+# mutation-testing this file (2026-08-07): deleting the current-capex gate from
+# detect_quarterly is invisible on every single-field row, because a
+# non-positive current capex gives capex_g <= -1.0 which cannot clear
+# rev_g + 0.10 — UNLESS current revenue is also negative, which pushes rev_g
+# below -1.10 and lets a capex COLLAPSE register as capital intensity RISING.
+# A distressed filer reporting a negative revenue restatement and no capex in
+# the same period is not exotic, and only a combined row can see it.
+SCENARIOS: list[tuple[str, tuple[tuple[str, tuple[str, ...], object], ...]]] = [
+    ("baseline", ()),
 ] + [
-    (f"{field}__{name}", field, periods, value)
+    (f"{field}__{name}", ((field, periods, value),))
     for field in _FIELD_CONCEPT
     for name, periods, value in _MUTATIONS
+] + [
+    (
+        "combined__negative_current_revenue_and_zero_current_capex",
+        (("revenue", (_CURRENT_END,), -500.0), ("capex", (_CURRENT_END,), 0.0)),
+    ),
+    (
+        "combined__negative_current_revenue_and_negative_current_capex",
+        (("revenue", (_CURRENT_END,), -500.0), ("capex", (_CURRENT_END,), -500.0)),
+    ),
+    (
+        "combined__absent_op_income_and_zero_current_capex",
+        (("op_income", (_CURRENT_END,), _ABSENT), ("capex", (_CURRENT_END,), 0.0)),
+    ),
+    # The exact intersection that makes the current-capex gate load-bearing, and
+    # the only row in this table that reaches it. THREE conditions must coincide:
+    # negative current revenue (so rev_g falls below -1.10), non-positive current
+    # capex (so capex_g == -1.0 clears rev_g + 0.10), and a non-positive current
+    # operating income (so the DISCLOSED revenue-only fallback is taken and the
+    # op-income conjunct cannot veto). A distressed filer posting a negative
+    # revenue restatement, no capex and an operating loss in one period satisfies
+    # all three — and the detector would report CAPITAL INTENSITY RISING off a
+    # capex COLLAPSE to zero. Every single-field row misses this.
+    (
+        "combined__negative_revenue_zero_capex_and_operating_loss",
+        (
+            ("revenue", (_CURRENT_END,), -500.0),
+            ("capex", (_CURRENT_END,), 0.0),
+            ("op_income", (_CURRENT_END,), -500.0),
+        ),
+    ),
 ]
 
-_SCENARIO_BY_ID = {row[0]: row for row in SCENARIOS}
+_SCENARIO_BY_ID = {scenario_id: edits for scenario_id, edits in SCENARIOS}
 
 
 def _fixture(name: str):
@@ -590,20 +638,19 @@ def _baseline_pair() -> tuple[dict[str, float], dict[str, float]]:
     return out[_CURRENT_END], out[_PRIOR_END]
 
 
-def _scenario_dicts(field, periods, value) -> tuple[dict, dict]:
-    """A and B's view of one scenario: the fixture pair with one edit applied."""
+def _scenario_dicts(edits) -> tuple[dict, dict]:
+    """A and B's view of one scenario: the fixture pair with every edit applied."""
     base_cur, base_pri = _baseline_pair()
     current, prior = dict(base_cur), dict(base_pri)
-    if field is None:
-        return current, prior
-    for period in periods:
-        target = current if period == _CURRENT_END else prior
-        if value == _ABSENT:
-            target.pop(field, None)
-        elif value == _NAN:
-            target[field] = float("nan")
-        else:
-            target[field] = float(value)
+    for field, periods, value in edits:
+        for period in periods:
+            target = current if period == _CURRENT_END else prior
+            if value == _ABSENT:
+                target.pop(field, None)
+            elif value == _NAN:
+                target[field] = float("nan")
+            else:
+                target[field] = float(value)
     return current, prior
 
 
@@ -642,7 +689,7 @@ _REGISTRY_STATE_TO_VERDICT = {
 }
 
 
-def _verdict_registry(field, periods, value) -> dict[str, str]:
+def _verdict_registry(edits) -> dict[str, str]:
     """One real kernel run per scenario; every detector's state comes back from it.
 
     The kernel has no NaN — on its side of the boundary a fact is reported or it
@@ -651,7 +698,7 @@ def _verdict_registry(field, periods, value) -> dict[str, str]:
     IS to the kernel. That is why the nan_* and absent_* rows agree on C.
     """
     payload = deepcopy(_fixture("companyfacts_versions.json"))
-    if field is not None:
+    for field, periods, value in edits:
         concept = _FIELD_CONCEPT[field]
         entries = payload["facts"]["us-gaap"][concept]["units"]["USD"]
         if value in (_ABSENT, _NAN):
@@ -685,9 +732,9 @@ def _verdict_registry(field, periods, value) -> dict[str, str]:
 @lru_cache(maxsize=None)
 def _verdicts(scenario_id: str) -> dict[str, tuple[str, str, str]]:
     """(script, moat, registry) verdict per detector for one scenario."""
-    _sid, field, periods, value = _SCENARIO_BY_ID[scenario_id]
-    current, prior = _scenario_dicts(field, periods, value)
-    registry = _verdict_registry(field, periods, value)
+    edits = _SCENARIO_BY_ID[scenario_id]
+    current, prior = _scenario_dicts(edits)
+    registry = _verdict_registry(edits)
     out: dict[str, tuple[str, str, str]] = {}
     for detector_id in SHARED_DETECTOR_IDS:
         assert detector_id in registry, (
@@ -804,7 +851,6 @@ def test_zero_prior_denominator_is_not_evaluable_in_all_three(detector_id, field
 #
 # Format: (scenario_id, detector_id, script, moat, registry, family, why)
 _F1 = "negative prior denominator"
-_F2 = "capex sign gate is checked in different periods"
 
 PINNED_THREE_WAY_DISAGREEMENTS: list[tuple[str, str, str, str, str, str, str]] = [
     # ---- family 1: what a NEGATIVE prior denominator means ----
@@ -859,25 +905,19 @@ PINNED_THREE_WAY_DISAGREEMENTS: list[tuple[str, str, str, str, str, str, str]] =
         "three implementations agree on it (see the op_income__zero_current and "
         "op_income__negative_current rows of the census, which agree three ways)",
     ),
-    # ---- family 2: WHICH period's capex must be positive ----
-    # engine/moat_falsifiers.py gates on CURRENT capex > 0 ("negative capex =
-    # disposal proceeds, the opposite direction — skip") and the kernel gates on
-    # current_capex <= 0. The projection builder has no current-capex gate; its
-    # _growth only constrains the PRIOR. A therefore evaluates pairs the other
-    # two refuse. A publishes CLEAR rather than a false fire here, so this is an
-    # evaluability difference and not a wrong finding — pinned, not fixed,
-    # because tightening A drops "clear" rows a live workbench already shows.
-    (
-        "capex__zero_current", "capital_intensity_rising",
-        CLEAR, NOT_EVALUABLE, NOT_EVALUABLE, _F2,
-        "current capex == 0: B and C require current capex > 0 and refuse; A only "
-        "constrains the prior, so it evaluates and reports clear",
-    ),
-    (
-        "capex__negative_current", "capital_intensity_rising",
-        CLEAR, NOT_EVALUABLE, NOT_EVALUABLE, _F2,
-        "current capex < 0 (net disposal proceeds), same split as zero",
-    ),
+    # ---- family 2 (WHICH period's capex must be positive) was FIXED, not pinned ----
+    # It briefly lived here as "A publishes clear, not a false fire, so this is
+    # only an evaluability difference". That reasoning was wrong and is worth
+    # recording: a permanent CLEAR drawn from evidence that cannot support one is
+    # the same defect as a false fire, just pointing the other way. A's _growth
+    # constrains only the PRIOR capex, so a non-positive CURRENT capex (net
+    # disposal proceeds) produced capex_g <= -1.0 — a well-formed number that can
+    # never clear rev_g + 0.10 — and the pair reported clear forever while being
+    # COUNTED AS COVERED. 4 live tickers on statements_quarterly.parquet.
+    # scripts/build_fundamental_forensics.py now gates current capex > 0 in both
+    # detect_quarterly and detector_evaluability, matching both siblings, so
+    # capex__zero_current and capex__negative_current now agree three ways and are
+    # asserted by the census below rather than pinned as exceptions.
 ]
 
 _PINNED_BY_CELL = {
@@ -923,7 +963,7 @@ def test_the_three_implementations_disagree_on_exactly_the_pinned_cells():
     edit, which a floor of 5 would have waved through at 5 remaining rows.
     """
     actual_disagreements = {}
-    for scenario_id, _field, _periods, _value in SCENARIOS:
+    for scenario_id, _edits in SCENARIOS:
         for detector_id, triple in _verdicts(scenario_id).items():
             if len(set(triple)) > 1:
                 actual_disagreements[(scenario_id, detector_id)] = triple
@@ -972,8 +1012,8 @@ def test_the_projection_builder_never_fires_what_it_calls_not_evaluable():
     shape exercises both functions.
     """
     contradictions = []
-    for scenario_id, field, periods, value in SCENARIOS:
-        current, prior = _scenario_dicts(field, periods, value)
+    for scenario_id, edits in SCENARIOS:
+        current, prior = _scenario_dicts(edits)
         cur, pri = _pair(current, prior)
         evaluable = ff_script.detector_evaluability(cur, pri, pd.DataFrame())
         fired = _script_fired(current, prior)
@@ -1005,7 +1045,7 @@ def test_the_evaluability_table_actually_exercises_all_three_implementations():
     """
     seen: dict[int, set[str]] = {0: set(), 1: set(), 2: set()}
     per_detector = {d: 0 for d in SHARED_DETECTOR_IDS}
-    for scenario_id, _field, _periods, _value in SCENARIOS:
+    for scenario_id, _edits in SCENARIOS:
         for detector_id, triple in _verdicts(scenario_id).items():
             per_detector[detector_id] += 1
             for position, verdict in enumerate(triple):

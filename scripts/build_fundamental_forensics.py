@@ -352,9 +352,21 @@ def detect_quarterly(current: pd.Series, prior: pd.Series, cik: int | None) -> l
     capex_g = _growth(current.get("capex"), prior.get("capex"))
     op_g = _growth(current.get("op_income"), prior.get("op_income"))
     op_cur = _finite(current.get("op_income"))
+    # Current capex must be POSITIVE — the detector is about rising capital
+    # SPENDING, and a non-positive current capex is net disposal proceeds (or a
+    # quarter with none reported), which is the opposite direction. _growth only
+    # constrains the PRIOR, so without this gate a zero/negative current capex
+    # yields a well-formed capex_g <= -1.0 that can never clear rev_g + 0.10 —
+    # so the pair reports "clear" forever AND is counted as covered, a permanent
+    # verdict drawn from evidence that cannot support one. Both siblings already
+    # refuse here (engine/moat_falsifiers.py skips on current capex <= 0; the
+    # registry kernel returns not_evaluable with
+    # "nonzero_revenue_and_positive_capex_required").
+    capex_cur = _finite(current.get("capex"))
+    capex_cur_positive = capex_cur is not None and capex_cur > 0
     capex_triggered = False
     capex_gap = None
-    if capex_g is not None and rev_g is not None and capex_g > rev_g + 0.10:
+    if capex_g is not None and rev_g is not None and capex_cur_positive and capex_g > rev_g + 0.10:
         if op_cur is not None and op_cur <= 0:
             capex_triggered, capex_gap = True, capex_g - rev_g
         elif op_g is not None and capex_g > op_g + 0.10:
@@ -425,9 +437,15 @@ def detector_evaluability(
     # the pair is not evaluable rather than "covered but clear".
     rev_cur = _finite(current.get("revenue"))
     rev_cur_positive = rev_cur is not None and rev_cur > 0
+    # Mirrors detect_quarterly: a non-positive CURRENT capex is disposal
+    # proceeds, not capital spending, so the pair is not evaluable rather than
+    # "covered and clear".
+    capex_cur = _finite(current.get("capex"))
+    capex_cur_positive = capex_cur is not None and capex_cur > 0
     capex_evaluable = (
         capex_g is not None
         and rev_g is not None
+        and capex_cur_positive
         and op_cur is not None
         and (op_cur <= 0 or op_g is not None)
     )
