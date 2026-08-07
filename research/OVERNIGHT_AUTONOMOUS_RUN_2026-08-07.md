@@ -68,7 +68,37 @@ Recording these explicitly, because both were wrong when I said them.
 | #4906 | EX-21 picker missed EDGAR's bare-`x` separator | merged 10:25Z |
 | #4794 | main-red heal — chat-nav drift | merged 07:13Z |
 | #4827 | main-red heal — stale exit-policy horse race | merged 03:33Z |
-| #4921 | Grader was missing its earnings/filings outcome labels | open, armed |
+| #4921 | Grader was missing its earnings/filings outcome labels | merged 11:13Z |
+
+**Open at end of run** (all armed `merge-on-green` except #4950, deliberately):
+
+| PR | What |
+|---|---|
+| #4939 | this record |
+| #4941 | GovTribe clean-room study |
+| #4949 | canon conformance guard — pins that `_tf_bars` and `canon.resample_sessions` are deliberately different anchors and neither may become a delegate of the other |
+| #4950 | amount-class conflation guard — **deliberately unarmed until its matcher earns the assurance it claims**; see below |
+| #4951 | BWXT alias repair + `page_size` 50→100 + zero-row tripwire |
+
+### The amount-class guard took three adversarial rounds, and that is the point
+
+It would have shipped **false assurance** on round 1 — reporting the tree clean while blind to the
+lobe's dominant arithmetic idiom. Each round was measured, not argued:
+
+| round | verdict | what the positive controls proved |
+|---|---|---|
+| 1 | BLOCKED | `_backlog` invisible (defensive rebind popped the class); `_concentration`'s published `covered_obligations` accepted an obligation+outlay sum. Both injections returned `EXIT=0`. |
+| 2 | SOUND on those, but over-corrected | a flat `_name_class` leaked function locals module-wide — two measured false positives at `metrics.py:1511`, and string labels like `event_type` classed as `transaction_delta` |
+| 3 | scoped per `FunctionDef` | both controls still fire, both false positives silent, tracker 42 → 22 classed names, module-scope contamination 21→0 and 17→0 |
+
+Round 3 introduced one narrowing of its own (**N1**): a container *hoisted to a name* loses its
+member classes, so `vals = [row["total_obligated"], …]; sum(vals) + row["total_outlays"]` reads clean
+where the inline form is caught. A final round is closing or tripwiring it. **The rule: a documented,
+tripwired blind spot is honest; an undocumented one is the exact defect this guard exists to prevent.**
+
+The lesson worth keeping: *a guard that reports clean because its matcher is narrow looks identical to
+a clean codebase.* Every "no findings" claim here was positive-controlled by injecting a real
+violation into the real function and confirming the guard saw it.
 
 ---
 
