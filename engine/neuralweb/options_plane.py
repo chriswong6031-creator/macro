@@ -34,8 +34,11 @@ nightly plane build; an options hiccup must never take the macro header down.
 from __future__ import annotations
 
 import logging
+from datetime import date as _date
 from pathlib import Path
 from typing import Any
+
+from lib import nyse_calendar
 
 log = logging.getLogger(__name__)
 
@@ -72,6 +75,20 @@ def _f(v: Any) -> float | None:
     except (TypeError, ValueError):
         return None
     return f if f == f and abs(f) != float("inf") else None
+
+
+def _as_session_date(v: Any) -> _date | None:
+    """``YYYY-MM-DD``-ish -> date, but only when it is a real NYSE session.
+
+    A non-session string is treated as unusable rather than parsed: the adjacency test
+    it feeds is meaningless against a Saturday, and returning it would let a weekend
+    row satisfy "the immediately prior session".
+    """
+    try:
+        d = _date.fromisoformat(str(v)[:10])
+    except (TypeError, ValueError):
+        return None
+    return d if nyse_calendar.is_session(d) else None
 
 
 def _regime(net_gex_bn: float | None, dist_pct: float | None) -> str | None:
@@ -119,15 +136,30 @@ def _trend(
     candidates = history[:-1] if aligned else history
 
     prev = None
+    prev_date = None
     for row in reversed(candidates):
         if isinstance(row, dict):
             prev = _f(row.get("net_gex_bn"))
             if prev is not None:
+                prev_date = str(row.get("date") or "")[:10]
                 break
     if prev is None:
         return "unknown", None
 
+    # GAP DISCIPLINE — TWO-ENDPOINT at n=1, which IS the COMPARE case: there is no
+    # honest widening of "yesterday". The walk above takes the first non-null row it
+    # finds, and each history row carries its own date that nothing used to read, so on
+    # a gapped store the published `regime_velocity_1d` was a multi-session change. The
+    # chain store is missing four sessions before 2026-08-06 (07-31 -> 08-06), so a
+    # payload built today would have labelled a FOUR-session move "1d".
+    # `regime_trend` survives — it is a direction-of-magnitude read that carries no
+    # day-count claim — but the velocity is null unless its endpoint really is the
+    # session immediately before the reference date.
     velocity = latest_bn - prev
+    ref = _as_session_date(asof) or _as_session_date(tail_date)
+    prev_d = _as_session_date(prev_date)
+    if ref is None or prev_d is None or not nyse_calendar.is_prior_session(prev_d, ref):
+        velocity = None
     scale = max(abs(latest_bn), abs(prev))
     if scale <= 0 or abs(abs(latest_bn) - abs(prev)) / scale < _TREND_FLAT_FRAC:
         return "stable", velocity

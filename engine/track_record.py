@@ -53,6 +53,7 @@ import json
 import logging
 import sys
 import warnings
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -115,6 +116,11 @@ _IDENTITY_COLS = [
     # W0-stageB: species / archetype (§5.1 species_id + §3.2 archetype stamp)
     "species_id",             # str/null  unambiguous registry mapping; null if ambiguous or none
     "archetype",              # str/null  archetype key from site/stockdata/<ticker>.json at stamp time
+    # R-SQ8: the §7 BUCKETING ERA this row's marker was drawn under, copied from the signal
+    # file's own `anchor_era`. Null on every pre-2026-08-06 row (they were logged before the
+    # field existed) and on near-miss rows (not §7 markers), which is itself the cohort
+    # boundary — a graded read fences on this field rather than on a date guess.
+    "anchor_era",             # str/null  e.g. "sq-abs-session-2026-08-06"
 ]
 
 # Maturation columns — NULL until enough forward data, then filled once and frozen
@@ -156,6 +162,32 @@ _MATURATION_COLS = [
 
 _ALL_COLS = _IDENTITY_COLS + _MATURATION_COLS
 _KEY = ("ticker", "date", "type")
+
+# --------------------------------------------------------------------------- #
+# R-SQ8 — the §7 anchor-era floor, and why an append-only ledger needs one
+# --------------------------------------------------------------------------- #
+# This ledger's identity is literally (ticker, MARKER DATE, type), keep-FIRST, append-only,
+# never-purge. It ingests the §7 marker files wholesale. On 2026-08-06 the marker engine's
+# bucketing grid was deliberately re-anchored (signal_quality.ANCHOR_ERA =
+# "sq-abs-session-2026-08-06"), which re-dates most historical markers by a session or two —
+# so with no guard, the first post-cutover run would mint a NEW row beside every pre-era row
+# whose date moved: permanent double-counting of the same physical event, in the one store
+# whose whole value is that a fire is logged exactly once.
+#
+# The rule: a NEW key is appended only if its marker date is ON OR AFTER the floor AND no
+# existing row of the same (ticker, type) sits within SQ_ERA_BOUNDARY_DAYS calendar days of
+# it. Pre-floor history in tonight's file is treated as the RE-DATED IMAGE of already-logged
+# events, never as new events. The ±4-day window (mirroring marker_integrity.TOL_DAYS) is
+# the boundary-week guard: a marker logged at 2026-08-05 that re-dates to 2026-08-07 lands
+# ON the wrong side of the floor and would otherwise slip through as new. It costs nothing
+# in steady state — two same-type §7 markers cannot fire on adjacent 3D buckets (both `CB`
+# and `CS` require a MACD cross, and a cross cannot repeat on consecutive bars), so real
+# same-type prints are always ≳6 calendar days apart.
+#
+# Existing rows keep maturing normally: fills touch only NULL maturation columns, and no
+# pre-era row is ever edited (the emitter-fix-cannot-heal-logged-rows law).
+SQ_ANCHOR_ERA_FLOOR = "2026-08-06"
+SQ_ERA_BOUNDARY_DAYS = 4
 
 # Which marker types carry the buy-filter verdict
 _ENTRY_TYPES = {"buy", "rebuy"}
@@ -461,6 +493,7 @@ def _build_row(
     mtype_to_species: dict | None = None,
     data_dir: "Path | None" = None,
     stockdata_dir: "Path | None" = None,
+    anchor_era: str | None = None,
 ) -> dict[str, Any]:
     """Build a single track-record row dict from a marker.
 
@@ -523,6 +556,8 @@ def _build_row(
         # W0-stageB: species/archetype (frozen at creation)
         "species_id": sp_id,
         "archetype": archetype,
+        # R-SQ8: the §7 bucketing era of the FILE this marker came from (frozen at creation)
+        "anchor_era": anchor_era,
         # maturation — all None at birth
         "fwd_ret_20": None, "fwd_ret_60": None, "fwd_ret_180": None,
         "fwd_price_20": None, "fwd_price_60": None, "fwd_price_180": None,
@@ -740,7 +775,12 @@ def _key_tuple(row_or_dict) -> tuple:
 # ---------------------------------------------------------------------------
 
 def _iter_marker_files(signals_dir: Path):
-    """Yield (ticker, markers_list) for every signal JSON in signals_dir."""
+    """Yield (ticker, markers_list, anchor_era) for every signal JSON in signals_dir.
+
+    ``anchor_era`` is the file's own §7 bucketing-era stamp (R-SQ3), None on a pre-era
+    file. It is carried here rather than re-derived so a row records the era of the FILE
+    it was read from, not the era of whatever engine happens to be importable.
+    """
     for fp in sorted(signals_dir.glob("*.json")):
         ticker = fp.stem
         try:
@@ -750,7 +790,60 @@ def _iter_marker_files(signals_dir: Path):
             continue
         markers = doc.get("markers") or []
         if markers:
-            yield ticker, markers
+            yield ticker, markers, doc.get("anchor_era")
+
+
+def _era_index(existing_keys: dict) -> dict[tuple, list[date]]:
+    """(ticker, type) -> the marker dates already logged for it (R-SQ8's boundary guard).
+
+    Snapshotted from the ledger BEFORE ingestion on purpose: rows appended during THIS run
+    must not seed the guard, or a genuine second print later in the same file would be
+    suppressed by the first. ``(ticker, None)`` holds every date logged for the ticker
+    under any type — the "does this name already have logged history" question.
+    """
+    idx: dict[tuple, list[date]] = {}
+    for (ticker, dstr, mtype) in existing_keys:
+        try:
+            d = date.fromisoformat(str(dstr)[:10])
+        except (TypeError, ValueError):
+            continue
+        idx.setdefault((ticker, mtype), []).append(d)
+        idx.setdefault((ticker, None), []).append(d)
+    return idx
+
+
+def _blocked_by_era_floor(ticker: str, mtype: str, dstr: str,
+                          era_index: dict[tuple, list[date]]) -> str | None:
+    """Why this NEW key must not be appended, or None if it may be (R-SQ8).
+
+    Returns a short reason string so a skip is countable and nameable rather than a silent
+    ``continue``.
+
+    THE FLOOR IS A DUPLICATION GUARD, AND IT IS SCOPED TO ITS OWN PREMISE. R-SQ8's
+    reasoning is that "pre-floor history in tonight's file is the re-dated image of
+    ALREADY-LOGGED events" — which is true exactly when this ledger was already recording
+    the name while those dates passed. So a pre-floor key is refused only for a ticker that
+    ALREADY HAS logged rows. A ticker with none is not a re-dating of anything: it is a
+    fresh build, a rebuilt-from-scratch ledger, or a newly covered name, and refusing its
+    history would mean this store could never be reconstructed and every backtest fixture
+    would log zero rows. The protection where the premise holds is unchanged: on the live
+    ledger every ticker has history, so every pre-floor re-dating is refused.
+
+    The ±``SQ_ERA_BOUNDARY_DAYS`` leg then catches the boundary week — a marker logged just
+    under the floor that re-dates to just over it, which the date test alone would let
+    through as new.
+    """
+    stamp = str(dstr)[:10]
+    try:
+        d = date.fromisoformat(stamp)
+    except (TypeError, ValueError):
+        return None                       # unparseable date: not this guard's call to make
+    if stamp < SQ_ANCHOR_ERA_FLOOR and era_index.get((ticker, None)):
+        return "pre_era_marker"           # the re-dated image of an already-logged event
+    for prior in era_index.get((ticker, mtype), ()):
+        if abs((d - prior).days) <= SQ_ERA_BOUNDARY_DAYS:
+            return "boundary_week_duplicate"
+    return None
 
 
 def _load_asof(mtf_path: Path, asof_override: str | None) -> str:
@@ -841,6 +934,9 @@ def update_track_record(
     new_rows: list[dict] = []
     skipped_pending = 0
     matured_rows = 0
+    # R-SQ8: the era floor's view of the ledger, snapshotted BEFORE ingestion.
+    era_index = _era_index(existing_keys)
+    era_skips: dict[str, int] = {}
 
     # W0-stageB: load species registry once per run and build mtype→species map
     registry = _load_species_registry(repo_root, data_dir=data_dir)
@@ -858,11 +954,16 @@ def update_track_record(
         dead_prices = {}
 
     # --- process each ticker's signal file ---
-    for ticker, markers in _iter_marker_files(signals_dir):
+    # Tonight's stream per ticker + every key it visited: the orphan-maturation pass below
+    # needs both to keep a re-dated row maturing (R-SQ8).
+    tonight: dict[str, list[dict]] = {}
+    visited: set[tuple] = set()
+    for ticker, markers, file_era in _iter_marker_files(signals_dir):
         close = _load_close(ticker, stocks_dir, dead_prices)
         if close is None or close.empty:
             logger.debug("No price data for %s — skipping", ticker)
             continue
+        tonight[ticker] = markers
 
         for idx, marker in enumerate(markers):
             mtype   = marker.get("type", "")
@@ -880,6 +981,7 @@ def update_track_record(
                 continue
 
             key = (ticker, marker["date"], mtype)
+            visited.add(key)
 
             if key in existing_keys:
                 # Row already exists — fill NULL maturation columns only (NEVER overwrite
@@ -901,16 +1003,76 @@ def update_track_record(
                 if changed:
                     matured_rows += 1
             else:
+                # R-SQ8: the §7 anchor-era floor. A key that is new only because the grid
+                # re-anchored is the RE-DATED IMAGE of a row already in this ledger, not a
+                # new event — appending it would double-count the same physical fire
+                # forever. Counted and named, never a silent `continue`.
+                blocked = _blocked_by_era_floor(ticker, mtype, marker["date"], era_index)
+                if blocked:
+                    era_skips[blocked] = era_skips.get(blocked, 0) + 1
+                    continue
                 # New row — build identity + entry-time features + attempt maturation
                 row = _build_row(
                     ticker, marker, markers, idx, close, run_asof,
                     mtype_to_species=mtype_to_species,
                     data_dir=data_dir,
                     stockdata_dir=stockdata_dir,
+                    anchor_era=file_era,
                 )
                 _fill_maturation(row, markers, idx, close, run_asof)
                 existing_keys[key] = row
                 new_rows.append(row)
+
+    # --- R-SQ8: keep a RE-DATED row maturing. The loop above is keyed on tonight's
+    # markers, so a logged row whose marker moved under the anchor cutover is never visited
+    # again and its forward columns would freeze as NULL forever — silently retiring the
+    # ledger's whole pre-era population on the one night it must keep grading. R-SQ8
+    # requires the opposite ("existing rows keep maturing normally").
+    #
+    # SCOPED EXACTLY TO WHAT THE FLOOR REFUSED, and for the same reason: a row is treated
+    # as re-dated only when tonight's stream carries a marker of the SAME type within
+    # SQ_ERA_BOUNDARY_DAYS of it — the identical relation `_blocked_by_era_floor` uses to
+    # call that marker this row's image. Anything else is left exactly as before: a row
+    # this ledger never matured is not this charter's to start maturing, and widening the
+    # pass would back-fill legacy rows that predate the columns themselves.
+    # `entry_idx` is the count of markers at or before the row's own date, so
+    # `_resolve_exit` scans exactly the markers that follow it and a re-dated exit resolves
+    # normally. Keep-FIRST throughout — nothing is overwritten, and no logged row is ever
+    # re-dated to match the new stream.
+    _orphan_close: dict[str, Any] = {}
+    for key, row in list(existing_keys.items()):
+        mtype = row.get("type")
+        if key in visited or mtype not in (_ENTRY_TYPES | _EXIT_TYPES):
+            continue
+        stream = tonight.get(row["ticker"])
+        if stream is None:                    # no signal file tonight: nothing to grade against
+            continue
+        try:
+            row_d = date.fromisoformat(str(row["date"])[:10])
+        except (TypeError, ValueError):
+            continue
+        redated = False
+        for m in stream:
+            if m.get("type") != mtype:
+                continue
+            try:
+                md = date.fromisoformat(str(m.get("date"))[:10])
+            except (TypeError, ValueError):
+                continue
+            if abs((md - row_d).days) <= SQ_ERA_BOUNDARY_DAYS:
+                redated = True
+                break
+        if not redated:
+            continue
+        tkr = row["ticker"]
+        if tkr not in _orphan_close:
+            _orphan_close[tkr] = _load_close(tkr, stocks_dir, dead_prices)
+        oc = _orphan_close[tkr]
+        if oc is None or oc.empty:
+            continue
+        entry_idx = sum(1 for m in stream if str(m.get("date", "")) <= str(row["date"])) - 1
+        if _fill_maturation(row, stream, entry_idx, oc, run_asof):
+            matured_rows += 1
 
     # --- W0.2 Stage C: mature near-miss rows (graded as predictions, §5.2 move 3).
     # Their keys never re-appear in the §7 marker stream, so the marker loop above
@@ -973,11 +1135,27 @@ def update_track_record(
             "(COLLECT_LANE != nightly)"
         )
 
+    # R-SQ8 disclosure: how many candidate keys the era floor refused, and why. Emitted as
+    # a GitHub annotation with a BARE print at column 0 (house law — a logger prefixes the
+    # line and GitHub silently drops it), so the cutover night is visible in the Actions
+    # summary rather than only in a return value nobody reads.
+    if era_skips:
+        print(
+            f"::notice title=track-record-era-floor::{sum(era_skips.values())} marker "
+            f"key(s) refused by the §7 anchor-era floor ({SQ_ANCHOR_ERA_FLOOR}): "
+            f"{era_skips} — re-dated images of rows already logged pre-era, not new "
+            f"events (R-SQ8)",
+            flush=True,
+        )
+        logger.info("track_record: era-floor skips %s", era_skips)
+
     return {
         "new_rows": len(new_rows),
         "matured_rows": matured_rows,
         "total_rows": len(out_df),
         "skipped_pending": skipped_pending,
+        "skipped_pre_era": sum(era_skips.values()),
+        "era_floor_skips": dict(era_skips),
         "out_path": str(out_path),
         "unstamped_count": unstamped_count,
     }

@@ -39,7 +39,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import options_skew as S  # noqa: E402
 from engine import validation as V  # noqa: E402
-from lib import config  # noqa: E402
+from lib import config, nyse_calendar  # noqa: E402
 
 log = logging.getLogger("validate_skew")
 
@@ -132,10 +132,22 @@ def _fwd_ic(panel: pd.DataFrame, h: int) -> dict:
     dates = list(spot.index)
     spy = spot["SPY"] if "SPY" in spot.columns else None
     ics = []
+    pos = nyse_calendar.session_label_map(dates)
     for i, d0 in enumerate(dates):
-        if i + h >= len(dates):
-            break
-        d1 = dates[i + h]
+        # GAP DISCIPLINE — TWO-ENDPOINT (lib/nyse_calendar, 2026-08-06). `dates[i + h]`
+        # is h ROWS ahead, not h SESSIONS: on the gapped chain store that silently
+        # lengthens the forward return this IC is measured against, inflating the
+        # horizon for exactly the dates that follow a collection outage. Resolve the
+        # forward endpoint by calendar and skip the date when it is absent — a horizon
+        # study cannot average over mixed horizons and still call itself h-day.
+        # The `i + h >= len(dates)` break this replaces was part of the same positional
+        # thinking: it is neither necessary (an absent endpoint is now detected directly)
+        # nor sufficient (it admitted dates[i + h] whatever session that turned out to
+        # be). Dormant today (the gate reports insufficient_history), fixed before it wakes.
+        _d0 = nyse_calendar.as_day(d0)
+        d1 = pos.get(nyse_calendar.session_n_forward(_d0, h)) if _d0 else None
+        if d1 is None:
+            continue
         fwd = spot.loc[d1] / spot.loc[d0] - 1.0
         if spy is not None:
             fwd = fwd - (spy.loc[d1] / spy.loc[d0] - 1.0)
@@ -151,8 +163,19 @@ def _fwd_ic(panel: pd.DataFrame, h: int) -> dict:
     summ = V.ic_summary(np.array(ics), periods_per_year=max(1, 252 // h))
     # ic_summary() returns "t_hac" (Newey-West HAC t-stat) — NOT "t" or "hac_t".
     # Using the wrong key silently produces NaN t-stats and a dead gate verdict.
-    return {"n_dates": len(ics), "mean_ic": round(float(summ.get("mean_ic", float("nan"))), 4),
-            "hac_t": round(float(summ.get("t_hac", float("nan"))), 2)}
+    # `t_hac` is None whenever newey_west_tstat could not form a correction (measured:
+    # ic_summary returns t_hac=None at n=6), and `float(None)` raises. This path was
+    # unreachable only because the gate has never held six evaluable dates — a latent
+    # crash, not a safe default. Map a missing/None statistic to NaN: every downstream
+    # comparison is `abs(hac_t) >= _T_BAR`, and NaN compares False, which is the honest
+    # verdict for a series too short to carry its own HAC correction.
+    def _num(v) -> float:
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return float("nan")
+    return {"n_dates": len(ics), "mean_ic": round(_num(summ.get("mean_ic")), 4),
+            "hac_t": round(_num(summ.get("t_hac")), 2)}
 
 
 def main() -> None:

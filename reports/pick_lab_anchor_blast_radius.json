@@ -1,0 +1,151 @@
+{
+  "era": "pl-abs-session-2026-08-06",
+  "boundary_date": "2026-08-06",
+  "measured_on": "2026-08-06",
+  "regions": [
+    {
+      "region": "US",
+      "market": "US",
+      "asof": "2026-08-05",
+      "d2": {
+        "names": 238,
+        "any_flip": 238,
+        "per_field": {
+          "macd": 238,
+          "sig": 238,
+          "k": 224,
+          "d": 236,
+          "macd_xup_bars": 79,
+          "kd_xup_bars": 48,
+          "from_os": 23,
+          "ob": 4
+        },
+        "flipped_sample": [
+          "AAPL",
+          "ABBV",
+          "ABNB",
+          "ABT",
+          "ADI",
+          "ADM",
+          "ADP",
+          "AEE",
+          "AEP",
+          "AMAT",
+          "AMCR",
+          "AMD"
+        ],
+        "old_geometry_leading_drop_flips": {
+          "k=1": 238,
+          "k=2": 0
+        },
+        "new_geometry_leading_drop_flips": {
+          "k=1": 0,
+          "k=2": 0,
+          "k=3": 0
+        }
+      }
+    },
+    {
+      "region": "CN",
+      "market": "CN",
+      "asof": "2026-08-06",
+      "d2": {
+        "names": 1794,
+        "any_flip": 1761,
+        "per_field": {
+          "macd": 1761,
+          "sig": 1761,
+          "k": 1703,
+          "d": 1742,
+          "macd_xup_bars": 316,
+          "kd_xup_bars": 205,
+          "from_os": 44,
+          "ob": 15
+        },
+        "flipped_sample": [
+          "000001.SZ",
+          "000002.SZ",
+          "000012.SZ",
+          "000021.SZ",
+          "000027.SZ",
+          "000028.SZ",
+          "000029.SZ",
+          "000030.SZ",
+          "000032.SZ",
+          "000034.SZ",
+          "000035.SZ",
+          "000039.SZ"
+        ],
+        "old_geometry_leading_drop_flips": {
+          "k=1": 1761,
+          "k=2": 0
+        },
+        "new_geometry_leading_drop_flips": {
+          "k=1": 0,
+          "k=2": 0,
+          "k=3": 0
+        }
+      }
+    },
+    {
+      "region": "HK",
+      "market": "HK",
+      "asof": "2026-08-06",
+      "d2": {
+        "names": 160,
+        "any_flip": 157,
+        "per_field": {
+          "macd": 157,
+          "sig": 157,
+          "k": 157,
+          "d": 157,
+          "macd_xup_bars": 81,
+          "kd_xup_bars": 111,
+          "from_os": 4,
+          "ob": 32
+        },
+        "flipped_sample": [
+          "0001.HK",
+          "0002.HK",
+          "0003.HK",
+          "0005.HK",
+          "0006.HK",
+          "0012.HK",
+          "0014.HK",
+          "0016.HK",
+          "0017.HK",
+          "0019.HK",
+          "0027.HK",
+          "0066.HK"
+        ],
+        "old_geometry_leading_drop_flips": {
+          "k=1": 0,
+          "k=2": 157
+        },
+        "new_geometry_leading_drop_flips": {
+          "k=1": 0,
+          "k=2": 0,
+          "k=3": 0
+        }
+      }
+    }
+  ],
+  "hk_d3": {
+    "names": 160,
+    "value_flips": 69,
+    "null_transitions": 8,
+    "null_transition_names": [
+      "0027.HK",
+      "0268.HK",
+      "1109.HK",
+      "1347.HK",
+      "2150.HK",
+      "2628.HK",
+      "2888.HK",
+      "9999.HK"
+    ],
+    "new_geometry_leading_drop_flips": {
+      "k=1": 0
+    }
+  }
+}

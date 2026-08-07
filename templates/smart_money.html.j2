@@ -434,7 +434,7 @@ a.mem-card:hover { border-color:var(--info); }
   <div>
     <div class="deck-eyebrow">{{ t('Institutional 13F · Context Only · Never a Buy List', '机构 13F · 仅供背景参考 · 非买入清单') }}</div>
     <h1>{{ t('Ownership Intelligence Desk', '持仓情报台') }}</h1>
-    <div class="deck-sub">{{ t('Who owns what, who just moved, and which managers have earned the right to be followed. Filings arrive ~45 days late — research leads, never buy signals.', '谁持有什么、谁刚动手、哪些基金经理值得跟随。申报滞后约45天——线索用于研究，不是买入信号。') }}</div>
+    <div class="deck-sub">{{ t('Who owns what, who just moved, and which managers have earned the right to be followed. Filings arrive ~45 days late — research leads, never buy signals.', '谁持有什么、谁刚动手、哪些基金经理值得跟随。披露滞后约45天——线索用于研究，不是买入信号。') }}</div>
   </div>
 
   {# Centre: filing clock #}
@@ -445,7 +445,7 @@ a.mem-card:hover { border-color:var(--info); }
     {% if qs == 'window_open' %}
       {% set filed_ct = (d_fresh.get('filed_pending') or []) | selectattr('status','equalto','filed') | list | length %}
       {% set total_ct = (d_fresh.get('filed_pending') or []) | rejectattr('status','equalto','closed') | list | length %}
-      <div class="qstate">{{ t('Filing window open','申报窗口已开启') }} — {{ filed_ct }}/{{ total_ct }} {{ t('funds filed','家基金已申报') }}</div>
+      <div class="qstate">{{ t('Filing window open','披露窗口已开启') }} — {{ filed_ct }}/{{ total_ct }} {{ t('funds filed','家基金已披露') }}</div>
     {% elif qs == 'closed' %}
       <div class="qstate" style="color:var(--muted)">{{ t('Window closed','窗口已关闭') }}</div>
     {% else %}
@@ -457,8 +457,8 @@ a.mem-card:hover { border-color:var(--info); }
   {# Right: dot grid #}
   <div class="sm-gridbox">
     <div class="gbk">
-      <span>{{ t('Filed vs pending — Q2 2026 window','已申报 vs 待申报 — 2026年Q2窗口') }}</span>
-      <span>&#9679; {{ t('filed','已申报') }} · &#9675; {{ t('pending','待申报') }}</span>
+      <span>{{ t('Filed vs pending — Q2 2026 window','已披露 vs 待披露 — 2026年Q2窗口') }}</span>
+      <span>&#9679; {{ t('filed','已披露') }} · &#9675; {{ t('pending','待披露') }}</span>
     </div>
     <div class="dots-grid">
       {% for fp in d_fresh.get('filed_pending') or [] %}
@@ -638,7 +638,7 @@ a.mem-card:hover { border-color:var(--info); }
   <button type="button" class="smfold-btn" onclick="(function(el){el.closest('.sm-card').querySelectorAll('.sm-fold-row').forEach(function(r){r.style.display='';});el.parentNode.style.display='none';})(this)">{{ t('See more','展开更多') }}</button>
 </div>
 {%- endif -%}
-<p class="hon-note" style="margin-top:8px">{{ t('Descriptive record, not a forecast — 13F filings arrive ~45 days late; scores start at each quarter\'s filing deadline.','描述性战绩，非预测——13F披露滞后约45天；计分自每季申报截止日起算。') }}</p>
+<p class="hon-note" style="margin-top:8px">{{ t('Descriptive record, not a forecast — 13F filings arrive ~45 days late; scores start at each quarter\'s filing deadline.','描述性战绩，非预测——13F披露滞后约45天；计分自每季披露截止日起算。') }}</p>
 </div>
 {% else %}{# no memory data #}
 <div class="sm-card" style="padding:16px"><p class="follow-empty">{{ t('Fund memory not computed this build — will appear after the next successful run.','本次构建未计算基金记忆——将在下次成功构建后出现。') }}</p></div>
@@ -976,11 +976,11 @@ research/smart_money_grade_a_q1_2026.md
       <span class="bt">{{ t('C-suite open-market buys','高管公开市场买入') }}</span>
       <span class="chip-fresh t-amber"><span class="fdot"></span>{{ t('SEC bulk panel · through','SEC批量面板 · 截至') }} {{ ii_p.get('asof') or '—' }} · {{ t('~45d publication lag','约45天发布滞后') }}</span>
     </div>
-    <div class="board-note">{{ t('Top-role (CEO / CFO / President / Chair) open-market purchases. The panel lags — filings through ' ~ (ii_p.get('asof') or '—') ~ ' only; recent weeks are structurally missing here, not absent in reality.','最高层（CEO/CFO/总裁/董事长）公开市场买入。面板有滞后——仅含截至' ~ (ii_p.get('asof') or '—') ~ '的申报；最近数周为结构性缺失，并非市场无交易。') }}</div>
+    <div class="board-note">{{ t('Top-role (CEO / CFO / President / Chair) open-market purchases. The panel lags — filings through ' ~ (ii_p.get('asof') or '—') ~ ' only; recent weeks are structurally missing here, not absent in reality.','最高层（CEO/CFO/总裁/董事长）公开市场买入。面板有滞后——仅含截至' ~ (ii_p.get('asof') or '—') ~ '的披露；最近数周为结构性缺失，并非市场无交易。') }}</div>
     {% set _csb = ii_p.get('csuite_buys') or [] %}
     {% if _csb %}
     <table class="sm-t">
-      <thead><tr><th class="l">#</th><th class="l">{{ t('Ticker','标的') }}</th><th class="l">{{ t('Role','职务') }}</th><th>{{ t('$','金额') }}</th><th>{{ t('Price','价格') }}</th><th>{{ t('Trade','交易日') }}</th><th>{{ t('Filed','申报日') }}</th></tr></thead>
+      <thead><tr><th class="l">#</th><th class="l">{{ t('Ticker','标的') }}</th><th class="l">{{ t('Role','职务') }}</th><th>{{ t('$','金额') }}</th><th>{{ t('Price','价格') }}</th><th>{{ t('Trade','交易日') }}</th><th>{{ t('Filed','披露日') }}</th></tr></thead>
       <tbody>
       {% for row in _csb[:8] %}{{ ii_cs_row(row, loop.index) }}{% endfor %}
       </tbody>
@@ -1030,7 +1030,7 @@ research/smart_money_grade_a_q1_2026.md
 {# ======================================================================== #}
 <div class="sm-sec" id="sec-managers">
   <h2>{{ t('Manager desk','基金经理台') }}</h2>
-  <span class="h-note">{{ t('track record on public 13F filing dates, scored vs SPY — grades are descriptive ranks within a curated survivor cohort', '以13F公开申报日为锚的业绩记录，相对标普评分——评级为精选幸存者队列中的描述性排名') }}</span>
+  <span class="h-note">{{ t('track record on public 13F filing dates, scored vs SPY — grades are descriptive ranks within a curated survivor cohort', '以13F公开披露日为锚的业绩记录，相对标普评分——评级为精选幸存者队列中的描述性排名') }}</span>
 </div>
 
 {# Featured head-to-head compact card #}
@@ -1081,7 +1081,7 @@ research/smart_money_grade_a_q1_2026.md
 
 <div class="banner">{{ t(
   'Grades are descriptive ranks within a curated survivor cohort — funds tracked because they are notable in 2026. They measure what filings did after their filing dates, not a manager-selection edge.',
-  '评级为精选幸存者队列中的描述性排名——追踪的基金在2026年具有代表性。衡量的是申报日后的持仓表现，而非经理选择能力。'
+  '评级为精选幸存者队列中的描述性排名——追踪的基金在2026年具有代表性。衡量的是披露日后的持仓表现，而非经理选择能力。'
 ) }}</div>
 
 <div class="sm-card">
@@ -1091,7 +1091,7 @@ research/smart_money_grade_a_q1_2026.md
     <th class="l">{{ t('Fund','基金') }}</th>
     <th>{{ t('Grade','评级') }}</th>
     <th>{{ t('Follow','跟随') }}</th>
-    <th data-tip-en="Median excess return vs SPY after filing date" data-tip-zh="申报日后相对标普中位超额收益">{{ t('Typical edge vs market','市场典型优势') }}</th>
+    <th data-tip-en="Median excess return vs SPY after filing date" data-tip-zh="披露日后相对标普中位超额收益">{{ t('Typical edge vs market','市场典型优势') }}</th>
     <th data-tip-en="Sell timing: median excess return after sell date" data-tip-zh="卖出时机：卖出后中位超额收益">{{ t('Sell timing','卖出时机') }}</th>
     <th>{{ t('Hit','胜率') }}</th>
     <th>{{ t('Turnover','换手') }}</th>
@@ -1197,7 +1197,7 @@ research/smart_money_grade_a_q1_2026.md
       {% set tt2 = r.get('turnover_tier') or '' %}
       {% if tt2 %}<span class="tier {{ 'low' if tt2 == 'low' else ('moderate' if tt2 == 'med' else 'elevated') }}">{{ tt2 | capitalize }}</span>{% endif %}
       <span class="sub">{{ t('median','中位') }} {{ exret(r.median_buy_excess) }} · {{ t('hit','胜率') }} {{ hit(r.buy_hit_rate) }} · {{ r.n_buys }} {{ t('buys','买入') }}</span>
-      <span class="sub" style="margin-left:auto">{{ usd(f.book_value_usd) }} · {{ t('filed','申报') }} {{ f.filing_date }}</span>
+      <span class="sub" style="margin-left:auto">{{ usd(f.book_value_usd) }} · {{ t('filed','披露日') }} {{ f.filing_date }}</span>
       <a class="fund-link sub" href="fund_{{ r.slug }}.html">{{ t('Full dossier','完整档案') }} &rarr;</a>
     </summary>
     <div class="f-body">
@@ -1295,8 +1295,8 @@ research/smart_money_grade_a_q1_2026.md
     <th class="l">{{ t('Funds','基金') }}</th>
     <th>{{ t('Conviction','信念') }}</th>
     <th class="num">{{ t('n','n') }}</th>
-    <th>{{ t('Filed','申报') }}</th>
-    <th>{{ t('Since filing','申报后') }}</th>
+    <th>{{ t('Filed','披露日') }}</th>
+    <th>{{ t('Since filing','自披露') }}</th>
   </tr></thead>
   <tbody>
   {%- set _bb_fold = namespace(n=0) -%}
@@ -1357,7 +1357,7 @@ research/smart_money_grade_a_q1_2026.md
     <th class="l">{{ t('Cap','市值') }}</th>
     <th>{{ t('Desk score','台面分') }}</th>
     <th class="l">{{ t("Who's buying",'买入基金') }}</th>
-    <th>{{ t('Since filing','申报后') }}</th>
+    <th>{{ t('Since filing','自披露') }}</th>
   </tr></thead>
   <tbody>
   {%- for _row in d_small_mid[:6] -%}
@@ -1440,7 +1440,7 @@ research/smart_money_grade_a_q1_2026.md
   {% endif %}
   <table class="sm-t">
     <thead><tr>
-      <th class="l">{{ t('Filed','申报日') }}</th>
+      <th class="l">{{ t('Filed','披露日') }}</th>
       <th class="l">{{ t('Ticker','标的') }}</th>
       <th class="l">{{ t('Fund(s)','基金') }}</th>
       <th>{{ t('Action','动作') }}</th>
@@ -1449,7 +1449,7 @@ research/smart_money_grade_a_q1_2026.md
       <th>{{ t('% book','仓位%') }}</th>
       <th>{{ t('# funds','基金数') }}</th>
       <th>{{ t('Turnover','换手') }}</th>
-      <th>{{ t('Since filing','自申报') }}</th>
+      <th>{{ t('Since filing','自披露') }}</th>
       <th>{{ t('Persisted?','是否延续') }}</th>
     </tr></thead>
     <tbody id="init-body">
@@ -1645,7 +1645,7 @@ research/smart_money_grade_a_q1_2026.md
     <th>{{ t('Max book %','最大仓位%') }}</th>
     <th>{{ t('HHI','集中度') }}</th>
     <th>{{ t('Top-10 in','前10持仓') }}</th>
-    <th>{{ t('Since filing','自申报') }}</th>
+    <th>{{ t('Since filing','自披露') }}</th>
   </tr></thead>
   <tbody>
   {% for row in d_gp %}
@@ -1690,17 +1690,17 @@ research/smart_money_grade_a_q1_2026.md
 {% set act_total = act_relevant | length %}
 
 <div class="sm-card">
-<p class="sub" style="margin-bottom:6px">{{ act_total }} {{ t('of','共') }} {{ d_act | length }} {{ t('filings have tracked-holder overlap','份申报有追踪持有者重叠') }}</p>
+<p class="sub" style="margin-bottom:6px">{{ act_total }} {{ t('of','共') }} {{ d_act | length }} {{ t('filings have tracked-holder overlap','份披露文件有追踪持有者重叠') }}</p>
 <table class="sm-t">
   <thead><tr>
-    <th class="l">{{ t('Filed','申报日') }}</th>
-    <th class="l">{{ t('Filer','申报人') }}</th>
+    <th class="l">{{ t('Filed','披露日') }}</th>
+    <th class="l">{{ t('Filer','披露人') }}</th>
     <th class="l">{{ t('Ticker','标的') }}</th>
     <th>{{ t('Form','表格') }}</th>
     <th>{{ t('State','状态') }}</th>
     <th>{{ t('Signal','信号') }}</th>
     <th>{{ t('Tracked holders','追踪持有者') }}</th>
-    <th>{{ t('Since filing','自申报') }}</th>
+    <th>{{ t('Since filing','自披露') }}</th>
   </tr></thead>
   <tbody>
   {% for row in act_active[:20] %}
@@ -1729,18 +1729,18 @@ research/smart_money_grade_a_q1_2026.md
 {% if act_other %}
 <details style="margin-top:10px">
   <summary style="cursor:pointer;padding:8px 4px;font-size:12px;color:var(--muted)">
-    {{ t('Passive &amp; other filings with overlap','有重叠的被动及其他申报') }} ({{ act_other | length }})
+    {{ t('Passive &amp; other filings with overlap','有重叠的被动及其他披露文件') }} ({{ act_other | length }})
   </summary>
   <table class="sm-t" style="margin-top:6px">
     <thead><tr>
-      <th class="l">{{ t('Filed','申报日') }}</th>
-      <th class="l">{{ t('Filer','申报人') }}</th>
+      <th class="l">{{ t('Filed','披露日') }}</th>
+      <th class="l">{{ t('Filer','披露人') }}</th>
       <th class="l">{{ t('Ticker','标的') }}</th>
       <th>{{ t('Form','表格') }}</th>
       <th>{{ t('State','状态') }}</th>
       <th>{{ t('Signal','信号') }}</th>
       <th>{{ t('Tracked holders','追踪持有者') }}</th>
-      <th>{{ t('Since filing','自申报') }}</th>
+      <th>{{ t('Since filing','自披露') }}</th>
     </tr></thead>
     <tbody>
     {% for row in act_other %}
@@ -1764,7 +1764,7 @@ research/smart_money_grade_a_q1_2026.md
 
 <div class="banner">{{ t(
   '13D deadline is 5 business days since Feb 2024 (was 10 calendar days). Custodial 13Gs (index giants) excluded from this view unless they have tracked-holder overlap.',
-  '自2024年2月起，13D申报期限为5个工作日（此前为10个日历日）。除非有追踪持有者重叠，否则指数巨头的被动13G申报已从此视图中排除。'
+  '自2024年2月起，13D披露期限为5个工作日（此前为10个日历日）。除非有追踪持有者重叠，否则指数巨头的被动13G披露已从此视图中排除。'
 ) }}</div>
 
 {# ======================================================================== #}
