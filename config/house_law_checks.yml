@@ -1525,6 +1525,18 @@ checks:
         scripts/audit_unrun_tests.py owns that class, and wiring every unrun suite
         would blow the ci-pack budget.
       - >-
+        Scope was `tests/` only until 2026-08-06 (#4693), which made this gate and
+        both censuses blind to research/-resident guard suites — the ones most
+        likely to be dark, because a packet fenced to files-only writes its suite
+        next to the instrument. Discovery is now the whole tree via
+        scripts/audit_unrun_tests.discover_suites().
+      - >-
+        A test_-shaped FILENAME is not a suite: three files under research/ are CLI
+        measurement instruments that collect zero tests. Classification reads the
+        AST for what pytest would collect rather than trusting the name, so those
+        are excluded — reporting them would make the census noise, which is the
+        failure mode these guards exist to end.
+      - >-
         Transitive dependency closure (PACKAGE_REQUIRES) is a hand-maintained
         table of hard runtime deps. Under-declaring costs a false red;
         over-declaring costs a missed skip-only suite. It is deliberately
@@ -1580,6 +1592,12 @@ checks:
       - >-
         Suites that NO job names are UNRUN, not trigger gaps —
         scripts/audit_unrun_tests.py owns that class.
+      - >-
+        Scope was tests/ only until 2026-08-06 (#4693) — a suite wired from
+        research/ was invisible to this gate even once wired. Suites now come from
+        audit_unrun_tests.discover_suites() and run-step tokens resolve against
+        that inventory, so a test_-shaped CLI instrument named by a run: step is
+        not gated as a suite.
     owner_program: null
     notes: >
       Registered by the 2026-08-06 base heal. The guard shipped wired in #4649

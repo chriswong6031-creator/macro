@@ -1,0 +1,110 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "KMT-2026-06-30-buy",
+  "ticker": "KMT",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "KMT",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "KMT",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "mixed",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Industrials",
+    "excess_spy": 0.008707551462709517,
+    "excess_sector": 0.029607769284098362,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CUSHIONED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "KMT modestly outperformed SPY and finished CUSHIONED. The mixed attribution leaves market, Industrials, and company-specific contributions unresolved.",
+    "root_cause": "KMT modestly outperformed SPY and finished CUSHIONED. The mixed attribution leaves market, Industrials, and company-specific contributions unresolved.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The outcome book retained the favorable result, but the confluence, rotation, and alpha books did not provide causal separation.",
+    "engines_credit": "The outcome ledger gets credit for restraint; the macro, sector, company-alpha, catalyst, and timing organs remain laggards in attribution.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "Company-specific behavior may have contributed within the recorded mixed cause.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "If KMT tracked its industry peers closely, company alpha would be unnecessary.",
+        "evidence_refs": [
+          "outcome_cause=mixed"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "sector",
+        "factor": "",
+        "mechanism": "Industrials conditions may have supported the relative outcome.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Sector weakness concurrent with KMT strength would favor idiosyncratic attribution.",
+        "evidence_refs": [
+          "sector=Industrials"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The outcome remained supported enough to finish CUSHIONED rather than breaking down.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "A sustained clean breakout would imply stronger momentum than cushioning alone.",
+        "evidence_refs": [
+          "terminal_state=CUSHIONED",
+          "excess_spy positive"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Broad beta may explain the outcome.",
+      "Industrials rotation may explain the result without company alpha.",
+      "A company catalyst may have emerged after entry and therefore would be hindsight."
+    ],
+    "missing_evidence": [
+      "KMT peer-neutral performance",
+      "Industrials breadth and rotation timing",
+      "Entry-date momentum and confluence features",
+      "Catalyst chronology and ex-ante visibility"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "mixed_cause_decomposition",
+        "feature": "Mixed-cause factor decomposition",
+        "measurement": "Decompose matured returns into market, sector, industry, and residual components using only information timestamped at or after entry as appropriate.",
+        "expected_direction": "Stronger entry-date residual momentum should correspond to a larger company-specific contribution.",
+        "falsifier": "Residual momentum fails to explain peer-neutral outcomes.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-07",
+  "asof": "2026-08-07",
+  "ts": "2026-08-07T08:35:36+00:00"
+}

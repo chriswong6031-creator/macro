@@ -1,0 +1,112 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "EFC-2026-06-30-buy",
+  "ticker": "EFC",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "EFC",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "EFC",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_break",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Financials",
+    "excess_spy": -0.019454519203280674,
+    "excess_sector": -0.05718197946000991,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "DEAD_MONEY",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "EFC underperformed SPY and finished DEAD_MONEY, with an idiosyncratic break recorded. Because the process was clean, research should determine the regime or company conditions associated with the break rather than tighten gates.",
+    "root_cause": "EFC underperformed SPY and finished DEAD_MONEY, with an idiosyncratic break recorded. Because the process was clean, research should determine the regime or company conditions associated with the break rather than tighten gates.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The outcome taxonomy captured a clean-process idiosyncratic failure, while mortgage-credit regime, catalyst, and breakout-quality books lacked attribution evidence.",
+    "engines_credit": "The process and outcome ledgers are role models; credit-regime, company-alpha, catalyst, and path organs are the laggards.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "A company-specific setup or thesis broke during maturation.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Similar weakness across comparable Financials or mortgage-credit peers would weaken idiosyncratic attribution.",
+        "evidence_refs": [
+          "outcome_cause=idio_break"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "macro_regime",
+        "factor": "",
+        "mechanism": "Rates, spreads, or credit conditions may have amplified the company-level break.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Stable peer performance through the same regime would support a more company-specific cause.",
+        "evidence_refs": [
+          "sector=Financials"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The break persisted without productive recovery and ended DEAD_MONEY.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "A rapid structural reclaim would indicate temporary path disruption rather than a lasting thesis break.",
+        "evidence_refs": [
+          "excess_spy negative",
+          "terminal_state=DEAD_MONEY",
+          "process_fault=clean"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "A Financials or mortgage-credit rotation may explain the weakness.",
+      "A failed breakout may have been mistaken for durable momentum.",
+      "A post-entry external event may have driven the break."
+    ],
+    "missing_evidence": [
+      "EFC peer set and peer-relative return",
+      "Rate, spread, and credit-regime history",
+      "Price-volume behavior around the break",
+      "Dividend, financing, filing, and estimate chronology",
+      "Ex-ante event visibility"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "credit_vehicle_regime_cell",
+        "feature": "Credit-sensitive Financials regime cell",
+        "measurement": "Compare outcomes across entry-date combinations of rate trend, credit spreads, peer breadth, and residual momentum.",
+        "expected_direction": "Adverse credit and breadth states should be associated with more idiosyncratic-break classifications.",
+        "falsifier": "Break frequency is invariant across the entry-date regime cells.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-07",
+  "asof": "2026-08-07",
+  "ts": "2026-08-07T08:35:36+00:00"
+}

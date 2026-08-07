@@ -1,0 +1,109 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "GTY-2026-06-30-buy",
+  "ticker": "GTY",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "GTY",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "GTY",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "beta_tailwind",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Real Estate",
+    "excess_spy": 0.01436846964365568,
+    "excess_sector": -0.004073391425092554,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CLEAN_LIFTOFF",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "GTY outperformed SPY and achieved CLEAN_LIFTOFF. Beta tailwind is the stated cause, although Real Estate rotation and company-specific strength cannot be separated from the supplied record.",
+    "root_cause": "GTY outperformed SPY and achieved CLEAN_LIFTOFF. Beta tailwind is the stated cause, although Real Estate rotation and company-specific strength cannot be separated from the supplied record.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The outcome and path books captured a favorable liftoff, while regime and sector attribution require cohort evidence.",
+    "engines_credit": "The path-state and outcome ledgers are role models; the macro, Real Estate rotation, catalyst, and alpha organs remain unproven.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "macro_regime",
+        "factor": "",
+        "mechanism": "A supportive beta environment was the recorded primary driver.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Absent broad participation among comparable Real Estate securities, beta would be an incomplete cause.",
+        "evidence_refs": [
+          "outcome_cause=beta_tailwind"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "sector",
+        "factor": "",
+        "mechanism": "Real Estate sensitivity may have amplified the broad tailwind.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "GTY-specific residual strength would favor company alpha over sector transmission.",
+        "evidence_refs": [
+          "sector=Real Estate"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The move developed into a CLEAN_LIFTOFF terminal path.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "Failure to hold the breakout path would contradict the liftoff classification.",
+        "evidence_refs": [
+          "terminal_state=CLEAN_LIFTOFF",
+          "excess_spy positive"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "A Real Estate rotation may have been the direct driver.",
+      "GTY-specific accumulation or re-rating may have preceded the move."
+    ],
+    "missing_evidence": [
+      "Entry-date Real Estate breadth",
+      "Rate-regime and factor-exposure data",
+      "GTY peer-neutral momentum",
+      "Ex-ante catalyst and accumulation records"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "re_liftoff_breadth",
+        "feature": "Real Estate liftoff breadth",
+        "measurement": "Measure entry-date participation, relative strength, and breakout persistence across the Real Estate cohort.",
+        "expected_direction": "Broader participation should accompany more durable liftoff paths.",
+        "falsifier": "Clean liftoffs are no more common when sector breadth is strong.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-07",
+  "asof": "2026-08-07",
+  "ts": "2026-08-07T08:35:36+00:00"
+}

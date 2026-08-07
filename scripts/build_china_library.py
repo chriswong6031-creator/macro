@@ -1618,7 +1618,7 @@ def _attach_eligible_coiled_fire(
             continue
         evaluated += 1
         try:
-            fire = coiled.fire_recent(close)
+            fire = coiled.fire_recent(close, market="CN")
         except Exception:  # noqa: BLE001 — display receipt never suppresses rank state
             continue
         if isinstance(fire, dict) and fire.get("fire"):
@@ -2115,7 +2115,9 @@ def main(alpha: dict | None = None) -> dict | None:
         try:
             _coil_d[ticker]      = coiled.weekly_d_last(close)
             _coil_wash[ticker]   = coiled.washout_ctx(close)
-            _coil_div[ticker]    = coiled.bull_div(close)
+            # CN reference calendar (session_anchor R1/R3, era coiled.ANCHOR_ERA):
+            # a CN name bucketed on NYSE sessions would be wrong invisibly.
+            _coil_div[ticker]    = coiled.bull_div(close, market="CN")
             _coil_sector[ticker] = sector or None
         except Exception:  # noqa: BLE001 — additive, never fatal
             pass

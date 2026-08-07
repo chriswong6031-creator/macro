@@ -718,11 +718,25 @@ class TestLiveConformance:
         collect_steps = daily["jobs"]["collect"]["steps"]
         push_data = next(step for step in collect_steps if step.get("id") == "pushdata")
         assert 'published=true" >> "$GITHUB_OUTPUT"' in push_data["run"]
-        assert daily["jobs"]["collect"]["outputs"] == {
-            "government_revenue_projection_needed": (
-                "${{ steps.pushdata.outputs.published }}"
-            )
-        }
+        collect_outputs = daily["jobs"]["collect"]["outputs"]
+        assert collect_outputs["government_revenue_projection_needed"] == (
+            "${{ steps.pushdata.outputs.published }}"
+        )
+        # The full key SET is pinned too, so a new output cannot appear unreviewed
+        # — a collect output is a cross-job contract, and this lane's `if:` reads
+        # one of them. The capital-structure pair arrived 2026-08-06 with the job
+        # split: the chain left `collect`, and the source ledger it compiles is
+        # deliberately never committed by the market checkpoint, so it crosses the
+        # job boundary as an artifact whose sha256/row-count receipt travels here.
+        # tests/test_daily_capital_structure_job.py owns their meaning.
+        assert set(collect_outputs) == {
+            "government_revenue_projection_needed",
+            "capital_structure_ledger_sha256",
+            "capital_structure_ledger_rows",
+        }, (
+            f"collect's job outputs changed to {sorted(collect_outputs)}. Every one "
+            "is a cross-job contract; add it here with the reason, or drop it."
+        )
         projection_job = daily["jobs"]["government_revenue_projection"]
         assert projection_job["needs"] == "collect"
         assert projection_job["if"] == (

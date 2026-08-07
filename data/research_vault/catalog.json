@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T08:05:02.403848+00:00",
-  "count": 928,
+  "generated_at": "2026-08-07T08:46:37.499313+00:00",
+  "count": 930,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -302,6 +302,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 24,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ghet4olm8u8-0b2b56",
+      "title": "JPM US Market Intelligence Macro Week Ahead",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T01:42:43Z",
+      "summary_points": [
+        "**US Data & Fed Policy Catalysts**: ADP (Aug 11), CPI/Real Earnings (Aug 12), Jobless Claims/PPI (Aug 13), Retail Sales (Aug 14), and Fed dates (Sep 16, Oct 28, Dec 9) dominate near-term monetary policy expectations and market volatility.",
+        "**Global Macro Policy Shifts**: Germany CPI revision (Aug 12), UK GDP/Private Consumption (Aug 13), and Eurozone IP (Aug 13) drive cross-border policy adjustments and risk sentiment across major economies.",
+        "**Geopolitical Risk Triggers**: US-China AI talks (Sep), Brazil election (Oct), and Trump-Xi trade truce expiration (Nov 1) amplify geopolitical volatility and portfolio repositioning risks.",
+        "**AI Tech Catalysts**: Google Gemini 3.5 Pro (Jul), Z-AI GLM 5.5 (Aug), Meta Connect (Sep), and AWS re:Invent (Nov-Dec) shape sector-specific sentiment and capital flows in tech."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
@@ -2127,6 +2147,26 @@
         "**Labor Share Depression**: Labor share of national income hit all-time low in Q2 2026, reflecting genuine decline in labor bargaining power (not measurement error); AI models predict further decline, threatening corporate margins and labor costs.",
         "**Reliable Proxy Metric**: Net capital share (QFR data) mirrors labor share trends despite 2017 tax act distortions, providing a critical alternative metric for portfolio analysis.",
         "**Elevated Capital Returns**: Nonfinancial corporate sector’s rate of return (before/after tax) remains above historical norms through Q2 2026, indicating persistent capital returns post-pandemic."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qdqvvh2r7z7-56cb45",
+      "title": "Forward Misguidance",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-05T11:01:14Z",
+      "summary_points": [
+        "**Forward Guidance Rejection**: Warsh’s rejection of forward guidance heightens short-term volatility amid geopolitical uncertainty, clashing with market need for policy clarity (per document’s \"implications\" and Chart 1).",
+        "**Neutral-Rate Unreliability**: Model-based neutral-rate estimates (r*) have wide confidence intervals, rendering them unhelpful for policy; market signals (e.g., long-term yields) now better reflect policy-relevant information amid supply shocks.",
+        "**Policy Focus Divergence**: Fed’s dot-implied inflation outlook (Chart 5) diverges from market-implied two-year rate changes, highlighting misalignment between central bank signals and market expectations.",
+        "**Flexible Framework Shift**: Central banks adopting \"framework guidance\" (e.g., ECB, BoE) with multiple scenarios to address supply shocks, moving beyond rigid forward guidance to capture evolving market dynamics."
       ],
       "tags": [],
       "tickers": [],

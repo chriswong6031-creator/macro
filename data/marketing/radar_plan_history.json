@@ -2,6 +2,14 @@
   "schema": "marketing.radar_plan_history/v1",
   "plans": [
     {
+      "as_of": "2026-08-07",
+      "tickers": [
+        "HII",
+        "NSSC",
+        "PLTR"
+      ]
+    },
+    {
       "as_of": "2026-08-06",
       "tickers": [
         "ARES",
@@ -93,13 +101,6 @@
         "SHOO",
         "TEAM",
         "TPR"
-      ]
-    },
-    {
-      "as_of": "2026-07-31",
-      "tickers": [
-        "EME",
-        "SNDK"
       ]
     }
   ]

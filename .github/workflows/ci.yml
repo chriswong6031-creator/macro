@@ -551,12 +551,19 @@ on:
       - "contracts/capital_structure_*.schema.json"
       - "docs/CAPITAL_STRUCTURE_INTELLIGENCE_CONTRACT.md"
       - "templates/capital_structure.html.j2"
-      # The collect-job checkpoint guard rides in the capital-structure pack: it
-      # pins the 2026-08-06 split that keeps every capital-structure step BELOW the
-      # market checkpoint. Its SUBJECT — daily.yml — already reaches CI via
-      # ".github/workflows/**"; this line covers the other direction, so an edit
-      # that only widens the veto allowlist still runs the suite that checks it.
+      # The two nightly-wiring guards ride in the capital-structure pack. They pin
+      # the 2026-08-06 split from both sides: the chain left the collect job for its
+      # own `needs: collect` job that nothing needs in turn, and the source ledger
+      # crosses that job boundary as a receipt-verified artifact because the market
+      # checkpoint deliberately never commits it. Their SUBJECTS — daily.yml,
+      # config/dag.yml — already reach CI via ".github/workflows/**" and the
+      # config/dag.yml entry; these lines cover the test-only direction, so an edit
+      # that only re-pins a guard still runs the job that carries it.
+      # NOTE the second name does NOT match the "tests/test_capital_structure_*.py"
+      # glob further down — it is test_DAILY_capital_structure_job.py — so it has to
+      # be listed by name or it goes dark on a test-only edit.
       - "tests/test_daily_collect_commit_path.py"
+      - "tests/test_daily_capital_structure_job.py"
       - "templates/capital_structure_boot.js"
       - "templates/capital_structure.css"
       - "templates/capital_structure.js"
@@ -812,6 +819,10 @@ on:
       - "config/biocatalyst_sources.yml"
       - "config/biocatalyst_outcomes.yml"
       - "config/biocatalyst_launch_slo_manifest.yml"
+      # Closed-beta source manifest: tests/test_biocatalyst_f0_delta_and_closed_beta_manifest.py
+      # reads it by a __file__-rooted path join, so an edit to the manifest alone must be
+      # able to start the pack that runs its guard (ops.ci_trigger_closure, #4693).
+      - "config/biocatalyst_closed_beta_source_manifest.yml"
       # BC-D0a: finite design-reference corpus and non-authorizing product
       # acceptance contract. These paths must reach the same contracts pack even
       # when an edit changes only a PNG/hash/spec/test, otherwise a reference can
@@ -824,6 +835,9 @@ on:
       - "mockups/refs/biocatalyst/**"
       - "scripts/verify_biocatalyst_d0a_references.py"
       - "research/BIOCATALYST_D0A_IA_STATE_CONTENT_CONTRACT.md"
+      # Same idiom as the line above: tests/test_biocatalyst_acceptance_v2.py reads this
+      # adjudication by path literal, so an edit to it alone must start the contracts pack.
+      - "research/BIOCATALYST_D0A_DESIGN_ADJUDICATION_2026-08-06.md"
       - "templates/biocatalyst.*"
       - "templates/_navlinks.html.j2"
       - "templates/_site_nav.html.j2"
@@ -944,6 +958,11 @@ on:
       # the checker; this is its other half, per the same two-halves law the guard
       # enforces on everything else.
       - "tests/test_ci_trigger_closure.py"
+      # UNRUN-CENSUS discovery (job: workflow-yaml). scripts/*.py reaches
+      # audit_unrun_tests.py itself; this is the test half. The census owns suite
+      # discovery for all THREE darkness guards, so a regression here re-blinds
+      # every one of them at once — which is what tests/ scoping did until #4693.
+      - "tests/test_audit_unrun_tests.py"
       # ── the 31 subjects that guard found unreachable on its first run ──────
       # Each line is a file some suite in the packed legacy jobs actually reads
       # (import, whole-string path literal, or a __file__-rooted path join) and
@@ -2172,6 +2191,9 @@ on:
       # the derived one would be checked.
       - "data/press/published.jsonl"
       # ── UNRUN-SUITE CENSUS (2026-07-26) ──────────────────────────────────────
+      # Measured when the census was scoped to tests/; it now covers the whole tree
+      # (#4693, 2026-08-06), so re-run scripts/audit_unrun_tests.py for live counts
+      # rather than reading the historical figures below as current.
       # 1135 of 1491 tests/test_*.py suites were named by NO `run:` step in ANY of
       # the 51 workflows, and there is no broad `pytest tests/` anywhere — every
       # invocation carries an explicit file list, so an unnamed suite is genuinely
@@ -2301,6 +2323,14 @@ on:
       # unrun-data-plane — R2 transport, accrual audits and the ledger-advance guards
       - "tests/test_audit_options_accrual.py"
       - "tests/test_audit_r2.py"
+      # The 2026-08-03 store-freshness program's four suites (added 2026-08-06).
+      # Their SUBJECTS were already triggerable — collectors/** and scripts/*.py
+      # below both match — so only the test-file half of the census was missing:
+      # editing a suite to weaken it started no run that could see it do so.
+      - "tests/test_audit_stocks_freshness.py"
+      - "tests/test_collector_freshness_disclosure.py"
+      - "tests/test_stock_library_freshness.py"
+      - "tests/test_stock_price_retention.py"
       - "tests/test_audit_thetadata_accrual.py"
       - "tests/test_build_polygon_universe.py"
       - "tests/test_builder_failstreaks.py"
@@ -2707,6 +2737,13 @@ on:
       - "tests/test_stage_analysis.py"
       - "tests/test_heal_stage_forward_ledger.py"
       - "tests/test_weinstein_stage.py"
+      # coiled/mtf_upturn absolute session anchor (era coiled-mtf-abs-session-
+      # 2026-08-06, job coiled-mtf-anchor-era): the engines are reached by the
+      # broad "engine/**" trigger; these entries are the OTHER half — a PR
+      # editing ONLY a suite must still start the pack that executes it
+      # (test_coiled.py was previously named by no run step AND no path).
+      - "tests/test_coiled.py"
+      - "tests/test_coiled_mtf_anchor_invariance.py"
       - "scripts/heal_contagion_links_ledger.py"
       - "scripts/heal_stage_forward_ledger.py"
       # The nightly stage builder invokes the heal above; it is the only lane
@@ -2725,6 +2762,7 @@ on:
       - "tests/test_board_contradictions.py"
       - "tests/test_bottom_ledger.py"
       - "tests/test_china_board_rank.py"
+      - "tests/test_china_continuation_watch.py"
       - "tests/test_china_prophet_shadow.py"
       - "tests/test_cn_board_unified_grid.py"
       - "tests/test_cn_prophet_candidates_schema.py"
@@ -2756,6 +2794,13 @@ on:
       - "tests/test_us_context_vector.py"
       - "tests/test_prophet_miss_audit.py"
       - "scripts/grade_us_prophet_candidates.py"
+      # Archetype coverage pipeline (2026-08): the candidates-stamp heal script and
+      # the suite pinning fac-less classification + store freshness + fill-null-only
+      # heal semantics. The store subjects (engine/stock_fundamentals.py,
+      # data/archetypes/) ride the engine/** and data/us_prophet_rank/** entries.
+      - "scripts/heal_candidates_archetype.py"
+      - "tests/test_heal_candidates_archetype.py"
+      - "data/archetypes/**"
       # The nightly-wiring half of the same pack job (2026-08-06): the four modules moved
       # off the engine job's critical path into daily.yml's us_prophet_ledgers lane. Its
       # subjects (.github/workflows/daily.yml, config/dag.yml) already reach CI via
