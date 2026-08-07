@@ -135,9 +135,12 @@ def test_the_committed_store_is_swept_for_unclassified_payloads() -> None:
     """Every non-scalar column already on disk must be classified.
 
     Skips when the store is absent (thin CI lanes do not check out data/).
-    This intentionally reports the CURRENT state: the historical part still
-    holds the forensics payload until it is purged, which is a separate
-    operator decision — so this asserts CLASSIFICATION, not absence.
+    This asserts CLASSIFICATION only — that no non-scalar column is unaccounted
+    for. It deliberately does NOT assert absence, because a column named in
+    STAMP_FORBIDDEN_COLUMNS counts as classified and would sail through:
+    for as long as the payload sat in the part, this test passed WITH the leak
+    on disk. ABSENCE is a separate, stronger guard —
+    :func:`test_no_committed_parquet_carries_a_paid_payload_column` below.
     """
     store = ROOT / "data" / "us_prophet_rank" / "candidates"
     parts = sorted(store.glob("*.parquet")) if store.is_dir() else []
@@ -162,4 +165,74 @@ def test_the_committed_store_is_swept_for_unclassified_payloads() -> None:
         "unclassified payload column(s) in the committed store — classify each as "
         "forbidden (paid body) or reviewed (deliberately carried) in "
         f"engine/us_context_vector.py: {sorted(set(unclassified))}"
+    )
+
+
+#: Payload FIELD suffixes, matched across every dimension prefix. The flatten in
+#: context_api.context_frame is generic — ``f"{dim_name}__{k}"`` — so the same
+#: paid body reaches a committed row under a new name the moment a different
+#: dimension grows a ``findings`` or ``disclosure_changes`` key. Pinning the
+#: suffix rather than the exact column is what makes this survive that rename;
+#: pinning `forensics__findings` alone would let `earnings__findings` through.
+PAID_PAYLOAD_SUFFIXES = ("__findings", "__disclosure_changes")
+
+
+def _tracked_parquets() -> list[Path]:
+    """Every parquet COMMITTED under data/, via git — not a filesystem glob.
+
+    The contract is about what `git clone` hands a stranger, so the file list
+    has to come from the index. A glob would also sweep untracked local scratch
+    parquets and report a leak that was never published.
+    """
+    import subprocess
+
+    try:
+        out = subprocess.run(
+            ["git", "ls-files", "-z", "data/"],
+            cwd=ROOT, capture_output=True, text=True, timeout=120, check=True,
+        ).stdout
+    except Exception:  # noqa: BLE001 — no git / no checkout is a skip, not a red
+        return []
+    return [ROOT / p for p in out.split("\0") if p.endswith(".parquet")]
+
+
+def test_no_committed_parquet_carries_a_paid_payload_column() -> None:
+    """No tracked parquet under data/ may carry an entitlement-gated body.
+
+    This is the durable half of the fix, and the one the seam allowlist cannot
+    provide. `STAMP_FORBIDDEN_COLUMNS` stops the CURRENT writer; this stops the
+    ARTIFACT, whatever wrote it. That distinction is load-bearing here, because
+    `append_candidates` unions its schema with the prior part on purpose ("a
+    column retired tonight is preserved for the nights that had it"), so closing
+    the seam alone would have carried the 722 tickers' findings forward for the
+    life of the store.
+
+    Scans schemas only (~4s over ~14k files), so it never materialises a body it
+    is asserting the absence of.
+    """
+    parquets = _tracked_parquets()
+    if not parquets:
+        pytest.skip("no tracked parquets under data/ in this checkout")
+
+    import pyarrow.parquet as pq
+
+    offenders: list[str] = []
+    for path in parquets:
+        if not path.exists():  # sparse/partial checkout
+            continue
+        try:
+            names = pq.read_schema(path).names
+        except Exception:  # noqa: BLE001 — an unreadable part is another test's problem
+            continue
+        rel = path.relative_to(ROOT).as_posix()
+        offenders += [
+            f"{rel}:{c}" for c in names
+            if c.endswith(PAID_PAYLOAD_SUFFIXES) or c in STAMP_FORBIDDEN_COLUMNS
+        ]
+
+    assert not offenders, (
+        "entitlement-gated payload is committed to a PUBLIC repository — "
+        "`git clone` bypasses require_site_full_user entirely. Drop the column "
+        "at the committing seam (engine/us_context_vector.context_dimension_frame) "
+        "and purge it from the part:\n  " + "\n  ".join(sorted(offenders))
     )
