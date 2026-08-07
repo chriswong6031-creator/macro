@@ -694,7 +694,7 @@
     <div class="panel" id="panel_demand" style="display:none">
       <h2>🧭 {{ t('Demand context — is the rally already priced?', '需求背景 — 涨势是否已被定价？') }}
         {{ help('A framing of WHERE a rally\'s demand story sits, in three honest layers. (1) Trailing = demand that already converted to financials — backward-looking by accounting construction. (2) Consensus = the forward view the market has ALREADY bought (forward P/E, next-quarter estimate, analyst revisions, SUE); agreeing with it is exposure, not edge, because it is already in the price. (3) Independent observable = a management-independent read on FORWARD demand (bookings/backlog, customer-capex, hiring) — the only layer that could say a rally is MIS-priced. It is not yet measured (Phase 1 of the Demand Desk). DISPLAY-ONLY context; nothing here is a buy signal.',
-          '用三个诚实的层次界定涨势的“需求故事”所处位置。(1) 历史＝已转化为财报的需求——按会计口径天然滞后。(2) 共识＝市场已经买入的前瞻预期（前瞻市盈率、下季预估、分析师评级调整、SUE）；认同它只是承担敞口而非优势，因为它已被定价。(3) 独立观测＝对前瞻需求、不依赖管理层口径的读数（订单/在手订单、客户资本开支、招聘）——这是唯一可能判断涨势被错误定价的层次。该层尚未度量（需求台第一阶段）。仅作背景展示，均非买入信号。') }}</h2>
+          '用三个诚实的层次界定涨势的“需求故事”所处位置。(1) 历史＝已转化为财报的需求——按会计口径天然滞后。(2) 共识＝市场已经买入的前瞻预期（前瞻市盈率、下季预估、分析师评级调整、SUE）；认同它只是承担敞口而非优势，因为它已被定价。(3) 独立观测＝对前瞻需求、不依赖管理层口径的读数（订单/在手订单、客户资本开支、招聘）——这是唯一可能判断涨势被错误定价的层次。该层尚未度量（需求台第一阶段）。仅供参考展示，均非买入信号。') }}</h2>
       <div id="r_demand"></div>
     </div>
 
@@ -720,7 +720,11 @@
     <div class="panel" id="panel_aq" style="display:none">
       <h2>🧾 {{ t('Accounting quality', '会计质量') }}
         {{ help('A plain-language read on whether the accounting is deteriorating — composed from this name\'s accruals (are earnings backed by cash?), working-capital trends (inventory & receivables vs sales), gross profitability, capital discipline (asset growth / dilution) and balance-sheet safety, using the same SEC-derived factor ranks shown below plus multi-year SEC companyfacts trends where they exist. DISPLAY-ONLY context: it is NOT part of any score, ranking or trading signal, and it deliberately does NOT change the technical / alpha call above — it is a fundamental cross-check for you to weigh. Lagged to the filing date; annual data, sparse for some filers.',
+<<<<<<< ours
           '用通俗语言判断会计质量是否在恶化——综合该标的的应计利润（盈利是否有现金支撑）、营运资本趋势（存货与应收对销售）、毛利能力、资本纪律（资产增长／股本稀释）与资产负债表安全性，即下方相同的 SEC 因子排名，并在可得时叠加 SEC companyfacts 多年趋势。仅作背景展示：不计入任何评分、排名或交易信号，且刻意不改变上方的技术／阿尔法判断——它只是供你权衡的基本面交叉验证。滞后至披露日；年度数据，对部分公司不全。') }}</h2>
+=======
+          '用通俗语言判断会计质量是否在恶化——综合该标的的应计利润（盈利是否有现金支撑）、营运资本趋势（存货与应收对销售）、毛利能力、资本纪律（资产增长／股本稀释）与资产负债表安全性，即下方相同的 SEC 因子排名，并在可得时叠加 SEC companyfacts 多年趋势。仅供参考展示：不计入任何评分、排名或交易信号，且刻意不改变上方的技术／阿尔法判断——它只是供你权衡的基本面交叉验证。滞后至申报日；年度数据，对部分公司不全。') }}</h2>
+>>>>>>> theirs
       <div id="r_aq"></div>
     </div>
 
@@ -736,7 +740,11 @@
     <div class="panel" id="panel_evwin" style="display:none">
       <h2>🗓 {{ t('Event windows', '事件窗口') }}
         {{ help('Upcoming event-calendar context for this name: next earnings date (calendar days away), next FOMC meeting (calendar days away), and the most recent EDGAR balance-sheet debt snapshot (current debt due within ~12 months, long-term debt, cash, net debt). DISPLAY-ONLY context — descriptive facts only, does not affect any score, rank, or entry decision. Debt figures in USD as reported; lagged to the most recent SEC filing date shown.',
+<<<<<<< ours
           '当前标的即将到来的事件日历背景：下次财报日期（距今日历天数）、下次FOMC会议（距今日历天数），以及最新EDGAR资产负债表债务快照（约12个月内到期的流动债务、长期债务、现金、净债务）。仅供展示——纯描述性事实，不影响任何评分、排名或入场决策。债务数据为美元报告值，滞后至所示最新SEC披露日期。') }}</h2>
+=======
+          '当前标的即将到来的事件日历参考：下次财报日期（距今日历天数）、下次FOMC会议（距今日历天数），以及最新EDGAR资产负债表债务快照（约12个月内到期的流动债务、长期债务、现金、净债务）。仅供展示——纯描述性事实，不影响任何评分、排名或入场决策。债务数据为美元报告值，滞后至所示最新SEC申报日期。') }}</h2>
+>>>>>>> theirs
       <div id="r_evwin"></div>
     </div>
 
@@ -753,7 +761,7 @@
 
     <div class="panel" id="panel_fac" style="display:none">
       <h2>🧬 {{ t('Factor fingerprint', '因子指纹') }}
-        {{ help('Where this name sits on the canonical smart-beta factors versus the S&P 1500 cross-section (winsorized z-scores; 0 = average, +2 = top of the pack, bars right of centre = attractive). These are RELATIVE RANKS lagged to the latest filing — context, not a validated alpha and not a quality verdict.',
+        {{ help('Where this name sits on the standard factors against the rest of the S&P 1500 (0 = average, +2 = top of the pack; bars right of centre are attractive). These are relative ranks as of the latest filing — context, not a verdict on quality and not an edge on its own.',
           '该标的在标普1500横截面上各经典smart-beta因子的位置（缩尾z分数；0＝平均，+2＝领先，条形位于中线右侧＝有吸引力）。这些是滞后至最新财报的相对排名——仅供参考，并非已验证的超额收益或质量结论。') }}</h2>
       <div id="r_fac_standout" class="fac-standout"></div>
       <div class="facwrap">
@@ -804,7 +812,7 @@
     <div class="panel" id="panel_fragility" style="display:none">
       <h2>⚠️ {{ t('Crowded & fragile', '拥挤且脆弱') }}
         {{ help("A contrarian RISK flag: this name is at once a crowded leader (high relative-strength percentile), a crowded short (high days-to-cover in the latest FINRA snapshot), AND stretched well above its 50-day average. That conjunction is a fragile set-up — prone to a sharp unwind or short squeeze either way. DISPLAY-ONLY context, never in the conviction score: our Phase-0 found crowding carries NO forward-return edge (only a marginal, statistically-weak worse drawdown), and short interest has no point-in-time history to validate. Context on fragility, NOT a sell.",
-          "一个逆向风险标记：该股同时是拥挤的领涨股（相对强弱百分位高）、拥挤的空头（最新 FINRA 快照中回补天数高），且远高于其 50 日均线。这种组合是一种脆弱形态 —— 易于双向剧烈回吐或逼空。仅作背景展示，绝不计入信念评分：我们的 Phase-0 发现拥挤本身没有前瞻收益优势（仅有边际且统计上微弱的更深回撤），且空头数据没有可供验证的时点历史。仅作脆弱性背景，而非卖出信号。") }}</h2>
+          "一个逆向风险标记：该股同时是拥挤的领涨股（相对强弱百分位高）、拥挤的空头（最新 FINRA 快照中回补天数高），且远高于其 50 日均线。这种组合是一种脆弱形态 —— 易于双向剧烈回吐或逼空。仅供参考展示，绝不计入信念评分：我们的 Phase-0 发现拥挤本身没有前瞻收益优势（仅有边际且统计上微弱的更深回撤），且空头数据没有可供验证的时点历史。仅作脆弱性背景，而非卖出信号。") }}</h2>
       <div id="r_fragility"></div>
     </div>
 
@@ -845,7 +853,7 @@
     </div>
     <p class="muted sv-method" style="font-size:11.5px;margin:14px 2px 0">{{ t(
       'How to read this page: the verdict band is the one call; the timing line, fingerprint axes and evidence lanes are the supporting reads behind it; the collapsed sections hold the full detail. Everything here is display-only research context, never personalized investment advice — sizing is a risk-budget guide, not a recommendation.',
-      '如何阅读本页：结论条是唯一的判断；时机行、画像轴与依据栏是其背后的支撑读数；折叠区块收纳完整明细。本页所有内容仅为研究性背景展示，并非个性化投资建议——仓位为风险预算参考，而非推荐。') }}</p>
+      '如何阅读本页：结论条是唯一的判断；时机行、画像轴与依据栏是其背后的支撑读数；折叠区块收纳完整明细。本页所有内容仅供研究参考展示，并非个性化投资建议——仓位为风险预算参考，而非推荐。') }}</p>
   </div>
 
 <script src="lightweight-charts-v5.js"></script>
@@ -895,7 +903,7 @@
           archhelp:'Archetype from factor ranks', conf:'confidence',
           fwdpe:'Forward P/E', peyf:'P/E (Yahoo)', pmargin:'Profit margin', roe:'ROE', dyield:'Dividend yld',
           short:'Short interest', shortpct:'Short % of float', dtc:'Days to cover', sichg:'SI change (2wk)',
-          shortflow:'Daily short flow', sfratio:'Short ratio', sftrend:'Trend (recent−base)', sfz:'Ratio z-score',
+          shortflow:'Daily short flow', sfratio:'Short ratio', sftrend:'Trend (recent−base)', sfz:'Ratio vs normal',
           insider:'Insider net flow', insiderpct:'Net buying (% cap)', buyers:'distinct insiders (B/S)', buys:'buys / sells', fwdnote_lite:'Forward P/E: trailing only — no free forward estimate at S&P-1500 scale.',
           mediansrc:'sector median', scorelab:'Factor score', compos:'composite percentile vs S&P 1500',
           suehelp:'Standardized unexpected earnings — how far the latest quarter beat its year-ago seasonal expectation, standardized by the company’s own history (post-earnings-announcement drift). Cross-sectional winsorized z vs the S&P 1500. Standout on the shallow 2023-2025 window, but its cross-sectional edge does NOT persist on deep 2011-2026 history (see the factors page) — earnings-momentum / PEAD context, not a standalone signal.',
@@ -1068,7 +1076,7 @@
     if (!box) return;
     if (!a) { box.style.display = 'none'; return; }
     box.className = 'macro-sens ad-tier-' + a.tier;
-    var ttl = lang() === 'zh' ? '替代数据' : 'Alternative data';
+    var ttl = lang() === 'zh' ? '另类数据' : 'Alternative data';
     var chips = (a.channels || []).map(function (c) {
       return '<span class="ms-chip">' + esc(lz(c.en, c.zh)) + '</span>'; });
     if (a.score >= 2) {

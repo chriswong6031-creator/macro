@@ -214,7 +214,7 @@
   <div class="panel span12" id="action-board">
     <h2>{{ t('What to act on now', '当前可操作') }}
       {{ help('Every sector and theme is sorted into five lanes by cycle position — the lane name is the action, and each lane explains itself below its title. Hover any row for full detail. Symbols: 🏛 sector fund · 🧩 theme group · ✓ tested sell-discipline gate (overrides the lane read when it fires) · ★ in the model book.', '所有板块与主题按周期位置分入五个泳道 — 泳道名称即操作建议，各泳道标题下有说明。悬停任意行查看完整详情。图例：🏛 板块基金 · 🧩 主题篮子 · ✓ 经回测的卖出纪律门槛（触发时覆盖泳道判读）· ★ 模型组合内。') }}
-      <a href="sector_central.html#actnow-section" style="font-size:11px;color:var(--muted);font-weight:400;text-decoration:none;margin-left:8px"><span class="l-en">Theme reasons → Sector Intelligence</span><span class="l-zh">主题详情 → 行业智慧页</span></a>
+      <a href="sector_central.html#actnow-section" style="font-size:11px;color:var(--muted);font-weight:400;text-decoration:none;margin-left:8px"><span class="l-en">Theme reasons → Sector Intelligence</span><span class="l-zh">主题详情 → 行业情报页</span></a>
     </h2>
     {# Policy-shock de-escalation fresh-entry caution chip (PS-R3: display de-escalation only —
        no reordering, no removal. Ranks computed on pre-shock data; this chip is the only change.) #}
@@ -453,7 +453,7 @@
           {% for x in action_board.buy_now %}
             {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('None today — nothing has fully confirmed a fresh cycle low.', '今日无 — 尚无标的完全确认新的周期低点。') }}</p>{% endfor %}
-          {%- if _more_bn > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_bn }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_bn }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
+          {%- if _more_bn > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_bn }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_bn }} 个 — 完整列表见行业情报页 →</span></a></p>{%- endif %}
         </div>
         {% if _bn_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _bn_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
@@ -471,7 +471,7 @@
           {% for x in action_board.buy_soon %}
             {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('No imminent setups.', '暂无临近的构筑。') }}</p>{% endfor %}
-          {%- if _more_bs > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_bs }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_bs }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
+          {%- if _more_bs > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_bs }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_bs }} 个 — 完整列表见行业情报页 →</span></a></p>{%- endif %}
         </div>
         {% if _bs_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _bs_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
@@ -489,7 +489,7 @@
           {% for x in action_board.get('on_the_run', []) %}
             {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('Nothing extended right now.', '当前无过度延伸的标的。') }}</p>{% endfor %}
-          {%- if _more_run > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_run }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_run }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
+          {%- if _more_run > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_run }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_run }} 个 — 完整列表见行业情报页 →</span></a></p>{%- endif %}
         </div>
         {% if _run_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _run_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
@@ -507,7 +507,7 @@
           {% for x in action_board.take_profits %}
             {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('Nothing topping.', '无标的做顶。') }}</p>{% endfor %}
-          {%- if _more_tp > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_tp }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_tp }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
+          {%- if _more_tp > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_tp }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_tp }} 个 — 完整列表见行业情报页 →</span></a></p>{%- endif %}
         </div>
         {% if _tp_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _tp_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
@@ -530,7 +530,7 @@
           {% for x in action_board.avoid %}
             {% if x.kind == 'theme' %}<div data-theme-id="{{ x.slug or x.ticker }}">{{ ab_theme_row(x) }}</div>{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% endfor %}
-          {%- if _more_hold > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_hold }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_hold }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
+          {%- if _more_hold > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_hold }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_hold }} 个 — 完整列表见行业情报页 →</span></a></p>{%- endif %}
         </div>
         {% if _hold_cnt > 3 %}
         <button class="lst-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more', '显示更多') }} ({{ _hold_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>

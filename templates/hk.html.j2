@@ -2322,7 +2322,7 @@
       {% else %}
       <p style="font-size:12px;color:var(--muted)">{{ t('Summary building…','简报生成中…') }}</p>
       {% endif %}
-      <div class="hkx-foot">{{ t('A plain-English recap of the China & HK dashboards — background, not a signal.','中港看板的白话摘要 — 仅为背景，非信号。') }}</div>
+      <div class="hkx-foot">{{ t('A plain-English recap of the China & HK dashboards — background, not a signal.','中港看板的白话摘要 — 仅供参考，非信号。') }}</div>
     </div>
   </div>
 
@@ -2678,7 +2678,7 @@
         {% endif %}
         <div class="hkx-fresh">{{ t('Weakest evidence tier — news volume, not a buy signal.','最弱证据层 — 新闻热度，非买入信号。') }}{% if hk_narrative.is_stale %} · {{ t('slow-moving','缓慢更新') }}{% endif %} · {{ t('as of','截至') }} {{ hk_narrative.as_of }}</div>
         {% endif %}
-        <div class="hkx-receipt">{{ t('Official filings from the Hong Kong exchange. Buyback = company buying its own shares (supports price). Placement = new shares sold (dilution). News attention comes from English-language news volume; it is context, not a signal.','来自港交所的正式公告。回购 = 公司买回自家股份（支撑股价）。配股 = 新发股份（稀释）。新闻关注度来自英文媒体报道量，仅为背景，非信号。') }}</div>
+        <div class="hkx-receipt">{{ t('Official filings from the Hong Kong exchange. Buyback = company buying its own shares (supports price). Placement = new shares sold (dilution). News attention comes from English-language news volume; it is context, not a signal.','来自港交所的正式公告。回购 = 公司买回自家股份（支撑股价）。配股 = 新发股份（稀释）。新闻关注度来自英文媒体报道量，仅供参考，非信号。') }}</div>
       </div>
     </div>
   </div>
@@ -2792,7 +2792,7 @@
         <div class="hkx-kv"><span class="hkx-k">{{ t('Cautionary (bear)','谨慎（空）') }}</span><span class="hkx-v hkx-dn">{{ signal_stack.n_bear }}</span></div>
         <div class="hkx-kv"><span class="hkx-k">{{ t('Total signals','信号总数') }}</span><span class="hkx-v">{{ signal_stack.n }}</span></div>
         {% endif %}
-        <div class="hkx-receipt">{{ t('A background read only — it never feeds the main score.','仅为背景读数 — 不影响主评分。') }}</div>
+        <div class="hkx-receipt">{{ t('A background read only — it never feeds the main score.','仅供参考读数 — 不影响主评分。') }}</div>
       </div>
     </div>
   </div>
@@ -3689,7 +3689,7 @@
     {%- set _ = _sc.update({'blocked': _sc['blocked'] + (_hk_veto|length)}) -%}
   {%- endif -%}
   <div class="panel span12" id="standouts">
-    <h2>⚡ {{ t('Prophet — HK stock signals', '先知 — 港股信号') }}
+    <h2>⚡ {{ t('Prophet — HK stock signals', 'Prophet — 港股信号') }}
       <span class="note" style="text-transform:none">· {% if _hsg.any %}{{ t('Ranked by readiness — what to act on, and what to leave alone', '按就绪度排序 —— 哪些可以动手，哪些放着别碰') }}{% else %}{{ t('Bottoming names, ranked by flow, value and strength', '筑底个股，按资金、价值与强度排序') }}{% endif %}</span>
       {% if _hsg.any %}{{ help("Every HK name we track that has a live read, in one board ordered by readiness — live entries first, then setups still forming, then names that already ran, then names an entry check is blocking. Priority 0–100 is a transparent readiness rank (" ~ _wtxt_en ~ "), used only to order the board: it is not a win probability and not a return forecast. The green cards are the picks — a separate gate on top of the order (fresh signal, entry window open, edge above zero, price not extended, capped per sector). Leader-cohort chips are context from a display-only read; they earn a name no points here. The " ~ _hk_def ~ " forward record is accruing separately.", "我们跟踪的每只有效港股都在同一张榜单上，按可操作就绪度排序 —— 先是入场窗口已打开的，然后是形态仍在形成的，接着是已经启动的，最后是被入场检查挡住的。优先级 0–100 是透明的就绪度排序（" ~ _wtxt_zh ~ "），仅用于给本榜排序：它不是胜率，也不是收益预测。发绿光的卡片是精选 —— 那是排序之上的另一道门槛（信号新鲜、入场窗口已打开、优势为正、价格未过度拉伸，并受行业名额限制）。龙头组合标签来自仅供展示的读数，不为个股加分。" ~ _hk_def ~ " 的前瞻记录将单独积累。") }}{% else %}{{ help("Shows HK names whose weekly, 3-day and daily cycles are turning up, then ranks them by three cleaner edges — southbound flow, A/H value, and strength after removing global-risk beta. Entry-open group first, then setting-up. A screen, not a promise.", "显示周线、3日、日线开始转上的港股，再按三条较干净的优势排序 —— 南向资金、A/H 价值、剥离全球风险贝塔后的强度。入场开启组优先，蓄势中次之。这是筛选，不是承诺。") }}{% endif %}
       {# W8-G: grid/table view toggle #}
@@ -3903,7 +3903,7 @@
         'edge_tip_en': (('HK Prophet priority 0–100 — ' ~ _wtxt_en ~ '. Transparent readiness rank for ordering this board; not a win probability or a return forecast.' ~ _rw_en)
                  if _prs is not none
                  else 'Edge percentile — within-market rank by the flow · value · exposure screen. Not a probability and not a validated buy list.'),
-        'edge_tip_zh': (('港股先知优先级 0–100 —— ' ~ _wtxt_zh ~ '。用于给本榜排序的透明就绪度分；不是胜率，也不是收益预测。' ~ _rw_zh)
+        'edge_tip_zh': (('港股 Prophet 优先级 0–100 —— ' ~ _wtxt_zh ~ '。用于给本榜排序的透明就绪度分；不是胜率，也不是收益预测。' ~ _rw_zh)
                  if _prs is not none
                  else '优势百分位 — 按资金·价值·敞口筛选在市场内的排名。不是概率，也不是已验证的买入清单。'),
         'stage': _stage, 'spark': n.get('spark_svg'),
@@ -4085,7 +4085,7 @@
             <span class="l-en" data-tip-en="{% if _vmf %}The signal fired on {{ _vd }}, but the entry check reads the next few days of price before it can decide. It finished on {{ _vmf }}, and the move above is measured from that day's close — so it leaves out the rise that only hindsight could have caught.{% else %}Measured from the close at which the entry check could first reach its verdict, not from the signal date — the signal date sits at the low that created the signal.{% endif %}" data-tip-zh="{% if _vmf %}信号于 {{ _vd }} 触发，但入场检查需要再读几天的价格才能作出判断，到 {{ _vmf }} 才完成。上面的涨跌幅从当天收盘价起算 —— 因此不包含只有事后回看才能抓到的那段涨幅。{% else %}从入场检查首次能作出判断的收盘价起算，而非从信号日起算 —— 信号日正处在造就该信号的低点上。{% endif %}">since the check finished</span><span class="l-zh">（检查完成后）</span>
           </span>
           <span class="pbv-why">
-            <span class="l-en">{{ r.get('blocked_reason_en') or 'The entry gate refused this signal' }}{% if _vdt %} · blocked on a {{ _vdt }} marker{% if _vsn is not none %}, {% if _vapx %}≈{% endif %}{{ _vsn }} session{{ '' if _vsn == 1 else 's' }} ago{% endif %}{% elif _vsn is not none %} · blocked {% if _vapx %}≈{% endif %}{{ _vsn }} session{{ '' if _vsn == 1 else 's' }} ago{% endif %}</span>
+            <span class="l-en">{{ r.get('blocked_reason_en') or 'This signal did not clear our buy check' }}{% if _vdt %} · blocked on a {{ _vdt }} marker{% if _vsn is not none %}, {% if _vapx %}≈{% endif %}{{ _vsn }} session{{ '' if _vsn == 1 else 's' }} ago{% endif %}{% elif _vsn is not none %} · blocked {% if _vapx %}≈{% endif %}{{ _vsn }} session{{ '' if _vsn == 1 else 's' }} ago{% endif %}</span>
             <span class="l-zh">{{ r.get('blocked_reason_zh') or r.get('blocked_reason_en') or '入场闸门未放行该信号' }}{% if _vd|length >= 10 %} · 受阻标记 {{ _vd }}{% if _vsn is not none %}，{% if _vapx %}≈{% endif %}{{ _vsn }}个交易日前{% endif %}{% elif _vsn is not none %} · {% if _vapx %}≈{% endif %}{{ _vsn }}个交易日前受阻{% endif %}</span>
           </span>
         </a>
@@ -4142,7 +4142,7 @@
              ships. What orders this table is the 3-month momentum z plus the
              cohort boost, so that is what the column shows and what it is called;
              `alpha` stays as the fallback for any row that does carry it. #}
-          <th class="r c-edge" data-tip-en="Trailing 3-month total return, expressed as a z-score against the HK panel — the number this table is ranked by. Membership of the mega-cap leader group adds a small boost on top, so a chipped row can sit above a bare row with a higher z." data-tip-zh="过去3个月总回报的 z 分（相对港股样本）—— 本表即按此排序。属于大市值龙头组合的个股会在此基础上获得小幅加成，因此带标签的个股可能排在 z 更高的个股之上。">{{ t('3-mo momentum', '3个月动量') }}</th>
+          <th class="r c-edge" data-tip-en="Total return over the last 3 months, scored against the rest of the HK board — the number this table is ranked by. Being one of the mega-cap leaders adds a small boost, so a chipped row can sit above a plain one that scored higher." data-tip-zh="过去 3 个月的总回报，和港股其他标的比出来的分数 —— 本表就按这个排序。属于大市值龙头的会有小幅加成，所以带标签的可能排在分数更高的前面。">{{ t('3-mo momentum', '3个月动量') }}</th>
           <th class="r c-offhigh" data-tip-en="Distance below the 52-week high — 0% means at the high" data-tip-zh="距52周高点的距离 —— 0%代表正处高点">{{ t('off high', '距高点') }}</th>
           {# was `state`: leaders rows carry no cycle label either, so that column
              was dead too. Signal age is the read this lane actually has, and it is
@@ -4251,7 +4251,7 @@
        new copy would put an accurate sentence on the wrong data. #}
     {% if _hsg.any %}
     <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--down);font-weight:700">⚠ {{ t('Weakest selection edge — distribution risk', '选股优势最弱 — 派发风险') }}
-      {{ help("The names whose selection edge — our stock-picking read, before any timing — sits lowest on the board tonight. It is NOT a statement that they are falling: a name can be up on the month and still be here, which usually reads as distribution, money leaving while the price holds. The figure is that edge, as a z-score against the HK panel, and it is the number the list is ordered by. A name whose edge cannot be resolved at all sorts to the end rather than the front — an unknown edge is not evidence of a weak one.", "本栏是今晚全榜选股优势最低的个股 —— 选股优势指的是不考虑择时的选股读数。这并不表示它们正在下跌：一只月内上涨的股票同样可能出现在这里，通常意味着派发，即股价撑住而资金在流出。所标数值即该优势的 z 分（相对港股样本），也是本列表的排序依据。优势完全无法计算的个股排在末尾而非开头 —— 优势未知不等于优势弱。") }}</p>
+      {{ help("The names whose selection edge — our stock-picking read, before any timing — sits lowest on the board tonight. It is NOT a statement that they are falling: a name can be up on the month and still be here, which usually reads as distribution, money leaving while the price holds. The figure is that edge scored against the rest of the HK board, and it is the number the list is ordered by. A name whose edge cannot be resolved at all sorts to the end rather than the front — an unknown edge is not evidence of a weak one.", "本栏是今晚全榜选股优势最低的个股 —— 选股优势指的是不考虑择时的选股读数。这并不表示它们正在下跌：一只月内上涨的股票同样可能出现在这里，通常意味着派发，即股价撑住而资金在流出。所标数值即该优势的 z 分（相对港股样本），也是本列表的排序依据。优势完全无法计算的个股排在末尾而非开头 —— 优势未知不等于优势弱。") }}</p>
     {% else %}
     <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--down);font-weight:700">⚠ {{ t('Weakest — avoid', '最弱 — 回避') }}</p>
     {% endif %}
@@ -4349,7 +4349,7 @@
   <!-- ===================== 1D VELOCITY DESK (fast movers, HK native 1D signal) ===================== -->
   <div class="panel span12" id="hk-velocity-desk">
     <h2 style="margin:0 0 4px">⚡ {{ t('Fast movers — 1-day momentum', '快速异动 — 1日动能') }}
-      {{ help("HK names that printed several 1-day momentum triggers today — MACD/StochRSI cross-up, an ADR overnight gap, or a washout turn — then ran. No price limits in HK, so a name that runs the same day shows real demand. A heads-up, not a buy signal.", "今日打印多个1日动能触发的港股 —— MACD/StochRSI 交叉上穿、ADR 隔夜跳空，或洗盘转身 —— 并随即上涨。港股无涨跌停，当日即涨显示真实需求。这是提示，非买入信号。") }}
+      {{ help("HK names that set off several same-day momentum triggers — a fresh cross, an overnight gap on the US listing, or a turn off a washout — and then ran. Hong Kong has no daily price limits, so a name that runs the same day is showing real demand. A heads-up, not a buy signal.", "今天同时触发了几个盘中动量信号的港股 —— 信号刚上穿、美股 ADR 隔夜跳空，或者从低位转上来 —— 然后就直接涨了。港股没有涨跌停，当天就能拉起来说明需求是真的。这是提示，不是买入信号。") }}
     </h2>
     {% set _vd_asof = _vd.get('as_of') %}
     {% if _vd_asof %}
@@ -4477,7 +4477,7 @@
   <div class="panel span12" id="mainland-money">
     <h2>🇨🇳 {{ t('Mainland money', '内地资金') }}
       <span class="note" style="text-transform:none">· {{ t("Southbound flow — and where it's going", '南向资金 — 以及流向哪里') }}{% if _mm_asof %} · {{ _mm_asof }}{% endif %}</span>
-      {{ help("Mainland money flowing into HK through Southbound Connect: how much (net flow), whether that flow is backing the HSI price trend, how cheap HK-listed H-shares look vs their mainland A-share twins, and which single names the mainland is adding to or trimming. A liquidity backdrop, not a buy signal.", "内地资金通过南向港股通流入港股：规模（净流入）、该资金是否支持恒指价格趋势、港股 H 相对 A 股孪生有多便宜、以及内地正在加仓或减仓哪些个股。流动性背景，非买入信号。") }}
+      {{ help("Mainland money flowing into HK through Southbound Connect: how much (net flow), whether that flow is backing the HSI price trend, how cheap HK-listed H-shares look vs their mainland A-share twins, and which single names the mainland is adding to or trimming. A liquidity backdrop, not a buy signal.", "内地资金通过南向港股通流入港股：规模（净流入）、该资金是否支持恒指价格趋势、港股 H 相对 A 股孪生有多便宜、以及内地正在加仓或减仓哪些个股。流动性情况，非买入信号。") }}
     </h2>
     {# Row 1 — the three cross-market read cards (values scaled to 亿) #}
     <div class="sbah-grid">
@@ -4568,7 +4568,7 @@
     </div>
     {% endif %}
     {# ONE merged footer (per-name coverage note) #}
-    <p class="note" style="margin:10px 0 0;font-size:11px;text-transform:none;color:var(--muted)">{% if _mm_sm %}{{ t('Per-name southbound holdings across', '个股南向持股，覆盖') }} {{ _mm_sm.n_sized }} {{ t('sized HK names.', '只有规模的港股。') }} {% endif %}{{ t('A liquidity backdrop, not a buy signal.', '流动性背景，非买入信号。') }}</p>
+    <p class="note" style="margin:10px 0 0;font-size:11px;text-transform:none;color:var(--muted)">{% if _mm_sm %}{{ t('Per-name southbound holdings across', '个股南向持股，覆盖') }} {{ _mm_sm.n_sized }} {{ t('sized HK names.', '只有规模的港股。') }} {% endif %}{{ t('A liquidity backdrop, not a buy signal.', '流动性情况，非买入信号。') }}</p>
   </div>
   {% endif %}
 
@@ -4897,7 +4897,7 @@ function initStockTableView(){
     { key:"alpha", labelEn:"3M RS z", labelZh:"3月相对强度z", default:true, sortable:true, right:true,
       fmt:function(v){ return v==null ? '<span class="st-muted">—</span>' :
         '<span class="' + (v>=0 ? 'st-pos' : 'st-neg') + '">' + fn(v,2) + '</span>'; },
-      tip:{en:"63-day relative return z-score within HK board universe (descriptive context, not a rank input)",
+      tip:{en:"How unusual its 3-month relative return is against the rest of the HK board (context only, not part of the rank)",
            zh:"63日收益率z分数（港股看板宇宙内的描述性背景，非排序输入）"} },
     { key:"edge_z", labelEn:"Edge z", labelZh:"综合优势z", default:true, sortable:true, right:true,
       fmt:function(v){ return v==null ? '<span class="st-muted">—</span>' :
@@ -4911,7 +4911,7 @@ function initStockTableView(){
         var own = r.sb_own!=null ? ' <span class="st-muted">(' + fn(r.sb_own,1) + '%)</span>' : '';
         return '<span class="' + cls + '">' + fn(v,2) + '</span>' + own;
       },
-      tip:{en:"Southbound Connect accumulation z-score. Context only — H1 NO-GO (not a standalone edge).",
+      tip:{en:"How heavily southbound money has been accumulating, against its own normal. Context only — on its own it has shown no edge.",
            zh:"南向资金累积z分数。仅供参考 — H1未通过（不作为独立优势）。"} },
     { key:"ah_z", labelEn:"A/H z", labelZh:"A/H价值z", default:true, sortable:true, right:true,
       fmt:function(v,r){
@@ -4932,7 +4932,7 @@ function initStockTableView(){
            zh:"共振 = 周线+3日+日线均向上（精英/武装）。临近 = 补位。"} },
     { key:"washout_2w", labelEn:"2W washout", labelZh:"双周洗盘", default:false, sortable:true,
       fmt:function(v){ return v ? '<span class="st-pos">✓</span>' : '<span class="st-muted">—</span>'; },
-      tip:{en:"2-week StochRSI washout-reclaim cross (CN port, display context, no rank effect yet)",
+      tip:{en:"Turning back up from a washout on the two-week view (context only — it does not affect the rank yet)",
            zh:"双周随机RSI洗盘回升穿越（CN移植，展示背景，暂无排序效果）"} },
   ];
 
