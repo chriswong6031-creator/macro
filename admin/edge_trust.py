@@ -30,9 +30,25 @@ captured off the loopback hop to :8787 with tcpdump):
 
 So ``EO-Connecting-IP`` is the ONLY header the edge rewrites, and it is the only
 one this module will ever read. A clean edge request carries no ``EO-Client-IP`` at
-all — the EdgeOne "Client IP Header" rule that ``app/main.py`` expects is not
-active on this zone — so reading that header would have handed a brute-forcer a
-free bucket-rotation knob. Do not add it here.
+all — the EdgeOne "Client IP Header" rule is not active on this zone — so reading
+that header would have handed a brute-forcer a free bucket-rotation knob. Do not
+add it here.
+
+THE ``EO-Client-IP`` ROW IS ABOUT ADMIN.* ONLY. Re-probing www.mastermind-x.com the
+same way on 2026-08-07 found the rule IS active there: a clean www request carries
+``EO-Client-IP``, and a forged copy arrives OVERWRITTEN with the true client. Both
+measurements are real and they disagree because the zones are configured
+differently, so neither table is an estate-wide statement — re-probe the zone you
+are working on. The public-site resolver is ``app/edge_client.py``; it reads only
+``EO-Connecting-IP`` precisely because that is the row that holds on both zones.
+
+DO NOT ROUTE app/ THROUGH ``from_edge``. This module's attestation exists because
+admin's edge sets no per-visitor header at all, so the only choice here is "attested
+visitor or shared peer bucket". www has a true per-visitor ``EO-Connecting-IP`` on
+every edge request, and with no attestation configured (see the range-list problem
+below, still unsolved) gating it would collapse every www visitor into ONE bucket —
+re-creating on the public site exactly the operator-lockout DoS this module fixed
+for admin. ``app/edge_client.py``'s header states this at length.
 
 THE PEER CHECK IS THE WHOLE SECURITY PROPERTY. ufw permits 80,443/tcp from
 Anywhere, so anyone can reach the origin directly and send whatever

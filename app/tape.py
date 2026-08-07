@@ -46,6 +46,7 @@ from typing import Any
 # then mistakes the param for a query field.
 from fastapi import WebSocket, WebSocketDisconnect
 
+from app import edge_client
 from app.tape_symbols import TAPE_SYMBOLS
 
 log = logging.getLogger("macro.tape")
@@ -65,9 +66,9 @@ _RECONNECT_BASE_S = 1.0
 _RECONNECT_MAX_S = 60.0
 # Per-IP concurrent-connection cap for /ws/tape: one client can't open unbounded
 # sockets and grow the hub's client set (and its fanout cost) without bound. The
-# cap keys on the derived client IP (see _client_ip); until EdgeOne's EO-Client-IP
-# rule is live, visitors behind the same CDN PoP share an edge IP and thus one
-# bucket, so this is set high enough for genuine multi-tab use. Tune here.
+# cap keys on the derived client IP (see _client_ip), which resolves to the visitor
+# for edge traffic and to the trusted Caddy peer otherwise — so it is set high enough
+# for genuine multi-tab use AND for the coarse case where a bucket is shared. Tune here.
 _MAX_CONNS_PER_IP = 5
 
 
@@ -374,21 +375,16 @@ async def stop_tape_hub(app) -> None:
 
 
 def _client_ip(websocket: WebSocket) -> str:
-    """Real visitor IP for a /ws/tape connection, mirroring app.main._mm_client_ip:
-    the configured CDN real-IP header first (EO-Client-IP), then other real-client
-    headers, then XFF / x-real-ip, then the socket peer. Kept local so this module
-    stays importable without app.main (register_tape is called from app.main)."""
-    h = websocket.headers
-    for k in ("eo-client-ip", "eo-connecting-ip", "cf-connecting-ip", "true-client-ip"):
-        v = (h.get(k) or "").strip()
-        if v:
-            return v[:64]
-    xff = h.get("x-forwarded-for")
-    if xff:
-        return xff.split(",")[0].strip()[:64]
-    xr = (h.get("x-real-ip") or "").strip()
-    if xr:
-        return xr[:64]
+    """Real visitor IP for a /ws/tape connection — one resolver with app.main.
+
+    Shares app/edge_client.py rather than re-listing headers locally: this cap and the
+    HTTP-side throttles must agree on who a visitor IS, and the duplicated list is how
+    they drifted. The socket-peer tail stays for local dev, where nothing sets a
+    forwarded header; behind Caddy it is 127.0.0.1 and would collapse every connection
+    into one bucket, so it is deliberately the LAST rung, below the trusted peer."""
+    ip = edge_client.client_ip(websocket.headers)
+    if ip != edge_client.UNKNOWN:
+        return ip
     client = websocket.client
     return (client.host if client else "") or "unknown"
 
