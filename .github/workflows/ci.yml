@@ -1291,6 +1291,14 @@ on:
       - "tests/test_codex_provider.py"
       - "tests/test_key_pool.py"
       - "tests/test_key_pool_economy.py"
+      # The local rung of that same waterfall + the usage ledger it writes to.
+      # Untriggered until 2026-08-07: a PR touching only lib/ai_costs.py or the
+      # ollama provider scheduled no ci.yml at all, so the mis-attribution that
+      # billed free local calls to the Claude subscription lane had no gate.
+      - "engine/ollama_provider.py"
+      - "tests/test_ollama_provider.py"
+      - "lib/ai_costs.py"
+      - "tests/test_ai_costs.py"
       - "scripts/metabolism_build.py"
       - "scripts/metabolism_dispatch.py"
       # V7 PR Audit gate (R-V7-1..6): audit engine, CLI, merge gate, workflow, test.

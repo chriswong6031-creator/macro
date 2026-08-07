@@ -2332,8 +2332,12 @@ jobs:
       # executed by CI. It rides here rather than in a marketing pack because
       # the module it covers is a PROVIDER: llm_auth (already on this line) is
       # what constructs OllamaClient, and this job's deps already carry it.
-      - name: llm auth waterfall + multi-key failover suite
-        run: python -m pytest tests/test_codex_provider.py tests/test_llm_auth.py tests/test_key_pool.py tests/test_ollama_provider.py -q
+      - name: llm auth waterfall + multi-key failover + usage-ledger attribution suite
+        # tests/test_ai_costs.py joins it 2026-08-07: the ledger the local rung
+        # writes to was dark too, which is how _capture_usage could bill free
+        # Ollama calls to the Claude subscription lane unnoticed.  It guards the
+        # same waterfall as the files beside it — keep it in this step.
+        run: python -m pytest tests/test_codex_provider.py tests/test_llm_auth.py tests/test_key_pool.py tests/test_ollama_provider.py tests/test_ai_costs.py -q
       - name: V10 key economy suite (enabled-set, header capture, usage snapshot)
         run: python -m pytest tests/test_key_pool_economy.py -q
       - name: cortex provider routing + tool loop suite
