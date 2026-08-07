@@ -379,9 +379,14 @@ class TestStampFunnelDropsWeekendRows:
         store still carries fabricated rows, which is asserted first).  The residual
         risk the equality used to cover — a gap making the shipped
         ``opt_vanna_hedge_5d`` a nine-session change rather than a five-session one —
-        is a property of ``_vanna_hedge_5d_from_summary``'s positional slice, and
-        making that slice date-anchored is a ledger-affecting change that belongs to
-        its own PR, not to a CI heal.
+        was CLOSED on 2026-08-06: ``_vanna_hedge_5d_from_summary`` resolves its far
+        endpoint by CALENDAR (``engine.options_stamp._row_n_sessions_back``), so only
+        the two endpoints matter and a gap now has exactly two legal outcomes — the
+        5-back session HAS a row and the stat recovers exactly (an interior hole is
+        irrelevant to a difference), or it does NOT and the stat is null.  A widened
+        basis is no longer reachable, which is why step (4) reports the gap rather
+        than asserting on it.  (See TestFiveSessionEndpointIsCalendarResolved at the
+        bottom of this file.)
         """
         import warnings
         from engine.options_stamp import _default_read_summary
@@ -418,15 +423,24 @@ class TestStampFunnelDropsWeekendRows:
             "sessions — the positional lookback is not session-true")
 
         # (4) The other direction is a collection gap. Surfaced, never silent: this
-        # lands in pytest's warnings summary in the job log.
+        # lands in pytest's warnings summary in the job log. Since the 5-back endpoint
+        # became calendar-resolved the gap can no longer widen the basis, so report
+        # WHICH of the two legal outcomes it produced instead.
         missing = [d for d in span if d not in set(window)]
         if missing:
+            target = span[-6]  # the 5-sessions-back session from the latest row
+            outcome = (f"the 5-back session {target} IS stored, so the stat recovers "
+                       "exactly (only the endpoints enter a difference)"
+                       if target in set(window) else
+                       f"there is no row at the 5-back session {target}, so the stat "
+                       "is null — unmeasurable, printed as such")
             warnings.warn(
                 f"polygon_gex/{p.name}: iloc[-6]..iloc[-1] spans {len(span)} sessions "
                 f"for {len(window)} rows — the store is missing "
-                f"{', '.join(str(d) for d in missing)}, so the '5-session' positional "
-                f"lookback in _vanna_hedge_5d_from_summary is reading "
-                f"{len(span) - 1} sessions back", stacklevel=2)
+                f"{', '.join(str(d) for d in missing)}. _vanna_hedge_5d_from_summary "
+                f"resolves its 5-session endpoint by CALENDAR, so this gap never "
+                f"widens the basis to {len(span) - 1} sessions: {outcome}",
+                stacklevel=2)
 
     def test_neutralising_the_filter_changes_the_stamp(self, monkeypatch):
         """Premise check — proves this test can actually fail. With session_rows made a
@@ -648,3 +662,109 @@ def test_the_writers_do_not_rewrite_history():
             assert banned not in src.split("SESSION GATE", 1)[-1][:2000], (
                 f"{rel}: the session gate must not mutate history ({banned})"
             )
+
+
+# ══════ THE OTHER DIRECTION: a window can span MORE sessions than it holds rows ══════
+#
+# Everything above makes each row in a positional window a real SESSION.  It does not
+# make the window five sessions WIDE.  The store is also missing sessions it never
+# collected, and no reader-side filter can conjure them: measured on summary_AAPL at
+# as_of 2026-08-06, the six trailing session rows are 07-27, 07-28, 07-29, 07-30, 07-31,
+# 08-06 — SIX rows spanning NINE sessions, because the collector did not run on
+# 08-03..08-05.  ``iloc[-6]`` therefore resolved 2026-07-27 where the 5-sessions-back
+# session is 2026-07-30, and a NINE-session change shipped labelled "5d" into
+# ``opt_vanna_relief``'s cross-sectional tercile (the same class that flipped the sign on
+# 10 of 10 sampled names at as_of 2026-07-21).
+#
+# A two-endpoint difference has an exact repair, and only the endpoints matter: resolve
+# the far one BY DATE.  An interior hole is then irrelevant, and a hole AT the target is
+# unmeasurable — null, never a mislabeled basis (house epistemics: nulls printed).
+# ``engine.options_stamp._row_n_sessions_back`` is that shared resolver; all three
+# 5-session readers route through it (engine/options_stamp._vanna_hedge_5d_basis,
+# scripts/stamp_options_state._get_iv30_5d_chg_from_summary,
+# engine/options_entry_state._compute_vanna_hedge_5d — each pinned in its own suite).
+
+# The real outage geometry, replayed: 6 rows, 9 sessions, 07-30 absent from nothing but
+# reachable only by date.  iv30 is chosen so the calendar row (0.30) and the positional
+# row (0.20) sit on OPPOSITE sides of the latest reading (0.26).
+_OUTAGE_ROWS = ["2026-07-27", "2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31",
+                "2026-08-06"]
+_OUTAGE_IV30 = {"2026-07-27": 0.20, "2026-07-28": 0.22, "2026-07-29": 0.24,
+                "2026-07-30": 0.30, "2026-07-31": 0.28, "2026-08-06": 0.26}
+_FIVE_BACK = date(2026, 7, 30)   # 5 sessions before 2026-08-06: 08-05/04/03, 07-31, 07-30
+
+
+class TestFiveSessionEndpointIsCalendarResolved:
+    """``engine.options_stamp._row_n_sessions_back`` — the shared far-endpoint resolver.
+
+    Row identity is the whole contract: which ROW comes back is what decides whether the
+    three readers ship a 5-session change, a 9-session change, or a null.
+    """
+
+    def test_an_outage_gap_resolves_the_endpoint_by_date_not_by_position(self):
+        from engine.options_stamp import _row_n_sessions_back
+        frame = _summary_frame(_OUTAGE_ROWS, _OUTAGE_IV30)
+        idx = [pd.Timestamp(d).date() for d in frame.index]
+
+        # PREMISE — six rows over nine sessions. If a calendar change ever made this
+        # fixture dense the positional and calendar answers would coincide and every
+        # assertion below would pass for the wrong reason. Fail loudly instead.
+        assert len(frame) == 6, "the fixture must hold exactly six rows"
+        assert len(nyse_calendar.sessions_between(idx[0], idx[-1])) == 9, (
+            f"fixture premise gone: {idx[0]}..{idx[-1]} no longer spans nine sessions, "
+            "so this test can no longer distinguish calendar from positional resolution")
+
+        got = _row_n_sessions_back(frame, 5)
+        assert got is not None, "the 5-back session IS in this store — it must resolve"
+        assert pd.Timestamp(got.name).date() == _FIVE_BACK, (
+            f"resolved {pd.Timestamp(got.name).date()}; five sessions before "
+            f"{idx[-1]} is {_FIVE_BACK}")
+        assert got["iv30"] == pytest.approx(0.30)
+        # …and explicitly NOT the positional row, which is four sessions further back.
+        assert pd.Timestamp(frame.iloc[-6].name).date() == date(2026, 7, 27)
+        assert got["iv30"] != pytest.approx(frame.iloc[-6]["iv30"]), (
+            "the resolver returned iloc[-6] — a nine-session basis labelled '5d'")
+
+    def test_no_row_at_the_target_session_returns_none_not_a_nearby_row(self):
+        """A hole AT the endpoint is unmeasurable. The nearest row is NOT an answer."""
+        from engine.options_stamp import _row_n_sessions_back
+        rows = ["2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28",
+                "2026-07-29", "2026-07-31", "2026-08-06"]
+        frame = _summary_frame(rows, {d: 0.20 + 0.02 * i for i, d in enumerate(rows)})
+        idx = [pd.Timestamp(d).date() for d in frame.index]
+
+        # PREMISE — SEVEN rows, comfortably clear of the ≥6-row floor every caller
+        # applies before it ever asks for the endpoint. Load-bearing: at exactly the
+        # floor a None could not be attributed to target resolution.
+        assert len(frame) >= 6, "a None here must come from RESOLUTION, not the floor"
+        assert nyse_calendar.is_session(_FIVE_BACK), "fixture premise: 07-30 trades"
+        assert _FIVE_BACK not in idx, "fixture premise: the store has no 07-30 row"
+        # A positional read would have happily returned one (07-24, four sessions early).
+        assert pd.Timestamp(frame.iloc[-6].name).date() == date(2026, 7, 24)
+
+        assert _row_n_sessions_back(frame, 5) is None, (
+            "the resolver substituted a nearby row for the absent 5-back session")
+
+    def test_a_dense_store_resolves_exactly_the_positional_row(self):
+        """No gap, no change: six consecutive sessions must still give ``index[-6]``.
+
+        The repair is a strict refinement — every healthy date keeps its old value.
+        """
+        from engine.options_stamp import _row_n_sessions_back
+        rows = ["2026-07-30", "2026-07-31", "2026-08-03", "2026-08-04",
+                "2026-08-05", "2026-08-06"]
+        frame = _summary_frame(rows, {"2026-07-30": 0.30, "2026-07-31": 0.28,
+                                      "2026-08-03": 0.27, "2026-08-04": 0.29,
+                                      "2026-08-05": 0.31, "2026-08-06": 0.26})
+        idx = [pd.Timestamp(d).date() for d in frame.index]
+
+        # PREMISE — six rows over six sessions: dense, so calendar target == index[-6].
+        assert len(frame) == 6
+        assert len(nyse_calendar.sessions_between(idx[0], idx[-1])) == 6, (
+            "fixture premise gone: these six dates no longer span exactly six sessions")
+
+        got = _row_n_sessions_back(frame, 5)
+        assert got is not None, "a dense store must never null the 5-back endpoint"
+        assert pd.Timestamp(got.name).date() == date(2026, 7, 30)
+        assert got["iv30"] == pytest.approx(0.30), (
+            "the dense answer must be the fixture's index[-6] iv30, unchanged")
