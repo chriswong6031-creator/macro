@@ -85,3 +85,83 @@ def test_oracle_state_asof_fallback(tmp_root):
 
 def test_selftest_passes():
     assert sentinel.selftest() == 0
+
+
+# ── escalation: the annotation was never the gap, the reader was ──────────────
+#
+# 2026-08-04: this sentinel emitted EIGHT staleness annotations into a job summary
+# and nothing consumed them. The US board stayed frozen at as_of=2026-07-31 until
+# 08-06, when the operator noticed the prices were wrong — six days during which
+# every night printed the diagnosis. Detection was never missing; a reader was.
+#
+# run() now pushes ONE digest to the ops spine when the worst surface is
+# ESCALATE_SESSIONS_BEHIND sessions or more behind. The threshold matters in both
+# directions: too low and a routine late render pages someone until they mute the
+# channel, which reproduces the original failure with extra steps.
+
+
+@pytest.fixture
+def _captured_push(monkeypatch):
+    """Capture push_ops_alert calls without touching Telegram/Discord."""
+    calls: list[dict] = []
+
+    def fake(**kwargs):
+        calls.append(kwargs)
+        return True
+
+    import engine.alert_triage as at
+    monkeypatch.setattr(at, "push_ops_alert", fake)
+    return calls
+
+
+def _set_as_of(root: Path, value: str) -> None:
+    p = root / _ARTIFACTS[0].path
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps({"as_of": value}))
+
+
+def test_two_sessions_behind_escalates_once_not_per_surface(tmp_root, _captured_push):
+    """Six stale surfaces describing one frozen board is ONE incident.
+
+    Six pushes is how an operator learns to mute the channel.
+    """
+    for spec in _ARTIFACTS:
+        (tmp_root / spec.path).write_text(json.dumps({"as_of": "2026-07-02"}))
+    assert sentinel.run(now=REF_NOW, root=tmp_root) == 0
+    assert len(_captured_push) == 1, "one digest, never one alert per surface"
+    kw = _captured_push[0]
+    assert kw["source"] == "surface_freshness"
+    assert kw["severity"] == "major"
+    assert "session(s) behind" in kw["message"]
+
+
+def test_one_session_behind_annotates_but_does_not_page(tmp_root, _captured_push, capsys):
+    """A single session behind is a late render, not an outage.
+
+    The annotation still prints — this narrows who gets woken, not what gets seen.
+    """
+    _set_as_of(tmp_root, "2026-07-07")   # one session before EXPECTED 2026-07-08
+    assert sentinel.run(now=REF_NOW, root=tmp_root) == 0
+    assert "SURFACE STALE" in capsys.readouterr().out, "the annotation must still fire"
+    assert _captured_push == [], "one session behind must not page"
+
+
+def test_a_missing_artifact_always_escalates(tmp_root, _captured_push):
+    """An artifact that is not there published nothing — there is no date to measure."""
+    (tmp_root / _ARTIFACTS[0].path).unlink()
+    assert sentinel.run(now=REF_NOW, root=tmp_root) == 0
+    assert len(_captured_push) == 1
+
+
+def test_a_broken_alert_channel_never_breaks_the_render(tmp_root, monkeypatch, capsys):
+    """FT-R8's contract is exit 0 ALWAYS. Escalation may not weaken that."""
+    import engine.alert_triage as at
+
+    def boom(**kwargs):
+        raise RuntimeError("telegram is down")
+
+    monkeypatch.setattr(at, "push_ops_alert", boom)
+    for spec in _ARTIFACTS:
+        (tmp_root / spec.path).write_text(json.dumps({"as_of": "2026-07-02"}))
+    assert sentinel.run(now=REF_NOW, root=tmp_root) == 0, "a dead channel must not fail the sentinel"
+    assert "SURFACE STALE" in capsys.readouterr().out, "and the annotations must survive it"
