@@ -48,16 +48,17 @@ from engine.prophet_live.r2io import PACK_KEY as AP_R2_PACK_KEY  # noqa: E402
 # A fixed business-day index: no wall-clock date arithmetic anywhere in this file.
 IDX = pd.bdate_range("2022-01-03", periods=520)
 
-#: Seeds kept for what the REAL cascade does with them. RE-MEASURED under the absolute
-#: session anchor (era abs-session-2026-08-06) — the anchor re-phases the 2D/3D buckets, so
-#: which seed sits in which state moved; the ENGINEERED property (some buyable, some near a
-#: flip, some dormant) is what the file needs and it still holds:
-#:   0  buyable, armed with a lower edge      7  buyable, no edge in band at all
-#:   2, 21, 22  near, armed with a lower edge
-#:   1, 5, 9, 13  dormant across the whole band   (9 was "near" pre-anchor)
-#: Nine series is ~135 real gate calls (~12s), which is the honest cost of testing
+#: Seeds kept for what the REAL cascade does with them. RE-MEASURED TWICE: under the
+#: cascade's absolute session anchor (era abs-session-2026-08-06), and again under the
+#: §7 stream's own anchor (era sq-abs-session-2026-08-06) — each re-phasing moves which
+#: seed sits in which state; the ENGINEERED property (some buyable, one of them armed,
+#: some near a flip, some dormant) is what the file needs and it still holds:
+#:   18  buyable, armed with a fade edge      7  buyable, no edge in band at all
+#:   0, 2, 21, 22  near, armed with a lower edge   (0 was "buyable" pre-sq-anchor)
+#:   1, 5, 9, 13  dormant across the whole band    (9 was "near" pre-anchor)
+#: Ten series is ~150 real gate calls (~13s), which is the honest cost of testing
 #: parity against the actual engine instead of a stub.
-SEEDS = (0, 1, 2, 5, 7, 9, 13, 21, 22)
+SEEDS = (0, 1, 2, 5, 7, 9, 13, 18, 21, 22)
 
 NOW = datetime(2026, 7, 29, 22, 30, tzinfo=timezone.utc)
 
@@ -757,7 +758,10 @@ def test_parity_error_annotation_is_a_bare_line_start_print(monkeypatch, capsys,
     """
     import scripts.build_prophet_live_pack as B
 
-    good = AP.build_pack([("S00", series["S00"])], now=NOW,
+    # S18 is the buyable board name whose published interval is fade-defined — the
+    # doctored fade below must therefore break parity (a near name's fade is not
+    # load-bearing, so S00 stopped working here when the sq-anchor moved it to near).
+    good = AP.build_pack([("S18", series["S18"])], now=NOW,
                          cfg={"max_probe": 50, "max_seconds": 3600})
     victim = next(t for t, e in good["names"].items() if AP.lower_edge(e) is not None)
     good["names"][victim]["fade_px"] = good["names"][victim]["as_of_close"] * 1.5
