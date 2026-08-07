@@ -323,6 +323,39 @@ jobs:
         run: |
           python -m scripts.audit_stocks_freshness \
             || echo "::warning::audit_stocks_freshness crashed (non-fatal — per-name freshness disclosure absent this run)"
+      - name: breadth OHLC basis coherence (split-basis tripwire — loud, never blocks the night)
+        # 2026-08-06 incident. The breadth namespaces keep _closes_cache beside the
+        # ADDITIVE _high/_low/_volume extras, and yfinance auto_adjust back-adjusts
+        # ONLY the downloaded window — so a split/large dividend re-bases the fresh
+        # 1mo window while the cached history keeps the old basis. Both repair paths
+        # (BreadthAdapter._merge_refreshed, scripts/heal_breadth_split_seams.py) scan
+        # seam_suspects over the CLOSES matrix ALONE and touch the extras only as a
+        # side effect of a closes-flagged ticker — so a basis split confined to
+        # high/low is invisible to every scanner in the tree. Close-only consumers
+        # (breadth ratios, 200DMA, NH-NL) are unaffected, which is what makes it
+        # silent; ATR's TR = max(H-L, |H-C_prev|, |L-C_prev|) is dominated by the
+        # basis gap and blows up for build_pick_lab / calibrate_bottom_radar /
+        # residual_momentum_phase0.
+        #
+        # HERE and not only in a PR pack because this is where a split is BORN: the
+        # nightly collection pushes straight to main, so no PR gate can ever see the
+        # commit that introduces one. This step runs AFTER the collectors and BEFORE
+        # the market checkpoint, so the night's own writes are what gets judged.
+        #
+        # always() + continue-on-error for the same reason as the two audits above:
+        # the alarm must be loudest exactly on the nights an earlier step failed, and
+        # a data finding must never discard hours of collected bytes. The module
+        # bare-prints ::error/::warning (a logger-prefixed annotation is dropped by
+        # GitHub) and exits 3 on a split; the teeth are that annotation plus
+        # data/quality/ohlc_basis_coherence.json, picked up by "commit market data"
+        # below. Isolated bad bars (yfinance ex-dividend rounding — 17 such bars
+        # across the three US panels at 2026-08-06) annotate as ::warning and never
+        # gate, so this cannot become a scheduled red.
+        if: always()
+        continue-on-error: true
+        run: |
+          python -m scripts.check_ohlc_basis_coherence \
+            || echo "::warning::check_ohlc_basis_coherence exited non-zero (see the ::error annotations above; heal with scripts/heal_breadth_split_seams.py)"
       # ── MARKET CHECKPOINT (1 of 2) ──────────────────────────────────────────
       # TWO-CHECKPOINT SPLIT (2026-08-06). This job used to land the whole night in
       # ONE commit that sat AFTER the five capital-structure steps, so a
