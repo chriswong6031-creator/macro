@@ -3563,6 +3563,7 @@ jobs:
           python -m pytest
           tests/test_biocatalyst_security.py
           tests/test_biocatalyst_source_registry.py
+          tests/test_biocatalyst_record_history_enablement.py
           tests/test_biocatalyst_storage.py
           tests/test_biocatalyst_protocols.py
           tests/test_biocatalyst_trials.py -q
