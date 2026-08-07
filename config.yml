@@ -6483,7 +6483,7 @@ intl:
     min_coverage: 0.5
     ajax_holdings_id: "1472631233320"   # stable UK-site holdings loader id (self-heal: scrape page for [0-9]+\.ajax)
 
-  # -- Countries (5 macro entities; Europe = Eurozone aggregate) --------------
+  # -- Countries (8 macro entities; Europe = Eurozone aggregate) --------------
   # Each: display, primary index + extras (yfinance), optional vol index, FX
   # pair (+ invert when quoted USD/XXX so "up = currency weaker = stress"),
   # the iShares UCITS universe fund, and FRED macro ids (degrade where absent).
@@ -6617,6 +6617,28 @@ intl:
         # Series removed; unemployment display will show N/A for EZ.
         gdp: CLVMNACSCAB1GQEA19
         # MYAGM2EZM196N discontinued 2017-03 — removed (M2 not displayed on intl page).
+    CA:
+      name: Canada
+      name_zh: 加拿大
+      flag: "🇨🇦"
+      region: Americas
+      index: "^GSPTSE"
+      indices: {"^GSPTSE": "S&P/TSX Composite"}
+      vol: null                     # no keyless implied-vol on Yahoo -> engine uses realized vol
+      fx: "USDCAD=X"
+      fx_invert: true               # USD/CAD up = CAD weaker = stress
+      # No `ucits` block on purpose: Canada already has a first-class single-name
+      # universe (data/canada_search + collectors/canada_*), so routing it through
+      # the UK-domiciled UCITS holdings feed would only duplicate it.
+      # collectors/intl_universe.py skips a market with no `ucits` key.
+      # ^GSPTSE and USDCAD=X are already proven on this stack under the `canada`
+      # group; intl_prices deep-seeds newly-configured series on the next run.
+      fred:                          # OECD member: rates/labour/output/CPI all current
+        yield_10y: IRLTLT01CAM156N
+        short_3m: IR3TIB01CAM156N
+        cpi_yoy: CPALTT01CAM659N
+        unemployment: LRHUTTTTCAM156S
+        gdp: NGDPRSAXDCCAQ
 
   # -- World Risk Appetite v2 (engine.intl_performance.risk_appetite) ----------
   # A DESCRIPTIVE display-tier dial (0-100): how risk-on is the WORLD tape, not
@@ -6629,7 +6651,10 @@ intl:
     # Hand-pinned approx shares of world equity market capitalisation (free-float
     # basis, mid-2026). Descriptive display weights, sqrt-dampened at compose time
     # so the dial is world-shaped rather than a pure US mirror. Not live data.
-    cap_share: {US: 62, EZ: 9, CN: 6.5, JP: 5.5, IN: 4, GB: 3.5, HK: 3.5, TW: 2.5, AU: 2, KR: 1.5}
+    # Not normalised to 100 — the block is renormalised at compose time over the
+    # markets actually available, so adding a market does not require restating
+    # every other share.
+    cap_share: {US: 62, EZ: 9, CN: 6.5, JP: 5.5, IN: 4, GB: 3.5, HK: 3.5, CA: 2.7, TW: 2.5, AU: 2, KR: 1.5}
     extra_markets:                   # US/CN/HK are outside intl.countries — display fields for the turn board + drags
       US: {name: "United States", name_zh: "美国", flag: "🇺🇸"}
       CN: {name: "China", name_zh: "中国", flag: "🇨🇳"}

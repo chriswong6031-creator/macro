@@ -293,11 +293,21 @@
      bar track is a FIXED width so the zero axis lands at the same x on every row — the
      whole point of a diverging bar chart — and the row's remaining slack goes to the
      sparkline, the one cell that actually gets better with width. */
-  .lb-row { display:grid; grid-template-columns:272px minmax(150px,1fr) 344px 196px; align-items:center; gap:16px;
-    padding:8px 8px; border-radius:10px; transition:background .15s; }
+  /* .lb-scale is the tick row under the board; it shares .lb-row's track list so its
+     labels sit under the bar column. One selector, so the two can never drift. */
+  .lb-row, .lb-scale { display:grid; grid-template-columns:272px minmax(150px,1fr) 344px 196px; gap:16px; }
+  .lb-row { align-items:center; padding:8px 8px; border-radius:10px; transition:background .15s; }
+  .lb-scale { padding:0 8px; }
+  .lb-scale .tk { grid-column:3; position:relative; height:14px; }
+  .lb-scale .tk span { position:absolute; transform:translateX(-50%); font-size:10px;
+    color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
   .lb-row:hover { background:var(--panel2); }
   .lb-row .eco { display:flex; align-items:center; gap:8px; font-weight:700; min-width:0; }
-  .lb-row .eco > span { min-width:0; }
+  /* nowrap: at 272px (and 236px at the 1180 breakpoint) the name still broke onto a
+     second line beside a long turn-state chip — "South Korea"/"United Kingdom" next to
+     "Crash damage unresolved" — which left those rows 71px against 51px for the rest.
+     Measured: nowrap holds every row at 51px with zero overflow at 1440 and at 980. */
+  .lb-row .eco > span { min-width:0; white-space:nowrap; }
   .lb-row .eco .flg { font-size:17px; flex:none; } .lb-row .eco small { color:var(--muted); font-weight:500; font-size:11px; display:block; }
   .lb-row .eco .ts-chip { flex:none; }
   /* the sparkline svg is viewBox 200×40 / preserveAspectRatio:none / width:100%, so it
@@ -305,18 +315,31 @@
   .lb-spark { display:flex; align-items:center; min-width:0; }
   .lb-row .nch { display:block; opacity:.9; }
   .lb-bar { position:relative; height:24px; }
-  .lb-bar .axis { position:absolute; top:0; bottom:0; left:50%; width:1px; background:var(--line); }
-  .lb-seg { position:absolute; top:4px; height:16px; }
-  .lb-seg.equity { background:color-mix(in srgb,var(--info) 55%,transparent); border-radius:3px; }
-  .lb-seg.fx-pos { background:color-mix(in srgb,var(--up) 80%,transparent); border-radius:3px; }
-  .lb-seg.fx-neg { background:color-mix(in srgb,var(--down) 80%,transparent); border-radius:3px; }
-  .lb-usd { position:absolute; top:-1px; width:3px; height:26px; background:var(--text); border-radius:2px; }
+  /* the zero axis is positioned per-render now (it is no longer always at 50%) */
+  .lb-bar .axis { position:absolute; top:0; bottom:0; width:1px; background:var(--line); }
+  .lb-bar .grid { position:absolute; top:2px; bottom:2px; width:1px; background:var(--line); opacity:.35; }
+  /* Solid bar = the USD return, so bar length and the big number can never disagree. */
+  .lb-usdbar { position:absolute; top:2px; height:13px; border-radius:3px; }
+  .lb-usdbar.pos { background:color-mix(in srgb,var(--info) 62%,transparent); }
+  .lb-usdbar.neg { background:color-mix(in srgb,var(--down) 55%,transparent); }
+  /* Currency leg = a caliper band on its own vertical band under the bar tip
+     (USD -> local). It used to be drawn at full bar height from local -> usd, which
+     for a negative leg is a strict SUB-range of the equity bar: it repainted the
+     bar's tail and left the bar ending at the LOCAL return, so the USD number the
+     row is ranked on was the least visible mark in the row. */
+  .lb-fx { position:absolute; top:17px; height:5px; border-radius:2px; }
+  .lb-fx.fx-pos { background:var(--up); }
+  .lb-fx.fx-neg { background:var(--down); }
+  .lb-loc { position:absolute; top:0; width:2px; height:17px; background:var(--text); opacity:.55; border-radius:1px; }
   .lb-vals { text-align:right; font-variant-numeric:tabular-nums; font-size:12px; line-height:1.3; }
   .lb-vals .big { font-size:16px; font-weight:800; } .lb-vals small { color:var(--muted); display:block; font-size:10.5px; }
   .lb-legend { display:flex; gap:16px; flex-wrap:wrap; font-size:11.5px; color:var(--muted); margin-top:11px; align-items:center; }
   .lb-legend i { display:inline-block; width:11px; height:11px; border-radius:3px; vertical-align:middle; margin-right:5px; }
-  @media (max-width:1180px){ .lb-row { grid-template-columns:236px minmax(110px,1fr) minmax(200px,340px) 168px; gap:12px; } }
-  @media (max-width:760px){ .lb-row { grid-template-columns:108px 1fr 92px; gap:9px; } .lb-spark { display:none; } }
+  @media (max-width:1180px){ .lb-row, .lb-scale { grid-template-columns:236px minmax(110px,1fr) minmax(200px,340px) 168px; gap:12px; } }
+  @media (max-width:760px){ .lb-row, .lb-scale { grid-template-columns:108px 1fr 92px; gap:9px; }
+    .lb-spark { display:none; } .lb-scale .tk { grid-column:2; }
+    /* 108px of name column cannot hold a nowrap country name — wrap again here */
+    .lb-row .eco > span { white-space:normal; } }
 
   /* ===== RRG rotation scatter ===== */
   .rrg { position:relative; height:340px; border:1px solid var(--line); border-radius:12px; margin-top:10px; overflow:hidden;
@@ -857,11 +880,12 @@
     </div>
   </div>
   <div class="lb" id="lb-board"></div>
+  <div class="lb-scale"><div class="tk" id="lb-scale"></div></div>
   <div class="lb-legend">
-    <span><i style="background:color-mix(in srgb,var(--info) 55%,transparent)"></i>{{ t('local equity', '本币股票') }}</span>
-    <span><i style="background:var(--up)"></i>{{ t('currency tailwind', '货币顺风') }}</span>
-    <span><i style="background:var(--down)"></i>{{ t('currency drag', '货币拖累') }}</span>
-    <span><i style="background:var(--text);width:3px;height:13px;border-radius:2px"></i>{{ t('net USD return', '美元净收益') }}</span>
+    <span><i style="background:color-mix(in srgb,var(--info) 62%,transparent)"></i>{{ t('USD return (bar length)', '美元收益（柱长）') }}</span>
+    <span><i style="background:var(--up);height:5px;border-radius:2px"></i>{{ t('currency added', '货币贡献') }}</span>
+    <span><i style="background:var(--down);height:5px;border-radius:2px"></i>{{ t('currency cost', '货币拖累') }}</span>
+    <span><i style="background:var(--text);opacity:.55;width:2px;height:13px;border-radius:1px"></i>{{ t('local index return', '本币指数收益') }}</span>
   </div>
 </div>
 {% endif %}
@@ -2056,10 +2080,78 @@ document.querySelectorAll('.more-btn[data-more]').forEach(function(btn){
       + '<span class="l-en">' + (t.state_en || t.state) + '</span>'
       + '<span class="l-zh">' + (t.state_zh || t.state) + '</span></span>';
   }
+  // unchanged markup — the two render branches emitted this identically
+  function ecoHtml(r){
+    return '<div class="eco"><span class="flg">' + r.flag + '</span><span>'
+      + '<span class="l-en">' + r.name + '</span><span class="l-zh">' + (r.name_zh || r.name) + '</span>'
+      + '<small>' + r.index_name + '</small></span>'
+      + stateChip(r.cc) + '</div>';
+  }
+
+  // --- axis -------------------------------------------------------------------
+  // ONE signed domain across both legs (USD + local) that always contains zero,
+  // mapped into [PAD, 100-PAD]. Zero is placed where it actually falls instead of
+  // being pinned to 50%: the old scale reserved half the track for negatives even
+  // when every market was positive, so the bars used half the resolution they could
+  // have. It also drops the old `maxabs` normalisation, under which one market with
+  // a big LOCAL return squashed everyone else's bar into a stub.
+  var PAD = 2.5;
+  function niceStep(raw){
+    if (!(raw > 0)) return 1;
+    var mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+    var n = raw / mag;
+    var m = n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10;
+    return m * mag;
+  }
+  function axis(vals){
+    var lo = 0, hi = 0;
+    vals.forEach(function(v){
+      if (typeof v === 'number' && isFinite(v)) { if (v < lo) lo = v; if (v > hi) hi = v; }
+    });
+    if (hi - lo < 1) hi = lo + 1;                       // degenerate-range guard
+    var pad = (hi - lo) * 0.04;
+    if (lo < 0) lo -= pad;
+    hi += pad;
+    var span = hi - lo;
+    var step = niceStep(span / 5);
+    var marks = [];
+    for (var t = Math.ceil(lo / step) * step; t <= hi + 1e-9 && marks.length < 12; t += step) {
+      marks.push(Math.round(t * 1000) / 1000);
+    }
+    return { lo: lo, hi: hi, marks: marks,
+      px: function(v){ return PAD + (v - lo) / span * (100 - 2 * PAD); } };
+  }
+  function gridHtml(ax){
+    return ax.marks.map(function(t){
+      return t === 0 ? '' : '<div class="grid" style="left:' + ax.px(t) + '%"></div>';
+    }).join('');
+  }
+  function barHtml(x, ax){
+    var zero = '<div class="axis" style="left:' + ax.px(0) + '%"></div>';
+    if (!x) return '<div class="lb-bar">' + gridHtml(ax) + zero + '</div>';
+    var usd = x.usd, loc = x.local, fxc = x.fx;
+    var xz = ax.px(0), xu = ax.px(usd), xl = ax.px(loc);
+    // Solid bar runs zero -> USD return, so its length IS the headline number. The
+    // currency leg is a caliper band (USD -> local) on its own vertical band; see the
+    // .lb-fx comment in the stylesheet for what this replaced and why.
+    var bL = Math.min(xz, xu), bW = Math.abs(xu - xz);
+    var fL = Math.min(xu, xl), fW = Math.abs(xl - xu);
+    return '<div class="lb-bar">' + gridHtml(ax) + zero
+      + '<div class="lb-usdbar ' + (usd >= 0 ? 'pos' : 'neg') + '" style="left:' + bL + '%;width:' + bW + '%"></div>'
+      + (fW > 0.05 ? '<div class="lb-fx ' + (fxc >= 0 ? 'fx-pos' : 'fx-neg') + '" style="left:' + fL + '%;width:' + fW + '%"></div>' : '')
+      + '<div class="lb-loc" style="left:' + xl + '%"></div>'
+      + '</div>';
+  }
+  function drawScale(ax){
+    var el = document.getElementById('lb-scale'); if (!el) return;
+    el.innerHTML = ax.marks.map(function(t){
+      return '<span style="left:' + ax.px(t) + '%">' + (t > 0 ? '+' : '') + t + '%</span>';
+    }).join('');
+  }
 
   function render(h){
-    var rows;
-    if (h === '__rank__') {
+    var ranked = (h === '__rank__'), rows;
+    if (ranked) {
       // Rotation-rank order: sorted by rank ascending; fall back to all leaderboard rows
       rows = P.leaderboard.slice();
       rows.sort(function(a, b){
@@ -2068,72 +2160,40 @@ document.querySelectorAll('.more-btn[data-more]').forEach(function(btn){
         if (ra) return -1; if (rb) return 1;
         return 0;
       });
-      // For display, use 12m returns if available (bars still show returns)
-      var maxabs = 1;
-      rows.forEach(function(r){
-        var x = r.returns && r.returns['12m'];
-        if (x) maxabs = Math.max(maxabs, Math.abs(x.usd || 0), Math.abs(x.local || 0));
-      });
-      function px2(v){ return 50 + (v / maxabs) * 48; }
-      board.innerHTML = rows.map(function(r){
-        var rr = rankLookup[r.cc];
-        var x = r.returns && r.returns['12m'];
-        var usd = x ? x.usd : null, loc = x ? x.local : null, fxc = x ? x.fx : null;
-        var barHtml = '';
-        if (x) {
-          var x0 = px2(0), xl = px2(loc), xu = px2(usd);
-          var eqL = Math.min(x0, xl), eqW = Math.abs(xl - x0);
-          var fxL = Math.min(xl, xu), fxW = Math.abs(xu - xl);
-          var fxCls = fxc >= 0 ? 'fx-pos' : 'fx-neg';
-          barHtml = '<div class="lb-bar"><div class="axis"></div>'
-            + '<div class="lb-seg equity" style="left:' + eqL + '%;width:' + eqW + '%"></div>'
-            + '<div class="lb-seg ' + fxCls + '" style="left:' + fxL + '%;width:' + fxW + '%"></div>'
-            + '<div class="lb-usd" style="left:' + xu + '%"></div></div>';
-        } else {
-          barHtml = '<div class="lb-bar"><div class="axis"></div></div>';
-        }
-        var rankLabel = rr ? '#' + rr.rank : '';
-        var noteHtml = rr && rr.note_en ? '<small class="muted" style="display:block"><span class="l-en">' + rr.note_en + '</span><span class="l-zh">' + (rr.note_zh || rr.note_en) + '</span></small>' : '';
-        return '<div class="lb-row">'
-          + '<div class="eco"><span class="flg">' + r.flag + '</span><span>'
-            + '<span class="l-en">' + r.name + '</span><span class="l-zh">' + (r.name_zh || r.name) + '</span>'
-            + '<small>' + r.index_name + '</small></span>'
-            + stateChip(r.cc) + '</div>'
-          + '<div class="lb-spark">' + (r.spark_svg || '') + '</div>'
-          + barHtml
-          + '<div class="lb-vals"><span class="big">' + rankLabel + '</span>'
-            + (x ? '<small><span class="l-en">12m USD </span><span class="l-zh">12月美元 </span>' + fmt(usd) + '</small>' : '')
-            + noteHtml + '</div>'
-          + '</div>';
-      }).join('');
     } else {
       rows = P.leaderboard.filter(function(b){ return b.returns[h]; });
       rows.sort(function(a, b){ return b.returns[h].usd - a.returns[h].usd; });
-      var maxabs = 1;
-      rows.forEach(function(r){ var x = r.returns[h]; maxabs = Math.max(maxabs, Math.abs(x.usd), Math.abs(x.local)); });
-      function px(v){ return 50 + (v / maxabs) * 48; }
-      board.innerHTML = rows.map(function(r){
-        var x = r.returns[h], usd = x.usd, loc = x.local, fxc = x.fx;
-        var x0 = px(0), xl = px(loc), xu = px(usd);
-        var eqL = Math.min(x0, xl), eqW = Math.abs(xl - x0);
-        var fxL = Math.min(xl, xu), fxW = Math.abs(xu - xl);
-        var fxCls = fxc >= 0 ? 'fx-pos' : 'fx-neg';
-        return '<div class="lb-row">'
-          + '<div class="eco"><span class="flg">' + r.flag + '</span><span>'
-            + '<span class="l-en">' + r.name + '</span><span class="l-zh">' + (r.name_zh || r.name) + '</span>'
-            + '<small>' + r.index_name + '</small></span>'
-            + stateChip(r.cc) + '</div>'
-          + '<div class="lb-spark">' + (r.spark_svg || '') + '</div>'
-          + '<div class="lb-bar"><div class="axis"></div>'
-            + '<div class="lb-seg equity" style="left:' + eqL + '%;width:' + eqW + '%"></div>'
-            + '<div class="lb-seg ' + fxCls + '" style="left:' + fxL + '%;width:' + fxW + '%"></div>'
-            + '<div class="lb-usd" style="left:' + xu + '%"></div></div>'
-          + '<div class="lb-vals"><span class="big ' + (usd >= 0 ? 'pos' : 'neg') + '">' + fmt(usd) + '</span>'
-            + '<small><span class="l-en">eq </span><span class="l-zh">股 </span>' + fmt(loc)
-            + ' · <span class="l-en">fx </span><span class="l-zh">汇 </span>' + fmt(fxc) + '</small></div>'
-          + '</div>';
-      }).join('');
     }
+    // Bars always plot returns; in rank mode the horizon is pinned to 12m.
+    var hb = ranked ? '12m' : h;
+    var vals = [];
+    rows.forEach(function(r){
+      var x = r.returns && r.returns[hb];
+      if (x) { vals.push(x.usd); vals.push(x.local); }
+    });
+    var ax = axis(vals);
+    drawScale(ax);
+    board.innerHTML = rows.map(function(r){
+      var x = r.returns && r.returns[hb];
+      var rr = rankLookup[r.cc];
+      var valsHtml;
+      if (ranked) {
+        var noteHtml = rr && rr.note_en ? '<small class="muted" style="display:block"><span class="l-en">' + rr.note_en + '</span><span class="l-zh">' + (rr.note_zh || rr.note_en) + '</span></small>' : '';
+        valsHtml = '<div class="lb-vals"><span class="big">' + (rr ? '#' + rr.rank : '') + '</span>'
+          + (x ? '<small><span class="l-en">12m USD </span><span class="l-zh">12月美元 </span>' + fmt(x.usd) + '</small>' : '')
+          + noteHtml + '</div>';
+      } else {
+        valsHtml = '<div class="lb-vals"><span class="big ' + (x.usd >= 0 ? 'pos' : 'neg') + '">' + fmt(x.usd) + '</span>'
+          + '<small><span class="l-en">eq </span><span class="l-zh">股 </span>' + fmt(x.local)
+          + ' · <span class="l-en">fx </span><span class="l-zh">汇 </span>' + fmt(x.fx) + '</small></div>';
+      }
+      return '<div class="lb-row">'
+        + ecoHtml(r)
+        + '<div class="lb-spark">' + (r.spark_svg || '') + '</div>'
+        + barHtml(x, ax)
+        + valsHtml
+        + '</div>';
+    }).join('');
   }
   // Default: rotation rank if available, else 12m
   var defaultH = window.INTL_RANKS ? '__rank__' : '12m';
