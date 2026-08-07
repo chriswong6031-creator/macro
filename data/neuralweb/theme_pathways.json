@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.theme_pathways.v1",
-  "as_of": "2026-08-05",
+  "as_of": "2026-08-06",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -31,7 +31,7 @@
   "theme_pathways": [
     {
       "theme_id": "ai_semiconductors",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "node_count": 7,
       "edge_count": 6,
       "nodes": [
@@ -233,7 +233,7 @@
     },
     {
       "theme_id": "memory_storage",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "node_count": 4,
       "edge_count": 3,
       "nodes": [
@@ -352,7 +352,7 @@
     },
     {
       "theme_id": "semicap_equipment",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "node_count": 4,
       "edge_count": 3,
       "nodes": [
@@ -469,7 +469,7 @@
     },
     {
       "theme_id": "data_center_power",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "node_count": 5,
       "edge_count": 4,
       "nodes": [
@@ -622,7 +622,7 @@
     },
     {
       "theme_id": "nuclear_power",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "node_count": 5,
       "edge_count": 4,
       "nodes": [
@@ -768,7 +768,7 @@
     },
     {
       "theme_id": "grid_electrification",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "node_count": 5,
       "edge_count": 4,
       "nodes": [
@@ -907,7 +907,7 @@
     },
     {
       "theme_id": "cybersecurity",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "node_count": 4,
       "edge_count": 3,
       "nodes": [
@@ -1024,7 +1024,7 @@
     },
     {
       "theme_id": "defense_aerospace",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "node_count": 5,
       "edge_count": 4,
       "nodes": [
@@ -1179,7 +1179,7 @@
     },
     {
       "theme_id": "robotics_automation",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "node_count": 5,
       "edge_count": 4,
       "nodes": [
@@ -1325,7 +1325,7 @@
     },
     {
       "theme_id": "glp1_obesity",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "node_count": 6,
       "edge_count": 5,
       "nodes": [
@@ -1493,7 +1493,7 @@
     },
     {
       "theme_id": "fintech_payments",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "node_count": 4,
       "edge_count": 3,
       "nodes": [
@@ -1603,7 +1603,7 @@
     },
     {
       "theme_id": "space_satellite",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "node_count": 5,
       "edge_count": 4,
       "nodes": [
@@ -1742,7 +1742,7 @@
     },
     {
       "theme_id": "rare_earth_critical_min",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "node_count": 4,
       "edge_count": 3,
       "nodes": [
@@ -1852,7 +1852,7 @@
     },
     {
       "theme_id": "copper_steel_electrify",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "node_count": 4,
       "edge_count": 3,
       "nodes": [
@@ -1962,7 +1962,7 @@
     },
     {
       "theme_id": "ag_fertilizer",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "node_count": 5,
       "edge_count": 4,
       "nodes": [
@@ -2065,7 +2065,7 @@
     },
     {
       "theme_id": "medical_devices",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "node_count": 4,
       "edge_count": 3,
       "nodes": [
@@ -2184,7 +2184,7 @@
     },
     {
       "theme_id": "diagnostics_lifesci",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "node_count": 4,
       "edge_count": 3,
       "nodes": [
@@ -2276,7 +2276,7 @@
     },
     {
       "theme_id": "solar",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-06",
       "node_count": 4,
       "edge_count": 3,
       "nodes": [
@@ -5122,7 +5122,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-08-05T16:19:59Z",
-  "inputs_hash": "sha256:647c74ae5cb9883e889716caf20ff34dea971b3196d6f9624d86db60bbc09df2",
+  "produced_at": "2026-08-06T23:34:15Z",
+  "inputs_hash": "sha256:9556dd09cd37c4213b1e404fd116e1e1d30d540d8d8e30165bb6f8c8c89f9b86",
   "tier": "display"
 }

@@ -39,7 +39,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from jinja2 import Environment, FileSystemLoader
 from lib import config
-from lib.nyse_calendar import is_session, sessions_behind  # noqa: E402
+from lib.nyse_calendar import (  # noqa: E402
+    is_prior_session, is_session, sessions_apart, sessions_behind,
+)
 from lib.pages import write_page  # noqa: E402
 
 log = logging.getLogger(__name__)
@@ -204,6 +206,26 @@ def _load_two_chain_days(data_root: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
         if is_session(stem_date):
             paths.append(p)
     if len(paths) < 2:
+        return pd.DataFrame(), pd.DataFrame()
+    # GAP DISCIPLINE — COMPARE (lib/nyse_calendar, 2026-08-06). Session filtering makes
+    # both files real sessions; it does NOT make them ADJACENT ones. oi_confirm reads
+    # this pair as "flow day d" versus "next day d+1", and there is no honest widening
+    # of "next day": ΔOI over a multi-session gap absorbs every intervening day's flow,
+    # so a position opened and closed inside the gap confirms as if it were day-d flow.
+    # Refuse instead. Measured over the committed store, 4 of 30 consecutive session
+    # pairs are non-adjacent (07-02→07-07, 07-14→07-16, 07-16→07-20, 07-31→08-06) —
+    # 13.3% of run days — and the CURRENT pair is one of them: 07-31 → 08-06 is FOUR
+    # sessions apart, so Board A/B is shipping gap-wide ΔOI as d+1 confirmation today.
+    d_older = date.fromisoformat(Path(paths[-2]).stem)
+    d_newer = date.fromisoformat(Path(paths[-1]).stem)
+    if not is_prior_session(d_older, d_newer):
+        gap = sessions_apart(d_older, d_newer)
+        print(f"::warning title=oi-confirm-nonadjacent::oi_confirm skipped: the two most "
+              f"recent chain snapshots are {d_older} and {d_newer}, "
+              f"{gap if gap is not None else 'an unknown number of'} sessions apart, not "
+              f"adjacent — a d+1 open-interest confirmation cannot be read across a "
+              f"collection gap, so no name is confirmed or denied for this run",
+              flush=True)
         return pd.DataFrame(), pd.DataFrame()
     try:
         d_t = pd.read_parquet(paths[-2])

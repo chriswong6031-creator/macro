@@ -1,16 +1,16 @@
 {
   "schema": "risk_radar_scorecard.v1",
-  "generated_at": "2026-08-05T15:34:56+00:00",
+  "generated_at": "2026-08-06T22:41:23+00:00",
   "markets": {
     "us": {
-      "asof_last_row": "2026-08-04",
+      "asof_last_row": "2026-08-05",
       "monitoring": {
         "log_fresh": true,
         "last_logged_days_ago": 1,
         "ungraded_backlog": 0,
         "awaiting_maturity": 18,
         "backlog_cutoff_bd": 28,
-        "graded_n": 9
+        "graded_n": 10
       },
       "windows": {
         "full": {
@@ -21,9 +21,9 @@
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 9,
+            "n": 10,
             "tp": 0,
-            "tn": 9,
+            "tn": 10,
             "precursor_rate": 0.0
           },
           "calm": {
@@ -43,9 +43,9 @@
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 9,
+            "n": 10,
             "tp": 0,
-            "tn": 9,
+            "tn": 10,
             "precursor_rate": 0.0
           },
           "calm": {
@@ -63,9 +63,9 @@
       "asof_last_row": "2026-07-16",
       "monitoring": {
         "log_fresh": false,
-        "last_logged_days_ago": 20,
-        "ungraded_backlog": 0,
-        "awaiting_maturity": 12,
+        "last_logged_days_ago": 21,
+        "ungraded_backlog": 1,
+        "awaiting_maturity": 11,
         "backlog_cutoff_bd": 28,
         "graded_n": 0
       },
@@ -120,9 +120,9 @@
       "asof_last_row": "2026-07-16",
       "monitoring": {
         "log_fresh": false,
-        "last_logged_days_ago": 20,
-        "ungraded_backlog": 0,
-        "awaiting_maturity": 11,
+        "last_logged_days_ago": 21,
+        "ungraded_backlog": 1,
+        "awaiting_maturity": 10,
         "backlog_cutoff_bd": 28,
         "graded_n": 0
       },
@@ -174,14 +174,14 @@
       }
     },
     "ca": {
-      "asof_last_row": "2026-07-31",
+      "asof_last_row": "2026-08-05",
       "monitoring": {
-        "log_fresh": false,
-        "last_logged_days_ago": 5,
+        "log_fresh": true,
+        "last_logged_days_ago": 1,
         "ungraded_backlog": 0,
-        "awaiting_maturity": 15,
+        "awaiting_maturity": 14,
         "backlog_cutoff_bd": 28,
-        "graded_n": 3
+        "graded_n": 5
       },
       "windows": {
         "full": {
@@ -192,10 +192,10 @@
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 3,
+            "n": 5,
             "tp": 0,
-            "tn": 3,
-            "precursor_rate": null
+            "tn": 5,
+            "precursor_rate": 0.0
           },
           "calm": {
             "n": 0,
@@ -214,10 +214,10 @@
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 3,
+            "n": 5,
             "tp": 0,
-            "tn": 3,
-            "precursor_rate": null
+            "tn": 5,
+            "precursor_rate": 0.0
           },
           "calm": {
             "n": 0,
@@ -234,7 +234,7 @@
       "asof_last_row": "2026-07-31",
       "monitoring": {
         "log_fresh": false,
-        "last_logged_days_ago": 5,
+        "last_logged_days_ago": 6,
         "ungraded_backlog": 0,
         "awaiting_maturity": 8,
         "backlog_cutoff_bd": 28,
@@ -291,7 +291,7 @@
       "asof_last_row": "2026-07-31",
       "monitoring": {
         "log_fresh": false,
-        "last_logged_days_ago": 5,
+        "last_logged_days_ago": 6,
         "ungraded_backlog": 0,
         "awaiting_maturity": 6,
         "backlog_cutoff_bd": 28,
@@ -348,7 +348,7 @@
       "asof_last_row": "2026-07-31",
       "monitoring": {
         "log_fresh": false,
-        "last_logged_days_ago": 5,
+        "last_logged_days_ago": 6,
         "ungraded_backlog": 0,
         "awaiting_maturity": 9,
         "backlog_cutoff_bd": 28,
@@ -405,7 +405,7 @@
       "asof_last_row": "2026-07-31",
       "monitoring": {
         "log_fresh": false,
-        "last_logged_days_ago": 5,
+        "last_logged_days_ago": 6,
         "ungraded_backlog": 0,
         "awaiting_maturity": 9,
         "backlog_cutoff_bd": 28,
@@ -462,7 +462,7 @@
       "asof_last_row": "2026-07-31",
       "monitoring": {
         "log_fresh": false,
-        "last_logged_days_ago": 5,
+        "last_logged_days_ago": 6,
         "ungraded_backlog": 0,
         "awaiting_maturity": 9,
         "backlog_cutoff_bd": 28,
@@ -519,7 +519,7 @@
       "asof_last_row": "2026-07-31",
       "monitoring": {
         "log_fresh": false,
-        "last_logged_days_ago": 5,
+        "last_logged_days_ago": 6,
         "ungraded_backlog": 0,
         "awaiting_maturity": 10,
         "backlog_cutoff_bd": 28,
@@ -576,7 +576,7 @@
       "asof_last_row": "2026-07-31",
       "monitoring": {
         "log_fresh": false,
-        "last_logged_days_ago": 5,
+        "last_logged_days_ago": 6,
         "ungraded_backlog": 0,
         "awaiting_maturity": 10,
         "backlog_cutoff_bd": 28,

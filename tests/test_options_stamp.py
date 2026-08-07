@@ -1739,3 +1739,290 @@ def test_committed_ledger_has_no_silent_null_stamp_cols():
         "silent-permanent-null stamp columns — ledger write path is dead while the "
         f"display store computes fine: {dead}"
     )
+
+
+# ── the 5-SESSION basis resolves its far endpoint by DATE, not by POSITION ───────────
+#
+# The session filters above make every row in a positional window a real SESSION. They do
+# NOT make a six-row window five sessions WIDE — the store is also missing sessions the
+# collector never ran for, and no reader-side filter can conjure those. Measured on
+# data/polygon_gex/summary_AAPL.parquet at as_of 2026-08-06, the six trailing session rows
+# are 07-27, 07-28, 07-29, 07-30, 07-31, 08-06: SIX rows spanning NINE sessions, because
+# the 08-03..08-05 collection outage punched a hole into the tail window. `iloc[-6]`
+# therefore resolved 2026-07-27 where the 5-sessions-back session is 2026-07-30 — a
+# NINE-session change shipped labelled "5d" into opt_vanna_relief's cross-sectional
+# tercile (the same class that flipped the sign on 10 of 10 sampled names at 2026-07-21).
+#
+# A two-endpoint difference has an exact repair: resolve the far endpoint BY DATE. Only
+# the endpoints enter a difference, so an interior hole is irrelevant and the stat
+# recovers exactly; a hole AT the target session is unmeasurable, so the stat is null —
+# never a mislabeled basis. Both readers below route through
+# engine.options_stamp._row_n_sessions_back. (The display twin
+# engine/options_entry_state._compute_vanna_hedge_5d is pinned in
+# tests/test_options_entry_state.py; the resolver itself in
+# tests/test_options_session_guards.py.)
+
+# The real outage geometry, replayed. iv30 is chosen so the CALENDAR answer and the
+# POSITIONAL answer land on OPPOSITE SIDES of the latest reading — a test that only
+# asserted "the value changed" would pass on a rounding difference.
+_GAP_ROWS = ["2026-07-27", "2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31",
+             "2026-08-06"]
+_GAP_IV30 = [0.20, 0.22, 0.24, 0.30, 0.28, 0.26]
+_GAP_NET_VEX = 1_000_000.0
+_GAP_ASOF = _dt.date(2026, 8, 6)
+_GAP_FIVE_BACK = _dt.date(2026, 7, 30)    # 08-05, 08-04, 08-03, 07-31, 07-30
+_GAP_ILOC6 = _dt.date(2026, 7, 27)        # what the positional read used to give
+# calendar   : 0.26 − 0.30 = −0.04  →  vanna = −net_vex × chg = +40,000
+# positional : 0.26 − 0.20 = +0.06  →  vanna = −net_vex × chg = −60,000
+_GAP_CAL_CHG = _GAP_IV30[-1] - _GAP_IV30[3]
+_GAP_POS_CHG = _GAP_IV30[-1] - _GAP_IV30[0]
+
+# Seven rows — clear of the ≥6-row floor — with the 5-back session (07-30) absent.
+# iloc[-6] is 07-24, so a positional read WOULD have returned a number here.
+_MISSING_ROWS = ["2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28",
+                 "2026-07-29", "2026-07-31", "2026-08-06"]
+_MISSING_IV30 = [0.18, 0.20, 0.20, 0.22, 0.24, 0.28, 0.26]
+
+# Six CONSECUTIVE sessions: dense, so the calendar target IS index[-6] and the value must
+# be byte-identical to what the old positional code produced.
+_DENSE_ROWS = ["2026-07-30", "2026-07-31", "2026-08-03", "2026-08-04",
+               "2026-08-05", "2026-08-06"]
+_DENSE_IV30 = [0.30, 0.28, 0.27, 0.29, 0.31, 0.26]
+
+
+def _vanna_summary_frame(dates, iv30s, *, net_vex=_GAP_NET_VEX):
+    """A polygon_gex summary frame carrying the two columns the 5-session basis reads."""
+    idx = pd.to_datetime(list(dates))
+    n = len(idx)
+    return pd.DataFrame(
+        {
+            "gamma_regime": ["long"] * n,
+            "dist_to_flip_pct": [5.0] * n,
+            "magnet_up": [110.0] * n,
+            "magnet_down": [95.0] * n,
+            "net_vex": [float(net_vex)] * n,
+            "iv30": [float(v) for v in iv30s],
+        },
+        index=idx,
+    )
+
+
+def _assert_outage_geometry(frame):
+    """PREMISE for every gap test: six rows spanning NINE sessions.
+
+    Without this the fixture can rot dense — the calendar and positional answers would
+    coincide and the behavioural assertions would pass for the wrong reason.
+    """
+    from lib import nyse_calendar
+    idx = [pd.Timestamp(d).date() for d in frame.index]
+    assert len(frame) == 6, f"the outage fixture must hold exactly six rows, got {len(frame)}"
+    assert len(nyse_calendar.sessions_between(idx[0], idx[-1])) == 9, (
+        f"fixture premise gone: {idx[0]}..{idx[-1]} no longer spans nine sessions, so "
+        "positional and calendar resolution would agree and this test is vacuous")
+    assert idx[3] == _GAP_FIVE_BACK and idx[0] == _GAP_ILOC6
+    assert _GAP_CAL_CHG < 0 < _GAP_POS_CHG, (
+        "fixture premise: the calendar and positional answers must differ in SIGN")
+
+
+# ── site (1): engine/options_stamp._vanna_hedge_5d_basis → opt_vanna_relief ──────────
+
+def test_vanna_5d_basis_resolves_the_far_endpoint_by_calendar_not_by_position():
+    """The measured outage shape: 6 rows / 9 sessions, opposite-sign answers."""
+    from engine.options_stamp import BASIS_OK, _vanna_hedge_5d_basis
+
+    frame = _vanna_summary_frame(_GAP_ROWS, _GAP_IV30)
+    _assert_outage_geometry(frame)
+
+    cal = round(-_GAP_NET_VEX * _GAP_CAL_CHG, 6)      # +40,000 — the 07-30 endpoint
+    pos = round(-_GAP_NET_VEX * _GAP_POS_CHG, 6)      # −60,000 — the iloc[-6] endpoint
+    assert cal > 0 > pos, "fixture premise: the two answers have opposite signs"
+
+    got, status = _vanna_hedge_5d_basis(_GAP_ASOF, frame)
+    assert got == pytest.approx(cal), (
+        f"shipped {got}; five sessions before {_GAP_ASOF} is {_GAP_FIVE_BACK} "
+        f"(iv30 {_GAP_IV30[3]}), so vanna_hedge_5d is {cal}")
+    assert got != pytest.approx(pos), (
+        f"shipped the POSITIONAL iloc[-6] answer {pos} — the {_GAP_ILOC6} endpoint is "
+        "NINE sessions back, and this stat is labelled '5d'")
+    assert status == BASIS_OK
+    # The wrapper the ledger path actually calls must agree with the basis it wraps.
+    from engine.options_stamp import _vanna_hedge_5d_from_summary
+    assert _vanna_hedge_5d_from_summary(_GAP_ASOF, frame) == pytest.approx(cal)
+
+
+def test_vanna_5d_basis_nulls_when_the_five_back_session_has_no_row():
+    """≥6 rows and still None — the null comes from RESOLUTION, not the row floor."""
+    from engine.options_stamp import (BASIS_GAP, _vanna_hedge_5d_basis,
+                                      _vanna_hedge_5d_from_summary)
+    from lib import nyse_calendar
+
+    frame = _vanna_summary_frame(_MISSING_ROWS, _MISSING_IV30)
+    idx = [pd.Timestamp(d).date() for d in frame.index]
+
+    # PREMISE — SEVEN rows. Load-bearing: the reader already nulls below six rows, so at
+    # exactly the floor a None could not be attributed to the missing target session.
+    assert len(frame) >= 6, "a None here must come from target resolution, not the floor"
+    assert nyse_calendar.is_session(_GAP_FIVE_BACK), "fixture premise: 07-30 trades"
+    assert _GAP_FIVE_BACK not in idx, "fixture premise: the store has no 07-30 row"
+    # A positional read would have returned a number (iloc[-6] = 07-24, iv30 0.20).
+    assert pd.Timestamp(frame.iloc[-6].name).date() == _dt.date(2026, 7, 24)
+    would_have = round(-_GAP_NET_VEX * (_MISSING_IV30[-1] - _MISSING_IV30[1]), 6)
+    assert would_have == pytest.approx(-60_000.0), "fixture premise: iloc[-6] is non-null"
+
+    got, status = _vanna_hedge_5d_basis(_GAP_ASOF, frame)
+    assert got is None, (
+        f"shipped {got} for a store with no {_GAP_FIVE_BACK} row — unmeasurable is a "
+        "null, never a substituted endpoint")
+    assert status == BASIS_GAP, (
+        f"status {status!r}: seven rows with one session missing is a collection GAP, "
+        "not absent history — the tercile's coverage floor reads that distinction")
+    assert _vanna_hedge_5d_from_summary(_GAP_ASOF, frame) is None
+
+
+def test_vanna_5d_basis_on_a_dense_store_is_the_old_positional_value():
+    """Strict refinement: no gap, no change — every healthy date keeps its value."""
+    from engine.options_stamp import BASIS_OK, _vanna_hedge_5d_basis
+    from lib import nyse_calendar
+
+    frame = _vanna_summary_frame(_DENSE_ROWS, _DENSE_IV30)
+    idx = [pd.Timestamp(d).date() for d in frame.index]
+
+    # PREMISE — six rows over exactly six sessions: dense, so calendar target == index[-6].
+    assert len(frame) == 6
+    assert len(nyse_calendar.sessions_between(idx[0], idx[-1])) == 6, (
+        "fixture premise gone: these six dates no longer span exactly six sessions")
+
+    # The literal the OLD positional code produced, computed from the fixture's own
+    # numbers (not from a second call to the function under test).
+    expected = round(-_GAP_NET_VEX * (_DENSE_IV30[-1] - _DENSE_IV30[0]), 6)
+    assert expected == pytest.approx(40_000.0)
+
+    got, status = _vanna_hedge_5d_basis(_GAP_ASOF, frame)
+    assert got == pytest.approx(expected), (
+        f"dense store shipped {got}, not the unchanged positional value {expected}")
+    assert status == BASIS_OK
+
+
+# ── site (2): scripts/stamp_options_state._get_iv30_5d_chg_from_summary ─────────────
+# The relief SIGN input: reads the store from disk through _default_read_summary, so
+# these go through the real on-disk path, not an injected frame.
+
+def _plant_summary(tmp_path, monkeypatch, dates, iv30s, ticker="FOO"):
+    from engine import options_stamp as st
+    _vanna_summary_frame(dates, iv30s).to_parquet(tmp_path / f"summary_{ticker}.parquet")
+    monkeypatch.setattr(st, "_summary_dir", lambda: tmp_path)
+    planted = st._default_read_summary(ticker)
+    assert planted is not None and len(planted) == len(dates), (
+        "the session filter dropped a fixture row — every fixture date must be a session")
+    return planted
+
+
+def test_iv30_5d_chg_resolves_the_far_endpoint_by_calendar_not_by_position(
+        monkeypatch, tmp_path):
+    from scripts.stamp_options_state import _get_iv30_5d_chg_from_summary
+
+    frame = _plant_summary(tmp_path, monkeypatch, _GAP_ROWS, _GAP_IV30)
+    _assert_outage_geometry(frame)
+
+    got = _get_iv30_5d_chg_from_summary("2026-08-06", "FOO", {})
+    assert got == pytest.approx(_GAP_CAL_CHG), (
+        f"read {got}; the {_GAP_FIVE_BACK} endpoint gives {_GAP_CAL_CHG}")
+    assert got != pytest.approx(_GAP_POS_CHG), (
+        f"read the POSITIONAL iloc[-6] change {_GAP_POS_CHG} — nine sessions of iv30 "
+        "move, signed the other way, feeding opt_vanna_relief")
+    assert got < 0 < _GAP_POS_CHG, "the shipped answer must carry the CALENDAR sign"
+
+
+def test_iv30_5d_chg_nulls_when_the_five_back_session_has_no_row(monkeypatch, tmp_path):
+    from scripts.stamp_options_state import _get_iv30_5d_chg_from_summary
+
+    frame = _plant_summary(tmp_path, monkeypatch, _MISSING_ROWS, _MISSING_IV30)
+    idx = [pd.Timestamp(d).date() for d in frame.index]
+
+    # PREMISE — SEVEN rows, so a None cannot come from the reader's own <6-row floor.
+    assert len(frame) >= 6
+    assert _GAP_FIVE_BACK not in idx, "fixture premise: the store has no 07-30 row"
+    assert pd.Timestamp(frame.iloc[-6].name).date() == _dt.date(2026, 7, 24), (
+        "fixture premise: a positional read would have returned the 07-24 row")
+
+    assert _get_iv30_5d_chg_from_summary("2026-08-06", "FOO", {}) is None, (
+        "a missing 5-back session must null the relief sign input, not widen its basis")
+
+
+def test_iv30_5d_chg_on_a_dense_store_is_the_old_positional_value(monkeypatch, tmp_path):
+    from scripts.stamp_options_state import _get_iv30_5d_chg_from_summary
+    from lib import nyse_calendar
+
+    frame = _plant_summary(tmp_path, monkeypatch, _DENSE_ROWS, _DENSE_IV30)
+    idx = [pd.Timestamp(d).date() for d in frame.index]
+
+    assert len(frame) == 6
+    assert len(nyse_calendar.sessions_between(idx[0], idx[-1])) == 6, (
+        "fixture premise gone: these six dates no longer span exactly six sessions")
+
+    expected = _DENSE_IV30[-1] - _DENSE_IV30[0]     # literal from the fixture
+    assert expected == pytest.approx(-0.04)
+    assert _get_iv30_5d_chg_from_summary("2026-08-06", "FOO", {}) == pytest.approx(expected)
+
+
+# ---------------------------------------------------------------------------
+# The tercile COVERAGE FLOOR (2026-08-06).
+#
+# Calendar-resolving the 5-session basis makes it null on a store gap, and that null is
+# DATE-wide rather than per-name: every ticker reads the same store on the same schedule.
+# The pre-existing `len(vals) >= 3` floor cannot see that — it answers "enough values to
+# draw a boundary", never "do these values represent the universe".  These guards pin the
+# distinction, using the geometry actually measured on the committed store.
+# ---------------------------------------------------------------------------
+
+def test_tercile_refuses_a_date_whose_ranked_names_are_coverage_selected(capsys):
+    """The measured collapse: 5 ranked of 375 measurable must NOT produce a threshold."""
+    from scripts.stamp_options_state import _TERCILE_MIN_NAMES, _tercile_thresholds
+
+    survivors = [-3000.0, -1500.0, -850.0, -400.0, 25000.0]
+    # PREMISE: the old `>= 3` floor would have FIRED on this input — otherwise this test
+    # would pass for the wrong reason (too few values, not too little coverage).
+    assert len(survivors) >= _TERCILE_MIN_NAMES
+
+    out = _tercile_thresholds({"2026-07-22": survivors}, {"2026-07-22": 375})
+    assert "2026-07-22" not in out, (
+        "a date ranking 5 of 375 measurable names (1.3%) was given a tercile boundary — "
+        "that redefines 'top tercile of the market' as 'top tercile of 5 "
+        "coverage-selected names'")
+
+    # Surfaced, never silent — and as a LINE-START annotation, or Actions drops it.
+    line = [ln for ln in capsys.readouterr().out.splitlines() if "vanna-tercile" in ln]
+    assert line and line[0].startswith("::warning "), (
+        "the refusal must emit a line-start ::warning; a prefixed logger call is dropped "
+        "by GitHub Actions")
+    assert "5 of 375" in line[0]
+
+
+def test_tercile_still_ranks_a_healthy_date(capsys):
+    """The other side of the floor: 374 of 375 (99.7%) is the normal case and must rank."""
+    from scripts.stamp_options_state import _tercile_thresholds
+
+    vals = [float(i) for i in range(374)]
+    out = _tercile_thresholds({"2026-07-27": vals}, {"2026-07-27": 375})
+    assert "2026-07-27" in out, (
+        "a date ranking 99.7% of its measurable names was refused — the floor is "
+        "supposed to sit between the 1.3% and 99.7% populations, not above both")
+    assert out["2026-07-27"] == pytest.approx(np.percentile(vals, 100.0 * 2.0 / 3.0))
+    assert "vanna-tercile" not in capsys.readouterr().out
+
+
+def test_coverage_denominator_excludes_names_that_were_never_candidates():
+    """Coverage is ranked ÷ MEASURABLE, never ÷ the whole board.
+
+    Only 214 of 2,287 ledger rows carry this flag at all.  Dividing by the board would
+    refuse to rank on every healthy date — the denominator must exclude names with no
+    options history (BASIS_NO_HISTORY), which is why the producer reports WHY a value is
+    null instead of just returning None.
+    """
+    from scripts.stamp_options_state import _tercile_thresholds
+
+    vals = [1.0, 2.0, 3.0, 4.0]
+    # 4 ranked, 4 measurable (100%) — but 2,287 names exist on the board overall.
+    assert "2026-07-27" in _tercile_thresholds({"2026-07-27": vals}, {"2026-07-27": 4})
+    # Had the denominator been the whole board, this same date would be refused:
+    assert "2026-07-27" not in _tercile_thresholds({"2026-07-27": vals}, {"2026-07-27": 2287})

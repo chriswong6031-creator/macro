@@ -14,18 +14,6 @@
    "lane": "buy"
   },
   {
-   "ticker": "CRDO",
-   "sector": "Information Technology",
-   "first_surfaced": "2026-07-29",
-   "surfaced_price": 177.45,
-   "last_price": 237.92,
-   "pct_since": 34.1,
-   "days_on_board": 1,
-   "exit_date": "2026-07-30",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
    "ticker": "NEOG",
    "sector": "Health Care",
    "first_surfaced": "2026-06-30",
@@ -50,6 +38,18 @@
    "lane": "buy"
   },
   {
+   "ticker": "UROY",
+   "sector": "Energy",
+   "first_surfaced": "2026-07-28",
+   "surfaced_price": 2.78,
+   "last_price": 3.56,
+   "pct_since": 28.1,
+   "days_on_board": 1,
+   "exit_date": "2026-07-29",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
    "ticker": "TNDM",
    "sector": "Health Care",
    "first_surfaced": "2026-07-15",
@@ -58,6 +58,18 @@
    "pct_since": 27.6,
    "days_on_board": 1,
    "exit_date": "2026-07-17",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
+   "ticker": "CRDO",
+   "sector": "Information Technology",
+   "first_surfaced": "2026-07-29",
+   "surfaced_price": 177.45,
+   "last_price": 224.63,
+   "pct_since": 26.6,
+   "days_on_board": 1,
+   "exit_date": "2026-07-30",
    "status": "running",
    "lane": "buy"
   },
@@ -146,18 +158,6 @@
    "lane": "buy"
   },
   {
-   "ticker": "UROY",
-   "sector": "Energy",
-   "first_surfaced": "2026-07-28",
-   "surfaced_price": 2.78,
-   "last_price": 3.36,
-   "pct_since": 20.9,
-   "days_on_board": 1,
-   "exit_date": "2026-07-29",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
    "ticker": "AMKR",
    "sector": "Information Technology",
    "first_surfaced": "2026-07-17",
@@ -190,6 +190,18 @@
    "pct_since": 19.3,
    "days_on_board": 2,
    "exit_date": "2026-07-02",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
+   "ticker": "TEAM",
+   "sector": "Information Technology",
+   "first_surfaced": "2026-07-27",
+   "surfaced_price": 95.87,
+   "last_price": 113.32,
+   "pct_since": 18.2,
+   "days_on_board": 4,
+   "exit_date": "2026-07-31",
    "status": "running",
    "lane": "buy"
   },
@@ -254,18 +266,6 @@
    "lane": "buy"
   },
   {
-   "ticker": "TEAM",
-   "sector": "Information Technology",
-   "first_surfaced": "2026-07-27",
-   "surfaced_price": 95.87,
-   "last_price": 110.31,
-   "pct_since": 15.1,
-   "days_on_board": 4,
-   "exit_date": "2026-07-31",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
    "ticker": "LKQ",
    "sector": "Consumer Discretionary",
    "first_surfaced": "2026-06-30",
@@ -290,18 +290,6 @@
    "lane": "buy"
   },
   {
-   "ticker": "NVO",
-   "sector": "Health Care",
-   "first_surfaced": "2026-07-30",
-   "surfaced_price": 51.61,
-   "last_price": 44.28,
-   "pct_since": -14.2,
-   "days_on_board": 1,
-   "exit_date": "2026-07-31",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
    "ticker": "ADT",
    "sector": "Consumer Discretionary",
    "first_surfaced": "2026-07-01",
@@ -311,6 +299,18 @@
    "days_on_board": 1,
    "exit_date": "2026-07-02",
    "status": "running",
+   "lane": "buy"
+  },
+  {
+   "ticker": "NVO",
+   "sector": "Health Care",
+   "first_surfaced": "2026-07-30",
+   "surfaced_price": 51.61,
+   "last_price": 44.53,
+   "pct_since": -13.7,
+   "days_on_board": 1,
+   "exit_date": "2026-07-31",
+   "status": "stopped",
    "lane": "buy"
   },
   {

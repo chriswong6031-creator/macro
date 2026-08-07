@@ -3,7 +3,11 @@
 A single signal is one DOOR in a cascade (the sector-cycle engine + the owner's
 leadership/rotation read are the other doors); this grades a name into the owner's
 ladder, strongest-confirmed -> earliest, each tier weighted by its held-out balance of
-earliness-vs-stop-out (research/signal_engine/TIERED_CASCADE.md, 110 held-out US names):
+earliness-vs-stop-out. Every return carries ``anchor_era`` = ANCHOR_ERA: the 2D/3D buckets
+are anchored to an ABSOLUTE session calendar (engine/session_anchor), not to the caller's
+first timestamp, so a verdict is a function of the price history alone — ruling
+research/SESSION_ANCHOR_ABSOLUTE_CALENDAR_ADJUDICATION_BY_FABLE.md.
+Tier table (research/signal_engine/TIERED_CASCADE.md, 110 held-out US names):
 
   TIER  WEIGHT  definition                                              held-out stop-out
   T1    0.90    3D MACD-RSI x 3D StochRSI, buy-filter endorsed (master)   38.3%   (= signal_gate TAKE)
@@ -30,7 +34,17 @@ import numpy as np
 import pandas as pd
 
 from engine.hysteresis import hysteretic_not_topped   # W6 #22 veto debounce (opt-in)
+from engine.session_anchor import session_positions   # absolute session-calendar anchor (R1-R3)
 from engine.technicals import rsi   # faithful Wilder RSI (== Pine ta.rsi)
+
+#: The bucketing ERA this module's verdicts belong to (R5, DT-R16 family). Emitted as
+#: ``anchor_era`` on every cascade return and as a tier_stream column; signal_gate copies it
+#: onto every verdict. Before it existed, 2D/3D buckets were phased to the caller's first
+#: timestamp, so the SAME name graded differently from two loaders the same night; graded
+#: records separate the cohorts by this field's presence/value. Any future anchor change
+#: mints a NEW string — a graded-population change is dated and labelled, never silent.
+#: Ruling: research/SESSION_ANCHOR_ABSOLUTE_CALENDAR_ADJUDICATION_BY_FABLE.md
+ANCHOR_ERA = "abs-session-2026-08-06"
 
 RSI_LEN, FAST_LEN, BASE_LEN, SIG_LEN = 14, 14, 60, 5
 STOCH_LEN, SMOOTH_K, SMOOTH_D = 14, 3, 3
@@ -51,12 +65,33 @@ EARLY_CROSS_BARS = 1.5            # 2D cross "projected within ~1-2 days" (bars-
 # names on which the 3D RSI-MACD leg was STILL NaN (needs 232) — so the not-topped veto's
 # macd_bear leg has been silently fail-open on every 200-231 bar name since the floor was set.
 #
-# Every number below was MEASURED, not derived. The cascade resamples with
-# ``resample("2B"/"3B")``, so the daily->TF bar ratio depends on the calendar; the
-# measurement basis is a pure business-day index (NO holidays), which is the WORST case —
-# holidays give a name MORE 2D/3D buckets per daily bar, so a floor measured without them is
-# conservative for every real ticker. Method: truncate to N trailing daily bars, ask whether
-# the leg is non-NaN at the final bar, and take the smallest N that holds for all N' >= N.
+# Every number below was MEASURED, not derived, and RE-MEASURED under the absolute session
+# anchor (R7, era abs-session-2026-08-06). Buckets are now phased to a fixed reference
+# calendar, so a trailing N-bar window's bucket count depends on WHERE the window sits: the
+# same N yields ceil(N/n) TF bars when the window starts on a bucket boundary and one MORE
+# when it straddles. The floor must therefore be the PHASE-WORST case, not one lucky
+# alignment. Basis: REAL NYSE sessions (lib.nyse_calendar) ending 2026-08-04 — real phases,
+# real holidays — with the window slid across 14 consecutive reference sessions, which
+# covers every 2D/3D/weekly/fortnight phase. Method per offset: truncate to N trailing daily
+# bars, ask whether the leg is non-NaN at the final bar, take the smallest N that holds for
+# all N' >= N; the tabled floor is the MAX over offsets.
+#
+# OUTCOME: every session-counted leg re-measured to its INCUMBENT value — the phase-worst
+# case IS the old phase-0 business-day measurement, because a window that starts exactly on a
+# bucket boundary yields ceil(N/n) TF bars either way, and a real session maps to a
+# CONSECUTIVE reference position (holidays are absent from both sides). MIN_HISTORY therefore
+# stays 159 and no cohort boundary moves under this era.
+#
+# The two CALENDAR-WEEK legs (`wbull`, `htf_2w`) are the exception, and NOT because of the
+# anchor: `wbull` runs on the untouched pandas W-FRI path, and both are dominated by how many
+# calendar weeks a window spans, which depends on HOLIDAY DENSITY rather than bucket phase.
+# On real sessions they measure lower (14-phase worst case 376 / 759; worst over a decade of
+# window ends 379 / 764) than the tabled 391 / 776. The tabled values are kept: they are the
+# NO-HOLIDAY worst case, they are the null-SAFE direction (over-disclosing a leg as
+# not-yet-knowable costs nothing; under-disclosing asserts a leg is live when it is not —
+# the PLTR error class), neither leg gates any tier, and relaxing them is a separate decision
+# from this anchor change (R8 keeps warmup-floor SEMANTICS put). Both numbers are pinned in
+# tests/test_confluence_warmup_floor.py so the gap is measured, not assumed.
 #
 #   leg                          daily bars  gates          short of it, TODAY
 #   ---------------------------  ----------  -------------  ---------------------------------
@@ -115,7 +150,10 @@ _BLANK = {"tier": None, "weight": 0.0, "sub": None, "eligible": False,
           # `above200`     True/False/None — None means the 200dMA is NOT YET KNOWABLE.
           #                NEVER False on an unknowable value (the PLTR precedent).
           # `null_legs`    {leg: plain-word reason} for every leg short of its warmup
+          # `veto_legs_null` the SAME disclosure for the not-topped veto's own legs (F6/R4)
+          # `anchor_era`   the bucketing era this verdict belongs to (R5)
           "bars": None, "young_history": None, "above200": None, "null_legs": None,
+          "veto_legs_null": None, "anchor_era": ANCHOR_ERA,
           # `evaluated` False = the cascade CRASHED or never ran — every other field in
           # this blank is "not knowable", NOT a verdict. A consumer that treats a blank
           # as a clean pass converts a data failure into a buyable T1 (audit F2
@@ -172,6 +210,29 @@ def _null_legs(n_bars: int) -> dict:
             for leg, need in LEG_WARMUP_BARS.items() if n_bars < need}
 
 
+#: The not-topped veto's three legs -> the LEG_WARMUP_BARS entry each one reads. The stoch
+#: pair warms at k3_d3 (94 bars); macd_bear reads the 3D RSI-MACD, which warms at m3_s3 (232).
+_VETO_LEGS = {"stoch_ob": "k3_d3", "stoch_bear": "k3_d3", "macd_bear": "m3_s3"}
+
+
+def _veto_legs_null(n_bars: int) -> dict:
+    """Plain-word disclosure for every NOT-TOPPED VETO leg that ``n_bars`` cannot yet compute.
+
+    F6 (adjudication R4). ``macd_bear`` compares ``float(m3_d[-1]) < float(s3_d[-1])``, and
+    ``float(nan) < float(nan)`` is False — so on every 159-231 bar name the leg has been
+    silently FAIL-OPEN while ``not_topped=True`` shipped as if all three legs had been checked.
+
+    The boolean's decision arithmetic is deliberately UNCHANGED (see the veto block in
+    :func:`cascade`): tri-stating it would flow through every ``if not not_topped`` consumer as
+    falsy and blank the whole 159-231 bar cohort, silently reversing the operator's 2026-08-05
+    floor-lift. What changes is that the gap is now DISCLOSED rather than implied — the same
+    shape as ``null_legs`` and the same binding precedent (the PLTR ``above200`` narration gap):
+    never assert the unknowable, name it. Returns a FRESH dict each call.
+    """
+    return {leg: f"needs {LEG_WARMUP_BARS[src]} daily bars, has {n_bars}"
+            for leg, src in _VETO_LEGS.items() if n_bars < LEG_WARMUP_BARS[src]}
+
+
 def _ema(s, span):
     return s.ewm(span=span, min_periods=span).mean()
 
@@ -200,10 +261,37 @@ def _since(cond):
     return pd.Series(pos, index=cond.index) - last
 
 
-def _tf_bars(daily, n):
-    s = daily.resample(f"{n}B").last().dropna()
-    known = daily.resample(f"{n}B").apply(lambda x: x.dropna().index.max()).reindex(s.index).dropna()
-    return s.reindex(known.index), pd.Series(pd.to_datetime(known.values), index=known.index)
+def _tf_bars(daily, n, market: str = "US"):
+    """The n-session timeframe grid, bucketed on the ABSOLUTE session calendar.
+
+    ``bucket(d) = session_anchor.session_positions(d, market) // n`` — a function of
+    ``(reference calendar, date)`` alone, so the grid is IDENTICAL no matter how much leading
+    history the caller passed. That is the whole repair: the previous ``resample("2B"/"3B")``
+    anchored its bin edges to the SERIES' FIRST timestamp, so one dropped leading bar flipped
+    the tier on 13/232 data/stocks names and the not-topped veto on 27/232, and the deep
+    data/stocks loader disagreed with the 2014-start baskets/ohlcv loader about live
+    buyability the same night. Ruling + measured blast radius:
+    research/SESSION_ANCHOR_ABSOLUTE_CALENDAR_ADJUDICATION_BY_FABLE.md (R1-R3).
+
+    Returns ``(tf_close, known)``: the per-bucket LAST close and its known-date, both indexed
+    by that bucket's last SESSION date (the old bin LABELS were pandas' synthetic bin edges
+    and nothing downstream read them semantically — every consumer reads ``known``'s VALUES
+    and does positional TF math). The return SHAPE is unchanged: a value Series plus a
+    Timestamp Series of the same length.
+    """
+    s = daily.dropna()
+    if not s.index.is_monotonic_increasing:
+        s = s.sort_index()                       # resample used to sort; keep that contract
+    s = s[~s.index.duplicated(keep="last")]
+    if s.empty:
+        return pd.Series(dtype="float64"), pd.Series(dtype="datetime64[ns]")
+    # One vectorized groupby over absolute bucket ids. `s` is sorted, so `.last()` per bucket
+    # IS the last close and the max date — no Python-level apply on the hot path.
+    b = session_positions(s.index, market) // n
+    g = pd.DataFrame({"v": s.to_numpy(), "d": s.index.to_numpy()}).groupby(b, sort=True).last()
+    known_dates = pd.DatetimeIndex(g["d"])
+    return (pd.Series(g["v"].to_numpy(), index=known_dates),
+            pd.Series(known_dates, index=known_dates))
 
 
 def _to_daily(tf_series, known, di, how="ffill"):
@@ -233,23 +321,26 @@ def _ticks_since(known, when) -> int | None:
 
 
 def cascade(daily_close: pd.Series, *, take_active: bool = False,
-            take_date=None) -> dict:
+            take_date=None, market: str = "US") -> dict:
     """Grade a close series into the weighted tier cascade. The board is ONLY "about to cross"
     (T3/T4, projected) + "JUST crossed" (T1/T2, within FRESH_TICKS on the signal's own TF) —
     never a name that crossed several ticks ago and has been rising. T1 = `take_active` (the
     validated master from signal_quality) but ONLY while its arrow is <= FRESH_TICKS 3D-ticks
     old AND the 3D momentum is still constructive (not-topped). `take_date` = the §7 buy
-    marker's date (used to age the take in 3D ticks; falls back to the raw 3D cross). Highest
+    marker's date (used to age the take in 3D ticks; falls back to the raw 3D cross).
+    ``market`` picks the reference session calendar the 2D/3D buckets are anchored to (US
+    default; signal_gate infers it from the ticker suffix — session_anchor R3). Highest
     active tier wins. Returns {tier, weight, sub, eligible, bars_to_cross, asof, not_topped,
-    ticks}. Never raises."""
+    ticks, ..., veto_legs_null, anchor_era}. Never raises."""
     try:
         c = daily_close.dropna()
         if not isinstance(c.index, pd.DatetimeIndex):
             c = c.copy(); c.index = pd.to_datetime(c.index)
         n_bars = len(c)
         if n_bars < MIN_HISTORY:
-            v = dict(_BLANK, bars=n_bars, young_history=True,
-                     above200=None, null_legs=_null_legs(n_bars))
+            v = dict(_BLANK, bars=n_bars, young_history=True, above200=None,
+                     null_legs=_null_legs(n_bars),
+                     veto_legs_null=_veto_legs_null(n_bars))
             if take_active:               # thin history: trust the §7 marker (can't tick-age it)
                 v.update(tier="T1", weight=WEIGHTS["T1"], eligible=True)
             return v
@@ -257,12 +348,13 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
         last = len(di) - 1
         young = n_bars < YOUNG_HISTORY_BARS
         nulls = _null_legs(n_bars)
+        veto_nulls = _veto_legs_null(n_bars)
         # HTF super-tier (S1/S2): display-only, rank-neutral, computed once per call.
         # Kept inside the try so any HTF failure degrades to {"s1":False,"s2":False} via _BLANK.
-        htf = _compute_htf(daily_close)
+        htf = _compute_htf(daily_close, market)
 
         # 2D RSI-MACD: confirmed cross (T2 leg) + imminent-cross projection (T3/T4 leg)
-        sm, smk = _tf_bars(c, 2)
+        sm, smk = _tf_bars(c, 2, market)
         m2, s2 = _rsi_macd(sm)
         h2 = m2 - s2
         mb2 = _xup(m2, s2)
@@ -271,7 +363,7 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
         imm2 = ((h2 < 0) & (slope2 > 0) & (btc > 0) & (btc <= EARLY_CROSS_BARS)).fillna(False)
 
         # 3D StochRSI (T1/T2/T3 stoch leg) + 3D RSI-MACD (master cross + not-rolled-over veto)
-        ss3, sk3 = _tf_bars(c, 3)
+        ss3, sk3 = _tf_bars(c, 3, market)
         k3, d3 = _stoch_rsi_kd(ss3)
         sb3 = _xup(k3, d3)
         recent3 = _since(sb3) <= CONF_W
@@ -322,6 +414,15 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
         # higher-TF momentum is still constructive. Reject if the 3D StochRSI is OVERBOUGHT or
         # has bearish-crossed (k<d, made a high and turned down), or the 3D RSI-MACD is below
         # its signal. AMAT (3D stoch k=82/d=86, k<d, overbought) fails on the first two.
+        #
+        # FAIL-OPEN ON AN UNKNOWABLE LEG IS AN EXPLICIT DECISION (F6 / adjudication R4), not an
+        # oversight: `float(nan) < float(nan)` is False, so below a leg's warmup that leg cannot
+        # veto. Between MIN_HISTORY and m3_s3's warmup the macd_bear leg is structurally
+        # unknowable and the veto rests on the two stoch legs alone. Tri-stating not_topped
+        # would read falsy in every `if not not_topped` consumer and blank the whole young
+        # cohort — silently reversing the operator's 2026-08-05 floor lift, which is not this
+        # change's call. So the arithmetic stands and `veto_legs_null` (published on every
+        # return) NAMES each leg that could not be checked. Do not "fix" this to block.
         k3n, d3n = float(k3_d.iloc[last]), float(d3_d.iloc[last])
         m3n, s3n = float(m3_d.iloc[last]), float(s3_d.iloc[last])
         stoch_ob   = (k3n >= OB) or (d3n >= OB)        # in the overbought zone -> extended entry
@@ -359,7 +460,7 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
         blank = dict(_BLANK, asof=str(di[last].date()), not_topped=not_topped, ticks=t1_ticks,
                      htf=htf, hist_d2=hist_d2, hist_d3=hist_d3,
                      bars=n_bars, young_history=young, above200=above200_pub,
-                     null_legs=nulls)
+                     null_legs=nulls, veto_legs_null=veto_nulls)
         if not not_topped:
             return blank                                # topped/rolled-over: never a fresh buy
 
@@ -419,9 +520,11 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
             "htf": htf,   # S1/S2 display-only badges (rank-neutral)
             "hist_d2": hist_d2, "hist_d3": hist_d3,   # display-only glyph feed
             # warmup disclosure — see _BLANK. `young_history` is the graded-cohort label
-            # (era law); `above200` is None, never False, when the 200dMA is unknowable.
+            # (era law); `above200` is None, never False, when the 200dMA is unknowable;
+            # `veto_legs_null` names each not-topped leg the history could not check (F6).
             "bars": n_bars, "young_history": young,
             "above200": above200_pub, "null_legs": nulls,
+            "veto_legs_null": veto_nulls, "anchor_era": ANCHOR_ERA,
         }
     except Exception:
         # Crash path: "not evaluated" must be distinguishable from "passed" — the blank's
@@ -457,7 +560,8 @@ def _ticks_since_vec(known: pd.Series, cross_pos_daily: np.ndarray, di: pd.Datet
     return out
 
 
-def tier_stream(daily_close: pd.Series, *, fresh_ticks: int | None = None) -> pd.DataFrame:
+def tier_stream(daily_close: pd.Series, *, fresh_ticks: int | None = None,
+                market: str = "US") -> pd.DataFrame:
     """VECTORIZED per-day tier for EVERY daily bar. BASIS CAVEAT (audit F3 2026-08-06):
     interior rows read the last COMPLETED bucket, but the FINAL row sits on the in-progress
     partial bucket `_tf_bars` still emits — the live board's provisional basis. The last row
@@ -474,8 +578,10 @@ def tier_stream(daily_close: pd.Series, *, fresh_ticks: int | None = None) -> pd
     cross as ``take`` (cascade's own fallback when no §7 take_date is supplied), so the stream is a
     self-contained close-only signal; the live board's T1 (validated §7 master) is a strict subset.
 
-    Returns a daily-indexed frame: tier (T1..T4|None), weight, ticks, not_topped, eligible, sub.
-    ``fresh_ticks`` overrides the module FRESH_TICKS for a knob sweep. Never raises → empty frame."""
+    Returns a daily-indexed frame: tier (T1..T4|None), weight, ticks, not_topped, eligible, sub,
+    s1/s2 and a constant ``anchor_era`` column (R5 — the bucketing era every row belongs to).
+    ``fresh_ticks`` overrides the module FRESH_TICKS for a knob sweep; ``market`` picks the
+    reference session calendar (session_anchor R3). Never raises → empty frame."""
     ft = FRESH_TICKS if fresh_ticks is None else int(fresh_ticks)
     try:
         c = daily_close.dropna()
@@ -486,7 +592,7 @@ def tier_stream(daily_close: pd.Series, *, fresh_ticks: int | None = None) -> pd
         di = c.index
         n = len(di)
 
-        sm, smk = _tf_bars(c, 2)
+        sm, smk = _tf_bars(c, 2, market)
         m2, s2 = _rsi_macd(sm)
         h2 = m2 - s2
         mb2 = _xup(m2, s2)
@@ -494,7 +600,7 @@ def tier_stream(daily_close: pd.Series, *, fresh_ticks: int | None = None) -> pd
         btc = (-h2 / slope2)
         imm2 = ((h2 < 0) & (slope2 > 0) & (btc > 0) & (btc <= EARLY_CROSS_BARS)).fillna(False)
 
-        ss3, sk3 = _tf_bars(c, 3)
+        ss3, sk3 = _tf_bars(c, 3, market)
         k3, d3 = _stoch_rsi_kd(ss3)
         sb3 = _xup(k3, d3)
         recent3 = _since(sb3) <= CONF_W
@@ -600,13 +706,16 @@ def tier_stream(daily_close: pd.Series, *, fresh_ticks: int | None = None) -> pd
             elig[i] = True
         # HTF super-tier streams (S1/S2): display-only, rank-neutral boolean columns.
         # Computed on the completed-bucket basis (same convention as the T1-T4 stream).
-        htf_s1, htf_s2 = _compute_htf_stream(daily_close)
+        htf_s1, htf_s2 = _compute_htf_stream(daily_close, market)
         # Align to di (the dropna'd close index) — reindex fills missing dates with False.
         htf_s1 = htf_s1.reindex(di, fill_value=False).fillna(False).astype(bool)
         htf_s2 = htf_s2.reindex(di, fill_value=False).fillna(False).astype(bool)
         return pd.DataFrame({"tier": tier, "weight": weight, "ticks": ticks,
                              "not_topped": not_topped, "eligible": elig, "sub": sub,
-                             "s1": htf_s1.to_numpy(), "s2": htf_s2.to_numpy()}, index=di)
+                             "s1": htf_s1.to_numpy(), "s2": htf_s2.to_numpy(),
+                             # constant column, not a per-row measurement: every row in this
+                             # frame was bucketed under ANCHOR_ERA (R5).
+                             "anchor_era": ANCHOR_ERA}, index=di)
     except Exception:
         return pd.DataFrame()
 
@@ -624,27 +733,62 @@ def _last_true_pos(mask: np.ndarray) -> np.ndarray:
 # Reference implementation: scripts/_bt_htf_super_tiers.py (validated; logic must match exactly).
 # ---------------------------------------------------------------------------
 
+#: A Friday, and the phase origin of the absolute fortnight grid (R6).
+_EPOCH_FRIDAY = pd.Timestamp("1970-01-02")
+
+
 def _completed_resample(daily: pd.Series, rule: str):
     """Return completed bars only — the in-progress tail bucket is dropped.
     Pattern: entry_primitives._completed_resample (RUL-31 PIT gate).
     Returns (tf_close, known_dt) where known_dt is a pd.Series of Timestamps
     indexed by the TF bar labels (same index as tf_close).
+
+    ``"W-FRI"`` keeps the pandas path: a weekly W-FRI bin is CALENDAR-absolute already (its
+    edges are Fridays, not the series start), so it never carried the F1 defect. ``"2W-FRI"``
+    did: pandas phases the FORTNIGHT to the series' first timestamp, so the S1/S2 badges
+    flipped with the caller's slice. It is replaced here by the absolute fortnight (R6):
+
+        week_friday(d) = d + (4 - d.weekday()) % 7           # the Friday closing d's week
+        fortnight_id   = (week_friday - 1970-01-02).days // 14
+        label          = 1970-01-02 + (2*fortnight_id + 1) * 7 days     # the pair-END Friday
+
+    Same right-closed/right-labelled semantics pandas gives ``2W-FRI`` — only the PHASE moves,
+    from "wherever this series happens to start" to a fixed epoch. The completed-only tail rule
+    is applied exactly as before, on the label.
     """
     last_obs = daily.index.max()
-    raw = daily.resample(rule).last().dropna()
-    raw = raw[raw.index <= last_obs]
-    known = (
-        daily.resample(rule)
-        .apply(lambda x: x.dropna().index.max())
-        .reindex(raw.index)
-        .dropna()
-    )
-    raw = raw.reindex(known.index)
-    known_dt = pd.Series(pd.to_datetime(known.values), index=known.index)
-    return raw, known_dt
+    if rule != "2W-FRI":
+        raw = daily.resample(rule).last().dropna()
+        raw = raw[raw.index <= last_obs]
+        known = (
+            daily.resample(rule)
+            .apply(lambda x: x.dropna().index.max())
+            .reindex(raw.index)
+            .dropna()
+        )
+        raw = raw.reindex(known.index)
+        known_dt = pd.Series(pd.to_datetime(known.values), index=known.index)
+        return raw, known_dt
+
+    s = daily.dropna()
+    if not s.index.is_monotonic_increasing:
+        s = s.sort_index()
+    if s.empty:
+        return pd.Series(dtype="float64"), pd.Series(dtype="datetime64[ns]")
+    d = pd.DatetimeIndex(s.index)
+    week_friday = d + pd.to_timedelta((4 - d.dayofweek.to_numpy()) % 7, unit="D")
+    fid = ((week_friday - _EPOCH_FRIDAY).days.to_numpy() // 14)
+    label = _EPOCH_FRIDAY + pd.to_timedelta((2 * fid + 1) * 7, unit="D")
+    g = pd.DataFrame({"v": s.to_numpy(), "d": d.to_numpy(), "lab": label.to_numpy()}
+                     ).groupby(fid, sort=True).last()
+    raw = pd.Series(g["v"].to_numpy(), index=pd.DatetimeIndex(g["lab"]))
+    known_dt = pd.Series(pd.DatetimeIndex(g["d"]), index=raw.index)
+    keep = raw.index <= last_obs            # completed-only: drop the in-progress tail bucket
+    return raw[keep], known_dt[keep]
 
 
-def _htf_confluence_active(c: pd.Series, di: pd.DatetimeIndex, rule: str) -> pd.Series:
+def _htf_confluence_active(c: pd.Series, di: pd.DatetimeIndex, rule: str,
+                           market: str = "US") -> pd.Series:
     """Per-TF confluence-active state (daily boolean) for W-FRI or 2W-FRI resamples.
 
     confluence-active on TF = MACD-RSI crossed up within HTF_FW native bars
@@ -657,7 +801,7 @@ def _htf_confluence_active(c: pd.Series, di: pd.DatetimeIndex, rule: str) -> pd.
     td = lambda s, kn, how="ffill": _to_daily(s, kn, di, how)  # noqa: E731
     if rule == "3D":
         # 3D uses _tf_bars (session buckets, known-date mapped) — same as production tier_stream
-        ss, sk = _tf_bars(c, 3)
+        ss, sk = _tf_bars(c, 3, market)
     else:
         ss, sk = _completed_resample(c, rule)
 
@@ -706,9 +850,9 @@ def _htf_2w_pending(c: pd.Series, di: pd.DatetimeIndex) -> pd.Series:
     return pending_d
 
 
-def _htf_not_topped_3d(c: pd.Series, di: pd.DatetimeIndex) -> pd.Series:
+def _htf_not_topped_3d(c: pd.Series, di: pd.DatetimeIndex, market: str = "US") -> pd.Series:
     """Production 3D not-topped veto (daily boolean) — same as cascade()."""
-    ss3, sk3 = _tf_bars(c, 3)
+    ss3, sk3 = _tf_bars(c, 3, market)
     k3, d3 = _stoch_rsi_kd(ss3)
     m3, s3 = _rsi_macd(ss3)
     td = lambda s, kn: _to_daily(s, kn, di)  # noqa: E731
@@ -720,7 +864,7 @@ def _htf_not_topped_3d(c: pd.Series, di: pd.DatetimeIndex) -> pd.Series:
     return ~(stoch_ob | stoch_bear | macd_bear).fillna(True)
 
 
-def _compute_htf(c: pd.Series) -> dict:
+def _compute_htf(c: pd.Series, market: str = "US") -> dict:
     """Compute S1 and S2 HTF super-tier booleans for the LAST bar.
 
     S1 = 2W confluence-active AND 3D confluence-active AND not_topped (3D).
@@ -738,11 +882,11 @@ def _compute_htf(c: pd.Series) -> dict:
             return dict(_HTF_BLANK)
         di = c.index
 
-        act_3d = _htf_confluence_active(c, di, "3D")
-        act_1w = _htf_confluence_active(c, di, "W-FRI")
-        act_2w = _htf_confluence_active(c, di, "2W-FRI")
+        act_3d = _htf_confluence_active(c, di, "3D", market)
+        act_1w = _htf_confluence_active(c, di, "W-FRI", market)
+        act_2w = _htf_confluence_active(c, di, "2W-FRI", market)
         pend_2w = _htf_2w_pending(c, di)
-        not_topped = _htf_not_topped_3d(c, di)
+        not_topped = _htf_not_topped_3d(c, di, market)
 
         last = len(di) - 1
         s1 = bool(act_2w.iloc[last] and act_3d.iloc[last] and not_topped.iloc[last])
@@ -752,7 +896,7 @@ def _compute_htf(c: pd.Series) -> dict:
         return dict(_HTF_BLANK)
 
 
-def _compute_htf_stream(c: pd.Series) -> tuple[pd.Series, pd.Series]:
+def _compute_htf_stream(c: pd.Series, market: str = "US") -> tuple[pd.Series, pd.Series]:
     """Vectorized per-day S1/S2 boolean streams (completed-bucket basis).
 
     Returns (s1_series, s2_series) as daily boolean pd.Series aligned to c.index.
@@ -769,11 +913,11 @@ def _compute_htf_stream(c: pd.Series) -> tuple[pd.Series, pd.Series]:
             return false_s, false_s
         di = c.index
 
-        act_3d = _htf_confluence_active(c, di, "3D")
-        act_1w = _htf_confluence_active(c, di, "W-FRI")
-        act_2w = _htf_confluence_active(c, di, "2W-FRI")
+        act_3d = _htf_confluence_active(c, di, "3D", market)
+        act_1w = _htf_confluence_active(c, di, "W-FRI", market)
+        act_2w = _htf_confluence_active(c, di, "2W-FRI", market)
         pend_2w = _htf_2w_pending(c, di)
-        not_topped = _htf_not_topped_3d(c, di)
+        not_topped = _htf_not_topped_3d(c, di, market)
 
         s1 = (act_2w & act_3d & not_topped).fillna(False).reindex(di, fill_value=False)
         s2 = (act_3d & act_1w & pend_2w & not_topped).fillna(False).reindex(di, fill_value=False)

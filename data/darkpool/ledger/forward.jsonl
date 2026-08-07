@@ -11,3 +11,16 @@
 {"asof":"2026-08-04","ticker":"ONTO","pattern":"heavy_into_strength","participation":0.4788,"participation_z":1.63,"streak":1,"price_change_pct":18.9,"ats_frac":0.6268,"short_trend_pp":17.95}
 {"asof":"2026-08-04","ticker":"ALHC","pattern":"heavy_into_weakness","participation":0.4999,"participation_z":1.56,"streak":2,"price_change_pct":-26.64,"ats_frac":0.4015,"short_trend_pp":-1.96}
 {"asof":"2026-08-04","ticker":"KLIC","pattern":"heavy_into_strength","participation":0.4463,"participation_z":1.51,"streak":1,"price_change_pct":3.21,"ats_frac":0.6347,"short_trend_pp":-8.04}
+{"asof":"2026-08-05","ticker":"AEP","pattern":"heavy_into_weakness","participation":0.5389,"participation_z":3.71,"streak":6,"price_change_pct":-2.26,"ats_frac":0.3286,"short_trend_pp":-2.56}
+{"asof":"2026-08-05","ticker":"HBAN","pattern":"heavy_into_strength","participation":0.6831,"participation_z":2.8,"streak":12,"price_change_pct":4.51,"ats_frac":0.4664,"short_trend_pp":-1.18}
+{"asof":"2026-08-05","ticker":"STX","pattern":"heavy_into_strength","participation":0.6044,"participation_z":2.8,"streak":6,"price_change_pct":9.58,"ats_frac":0.4611,"short_trend_pp":9.98}
+{"asof":"2026-08-05","ticker":"GOOGL","pattern":"heavy_into_strength","participation":0.4546,"participation_z":2.81,"streak":1,"price_change_pct":7.64,"ats_frac":0.4549,"short_trend_pp":8.6}
+{"asof":"2026-08-05","ticker":"ETHA","pattern":"heavy_into_weakness","participation":0.4003,"participation_z":2.51,"streak":6,"price_change_pct":-2.35,"ats_frac":0.3219,"short_trend_pp":7.48}
+{"asof":"2026-08-05","ticker":"CL","pattern":"heavy_price_flat","participation":0.4152,"participation_z":1.94,"streak":3,"price_change_pct":-0.22,"ats_frac":0.5494,"short_trend_pp":-4.86}
+{"asof":"2026-08-05","ticker":"NRG","pattern":"heavy_into_weakness","participation":0.4472,"participation_z":2.01,"streak":2,"price_change_pct":-2.47,"ats_frac":0.5414,"short_trend_pp":3.74}
+{"asof":"2026-08-05","ticker":"QLYS","pattern":"heavy_into_strength","participation":0.4845,"participation_z":1.9,"streak":1,"price_change_pct":35.61,"ats_frac":0.8026,"short_trend_pp":4.53}
+{"asof":"2026-08-05","ticker":"MDB","pattern":"heavy_into_strength","participation":0.4877,"participation_z":1.67,"streak":2,"price_change_pct":22.35,"ats_frac":0.616,"short_trend_pp":-4.7}
+{"asof":"2026-08-05","ticker":"OC","pattern":"heavy_into_strength","participation":0.4552,"participation_z":1.61,"streak":2,"price_change_pct":11.81,"ats_frac":0.7633,"short_trend_pp":-6.28}
+{"asof":"2026-08-05","ticker":"CIEN","pattern":"heavy_into_strength","participation":0.4936,"participation_z":1.59,"streak":1,"price_change_pct":23.75,"ats_frac":0.4809,"short_trend_pp":4.69}
+{"asof":"2026-08-05","ticker":"KLIC","pattern":"heavy_into_strength","participation":0.4653,"participation_z":1.58,"streak":2,"price_change_pct":13.25,"ats_frac":0.6358,"short_trend_pp":-13.31}
+{"asof":"2026-08-05","ticker":"LHX","pattern":"heavy_into_weakness","participation":0.4685,"participation_z":1.55,"streak":1,"price_change_pct":-3.83,"ats_frac":0.5647,"short_trend_pp":0.18}

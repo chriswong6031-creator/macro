@@ -1,0 +1,1006 @@
+{
+  "schema": "company_intelligence.golden_corpus_v1_contexts/v1",
+  "note": "v1-shaped contexts that MUST round-trip through the real engine.company_intelligence.contracts.validate_context. Synthetic bodies; the event_id values are minted by the real stable_event_id(). Their purpose is to make a schema drift in contracts.py break this benchmark loudly rather than silently.",
+  "contexts": [
+    {
+      "case_ref": "v1ctx-ready",
+      "expected": "valid",
+      "context": {
+        "schema": "company_intelligence_context.v1",
+        "authority": "context_only",
+        "generated_at": "2026-08-06T00:00:00Z",
+        "generation_id": "1eb44d625271a4eb75016f27",
+        "company": {
+          "ticker": "AAPL",
+          "display_name": "Apple Inc.",
+          "exchange": null
+        },
+        "status": "ready",
+        "latest_event_id": "cie_75c611441713fa81482ce327",
+        "latest_event": {
+          "event_id": "cie_75c611441713fa81482ce327",
+          "ticker": "AAPL",
+          "fiscal_year": 2026,
+          "fiscal_quarter": 2,
+          "call_date": "2026-05-07",
+          "summary": "Apple Inc. reported Q2 2026 results.",
+          "highlights": [
+            "Reported Q2 2026."
+          ],
+          "positive_highlights": [
+            "Cost base held to plan."
+          ],
+          "negative_highlights": [],
+          "key_quote": "We exited the quarter with the cost base we committed to.",
+          "tags": [
+            "services",
+            "margins"
+          ],
+          "metrics": {
+            "analyst_criticism": 0.25,
+            "analysts_count": 0.25,
+            "call_positivity": 0.25,
+            "combined": 0.25,
+            "confidence": 0.25,
+            "eps_growth_pct": 0.25,
+            "future_outlook": 0.25,
+            "gross_margin_pct": 0.25,
+            "management_confidence": 0.25,
+            "performance": 0.25,
+            "questions_count": 0.25,
+            "revenue_growth_pct": 0.25,
+            "sentiment": 0.25
+          },
+          "field_lineage": {
+            "summary": "earnings_history",
+            "key_quote": "transcript",
+            "metrics": {
+              "analyst_criticism": "earnings_history",
+              "analysts_count": "earnings_history",
+              "call_positivity": "earnings_history",
+              "combined": "earnings_history",
+              "confidence": "earnings_history",
+              "eps_growth_pct": "earnings_history",
+              "future_outlook": "earnings_history",
+              "gross_margin_pct": "earnings_history",
+              "management_confidence": "earnings_history",
+              "performance": "earnings_history",
+              "questions_count": "earnings_history",
+              "revenue_growth_pct": "earnings_history",
+              "sentiment": "earnings_history"
+            },
+            "positive_highlights": [
+              "earnings_history"
+            ],
+            "negative_highlights": [],
+            "highlights": [
+              "earnings_history"
+            ],
+            "tags": {
+              "services": "earnings_history",
+              "margins": "earnings_history"
+            }
+          },
+          "previous_event_deltas": {
+            "analyst_criticism": null,
+            "analysts_count": null,
+            "call_positivity": null,
+            "combined": null,
+            "confidence": null,
+            "eps_growth_pct": null,
+            "future_outlook": null,
+            "gross_margin_pct": null,
+            "management_confidence": null,
+            "performance": null,
+            "questions_count": null,
+            "revenue_growth_pct": null,
+            "sentiment": null
+          },
+          "sources": [
+            {
+              "source_ref": "earnings_history",
+              "kind": "earnings_history",
+              "status": "present",
+              "citation_precision": "document",
+              "url": "https://issuer.example/ir/release",
+              "receipt": {
+                "source_hash": "ba0edae993592ce54da5f58b4f3fa82eafe83b18b04847e5b05f76dff8e59f7d",
+                "source_date": "2026-05-07"
+              }
+            },
+            {
+              "source_ref": "score_overlay",
+              "kind": "score_overlay",
+              "status": "metadata_only",
+              "citation_precision": "metadata",
+              "url": null,
+              "receipt": null
+            },
+            {
+              "source_ref": "transcript",
+              "kind": "transcript",
+              "status": "present",
+              "citation_precision": "document",
+              "url": "/data/tx/AAPL/2026Q2.json.gz",
+              "receipt": null
+            }
+          ],
+          "claim_citations_pending": true
+        },
+        "history": [
+          {
+            "event_id": "cie_75c611441713fa81482ce327",
+            "ticker": "AAPL",
+            "fiscal_year": 2026,
+            "fiscal_quarter": 2,
+            "call_date": "2026-05-07",
+            "summary": "Apple Inc. reported Q2 2026 results.",
+            "highlights": [
+              "Reported Q2 2026."
+            ],
+            "positive_highlights": [
+              "Cost base held to plan."
+            ],
+            "negative_highlights": [],
+            "key_quote": "We exited the quarter with the cost base we committed to.",
+            "tags": [
+              "services",
+              "margins"
+            ],
+            "metrics": {
+              "analyst_criticism": 0.25,
+              "analysts_count": 0.25,
+              "call_positivity": 0.25,
+              "combined": 0.25,
+              "confidence": 0.25,
+              "eps_growth_pct": 0.25,
+              "future_outlook": 0.25,
+              "gross_margin_pct": 0.25,
+              "management_confidence": 0.25,
+              "performance": 0.25,
+              "questions_count": 0.25,
+              "revenue_growth_pct": 0.25,
+              "sentiment": 0.25
+            },
+            "field_lineage": {
+              "summary": "earnings_history",
+              "key_quote": "transcript",
+              "metrics": {
+                "analyst_criticism": "earnings_history",
+                "analysts_count": "earnings_history",
+                "call_positivity": "earnings_history",
+                "combined": "earnings_history",
+                "confidence": "earnings_history",
+                "eps_growth_pct": "earnings_history",
+                "future_outlook": "earnings_history",
+                "gross_margin_pct": "earnings_history",
+                "management_confidence": "earnings_history",
+                "performance": "earnings_history",
+                "questions_count": "earnings_history",
+                "revenue_growth_pct": "earnings_history",
+                "sentiment": "earnings_history"
+              },
+              "positive_highlights": [
+                "earnings_history"
+              ],
+              "negative_highlights": [],
+              "highlights": [
+                "earnings_history"
+              ],
+              "tags": {
+                "services": "earnings_history",
+                "margins": "earnings_history"
+              }
+            },
+            "previous_event_deltas": {
+              "analyst_criticism": null,
+              "analysts_count": null,
+              "call_positivity": null,
+              "combined": null,
+              "confidence": null,
+              "eps_growth_pct": null,
+              "future_outlook": null,
+              "gross_margin_pct": null,
+              "management_confidence": null,
+              "performance": null,
+              "questions_count": null,
+              "revenue_growth_pct": null,
+              "sentiment": null
+            },
+            "sources": [
+              {
+                "source_ref": "earnings_history",
+                "kind": "earnings_history",
+                "status": "present",
+                "citation_precision": "document",
+                "url": "https://issuer.example/ir/release",
+                "receipt": {
+                  "source_hash": "ba0edae993592ce54da5f58b4f3fa82eafe83b18b04847e5b05f76dff8e59f7d",
+                  "source_date": "2026-05-07"
+                }
+              },
+              {
+                "source_ref": "score_overlay",
+                "kind": "score_overlay",
+                "status": "metadata_only",
+                "citation_precision": "metadata",
+                "url": null,
+                "receipt": null
+              },
+              {
+                "source_ref": "transcript",
+                "kind": "transcript",
+                "status": "present",
+                "citation_precision": "document",
+                "url": "/data/tx/AAPL/2026Q2.json.gz",
+                "receipt": null
+              }
+            ],
+            "claim_citations_pending": true
+          },
+          {
+            "event_id": "cie_5c36e0ce3bfe6f14cbc3adeb",
+            "ticker": "AAPL",
+            "fiscal_year": 2026,
+            "fiscal_quarter": 1,
+            "call_date": "2026-02-12",
+            "summary": "Apple Inc. reported Q1 2026 results.",
+            "highlights": [
+              "Reported Q1 2026."
+            ],
+            "positive_highlights": [
+              "Cost base held to plan."
+            ],
+            "negative_highlights": [],
+            "key_quote": "We exited the quarter with the cost base we committed to.",
+            "tags": [
+              "services",
+              "supply_chain"
+            ],
+            "metrics": {
+              "analyst_criticism": 0.25,
+              "analysts_count": 0.25,
+              "call_positivity": 0.25,
+              "combined": 0.25,
+              "confidence": 0.25,
+              "eps_growth_pct": 0.25,
+              "future_outlook": 0.25,
+              "gross_margin_pct": 0.25,
+              "management_confidence": 0.25,
+              "performance": 0.25,
+              "questions_count": 0.25,
+              "revenue_growth_pct": 0.25,
+              "sentiment": 0.25
+            },
+            "field_lineage": {
+              "summary": "earnings_history",
+              "key_quote": "transcript",
+              "metrics": {
+                "analyst_criticism": "earnings_history",
+                "analysts_count": "earnings_history",
+                "call_positivity": "earnings_history",
+                "combined": "earnings_history",
+                "confidence": "earnings_history",
+                "eps_growth_pct": "earnings_history",
+                "future_outlook": "earnings_history",
+                "gross_margin_pct": "earnings_history",
+                "management_confidence": "earnings_history",
+                "performance": "earnings_history",
+                "questions_count": "earnings_history",
+                "revenue_growth_pct": "earnings_history",
+                "sentiment": "earnings_history"
+              },
+              "positive_highlights": [
+                "earnings_history"
+              ],
+              "negative_highlights": [],
+              "highlights": [
+                "earnings_history"
+              ],
+              "tags": {
+                "services": "earnings_history",
+                "supply_chain": "earnings_history"
+              }
+            },
+            "previous_event_deltas": {
+              "analyst_criticism": null,
+              "analysts_count": null,
+              "call_positivity": null,
+              "combined": null,
+              "confidence": null,
+              "eps_growth_pct": null,
+              "future_outlook": null,
+              "gross_margin_pct": null,
+              "management_confidence": null,
+              "performance": null,
+              "questions_count": null,
+              "revenue_growth_pct": null,
+              "sentiment": null
+            },
+            "sources": [
+              {
+                "source_ref": "earnings_history",
+                "kind": "earnings_history",
+                "status": "present",
+                "citation_precision": "document",
+                "url": "https://issuer.example/ir/release",
+                "receipt": {
+                  "source_hash": "e76e34fa920d0e5b343ce167798beb30dd249c423e3d88269dd9b6fc755458de",
+                  "source_date": "2026-02-12"
+                }
+              },
+              {
+                "source_ref": "score_overlay",
+                "kind": "score_overlay",
+                "status": "metadata_only",
+                "citation_precision": "metadata",
+                "url": null,
+                "receipt": null
+              },
+              {
+                "source_ref": "transcript",
+                "kind": "transcript",
+                "status": "present",
+                "citation_precision": "document",
+                "url": "/data/tx/AAPL/2026Q1.json.gz",
+                "receipt": null
+              }
+            ],
+            "claim_citations_pending": true
+          }
+        ],
+        "topics": {
+          "timeline": [
+            {
+              "tag": "margins",
+              "first_event_id": "cie_75c611441713fa81482ce327",
+              "last_event_id": "cie_75c611441713fa81482ce327",
+              "event_count": 1,
+              "status": "added"
+            },
+            {
+              "tag": "services",
+              "first_event_id": "cie_5c36e0ce3bfe6f14cbc3adeb",
+              "last_event_id": "cie_75c611441713fa81482ce327",
+              "event_count": 2,
+              "status": "persistent"
+            },
+            {
+              "tag": "supply_chain",
+              "first_event_id": "cie_5c36e0ce3bfe6f14cbc3adeb",
+              "last_event_id": "cie_5c36e0ce3bfe6f14cbc3adeb",
+              "event_count": 1,
+              "status": "dropped"
+            }
+          ],
+          "added": [
+            "margins"
+          ],
+          "dropped": [
+            "supply_chain"
+          ],
+          "persistent": [
+            "services"
+          ]
+        },
+        "source_completeness": {
+          "earnings_history": {
+            "status": "present",
+            "event_count": 2
+          },
+          "score_overlay": {
+            "status": "metadata_only",
+            "event_count": 2
+          },
+          "transcripts": {
+            "status": "present",
+            "event_count": 2
+          }
+        },
+        "warnings": [],
+        "missing_sources": [],
+        "transport_lineage": {
+          "earnings_manifest": {
+            "generation_id": "bbbbbbbbbbbbbbbbbbbbbbbb",
+            "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+          },
+          "tx_index": {
+            "generation_id": "dddddddddddddddddddddddd",
+            "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "schema": "mastermind.tx-index/v1"
+          },
+          "builder": "company_intelligence.v1"
+        }
+      }
+    },
+    {
+      "case_ref": "v1ctx-partial",
+      "expected": "valid",
+      "context": {
+        "schema": "company_intelligence_context.v1",
+        "authority": "context_only",
+        "generated_at": "2026-08-06T00:00:00Z",
+        "generation_id": "b64a63240feae5b246c6b568",
+        "company": {
+          "ticker": "JPM",
+          "display_name": "JPMorgan Chase & Co.",
+          "exchange": null
+        },
+        "status": "partial",
+        "latest_event_id": "cie_acf6e01e775a3744627190f2",
+        "latest_event": {
+          "event_id": "cie_acf6e01e775a3744627190f2",
+          "ticker": "JPM",
+          "fiscal_year": 2026,
+          "fiscal_quarter": 1,
+          "call_date": "2026-02-12",
+          "summary": "JPMorgan Chase & Co. reported Q1 2026 results.",
+          "highlights": [
+            "Reported Q1 2026."
+          ],
+          "positive_highlights": [
+            "Cost base held to plan."
+          ],
+          "negative_highlights": [],
+          "key_quote": "We exited the quarter with the cost base we committed to.",
+          "tags": [
+            "net_interest_income"
+          ],
+          "metrics": {
+            "analyst_criticism": null,
+            "analysts_count": null,
+            "call_positivity": null,
+            "combined": null,
+            "confidence": null,
+            "eps_growth_pct": 0.25,
+            "future_outlook": null,
+            "gross_margin_pct": null,
+            "management_confidence": null,
+            "performance": null,
+            "questions_count": null,
+            "revenue_growth_pct": 0.25,
+            "sentiment": null
+          },
+          "field_lineage": {
+            "summary": "earnings_history",
+            "key_quote": "transcript",
+            "metrics": {
+              "analyst_criticism": null,
+              "analysts_count": null,
+              "call_positivity": null,
+              "combined": null,
+              "confidence": null,
+              "eps_growth_pct": "earnings_history",
+              "future_outlook": null,
+              "gross_margin_pct": null,
+              "management_confidence": null,
+              "performance": null,
+              "questions_count": null,
+              "revenue_growth_pct": "earnings_history",
+              "sentiment": null
+            },
+            "positive_highlights": [
+              "earnings_history"
+            ],
+            "negative_highlights": [],
+            "highlights": [
+              "earnings_history"
+            ],
+            "tags": {
+              "net_interest_income": "earnings_history"
+            }
+          },
+          "previous_event_deltas": {
+            "analyst_criticism": null,
+            "analysts_count": null,
+            "call_positivity": null,
+            "combined": null,
+            "confidence": null,
+            "eps_growth_pct": null,
+            "future_outlook": null,
+            "gross_margin_pct": null,
+            "management_confidence": null,
+            "performance": null,
+            "questions_count": null,
+            "revenue_growth_pct": null,
+            "sentiment": null
+          },
+          "sources": [
+            {
+              "source_ref": "earnings_history",
+              "kind": "earnings_history",
+              "status": "present",
+              "citation_precision": "document",
+              "url": "https://issuer.example/ir/release",
+              "receipt": {
+                "source_hash": "67c50449383c42a345159e27ba96d4792be408d0bb87a21021534d8672424049",
+                "source_date": "2026-02-12"
+              }
+            },
+            {
+              "source_ref": "transcript",
+              "kind": "transcript",
+              "status": "present",
+              "citation_precision": "document",
+              "url": "/data/tx/JPM/2026Q1.json.gz",
+              "receipt": null
+            }
+          ],
+          "claim_citations_pending": true
+        },
+        "history": [
+          {
+            "event_id": "cie_acf6e01e775a3744627190f2",
+            "ticker": "JPM",
+            "fiscal_year": 2026,
+            "fiscal_quarter": 1,
+            "call_date": "2026-02-12",
+            "summary": "JPMorgan Chase & Co. reported Q1 2026 results.",
+            "highlights": [
+              "Reported Q1 2026."
+            ],
+            "positive_highlights": [
+              "Cost base held to plan."
+            ],
+            "negative_highlights": [],
+            "key_quote": "We exited the quarter with the cost base we committed to.",
+            "tags": [
+              "net_interest_income"
+            ],
+            "metrics": {
+              "analyst_criticism": null,
+              "analysts_count": null,
+              "call_positivity": null,
+              "combined": null,
+              "confidence": null,
+              "eps_growth_pct": 0.25,
+              "future_outlook": null,
+              "gross_margin_pct": null,
+              "management_confidence": null,
+              "performance": null,
+              "questions_count": null,
+              "revenue_growth_pct": 0.25,
+              "sentiment": null
+            },
+            "field_lineage": {
+              "summary": "earnings_history",
+              "key_quote": "transcript",
+              "metrics": {
+                "analyst_criticism": null,
+                "analysts_count": null,
+                "call_positivity": null,
+                "combined": null,
+                "confidence": null,
+                "eps_growth_pct": "earnings_history",
+                "future_outlook": null,
+                "gross_margin_pct": null,
+                "management_confidence": null,
+                "performance": null,
+                "questions_count": null,
+                "revenue_growth_pct": "earnings_history",
+                "sentiment": null
+              },
+              "positive_highlights": [
+                "earnings_history"
+              ],
+              "negative_highlights": [],
+              "highlights": [
+                "earnings_history"
+              ],
+              "tags": {
+                "net_interest_income": "earnings_history"
+              }
+            },
+            "previous_event_deltas": {
+              "analyst_criticism": null,
+              "analysts_count": null,
+              "call_positivity": null,
+              "combined": null,
+              "confidence": null,
+              "eps_growth_pct": null,
+              "future_outlook": null,
+              "gross_margin_pct": null,
+              "management_confidence": null,
+              "performance": null,
+              "questions_count": null,
+              "revenue_growth_pct": null,
+              "sentiment": null
+            },
+            "sources": [
+              {
+                "source_ref": "earnings_history",
+                "kind": "earnings_history",
+                "status": "present",
+                "citation_precision": "document",
+                "url": "https://issuer.example/ir/release",
+                "receipt": {
+                  "source_hash": "67c50449383c42a345159e27ba96d4792be408d0bb87a21021534d8672424049",
+                  "source_date": "2026-02-12"
+                }
+              },
+              {
+                "source_ref": "transcript",
+                "kind": "transcript",
+                "status": "present",
+                "citation_precision": "document",
+                "url": "/data/tx/JPM/2026Q1.json.gz",
+                "receipt": null
+              }
+            ],
+            "claim_citations_pending": true
+          }
+        ],
+        "topics": {
+          "timeline": [
+            {
+              "tag": "net_interest_income",
+              "first_event_id": "cie_acf6e01e775a3744627190f2",
+              "last_event_id": "cie_acf6e01e775a3744627190f2",
+              "event_count": 1,
+              "status": "added"
+            }
+          ],
+          "added": [
+            "net_interest_income"
+          ],
+          "dropped": [],
+          "persistent": []
+        },
+        "source_completeness": {
+          "earnings_history": {
+            "status": "present",
+            "event_count": 1
+          },
+          "score_overlay": {
+            "status": "missing",
+            "event_count": 0
+          },
+          "transcripts": {
+            "status": "present",
+            "event_count": 1
+          }
+        },
+        "warnings": [
+          "transcripts_partial"
+        ],
+        "missing_sources": [
+          "transcripts_for_some_events"
+        ],
+        "transport_lineage": {
+          "earnings_manifest": {
+            "generation_id": "bbbbbbbbbbbbbbbbbbbbbbbb",
+            "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+          },
+          "tx_index": {
+            "generation_id": "dddddddddddddddddddddddd",
+            "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "schema": "mastermind.tx-index/v1"
+          },
+          "builder": "company_intelligence.v1"
+        }
+      }
+    },
+    {
+      "case_ref": "v1ctx-stale",
+      "expected": "valid",
+      "context": {
+        "schema": "company_intelligence_context.v1",
+        "authority": "context_only",
+        "generated_at": "2026-08-06T00:00:00Z",
+        "generation_id": "c4694f2e93d5c4e7d51f9c5d",
+        "company": {
+          "ticker": "O",
+          "display_name": "Realty Income Corporation",
+          "exchange": null
+        },
+        "status": "stale",
+        "latest_event_id": "cie_d352f00a5d687769ae3d8d08",
+        "latest_event": {
+          "event_id": "cie_d352f00a5d687769ae3d8d08",
+          "ticker": "O",
+          "fiscal_year": 2025,
+          "fiscal_quarter": 4,
+          "call_date": "2025-11-04",
+          "summary": "Realty Income Corporation reported Q4 2025 results.",
+          "highlights": [
+            "Reported Q4 2025."
+          ],
+          "positive_highlights": [
+            "Cost base held to plan."
+          ],
+          "negative_highlights": [],
+          "key_quote": "We exited the quarter with the cost base we committed to.",
+          "tags": [
+            "ffo"
+          ],
+          "metrics": {
+            "analyst_criticism": null,
+            "analysts_count": null,
+            "call_positivity": null,
+            "combined": null,
+            "confidence": null,
+            "eps_growth_pct": 0.25,
+            "future_outlook": null,
+            "gross_margin_pct": null,
+            "management_confidence": null,
+            "performance": null,
+            "questions_count": null,
+            "revenue_growth_pct": 0.25,
+            "sentiment": null
+          },
+          "field_lineage": {
+            "summary": "earnings_history",
+            "key_quote": "transcript",
+            "metrics": {
+              "analyst_criticism": null,
+              "analysts_count": null,
+              "call_positivity": null,
+              "combined": null,
+              "confidence": null,
+              "eps_growth_pct": "earnings_history",
+              "future_outlook": null,
+              "gross_margin_pct": null,
+              "management_confidence": null,
+              "performance": null,
+              "questions_count": null,
+              "revenue_growth_pct": "earnings_history",
+              "sentiment": null
+            },
+            "positive_highlights": [
+              "earnings_history"
+            ],
+            "negative_highlights": [],
+            "highlights": [
+              "earnings_history"
+            ],
+            "tags": {
+              "ffo": "earnings_history"
+            }
+          },
+          "previous_event_deltas": {
+            "analyst_criticism": null,
+            "analysts_count": null,
+            "call_positivity": null,
+            "combined": null,
+            "confidence": null,
+            "eps_growth_pct": null,
+            "future_outlook": null,
+            "gross_margin_pct": null,
+            "management_confidence": null,
+            "performance": null,
+            "questions_count": null,
+            "revenue_growth_pct": null,
+            "sentiment": null
+          },
+          "sources": [
+            {
+              "source_ref": "earnings_history",
+              "kind": "earnings_history",
+              "status": "present",
+              "citation_precision": "document",
+              "url": "https://issuer.example/ir/release",
+              "receipt": {
+                "source_hash": "f333a8e64e998700807875697fce9de81a9f853be5637c6de793c472da680513",
+                "source_date": "2025-11-04"
+              }
+            },
+            {
+              "source_ref": "transcript",
+              "kind": "transcript",
+              "status": "present",
+              "citation_precision": "document",
+              "url": "/data/tx/O/2025Q4.json.gz",
+              "receipt": null
+            }
+          ],
+          "claim_citations_pending": true
+        },
+        "history": [
+          {
+            "event_id": "cie_d352f00a5d687769ae3d8d08",
+            "ticker": "O",
+            "fiscal_year": 2025,
+            "fiscal_quarter": 4,
+            "call_date": "2025-11-04",
+            "summary": "Realty Income Corporation reported Q4 2025 results.",
+            "highlights": [
+              "Reported Q4 2025."
+            ],
+            "positive_highlights": [
+              "Cost base held to plan."
+            ],
+            "negative_highlights": [],
+            "key_quote": "We exited the quarter with the cost base we committed to.",
+            "tags": [
+              "ffo"
+            ],
+            "metrics": {
+              "analyst_criticism": null,
+              "analysts_count": null,
+              "call_positivity": null,
+              "combined": null,
+              "confidence": null,
+              "eps_growth_pct": 0.25,
+              "future_outlook": null,
+              "gross_margin_pct": null,
+              "management_confidence": null,
+              "performance": null,
+              "questions_count": null,
+              "revenue_growth_pct": 0.25,
+              "sentiment": null
+            },
+            "field_lineage": {
+              "summary": "earnings_history",
+              "key_quote": "transcript",
+              "metrics": {
+                "analyst_criticism": null,
+                "analysts_count": null,
+                "call_positivity": null,
+                "combined": null,
+                "confidence": null,
+                "eps_growth_pct": "earnings_history",
+                "future_outlook": null,
+                "gross_margin_pct": null,
+                "management_confidence": null,
+                "performance": null,
+                "questions_count": null,
+                "revenue_growth_pct": "earnings_history",
+                "sentiment": null
+              },
+              "positive_highlights": [
+                "earnings_history"
+              ],
+              "negative_highlights": [],
+              "highlights": [
+                "earnings_history"
+              ],
+              "tags": {
+                "ffo": "earnings_history"
+              }
+            },
+            "previous_event_deltas": {
+              "analyst_criticism": null,
+              "analysts_count": null,
+              "call_positivity": null,
+              "combined": null,
+              "confidence": null,
+              "eps_growth_pct": null,
+              "future_outlook": null,
+              "gross_margin_pct": null,
+              "management_confidence": null,
+              "performance": null,
+              "questions_count": null,
+              "revenue_growth_pct": null,
+              "sentiment": null
+            },
+            "sources": [
+              {
+                "source_ref": "earnings_history",
+                "kind": "earnings_history",
+                "status": "present",
+                "citation_precision": "document",
+                "url": "https://issuer.example/ir/release",
+                "receipt": {
+                  "source_hash": "f333a8e64e998700807875697fce9de81a9f853be5637c6de793c472da680513",
+                  "source_date": "2025-11-04"
+                }
+              },
+              {
+                "source_ref": "transcript",
+                "kind": "transcript",
+                "status": "present",
+                "citation_precision": "document",
+                "url": "/data/tx/O/2025Q4.json.gz",
+                "receipt": null
+              }
+            ],
+            "claim_citations_pending": true
+          }
+        ],
+        "topics": {
+          "timeline": [
+            {
+              "tag": "ffo",
+              "first_event_id": "cie_d352f00a5d687769ae3d8d08",
+              "last_event_id": "cie_d352f00a5d687769ae3d8d08",
+              "event_count": 1,
+              "status": "added"
+            }
+          ],
+          "added": [
+            "ffo"
+          ],
+          "dropped": [],
+          "persistent": []
+        },
+        "source_completeness": {
+          "earnings_history": {
+            "status": "present",
+            "event_count": 1
+          },
+          "score_overlay": {
+            "status": "missing",
+            "event_count": 0
+          },
+          "transcripts": {
+            "status": "present",
+            "event_count": 1
+          }
+        },
+        "warnings": [
+          "freshness_reference_missing"
+        ],
+        "missing_sources": [],
+        "transport_lineage": {
+          "earnings_manifest": {
+            "generation_id": "bbbbbbbbbbbbbbbbbbbbbbbb",
+            "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+          },
+          "tx_index": {
+            "generation_id": "dddddddddddddddddddddddd",
+            "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "schema": "mastermind.tx-index/v1"
+          },
+          "builder": "company_intelligence.v1"
+        }
+      }
+    },
+    {
+      "case_ref": "v1ctx-not-covered",
+      "expected": "valid",
+      "context": {
+        "schema": "company_intelligence_context.v1",
+        "authority": "context_only",
+        "generated_at": "2026-08-06T00:00:00Z",
+        "generation_id": "c928e9893944a6137ab70e32",
+        "company": {
+          "ticker": "MOG.A",
+          "display_name": "Moog Inc.",
+          "exchange": null
+        },
+        "status": "not_covered",
+        "latest_event_id": null,
+        "latest_event": null,
+        "history": [],
+        "topics": {
+          "timeline": [],
+          "added": [],
+          "dropped": [],
+          "persistent": []
+        },
+        "source_completeness": {
+          "earnings_history": {
+            "status": "missing",
+            "event_count": 0
+          },
+          "score_overlay": {
+            "status": "missing",
+            "event_count": 0
+          },
+          "transcripts": {
+            "status": "missing",
+            "event_count": 0
+          }
+        },
+        "warnings": [
+          "earnings_history_missing"
+        ],
+        "missing_sources": [
+          "earnings_history"
+        ],
+        "transport_lineage": {
+          "earnings_manifest": {
+            "generation_id": "bbbbbbbbbbbbbbbbbbbbbbbb",
+            "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+          },
+          "tx_index": {
+            "generation_id": "dddddddddddddddddddddddd",
+            "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "schema": "mastermind.tx-index/v1"
+          },
+          "builder": "company_intelligence.v1"
+        }
+      }
+    }
+  ]
+}

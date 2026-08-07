@@ -99,21 +99,31 @@ def test_merge_accumulates_new_date(tmp_path, monkeypatch):
 
 
 def test_merge_deduplicates_on_key(tmp_path, monkeypatch):
-    """Re-grading the same (as_of, ticker, lane, horizon) replaces the stored row."""
+    """Re-grading the same (as_of, ticker, lane, horizon) yields ONE row, and does not
+    restate its price-derived measurement.
+
+    INVERTED 2026-08-06. This asserted `excess_spy` took the fresh value, which is the
+    behaviour that let a re-based breadth cache silently rewrite published returns: 75
+    shipped rows moved on a re-run, 19 materially. Dedup-to-one-row is still the
+    contract; the measurement is now write-once (see _FROZEN_PRICE_COLS)."""
     monkeypatch.setattr("scripts.grade_us_board.LEDGER_DIR", tmp_path)
     pq = tmp_path / "retro_grades.parquet"
     monkeypatch.setattr("scripts.grade_us_board.RETRO_PARQUET", pq)
 
     first = _minimal_grade_df(as_of="2026-01-02", n=3)
     _merge_into_store(first)
+    # each seeded row carries a DIFFERENT excess_spy, so compare per ticker rather than
+    # against one scalar — a scalar comparison would pass on a single-row fixture and
+    # hide a merge that collapsed every row onto the same value.
+    original = first.set_index("ticker")["excess_spy"]
 
-    # Re-grade same keys with updated excess_spy value
     updated = first.copy()
     updated["excess_spy"] = 0.99
     result = _merge_into_store(updated)
-    # De-dup should keep fresh (0.99), not the old value
-    assert len(result) == 3
-    assert (result["excess_spy"] == 0.99).all()
+    assert len(result) == 3, "dedup must still collapse to one row per key"
+    got = result.set_index("ticker")["excess_spy"]
+    assert got.reindex(original.index).equals(original), (
+        "a published excess return was restated by a re-grade")
 
 
 def test_merge_with_empty_fresh_returns_stored(tmp_path, monkeypatch):
@@ -569,24 +579,31 @@ def test_schema_union_legacy_rows_get_nulls(tmp_path, monkeypatch):
     assert new_rows["fwd_mfe_5"].notna().all(), "new rows should have non-null fwd_mfe_5"
 
 
-def test_schema_union_keep_fresh_replaces_stored_row(tmp_path, monkeypatch):
-    """W0.1 B-b: keep-FIRST — dedup on (as_of, ticker, lane, horizon) never overwrites
-    stored non-null with null (fresh takes precedence on the full row)."""
+def test_schema_union_freezes_prices_but_still_accrues_annotations(tmp_path, monkeypatch):
+    """W0.1 B-b schema-union still works; the PRICE half of the row is now write-once.
+
+    INVERTED 2026-08-06 (was: fresh replaces the stored row wholesale). `fwd_mfe_5` is
+    computed off the close panel, and the panel is re-based in place, so replacing it on
+    every run restates history. Annotations must still land, or the regime/archetype
+    backfills stop reaching historical rows."""
     monkeypatch.setattr("scripts.grade_us_board.LEDGER_DIR", tmp_path)
     pq = tmp_path / "retro_grades.parquet"
     monkeypatch.setattr("scripts.grade_us_board.RETRO_PARQUET", pq)
 
-    # First insert: rows with spine values
     first = _grade_df_with_spine(n=2, as_of="2026-01-02", horizon=5)
     _merge_into_store(first)
+    original_mfe = float(first["fwd_mfe_5"].iloc[0])
 
-    # Second insert (same keys): fresh rows should REPLACE stored rows (fresh takes precedence)
     second = first.copy()
-    second["fwd_mfe_5"] = 0.99
+    second["fwd_mfe_5"] = 0.99                       # price-derived  -> frozen
+    second["archetype"] = "coiled"                   # annotation     -> accrues
     result = _merge_into_store(second)
+
     assert len(result) == 2, "dedup should yield 2 rows"
-    # fresh wins -> new value 0.99
-    assert (result["fwd_mfe_5"] == 0.99).all(), "fresh row should replace stored row"
+    assert (result["fwd_mfe_5"] == original_mfe).all(), (
+        "a price-derived spine column was restated")
+    assert (result["archetype"] == "coiled").all(), (
+        "annotations must still reach historical rows")
 
 
 # ---------------------------------------------------------------------------
