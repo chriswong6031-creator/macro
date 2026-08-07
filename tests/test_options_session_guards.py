@@ -663,3 +663,108 @@ def test_the_writers_do_not_rewrite_history():
             assert banned not in src.split("SESSION GATE", 1)[-1][:2000], (
                 f"{rel}: the session gate must not mutate history ({banned})"
             )
+
+
+def _sym(prefix: str, i: int) -> str:
+    r"""A synthetic ticker that never ends in a digit — ``_ADJUSTED_ROOT`` (``\d$``)
+    reads a numeric-suffixed root as corporate-action-adjusted and stamps it all-null,
+    which would make every test below vacuously "null"."""
+    return f"{prefix}{chr(65 + i // 26)}{chr(65 + i % 26)}"
+
+
+class TestVannaTercileCoverageFloor:
+    """``opt_vanna_relief`` is a CROSS-SECTIONAL claim — "vanna_hedge_5d in the top
+    tercile per as_of" — so the ranked names must represent the measurable universe.
+
+    Since the 5-session basis became calendar-resolved (above) it returns None on a
+    store gap, and a gap at the ONE session the basis needs is store-WIDE: measured on
+    the live store, as_of 2026-07-13 / 07-22 / 07-24 collapse from ~375 ranked names to
+    exactly 5, while every healthy date ranks >=99.7%. A bare ``len(vals) >= 3`` still
+    FIRES on those five, so "top tercile of the market" silently becomes "top tercile of
+    5 coverage-selected names" — the 2026-07-22 threshold moves +13,460 -> -850.
+    """
+
+    @staticmethod
+    def _run(gapped: int, covered: int):
+        """A universe of ``gapped`` + ``covered`` names on one as_of. Gapped names hold
+        >=6 sessions of history but NO row at the 5-back session; covered names do."""
+        import pandas as _pd
+        from scripts.stamp_options_state import stamp_ledger
+        import engine.options_stamp as _os
+
+        AS_OF = "2026-08-06"
+        # 07-30 is exactly 5 sessions before 08-06.
+        WITH = ["2026-07-27", "2026-07-28", "2026-07-29", "2026-07-30",
+                "2026-07-31", "2026-08-06"]
+        WITHOUT = ["2026-07-22", "2026-07-23", "2026-07-24", "2026-07-27",
+                   "2026-07-28", "2026-07-31", "2026-08-06"]
+        names = ([(_sym("GAP", i), WITHOUT) for i in range(gapped)]
+                 + [(_sym("OK", i), WITH) for i in range(covered)])
+        frames = {}
+        for i, (t, ds) in enumerate(names):
+            # distinct iv30 per name so the tercile has a real spread to rank
+            frames[t] = _summary_frame(ds, {ds[-1]: 0.30 + 0.01 * i})
+        df = _pd.DataFrame({
+            "as_of": [AS_OF] * len(names),
+            "ticker": [t for t, _ in names],
+            "lane": ["buy"] * len(names),
+            "horizon": [5] * len(names),
+            "fwd_ret_5": [0.0] * len(names),
+        })
+        import pytest as _pytest
+        mp = _pytest.MonkeyPatch()
+        try:
+            mp.setattr(_os, "_default_read_summary", lambda t: frames.get(t))
+            mp.setattr(_os, "_default_chain_dates", lambda: [])
+            mp.setattr(_os, "_default_read_chain", lambda d: None)
+            out, _ = stamp_ledger(df)
+        finally:
+            mp.undo()
+        return out
+
+    def test_a_coverage_selected_cross_section_does_not_rank(self):
+        """5 covered of 100 measurable = 5% — far below the floor. The flag must stay
+        null: unmeasurable, never a tercile whose meaning silently changed."""
+        out = self._run(gapped=95, covered=5)
+        ranked = out["opt_vanna_relief"].notna().sum()
+        assert ranked == 0, (
+            f"{ranked} rows were ranked from a 5-of-100 cross-section — the tercile "
+            "fired on a coverage-selected subsample")
+
+    def test_a_fully_covered_cross_section_still_ranks(self):
+        """Premise — the floor must not simply disable the flag. Same universe size,
+        full coverage, and the tercile fires as before."""
+        out = self._run(gapped=0, covered=100)
+        ranked = out["opt_vanna_relief"].notna().sum()
+        assert ranked > 0, (
+            "the coverage floor blocked a fully covered cross-section — it is not "
+            "measuring coverage, it is just off")
+
+    def test_the_floor_is_a_share_of_measurable_not_of_the_board(self):
+        """Names with NO options history at all were never candidates; counting them in
+        the denominator would refuse to rank on a perfectly healthy date (most ledger
+        rows are names with no options store: 214 of 2,287 carry this flag)."""
+        import pandas as _pd
+        from scripts.stamp_options_state import stamp_ledger
+        import engine.options_stamp as _os
+        WITH = ["2026-07-27", "2026-07-28", "2026-07-29", "2026-07-30",
+                "2026-07-31", "2026-08-06"]
+        frames = {_sym("OK", i): _summary_frame(WITH, {"2026-08-06": 0.30 + 0.01 * i})
+                  for i in range(10)}
+        rows = [_sym("OK", i) for i in range(10)] + [_sym("NONE", i) for i in range(90)]
+        df = _pd.DataFrame({
+            "as_of": ["2026-08-06"] * len(rows), "ticker": rows,
+            "lane": ["buy"] * len(rows), "horizon": [5] * len(rows),
+            "fwd_ret_5": [0.0] * len(rows),
+        })
+        mp = pytest.MonkeyPatch()
+        try:
+            mp.setattr(_os, "_default_read_summary", lambda t: frames.get(t))
+            mp.setattr(_os, "_default_chain_dates", lambda: [])
+            mp.setattr(_os, "_default_read_chain", lambda d: None)
+            out, _ = stamp_ledger(df)
+        finally:
+            mp.undo()
+        assert out["opt_vanna_relief"].notna().sum() > 0, (
+            "10 fully-covered names among 90 with no options history at all must still "
+            "rank — the denominator counted non-candidates")

@@ -111,6 +111,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from engine import options_stamp
 from engine.options_stamp import (
     STAMP_COLS,
     STAMP_COVERAGE_COLS,
@@ -131,6 +132,13 @@ ALL_STAMP_COLS: list[str] = STAMP_COLS + TAPE_FLOW_STAMP_COLS
 # Columns whose value comes from a POSITIONAL window over a dated store (chains files or
 # summary rows) and is therefore invalidated by a non-session entry inside that window.
 # These are the columns --restamp-positional recomputes; see module header REPAIR.
+# Cross-sectional floors for the opt_vanna_relief tercile (see the COVERAGE FLOOR block
+# in stamp_ledger).  _TERCILE_MIN_NAMES is the pre-existing "enough values to have a
+# boundary" floor; _TERCILE_MIN_COVERAGE is the share of MEASURABLE names that must
+# actually carry a 5-session basis before the tercile means anything cross-sectionally.
+_TERCILE_MIN_NAMES = 3
+_TERCILE_MIN_COVERAGE = 0.50
+
 _POSITIONAL_WINDOW_COLS: list[str] = [
     "opt_doi_slope_5d",        # OLS over the trailing 6 chain files
     "opt_voi_flag",            # chains usable[-1] volume vs usable[-2] OI
@@ -248,6 +256,8 @@ def stamp_ledger(
     _ovc_pending: dict[tuple, dict] = {}
     # Separate map for vanna_hedge_5d values (computed per-ticker for cross-sectional ranking)
     _ovc_vhd_precomputed: dict[tuple, float | None] = {}
+    # Why each null is null — feeds the tercile's coverage floor (BASIS_* in options_stamp)
+    _ovc_vhd_basis: dict[tuple, str] = {}
 
     for idx in df.index[eligible_mask]:
         as_of = df.at[idx, "as_of"]
@@ -269,10 +279,14 @@ def stamp_ledger(
             _ovc_pending[key] = stamp  # stash for cross-sectional ranking below
             # Compute vanna_hedge_5d for this (as_of, ticker) if not already done
             if key not in _ovc_vhd_precomputed:
-                from engine.options_stamp import _vanna_hedge_5d_from_summary, _default_read_summary, _as_date as _stamp_as_date
+                from engine.options_stamp import _vanna_hedge_5d_basis, _default_read_summary, _as_date as _stamp_as_date
                 _as_of_d = _stamp_as_date(as_of)
                 _sdf = _default_read_summary(ticker)
-                _ovc_vhd_precomputed[key] = _vanna_hedge_5d_from_summary(_as_of_d, _sdf) if _as_of_d else None
+                _vhd_val, _vhd_status = (
+                    _vanna_hedge_5d_basis(_as_of_d, _sdf) if _as_of_d
+                    else (None, options_stamp.BASIS_NO_HISTORY))
+                _ovc_vhd_precomputed[key] = _vhd_val
+                _ovc_vhd_basis[key] = _vhd_status
             # Always write opt_opex_days (calendar-derived; always available) even when
             # coverage-gated cols are null.  This lets us track OPEX proximity for all
             # fires without poisoning the retry gate.
@@ -343,10 +357,39 @@ def stamp_ledger(
         if vhd is not None and math.isfinite(vhd):
             _vhd_by_asof.setdefault(str(asof_k), []).append(vhd)
 
+    # COVERAGE FLOOR (2026-08-06).  A tercile is a CROSS-SECTIONAL statement — "top third
+    # of the market's vanna hedge pressure" — so it is only meaningful when the ranked
+    # names actually represent the measurable universe.  Since the 5-session basis became
+    # calendar-resolved it returns None on a store gap, and a gap at the ONE session the
+    # basis needs is store-WIDE: measured on the live store, as_of 2026-07-13 / 07-22 /
+    # 07-24 collapse from ~375 ranked names to exactly 5 (the handful whose store happens
+    # to hold that session), while every healthy date ranks ≥99.7% of them.  A bare
+    # ``len(vals) >= 3`` still FIRES on those five, silently redefining "top tercile of the
+    # market" as "top tercile of 5 coverage-selected names" — the threshold moves from
+    # +13,460 to −850 at as_of 2026-07-22, admitting names nowhere near the true top third.
+    # Below the floor the flag is unmeasurable, so it stays null (nulls printed, never a
+    # gate whose meaning silently changed).  The two populations are separated by ~70×, so
+    # this threshold is nowhere near either of them.
+    _measurable_by_asof: dict[str, int] = {}
+    for (asof_k, _tk), status in _ovc_vhd_basis.items():
+        if status in (options_stamp.BASIS_OK, options_stamp.BASIS_GAP):
+            _measurable_by_asof[str(asof_k)] = _measurable_by_asof.get(str(asof_k), 0) + 1
+
     _tercile_hi: dict[str, float] = {}
     for asof_k, vals in _vhd_by_asof.items():
-        if len(vals) >= 3:
-            _tercile_hi[asof_k] = float(np.percentile(vals, 100.0 * 2.0 / 3.0))
+        measurable = _measurable_by_asof.get(asof_k, len(vals))
+        if len(vals) < _TERCILE_MIN_NAMES:
+            continue
+        if measurable and len(vals) < _TERCILE_MIN_COVERAGE * measurable:
+            print(f"::warning title=vanna-tercile-coverage::opt_vanna_relief not ranked "
+                  f"for as_of {asof_k}: only {len(vals)} of {measurable} measurable names "
+                  f"carry a 5-session basis ({100.0 * len(vals) / measurable:.1f}% < "
+                  f"{100.0 * _TERCILE_MIN_COVERAGE:.0f}% floor) — the polygon_gex store is "
+                  f"missing that as_of's 5-back session for the rest, so a tercile over "
+                  f"the survivors would be coverage-selected, not cross-sectional",
+                  flush=True)
+            continue
+        _tercile_hi[asof_k] = float(np.percentile(vals, 100.0 * 2.0 / 3.0))
 
     # Step 3: Compute opt_vanna_relief per eligible row and write it back.
     # Also compute iv30_5d_chg directly from the summary frame for each ticker.

@@ -758,6 +758,61 @@ def _row_n_sessions_back(usable: pd.DataFrame, n: int) -> pd.Series | None:
     return None
 
 
+# Why the 5-session basis was unavailable — the cross-sectional ranker in
+# scripts/stamp_options_state.py needs these apart, because they mean opposite things
+# for its tercile denominator:
+#   BASIS_NO_HISTORY — the name has no options coverage at this as_of.  It was never a
+#     candidate; counting it would depress the coverage ratio on a perfectly healthy
+#     date (most ledger rows are names with no options store at all: 214 of 2,287).
+#   BASIS_GAP — the name HAS history, but the store is missing the one session the
+#     basis needs.  That is a collection MISS, and a date where most names miss is a
+#     date whose surviving cross-section is coverage-SELECTED, not representative.
+BASIS_OK = "ok"
+BASIS_NO_HISTORY = "no_history"
+BASIS_GAP = "gap"
+
+
+def _vanna_hedge_5d_basis(
+    as_of: _dt.date,
+    sdf: pd.DataFrame | None,
+) -> tuple[float | None, str]:
+    """``(vanna_hedge_5d, status)`` — the value plus WHY it is null when it is null.
+
+    Same computation as ``_vanna_hedge_5d_from_summary`` (which wraps this); the status
+    exists so a caller ranking these values cross-sectionally can measure its own
+    coverage.  See the BASIS_* constants above.
+    """
+    if sdf is None or sdf.empty:
+        return None, BASIS_NO_HISTORY
+    if "net_vex" not in sdf.columns or "iv30" not in sdf.columns:
+        return None, BASIS_NO_HISTORY
+    idx_dates = [_as_date(d) for d in sdf.index]
+    mask = [d is not None and d <= as_of for d in idx_dates]
+    usable = sdf[mask]
+    if len(usable) < 6:
+        return None, BASIS_NO_HISTORY
+    latest = usable.iloc[-1]
+    prior = _row_n_sessions_back(usable, 5)
+    if prior is None:
+        # ≥6 sessions of history, but not a row AT the 5-back session: a store gap.
+        return None, BASIS_GAP
+
+    def _f(v) -> float | None:
+        try:
+            x = float(v)
+        except (TypeError, ValueError):
+            return None
+        return None if not math.isfinite(x) else x
+
+    net_vex = _f(latest.get("net_vex"))
+    iv30_latest = _f(latest.get("iv30"))
+    iv30_prior = _f(prior.get("iv30"))
+    if net_vex is None or iv30_latest is None or iv30_prior is None:
+        return None, BASIS_GAP
+    iv30_5d_chg = iv30_latest - iv30_prior
+    return round(-net_vex * iv30_5d_chg, 6), BASIS_OK
+
+
 def _vanna_hedge_5d_from_summary(
     as_of: _dt.date,
     sdf: pd.DataFrame | None,
@@ -771,34 +826,7 @@ def _vanna_hedge_5d_from_summary(
     Returns None when insufficient history, the 5-back session's row is absent,
     columns absent, or any value non-finite.
     """
-    if sdf is None or sdf.empty:
-        return None
-    if "net_vex" not in sdf.columns or "iv30" not in sdf.columns:
-        return None
-    idx_dates = [_as_date(d) for d in sdf.index]
-    mask = [d is not None and d <= as_of for d in idx_dates]
-    usable = sdf[mask]
-    if len(usable) < 6:
-        return None
-    latest = usable.iloc[-1]
-    prior = _row_n_sessions_back(usable, 5)
-    if prior is None:
-        return None
-
-    def _f(v) -> float | None:
-        try:
-            x = float(v)
-        except (TypeError, ValueError):
-            return None
-        return None if not math.isfinite(x) else x
-
-    net_vex = _f(latest.get("net_vex"))
-    iv30_latest = _f(latest.get("iv30"))
-    iv30_prior = _f(prior.get("iv30"))
-    if net_vex is None or iv30_latest is None or iv30_prior is None:
-        return None
-    iv30_5d_chg = iv30_latest - iv30_prior
-    return round(-net_vex * iv30_5d_chg, 6)
+    return _vanna_hedge_5d_basis(as_of, sdf)[0]
 
 
 def _pin_risk_flag(
