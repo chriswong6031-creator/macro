@@ -1,11 +1,9 @@
 # Display-grid alignment — bar_derive + chart.js on the absolute session anchor
 
-**Era:** `display-grid-abs-session-2026-08-06` · **Status:** ADJUDICATED; implementation
-PENDING in PR #4799, which is gated behind the two sibling eras below (both open).
-This document is the ruling of record — land it separately so the decision is citable
-and this surface is not re-litigated while the code waits. Nothing described under
-"the fix" is on `main` yet; check `git cat-file -e origin/main:engine/session_anchor.py`
-before building on any of it.
+**Era:** `display-grid-abs-session-2026-08-06` · **Status:** ADJUDICATED (this ruling
+landed on `main` separately in #4853); the implementation it describes lands with THIS
+PR (#4799). Until this merges, nothing under "the fix" is on `main` — check
+`git cat-file -e origin/main:engine/session_anchor.py` before building on any of it.
 **Charter lineage:** chartered by `research/SIGNAL_QUALITY_SESSION_ANCHOR_ADJUDICATION_BY_FABLE.md`
 (§Consumer surfaces + §Sibling triage: "The display-grid pair (`bar_derive` + chart.js
 `floor(i/3)`) … chartered separately"), itself the A3 follow-up of

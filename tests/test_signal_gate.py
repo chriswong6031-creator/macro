@@ -13,6 +13,7 @@ import pytest
 from engine.signal_gate import BUYABLE_TIERS, buy_signal, is_buyable
 from engine.signal_gate import blend_sorted, tier_rank, TIER_FRAC
 from engine import confluence_tiers
+from engine import signal_quality
 
 
 def test_buyable_tiers_are_t1_t2_t3_only():
@@ -59,7 +60,12 @@ def test_buy_signal_is_slim_and_json_safe():
                          # (abs-session-2026-08-06). Before it, the same name graded
                          # differently from two loaders on the same night, so a persisted buy
                          # row is only comparable to another row from the same era.
-                         "anchor_era"}
+                         "anchor_era",
+                         # ...and the §7 marker stream's OWN era (sq-abs-session-2026-08-06,
+                         # R-SQ3). The two grids were re-anchored in different PRs, so a row
+                         # needs BOTH labels to be placed: `anchor_era` fences the cascade
+                         # that tiered it, `sq_anchor_era` the marker stream that fed it.
+                         "sq_anchor_era"}
     assert "last" not in slim and "result" not in slim          # no NaN-prone / heavy fields
     json.dumps(slim, allow_nan=False)                            # must not raise
     assert is_buyable(slim) is True                              # slim still gates correctly
@@ -67,7 +73,10 @@ def test_buy_signal_is_slim_and_json_safe():
     # row with no era cannot be placed in either cohort after the fact.
     assert buy_signal(None) == {"eligible": False, "tier_cascade": None,
                                 "htf_s1": False, "htf_s2": False, "young_history": False,
-                                "anchor_era": confluence_tiers.ANCHOR_ERA}
+                                "anchor_era": confluence_tiers.ANCHOR_ERA,
+                                # BOTH eras ride on a blank: the row was produced by both
+                                # grids whether or not either had anything to say (R-SQ3).
+                                "sq_anchor_era": signal_quality.ANCHOR_ERA}
     assert is_buyable(buy_signal(None)) is False
 
 
