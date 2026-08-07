@@ -731,7 +731,14 @@ def test_publisher_lets_exactly_one_of_the_fanned_family_through(monkeypatch, tm
     assert len(posted) == 1, [(i, statuses[i]) for i in ids]
     assert len(held) == 3, [(i, statuses[i]) for i in ids]
     note = _ledger_note(tmp_path, held[0])
-    assert "fact fan-out" in note and "ratio:4of11:sector" in note, note
+    # THE OUTCOME IS THE CLAIM; the key NAMED in the receipt is not. These four
+    # lines share the breadth ratio AND (since the 2026-08-06 numeric-fact
+    # fingerprint) the "214,000 claims" print, so which anchor the receipt quotes
+    # is now decided by sorted-key order. Pinning one literal made this test
+    # report a regression for a gate that had got STRICTER; it pins the refusal
+    # class and the shared anchor instead.
+    assert "fact fan-out" in note, note
+    assert ("ratio:4of11:sector" in note or "macro:claims:214k" in note), note
 
 
 def test_the_fan_out_gate_leaves_unrelated_posts_alone(monkeypatch, tmp_path):

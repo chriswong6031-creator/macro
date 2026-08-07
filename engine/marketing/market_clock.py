@@ -183,6 +183,31 @@ def last_completed_session(now: datetime) -> date:
     return session_of(d - timedelta(days=1))
 
 
+def live_session(now: datetime) -> date:
+    """The most recent session that has OPENED at `now`. The freshness clock.
+
+    THE OPERATOR'S LAW (2026-08-06): "you can post about tickers during market
+    hours and after market closes anytime and say oh this went up or this went
+    down, but you cant post yesterdays action today, or todays action tomorrow."
+    So the window a tape claim is publishable in is exactly ONE session, and it
+    closes when the NEXT session opens — not at the bell, not at midnight.
+
+    Distinct from both of its neighbours, and the difference is the whole point:
+
+      * :func:`current_session` returns None off-session, which would make a
+        Saturday post about Friday's close "stale" — wrong, no new session has
+        opened, Friday is still the live tape;
+      * :func:`last_completed_session` returns the PRIOR session all morning,
+        which would make a 10:00 ET post about this morning's move "stale" —
+        also wrong, and it is the same post the operator explicitly blesses
+        ("during market hours").
+
+    Falls back through the weekend/holiday to the session before, so this is
+    total: there is always a most-recent open session.
+    """
+    return current_session(now) or last_completed_session(now)
+
+
 def is_pre_open(now: datetime) -> bool:
     """True on a session day before 09:30 ET — the window an overnight gap has
     just elapsed into and can honestly be described."""
@@ -519,6 +544,348 @@ def dead_date_future_tense(text: str, *, now: datetime) -> list[str]:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Session claims, and the freshness law over them
+#
+# THE OPERATOR, 2026-08-06: "we cannot keep posting stale content from the day
+# before. you can post about tickers during market hours and after market closes
+# anytime and say oh this went up or this went down, but you cant post yesterdays
+# action today, or todays action tomorrow. no human would post stale data like
+# that."
+#
+# THE MEASURED DEFECT. A `theme_list` planned for 2026-08-05T12:00Z reading
+# "+1.9% avg on Tuesday" still offered an Approve button on Wednesday night —
+# 35 hours old, one whole session past its own tape. Two siblings reached 60h.
+# Every generation-time gate in the estate had passed it, correctly: "on Tuesday"
+# was TRUE when it was written. The queue is what made it false, so only a
+# publish-time gate can catch it — an item can be approved at any hour.
+#
+# WHY THIS LIVES HERE and not in the publisher. `publish_time_content` already
+# resolves weekday / month-day / "today" phrases to session dates for ONE lane
+# (its `_session_claims`), and the same question is now asked by the publisher
+# for EVERY lane. A third copy of that resolver is how two gates start
+# disagreeing about which session "on Friday" names. The resolver moves here,
+# next to the calendar it depends on, and both callers ask the same function.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: A weekday name as published copy writes it ("on Friday", "Friday's move").
+#: CASE-SENSITIVE on the capitalised form: these are proper nouns in a headline,
+#: and a case-insensitive match would be a needless invitation for a lower-case
+#: false positive to kill a good post (the refusals downstream are terminal).
+_WEEKDAY_CLAIM_RE = re.compile(
+    r"(?<![\w'])(" + "|".join(_WEEKDAYS_EN) + r")(?![\w])")
+
+#: "on July 31", "Aug 1" — the shape :func:`temporal_vocab` degrades to once a
+#: weekday name would be ambiguous. Two deliberate narrowings:
+#:   * a BARE month name is NOT matched. "May" is also an ordinary English word,
+#:     and a month with no day number names no session anyway.
+#:   * the alternation lists the FULL names and their 3-letter abbreviations
+#:     EXPLICITLY, longest-first, instead of `Mar[a-z]*`-style prefixing. A
+#:     wildcard suffix makes "Market 5" a March date, and a false positive here
+#:     kills a good post.
+_MONTH_ALTS: tuple[str, ...] = tuple(
+    sorted({m for name in _MONTHS_EN for m in (name, name[:3])} | {"Sept"},
+           key=len, reverse=True))
+_MONTH_DAY_CLAIM_RE = re.compile(
+    r"(?<![\w'])(" + "|".join(_MONTH_ALTS) + r")\.?\s+(\d{1,2})(?![\d])")
+
+#: How far back a weekday / month-day phrase is resolved. 7 days covers every
+#: phrase this estate's banks can emit (the vocab switches to month-day past 6
+#: days); a month-day gets a year, because that is the range over which a
+#: "July 31" in a live post could still be honest.
+_WEEKDAY_LOOKBACK_DAYS = 7
+_MONTH_DAY_LOOKBACK_DAYS = 366
+
+
+def _resolve_weekday(name: str, today: date) -> date | None:
+    """The session the bare weekday `name` points at, looking back from `today`."""
+    for back in range(_WEEKDAY_LOOKBACK_DAYS + 1):
+        d = today - timedelta(days=back)
+        if weekday_name(d) == name:
+            # session_of walks back off a non-session day, so "on Friday" said
+            # about a Good Friday resolves to the Thursday that actually traded —
+            # the same normalisation temporal_vocab uses.
+            return session_of(d)
+    return None
+
+
+def _resolve_month_day_claim(token: str, day_num: str, today: date) -> date | None:
+    """The session "Jul 31" / "August 1" points at, looking back from `today`."""
+    try:
+        day = int(day_num)
+        month = next(i + 1 for i, name in enumerate(_MONTHS_EN)
+                     if name.startswith(token))
+    except (ValueError, StopIteration):
+        return None
+    for back in range(_MONTH_DAY_LOOKBACK_DAYS + 1):
+        d = today - timedelta(days=back)
+        if d.month == month and d.day == day:
+            return session_of(d)
+    return None
+
+
+def session_claims(text: str, *, now: datetime) -> tuple[set[date], list[str]]:
+    """(sessions the text claims, unresolvable claims) for copy said at `now`.
+
+    Every claim is resolved to a SESSION DATE so two differently-worded claims
+    about the same session ("today" on Monday and "on Monday") compare equal, and
+    two claims about different sessions compare unequal no matter how they were
+    phrased. That is the whole point: the check is about sessions, not strings.
+
+    An unresolvable claim (a "today" word on a day with no session in progress; a
+    weekday or month-day naming no session in the lookback) is returned SEPARATELY
+    rather than dropped, because "we cannot tell which session this names" is a
+    refusal, not a pass.
+    """
+    body = str(text or "")
+    claims: set[date] = set()
+    unresolved: list[str] = []
+    if not body.strip():
+        return claims, unresolved
+
+    today = et_date(now)
+
+    # "today" / "this session" / "at the close" … → the session in progress NOW.
+    if _TODAY_RE.search(body):
+        cur = current_session(now)
+        if cur is None:
+            # No session in progress (weekend / holiday) — a "today" word here
+            # names nothing at all. temporal_violations reports the same
+            # condition; it is repeated as an unresolved CLAIM so the two halves
+            # of the check share one refusal path.
+            unresolved.append(
+                f"today-word with no session in progress at {today.isoformat()}")
+        else:
+            claims.add(cur)
+
+    for m in _WEEKDAY_CLAIM_RE.finditer(body):
+        hit = _resolve_weekday(m.group(1), today)
+        if hit is None:
+            unresolved.append(f"weekday '{m.group(1)}' names no session in the "
+                              f"last {_WEEKDAY_LOOKBACK_DAYS} days")
+        else:
+            claims.add(hit)
+
+    for m in _MONTH_DAY_CLAIM_RE.finditer(body):
+        hit = _resolve_month_day_claim(m.group(1), m.group(2), today)
+        if hit is None:
+            unresolved.append(f"date '{m.group(0)}' is not in the last "
+                              f"{_MONTH_DAY_LOOKBACK_DAYS} days")
+        else:
+            claims.add(hit)
+
+    return claims, unresolved
+
+
+# ── A DATE IN COPY IS NOT AUTOMATICALLY A CLAIM ABOUT WHICH SESSION IT REPORTS ─
+#
+# Found by replaying the freshness gate over the live 492-item outbox, not by
+# review: a first cut refused 78 items that were dispatched exactly on time.
+# Every one of them cited a date as an ANCHOR while reporting the current tape —
+#
+#   "Apple $AAPL is down -9.29% so far today, now -11.06% from its all-time high
+#    of 340.08 set on July 28."
+#   "$GOOGL is up 5.23% right now, with a 2-day winning streak since July 29."
+#   "the average price paid since the Jun 26 volume spike"
+#   "The July jobs numbers are due out Friday."
+#
+# — against the one shape the gate is FOR, where the date is the whole subject:
+#
+#   "Cloud Computing ripping, +1.7% avg on Tuesday"   (posted on Wednesday)
+#
+# The discriminator is the word in front of the date. A citation is introduced by
+# a source cue ("set on", "since", "from its", "record ... of") and a forward
+# reference by a future frame ("due out", "ahead of"); a session claim is
+# introduced by "on", "'s", or nothing at all. Everything below is scoped to the
+# FRESHNESS leg — `session_claims` above still reports every date it finds,
+# because its other caller is looking for internal contradictions, where a
+# citation is a legitimate half.
+_CITATION_CUES: tuple[str, ...] = (
+    "set", "since", "from", "back to", "record", "high of", "low of",
+    "close of", "peak", "established", "prior", "versus", "vs", "compared",
+    "spike", "before", "after", "between", "through", "until", "til",
+    "dated", "reported", "filed", "announced", "posted on", "of its",
+)
+_FUTURE_CUES: tuple[str, ...] = (
+    "due", "due out", "ahead of", "expected", "coming", "upcoming", "next",
+    "scheduled", "slated", "lands", "land", "on deck", "watch for", "eyes on",
+    "will", "reports",
+)
+
+#: How much text before a date token is inspected for a cue. One clause: "now
+#: -11.06% from its all-time high of 340.08 set on " is 46 characters between
+#: "from" and the date, which is why this is not tighter.
+_CUE_LOOKBEHIND_CHARS = 52
+
+
+def _claim_is_cited(body: str, start: int) -> bool:
+    """True when the date token at `start` is a citation or a forward reference.
+
+    Fail direction is PERMISSIVE — an ambiguous lead-in reads as a citation and
+    the post survives — because the refusal downstream is a terminal quarantine
+    and the freshness gate's own first leg (the item's `as_of`) still covers a
+    genuinely stale row.
+    """
+    window = body[max(0, start - _CUE_LOOKBEHIND_CHARS):start].lower()
+    if not window.strip():
+        return False
+    for cue in _CITATION_CUES + _FUTURE_CUES:
+        if re.search(r"(?<![\w'])" + re.escape(cue) + r"(?![\w])", window):
+            return True
+    return False
+
+
+def _stale_claim_in_copy(body: str, *, now: datetime, live: date) -> date | None:
+    """The past session this copy REPORTS, or None. See `_claim_is_cited`.
+
+    Returns None the moment the copy also claims the live session: a post that
+    says "so far today" is a report on today whatever else it cites, and that
+    single condition is what separates the wire lane's anchor-heavy copy from
+    the theme_list defect.
+    """
+    today = et_date(now)
+    if _TODAY_RE.search(body) and current_session(now) == live:
+        return None
+
+    best: date | None = None
+    for m in _WEEKDAY_CLAIM_RE.finditer(body):
+        if _claim_is_cited(body, m.start()):
+            continue
+        hit = _resolve_weekday(m.group(1), today)
+        if hit is not None and hit < live and (live - hit).days <= _WEEKDAY_LOOKBACK_DAYS:
+            best = hit if best is None else min(best, hit)
+    for m in _MONTH_DAY_CLAIM_RE.finditer(body):
+        if _claim_is_cited(body, m.start()):
+            continue
+        hit = _resolve_month_day_claim(m.group(1), m.group(2), today)
+        # BOUNDED TO THE WEEKDAY LOOKBACK on purpose. `session_claims` resolves a
+        # month-day up to a YEAR back; past a week that is history, not a
+        # freshness claim, and treating it as one killed "first since Jul 2026".
+        if hit is not None and hit < live and (live - hit).days <= _WEEKDAY_LOOKBACK_DAYS:
+            best = hit if best is None else min(best, hit)
+    return best
+
+
+#: Post kinds whose PAYLOAD is the tape: every one of these describes what a
+#: price did, whether or not the copy happens to spell out a day word. A
+#: `theme_list` is "these names moved together"; a `mover` is "this name moved";
+#: `chart`, `signal` and `watchlist` are all reads of a price series.
+#:
+#: DELIBERATELY EXCLUDES `macro`, `event`, `education`, `insider`, `congress` and
+#: `breaking`. A jobless-claims print, a filing and a wire flash are not tape
+#: action — they perish on their own clocks (the wire reaper's 3h TTL, the
+#: numeric-fact cooldown), and sweeping them in here would make one gate own
+#: four different perishability laws.
+ACTION_KINDS: frozenset[str] = frozenset(
+    {"mover", "theme_list", "chart", "signal", "watchlist"})
+
+#: Phrases that report a PRICE MOVE. Used to answer "does this post claim market
+#: action" for kinds outside ACTION_KINDS.
+#:
+#: BROAD ON PURPOSE, and it is safe to be broad here in a way it is nowhere else
+#: in this module: this predicate is only ever consulted about an item that is
+#: ALREADY a session stale, so its false positives are posts that should not
+#: ship anyway. Its false NEGATIVES are the expensive direction, so the list
+#: leans inclusive.
+_ACTION_PHRASES: tuple[str, ...] = (
+    "closed", "closes", "closing high", "closing low", "close above",
+    "close below", "rallied", "rallies", "surged", "surges", "jumped",
+    "jumps", "popped", "spiked", "ripped", "ran", "slid", "slides", "fell",
+    "falls", "dropped", "drops", "sank", "sold off", "selling off", "gapped",
+    "gaps", "bounced", "bounces", "reclaimed", "reclaims", "broke", "breaks",
+    "held", "holds", "tagged", "printed", "green close", "green closes",
+    "red close", "red closes", "record high", "yearly high", "fresh high",
+    "fresh low", "new high", "new low", "off the highs", "off the lows",
+    "up on the", "down on the", "bid up", "marked up", "marking up",
+)
+_ACTION_RE = _word_re(_ACTION_PHRASES)
+
+#: A percent claim of any sign. "+1.9% avg" — the theme_list defect verbatim —
+#: carries no verb at all, so the verb list above cannot see it.
+_ANY_PCT_RE = re.compile(r"(?<![\w])[+-]?\d{1,3}(?:\.\d{1,2})?\s?%")
+
+
+def market_action_claim(text: str, kind: str = "") -> str:
+    """The reason this post claims market ACTION, or "" when it does not.
+
+    Two routes, because the two live shapes of the defect look nothing alike:
+    a `kind` whose whole job is a price read, and a post of some other kind
+    whose sentence reports a move ("$WDC falls -4.03%").
+    """
+    k = str(kind or "").strip().lower()
+    if k in ACTION_KINDS:
+        return f"kind '{k}' is a tape read"
+    body = str(text or "")
+    m = _ACTION_RE.search(body)
+    if m is not None:
+        return f"move phrase '{m.group(1).lower()}'"
+    if _ANY_PCT_RE.search(body):
+        return "a percent move claim"
+    return ""
+
+
+def stale_session_violations(text: str, *, now: datetime, fact_asof: object,
+                             kind: str = "") -> list[str]:
+    """Reasons this post's tape claim is a SESSION out of date. [] = publishable.
+
+    Two legs, and they catch different halves of the same law:
+
+      ``stale_session:<fact>!=<live>`` — the item's own facts belong to a session
+        that is no longer the live one. This is the 35h theme_list: its copy was
+        internally consistent, and the thing that had changed was the clock.
+      ``stale_session_claim:<claimed>!=<live>`` — the COPY names a session other
+        than the live one, whatever the item's stamp says. This is the leg that
+        survives a mis-stamped row.
+
+    THE BOUNDARIES, each one a way this gate could have been worse than the
+    defect (a gate that silences a lane is the failure mode of every previous
+    attempt at this):
+
+      * SAME-DAY AFTER-CLOSE SHIPS. :func:`live_session` spans the whole ET
+        calendar day of a session, so a 21:00 ET post about that afternoon's
+        close is current, not stale. The window closes when the NEXT session
+        opens, exactly as the operator stated it.
+      * A MISSING OR MALFORMED ``as_of`` IS NOT STALE. `fact_asof` that will not
+        parse yields no fact session, and leg one simply does not run — a
+        garbled stamp must never be the reason a good post dies. Leg two still
+        applies, because it reads the copy rather than the stamp.
+      * WEEKENDS AND HOLIDAYS SHIP. `live_session` walks back to Friday, so a
+        Friday-stamped post published on Saturday is current all weekend and
+        dies on Monday's open. That is the honest reading of "the next session
+        kills it".
+      * A POST THAT CLAIMS NO MARKET ACTION IS NOT JUDGED. An education post or
+        a filing summary has no session to be stale about.
+    """
+    body = str(text or "")
+    if not body.strip():
+        return []
+    why = market_action_claim(body, kind)
+    if not why:
+        return []
+
+    live = live_session(now)
+    out: list[str] = []
+
+    fact_day = _as_date(fact_asof)
+    fact_session = session_of(fact_day) if fact_day is not None else None
+    if fact_session is not None and fact_session != live:
+        # A fact session AHEAD of the live one is a forward-booked row, not a
+        # stale one; `dead_date_future_tense` and the booking lanes own that
+        # case and this gate must not double-refuse it.
+        if fact_session < live:
+            out.append(
+                f"stale_session:{fact_session.isoformat()}!={live.isoformat()} "
+                f"({why}; the {weekday_name(live)} session has opened)")
+
+    claimed = _stale_claim_in_copy(body, now=now, live=live)
+    if claimed is not None:
+        out.append(
+            f"stale_session_claim:{claimed.isoformat()}!={live.isoformat()} "
+            f"(copy names {weekday_name(claimed)}'s tape)")
+
+    return out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Fact anchors: one source fact wears one post
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -548,6 +915,121 @@ def _stem(noun: str) -> str:
     return n[:-1] if len(n) > 3 and n.endswith("s") else n
 
 
+# ── the numeric-fact fingerprint (operator 2026-08-06) ───────────────────────
+#
+# "holy fuck the 203k claims it was posted so many times everywhere."
+#
+# MEASURED on the live corpus: ONE fact — 203k jobless claims, 8.6% below a year
+# ago, 5.0% GDPNow, 2.1% median CPI — was generated on FIVE days across SEVEN
+# accounts and TWO of them POSTED. Every text-similarity gate in the estate saw
+# seven different strings, because they ARE seven different strings:
+#
+#   "203k claims a week this month, 8.6% below a year ago"          (posted)
+#   "Jobless claims averaging 203k this month, 8.6% below…"          (posted)
+#   "claims hit 203k this month, 8.6% below a year ago"
+#   "203k jobless claims, 5.0% GDPNow, 2.1% median CPI"
+#   "Jobless claims: 203 thousand a week, 8.6% below a year ago"
+#
+# And `fact_anchor_keys` above could not see them either: its two key families
+# are RATIOS over a named universe and a single-ticker PERCENT. A weekly macro
+# print is neither, so it was invisible to the one gate built for exactly this.
+#
+# THE LAW: a numeric fact posts once per cooldown window, NETWORK-WIDE,
+# fingerprinted on (indicator, VALUE). The value half is what keeps this from
+# being a mute button: GDPNow moving 5.0 -> 5.9 is NEWS and ships, while the
+# same 203k reworded for a fourth desk does not. Both live in the corpus on the
+# same night, and a key on the indicator alone would have killed the new print.
+
+#: Canonical indicator slug -> the ways copy names it. Aliases collapse into one
+#: slug because the desks genuinely rotate through them: "GDPNow", "the Atlanta
+#: Fed", and a bare "Growth:" label are three names for one number, and keying
+#: them apart is how three phrasings of one print all read as fresh.
+_MACRO_NAME_ALIASES: tuple[tuple[str, str], ...] = (
+    ("claims", r"claims"),
+    ("gdpnow", r"gdpnow|gdp\s*now|gdp\s*track\w*|atlanta\s*fed|\bgrowth\b|\bgdp\b"),
+    ("cpi", r"\bcpi\b|inflation|cleveland"),
+    ("payrolls", r"payrolls?|nonfarm|\bnfp\b|jobs report"),
+    ("unemployment", r"unemployment rate|jobless rate"),
+    ("pce", r"\bpce\b"),
+    ("ism", r"\bism\b|\bpmi\b"),
+    ("retail_sales", r"retail sales"),
+)
+_MACRO_NAME_RES: tuple[tuple[str, "re.Pattern[str]"], ...] = tuple(
+    (slug, re.compile(pat, re.IGNORECASE)) for slug, pat in _MACRO_NAME_ALIASES)
+
+#: The value shapes a macro print is quoted in. A BARE integer is deliberately
+#: absent: ordinary copy counts things ("the 4th time", "23 sessions") and
+#: fingerprinting those would collapse unrelated posts onto one key.
+_MACRO_VALUE_RES: tuple[tuple[str, "re.Pattern[str]"], ...] = (
+    ("k", re.compile(r"(?<![\w.])(\d{1,4}(?:\.\d{1,2})?)\s?(?:k\b|thousand\b)",
+                     re.IGNORECASE)),
+    ("k", re.compile(r"(?<![\w.])(\d{1,3}),000(?![\d])")),
+    ("pct", re.compile(r"(?<![\w])(\d{1,3}(?:\.\d{1,2})?)\s?%")),
+    ("m", re.compile(r"(?<![\w.])(\d{1,4}(?:\.\d{1,2})?)\s?(?:m\b|million\b)",
+                     re.IGNORECASE)),
+)
+
+#: How far from a number an indicator name may sit and still be ITS name. Sized
+#: to one clause of published copy: "Jobless claims are averaging 203 thousand a
+#: week this month" is 44 characters between the two.
+_MACRO_PROXIMITY_CHARS = 70
+
+#: Every macro key starts with this, so a caller can give the family its own
+#: cooldown window without re-parsing the key.
+MACRO_KEY_PREFIX = "macro:"
+
+
+def macro_fact_keys(text: str) -> frozenset[str]:
+    """(indicator, value) fingerprints of the macro prints a post quotes.
+
+    NO-CASHTAG SCOPE, and it is load-bearing. "Growth" and "inflation" are also
+    ordinary words about a COMPANY ("revenue growth of 12%"), and keying those
+    would let two desks writing about two different names collide on
+    ``macro:gdpnow:12pct`` — a terminal quarantine earned by a coincidence. Every
+    post in the measured 203k family is cashtag-free, because a macro print is
+    not about a ticker; requiring that costs the gate nothing real and closes the
+    whole false-positive class.
+
+    A number takes the NEAREST indicator name within
+    :data:`_MACRO_PROXIMITY_CHARS`, and one only. Pairing every name in range
+    was the first cut and it manufactured a cross product — "203k claims … 2.1%
+    median CPI" emitted ``macro:cpi:203k`` and ``macro:claims:2.1pct`` as well as
+    the two real keys, so an unrelated post quoting 2.1% claims would have
+    collided with it. The alias table is what makes nearest-wins safe: "GDPNow
+    has growth at 5.9%" resolves through `growth`, a bare "Growth: 5.9%" through
+    the same alias, and both land on ``macro:gdpnow:5.9pct``.
+    """
+    body = str(text or "")
+    if not body.strip() or _CASHTAG_RE.search(body):
+        return frozenset()
+
+    names: list[tuple[str, int, int]] = []
+    for slug, rx in _MACRO_NAME_RES:
+        for m in rx.finditer(body):
+            names.append((slug, m.start(), m.end()))
+    if not names:
+        return frozenset()
+
+    keys: set[str] = set()
+    for unit, rx in _MACRO_VALUE_RES:
+        for m in rx.finditer(body):
+            try:
+                val = float(m.group(1))
+            except (TypeError, ValueError):  # pragma: no cover - regex-guarded
+                continue
+            lo, hi = m.start(), m.end()
+            best: tuple[int, str] | None = None
+            for slug, n_lo, n_hi in names:
+                gap = n_lo - hi if n_lo >= hi else lo - n_hi
+                if gap > _MACRO_PROXIMITY_CHARS:
+                    continue
+                if best is None or (gap, slug) < best:
+                    best = (gap, slug)
+            if best is not None:
+                keys.add(f"{MACRO_KEY_PREFIX}{best[1]}:{val:g}{unit}")
+    return frozenset(keys)
+
+
 def fact_anchor_keys(text: str, kind: str = "") -> frozenset[str]:
     """The source facts a post is anchored on, as stable comparable keys.
 
@@ -557,6 +1039,8 @@ def fact_anchor_keys(text: str, kind: str = "") -> frozenset[str]:
 
       ``ratio:4of11:sector``      — kind-agnostic (one universe, one true value)
       ``pct:mover:AMZN:15.3``     — kind- and ticker-scoped, lead claim only
+      ``macro:claims:203k``       — an indicator print at a VALUE, cashtag-free
+                                    copy only (see :func:`macro_fact_keys`)
 
     Empty set = no extractable anchor; callers must treat that as "cannot judge"
     and let the post through, never as "no duplicate".
@@ -582,7 +1066,48 @@ def fact_anchor_keys(text: str, kind: str = "") -> frozenset[str]:
             if val is not None:
                 keys.add(f"pct:{k}:{next(iter(tickers))}:{val:g}")
 
+    if k not in _MACRO_KEY_EXEMPT_KINDS:
+        keys |= macro_fact_keys(body)
+
     return frozenset(keys)
+
+
+#: Kinds the numeric-fact cooldown does NOT apply to. A relayed wire flash is a
+#: report of what a source said, not our desk quoting a print for the fourth
+#: time, and it already has two dedup mechanisms of its own (the story key and a
+#: 3h TTL). Including it measured badly for one specific reason: the Fed's 2%
+#: inflation TARGET appears in almost every central-bank headline, so a 7-day
+#: hold on ``macro:cpi:2pct`` would mute the biggest lane in the queue for a week
+#: on the strength of a number nobody is reporting as news.
+_MACRO_KEY_EXEMPT_KINDS: frozenset[str] = frozenset({"breaking"})
+
+
+#: Cooldown windows, in days, by key family. Claims and GDPNow are WEEKLY
+#: prints, so one week is the shape: inside it there is no new number to report
+#: and a second post is the same fact reworded; past it the print has been
+#: refreshed and a repeat is legitimately news again. The tape families keep the
+#: 5-day window the fan-out gate shipped with.
+FACT_COOLDOWN_DAYS_DEFAULT: dict[str, int] = {"macro": 7, "default": 5}
+
+
+def fact_cooldown_days(key: str, windows: dict | None = None) -> int:
+    """How many days `key` stays claimed. Config-driven, with the shipped floor.
+
+    A malformed or missing config entry falls back to the default rather than
+    raising: this figure decides whether a post ships, and a typo in YAML must
+    not become an unbounded — or zero — cooldown.
+    """
+    table = dict(FACT_COOLDOWN_DAYS_DEFAULT)
+    for k, v in (windows or {}).items():
+        try:
+            table[str(k)] = int(v)
+        except (TypeError, ValueError):
+            continue
+    family = str(key or "").split(":", 1)[0] or "default"
+    try:
+        return int(table.get(family, table.get("default", 5)))
+    except (TypeError, ValueError):  # pragma: no cover - coerced above
+        return 5
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -601,6 +601,22 @@ cold_read:
 publish:
   backend: buffer          # only "buffer" is implemented today
   require_approval: true   # only outbox items an operator approved may post
+
+  # ── One numeric fact, one post, network-wide (operator 2026-08-06) ────────
+  # "holy fuck the 203k claims it was posted so many times everywhere."
+  # MEASURED: 203k jobless claims / 5.0% GDPNow / 2.1% median CPI was generated
+  # on FIVE days across SEVEN accounts and TWO of them posted. The publisher's
+  # fact fan-out gate held anchors for 5 days, which is right for a tape move
+  # and far too short for a WEEKLY print — claims and GDPNow refresh once a
+  # week, so a 5-day window let the same number come back around on day six
+  # looking new.
+  #
+  # Keyed on (indicator, VALUE), never the indicator alone: GDPNow moving 5.0
+  # -> 5.9 is news and ships the same night. Family names are the prefix of the
+  # anchor key (`macro:`, `ratio:`, `pct:`); `default` covers the rest.
+  fact_cooldown_days:
+    macro: 7
+    default: 5
   # Operator decision 2026-07-24 ("auto-approve flagship signals"): the runner
   # auto-advances queued→approved for EVERY item clearing all publish gates
   # (validate_postable, a channel id configured for its account, under the daily
@@ -1799,13 +1815,17 @@ copywriter:
     - sound like a real person on X, not a desk or a brand; contractions always, fragments are fine, natural-short not telegraph-short
     - NO em dashes and NO spaced en dashes anywhere; use a period, a comma, or a new sentence (hyphens in compounds like 52-week are fine)
     - mix "I" and "we"; "I" for takes and watching, "we" for the shop and the track record; never "our model", "the engine", "the system"
-    - every post carries a level, a take, or a real question a trader would ask; a stance (watching, leaning, respecting, fading, waiting, not chasing) beats "thoughts?"
+    # "not chasing" and "waiting" were on this list until 2026-08-06. They are
+    # not stances — they are the two ways of saying the desk did nothing, and
+    # naming them here as approved stances is how they became the house closer.
+    # See the abstention law further down: a stance names a level or a condition.
+    - every post carries a level, a take, or a real question a trader would ask; a stance (a level it has to hold, a condition that would change our mind, a read we can be shown to have got wrong) beats "thoughts?"
     # This law used to PRESCRIBE two closers verbatim. The model complied: a live
     # 8-post sample closed five of six passing posts with the identical sentence,
     # which the operator correctly called bot-like (2026-07-30). Ask for the
     # stance, never the sentence — and see the "never repeat a signature phrase"
     # law below, which the old wording directly contradicted.
-    - down movers admit you are not trying to catch the bottom yet; up movers respect the strength without chasing it. Write that stance fresh every time, in your own words. Never close two posts in a plan with the same sentence
+    - down movers name the level that has to hold for the fall to be over; up movers name what the move has to do next to be real. Write that stance fresh every time, in your own words, and never as a statement that you are staying out. Never close two posts in a plan with the same sentence
     - 'banned closers (these were once house boilerplate and are now forbidden): "strength worth respecting, not chasing here", "watching for a bottom setup, not catching it yet", "size appropriately"'
     # Operator 2026-07-30: "no one likes being lectured... we want to provide
     # value without making it seem like we are superior to others, or
@@ -1827,11 +1847,36 @@ copywriter:
     # posts they approved and the two they hated separate on exactly one axis:
     # whether the reaction COST the author something. "Hershey's closed green
     # eight days in a row. I don't have a clever explanation and I'm not going to
-    # invent one." (refuses to fake insight) and "Ares is up about 12% in a
-    # month. I looked at it twice and passed both times." (admits being wrong)
-    # both cost. "EQT is back at the price where buyers kept showing up... that's
-    # the whole observation" does not, and drew "why even post, shut up then?"
-    - 'every post is a FACT plus a reaction that COSTS you something: an admission you were wrong, a pass you regret, a thing you do not understand, a position that hurt. Never a fact plus a note ABOUT the fact ("that''s the whole observation") and never a fact plus a hedge that resolves to nothing ("either it''s a floor or nobody cares, I don''t know which"). If the reaction costs you nothing, you have no post'
+    # invent one." (refuses to fake insight) both cost. "EQT is back at the price
+    # where buyers kept showing up... that's the whole observation" does not, and
+    # drew "why even post, shut up then?"
+    #
+    # AMENDED 2026-08-06 — THE LAW WAS MANUFACTURING THE DEFECT IT EXISTS TO
+    # PREVENT. As written it invited a cost, and the CHEAPEST cost a writer can
+    # pay is to admit the desk did nothing: "I passed", "I missed it", "buyers
+    # didn't". 8 of 66 copy strings on one nightly plan (12.1%) came back in that
+    # register, six of them "I passed" variants. The operator: "it makes us look
+    # indecisive and provides zero value. NO one wants to read this. It kills
+    # authority and causes unfollows and zero engagement."
+    #
+    # So the cost is now specified by WHO PAYS IT. A reaction that costs the
+    # AUTHOR'S EGO ("I was too slow") is free — it commits to nothing and the
+    # reader cannot use it. A reaction that costs the desk its OPTIONALITY is the
+    # real one: a named level, a named condition, a thing that would change our
+    # mind, stated where everyone can see it fail. That is what "on record" means.
+    #
+    # The old exemplar for this law was "Ares is up about 12% in a month. I
+    # looked at it twice and passed both times." It has been RETIRED rather than
+    # softened: it is the exact shape the operator banned, and an approved
+    # example is worth more than a rule.
+    #
+    # NOT IN CONFLICT WITH THE FSLR LAW ("never issue a directional stance the
+    # engines did not compute"). That law does not mean "advertise that you have
+    # no view" — it means: if the engines computed nothing, DO NOT POST. Silence
+    # is the lawful no-stance shape. A shrug is not.
+    - 'every post is a FACT plus a reaction that puts something of OURS at risk: a level we will be judged at, a condition we say has to happen, a thing that would change our mind, a read that was wrong, a position that hurt. "314 is the line. If it goes, I was early and I''ll say so." Never a fact plus a note ABOUT the fact ("that''s the whole observation") and never a fact plus a hedge that resolves to nothing ("either it''s a floor or nobody cares, I don''t know which"). If nothing of ours can be shown to have failed, you have no post'
+    - 'BANNED OUTRIGHT: a reaction whose content is that you did nothing. "I passed", "I stayed out", "I missed it", "I was late", "I''m watching, not chasing", "I won''t chase", "I can''t separate the two yet, so I passed", "hands in pockets", "patience is a position". Admitting inaction is the cheapest possible cost and it reads as indecision, not honesty. If the only true thing you have about a name is that you are not in it, DO NOT POST that name — silence costs the desk nothing and a shrug costs it authority'
+    - 'no clerical diary voice. "I log the buy", "I write down the market''s story", "I note the fact", "I''m logging the filing and waiting" — nobody wants to hear that you recorded something. Describe what the fact CHANGES, or drop the post'
     # This law used to MANDATE the machine voice: signal posts were REQUIRED to
     # carry an invalidation phrase and an honesty caveat. Stack those into 275
     # chars alongside a level and a stance and you produce "37.1 is my trigger,

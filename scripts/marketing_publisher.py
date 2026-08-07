@@ -503,16 +503,33 @@ def _item_fact_day(it: dict) -> object:
 
 
 def _clock_violations(it: dict, text: str, now: datetime) -> list[str]:
-    """Temporal-vocabulary and dead-date reasons this item must not post NOW.
+    """Temporal-vocabulary, dead-date and STALE-SESSION reasons not to post NOW.
 
     (a) and (b) of the publish-time gate. Fail-SOFT: any internal error returns
     no violations, because a broken clock must never wedge the whole queue — the
     generators and the sentinel are still upstream of this.
+
+    THE THIRD LEG (operator 2026-08-06): "you cant post yesterdays action today,
+    or todays action tomorrow. no human would post stale data like that." The
+    two checks above ask whether a WORD in the copy is false; neither asks
+    whether the whole post has been overtaken by a new session. A theme_list
+    planned for 2026-08-05T12:00Z reading "+1.9% avg on Tuesday" passed both of
+    them on Wednesday night at 35 hours old, because "on Tuesday" was true — it
+    was just no longer worth saying. Two siblings reached 60h.
+
+    IT BELONGS HERE, IN THE PUBLISHER, and nowhere earlier. An item can be
+    approved at any hour, so a generation-time freshness check answers the
+    question at the wrong moment; this function is the last thing between the
+    queue and the network. `market_clock.stale_session_violations` owns the law
+    itself (and the four boundaries it must not break); this call is the wiring.
     """
     try:
         reasons = _clock.temporal_violations(
             text, now=now, fact_asof=_item_fact_day(it))
         reasons += _clock.dead_date_future_tense(text, now=now)
+        reasons += _clock.stale_session_violations(
+            text, now=now, fact_asof=_item_fact_day(it),
+            kind=str(it.get("kind") or ""))
         return reasons
     except Exception as exc:  # noqa: BLE001
         log.warning("clock gate unavailable for %s (%s) — passing",
@@ -528,7 +545,8 @@ _ANCHOR_OWNER_RANK: dict[str, int] = {
 
 
 def _fact_anchor_owners(state: dict, now: datetime,
-                        days: int = _FACT_ANCHOR_WINDOW_DAYS
+                        days: int = _FACT_ANCHOR_WINDOW_DAYS,
+                        windows: dict | None = None,
                         ) -> dict[str, str]:
     """anchor key -> the ONE item id entitled to it, over the trailing window.
 
@@ -550,11 +568,23 @@ def _fact_anchor_owners(state: dict, now: datetime,
     breadth family are held RIGHT NOW, which would have blocked every breadth
     post for five days on the first run of this gate. Same reasoning as the dead
     statuses: not competing for the slot, not entitled to the fact.
+
+    PER-FAMILY COOLDOWNS (operator 2026-08-06, the 203k defect). A tape fact and
+    a weekly macro print perish on completely different clocks: five days is
+    right for "$AMZN +15.3%", and it is why the SAME 203k jobless-claims number
+    could be re-planned on five separate days and still look new to this gate on
+    day six. `windows` (config `publish.fact_cooldown_days`) sets the window per
+    key family; the scan runs over the LONGEST of them and each key is then held
+    to its own, so widening the macro window cannot silently widen the tape one.
     """
-    cutoff = _clock.et_date(now) - timedelta(days=days)
+    scan_days = max([days] + [
+        _clock.fact_cooldown_days(f"{fam}:x", windows)
+        for fam in (windows or _clock.FACT_COOLDOWN_DAYS_DEFAULT)])
+    today = _clock.et_date(now)
+    cutoff = today - timedelta(days=scan_days)
     statuses = state.get("status") or {}
     held = state.get("held") or set()
-    rows: list[tuple[int, str, str, str]] = []
+    rows: list[tuple[int, str, str, str, date]] = []
     for iid, it in (state.get("items") or {}).items():
         st = str(statuses.get(iid, "queued"))
         if st not in _LIVE_STATUSES or iid in held:
@@ -566,14 +596,18 @@ def _fact_anchor_owners(state: dict, now: datetime,
         if when < cutoff:
             continue
         rows.append((_ANCHOR_OWNER_RANK.get(st, 9), str(iid),
-                     str(it.get("text") or ""), str(it.get("kind") or "")))
+                     str(it.get("text") or ""), str(it.get("kind") or ""), when))
     owners: dict[str, str] = {}
-    for _rank, iid, text, kind in sorted(rows, key=lambda r: (r[0], r[1])):
+    for _rank, iid, text, kind, when in sorted(rows, key=lambda r: (r[0], r[1])):
         try:
             keys = _clock.fact_anchor_keys(text, kind)
         except Exception:  # noqa: BLE001
             continue
         for key in keys:
+            # The key's OWN window, measured from the claimant's session. An
+            # item outside it never held that fact in the first place.
+            if (today - when).days > _clock.fact_cooldown_days(key, windows):
+                continue
             owners.setdefault(key, iid)
     return owners
 
@@ -1991,7 +2025,12 @@ def main(argv: list[str] | None = None) -> int:
     # See the block comment above _FACT_ANCHOR_WINDOW_DAYS. `_fact_owners` is
     # resolved ONCE, before the loop, so ownership of a shared fact cannot
     # depend on which item this sweep happens to reach first.
-    _fact_owners = _fact_anchor_owners(state, now)
+    _fact_cooldowns = pub_cfg.get("fact_cooldown_days") or {}
+    if not isinstance(_fact_cooldowns, dict):
+        log.warning("publish.fact_cooldown_days is %r, not a mapping — using the "
+                    "shipped defaults", type(_fact_cooldowns).__name__)
+        _fact_cooldowns = {}
+    _fact_owners = _fact_anchor_owners(state, now, windows=_fact_cooldowns)
     quarantined_clock = 0
     quarantined_fact_fanout = 0
     log.info("publish-time clock gate | session_day=%s pre_open=%s | "
