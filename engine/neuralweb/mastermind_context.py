@@ -70,7 +70,11 @@ from engine.government_revenue.freshness import effective_freshness
 from engine.neuralweb.options_plane import (
     options_structure_block as _options_structure_block,
 )
-from engine.seasonality.contracts import ContractError, validate_neuralweb_state
+from engine.seasonality.contracts import (
+    ContractError,
+    seasonality_state_projection,
+    validate_seasonality_state,
+)
 
 log = logging.getLogger(__name__)
 
@@ -2133,10 +2137,20 @@ def _load_seasonality_map(
 ) -> dict[str, dict]:
     """Load the Lane 6 shadow lobe into a sparse {ticker: {...}} projection.
 
+    DUAL-READ: v1 and v2 states are both accepted, dispatched on each state's
+    own declared ``schema`` by ``validate_seasonality_state``, and projected
+    through the ONE shared ``seasonality_state_projection``.  A v1 file and a
+    v2 file built from the same panel therefore produce the same block — the
+    migration renamed ``forecast`` to ``historical_up_share``, it did not
+    reinterpret anything, and ``p`` is the historical positive-year share on
+    both sides.  A calibrated estimate is deliberately NOT projected: v2 keeps
+    it in a separate typed slot precisely so that surfacing one is a later,
+    gauntleted decision rather than a side effect of this reader.
+
     Three refusals, each of which is the point of the lobe rather than a
     defensive extra:
 
-    * a state that does NOT pass ``validate_neuralweb_state`` is skipped — the
+    * a state that does NOT pass its version's contract is skipped — the
       contract is what pins the all-false authority ceiling, so a state that
       has not passed it is not a weaker context block, it is an unbounded one;
     * an EXPIRED state is skipped. Calendar context expires by design (48h);
@@ -2179,13 +2193,14 @@ def _load_seasonality_map(
             n_invalid += 1
             continue
         try:
-            state = validate_neuralweb_state(state)
+            state = validate_seasonality_state(state)
+            projection = seasonality_state_projection(state)
         except ContractError:
             n_invalid += 1
             continue
         try:
             expires = datetime.fromisoformat(
-                str(state.get("expires_at")).replace("Z", "+00:00")
+                str(projection["expires_at"]).replace("Z", "+00:00")
             )
         except ValueError:
             n_invalid += 1
@@ -2193,30 +2208,10 @@ def _load_seasonality_map(
         if expires <= reference:
             n_expired += 1
             continue
-        if (state.get("uncertainty") or {}).get("abstain"):
+        if projection["abstain"]:
             continue
 
-        clock = state.get("clock") or {}
-        forecast = state.get("forecast") or {}
-        evidence = state.get("evidence") or {}
-        block = _sparse({
-            "as_of": state.get("asof"),
-            "phase": clock.get("phase"),
-            "start_doy": clock.get("start_doy"),
-            "end_doy": clock.get("end_doy"),
-            "occurrence_end_date": clock.get("occurrence_end_date"),
-            "p": forecast.get("p"),
-            "p_baseline": forecast.get("p_baseline"),
-            "edge": forecast.get("edge"),
-            "n_years": evidence.get("n_independent"),
-            "live_n": evidence.get("live_n"),
-            # The full flag list, never a filtered one: the flags ARE the
-            # honesty of this block, and a trimmed list would read as a
-            # cleaner finding than the lobe actually has.
-            "flags": (state.get("uncertainty") or {}).get("flags") or [],
-            "expires_at": state.get("expires_at"),
-            "allowed_behavior": "annotate_only",
-        })
+        block = _sparse({**projection["block"], "allowed_behavior": "annotate_only"})
         if block:
             out[str(symbol).upper()] = block
 

@@ -1171,6 +1171,24 @@ jobs:
           tests/test_seasonality_event_study.py
           tests/test_seasonality_model.py
           tests/test_seasonality_calibration.py -q
+      # W5 state v2. The suite that has to run here is the one about a
+      # migration that has NOT happened yet: v1's ``forecast.p`` is a historical
+      # positive-year share, and the failure this pins is a later session
+      # fitting a model and writing its output into a field that is already
+      # there, already plumbed, and already called ``p``. Every downstream
+      # reader would keep reading and nothing in the payload would record that
+      # the meaning changed — which is exactly the class of defect that looks
+      # entirely plausible in the output, same as the leap-day and window-wrap
+      # regressions this job already exists for. Offline: pure-stdlib contracts
+      # plus a tmp_path parquet store, no network.
+      # test_seasonality_shadow_state.py was named by NO job before this line: the
+      # Lane 6 emitter has never been executed in CI since #4370. This PR rewrites
+      # what it emits, so it runs here now.
+      - name: seasonality state v2 — frozen v1 semantic, dual read, ledger grading
+        run: >
+          python -m pytest
+          tests/test_seasonality_state_v2.py
+          tests/test_seasonality_shadow_state.py -q
 
   china-native-collectors:
     if: ${{ false }}

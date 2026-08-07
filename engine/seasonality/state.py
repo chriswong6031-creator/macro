@@ -41,6 +41,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from . import contracts
+from .event_clock import EXPECTED_PROJECTION_CONTRACT
 from .panel import N_SLOTS, date_for_slot, slot_for_date
 
 # --- identity ---------------------------------------------------------------
@@ -71,19 +72,46 @@ WILSON_Z_90 = 1.645
 # saying this is a structured gap rather than an off-by-one nobody can see.
 _WINDOW_CONVENTION_MARK = "cum[end_doy - 1] - cum[start_doy - 1]"
 
-# Contradiction + overlap hooks. Both are OPEN questions, and both are carried
-# on every state so the Neural Web can see that they are open rather than infer
-# from their absence that they were answered. The event clock (Lane 3) does not
-# exist yet, so a calendar tailwind cannot yet be checked against an event
-# hazard; the covariance-spine crosswalk that would discount duplicate momentum
-# information lands with Lane 4.
-HOOKS: dict[str, dict[str, str]] = {
-    "calendar_tailwind_vs_event_hazard": {"status": "event_clock_not_built"},
-    "momentum_overlap": {
-        "status": "not_yet_measured",
-        "note": "covariance-spine crosswalk lands with Lane 4",
-    },
-}
+# --- v2: the multi-clock state ----------------------------------------------
+#
+# v1 carried the contradiction and overlap questions as a loose ``hooks`` blob
+# bolted onto the payload AFTER the contract validated it — so the two facts
+# the lobe most needed to be honest about were the two the contract never
+# checked, and their only vocabulary was a free-text ``status`` string. Both
+# are first-class validated fields in v2 (:func:`measure_contradiction`,
+# :func:`measure_overlap`), each of which must name a reason code when it
+# cannot measure.
+
+#: The schema this module EMITS.  v1 remains a supported input everywhere it is
+#: read (``contracts.validate_seasonality_state`` dispatches on the payload's
+#: own schema), so a stale committed artifact keeps working through the change.
+EMITTED_STATE_SCHEMA = contracts.NEURALWEB_STATE_V2_SCHEMA
+
+#: NO calibrated model exists.  This is a hard constant rather than a parameter
+#: because a calibrated seasonality estimate is a promotion decision — it needs
+#: pre-registered gates and a gauntlet, not a keyword argument.  The contract
+#: refuses a partially-provenanced estimate outright, so the day this stops
+#: being ``None`` the payload must carry a calibration version, a model
+#: version, and a data cutoff or it will not validate.
+CALIBRATED_ESTIMATE: dict[str, Any] | None = None
+
+#: Where the covariance spine publishes its measurement.  Read, never rebuilt:
+#: the spine is the repo's ONE redundancy measurement and a second one computed
+#: here would be a second answer to the same question.
+SPINE_ARTIFACT_PATH = "data/neuralweb/covariance_spine.json"
+SPINE_SCHEMA = "neuralweb.covariance_spine.v1"
+
+#: The name seasonality would fire under in ``spine_index.parquet``.  It does
+#: not appear there yet — the lobe is shadow and has never fired — which is
+#: exactly why the overlap slot has to be able to say "unmeasured" out loud.
+SPINE_LOBE_NAME = "seasonality"
+
+#: The producer of an authorized event-timing probability.  Imported from the
+#: reader that DECLARES the expectation rather than restated here, so the name
+#: in the contradiction detail cannot drift away from the name the reader
+#: actually refuses to interpret without.
+EVENT_TIMING_OWNER_CONTRACT = EXPECTED_PROJECTION_CONTRACT
+EVENT_TIMING_OWNER = "biocatalyst"
 
 
 class StateInputError(ValueError):
@@ -216,6 +244,210 @@ def window_phase(today: date, start_doy: int, end_doy: int) -> str:
     return "out_of_window"
 
 
+# --- contradiction: measured, or explicitly unavailable ----------------------
+
+
+def measure_contradiction(
+    *,
+    calendar_phase: str,
+    event_timing_probability: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Check a calendar tailwind against an event-timing hazard, or say why not.
+
+    A contradiction between "this window is historically up" and "an adverse
+    binary lands inside it" is a REAL and useful reading — and it requires two
+    legs.  The second leg is an authorized, BioCatalyst-owned event-timing
+    probability, and no such artifact exists in this repo: ``event_clock`` is a
+    reader whose producer contract
+    (:data:`EVENT_TIMING_OWNER_CONTRACT`) has not landed, and that reader
+    refuses an unratified dialect *wholesale* rather than partially
+    interpreting it.
+
+    So this function has exactly two honest outcomes and no third:
+
+    * both legs present and authorized — measure and report;
+    * the event leg absent or unratified — ``present: False`` with a
+      ``reason_code`` and a ``detail`` that NAMES the missing owner artifact.
+
+    What it must never do is return ``present: False`` with no reason, because
+    that is indistinguishable from "checked, and the two clocks agree".  The
+    program has already shipped one hook whose silence read as a finding.
+    """
+    between = ["calendar_clock", "event_clock"]
+    if event_timing_probability is None:
+        return {
+            "present": False,
+            "between": between,
+            "reason_code": "event_timing_probability_absent",
+            "detail": (
+                "no authorized event-timing probability exists: the "
+                f"{EVENT_TIMING_OWNER_CONTRACT!r} producer (owner: "
+                f"{EVENT_TIMING_OWNER}) has not landed, so a {calendar_phase!r} "
+                "calendar read cannot be checked against an event hazard. This is "
+                "an unmeasured question, NOT a measured absence of contradiction."
+            ),
+        }
+    return {
+        "present": False,
+        "between": between,
+        "reason_code": "event_timing_contract_not_ratified",
+        "detail": (
+            "an event-timing payload was supplied but "
+            f"{EVENT_TIMING_OWNER_CONTRACT!r} is a consumer-side EXPECTATION, not "
+            "a ratified producer contract — engine/seasonality/event_clock.py "
+            "refuses an unratified dialect wholesale, and a partial read of an "
+            "unknown dialect is indistinguishable from a confident misread. "
+            "Reconciliation lands with the BioCatalyst W1B producer PR."
+        ),
+    }
+
+
+# --- overlap: measured through the covariance spine, or unavailable ----------
+
+
+def load_spine(root: Path) -> Mapping[str, Any] | None:
+    """Read the committed covariance-spine artifact. ``None`` when unusable.
+
+    Never raises and never rebuilds: rebuilding the spine here would be a
+    SECOND redundancy measurement in a repo that already has one, and two
+    measurements of the same quantity eventually disagree in public.
+    """
+    path = Path(root) / SPINE_ARTIFACT_PATH
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(payload, Mapping) or payload.get("schema") != SPINE_SCHEMA:
+        return None
+    return payload
+
+
+def _overlap_unavailable(reason_code: str, detail: str, measured_against: list[str]) -> dict[str, Any]:
+    return {
+        "measured": False,
+        "measured_against": measured_against,
+        "redundancy": None,  # NOT 0.0 — an unmeasured overlap is not independence
+        "reason_code": reason_code,
+        "detail": detail,
+        "measured_by": SPINE_ARTIFACT_PATH,
+    }
+
+
+def measure_overlap(spine: Mapping[str, Any] | None, symbol: str) -> dict[str, Any]:
+    """Redundancy of the seasonality lobe against the other measured lobes.
+
+    Delegated entirely to ``engine/neuralweb/covariance_spine.py`` — this reads
+    that artifact's ``lobes`` block and reports what it says.  The spine's unit
+    is an ENGINE's weekly firing pattern, so the measurement is per-lobe and the
+    same for every symbol this lobe covers; ``symbol`` is carried so the
+    unavailable reason is attributable per row rather than only per run.
+
+    The seasonality lobe is shadow and has never fired, so it is absent from
+    ``spine_index.parquet`` and the honest answer today is an explicit
+    unavailable state.  That is a fact this function MEASURES on every run, not
+    a constant it returns: the day the lobe starts firing and clears the spine's
+    30-active-week floor, the same code path begins reporting a number.
+    """
+    if spine is None:
+        return _overlap_unavailable(
+            "spine_artifact_unavailable",
+            f"{SPINE_ARTIFACT_PATH} absent, unreadable, or not {SPINE_SCHEMA} — "
+            f"redundancy for {symbol} is unmeasured",
+            [],
+        )
+    lobes = (spine.get("blocks") or {}).get("lobes")
+    if not isinstance(lobes, Mapping):
+        return _overlap_unavailable(
+            "spine_lobes_block_absent",
+            f"{SPINE_ARTIFACT_PATH} carries no lobes block — redundancy for "
+            f"{symbol} is unmeasured",
+            [],
+        )
+
+    coverage = lobes.get("coverage") or {}
+    measurable = [str(name) for name in (coverage.get("measurable") or [])]
+    unmeasurable = coverage.get("unmeasurable") or {}
+
+    if SPINE_LOBE_NAME in unmeasurable:
+        return _overlap_unavailable(
+            "lobe_below_spine_measurement_floor",
+            f"the {SPINE_LOBE_NAME!r} lobe has "
+            f"{unmeasurable[SPINE_LOBE_NAME]} active week(s) in the spine, below "
+            "its measurement floor — redundancy is unmeasured, not zero",
+            measurable,
+        )
+    if SPINE_LOBE_NAME not in measurable:
+        return _overlap_unavailable(
+            "lobe_absent_from_spine",
+            f"the {SPINE_LOBE_NAME!r} lobe does not appear in the spine's firing "
+            "index at all (it is shadow and has never fired), so its redundancy "
+            f"against {len(measurable)} measured lobe(s) is unmeasured",
+            measurable,
+        )
+
+    # The lobe is in the spine's index — now find what the spine actually
+    # PUBLISHED about it.
+    #
+    # The pair dialect is the producer's own and is read by its own key names:
+    # ``covariance_spine`` writes ``{"a": <engine>, "b": <engine>, "corr": c}``
+    # (engine/neuralweb/covariance_spine.py, ``highest_overlap_pairs``).  A
+    # reader that guesses a different key shape finds no pair on every entry and
+    # then has to invent a redundancy for a lobe it never correlated — which is
+    # the same fabrication ``_overlap_unavailable`` exists to prevent, one level
+    # down.  So the shape is asserted here rather than sniffed.
+    peers: list[str] = []
+    strongest: float | None = None
+    for pair in lobes.get("highest_overlap_pairs") or ():
+        if not isinstance(pair, Mapping) or "a" not in pair or "b" not in pair:
+            continue
+        names = [str(pair["a"]), str(pair["b"])]
+        if SPINE_LOBE_NAME not in names:
+            continue
+        value = pair.get("corr")
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            continue
+        peers.extend(name for name in names if name != SPINE_LOBE_NAME)
+        magnitude = abs(float(value))
+        strongest = magnitude if strongest is None else max(strongest, magnitude)
+
+    if strongest is None:
+        # ``highest_overlap_pairs`` is the spine's GLOBAL top-5 by |corr|
+        # (covariance_spine.py: ``all_pairs[:5]``), not this lobe's pair set,
+        # and the artifact publishes no correlation matrix.  So a lobe that is
+        # in the index but out of that top-5 has no published correlation at
+        # all — which is unmeasured, NOT measured-and-independent.  Reporting
+        # 0.0 here would publish a positive claim of total independence against
+        # peers this lobe was never correlated with.
+        return _overlap_unavailable(
+            "lobe_in_index_but_no_pair_published",
+            f"the {SPINE_LOBE_NAME!r} lobe clears the spine's measurement floor, "
+            f"but {SPINE_ARTIFACT_PATH} publishes only its global top-5 "
+            "highest-overlap pairs and none of them names this lobe — its "
+            f"redundancy against {len(measurable)} measured lobe(s) is therefore "
+            "unpublished, not zero",
+            measurable,
+        )
+
+    return {
+        "measured": True,
+        # Exactly the peers the reported number was computed OVER — never the
+        # whole measurable roster, because naming a lobe this figure was not
+        # correlated against reads as a measurement that never happened.
+        "measured_against": sorted(set(peers)),
+        # Highest |corr| against any peer the spine published a pair for. The
+        # spine treats a below-floor pair as 0.0, which biases this DOWN —
+        # toward claiming more independence than was shown — so it is reported
+        # as the spine's own figure rather than re-derived here.
+        "redundancy": round(strongest, 6),
+        "reason_code": "measured",
+        "detail": (
+            f"strongest |correlation| between the {SPINE_LOBE_NAME!r} lobe and the "
+            f"spine-published peer(s) {', '.join(sorted(set(peers)))}"
+        ),
+        "measured_by": SPINE_ARTIFACT_PATH,
+    }
+
+
 # --- one symbol -------------------------------------------------------------
 
 
@@ -274,8 +506,20 @@ def build_state(
     index_as_of: str | None,
     live_n: int,
     now: datetime,
+    spine: Mapping[str, Any] | None = None,
+    event_timing_probability: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Build ONE contract-checked context state. Raises StateInputError / ContractError."""
+    """Build ONE contract-checked v2 context state.
+
+    Raises StateInputError / ContractError.
+
+    The numbers are IDENTICAL to the v1 this replaced — same window deltas,
+    same up share, same all-starts baseline, same Wilson interval.  What
+    changed is only that they are now named for what they are: the up share
+    lives in ``historical_up_share`` instead of ``forecast``, and the slot a
+    fitted estimate would occupy (``calibrated_estimate``) is separate, typed,
+    and null.
+    """
     _require(
         entity.get("schema") == ENTITY_SCHEMA,
         "schema_mismatch",
@@ -373,7 +617,8 @@ def build_state(
     available_at = utc_iso(now)
     expires_at = utc_iso(now + timedelta(hours=TTL_HOURS))
 
-    state = contracts.build_neuralweb_state(
+    phase = window_phase(today, start_doy, end_doy)
+    state = contracts.build_neuralweb_state_v2(
         artifact_id=STATE_ARTIFACT_ID,
         entity={
             "type": "issuer" if group == "equity" else "etf",
@@ -383,30 +628,59 @@ def build_state(
         asof=asof,
         available_at=available_at,
         expires_at=expires_at,
-        clock={
-            "type": "calendar",
-            "phase": window_phase(today, start_doy, end_doy),
-            "pattern_id": f"cal:{symbol}:{start_doy}-{end_doy}",
-            "start_doy": start_doy,
-            "end_doy": end_doy,
-            "occurrence_end_date": end_date.isoformat(),
-            "days_to_window_end": (end_date - today).days,
-            "window_source": default_window.get("source"),
-        },
-        forecast={
+        # A LIST because a name can sit on several clocks at once. Exactly one
+        # is emitted today, and that is the point of the list: the event and
+        # regime clocks are ABSENT rather than present-and-empty, so a consumer
+        # cannot mistake an unbuilt clock for a clock that found nothing.
+        clocks=[
+            {
+                "type": "calendar",
+                "phase": phase,
+                "pattern_id": f"cal:{symbol}:{start_doy}-{end_doy}",
+                "window": {
+                    "start_doy": start_doy,
+                    "end_doy": end_doy,
+                    "occurrence_end_date": end_date.isoformat(),
+                    "days_to_window_end": (end_date - today).days,
+                    "window_source": default_window.get("source"),
+                },
+                "evidence": {
+                    "n_years": n_years,
+                    "horizon_td": horizon_td,
+                },
+            }
+        ],
+        # The v1 ``forecast`` object, renamed to the thing it has always
+        # measured. Same p, same baseline, same edge, same interval.
+        historical_up_share={
             "target": FORECAST_TARGET,
             "horizon_td": horizon_td,
             "p": p,
             "p_baseline": p_baseline,
             "edge": edge,
             "ci90": [ci_low, ci_high],
+            # The two intervals this object ships are DIFFERENT objects and each
+            # says so: the Wilson ci90 bounds the realized share itself (a
+            # parameter CI), while the quantiles describe where one future
+            # window's return might land. They plot identically, so neither is
+            # left to be inferred from its position in the payload.
+            "ci90_kind": "parameter_ci",
+            "n_years": n_years,
             "quantiles": {
                 "q05": round(_quantile(returns, 0.05), 6),
                 "q50": round(_quantile(returns, 0.50), 6),
                 "q95": round(_quantile(returns, 0.95), 6),
             },
-            "baseline_basis": BASELINE_BASIS,
+            "quantiles_kind": "outcome_quantiles",
+            "basis": BASELINE_BASIS,
         },
+        # Null, and structurally hard to fill loosely later — see the constant.
+        calibrated_estimate=CALIBRATED_ESTIMATE,
+        contradiction=measure_contradiction(
+            calendar_phase=phase,
+            event_timing_probability=event_timing_probability,
+        ),
+        overlap=measure_overlap(spine, symbol),
         evidence={
             # The independence unit is one complete year, exactly as Lane 1
             # defines it — never one session. One symbol is one issuer, and a
@@ -436,9 +710,12 @@ def build_state(
         },
         tier="shadow",
     )
-    # Re-checked with the hooks attached so the augmented payload is proven,
-    # not merely assumed to still pass.
-    return contracts.validate_neuralweb_state({**state, "hooks": dict(HOOKS)})
+    # ``build_neuralweb_state_v2`` validates before returning, and nothing is
+    # attached afterwards: in v1 the two open questions rode along as a loose
+    # ``hooks`` blob bolted on after validation, which meant the contract never
+    # saw them. They are first-class validated fields now (``contradiction``,
+    # ``overlap``), so there is no post-validation mutation left to re-check.
+    return state
 
 
 # --- the sweep --------------------------------------------------------------
@@ -468,6 +745,7 @@ def build_states(
     entities_dir: Path,
     ledger_live_n: Mapping[str, int],
     now: datetime,
+    root: Path | None = None,
 ) -> tuple[dict[str, dict], list[dict]]:
     """Build every biopharma state. Returns ``(states, gaps)`` and never raises.
 
@@ -475,9 +753,17 @@ def build_states(
     ~28 names and the entity tree is R2-published, so a partially-synced
     checkout is the NORMAL case off the nightly runner, and it has to degrade
     into a visible, countable hole.
+
+    ``root`` locates the covariance-spine artifact, which is read ONCE per run
+    and shared: the spine's unit is a lobe, so re-reading it per symbol would
+    be ~28 identical file reads producing ~28 identical answers.  When ``root``
+    is omitted the spine is simply unavailable and every state says so — the
+    overlap slot degrades into its explicit unavailable form rather than into
+    silence.
     """
     entities_dir = Path(entities_dir)
     index_as_of = index.get("as_of")
+    spine = load_spine(Path(root)) if root is not None else None
     states: dict[str, dict] = {}
     gaps: list[dict] = []
 
@@ -511,6 +797,7 @@ def build_states(
                 index_as_of=index_as_of,
                 live_n=int(ledger_live_n.get(symbol, 0)),
                 now=now,
+                spine=spine,
             )
         except StateInputError as exc:
             gaps.append(_gap(symbol, exc.reason_code, exc.detail))
@@ -543,18 +830,29 @@ def register_rows(
 
     An ABSTAINING state is not a shown forecast — it is the lobe declining to
     speak — so it is not registered.
+
+    The ROW schema is unchanged across the v1 -> v2 state migration and stays
+    ``seasonality.nw_forward_ledger.v1``: the ledger's 28 existing rows must
+    remain comparable with everything appended after it, and ``p`` means the
+    same thing on both sides of the rename (it is read through
+    ``contracts.seasonality_state_projection``, which resolves v1's
+    ``forecast.p`` and v2's ``historical_up_share.p`` to one number).
     """
     rows: list[dict] = []
     seen = set(existing_keys)
     for symbol in sorted(states):
         state = states[symbol]
-        if (state.get("uncertainty") or {}).get("abstain"):
+        projection = contracts.seasonality_state_projection(state)
+        if projection["abstain"]:
             continue
-        clock = state.get("clock") or {}
-        forecast = state.get("forecast") or {}
-        provenance = state.get("provenance") or {}
-        end_date = date.fromisoformat(str(clock["occurrence_end_date"]))
-        key = occurrence_key(symbol, end_date.year, clock["start_doy"], clock["end_doy"])
+        ledger = projection["ledger"]
+        # No defensive parse here on purpose. ``contracts._validate_clocks``
+        # requires a calendar clock whose window carries a parseable
+        # ``occurrence_end_date``, so every state that reaches this function has
+        # one — and a try/except that can never fire is a guard no test can
+        # distinguish from its absence. The contract is the guard.
+        end_date = date.fromisoformat(str(ledger["occurrence_end_date"]))
+        key = occurrence_key(symbol, end_date.year, ledger["start_doy"], ledger["end_doy"])
         if key in seen:
             continue
         seen.add(key)
@@ -565,14 +863,14 @@ def register_rows(
                 "key": key,
                 "symbol": symbol,
                 "registered_asof": asof.isoformat(),
-                "start_doy": clock["start_doy"],
-                "end_doy": clock["end_doy"],
+                "start_doy": ledger["start_doy"],
+                "end_doy": ledger["end_doy"],
                 "occurrence_end_date": end_date.isoformat(),
-                "p": forecast.get("p"),
-                "p_baseline": forecast.get("p_baseline"),
-                "n_years": (state.get("evidence") or {}).get("n_independent"),
-                "pattern_spec_hash": provenance.get("pattern_spec_hash"),
-                "model_version": provenance.get("model_version"),
+                "p": ledger["p"],
+                "p_baseline": ledger["p_baseline"],
+                "n_years": ledger["n_years"],
+                "pattern_spec_hash": ledger["pattern_spec_hash"],
+                "model_version": ledger["model_version"],
                 "tier": "shadow",
             }
         )

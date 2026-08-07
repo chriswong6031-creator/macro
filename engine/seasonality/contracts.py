@@ -1241,3 +1241,729 @@ def event_v2_content_hash(event: Mapping[str, Any]) -> str:
     """Return ``sha256:<64 hex>`` over :func:`canonical_event_v2_bytes`."""
     digest = hashlib.sha256(canonical_event_v2_bytes(event)).hexdigest()
     return _sha256_ref(f"sha256:{digest}", "event_v2_content_hash")
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# neuralweb.biopharma_seasonality_state.v2 — the multi-clock state
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Appended as a self-contained block on purpose: every v1 symbol above is
+# byte-identical, so "v2 is additive" is checkable with ``git diff`` rather
+# than asserted in a docstring.
+#
+# WHY A SECOND SCHEMA RATHER THAN A WIDER v1
+# -------------------------------------------
+# ``v1.forecast.p`` is, and has always been, a *historical positive-year
+# share*: the fraction of complete years in which this calendar window finished
+# up.  It is not a calibrated probability, it was never fitted, and it carries
+# no data cutoff.  The dangerous migration — the one this file exists to make
+# impossible — is a later session that fits a model and writes its output into
+# ``forecast.p`` because the field is already there, already plumbed, and
+# already named ``p``.  Every downstream reader would silently reinterpret a
+# frequency as a forecast, and nothing in the payload would record that the
+# meaning changed.
+#
+# So v2 does three structural things, none of which is a comment:
+#
+# 1. It **has no ``forecast`` key at all** (:data:`_V2_FORBIDDEN_TOP_KEYS`).
+#    The old name is not deprecated, it is absent — there is nowhere to write.
+# 2. The v1 semantic is renamed to what it actually is,
+#    ``historical_up_share``, and that object is *defined* as a realized
+#    frequency: it carries ``n_years`` and a ``basis``, and it is not
+#    permitted to carry a model version or a data cutoff, because a realized
+#    frequency does not have either.
+# 3. Any estimate that IS fitted lives in ``calibrated_estimate``, a
+#    separately named and separately typed object that cannot exist without
+#    ``calibration_version``, ``model_version``, and ``data_cutoff``
+#    simultaneously.  A loosely-filled calibrated estimate is a
+#    :class:`ContractError`, not a warning.
+#
+# ``clocks`` is a list because a name can be on more than one clock at once
+# (a December calendar window AND a PDUFA date AND a regime phase), and a
+# single ``clock`` object forced the producer to pick one and drop the rest.
+# Types are unique within the list so a consumer projecting "the calendar
+# clock" gets a deterministic answer rather than a first-match lottery.
+#
+# ``contradiction`` and ``overlap`` are MEASUREMENT slots, not verdict slots:
+# both carry an explicit unavailable state, because the failure this program
+# has already seen is a hook whose silence read as "checked, nothing found".
+
+NEURALWEB_STATE_V2_SCHEMA = "neuralweb.biopharma_seasonality_state.v2"
+
+#: Estimate kinds ``calibrated_estimate`` may declare.  Closed on purpose: a
+#: reader must never have to guess whether ``value`` is a probability or a
+#: return.
+_ESTIMATE_KINDS = frozenset({"probability", "expectation", "quantiles", "distribution"})
+
+#: How an interval on a calibrated estimate must describe itself.  A parameter
+#: CI (how well do we know the mean) and a predictive interval (where will the
+#: next outcome land) are different objects that plot identically, and a payload
+#: that says only "interval" has already lost the distinction.
+_UNCERTAINTY_KINDS = frozenset({"parameter_ci", "predictive_interval", "outcome_quantiles"})
+
+#: Generic labels banned wherever an interval is described.  ``interval`` is
+#: exactly the word that lets the two meanings above collapse into one.
+_FORBIDDEN_UNCERTAINTY_LABELS = frozenset({"interval", "ci", "band", "range", "uncertainty"})
+
+#: The ONLY keys ``calibrated_estimate`` may carry.  Closed, not blacklisted.
+#:
+#: A blacklist of generic words cannot hold this line: the requirement to name
+#: an interval's kind can be dodged by spelling the interval ``ci95``,
+#: ``credible_interval``, ``lower``/``upper``, ``p05``/``p95``, or
+#: ``stderr``/``sigma`` — six spellings of one object, none of them the banned
+#: word, each of them an interval whose meaning the payload never states.  So
+#: the vocabulary is closed instead: ``ci90`` is the one interval shape, it
+#: carries ``uncertainty_kind``, and every other spelling is refused BY NAME
+#: rather than tested against a list of words someone thought of in advance.
+_CALIBRATED_ESTIMATE_KEYS = frozenset(
+    {
+        "kind",
+        "value",
+        "quantiles",
+        "distribution",
+        "baseline",
+        "edge",
+        "ci90",
+        "uncertainty_kind",
+        "calibration_version",
+        "model_version",
+        "data_cutoff",
+    }
+)
+
+#: Keys a v2 state may never carry.  ``forecast`` is the frozen v1 name; the
+#: rest are the fused-score vocabulary seasonality is not allowed to compute.
+_V2_FORBIDDEN_TOP_KEYS = frozenset(
+    {
+        "forecast",
+        "score",
+        "combined_score",
+        "weight",
+        "combined_weight",
+        "discount",
+        "rank",
+        "conviction",
+        "size",
+    }
+)
+
+#: Keys ``historical_up_share`` may never carry.  A realized frequency has no
+#: model and no cutoff; a payload that gives it one is describing something
+#: else under an honest object's name.
+_HISTORICAL_FORBIDDEN_KEYS = frozenset(
+    {"model_version", "calibration_version", "data_cutoff", "calibrated"}
+)
+
+
+def _finite_number(value: Any, field: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ContractError(f"{field} must be a finite number")
+    number = float(value)
+    if not math.isfinite(number):
+        raise ContractError(f"{field} must be a finite number")
+    return number
+
+
+def _string_list(value: Any, field: str) -> list[str]:
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        raise ContractError(f"{field} must be a list of strings")
+    return list(value)
+
+
+def _reject_generic_uncertainty_labels(payload: Mapping[str, Any], field: str) -> None:
+    for key in payload:
+        if str(key).lower() in _FORBIDDEN_UNCERTAINTY_LABELS:
+            raise ContractError(
+                f"{field}.{key} is a generic uncertainty label — name the kind "
+                f"explicitly via uncertainty_kind ({sorted(_UNCERTAINTY_KINDS)})"
+            )
+
+
+def _validate_quantile_map(quantiles: Any, field: str) -> None:
+    """``{"q05": …, "q50": …, "q95": …}`` — closed labels, monotone in level.
+
+    Labels are a closed ``q<two-digit percentile>`` form rather than free text
+    so the levels can be ORDERED, and once they can be ordered the values must
+    not cross: a payload whose q05 sits above its q95 is not a wide
+    distribution, it is a swapped pair, and it plots as a perfectly ordinary
+    fan.
+
+    Exactly two digits, because a longer form is ambiguous rather than more
+    precise — ``q100`` reads as both the 100th percentile and the 10.0th, and a
+    label whose LEVEL is a guess cannot order anything.
+    """
+    if not isinstance(quantiles, Mapping) or not quantiles:
+        raise ContractError(f"{field} must be a non-empty object")
+    levels: list[tuple[float, float]] = []
+    for label, value in quantiles.items():
+        text = str(label)
+        if not (len(text) == 3 and text[0] == "q" and text[1:].isdigit()):
+            raise ContractError(
+                f"{field}[{label}] label must be 'q' followed by exactly two digits "
+                "(q05, q50, q95) so the levels can be ordered — a longer form is "
+                "ambiguous, not more precise"
+            )
+        level = float(text[1:]) / 100.0
+        if not 0.0 < level < 1.0:
+            raise ContractError(f"{field}[{label}] percentile must lie strictly inside (0, 1)")
+        levels.append((level, _finite_number(value, f"{field}[{label}]")))
+    levels.sort(key=lambda item: item[0])
+    for (lower_level, lower_value), (upper_level, upper_value) in zip(levels, levels[1:]):
+        if lower_value > upper_value:
+            raise ContractError(
+                f"{field} is non-monotone: the {lower_level:.3g} quantile "
+                f"({lower_value}) exceeds the {upper_level:.3g} quantile "
+                f"({upper_value})"
+            )
+
+
+def _validate_calendar_window(window: Mapping[str, Any], field: str) -> None:
+    """The three fields every reader of a calendar clock projects.
+
+    These are not optional decoration.  ``seasonality_state_projection`` reads
+    exactly ``start_doy`` / ``end_doy`` / ``occurrence_end_date`` out of the
+    calendar clock, and ``state.register_rows`` turns the last of the three into
+    a ``date`` to mint the forward-ledger key.  A calendar clock carrying an
+    empty window therefore validates, projects a ``p`` with a NULL window (a
+    probability about no period), and then takes the whole nightly down inside
+    ``date.fromisoformat(None)`` — a contract-valid payload that removes the
+    lobe.  So the window is checked where it is written, not where it explodes.
+    """
+    start = window.get("start_doy")
+    end = window.get("end_doy")
+    for name, value in (("start_doy", start), ("end_doy", end)):
+        if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 366:
+            raise ContractError(f"{field}.{name} must be a day-of-year integer in [1, 366]")
+    if start >= end:  # type: ignore[operator]
+        raise ContractError(
+            f"{field}.start_doy must precede {field}.end_doy — the calendar family "
+            "does not wrap the year"
+        )
+    end_date = _require_text(window.get("occurrence_end_date"), f"{field}.occurrence_end_date")
+    try:
+        # strptime rather than fromisoformat: the ledger key is minted from a
+        # pure calendar date, and fromisoformat would also accept a timestamp.
+        datetime.strptime(end_date, "%Y-%m-%d")
+    except ValueError as exc:
+        raise ContractError(
+            f"{field}.occurrence_end_date must be an ISO-8601 calendar date "
+            "(it is the forward-ledger occurrence identity)"
+        ) from exc
+
+
+def _validate_clocks(clocks: Any) -> None:
+    """A non-empty list of clocks, one per type, each stating its own window.
+
+    Emptiness is refused rather than tolerated: a state with no clock is not a
+    weaker seasonality read, it is a state about nothing.
+
+    Exactly one of them must be the ``calendar`` clock, because
+    ``historical_up_share`` — which every v2 state is required to carry — IS a
+    calendar-window statistic (the share of complete years in which THIS window
+    finished up).  A state that publishes that share while declaring no calendar
+    clock is a number about a period it never names.
+    """
+    if not isinstance(clocks, list) or not clocks:
+        raise ContractError("clocks must be a non-empty list")
+    seen: set[str] = set()
+    for position, clock in enumerate(clocks):
+        field = f"clocks[{position}]"
+        entry = _require_mapping(clock, field)
+        clock_type = entry.get("type")
+        if clock_type not in _CLOCK_TYPES:
+            raise ContractError(f"{field}.type must be one of {sorted(_CLOCK_TYPES)}")
+        if clock_type in seen:
+            raise ContractError(
+                f"{field}.type {clock_type!r} is declared twice — clock types are "
+                "unique so a consumer projecting one clock gets a deterministic answer"
+            )
+        seen.add(str(clock_type))
+        _require_text(entry.get("phase"), f"{field}.phase")
+        window = _require_mapping(entry.get("window"), f"{field}.window")
+        _require_mapping(entry.get("evidence"), f"{field}.evidence")
+        if clock_type == "calendar":
+            _validate_calendar_window(window, f"{field}.window")
+    if "calendar" not in seen:
+        raise ContractError(
+            "clocks must include the 'calendar' clock — historical_up_share is a "
+            "calendar-window statistic, so the window it measures has to be declared"
+        )
+
+
+def _validate_historical_up_share(share: Mapping[str, Any]) -> None:
+    """The v1 ``forecast`` semantic, renamed to what it measures.
+
+    EVERY check :func:`_validate_forecast` makes still runs here — ``target``,
+    ``horizon_td``, ``p``, ``p_baseline``, ``edge``, ``ci90`` — so a v1 payload
+    and a v2 payload built from one panel cannot disagree about any of them.  A
+    rename that quietly drops a check is a loosening wearing a migration's name,
+    which is why ``horizon_td`` is validated here even though nothing downstream
+    projects it.
+
+    The two intervals this object ships each declare WHICH interval they are,
+    under the same closed vocabulary ``calibrated_estimate`` uses.  They are not
+    the same kind of object: ``ci90`` is a Wilson interval on the realized share
+    (a PARAMETER CI — how well the frequency itself is pinned), while
+    ``quantiles`` describes where a single future window's RETURN might land.
+    They plot identically and a payload that labels neither has already lost the
+    distinction, so both labels are required rather than inferred.
+    """
+    field = "historical_up_share"
+    for key in _HISTORICAL_FORBIDDEN_KEYS:
+        if key in share:
+            raise ContractError(
+                f"{field}.{key} is forbidden — historical_up_share is a realized "
+                "frequency, so a model version or a data cutoff means a fitted "
+                "estimate was written under its name (use calibrated_estimate)"
+            )
+    _reject_generic_uncertainty_labels(share, field)
+    _require_text(share.get("target"), f"{field}.target")
+    horizon = share.get("horizon_td")
+    if isinstance(horizon, bool) or not isinstance(horizon, int) or horizon <= 0:
+        raise ContractError(f"{field}.horizon_td must be a positive integer")
+    p = _probability(share.get("p"), f"{field}.p")
+    baseline = _probability(share.get("p_baseline"), f"{field}.p_baseline")
+    edge = _finite_number(share.get("edge"), f"{field}.edge")
+    if not math.isclose(edge, p - baseline, abs_tol=1e-9):
+        raise ContractError(f"{field}.edge must equal {field}.p - {field}.p_baseline")
+    ci = share.get("ci90")
+    if not isinstance(ci, (list, tuple)) or len(ci) != 2:
+        raise ContractError(f"{field}.ci90 must contain [lower, upper]")
+    lower = _probability(ci[0], f"{field}.ci90[0]")
+    upper = _probability(ci[1], f"{field}.ci90[1]")
+    if lower > upper or not lower <= p <= upper:
+        raise ContractError(f"{field}.ci90 must be ordered and contain {field}.p")
+    if share.get("ci90_kind") != "parameter_ci":
+        raise ContractError(
+            f"{field}.ci90_kind must be 'parameter_ci' — the Wilson interval on a "
+            "realized share bounds the FREQUENCY, not the next outcome, and an "
+            "unlabelled interval is the exact ambiguity this schema refuses"
+        )
+    if share.get("quantiles") is not None:
+        _validate_quantile_map(share.get("quantiles"), f"{field}.quantiles")
+        if share.get("quantiles_kind") != "outcome_quantiles":
+            raise ContractError(
+                f"{field}.quantiles_kind must be 'outcome_quantiles' — these are "
+                "realized window RETURNS, a different object from the ci90 on p"
+            )
+    _non_negative_int(share.get("n_years"), f"{field}.n_years")
+    _require_text(share.get("basis"), f"{field}.basis")
+
+
+def _validate_calibrated_estimate(estimate: Any) -> None:
+    """``None``, or a fully-provenanced estimate. There is no middle state.
+
+    The three provenance fields are required TOGETHER because each alone is
+    uninterpretable: a model version without a data cutoff cannot be checked
+    for leakage, and a cutoff without a calibration version cannot be checked
+    for whether the mapping from score to probability was ever fitted.
+    """
+    if estimate is None:
+        return
+    field = "calibrated_estimate"
+    payload = _require_mapping(estimate, field)
+
+    # Closed vocabulary FIRST, so an unknown key cannot smuggle in an interval
+    # under a spelling the checks below never look for.
+    unknown = sorted(set(payload) - _CALIBRATED_ESTIMATE_KEYS)
+    if unknown:
+        raise ContractError(
+            f"{field} carries unknown key(s) {unknown} — the vocabulary is closed "
+            f"to {sorted(_CALIBRATED_ESTIMATE_KEYS)} so an interval cannot arrive "
+            "under a name whose meaning nothing states (ci95, credible_interval, "
+            "lower/upper, p05/p95, stderr all describe intervals; use ci90 with "
+            "uncertainty_kind)"
+        )
+
+    kind = payload.get("kind")
+    if kind not in _ESTIMATE_KINDS:
+        raise ContractError(f"{field}.kind must be one of {sorted(_ESTIMATE_KINDS)}")
+
+    for key in ("calibration_version", "model_version", "data_cutoff"):
+        if key not in payload:
+            raise ContractError(
+                f"{field}.{key} is required — a calibrated estimate without a "
+                "calibration version, a model version, AND a data cutoff cannot "
+                "be audited, reproduced, or checked for leakage"
+            )
+        _require_text(payload.get(key), f"{field}.{key}")
+
+    _reject_generic_uncertainty_labels(payload, field)
+
+    if kind == "quantiles":
+        _validate_quantile_map(payload.get("quantiles"), f"{field}.quantiles")
+    elif kind == "distribution":
+        _require_mapping(payload.get("distribution"), f"{field}.distribution")
+    elif kind == "probability":
+        _probability(payload.get("value"), f"{field}.value")
+    else:  # expectation
+        _finite_number(payload.get("value"), f"{field}.value")
+
+    if payload.get("baseline") is not None:
+        _finite_number(payload.get("baseline"), f"{field}.baseline")
+    if payload.get("edge") is not None:
+        _finite_number(payload.get("edge"), f"{field}.edge")
+
+    # An interval that does not say WHICH interval it is is the defect this
+    # field exists to prevent, so the requirement is triggered by the presence
+    # of interval-shaped content rather than by the producer opting in.
+    carries_interval = (
+        payload.get("ci90") is not None
+        or payload.get("quantiles") is not None
+        or kind in {"quantiles", "distribution"}
+    )
+    uncertainty_kind = payload.get("uncertainty_kind")
+    if carries_interval:
+        if uncertainty_kind not in _UNCERTAINTY_KINDS:
+            raise ContractError(
+                f"{field}.uncertainty_kind is required whenever an interval is "
+                f"present and must be one of {sorted(_UNCERTAINTY_KINDS)} — a "
+                "generic interval label is forbidden"
+            )
+    elif uncertainty_kind is not None and uncertainty_kind not in _UNCERTAINTY_KINDS:
+        raise ContractError(
+            f"{field}.uncertainty_kind must be one of {sorted(_UNCERTAINTY_KINDS)}"
+        )
+
+    if payload.get("ci90") is not None:
+        ci = payload["ci90"]
+        if not isinstance(ci, (list, tuple)) or len(ci) != 2:
+            raise ContractError(f"{field}.ci90 must contain [lower, upper]")
+        # Same arithmetic v1's _validate_forecast applies to its own interval:
+        # a probability's interval lives in [0, 1] and CONTAINS the point
+        # estimate.  An interval that excludes its own estimate is not a wider
+        # read, it is two numbers from different objects printed side by side —
+        # and it plots as an ordinary error bar.
+        edge_check = _probability if kind == "probability" else _finite_number
+        lower = edge_check(ci[0], f"{field}.ci90[0]")
+        upper = edge_check(ci[1], f"{field}.ci90[1]")
+        if lower > upper:
+            raise ContractError(f"{field}.ci90 must be ordered")
+        if kind in {"probability", "expectation"}:
+            value = _finite_number(payload.get("value"), f"{field}.value")
+            if not lower <= value <= upper:
+                raise ContractError(f"{field}.ci90 must contain {field}.value")
+
+
+def _validate_contradiction(contradiction: Mapping[str, Any]) -> None:
+    """Measured, or explicitly unavailable — never silent, never asserted.
+
+    ``present: false`` with an empty ``detail`` would be the exact failure this
+    slot replaces: an absence that reads as "checked, nothing found" when it
+    actually means "never checked".
+    """
+    field = "contradiction"
+    present = contradiction.get("present")
+    if not isinstance(present, bool):
+        raise ContractError(f"{field}.present must be a boolean")
+    between = _string_list(contradiction.get("between"), f"{field}.between")
+    _require_text(contradiction.get("detail"), f"{field}.detail")
+    if present:
+        if len(between) < 2:
+            raise ContractError(
+                f"{field}.between must name at least two legs when a contradiction is present"
+            )
+        # A CLAIMED contradiction has to name the artifact that measured it, for
+        # the same reason ``overlap`` always carries ``measured_by``: the second
+        # leg of this comparison is an event-timing probability whose producer
+        # contract has not landed, so "the calendar disagrees with X" is a
+        # finding about a measurement someone has to be able to open.  Without
+        # it the strongest positive claim in the payload is the only one with no
+        # provenance at all.
+        _require_text(contradiction.get("measured_by"), f"{field}.measured_by")
+    else:
+        _require_text(contradiction.get("reason_code"), f"{field}.reason_code")
+
+
+def _validate_overlap(overlap: Mapping[str, Any]) -> None:
+    """Redundancy against existing features, or a named reason it is unmeasured."""
+    field = "overlap"
+    measured = overlap.get("measured")
+    if not isinstance(measured, bool):
+        raise ContractError(f"{field}.measured must be a boolean")
+    _string_list(overlap.get("measured_against"), f"{field}.measured_against")
+    redundancy = overlap.get("redundancy")
+    if measured:
+        if redundancy is None:
+            raise ContractError(f"{field}.redundancy is required when measured is true")
+        _finite_number(redundancy, f"{field}.redundancy")
+    else:
+        if redundancy is not None:
+            raise ContractError(
+                f"{field}.redundancy must be null when the overlap was not measured "
+                "— an unmeasured redundancy is not zero redundancy"
+            )
+        _require_text(overlap.get("reason_code"), f"{field}.reason_code")
+    _require_text(overlap.get("measured_by"), f"{field}.measured_by")
+
+
+def validate_neuralweb_state_v2(state: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate a multi-clock ``neuralweb.biopharma_seasonality_state.v2`` state.
+
+    The authority ceiling is IDENTICAL to v1 — same :func:`_validate_authority`,
+    not a re-implementation — because a schema bump is not an authority grant.
+    """
+    payload = dict(_require_mapping(state, "state"))
+    if payload.get("schema") != NEURALWEB_STATE_V2_SCHEMA:
+        raise ContractError(f"schema must be {NEURALWEB_STATE_V2_SCHEMA!r}")
+
+    forbidden = sorted(_V2_FORBIDDEN_TOP_KEYS & set(payload))
+    if forbidden:
+        raise ContractError(
+            f"v2 state carries forbidden key(s) {forbidden}: 'forecast' is the frozen "
+            "v1 historical-share name and the rest are fused-score fields seasonality "
+            "does not compute"
+        )
+
+    if payload.get("tier") not in _STATE_TIERS:
+        raise ContractError(f"tier must be one of {sorted(_STATE_TIERS)}")
+    if payload.get("is_context_only") is not True:
+        raise ContractError("is_context_only must be true")
+
+    entity = _require_mapping(payload.get("entity"), "entity")
+    _require_text(entity.get("type"), "entity.type")
+    _require_text(entity.get("id"), "entity.id")
+
+    _validate_clocks(payload.get("clocks"))
+
+    available_at = _parse_utc(payload.get("available_at"), "available_at")
+    expires_at = _parse_utc(payload.get("expires_at"), "expires_at")
+    if expires_at <= available_at:
+        raise ContractError("expires_at must be later than available_at")
+
+    # POINT-IN-TIME: ``asof`` is the vintage of the DATA the numbers were folded
+    # from, ``available_at`` is when this state came into existence.  Data
+    # cannot be older-than-itself and cannot come from after the moment it was
+    # read, so an asof past available_at is a look-ahead — the payload claiming
+    # it knew, at build time, something that had not happened.  v1 left this
+    # unchecked and the only defence was producer-side; a hand-built or
+    # third-party state walked straight past it.
+    asof_text = _require_text(payload.get("asof"), "asof")
+    try:
+        asof_date = datetime.strptime(asof_text[:10], "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    except ValueError as exc:
+        raise ContractError("asof must begin with an ISO-8601 calendar date") from exc
+    if asof_date.date() > available_at.date():
+        raise ContractError(
+            f"asof {asof_text!r} is later than available_at "
+            f"{payload.get('available_at')!r} — a state cannot be built from data "
+            "that was not yet available when it was built"
+        )
+
+    share = _require_mapping(payload.get("historical_up_share"), "historical_up_share")
+    _validate_historical_up_share(share)
+    if "calibrated_estimate" not in payload:
+        raise ContractError(
+            "calibrated_estimate is required and must be explicitly null when no "
+            "calibrated model exists — an absent key reads as an oversight"
+        )
+    _validate_calibrated_estimate(payload.get("calibrated_estimate"))
+    _validate_contradiction(_require_mapping(payload.get("contradiction"), "contradiction"))
+    _validate_overlap(_require_mapping(payload.get("overlap"), "overlap"))
+
+    evidence = _require_mapping(payload.get("evidence"), "evidence")
+    for field in ("n_independent", "n_issuers", "n_date_clusters", "live_n"):
+        _non_negative_int(evidence.get(field), f"evidence.{field}")
+    for field in ("q_by", "p_max_t", "spa_p"):
+        if evidence.get(field) is not None:
+            _probability(evidence[field], f"evidence.{field}")
+
+    # ONE independence count, written twice.  ``seasonality_state_projection``
+    # reads ``historical_up_share.n_years`` for v2 and ``evidence.n_independent``
+    # for v1 — the same field from two places — so a producer that wrote
+    # different numbers into them would hand the consumer block one count and
+    # the forward ledger another, with nothing anywhere recording the split.
+    # The independence unit here is one complete year, which is exactly what
+    # ``n_independent`` counts, so they must agree or one of them is wrong.
+    if share.get("n_years") != evidence.get("n_independent"):
+        raise ContractError(
+            f"historical_up_share.n_years ({share.get('n_years')!r}) must equal "
+            f"evidence.n_independent ({evidence.get('n_independent')!r}) — they are "
+            "the same count (one complete year is the independence unit), and a "
+            "disagreement makes the projected n_years depend on which key a reader "
+            "happens to consult"
+        )
+
+    uncertainty = _require_mapping(payload.get("uncertainty"), "uncertainty")
+    if not isinstance(uncertainty.get("abstain"), bool):
+        raise ContractError("uncertainty.abstain must be a boolean")
+    _string_list(uncertainty.get("flags"), "uncertainty.flags")
+
+    _validate_authority(_require_mapping(payload.get("authority"), "authority"))
+
+    provenance = _require_mapping(payload.get("provenance"), "provenance")
+    _require_text(provenance.get("model_version"), "provenance.model_version")
+    _sha256_ref(provenance.get("pattern_spec_hash"), "provenance.pattern_spec_hash")
+    _sha256_ref(provenance.get("data_snapshot"), "provenance.data_snapshot")
+    return deepcopy(payload)
+
+
+def build_neuralweb_state_v2(
+    *,
+    artifact_id: str,
+    entity: Mapping[str, Any],
+    asof: str,
+    available_at: str,
+    expires_at: str,
+    clocks: list[Mapping[str, Any]] | tuple[Mapping[str, Any], ...],
+    historical_up_share: Mapping[str, Any],
+    contradiction: Mapping[str, Any],
+    overlap: Mapping[str, Any],
+    evidence: Mapping[str, Any],
+    uncertainty: Mapping[str, Any],
+    provenance: Mapping[str, Any],
+    calibrated_estimate: Mapping[str, Any] | None = None,
+    tier: str = "shadow",
+) -> dict[str, Any]:
+    """Build a v2 state with the same birth authority ceiling v1 is born with.
+
+    ``calibrated_estimate`` defaults to ``None`` and stays ``None`` unless a
+    caller passes a fully-provenanced object — the validator refuses anything
+    partial, so the default cannot decay into a half-filled estimate.
+    """
+    payload = {
+        "schema": NEURALWEB_STATE_V2_SCHEMA,
+        "artifact_id": artifact_id,
+        "entity": dict(entity),
+        "asof": asof,
+        "available_at": available_at,
+        "expires_at": expires_at,
+        "tier": tier,
+        "is_context_only": True,
+        "clocks": [dict(clock) for clock in clocks],
+        "historical_up_share": dict(historical_up_share),
+        "calibrated_estimate": (
+            dict(calibrated_estimate) if calibrated_estimate is not None else None
+        ),
+        "contradiction": dict(contradiction),
+        "overlap": dict(overlap),
+        "evidence": dict(evidence),
+        "uncertainty": dict(uncertainty),
+        "authority": {
+            "may_explain": True,
+            "may_flag_attention": True,
+            "may_deescalate": False,
+            "may_rank": False,
+            "may_gate": False,
+            "may_size": False,
+            "may_originate": False,
+            "may_rewrite_geometry": False,
+            "may_boost_confidence": False,
+        },
+        "provenance": dict(provenance),
+    }
+    return validate_neuralweb_state_v2(payload)
+
+
+def validate_seasonality_state(state: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate a v1 OR v2 seasonality state, dispatching on its own ``schema``.
+
+    Dispatch is on the declared schema and nothing else: a payload whose schema
+    string is unknown is refused rather than sniffed, because a shape-sniffing
+    reader is exactly how a v3 would get half-interpreted by a v2 consumer.
+    """
+    payload = _require_mapping(state, "state")
+    schema = payload.get("schema")
+    if schema == NEURALWEB_STATE_SCHEMA:
+        return validate_neuralweb_state(payload)
+    if schema == NEURALWEB_STATE_V2_SCHEMA:
+        return validate_neuralweb_state_v2(payload)
+    raise ContractError(
+        f"schema must be {NEURALWEB_STATE_SCHEMA!r} or {NEURALWEB_STATE_V2_SCHEMA!r}, "
+        f"got {schema!r}"
+    )
+
+
+#: The consumer-facing block keys.  ONE list, shared by every reader, so "the
+#: v1 block and the v2 block are equivalent" is a property of the code rather
+#: than of two hand-kept projections agreeing by luck.
+SEASONALITY_BLOCK_KEYS = (
+    "as_of",
+    "phase",
+    "start_doy",
+    "end_doy",
+    "occurrence_end_date",
+    "p",
+    "p_baseline",
+    "edge",
+    "n_years",
+    "live_n",
+    "flags",
+    "expires_at",
+)
+
+
+def seasonality_state_projection(state: Mapping[str, Any]) -> dict[str, Any]:
+    """Project a validated v1 or v2 state onto the shared consumer view.
+
+    Returns ``{"block", "abstain", "expires_at", "ledger"}``:
+
+    * ``block`` — exactly :data:`SEASONALITY_BLOCK_KEYS`, the annotate-only
+      context a candidate row carries.  A v1 state and a v2 state built from
+      the same panel project to the same block, which is what makes the
+      migration a rename rather than a reinterpretation;
+    * ``abstain`` / ``expires_at`` — the two control facts a consumer needs to
+      decide whether to attach the block at all;
+    * ``ledger`` — the forward-outcome identity fields, so the append-only
+      ledger keeps one row schema across the schema migration.
+
+    ``p`` is the HISTORICAL up share in both versions and never a calibrated
+    value: v2 has no ``forecast`` key to read one from, and
+    ``calibrated_estimate`` is deliberately not projected here — a calibrated
+    number reaching consumers is a separate, gauntleted decision.
+    """
+    payload = _require_mapping(state, "state")
+    schema = payload.get("schema")
+    uncertainty = payload.get("uncertainty") or {}
+    evidence = payload.get("evidence") or {}
+    provenance = payload.get("provenance") or {}
+
+    if schema == NEURALWEB_STATE_SCHEMA:
+        window = dict(payload.get("clock") or {})
+        share: Mapping[str, Any] = payload.get("forecast") or {}
+        n_years = evidence.get("n_independent")
+    elif schema == NEURALWEB_STATE_V2_SCHEMA:
+        window = {}
+        for clock in payload.get("clocks") or ():
+            if isinstance(clock, Mapping) and clock.get("type") == "calendar":
+                window = {**dict(clock.get("window") or {}), "phase": clock.get("phase")}
+                break
+        share = payload.get("historical_up_share") or {}
+        # ONE source: the validator pins historical_up_share.n_years ==
+        # evidence.n_independent, so this cannot depend on which key is read.
+        n_years = share.get("n_years")
+    else:
+        raise ContractError(f"cannot project an unknown seasonality schema {schema!r}")
+
+    block = {
+        "as_of": payload.get("asof"),
+        "phase": window.get("phase"),
+        "start_doy": window.get("start_doy"),
+        "end_doy": window.get("end_doy"),
+        "occurrence_end_date": window.get("occurrence_end_date"),
+        "p": share.get("p"),
+        "p_baseline": share.get("p_baseline"),
+        "edge": share.get("edge"),
+        "n_years": n_years,
+        "live_n": evidence.get("live_n"),
+        # The FULL flag list, never a filtered one: the flags are the honesty
+        # of this block, and a trimmed list reads as a cleaner finding than the
+        # lobe actually has.
+        "flags": list(uncertainty.get("flags") or []),
+        "expires_at": payload.get("expires_at"),
+    }
+    return {
+        "block": {key: block[key] for key in SEASONALITY_BLOCK_KEYS},
+        "abstain": bool(uncertainty.get("abstain")),
+        "expires_at": payload.get("expires_at"),
+        "ledger": {
+            "start_doy": window.get("start_doy"),
+            "end_doy": window.get("end_doy"),
+            "occurrence_end_date": window.get("occurrence_end_date"),
+            "p": share.get("p"),
+            "p_baseline": share.get("p_baseline"),
+            "n_years": n_years,
+            "pattern_spec_hash": provenance.get("pattern_spec_hash"),
+            "model_version": provenance.get("model_version"),
+        },
+    }
