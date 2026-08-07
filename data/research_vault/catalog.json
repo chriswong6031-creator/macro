@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T04:47:17.742669+00:00",
-  "count": 909,
+  "generated_at": "2026-08-07T04:59:46.762685+00:00",
+  "count": 919,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -24,6 +24,7 @@
     "Ing Econ",
     "J.P. Morgan",
     "Jefferies",
+    "LSEG",
     "MUFG",
     "Mizuho",
     "Morgan Stanley",
@@ -57,6 +58,212 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-bcjktsbzuwe-b4ec6e",
+      "title": "Global Markets Comment A Few Follow Up Questions on Yen Intervention",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:41Z",
+      "summary_points": [
+        "**Dollar Reserve Appeal Unaffected**: Goldman Sachs confirms Japan's Treasury sales via FIMA reinforce dollar's reserve role, not undermine it; recent Treasury weakness stems from temporary factors (oil, FOMC), not structural dollar fragility.",
+        "**FIMA Strategic Advantage for Japan**: Japan leverages FIMA for smooth large-scale sales, capital market depth, and liquidity during stress—unique to USD reserves, contrasting with alternatives like Turkey's diversification hurdles.",
+        "**BoJ Rate Hike Tension**: Japan's FX intervention (funded by Treasury sales) may delay BoJ rate hikes (e.g., September), creating market tension between current Yen value and BoJ meeting expectations.",
+        "**FIMA's Structural Impact**: FIMA usage (e.g., Japan's $85bn 2-day sale) has modest USD funding impact ($50–100bn reserves) but underscores dollar's structural dominance over alternatives, with proposed facility upsizing to ease constraints."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7asch3vfxl9-900e62",
+      "title": "PAR Technology Corp. (PAR) 2Q26 Takeaways Topline beat with cost discipline driving better than expected profitability",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:40Z",
+      "summary_points": [
+        "**Q2 Results & Guidance**: Revenue $133m (beat $125m consensus), 17% ARR growth (12% organic), Adjusted EBITDA $14.3m (beat $10.5m); FY26 revenue guidance $516m-$523m (+2% vs consensus) driven by hardware refreshes and Burger King/Papa Johns rollouts.",
+        "**Profitability & Risks**: Cost discipline exceeded EBITDA estimates, but less mature profitability profile remains a key risk; competitive positioning strong in T1/T2 QSR/Retail, though ARR growth trajectory lacks clarity.",
+        "**Valuation Target & Deterioration**: $20.50 target maintained (4x EV/GP), but Goldman Sachs target fell 65% from $75.00 to $20.50, signaling severe bearish sentiment and deteriorating fundamentals.",
+        "**Market Pricing Divergence**: Closing price ($16.74) consistently below target ($20.50), indicating market pricing in lower expectations and reinforcing negative positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-q59jxbzxbfx-a7a25f",
+      "title": "Kodiak Gas Services Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:39Z",
+      "summary_points": [
+        "**Strong Q2 Performance & Revised Guidance**: FY26 EBITDA guidance raised to $830-860m (vs.",
+        "consensus $843m), driven by lower compression costs and Q2 adj.",
+        "EBITDA of $217m beating consensus.",
+        "**Compression Margin Expansion**: Compression margin at 70.0% (vs.",
+        "0% expected), with pricing exceeding consensus (end-of-period revenue per HP $23.80 vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xtcqlmh1hhx-71ad64",
+      "title": "The 720 Lasertec, DBS, Nintendo, Furukawa, SUMCO, Resonac, JX Advanced Materials, NYPCB, Winway, Kakao Corp",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:37Z",
+      "summary_points": [
+        "**AI Infrastructure Demand Surge**: Resonac, SUMCO, JX Advanced Metals report Q2/Q1 profit beats driven by AI server demand (Resonac core profit JPY 55.1bn vs.",
+        "JPY 44bn forecast; JX FY3/27 guidance raised 22% to JPY 232bn), with NYPCB's NT$46.8bn CAPEX signaling sustained ASP growth.",
+        "**Capacity Constraints & Price Hikes**: SUMCO and JX highlight capacity shortages driving negotiated price increases (SUMCO), with JX expecting hikes; Resonac's HD media benefits from early price rises, supporting margin expansion but posing near-term volatility risk.",
+        "**TSMC Margin & Supply Dynamics**: TSMC margin jumped 8.9 ppt QoQ, revenue grew 27% QoQ in 2026, with supply shortages accelerating margin outperformance and earnings revised 2%-23% higher.",
+        "**AI-Driven Data Center Power Demand**: US/global data center power demand (AI + non-AI) accelerates exponentially post-2025E, signaling structural energy market shifts and critical infrastructure investment themes."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mrfz42sxb6j-90d1db",
+      "title": "Suncor Energy Inc. (SU) Updating Estimates Following Solid 2Q Results and Key Management Changes Including Incoming CEO",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:35Z",
+      "summary_points": [
+        "**Management Transition & Governance**: Zebedee appointed President/CEO effective Sept 2026, replacing Kruger as Executive Vice Chair (April 2027), critical for strategic continuity amid in-situ capital shift.",
+        "**Fundamental Catalysts**: 2026E EPS growth at 122.8% (vs 16.1% prior), EBITDA growth 50.9% (vs 9.6%), supported by robust free cash flow per share (C$10.71) and undervalued metrics (P/E 8.5, EV/EBITDA 4.4).",
+        "**Key Risk Factor**: Medium-term capital spend (~C$6bn) for in-situ shift, posing significant long-term execution risk despite strong Q2 results.",
+        "**Valuation & Momentum**: $75 price target (22.2% upside from current), with persistent target-closing price gap ($75 vs $65.80) signaling institutional bullishness and undervaluation.",
+        "**Operational Execution**: Integrated operations driving elevated margins, with management confirming significant free cash flow across cycles despite neutral rating."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-b5e1vltymir-e4fb82",
+      "title": "Loar Holdings (LOAR) 2Q26 First Take beat & raise",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:33Z",
+      "summary_points": [
+        "**Guidance Expansion**: Q2 revenue ($171.6m, +5% vs consensus) and EBITDA ($69.4m, +7%) beat estimates, with 2026 guidance raised: revenue +3%, EBITDA +3%, EPS +5% (revenue forecast $665-675m vs prior $645-655m).",
+        "**Commercial Aerospace Driver**: Commercial OEM organic revenue growth +25.7% and aftermarket +8.6% underpin guidance, with FY2026 EBITDA forecast raised to $265-270m (vs prior $257-262m), signaling sector strength.",
+        "**Coverage & Valuation Risk**: Goldman Sachs price target fell from $102 to $91 despite beat, with \"not covered\" status as of Nov 25, 2025, indicating liquidity risk and deteriorating analyst support.",
+        "**Margin Quality**: 40.5% adjusted EBITDA margin (Q2) highlights operational efficiency, supporting growth trajectory (revenue/EBITDA forecasted to grow 62.5%/74.5% in Aerospace & Defense)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ixptt7ifbvp-d3bd90",
+      "title": "Occidental Petroleum Corp. (OXY) Raising Target Following Strong Multi Year Cash Flow Improvement Plan",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:33Z",
+      "summary_points": [
+        "**Cash Flow & Debt Target**: OXY targets $4.0bn cash flow improvement by 2030 (50% achieved by 2027) via debt reduction ($1.9bn reduced in 2026), operational efficiencies, and preferred equity redemption (Aug 2029), with principal debt target <$10bn.",
+        "**Valuation Mispricing Signal**: P/E and EV/EBITDA fell to 9.9x and 4.4x (12/26E) vs prior year (19.9x, 5.8x), while EPS growth spiked 154.8% (12/26E) before declining, indicating potential one-time earnings or valuation disconnect.",
+        "**Capital Allocation Constraints**: Debt reduction to $10.0bn principal (current $11.8bn) is priority before shifting to preferred equity redemption; dividend increased 8% but shareholder returns constrained post-debt target.",
+        "**Technical Underperformance**: Price target ($64.00, May 2026) exceeds closing price ($58.87), with target line consistently above stock price since May 2026 (S&P 500 benchmark), signaling widening downside pressure or mispricing risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-j2hd6edol6n-2cd226",
+      "title": "IC STORIES",
+      "institution": "LSEG",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T01:53:22Z",
+      "summary_points": [
+        "**BP Profit Surge & Oil Price Volatility**: $5.73B Q2 profit (doubled) from U.S.-Iran conflict-driven energy prices; strategic oil/gas pivot (renewables write-down $4.1B) amid 2% share drop on U.S.-Iran deal hopes.",
+        "**Russian Oil Export Collapse**: Seaborne exports down 33% m/m (3.9M tons), fuel exports plummet 60% (diesel/gasoline) and 35% (naphtha) due to Ukraine attacks, export bans, and EU sanctions.",
+        "**ADM Earnings & Biofuels Surge**: 2026 adjusted earnings raised to $5.15–$5.60/share (vs.",
+        "$4.15–$4.70), fueled by Iran war-driven grain prices, 129% ag services jump, and U.S.",
+        "mandates."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mati58szsof-636f60",
+      "title": "Market Update US, Europe & Asia",
+      "institution": "Safra",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T01:52:19Z",
+      "summary_points": [
+        "**Geopolitical Volatility**: Russia's missile strikes in Kyiv (17 killed) and EU condemnation heighten market volatility; Middle East concerns persist amid S&P 500 earnings beat rate at 86%.",
+        "**US Macro Data Shift**: July ISM services at 54.1 (below 54.5 forecast) with employment contraction; Treasury’s Q3 refunding unchanged signals cautious fiscal stance.",
+        "**Earnings Quality & Risks**: S&P 500 earnings beat rate at 86% (top-line strong), but CVS and Middle East risks offset gains; sector-specific declines driven by U.S.",
+        "solar softness (SEDG) and tariffs (MDLN).",
+        "**Sector-Specific Threats**: Cyber disruption (CPNG -4.7%) and regulatory headwinds (CDW -9.0%) critical; U.S."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-alnraqdv0az-2f1bf5",
+      "title": "JPM US Weekly Prospects",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T01:42:43Z",
+      "summary_points": [
+        "**FOMC Policy Tensions & Rate Hike Timing**: Three regional Fed dissenters (Hammack, Kashkari, Logan) signal inflation concerns; Fed credibility erosion may accelerate rate hikes to 75bp by year-end, with September possible if CPI moderates.",
+        "**PCE Inflation Trajectory**: Core PCE remains elevated at 3.3% (Q4), above target, with new pressures from goods prices and ex-housing services inflation threatening sustained above-target readings.",
+        "**Labor Market Softening & Unemployment Risk**: Payroll growth slowed (June), temporary unemployment rose to 4.3%; robust indicators (jobless claims, Conference Board) suggest limited near-term impact but upward drift risk.",
+        "**Nonresidential Construction Decline**: Nonresidential construction fell 5.0% q/q (10th straight decline), driven by commercial/healthcare vacancies and mortgage rates, offset only partially by data center growth (18% yoy).",
+        "**Global GDP Resilience & Geopolitical Risks**: 1H26 global GDP at 2.5% (non-tech lift), but Middle East conflict spiking input/output prices (62.2/58.9) threatens inflation recovery despite World Cup stimulus."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 24,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-ykidyjd5ywx-2c1595",
       "title": "JPM US Market Intelligence Macro Week Ahead CPI, PPI and Retail Sales Next Week",
