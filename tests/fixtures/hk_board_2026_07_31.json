@@ -12,7 +12,7 @@
   "0700.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 16,
+   "ticks": 15,
    "fresh_bars": 43,
    "above200": false,
    "weekly_bull": true,
@@ -92,7 +92,7 @@
   "9888.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 26,
+   "ticks": 23,
    "fresh_bars": null,
    "above200": false,
    "weekly_bull": false,
@@ -108,7 +108,7 @@
   "1024.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 21,
+   "ticks": 20,
    "fresh_bars": 59,
    "above200": false,
    "weekly_bull": true,
@@ -124,7 +124,7 @@
   "0992.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 42,
+   "ticks": 40,
    "fresh_bars": null,
    "above200": true,
    "weekly_bull": false,
@@ -140,7 +140,7 @@
   "0981.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 27,
+   "ticks": 26,
    "fresh_bars": 75,
    "above200": false,
    "weekly_bull": false,
@@ -188,7 +188,7 @@
   "2382.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 33,
+   "ticks": 32,
    "fresh_bars": null,
    "above200": false,
    "weekly_bull": false,
@@ -316,7 +316,7 @@
   "3888.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 16,
+   "ticks": 15,
    "fresh_bars": 43,
    "above200": true,
    "weekly_bull": true,
@@ -396,7 +396,7 @@
   "0005.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 12,
+   "ticks": 11,
    "fresh_bars": 32,
    "above200": true,
    "weekly_bull": true,
@@ -492,7 +492,7 @@
   "2888.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 27,
+   "ticks": 26,
    "fresh_bars": 75,
    "above200": true,
    "weekly_bull": true,
@@ -604,7 +604,7 @@
   "2628.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 25,
+   "ticks": 23,
    "fresh_bars": 68,
    "above200": true,
    "weekly_bull": true,
@@ -652,7 +652,7 @@
   "1336.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 13,
+   "ticks": 11,
    "fresh_bars": null,
    "above200": false,
    "weekly_bull": true,
@@ -1228,7 +1228,7 @@
   "3333.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 162,
+   "ticks": 148,
    "fresh_bars": null,
    "above200": false,
    "weekly_bull": true,
@@ -1340,7 +1340,7 @@
   "1929.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 28,
+   "ticks": 26,
    "fresh_bars": 77,
    "above200": false,
    "weekly_bull": true,
@@ -1580,7 +1580,7 @@
   "0345.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 10,
+   "ticks": 9,
    "fresh_bars": null,
    "above200": false,
    "weekly_bull": true,
@@ -1596,7 +1596,7 @@
   "9633.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 3,
+   "ticks": 4,
    "fresh_bars": null,
    "above200": false,
    "weekly_bull": false,
@@ -1612,7 +1612,7 @@
   "2150.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 16,
+   "ticks": 15,
    "fresh_bars": 44,
    "above200": false,
    "weekly_bull": true,
@@ -1692,7 +1692,7 @@
   "6160.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 9,
+   "ticks": 8,
    "fresh_bars": 23,
    "above200": true,
    "weekly_bull": true,
@@ -1740,7 +1740,7 @@
   "1801.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 9,
+   "ticks": 8,
    "fresh_bars": 23,
    "above200": true,
    "weekly_bull": true,
@@ -1820,7 +1820,7 @@
   "1066.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 21,
+   "ticks": 20,
    "fresh_bars": 57,
    "above200": false,
    "weekly_bull": true,
@@ -2236,7 +2236,7 @@
   "2282.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 26,
+   "ticks": 25,
    "fresh_bars": 72,
    "above200": false,
    "weekly_bull": true,
@@ -2394,9 +2394,9 @@
    }
   },
   "0763.HK": {
-   "eligible": true,
-   "tier_cascade": "T2",
-   "ticks": 0,
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 4,
    "fresh_bars": 9,
    "above200": false,
    "weekly_bull": true,
@@ -2428,7 +2428,7 @@
   "2338.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 23,
+   "ticks": 22,
    "fresh_bars": null,
    "above200": true,
    "weekly_bull": false,

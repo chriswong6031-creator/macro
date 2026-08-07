@@ -56,6 +56,7 @@ import pandas as pd
 
 from engine.signal_quality import analyze
 from engine import confluence_tiers   # owner's weighted T1->T4 cascade (TIERED_CASCADE.md)
+from engine import session_anchor     # absolute session-calendar anchor (per-market, R3)
 
 TAKE = "take"
 ANTICIPATION = "anticipation"
@@ -104,7 +105,12 @@ def is_buyable(v: dict | None) -> bool:
 _VERDICT_KEYS = ("eligible", "tier", "sub", "reason", "reasons", "state", "above200",
                  "weekly_bull", "early_now", "asof", "last",
                  "tier_cascade", "weight", "tier_sub", "bars_to_cross", "fresh_bars", "ticks",
-                 "provisional", "htf_s1", "htf_s2", "young_history", "history_bars")
+                 "provisional", "htf_s1", "htf_s2", "young_history", "history_bars",
+                 # the bucketing era this verdict was graded under (R5) — a cohort label like
+                 # young_history, so it travels the same way. `veto_legs_null` is deliberately
+                 # NOT here: it is a warmup DISCLOSURE and rides beside `null_legs`, which the
+                 # compact row has never carried either.
+                 "anchor_era")
 
 _BLOCKED_PREFIX = "buy blocked by filter: "
 
@@ -229,8 +235,13 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True) -> dict:
     is_buy = bool(last_m and last_m.get("type") in _BUY_TYPES)   # take OR forming 'pending'
     take_date = last_m.get("date") if is_buy else None           # age the arrow by its OWN date
     v["fresh_bars"] = _bars_since(daily_close, last_m) if is_buy else None
+    # The 2D/3D buckets are anchored to a per-MARKET reference session calendar (R3). Inferring
+    # it from the ticker suffix here is what lets every board (US/CN/HK/CA/Intl) route through
+    # gate() and get the right calendar with no caller edit; unmapped suffixes resolve to US
+    # openly (engine/session_anchor.market_for_ticker).
+    market = session_anchor.market_for_ticker(ticker)
     casc = confluence_tiers.cascade(daily_close, take_active=take_active,
-                                    take_date=take_date)
+                                    take_date=take_date, market=market)
     topped = not casc.get("not_topped", True)
     tier_c = casc.get("tier")
     ticks = casc.get("ticks")
@@ -296,6 +307,13 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True) -> dict:
     v["young_history"] = bool(casc.get("young_history"))
     v["history_bars"] = casc.get("bars")
     v["null_legs"] = casc.get("null_legs") or {}
+    # veto_legs_null names each NOT-TOPPED VETO leg the history could not check (F6/R4). It
+    # rides beside null_legs for the same reason: the veto shipped `not_topped=True` on names
+    # whose macd_bear leg was structurally unknowable, as if all three legs had been checked.
+    v["veto_legs_null"] = casc.get("veto_legs_null") or {}
+    # anchor_era is the graded-COHORT label for the bucketing era (R5) — it travels exactly
+    # like young_history, onto every verdict and into the slim board dict.
+    v["anchor_era"] = casc.get("anchor_era")
     # above200 HEALING, not widening. signal_quality.analyze needs ~270 daily bars, so it
     # returns None for a name the cascade can now grade — leaving above200 None on a series
     # whose 200dMA IS computable. Every consumer tests `is True`, so that None reads exactly
@@ -385,14 +403,16 @@ def compact(v: dict | None) -> dict:
 # payload ("last"/"state"/...) — those can carry NaN, and the boards only need the tier +
 # freshness — so it is safe to persist with allow_nan=False. is_buyable() reads from this.
 _BUY_KEYS = ("eligible", "tier_cascade", "tier_sub", "ticks", "bars_to_cross", "provisional",
-             "htf_s1", "htf_s2", "young_history")
+             "htf_s1", "htf_s2", "young_history", "anchor_era")
 
 
 def buy_signal(v: dict | None) -> dict:
     """Slim, JSON-safe buy verdict: confluence tier + freshness + HTF badges, no markers."""
     if not v:
+        # a BLANK is still a post-era row: the board persisted it under this anchor, so the
+        # graded record must be able to place it in the right cohort (R5).
         return {"eligible": False, "tier_cascade": None, "htf_s1": False, "htf_s2": False,
-                "young_history": False}
+                "young_history": False, "anchor_era": confluence_tiers.ANCHOR_ERA}
     return {k: v.get(k) for k in _BUY_KEYS}
 
 

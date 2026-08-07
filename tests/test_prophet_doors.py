@@ -45,13 +45,20 @@ def _wave(n: int = 430, *, wave: int, amp: float, drift: float, phase: int,
     return pd.Series(vals, index=pd.bdate_range(start, periods=n), dtype=float)
 
 
-# Measured against the frozen confluence_tiers math at authoring time:
-#   R_POS      -> 2D cross-up on the last COMPLETED bucket = True,  3D K 30.46 >= D 28.41
-#   R_NO_CROSS -> 2D cross-up = False,                              3D K 51.46 >= D 29.07
-#   R_NO_STOCH -> 2D cross-up = True,                               3D K 33.66 <  D 50.06
-R_POS = dict(wave=18, amp=0.08, drift=0.0016, phase=5)
-R_NO_CROSS = dict(wave=18, amp=0.08, drift=0.0016, phase=7)
-R_NO_STOCH = dict(wave=12, amp=0.04, drift=0.0016, phase=4)
+# RE-DERIVED under the abs-session anchor (era abs-session-2026-08-06). The 2D/3D buckets are
+# no longer phased to the series' first timestamp, so a fixture's phase index shifts; each
+# triple was re-measured against the CURRENT confluence_tiers math to isolate the SAME leg it
+# always isolated. The wave/amp/drift shapes are untouched — only `phase` moved (+1, +1, +2),
+# which is precisely the re-phase the anchor change predicts.
+#   R_POS      -> 2D cross-up on the last COMPLETED bucket = True,  3D K 30.41 >= D 28.23
+#                 (was phase=5, K 30.46 >= D 28.41 pre-anchor)
+#   R_NO_CROSS -> 2D cross-up = False,                              3D K 54.51 >= D 32.78
+#                 (was phase=7, K 51.46 >= D 29.07 pre-anchor)
+#   R_NO_STOCH -> 2D cross-up = True,                               3D K 37.45 <  D 48.69
+#                 (was phase=4, K 33.66 <  D 50.06 pre-anchor)
+R_POS = dict(wave=18, amp=0.08, drift=0.0016, phase=6)
+R_NO_CROSS = dict(wave=18, amp=0.08, drift=0.0016, phase=8)
+R_NO_STOCH = dict(wave=12, amp=0.04, drift=0.0016, phase=6)
 
 
 def _verdict(**over) -> dict:
@@ -283,11 +290,19 @@ class TestCompletedBucketIsPointInTime:
             assert base.index.max() >= tail_close, "a completed bucket must have closed"
 
     def test_in_progress_tail_is_excluded_from_the_completed_read(self):
-        """Guards against completed_tf silently degrading into _tf_bars. An ODD-length series
-        leaves the final 2B bucket holding one bar, so a spike ON that bar must move the raw
-        read and leave the completed read byte-identical."""
+        """Guards against completed_tf silently degrading into _tf_bars. A series whose last
+        bar OPENS its 2-session bucket leaves that bucket in progress, so a spike ON that bar
+        must move the raw read and leave the completed read byte-identical.
+
+        RE-DERIVED under the abs-session anchor: "in progress" is now the last bar's session
+        POSITION (``pos % 2 == 0`` opens a 2-bucket), not the series' length parity.
+        """
         from engine.confluence_tiers import _tf_bars
-        base = _wave(n=429, **R_POS)                 # odd -> final 2B bucket is in progress
+        from engine.session_anchor import session_positions
+        base = _wave(n=430, **R_POS)
+        pos = session_positions(base.index)
+        opening = np.where(pos % 2 == 0)[0]          # last bar OPENS its bucket -> in progress
+        base = base.iloc[:opening[-1] + 1]
         raw, _ = _tf_bars(base, 2)
         comp, _ = pdz.completed_tf(base, 2)
         assert len(comp) == len(raw) - 1, "this fixture must exercise the truncation"
@@ -301,13 +316,35 @@ class TestCompletedBucketIsPointInTime:
         assert comp_s.equals(comp), "the completed read must not see the in-progress bar"
 
     def test_closed_tail_bucket_is_kept(self):
-        """The truncation is conditional, not unconditional — an EVEN-length series closes its
-        final 2B bucket, and dropping it would delay every fire by a session."""
+        """The truncation is CONDITIONAL, not unconditional — dropping a bucket that has in
+        fact closed would delay every Door R fire by a session.
+
+        RE-DERIVED under the abs-session anchor. The condition is no longer the series'
+        LENGTH parity (which is what mattered when bins were phased to the series start): a
+        bucket spans reference positions [b*n, b*n+n-1], so it closes when the last session's
+        POSITION sits on b*n+n-1. This test picks its last bar by that arithmetic, so it
+        keeps testing "a closed bucket survives" rather than a length coincidence.
+
+        It is also the regression guard for the index-semantics change: `_tf_bars` used to be
+        indexed by pandas' bin START and is now indexed by each bucket's LAST SESSION, and
+        `completed_tf` reads that index. The old "label + n-1 business days" test applied to
+        the new index drops closed buckets — this test reds on exactly that.
+        """
         from engine.confluence_tiers import _tf_bars
+        from engine.session_anchor import session_positions
         base = _wave(n=430, **R_POS)
+        # trim to a last bar that CLOSES its 2-session bucket
+        pos = session_positions(base.index)
+        closed = np.where(pos % 2 == 1)[0]
+        base = base.iloc[:closed[-1] + 1]
         raw, _ = _tf_bars(base, 2)
         comp, _ = pdz.completed_tf(base, 2)
-        assert len(comp) == len(raw)
+        assert len(comp) == len(raw), "a CLOSED tail bucket must survive the truncation"
+        # and the complement: one session earlier the bucket is still open, so it is dropped
+        open_tail = base.iloc[:-1]
+        raw_o, _ = _tf_bars(open_tail, 2)
+        comp_o, _ = pdz.completed_tf(open_tail, 2)
+        assert len(comp_o) == len(raw_o) - 1, "an OPEN tail bucket must be dropped"
 
 
 # =========================================================================== #

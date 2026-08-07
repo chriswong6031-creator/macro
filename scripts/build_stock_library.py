@@ -3349,6 +3349,10 @@ def main() -> int:
                 # the record can forever separate the pre/post-change populations.
                 "young_history": bool(_sv.get("young_history", False)),
                 "history_bars": _sv.get("history_bars"),
+                # Bucketing-era cohort label (abs-session-2026-08-06, adjudication R5):
+                # travels exactly like young_history so the board-row record can forever
+                # separate pre/post-anchor populations.
+                "anchor_era": _sv.get("anchor_era"),
                 "asof": _sv.get("asof"),
             }
         except Exception:  # noqa: BLE001 — additive; never fatal
@@ -3356,6 +3360,8 @@ def main() -> int:
                                  "bars_to_cross": None, "provisional": False,
                                  "not_topped": True, "htf_s1": False, "htf_s2": False,
                                  "young_history": False, "history_bars": None,
+                                 # a blank persisted post-era is still a post-era row (R5)
+                                 "anchor_era": signal_gate.confluence_tiers.ANCHOR_ERA,
                                  "asof": None}
         # ---- sniper pre-compute (frozen Terminal contract, 2026-07-06) -----------
         # Compute w2_washout/w2_stoch_d + days_since_63d_low here (close is in scope).
