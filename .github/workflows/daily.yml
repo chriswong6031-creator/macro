@@ -1294,36 +1294,61 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.fetch_r2 --dirs subsectorohlc,subsectorohlc_nasdaq,subsectorohlc_russell || echo "::warning::subsectorohlc R2 restore failed (non-fatal — index_leadership skips loudly and keeps the last committed board)"
+      # restore-keys REMOVED from all five breadth caches below — the SAME defect the
+      # china per-name OHLC store 25 lines down already fixed (CN-SYS W5a).
+      #
+      # A prefix restore-key matches the newest cache under that prefix from ANY prior run,
+      # so this job laid a stale parquet on top of the fresh one `collect` had committed
+      # hours earlier the same night. Measured 2026-08-06: collect wrote
+      # data/breadth/_closes_cache.parquet through the 08-05 close (348 rows x 510 names,
+      # commit 361136284f2); the engine job 14 hours later committed it back at 2026-07-31
+      # (345 x 509, commit 2dfebf35dbd).
+      #
+      # WHY THIS BIT BREADTH AND NOT china*/hk*: the commit steps in this file already
+      # unstage every asia-close-owned path after `git add data/` (see the W0b 2026-07-08
+      # stale-HK incident notes in the collect and engine commit steps), so a stale
+      # cache-restore there can never reach a commit. data/breadth is US-owned, is NOT in
+      # that unstage list, and so had no such protection.
+      #
+      # That one regression froze the entire US board. _closes() ends at 07-31, so
+      # engine/residual_alpha.py:277 stamps as_of = R.index.max() = 2026-07-31, alpha.json
+      # carries it, build_stock_library.py:4267 copies it into us_standouts.json, and the
+      # snapshotter — which keys on as_of — saw the same date every night and appended
+      # nothing: data/us_board_ledger/snapshots.jsonl dead-ended at 2026-07-31 for six days
+      # while the board kept publishing picks ranked on 07-31 factors beside current-day
+      # entry zones (the operator's ~$6 gap on FCX). build_stock_library's own
+      # _board_continuity_warning had been printing "22 builds all claiming
+      # as_of=2026-07-31" throughout, but it is display-only and gates nothing.
+      #
+      # Dropping the restore-key makes this job's cache lookup MISS by design. That is the
+      # point: on a miss the job simply uses the panel already in the git checkout, which is
+      # collect's fresh one. The key still carries github.run_id so the within-run save/
+      # restore handoff is unaffected.
       - name: restore breadth close cache (stock search library needs constituent closes)
         uses: actions/cache@v4
         with:
           path: data/breadth/_closes_cache.parquet
           key: breadth-closes-engine-${{ github.run_id }}
-          restore-keys: breadth-closes-
       - name: restore smallcap (S&P 600) breadth close cache (stock library needs constituent closes)
         uses: actions/cache@v4
         with:
           path: data/smallcap_breadth/_closes_cache.parquet
           key: smallcap-closes-engine-${{ github.run_id }}
-          restore-keys: smallcap-closes-
       - name: restore midcap (S&P 400) breadth close cache (stock library needs constituent closes)
         uses: actions/cache@v4
         with:
           path: data/midcap_breadth/_closes_cache.parquet
           key: midcap-closes-engine-${{ github.run_id }}
-          restore-keys: midcap-closes-
       - name: restore Russell 2000 breadth close cache (stock library needs constituent closes)
         uses: actions/cache@v4
         with:
           path: data/russell_breadth/_closes_cache.parquet
           key: russell-closes-engine-${{ github.run_id }}
-          restore-keys: russell-closes-
       - name: restore hk breadth close cache (hk stock search library needs constituent closes)
         uses: actions/cache@v4
         with:
           path: data/hk_breadth/_closes_cache.parquet
           key: hk-breadth-closes-engine-${{ github.run_id }}
-          restore-keys: hk-breadth-closes-
       - name: restore china per-name OHLC store (build_china_library overlays it for US parity)
         # restore-keys intentionally removed: data/china_stocks is git-tracked and owned by
         # asia-close. Restoring a stale GHA cache here was causing the 5-day lag regression
