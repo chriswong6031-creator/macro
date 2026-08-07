@@ -825,22 +825,42 @@ class TestZeroAuthorityFence:
 class TestDagWiring:
 
     def test_the_nightly_step_is_declared_and_ordered(self):
+        """Declared in the OFF-ENGINE lane, after the stamp and before the miss-audit.
+
+        Moved out of the engine job 2026-08-06 (that job is chronically at its 200m cap and
+        a cancel skips its commit, discarding the night's accrual). The two ordering facts
+        are unchanged, they are just enforced across jobs now: build_stock_library (called
+        at runtime by build_site, per config/dag.yml's own note on scripts.build_site) still
+        stamps tonight's candidate rows FIRST — the engine job COMMITS them and this job
+        `needs` it — and the miss-audit, whose priority_score_scorecard reads this store,
+        still runs after within the new lane.
+        """
         import yaml
         dag = yaml.safe_load((REPO / "config" / "dag.yml").read_text())
-        lane = next(l for l in dag["lanes"]
-                    if l["workflow"] == ".github/workflows/daily.yml"
-                    and l["job"] == "engine")
+
+        def _lane(job):
+            return next(l for l in dag["lanes"]
+                        if l["workflow"] == ".github/workflows/daily.yml"
+                        and l["job"] == job)
+
+        engine = [s.get("module") for s in _lane("engine")["steps"]]
+        assert "scripts.grade_us_prophet_candidates" not in engine, (
+            "the grader is off the engine job's critical path — a step re-added there "
+            "rides the cancel that discards the night")
+        assert "scripts.build_site" in engine, "the stamping builder must stay in engine"
+
+        lane = _lane("us_prophet_ledgers")
         modules = [s.get("module") for s in lane["steps"]]
         assert "scripts.grade_us_prophet_candidates" in modules
-        # build_stock_library — which stamps tonight's candidate rows — is called at runtime
-        # by build_site rather than declared as its own step (config/dag.yml's own note on
-        # scripts.build_site says so), so build_site is what the ordering must clear.
-        assert (modules.index("scripts.grade_us_prophet_candidates")
-                > modules.index("scripts.build_site")), (
-            "the grader must run AFTER the builder that stamps tonight's candidate rows")
         assert (modules.index("scripts.grade_us_prophet_candidates")
                 < modules.index("scripts.run_prophet_miss_audit")), (
             "the miss-audit's scorecard reads this store, so the grader must run first")
+
+        daily = yaml.safe_load((REPO / ".github/workflows/daily.yml").read_text())
+        needs = daily["jobs"]["us_prophet_ledgers"]["needs"]
+        assert "engine" in needs, (
+            "the grader reads data/us_prophet_rank/candidates, which the engine job's "
+            "'commit engine outputs' step is what lands on main")
 
     def test_the_workflow_invokes_it_with_the_nightly_flag(self):
         text = (REPO / ".github" / "workflows" / "daily.yml").read_text()

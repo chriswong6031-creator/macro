@@ -681,3 +681,93 @@ def test_r2_publish_is_itself_non_fatal(collect_steps, step_name):
         "publish failure would red an otherwise-successful night. Keep the house "
         '`|| echo "::warning::..."` guard.'
     )
+
+
+# ── the other way to lose a night: publish it, then overwrite it ──────────────
+# The commit path above makes a night REAL. This guard covers the mirror defect:
+# a LATER job in the same night restoring a stale GHA cache on top of what an
+# earlier job already committed, then committing the stale copy back.
+#
+# 2026-08-06, measured: `collect` wrote data/breadth/_closes_cache.parquet through
+# the 08-05 close (348 rows x 510 names, 361136284f2); the `engine` job 14 hours
+# later committed it back at 2026-07-31 (345 x 509, 2dfebf35dbd), because its
+# actions/cache step carried `restore-keys: breadth-closes-`, which matches the
+# newest cache under that prefix from ANY prior run.
+#
+# The blast radius was the whole US board. engine/residual_alpha.py stamps
+# as_of = R.index.max() off that panel, alpha.json carries it, build_stock_library
+# copies it into us_standouts.json, and the snapshotter keys on as_of — so
+# data/us_board_ledger/snapshots.jsonl appended NOTHING for six days while the
+# board kept publishing picks ranked on 07-31 factors next to current-day prices.
+#
+# china*/hk* never had this problem: the commit steps unstage every asia-owned
+# path (W0b, 2026-07-08), so a stale restore there cannot reach a commit. This
+# test encodes the real invariant rather than a list of paths — a git-tracked
+# cache path that the commit step does NOT unstage must not carry a restore-key.
+
+import fnmatch  # noqa: E402
+import subprocess  # noqa: E402
+
+
+def _is_git_tracked(path: str) -> bool:
+    """True when the path has at least one tracked file (so a commit can carry it)."""
+    out = subprocess.run(["git", "ls-files", "--", path],
+                         cwd=ROOT, capture_output=True, text=True).stdout
+    return bool(out.strip())
+
+
+def _unstaged_by(commit_run: str, path: str) -> bool:
+    """True when a `git reset` in the commit step unstages this path (asia-owned carve-out)."""
+    for line in commit_run.splitlines():
+        line = line.strip()
+        if not line.startswith("git reset"):
+            continue
+        for tok in line.split():
+            if not tok.startswith("data/"):
+                continue
+            if path == tok or path.startswith(tok.rstrip("*")) or fnmatch.fnmatch(path, tok):
+                return True
+    return False
+
+
+#: Jobs that CONSUME the breadth panel without regenerating it. `collect` is
+#: deliberately absent: it is the PRODUCER, and there its prefix restore-key is
+#: load-bearing — it warm-starts the ~3-year panel so the collectors only have to
+#: append today's closes. Restoring a prior cache and then rewriting the file is
+#: safe; restoring one and then committing it unchanged is what corrupts the night.
+_CACHE_CONSUMER_JOBS = ["engine"]
+
+
+@pytest.mark.parametrize("job_name", _CACHE_CONSUMER_JOBS)
+def test_no_job_restores_a_stale_cache_over_data_it_will_commit(job_name):
+    doc = yaml.safe_load(DAILY.read_text())
+    job = doc["jobs"][job_name]
+    steps = job.get("steps") or []
+    commit_run = "\n".join(
+        (s.get("run") or "") for s in steps
+        if "commit" in ((s.get("name") or "").lower())
+    )
+
+    offenders = []
+    for st in steps:
+        if not str(st.get("uses") or "").startswith("actions/cache@"):
+            continue
+        w = st.get("with") or {}
+        path = str(w.get("path") or "").strip()
+        if not path.startswith("data/") or not w.get("restore-keys"):
+            continue
+        if not _is_git_tracked(path):
+            continue              # untracked: no commit can carry it back
+        if _unstaged_by(commit_run, path):
+            continue              # carved out of `git add data/` before the commit
+        offenders.append(f"{path} (restore-keys: {str(w['restore-keys']).strip()})")
+
+    assert not offenders, (
+        f"daily.yml job {job_name!r} restores a prefix-matched GHA cache onto GIT-TRACKED "
+        f"paths it then commits: {offenders}. A prefix restore-key matches the newest cache "
+        f"from ANY prior run, so this overwrites data an earlier job committed tonight and "
+        f"pushes the stale copy back — it froze the US board at as_of=2026-07-31 for six "
+        f"days on 2026-08-06. Either drop restore-keys (the job then simply uses the fresh "
+        f"panel already in the git checkout) or unstage the path in the commit step the way "
+        f"the asia-owned china*/hk* carve-out does."
+    )

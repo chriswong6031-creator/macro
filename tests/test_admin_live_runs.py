@@ -415,18 +415,22 @@ class TestMastermindBotProbe:
         assert result is False
 
     def test_probe_bot_no_requests_lib(self, monkeypatch):
-        """_probe_bot returns False when requests library is unavailable."""
+        """_probe_bot returns False when requests library is unavailable.
+
+        ``sys.modules[name] = None`` alone makes ``import name`` raise
+        ImportError, which is all this test needs.  Do NOT pop the key first:
+        ``monkeypatch.setitem`` snapshots the mapping state at CALL time, so a
+        preceding pop makes it record "key absent" and its teardown then
+        DELETES the key — silently undoing any manual restore in a finally
+        block, because monkeypatch runs after the test body.  That evicted the
+        real ``requests`` for the rest of the session; the next ``import
+        requests`` re-executed ``requests/__init__.py`` against still-cached
+        submodules, producing a module with ``.session`` but no ``.sessions``
+        and failing tests in unrelated files (see tests/test_no_module_leak.py).
+        """
         lr = _lr()
-        saved = sys.modules.pop("requests", None)
         monkeypatch.setitem(sys.modules, "requests", None)  # type: ignore[arg-type]
-        try:
-            result = lr._probe_bot("http://127.0.0.1:8000")
-        finally:
-            if saved is not None:
-                sys.modules["requests"] = saved
-            else:
-                sys.modules.pop("requests", None)
-        assert result is False
+        assert lr._probe_bot("http://127.0.0.1:8000") is False
 
     def test_base_url_from_env(self, monkeypatch):
         """snapshot() uses MASTERMIND_BOT_BASE env when set."""

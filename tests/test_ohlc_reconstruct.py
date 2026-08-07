@@ -14,12 +14,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import date as _date
 
 import numpy as np
 import pandas as pd
 
 from engine import ohlc_reconstruct as orc
 from engine.signal_quality import signal_frame, _swing_highs, analyze
+from lib import nyse_calendar
 
 
 def _close(vals, start="2020-01-01"):
@@ -162,11 +164,33 @@ def test_reconstruction_is_causal_no_repaint():
 # This pins the validated buy-filter's close-only output bit-for-bit: any future edit
 # that perturbs the close-only path (the safety contract that lets us feed high/low
 # without re-validating it) flips the fingerprint and fails loudly.
-_GOLD_FP, _GOLD_N = "f88f005c2386793a", 15
+#
+# RE-PINNED 2026-08-06 for era `sq-abs-session-2026-08-06` (ruling
+# research/SIGNAL_QUALITY_SESSION_ANCHOR_ADJUDICATION_BY_FABLE.md). It flipped exactly as
+# designed — the §7 marker stream re-draws ONCE under the absolute session anchor (R-SQ4) —
+# and an adjudicated era change is re-pinned with its reason recorded, the same doctrine as
+# `regen_hk_g1_fixture --force`. TWO deliberate changes, both recorded so the re-pin stays
+# auditable:
+#
+#   1. The index moved from `freq="B"` to REAL NYSE sessions. A business-day index carries
+#      every market HOLIDAY as if it were a bar, and under the absolute anchor a date absent
+#      from the reference takes the NEXT session's position — so a synthetic holiday bar
+#      shares a bucket with the session after it. A GOLDEN should pin the geometry
+#      production actually runs on, not one no store ever produces.
+#   2. The fingerprint and count follow from (1) plus the era: was 15 markers /
+#      f88f005c2386793a on business days pre-era; the same business-day fixture reads 16 /
+#      7397a46804404e02 post-era; on real sessions it is 13 / ef6a5d4f6ead0f0c. All three
+#      are recorded here so a future reader can tell which change moved what.
+#
+# The close-only CONTRACT this test exists for is unchanged and still pinned bit-for-bit:
+# `analyze()` with no high/low must keep taking the h3 = l3 = s3 fallback path.
+_GOLD_FP, _GOLD_N = "ef6a5d4f6ead0f0c", 13
+_GOLD_SESSIONS = pd.DatetimeIndex(pd.to_datetime(
+    nyse_calendar.sessions_between(_date(2018, 1, 1), _date(2022, 12, 31))))
 
 
 def _gold_close():
-    idx = pd.date_range("2018-01-01", periods=800, freq="B", name="Date")
+    idx = pd.DatetimeIndex(_GOLD_SESSIONS[:800], name="Date")
     rng = np.random.RandomState(42)
     return pd.Series(100 * np.exp(np.cumsum(rng.randn(800) * 0.015)), index=idx)
 
