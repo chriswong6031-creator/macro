@@ -156,3 +156,97 @@ def test_misaligned_high_falls_back_to_close_only():
     snap = st.snapshot(c, bad_high, bad_high)
     assert snap["coverage"] == "close"
     assert snap["atr14"] is None
+
+
+# --- 1-day change (PSI W2.5) ------------------------------------------------
+def test_chg_1d_two_closes_percent_move():
+    c = pd.Series([100.0, 102.5], index=_idx(2))
+    assert st.chg_1d(c) == 2.5
+
+
+def test_chg_1d_rounds_to_one_dp_like_the_other_percent_fields():
+    # the module's percent idiom is 1 dp (ret_1m, pct_vs_50dma, off_52w_high_pct)
+    c = pd.Series([100.0, 100.3456], index=_idx(2))
+    assert st.chg_1d(c) == 0.3
+
+
+def test_chg_1d_negative_move_is_signed():
+    c = pd.Series([100.0, 97.0], index=_idx(2))
+    assert st.chg_1d(c) == -3.0
+
+
+def test_chg_1d_needs_two_valid_closes():
+    assert st.chg_1d(pd.Series([100.0], index=_idx(1))) is None
+    assert st.chg_1d(pd.Series([], dtype=float)) is None
+    # NaN padding does not count as a valid close
+    padded = pd.Series([np.nan, np.nan, 100.0], index=_idx(3))
+    assert st.chg_1d(padded) is None
+
+
+def test_chg_1d_compares_against_the_prior_VALID_close():
+    # snapshot() drops NaNs before reading any bar, so the helper must too — otherwise the
+    # standalone helper and the published tech field disagree on any holed panel column.
+    holed = pd.Series([100.0, np.nan, 102.0], index=_idx(3))
+    assert st.chg_1d(holed) == 2.0
+    assert st.snapshot(holed)["chg_1d"] == 2.0
+
+
+def test_chg_1d_none_on_non_positive_prior_close():
+    assert st.chg_1d(pd.Series([0.0, 10.0], index=_idx(2))) is None
+
+
+def test_snapshot_emits_chg_1d_consistent_with_price():
+    c = _trend_series(300, noise=1.0)
+    snap = st.snapshot(c)
+    assert snap["chg_1d"] == st.chg_1d(c)
+    # same bar as `price`: reconstruct the prior close from the published pair
+    prior = float(c.iloc[-2])
+    assert snap["chg_1d"] == round((snap["price"] / prior - 1.0) * 100.0, 1)
+
+
+def test_snapshot_omits_chg_1d_below_two_closes():
+    one = pd.Series([100.0], index=_idx(1))
+    snap = st.snapshot(one)
+    assert "chg_1d" not in snap, "single-close names must OMIT chg_1d, not publish 0/null"
+    assert snap["price"] == 100.0        # the rest of the snapshot still reads
+
+
+def test_snapshot_chg_1d_survives_the_ohlcv_path():
+    c = _trend_series(400)
+    h, l, v = _ohlc_from_close(c)
+    assert st.snapshot(c, h, l, v)["chg_1d"] == st.chg_1d(c)
+
+
+# --- the index mirror -------------------------------------------------------
+def test_attach_chg_1d_copies_the_published_value():
+    row = {"t": "AAA"}
+    st.attach_chg_1d(row, {"price": 10.0, "chg_1d": -1.4})
+    assert row["c1"] == -1.4
+
+
+def test_attach_chg_1d_omits_when_the_field_is_absent():
+    for tech in ({}, {"price": 10.0}, None):
+        row = {"t": "AAA"}
+        st.attach_chg_1d(row, tech)
+        assert "c1" not in row, f"c1 must be absent, not null, for tech={tech!r}"
+
+
+def test_attach_chg_1d_leaves_existing_row_fields_alone():
+    row = {"t": "AAA", "n": "Alpha", "s": "Tech", "st": "RALLY ON", "v": 123, "a": 1.2}
+    before = dict(row)
+    st.attach_chg_1d(row, {"chg_1d": 0.9})
+    assert {k: row[k] for k in before} == before      # nothing reordered or renamed
+    assert list(row)[-1] == "c1"                      # appended, never inserted
+
+
+def test_chg_1d_zero_is_a_real_flat_session_not_a_missing_reading():
+    # 0 is a measurement (the name closed flat); ABSENT is the only "no reading" state.
+    # Consumers must test presence/null, never truthiness — pinned here so the contract
+    # is discoverable from the test file, not just the docstring.
+    flat = pd.Series([100.0, 100.0], index=_idx(2))
+    assert st.chg_1d(flat) == 0.0
+    snap = st.snapshot(flat)
+    assert "chg_1d" in snap and snap["chg_1d"] == 0.0
+    row: dict = {"t": "AAA"}
+    st.attach_chg_1d(row, snap)
+    assert row["c1"] == 0.0

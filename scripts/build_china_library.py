@@ -2204,6 +2204,7 @@ def main(alpha: dict | None = None) -> dict | None:
             name_en=name_en_by.get(ticker), name_zh=name_zh_by.get(ticker),
         )
         attach_latest_volume(idx, ticker, latest_volumes)
+        stock_technicals.attach_chg_1d(idx, rec.get("tech"))   # `c1` — mirrors tech.chg_1d
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
         index.append(idx)
