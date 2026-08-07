@@ -1827,9 +1827,29 @@ def test_b2_baseline_generation_tear_is_refused_exactly_like_a_live_one(
     state_bytes = state_path.read_bytes()
 
     # The later run offers a genuinely newer observation (175.0 / 30.0).  It
-    # must still refuse: the last-good triad stays byte-identical...
+    # must still refuse.
     clock[0] = "2026-08-01T14:00:00+00:00"
-    collect(_EventSession(current_amount=175.0, action_obligation=30.0))
+    later = collect(_EventSession(current_amount=175.0, action_obligation=30.0))
+
+    # A refusal must be VISIBLE.  Accepting the tear reports a healthy-looking
+    # bounded `partial` with an empty `errors` list, which is indistinguishable
+    # from a normal single-ticker collection — a fail-soft with its signal gone.
+    # The refusal travels the ordinary persist try/except, so `persisted` stays
+    # False and the run is `failed` with a persist-stage error whose message
+    # names the refusal.  (The `reason` taxonomy is deliberately not asserted:
+    # every persist exception is tagged `ledger_write_failed` by a pre-existing
+    # generic handler that predates this change and is owned elsewhere.)
+    assert later["status"] == "failed"
+    assert later["rails"]["awards"]["state"] == "failed"
+    refusals = [
+        error
+        for error in later["errors"]
+        if error.get("stage") == "persist"
+        and "full receipt-bound reconciliation" in str(error.get("error"))
+    ]
+    assert len(refusals) == 1, later["errors"]
+
+    # ...and the last-good triad stays byte-identical.
     assert (data_dir / "award_event_snapshots.parquet").read_bytes() == snapshot_bytes
     assert (data_dir / "award_action_versions.parquet").read_bytes() == action_bytes
     assert state_path.read_bytes() == state_bytes
