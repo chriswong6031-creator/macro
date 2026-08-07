@@ -505,6 +505,63 @@ jobs:
           if git diff --cached --quiet; then echo "no market data changes to commit"; exit 0; fi
           git commit -m "data: daily collection $(date -u +%F)"
           echo "committed=true" >> "$GITHUB_OUTPUT"
+      - name: salvage unrecoverable chain snapshots (collectors red — market commit skipped)
+        # THE HALF THE NAMED-STEPS GATE ABOVE CANNOT COVER (2026-08-06 postmortem).
+        # That gate is right for the bulk plane and must not be loosened, and the
+        # 2026-08-06 checkpoint SPLIT already removed the capital-structure chain's
+        # ability to veto it. What neither closes is a red `run collectors` itself:
+        # the market commit is still gated on `collectors == 'success'`, and that
+        # costs the ONE thing in data/ that no later run can rebuild.
+        # data/cboe/{putcall,gex*}.parquet are one-row-per-session snapshots of a
+        # delayed-quotes endpoint that serves only the LIVE book. Every other store
+        # re-fetches its history, so a skipped commit costs them nothing; these twelve
+        # are deleted forever by the next run's clean checkout.
+        #
+        # Measured, not hypothetical — 2026-08-03 (job 91848095334): gex and all ten
+        # symbols RECOVERED on the post-cooldown sweep (`cboe_gex -> ok (11 rows, last
+        # 2026-08-03)`), then `run collectors` died on `AttributeError:
+        # 'NYGamingAdapter' object has no attribute 'fetch_result_status'` — a bug in
+        # an unrelated adapter's duck-typing — and every one of those rows was gone the
+        # next evening. The board regime panel, conditions P/C and the gex_flip_cross
+        # alert have been computing across that hole since.
+        #
+        # This is NOT the forbidden bare always() commit: the 08-04 P0 was a BULK tree
+        # committed ahead of its SKIPPED normalizers. Nothing is downstream of these
+        # files — the adapters write the final artifact directly — and the selector
+        # (scripts/ci/chain_snapshot_salvage.py) stages only the declared chain family,
+        # each file individually re-read and required to tip on a real NYSE session, so
+        # a parquet torn by a mid-write crash is dropped rather than published.
+        # Runs only when the market commit did NOT, so the two can never race.
+        if: always() && steps.collectors.outcome != 'success'
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          SAFE=$(python -m scripts.ci.chain_snapshot_salvage . 2>/dev/null) || SAFE=""
+          if [ -z "$SAFE" ]; then
+            echo "no salvageable chain snapshots on disk"; exit 0
+          fi
+          echo "$SAFE" | while IFS= read -r f; do [ -n "$f" ] && git add -- "$f"; done
+          if git diff --cached --quiet; then
+            echo "chain snapshots already committed — nothing to salvage"; exit 0
+          fi
+          SAVED=$(git diff --cached --name-only | tr '\n' ' ')
+          git commit -m "data: salvage unrecoverable cboe chain snapshots $(date -u +%F)" || exit 0
+          # Bare line-start print: a logger/indent would push "::" off column 0 and
+          # GitHub would drop the annotation (tests/test_gh_annotation_line_start.py).
+          printf '::warning title=chain-snapshot-salvage::%s\n' "collect was red so the night's data commit was skipped; salvaged the unbackfillable delayed-chain snapshots only: $SAVED"
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          PUSH_ALARM=420
+          push_retry_init "salvaged chain snapshots"
+          while push_attempt; do
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
+              if push_do; then echo "pushed salvaged chain snapshots"; push_won; exit 0; fi
+            fi
+            push_abort_rebase
+            push_backoff
+          done
+          push_lost
+          printf '::warning title=chain-snapshot-salvage::%s\n' "could not push the salvaged chain snapshots after $PUSH_ATTEMPT attempts ($PUSH_STOP) — they exist only on this runner and the next checkout will delete them"
       # COMMIT/PUSH SPLIT (2026-07-17, run 29542087837 postmortem): the local commit above
       # is atomic and integrity-complete (fully-staged tree, asia paths reset out, empty-
       # guarded) — everything below is pure network publish. It lives in a SEPARATE
