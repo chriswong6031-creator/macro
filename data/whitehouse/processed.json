@@ -563,6 +563,18 @@
       "at": "2026-08-07T00:16:35.208901+00:00",
       "activated": false,
       "importance": 5
+    },
+    "https://www.whitehouse.gov/?p=47635": {
+      "id": "wh-2026-08-06-private-sector-answers-president-trumps-call-to-lower-prices-for-american-famili",
+      "at": "2026-08-07T04:04:05.672238+00:00",
+      "activated": true,
+      "importance": 65
+    },
+    "tw-2026-07-17-tga-build": {
+      "id": "tw-2026-07-17-tga-build",
+      "at": "2026-08-07T04:04:42.895160+00:00",
+      "activated": true,
+      "importance": 78
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."
