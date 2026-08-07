@@ -721,6 +721,102 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
     return "red", f"{conclusion or 'missing conclusion'} at {detail}"
 
 
+#: How far back along main to look for a commit that actually published checks.
+#: Measured 2026-08-07 on the last 14 main commits: NINE carried no check runs at
+#: all — `[skip ci]` press-wire ticks, earnings-wire publishes, research_vault
+#: catalogs, whitehouse alert updates — and the tip had none either. The newest
+#: commit with concluded packs sat 5 back. 20 clears that with room; a main whose
+#: last 20 commits are all skip-ci is a main nothing has proved, and the walk
+#: correctly returns an empty set there.
+MAIN_PROOF_WALK = 20
+
+
+def main_clean_check_names(repo: str, token: str) -> set[str]:
+    """Non-spurious check names that concluded CLEAN on the newest PROVED main commit.
+
+    Read ONCE per sweep and shared by every pull request, because it answers a
+    question about main, not about any PR.
+
+    NOT the tip. main's tip is usually a commit that never ran CI: this repo pushes
+    `[skip ci]` wire ticks and research_vault catalogs to main every few minutes, and
+    ci.yml is path-filtered on top of that. Reading the tip alone returned a set with
+    no packs in it almost always, which would have left this whole mechanism inert —
+    it would have looked like it worked while never firing. So walk newest->oldest and
+    answer from the first commit that published ANY concluded non-spurious check, the
+    same shape `integration_baseline_state` already uses for the breaker.
+
+    This exists to tell two reds apart that look identical on a PR:
+
+      * the PR broke something — its red is its own, and blocking is correct;
+      * main was red when the PR last ran, the PR inherited that failure, and main
+        has since been healed — the red describes a base that no longer exists.
+
+    The second shape is what regenerates the armed backlog. Every time main goes
+    red, every armed PR inherits it (measured 2026-08-07: ci-pack-2 red on 62 of
+    100 armed PRs and ci-pack-3 on 62, both already healed on main by #4752 and
+    #4767) — and `sweep_pull` used to return at `blocked` BEFORE reaching the
+    staleness path, so nothing ever re-tested them. They sat until a human ran
+    `update-branch` by hand, one at a time. The sweeper's own header records an
+    earlier round of exactly this: "#4583 changed those constants, main went red,
+    and 18 open pull requests inherited a ci-pack-1 failure until #4645 repaired
+    it."
+
+    Stops at the first PROVED commit and answers from that one alone — it does not
+    union across commits. A union would let a check that passed four commits ago
+    excuse a red the very next commit introduced.
+
+    FAILS CLOSED at every exit: an unreadable main, a walk that finds no proved
+    commit, or any exception all return an EMPTY set, and an empty set can never be
+    a superset of a non-empty failing set, so the caller falls through to the
+    unchanged `merge-blocked` path. Not knowing what main proves is never permission
+    to refresh anything.
+    """
+    try:
+        status, payload = _request(
+            "GET",
+            f"{GITHUB_API}/repos/{repo}/commits?sha=main&per_page={MAIN_PROOF_WALK}",
+            token,
+        )
+        if status >= 400 or not isinstance(payload, list):
+            return set()
+        for commit in payload:
+            sha = str((commit or {}).get("sha") or "")
+            if not sha:
+                continue
+            considered = [
+                run
+                for run in head_check_runs(repo, sha, token)
+                if not is_spurious_check(str(run.get("name") or ""))
+                and run.get("status") == "completed"
+            ]
+            if not considered:
+                continue  # a skip-ci / path-filtered commit proves nothing either way
+            return {
+                str(run.get("name") or "")
+                for run in considered
+                if run.get("conclusion") in CLEAN_CONCLUSIONS
+            }
+    except Exception:  # noqa: BLE001 — a diagnostic must never fail a sweep
+        return set()
+    return set()
+
+
+def failing_check_names(runs: list[dict[str, Any]]) -> set[str]:
+    """Bare names of the non-spurious checks that concluded badly on a head.
+
+    Derived from the runs rather than parsed back out of `decide_verdict`'s
+    display strings, which carry a " (conclusion)" suffix — re-deriving keeps the
+    comparison exact and independent of that formatting.
+    """
+    return {
+        str(run.get("name") or "")
+        for run in runs
+        if not is_spurious_check(str(run.get("name") or ""))
+        and run.get("status") == "completed"
+        and run.get("conclusion") not in CLEAN_CONCLUSIONS
+    }
+
+
 def mark_blocked(repo: str, pull: dict[str, Any], message: str, token: str) -> bool:
     """Add `merge-blocked` and explain it — but only on the transition.
 
@@ -930,6 +1026,7 @@ def sweep_pull(
     read_token: str,
     merge_token: str,
     freshness: "ProofFreshness",
+    main_clean: set[str] | None = None,
 ) -> str:
     """Judge and, when clean, merge one labeled pull request. Returns the verdict.
 
@@ -937,7 +1034,14 @@ def sweep_pull(
     caller that forgot to build it merge on an undated green forever, which is the
     exact failure this parameter exists to close; making it required turns that
     mistake into a TypeError at the call site instead of a silent no-op.
+
+    ``main_clean`` — the check names currently green on main's tip, from
+    :func:`main_clean_check_names`. It only ever WIDENS what a red PR may do (see
+    the base-inherited-red branch), never what a clean one may merge, so unlike
+    ``freshness`` a missing value is safe: it defaults to the empty set, which
+    reproduces the pre-2026-08-07 behaviour exactly.
     """
+    main_clean = main_clean or set()
     number = pull.get("number")
     head_sha = str((pull.get("head") or {}).get("sha") or "")
     if not head_sha:
@@ -966,6 +1070,35 @@ def sweep_pull(
         return verdict
 
     if verdict == "blocked":
+        # A red inherited from a base that has since been healed is not this pull
+        # request's red. Every failing check being GREEN on main's tip is the
+        # signature: the PR ran against an older main, main was repaired, and
+        # nothing has re-tested the PR since. Refresh it and let its fresh checks
+        # decide on a later sweep — the same courtesy the clean-but-stale path
+        # below has always had, which this branch simply reaches first.
+        #
+        # Narrow on purpose. If even ONE failing check is not currently clean on
+        # main, this is not a base-inherited red and the old path runs unchanged,
+        # so a genuine regression can never be refreshed out of sight. `main_clean`
+        # is empty whenever main was unreadable, and an empty set is never a
+        # superset of a non-empty failing set — so the degraded case blocks too.
+        #
+        # Self-terminating: update-branch answers 422 when the head is already
+        # current, which is exactly the case where the red must be the PR's own,
+        # and the call falls through to `merge-blocked` below. So a PR cannot be
+        # refreshed twice for the same red, and no loop is possible.
+        bad_names = failing_check_names(runs)
+        if bad_names and main_clean and bad_names <= main_clean:
+            if update_branch(repo, pull, merge_token):
+                clear_blocked(repo, pull, merge_token)
+                print(
+                    f"PR #{number}: red checks ({', '.join(sorted(bad_names)[:6])}) "
+                    "are all green on main — the base moved under it. Refreshed; its "
+                    "fresh checks decide on a later sweep.",
+                    flush=True,
+                )
+                return "rebased"
+
         added = mark_blocked(
             repo,
             pull,
@@ -1122,6 +1255,18 @@ def main() -> int:
         )
         return 1
 
+    # One read of main's tip, shared by every pull request in the sweep. Never
+    # fatal: an empty set disables the base-inherited-red refresh and every PR
+    # falls through to the unchanged blocking path.
+    main_clean = main_clean_check_names(repo, read_token)
+    if not main_clean:
+        _annotate(
+            "notice",
+            "merge-on-green",
+            "main's tip published no clean non-spurious checks (or was unreadable) — "
+            "base-inherited reds will be labeled merge-blocked as before, not refreshed.",
+        )
+
     tally: dict[str, int] = {}
     repair_slot_used = False
     for pull in pulls:
@@ -1141,7 +1286,9 @@ def main() -> int:
             # repairs have not been jointly proven against the broken baseline.
             repair_slot_used = True
         try:
-            verdict = sweep_pull(repo, pull, read_token, merge_token, freshness)
+            verdict = sweep_pull(
+                repo, pull, read_token, merge_token, freshness, main_clean
+            )
         except Exception as exc:
             # One bad pull request must never fail a sweep that had clean work to
             # do. The next run retries it; the label is still armed.
