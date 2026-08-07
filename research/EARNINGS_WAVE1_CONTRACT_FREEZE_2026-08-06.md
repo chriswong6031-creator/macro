@@ -163,6 +163,51 @@ it is a Wave 7 value and must not be minted before there is a rights check that
 can actually return it; a status value no code path can produce is a lie in a
 dropdown.
 
+### Q6 — a span's byte range is VERIFIED; its locator attributes are CLAIMED
+
+*Added 2026-08-07, raised by Wave 1A ([#4910](https://github.com/chriswong6031-creator/macro/pull/4910))
+while implementing against the corpus. This answer was not in the original five.*
+
+**Frozen: `source_span.v1` must distinguish what it verified from what it copied.**
+
+The corpus has 12 `speaker_role_error` cases, and **10 of them expect
+`exact_receipt`**. That is not a contradiction — the receipt *is* exact about
+where the text lives. Verified on `CIE-GC-0199`: the cited segment byte-replays
+correctly, and its locator `speaker` reads `"Analyst, Kestrel Securities"` on a
+sentence in which the CFO states the quarter's revenue and EPS.
+
+So the span is simultaneously:
+
+- **verified** on `text_sha256`, `span_start_byte`, `span_end_byte` — the byte
+  replay proves the quoted text is what the document says at that offset; and
+- **merely transcribed** on `speaker`, `role`, `chapter` — these are asserted by
+  the transcript producer and nothing in the receipt checks them.
+
+Today the envelope emits both at the same apparent confidence. A surface that
+renders attribution — the Terminal Brief, a dossier evidence rail, a Struct
+article byline — would print *"the CFO said"* with an **exact receipt** badge
+beside a role the receipt never checked. A confidently wrong attribution is worse
+than an absent one, and it is worse specifically because the receipt makes it
+look audited.
+
+**What Wave 1 must carry:** a per-attribute reliability marker on the locator —
+a `disputed_fields` list, or an explicit `verified` / `source_asserted` split
+across locator keys. The shape is an implementation choice; the invariant is not:
+
+> No consumer may render a locator attribute at the same confidence as the byte
+> range unless something verified it.
+
+**Grading note.** The corpus grades only the *outcome* (`exact_receipt`), so this
+class passes without the marker — which is precisely why the class exists. Wave 1A
+recorded the gap rather than papering over it. Any implementation that resolves
+these 10 cases to `exact_receipt` **and** emits an unmarked speaker has satisfied
+the benchmark and shipped the bug.
+
+**Corollary for Wave 4 and Wave 6.** `Mentioned By`, the commitment ledger, and
+any Struct prose that attributes a statement to a named person all inherit this.
+An attribution is a claim about a *person*, and it needs its own evidence — not
+the byte range's.
+
 ---
 
 ## 3. Wave 0 status ledger
