@@ -1,0 +1,329 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_operating_packet.v1.schema.json",
+  "title": "BioCatalyst operating packet v1",
+  "description": "One deterministic, facts-only operating carrier bound to an already-compiled sector_intelligence_packet.v1 and to the owner projections that produced it. Unavailable families are declared with a named blocker; they are never omitted, inferred, or faked. The carrier grants no authority above A1_EXPLAIN and never originates a probability, ranking, signal, score, or escalation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema_version",
+    "packet_id",
+    "packet_version",
+    "sector",
+    "producer",
+    "generated_at",
+    "knowledge_cutoff",
+    "sector_packet_ref",
+    "sector_packet_sha256",
+    "entity_refs",
+    "source_refs",
+    "evidence_refs",
+    "owner_projection_reads",
+    "point_in_time_facts",
+    "freshness",
+    "coverage",
+    "contradictions",
+    "corrections",
+    "identity_state",
+    "forecast_references",
+    "unavailable_families",
+    "authority_caps",
+    "warnings",
+    "hash_scope",
+    "packet_hash"
+  ],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_operating_packet.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "packet_id": {"type": "string", "pattern": "^biocatalyst_operating_packet:[a-f0-9]{24}$"},
+    "packet_version": {"const": 1},
+    "sector": {"const": "biopharma"},
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["service", "code_version", "owner"],
+      "properties": {
+        "service": {"const": "biocatalyst-operating-packet"},
+        "code_version": {"type": "string", "minLength": 1, "maxLength": 64},
+        "owner": {"const": "biocatalyst"}
+      }
+    },
+    "generated_at": {"$ref": "#/$defs/utcTimestamp"},
+    "knowledge_cutoff": {"$ref": "#/$defs/utcTimestamp"},
+    "sector_packet_ref": {"type": "string", "pattern": "^packet:biopharma:[a-f0-9]{24}$"},
+    "sector_packet_sha256": {"$ref": "#/$defs/sha256"},
+    "entity_refs": {
+      "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/entityRef"}
+    },
+    "source_refs": {
+      "type": "array",
+      "maxItems": 1000,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/sourceRef"}
+    },
+    "evidence_refs": {
+      "type": "array",
+      "maxItems": 1000,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    },
+    "owner_projection_reads": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/ownerProjectionRead"}
+    },
+    "point_in_time_facts": {
+      "type": "array",
+      "maxItems": 1600,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/pointInTimeFact"}
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "oldest_required_source_at",
+        "evaluated_at",
+        "stale_source_ids",
+        "unknown_source_ids"
+      ],
+      "properties": {
+        "state": {"enum": ["fresh", "stale", "unknown", "degraded"]},
+        "oldest_required_source_at": {
+          "anyOf": [{"type": "null"}, {"type": "string", "minLength": 1, "maxLength": 64}]
+        },
+        "evaluated_at": {"$ref": "#/$defs/utcTimestamp"},
+        "stale_source_ids": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/sourceId"}
+        },
+        "unknown_source_ids": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/sourceId"}
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "observed", "completeness"],
+      "properties": {
+        "class": {"const": "current_only"},
+        "observed": {"type": "integer", "minimum": 0},
+        "completeness": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "contradictions": {"$ref": "#/$defs/disagreementLane"},
+    "corrections": {"$ref": "#/$defs/disagreementLane"},
+    "identity_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "availability",
+        "blocker",
+        "blocker_note",
+        "issuer_refs",
+        "security_refs",
+        "inference_from_registry_record"
+      ],
+      "properties": {
+        "availability": {"const": "unavailable"},
+        "blocker": {"const": "no_eligible_point_in_time_issuer_security_identity_bridge"},
+        "blocker_note": {"type": "string", "minLength": 1, "maxLength": 512},
+        "issuer_refs": {"type": "array", "maxItems": 0, "items": false},
+        "security_refs": {"type": "array", "maxItems": 0, "items": false},
+        "inference_from_registry_record": {"const": "forbidden"}
+      }
+    },
+    "forecast_references": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["availability", "refs", "reason", "enumerated_lane", "evidence_ref"],
+      "properties": {
+        "availability": {"enum": ["available_enumerated_empty", "unavailable"]},
+        "refs": {"type": "array", "maxItems": 0, "items": false},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 512},
+        "enumerated_lane": {
+          "anyOf": [{"type": "null"}, {"type": "string", "minLength": 1, "maxLength": 256}]
+        },
+        "evidence_ref": {
+          "anyOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^packet:biopharma:[a-f0-9]{24}$"}
+          ]
+        }
+      }
+    },
+    "unavailable_families": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["family", "availability", "blocker"],
+        "properties": {
+          "family": {
+            "enum": [
+              "capital_structure",
+              "identity",
+              "market",
+              "ownership",
+              "regulatory"
+            ]
+          },
+          "availability": {"const": "unavailable"},
+          "blocker": {"type": "string", "minLength": 1, "maxLength": 256}
+        }
+      }
+    },
+    "authority_caps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_authority",
+        "allowed_actions",
+        "forbidden_actions",
+        "llm_may_originate_signals",
+        "authority_manifest_ref"
+      ],
+      "properties": {
+        "max_authority": {"enum": ["A0_OBSERVE", "A1_EXPLAIN"]},
+        "allowed_actions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {"enum": ["observe", "explain"]}
+        },
+        "forbidden_actions": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 64}
+        },
+        "llm_may_originate_signals": {"const": false},
+        "authority_manifest_ref": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {"type": "string", "minLength": 1, "maxLength": 512}
+    },
+    "hash_scope": {"const": "canonical_payload_excluding_packet_hash"},
+    "packet_hash": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "utcTimestamp": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$"
+    },
+    "entityRef": {"type": "string", "pattern": "^trial:NCT[0-9]{8}$"},
+    "sourceRef": {
+      "type": "string",
+      "pattern": "^src:ctgov:NCT[0-9]{8}:sha256:[a-f0-9]{64}$"
+    },
+    "sourceId": {"type": "string", "minLength": 1, "maxLength": 64},
+    "ownerProjectionRead": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["read_id", "projection_id", "as_of", "row_count", "payload_sha256"],
+      "properties": {
+        "read_id": {
+          "type": "string",
+          "pattern": "^read:[a-z][a-z0-9_.:-]{0,95}:[a-f0-9]{24}$"
+        },
+        "projection_id": {
+          "type": "string",
+          "pattern": "^biocatalyst\\.[a-z][a-z0-9_.]{0,63}\\.v1$"
+        },
+        "as_of": {"$ref": "#/$defs/utcTimestamp"},
+        "row_count": {"type": "integer", "minimum": 0, "maximum": 100000},
+        "payload_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "pointInTimeFact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entity_ref",
+        "fact_key",
+        "state",
+        "source_json_path",
+        "source_ref",
+        "observed_at",
+        "knowledge_cutoff",
+        "value",
+        "value_sha256",
+        "value_omitted_reason"
+      ],
+      "properties": {
+        "entity_ref": {"$ref": "#/$defs/entityRef"},
+        "fact_key": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"},
+        "state": {"const": "observed"},
+        "source_json_path": {"type": "string", "minLength": 1, "maxLength": 256},
+        "source_ref": {"$ref": "#/$defs/sourceRef"},
+        "observed_at": {
+          "anyOf": [{"type": "null"}, {"type": "string", "minLength": 1, "maxLength": 64}]
+        },
+        "knowledge_cutoff": {"$ref": "#/$defs/utcTimestamp"},
+        "value": true,
+        "value_sha256": {"$ref": "#/$defs/sha256"},
+        "value_omitted_reason": {
+          "anyOf": [
+            {"type": "null"},
+            {"const": "fact_value_exceeds_packet_budget"}
+          ]
+        }
+      }
+    },
+    "disagreementLane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "items", "evidence_refs"],
+      "properties": {
+        "state": {"enum": ["none_known", "present", "unavailable"]},
+        "items": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "entity_ref", "detail", "read_id"],
+            "properties": {
+              "kind": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"},
+              "entity_ref": {"$ref": "#/$defs/entityRef"},
+              "detail": {"type": "string", "minLength": 1, "maxLength": 512},
+              "read_id": {
+                "type": "string",
+                "pattern": "^read:[a-z][a-z0-9_.:-]{0,95}:[a-f0-9]{24}$"
+              }
+            }
+          }
+        },
+        "evidence_refs": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 256}
+        }
+      }
+    }
+  }
+}

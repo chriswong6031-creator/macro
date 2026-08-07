@@ -805,8 +805,9 @@ entries:
       any_of:
         - 'overhead.{0,30}supply.{0,30}fraction'
     reason: >
-      REDUNDANT — \
-    source: 'ρ\'
+      REDUNDANT — |ρ| 0.95/0.88/0.875 vs ext_atr / poc_dist_126 /
+      dist_to_52wh (§4.3 fence)
+    source: 'EI-PM0 run (2026-07-10, r4)'
 
   - id: BL-G054
     match:
@@ -1115,22 +1116,35 @@ entries:
       any_of:
         - 'signal.{0,30}family.{0,30}reliability'
     reason: >
-      market regime]` graded on forward drawdown (the "momentum
-      reliability 0.31 / breakout continuation 0.24" grid)
-    source: 'KILLED (construction-scoped) — the claim requires a family×regime INTERACTION, and on the only multi-regime graded record (`track_record.parquet`, 57,642 matured signals, 763 months, 1962–2026) the in'
+      KILLED (construction-scoped) — the claim requires a family×regime
+      INTERACTION, and on the only multi-regime graded record
+      (`track_record.parquet`, 57,642 matured signals, 763 months,
+      1962–2026) the in
+    source: 'RRC-R2, `REGIME_RELIABILITY_FACTOR_CROWDING_ADJUDICATION.md` §4; `reports/regime-reliability-phase0.md` (2026-08-05)'
 
   - id: BL-G087
     match:
       any_of:
-        - 'kill.{0,30}liquidity.{0,30}shock'
+        - 'liquidity.{0,30}shock.{0,30}reversal'
     reason: >
-      Liquidity-shock reversal classifier (LSR-P0) — separating
-      forced-liquidation from information-driven ±3σ shocks by an
-      information firewall + OHLCV-derived microstructure, for
-      mean-reversion candidates
-    source: 'KILLED phase-0 (construction-scoped) — all three pre-registered gates FAIL on 16,315 firewall-covered shocks (4,281-name tradeable panel, 1,274 covered names × 1,191 dates, 2021-09..2026-07, date-clus'
+      KILLED phase-0 (construction-scoped) — all three pre-registered
+      gates FAIL on 16,315 firewall-covered shocks (4,281-name
+      tradeable panel, 1,274 covered names × 1,191 dates,
+      2021-09..2026-07, date-clus
+    source: 'LSR-P0 (2026-08-05): `research/LIQUIDITY_SHOCK_REVERSAL_PHASE0.md`; `reports/liquidity-shock-reversal-phase0.md`; `scripts/research_liquidity_shock_reversal.py` + `scripts/research_lsr_reopeners.py` ('
 
   - id: BL-G088
+    match:
+      any_of:
+        - 'reclaim.{0,30}veto.{0,30}flat'
+    reason: >
+      REJECTED-ON-MEASUREMENT (operator-delegated ruling 2026-08-05) —
+      pooled packet read favours the veto (refused fires −4.54pp @21,
+      173 losers saved vs 91 winners cost, no drawdown band positive at
+      any h
+    source: '`research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md` §9 + frozen JSON (#4607)'
+
+  - id: BL-G089
     match:
       any_of:
         - 'ticker.{0,30}cluster.{0,30}bootstrap'
@@ -1138,7 +1152,7 @@ entries:
       FORBIDDEN estimator — anti-conservative, effective N = months
     source: 'DT-R14; `TIME_CONFOUND_EXPOSURE_AUDIT` (#1755)'
 
-  - id: BL-G089
+  - id: BL-G090
     match:
       any_of:
         - 'factor.{0,30}apparatus.{0,30}applied'
@@ -1147,7 +1161,7 @@ entries:
       absolute)
     source: 'Oracle reversion metric reframe (#1458)'
 
-  - id: BL-G090
+  - id: BL-G091
     match:
       any_of:
         - 'pooled.{0,30}inference.{0,30}across'
@@ -1155,7 +1169,7 @@ entries:
       FORBIDDEN without era split
     source: 'DT-R16 era-split law (#1751)'
 
-  - id: BL-G091
+  - id: BL-G092
     match:
       any_of:
         - 'closing.{0,30}factor.{0,30}family'
@@ -1163,7 +1177,7 @@ entries:
       INCOMPLETE — diagnose mechanism + pre-registered pairlets first
     source: 'Factor-kill interaction feedback law'
 
-  - id: BL-G092
+  - id: BL-G093
     match:
       any_of:
         - 'estimator.{0,30}shortcuts'
@@ -1171,7 +1185,7 @@ entries:
       Constrained per R1-M estimator law
     source: 'Nontech-bottom program'
 
-  - id: BL-G093
+  - id: BL-G094
     match:
       any_of:
         - 'exact.{0,30}label.{0,30}adverse'
@@ -1182,7 +1196,7 @@ entries:
       exact configuration
     source: '`research/PSS_RH1_RELIEF_HAZARD_PROSPECTIVE_CHARTER.md`; `data/personality_timing/relief_hazard_manifest_v1.json` (family `pss_rh1_relief_hazard_prospective`, frozen 2026-07-27)'
 
-  - id: BL-G094
+  - id: BL-G095
     match:
       any_of:
         - 'first.{0,30}real.{0,30}sector'
@@ -1193,7 +1207,7 @@ entries:
       +0.50-ATR re
     source: '`research/PSS_CR1_CHALLENGE_RESILIENCE_PROSPECTIVE_CHARTER.md`; `data/personality_timing/challenge_resilience_manifest_v1.json` (family `pss_cr1_challenge_resilience_prospective`, frozen 2026-07-27)'
 
-  - id: BL-G095
+  - id: BL-G096
     match:
       any_of:
         - 'correlation.{0,30}dispersion.{0,30}overlay'
@@ -1204,7 +1218,7 @@ entries:
       thresholds. Joint
     source: '`research/PSS_CD1_CORRELATION_DISPERSION_PROSPECTIVE_CHARTER.md`; `data/personality_timing/crowding_hazard_manifest_v1.json` (family `pss_cd1_correlation_dispersion_prospective`, frozen 2026-07-27)'
 
-  - id: BL-G096
+  - id: BL-G097
     match:
       any_of:
         - 'finra.{0,30}short.{0,30}marked'
@@ -1215,7 +1229,7 @@ entries:
       rolling-three-session q75,
     source: '`research/PSS_AF1_FINRA_ABSORPTION_PROSPECTIVE_CHARTER.md`; `data/personality_timing/flow_absorption_manifest_v1.json` (family `pss_af1_finra_absorption_witness_prospective`, frozen 2026-07-27)'
 
-  - id: BL-G097
+  - id: BL-G098
     match:
       any_of:
         - 'ontology.{0,30}acceptance'
@@ -1223,7 +1237,7 @@ entries:
       HOLD — peak gate IQR 48.8 > 25
     source: 'Open PR #1639 (do not accidentally revive)'
 
-  - id: BL-G098
+  - id: BL-G099
     match:
       any_of:
         - 'theta.{0,30}tape'
@@ -1231,7 +1245,7 @@ entries:
       SUSPENDED
     source: 'Final3-lobes program (2026-07-06)'
 
-  - id: BL-G099
+  - id: BL-G100
     match:
       any_of:
         - 'disp.{0,30}gate'
@@ -1239,7 +1253,7 @@ entries:
       DEFER ×2-replicated
     source: 'Final3-lobes program (#1696)'
 
-  - id: BL-G100
+  - id: BL-G101
     match:
       any_of:
         - 'price.{0,30}memory.{0,30}trials'
@@ -1248,7 +1262,7 @@ entries:
       60% floor at execution)
     source: 'PM0 prereg (#1761) + EI-PM0 run (2026-07-10)'
 
-  - id: BL-G101
+  - id: BL-G102
     match:
       any_of:
         - 'g1'
@@ -1256,7 +1270,7 @@ entries:
       DEFERRED
     source: 'Long-hold thesis program (#1507/#1588)'
 
-  - id: BL-G102
+  - id: BL-G103
     match:
       any_of:
         - 'options'
@@ -1264,7 +1278,7 @@ entries:
       PARKED until preconditions (1)+(2)
     source: 'Options→NW masterplan'
 
-  - id: BL-G103
+  - id: BL-G104
     match:
       any_of:
         - 'codeowners.{0,30}branch.{0,30}protection'
@@ -1272,7 +1286,7 @@ entries:
       DEFERRED to RF codegen lane scope
     source: 'ABM-R3; `RF_CODEGEN_LANE_FOR_FABLE.md`'
 
-  - id: BL-G104
+  - id: BL-G105
     match:
       any_of:
         - 'ticker.{0,30}multi.{0,30}label'
@@ -1281,7 +1295,7 @@ entries:
       revenue-geography ingestion + own adjudication
     source: 'TI-R2, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md`'
 
-  - id: BL-G105
+  - id: BL-G106
     match:
       any_of:
         - 'public.{0,30}breakaway.{0,30}desk'
@@ -1290,7 +1304,7 @@ entries:
       its own wave
     source: '`WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md` §8'
 
-  - id: BL-G106
+  - id: BL-G107
     match:
       any_of:
         - 'winner.{0,30}autopsy.{0,30}short'
@@ -1299,7 +1313,7 @@ entries:
       settlement date)
     source: 'WA-R (docket adjudication), aligns NEXTL-U19'
 
-  - id: BL-G107
+  - id: BL-G108
     match:
       any_of:
         - 'full.{0,30}graph.{0,30}causal'
@@ -1309,7 +1323,7 @@ entries:
       clock
     source: 'CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
 
-  - id: BL-G108
+  - id: BL-G109
     match:
       any_of:
         - 'dedicated.{0,30}machine.{0,30}registration'
@@ -1319,7 +1333,7 @@ entries:
       stands (QS-U2)
     source: 'CHF-R2, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
 
-  - id: BL-G109
+  - id: BL-G110
     match:
       any_of:
         - 'ignition.{0,30}radar.{0,30}user'
@@ -1329,17 +1343,6 @@ entries:
       operator ruling", never met); the 07-23 tape showed the
       narrow-theme
     source: 'Operator ruling 2026-07-23 + `POSTMORTEM_20260723_MAG7_FORCED_CALL_BY_FABLE.md` §2'
-
-  - id: BL-G110
-    match:
-      any_of:
-        - 'reclaim.{0,30}veto.{0,30}flat'
-    reason: >
-      REJECTED-ON-MEASUREMENT (operator-delegated ruling 2026-08-05) —
-      pooled packet read favours the veto (refused fires −4.54pp @21,
-      173 losers saved vs 91 winners cost, no drawdown band positive at
-      any h
-    source: '`research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md` §9 + frozen JSON (#4607)'
 
   - id: BL-G111
     match:

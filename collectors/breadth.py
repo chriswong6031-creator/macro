@@ -413,7 +413,15 @@ class BreadthAdapter(Adapter):
                         "retried next run", self.name, missed[:12])
         for k, w in list(fresh_extras.items()):
             rw = repull_extras.get(k)
-            cols = [t for t in healed if rw is not None and t in rw.columns and t in w.columns]
+            # NOT filtered by `t in w.columns` (2026-08-06 split-basis incident): w is the
+            # FRESH 1mo window, and a healed ticker missing from it — yfinance returned no
+            # High/Low for that name in that batch — is exactly the case where the extras
+            # cache still holds the OLD basis. Skipping it there healed the closes and left
+            # high/low re-based, with no warning (the closes half succeeded), which is the
+            # one split shape no scanner in the tree can see: seam_suspects only ever reads
+            # the closes matrix. The assignment below creates the column when absent, and
+            # the union reindex already guarantees it spans the extras cache's rows.
+            cols = [t for t in healed if rw is not None and t in rw.columns]
             if not cols:
                 continue
             # union index: the grafted column must span the extras CACHE's rows,

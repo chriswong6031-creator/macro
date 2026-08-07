@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T07:16:31.528078+00:00",
-  "count": 926,
+  "generated_at": "2026-08-07T08:05:02.403848+00:00",
+  "count": 928,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -33,6 +33,7 @@
     "Nordea",
     "Nuveen",
     "Other",
+    "PNC",
     "Prime",
     "RBC",
     "Rabobank",
@@ -260,6 +261,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-0091uhxpt4p-c93cc6",
+      "title": "PNC Economics Research Claims 6 August 2026",
+      "institution": "PNC",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T01:44:14Z",
+      "summary_points": [
+        "**Labor Market Cooling**: Initial claims unchanged at 199k, four-week avg below 200k (first since Oct 2022), signaling moderation in labor market strength.",
+        "**Persistent Low Stress**: Insured unemployment rate held at 1.2% for 13 consecutive weeks, indicating minimal labor market distress.",
+        "**Stabilization Forecast**: PNC projects July nonfarm payrolls +72k (vs.",
+        "June’s 57k), unemployment rate steady at 4.2%, reflecting sustained but non-accelerating job growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
@@ -2029,6 +2050,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vr55d5yck4i-f6a11c",
+      "title": "Space Exploration Technologies Corp. (SPCX) Q2'26 Review Inaugural Earnings Report Reinforces Multiple Large Addressable Ma...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T11:07:25Z",
+      "summary_points": [
+        "**Earnings Beat & Segment Momentum**: Q2 revenue +17% (vs 15% est), GAAP operating income +92% (vs 91% est); Starlink subscribers exceeded forecasts, AI segment revenue/operating income beat, Starship launches driving reusability cadence.",
+        "**Valuation Upside Catalysts**: $220 price target (75.5% upside), $1T market cap; SOTP model shows 146% base-case upside (Connectivity/AI: 50.0x/47.0x EV/EBIT; Space: 15.0x EV/Sales).",
+        "**Core Growth Drivers**: Starship launch cadence (14th launch imminent), Starlink market penetration, AI compute scaling via hyperscaler partnerships; $100bn ARR target by Dec 2026.",
+        "**Critical Risks**: Governance concentration (founder control), execution risk in unproven tech (AI/orbital compute), regulatory delays, supply chain reliance (NVIDIA GPUs), high capital burn.",
+        "**Institutional Flow Support**: 65% Buy rating in banking relationships vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
