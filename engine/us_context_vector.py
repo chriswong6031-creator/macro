@@ -813,6 +813,37 @@ CONTEXT_DIMENSIONS = (
 )
 
 
+#: Entitlement-gated payload columns that must NEVER reach the committed
+#: candidates store. These are paid product bodies, not telemetry: the compact
+#: finding structs (id/detector/priority/topic/title/summary/periods) and the
+#: accession-level disclosure projection that /api/forensics/state serves only
+#: to require_site_full_user holders.
+#:
+#: The scalar forensics fields are deliberately KEPT — action, latest_period,
+#: latest_filed, as_of, basis, absent, authority, display_only. They are
+#: zero-authority telemetry: they say a read exists and how stale it is, without
+#: reproducing what the reader paid for.
+STAMP_FORBIDDEN_COLUMNS = frozenset({
+    "forensics__findings",
+    "forensics__disclosure_changes",
+})
+
+#: Non-scalar columns this store carries ON PURPOSE. Every list/dict-valued
+#: column in the stamped frame must appear in exactly one of these two sets —
+#: tests/test_us_context_vector_payload_containment.py fails on any that is in
+#: neither. That is the durable half of this guard: the flatten in
+#: context_api.context_frame is generic, so the NEXT dimension to grow a paid
+#: body would otherwise leak in silently, exactly as forensics did.
+#:
+#: These two are carried unchanged by this change and are NOT a claim that they
+#: are safe to publish — neither is the Filing Forensics paid product, and
+#: reclassifying them is a separate reviewed decision.
+STAMP_REVIEWED_NONSCALAR_COLUMNS = frozenset({
+    "spine__records",
+    "options__skew",
+})
+
+
 def context_dimension_frame(
     tickers: list[str],
     asof: str,
@@ -846,7 +877,25 @@ def context_dimension_frame(
     if frame is None or frame.empty:
         return pd.DataFrame()
     # ``date`` duplicates our own stamp_date; drop it rather than ship two.
-    return frame.drop(columns=[c for c in ("date",) if c in frame.columns])
+    frame = frame.drop(columns=[c for c in ("date",) if c in frame.columns])
+    # This function is the ONE seam where a Context Snapshot dimension becomes a
+    # COMMITTED artifact: the caller merges the result into the candidates store
+    # under data/us_prophet_rank/, which is tracked in a PUBLIC repository.
+    #
+    # context_api.context_frame flattens a dimension's whole ``value`` dict with
+    # no allowlist, so any paid body a dimension carries arrives here as a
+    # column. That is how entitlement-gated Filing Forensics findings — the same
+    # rows /api/forensics/state serves only behind require_site_full_user — came
+    # to sit in a tracked parquet for 722 tickers. `git clone` bypassed the
+    # paywall entirely.
+    #
+    # Drop them at the boundary rather than in context_api: context_frame is a
+    # general reader whose other (non-committing) callers may legitimately want
+    # the full payload. Only the committed path has to be narrow.
+    dropped = [c for c in frame.columns if c in STAMP_FORBIDDEN_COLUMNS]
+    if dropped:
+        frame = frame.drop(columns=dropped)
+    return frame
 
 
 # --------------------------------------------------------------------------- #

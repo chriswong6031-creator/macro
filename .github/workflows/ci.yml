@@ -2595,6 +2595,7 @@ on:
       - "tests/test_us_board_rank.py"
       - "tests/test_us_board_w3_evidence.py"
       - "tests/test_us_context_vector.py"
+      - "tests/test_us_context_vector_payload_containment.py"
       - "scripts/build_china_pick_lab.py"
       - "scripts/build_pick_lab.py"
       - "scripts/build_stock_board_v2.py"
@@ -2608,6 +2609,7 @@ on:
       # prophet-us-context-and-grades (PROPHET US §W7)
       - "tests/test_us_prophet_grades.py"
       - "tests/test_us_context_vector.py"
+      - "tests/test_us_context_vector_payload_containment.py"
       - "tests/test_prophet_miss_audit.py"
       - "scripts/grade_us_prophet_candidates.py"
       # The nightly-wiring half of the same pack job (2026-08-06): the four modules moved
