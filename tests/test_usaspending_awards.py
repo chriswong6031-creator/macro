@@ -1569,3 +1569,447 @@ def test_collect_registry_exposes_usaspending_awards_adapter():
 
     registry = all_adapters()
     assert registry["usaspending_awards"] is UsaspendingAwardsAdapter
+
+
+# ---------------------------------------------------------------------------
+# Wave 9C — activation observability.
+#
+# The 2026-08-06 production run qualified for baseline activation and was
+# stopped only by the persistence crash, yet three persisted fields
+# (rails.*.completeness.bounded_sample_complete, award_event_spine.
+# bounded_sample_complete, award_event_spine.full_receipt_bound_baseline_this_run)
+# all read false, because the spine block is populated from previous_event_state
+# when persist fails.  An operator reading those fields concludes coverage is
+# insufficient and asks for a higher page cap — the opposite of the true cause.
+# ---------------------------------------------------------------------------
+
+# 19 entities whose award query hit the declared 2-page cap with hasNext=true,
+# one that reached explicit hasNext=false with awards, and one that reached
+# hasNext=false with none.  That is 21 requested / 20 with awards, exactly the
+# committed 2026-08-06 shape.
+_CAPPED_TICKERS = (
+    "LMT", "RTX", "NOC", "GD", "LHX", "HII", "BA", "TDG", "HWM", "AVAV",
+    "KTOS", "GE", "LDOS", "TXT", "CW", "TDY", "HEI", "VSAT", "PLTR",
+)
+_EXHAUSTED_TICKER = "BAH"
+_EMPTY_TICKER = "CACI"
+_PRODUCTION_TICKERS = (*_CAPPED_TICKERS, _EXHAUSTED_TICKER, _EMPTY_TICKER)
+_AWARDS_PER_PAGE = 8
+
+
+def _write_production_entities(tmp_path):
+    data_dir = tmp_path / "data" / "government_revenue"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    (data_dir / "entities.json").write_text(json.dumps({
+        "entities": {
+            ticker: {
+                "name": f"{ticker} Corp",
+                "recipient_search_text": f"RECIPIENT {ticker}",
+            }
+            for ticker in _PRODUCTION_TICKERS
+        }
+    }))
+    return data_dir
+
+
+class _ProductionShapeSession(_Session):
+    """Replay the 2026-08-06 run's collection shape at test scale.
+
+    Entity/award-detail/action denominators are the production ones (21 / 160 /
+    160); only the per-page award volume is smaller, because the gate reads
+    pagination outcomes, never row counts.
+    """
+
+    def __init__(self, *, capped=_CAPPED_TICKERS, page_two_failures=()):
+        super().__init__()
+        self.capped = set(capped)
+        self.page_two_failures = set(page_two_failures)
+
+    @staticmethod
+    def _ticker_from_query(query: str) -> str:
+        return str(query).split()[-1]
+
+    @staticmethod
+    def _ticker_from_generated(generated: str) -> str:
+        return generated.removeprefix("CONT_AWD_")[:-2]
+
+    def _award_page(self, ticker: str, page: int) -> list[dict]:
+        if ticker == _EMPTY_TICKER:
+            return []
+        first = (page - 1) * _AWARDS_PER_PAGE
+        return [
+            _raw_award_for(
+                f"{ticker}{first + index + 1:02d}",
+                f"{ticker} CORP",
+                1000.0 - first - index,
+            )
+            for index in range(_AWARDS_PER_PAGE)
+        ]
+
+    def post(self, url, json, headers, timeout):
+        self.calls.append((url, json, headers, timeout))
+        if url == AWARDS_URL:
+            ticker = self._ticker_from_query(
+                json["filters"]["recipient_search_text"][0]
+            )
+            page = int(json["page"])
+            if page == 2 and ticker in self.page_two_failures:
+                raise RuntimeError(f"simulated upstream failure for {ticker} page 2")
+            capped = ticker in self.capped
+            return _Response({
+                "results": self._award_page(ticker, page),
+                # A capped entity keeps promising more at the declared cap; the
+                # other two answer the pagination question explicitly.
+                "page_metadata": {"hasNext": bool(capped and page < 3)},
+            })
+        assert url == TRANSACTIONS_URL
+        generated = str(json["award_id"])
+        return _Response({
+            "results": [{
+                "id": f"TX-{generated}",
+                "action_date": "2026-07-30",
+                "action_type": "B",
+                "action_type_description": "SUPPLEMENTAL AGREEMENT",
+                "modification_number": "P1",
+                "federal_action_obligation": 25.0,
+                "description": "Official award action",
+            }],
+            "page_metadata": {"hasNext": False},
+        })
+
+    def get(self, url, headers, timeout):
+        self.calls.append((url, None, headers, timeout))
+        generated = url.rstrip("/").split("/")[-1]
+        ticker = self._ticker_from_generated(generated)
+        award_id = generated.removeprefix("CONT_AWD_")
+        return _Response({
+            "generated_unique_award_id": generated,
+            "piid": award_id,
+            "total_obligation": 800.0,
+            "total_outlay": 600.0,
+            "base_exercised_options": 1000.0,
+            "base_and_all_options": 1500.0,
+            "period_of_performance": {
+                "start_date": "2025-01-01",
+                "end_date": "2027-01-01",
+                "last_modified_date": "2026-07-31",
+            },
+            "recipient": {
+                "recipient_name": f"{ticker} CORP",
+                "recipient_uei": f"UEI-{award_id}",
+            },
+            "latest_transaction_contract_data": {
+                "dod_acquisition_program_description": "Test acquisition program"
+            },
+        })
+
+
+def _collect_production_shape(tmp_path, session):
+    return UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=session,
+        page_size=_AWARDS_PER_PAGE,
+        max_pages=2,
+        max_action_awards_per_entity=8,
+        request_pacing_seconds=0,
+    ).collect(list(_PRODUCTION_TICKERS), as_of="2026-08-06", lookback_days=1826)
+
+
+def _boom_persist(*args, **kwargs):
+    # The 2026-08-06 shape: persist raises before any ledger is replaced, so the
+    # run records `ledger_write_failed` and nothing advances.
+    raise RuntimeError("simulated ledger write failure")
+
+
+def test_persist_failure_reports_a_qualified_collection_not_thin_coverage(
+    tmp_path,
+    monkeypatch,
+):
+    """The 2026-08-06 shape: collection qualified, only persistence failed."""
+
+    _write_production_entities(tmp_path)
+    monkeypatch.setattr(
+        "collectors.usaspending_awards._utc_iso",
+        lambda value=None: "2026-08-06T07:29:00.411636+00:00" if value is None else str(value),
+    )
+    monkeypatch.setattr(UsaspendingAwardsCollector, "persist", _boom_persist)
+    status = _collect_production_shape(tmp_path, _ProductionShapeSession())
+
+    # The committed artifact's denominators, reproduced.  These are the only
+    # honest record in today's status and every activation-gate input is met.
+    assert status["status"] == "failed"
+    assert status["entities_requested"] == 21
+    assert status["entities_with_awards"] == 20
+    assert status["full_configured_universe"] is True
+    awards = status["rails"]["awards"]["denominators"]
+    assert awards["queries_bounded_sample_complete"] == 21
+    assert awards["entities_requested"] == 21
+    assert awards["queries_partial"] == 19
+    assert awards["queries_complete"] == 2
+    assert awards["queries_truncated_by_safety_cap"] == 19
+    assert awards["normalization_failures"] == 0
+    assert awards["records_rejected_without_identity"] == 0
+    detail = status["rails"]["award_detail"]["denominators"]
+    assert detail["succeeded"] == detail["candidate_awards"] == 160
+    assert detail["skipped_missing_generated_award_id"] == 0
+    actions = status["rails"]["actions"]["denominators"]
+    assert actions["queries_bounded_sample_complete"] == 160
+    assert actions["queries_not_requested"] == 0
+    assert actions["identity_failures"] == 0
+    assert actions["normalization_failures"] == 0
+    reasons = [error.get("reason") for error in status["errors"]]
+    assert reasons.count("max_pages_reached_with_has_next") == 19
+    assert reasons.count("ledger_write_failed") == 1
+    assert not any(reason == "ticker_not_in_entity_map" for reason in reasons)
+
+    # NEW: the status now says, in as many words, that the collection qualified
+    # and that persistence is the sole reason nothing activated.
+    activation = status["baseline_activation"]
+    assert activation["collection_qualified_this_run"] is True
+    assert activation["persisted_this_run"] is False
+    assert activation["activated_this_run"] is False
+    assert activation["blocked_by"] == "persistence"
+    assert activation["persistence_failure_reason"] == "ledger_write_failed"
+    assert activation["unsatisfied_conditions"] == []
+    assert activation["conditions_agree_with_gate"] is True
+    assert "Persistence failed" in activation["summary"]
+    assert "Coverage is not the blocker" in activation["summary"]
+    # The 19 capped queries are a complete bounded sample, not a gate failure.
+    capped_condition = next(
+        entry for entry in activation["conditions"]
+        if entry["name"] == "award_bounded_complete_entities_equals_requested_entities"
+    )
+    assert capped_condition["satisfied"] is True
+    assert capped_condition["detail"] == (
+        "award_bounded_complete_entities 21 == requested_entities 21"
+    )
+    assert "not an activation blocker" in activation["safety_cap_note"]
+
+    # NEW: this run's own measurement, carried separately from the published state.
+    spine = status["award_event_spine"]
+    assert spine["collection_full_receipt_bound_baseline"] is True
+    assert spine["collection_bounded_sample_complete"] is True
+    assert spine["state_source"] == "previous_state"
+    assert spine["state_reflects_this_run"] is False
+    assert spine["state_is_stale_because"] == "ledger_write_failed"
+    for rail in ("awards", "award_detail", "actions"):
+        completeness = status["rails"][rail]["completeness"]
+        assert completeness["collection_bounded_sample_complete"] is True
+        assert completeness["published_this_run"] is False
+        assert completeness["collection_state"] != "failed"
+
+    # FENCE: published/authority fields keep their existing fail-closed values.
+    assert spine["bounded_sample_complete"] is False
+    assert spine["full_receipt_bound_baseline_this_run"] is False
+    assert spine["activation_state"] == "baseline"
+    assert status["last_successful_observed_at"] is None
+    for rail in ("awards", "award_detail", "actions"):
+        assert status["rails"][rail]["state"] == "failed"
+        assert status["rails"][rail]["completeness"]["bounded_sample_complete"] is False
+
+
+def test_incomplete_collection_names_the_failing_condition_with_both_numbers(
+    tmp_path,
+    monkeypatch,
+):
+    """A genuinely incomplete collection must not read as qualified."""
+
+    _write_production_entities(tmp_path)
+    monkeypatch.setattr(
+        "collectors.usaspending_awards._utc_iso",
+        lambda value=None: "2026-08-07T07:29:00+00:00" if value is None else str(value),
+    )
+    # The failing page is retried with a real backoff; skip the wall-clock wait.
+    monkeypatch.setattr(usaspending_awards.time, "sleep", lambda *_args: None)
+    # One entity's second page fails outright: 20 of 21 bounded-complete.
+    status = _collect_production_shape(
+        tmp_path,
+        _ProductionShapeSession(page_two_failures={"RTX"}),
+    )
+
+    assert status["rails"]["awards"]["denominators"]["queries_bounded_sample_complete"] == 20
+    activation = status["baseline_activation"]
+    assert activation["persisted_this_run"] is True
+    assert activation["collection_qualified_this_run"] is False
+    assert activation["activated_this_run"] is False
+    assert activation["blocked_by"] == "collection"
+    assert activation["persistence_failure_reason"] is None
+    assert activation["conditions_agree_with_gate"] is True
+    assert activation["unsatisfied_conditions"] == [
+        "award_bounded_complete_entities_equals_requested_entities"
+    ]
+    failing = next(
+        entry for entry in activation["conditions"]
+        if entry["name"] == "award_bounded_complete_entities_equals_requested_entities"
+    )
+    assert failing["satisfied"] is False
+    assert failing["observed"] == {"name": "award_bounded_complete_entities", "value": 20}
+    assert failing["required"] == {"name": "requested_entities", "value": 21}
+    assert failing["detail"] == (
+        "award_bounded_complete_entities 20 != requested_entities 21"
+    )
+    assert activation["unsatisfied_details"] == [failing["detail"]]
+    assert failing["detail"] in activation["summary"]
+
+    # Persistence succeeded, so the spine block IS this run's measurement — and
+    # it still must not claim a baseline.
+    spine = status["award_event_spine"]
+    assert spine["state_source"] == "this_run"
+    assert spine["state_reflects_this_run"] is True
+    assert spine["state_is_stale_because"] is None
+    assert spine["collection_full_receipt_bound_baseline"] is False
+    assert spine["full_receipt_bound_baseline_this_run"] is False
+    assert spine["activation_state"] == "baseline"
+
+
+def test_persist_failure_advances_nothing_and_leaves_the_triad_untouched(
+    tmp_path,
+    monkeypatch,
+):
+    """The fence: new reporting must not move one byte of published state."""
+
+    data_dir = _write_production_entities(tmp_path)
+    clock = ["2026-08-06T07:00:00+00:00"]
+    monkeypatch.setattr(
+        "collectors.usaspending_awards._utc_iso",
+        lambda value=None: clock[0] if value is None else str(value),
+    )
+    # A fully source-exhausted first run establishes a live baseline to protect.
+    good = _collect_production_shape(tmp_path, _ProductionShapeSession(capped=()))
+    assert good["status"] == "ok"
+    assert good["last_successful_observed_at"] == clock[0]
+    assert good["baseline_activation"]["activated_this_run"] is True
+    assert good["baseline_activation"]["blocked_by"] is None
+    assert good["award_event_spine"]["activation_state"] == "live"
+    assert good["award_event_spine"]["state_source"] == "this_run"
+
+    tracked = [
+        "awards.parquet",
+        "award_actions.parquet",
+        "award_snapshots.parquet",
+        "award_event_snapshots.parquet",
+        "award_action_versions.parquet",
+        AWARD_EVENT_PROJECTION_STATE_FILENAME,
+    ]
+    before = {name: (data_dir / name).read_bytes() for name in tracked}
+    rail_last_good = {
+        rail: good["rails"][rail]["last_successful_observed_at"]
+        for rail in ("awards", "award_detail", "actions")
+    }
+
+    clock[0] = "2026-08-07T07:00:00+00:00"
+    monkeypatch.setattr(UsaspendingAwardsCollector, "persist", _boom_persist)
+    failed = _collect_production_shape(tmp_path, _ProductionShapeSession(capped=()))
+
+    assert failed["status"] == "failed"
+    assert failed["observed_at"] == clock[0]
+    # Nothing advanced: every accrued artifact is byte-identical.
+    for name in tracked:
+        assert (data_dir / name).read_bytes() == before[name], name
+    # The last-good clocks do not move.
+    assert failed["last_successful_observed_at"] == good["last_successful_observed_at"]
+    assert failed["freshness"]["last_good_at"] == good["last_successful_observed_at"]
+    assert failed["freshness"]["state"] == "failed"
+    for rail, expected in rail_last_good.items():
+        assert failed["rails"][rail]["last_successful_observed_at"] == expected
+        assert failed["rails"][rail]["state"] == "failed"
+        assert failed["rails"][rail]["completeness"]["bounded_sample_complete"] is False
+    # The live marker survives untouched and is labelled as carried forward.
+    assert failed["award_event_spine"]["activation_state"] == "live"
+    assert failed["award_event_spine"]["last_observed_at"] == good["observed_at"]
+    assert failed["award_event_spine"]["state_source"] == "previous_state"
+    assert failed["award_event_spine"]["full_receipt_bound_baseline_this_run"] is False
+    # ...while the run's own verdict is still readable.
+    assert failed["baseline_activation"]["collection_qualified_this_run"] is True
+    assert failed["baseline_activation"]["blocked_by"] == "persistence"
+
+
+def test_activation_conditions_never_outrank_the_gate():
+    """Every gate input owns exactly one named, two-number condition."""
+
+    clean = {
+        "requested_entities": 21,
+        "award_bounded_complete_entities": 21,
+        "unknown_tickers": [],
+        "award_normalization_failures": 0,
+        "award_rejected_without_key": 0,
+        "full_configured_universe": True,
+        "max_action_awards_per_entity": 8,
+        "detail_candidates": 160,
+        "detail_succeeded": 160,
+        "detail_skipped_missing_identifier": 0,
+        "action_awards_bounded_complete": 160,
+        "action_awards_not_requested": 0,
+        "event_snapshot_failures": 0,
+        "event_action_failures": 0,
+        "event_action_identity_failures": 0,
+        "action_normalization_failures": 0,
+    }
+    baseline = usaspending_awards._baseline_activation_conditions(**clean)
+    assert [entry["name"] for entry in baseline] == [
+        "entities_requested_positive",
+        "award_bounded_complete_entities_equals_requested_entities",
+        "no_unknown_tickers",
+        "award_normalization_failures_zero",
+        "records_rejected_without_identity_zero",
+        "full_configured_universe",
+        "detail_succeeded_equals_detail_candidates",
+        "detail_skipped_missing_generated_award_id_zero",
+        "action_awards_bounded_complete_equals_detail_candidates",
+        "action_awards_not_requested_zero",
+        "event_snapshot_failures_zero",
+        "event_action_failures_zero",
+        "event_action_identity_failures_zero",
+        "action_normalization_failures_zero",
+    ]
+    assert all(entry["satisfied"] for entry in baseline)
+    assert all(entry["applicable"] for entry in baseline)
+
+    breakages = {
+        "entities_requested_positive": {
+            "requested_entities": 0,
+            "award_bounded_complete_entities": 0,
+        },
+        "award_bounded_complete_entities_equals_requested_entities": {
+            "award_bounded_complete_entities": 20
+        },
+        "no_unknown_tickers": {"unknown_tickers": ["ZZZZ"]},
+        "award_normalization_failures_zero": {"award_normalization_failures": 3},
+        "records_rejected_without_identity_zero": {"award_rejected_without_key": 1},
+        "full_configured_universe": {"full_configured_universe": False},
+        "detail_succeeded_equals_detail_candidates": {"detail_succeeded": 159},
+        "detail_skipped_missing_generated_award_id_zero": {
+            "detail_skipped_missing_identifier": 2
+        },
+        "action_awards_bounded_complete_equals_detail_candidates": {
+            "action_awards_bounded_complete": 158
+        },
+        "action_awards_not_requested_zero": {"action_awards_not_requested": 4},
+        "event_snapshot_failures_zero": {"event_snapshot_failures": 1},
+        "event_action_failures_zero": {"event_action_failures": 1},
+        "event_action_identity_failures_zero": {"event_action_identity_failures": 1},
+        "action_normalization_failures_zero": {"action_normalization_failures": 1},
+    }
+    for name, override in breakages.items():
+        conditions = usaspending_awards._baseline_activation_conditions(
+            **{**clean, **override}
+        )
+        unsatisfied = [entry["name"] for entry in conditions if not entry["satisfied"]]
+        assert unsatisfied == [name], (name, unsatisfied)
+        entry = next(item for item in conditions if item["name"] == name)
+        assert str(entry["observed"]["value"]).lower() in entry["detail"].lower()
+        assert str(entry["required"]["value"]).lower() in entry["detail"].lower()
+
+    # Disabling the sample marks the four sampled-rail conditions inapplicable
+    # rather than silently satisfying them.
+    disabled = usaspending_awards._baseline_activation_conditions(
+        **{**clean, "max_action_awards_per_entity": 0, "detail_succeeded": 0}
+    )
+    inapplicable = [entry["name"] for entry in disabled if not entry["applicable"]]
+    assert inapplicable == [
+        "detail_succeeded_equals_detail_candidates",
+        "detail_skipped_missing_generated_award_id_zero",
+        "action_awards_bounded_complete_equals_detail_candidates",
+        "action_awards_not_requested_zero",
+    ]
+    assert all(entry["satisfied"] for entry in disabled)
