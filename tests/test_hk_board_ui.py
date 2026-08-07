@@ -224,6 +224,13 @@ def _witness_buy_row(w, status: str, block_reason: str | None = None) -> dict:
         # earn the star — the featured tests need a subject, and inventing one by
         # hand is what let the real gate go unexercised
         "_adv63": 900_000_000.0,
+        # ...and an extension READING, for the same reason. Since #4684 (B3,
+        # 2026-08-06) an absent `ext_z` is itself a featured veto (`ext_z_unknown`),
+        # so without this every G4 aura test would assert over an empty cohort. 0.0
+        # is un-extended, well inside `us_board_rank.EXT_Z_FULL`. The REAL HK board
+        # supplies no `ext_z` anywhere and therefore features nothing — pinned in
+        # `test_the_hk_board_can_no_longer_feature_anything`, not hidden here.
+        "ext_z": 0.0,
         "label": "BOTTOMING", "label_zh": "筑底中", "group": "entry_open",
         "conviction": {"score": 71, "verdict": "Leader turning up",
                        "verdict_zh": "龙头转强", "cautions": [], "cautions_zh": [],
@@ -681,6 +688,50 @@ def test_every_priority_card_carries_a_stage_attribute(prio_html):
 # --------------------------------------------------------------------------- #
 # G4 — the featured glow, and ONLY on featured rows
 # --------------------------------------------------------------------------- #
+
+def test_the_hk_board_can_no_longer_feature_anything():
+    """A KNOWN DEFECT, pinned so it cannot go quiet. THIS TEST IS MEANT TO FAIL once HK
+    can feature again — that failure is the signal to delete it and re-pin G4 on the
+    real cohort.
+
+    #4684 (B3, 2026-08-06) made an ABSENT extension reading a featured veto in
+    `us_board_rank._featured_shortfalls`: "a row with NO ext_z reading is not 'at the
+    line', it is unmeasured".  That is right, and on the US board it is fail-closed on a
+    WIRED input that happened to be null — it forces the wiring to be repaired.
+
+    HK has no wiring to repair.  `ext_z` is set nowhere in `scripts/build_hk_library.py`,
+    nowhere in `engine/hk_board_rank.py`, and on no row of the frozen 2026-07-31 artifact
+    — so for HK the veto is not fail-closed, it is UNSATISFIABLE, and the featured aura
+    is dark board-wide.  Measured on the production fixture: 3 of 3 buy rows carry
+    `ext_z_unknown`, `featured_count` is 0 and `featured_blocked_unknown_extension` is 3.
+    #4684 measured 59 rows / 10 featured — that is the US board; HK was never checked,
+    and this job was red at the time so nothing said so.
+
+    Not repaired here: the two candidate repairs are wiring an HK extension reading, or
+    giving HK a policy switch the way `reclaim_veto=False` already scopes off the other
+    leg HK cannot satisfy (`signal_quality._confirm_legs` calls that leg "an
+    UNSATISFIABLE condition" in as many words).  Both are board-owner calls, not CI
+    heals.  What this test guarantees meanwhile is that the darkness is DISCLOSED rather
+    than silent — the escape hatch #4684 itself specified: "0 featured with a large count
+    here means the leg has no input on this board, which is a data fact the artifact must
+    print".
+    """
+    su = production_fixture()
+    buy = su["buy"]
+    assert buy, "no buy lane — the assertions below would be vacuous"
+    assert all(not r.get("featured") for r in buy), (
+        "HK featured something — if `ext_z` was wired or the veto scoped, delete this "
+        "test and re-pin the G4 gates on the real featured cohort")
+    assert all("ext_z_unknown" in (r.get("featured_blocked_by") or ()) for r in buy), (
+        "the HK rows are unfeatured for some OTHER reason now — this pin has stopped "
+        "describing the defect it was written for")
+    # the darkness must be PRINTED, not merely true
+    rb = su["ranking"]
+    assert rb.get("featured_count") == 0
+    assert rb.get("featured_blocked_unknown_extension") == len(buy), (
+        "the disclosure counter no longer reports the whole buy lane — a dark featured "
+        "leg that does not say so is the failure mode #4684 built this counter for")
+
 
 def test_featured_glow_lands_only_on_featured_rows(prio_html):
     su = shapes_fixture()
@@ -1284,6 +1335,57 @@ def test_leaders_entry_column_shows_a_zone_when_the_engine_has_one(prio_html):
     seg = _leaders_block(_render(su))
     assert '<span class="ent-good"><span class="l-en">pullback zone</span>' in seg
     assert "10.00–11.50" in seg
+
+
+def test_no_cohort_member_currently_reaches_the_leaders_strip():
+    """A KNOWN DEFECT, pinned so it cannot go quiet. THIS TEST IS MEANT TO FAIL when the
+    defect is repaired — that failure is the signal to re-pin the G2 cohort gates above
+    on the real cohort row and delete this test.
+
+    Those gates are pinned on a chip `shapes_fixture()` stamps by hand (#4889), which is
+    the right call — the column, the mobile budget and the HKRV-R5 disclosure must stay
+    tested — but it means nothing above notices that the REAL strip carries no cohort
+    member at all.  This does.  On the 2026-07-31 panel the leaders strip carries ZERO
+    (it was two), the strip fills 14 of LEADERS_CAP=15, and `ran` fills 3 of 12.
+
+    Root cause, measured 2026-08-07: `signal_quality.signal_frame` joins the
+    calendar-absolute W-FRI weekly leg onto the 3D grid's INDEX LABEL —
+
+        wbull = (wm >= wsg).shift(1).reindex(s3.index, method="ffill")
+
+    — while a bucket's `close` is its LAST close.  R-SQ2 made that label the bucket's
+    OPEN date, so each 3D bar is handed the weekly regime from up to a bucket before its
+    own close.  Joining on `_tf_grid(...).last_session` instead flips `weekly_bull` on 28
+    of 157 names here, and `weekly_bull is True` is half the leaders admission gate
+    (`hk_board_rank.build_leaders_rows`); with it, 0941.HK and 9618.HK re-enter the strip
+    and leaders/ran/vetoed all fill their caps (15/15, 12/12, 12/12).
+
+    NOT REPAIRED IN THE PR THAT WROTE THIS TEST, deliberately.  The join is not an R-SQ2
+    regression — `git log -S` puts the line at the module's original commit, and the
+    retired 3B label was the synthetic LEFT edge too (mean 1.87 sessions before the close
+    it carried), so this has always been label-anchored; the era only removed a truncation
+    bin that had been masking it at this as-of.  Repairing it is therefore a SEMANTIC
+    REVISION, not a defect repair, and R-SQ6 pins `_confirm_legs` semantics as
+    "byte-identical".  It owes: `ANCHOR_ERA` bumped (R-SQ3), a committed blast-radius
+    report (R-SQ4 — 107/157 marker lists move on the HK panel alone; US/CN/CA unmeasured),
+    and the two sibling joins fixed with it (`above200` at 0.30% disagreement,
+    `rising2_on3` at 19.76%) so `_confirm_legs` does not read two different as-of dates.
+    `engine/canon.py:370,444` — the golden oracle — already joins the weekly on the
+    bucket's last session and calls it leak-free; that is the precedent that work should
+    cite.  Full site table: research/SQ_BUCKET_LABEL_AS_DATE_FINDINGS_2026-08-07.md.
+    """
+    lanes = engine_lanes()
+    chipped = {lane: [r["ticker"] for r in rows if r.get("leadership")]
+               for lane, rows in lanes.items()}
+    assert chipped["leaders"] == [], (
+        "a cohort member reached the leaders strip: %r — if the weekly-leg join was "
+        "repaired, re-pin the G2 cohort gates on the real row and delete this test"
+        % chipped["leaders"])
+    # the chip source itself must still be alive, or the statement above is not about
+    # the leaders gate at all — it is about a dead cohort read.
+    assert chipped["ran"] or chipped["vetoed"], (
+        "no lane carries a cohort chip — the cohort read is dead, which is a different "
+        "and larger defect than the one this test pins")
 
 
 def test_cohort_chip_tells_the_truth_about_where_it_counts(prio_html):
