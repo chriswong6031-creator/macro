@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-06T23:47:59.147080+00:00",
-  "count": 904,
+  "generated_at": "2026-08-06T23:59:15.758090+00:00",
+  "count": 905,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -359,6 +359,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vbe1v4j1wgw-0faf20",
+      "title": "Aug 06 2026 JefferiesLLC StrongTractionwithNBMsbutEarningsMomentumSlows",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-06T12:51:49Z",
+      "summary_points": [
+        "**NAND Revenue Guidance Downgrade**: Management lowered NAND revenue growth to soft y/y due to inventory builds, contrasting June’s strong beat, with NBM momentum showing 8 customers signed and >50% F27/F28 bit commitments.",
+        "**eSSD Growth Catalyst**: eSSD business could reach 7%+ revenue share by 2027 ($2.5B revenue, $2B+ EPS benefit), driven by sustained bit growth and declining ASP degradation from capital intensity subsidies.",
+        "**Valuation Premium Risk**: Forward P/E (F2Y) trades at premium (near +1 St Dev), signaling overvaluation and significant downside risk if earnings miss, especially amid elevated market expectations.",
+        "**Geographic Concentration Risk**: 72% of revenue from Americas (declining US share from 39%→28% FY22-FY25), with Asia growth (China 14%→17%, RoA 18%→20%) offering diversification but exposing portfolio to US disruption vulnerability.",
+        "**Data Center Dominance**: Datacenter drives 50-60% of revenue (accelerating toward 2026), with C26 revenue target at 300B and C27 at 500B, aligning with AI/cloud infrastructure trends as core growth engine."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
       "language": "en",
       "needs_metadata": false
     },
