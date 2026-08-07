@@ -643,6 +643,18 @@ on:
       - "tests/test_government_revenue_wave8_api.py"
       - "tests/test_government_revenue_workspace.py"
       - "tests/test_usaspending_idv_graph.py"
+      # Recipient->issuer attribution (job: unrun-government-revenue, wired
+      # 2026-08-06). engine/** already covers entity_resolution.py and
+      # scripts/*.py the proposal tool, but both halves are listed on purpose:
+      # a test-only edit, or a re-pinned EX-21 fixture, must re-run the suite
+      # that measures it. The fixtures are two VERBATIM SEC exhibits pinned by
+      # sha256 — swapping one for a synthetic is exactly the edit that has to
+      # retrigger. (test_government_revenue_recipient_graph.py and
+      # test_government_revenue_entity_resolution.py are already named in the
+      # darkness-backfill list directly above.)
+      - "scripts/propose_government_revenue_recipient_graph.py"
+      - "tests/test_propose_government_revenue_recipient_graph.py"
+      - "tests/fixtures/govrev_issuer_evidence/**"
       # W3 CNH part B: the five native flash wires + the forward calendar organ.
       # engine/** is NOT a blanket trigger here, so each of these must be named or a
       # parser/aggregator edit merges with the suite unrun. test_cn_newswires.py was
