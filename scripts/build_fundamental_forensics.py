@@ -269,6 +269,20 @@ def detect_quarterly(current: pd.Series, prior: pd.Series, cik: int | None) -> l
     rev_g = _growth(current.get("revenue"), prior.get("revenue"))
     gm_cur = _ratio(current.get("gross_profit"), current.get("revenue"))
     gm_prev = _ratio(prior.get("gross_profit"), prior.get("revenue"))
+    # A computable revenue GROWTH is not the same as a usable revenue BASE.
+    # _growth only requires the PRIOR denominator to be positive, so a filer
+    # whose revenue collapses to 0 (or is reported negative) still yields
+    # rev_g = -1.0 or lower. The working-capital spreads below then degenerate:
+    # `ar_g > rev_g + 0.10` becomes `ar_g > -0.90`, which almost any receivables
+    # series clears — a near-certain FALSE FIRE driven entirely by the revenue
+    # collapse rather than by any receivables behaviour. Both sibling
+    # implementations already refuse here (engine/moat_falsifiers.py returns
+    # None; engine/fundamental_forensics/detectors.py returns NOT_EVALUABLE with
+    # "positive_revenue_and_nonzero_prior_balance_required"), so this gate makes
+    # the workbench agree with them instead of publishing the artefact.
+    # The margin check needs no such gate: _ratio already requires d > 0.
+    rev_cur = _finite(current.get("revenue"))
+    rev_cur_positive = rev_cur is not None and rev_cur > 0
 
     if rev_g is not None and rev_g >= 0.03 and gm_cur is not None and gm_prev is not None and gm_cur < gm_prev:
         compression = gm_prev - gm_cur
@@ -292,7 +306,7 @@ def detect_quarterly(current: pd.Series, prior: pd.Series, cik: int | None) -> l
         ))
 
     ar_g = _growth(current.get("receivables"), prior.get("receivables"))
-    if rev_g is not None and ar_g is not None and ar_g > rev_g + 0.10:
+    if rev_g is not None and rev_cur_positive and ar_g is not None and ar_g > rev_g + 0.10:
         gap = ar_g - rev_g
         out.append(_finding(
             "receivables_stretch", "high" if gap >= 0.25 else "watch", current, prior,
@@ -314,7 +328,7 @@ def detect_quarterly(current: pd.Series, prior: pd.Series, cik: int | None) -> l
         ))
 
     inv_g = _growth(current.get("inventory"), prior.get("inventory"))
-    if rev_g is not None and inv_g is not None and inv_g > rev_g + 0.15:
+    if rev_g is not None and rev_cur_positive and inv_g is not None and inv_g > rev_g + 0.15:
         gap = inv_g - rev_g
         out.append(_finding(
             "inventory_build", "high" if gap >= 0.30 else "watch", current, prior,
@@ -406,6 +420,11 @@ def detector_evaluability(
     capex_g = _growth(current.get("capex"), prior.get("capex"))
     op_cur = _finite(current.get("op_income"))
     op_g = _growth(current.get("op_income"), prior.get("op_income"))
+    # Mirrors the gate added to detect_quarterly: a non-positive CURRENT revenue
+    # makes the working-capital spread an artefact of the revenue collapse, so
+    # the pair is not evaluable rather than "covered but clear".
+    rev_cur = _finite(current.get("revenue"))
+    rev_cur_positive = rev_cur is not None and rev_cur > 0
     capex_evaluable = (
         capex_g is not None
         and rev_g is not None
@@ -414,8 +433,8 @@ def detector_evaluability(
     )
     return {
         "margin_compression_despite_revenue_growth": rev_g is not None and gm_cur is not None and gm_prev is not None,
-        "receivables_stretch": rev_g is not None and ar_g is not None,
-        "inventory_build": rev_g is not None and inv_g is not None,
+        "receivables_stretch": rev_g is not None and ar_g is not None and rev_cur_positive,
+        "inventory_build": rev_g is not None and inv_g is not None and rev_cur_positive,
         "capital_intensity_rising": capex_evaluable,
         "accruals_trending_up": _accrual_inputs(annual) is not None,
     }
