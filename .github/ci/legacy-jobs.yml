@@ -4522,7 +4522,10 @@ jobs:
     # subaward rails import fastapi at module scope. Like unrun-brain-gateway
     # this buys one extra venv in whichever pack it lands.
     if: ${{ false }}
-    timeout-minutes: 6
+    # 6 -> 8 for the nineteen-suite darkness backfill below (+~20s of tests on
+    # top of an install-dominated job); the margin is for a cold wheel cache,
+    # not for the suites themselves.
+    timeout-minutes: 8
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -4537,6 +4540,19 @@ jobs:
         run: python -m pytest tests/test_government_revenue_ui.py tests/test_government_revenue_dossier_ui.py tests/test_government_revenue_briefcase_ui.py -q
       - name: federal-award collectors — SAM.gov, USAspending awards + subawards, Census trade
         run: python -m pytest tests/test_sam_gov_opportunities.py tests/test_sam_gov_radar_leg.py tests/test_usaspending_awards.py tests/test_usaspending_subawards.py tests/test_census_trade.py -q
+      # The 2026-08-03 backfill wired the builder/fence/UI/collector suites but
+      # left nineteen Government Revenue suites enumerated by NOTHING in
+      # .github/ — no pack, no workflow, and no catch-all `pytest tests/` sweep
+      # exists in this repo to pick them up.  Among them were the two suites
+      # that own the forward award-event spine itself
+      # (test_government_revenue_award_spine.py, test_government_revenue_award_events.py),
+      # so the state machine guarding the event triad was never once executed by
+      # CI.  That is how the 2026-08-06 `ledger_write_failed` persistence break
+      # reached production: the lobe looked green because its on-point guards
+      # were invisible, not because they passed.  Measured on origin/main under
+      # this job's exact dependency set: 270 passed in 19s.
+      - name: award-event spine, candidate/projection, entity + workspace contracts
+        run: python -m pytest tests/test_government_revenue.py tests/test_government_revenue_award_events.py tests/test_government_revenue_award_spine.py tests/test_government_revenue_api.py tests/test_government_revenue_budget_graph.py tests/test_government_revenue_candidate_api.py tests/test_government_revenue_candidate_projection.py tests/test_government_revenue_candidates.py tests/test_government_revenue_contracts.py tests/test_government_revenue_entity_resolution.py tests/test_government_revenue_freshness.py tests/test_government_revenue_idv_dossiers.py tests/test_government_revenue_neuralweb.py tests/test_government_revenue_opportunities.py tests/test_government_revenue_recipient_graph.py tests/test_government_revenue_subaward_dossiers.py tests/test_government_revenue_wave8_api.py tests/test_government_revenue_workspace.py tests/test_usaspending_idv_graph.py -q
 
   unrun-factor-research:
     # factor registry + measurement disclosure + the study lanes behind them.
