@@ -2144,3 +2144,45 @@ def test_the_refresh_cap_does_not_change_behaviour_when_no_budget_is_passed(
             == "rebased"
         )
     assert len([c for c in calls if c[1].endswith("/update-branch")]) == 29
+
+
+# ── the breaker's upstream: a proof that never concludes reads as `pending` ────
+#
+# merge_on_green short-circuits on integration-baseline BEFORE it looks at any pull
+# request, and a never-concluding newest run reads as `pending`, which blocks ordinary
+# merges. So the sweeper's throughput depends on a workflow it does not own.
+#
+# 2026-08-07: integration-baseline.yml carried `cancel-in-progress: true`, which cancels
+# the RUNNING proof and not merely superseded pending ones. Source pushes land every 1-2
+# minutes during a merge drain and the hosted queue sat 100-180 deep, so every run was
+# killed before it acquired a runner: measured over ~3h the last 60 runs were 59
+# cancelled + 1 running, ZERO success, newest success 5h stale. The sweeper reported
+# "11 baseline-blocked" against a main that was green. The armed backlog could not drain
+# because the proof that main is drainable was being cancelled by the drain's own pushes.
+#
+# `false` still coalesces — GitHub allows one pending run per group, so a newer push
+# still supersedes an older PENDING proof — but the run holding a runner gets to finish.
+
+import yaml as _yaml  # noqa: E402
+
+_BASELINE_WF = ROOT / ".github" / "workflows" / "integration-baseline.yml"
+
+
+def test_the_baseline_proof_is_allowed_to_finish():
+    """cancel-in-progress must stay false or the breaker can never open under load.
+
+    Not a style preference. With `true`, a repo that pushes source faster than it can
+    acquire a runner never produces a concluded proof at all, and `pending` blocks every
+    ordinary merge — the sweeper stalls on a green main.
+    """
+    doc = _yaml.safe_load(_BASELINE_WF.read_text())
+    conc = doc.get("concurrency") or {}
+    assert conc.get("group") == "integration-baseline-main", \
+        "the baseline must stay in one coalescing group"
+    assert conc.get("cancel-in-progress") is False, (
+        "integration-baseline.yml has cancel-in-progress back on. That cancels the RUNNING "
+        "proof, not just superseded pending ones — measured 2026-08-07, it produced 59 "
+        "cancelled runs and zero successes in 3h while merge-on-green reported "
+        "'11 baseline-blocked' against a green main. If a newer proof must win, supersede "
+        "the PENDING one (which the group already does); do not kill the one on a runner."
+    )
