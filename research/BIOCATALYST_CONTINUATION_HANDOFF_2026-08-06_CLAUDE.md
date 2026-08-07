@@ -17,7 +17,7 @@
 | W0-A B1S2a private bounded fixed-cohort transport (dark) | #4820 | armed |
 | W7-A/B N0a operating packet producer + N0b allowlisted reader | #4822 | armed |
 | W0-B2 v2 acceptance contract + trusted browser verifier | #4825 | open, **deliberately NOT armed** — see §2 |
-| W2/D0b premium trial product (Screen+facets, Peer Matrix, Change Tape, primitives) | branch `claude/bio-d0b-premium-trial-product` | pushed; PR pending |
+| W2/D0b premium trial product (Screen+facets, Peer Matrix, Change Tape, primitives) | #4831 | armed; commissioning fix `7f85439b164` applied |
 
 ### Integration evidence (run by the commissioning session, on an idle-ish machine)
 
@@ -88,8 +88,27 @@ session's first D0b task is to RUN the verifier against the merged page and bind
 
 ## 5. Known-open items
 
-- **D0b defect (EN only):** `1 trials do not record this field.` — pluralization. ZH twin
-  `1 项试验未记录此字段。` is correct.
+- **D0b defect (EN only): FIXED** in `7f85439b164` — `1 trials do not record this field.`
+  The ZH twin was already correct (Chinese carries no plural inflection), which is why one
+  shared format string was right for one language and wrong for the other. The test that
+  asserted the old literal now pins **both** grammatical numbers.
+
+- **THE LARGEST OPEN ITEM — the Change Tape API cannot serve what W2-D asks for.**
+  `GET /api/biocatalyst/v1/trials/change-tape` returns a **field-class ledger**
+  (`field_class`, `op`, `before_state`/`after_state` ∈ {missing, present}, `source_versions`,
+  `observed_at`) with **no `before_value`/`after_value` and no JSON pointer**. The handoff §7
+  W2-D requirement — "exact before/after field values, source path" — is **not satisfiable
+  from the API as built**. The D0b UI correctly refuses to fabricate them and routes to the
+  dossier, which carries the exact before/after from the verified version chain for the same
+  V(n)→V(n+1) pair.
+  A second, related gap: the tape payload declares **no correction-chain field**, so the
+  Temporal Braid's redline branch is driven by an **inferred** signal (`op === 'replace'` plus
+  the version pair) rather than declared lineage. Honest given the API, but not verifiable.
+  **Fix both together:** extend `engine/biocatalyst/change_tape.py`,
+  `contracts/biocatalyst/trial_change_tape_read_model.v1.schema.json`, and `app/biocatalyst.py`
+  to carry the exact values, their source locator, and a declared correction lineage. Note the
+  tape is served from a **pre-published artifact**, not a live engine call, so the publication
+  path changes too.
 - **Pre-existing main red, NOT ours:** `tests/test_house_law_registry.py` 5 failed —
   `check_ci_trigger_closure.py` on disk but unregistered in `config/house_law_checks.yml`
   (landed #4649). Owned by open PR #4787.
