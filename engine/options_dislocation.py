@@ -70,7 +70,7 @@ from __future__ import annotations
 import logging
 from datetime import date, datetime, timezone
 
-from lib import config
+from lib import config, nyse_calendar
 
 log = logging.getLogger(__name__)
 
@@ -300,6 +300,131 @@ def neutralise(panel, cols, controls=_CONTROLS, min_names: int = _MIN_XS):
     return panel
 
 
+# Share of CANDIDATE names that must carry a real 5-session basis before a date's
+# d5_* column means anything cross-sectionally. Same reasoning and same value as
+# `_TERCILE_MIN_COVERAGE` in scripts/stamp_options_state.py — see `_apply_coverage_floor`.
+_MIN_D5_COVERAGE = 0.50
+
+_MISS = object()
+
+
+def _d5_by_session(P, col: str, n: int = 5):
+    """``x[d] − x[d − n sessions]`` per name, with the far endpoint resolved BY CALENDAR.
+
+    GAP DISCIPLINE — TWO-ENDPOINT (lib/nyse_calendar).  The predecessor was
+    ``groupby("underlying")[col].diff(n)``, whose own comment already admitted it was
+    "a 5-observation change, not 5 calendar days"; `engine/quant_lab/specs.py` recorded
+    the consequence in the live store ("24 of these windows spanned only 3-4 real market
+    sessions instead of 5").
+
+    Measured over the committed `options_dislocation/snapshots.parquet` (13,185 rows,
+    407 names), only 2,881 of 11,278 diff(5) windows — 25.5% — actually spanned five
+    sessions.  TWO distinct defects produced that, and both are fixed here:
+
+      * NON-SESSION rows.  `_dated_chains` read every chain snapshot including the 11
+        weekend/holiday files of 42, so five ROWS could span as few as THREE sessions
+        (span histogram 3→4,369 and 4→3,628 — the short side, not the long one).  That
+        reader now session-filters, which alone lifts exactly-5 spans to 46.0%.
+      * GAPS.  Even session-only, the store's collection outages stretch the remaining
+        windows (6→2,490, 7→1,485, 8→356).  Calendar resolution fixes those exactly
+        when the endpoint exists and refuses when it does not: 86.4% measurable,
+        13.6% refused.
+
+    An interior gap costs nothing — a difference reads only its endpoints.
+    """
+    import numpy as np
+    import pandas as pd
+
+    out = np.full(len(P), np.nan, dtype=float)
+    if col not in P.columns or P.empty:
+        return pd.Series(out, index=P.index, dtype=float)
+    vals = pd.to_numeric(P[col], errors="coerce").to_numpy(dtype=float)
+    dates = [d.date() if d is not None and not pd.isna(d) else None
+             for d in pd.to_datetime(P["date"], errors="coerce")]
+    names = P["underlying"].astype(str).tolist()
+    pos = {(u, d): i for i, (u, d) in enumerate(zip(names, dates)) if d is not None}
+    back: dict = {}
+    for i, (u, d) in enumerate(zip(names, dates)):
+        if d is None:
+            continue
+        t = back.get(d, _MISS)
+        if t is _MISS:
+            t = nyse_calendar.session_n_back(d, n)
+            back[d] = t
+        if t is None:
+            continue
+        j = pos.get((u, t))
+        if j is None:                      # no row AT the n-back session: unmeasurable
+            continue
+        a, b = vals[i], vals[j]
+        if np.isfinite(a) and np.isfinite(b):
+            out[i] = a - b
+    return pd.Series(out, index=P.index, dtype=float)
+
+
+def _apply_coverage_floor(P, cols: list[str], n: int = 5,
+                          floor: float = _MIN_D5_COVERAGE) -> None:
+    """Null a date's ``cols`` entirely when too few CANDIDATE names carry a real basis.
+
+    A d5_* column feeds `neutralise`, which is a per-DATE cross-sectional statement.
+    Because every name reads the same chain store on the same schedule, a missing
+    n-back session is date-WIDE rather than per-name — so the survivors of a gap date
+    are not a random sample, they are the names whose stores happen to hold that
+    session, which in the sibling ledger store turned out to be FROZEN stores whose
+    whole tail predates the gap (see `_tercile_thresholds` in
+    scripts/stamp_options_state.py: five dead names redefined "the market's top
+    tercile" on three dates).
+
+    Coverage is measured ÷ CANDIDATES, never ÷ the whole panel: a name without n+1
+    sessions of its own history was never a candidate, and counting it would refuse to
+    rank perfectly healthy dates.
+
+    On the committed panel the collapse is total rather than partial — 100% coverage on
+    23 of 26 dates and exactly 0% on 2026-07-13 / 07-22 / 07-24 — so `neutralise`'s
+    absolute `_MIN_XS` floor happens to catch today's geometry on its own.  This floor
+    exists because that is luck, not protection: a partial collapse to 25 surviving dead
+    stores clears `_MIN_XS = 20` and would neutralise a coverage-SELECTED cross-section
+    while looking entirely healthy.
+    """
+    import numpy as np
+    import pandas as pd
+
+    if P is None or P.empty:
+        return
+    dates = pd.to_datetime(P["date"], errors="coerce")
+    day = [d.date() if d is not None and not pd.isna(d) else None for d in dates]
+    names = P["underlying"].astype(str).tolist()
+    # A name is a CANDIDATE on date d when it has >= n+1 of its own sessions <= d.
+    own: dict[str, list] = {}
+    for u, d in zip(names, day):
+        if d is not None:
+            own.setdefault(u, []).append(d)
+    for u in own:
+        own[u].sort()
+    import bisect
+    for col in cols:
+        if col not in P.columns:
+            continue
+        vals = pd.to_numeric(P[col], errors="coerce")
+        for d0 in sorted({d for d in day if d is not None}):
+            idx = [i for i, d in enumerate(day) if d == d0]
+            cands = [i for i in idx
+                     if bisect.bisect_right(own[names[i]], d0) >= n + 1]
+            if not cands:
+                continue
+            measured = sum(1 for i in cands if np.isfinite(vals.iloc[i]))
+            if measured >= floor * len(cands):
+                continue
+            print(f"::warning title=dislocation-d5-coverage::{col} not published for "
+                  f"{d0}: only {measured} of {len(cands)} candidate names carry a "
+                  f"{n}-session basis ({100.0 * measured / len(cands):.1f}% < "
+                  f"{100.0 * floor:.0f}% floor) — the polygon_gex chain store is missing "
+                  f"that date's {n}-back session for the rest, so a cross-sectional read "
+                  f"over the survivors would be coverage-selected, not representative",
+                  flush=True)
+            P.loc[P.index[idx], col] = np.nan
+
+
 def build_panel(history=None, chains: dict | None = None):
     """Assemble the per-(date, underlying) panel: primitives + joined skew/ivspread legs +
     within-name changes + neutralised columns. `chains` maps date-string → chain frame
@@ -335,11 +460,13 @@ def build_panel(history=None, chains: dict | None = None):
 
     P["log_spot"] = np.log(pd.to_numeric(P["spot"], errors="coerce").clip(lower=0.01))
 
-    # Within-name changes. diff(5) over the panel's own date ordering — the panel is one
-    # row per (date, underlying), so this is a 5-observation change, not 5 calendar days.
+    # Within-name changes, resolved by CALENDAR (GAP DISCIPLINE — TWO-ENDPOINT).
     for c in ("skew", "ivspread", "term_slope"):
-        P[f"d5_{c}"] = P.groupby("underlying")[c].diff(5)
-    P["skew_accel"] = P.groupby("underlying")["d5_skew"].diff(5)
+        P[f"d5_{c}"] = _d5_by_session(P, c)
+    # skew_accel is a difference OF a difference: both legs are already calendar-resolved,
+    # and a null in either endpoint propagates, which is the correct refusal.
+    P["skew_accel"] = _d5_by_session(P, "d5_skew")
+    _apply_coverage_floor(P, ["d5_skew", "d5_ivspread", "d5_term_slope", "skew_accel"])
 
     P = _add_stock_state(P)
     P = _add_event_gap(P)
@@ -357,12 +484,19 @@ def _add_stock_state(P):
     import pandas as pd
     try:
         P = P.sort_values(["underlying", "date"]).copy()
-        P["ret5"] = P.groupby("underlying")["spot"].pct_change(5)
+        # GAP DISCIPLINE — TWO-ENDPOINT. `pct_change(5)` was the same 5-ROW defect as the
+        # d5_* block: on the gapped chain store five rows are not five sessions, so the
+        # ±2% band below was applied to a move measured over anywhere from 3 to 8 sessions.
+        # Resolve the far endpoint by calendar; a name without a row at the 5-back session
+        # gets no stock_state rather than a mis-scaled one.
+        P["_log_spot_ret"] = np.log(pd.to_numeric(P["spot"], errors="coerce").clip(lower=1e-9))
+        P["ret5"] = np.expm1(_d5_by_session(P, "_log_spot_ret"))
+        P = P.drop(columns=["_log_spot_ret"])
         bench = (P[P["underlying"] == "SPY"].set_index("date")["ret5"]
                  if (P["underlying"] == "SPY").any() else None)
         rel = P["ret5"] - P["date"].map(bench) if bench is not None else P["ret5"]
         P["ret5_rel"] = rel
-        band = 0.02  # ±2% relative over five observations reads as a real move
+        band = 0.02  # ±2% relative over five SESSIONS reads as a real move
         P["stock_state"] = np.where(~np.isfinite(pd.to_numeric(rel, errors="coerce")), None,
                                     np.where(rel > band, "up",
                                              np.where(rel < -band, "down", "neutral")))
@@ -558,12 +692,30 @@ def _snap_path():
 
 
 def _dated_chains() -> dict:
-    """{date-string: chain frame} from the dated chain snapshots. The filename IS the date."""
+    """{date-string: chain frame} from the dated chain snapshots. The filename IS the date.
+
+    SESSION GUARD (#3721 class).  This reader had NO session filter, so every weekend and
+    holiday snapshot entered the panel as its own "day" — 11 non-session dates of 42 in the
+    committed store.  Those files re-record the previous session's chain, so they are not
+    harmless duplicates: they shorten every within-name lookback measured in rows.  It is
+    why `diff(5)` spans of THREE and FOUR sessions (4,369 + 3,628 windows) outnumbered the
+    correct five-session span, and why `engine/quant_lab/specs.py` recorded windows
+    "spanning only 3-4 real market sessions instead of 5".
+    Fail-open (see lib.nyse_calendar.session_dates).
+    """
     import glob
     from pathlib import Path
     import pandas as pd
     out = {}
-    for f in sorted(glob.glob(str(config.data_dir() / "polygon_gex" / "chains" / "*.parquet"))):
+    files = nyse_calendar.session_dates(
+        sorted(glob.glob(str(config.data_dir() / "polygon_gex" / "chains" / "*.parquet"))),
+        key=lambda f: Path(f).stem,
+        # keep_unparseable=True: these are PATHS; a stem this key cannot read as a date is
+        # a file we must not silently drop (same contract as engine/altdata.py).
+        keep_unparseable=True,
+        label="polygon_gex/chains",
+    )
+    for f in files:
         try:
             out[Path(f).stem] = pd.read_parquet(f)
         except Exception as e:  # noqa: BLE001

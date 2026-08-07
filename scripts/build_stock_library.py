@@ -2249,13 +2249,14 @@ def main() -> int:
     # confirmer we can build for $0 — no trade tape / NBBO signing needed). Computed once over
     # the freshest per-strike chain snapshot; graceful {} when the GEX chain store is absent.
     # DISPLAY-ONLY context until scripts/validate_options_ivspread earns a verdict.
+    from lib import nyse_calendar          # adjacency test for the ivspread delta below
     try:
-        _ivs_chain = options_ivspread._latest_chain()
+        _ivs_chain, _ivs_asof = options_ivspread._latest_chain_dated()
         ivspread_map = options_ivspread.ivspread_map(_ivs_chain) if _ivs_chain is not None else {}
         ivspread_prior = options_ivspread.prior_spread_map() if ivspread_map else {}
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.debug("ivspread map skipped: %s", e)
-        ivspread_map, ivspread_prior = {}, {}
+        ivspread_map, ivspread_prior, _ivs_asof = {}, {}, None
     if ivspread_map:
         log.info("IV-spread confirmer: %d optionable names", len(ivspread_map))
     # contrarian crowding/fragility flags (DISPLAY-ONLY, gated OUT of the score by
@@ -2992,10 +2993,20 @@ def main() -> int:
         _ivs = ivspread_map.get(ticker)
         if _ivs:
             rec["iv_spread"] = _ivs
-            _prior = ivspread_prior.get(ticker.upper())
+            # GAP DISCIPLINE — COMPARE (lib/nyse_calendar, 2026-08-06). `assess` narrates
+            # this delta as richness "building/fading vs the prior session", so it is only
+            # honest when the stored reading IS the immediately-prior session. The chain
+            # store gaps (07-31 -> 08-06 is four sessions), and the old code could not even
+            # ask — prior_spread_map discarded the date. No adjacency, no delta: `assess`
+            # then renders the level alone, which is the honest reading.
+            _pr = ivspread_prior.get(ticker.upper())
+            _prior = _pr.get("ivspread") if isinstance(_pr, dict) else None
+            _prior_d = _pr.get("date") if isinstance(_pr, dict) else None
             _cur = _ivs.get("ivspread")
+            _adjacent = (_ivs_asof is not None and _prior_d is not None
+                         and nyse_calendar.is_prior_session(_prior_d, _ivs_asof))
             _chg = (round(float(_cur) - _prior, 5)
-                    if _prior is not None and _cur is not None else None)
+                    if _adjacent and _prior is not None and _cur is not None else None)
             _ic = options_ivspread.assess(_ivs, chg=_chg)
             if _ic:
                 rec["iv_spread_confirm"] = _ic
