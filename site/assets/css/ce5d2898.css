@@ -74,6 +74,15 @@
                    color: var(--ink-info, var(--info)); border: 1px solid color-mix(in srgb, var(--ink-info, var(--info)) 28%, transparent); }
   .ab-chip--muted { background: color-mix(in srgb, var(--muted) 12%, transparent);
                     color: var(--muted); border: 1px solid color-mix(in srgb, var(--muted) 22%, transparent); }
+  /* A chip whose wording is longer than a lane column. .ab-chip is nowrap + flex:none,
+     so a long label runs past .actitem's overflow:hidden and is silently CLIPPED —
+     measured at 180px inside a 177px row for the graduation-gap chip. Its words ship
+     from the engine (bottoming_authority) and must not be shortened on the page, so
+     the chip wraps to a second line instead of losing its tail.
+     white-space alone is NOT enough: .ab-chip is `flex: none` (= 0 0 auto), so the
+     chip keeps its max-content width and wraps nowhere. It has to be allowed to
+     shrink as well — flex-shrink + min-width:0 are what actually let the text reflow. */
+  .ab-chip--wrap { white-space: normal; line-height: 1.3; flex: 0 1 auto; min-width: 0; max-width: 100%; }
   /* gate-override ✓ pill */
   .ab-chip--gate { background: color-mix(in srgb, var(--up) 10%, transparent);
                    color: var(--up); border: 1px solid color-mix(in srgb, var(--up) 22%, transparent);
@@ -107,4 +116,52 @@
   /* ── TS-R6: two-reads reconciliation chip ───────────────────────────────── */
   .two-reads-chip { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:600; white-space:nowrap; background:color-mix(in srgb,var(--info) 9%,var(--panel2)); border:1px solid color-mix(in srgb,var(--info) 28%,var(--line)); color:var(--info,var(--link)); cursor:help; }
   .two-reads-chip .tr-sep { opacity:.45; margin:0 2px; }
+  /* ── Legacy help() "?" hover framework — HOST-PORTABILITY COPY ─────────────
+     us_stocks gets these rules from dashboard.html.j2's inline page <style>;
+     they are NOT in theme.css (theme.css carries only the span.help glyph
+     metrics + .help-upgraded popover overrides — see its help-icon comment).
+     The SI Overview host has no page-level copy, so without this block the
+     board h2's help() tip renders permanently inline next to the heading
+     (Tier-2 sentence at the glance tier — doctrine violation, 2026-08-06).
+     On us_stocks this is a harmless same-rules duplicate of the page block
+     (same precedent as dc.dc_css() above). theme.js upgradeHelpIcons still
+     swaps the CSS hover for the LENS popover where it runs; these rules are
+     the no-JS floor. */
+  /* help-tip-framework:BEGIN — legacy help() "?" hover framework. Byte-identical
+     twin in templates/dashboard.html.j2 AND templates/_us_act_now_board.html.j2
+     (the shared board include ships it to hosts that have no page-level copy —
+     sector_central leaked the whole tip sentence inline without it, 2026-08-06).
+     Deliberately NOT in theme.css: editing theme.css re-stamps ~176 pages, and
+     its span.help glyph metrics must keep outranking these bare-.help rules.
+     Keep both copies in step — pinned by
+     tests/test_us_act_now.py::test_help_tip_framework_is_byte_identical_in_both_copies. */
+  .help { display: inline-flex; align-items: center; justify-content: center;
+          width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
+          color: var(--muted); font-size: 10px; font-weight: 600; cursor: help;
+          position: relative; vertical-align: middle; margin-left: 5px; flex: none; }
+  .help .tip { display: none; position: absolute; bottom: 140%; left: 50%;
+               transform: translateX(-50%); width: 330px;
+               background: var(--panel); border: 1px solid var(--line);
+               padding: 10px 13px; border-radius: 8px;
+               z-index: 60; font-size: 12px; line-height: 1.5; color: var(--text);
+               text-align: left; font-weight: 400; text-transform: none;
+               letter-spacing: normal; box-shadow: var(--popover-shadow);
+               pointer-events: auto; cursor: auto; white-space: normal;
+               max-height: min(60vh, 420px); overflow-y: auto; overscroll-behavior: contain; }
+  /* invisible hover pad across the gap between the ? icon and the tip box —
+     without it the :hover chain breaks mid-travel and the tip vanishes before
+     the cursor can reach (and scroll) it. Lives on .help, not .tip: the tip
+     is a scroll container (overflow-y:auto), which clips its own pseudos. */
+  .help:hover::before { content: ''; position: absolute; bottom: 100%; left: -30px; right: -30px; height: 10px; }
+  .help:hover .tip, .help.tip-open .tip { display: block; }
+  th .help .tip, .help.below .tip { bottom: auto; top: 140%; }
+  th .help:hover::before, .help.below:hover::before { bottom: auto; top: 100%; }
+  /* keep tooltips on-screen near the right/left viewport edges */
+  .help.edge-right .tip { left: auto; right: 0; transform: none; }
+  .help.edge-left .tip { left: 0; right: auto; transform: none; }
+  .help .tip.tip-wide { width: min(430px, calc(100vw - 32px)); }
+  @media (max-width: 640px) {
+    .help .tip.tip-wide { width: calc(100vw - 28px); font-size: 11.5px; line-height: 1.45; }
+  }
+  /* help-tip-framework:END */
   

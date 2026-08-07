@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Windows where the US board PUBLISHED but its output is not gradeable. A gap listed here is a disclosed null era, not missing data and not a defect to be repaired by backfilling. Consumers that compute a rate, hit-rate, calibration number or any Prophet training input MUST exclude these windows, and MUST disclose them rather than silently narrowing the denominator.",
+  "why_a_file_and_not_a_comment": "The hole is in data/us_board_ledger/snapshots.jsonl, which simply has no rows for these dates. An undocumented hole looks exactly like an outage someone should fix, and the obvious fix - backfill the dates - is the wrong action here. This file is what a future backfill is meant to trip over. tests/test_grade_us_board.py asserts the window stays empty, so filling it turns a test red and forces a conscious decision instead of a silent one.",
+  "gaps": [
+    {
+      "id": "us-board-frozen-alpha-2026-08",
+      "market": "US",
+      "board_definition": "us_prophet_v1",
+      "window": { "from": "2026-08-01", "to": "2026-08-06" },
+      "missing_trading_days": ["2026-08-03", "2026-08-04", "2026-08-05", "2026-08-06"],
+      "gradeable": false,
+      "backfillable": false,
+      "headline": "The board published every day but ranked on factors frozen at 2026-07-31.",
+      "reason": "A GitHub Actions cache regression froze the factor panel. daily.yml's engine job restored data/breadth/_closes_cache.parquet from a prefix-matched GHA cache (restore-keys: breadth-closes-) on top of the fresh panel the collect job had committed hours earlier the same night, then committed the stale copy back with `git add data/` and won the conflict via push_retry's `-X theirs`. It re-saved its own stale copy under the same prefix, so the regression re-seeded itself nightly.",
+      "why_not_gradeable": "The board's RANKING KEY is alpha: scripts/build_stock_library.py:3850 calls rank_setups(cand, as_of=alpha_asof, rank_by=\"alpha\", ...). alpha comes from engine/residual_alpha.py:277, which stamps as_of = R.index.max() off that frozen panel. So every board in this window ordered its names by 2026-07-31 factors while drawing entry zones from current prices - a hybrid vintage. Recording these as entries would teach Prophet from rankings that were computed on data six days stale, at prices six days newer. The dates would be right and the rankings would still be wrong.",
+      "evidence": {
+        "panel_regression": "collect wrote data/breadth/_closes_cache.parquet through the 08-05 close (348x510, commit 361136284f2); the engine job committed it back at 2026-07-31 (345x509, commit 2dfebf35dbd) 14 hours later.",
+        "alpha_frozen": "Every revision of site/factordata/alpha.json from 2026-07-31T20:35Z through 2026-08-06T16:36Z carries as_of=2026-07-31 - one distinct value across the whole window.",
+        "board_frozen": "~47 revisions of site/factordata/us_standouts.json across the window all carry as_of=2026-07-31 while their buy lane moved 71 -> 76 -> 73 -> 55 -> 59 -> 62. Different boards, one stamp.",
+        "ledger_effect": "The snapshotter keys on as_of, saw the same date every night, and appended nothing. snapshots.jsonl dead-ends at 2026-07-31.",
+        "alarm_that_fired_and_gated_nothing": "scripts/build_stock_library.py:_board_continuity_warning printed \"22 builds all claiming as_of=2026-07-31\" throughout. It is marked `Display-only: never a gate`."
+      },
+      "repaired_by": {
+        "cause": "PR #4798 - dropped restore-keys from the engine job's five breadth cache steps (the consumer). The collect job keeps its restore-keys and must: it is the producer and warm-starts the ~3-year panel before appending today's closes.",
+        "guard": "tests/test_daily_collect_commit_path.py::test_no_job_restores_a_stale_cache_over_data_it_will_commit - a git-tracked cache path a job's commit step does not unstage may not carry a restore-key.",
+        "verified_in_production": "data: daily collection 2026-08-07 wrote max_date=2026-08-06 (349x510) - the first advance since 07-31."
+      },
+      "adjudication": {
+        "decided": "2026-08-07",
+        "by": "operator",
+        "ruling": "Record as a disclosed null era with no graded entries. Six days of learning signal are forfeited; the substrate stays clean and the gap is auditable rather than invisible.",
+        "options_rejected": [
+          "Backfill and grade normally - would teach Prophet from frozen-factor rankings, the exact corruption this was raised to prevent.",
+          "Backfill display-only - considered and not taken; the rows add audit value but every consumer would then need to honour an exclusion flag, and an exclusion flag that one consumer forgets is worse than an honest hole."
+        ]
+      },
+      "note_on_reopening": "If these days are ever reconstructed, they need a NEW board_definition era stamp - not us_prophet_v1 - because a re-ranked board is a different admission rule from the one that actually published. Reconstruction also requires a point-in-time replay harness that does not exist: scripts/build_stock_library.py has no argparse and no as-of clamp, and as_of is derived from whatever panel is on disk."
+    }
+  ]
+}

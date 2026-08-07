@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T09:01:44.787836+00:00",
-  "count": 931,
+  "generated_at": "2026-08-07T09:52:04.017242+00:00",
+  "count": 933,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -214,6 +214,46 @@
         "**Backlog-Driven FY27 Visibility**: €30bn order backlog (June), ~2/3 converting to revenue in 12m, supporting FY27 revenue (Vara Consensus: €19.2bn).",
         "**Pricing & Margin Expansion**: Two price increases implemented (July), Q4 segment margin guided at c.23%, incremental margin flow-through >50% in Q4.",
         "**Goldman Sachs Buy Rating**: **Buy** with €91.00 target (50.9% upside from €60.32), based on 15x EV/EBITDA applied to updated EBITDA estimates."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-igkggbrovm4-d91fe5",
+      "title": "Fiserv Inc. (FISV) Key takeaways Another reset likely to push out the turnaround story",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:29Z",
+      "summary_points": [
+        "**Guidance Revision**: FISV lowered FY2026 revenue growth to -1% organic, adjusted margin to 31-31.5%, and EPS to $7.20-$7.40 due to delayed client ramps, Argentina, and contracted revenue; sustained Neutral rating amid extended margin pressures beyond 2026.",
+        "**Price Target Collapse**: Goldman Sachs cut FISV target from $126 (Oct 2023) to $54 (Aug 2026), reflecting bearish sentiment and 57% downside risk, with stock consistently trading below target levels.",
+        "**Valuation & EPS Compression**: EPS expected to decline to $1.64 (3/27E) amid P/E collapse from 18.0x to 6.3x, signaling growth deceleration despite revenue growth to $20.67B, indicating fundamental valuation pressure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kydsho2pfc6-4f640f",
+      "title": "Eversource Energy (ES) Improved balance sheet supportive of incremental capex",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:28Z",
+      "summary_points": [
+        "**Balance sheet strengthening via Aquarian sale**: $1.7bn net equity proceeds to reduce parent debt, Moody’s outlook upgraded to stable, enabling pure-play T&D utility transition.",
+        "**Regulatory Catalysts & Capex Upside**: PURA storm cost approval ($870mn) and CL&P rate case (10.25% ROE, $451mn proposal) drive regulatory tailwinds; $700mn transmission capex (2025) supports 5%-7% EPS CAGR target by 2028.",
+        "**Key Risk Factor**: Regulatory environment deterioration noted as critical risk, threatening rate base growth and cost management efficacy.",
+        "**Price Target Upside**: $82.00 target vs.",
+        "$72.06 current price (13.8% upside), driven by revenue growth (13.5B→15.0B) and EPS growth (4.76→5.35) per Goldman Sachs forecast."
       ],
       "tags": [],
       "tickers": [],

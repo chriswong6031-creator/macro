@@ -59,6 +59,10 @@ from .multiplicity import (
     benjamini_yekutieli,
     max_t_adjusted_p_values,
 )
+from .prophet_bridge import (
+    OVERLAY_SET_SCHEMA,
+    build_overlays_for_plans,
+)
 from .regime import (
     AUTHORIZED_AXES,
     DISPLAY_ONLY_AXES,
@@ -91,6 +95,7 @@ __all__ = [
     "MODEL_SCHEMA",
     "MODEL_VERSION",
     "NEURALWEB_STATE_SCHEMA",
+    "OVERLAY_SET_SCHEMA",
     "OwnerProbabilityFeatureError",
     "PROPHET_OVERLAY_SCHEMA",
     "QUARANTINE_REASON_CODES",
@@ -101,6 +106,7 @@ __all__ = [
     "UniverseRead",
     "benjamini_yekutieli",
     "build_neuralweb_state",
+    "build_overlays_for_plans",
     "build_prophet_overlay",
     "classify_feature",
     "conditional_estimate_or_context",
