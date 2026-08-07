@@ -1177,7 +1177,13 @@ jobs:
         with:
           python-version: "3.12"
       - name: install seasonality test deps
-        run: pip install pytest pandas numpy pyarrow pyyaml
+        # jinja2: test_seasonality_program_watch.py's public-containment class
+        # imports scripts.build_measurement, which does `from jinja2 import
+        # Environment` at module scope. run_ci_pack builds a FRESH isolated venv
+        # per distinct install string (no --system-site-packages), so a package
+        # another job installed is not visible here and the two containment tests
+        # — the leak gate itself — error with ModuleNotFoundError.
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: seasonality contracts, panel, curve, window family, null, and artifact
         run: >
           python -m pytest
@@ -1188,7 +1194,8 @@ jobs:
           tests/test_seasonality_prophet_overlay.py
           tests/test_seasonality_event_study.py
           tests/test_seasonality_model.py
-          tests/test_seasonality_calibration.py -q
+          tests/test_seasonality_calibration.py
+          tests/test_seasonality_program_watch.py -q
       # W5 state v2. The suite that has to run here is the one about a
       # migration that has NOT happened yet: v1's ``forecast.p`` is a historical
       # positive-year share, and the failure this pins is a later session
