@@ -802,6 +802,15 @@ on:
       - "mockups/refs/biocatalyst/**"
       - "scripts/verify_biocatalyst_d0a_references.py"
       - "research/BIOCATALYST_D0A_IA_STATE_CONTENT_CONTRACT.md"
+      # Both halves per #3488/#4559: a subject an edit can change must be able to
+      # start the job that proves it. The named design ruling is bound BY BYTES —
+      # engine/biocatalyst/acceptance_v2.py hashes it and
+      # tests/test_biocatalyst_acceptance_v2.py asserts the result against the real
+      # repo root — so an edit to the markdown moves a test outcome. Without these
+      # entries it moved one silently: #4796 landed the ruling, no PR touching it
+      # could start biocatalyst-contracts, and the suite went red on main unnoticed.
+      - "research/BIOCATALYST_D0A_DESIGN_ADJUDICATION_2026-08-06.md"
+      - "config/biocatalyst_closed_beta_source_manifest.yml"
       - "templates/biocatalyst.*"
       - "templates/_navlinks.html.j2"
       - "templates/_site_nav.html.j2"
