@@ -55,6 +55,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+# Module-top on purpose: importing lib.config runs _load_dotenv(), which is what
+# populates the R2_* vars from the gitignored ROOT/.env on local runs (CI injects
+# real env vars, which win via setdefault). It must execute BEFORE _client()
+# reads os.environ — deferred into publish() it ran after the creds check, so
+# every local invocation took the "no R2 creds — skip" exit-0 path even with a
+# fully-keyed .env (observed live 2026-08-06).
+from lib import config  # noqa: E402
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("publish_r2")
 
@@ -366,7 +374,6 @@ def publish(dirs, dry_run: bool = False, workers: int = 32,
     # two halves of the invariant drift apart on an s3transfer default bump.
     _xfer = _transfer_config()
     _xfer_kw = {} if _xfer is None else {"Config": _xfer}
-    from lib import config
     bucket = os.environ["R2_BUCKET"]
     site = config.ROOT / config.load()["storage"]["site_dir"]
     up = skip = failed = 0

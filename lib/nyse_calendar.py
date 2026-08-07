@@ -389,3 +389,204 @@ def session_dates(dates, *, key=None, keep_unparseable: bool = True,
         _log.debug("session_dates(%s): dropped %d non-session entr(ies) of %d",
                    label, len(src) - len(out), len(src))
     return out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GAP DISCIPLINE — resolving an "N-session" endpoint by CALENDAR, not by position
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# `session_rows` / `session_dates` above remove rows that should never have existed
+# (the #3721 weekend class).  The helpers below address the OPPOSITE failure: rows
+# that should exist and DO NOT.  A store that took a collection outage is session-
+# GAPPED, so `iloc[-(n+1)]` stops meaning "n sessions ago" — it reads FURTHER back
+# and publishes the result under the original day-count label.
+#
+# Measured on `data/polygon_gex/summary_*.parquet` over 2026-06-15..08-06 (37 NYSE
+# sessions, 418 stores): six sessions hold zero rows in ANY store (07-06, 07-15,
+# 07-17, 08-03, 08-04, 08-05) and the 08-03..08-05 outage is unrecoverable — the
+# snapshot API is current-only.  Across every as_of, the positional endpoint is the
+# WRONG session for 54.0% of (as_of, name) pairs.  On a DENSE store positional and
+# calendar agree, which is exactly why this hides in testing.
+#
+# CHOOSE THE REPAIR BY THE STAT'S SHAPE.  Picking one rule for all three is the
+# documented mistake:
+#
+#   TWO-ENDPOINT difference (`x[t] - x[t-n]`) — only the endpoints matter, so an
+#     INTERIOR gap is harmless and the stat recovers exactly.  Resolve the far
+#     endpoint with `row_n_sessions_back`; return None when that session has no row.
+#     Exact, or absent.  Never a wider basis under a narrower label.
+#
+#   FIT (slope/regression/rolling window over N points) — every point carries
+#     information, so refusing on any gap throws away most of the sample: measured
+#     at 46% of as_of coverage on the ledger's 5-session basis.  Do NOT refuse.
+#     Re-weight against SESSION ORDINALS (`session_ordinals`) so the x-axis is real
+#     elapsed session time, and bound how far the window may stretch with a span cap
+#     (`sessions_apart`).
+#
+#   COMPARE (two snapshots where the older one is pinned to "yesterday") — there is
+#     no honest widening of "yesterday".  Refuse: `is_prior_session` must hold, or
+#     the comparison is null.
+#
+# FAIL-CLOSED, deliberately inverting this module's other convention.  `session_rows`
+# and `session_dates` fail OPEN because dropping every row would blank a panel and a
+# calendar surprise should degrade to the old behaviour.  These resolvers fail CLOSED
+# (return None / False) because their entire purpose is to refuse a mislabeled number:
+# a fail-open resolver would hand back the positional answer it exists to prevent.
+
+
+def session_n_back(last: date, n: int) -> date | None:
+    """The session exactly ``n`` NYSE sessions before ``last``, or None.
+
+    ``n=0`` returns ``last`` itself when it is a session.  Returns None when the
+    calendar cannot reach that far back within the search horizon, or when ``last``
+    is not itself a session (a caller comparing against a non-session "latest" has
+    already lost the thread — see `session_rows`).
+    """
+    if n < 0:
+        raise ValueError(f"session_n_back: n must be >= 0, got {n}")
+    if not is_session(last):
+        return None
+    # 3n+10 calendar days covers n sessions plus weekends and a holiday stretch.
+    sess = sessions_between(last - timedelta(days=3 * n + 10), last)
+    if len(sess) < n + 1:
+        return None
+    return sess[-(n + 1)]
+
+
+def session_n_forward(first: date, n: int) -> date | None:
+    """The session exactly ``n`` NYSE sessions AFTER ``first``, or None.
+
+    The forward twin of `session_n_back`, for horizon stats that step ahead from a
+    signal date (a forward return, a forward-IC evaluation).  Same fail-closed
+    contract: None when ``first`` is not a session.
+    """
+    if n < 0:
+        raise ValueError(f"session_n_forward: n must be >= 0, got {n}")
+    if not is_session(first):
+        return None
+    sess = sessions_between(first, first + timedelta(days=3 * n + 10))
+    return sess[n] if len(sess) > n else None
+
+
+def sessions_apart(older: date, newer: date) -> int | None:
+    """Session steps from ``older`` to ``newer`` (adjacent sessions -> 1), or None.
+
+    None when either endpoint is not a session or when ``older > newer`` — both mean
+    the caller's model of its own data is wrong, and a number here would launder that
+    into a plausible-looking span.
+    """
+    if older > newer or not is_session(older) or not is_session(newer):
+        return None
+    return len(sessions_between(older, newer)) - 1
+
+
+def is_prior_session(older: date, newer: date) -> bool:
+    """True when ``older`` is the session IMMEDIATELY before ``newer``.
+
+    The COMPARE gate: a stat whose older endpoint is pinned to "yesterday" has no
+    honest reading when yesterday's row is missing, so this is asked as a hard
+    precondition rather than folded into a tolerance.
+    """
+    return sessions_apart(older, newer) == 1
+
+
+def session_ordinals(dates: list[date]) -> list[int | None]:
+    """Session index of each date relative to the earliest, for FIT re-weighting.
+
+    ``[d0, d1, ...] -> [0, k1, k2, ...]`` where ``ki`` counts SESSIONS elapsed since
+    ``d0``.  Gapped rows therefore land at their true x-position instead of being
+    squashed onto consecutive integers, which is what lets a slope keep its units
+    ("per session") across an outage instead of silently steepening.  Non-session or
+    unorderable entries map to None so the caller can drop them explicitly.
+    """
+    if not dates:
+        return []
+    valid = [d for d in dates if isinstance(d, date) and is_session(d)]
+    if not valid:
+        return [None] * len(dates)
+    lo, hi = min(valid), max(valid)
+    index = {d: i for i, d in enumerate(sessions_between(lo, hi))}
+    return [index.get(d) if isinstance(d, date) else None for d in dates]
+
+
+def as_day(v) -> date | None:
+    """Best-effort ``-> date`` for a store label (str, Timestamp, datetime), else None.
+
+    NUMBERS ARE REJECTED, not coerced.  ``pd.Timestamp(0)`` happily returns
+    1970-01-01, so a frame carrying a plain ``RangeIndex`` would silently resolve into
+    epoch dates and every session question asked of it would get a confident, wrong
+    answer.  A bare integer is not a date this codebase ever stores, so treating it as
+    unusable is the only reading that cannot lie.  (``bool`` is an ``int`` subclass and
+    is caught by the same test.)
+    """
+    import pandas as pd
+
+    if v is None or pd.api.types.is_number(v):   # covers numpy scalars too, and bool
+        return None
+    try:
+        ts = pd.Timestamp(v)
+    except (ValueError, TypeError):
+        return None
+    return None if pd.isna(ts) else ts.date()
+
+
+def session_label_map(labels) -> dict:
+    """``{session date -> the original label}`` for a dated index.
+
+    Lets a caller holding a pivot index (whose labels may be strings OR Timestamps)
+    ask a CALENDAR question and get back a key it can still use with ``.loc``.
+    Non-session and unparseable labels are omitted, so a hit is always a real session.
+    """
+    out: dict = {}
+    for lab in labels:
+        d = as_day(lab)
+        if d is not None and is_session(d):
+            out[d] = lab
+    return out
+
+
+def row_n_sessions_back(df, n: int, *, date_col: str | None = None):
+    """The row exactly ``n`` sessions before ``df``'s last row, resolved BY DATE.
+
+    The TWO-ENDPOINT resolver.  ``df`` must be sorted ascending and already
+    session-filtered (`session_rows`); ``date_col=None`` reads a DatetimeIndex,
+    otherwise the named column.  Returns None when the target session holds no row —
+    unmeasurable, never mislabeled.  A DataFrame yields the matching row as a Series;
+    a date-indexed SERIES yields that row's scalar value, so a caller holding one
+    column (``df["iv30"].dropna()``) need not rebuild a frame to ask this question.
+
+    Why by date: after the 2026-08-03..08-05 outage every summary store's six
+    trailing rows spanned NINE sessions, so ``iloc[-6]`` shipped an eight-session
+    change under a five-session label.  Calendar resolution is exact across an
+    interior gap (a difference only reads its endpoints) and absent at the edge.
+    """
+    import pandas as pd
+
+    if df is None or getattr(df, "empty", True):
+        return None
+    try:
+        if date_col is None:
+            raw = list(df.index)
+        else:
+            if date_col not in df.columns:
+                _log.warning("row_n_sessions_back: no column %r — refusing", date_col)
+                return None
+            raw = list(df[date_col])
+        # `as_day` rejects numbers rather than coercing them: a RangeIndex would
+        # otherwise resolve to 1970 epoch dates and answer session questions confidently.
+        dates: list[date | None] = [as_day(v) for v in raw]
+        if not dates or dates[-1] is None:
+            return None
+        target = session_n_back(dates[-1], n)
+        if target is None:
+            return None
+        for pos in range(len(dates) - 1, -1, -1):
+            d = dates[pos]
+            if d == target:
+                return df.iloc[pos]
+            if d is not None and d < target:
+                break          # sorted ascending: past the target, it is absent
+        return None
+    except Exception as exc:  # noqa: BLE001
+        _log.warning("row_n_sessions_back: resolve failed (%s) — refusing", exc)
+        return None

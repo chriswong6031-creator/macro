@@ -48,32 +48,52 @@ def _row(ticker: str, reason: str, *, eligible: bool = False, **extra) -> dict:
             "signal": {"eligible": eligible, "reason": reason}, **extra}
 
 
-#: The verdict text the production gate actually emits for the §2.7 block.
-#: Composed from the two production constants rather than hand-copied: the
-#: hand-copy is what rotted the pin below, and a fixture that quietly stops
-#: matching production would leave every candidate-rule test here green on rows
-#: no gate can emit.  The literal itself is pinned once, in
-#: :data:`_CT_BLOCK_CONSTANTS`.
-BLOCKED = signal_gate._BLOCKED_PREFIX + signal_quality.CT_BOTH_FAIL  # noqa: SLF001
+#: The verdict text the production gate actually emits for the §2.7 block:
+#: ``signal_gate.verdict`` wraps the filter's reason as "buy blocked by
+#: filter: ...".  Derived from the constant rather than retyped, so the cases
+#: below keep exercising the string the engine currently ships — a hardcoded
+#: copy would go on passing against a spelling that had been retired.
+BLOCKED = f"buy blocked by filter: {signal_quality.CT_BOTH_FAIL}"
 
 
 # ---------------------------------------------------------------------------
 # 0. the reason strings are the ENGINE's, not this module's invention
 # ---------------------------------------------------------------------------
 
-#: The §2.7 block family, read off the constants that OWN each string today.
-#: Named attributes — not ``co_consts`` — because the literals were hoisted out of
-#: ``_buy_filter`` into module scope by the 2026-08-04 reason-string correction
-#: (CN_RECLAIM_HOLD_AUDIT.md §10/§11), which also split the single legacy string
-#: into three.  A ``co_consts`` scan silently stopped seeing any of them:
-#: ``_buy_filter`` now delegates to ``_confirm_legs`` and its own consts tuple holds
-#: nothing but a docstring, so the old pin passed judgement on an empty list.
-#: A missing attribute here is an AttributeError at collection — which is the point.
-_CT_BLOCK_CONSTANTS = {
-    "CT_BOTH_FAIL": "counter-trend, no 200-reclaim/hold",
-    "CT_RECLAIM_FAIL": "counter-trend, held but no 200-reclaim",
-    "CT_HOLD_FAIL": "counter-trend, reclaimed 200 but no next-bar hold",
+def _filter_frame(closes, above200, w_bull) -> dict:
+    """The three columns ``_buy_filter``'s confirmation legs read, as a frame."""
+    idx = pd.bdate_range("2026-06-01", periods=len(closes))
+    return {"close": pd.Series(closes, index=idx, dtype=float),
+            "above200": pd.Series(above200, index=idx),
+            "w_bull": pd.Series(w_bull, index=idx)}
+
+
+#: Bar 0 of each frame is BOTH below-200 and weekly-down, which is what selects
+#: the counter-trend branch; bars 1-2 then choose which of its three failures
+#: fires.  Every §2.7 block shape, driven out of the live filter.
+_COUNTER_TREND_BLOCKS = {
+    "both legs fail":     _filter_frame([10, 9, 9, 9],    [False] * 4,               [False] * 4),
+    "held, no reclaim":   _filter_frame([10, 11, 11, 11], [False] * 4,               [False] * 4),
+    "reclaimed, no hold": _filter_frame([10, 9, 9, 9],    [False, True, True, True], [False] * 4),
 }
+
+
+def _emitted_reason(frame: dict, *, reclaim_veto: bool = True) -> str:
+    """What ``_buy_filter`` ACTUALLY returns for ``frame`` (bear=False, bar 0)."""
+    take, reason = signal_quality._buy_filter(  # noqa: SLF001
+        0, frame, False, 4, reclaim_veto=reclaim_veto)
+    assert take is False, f"expected a block, got {take!r}/{reason!r}"
+    return reason
+
+
+def _gate_verdict(reason: str) -> dict:
+    """A blocked buy carried through the REAL verdict mapper, as the lane sees it."""
+    return signal_gate.verdict({
+        "markers": [{"type": "buy", "quality": "block", "reason": reason,
+                     "date": "2026-07-01"}],
+        "state": "down", "above200": False, "weekly_bull": False,
+        "early_now": False, "asof": "2026-07-02",
+    })
 
 
 def test_block_markers_match_the_live_buy_filter_strings():
@@ -82,99 +102,69 @@ def test_block_markers_match_the_live_buy_filter_strings():
     Pinning the real source strings makes that a red test rather than a lane
     that quietly logs nothing for months.
 
-    Two failure shapes, both red here: the constant DISAPPEARS (renamed, deleted,
-    folded away) or it is RE-WORDED.  A re-word that keeps a marker substring would
-    still fill the cohort, but it changes the ``blocked_reason`` this lane stamps
-    into the shadow ledger and the copy maps keyed on it, so it earns a look too.
+    The strings are RUN out of the engine rather than read off its bytecode.
+    #4583 moved them into module constants (``CT_*``), and a function that
+    references a module global does not carry the value in its own
+    ``co_consts`` — so the first version of this test, which read
+    ``_buy_filter.__code__.co_consts``, stopped being able to see them at all.
+    Driving the filter pins the value that actually ships, through the same
+    verdict mapper the nightly builder feeds ``select`` from.
     """
-    for attr, text in _CT_BLOCK_CONSTANTS.items():
-        live = getattr(signal_quality, attr)
-        assert live == text, (
-            f"signal_quality.{attr} was re-worded to {live!r}. This is the §2.7 block "
-            "family engine/china_continuation_watch.BLOCK_REASON_MARKERS matches on — "
-            "re-check the markers, then update this pin."
-        )
-        assert ccw.is_trend_blocked({"eligible": False, "reason": live}), (
-            f"{attr} = {live!r} no longer matches BLOCK_REASON_MARKERS — the "
-            "continuation-watch cohort silently empties for this branch."
-        )
+    emitted = {shape: _emitted_reason(f) for shape, f in _COUNTER_TREND_BLOCKS.items()}
 
-
-def test_the_hold_only_block_stays_out_of_the_cohort():
-    """The deliberate EXCLUSION, pinned from the same side as the inclusions.
-
-    ``HOLD_FAIL`` is the reclaim_veto=False / main-branch outcome: one leg tested,
-    no reclaim anywhere in it, so it is not the §2.7 never-eligible block.  It is
-    also the string the 2026-08-04 correction moved 1,094 mislabelled blocks ONTO —
-    if a re-word ever gave it a family marker this lane would start hoovering up
-    ordinary follow-through failures under a definition that claims otherwise.
-    """
-    assert signal_quality.HOLD_FAIL == "failed next-bar hold"
-    assert not ccw.is_trend_blocked(
-        {"eligible": False, "reason": signal_quality.HOLD_FAIL}
-    ), "the hold-only block is now admitted — see engine/china_continuation_watch.py:69"
-
-
-def _sig(*, held: bool, reclaim: bool):
-    """A 4-bar synthetic frame parked on the counter-trend branch at ``i=0``.
-
-    ``_confirm_legs`` reads exactly three columns.  Bar 0 is below its 200-day
-    average AND weekly-down, which is the ONLY door into the counter-trend legs;
-    ``held`` is bar1 > bar0 and ``reclaim`` is above200 on bar1 or bar2.
-    """
-    close = pd.Series([10.0, 11.0 if held else 9.0, 10.0, 10.0])
-    above = pd.Series([False, reclaim, False, False])
-    return {"close": close, "above200": above,
-            "w_bull": pd.Series([False, False, False, False])}
-
-
-def test_the_counter_trend_branch_still_EMITS_each_pinned_string():
-    """Behaviour, not spelling: run the filter down all three legs.
-
-    A constant can survive a refactor while nothing returns it any more — the
-    dead-marker shape that left ``"reclaim-and-hold"`` in BLOCK_REASON_MARKERS
-    matching nothing.  Reading ``signal_quality.CT_*`` by attribute cannot see
-    that; only driving ``_buy_filter`` can.  This is the same lesson the
-    ``co_consts`` pin failed, one level up: assert what the function EMITS.
-    """
-    emitted = {
-        "CT_BOTH_FAIL": signal_quality._buy_filter(  # noqa: SLF001
-            0, _sig(held=False, reclaim=False), False, 4)[1],
-        "CT_RECLAIM_FAIL": signal_quality._buy_filter(  # noqa: SLF001
-            0, _sig(held=True, reclaim=False), False, 4)[1],
-        "CT_HOLD_FAIL": signal_quality._buy_filter(  # noqa: SLF001
-            0, _sig(held=False, reclaim=True), False, 4)[1],
-    }
-    # Non-vacuity: three DISTINCT strings, so a collapse to one spelling reds
-    # here rather than pinning the same literal three times.
+    # Non-vacuity: three DISTINCT strings, or the sweep below pins one thrice.
     assert len(set(emitted.values())) == 3, emitted
-    for attr, reason in emitted.items():
-        assert reason == _CT_BLOCK_CONSTANTS[attr], (
-            f"the branch that used to emit {attr} now returns {reason!r} — the "
-            "constant may still exist while nothing reaches it."
-        )
-        assert ccw.is_trend_blocked({"eligible": False, "reason": reason})
+    # ...and they are exactly the module's counter-trend constants, so a fourth
+    # shape added upstream is a red test here rather than an unswept branch.
+    assert set(emitted.values()) == {
+        v for k, v in vars(signal_quality).items() if k.startswith("CT_")
+    }, emitted
+
+    # THE CONTRACT: every one of them still reaches the cohort.
+    for shape, reason in emitted.items():
+        v = _gate_verdict(reason)
+        assert v["eligible"] is False, shape
+        assert ccw.is_trend_blocked(v), f"{shape}: {v['reason']!r} matches no marker"
 
 
-def test_every_counter_trend_constant_is_classified_by_this_pin():
-    """Completeness, so a FOURTH branch cannot appear unnoticed.
+def test_a_hold_only_block_is_not_the_counter_trend_cohort():
+    """§2.7 is the counter-trend block, so failing ONLY the next-bar hold is not it.
 
-    The 2026-08-04 correction turned one block string into three.  A pin that
-    enumerates by hand goes stale the same way the last one did unless something
-    fails when the engine grows a reason it has never seen, so scan the module and
-    require every counter-trend block constant to be classified above.
+    Load-bearing rather than incidental.  Before #4583 the main branch emitted
+    ``failed reclaim-and-hold`` — naming a reclaim it never evaluated — which
+    ``BLOCK_REASON_MARKERS`` matches, so had the correction not landed this lane
+    would have swept in every plain hold failure (1,094 in the audit year;
+    research/cn_prophet_audit/CN_RECLAIM_HOLD_AUDIT.md §10/§11).  Both branches
+    that can emit the corrected string must stay out.
     """
-    live = {
-        name: value
-        for name, value in vars(signal_quality).items()
-        if name.isupper() and isinstance(value, str) and "counter-trend" in value
-    }
-    assert set(live) == set(_CT_BLOCK_CONSTANTS), (
-        f"signal_quality's counter-trend block constants are now {sorted(live)}; this "
-        f"pin knows {sorted(_CT_BLOCK_CONSTANTS)}. Decide whether the new/removed branch "
-        "belongs in the §2.7 never-eligible cohort, then update "
-        "engine/china_continuation_watch.BLOCK_REASON_MARKERS and this map together."
-    )
+    main_branch = _filter_frame([10, 9, 9, 9], [True] * 4, [True] * 4)
+    counter_trend_no_veto = _COUNTER_TREND_BLOCKS["both legs fail"]
+
+    for shape, reason in (
+        ("main branch", _emitted_reason(main_branch)),
+        ("counter-trend, reclaim_veto=False",
+         _emitted_reason(counter_trend_no_veto, reclaim_veto=False)),
+    ):
+        assert reason == signal_quality.HOLD_FAIL, shape
+        assert ccw.is_trend_blocked(_gate_verdict(reason)) is False, shape
+
+
+def test_the_retired_reason_string_is_no_longer_emitted():
+    """``reclaim-and-hold`` survives in BLOCK_REASON_MARKERS but matches nothing.
+
+    That is only safe while the engine cannot emit it: the string named a
+    hold-only block, which the test above establishes is NOT a member of this
+    cohort.  If a re-wording ever brings the spelling back, that dead marker
+    silently starts admitting the wrong population — so pin the retirement here
+    rather than trusting it to stay retired.
+    """
+    frames = [*_COUNTER_TREND_BLOCKS.values(),
+              _filter_frame([10, 9, 9, 9], [True] * 4, [True] * 4),    # main, blocked
+              _filter_frame([10, 11, 11, 11], [True] * 4, [True] * 4)]  # main, passing
+    reasons = {signal_quality._buy_filter(0, f, bear, 4, reclaim_veto=veto)[1]  # noqa: SLF001
+               for f in frames for bear in (False, True) for veto in (False, True)}
+    assert len(reasons) >= 5, sorted(reasons)   # every branch, passes included
+    assert not any("reclaim-and-hold" in r for r in reasons), sorted(reasons)
 
 
 def test_gate_verdict_for_a_blocked_buy_carries_the_family_reason():

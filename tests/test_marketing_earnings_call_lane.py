@@ -118,7 +118,14 @@ def test_instruction_like_model_prose_never_reaches_post_or_card(
     result = lane.enqueue_event(event, root=tmp_path, now=NOW)
     assert result["status"] == "queued", result
     assert probe not in result["item"]["text"]
-    assert probe not in calls[0]["svg"]
+    assert all(probe not in c["svg"] for c in calls)
+    # AND THE POST STILL SHIPS, TEXT-ONLY. Redacting the summary leaves the card
+    # with nothing but a hero that is the post's own first line, so the
+    # card-value gate (wired into this lane 2026-08-06) withholds the picture.
+    # Asserted explicitly because `probe not in <no svg at all>` is vacuous:
+    # this pins WHY there is no svg, and that the emission survived it.
+    assert calls == []
+    assert result["item"]["source"]["card_withheld_for_value"] is True
 
 
 def test_model_numeric_clauses_are_omitted_not_circularly_allowlisted(
@@ -141,8 +148,12 @@ def test_model_numeric_clauses_are_omitted_not_circularly_allowlisted(
     calls = _hosted(monkeypatch)
     result = lane.enqueue_event(event, root=tmp_path, now=NOW)
     assert result["status"] == "queued", result
-    assert "93%" not in calls[0]["svg"]
-    assert "47%" not in calls[0]["svg"]
+    assert all("93%" not in c["svg"] and "47%" not in c["svg"] for c in calls)
+    # Same shape as the instruction-probe test above: an omitted numeric clause
+    # leaves the card hero-only, the hero is the post's first line, and the
+    # card-value gate withholds the picture rather than the post.
+    assert calls == []
+    assert result["item"]["source"]["card_withheld_for_value"] is True
     assert result["item"]["source"]["numbers_whitelist"] == ["2", "2026"]
 
 

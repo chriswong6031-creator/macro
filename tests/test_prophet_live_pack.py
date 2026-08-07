@@ -16,8 +16,8 @@ sides look internally consistent. So this file re-runs the REAL
 
 FIXTURES ARE ENGINEERED TO SIT NEAR TIER FLIPS, not sampled and hoped over: the
 seeded walks below are chosen because the real cascade puts three of them inside a
-buyable tier and three within a few percent of one (S09's trigger is 0.4% above its
-own close). ``test_fixtures_are_not_vacuous`` fails if that ever stops being true, so
+buyable tier and three within a few percent of one (``ARMED_FIXTURE``'s trigger sits
+just above its own close). ``test_fixtures_are_not_vacuous`` fails if that ever stops being true, so
 a future engine change cannot turn this file into a suite that passes by testing
 nothing.
 
@@ -48,16 +48,24 @@ from engine.prophet_live.r2io import PACK_KEY as AP_R2_PACK_KEY  # noqa: E402
 # A fixed business-day index: no wall-clock date arithmetic anywhere in this file.
 IDX = pd.bdate_range("2022-01-03", periods=520)
 
-#: Seeds kept for what the REAL cascade does with them, measured 2026-07-29:
-#:   0  buyable with BOTH edges inside the band (fade + fade_hi)
-#:   2  buyable with a lower edge only        7  buyable, no edge in band at all
-#:   9  near, trigger 0.4% above its close   21, 22  near, trigger mid-band
-#:   1, 5, 13  dormant across the whole band
-#: Nine series is ~135 real gate calls (~12s), which is the honest cost of testing
+#: Seeds kept for what the REAL cascade does with them. RE-MEASURED TWICE: under the
+#: cascade's absolute session anchor (era abs-session-2026-08-06), and again under the
+#: §7 stream's own anchor (era sq-abs-session-2026-08-06) — each re-phasing moves which
+#: seed sits in which state; the ENGINEERED property (some buyable, one of them armed,
+#: some near a flip, some dormant) is what the file needs and it still holds:
+#:   18  buyable, armed with a fade edge      7  buyable, no edge in band at all
+#:   0, 2, 21, 22  near, armed with a lower edge   (0 was "buyable" pre-sq-anchor)
+#:   1, 5, 9, 13  dormant across the whole band    (9 was "near" pre-anchor)
+#: Ten series is ~150 real gate calls (~13s), which is the honest cost of testing
 #: parity against the actual engine instead of a stub.
-SEEDS = (0, 1, 2, 5, 7, 9, 13, 21, 22)
+SEEDS = (0, 1, 2, 5, 7, 9, 13, 18, 21, 22)
 
 NOW = datetime(2026, 7, 29, 22, 30, tzinfo=timezone.utc)
+
+#: The seed used wherever a test needs a name that is ARMED (a published lower edge). Named
+#: once, and pinned by test_the_armed_fixture_is_actually_armed, so a future re-phase reds
+#: THAT test with a clear message instead of silently making four refusal tests vacuous.
+ARMED_FIXTURE = "S21"
 
 
 def _walk(seed: int, n: int = 520, start: float = 100.0,
@@ -97,6 +105,19 @@ def test_fixtures_are_not_vacuous(pack):
     lowers = [AP.lower_edge(e) for e in pack["names"].values()]
     assert sum(1 for x in lowers if x is not None) >= 4
     assert any(e.get("fade_hi_px") is not None for e in pack["names"].values())
+
+
+def test_the_armed_fixture_is_actually_armed(series):
+    """``ARMED_FIXTURE`` is the seed four REFUSAL tests build a one-name pack from. If an
+    engine change re-phases it into `dormant`, those tests stop exercising a refusal and go
+    quietly vacuous — the pack they build has nothing to refuse. Red HERE instead, with the
+    remedy: re-measure the seeds and repoint ARMED_FIXTURE (that is what the absolute session
+    anchor, era abs-session-2026-08-06, required when S09 went dormant)."""
+    p = AP.build_pack([(ARMED_FIXTURE, series[ARMED_FIXTURE])], now=NOW)
+    assert p["meta"]["armed_n"] >= 1, (
+        f"{ARMED_FIXTURE} is no longer armed ({p['meta']}) — repoint ARMED_FIXTURE at a seed "
+        f"that is, or the refusal tests below prove nothing")
+    assert AP.lower_edge(p["names"][ARMED_FIXTURE]) is not None
 
 
 def test_parity_at_as_of_close(pack, series):
@@ -153,7 +174,7 @@ def test_the_edge_check_runs_and_is_not_vacuous(pack):
 
 def test_the_edge_check_catches_a_price_the_gate_rejects(series):
     """It must be able to FAIL — the whole point of replacing the tautology."""
-    tkr = "S09"
+    tkr = ARMED_FIXTURE
     s = series[tkr]
     rec = AP.centre_record(tkr, s, cfg=AP.pack_cfg(None))
     probe = AP.probe_name(tkr, s, rec, cfg=AP.pack_cfg(None))
@@ -188,7 +209,7 @@ def test_the_false_side_price_comes_from_the_bisection_not_a_guess():
 def test_an_unverified_armed_pack_is_refused(monkeypatch, capsys, series):
     """Unproven is not clean: armed levels with zero re-verified prices must not ship."""
     import scripts.build_prophet_live_pack as B
-    p = AP.build_pack([("S09", series["S09"])], now=NOW)
+    p = AP.build_pack([(ARMED_FIXTURE, series[ARMED_FIXTURE])], now=NOW)
     assert p["meta"]["armed_n"] >= 1
     p["meta"]["edges_checked"] = 0
     p["meta"]["edge_mismatches"] = []
@@ -210,8 +231,8 @@ def test_an_edge_mismatch_withholds_that_name_not_the_pack(monkeypatch, capsys, 
     name's levels. The wrong price does not reach a user on either path.
     """
     import scripts.build_prophet_live_pack as B
-    p = AP.build_pack([("S09", series["S09"])], now=NOW)
-    p["meta"]["edge_mismatches"] = ["S09: gate says buyable=False at published price 1.0"]
+    p = AP.build_pack([(ARMED_FIXTURE, series[ARMED_FIXTURE])], now=NOW)
+    p["meta"]["edge_mismatches"] = [f"{ARMED_FIXTURE}: gate says buyable=False at published price 1.0"]
     published: list[str] = []
     monkeypatch.setattr(B, "build", lambda **kw: p)
     monkeypatch.setattr(B.r2io, "put_json", lambda k, v, **kw: published.append(k) or True)
@@ -226,7 +247,7 @@ def test_an_edge_mismatch_withholds_that_name_not_the_pack(monkeypatch, capsys, 
 def test_a_residual_membership_mismatch_still_refuses_the_pack(monkeypatch, series):
     """The belt: anything that survives the withholding is structural and blocks."""
     import scripts.build_prophet_live_pack as B
-    p = AP.build_pack([("S09", series["S09"])], now=NOW)
+    p = AP.build_pack([(ARMED_FIXTURE, series[ARMED_FIXTURE])], now=NOW)
     victim = next(t for t, e in p["names"].items() if e.get("trigger_px") is not None)
     p["names"][victim]["trigger_px"] = p["names"][victim]["as_of_close"] * 0.5
     published: list[str] = []
@@ -242,8 +263,8 @@ def test_a_membership_mismatch_is_withheld_inside_build(monkeypatch, series):
     # bisect_iters high enough that a boundary can land within one 4-dp step of the
     # close is the config-reachable route; drive the withholding directly instead of
     # hunting a fixture that triggers it, and assert the entry shape it produces.
-    rec = AP.centre_record("S09", series["S09"], cfg=AP.pack_cfg(None))
-    probe = AP.probe_name("S09", series["S09"], rec, cfg=AP.pack_cfg(None))
+    rec = AP.centre_record(ARMED_FIXTURE, series[ARMED_FIXTURE], cfg=AP.pack_cfg(None))
+    probe = AP.probe_name(ARMED_FIXTURE, series[ARMED_FIXTURE], rec, cfg=AP.pack_cfg(None))
     entry = AP.name_entry(rec, probe)
     assert entry.get("trigger_px") is not None
     rec["skip"] = "membership_mismatch"
@@ -737,7 +758,10 @@ def test_parity_error_annotation_is_a_bare_line_start_print(monkeypatch, capsys,
     """
     import scripts.build_prophet_live_pack as B
 
-    good = AP.build_pack([("S00", series["S00"])], now=NOW,
+    # S18 is the buyable board name whose published interval is fade-defined — the
+    # doctored fade below must therefore break parity (a near name's fade is not
+    # load-bearing, so S00 stopped working here when the sq-anchor moved it to near).
+    good = AP.build_pack([("S18", series["S18"])], now=NOW,
                          cfg={"max_probe": 50, "max_seconds": 3600})
     victim = next(t for t, e in good["names"].items() if AP.lower_edge(e) is not None)
     good["names"][victim]["fade_px"] = good["names"][victim]["as_of_close"] * 1.5

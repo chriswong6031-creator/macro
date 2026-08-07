@@ -1,0 +1,2473 @@
+{
+  "schema": "company_intelligence.golden_corpus_issuers/v1",
+  "note": "Real, public ticker symbols and issuer names. CIKs are SYNTHETIC but format-valid (see cik_synthetic). fiscal_year_end_month drives the fiscal_year_ambiguity class and is the issuer's published fiscal calendar.",
+  "issuer_count": 130,
+  "issuers": [
+    {
+      "issuer_id": "iss_1eb44d625271a4eb",
+      "display_name": "Apple Inc.",
+      "kind": "general",
+      "primary_ticker": "AAPL",
+      "fiscal_year_end_month": 9,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1632770,
+      "listings": [
+        {
+          "ticker": "AAPL",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_9940b3adcf07ff61",
+      "display_name": "AbbVie Inc.",
+      "kind": "general",
+      "primary_ticker": "ABBV",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1054349,
+      "listings": [
+        {
+          "ticker": "ABBV",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_6d50f3cd55fb1bba",
+      "display_name": "Airbnb, Inc.",
+      "kind": "general",
+      "primary_ticker": "ABNB",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1021837,
+      "listings": [
+        {
+          "ticker": "ABNB",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_13b4f6f5011a4d75",
+      "display_name": "Accenture plc",
+      "kind": "general",
+      "primary_ticker": "ACN",
+      "fiscal_year_end_month": 8,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1226805,
+      "listings": [
+        {
+          "ticker": "ACN",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_ca5798508c77b80e",
+      "display_name": "Adobe Inc.",
+      "kind": "general",
+      "primary_ticker": "ADBE",
+      "fiscal_year_end_month": 11,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1438256,
+      "listings": [
+        {
+          "ticker": "ADBE",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_a6e21af01e847aa4",
+      "display_name": "Analog Devices, Inc.",
+      "kind": "general",
+      "primary_ticker": "ADI",
+      "fiscal_year_end_month": 10,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1535888,
+      "listings": [
+        {
+          "ticker": "ADI",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_104671425b6d8ba2",
+      "display_name": "Aflac Incorporated",
+      "kind": "insurer",
+      "primary_ticker": "AFL",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1051970,
+      "listings": [
+        {
+          "ticker": "AFL",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_c5da7c809a65b7f6",
+      "display_name": "American International Group, Inc.",
+      "kind": "insurer",
+      "primary_ticker": "AIG",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1030272,
+      "listings": [
+        {
+          "ticker": "AIG",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_b5c7aed7cd2a3085",
+      "display_name": "The Allstate Corporation",
+      "kind": "insurer",
+      "primary_ticker": "ALL",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1562519,
+      "listings": [
+        {
+          "ticker": "ALL",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_61c49740560a30d0",
+      "display_name": "Applied Materials, Inc.",
+      "kind": "general",
+      "primary_ticker": "AMAT",
+      "fiscal_year_end_month": 10,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1173728,
+      "listings": [
+        {
+          "ticker": "AMAT",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_0fd3e4e71b62f777",
+      "display_name": "Advanced Micro Devices, Inc.",
+      "kind": "general",
+      "primary_ticker": "AMD",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1244935,
+      "listings": [
+        {
+          "ticker": "AMD",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_69c7df07e3ad12ca",
+      "display_name": "American Tower Corporation",
+      "kind": "reit",
+      "primary_ticker": "AMT",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1206439,
+      "listings": [
+        {
+          "ticker": "AMT",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_31ac18dc22b89690",
+      "display_name": "Amazon.com, Inc.",
+      "kind": "general",
+      "primary_ticker": "AMZN",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1362140,
+      "listings": [
+        {
+          "ticker": "AMZN",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_6b03c0b5e769bbea",
+      "display_name": "Arista Networks, Inc.",
+      "kind": "general",
+      "primary_ticker": "ANET",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1608053,
+      "listings": [
+        {
+          "ticker": "ANET",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_2fc02548fa481b1a",
+      "display_name": "AvalonBay Communities, Inc.",
+      "kind": "reit",
+      "primary_ticker": "AVB",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1321608,
+      "listings": [
+        {
+          "ticker": "AVB",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_b78cca2401256f81",
+      "display_name": "Broadcom Inc.",
+      "kind": "general",
+      "primary_ticker": "AVGO",
+      "fiscal_year_end_month": 10,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1157316,
+      "listings": [
+        {
+          "ticker": "AVGO",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_6a780a2e122c630c",
+      "display_name": "AstraZeneca PLC",
+      "kind": "dual_listed",
+      "primary_ticker": "AZN",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1551822,
+      "listings": [
+        {
+          "ticker": "AZN",
+          "mic": "XNYS",
+          "share_class": "ADR",
+          "is_primary": true,
+          "trading_currency": "USD"
+        },
+        {
+          "ticker": "AZN.L",
+          "mic": "XLON",
+          "share_class": "ordinary",
+          "is_primary": false,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_296d71a7f66e75b7",
+      "display_name": "The Boeing Company",
+      "kind": "general",
+      "primary_ticker": "BA",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1638375,
+      "listings": [
+        {
+          "ticker": "BA",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_20cb7cc402b3f345",
+      "display_name": "Bank of America Corporation",
+      "kind": "bank",
+      "primary_ticker": "BAC",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1006660,
+      "listings": [
+        {
+          "ticker": "BAC",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_343d44bf3298c6ee",
+      "display_name": "BHP Group Limited",
+      "kind": "dual_listed",
+      "primary_ticker": "BHP",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1030527,
+      "listings": [
+        {
+          "ticker": "BHP",
+          "mic": "XNYS",
+          "share_class": "ADR",
+          "is_primary": true,
+          "trading_currency": "USD"
+        },
+        {
+          "ticker": "BHP.AX",
+          "mic": "XASX",
+          "share_class": "ordinary",
+          "is_primary": false,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_f0a41f48468429a7",
+      "display_name": "The Bank of New York Mellon Corporation",
+      "kind": "bank",
+      "primary_ticker": "BK",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1387752,
+      "listings": [
+        {
+          "ticker": "BK",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_36b717811ee15f49",
+      "display_name": "BP p.l.c.",
+      "kind": "dual_listed",
+      "primary_ticker": "BP",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1268769,
+      "listings": [
+        {
+          "ticker": "BP",
+          "mic": "XNYS",
+          "share_class": "ADR",
+          "is_primary": true,
+          "trading_currency": "USD"
+        },
+        {
+          "ticker": "BP.L",
+          "mic": "XLON",
+          "share_class": "ordinary",
+          "is_primary": false,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_0907abf5bc1da7c7",
+      "display_name": "Berkshire Hathaway Inc.",
+      "kind": "multi_class",
+      "primary_ticker": "BRK.B",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1297717,
+      "listings": [
+        {
+          "ticker": "BRK.A",
+          "mic": "XNYS",
+          "share_class": "A",
+          "is_primary": false,
+          "trading_currency": "USD"
+        },
+        {
+          "ticker": "BRK.B",
+          "mic": "XNYS",
+          "share_class": "B",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_6b23c0d5f35d1b11",
+      "display_name": "Citigroup Inc.",
+      "kind": "bank",
+      "primary_ticker": "C",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1605237,
+      "listings": [
+        {
+          "ticker": "C",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_15b89a569474240a",
+      "display_name": "Caterpillar Inc.",
+      "kind": "general",
+      "primary_ticker": "CAT",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1419670,
+      "listings": [
+        {
+          "ticker": "CAT",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_bf7b0ead279760f8",
+      "display_name": "Chubb Limited",
+      "kind": "insurer",
+      "primary_ticker": "CB",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1212941,
+      "listings": [
+        {
+          "ticker": "CB",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_e1b83df3c19180d3",
+      "display_name": "Cadence Design Systems, Inc.",
+      "kind": "general",
+      "primary_ticker": "CDNS",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1648083,
+      "listings": [
+        {
+          "ticker": "CDNS",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_3e9fec11aed58a5c",
+      "display_name": "Cincinnati Financial Corporation",
+      "kind": "insurer",
+      "primary_ticker": "CINF",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1668049,
+      "listings": [
+        {
+          "ticker": "CINF",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_51a3f330a239cf44",
+      "display_name": "ConocoPhillips",
+      "kind": "general",
+      "primary_ticker": "COP",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1499120,
+      "listings": [
+        {
+          "ticker": "COP",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_acda47627f691f0d",
+      "display_name": "Costco Wholesale Corporation",
+      "kind": "general",
+      "primary_ticker": "COST",
+      "fiscal_year_end_month": 8,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1586274,
+      "listings": [
+        {
+          "ticker": "COST",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_130f70ae5b44ed4c",
+      "display_name": "Salesforce, Inc.",
+      "kind": "general",
+      "primary_ticker": "CRM",
+      "fiscal_year_end_month": 1,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1578990,
+      "listings": [
+        {
+          "ticker": "CRM",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_b326211c03c0c3df",
+      "display_name": "CrowdStrike Holdings, Inc.",
+      "kind": "general",
+      "primary_ticker": "CRWD",
+      "fiscal_year_end_month": 1,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1520508,
+      "listings": [
+        {
+          "ticker": "CRWD",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_1e477f590d4613e6",
+      "display_name": "Cisco Systems, Inc.",
+      "kind": "general",
+      "primary_ticker": "CSCO",
+      "fiscal_year_end_month": 7,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1502137,
+      "listings": [
+        {
+          "ticker": "CSCO",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_6bda74c96c41df2b",
+      "display_name": "CVS Health Corporation",
+      "kind": "general",
+      "primary_ticker": "CVS",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1678857,
+      "listings": [
+        {
+          "ticker": "CVS",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_cc1f4a044444f33a",
+      "display_name": "Chevron Corporation",
+      "kind": "general",
+      "primary_ticker": "CVX",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1202628,
+      "listings": [
+        {
+          "ticker": "CVX",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_32977eb69ebe3c87",
+      "display_name": "Clearway Energy, Inc.",
+      "kind": "multi_class",
+      "primary_ticker": "CWEN",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1389174,
+      "listings": [
+        {
+          "ticker": "CWEN",
+          "mic": "XNAS",
+          "share_class": "C",
+          "is_primary": true,
+          "trading_currency": "USD"
+        },
+        {
+          "ticker": "CWEN.A",
+          "mic": "XNYS",
+          "share_class": "A",
+          "is_primary": false,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_b0a8c8f2f15e6ed0",
+      "display_name": "Delta Air Lines, Inc.",
+      "kind": "general",
+      "primary_ticker": "DAL",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1051506,
+      "listings": [
+        {
+          "ticker": "DAL",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_1ce382dc148a7555",
+      "display_name": "DoorDash, Inc.",
+      "kind": "general",
+      "primary_ticker": "DASH",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1272220,
+      "listings": [
+        {
+          "ticker": "DASH",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_c94b1b55cc5c7123",
+      "display_name": "Datadog, Inc.",
+      "kind": "general",
+      "primary_ticker": "DDOG",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1342613,
+      "listings": [
+        {
+          "ticker": "DDOG",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_6814ef46f686990c",
+      "display_name": "Deere & Company",
+      "kind": "general",
+      "primary_ticker": "DE",
+      "fiscal_year_end_month": 10,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1402438,
+      "listings": [
+        {
+          "ticker": "DE",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_875caa8e41504857",
+      "display_name": "Digital Realty Trust, Inc.",
+      "kind": "reit",
+      "primary_ticker": "DLR",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1197134,
+      "listings": [
+        {
+          "ticker": "DLR",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_c10eb640cff82439",
+      "display_name": "Equinix, Inc.",
+      "kind": "reit",
+      "primary_ticker": "EQIX",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1066848,
+      "listings": [
+        {
+          "ticker": "EQIX",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_d3f1c16e7e6be9f8",
+      "display_name": "Equity Residential",
+      "kind": "reit",
+      "primary_ticker": "EQR",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1536270,
+      "listings": [
+        {
+          "ticker": "EQR",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_6c68142ed7e42b08",
+      "display_name": "FedEx Corporation",
+      "kind": "general",
+      "primary_ticker": "FDX",
+      "fiscal_year_end_month": 5,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1160238,
+      "listings": [
+        {
+          "ticker": "FDX",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_9b7e7185f484f7f5",
+      "display_name": "Fox Corporation",
+      "kind": "multi_class",
+      "primary_ticker": "FOXA",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1555077,
+      "listings": [
+        {
+          "ticker": "FOXA",
+          "mic": "XNAS",
+          "share_class": "A",
+          "is_primary": true,
+          "trading_currency": "USD"
+        },
+        {
+          "ticker": "FOX",
+          "mic": "XNAS",
+          "share_class": "B",
+          "is_primary": false,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_e87601989d7d2997",
+      "display_name": "GE Aerospace",
+      "kind": "general",
+      "primary_ticker": "GE",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1347768,
+      "listings": [
+        {
+          "ticker": "GE",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_a25fc665a45215b9",
+      "display_name": "Alphabet Inc.",
+      "kind": "multi_class",
+      "primary_ticker": "GOOGL",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1485701,
+      "listings": [
+        {
+          "ticker": "GOOGL",
+          "mic": "XNAS",
+          "share_class": "A",
+          "is_primary": true,
+          "trading_currency": "USD"
+        },
+        {
+          "ticker": "GOOG",
+          "mic": "XNAS",
+          "share_class": "C",
+          "is_primary": false,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_3ed0f46ad0ed8ad9",
+      "display_name": "The Goldman Sachs Group, Inc.",
+      "kind": "bank",
+      "primary_ticker": "GS",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1381450,
+      "listings": [
+        {
+          "ticker": "GS",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_323e41792751e840",
+      "display_name": "The Home Depot, Inc.",
+      "kind": "general",
+      "primary_ticker": "HD",
+      "fiscal_year_end_month": 1,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1140793,
+      "listings": [
+        {
+          "ticker": "HD",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_e7856a402ab217b1",
+      "display_name": "HEICO Corporation",
+      "kind": "multi_class",
+      "primary_ticker": "HEI",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1680384,
+      "listings": [
+        {
+          "ticker": "HEI",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        },
+        {
+          "ticker": "HEI.A",
+          "mic": "XNYS",
+          "share_class": "A",
+          "is_primary": false,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_f83bbe6ad5f593cb",
+      "display_name": "The Hartford Insurance Group, Inc.",
+      "kind": "insurer",
+      "primary_ticker": "HIG",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1364938,
+      "listings": [
+        {
+          "ticker": "HIG",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_cfacdabce4268185",
+      "display_name": "Honeywell International Inc.",
+      "kind": "general",
+      "primary_ticker": "HON",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1311900,
+      "listings": [
+        {
+          "ticker": "HON",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_b756e6b19c71172a",
+      "display_name": "HSBC Holdings plc",
+      "kind": "dual_listed",
+      "primary_ticker": "HSBC",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1125681,
+      "listings": [
+        {
+          "ticker": "HSBC",
+          "mic": "XNYS",
+          "share_class": "ADR",
+          "is_primary": true,
+          "trading_currency": "USD"
+        },
+        {
+          "ticker": "0005.HK",
+          "mic": "XHKG",
+          "share_class": "ordinary",
+          "is_primary": false,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_e0fbf35ceb35a020",
+      "display_name": "HubSpot, Inc.",
+      "kind": "general",
+      "primary_ticker": "HUBS",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1208220,
+      "listings": [
+        {
+          "ticker": "HUBS",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_973a4a818d799636",
+      "display_name": "International Business Machines Corporation",
+      "kind": "general",
+      "primary_ticker": "IBM",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1379777,
+      "listings": [
+        {
+          "ticker": "IBM",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_a1d2c920462d0868",
+      "display_name": "Intel Corporation",
+      "kind": "general",
+      "primary_ticker": "INTC",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1345824,
+      "listings": [
+        {
+          "ticker": "INTC",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_b8168927a6f98f45",
+      "display_name": "Intuit Inc.",
+      "kind": "general",
+      "primary_ticker": "INTU",
+      "fiscal_year_end_month": 7,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1084647,
+      "listings": [
+        {
+          "ticker": "INTU",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_4b984b3ea8cbabf5",
+      "display_name": "Iron Mountain Incorporated",
+      "kind": "reit",
+      "primary_ticker": "IRM",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1571934,
+      "listings": [
+        {
+          "ticker": "IRM",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_e57059d8f6907f2c",
+      "display_name": "Johnson & Johnson",
+      "kind": "general",
+      "primary_ticker": "JNJ",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1045496,
+      "listings": [
+        {
+          "ticker": "JNJ",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_b64a63240feae5b2",
+      "display_name": "JPMorgan Chase & Co.",
+      "kind": "bank",
+      "primary_ticker": "JPM",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1028356,
+      "listings": [
+        {
+          "ticker": "JPM",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_3bfe18773e5f53f7",
+      "display_name": "KLA Corporation",
+      "kind": "general",
+      "primary_ticker": "KLAC",
+      "fiscal_year_end_month": 6,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1608151,
+      "listings": [
+        {
+          "ticker": "KLAC",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_849af174c5b12dfa",
+      "display_name": "The Coca-Cola Company",
+      "kind": "general",
+      "primary_ticker": "KO",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1146868,
+      "listings": [
+        {
+          "ticker": "KO",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_ea6a8bc051ff45d6",
+      "display_name": "Lennar Corporation",
+      "kind": "multi_class",
+      "primary_ticker": "LEN",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1251136,
+      "listings": [
+        {
+          "ticker": "LEN",
+          "mic": "XNAS",
+          "share_class": "A",
+          "is_primary": true,
+          "trading_currency": "USD"
+        },
+        {
+          "ticker": "LEN.B",
+          "mic": "XNYS",
+          "share_class": "B",
+          "is_primary": false,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_4bac08627e22b898",
+      "display_name": "Eli Lilly and Company",
+      "kind": "general",
+      "primary_ticker": "LLY",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1465538,
+      "listings": [
+        {
+          "ticker": "LLY",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_5fbdda1b8c72e849",
+      "display_name": "Lowe's Companies, Inc.",
+      "kind": "general",
+      "primary_ticker": "LOW",
+      "fiscal_year_end_month": 1,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1477659,
+      "listings": [
+        {
+          "ticker": "LOW",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_f260ed6f793e6cb5",
+      "display_name": "Lam Research Corporation",
+      "kind": "general",
+      "primary_ticker": "LRCX",
+      "fiscal_year_end_month": 6,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1138511,
+      "listings": [
+        {
+          "ticker": "LRCX",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_f75ba00a00e32d5b",
+      "display_name": "McDonald's Corporation",
+      "kind": "general",
+      "primary_ticker": "MCD",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1377098,
+      "listings": [
+        {
+          "ticker": "MCD",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_a429a7da1255c729",
+      "display_name": "MongoDB, Inc.",
+      "kind": "general",
+      "primary_ticker": "MDB",
+      "fiscal_year_end_month": 1,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1393370,
+      "listings": [
+        {
+          "ticker": "MDB",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_df1704ca267d8be7",
+      "display_name": "MetLife, Inc.",
+      "kind": "insurer",
+      "primary_ticker": "MET",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1627722,
+      "listings": [
+        {
+          "ticker": "MET",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_2d1edf729cc53756",
+      "display_name": "Meta Platforms, Inc.",
+      "kind": "general",
+      "primary_ticker": "META",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1298002,
+      "listings": [
+        {
+          "ticker": "META",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_c928e9893944a613",
+      "display_name": "Moog Inc.",
+      "kind": "multi_class",
+      "primary_ticker": "MOG.A",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1201641,
+      "listings": [
+        {
+          "ticker": "MOG.A",
+          "mic": "XNYS",
+          "share_class": "A",
+          "is_primary": true,
+          "trading_currency": "USD"
+        },
+        {
+          "ticker": "MOG.B",
+          "mic": "XNYS",
+          "share_class": "B",
+          "is_primary": false,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_673f3ea02451550f",
+      "display_name": "Merck & Co., Inc.",
+      "kind": "general",
+      "primary_ticker": "MRK",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1398048,
+      "listings": [
+        {
+          "ticker": "MRK",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_b93441048d4e3b86",
+      "display_name": "Marvell Technology, Inc.",
+      "kind": "general",
+      "primary_ticker": "MRVL",
+      "fiscal_year_end_month": 1,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1609476,
+      "listings": [
+        {
+          "ticker": "MRVL",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_4d95e550b47c0122",
+      "display_name": "Morgan Stanley",
+      "kind": "bank",
+      "primary_ticker": "MS",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1369200,
+      "listings": [
+        {
+          "ticker": "MS",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_8638f0279b38c5e1",
+      "display_name": "Microsoft Corporation",
+      "kind": "general",
+      "primary_ticker": "MSFT",
+      "fiscal_year_end_month": 6,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1678439,
+      "listings": [
+        {
+          "ticker": "MSFT",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_a24c631b902b547e",
+      "display_name": "Micron Technology, Inc.",
+      "kind": "general",
+      "primary_ticker": "MU",
+      "fiscal_year_end_month": 8,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1615099,
+      "listings": [
+        {
+          "ticker": "MU",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_e2ffa4f10657fdc4",
+      "display_name": "Cloudflare, Inc.",
+      "kind": "general",
+      "primary_ticker": "NET",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1404721,
+      "listings": [
+        {
+          "ticker": "NET",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_2446d5d7e68e0d99",
+      "display_name": "NIKE, Inc.",
+      "kind": "general",
+      "primary_ticker": "NKE",
+      "fiscal_year_end_month": 5,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1322039,
+      "listings": [
+        {
+          "ticker": "NKE",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_97bfc0d9913d2b68",
+      "display_name": "ServiceNow, Inc.",
+      "kind": "general",
+      "primary_ticker": "NOW",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1026361,
+      "listings": [
+        {
+          "ticker": "NOW",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_426219f2bc198296",
+      "display_name": "NVIDIA Corporation",
+      "kind": "general",
+      "primary_ticker": "NVDA",
+      "fiscal_year_end_month": 1,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1025426,
+      "listings": [
+        {
+          "ticker": "NVDA",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_c4694f2e93d5c4e7",
+      "display_name": "Realty Income Corporation",
+      "kind": "reit",
+      "primary_ticker": "O",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1335886,
+      "listings": [
+        {
+          "ticker": "O",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_e14ece3ef1510d35",
+      "display_name": "Okta, Inc.",
+      "kind": "general",
+      "primary_ticker": "OKTA",
+      "fiscal_year_end_month": 1,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1038206,
+      "listings": [
+        {
+          "ticker": "OKTA",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_71ed90c9c15c54fd",
+      "display_name": "Oracle Corporation",
+      "kind": "general",
+      "primary_ticker": "ORCL",
+      "fiscal_year_end_month": 5,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1394505,
+      "listings": [
+        {
+          "ticker": "ORCL",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_f64493939ba13fff",
+      "display_name": "Palo Alto Networks, Inc.",
+      "kind": "general",
+      "primary_ticker": "PANW",
+      "fiscal_year_end_month": 7,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1289363,
+      "listings": [
+        {
+          "ticker": "PANW",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_ad200d016a11b48b",
+      "display_name": "PepsiCo, Inc.",
+      "kind": "general",
+      "primary_ticker": "PEP",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1258849,
+      "listings": [
+        {
+          "ticker": "PEP",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_732df12a95b51656",
+      "display_name": "Pfizer Inc.",
+      "kind": "general",
+      "primary_ticker": "PFE",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1390698,
+      "listings": [
+        {
+          "ticker": "PFE",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_91f026c996feb335",
+      "display_name": "The Procter & Gamble Company",
+      "kind": "general",
+      "primary_ticker": "PG",
+      "fiscal_year_end_month": 6,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1534889,
+      "listings": [
+        {
+          "ticker": "PG",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_0aa22b84b77e8c1d",
+      "display_name": "The Progressive Corporation",
+      "kind": "insurer",
+      "primary_ticker": "PGR",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1600132,
+      "listings": [
+        {
+          "ticker": "PGR",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_edee38ac5b4308a8",
+      "display_name": "Prologis, Inc.",
+      "kind": "reit",
+      "primary_ticker": "PLD",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1412268,
+      "listings": [
+        {
+          "ticker": "PLD",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_93f986dfd0612406",
+      "display_name": "Palantir Technologies Inc.",
+      "kind": "general",
+      "primary_ticker": "PLTR",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1403743,
+      "listings": [
+        {
+          "ticker": "PLTR",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_be6c1969de670ae3",
+      "display_name": "The PNC Financial Services Group, Inc.",
+      "kind": "bank",
+      "primary_ticker": "PNC",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1655433,
+      "listings": [
+        {
+          "ticker": "PNC",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_b38489502bd7d39e",
+      "display_name": "Prudential Financial, Inc.",
+      "kind": "insurer",
+      "primary_ticker": "PRU",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1407568,
+      "listings": [
+        {
+          "ticker": "PRU",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_9c2803bdee7e1887",
+      "display_name": "Public Storage",
+      "kind": "reit",
+      "primary_ticker": "PSA",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1468093,
+      "listings": [
+        {
+          "ticker": "PSA",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_a59e305d64206c90",
+      "display_name": "PayPal Holdings, Inc.",
+      "kind": "general",
+      "primary_ticker": "PYPL",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1307709,
+      "listings": [
+        {
+          "ticker": "PYPL",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_bfceb2656bd0db5f",
+      "display_name": "QUALCOMM Incorporated",
+      "kind": "general",
+      "primary_ticker": "QCOM",
+      "fiscal_year_end_month": 9,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1094341,
+      "listings": [
+        {
+          "ticker": "QCOM",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_e2f7e6724038ea7e",
+      "display_name": "Roblox Corporation",
+      "kind": "general",
+      "primary_ticker": "RBLX",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1597202,
+      "listings": [
+        {
+          "ticker": "RBLX",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_b1d530afe4c15a78",
+      "display_name": "Rio Tinto Group",
+      "kind": "dual_listed",
+      "primary_ticker": "RIO",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1138863,
+      "listings": [
+        {
+          "ticker": "RIO",
+          "mic": "XNYS",
+          "share_class": "ADR",
+          "is_primary": true,
+          "trading_currency": "USD"
+        },
+        {
+          "ticker": "RIO.L",
+          "mic": "XLON",
+          "share_class": "ordinary",
+          "is_primary": false,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_b6191bbbc00d24eb",
+      "display_name": "Royal Bank of Canada",
+      "kind": "dual_listed",
+      "primary_ticker": "RY",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "CAD",
+      "cik_synthetic": 1298811,
+      "listings": [
+        {
+          "ticker": "RY",
+          "mic": "XNYS",
+          "share_class": "ADR",
+          "is_primary": true,
+          "trading_currency": "USD"
+        },
+        {
+          "ticker": "RY.TO",
+          "mic": "XTSE",
+          "share_class": "ordinary",
+          "is_primary": false,
+          "trading_currency": "CAD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_5a06b98b21528d30",
+      "display_name": "SAP SE",
+      "kind": "dual_listed",
+      "primary_ticker": "SAP",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "EUR",
+      "cik_synthetic": 1490155,
+      "listings": [
+        {
+          "ticker": "SAP",
+          "mic": "XNYS",
+          "share_class": "ADR",
+          "is_primary": true,
+          "trading_currency": "USD"
+        },
+        {
+          "ticker": "SAP.DE",
+          "mic": "XETR",
+          "share_class": "ordinary",
+          "is_primary": false,
+          "trading_currency": "EUR"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_6eec4bbf25ff5291",
+      "display_name": "Starbucks Corporation",
+      "kind": "general",
+      "primary_ticker": "SBUX",
+      "fiscal_year_end_month": 9,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1379647,
+      "listings": [
+        {
+          "ticker": "SBUX",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_b61e0cc7d4b1ff3e",
+      "display_name": "The Charles Schwab Corporation",
+      "kind": "bank",
+      "primary_ticker": "SCHW",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1622663,
+      "listings": [
+        {
+          "ticker": "SCHW",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_6d4d9d5bb3945c75",
+      "display_name": "Shell plc",
+      "kind": "dual_listed",
+      "primary_ticker": "SHEL",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1503099,
+      "listings": [
+        {
+          "ticker": "SHEL",
+          "mic": "XNYS",
+          "share_class": "ADR",
+          "is_primary": true,
+          "trading_currency": "USD"
+        },
+        {
+          "ticker": "SHEL.L",
+          "mic": "XLON",
+          "share_class": "ordinary",
+          "is_primary": false,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_1ed8f0748b4186f6",
+      "display_name": "Shopify Inc.",
+      "kind": "general",
+      "primary_ticker": "SHOP",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1233812,
+      "listings": [
+        {
+          "ticker": "SHOP",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_daa1956c04cea966",
+      "display_name": "Snowflake Inc.",
+      "kind": "general",
+      "primary_ticker": "SNOW",
+      "fiscal_year_end_month": 1,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1022636,
+      "listings": [
+        {
+          "ticker": "SNOW",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_953c8cec9ede4191",
+      "display_name": "Synopsys, Inc.",
+      "kind": "general",
+      "primary_ticker": "SNPS",
+      "fiscal_year_end_month": 10,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1573420,
+      "listings": [
+        {
+          "ticker": "SNPS",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_ab28bb8390566492",
+      "display_name": "Simon Property Group, Inc.",
+      "kind": "reit",
+      "primary_ticker": "SPG",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1173379,
+      "listings": [
+        {
+          "ticker": "SPG",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_b31dbe9abcd2cf11",
+      "display_name": "Spotify Technology S.A.",
+      "kind": "general",
+      "primary_ticker": "SPOT",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1671002,
+      "listings": [
+        {
+          "ticker": "SPOT",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_6c78e0e17576dce9",
+      "display_name": "State Street Corporation",
+      "kind": "bank",
+      "primary_ticker": "STT",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1561217,
+      "listings": [
+        {
+          "ticker": "STT",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_f404d4ef53431418",
+      "display_name": "Atlassian Corporation",
+      "kind": "general",
+      "primary_ticker": "TEAM",
+      "fiscal_year_end_month": 6,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1357359,
+      "listings": [
+        {
+          "ticker": "TEAM",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_bb2999daac39db5c",
+      "display_name": "Truist Financial Corporation",
+      "kind": "bank",
+      "primary_ticker": "TFC",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1565754,
+      "listings": [
+        {
+          "ticker": "TFC",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_655caf7addefeefb",
+      "display_name": "Target Corporation",
+      "kind": "general",
+      "primary_ticker": "TGT",
+      "fiscal_year_end_month": 1,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1273050,
+      "listings": [
+        {
+          "ticker": "TGT",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_2f9b3cd8032d1c58",
+      "display_name": "The Travelers Companies, Inc.",
+      "kind": "insurer",
+      "primary_ticker": "TRV",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1002808,
+      "listings": [
+        {
+          "ticker": "TRV",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_2ff6985a9799a3a9",
+      "display_name": "Tesla, Inc.",
+      "kind": "general",
+      "primary_ticker": "TSLA",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1390010,
+      "listings": [
+        {
+          "ticker": "TSLA",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_cb15b056a5ad5c98",
+      "display_name": "Taiwan Semiconductor Manufacturing Company Limited",
+      "kind": "dual_listed",
+      "primary_ticker": "TSM",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "TWD",
+      "cik_synthetic": 1296246,
+      "listings": [
+        {
+          "ticker": "TSM",
+          "mic": "XNYS",
+          "share_class": "ADR",
+          "is_primary": true,
+          "trading_currency": "USD"
+        },
+        {
+          "ticker": "2330.TW",
+          "mic": "XTAI",
+          "share_class": "ordinary",
+          "is_primary": false,
+          "trading_currency": "TWD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_1ea800dcfe5b102f",
+      "display_name": "Twilio Inc.",
+      "kind": "general",
+      "primary_ticker": "TWLO",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1526748,
+      "listings": [
+        {
+          "ticker": "TWLO",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_cb1d474948e3b8bc",
+      "display_name": "Texas Instruments Incorporated",
+      "kind": "general",
+      "primary_ticker": "TXN",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1093641,
+      "listings": [
+        {
+          "ticker": "TXN",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_9dd912ab0bf732c5",
+      "display_name": "United Airlines Holdings, Inc.",
+      "kind": "general",
+      "primary_ticker": "UAL",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1149003,
+      "listings": [
+        {
+          "ticker": "UAL",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_ba1ee3045e9bd90e",
+      "display_name": "Uber Technologies, Inc.",
+      "kind": "general",
+      "primary_ticker": "UBER",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1586372,
+      "listings": [
+        {
+          "ticker": "UBER",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_c9e3119bc2ea08bf",
+      "display_name": "U-Haul Holding Company",
+      "kind": "multi_class",
+      "primary_ticker": "UHAL",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1501595,
+      "listings": [
+        {
+          "ticker": "UHAL",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        },
+        {
+          "ticker": "UHAL.B",
+          "mic": "XNYS",
+          "share_class": "N",
+          "is_primary": false,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_6138f40c9673bed1",
+      "display_name": "Unilever PLC",
+      "kind": "dual_listed",
+      "primary_ticker": "UL",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "EUR",
+      "cik_synthetic": 1122444,
+      "listings": [
+        {
+          "ticker": "UL",
+          "mic": "XNYS",
+          "share_class": "ADR",
+          "is_primary": true,
+          "trading_currency": "USD"
+        },
+        {
+          "ticker": "UL.L",
+          "mic": "XLON",
+          "share_class": "ordinary",
+          "is_primary": false,
+          "trading_currency": "EUR"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_36877c0a7e6cd61b",
+      "display_name": "UnitedHealth Group Incorporated",
+      "kind": "general",
+      "primary_ticker": "UNH",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1648778,
+      "listings": [
+        {
+          "ticker": "UNH",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_356479227b434e95",
+      "display_name": "United Parcel Service, Inc.",
+      "kind": "general",
+      "primary_ticker": "UPS",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1477058,
+      "listings": [
+        {
+          "ticker": "UPS",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_61f0acff1735aac4",
+      "display_name": "U.S. Bancorp",
+      "kind": "bank",
+      "primary_ticker": "USB",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1262879,
+      "listings": [
+        {
+          "ticker": "USB",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_7583eba4fd0e8759",
+      "display_name": "Ventas, Inc.",
+      "kind": "reit",
+      "primary_ticker": "VTR",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1379812,
+      "listings": [
+        {
+          "ticker": "VTR",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_ab337f148b170b7d",
+      "display_name": "Workday, Inc.",
+      "kind": "general",
+      "primary_ticker": "WDAY",
+      "fiscal_year_end_month": 1,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1178804,
+      "listings": [
+        {
+          "ticker": "WDAY",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_ae80518fd8a7562f",
+      "display_name": "Welltower Inc.",
+      "kind": "reit",
+      "primary_ticker": "WELL",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1245071,
+      "listings": [
+        {
+          "ticker": "WELL",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_e7426f32fe515d04",
+      "display_name": "Wells Fargo & Company",
+      "kind": "bank",
+      "primary_ticker": "WFC",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1490738,
+      "listings": [
+        {
+          "ticker": "WFC",
+          "mic": "XNYS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_dd388dd2270e268f",
+      "display_name": "Walmart Inc.",
+      "kind": "general",
+      "primary_ticker": "WMT",
+      "fiscal_year_end_month": 1,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1071058,
+      "listings": [
+        {
+          "ticker": "WMT",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_b8b420a4c8207015",
+      "display_name": "Exxon Mobil Corporation",
+      "kind": "general",
+      "primary_ticker": "XOM",
+      "fiscal_year_end_month": 12,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1612580,
+      "listings": [
+        {
+          "ticker": "XOM",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    },
+    {
+      "issuer_id": "iss_7dd589016eebc634",
+      "display_name": "Zscaler, Inc.",
+      "kind": "general",
+      "primary_ticker": "ZS",
+      "fiscal_year_end_month": 7,
+      "reporting_currency": "USD",
+      "cik_synthetic": 1646241,
+      "listings": [
+        {
+          "ticker": "ZS",
+          "mic": "XNAS",
+          "share_class": "common",
+          "is_primary": true,
+          "trading_currency": "USD"
+        }
+      ]
+    }
+  ]
+}

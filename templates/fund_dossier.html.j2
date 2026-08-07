@@ -284,7 +284,7 @@ table.sm-t th.sorted { color:var(--text); }
   </div>
   <div class="metacol">
     <span class="chip-fresh t-amber"><span class="fdot"></span>{{ t('13F · quarterly · ~45-day lag','13F · 季度披露 · 约45天滞后') }}</span>
-    {% if FILED %}<span class="chip-fresh">{{ t('filed','申报日') }} <b class="num">{{ FILED }}</b>{% if PEND %} · {{ t('period end','期末') }} <b class="num">{{ PEND }}</b>{% endif %}</span>{% endif %}
+    {% if FILED %}<span class="chip-fresh">{{ t('filed','披露日') }} <b class="num">{{ FILED }}</b>{% if PEND %} · {{ t('period end','期末') }} <b class="num">{{ PEND }}</b>{% endif %}</span>{% endif %}
     {% if generated_utc %}<span class="chip-fresh">{{ t('generated','生成于') }} <span class="num">{{ generated_utc }}</span></span>{% endif %}
     {% if SLUG %}<a class="chip-fresh" href="funddata/{{ SLUG }}.json">{{ t('Data (JSON)','数据 (JSON)') }}</a>{% endif %}
   </div>
@@ -323,7 +323,7 @@ table.sm-t th.sorted { color:var(--text); }
   <div class="fd-stat">
     <div class="k">{{ t('Median excess','中位超额') }}</div>
     <div class="v">{{ exret(LB.get('median_buy_excess')) }}</div>
-    <div class="s">{{ t('buys vs SPY, since filing','买入相对SPY，自申报起') }}{% if LB.get('n_buys') %} · n {{ LB.get('n_buys') }}{% endif %}</div>
+    <div class="s">{{ t('buys vs SPY, since filing','买入相对SPY，自披露起') }}{% if LB.get('n_buys') %} · n {{ LB.get('n_buys') }}{% endif %}</div>
   </div>
   <div class="fd-stat">
     <div class="k">{{ t('Hit rate','胜率') }}</div>
@@ -371,7 +371,7 @@ table.sm-t th.sorted { color:var(--text); }
   {% endif %}
   <div class="lean-note">{{ t(
     'Descriptive read of the latest filing — themes clustered from curated baskets (Finviz fallback), added-pp = Σ % of book bought this quarter. Not a forecast.',
-    '基于最新申报的描述性解读——主题按精选篮子聚类（Finviz 兜底），added-pp = 本季度买入占组合百分比之和。非预测。'
+    '基于最新披露的描述性解读——主题按精选篮子聚类（Finviz 兜底），added-pp = 本季度买入占组合百分比之和。非预测。'
   ) }}</div>
 </div>
 
@@ -380,7 +380,7 @@ table.sm-t th.sorted { color:var(--text); }
 {# ======================================================================== #}
 <div class="sm-sec" id="fd-history">
   <h2>{{ t('Grade &amp; excess history','评级与超额历史') }}</h2>
-  <span class="h-note">{{ t('per-quarter buy cohorts, scored on public filing dates vs SPY — descriptive ranks in a curated survivor cohort','按季度买入队列，以公开申报日为锚相对SPY评分——精选幸存者队列中的描述性排名') }}</span>
+  <span class="h-note">{{ t('per-quarter buy cohorts, scored on public filing dates vs SPY — descriptive ranks in a curated survivor cohort','按季度买入队列，以公开披露日为锚相对SPY评分——精选幸存者队列中的描述性排名') }}</span>
 </div>
 
 <div class="sm-card">
@@ -430,7 +430,7 @@ table.sm-t th.sorted { color:var(--text); }
 {# ======================================================================== #}
 <div class="sm-sec" id="fd-sector">
   <h2>{{ t('Sector exposure &amp; rotation','行业配置与轮动') }}</h2>
-  <span class="h-note">{{ t('value-weighted, latest filing; QoQ deltas vs prior quarter','按市值加权，最新申报；季度环比变化对上季') }}</span>
+  <span class="h-note">{{ t('value-weighted, latest filing; QoQ deltas vs prior quarter','按市值加权，最新披露；季度环比变化对上季') }}</span>
 </div>
 
 <div class="banner">{{ t(
@@ -522,7 +522,7 @@ table.sm-t th.sorted { color:var(--text); }
 {# ======================================================================== #}
 <div class="sm-sec" id="fd-book-sec">
   <h2>{{ t('Full book','完整持仓') }}</h2>
-  <span class="h-note">{{ t('every resolved position as filed — click a column header to sort. Conviction is a descriptive composite, not a forecast.','截至申报日的全部已解析持仓——点击列头排序。信念分为描述性综合指标，非预测。') }}</span>
+  <span class="h-note">{{ t('every resolved position as filed — click a column header to sort. Conviction is a descriptive composite, not a forecast.','截至披露日的全部已解析持仓——点击列头排序。信念分为描述性综合指标，非预测。') }}</span>
 </div>
 
 <div class="sm-card">
@@ -554,7 +554,7 @@ table.sm-t th.sorted { color:var(--text); }
       <th class="l">{{ t('Themes','主题') }}</th>
       <th class="sortable" data-col="since" onclick="fdSort('since')"
           data-tip-en="Excess vs SPY since this fund's filing date (variable hold — same convention as the tracker)."
-          data-tip-zh="自该基金申报日起相对SPY的超额（持有期不定——与追踪器口径一致）。">{{ t('Since filing','自申报') }} <span class="sort-ind">↕</span></th>
+          data-tip-zh="自该基金披露日起相对SPY的超额（持有期不定——与追踪器口径一致）。">{{ t('Since filing','自披露') }} <span class="sort-ind">↕</span></th>
     </tr></thead>
     <tbody id="fd-book-body">
     {% for p in BOOK %}
@@ -617,7 +617,7 @@ table.sm-t th.sorted { color:var(--text); }
 {# ======================================================================== #}
 <div class="sm-sec" id="fd-rotation">
   <h2>{{ t('Rotation detail','轮动明细') }}</h2>
-  <span class="h-note">{{ t('this filing cycle, uncapped — adds/new and trims from the resolved book, exits from the rotation feed','本申报周期，不设上限——新建/加仓与减持取自已解析持仓，清仓取自轮动数据') }}</span>
+  <span class="h-note">{{ t('this filing cycle, uncapped — adds/new and trims from the resolved book, exits from the rotation feed','本披露周期，不设上限——新建/加仓与减持取自已解析持仓，清仓取自轮动数据') }}</span>
 </div>
 
 <div class="sm-card">
@@ -676,18 +676,18 @@ table.sm-t th.sorted { color:var(--text); }
 {# ======================================================================== #}
 <div class="sm-sec" id="fd-trades">
   <h2>{{ t('Trade log','交易记录') }}</h2>
-  <span class="h-note">{{ t('last 40 graded trades, filing-date anchored, newest first — variable hold vs SPY','最近40笔已评分交易，以申报日为锚，最新在前——持有期不定，相对SPY') }}</span>
+  <span class="h-note">{{ t('last 40 graded trades, filing-date anchored, newest first — variable hold vs SPY','最近40笔已评分交易，以披露日为锚，最新在前——持有期不定，相对SPY') }}</span>
 </div>
 
 <div class="sm-card">
   {% if TLOG %}
   <table class="sm-t">
     <thead><tr>
-      <th class="l">{{ t('Filed','申报日') }}</th>
+      <th class="l">{{ t('Filed','披露日') }}</th>
       <th class="l">{{ t('Ticker','标的') }}</th>
       <th>{{ t('Action','动作') }}</th>
       <th>{{ t('% book','仓位%') }}</th>
-      <th>{{ t('Since excess','自申报超额') }}</th>
+      <th>{{ t('Since excess','自披露超额') }}</th>
       <th>{{ t('Abs / SPY','绝对/SPY') }}</th>
       <th>{{ t('Hold','持有') }}</th>
     </tr></thead>
@@ -725,7 +725,7 @@ table.sm-t th.sorted { color:var(--text); }
   ) }}
   {{ t(
     'Grades and reliability are descriptive ranks within a curated survivor cohort — they measure what filings did after their filing dates, not a manager-selection edge. Conviction and core-lean reads are descriptive composites earning a forward record via the pre-registered ledger (L5); sector/theme classification applies the current map to history.',
-    '评级与可靠性为精选幸存者队列中的描述性排名——衡量申报日之后持仓的表现，而非经理选择能力。信念分与核心倾向为描述性综合指标，通过预注册账本（L5）积累前瞻记录；行业/主题分类将当前映射应用于历史。'
+    '评级与可靠性为精选幸存者队列中的描述性排名——衡量披露日之后持仓的表现，而非经理选择能力。信念分与核心倾向为描述性综合指标，通过预注册账本（L5）积累前瞻记录；行业/主题分类将当前映射应用于历史。'
   ) }}
 </div>
 

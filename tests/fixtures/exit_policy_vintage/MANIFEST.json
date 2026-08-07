@@ -1,0 +1,19 @@
+{
+ "source_ref": "c6fc135632fc7b6629a400434ffa74bda9637d26",
+ "source_ref_short": "c6fc135632fc",
+ "ledger_as_of": "2026-07-31",
+ "priced_through": "2026-07-31",
+ "priced_through_backfilled": true,
+ "n_tickers": 383,
+ "n_sessions": 777,
+ "n_board_days": 17,
+ "n_snapshot_lines": 17,
+ "provenance": {
+  "n_days_snapshots": 17,
+  "n_days_retro_only": 0,
+  "n_tickers_added_by_retro": 0,
+  "n_days_before_definition": 0
+ },
+ "regenerate_with": "python3 scripts/build_exit_policy_vintage_fixture.py",
+ "why": "Reconstruction fidelity is pinned to a FROZEN INPUT SLICE because collect re-adjusts historical closes in place, so no date clip can restore like-for-like against a live cache. See the module docstring."
+}

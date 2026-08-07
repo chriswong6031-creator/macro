@@ -35,7 +35,7 @@
      `null` for a local-only build). A page that sets window.SUPABASE_CFG inline
      (e.g. watchlist.html) wins, so the value is identical either way. The
      publishable key is PUBLIC by design; per-user isolation is enforced by RLS. */
-  window.SUPABASE_CFG = window.SUPABASE_CFG || {"url": "https://fsldfzlxyavsuwqbceod.supabase.co", "anonKey": "sb_publishable_f33VG8fZuyIZPl_lZIDX3w_RFuuZtpv"};
+  window.SUPABASE_CFG = window.SUPABASE_CFG || {"url": "https://fsldfzlxyavsuwqbceod.supabase.co", "anonKey": "sb_publishable_f33VG8fZuyIZPl_lZIDX3w_RFuuZtpv", "ref": "fsldfzlxyavsuwqbceod"};
 
   /* ---- Google Analytics 4 (gtag.js) ---------------------------------------
      Injected once on EVERY page via this one shared script (every page loads
@@ -1701,8 +1701,18 @@
     for (var k in map) { if (map.hasOwnProperty(k) && /^sb-.*-auth-token(\.\d+)?$/.test(k)) return true; }
     return false;
   }
+  // The session cookie is keyed by the PROJECT, not by whichever host the browser
+  // was pointed at. `ref` is baked by lib/site_assets.supabase_cfg_json and is always
+  // the project ref; deriving from _sbCfg.url is the legacy fallback and is correct
+  // only while url IS the project. Once url is a proxy origin (GFW — see config.yml
+  // watchlist.supabase.browser_url) that derivation yields `sb-www-auth-token` while
+  // app.main._sb_storage_key still reads `sb-<ref>-auth-token`: every session orphaned,
+  // every user logged out, and the server blind to sessions from then on.
   function _storageKey() {
-    try { return 'sb-' + new URL(_sbCfg.url).hostname.split('.')[0] + '-auth-token'; }
+    try {
+      if (_sbCfg && _sbCfg.ref) return 'sb-' + _sbCfg.ref + '-auth-token';
+      return 'sb-' + new URL(_sbCfg.url).hostname.split('.')[0] + '-auth-token';
+    }
     catch (e) { return 'sb-auth-token'; }
   }
   function _isAuthReturn() {

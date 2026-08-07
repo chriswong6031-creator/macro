@@ -162,7 +162,7 @@
   <h1>{{ t('Congressional Trades', '国会交易') }}</h1>
   <p class="cg-sub">{{ t(
      'Every member of the U.S. House and Senate must disclose their stock trades (the STOCK Act). We pull those filings from Quiver Quantitative and turn them into a copy-signal watchlist: a ticker joins the moment a member discloses a trade in it and stays ~6 months from its latest transaction before falling off. Names disclosed by more — and bipartisan — members rank as more important. Each name is then scored on the politician cluster, the engine technical read, and a sector/theme buyable-zone gate. The cluster generates the idea; the engine confirms it — a heavily-bought name that is extended or rolling over is high-interest but not "act now." Display / research only.',
-     '美国国会参众两院议员必须披露其股票交易（STOCK 法案）。我们从 Quiver Quantitative 获取这些申报，转化为可跟单的观察清单：一旦有议员披露某标的交易，它即进入清单，并从最近一次交易日起保留约 6 个月后移出。被更多议员（尤其两党共同）披露的名字更重要。随后按政界集群、引擎技术面与板块/主题可买区间评分。集群产生想法，引擎负责确认——被大量买入但已过度拉升或走弱的名字关注度高，但并非"现在就买"。仅供展示/研究。') }}</p>
+     '美国国会参众两院议员必须披露其股票交易（STOCK 法案）。我们从 Quiver Quantitative 获取这些披露文件，转化为可跟单的观察清单：一旦有议员披露某标的交易，它即进入清单，并从最近一次交易日起保留约 6 个月后移出。被更多议员（尤其两党共同）披露的名字更重要。随后按政界集群、引擎技术面与板块/主题可买区间评分。集群产生想法，引擎负责确认——被大量买入但已过度拉升或走弱的名字关注度高，但并非"现在就买"。仅供展示/研究。') }}</p>
   <div class="cg-meta">
     <span class="chip tag-event">Quiver Quantitative</span>
     <span class="chip">{{ t('As of', '截至') }} {{ summary.as_of }}</span>
@@ -381,7 +381,7 @@
         {% if it.is_etf %}<span class="cg-flag etf" data-tip-en="ETF — individual conviction is fund-level, not stock-picking" data-tip-zh="ETF — 个人信念是基金层面，非选股">ETF</span>{% endif %}
         {% if it.single_member %}<span class="cg-flag stale" data-tip-en="Single member only — lower cluster signal" data-tip-zh="仅1位议员 — 集群信号较弱">1 member</span>{% endif %}
         {% if it.all_stale %}<span class="cg-flag stale" data-tip-en="All transactions &gt;90d ago — stale position" data-tip-zh="所有交易超90天前 — 陈旧仓位">stale</span>{% endif %}
-        {% if it.any_late_filing %}<span class="cg-flag late" data-tip-en="At least one filing exceeded the 45-day STOCK Act deadline" data-tip-zh="至少一笔申报超过 STOCK 法案 45 天截止日">late ⚠️</span>{% endif %}
+        {% if it.any_late_filing %}<span class="cg-flag late" data-tip-en="At least one filing exceeded the 45-day STOCK Act deadline" data-tip-zh="至少一笔披露超过 STOCK 法案 45 天截止日">late ⚠️</span>{% endif %}
       </td>
       <td class="mut2" style="font-size:11.5px">
         {% if it.timing %}{{ t(it.timing, TIMING_ZH.get(it.timing, it.timing)) }}{% else %}—{% endif %}{% if not it.covered %} <span style="font-size:10px">({{ t('no engine coverage','无引擎覆盖') }})</span>{% endif %}
@@ -482,7 +482,7 @@
 {# ---------------- the raw disclosure feed ---------------- #}
 <div class="cg-card">
   <h2>🗳️ {{ t('Recent disclosures', '最新披露') }}
-      <span class="h-note">— {{ t('newest filings first; ExcessReturn = cumulative excess vs SPY since trade date (horizon-inconsistent — older trades have more time to compound)','最新申报在前；超额收益 = 自交易日起累计超越标普（时间不一致——老交易有更多时间复利）') }}</span></h2>
+      <span class="h-note">— {{ t('newest filings first; ExcessReturn = cumulative excess vs SPY since trade date (horizon-inconsistent — older trades have more time to compound)','最新披露在前；超额收益 = 自交易日起累计超越标普（时间不一致——老交易有更多时间复利）') }}</span></h2>
   {% if feed %}
   <table class="ad" id="cgFeedTable"><thead><tr>
     <th>{{ t('Disclosed','披露日') }}</th>
@@ -494,7 +494,7 @@
     <th class="num">{{ t('vs SPY','相对标普') }}</th>
     <th>{{ t('Traded','交易日') }}</th>
     <th class="num">{{ t('Tx age','交易年龄') }}</th>
-    <th class="num">{{ t('Filing lag','申报滞后') }}</th>
+    <th class="num">{{ t('Filing lag','披露滞后') }}</th>
   </tr></thead><tbody>
   {% for r in feed %}
     <tr>

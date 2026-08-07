@@ -4,11 +4,15 @@
     {
       "as_of": "2026-08-06",
       "tickers": [
-        "AMZN",
-        "DVA",
-        "EWAV",
-        "MDB",
-        "NUE",
+        "ARES",
+        "CDW",
+        "CUBI",
+        "CWK",
+        "FCX",
+        "GE",
+        "HII",
+        "LPG",
+        "SSPC",
         "XIIIU"
       ]
     },
