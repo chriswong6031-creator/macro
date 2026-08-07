@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T08:31:22.925380+00:00",
-  "count": 929,
+  "generated_at": "2026-08-07T08:46:37.499313+00:00",
+  "count": 930,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -2147,6 +2147,26 @@
         "**Labor Share Depression**: Labor share of national income hit all-time low in Q2 2026, reflecting genuine decline in labor bargaining power (not measurement error); AI models predict further decline, threatening corporate margins and labor costs.",
         "**Reliable Proxy Metric**: Net capital share (QFR data) mirrors labor share trends despite 2017 tax act distortions, providing a critical alternative metric for portfolio analysis.",
         "**Elevated Capital Returns**: Nonfinancial corporate sector’s rate of return (before/after tax) remains above historical norms through Q2 2026, indicating persistent capital returns post-pandemic."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qdqvvh2r7z7-56cb45",
+      "title": "Forward Misguidance",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-05T11:01:14Z",
+      "summary_points": [
+        "**Forward Guidance Rejection**: Warsh’s rejection of forward guidance heightens short-term volatility amid geopolitical uncertainty, clashing with market need for policy clarity (per document’s \"implications\" and Chart 1).",
+        "**Neutral-Rate Unreliability**: Model-based neutral-rate estimates (r*) have wide confidence intervals, rendering them unhelpful for policy; market signals (e.g., long-term yields) now better reflect policy-relevant information amid supply shocks.",
+        "**Policy Focus Divergence**: Fed’s dot-implied inflation outlook (Chart 5) diverges from market-implied two-year rate changes, highlighting misalignment between central bank signals and market expectations.",
+        "**Flexible Framework Shift**: Central banks adopting \"framework guidance\" (e.g., ECB, BoE) with multiple scenarios to address supply shocks, moving beyond rigid forward guidance to capture evolving market dynamics."
       ],
       "tags": [],
       "tickers": [],
