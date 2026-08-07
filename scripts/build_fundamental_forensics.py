@@ -171,7 +171,7 @@ def _source_links(cik: int | None, filed: str | None) -> list[dict[str, Any]]:
     return [
         {
             "label_en": "SEC filing history",
-            "label_zh": "SEC 申报历史",
+            "label_zh": "SEC 披露历史",
             "date": filed,
             "url": f"https://www.sec.gov/edgar/browse/?CIK={int(cik)}&owner=exclude&action=getcompany",
             "basis": "filing_index",
@@ -706,7 +706,7 @@ def compose_state(root: Path, *, generated_at: str | None = None) -> dict[str, A
                 "Findings are deterministic review prompts, not misconduct claims, ratings, or trading signals.",
             ],
             "limitations_zh": [
-                "广覆盖报表投影保留申报日期，但并非 accession 一致；下方可选披露记录拥有各自的 accession 与来源回执谱系。",
+                "广覆盖报表投影保留披露日期，但并非 accession 一致；下方可选披露记录拥有各自的 accession 与来源回执谱系。",
                 "季度流量字段可能由年初至今数据推导，不同指标也可能来自独立选择的标准概念。",
                 "依赖任何发现前请打开 SEC 来源端点；公司自定义分类及公司行动可能需要人工复核。",
                 "发现是确定性的复核提示，不是欺诈指控、评级或交易信号。",

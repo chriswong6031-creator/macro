@@ -100,9 +100,57 @@ fresh checks decide on a later sweep. If it has not, the existing green still
 means what it said. That is the operator's chosen option — NOT strict
 up-to-date-with-main, which would serialise a 60-PR queue into days.
 
+THE SWEEPER CAN STARVE ITSELF (measured 2026-08-07). Everything above spends API
+calls without ever asking how many are left. `READ_TOKEN` is the job's own
+`GITHUB_TOKEN`, whose Actions quota is **1,000 requests per hour PER REPOSITORY**
+— shared by every concurrent sweep and by every other lane in this repo that
+reads with `GITHUB_TOKEN`. A full sweep of the armed backlog costs roughly
+
+    1 listing + ~3 baseline + 1 main timeline + ~6 walking main for a proved
+      commit + 1 per pull request (check runs) + ~4 per pull request that is
+      clean-but-refused (files, merge, settled, update-branch)
+
+which run 31148157570 (04:39Z, 93 pull requests: 84 blocked / 5 conflict /
+4 pending) spent as ~121 calls in 82 seconds. The `workflow_run` trigger fires
+far more often than that budget allows — 23-28 non-skipped sweeps in the 02Z
+hour — so 28 x 121 = ~3,400 calls against a 1,000/hr bucket. The bucket empties,
+every later sweep 403s on its FIRST call, and because sweeps keep firing they
+keep consuming each refill. Measured outage: continuous failure 03:34Z-04:38Z,
+recovery at 04:39Z, one clean hourly window.
+
+That is a self-sustaining deadlock, and it is the mechanism behind this repo's
+recurring armed backlog: a big backlog makes each sweep expensive, the token
+starves, nothing merges, the backlog stays big.
+
+So the sweep is now BUDGET-AWARE, in three places. It preflights `GET
+/rate_limit` (which does not itself count against the core budget) and DEFERS —
+exit 0 with a notice, never a red run — when the remaining budget cannot fund a
+useful pass. It evaluates at most `MAX_PULLS_PER_SWEEP` pull requests per run,
+in a rotating order that no pull request can be starved out of, and it says which
+ones it deferred. And it re-reads the budget as it goes, stopping cleanly rather
+than dying half-way through on a 403. A deferred sweep merges strictly FEWER pull
+requests than a full one, never more.
+
+REFRESHES ARE CAPPED TOO, and for a second reason. `update-branch` is the
+sweeper's answer to three different situations — a stale-but-clean proof, a merge
+GitHub refused, and (since the base-inherited-red path in `main_clean_check_names`)
+a red the PR inherited from a main that has since been healed. That third one is
+the dangerous one at scale, because it makes a large fraction of the backlog
+eligible AT ONCE: the measured shape was 84 of 93 armed pull requests red on the
+same `ci-pack-1/2/3`. Each refresh is a write call AND a fresh `ci` run, which
+takes 36-91 minutes on an 8-runner self-hosted pool. Uncapped, the first sweep
+after that path shipped would have queued ~84 pack runs from a single 46-second
+job — a multi-day CI jam, and a much worse outage than the one being repaired.
+`MAX_REFRESHES_PER_SWEEP` drains the same backlog over ~11 sweeps instead, which
+at the observed sweep rate is well under an hour. A pull request whose refresh
+this sweep could not fund is left ARMED AND UNLABELED, never `merge-blocked` —
+it has done nothing wrong, and `mark_blocked`'s comment is one-shot, so a false
+accusation would be the one that sticks.
+
 Individual pull-request outcomes are ANNOTATIONS, never job failures: one PR with
 a red check must not fail a sweep that also had clean PRs to merge. The process
-exits non-zero only when the sweep itself could not run.
+exits non-zero only when the sweep itself could not run — and a sweep the API
+budget deferred DID run, correctly, so that exits 0.
 """
 
 from __future__ import annotations
@@ -129,12 +177,61 @@ BASELINE_WORKFLOW = "integration-baseline.yml"
 WORKFLOWS_DIR = Path(__file__).resolve().parents[1] / ".github" / "workflows"
 # The conclusions that count as "this check did not fail". `neutral` and
 # `skipped` are the shapes a path-filtered or deliberately-inert job publishes.
+#
+# Membership here means "did not fail" and NEVER "passed" — do not read it as the
+# latter, and do not evict `skipped` to try to make it mean the latter. A ci.yml
+# pack that legitimately skips on a `paths:` filter is a real clean result, so
+# `skipped` has to stay; what stops an ALL-skipped head from reading clean is
+# `decide_verdict`'s separate affirmative-pass requirement, not this set.
 CLEAN_CONCLUSIONS = {"success", "neutral", "skipped"}
 # `_head_check_runs`' cap in .claude/hooks/ship_loop_guard.py, for the same
 # fail-closed reason: PR #3629's head carried 101 check runs, so a single
 # `per_page=100` call hid the tail and a red past page one went unseen.
 CHECK_RUN_PAGE_CAP = 5
 REQUEST_TIMEOUT_SECONDS = 30
+
+# --- the API budget -----------------------------------------------------------
+#
+# `READ_TOKEN` is the job's own GITHUB_TOKEN: 1,000 requests/hour PER REPOSITORY,
+# shared by every concurrent sweep and by every other GITHUB_TOKEN reader in this
+# repo. All the numbers below are derived from run 31148157570's measured cost —
+# ~121 calls for 93 pull requests, i.e. ~1 call per pull request plus the fixed
+# overhead and ~4 more for each clean-but-refused one.
+#
+# MAX_PULLS_PER_SWEEP is the load-bearing one. The observed peak sweep rate is 28
+# non-skipped runs in an hour, so a sweep must cost at most 1000/28 = ~35 calls to
+# be sustainable at that rate. Fixed overhead is ~12 (1 listing + ~3 baseline + 1
+# main timeline + ~6 for `main_clean_check_names`, which walks main newest->oldest
+# until it finds a commit that actually published checks — measured at 5 back),
+# which leaves ~23. 25 is the chosen cap: marginally above that steady-state
+# figure, because the sweep rate only peaks at 28 and RATE_LIMIT_RESERVE stops the
+# pass cleanly if a run does overshoot. Uncapped, the same 28 sweeps cost ~3,400
+# calls and empty the bucket in the first 8 of them.
+MAX_PULLS_PER_SWEEP = 25
+# Do not START a sweep below this. A capped pass needs ~12 fixed + 25 x up-to-5 +
+# a few writes ~= 150 in its worst shape, so 200 both funds the pass and leaves the
+# last fifth of the bucket to the OTHER lanes that read main with GITHUB_TOKEN —
+# a merge sweeper starving render.yml would just move the outage.
+RATE_LIMIT_FLOOR = 200
+# Stop MID-sweep below this. Covers the in-flight pull request's remaining writes
+# (merge, label, comment, delete-ref) plus the calls that can be spent between two
+# budget polls, so the stop is clean rather than a 403 half-way through.
+RATE_LIMIT_RESERVE = 60
+# Poll `GET /rate_limit` every N evaluated pull requests rather than every one. It
+# costs no core budget but it is still a round trip; at <=5 calls per pull request
+# the reserve above comfortably covers the at-most-25 calls spent between polls.
+BUDGET_RECHECK_EVERY = 5
+# Each `update-branch` is a write AND a fresh CI run on a saturated pool (36-91
+# minutes, 8 self-hosted runners). The base-inherited-red path makes most of a red
+# backlog eligible at once — measured 84 of 93 armed pull requests — so uncapped,
+# one 46-second sweep would queue ~84 pack runs and jam CI for days. 8 drains the
+# same backlog over ~11 sweeps, which at the observed sweep rate is under an hour.
+MAX_REFRESHES_PER_SWEEP = 8
+# The rotation advances by MAX_PULLS_PER_SWEEP every bucket, so every armed pull
+# request enters the window within ceil(N / cap) buckets — ~40 minutes for a
+# 93-PR backlog. Ten minutes matches the recovery cron; the sweeper keeps NO state
+# between runs (it is a level-triggered reconciler), so the clock IS the cursor.
+ROTATION_BUCKET_SECONDS = 600
 
 # --- the tested-surface gate --------------------------------------------------
 #
@@ -200,6 +297,45 @@ def _annotate(level: str, title: str, message: str) -> None:
     print(f"::{level} title={title}::{message}", flush=True)
 
 
+class RateLimited(RuntimeError):
+    """A read GitHub refused for rate-limit reasons, primary or secondary.
+
+    Distinct from `RuntimeError` because the two demand opposite reactions. A
+    broken sweep is a red run someone must look at; a rate-limited sweep is a
+    sweep that correctly declined to run, and turning that into a red run is how
+    a starved lane buries its own diagnosis under 17 identical failures.
+    """
+
+    def __init__(self, message: str, *, retry_after: int | None = None, secondary: bool = False):
+        super().__init__(message)
+        self.retry_after = retry_after
+        self.secondary = secondary
+
+
+# `_request` records the last response's headers here so callers can tell a
+# quota 403 from a permissions 403. A module global rather than a wider return
+# type on purpose: `_request`'s `(status, payload)` shape is the seam every test
+# in tests/test_merge_on_green.py monkeypatches, and widening it would rewrite
+# the whole pack to buy a diagnostic. A monkeypatched `_request` simply leaves
+# this empty, which degrades the classifier to body-only — the safe direction.
+_LAST_RESPONSE_HEADERS: dict[str, str] = {}
+
+
+def last_response_headers() -> dict[str, str]:
+    """Lower-cased headers of the most recent real HTTP response."""
+    return dict(_LAST_RESPONSE_HEADERS)
+
+
+def _record_headers(raw: Any) -> None:
+    _LAST_RESPONSE_HEADERS.clear()
+    try:
+        items = raw.items()
+    except AttributeError:
+        return
+    for key, value in items:
+        _LAST_RESPONSE_HEADERS[str(key).lower()] = str(value)
+
+
 def _request(
     method: str,
     url: str,
@@ -212,6 +348,10 @@ def _request(
     not mergeable) that this sweeper must classify rather than crash on, so HTTP
     errors are returned like any other status. A body that is empty or not JSON
     parses to None; callers key on the status.
+
+    Response headers land in `last_response_headers()`. `x-ratelimit-remaining`
+    and `retry-after` are the only evidence that separates "the budget is gone"
+    from "this token may not do that", and both arrive ONLY in the headers.
     """
     headers = {
         "Accept": "application/vnd.github+json",
@@ -227,15 +367,95 @@ def _request(
     request = urllib.request.Request(url, data=data, headers=headers, method=method)
     try:
         with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
+            _record_headers(getattr(response, "headers", None))
             body = response.read()
             return int(response.status), (json.loads(body) if body else None)
     except urllib.error.HTTPError as exc:
+        _record_headers(getattr(exc, "headers", None))
         body = exc.read() if hasattr(exc, "read") else b""
         try:
             parsed = json.loads(body) if body else None
         except ValueError:
             parsed = None
         return int(exc.code), parsed
+
+
+def _api_message(payload: Any) -> str:
+    """GitHub's own explanation of a failure, when the body carried one."""
+    if isinstance(payload, dict):
+        message = str(payload.get("message") or "").strip()
+        if message:
+            return message
+    return ""
+
+
+def rate_limit_refusal(
+    status: int, payload: Any, headers: dict[str, str] | None = None
+) -> RateLimited | None:
+    """Classify one failed API answer: rate limit, or something else?
+
+    Pure, so the discrimination is testable without a network — and it is worth
+    discriminating, because for the whole 2026-08-07 outage the operator saw only
+    `pull-request listing failed: HTTP 403`, which reads identically whether the
+    quota is gone, a burst tripped a SECONDARY limit, or the token lost a scope.
+
+    Returns a `RateLimited` only on POSITIVE evidence:
+
+      * `x-ratelimit-remaining: 0`     — primary quota, the measured cause here;
+      * a `retry-after` header          — GitHub's secondary/abuse throttle;
+      * a body that says so             — "API rate limit exceeded", "secondary
+                                          rate limit", "abuse detection".
+
+    Everything else returns None and stays a hard error. A 403 with no such
+    evidence is far more likely a permissions regression, and silently downgrading
+    that to "deferred, exit 0" would hide a genuinely broken lane behind a notice —
+    the one failure mode worse than the outage this function documents.
+    """
+    if status not in {403, 429}:
+        return None
+    headers = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
+    message = _api_message(payload)
+    lowered = message.lower()
+
+    retry_after: int | None = None
+    raw_retry = headers.get("retry-after", "").strip()
+    if raw_retry.isdigit():
+        retry_after = int(raw_retry)
+
+    remaining = headers.get("x-ratelimit-remaining", "").strip()
+    exhausted = remaining.isdigit() and int(remaining) == 0
+    secondary = "secondary rate limit" in lowered or "abuse detection" in lowered
+    primary = exhausted or "api rate limit exceeded" in lowered
+
+    if not (secondary or primary or retry_after is not None):
+        return None
+
+    kind = "secondary (burst) rate limit" if secondary else "primary API quota"
+    parts = [f"HTTP {status}: {kind} reached"]
+    if message:
+        parts.append(f"GitHub said {message!r}")
+    if exhausted:
+        reset = headers.get("x-ratelimit-reset", "").strip()
+        limit = headers.get("x-ratelimit-limit", "").strip() or "?"
+        window = f", window resets at epoch {reset}" if reset.isdigit() else ""
+        parts.append(f"0 of {limit} requests left{window}")
+    if retry_after is not None:
+        parts.append(f"retry-after {retry_after}s")
+    return RateLimited("; ".join(parts), retry_after=retry_after, secondary=secondary)
+
+
+def _read_failed(status: int, payload: Any, what: str) -> RuntimeError:
+    """The exception a failed READ should raise: RateLimited, or a named error.
+
+    Every read helper funnels its failure through here so a quota 403 is a
+    deferral everywhere and an unexplained one is loud everywhere, and so
+    GitHub's own message reaches the Actions log instead of a bare status code.
+    """
+    refusal = rate_limit_refusal(status, payload, last_response_headers())
+    if refusal is not None:
+        return refusal
+    message = _api_message(payload)
+    return RuntimeError(f"{what}: HTTP {status}" + (f" ({message})" if message else ""))
 
 
 def is_spurious_check(name: str) -> bool:
@@ -257,11 +477,13 @@ def decide_verdict(runs: list[dict[str, Any]]) -> tuple[str, list[str]]:
 
     Returns ``(verdict, names)``:
 
-      ``unproven`` — the head carries NO non-spurious check runs. Never merged.
-        A docs-only PR that matched no `paths:` filter is genuinely unproven, and
-        a head whose only run is the spurious Cloudflare X is the same thing
-        wearing a check. (The literal "zero check runs" rule would merge that
-        second shape, which is why the count is taken AFTER the spurious filter.)
+      ``unproven`` — nothing on the head affirmatively PASSED. Never merged. Three
+        shapes arrive here. A docs-only PR that matched no `paths:` filter carries
+        no check runs at all. A head whose only run is the spurious Cloudflare X is
+        the same nothing wearing a check — which is why the count is taken AFTER
+        the spurious filter, since a literal "zero check runs" rule would merge it.
+        And a head whose every surviving check concluded `skipped`/`neutral` is that
+        same nothing wearing a name the spurious filter does not know (#4779, below).
       ``pending`` — something has not concluded. Wait for the next sweep; a
         pending check is not a pass, and labeling `merge-blocked` now would be
         premature and would burn the one-shot comment on a race.
@@ -292,6 +514,34 @@ def decide_verdict(runs: list[dict[str, Any]]) -> tuple[str, list[str]]:
     ]
     if bad:
         return "blocked", bad
+    # AN ABSENCE OF FAILURE IS NOT A PASS (#4779, measured 2026-08-06 during the
+    # Actions major outage #4743 documents). #4779's `pull_request` webhook was
+    # dropped, so ci.yml scheduled NO run, and the head carried exactly two checks:
+    #
+    #     Supabase Preview        completed  skipped
+    #     Workers Builds: macro   completed  failure
+    #
+    # `is_spurious_check` knows the Cloudflare X and filters it, but nothing knew
+    # `Supabase Preview`, so it survived into `considered`, made it non-empty, and
+    # the `unproven` branch above never fired. Nothing was pending; `skipped` is in
+    # CLEAN_CONCLUSIONS; `bad` was empty. Verdict: `clean` — squash-merge a head with
+    # ZERO CI evidence, which is the exact outcome the `unproven` rule exists to
+    # prevent, defeated by a third-party integration the filter cannot enumerate.
+    #
+    # So the gate is an AFFIRMATIVE pass, not the absence of a red: enumerating every
+    # third-party app that might publish an inert check is a blocklist that loses to
+    # the next integration someone installs, while "at least one check actually
+    # succeeded" holds for all of them without naming any. Widening
+    # `is_spurious_check` would have fixed #4779 and not the next one.
+    #
+    # This cannot block an ordinary path-filtered PR. ci.yml is `paths:`-filtered at
+    # the WORKFLOW level, so a non-matching PR gets no run at all and was already
+    # `unproven` before this line existed; `ci-pack`'s only job-level `if:` is
+    # `action != 'closed'`, which is true for every event that opens or updates a
+    # pull request. A head with real packs therefore carries real successes, and a
+    # mixed head (one success + one path-skipped pack) still reads `clean`.
+    if not any(run.get("conclusion") == "success" for run in considered):
+        return "unproven", []
     return "clean", []
 
 
@@ -309,7 +559,7 @@ def head_check_runs(repo: str, head_sha: str, token: str) -> list[dict[str, Any]
             "GET", f"{GITHUB_API}/repos/{repo}/commits/{head_sha}/check-runs?{query}", token
         )
         if status >= 400 or not isinstance(payload, dict):
-            raise RuntimeError(f"check-run listing failed: HTTP {status}")
+            raise _read_failed(status, payload, "check-run listing failed")
         batch = payload.get("check_runs") or []
         runs.extend(batch)
         total = int(payload.get("total_count") or 0)
@@ -439,7 +689,7 @@ class ProofFreshness:
             "GET", f"{GITHUB_API}/repos/{repo}/commits?{query}", token
         )
         if status >= 400 or not isinstance(payload, list):
-            raise RuntimeError(f"main commit listing failed: HTTP {status}")
+            raise _read_failed(status, payload, "main commit listing failed")
         commits: list[dict[str, Any]] = []
         for entry in payload:
             sha = str((entry or {}).get("sha") or "")
@@ -466,7 +716,7 @@ class ProofFreshness:
         )
         self.commit_file_reads += 1
         if status >= 400 or not isinstance(payload, dict):
-            raise RuntimeError(f"commit {sha[:12]} unreadable: HTTP {status}")
+            raise _read_failed(status, payload, f"commit {sha[:12]} unreadable")
         files = [
             str((entry or {}).get("filename") or "") for entry in (payload.get("files") or [])
         ]
@@ -627,8 +877,179 @@ def labeled_pulls(repo: str, token: str) -> list[dict[str, Any]]:
     query = urllib.parse.urlencode({"state": "open", "per_page": "100"})
     status, payload = _request("GET", f"{GITHUB_API}/repos/{repo}/pulls?{query}", token)
     if status >= 400 or not isinstance(payload, list):
-        raise RuntimeError(f"pull-request listing failed: HTTP {status}")
+        raise _read_failed(status, payload, "pull-request listing failed")
     return [pull for pull in payload if MERGE_ON_GREEN_LABEL in label_names(pull)]
+
+
+# ── the API budget ───────────────────────────────────────────────────────────
+
+
+def core_rate_limit(token: str) -> tuple[int, int] | None:
+    """``(remaining, limit)`` for the core REST pool, or None when unreadable.
+
+    `GET /rate_limit` is the one endpoint that does NOT count against the core
+    budget, which is what makes a preflight possible at all: asking "can I afford
+    this sweep" cannot itself be the call that makes the answer no.
+
+    FAILS OPEN — an unreadable answer returns None and the caller sweeps anyway.
+    That is deliberate and it is the opposite of the fail-closed choices elsewhere
+    in this file, because the risks are not symmetric. Every fail-closed gate here
+    protects a MERGE; this one only protects a budget, and a budget check that can
+    wedge the whole lane when GitHub hiccups would be a worse outage than the one
+    it prevents. The 403 handling on the real calls is the backstop.
+    """
+    status, payload = _request("GET", f"{GITHUB_API}/rate_limit", token)
+    if status >= 400 or not isinstance(payload, dict):
+        return None
+    core = (payload.get("resources") or {}).get("core") or {}
+    remaining, limit = core.get("remaining"), core.get("limit")
+    if not isinstance(remaining, int) or not isinstance(limit, int):
+        return None
+    return remaining, limit
+
+
+class SweepBudget:
+    """How much API budget this sweep may spend, asked repeatedly as it spends it.
+
+    One object per sweep. Three questions, three answers:
+
+      `preflight()`   — may this sweep start at all?
+      `may_continue()`— may it evaluate another pull request?
+      `take_refresh()`— may it spend an `update-branch` (a write AND a CI run)?
+
+    Every method fails OPEN on an unreadable budget, for the reason in
+    `core_rate_limit`. None of them can ever authorise a merge that the check
+    gates would refuse — they only ever make the sweep do LESS.
+    """
+
+    def __init__(
+        self,
+        token: str,
+        *,
+        floor: int = RATE_LIMIT_FLOOR,
+        reserve: int = RATE_LIMIT_RESERVE,
+        recheck_every: int = BUDGET_RECHECK_EVERY,
+        max_refreshes: int = MAX_REFRESHES_PER_SWEEP,
+    ) -> None:
+        self.token = token
+        self.floor = floor
+        self.reserve = reserve
+        self.recheck_every = max(1, recheck_every)
+        self.max_refreshes = max_refreshes
+        self.refreshes_used = 0
+        self.polls = 0
+        self.last_seen: int | None = None
+
+    def _poll(self) -> tuple[int, int] | None:
+        reading = core_rate_limit(self.token)
+        self.polls += 1
+        if reading is not None:
+            self.last_seen = reading[0]
+        return reading
+
+    def preflight(self) -> tuple[bool, str]:
+        """``(may_sweep, detail)``. False means defer — exit 0, not a red run."""
+        reading = self._poll()
+        if reading is None:
+            return True, "the rate limit could not be read; sweeping anyway"
+        remaining, limit = reading
+        if remaining < self.floor:
+            return False, (
+                f"only {remaining} of {limit} core API requests remain, below the "
+                f"{self.floor} a capped sweep needs. Nothing was swept and nothing "
+                "is broken — the budget refills hourly and the next trigger retries"
+            )
+        return True, f"{remaining} of {limit} core API requests available"
+
+    def may_continue(self, evaluated: int) -> tuple[bool, str]:
+        """``(keep_going, detail)`` before evaluating pull request number N.
+
+        Polled every `recheck_every` pull requests rather than every one: the
+        endpoint costs no core budget but it is still a round trip, and the
+        reserve is sized to cover everything spendable between two polls.
+        """
+        if evaluated % self.recheck_every:
+            return True, ""
+        reading = self._poll()
+        if reading is None:
+            return True, ""
+        remaining, limit = reading
+        if remaining < self.reserve:
+            return False, (
+                f"only {remaining} of {limit} core API requests remain, below the "
+                f"{self.reserve} reserved to finish cleanly"
+            )
+        return True, ""
+
+    def take_refresh(self) -> bool:
+        """Consume one `update-branch` slot. False when this sweep has spent them.
+
+        Consumed on the ATTEMPT, not on success. The slot bounds API calls as well
+        as triggered CI runs, and a refused attempt still spent a call; a sweep that
+        could retry indefinitely on 422s would bound neither.
+        """
+        if self.refreshes_used >= self.max_refreshes:
+            return False
+        self.refreshes_used += 1
+        return True
+
+
+def sweep_order(
+    pulls: list[dict[str, Any]],
+    *,
+    trigger_head_sha: str = "",
+    now: float | None = None,
+    cap: int = MAX_PULLS_PER_SWEEP,
+    bucket_seconds: int = ROTATION_BUCKET_SECONDS,
+) -> list[dict[str, Any]]:
+    """Order the armed pull requests so a capped sweep is fair AND useful.
+
+    Three tiers, then a rotation:
+
+      0. `main-red-repair` — the circuit breaker admits exactly one of these per
+         sweep when main is red, so it must never fall outside the cap; a repair
+         deferred to the next sweep is the whole repo deferred with it.
+      1. the head the TRIGGERING workflow run just concluded on. The sweeper wakes
+         because some run went green; that run's own pull request is the single
+         most likely merge in the backlog, and putting it first is what keeps the
+         cap from adding latency to the case the trigger exists to serve.
+      2. everything else, rotated.
+
+    The rotation is what makes the cap fair. This script keeps NO state between
+    runs — it is a level-triggered reconciler, and that property is load-bearing
+    for the overlapping-sweep safety argument — so it cannot remember where the
+    last sweep stopped. The wall clock is the cursor instead: the window start
+    advances by `cap` every `bucket_seconds`, which walks the whole ring and
+    therefore reaches every pull request within ceil(N / cap) buckets no matter
+    how long it has sat. Sorting by `updated_at` was the obvious alternative and
+    it starves: a pull request nothing acts on never has its timestamp bumped, so
+    it would hold its place — or lose it — forever.
+
+    The rotation applies WITHIN tier 0 as well, which is what keeps two armed
+    repairs taking turns. Only the first repair in the order gets the single
+    per-sweep repair slot, so a permanently-red repair that always sorted first
+    would hold that slot forever and its sibling — possibly the one that actually
+    fixes main — would never be evaluated at all.
+    """
+    if not pulls:
+        return []
+    stable = sorted(pulls, key=lambda pull: int(pull.get("number") or 0))
+    span = len(stable)
+    when = int(dt.datetime.now(dt.timezone.utc).timestamp() if now is None else now)
+    offset = ((when // max(1, bucket_seconds)) * max(1, cap)) % span
+    wanted = str(trigger_head_sha or "").strip().lower()
+
+    def rank(entry: tuple[int, dict[str, Any]]) -> tuple[int, int, int]:
+        index, pull = entry
+        if MAIN_RED_REPAIR_LABEL in label_names(pull):
+            tier = 0
+        elif wanted and str((pull.get("head") or {}).get("sha") or "").lower() == wanted:
+            tier = 1
+        else:
+            tier = 2
+        return (tier, (index - offset) % span, int(pull.get("number") or 0))
+
+    return [pull for _index, pull in sorted(enumerate(stable), key=rank)]
 
 
 def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
@@ -661,7 +1082,7 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
         token,
     )
     if status >= 400 or not isinstance(payload, dict):
-        raise RuntimeError(f"integration-baseline listing failed: HTTP {status}")
+        raise _read_failed(status, payload, "integration-baseline listing failed")
     runs = payload.get("workflow_runs") or []
     if not runs:
         return "unproven", "integration-baseline has not published a run"
@@ -700,7 +1121,7 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
         "GET", f"{GITHUB_API}/repos/{repo}/git/ref/heads/main", token
     )
     if ref_status >= 400 or not isinstance(ref_payload, dict):
-        raise RuntimeError(f"main ref lookup failed: HTTP {ref_status}")
+        raise _read_failed(ref_status, ref_payload, "main ref lookup failed")
     main_sha = str(((ref_payload.get("object") or {}).get("sha")) or "")
     if not run_sha or not main_sha:
         return "unproven", f"baseline/main SHA missing ({detail})"
@@ -956,8 +1377,31 @@ def update_branch(repo: str, pull: dict[str, Any], token: str) -> bool:
     return False
 
 
+def refresh_deferred(number: Any, why: str) -> str:
+    """Leave a pull request untouched because the refresh budget is spent.
+
+    NOT a `merge-blocked`, deliberately. The pull request has done nothing wrong —
+    this sweep simply ran out of `update-branch` slots — so labelling it would be
+    a false accusation, and `mark_blocked`'s comment is one-shot, so the false one
+    would be the one that sticks. It stays armed and the next sweep refreshes it.
+    """
+    _annotate(
+        "notice",
+        "merge-on-green",
+        f"PR #{number}: {why}, but this sweep has spent its "
+        f"{MAX_REFRESHES_PER_SWEEP} `update-branch` slots. Left armed and unlabeled; "
+        "the next sweep picks it up.",
+    )
+    return "refresh-deferred"
+
+
 def reprove(
-    repo: str, pull: dict[str, Any], reason: str, read_token: str, merge_token: str
+    repo: str,
+    pull: dict[str, Any],
+    reason: str,
+    read_token: str,
+    merge_token: str,
+    budget: "SweepBudget | None" = None,
 ) -> str:
     """Refuse to merge a clean-but-stale proof; hand the head back to CI.
 
@@ -977,6 +1421,8 @@ def reprove(
     exactly the same reason it is asked on a refused merge.
     """
     number = pull.get("number")
+    if budget is not None and not budget.take_refresh():
+        return refresh_deferred(number, f"its proof is stale ({reason})")
     _annotate(
         "notice",
         "merge-on-green",
@@ -1027,6 +1473,7 @@ def sweep_pull(
     merge_token: str,
     freshness: "ProofFreshness",
     main_clean: set[str] | None = None,
+    budget: "SweepBudget | None" = None,
 ) -> str:
     """Judge and, when clean, merge one labeled pull request. Returns the verdict.
 
@@ -1035,11 +1482,15 @@ def sweep_pull(
     exact failure this parameter exists to close; making it required turns that
     mistake into a TypeError at the call site instead of a silent no-op.
 
-    ``main_clean`` — the check names currently green on main's tip, from
-    :func:`main_clean_check_names`. It only ever WIDENS what a red PR may do (see
-    the base-inherited-red branch), never what a clean one may merge, so unlike
-    ``freshness`` a missing value is safe: it defaults to the empty set, which
-    reproduces the pre-2026-08-07 behaviour exactly.
+    ``main_clean`` — the check names currently green on the newest PROVED main
+    commit, from :func:`main_clean_check_names`. It only ever WIDENS what a red PR
+    may do (see the base-inherited-red branch), never what a clean one may merge,
+    so unlike ``freshness`` a missing value is safe: it defaults to the empty set,
+    which reproduces the pre-2026-08-07 behaviour exactly.
+
+    ``budget`` is the same shape of optional: it only ever WITHHOLDS
+    `update-branch` slots, so its absent form (no cap) reproduces the uncapped
+    behaviour and it can never authorise a merge the check gates would refuse.
     """
     main_clean = main_clean or set()
     number = pull.get("number")
@@ -1089,6 +1540,16 @@ def sweep_pull(
         # refreshed twice for the same red, and no loop is possible.
         bad_names = failing_check_names(runs)
         if bad_names and main_clean and bad_names <= main_clean:
+            # THIS is the branch the refresh cap exists for. A main-red episode
+            # makes most of the armed backlog eligible at once (84 of 93 measured),
+            # and every refresh queues a fresh 36-91 minute `ci` run onto an
+            # 8-runner pool. Deferring is NOT `merge-blocked`: nothing is wrong with
+            # the pull request, so it stays armed and unlabeled for the next sweep.
+            if budget is not None and not budget.take_refresh():
+                return refresh_deferred(
+                    number,
+                    "its red checks are all green on main, so it needs a refresh",
+                )
             if update_branch(repo, pull, merge_token):
                 clear_blocked(repo, pull, merge_token)
                 print(
@@ -1130,7 +1591,7 @@ def sweep_pull(
     except Exception as exc:  # a broken read must never become permission to merge
         stale, reason = True, f"the tested-surface check itself failed ({exc})"
     if stale:
-        return reprove(repo, pull, reason, read_token, merge_token)
+        return reprove(repo, pull, reason, read_token, merge_token, budget)
     print(f"PR #{number}: proof still current — {reason}.", flush=True)
 
     status, body = _request(
@@ -1168,6 +1629,10 @@ def sweep_pull(
                 "a concurrent sweep won the race. Nothing to do, nothing labeled.",
             )
             return f"already-{how}"
+        if budget is not None and not budget.take_refresh():
+            # No slots left to fast-forward it, and the refusal may be nothing but
+            # a stale base — so this must NOT fall through to `merge-blocked`.
+            return refresh_deferred(number, f"GitHub refused the merge ({detail})")
         if update_branch(repo, pull, merge_token):
             # The head now carries main. It is UNPROVEN until its fresh checks
             # conclude, so nothing merges on this pass and the label stays armed
@@ -1206,12 +1671,30 @@ def main() -> int:
     # The PAT is what makes a sweeper merge fire push-triggered workflows; the
     # job token is a working fallback (see the module docstring).
     merge_token = os.environ.get("MERGE_TOKEN", "").strip() or read_token
+    # The head the `workflow_run` that woke this sweep concluded on, when there was
+    # one. Empty for the cron and for workflow_dispatch, which is harmless — it only
+    # promotes a pull request within the per-sweep cap, never past a gate.
+    trigger_head_sha = os.environ.get("TRIGGER_HEAD_SHA", "").strip()
     if not repo:
         _annotate("error", "merge-on-green", "GH_REPO is not set; nothing to sweep.")
         return 1
 
+    # Preflight the budget BEFORE the first real call. A starved sweeper that keeps
+    # firing consumes each hourly refill on its own 403s and never recovers; a
+    # deferral is a deliberate, logged no-op and exits 0, because a red run here is
+    # noise that masks the genuine failures this lane also reports.
+    budget = SweepBudget(read_token)
+    may_sweep, budget_detail = budget.preflight()
+    if not may_sweep:
+        _annotate("notice", "merge-on-green", f"Sweep deferred: {budget_detail}.")
+        return 0
+    print(f"API budget: {budget_detail}.", flush=True)
+
     try:
         pulls = labeled_pulls(repo, read_token)
+    except RateLimited as exc:
+        _annotate("warning", "merge-on-green", f"Sweep deferred: {exc}. No PRs swept.")
+        return 0
     except Exception as exc:
         _annotate("error", "merge-on-green", f"Could not list pull requests: {exc}")
         return 1
@@ -1222,6 +1705,9 @@ def main() -> int:
 
     try:
         baseline_state, baseline_detail = integration_baseline_state(repo, read_token)
+    except RateLimited as exc:
+        _annotate("warning", "merge-on-green", f"Sweep deferred: {exc}. No PRs swept.")
+        return 0
     except Exception as exc:
         # Fail closed. An unavailable circuit breaker must never silently become
         # permission to merge; the schedule/workflow_run recovery will retry.
@@ -1242,6 +1728,9 @@ def main() -> int:
 
     try:
         freshness = ProofFreshness.build(repo, read_token)
+    except RateLimited as exc:
+        _annotate("warning", "merge-on-green", f"Sweep deferred: {exc}. No PRs swept.")
+        return 0
     except Exception as exc:
         # Sweep-level, so it aborts rather than re-proving 60 pull requests one by
         # one: a missing path filter or an unreadable main history is a broken
@@ -1255,21 +1744,57 @@ def main() -> int:
         )
         return 1
 
-    # One read of main's tip, shared by every pull request in the sweep. Never
-    # fatal: an empty set disables the base-inherited-red refresh and every PR
+    # One walk of main's recent history, shared by every pull request in the sweep.
+    # Never fatal: an empty set disables the base-inherited-red refresh and every PR
     # falls through to the unchanged blocking path.
     main_clean = main_clean_check_names(repo, read_token)
     if not main_clean:
         _annotate(
             "notice",
             "merge-on-green",
-            "main's tip published no clean non-spurious checks (or was unreadable) — "
-            "base-inherited reds will be labeled merge-blocked as before, not refreshed.",
+            f"none of main's last {MAIN_PROOF_WALK} commits published a clean "
+            "non-spurious check (or main was unreadable) — base-inherited reds will "
+            "be labeled merge-blocked as before, not refreshed.",
         )
 
+    ordered = sweep_order(pulls, trigger_head_sha=trigger_head_sha)
+    considered = ordered[:MAX_PULLS_PER_SWEEP]
+    deferred = ordered[MAX_PULLS_PER_SWEEP:]
+
     tally: dict[str, int] = {}
+    if deferred:
+        # NO SILENT CAPS. A sweep that quietly evaluated a quarter of the backlog
+        # would look identical in the log to one that evaluated all of it, and the
+        # difference is the entire reason this lane stopped working.
+        shown = ", ".join(f"#{pull.get('number')}" for pull in deferred[:20])
+        more = f" (+{len(deferred) - 20} more)" if len(deferred) > 20 else ""
+        _annotate(
+            "notice",
+            "merge-on-green",
+            f"Per-sweep cap: evaluating {len(considered)} of {len(ordered)} armed pull "
+            "requests. READ_TOKEN's quota is 1,000 requests/hour per repository and a "
+            f"full pass of this backlog costs ~{len(ordered)} of them, so an uncapped "
+            "sweep at this trigger rate empties the bucket and every later sweep 403s. "
+            f"The order rotates every {ROTATION_BUCKET_SECONDS // 60} minutes, so no "
+            f"pull request can be starved. Deferred to a later sweep: {shown}{more}.",
+        )
+        tally["cap-deferred"] = len(deferred)
+
     repair_slot_used = False
-    for pull in pulls:
+    for index, pull in enumerate(considered):
+        keep_going, why = budget.may_continue(index)
+        if not keep_going:
+            left = len(considered) - index
+            _annotate(
+                "warning",
+                "merge-on-green",
+                f"Stopping after {index} of {len(considered)} pull requests — {why}. "
+                f"The remaining {left} stay armed and unlabeled; the budget refills "
+                "hourly and the next sweep resumes. Nothing was merged on partial "
+                "information.",
+            )
+            tally["budget-deferred"] = tally.get("budget-deferred", 0) + left
+            break
         if baseline_state != "green":
             is_repair = MAIN_RED_REPAIR_LABEL in label_names(pull)
             if not is_repair or repair_slot_used:
@@ -1287,8 +1812,21 @@ def main() -> int:
             repair_slot_used = True
         try:
             verdict = sweep_pull(
-                repo, pull, read_token, merge_token, freshness, main_clean
+                repo, pull, read_token, merge_token, freshness, main_clean, budget
             )
+        except RateLimited as exc:
+            # The budget ran out between two polls. Stop the sweep rather than
+            # spending the rest of it on 403s — every one of those is a call the
+            # NEXT sweep needed, which is the loop that made this outage permanent.
+            left = len(considered) - index
+            _annotate(
+                "warning",
+                "merge-on-green",
+                f"Stopping at PR #{pull.get('number')} ({index} of {len(considered)} "
+                f"done) — {exc}. The remaining {left} stay armed and unlabeled.",
+            )
+            tally["budget-deferred"] = tally.get("budget-deferred", 0) + left
+            break
         except Exception as exc:
             # One bad pull request must never fail a sweep that had clean work to
             # do. The next run retries it; the label is still armed.
@@ -1303,7 +1841,9 @@ def main() -> int:
     print(
         "merge-on-green sweep complete: "
         + ", ".join(f"{count} {verdict}" for verdict, count in sorted(tally.items()))
-        + f" ({freshness.commit_file_reads} main commit(s) classified)",
+        + f" ({freshness.commit_file_reads} main commit(s) classified, "
+        + f"{budget.refreshes_used}/{MAX_REFRESHES_PER_SWEEP} refresh slot(s) used, "
+        + f"~{budget.last_seen if budget.last_seen is not None else '?'} API requests left)",
         flush=True,
     )
     return 0

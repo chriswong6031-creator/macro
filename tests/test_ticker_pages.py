@@ -38,6 +38,7 @@ from scripts.build_ticker_pages import (  # noqa: E402
     sections_available,
     SEASONALITY_MIN_BARS,
     _build_why_moving,
+    _build_themes,
     _build_ownership,
     _build_financials,
     _build_earnings,
@@ -2258,3 +2259,57 @@ class TestR2000UniverseExpansion:
         from engine.intel_discovery import _INDEX_TIER
         assert "r2000" in _INDEX_TIER
         assert _INDEX_TIER["r2000"] == 0.45
+
+
+def test_dossier_never_links_a_basket_that_has_no_page() -> None:
+    """A basket link must be gated on baskets_map, not on membership.
+
+    baskets_map is loaded from site/basketdata/baskets.json — the basket builder's own
+    output — so it is exactly the set of baskets that produced a site/basket/<id>.html.
+    Membership is wider: engine/baskets.py drops a basket resolving fewer than 3 members
+    and that basket stays in membership.json with no page ever written.
+
+    Ungated, the dossier links ../basket/<slug>.html into a 404, and
+    check_site_asset_refs treats a dangling link as a live 404 and FAILS the render — so
+    one unbuilt basket freezes the entire site. silver_miners (#4607) did exactly that
+    for ~18h through stocks/HL.html and stocks/SSRM.html.
+
+    Both source loops are covered: baskets_membership AND member_context.
+    """
+    built = {"gold_miners": {"id": "gold_miners", "name": "Gold Miners", "name_zh": "\u91d1\u77ff"}}
+    blob = {"baskets_membership": [
+        {"slug": "gold_miners", "name": "Gold Miners"},
+        {"slug": "silver_miners", "name": "Silver Miners"},   # in membership, never built
+    ]}
+    member_ctx = [
+        {"basket_id": "gold_miners", "basket": "Gold Miners", "band_en": "core"},
+        {"basket_id": "silver_miners", "basket": "Silver Miners", "band_en": "core"},
+    ]
+
+    themes = _build_themes(blob, member_ctx, built)
+    ids = {r["id"] for r in (themes or {}).get("baskets", [])} if isinstance(themes, dict) \
+        else {r["id"] for r in (themes or [])}
+
+    assert "gold_miners" in ids, "a built basket must still be linked"
+    assert "silver_miners" not in ids, (
+        "an unbuilt basket was linked — ../basket/silver_miners.html is a 404 and "
+        "check_site_asset_refs will fail the render on it, freezing the whole site"
+    )
+
+
+def test_membership_gate_is_applied_before_the_five_row_slice() -> None:
+    """Filtering after the slice would silently cost a member its real baskets.
+
+    Six memberships where only the last five are built must yield five links, not four:
+    slice-then-filter would spend a slot on the unbuilt one.
+    """
+    built = {f"b{i}": {"id": f"b{i}", "name": f"B{i}"} for i in range(1, 6)}
+    blob = {"baskets_membership": [{"slug": "unbuilt", "name": "Unbuilt"}]
+            + [{"slug": f"b{i}", "name": f"B{i}"} for i in range(1, 6)]}
+
+    themes = _build_themes(blob, [], built)
+    rows = (themes or {}).get("baskets", []) if isinstance(themes, dict) else (themes or [])
+    ids = [r["id"] for r in rows]
+
+    assert "unbuilt" not in ids
+    assert len(ids) == 5, f"expected five linkable baskets, got {len(ids)}: {ids}"

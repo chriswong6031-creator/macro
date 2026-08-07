@@ -1,0 +1,484 @@
+# The BioCatalyst closed-beta launch denominator.  It names every source
+# family closed beta depends on by exact source or adapter id and version,
+# records the rights disposition and SLO denominators for each, and states
+# exactly which product features each family unlocks or leaves unavailable.
+# A family whose source is not eligible is recorded UNAVAILABLE with its
+# blocker.  This file is a denominator, not an activation: it arms nothing,
+# changes no rights or entitlement, is not an operator decision, and is not
+# evidence that any soak ran.  The single launch_critical row in
+# config/biocatalyst_sources.yml does not satisfy it.
+contract_id: biocatalyst_closed_beta_source_manifest.v1
+schema_version: 1.0.0
+state: draft_denominator_unarmed
+effective_at: '2026-08-06T00:00:00Z'
+owner: biocatalyst
+source_registry_ref: config/biocatalyst_sources.yml
+source_registry_sha256: 6accf3fde4fa721783916c4d58cfe88a4a540f2be338f5a11ade817e7ff53a82
+ownership_registry_ref: config/sector_intelligence_ownership.yml
+ownership_registry_sha256: a2036e75f6db6ee7d2df4fa908966fa39dd2bbf2aa7431678367ae2bd60c74c6
+reconciliation_receipt_ref: data/biocatalyst/fixtures/biocatalyst_f0_delta_reconciliation_receipt.v1.json
+reconciliation_receipt_id: biocatalyst_f0_delta_c421aafb2fd1c612417decc3
+reconciliation_receipt_sha256: 5aa5234ee2aa05a1cae1d1e96fcf426433928e0d1892c748d8594c627e9adcda
+launch_slo_manifest_ref: config/biocatalyst_launch_slo_manifest.yml
+launch_slo_manifest_id: biocatalyst_launch_slo_097bc893fbae64257cd7687e
+launch_slo_manifest_content_sha256: 097bc893fbae64257cd7687e019eacf4ea69c336e9e0d0dd133f71edaa140950
+families:
+- family_id: clinicaltrials_current_record
+  title: ClinicalTrials.gov current-record coverage
+  obligation: mandatory
+  availability: available
+  activation_state: dark_unarmed
+  bindings:
+  - binding_kind: source_registry_source
+    id: clinicaltrials_gov_v2
+    version: ctgov_api_v2/clinicaltrials_v2_parser.v1
+    registry_ref: config/biocatalyst_sources.yml
+    launch_critical: true
+    production_ingest_allowed: true
+    license_class: us_government_source_facts
+    rights_state: official_terms_operator_reviewed_for_bounded_beta
+  - binding_kind: shared_plane_read_adapter
+    id: biocatalyst_trial_read_api.v1
+    version: 1.0.0
+    registry_ref: config/sector_intelligence_ownership.yml
+    launch_critical: null
+    production_ingest_allowed: null
+    license_class: null
+    rights_state: implemented_current_record_facts_only
+  rights:
+    retention: private_only
+    redistribution: review_required
+    derived_model_training: review_required
+    publication: source_facts_with_attribution
+    distribution_obligations:
+    - attribute_clinicaltrials_gov
+    - display_source_processing_date
+    - keep_projected_data_current
+    - disclose_content_modifications
+    - do_not_assert_proprietary_rights_over_source_database
+    - do_not_use_extracted_email_addresses_for_marketing
+    - display_source_submitter_responsibility_note
+    - do_not_present_registry_as_government_validation
+  slo:
+    freshness_slo_seconds: 7200
+    freshness_denominator: Every configured hourly UTC canary poll opportunity in the frozen schedule,
+      measured from the /version dataTimestamp observed by the committed source receipt.
+    completeness_denominator: Every NCT in the configured explicit allowlist across a terminal-page-reached
+      run whose allowlist, page, record, and publication counts reconcile exactly.
+    error_denominator: Every scheduled opportunity in the frozen UTC schedule, with upstream outages retained
+      as denominator misses and no post-hoc exclusions.
+    correction_denominator: Every source-record revision observed after first publication, replayed append-only
+      against the prior transaction interval.
+  features_unlocked:
+  - trial_capsule_current_record
+  - trial_screen_and_facets
+  - trial_peer_set_resolution
+  - registry_change_tape
+  features_unavailable:
+  - complete_historical_version_record
+  - protocol_change_interpretation
+  blocker: null
+- family_id: clinicaltrials_discovery_scope
+  title: ClinicalTrials.gov discovery scope and universe coverage
+  obligation: mandatory
+  availability: unavailable
+  activation_state: dark_contract_and_hermetic_harness_only
+  bindings:
+  - binding_kind: source_registry_source
+    id: clinicaltrials_gov_v2
+    version: ctgov_discovery_scope.v1
+    registry_ref: config/biocatalyst_sources.yml
+    launch_critical: true
+    production_ingest_allowed: true
+    license_class: us_government_source_facts
+    rights_state: official_terms_operator_reviewed_for_bounded_beta
+  rights:
+    retention: private_only
+    redistribution: review_required
+    derived_model_training: review_required
+    publication: blocked_until_enable
+    distribution_obligations:
+    - attribute_clinicaltrials_gov
+    - display_source_processing_date
+    - keep_projected_data_current
+    - disclose_content_modifications
+    - do_not_assert_proprietary_rights_over_source_database
+    - do_not_use_extracted_email_addresses_for_marketing
+    - display_source_submitter_responsibility_note
+    - do_not_present_registry_as_government_validation
+  slo:
+    freshness_slo_seconds: null
+    freshness_denominator: 'Unavailable: the discovery control is dark with live_network_allowed false,
+      so no scheduled discovery opportunity exists to measure.'
+    completeness_denominator: 'Unavailable: no coverage epoch is produced outside the hermetic fixture
+      harness, so a universe denominator cannot be stated.'
+    error_denominator: 'Unavailable: there is no scheduled discovery run, so there is no opportunity denominator.'
+    correction_denominator: 'Unavailable: no discovery membership is published, so no correction can be
+      replayed.'
+  features_unlocked: []
+  features_unavailable:
+  - sponsor_or_indication_universe_browse
+  - new_registration_discovery_feed
+  - coverage_completeness_disclosure
+  blocker: discovery_control_is_dark_contract_and_hermetic_harness_only
+- family_id: clinicaltrials_record_history
+  title: ClinicalTrials.gov record-history versions
+  obligation: deferred
+  availability: unavailable
+  activation_state: blocked_until_enable
+  bindings:
+  - binding_kind: source_registry_source
+    id: clinicaltrials_gov_record_history
+    version: clinicaltrials_record_history_parser.v1
+    registry_ref: config/biocatalyst_sources.yml
+    launch_critical: false
+    production_ingest_allowed: false
+    license_class: us_government_source_facts
+    rights_state: operator_review_required_before_enable
+  rights:
+    retention: private_only
+    redistribution: review_required
+    derived_model_training: review_required
+    publication: blocked_until_enable
+    distribution_obligations:
+    - attribute_clinicaltrials_gov
+    - display_source_processing_date
+    - keep_projected_data_current
+    - disclose_content_modifications
+    - do_not_assert_proprietary_rights_over_source_database
+    - do_not_use_extracted_email_addresses_for_marketing
+    - display_source_submitter_responsibility_note
+    - do_not_present_registry_as_government_validation
+  slo:
+    freshness_slo_seconds: null
+    freshness_denominator: 'Unavailable: the source declares freshness_slo_seconds null and collection
+      is an operator-armed explicit NCT allowlist that is empty by default.'
+    completeness_denominator: 'Unavailable: completeness would be every version in each NCT history chain
+      roundtripped and receipted, but the canary allowlist is empty and ingest is disallowed.'
+    error_denominator: 'Unavailable: no history chain is scheduled, so there is no opportunity denominator.'
+    correction_denominator: 'Unavailable: no history projection is published, so no correction can be
+      replayed.'
+  features_unlocked: []
+  features_unavailable:
+  - halt_onset_date
+  - complete_version_timeline
+  - exact_historical_field_diff
+  blocker: operator_review_required_before_enable_and_production_ingest_disallowed
+- family_id: regulator_application_and_submission
+  title: Regulator-native application and submission records
+  obligation: mandatory
+  availability: unavailable
+  activation_state: dark_b4a_private_only
+  bindings:
+  - binding_kind: source_registry_source
+    id: drugs_at_fda
+    version: exact_archive_sha256_only
+    registry_ref: config/biocatalyst_sources.yml
+    launch_critical: false
+    production_ingest_allowed: false
+    license_class: us_government_source_facts
+    rights_state: review_required_before_b4
+  rights:
+    retention: private_only_after_review
+    redistribution: review_required
+    derived_model_training: review_required
+    publication: blocked_until_review
+    distribution_obligations: []
+  slo:
+    freshness_slo_seconds: 14400
+    freshness_denominator: Every published Drugs@FDA data release, measured from the landing-page source-reported
+      release date; the registry declares this SLO but ingest is not allowed, so nothing is measured today.
+    completeness_denominator: Every table in the release archive whose source-file manifest and record
+      counts reconcile against the exact archive sha256.
+    error_denominator: Every published source release; a missed release is a denominator miss, not an
+      exclusion.
+    correction_denominator: Every superseding release archive replayed from exact retained bytes before
+      any local pointer advance.
+  features_unlocked: []
+  features_unavailable:
+  - approval_and_submission_timeline
+  - application_dossier_lens
+  - regulator_event_context_chip
+  blocker: review_required_before_b4_and_public_projection_blocked_until_review
+- family_id: label_and_safety
+  title: Label and safety coverage
+  obligation: deferred
+  availability: unavailable
+  activation_state: blocked_until_dataset_review
+  bindings:
+  - binding_kind: source_registry_source
+    id: openfda
+    version: openfda_dataset_release
+    registry_ref: config/biocatalyst_sources.yml
+    launch_critical: false
+    production_ingest_allowed: false
+    license_class: us_government_source_facts
+    rights_state: review_required_per_dataset
+  rights:
+    retention: private_only_after_dataset_review
+    redistribution: review_required
+    derived_model_training: review_required
+    publication: blocked_until_dataset_review
+    distribution_obligations: []
+  slo:
+    freshness_slo_seconds: 86400
+    freshness_denominator: Every openFDA dataset release or poll window declared by the registry; nothing
+      is measured today because production ingest is disallowed.
+    completeness_denominator: Every record in a source-specific manifest that reconciles for the reviewed
+      dataset; no dataset has passed review, so the denominator is empty.
+    error_denominator: Every dataset release or poll window in the declared schedule.
+    correction_denominator: Every superseding dataset release replayed against the prior reviewed release.
+  features_unlocked: []
+  features_unavailable:
+  - label_section_context
+  - adverse_event_context
+  - safety_signal_surface
+  blocker: review_required_per_dataset_and_no_dataset_review_has_been_completed
+- family_id: company_and_asset_identity_pit
+  title: Point-in-time company and asset identity
+  obligation: mandatory
+  availability: unavailable
+  activation_state: no_biocatalyst_read_contract
+  bindings:
+  - binding_kind: shared_plane_read_adapter
+    id: biocatalyst_company_identity_pit_adapter.v1
+    version: 1.0.0
+    registry_ref: config/sector_intelligence_ownership.yml
+    launch_critical: null
+    production_ingest_allowed: null
+    license_class: null
+    rights_state: blocked_no_pit_identity_adapter
+  rights:
+    retention: not_applicable_no_eligible_source
+    redistribution: not_applicable_no_eligible_source
+    derived_model_training: not_applicable_no_eligible_source
+    publication: not_applicable_no_eligible_source
+    distribution_obligations: []
+  slo:
+    freshness_slo_seconds: null
+    freshness_denominator: 'Unavailable: the owning plane exposes no point-in-time read, so there is no
+      as-of clock to measure freshness against.'
+    completeness_denominator: 'Unavailable: no identity universe is contracted to BioCatalyst, so a completeness
+      denominator cannot be stated.'
+    error_denominator: 'Unavailable: no scheduled identity read exists.'
+    correction_denominator: 'Unavailable: no identity projection is published, so no correction can be
+      replayed.'
+  features_unlocked: []
+  features_unavailable:
+  - sponsor_to_company_resolution
+  - asset_ownership_lineage
+  - company_alias_history
+  blocker: reviewed_point_in_time_company_identity_contract
+- family_id: security_context_boundary
+  title: Security identity and corporate-actions context boundary
+  obligation: mandatory
+  availability: unavailable
+  activation_state: no_biocatalyst_read_contract
+  bindings:
+  - binding_kind: shared_plane_read_adapter
+    id: biocatalyst_security_identity_pit_adapter.v1
+    version: 1.0.0
+    registry_ref: config/sector_intelligence_ownership.yml
+    launch_critical: null
+    production_ingest_allowed: null
+    license_class: null
+    rights_state: unavailable_bootstrap_roster_only
+  rights:
+    retention: not_applicable_no_eligible_source
+    redistribution: not_applicable_no_eligible_source
+    derived_model_training: not_applicable_no_eligible_source
+    publication: not_applicable_no_eligible_source
+    distribution_obligations: []
+  slo:
+    freshness_slo_seconds: null
+    freshness_denominator: 'Unavailable: only a bootstrap US exchange roster exists and it is not registered
+      as a complete security master, so no freshness clock is contracted.'
+    completeness_denominator: 'Unavailable: corporate-action history is declared incomplete and no global
+      security master exists.'
+    error_denominator: 'Unavailable: no BioCatalyst-facing security read is scheduled.'
+    correction_denominator: 'Unavailable: no security projection is published, so no correction can be
+      replayed.'
+  features_unlocked: []
+  features_unavailable:
+  - ticker_or_issuer_join
+  - corporate_action_adjusted_context
+  - security_level_catalyst_surface
+  blocker: complete_point_in_time_security_and_corporate_actions_contract
+- family_id: corporate_document_and_span
+  title: Corporate document and exact-span coverage
+  obligation: optional
+  availability: unavailable
+  activation_state: no_biocatalyst_read_contract
+  bindings:
+  - binding_kind: shared_plane_read_adapter
+    id: biocatalyst_corporate_document_span_adapter.v1
+    version: 1.0.0
+    registry_ref: config/sector_intelligence_ownership.yml
+    launch_critical: null
+    production_ingest_allowed: null
+    license_class: null
+    rights_state: blocked_no_cross_domain_read_adapter
+  rights:
+    retention: corporate_plane_only
+    redistribution: blocked
+    derived_model_training: blocked
+    publication: corporate_adapter_only
+    distribution_obligations: []
+  slo:
+    freshness_slo_seconds: null
+    freshness_denominator: 'Unavailable: the owner substrate is not exposed to BioCatalyst as a versioned
+      read, so no freshness target binds.'
+    completeness_denominator: 'Unavailable: no document universe is contracted to BioCatalyst, and absence
+      must never be read as a conclusion.'
+    error_denominator: 'Unavailable: no BioCatalyst-facing document read is scheduled.'
+    correction_denominator: 'Unavailable: no document projection is published, so no correction can be
+      replayed.'
+  features_unlocked: []
+  features_unavailable:
+  - issuer_disclosed_pdufa_claim
+  - issuer_hold_or_crl_claim
+  - exact_document_span_citation
+  blocker: versioned_document_and_exact_span_read_contract
+- family_id: earnings_transcript_context
+  title: Earnings transcript context spans
+  obligation: optional
+  availability: available
+  activation_state: implemented_private_in_process_transcript_only
+  bindings:
+  - binding_kind: shared_plane_read_adapter
+    id: biocatalyst_earnings_transcript_span_adapter.v1
+    version: 1.0.0
+    registry_ref: config/sector_intelligence_ownership.yml
+    launch_critical: null
+    production_ingest_allowed: null
+    license_class: null
+    rights_state: implemented_private_in_process_transcript_only
+  rights:
+    retention: private_only
+    redistribution: blocked
+    derived_model_training: blocked
+    publication: blocked
+    distribution_obligations: []
+  slo:
+    freshness_slo_seconds: null
+    freshness_denominator: Every caller request is served from the latest selected context packet, bound
+      by that packet's known-at and correction stamps; there is no independent BioCatalyst refresh schedule.
+    completeness_denominator: The transcripts present in the owner's latest selected context packet for
+      the caller-supplied ticker; absence is never a conclusion about the company.
+    error_denominator: Every in-process read call; an unavailable packet returns an explicit unavailable
+      bundle rather than a silent empty result.
+    correction_denominator: Every packet correction the owning plane publishes, carried through on the
+      next read.
+  features_unlocked:
+  - transcript_context_hover
+  features_unavailable:
+  - issuer_security_sponsor_or_trial_linkage
+  - document_history_or_absence_conclusion
+  - independent_source_authenticity_attestation
+  blocker: null
+- family_id: capital_structure_pit
+  title: Capital Structure point-in-time inputs
+  obligation: mandatory
+  availability: unavailable
+  activation_state: no_biocatalyst_read_contract
+  bindings:
+  - binding_kind: shared_plane_read_adapter
+    id: biocatalyst_capital_structure_pit_adapter.v1
+    version: 1.0.0
+    registry_ref: config/sector_intelligence_ownership.yml
+    launch_critical: null
+    production_ingest_allowed: null
+    license_class: null
+    rights_state: blocked_current_projection_has_no_biocatalyst_pit_adapter
+  rights:
+    retention: not_applicable_no_eligible_source
+    redistribution: not_applicable_no_eligible_source
+    derived_model_training: not_applicable_no_eligible_source
+    publication: not_applicable_no_eligible_source
+    distribution_obligations: []
+  slo:
+    freshness_slo_seconds: null
+    freshness_denominator: 'Unavailable: the owning plane serves one current projection twin with a single
+      as-of stamp and no as_of request parameter, so no point-in-time freshness denominator exists.'
+    completeness_denominator: 'Unavailable: cash runway, fully diluted shares, instruments, and remaining
+      capacity are declared unavailable capabilities on the owning plane.'
+    error_denominator: 'Unavailable: no BioCatalyst-facing capital-structure read is scheduled.'
+    correction_denominator: 'Unavailable: no capital-structure projection is published by BioCatalyst,
+      so no correction can be replayed.'
+  features_unlocked: []
+  features_unavailable:
+  - cash_through_catalyst
+  - financing_survival_context
+  - dilution_distribution_context
+  blocker: versioned_internal_pit_adapter_with_unavailable_state_semantics
+- family_id: market_and_options_context
+  title: Market and options context for financing or enterprise-value surfaces
+  obligation: deferred
+  availability: unavailable
+  activation_state: no_biocatalyst_read_contract
+  bindings:
+  - binding_kind: shared_plane_read_adapter
+    id: biocatalyst_security_identity_pit_adapter.v1
+    version: 1.0.0
+    registry_ref: config/sector_intelligence_ownership.yml
+    launch_critical: null
+    production_ingest_allowed: null
+    license_class: null
+    rights_state: unavailable_bootstrap_roster_only
+  rights:
+    retention: not_applicable_no_eligible_source
+    redistribution: not_applicable_no_eligible_source
+    derived_model_training: not_applicable_no_eligible_source
+    publication: not_applicable_no_eligible_source
+    distribution_obligations: []
+  slo:
+    freshness_slo_seconds: null
+    freshness_denominator: 'Unavailable: any market or options surface would first need a security identity
+      join, and that adapter is blocked, so no freshness denominator can be stated.'
+    completeness_denominator: 'Unavailable: no market or options universe is contracted to BioCatalyst.'
+    error_denominator: 'Unavailable: no BioCatalyst-facing market read is scheduled.'
+    correction_denominator: 'Unavailable: no market projection is published by BioCatalyst.'
+  features_unlocked: []
+  features_unavailable:
+  - enterprise_value_context
+  - financing_market_context
+  - options_positioning_context
+  blocker: blocked_by_security_context_boundary_no_market_adapter_exists
+launch_denominator:
+  mandatory_family_ids:
+  - clinicaltrials_current_record
+  - clinicaltrials_discovery_scope
+  - regulator_application_and_submission
+  - company_and_asset_identity_pit
+  - security_context_boundary
+  - capital_structure_pit
+  mandatory_families_total: 6
+  mandatory_families_available: 1
+  all_mandatory_families_available: false
+  readiness_claim: closed_beta_source_denominator_not_met
+  single_launch_critical_source_is_sufficient: false
+  omitted_family_allowed: false
+  unknown_family_allowed: false
+  weighted_substitution_allowed: false
+successor_binding:
+  binds_launch_slo_contract: biocatalyst_launch_slo_manifest.v1
+  required_soak_duration_seconds: 1209600
+  successor_manifest_required_before_soak_scheduling: true
+  soak_scheduling_blockers:
+  - root_sealed_retention_activation
+  - operator_arming
+  - closed_beta_source_denominator_not_met
+authority:
+  authorizes_source_activation: false
+  authorizes_operator_arming: false
+  authorizes_rights_change: false
+  authorizes_entitlement_change: false
+  authorizes_model_promotion: false
+  authorizes_neural_web_authority: false
+  authorizes_prophet_behavior: false
+  constitutes_rights_review: false
+  constitutes_soak_evidence: false
+  originates_signals_scores_or_ranking: false
+hash_scope: canonical_payload_excluding_manifest_id_and_content_sha256
+manifest_id: biocatalyst_closed_beta_3be20a6afa3ba1fb70eb84ea
+content_sha256: 3be20a6afa3ba1fb70eb84ea301171839b4e75cb89cbe1a554cb19e7c54f7c02

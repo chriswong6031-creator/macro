@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import threading
@@ -16,6 +17,7 @@ from fastapi.responses import Response
 from engine.fundamental_forensics.private_state import load_state_blob
 
 router = APIRouter()
+log = logging.getLogger("fundamental_forensics.api")
 REPO = Path(os.environ.get("MACRO_REPO", "/opt/macro"))
 
 # The receipt API is an authenticated, private research surface even when it is
@@ -145,20 +147,60 @@ def forensics_state(_user: dict = Depends(require_site_full_user)) -> Response:
 # ---------------------------------------------------------------------------
 
 def _build_store():
-    """Build one private research store lazily, then reuse it for immutable reads.
+    """Build the DEDICATED attested-history reader lazily, then reuse it.
 
+    The sealed receipts live in their own bucket, addressed only by
+    ``FF_ATTESTED_R2_READONLY_{ENDPOINT,ACCESS_KEY_ID,SECRET_ACCESS_KEY,BUCKET}``
+    — never the Research Vault bucket and never a generic ``R2_*`` fallback.
     Reconstructing a boto3/R2 client on every request defeats the engine's
     bounded immutable-reader cache and can leak connection pools.  A missing
     store is cached too: it remains a bounded 503 until process restart or the
     explicit test/operator reset, never a fallback to a different bucket.
+
+    A misconfigured value raises from the factory.  That is cached as an
+    absent store rather than propagated: the route's contract is one bounded,
+    private-header 503, not an unbounded exception or a stack trace.
     """
     global _STORE_CACHE, _STORE_INITIALIZED
     with _STORE_LOCK:
         if _STORE_INITIALIZED:
             return _STORE_CACHE
-        from engine.research_vault.r2_store import build_store  # noqa: PLC0415
+        store = None
+        try:
+            from engine.fundamental_forensics.attested_history_store import (  # noqa: PLC0415
+                ATTESTED_HISTORY_ENV_NAMES,
+                AttestedHistoryStoreError,
+                build_attested_history_store,
+            )
 
-        _STORE_CACHE = build_store()
+            store = build_attested_history_store()
+            if store is None:
+                # An absent store is cached below and becomes a permanent 503,
+                # so a silent None would leave the operator nothing to act on.
+                # NAMES only -- never a value.  A half-delivered credential set
+                # is the realistic case: the deploy workflow strips all four
+                # FF_ATTESTED_R2_READONLY_* lines and re-adds only the non-empty
+                # ones, so one dispatch mid-rotation can leave a partial set.
+                absent = [n for n in ATTESTED_HISTORY_ENV_NAMES if not os.environ.get(n)]
+                log.warning(
+                    "attested history store not configured (absent: %s)",
+                    ",".join(absent) or "none - values present but rejected",
+                )
+        except AttestedHistoryStoreError as exc:
+            # This class's messages are fixed literals that never interpolate a
+            # configuration value, so the message itself is safe to log -- and
+            # it is the only thing that distinguishes a bad endpoint from a bad
+            # bucket, key, TTL, or refresh margin. Without it all five collapse
+            # into one indistinguishable line behind a permanent 503.
+            log.warning("attested history store unavailable: %s", exc)
+            store = None
+        except Exception as exc:  # noqa: BLE001 - fail closed, never leak the cause
+            # Everything else (boto/botocore especially) records the TYPE only:
+            # those messages can quote configuration values, and this bucket's
+            # credentials must never reach a log line.
+            log.warning("attested history store unavailable (%s)", type(exc).__name__)
+            store = None
+        _STORE_CACHE = store
         _STORE_INITIALIZED = True
         return _STORE_CACHE
 

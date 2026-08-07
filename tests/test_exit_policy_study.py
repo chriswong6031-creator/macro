@@ -40,6 +40,8 @@ from scripts.exit_policy_study import (  # noqa: E402
     POLICY_SHORT,
     PLAN_ATR_MULT,
     PLAN_R_MULT,
+    REPORT_PATH,
+    VINTAGE_FIXTURE,
     R_DATA_END,
     R_HORIZON,
     R_PLAN_STOP,
@@ -52,6 +54,7 @@ from scripts.exit_policy_study import (  # noqa: E402
     decompose,
     evaluate,
     excursions,
+    main as study_main,
     paired_delta,
     policy_metrics,
     reconcile_round,
@@ -707,7 +710,10 @@ def study():
     return run_study()
 
 
-VINTAGE = Path(__file__).resolve().parent / "fixtures" / "exit_policy_vintage"
+# The module's own constant, not a second spelling of the path: the writer renders the
+# committed report at this slice, so a test that pointed somewhere else would check a
+# different pin than the one that ships.
+VINTAGE = VINTAGE_FIXTURE
 
 
 @pytest.fixture(scope="module")
@@ -1150,6 +1156,17 @@ class TestCommittedReportIsCurrent:
     measurement shows does not exist. A study is a dated instrument; demanding it track a
     price cache that is rewritten in place every night makes it a nightly treadmill and
     turns every collect into a documentation failure.
+
+    Half of that was still missing on 2026-08-06 and put main red for a day: the GUARD
+    moved to the pin, the WRITER did not. `main()` still rendered from the live caches and
+    wrote this exact path, so #4827 regenerated the report from the caches as they stood
+    that evening — a day newer than the slice — and #4763 pinned the guard 53 minutes
+    later. In between, collect re-adjusted a close on a new ex-date and flipped one P2 k=2
+    episode from a stop exit to a `data_end` mark: 536 marks on disk, 535 at the pin.
+    Neither PR could see the other, because `reports/` was not in ci.yml's trigger list and
+    #4827 touched nothing else, so the pack that checks this artifact never ran on the PR
+    that rewrote it. An artifact and its guard have to be rendered from the SAME inputs or
+    the pair is green only while one run wrote both — so the writer is pinned here too.
     """
 
     def test_the_committed_report_matches_a_fresh_render(self, vintage):
@@ -1173,3 +1190,38 @@ class TestCommittedReportIsCurrent:
         if not path.exists():
             pytest.skip("report not committed yet")
         assert f"Prices run to **{manifest['priced_through']}**" in path.read_text()
+
+    def test_the_documented_regeneration_command_reproduces_the_committed_report(
+            self, tmp_path):
+        """The WRITER half of the contract, EXECUTED — not grepped.
+
+        The test above proves the committed bytes equal a render at the pin. It says
+        nothing about what `python -m scripts.exit_policy_study` actually writes, and that
+        gap is the whole 2026-08-06 defect: the writer read the live caches while the guard
+        read the slice, so the documented way to refresh this file was also the way to
+        break it. Running main() is what pins the pair; a source grep would pass on a
+        default that is overridden, shadowed, or read from somewhere else.
+        """
+        if not REPORT_PATH.exists():
+            pytest.skip("report not committed yet")
+        out = tmp_path / "exit-policy-horserace.md"
+        assert study_main(["--out", str(out), "--quiet"]) == 0
+        strip = lambda ls: [l for l in ls if "**Study date:**" not in l]  # noqa: E731
+        assert strip(out.read_text().splitlines()) == strip(
+            REPORT_PATH.read_text().splitlines()), (
+            "python -m scripts.exit_policy_study no longer reproduces the committed "
+            "report. Either the renderer changed (re-run it and commit the result) or the "
+            "writer stopped rendering at VINTAGE_FIXTURE — if it is reading the live "
+            "caches again, that is the 2026-08-06 regression, not a stale artifact.")
+
+    def test_a_live_render_may_not_overwrite_the_committed_report(self):
+        """The fence, in both spellings. `--live` is the ad-hoc "what do today's caches
+        say" run; pointed at this path it silently re-creates the mismatch, and it does so
+        with a report whose own "Prices run to" line then contradicts the pinned manifest.
+        Checked before any study runs, so this test is cheap and stays that way.
+        """
+        for argv in (["--live"], ["--live", "--out", str(REPORT_PATH)]):
+            with pytest.raises(SystemExit) as exc:
+                study_main(argv)
+            assert "refusing to overwrite" in str(exc.value), argv
+            assert "exit-policy-horserace.md" in str(exc.value), argv

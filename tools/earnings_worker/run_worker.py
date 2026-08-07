@@ -146,6 +146,24 @@ def _find_transcript(transcripts_dir: Path, ticker: str) -> tuple[dict, str] | N
     return payload, text
 
 
+def _log_provider_fallback(row: dict) -> None:
+    """Announce a rung that failed even though the row scored successfully.
+
+    A local-endpoint 404 followed by a cloud success writes a healthy row, so
+    without this the only trace of a mis-set EARNINGS_LLM_MODEL is the quiet
+    change of ``model`` from the local rung to the paid one.
+    """
+    fallback = row.get("provider_fallback_reason")
+    if not fallback:
+        return
+    log.warning(
+        "provider fallback for %s: first rung failed (%s) — answered by %s",
+        row.get("ticker") or "?",
+        fallback,
+        row.get("model") or "no provider",
+    )
+
+
 def run(
     *,
     tickers: list[str],
@@ -240,6 +258,7 @@ def run(
                      row.get("ticker"), row.get("quarter"), row.get("year"),
                      row.get("sentiment") or 0.0, row.get("performance") or 0.0,
                      row.get("tone_word"))
+        _log_provider_fallback(row)
         seen.add(sha)
         rows.append(row)
 
@@ -412,6 +431,7 @@ def run_terminal(
             # Keep the cursor pending.  upsert_scores may retain a degraded
             # observability receipt, but it will preserve any prior healthy row.
             earnings_qual.upsert_scores([row], root=repo_root)
+            _log_provider_fallback(row)
             log.warning(
                 "Terminal transcript %s DEGRADED (%s) — retained in retry queue",
                 ref.pair,
@@ -426,6 +446,7 @@ def run_terminal(
             continue
 
         earnings_qual.upsert_scores([row], root=repo_root)
+        _log_provider_fallback(row)
         if record_id:
             completed_records[record_id] = sha
         succeeded += 1
