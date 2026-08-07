@@ -1,0 +1,455 @@
+{
+  "schema": "company_intelligence.golden_corpus_edgar_identity/v1",
+  "note": "Synthetic CIKs and accession numbers in format-valid shape; the KEY SETS are the real ones emitted by the two readers named in each row. No EDGAR document text is stored. The finding this fixture pins: the two readers share only `ticker`, which cannot key an event, so no join exists today at any level.",
+  "open_contract_question": "Wave 1 must decide the canonical filing key. The corpus's position: (cik, accession) is the only correction-stable pair, so edgar_earnings_8k must capture accession and edgar_earnings_wire must capture cik + the SOURCE acceptance timestamp. Until then every edgar_identity_join case is a typed absence.",
+  "pairs": [
+    {
+      "case_ref": "CIE-GC-0221",
+      "ticker": "BK",
+      "expected_v2_outcome": "typed_absence",
+      "collector_edgar_earnings_8k_row": {
+        "ticker": "BK",
+        "cik": 1387752,
+        "filing_date": "2024-02-12",
+        "acceptance_datetime": "2024-02-12T21:07:14.000Z",
+        "items": "2.02,9.01"
+      },
+      "engine_edgar_earnings_wire_row": {
+        "id": "BK-0001387752-24-669681",
+        "accession": "0001387752-24-669681",
+        "ticker": "BK",
+        "when": "2026-08-06T00:00:00+00:00",
+        "when_semantics": "wall_clock_at_processing_not_source_timestamp"
+      },
+      "joinable_keys_today": [
+        "ticker"
+      ],
+      "missing_for_join": {
+        "collector_edgar_earnings_8k": [
+          "accession"
+        ],
+        "engine_edgar_earnings_wire": [
+          "cik",
+          "filing_date",
+          "acceptance_datetime"
+        ]
+      }
+    },
+    {
+      "case_ref": "CIE-GC-0222",
+      "ticker": "BP",
+      "expected_v2_outcome": "typed_absence",
+      "collector_edgar_earnings_8k_row": {
+        "ticker": "BP",
+        "cik": 1268769,
+        "filing_date": "2024-05-08",
+        "acceptance_datetime": "2024-05-08T21:07:14.000Z",
+        "items": "2.02,9.01"
+      },
+      "engine_edgar_earnings_wire_row": {
+        "id": "BP-0001268769-24-704996",
+        "accession": "0001268769-24-704996",
+        "ticker": "BP",
+        "when": "2026-08-06T00:00:00+00:00",
+        "when_semantics": "wall_clock_at_processing_not_source_timestamp"
+      },
+      "joinable_keys_today": [
+        "ticker"
+      ],
+      "missing_for_join": {
+        "collector_edgar_earnings_8k": [
+          "accession"
+        ],
+        "engine_edgar_earnings_wire": [
+          "cik",
+          "filing_date",
+          "acceptance_datetime"
+        ]
+      }
+    },
+    {
+      "case_ref": "CIE-GC-0223",
+      "ticker": "BRK.A",
+      "expected_v2_outcome": "typed_absence",
+      "collector_edgar_earnings_8k_row": {
+        "ticker": "BRK.A",
+        "cik": 1297717,
+        "filing_date": "2024-08-08",
+        "acceptance_datetime": "2024-08-08T21:07:14.000Z",
+        "items": "2.02,9.01"
+      },
+      "engine_edgar_earnings_wire_row": {
+        "id": "BRK.A-0001338506-24-299372",
+        "accession": "0001338506-24-299372",
+        "ticker": "BRK.A",
+        "when": "2026-08-06T00:00:00+00:00",
+        "when_semantics": "wall_clock_at_processing_not_source_timestamp"
+      },
+      "joinable_keys_today": [
+        "ticker"
+      ],
+      "missing_for_join": {
+        "collector_edgar_earnings_8k": [
+          "accession"
+        ],
+        "engine_edgar_earnings_wire": [
+          "cik",
+          "filing_date",
+          "acceptance_datetime"
+        ]
+      }
+    },
+    {
+      "case_ref": "CIE-GC-0224",
+      "ticker": "C",
+      "expected_v2_outcome": "typed_absence",
+      "collector_edgar_earnings_8k_row": {
+        "ticker": "C",
+        "cik": 1605237,
+        "filing_date": "2024-11-07",
+        "acceptance_datetime": "2024-11-07T21:07:14.000Z",
+        "items": "2.02,9.01"
+      },
+      "engine_edgar_earnings_wire_row": {
+        "id": "C-0001605237-24-220388",
+        "accession": "0001605237-24-220388",
+        "ticker": "C",
+        "when": "2026-08-06T00:00:00+00:00",
+        "when_semantics": "wall_clock_at_processing_not_source_timestamp"
+      },
+      "joinable_keys_today": [
+        "ticker"
+      ],
+      "missing_for_join": {
+        "collector_edgar_earnings_8k": [
+          "accession"
+        ],
+        "engine_edgar_earnings_wire": [
+          "cik",
+          "filing_date",
+          "acceptance_datetime"
+        ]
+      }
+    },
+    {
+      "case_ref": "CIE-GC-0225",
+      "ticker": "CAT",
+      "expected_v2_outcome": "typed_absence",
+      "collector_edgar_earnings_8k_row": {
+        "ticker": "CAT",
+        "cik": 1419670,
+        "filing_date": "2025-02-16",
+        "acceptance_datetime": "2025-02-16T21:07:14.000Z",
+        "items": "2.02,9.01"
+      },
+      "engine_edgar_earnings_wire_row": {
+        "id": "CAT-0001419670-25-882688",
+        "accession": "0001419670-25-882688",
+        "ticker": "CAT",
+        "when": "2026-08-06T00:00:00+00:00",
+        "when_semantics": "wall_clock_at_processing_not_source_timestamp"
+      },
+      "joinable_keys_today": [
+        "ticker"
+      ],
+      "missing_for_join": {
+        "collector_edgar_earnings_8k": [
+          "accession"
+        ],
+        "engine_edgar_earnings_wire": [
+          "cik",
+          "filing_date",
+          "acceptance_datetime"
+        ]
+      }
+    },
+    {
+      "case_ref": "CIE-GC-0226",
+      "ticker": "CB",
+      "expected_v2_outcome": "typed_absence",
+      "collector_edgar_earnings_8k_row": {
+        "ticker": "CB",
+        "cik": 1212941,
+        "filing_date": "2025-05-12",
+        "acceptance_datetime": "2025-05-12T21:07:14.000Z",
+        "items": "2.02,9.01"
+      },
+      "engine_edgar_earnings_wire_row": {
+        "id": "CB-0001212941-25-239118",
+        "accession": "0001212941-25-239118",
+        "ticker": "CB",
+        "when": "2026-08-06T00:00:00+00:00",
+        "when_semantics": "wall_clock_at_processing_not_source_timestamp"
+      },
+      "joinable_keys_today": [
+        "ticker"
+      ],
+      "missing_for_join": {
+        "collector_edgar_earnings_8k": [
+          "accession"
+        ],
+        "engine_edgar_earnings_wire": [
+          "cik",
+          "filing_date",
+          "acceptance_datetime"
+        ]
+      }
+    },
+    {
+      "case_ref": "CIE-GC-0227",
+      "ticker": "CDNS",
+      "expected_v2_outcome": "duplicate_collapsed",
+      "collector_edgar_earnings_8k_row": {
+        "ticker": "CDNS",
+        "cik": 1648083,
+        "filing_date": "2025-08-12",
+        "acceptance_datetime": "2025-08-12T21:07:14.000Z",
+        "items": "2.02,9.01"
+      },
+      "engine_edgar_earnings_wire_row": {
+        "id": "CDNS-0001648083-25-536975",
+        "accession": "0001648083-25-536975",
+        "ticker": "CDNS",
+        "when": "2026-08-06T00:00:00+00:00",
+        "when_semantics": "wall_clock_at_processing_not_source_timestamp"
+      },
+      "joinable_keys_today": [
+        "ticker"
+      ],
+      "missing_for_join": {
+        "collector_edgar_earnings_8k": [
+          "accession"
+        ],
+        "engine_edgar_earnings_wire": [
+          "cik",
+          "filing_date",
+          "acceptance_datetime"
+        ]
+      }
+    },
+    {
+      "case_ref": "CIE-GC-0228",
+      "ticker": "CINF",
+      "expected_v2_outcome": "typed_absence",
+      "collector_edgar_earnings_8k_row": {
+        "ticker": "CINF",
+        "cik": 1668049,
+        "filing_date": "2025-11-11",
+        "acceptance_datetime": "2025-11-11T21:07:14.000Z",
+        "items": "2.02,9.01"
+      },
+      "engine_edgar_earnings_wire_row": {
+        "id": "CINF-0001668049-25-260878",
+        "accession": "0001668049-25-260878",
+        "ticker": "CINF",
+        "when": "2026-08-06T00:00:00+00:00",
+        "when_semantics": "wall_clock_at_processing_not_source_timestamp"
+      },
+      "joinable_keys_today": [
+        "ticker"
+      ],
+      "missing_for_join": {
+        "collector_edgar_earnings_8k": [
+          "accession"
+        ],
+        "engine_edgar_earnings_wire": [
+          "cik",
+          "filing_date",
+          "acceptance_datetime"
+        ]
+      }
+    },
+    {
+      "case_ref": "CIE-GC-0229",
+      "ticker": "COP",
+      "expected_v2_outcome": "typed_absence",
+      "collector_edgar_earnings_8k_row": {
+        "ticker": "COP",
+        "cik": 1499120,
+        "filing_date": "2026-02-20",
+        "acceptance_datetime": "2026-02-20T21:07:14.000Z",
+        "items": "2.02,9.01"
+      },
+      "engine_edgar_earnings_wire_row": {
+        "id": "COP-0001499120-26-078013",
+        "accession": "0001499120-26-078013",
+        "ticker": "COP",
+        "when": "2026-08-06T00:00:00+00:00",
+        "when_semantics": "wall_clock_at_processing_not_source_timestamp"
+      },
+      "joinable_keys_today": [
+        "ticker"
+      ],
+      "missing_for_join": {
+        "collector_edgar_earnings_8k": [
+          "accession"
+        ],
+        "engine_edgar_earnings_wire": [
+          "cik",
+          "filing_date",
+          "acceptance_datetime"
+        ]
+      }
+    },
+    {
+      "case_ref": "CIE-GC-0230",
+      "ticker": "COST",
+      "expected_v2_outcome": "typed_absence",
+      "collector_edgar_earnings_8k_row": {
+        "ticker": "COST",
+        "cik": 1586274,
+        "filing_date": "2026-05-16",
+        "acceptance_datetime": "2026-05-16T21:07:14.000Z",
+        "items": "2.02,9.01"
+      },
+      "engine_edgar_earnings_wire_row": {
+        "id": "COST-0001586274-26-402813",
+        "accession": "0001586274-26-402813",
+        "ticker": "COST",
+        "when": "2026-08-06T00:00:00+00:00",
+        "when_semantics": "wall_clock_at_processing_not_source_timestamp"
+      },
+      "joinable_keys_today": [
+        "ticker"
+      ],
+      "missing_for_join": {
+        "collector_edgar_earnings_8k": [
+          "accession"
+        ],
+        "engine_edgar_earnings_wire": [
+          "cik",
+          "filing_date",
+          "acceptance_datetime"
+        ]
+      }
+    },
+    {
+      "case_ref": "CIE-GC-0231",
+      "ticker": "CRM",
+      "expected_v2_outcome": "typed_absence",
+      "collector_edgar_earnings_8k_row": {
+        "ticker": "CRM",
+        "cik": 1578990,
+        "filing_date": "2024-02-22",
+        "acceptance_datetime": "2024-02-22T21:07:14.000Z",
+        "items": "2.02,9.01"
+      },
+      "engine_edgar_earnings_wire_row": {
+        "id": "CRM-0001578990-24-874968",
+        "accession": "0001578990-24-874968",
+        "ticker": "CRM",
+        "when": "2026-08-06T00:00:00+00:00",
+        "when_semantics": "wall_clock_at_processing_not_source_timestamp"
+      },
+      "joinable_keys_today": [
+        "ticker"
+      ],
+      "missing_for_join": {
+        "collector_edgar_earnings_8k": [
+          "accession"
+        ],
+        "engine_edgar_earnings_wire": [
+          "cik",
+          "filing_date",
+          "acceptance_datetime"
+        ]
+      }
+    },
+    {
+      "case_ref": "CIE-GC-0232",
+      "ticker": "CRWD",
+      "expected_v2_outcome": "typed_absence",
+      "collector_edgar_earnings_8k_row": {
+        "ticker": "CRWD",
+        "cik": 1520508,
+        "filing_date": "2024-02-23",
+        "acceptance_datetime": "2024-02-23T21:07:14.000Z",
+        "items": "2.02,9.01"
+      },
+      "engine_edgar_earnings_wire_row": {
+        "id": "CRWD-0001520508-24-289687",
+        "accession": "0001520508-24-289687",
+        "ticker": "CRWD",
+        "when": "2026-08-06T00:00:00+00:00",
+        "when_semantics": "wall_clock_at_processing_not_source_timestamp"
+      },
+      "joinable_keys_today": [
+        "ticker"
+      ],
+      "missing_for_join": {
+        "collector_edgar_earnings_8k": [
+          "accession"
+        ],
+        "engine_edgar_earnings_wire": [
+          "cik",
+          "filing_date",
+          "acceptance_datetime"
+        ]
+      }
+    },
+    {
+      "case_ref": "CIE-GC-0233",
+      "ticker": "CSCO",
+      "expected_v2_outcome": "typed_absence",
+      "collector_edgar_earnings_8k_row": {
+        "ticker": "CSCO",
+        "cik": 1502137,
+        "filing_date": "2024-05-19",
+        "acceptance_datetime": "2024-05-19T21:07:14.000Z",
+        "items": "2.02,9.01"
+      },
+      "engine_edgar_earnings_wire_row": {
+        "id": "CSCO-0001502137-24-436794",
+        "accession": "0001502137-24-436794",
+        "ticker": "CSCO",
+        "when": "2026-08-06T00:00:00+00:00",
+        "when_semantics": "wall_clock_at_processing_not_source_timestamp"
+      },
+      "joinable_keys_today": [
+        "ticker"
+      ],
+      "missing_for_join": {
+        "collector_edgar_earnings_8k": [
+          "accession"
+        ],
+        "engine_edgar_earnings_wire": [
+          "cik",
+          "filing_date",
+          "acceptance_datetime"
+        ]
+      }
+    },
+    {
+      "case_ref": "CIE-GC-0234",
+      "ticker": "CVS",
+      "expected_v2_outcome": "duplicate_collapsed",
+      "collector_edgar_earnings_8k_row": {
+        "ticker": "CVS",
+        "cik": 1678857,
+        "filing_date": "2024-08-19",
+        "acceptance_datetime": "2024-08-19T21:07:14.000Z",
+        "items": "2.02,9.01"
+      },
+      "engine_edgar_earnings_wire_row": {
+        "id": "CVS-0001678857-24-633188",
+        "accession": "0001678857-24-633188",
+        "ticker": "CVS",
+        "when": "2026-08-06T00:00:00+00:00",
+        "when_semantics": "wall_clock_at_processing_not_source_timestamp"
+      },
+      "joinable_keys_today": [
+        "ticker"
+      ],
+      "missing_for_join": {
+        "collector_edgar_earnings_8k": [
+          "accession"
+        ],
+        "engine_edgar_earnings_wire": [
+          "cik",
+          "filing_date",
+          "acceptance_datetime"
+        ]
+      }
+    }
+  ]
+}

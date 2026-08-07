@@ -12,15 +12,15 @@
   "0700.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 16,
+   "ticks": 15,
    "fresh_bars": 43,
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
     "date": "2026-05-29",
-    "type": "rebuy",
+    "type": "buy",
     "quality": "block",
     "reason": "counter-trend, no 200-reclaim/hold"
    }
@@ -29,13 +29,13 @@
    "eligible": false,
    "tier_cascade": null,
    "ticks": 6,
-   "fresh_bars": 15,
+   "fresh_bars": 16,
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-10",
+    "date": "2026-07-09",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, held but no 200-reclaim"
@@ -45,35 +45,163 @@
    "eligible": false,
    "tier_cascade": null,
    "ticks": 7,
-   "fresh_bars": 20,
+   "fresh_bars": 19,
    "above200": true,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-03",
+    "date": "2026-07-06",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, no 200-reclaim/hold"
    }
   },
   "9618.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 5,
-   "fresh_bars": 12,
+   "fresh_bars": 13,
    "above200": true,
-   "weekly_bull": true,
+   "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-15",
+    "date": "2026-07-14",
     "type": "buy",
     "quality": "take",
     "reason": "held confirmation"
    }
   },
   "1810.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 6,
+   "fresh_bars": 16,
+   "above200": false,
+   "weekly_bull": true,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-09",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, held but no 200-reclaim"
+   }
+  },
+  "9888.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 23,
+   "fresh_bars": null,
+   "above200": false,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-06-08",
+    "type": "sell",
+    "quality": null,
+    "reason": null
+   }
+  },
+  "1024.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 20,
+   "fresh_bars": 58,
+   "above200": false,
+   "weekly_bull": true,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-05-07",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, no 200-reclaim/hold"
+   }
+  },
+  "0992.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 40,
+   "fresh_bars": null,
+   "above200": true,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-06-16",
+    "type": "sell",
+    "quality": null,
+    "reason": null
+   }
+  },
+  "0981.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 25,
+   "fresh_bars": 73,
+   "above200": false,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-04-15",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, reclaimed 200 but no next-bar hold"
+   }
+  },
+  "9999.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 1,
+   "fresh_bars": 1,
+   "above200": true,
+   "weekly_bull": true,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-30",
+    "type": "rebuy",
+    "quality": "pending",
+    "reason": "pending confirmation"
+   }
+  },
+  "0285.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 5,
+   "fresh_bars": 13,
+   "above200": false,
+   "weekly_bull": true,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-14",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, held but no 200-reclaim"
+   }
+  },
+  "2382.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 32,
+   "fresh_bars": null,
+   "above200": false,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-06-25",
+    "type": "sell",
+    "quality": null,
+    "reason": null
+   }
+  },
+  "0241.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 7,
@@ -86,148 +214,20 @@
     "date": "2026-07-06",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
-   }
-  },
-  "9888.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 26,
-   "fresh_bars": null,
-   "above200": false,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-06-08",
-    "type": "sell",
-    "quality": null,
-    "reason": null
-   }
-  },
-  "1024.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 21,
-   "fresh_bars": 59,
-   "above200": false,
-   "weekly_bull": true,
-   "provisional": false,
-   "asof": "2026-07-29",
-   "last": {
-    "date": "2026-05-06",
-    "type": "buy",
-    "quality": "block",
     "reason": "counter-trend, no 200-reclaim/hold"
-   }
-  },
-  "0992.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 42,
-   "fresh_bars": null,
-   "above200": true,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-30",
-   "last": {
-    "date": "2026-06-18",
-    "type": "sell",
-    "quality": null,
-    "reason": null
-   }
-  },
-  "0981.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 27,
-   "fresh_bars": 75,
-   "above200": false,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-30",
-   "last": {
-    "date": "2026-04-13",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
-   }
-  },
-  "9999.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 1,
-   "fresh_bars": 2,
-   "above200": true,
-   "weekly_bull": true,
-   "provisional": false,
-   "asof": "2026-07-29",
-   "last": {
-    "date": "2026-07-29",
-    "type": "rebuy",
-    "quality": "pending",
-    "reason": "pending confirmation"
-   }
-  },
-  "0285.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 5,
-   "fresh_bars": 14,
-   "above200": false,
-   "weekly_bull": true,
-   "provisional": false,
-   "asof": "2026-07-29",
-   "last": {
-    "date": "2026-07-13",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
-   }
-  },
-  "2382.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 33,
-   "fresh_bars": null,
-   "above200": false,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-30",
-   "last": {
-    "date": "2026-06-23",
-    "type": "sell",
-    "quality": null,
-    "reason": null
-   }
-  },
-  "0241.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 7,
-   "fresh_bars": 20,
-   "above200": false,
-   "weekly_bull": true,
-   "provisional": false,
-   "asof": "2026-07-29",
-   "last": {
-    "date": "2026-07-03",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
    }
   },
   "1347.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 11,
-   "fresh_bars": 30,
+   "fresh_bars": 31,
    "above200": true,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-06-17",
+    "date": "2026-06-16",
     "type": "rebuy",
     "quality": "take",
     "reason": "held confirmation"
@@ -236,30 +236,30 @@
   "0268.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 7,
-   "fresh_bars": 18,
+   "ticks": 25,
+   "fresh_bars": 73,
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-07",
+    "date": "2026-04-15",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "counter-trend, no 200-reclaim/hold"
    }
   },
   "0772.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 7,
-   "fresh_bars": 18,
+   "fresh_bars": 19,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-07",
+    "date": "2026-07-06",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, no 200-reclaim/hold"
@@ -269,13 +269,13 @@
    "eligible": false,
    "tier_cascade": null,
    "ticks": 5,
-   "fresh_bars": 14,
+   "fresh_bars": 13,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-13",
+    "date": "2026-07-14",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, no 200-reclaim/hold"
@@ -289,7 +289,7 @@
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
     "date": "2026-06-25",
     "type": "buy",
@@ -301,13 +301,13 @@
    "eligible": false,
    "tier_cascade": null,
    "ticks": 7,
-   "fresh_bars": 18,
+   "fresh_bars": 19,
    "above200": false,
-   "weekly_bull": true,
+   "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-07",
+    "date": "2026-07-06",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, no 200-reclaim/hold"
@@ -316,30 +316,30 @@
   "3888.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 16,
-   "fresh_bars": 43,
+   "ticks": 25,
+   "fresh_bars": 73,
    "above200": true,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-05-29",
-    "type": "rebuy",
+    "date": "2026-04-15",
+    "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "counter-trend, held but no 200-reclaim"
    }
   },
   "1833.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 6,
-   "fresh_bars": 17,
+   "ticks": 7,
+   "fresh_bars": 19,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-08",
+    "date": "2026-07-06",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, no 200-reclaim/hold"
@@ -364,14 +364,14 @@
   "0939.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 4,
-   "fresh_bars": 10,
+   "ticks": 3,
+   "fresh_bars": 7,
    "above200": true,
    "weekly_bull": false,
    "provisional": false,
    "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-17",
+    "date": "2026-07-22",
     "type": "buy",
     "quality": "take",
     "reason": "held confirmation"
@@ -385,9 +385,9 @@
    "above200": true,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-05-01",
+    "date": "2026-05-20",
     "type": "sell",
     "quality": null,
     "reason": null
@@ -396,33 +396,33 @@
   "0005.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 12,
-   "fresh_bars": 32,
+   "ticks": 7,
+   "fresh_bars": null,
    "above200": true,
    "weekly_bull": true,
    "provisional": false,
    "asof": "2026-07-30",
    "last": {
-    "date": "2026-06-15",
-    "type": "rebuy",
-    "quality": "block",
-    "reason": "failed next-bar hold"
+    "date": "2026-06-08",
+    "type": "sell",
+    "quality": null,
+    "reason": null
    }
   },
   "2388.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 3,
-   "fresh_bars": 8,
+   "ticks": 2,
+   "fresh_bars": null,
    "above200": true,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-21",
-    "type": "buy",
-    "quality": "take",
-    "reason": "held confirmation"
+    "date": "2026-06-08",
+    "type": "sell",
+    "quality": null,
+    "reason": null
    }
   },
   "3328.HK": {
@@ -445,13 +445,13 @@
    "eligible": false,
    "tier_cascade": null,
    "ticks": 3,
-   "fresh_bars": 6,
+   "fresh_bars": 7,
    "above200": true,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-23",
+    "date": "2026-07-22",
     "type": "buy",
     "quality": "take",
     "reason": "held confirmation"
@@ -460,47 +460,47 @@
   "3968.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 14,
-   "fresh_bars": 39,
-   "above200": true,
-   "weekly_bull": true,
-   "provisional": false,
-   "asof": "2026-07-29",
-   "last": {
-    "date": "2026-06-04",
-    "type": "buy",
-    "quality": "take",
-    "reason": "reclaimed 200 & held"
-   }
-  },
-  "1658.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 4,
-   "fresh_bars": 11,
-   "above200": true,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-29",
-   "last": {
-    "date": "2026-07-16",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
-   }
-  },
-  "2888.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 27,
-   "fresh_bars": 75,
+   "ticks": 7,
+   "fresh_bars": 19,
    "above200": true,
    "weekly_bull": true,
    "provisional": false,
    "asof": "2026-07-30",
    "last": {
-    "date": "2026-04-13",
+    "date": "2026-07-06",
     "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, held but no 200-reclaim"
+   }
+  },
+  "1658.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 5,
+   "fresh_bars": 13,
+   "above200": true,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-14",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, held but no 200-reclaim"
+   }
+  },
+  "2888.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 11,
+   "fresh_bars": 31,
+   "above200": true,
+   "weekly_bull": true,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-06-16",
+    "type": "rebuy",
     "quality": "take",
     "reason": "held confirmation"
    }
@@ -509,13 +509,13 @@
    "eligible": false,
    "tier_cascade": null,
    "ticks": 5,
-   "fresh_bars": 14,
+   "fresh_bars": 13,
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-13",
+    "date": "2026-07-14",
     "type": "rebuy",
     "quality": "take",
     "reason": "held confirmation"
@@ -525,13 +525,13 @@
    "eligible": false,
    "tier_cascade": null,
    "ticks": 3,
-   "fresh_bars": 6,
+   "fresh_bars": 7,
    "above200": true,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-23",
+    "date": "2026-07-22",
     "type": "buy",
     "quality": "take",
     "reason": "held confirmation"
@@ -540,46 +540,46 @@
   "1359.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 6,
-   "fresh_bars": 17,
+   "ticks": 8,
+   "fresh_bars": 22,
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-08",
+    "date": "2026-06-30",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, no 200-reclaim/hold"
    }
   },
   "3618.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 4,
-   "fresh_bars": 11,
+   "ticks": 3,
+   "fresh_bars": 7,
    "above200": true,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-16",
+    "date": "2026-07-22",
     "type": "buy",
-    "quality": "block",
-    "reason": "failed next-bar hold"
+    "quality": "take",
+    "reason": "held confirmation"
    }
   },
   "2318.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 6,
-   "fresh_bars": 15,
+   "ticks": 5,
+   "fresh_bars": 13,
    "above200": false,
-   "weekly_bull": true,
+   "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-10",
+    "date": "2026-07-14",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, held but no 200-reclaim"
@@ -588,14 +588,14 @@
   "1299.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 6,
-   "fresh_bars": 15,
+   "ticks": 5,
+   "fresh_bars": 13,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-10",
+    "date": "2026-07-14",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, held but no 200-reclaim"
@@ -604,14 +604,14 @@
   "2628.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 25,
-   "fresh_bars": 68,
+   "ticks": 22,
+   "fresh_bars": 64,
    "above200": true,
-   "weekly_bull": true,
+   "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-04-22",
+    "date": "2026-04-28",
     "type": "buy",
     "quality": "take",
     "reason": "held confirmation"
@@ -621,13 +621,13 @@
    "eligible": false,
    "tier_cascade": null,
    "ticks": 5,
-   "fresh_bars": 12,
+   "fresh_bars": 13,
    "above200": false,
-   "weekly_bull": true,
+   "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-15",
+    "date": "2026-07-14",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, held but no 200-reclaim"
@@ -637,61 +637,61 @@
    "eligible": false,
    "tier_cascade": null,
    "ticks": 7,
-   "fresh_bars": 20,
+   "fresh_bars": 19,
    "above200": true,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-03",
+    "date": "2026-07-06",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, no 200-reclaim/hold"
    }
   },
   "1336.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 13,
-   "fresh_bars": null,
+   "ticks": 12,
+   "fresh_bars": 34,
    "above200": false,
-   "weekly_bull": true,
+   "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-05-21",
-    "type": "sell",
-    "quality": null,
-    "reason": null
+    "date": "2026-06-11",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, no 200-reclaim/hold"
    }
   },
   "6060.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 13,
-   "fresh_bars": 36,
+   "ticks": 15,
+   "fresh_bars": 43,
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-06-09",
+    "date": "2026-05-29",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, no 200-reclaim/hold"
    }
   },
   "2378.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 7,
-   "fresh_bars": 20,
+   "fresh_bars": 19,
    "above200": true,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-03",
+    "date": "2026-07-06",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, held but no 200-reclaim"
@@ -701,13 +701,13 @@
    "eligible": false,
    "tier_cascade": null,
    "ticks": 4,
-   "fresh_bars": 11,
+   "fresh_bars": 10,
    "above200": true,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-16",
+    "date": "2026-07-17",
     "type": "buy",
     "quality": "take",
     "reason": "held confirmation"
@@ -732,14 +732,14 @@
   "0386.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 8,
-   "fresh_bars": 21,
+   "ticks": 12,
+   "fresh_bars": 34,
    "above200": false,
-   "weekly_bull": true,
+   "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-02",
+    "date": "2026-06-11",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, no 200-reclaim/hold"
@@ -764,14 +764,14 @@
   "0934.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 8,
-   "fresh_bars": 21,
+   "ticks": 7,
+   "fresh_bars": 19,
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-02",
+    "date": "2026-07-06",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, no 200-reclaim/hold"
@@ -780,14 +780,14 @@
   "1898.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 4,
-   "fresh_bars": 9,
+   "ticks": 3,
+   "fresh_bars": 7,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-20",
+    "date": "2026-07-22",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, no 200-reclaim/hold"
@@ -797,29 +797,29 @@
    "eligible": false,
    "tier_cascade": null,
    "ticks": 3,
-   "fresh_bars": 6,
-   "above200": false,
+   "fresh_bars": 7,
+   "above200": true,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-23",
+    "date": "2026-07-22",
     "type": "buy",
     "quality": "take",
-    "reason": "reclaimed 200 & held"
+    "reason": "held confirmation"
    }
   },
   "2883.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 4,
-   "fresh_bars": 11,
+   "fresh_bars": 10,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-16",
+    "date": "2026-07-17",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, held but no 200-reclaim"
@@ -844,36 +844,52 @@
   "0135.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 6,
-   "fresh_bars": 15,
+   "ticks": 5,
+   "fresh_bars": 13,
    "above200": false,
-   "weekly_bull": true,
+   "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-10",
+    "date": "2026-07-14",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, held but no 200-reclaim"
    }
   },
   "3800.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 3,
-   "fresh_bars": 8,
+   "eligible": true,
+   "tier_cascade": "T1",
+   "ticks": 1,
+   "fresh_bars": 1,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-21",
+    "date": "2026-07-30",
     "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "quality": "pending",
+    "reason": "pending confirmation"
    }
   },
   "2600.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 3,
+   "fresh_bars": 7,
+   "above200": false,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-22",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, held but no 200-reclaim"
+   }
+  },
+  "0358.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 4,
@@ -889,36 +905,20 @@
     "reason": "counter-trend, held but no 200-reclaim"
    }
   },
-  "0358.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 4,
-   "fresh_bars": 9,
-   "above200": false,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-07-20",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
-   }
-  },
   "1378.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 5,
-   "fresh_bars": 13,
+   "ticks": 4,
+   "fresh_bars": 10,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
    "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-14",
+    "date": "2026-07-17",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, held but no 200-reclaim"
    }
   },
   "3993.HK": {
@@ -938,67 +938,67 @@
    }
   },
   "0486.HK": {
-   "eligible": true,
-   "tier_cascade": "T1",
-   "ticks": 2,
-   "fresh_bars": 5,
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 3,
+   "fresh_bars": 7,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-24",
+    "date": "2026-07-22",
     "type": "buy",
-    "quality": "pending",
-    "reason": "pending confirmation"
+    "quality": "block",
+    "reason": "counter-trend, held but no 200-reclaim"
    }
   },
   "2899.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 8,
-   "fresh_bars": 21,
+   "ticks": 7,
+   "fresh_bars": 19,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-02",
+    "date": "2026-07-06",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, no 200-reclaim/hold"
    }
   },
   "1799.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 3,
-   "fresh_bars": 8,
+   "eligible": true,
+   "tier_cascade": "T1",
+   "ticks": 2,
+   "fresh_bars": 4,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-21",
+    "date": "2026-07-27",
     "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "quality": "pending",
+    "reason": "pending confirmation"
    }
   },
   "1208.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 4,
-   "fresh_bars": 9,
+   "ticks": 3,
+   "fresh_bars": 7,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-20",
+    "date": "2026-07-22",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "counter-trend, no 200-reclaim/hold"
    }
   },
   "0639.HK": {
@@ -1020,110 +1020,110 @@
   "0323.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 6,
-   "fresh_bars": 15,
+   "ticks": 3,
+   "fresh_bars": 7,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-10",
+    "date": "2026-07-22",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, held but no 200-reclaim"
    }
   },
   "0016.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 5,
-   "fresh_bars": 12,
+   "fresh_bars": 13,
    "above200": true,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-15",
+    "date": "2026-07-14",
     "type": "buy",
-    "quality": "take",
-    "reason": "held confirmation"
+    "quality": "block",
+    "reason": "failed next-bar hold"
    }
   },
   "1109.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 2,
-   "fresh_bars": 3,
+   "ticks": 24,
+   "fresh_bars": null,
    "above200": true,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-28",
-    "type": "buy",
-    "quality": "block",
-    "reason": "failed next-bar hold"
+    "date": "2026-06-16",
+    "type": "sell",
+    "quality": null,
+    "reason": null
    }
   },
   "0688.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 2,
-   "fresh_bars": 3,
+   "ticks": 21,
+   "fresh_bars": null,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-28",
-    "type": "buy",
-    "quality": "block",
-    "reason": "failed next-bar hold"
+    "date": "2026-06-16",
+    "type": "sell",
+    "quality": null,
+    "reason": null
    }
   },
   "0823.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 5,
-   "fresh_bars": 14,
-   "above200": true,
-   "weekly_bull": true,
-   "provisional": false,
-   "asof": "2026-07-29",
-   "last": {
-    "date": "2026-07-13",
-    "type": "buy",
-    "quality": "take",
-    "reason": "held confirmation"
-   }
-  },
-  "0017.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 4,
-   "fresh_bars": 9,
-   "above200": false,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-07-20",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
-   }
-  },
-  "1997.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 7,
-   "fresh_bars": 19,
+   "fresh_bars": 13,
    "above200": true,
    "weekly_bull": true,
    "provisional": false,
    "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-06",
+    "date": "2026-07-14",
+    "type": "buy",
+    "quality": "block",
+    "reason": "veto: bearish divergence"
+   }
+  },
+  "0017.HK": {
+   "eligible": true,
+   "tier_cascade": "T1",
+   "ticks": 2,
+   "fresh_bars": 4,
+   "above200": false,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-27",
+    "type": "buy",
+    "quality": "pending",
+    "reason": "pending confirmation"
+   }
+  },
+  "1997.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 6,
+   "fresh_bars": 16,
+   "above200": true,
+   "weekly_bull": true,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-09",
     "type": "buy",
     "quality": "take",
     "reason": "reclaimed 200 & held"
@@ -1132,30 +1132,30 @@
   "0012.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 5,
-   "fresh_bars": 12,
+   "ticks": 4,
+   "fresh_bars": 10,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-15",
+    "date": "2026-07-17",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, no 200-reclaim/hold"
    }
   },
   "0101.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 5,
-   "fresh_bars": 12,
+   "fresh_bars": 13,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-15",
+    "date": "2026-07-14",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, no 200-reclaim/hold"
@@ -1164,30 +1164,30 @@
   "0960.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 4,
-   "fresh_bars": 9,
+   "ticks": 3,
+   "fresh_bars": 7,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-20",
+    "date": "2026-07-22",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, held but no 200-reclaim"
    }
   },
   "1113.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 4,
-   "fresh_bars": 11,
+   "fresh_bars": 10,
    "above200": true,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-16",
+    "date": "2026-07-17",
     "type": "buy",
     "quality": "take",
     "reason": "held confirmation"
@@ -1196,14 +1196,14 @@
   "0014.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 7,
-   "fresh_bars": 18,
+   "ticks": 6,
+   "fresh_bars": 16,
    "above200": true,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-07",
+    "date": "2026-07-09",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, held but no 200-reclaim"
@@ -1212,14 +1212,14 @@
   "2007.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 6,
-   "fresh_bars": 17,
+   "ticks": 7,
+   "fresh_bars": 19,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-08",
+    "date": "2026-07-06",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, no 200-reclaim/hold"
@@ -1228,14 +1228,14 @@
   "3333.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 162,
+   "ticks": 148,
    "fresh_bars": null,
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2025-07-01",
+   "asof": "2025-08-22",
    "last": {
-    "date": "2022-05-16",
+    "date": "2022-05-25",
     "type": "sell",
     "quality": null,
     "reason": null
@@ -1244,30 +1244,30 @@
   "0884.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 4,
-   "fresh_bars": 9,
+   "ticks": 5,
+   "fresh_bars": 13,
    "above200": false,
-   "weekly_bull": true,
+   "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-20",
+    "date": "2026-07-14",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, held but no 200-reclaim"
    }
   },
   "1209.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 4,
-   "fresh_bars": 11,
+   "fresh_bars": 10,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-16",
+    "date": "2026-07-17",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, no 200-reclaim/hold"
@@ -1277,48 +1277,48 @@
    "eligible": false,
    "tier_cascade": null,
    "ticks": 4,
-   "fresh_bars": 9,
+   "fresh_bars": 10,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-20",
+    "date": "2026-07-17",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, no 200-reclaim/hold"
    }
   },
   "0778.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 5,
-   "fresh_bars": 12,
+   "ticks": 4,
+   "fresh_bars": 10,
    "above200": true,
-   "weekly_bull": true,
+   "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-15",
+    "date": "2026-07-17",
     "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "quality": "take",
+    "reason": "reclaimed 200 & held"
    }
   },
   "2020.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 7,
-   "fresh_bars": 20,
+   "fresh_bars": 19,
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-03",
+    "date": "2026-07-06",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, held but no 200-reclaim"
    }
   },
   "2331.HK": {
@@ -1340,14 +1340,14 @@
   "1929.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 28,
-   "fresh_bars": 77,
+   "ticks": 21,
+   "fresh_bars": 61,
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-04-09",
+    "date": "2026-05-04",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, held but no 200-reclaim"
@@ -1372,14 +1372,14 @@
   "0291.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 6,
-   "fresh_bars": 15,
+   "ticks": 5,
+   "fresh_bars": 13,
    "above200": false,
-   "weekly_bull": true,
+   "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-10",
+    "date": "2026-07-14",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, held but no 200-reclaim"
@@ -1389,16 +1389,16 @@
    "eligible": false,
    "tier_cascade": null,
    "ticks": 3,
-   "fresh_bars": 8,
+   "fresh_bars": 7,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-21",
+    "date": "2026-07-22",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, held but no 200-reclaim"
    }
   },
   "2319.HK": {
@@ -1411,8 +1411,8 @@
    "provisional": false,
    "asof": "2026-07-30",
    "last": {
-    "date": "2026-04-08",
-    "type": "cut",
+    "date": "2026-05-20",
+    "type": "sell",
     "quality": null,
     "reason": null
    }
@@ -1420,30 +1420,30 @@
   "1044.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 8,
-   "fresh_bars": 21,
+   "ticks": 6,
+   "fresh_bars": 16,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-02",
+    "date": "2026-07-09",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, held but no 200-reclaim"
    }
   },
   "6098.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 6,
-   "fresh_bars": 15,
+   "fresh_bars": 16,
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-10",
+    "date": "2026-07-09",
     "type": "buy",
     "quality": "take",
     "reason": "reclaimed 200 & held"
@@ -1452,30 +1452,30 @@
   "2313.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 7,
-   "fresh_bars": 20,
+   "ticks": 19,
+   "fresh_bars": 55,
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-03",
-    "type": "rebuy",
+    "date": "2026-05-12",
+    "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, no 200-reclaim/hold"
    }
   },
   "6969.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 4,
-   "fresh_bars": 11,
+   "ticks": 5,
+   "fresh_bars": 13,
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-16",
+    "date": "2026-07-14",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, held but no 200-reclaim"
@@ -1484,17 +1484,17 @@
   "9961.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 4,
-   "fresh_bars": 11,
+   "ticks": 5,
+   "fresh_bars": 13,
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-16",
+    "date": "2026-07-14",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, held but no 200-reclaim"
    }
   },
   "1112.HK": {
@@ -1533,13 +1533,13 @@
    "eligible": false,
    "tier_cascade": null,
    "ticks": 7,
-   "fresh_bars": 20,
+   "fresh_bars": 19,
    "above200": true,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-03",
+    "date": "2026-07-06",
     "type": "buy",
     "quality": "take",
     "reason": "held confirmation"
@@ -1548,14 +1548,14 @@
   "0151.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 4,
-   "fresh_bars": 11,
+   "ticks": 14,
+   "fresh_bars": 40,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-16",
+    "date": "2026-06-03",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, no 200-reclaim/hold"
@@ -1564,14 +1564,14 @@
   "0322.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 8,
-   "fresh_bars": 21,
+   "ticks": 7,
+   "fresh_bars": 19,
    "above200": true,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-02",
+    "date": "2026-07-06",
     "type": "buy",
     "quality": "block",
     "reason": "failed next-bar hold"
@@ -1580,15 +1580,15 @@
   "0345.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 10,
+   "ticks": 9,
    "fresh_bars": null,
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-03-11",
-    "type": "sell",
+    "date": "2026-06-08",
+    "type": "cut",
     "quality": null,
     "reason": null
    }
@@ -1596,14 +1596,14 @@
   "9633.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 3,
+   "ticks": 4,
    "fresh_bars": null,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-05-14",
+    "date": "2026-05-15",
     "type": "sell",
     "quality": null,
     "reason": null
@@ -1612,30 +1612,30 @@
   "2150.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 16,
-   "fresh_bars": 44,
+   "ticks": 14,
+   "fresh_bars": null,
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
    "asof": "2026-07-30",
    "last": {
-    "date": "2026-05-28",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "date": "2026-05-15",
+    "type": "cut",
+    "quality": null,
+    "reason": null
    }
   },
   "1093.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 9,
-   "fresh_bars": 24,
+   "fresh_bars": 25,
    "above200": true,
    "weekly_bull": true,
    "provisional": false,
    "asof": "2026-07-30",
    "last": {
-    "date": "2026-06-26",
+    "date": "2026-06-25",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, held but no 200-reclaim"
@@ -1651,7 +1651,7 @@
    "provisional": false,
    "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-01",
+    "date": "2026-06-30",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, held but no 200-reclaim"
@@ -1661,13 +1661,13 @@
    "eligible": false,
    "tier_cascade": null,
    "ticks": 10,
-   "fresh_bars": 27,
+   "fresh_bars": 28,
    "above200": true,
    "weekly_bull": true,
    "provisional": false,
    "asof": "2026-07-30",
    "last": {
-    "date": "2026-06-23",
+    "date": "2026-06-22",
     "type": "buy",
     "quality": "take",
     "reason": "reclaimed 200 & held"
@@ -1681,7 +1681,7 @@
    "above200": true,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
     "date": "2026-06-22",
     "type": "buy",
@@ -1693,16 +1693,16 @@
    "eligible": false,
    "tier_cascade": null,
    "ticks": 9,
-   "fresh_bars": 23,
+   "fresh_bars": 25,
    "above200": true,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-06-29",
+    "date": "2026-06-25",
     "type": "buy",
-    "quality": "take",
-    "reason": "reclaimed 200 & held"
+    "quality": "block",
+    "reason": "counter-trend, held but no 200-reclaim"
    }
   },
   "1099.HK": {
@@ -1713,7 +1713,7 @@
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
     "date": "2026-06-25",
     "type": "buy",
@@ -1722,150 +1722,6 @@
    }
   },
   "2196.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 8,
-   "fresh_bars": 21,
-   "above200": false,
-   "weekly_bull": true,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-07-02",
-    "type": "buy",
-    "quality": "block",
-    "reason": "veto: bearish divergence"
-   }
-  },
-  "1801.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 9,
-   "fresh_bars": 23,
-   "above200": true,
-   "weekly_bull": true,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-06-29",
-    "type": "buy",
-    "quality": "take",
-    "reason": "reclaimed 200 & held"
-   }
-  },
-  "6618.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 8,
-   "fresh_bars": 21,
-   "above200": false,
-   "weekly_bull": true,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-07-02",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
-   }
-  },
-  "9926.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 7,
-   "fresh_bars": 18,
-   "above200": false,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-07-07",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
-   }
-  },
-  "2607.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 7,
-   "fresh_bars": 20,
-   "above200": true,
-   "weekly_bull": true,
-   "provisional": false,
-   "asof": "2026-07-29",
-   "last": {
-    "date": "2026-07-03",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, reclaimed 200 but no next-bar hold"
-   }
-  },
-  "3692.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 8,
-   "fresh_bars": 21,
-   "above200": false,
-   "weekly_bull": true,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-07-02",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
-   }
-  },
-  "1066.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 21,
-   "fresh_bars": 57,
-   "above200": false,
-   "weekly_bull": true,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-05-08",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
-   }
-  },
-  "0867.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 9,
-   "fresh_bars": 25,
-   "above200": false,
-   "weekly_bull": true,
-   "provisional": false,
-   "asof": "2026-07-29",
-   "last": {
-    "date": "2026-06-25",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
-   }
-  },
-  "2392.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 1,
-   "fresh_bars": null,
-   "above200": false,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-30",
-   "last": {
-    "date": "2026-04-29",
-    "type": "cut",
-    "quality": null,
-    "reason": null
-   }
-  },
-  "1211.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 7,
@@ -1878,20 +1734,164 @@
     "date": "2026-07-06",
     "type": "buy",
     "quality": "block",
+    "reason": "veto: bearish divergence"
+   }
+  },
+  "1801.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 9,
+   "fresh_bars": 25,
+   "above200": true,
+   "weekly_bull": true,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-06-25",
+    "type": "buy",
+    "quality": "take",
+    "reason": "reclaimed 200 & held"
+   }
+  },
+  "6618.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 8,
+   "fresh_bars": 22,
+   "above200": false,
+   "weekly_bull": true,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-06-30",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, held but no 200-reclaim"
+   }
+  },
+  "9926.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 6,
+   "fresh_bars": 16,
+   "above200": false,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-09",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, held but no 200-reclaim"
+   }
+  },
+  "2607.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 11,
+   "fresh_bars": 31,
+   "above200": true,
+   "weekly_bull": true,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-06-16",
+    "type": "buy",
+    "quality": "block",
     "reason": "counter-trend, no 200-reclaim/hold"
+   }
+  },
+  "3692.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 8,
+   "fresh_bars": 22,
+   "above200": false,
+   "weekly_bull": true,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-06-30",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, no 200-reclaim/hold"
+   }
+  },
+  "1066.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 17,
+   "fresh_bars": 49,
+   "above200": false,
+   "weekly_bull": true,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-05-20",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, no 200-reclaim/hold"
+   }
+  },
+  "0867.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 9,
+   "fresh_bars": 25,
+   "above200": false,
+   "weekly_bull": true,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-06-25",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, held but no 200-reclaim"
+   }
+  },
+  "2392.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 25,
+   "fresh_bars": 73,
+   "above200": false,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-04-15",
+    "type": "buy",
+    "quality": "block",
+    "reason": "failed next-bar hold"
+   }
+  },
+  "1211.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 6,
+   "fresh_bars": 16,
+   "above200": false,
+   "weekly_bull": true,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-09",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, held but no 200-reclaim"
    }
   },
   "2015.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 2,
-   "fresh_bars": 3,
+   "fresh_bars": 4,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-28",
+    "date": "2026-07-27",
     "type": "buy",
     "quality": "pending",
     "reason": "pending confirmation"
@@ -1901,131 +1901,51 @@
    "eligible": false,
    "tier_cascade": null,
    "ticks": 5,
-   "fresh_bars": 14,
+   "fresh_bars": 13,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-13",
+    "date": "2026-07-14",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, no 200-reclaim/hold"
    }
   },
   "0175.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 3,
-   "fresh_bars": 6,
+   "ticks": 5,
+   "fresh_bars": 13,
    "above200": true,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-23",
+    "date": "2026-07-14",
     "type": "buy",
-    "quality": "take",
-    "reason": "held confirmation"
+    "quality": "block",
+    "reason": "failed next-bar hold"
    }
   },
   "2238.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 8,
-   "fresh_bars": 21,
+   "fresh_bars": 22,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-02",
+    "date": "2026-06-30",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, held but no 200-reclaim"
    }
   },
   "9863.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 6,
-   "fresh_bars": 17,
-   "above200": false,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-29",
-   "last": {
-    "date": "2026-07-08",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
-   }
-  },
-  "2333.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 6,
-   "fresh_bars": 15,
-   "above200": false,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-07-10",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
-   }
-  },
-  "1958.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 7,
-   "fresh_bars": 18,
-   "above200": false,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-07-07",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
-   }
-  },
-  "1057.HK": {
-   "eligible": true,
-   "tier_cascade": "T1",
-   "ticks": 2,
-   "fresh_bars": 5,
-   "above200": false,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-29",
-   "last": {
-    "date": "2026-07-24",
-    "type": "buy",
-    "quality": "pending",
-    "reason": "pending confirmation"
-   }
-  },
-  "0941.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 3,
-   "fresh_bars": 6,
-   "above200": true,
-   "weekly_bull": true,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-07-23",
-    "type": "buy",
-    "quality": "take",
-    "reason": "held confirmation"
-   }
-  },
-  "0762.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 3,
@@ -2041,236 +1961,28 @@
     "reason": "counter-trend, held but no 200-reclaim"
    }
   },
-  "0728.HK": {
+  "2333.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 4,
-   "fresh_bars": 11,
+   "fresh_bars": 10,
    "above200": false,
    "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-29",
-   "last": {
-    "date": "2026-07-16",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
-   }
-  },
-  "0002.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 7,
-   "fresh_bars": 18,
-   "above200": true,
-   "weekly_bull": true,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-07-07",
-    "type": "buy",
-    "quality": "take",
-    "reason": "held confirmation"
-   }
-  },
-  "0003.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 5,
-   "fresh_bars": 12,
-   "above200": true,
-   "weekly_bull": true,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-07-15",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
-   }
-  },
-  "1038.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 7,
-   "fresh_bars": 18,
-   "above200": true,
-   "weekly_bull": true,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-07-07",
-    "type": "buy",
-    "quality": "block",
-    "reason": "veto: bearish divergence"
-   }
-  },
-  "0006.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 5,
-   "fresh_bars": 12,
-   "above200": true,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-07-15",
-    "type": "buy",
-    "quality": "block",
-    "reason": "failed next-bar hold"
-   }
-  },
-  "0836.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 3,
-   "fresh_bars": 8,
-   "above200": true,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-29",
-   "last": {
-    "date": "2026-07-21",
-    "type": "buy",
-    "quality": "block",
-    "reason": "failed next-bar hold"
-   }
-  },
-  "0257.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 4,
-   "fresh_bars": 9,
-   "above200": true,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-07-20",
-    "type": "buy",
-    "quality": "block",
-    "reason": "failed next-bar hold"
-   }
-  },
-  "0371.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 4,
-   "fresh_bars": 9,
-   "above200": false,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-07-20",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
-   }
-  },
-  "2688.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 5,
-   "fresh_bars": 14,
-   "above200": false,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-29",
-   "last": {
-    "date": "2026-07-13",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
-   }
-  },
-  "0027.HK": {
-   "eligible": true,
-   "tier_cascade": null,
-   "ticks": 8,
-   "fresh_bars": 21,
-   "above200": false,
-   "weekly_bull": true,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-07-02",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
-   }
-  },
-  "1928.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 4,
-   "fresh_bars": 11,
-   "above200": false,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-29",
-   "last": {
-    "date": "2026-07-16",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
-   }
-  },
-  "0880.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 5,
-   "fresh_bars": 12,
-   "above200": false,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-07-15",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
-   }
-  },
-  "2282.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 26,
-   "fresh_bars": 72,
-   "above200": false,
-   "weekly_bull": true,
    "provisional": false,
    "asof": "2026-07-30",
    "last": {
-    "date": "2026-04-16",
+    "date": "2026-07-17",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, no 200-reclaim/hold"
    }
   },
-  "0200.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 4,
-   "fresh_bars": 9,
-   "above200": false,
-   "weekly_bull": false,
-   "provisional": false,
-   "asof": "2026-07-31",
-   "last": {
-    "date": "2026-07-20",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
-   }
-  },
-  "0388.HK": {
+  "1958.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 6,
    "fresh_bars": 16,
-   "above200": true,
+   "above200": false,
    "weekly_bull": false,
    "provisional": false,
    "asof": "2026-07-30",
@@ -2281,17 +1993,305 @@
     "reason": "counter-trend, held but no 200-reclaim"
    }
   },
-  "0001.HK": {
+  "1057.HK": {
+   "eligible": true,
+   "tier_cascade": "T1",
+   "ticks": 2,
+   "fresh_bars": 4,
+   "above200": false,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-27",
+    "type": "buy",
+    "quality": "pending",
+    "reason": "pending confirmation"
+   }
+  },
+  "0941.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 4,
-   "fresh_bars": 9,
+   "ticks": 3,
+   "fresh_bars": 7,
    "above200": true,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-20",
+    "date": "2026-07-22",
+    "type": "buy",
+    "quality": "take",
+    "reason": "held confirmation"
+   }
+  },
+  "0762.HK": {
+   "eligible": true,
+   "tier_cascade": "T1",
+   "ticks": 2,
+   "fresh_bars": 4,
+   "above200": false,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-27",
+    "type": "buy",
+    "quality": "pending",
+    "reason": "pending confirmation"
+   }
+  },
+  "0728.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 3,
+   "fresh_bars": 7,
+   "above200": false,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-22",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, held but no 200-reclaim"
+   }
+  },
+  "0002.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 7,
+   "fresh_bars": 19,
+   "above200": true,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-06",
+    "type": "buy",
+    "quality": "take",
+    "reason": "held confirmation"
+   }
+  },
+  "0003.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 4,
+   "fresh_bars": 10,
+   "above200": true,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-17",
+    "type": "buy",
+    "quality": "take",
+    "reason": "reclaimed 200 & held"
+   }
+  },
+  "1038.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 8,
+   "fresh_bars": 22,
+   "above200": true,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-06-30",
+    "type": "buy",
+    "quality": "block",
+    "reason": "failed next-bar hold"
+   }
+  },
+  "0006.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 4,
+   "fresh_bars": 10,
+   "above200": true,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-17",
+    "type": "buy",
+    "quality": "take",
+    "reason": "held confirmation"
+   }
+  },
+  "0836.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 2,
+   "fresh_bars": 4,
+   "above200": true,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-27",
+    "type": "buy",
+    "quality": "block",
+    "reason": "failed next-bar hold"
+   }
+  },
+  "0257.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 4,
+   "fresh_bars": 10,
+   "above200": true,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-17",
+    "type": "buy",
+    "quality": "block",
+    "reason": "failed next-bar hold"
+   }
+  },
+  "0371.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 3,
+   "fresh_bars": 7,
+   "above200": false,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-22",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, held but no 200-reclaim"
+   }
+  },
+  "2688.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 3,
+   "fresh_bars": 7,
+   "above200": false,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-22",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, held but no 200-reclaim"
+   }
+  },
+  "0027.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 18,
+   "fresh_bars": 52,
+   "above200": false,
+   "weekly_bull": true,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-05-15",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, no 200-reclaim/hold"
+   }
+  },
+  "1928.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 4,
+   "fresh_bars": 10,
+   "above200": false,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-17",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, held but no 200-reclaim"
+   }
+  },
+  "0880.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 8,
+   "fresh_bars": 22,
+   "above200": false,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-06-30",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, no 200-reclaim/hold"
+   }
+  },
+  "2282.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 24,
+   "fresh_bars": 70,
+   "above200": false,
+   "weekly_bull": true,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-04-20",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, held but no 200-reclaim"
+   }
+  },
+  "0200.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 3,
+   "fresh_bars": 7,
+   "above200": false,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-22",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, held but no 200-reclaim"
+   }
+  },
+  "0388.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 5,
+   "fresh_bars": 13,
+   "above200": true,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-14",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, held but no 200-reclaim"
+   }
+  },
+  "0001.HK": {
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 3,
+   "fresh_bars": 7,
+   "above200": true,
+   "weekly_bull": false,
+   "provisional": false,
+   "asof": "2026-07-30",
+   "last": {
+    "date": "2026-07-22",
     "type": "buy",
     "quality": "take",
     "reason": "held confirmation"
@@ -2300,14 +2300,14 @@
   "0019.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 6,
-   "fresh_bars": 15,
+   "ticks": 5,
+   "fresh_bars": 13,
    "above200": true,
-   "weekly_bull": true,
+   "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-10",
+    "date": "2026-07-14",
     "type": "buy",
     "quality": "take",
     "reason": "held confirmation"
@@ -2317,45 +2317,45 @@
    "eligible": false,
    "tier_cascade": null,
    "ticks": 5,
-   "fresh_bars": 14,
+   "fresh_bars": 13,
    "above200": true,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-13",
+    "date": "2026-07-14",
     "type": "buy",
     "quality": "take",
     "reason": "held confirmation"
    }
   },
   "0083.HK": {
-   "eligible": false,
-   "tier_cascade": null,
-   "ticks": 4,
-   "fresh_bars": 9,
+   "eligible": true,
+   "tier_cascade": "T1",
+   "ticks": 2,
+   "fresh_bars": 4,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-20",
+    "date": "2026-07-27",
     "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "quality": "pending",
+    "reason": "pending confirmation"
    }
   },
   "0316.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 5,
-   "fresh_bars": 14,
+   "fresh_bars": 13,
    "above200": true,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-13",
+    "date": "2026-07-14",
     "type": "buy",
     "quality": "take",
     "reason": "held confirmation"
@@ -2380,30 +2380,30 @@
   "0390.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 12,
-   "fresh_bars": 33,
+   "ticks": 4,
+   "fresh_bars": null,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-06-12",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "date": "2026-06-25",
+    "type": "cut",
+    "quality": null,
+    "reason": null
    }
   },
   "0763.HK": {
-   "eligible": true,
-   "tier_cascade": "T2",
-   "ticks": 0,
-   "fresh_bars": 9,
+   "eligible": false,
+   "tier_cascade": null,
+   "ticks": 5,
+   "fresh_bars": 13,
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-20",
+    "date": "2026-07-14",
     "type": "buy",
     "quality": "block",
     "reason": "failed next-bar hold"
@@ -2412,30 +2412,30 @@
   "0669.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 12,
-   "fresh_bars": 33,
+   "ticks": 11,
+   "fresh_bars": null,
    "above200": true,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-29",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-06-12",
-    "type": "rebuy",
-    "quality": "block",
-    "reason": "failed next-bar hold"
+    "date": "2026-05-26",
+    "type": "sell",
+    "quality": null,
+    "reason": null
    }
   },
   "2338.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 23,
+   "ticks": 22,
    "fresh_bars": null,
    "above200": true,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-05-18",
+    "date": "2026-05-15",
     "type": "sell",
     "quality": null,
     "reason": null
@@ -2449,9 +2449,9 @@
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-06-19",
+    "date": "2026-06-22",
     "type": "cut",
     "quality": null,
     "reason": null
@@ -2460,14 +2460,14 @@
   "0656.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 8,
-   "fresh_bars": 22,
+   "ticks": 5,
+   "fresh_bars": 13,
    "above200": true,
    "weekly_bull": true,
    "provisional": false,
    "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-01",
+    "date": "2026-07-14",
     "type": "buy",
     "quality": "block",
     "reason": "failed next-bar hold"
@@ -2476,30 +2476,30 @@
   "0144.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 6,
-   "fresh_bars": 15,
+   "ticks": 5,
+   "fresh_bars": 13,
    "above200": true,
-   "weekly_bull": true,
+   "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-10",
+    "date": "2026-07-14",
     "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "quality": "take",
+    "reason": "reclaimed 200 & held"
    }
   },
   "0392.HK": {
    "eligible": false,
    "tier_cascade": null,
    "ticks": 7,
-   "fresh_bars": 18,
+   "fresh_bars": 19,
    "above200": false,
    "weekly_bull": true,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-07",
+    "date": "2026-07-06",
     "type": "buy",
     "quality": "block",
     "reason": "counter-trend, held but no 200-reclaim"
@@ -2508,17 +2508,17 @@
   "1072.HK": {
    "eligible": false,
    "tier_cascade": null,
-   "ticks": 3,
-   "fresh_bars": 6,
+   "ticks": 38,
+   "fresh_bars": null,
    "above200": false,
    "weekly_bull": false,
    "provisional": false,
-   "asof": "2026-07-31",
+   "asof": "2026-07-30",
    "last": {
-    "date": "2026-07-23",
-    "type": "buy",
-    "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "date": "2026-03-12",
+    "type": "sell",
+    "quality": null,
+    "reason": null
    }
   }
  },

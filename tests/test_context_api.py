@@ -44,6 +44,7 @@ from engine.neuralweb.context_api import (
     _regime_dim,
     _short_int_dim,
     _insider_dim,
+    _options_dim,
     _spine_dim,
     _fundamental_forensics_dim,
     _trading_days_between,
@@ -588,6 +589,164 @@ def test_options_absent_tolerant(tmp_path):
     dim = result["dimensions"]["options"]
     assert dim.get("absent") is True
     # Must not raise
+
+
+# ---------------------------------------------------------------------------
+# (11b) Options — the GEX as-of join
+# ---------------------------------------------------------------------------
+# data/polygon_gex/summary_<TICKER>.parquet is written by lib.store.upsert,
+# whose contract is a bare DatetimeIndex: the index is coerced with
+# pd.to_datetime, normalize()d to midnight, de-duplicated and sort_index()ed.
+# There is NO 'date' column and never has been — all 418 files on disk carry
+# the same 16 value columns and an unnamed DatetimeIndex.  These tests pin the
+# as-of join against that index.
+#
+# STAMP SEMANTICS: every stamp is the NYSE SESSION the snapshot describes.
+# The join is therefore a plain "greatest stamp <= as_of" with NO calendar
+# offset in either direction; test_options_gex_stamp_is_taken_at_face_value
+# fails if one is ever reintroduced.
+
+_GEX_COLUMNS = (
+    "spot", "net_gex_bn", "net_vex", "net_cex", "gamma_flip",
+    "dist_to_flip_pct", "gamma_regime", "magnet_up", "magnet_down",
+    "charm_anchor", "charm_net_sign", "iv30", "put_call_oi_ratio",
+    "max_pain", "n_strikes", "tier",
+)
+
+
+def _write_gex_summary(root: Path, ticker: str, rows: dict[str, dict]) -> Path:
+    """Write a polygon_gex summary in the real store shape.
+
+    ``rows`` maps session stamp -> partial column overrides.  The frame is
+    built exactly as lib.store.upsert leaves it: a normalized, sorted,
+    unnamed DatetimeIndex and the 16 value columns, no date column.
+    """
+    frame = pd.DataFrame(
+        [{c: r.get(c) for c in _GEX_COLUMNS} for r in rows.values()],
+        index=pd.DatetimeIndex(pd.to_datetime(list(rows))).normalize(),
+    ).sort_index()
+    path = root / "data" / "polygon_gex" / f"summary_{ticker}.parquet"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    frame.to_parquet(path)
+    return path
+
+
+def test_options_gex_asof_returns_the_latest_row_at_or_before(tmp_path):
+    """A ticker with GEX history yields a populated gex block at an as-of.
+
+    Regression: _options_dim looked for a 'date' COLUMN that the store has
+    never had, so `if date_col:` was unreachable and gex was None for every
+    call ever made.  The shipped context vector store proves it — the
+    options__gex column is 0/2933 non-null while options__skew is 392/2933.
+    """
+    root = _make_root(tmp_path)
+    _write_gex_summary(root, "AAPL", {
+        "2026-07-29": {"spot": 300.0, "net_gex_bn": 1.0, "gamma_regime": "short"},
+        "2026-07-30": {"spot": 310.0, "net_gex_bn": 2.0, "gamma_regime": "long"},
+    })
+
+    dim = _options_dim("AAPL", pd.Timestamp("2026-07-30"), root)
+
+    assert not dim.get("absent"), "gex present should carry the dimension"
+    gex = dim["value"]["gex"]
+    assert gex is not None, "the as-of join must populate gex"
+    assert gex["spot"] == 310.0
+    assert gex["net_gex_bn"] == 2.0
+    assert gex["gamma_regime"] == "long"
+    assert gex["as_of"] == "2026-07-30"
+
+
+def test_options_gex_stamp_is_taken_at_face_value(tmp_path):
+    """No calendar offset: an as-of ON a stamped session returns THAT session.
+
+    Stamps are the session the snapshot describes (they were the UTC run date,
+    one session forward, until the 2026-08-06 migration).  A +/-1 day nudge to
+    compensate for that old defect would fail here.
+    """
+    root = _make_root(tmp_path)
+    _write_gex_summary(root, "MSFT", {
+        "2026-07-28": {"spot": 100.0},
+        "2026-07-29": {"spot": 200.0},
+        "2026-07-30": {"spot": 300.0},
+    })
+
+    for stamp, spot in (("2026-07-28", 100.0), ("2026-07-29", 200.0), ("2026-07-30", 300.0)):
+        gex = _options_dim("MSFT", pd.Timestamp(stamp), root)["value"]["gex"]
+        assert gex["as_of"] == stamp, f"as-of {stamp} must return its own row"
+        assert gex["spot"] == spot
+
+
+def test_options_gex_never_looks_ahead(tmp_path):
+    """An as-of between stamps returns the earlier row, never the future one."""
+    root = _make_root(tmp_path)
+    _write_gex_summary(root, "NVDA", {
+        "2026-07-30": {"spot": 100.0},
+        "2026-08-06": {"spot": 999.0},   # future relative to the query
+    })
+
+    gex = _options_dim("NVDA", pd.Timestamp("2026-08-03"), root)["value"]["gex"]
+
+    assert gex["as_of"] == "2026-07-30"
+    assert gex["spot"] == 100.0, "a stamp after the as-of must never be selected"
+
+
+def test_options_gex_absent_when_asof_predates_every_row(tmp_path):
+    """Degrade to None — not a raise, not a row — when nothing is at or before."""
+    root = _make_root(tmp_path)
+    _write_gex_summary(root, "TSLA", {"2026-07-30": {"spot": 100.0}})
+
+    dim = _options_dim("TSLA", pd.Timestamp("2026-06-01"), root)
+
+    # No skew store either, so the whole dimension degrades to absent.
+    assert dim.get("absent") is True
+
+
+def test_options_gex_carries_the_dimension_without_skew(tmp_path):
+    """gex alone makes the dimension present, and supplies its as_of."""
+    root = _make_root(tmp_path)
+    _write_gex_summary(root, "AMD", {"2026-07-30": {"spot": 100.0, "tier": "full"}})
+
+    dim = _options_dim("AMD", pd.Timestamp("2026-07-31"), root)
+
+    assert not dim.get("absent")
+    assert dim["value"]["skew"] is None
+    assert dim["as_of"] == "2026-07-30", "dimension as_of falls through to gex"
+    assert dim["basis"] == "options_snapshot"
+
+
+def test_options_gex_does_not_leak_internal_columns(tmp_path):
+    """The emitted dict is the store's own columns plus as_of — nothing else."""
+    root = _make_root(tmp_path)
+    _write_gex_summary(root, "META", {"2026-07-30": {"spot": 100.0, "n_strikes": 900}})
+
+    gex = _options_dim("META", pd.Timestamp("2026-07-30"), root)["value"]["gex"]
+
+    assert set(gex) == {*_GEX_COLUMNS, "as_of"}
+    assert not any(k.startswith("_") for k in gex), "no _dt scratch column"
+
+
+def test_options_gex_missing_values_normalize_to_none(tmp_path):
+    """NaN never reaches the payload — the dimension is JSON-serialisable."""
+    root = _make_root(tmp_path)
+    _write_gex_summary(root, "AAPL", {"2026-07-30": {"spot": 100.0}})  # rest NaN
+
+    gex = _options_dim("AAPL", pd.Timestamp("2026-07-30"), root)["value"]["gex"]
+
+    assert gex["spot"] == 100.0
+    assert gex["max_pain"] is None
+    assert not any(isinstance(v, float) and pd.isna(v) for v in gex.values())
+
+
+def test_options_gex_unreadable_store_stays_absent_tolerant(tmp_path):
+    """A corrupt summary file degrades to absent, never raises (CI-runner law)."""
+    root = _make_root(tmp_path)
+    path = root / "data" / "polygon_gex" / "summary_AAPL.parquet"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(b"not a parquet file")
+
+    dim = _options_dim("AAPL", pd.Timestamp("2026-07-30"), root)
+
+    assert dim.get("absent") is True
 
 
 # ---------------------------------------------------------------------------

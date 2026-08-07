@@ -1251,11 +1251,29 @@ def _fetch_cn_wires(cfg: dict, today: date | None = None) -> tuple[list[dict], s
     return items, (None if items else "cn_wire_no_headlines")
 
 
-def _gdelt_query(cfg: dict) -> str:
+# GDELT rejects long queries server-side ('Your query was too short or too long',
+# limit tightened ~2026-06-20; probed 2026-07-10: 246 chars accepted, 288 rejected —
+# see engine/news_vector._MAX_QUERY_LEN). The single joined wire query is ~410 chars,
+# so it was structurally rejected EVERY night and the wire lane sat dark from
+# ~2026-06-20 until this split (W3 re-measure, 2026-08-06).
+_WIRE_MAX_QUERY_LEN = 230
+
+
+def _gdelt_queries(cfg: dict) -> list[str]:
+    """Split the wire term list into OR-group sub-queries whose FULL query strings
+    (terms + sourcelang suffix) each stay under _WIRE_MAX_QUERY_LEN. PURE.
+    Queries are intentionally broad; source allowlist + deterministic macro theme
+    gate below do the precision work."""
     terms = cfg.get("wire_query_terms") or GDELT_QUERY_TERMS
-    # Query is intentionally broad; source allowlist + deterministic macro theme
-    # gate below do the precision work.
-    return "(" + " OR ".join(terms) + f") sourcelang:{cfg.get('wire_lang', 'eng')}"
+    suffix = f" sourcelang:{cfg.get('wire_lang', 'eng')}"
+    budget = _WIRE_MAX_QUERY_LEN - len(suffix) - 2          # 2 for the wrapping parens
+    groups: list[list[str]] = [[]]
+    for term in terms:
+        if groups[-1] and len(" OR ".join(groups[-1] + [term])) > budget:
+            groups.append([term])
+        else:
+            groups[-1].append(term)
+    return ["(" + " OR ".join(g) + ")" + suffix for g in groups if g]
 
 
 def _fetch_wire_gdelt(cfg: dict, today: date | None = None) -> tuple[list[dict], str | None]:
@@ -1285,27 +1303,44 @@ def _fetch_wire_gdelt(cfg: dict, today: date | None = None) -> tuple[list[dict],
     win = int(cfg.get("wire_window_days", cfg.get("window_days", 4)))
     end = datetime(today.year, today.month, today.day, 23, 59, 59)
     start = end - timedelta(days=win)
-    params = {"query": _gdelt_query(cfg), "mode": "artlist", "format": "json",
-              "maxrecords": str(cfg.get("wire_max_records", 160)), "sort": "datedesc",
-              "startdatetime": start.strftime("%Y%m%d%H%M%S"),
-              "enddatetime": end.strftime("%Y%m%d%H%M%S")}
     items: list[dict] = []
     reason: str | None = None
     allow = [s.lower() for s in (cfg.get("wire_sources") or WIRE_SOURCES)]
     timeout_s = max(5, int(cfg.get("wire_timeout_s", 12)))
     try:
-        raw_articles, gc_reason = _gc.get_articles(params, timeout=timeout_s)
-        if raw_articles is None:
-            raw_articles = []
-        # map gdelt_client reason tokens to china_news's own tokens
-        if gc_reason == "rate_limited":
+        # Fan out over the split sub-queries (each under GDELT's server-side length
+        # limit — the old single 410-char query was rejected structurally every
+        # night), merge, and dedupe on (title, domain) like news_vector.fetch_range.
+        # Worst sub-query outcome wins the degraded_reason so a structural
+        # rejection stays loud even when the other sub-queries succeeded.
+        raw_articles: list[dict] = []
+        seen: set[tuple[str, str]] = set()
+        gc_reasons: list[str] = []
+        for q in _gdelt_queries(cfg):
+            params = {"query": q, "mode": "artlist", "format": "json",
+                      "maxrecords": str(cfg.get("wire_max_records", 160)),
+                      "sort": "datedesc",
+                      "startdatetime": start.strftime("%Y%m%d%H%M%S"),
+                      "enddatetime": end.strftime("%Y%m%d%H%M%S")}
+            got, gc_reason = _gc.get_articles(params, timeout=timeout_s)
+            if got is None:
+                gc_reasons.append(gc_reason or "fetch_error")
+                continue
+            for a in got:
+                key = ((a.get("title") or "").strip(), (a.get("domain") or "").lower())
+                if key in seen:
+                    continue                 # same story matched two sub-queries
+                seen.add(key)
+                raw_articles.append(a)
+        # map the WORST gdelt_client reason token to china_news's own tokens
+        _priority = ("query_rejected", "rate_limited", "fetch_error")
+        gc_worst = next((lvl for lvl in _priority if lvl in gc_reasons), None)
+        if gc_worst == "query_rejected":
+            reason = "wire_query_rejected"
+        elif gc_worst == "rate_limited":
             reason = "wire_rate_limited"
-        elif gc_reason in ("fetch_error",):
+        elif gc_worst == "fetch_error":
             reason = "wire_fetch_error"
-        elif gc_reason == "no_articles":
-            reason = "wire_no_headlines"
-        else:
-            reason = gc_reason
 
         for a in raw_articles:
             dom = (a.get("domain") or "").lower()
@@ -1317,9 +1352,7 @@ def _fetch_wire_gdelt(cfg: dict, today: date | None = None) -> tuple[list[dict],
                           "theme": classify_theme(title) or "macro",
                           "source": "gdelt", "source_name": dom or "GDELT",
                           "source_tier": "wire"})
-        if raw_articles and not items:
-            reason = "wire_no_headlines"
-        elif not raw_articles and not items and reason is None:
+        if not items and reason is None:
             reason = "wire_no_headlines"
     except Exception as e:  # noqa: BLE001
         log.warning("china_news gdelt wire fetch failed (%s)", e)

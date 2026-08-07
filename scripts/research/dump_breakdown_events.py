@@ -86,6 +86,7 @@ from engine.grading import (  # noqa: E402
 )
 from engine.trial_ledger import TrialLedger  # noqa: E402
 from engine.signal_quality import fresh_breach_mask  # noqa: E402
+from engine import session_anchor as _sa  # noqa: E402  — per-market bucket calendar (R-SQ1)
 
 # split_adjust from scripts.replay_standout_pipeline (the canonical import per §3.2)
 try:
@@ -632,17 +633,24 @@ def detect_bd3(ticker: str, close: pd.Series, raw_df: pd.DataFrame | None) -> li
         return events
 
     # Compute ema8 fresh_breach via the canonical fresh_breach_mask() helper in
-    # engine.signal_quality (single source of truth: 3B resample, span=8, fresh_breach mask).
+    # engine.signal_quality (single source of truth: absolute-session 3D buckets, span=8,
+    # fresh_breach mask). The buckets are anchored to the ticker's OWN market calendar
+    # (signal_quality R-SQ1) — inferred from the ticker rather than pinned, so a non-US
+    # name never gets silently bucketed on NYSE sessions.
     try:
-        fresh_breach_3b = fresh_breach_mask(close)
+        fresh_breach_3b = fresh_breach_mask(close, market=_sa.market_for_ticker(ticker))
     except Exception as e:
         log.debug("BD-3 fresh_breach_mask failed for %s: %s", ticker, e)
         return events
     if fresh_breach_3b.empty:
         return events
 
-    # Map 3B breach dates back to daily close dates: the 3B bar date is the LAST
-    # trading day of that bucket, so we collect those dates directly as a set.
+    # Map bucket breach dates back to daily close dates. Under sq-abs-session-2026-08-06 a
+    # bucket label is its OPEN date — the FIRST traded session in it (R-SQ2) — so every
+    # label is a real row of `close` and the membership test below always resolves. (The
+    # retired "3B" bins labelled the synthetic LEFT EDGE, which could be a holiday present
+    # in no series at all; such a breach silently matched nothing. The comment here claimed
+    # the LAST trading day, which was never what either construction produced.)
     breach_dates: set[pd.Timestamp] = set(fresh_breach_3b.index[fresh_breach_3b])
 
     # Extended: close >= 1.15 * rolling 126-bar min

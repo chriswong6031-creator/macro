@@ -209,7 +209,7 @@ class TestStateAssignment:
              patch("engine.mtf_upturn._leg_w_macd", return_value="cross" if w_macd_cross else "none"), \
              patch("engine.mtf_upturn._leg_w2_macd", return_value=w2_macd), \
              patch("engine.mtf_upturn._monthly_phase", return_value="macd_pos/rising"):
-            return _compute_symbol(close, close, prior_state, prior_held)
+            return _compute_symbol("TEST", close, prior_state, prior_held)
 
     def test_k0_is_none(self):
         r = self._make_result(False, False, False, False)
@@ -271,7 +271,7 @@ class TestHysteresis:
              patch("engine.mtf_upturn._leg_w_macd", return_value="cross" if w_macd_cross else "none"), \
              patch("engine.mtf_upturn._leg_w2_macd", return_value=w2_macd), \
              patch("engine.mtf_upturn._monthly_phase", return_value="macd_pos/rising"):
-            return _compute_symbol(close, close, prior_state, prior_held)
+            return _compute_symbol("TEST", close, prior_state, prior_held)
 
     def test_confirmed_stays_while_k2_session1(self):
         """CONFIRMED persists at K=2 on session 1 of hysteresis."""
@@ -315,7 +315,7 @@ class TestApproachingDoesNotCount:
              patch("engine.mtf_upturn._leg_w_macd", return_value="approaching"), \
              patch("engine.mtf_upturn._leg_w2_macd", return_value=False), \
              patch("engine.mtf_upturn._monthly_phase", return_value="macd_neg/rising"):
-            r = _compute_symbol(close, close, "NONE", 0)
+            r = _compute_symbol("TEST", close, "NONE", 0)
         # K should be 0 (approaching doesn't count)
         assert r["k"] == 0
         assert r["legs"]["w_macd"] == "approaching"
@@ -330,7 +330,7 @@ class TestApproachingDoesNotCount:
              patch("engine.mtf_upturn._leg_w_macd", return_value="approaching"), \
              patch("engine.mtf_upturn._leg_w2_macd", return_value=False), \
              patch("engine.mtf_upturn._monthly_phase", return_value="macd_pos/rising"):
-            r = _compute_symbol(close, close, "NONE", 0)
+            r = _compute_symbol("TEST", close, "NONE", 0)
         assert r["k"] == 2
         assert r["state"] == "UPTURN_WATCH"  # K=2 → WATCH, not CONFIRMED
 
@@ -343,7 +343,7 @@ class TestApproachingDoesNotCount:
              patch("engine.mtf_upturn._leg_w_macd", return_value="approaching"), \
              patch("engine.mtf_upturn._leg_w2_macd", return_value=False), \
              patch("engine.mtf_upturn._monthly_phase", return_value="macd_neg/rising"):
-            r = _compute_symbol(close, close, "NONE", 0)
+            r = _compute_symbol("TEST", close, "NONE", 0)
         assert r["legs"]["w_macd"] == "approaching"
 
 
@@ -551,7 +551,7 @@ class TestWeeklyMACDStatus:
              patch("engine.mtf_upturn._leg_d3_confluence", return_value=False), \
              patch("engine.mtf_upturn._leg_w2_macd", return_value=False), \
              patch("engine.mtf_upturn._monthly_phase", return_value="macd_neg/rising"):
-            r = _compute_symbol(close, close, "NONE", 0)
+            r = _compute_symbol("TEST", close, "NONE", 0)
         assert r["k"] == 0
 
 
@@ -609,7 +609,7 @@ class TestHysteresisCounterE2E:
                  patch("engine.mtf_upturn._leg_w_macd", return_value=w_macd_val), \
                  patch("engine.mtf_upturn._leg_w2_macd", return_value=legs["w2_macd"]), \
                  patch("engine.mtf_upturn._monthly_phase", return_value="macd_pos/rising"):
-                r = _compute_symbol(close, close, prior_state, prior_held)
+                r = _compute_symbol("TEST", close, prior_state, prior_held)
 
             state = r["state"]
             raw_state = r["raw_state"]
@@ -702,7 +702,7 @@ class TestHTFCoverage:
         close = _flat_series(150, 100.0)
         # Do NOT patch legs — let real functions run to verify honest False
         with patch("engine.mtf_upturn._monthly_phase", return_value="unknown"):
-            r = _compute_symbol(close, close, "NONE", 0)
+            r = _compute_symbol("TEST", close, "NONE", 0)
 
         assert r["legs"]["w2_macd"] is False, "w2_macd must be False for ~150-bar series"
         assert r["htf_coverage"] is False, (
@@ -718,14 +718,14 @@ class TestHTFCoverage:
              patch("engine.mtf_upturn._leg_w_macd", return_value="none"), \
              patch("engine.mtf_upturn._leg_w2_macd", return_value=False), \
              patch("engine.mtf_upturn._monthly_phase", return_value="unknown"):
-            r = _compute_symbol(close, close, "NONE", 0)
+            r = _compute_symbol("TEST", close, "NONE", 0)
         assert "htf_coverage" in r
 
     def test_htf_coverage_true_on_long_series(self):
         """600-bar series should have htf_coverage=True (2W MACD is non-NaN)."""
         close = _trending_up(600)
         with patch("engine.mtf_upturn._monthly_phase", return_value="macd_pos/rising"):
-            r = _compute_symbol(close, close, "NONE", 0)
+            r = _compute_symbol("TEST", close, "NONE", 0)
         # 600 bars ~= 30 2W bars, enough for 35 needed; coverage may still be marginal
         # but at minimum should produce a non-NaN histogram
         # (flag as True when w2 hist has >= W2_MACD_CROSS_WINDOW+1 valid bars)
@@ -863,7 +863,7 @@ class TestTrendFields:
     def test_compute_symbol_carries_trend(self):
         """_compute_symbol output always includes 'trend' dict."""
         close = _trending_up(400)
-        r = _compute_symbol(close, close, "NONE", 0)
+        r = _compute_symbol("TEST", close, "NONE", 0)
         assert "trend" in r, "_compute_symbol output missing 'trend' key (U7)"
         trend = r["trend"]
         for tf in ("d", "d3", "w", "w2"):
@@ -873,8 +873,8 @@ class TestTrendFields:
         """Adding trend fields must not change K or state (construction frozen)."""
         close = _trending_up(400)
         # Run twice, check K and state are identical (trend is additive only)
-        r1 = _compute_symbol(close, close, "NONE", 0)
-        r2 = _compute_symbol(close, close, "NONE", 0)
+        r1 = _compute_symbol("TEST", close, "NONE", 0)
+        r2 = _compute_symbol("TEST", close, "NONE", 0)
         assert r1["k"] == r2["k"]
         assert r1["state"] == r2["state"]
         assert r1["legs"] == r2["legs"]
