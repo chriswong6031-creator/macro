@@ -1,12 +1,27 @@
 {
   "as_of": "2026-08-06",
   "coverage": {
-    "end": "2026-08-05",
-    "note": "daily rollup covers 10 session-date(s) from 2026-07-27 to 2026-08-05; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
-    "start": "2026-07-27"
+    "end": "2026-08-06",
+    "note": "daily rollup covers 10 session-date(s) from 2026-07-28 to 2026-08-06; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-07-28"
   },
   "schema": "chronicle.rollup.daily/v1",
   "sessions": [
+    {
+      "date": "2026-08-06",
+      "events": [
+        {
+          "date": "2026-08-06",
+          "id": "cev-research_vault-2fe6ddd4e3c8",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-eglyaiphi8v-4403b5",
+          "tickers": [],
+          "title": "Goldman Sachs: Expedia Group (EXPE) Q2'26 Earnings Review Strong Execution and B2B Momentum Drive Beat and Raise Quarter",
+          "weight_hint": 3
+        }
+      ]
+    },
     {
       "date": "2026-08-05",
       "events": [
@@ -197,70 +212,55 @@
           "tickers": [],
           "title": "J.P. Morgan: JPM US Market Intell | Morning Briefing",
           "weight_hint": 3
-        }
-      ]
-    },
-    {
-      "date": "2026-07-27",
-      "events": [
-        {
-          "date": "2026-07-27",
-          "id": "cev-research_vault-1ba0b6a9e9c3",
-          "kind": "report",
-          "source": "research_vault",
-          "source_ref": "marketdesk-bms7cauktyp-277d6e",
-          "tickers": [],
-          "title": "Goldman Sachs: Japan Portfolio Strategy Trigger warnings Lessons from the July August 2024 sell off",
-          "weight_hint": 3
         },
         {
-          "date": "2026-07-27",
-          "id": "cev-research_vault-de040eb9c033",
+          "date": "2026-07-28",
+          "id": "cev-research_vault-f6b301ad91d9",
           "kind": "report",
           "source": "research_vault",
-          "source_ref": "marketdesk-bsw5n8dbnri-2c84f6",
+          "source_ref": "marketdesk-yed4zegfbyz-8d1b1f",
           "tickers": [],
-          "title": "BTIG: The Backstop Boys",
+          "title": "Deutsche Bank: DB Early Morning Reid Macro Strategy 2 1",
           "weight_hint": 2
         },
         {
-          "date": "2026-07-27",
-          "id": "cev-research_vault-e3bcb2d03453",
+          "date": "2026-07-28",
+          "id": "cev-research_vault-f891c44726e7",
           "kind": "report",
           "source": "research_vault",
-          "source_ref": "marketdesk-xec7hlxdq8s-dc2440",
+          "source_ref": "marketdesk-2bj6binstrr-1131e3",
           "tickers": [],
-          "title": "Goldman Sachs: CEEMEA in Focus Trip Notes from Kenya — Stronger BoP and Shilling Support",
+          "title": "Other: MRB Theme What Cant Be Sustained Wont Be Five Charts Highlighting Unsustainable US Trends July 28 2026",
           "weight_hint": 2
         },
         {
-          "date": "2026-07-27",
-          "id": "cev-research_vault-f3db63abd284",
+          "date": "2026-07-28",
+          "id": "cev-research_vault-fa0c53e697b4",
           "kind": "report",
           "source": "research_vault",
-          "source_ref": "marketdesk-u7rtn3b1y0w-1ffd42",
+          "source_ref": "marketdesk-nyppxndg4ve-b079ea",
           "tickers": [],
-          "title": "Bank of America: Short and strong Sliding shorter",
+          "title": "Other: fxfistrategy docs",
           "weight_hint": 2
         },
         {
-          "date": "2026-07-27",
-          "id": "cev-research_vault-f54115fb3650",
+          "date": "2026-07-28",
+          "id": "cev-research_vault-fed6cc964597",
           "kind": "report",
           "source": "research_vault",
-          "source_ref": "marketdesk-akbdyzhvig4-aa2f88",
+          "source_ref": "marketdesk-8h0bnh0zc24-28fcfa",
           "tickers": [],
-          "title": "Deutsche Bank: Global Autos Daily Market Update",
+          "title": "UBS: Investment grade bonds",
           "weight_hint": 2
         },
         {
-          "date": "2026-07-27",
-          "id": "cev-risk_band-8489299a6c95",
+          "date": "2026-07-28",
+          "id": "cev-risk_band-c0c1fbc1d50d",
           "kind": "state_flip",
           "source": "risk_band",
-          "source_ref": "risk_radar_forward_log#2026-07-27",
+          "source_ref": "risk_radar_forward_log#2026-07-28",
           "tickers": [],
-          "title": "Risk radar: caution → watch",
+          "title": "Risk radar: watch → caution",
           "weight_hint": 2
         }
       ]

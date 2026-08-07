@@ -1,18 +1,27 @@
 {
   "status": "stale",
-  "checked_at": "2026-08-05T10:24:45.141302+00:00",
+  "checked_at": "2026-08-07T03:24:37.192404+00:00",
   "threshold_sessions": 3,
-  "store_max": "2026-08-04",
-  "n_members": 694,
-  "n_stale": 1,
-  "n_behind_within_threshold": 692,
-  "stale": {
+  "store_max": "2026-08-06",
+  "n_members": 700,
+  "n_stale": 0,
+  "n_behind_within_threshold": 1,
+  "stale": {},
+  "missing": [
+    "GATO",
+    "MAG"
+  ],
+  "inactive": {
     "BLD": {
       "last": "2026-07-02",
-      "sessions_behind": 22
+      "sessions_behind": 24,
+      "removed": "2026-07-01",
+      "rationale": "TopBuild \u2014 insulation distribution/installation scale. DELISTED: acquired by QXO, merger completed 2026-07-01, NYSE trading suspended before the open that day; renamed QXO Insulation, LLC (SEC CIK 1633931 formerNames; Form 15-12G deregistra"
     }
   },
-  "missing": [],
-  "absent_all_rungs": [],
-  "n_absent_all_rungs": 0
+  "absent_all_rungs": [
+    "GATO",
+    "MAG"
+  ],
+  "n_absent_all_rungs": 2
 }
