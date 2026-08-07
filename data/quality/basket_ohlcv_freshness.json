@@ -1,11 +1,11 @@
 {
   "status": "stale",
-  "checked_at": "2026-08-07T03:24:37.192404+00:00",
+  "checked_at": "2026-08-07T12:16:22.988577+00:00",
   "threshold_sessions": 3,
   "store_max": "2026-08-06",
   "n_members": 700,
   "n_stale": 0,
-  "n_behind_within_threshold": 1,
+  "n_behind_within_threshold": 0,
   "stale": {},
   "missing": [
     "GATO",
