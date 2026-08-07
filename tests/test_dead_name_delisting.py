@@ -241,4 +241,5 @@ def test_price_coverage_softens_after_imputation(monkeypatch, tmp_path):
     assert cov["n_imputed_bankruptcies"] == 1
     assert cov["delisting_reason"]["bankruptcy"] == 1
     assert "imputed" in cov["residual_bias"] and "ACQUISITION" in cov["residual_bias"]
-    assert cov["schema"] == "dead_name_price_coverage.v2"
+    # v3 adds universe_basis (the index-exit caveat) + identity_splice_quarantine
+    assert cov["schema"] == "dead_name_price_coverage.v3"

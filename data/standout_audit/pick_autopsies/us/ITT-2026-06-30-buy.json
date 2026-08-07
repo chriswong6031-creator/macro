@@ -1,0 +1,112 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "ITT-2026-06-30-buy",
+  "ticker": "ITT",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "ITT",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "ITT",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_alpha",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Industrials",
+    "excess_spy": 0.03610679665793293,
+    "excess_sector": 0.05700701447932177,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CUSHIONED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "ITT outperformed SPY and ended CUSHIONED, with company-specific alpha recorded and no process fault. The terminal state suggests path effects mattered, but the supplied record contains no drawdown or catalyst chronology.",
+    "root_cause": "ITT outperformed SPY and ended CUSHIONED, with company-specific alpha recorded and no process fault. The terminal state suggests path effects mattered, but the supplied record contains no drawdown or catalyst chronology.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The company-alpha book surfaced the winner, while the path-risk book did not leave enough trace to explain the cushioned rather than clean trajectory.",
+    "engines_credit": "Company-alpha selection is the role model; path-risk, catalyst, and Industrials-rotation organs are evidentiary laggards.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "Company-specific strength is the recorded primary driver.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Without company-specific strength, positive excess return would need another explanation.",
+        "evidence_refs": [
+          "outcome_cause=idio_alpha",
+          "excess_spy=0.03610679665793293"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "entry_timing",
+        "factor": "",
+        "mechanism": "Buy placement occurred with no recorded timing or gate defect.",
+        "evidence_status": "corroborated",
+        "timing_status": "known_at_entry",
+        "counterfactual": "A materially different entry could have changed the path classification, but prices are missing.",
+        "evidence_refs": [
+          "lane=buy",
+          "board_tenure_days=0.0",
+          "process_fault=clean"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The CUSHIONED state indicates that the favorable outcome was moderated by an unspecified path characteristic.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "Without the moderating path effect, the outcome might have been classified as clean liftoff.",
+        "evidence_refs": [
+          "terminal_state=CUSHIONED"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Industrials rotation",
+      "Company-specific catalyst after entry",
+      "Temporary adverse path volatility followed by recovery"
+    ],
+    "missing_evidence": [
+      "Definition and components of CUSHIONED",
+      "Intraperiod return and drawdown path",
+      "Company and industry catalysts",
+      "Entry-date factor decomposition"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "alpha_path_resilience",
+        "feature": "Persistence of company residual strength through adverse path moves",
+        "measurement": "Track timestamp-safe residual trend stability and recovery behavior after selection.",
+        "expected_direction": "More persistent residual strength should associate with cushioned recovery rather than stopped outcomes.",
+        "falsifier": "Residual persistence does not distinguish cushioned from stopped paths.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T23:44:21+00:00"
+}

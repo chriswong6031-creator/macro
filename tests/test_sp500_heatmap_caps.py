@@ -77,6 +77,123 @@ def test_prev_payload_recycle_requires_marketcap(tmp_path):
     assert bh._load_caps_from_prev_payload(tmp_path) == {"AAPL": 3.5e12}
 
 
+class _FakeRefClient:
+    """ticker_details stub: value per symbol, or an Exception instance to raise."""
+
+    def __init__(self, by_sym):
+        self._by_sym = by_sym
+
+    def ticker_details(self, sym):
+        r = self._by_sym.get(sym)
+        if isinstance(r, Exception):
+            raise r
+        return r or {}
+
+
+def _run_refresh(monkeypatch, by_sym, symbols):
+    import collectors.polygon_options as po
+    monkeypatch.setenv("POLYGON_API_KEY", "k")
+    monkeypatch.setattr(po, "PolygonOptions", lambda: _FakeRefClient(by_sym))
+    bh.refresh_caps(pd.DataFrame(index=list(symbols)), force=True)
+
+
+def test_refresh_extracts_shares_from_details_dict(data_dir, monkeypatch):
+    # Pins the /v3/reference/tickers contract: results is ONE dict (not a page
+    # list) — routing it through the paginating _get iterated its keys and wrote
+    # shares=None for all 503 rows on every sweep 2026-07-11..08-02.
+    by_sym = {
+        "BKNG": {"weighted_shares_outstanding": 774_878_436,
+                 "sic_code": "4700", "sic_description": "TRANSPORTATION SERVICES"},
+        "BRK.B": {"share_class_shares_outstanding": 1_300_000_000},
+    }
+    _run_refresh(monkeypatch, by_sym, ["BKNG", "BRK-B"])
+    ref = pd.read_parquet(data_dir / "reference.parquet")
+    assert ref.loc["BKNG", "shares"] == 774_878_436.0     # weighted preferred
+    assert ref.loc["BKNG", "sic"] == "4700"
+    assert ref.loc["BRK-B", "shares"] == 1_300_000_000.0  # share-class fallback,
+    assert bh._shares_coverage(ref) == 1.0                # queried as BRK.B
+
+
+def test_refresh_refuses_majority_none_overwrite(data_dir, monkeypatch, capsys):
+    # A populated committed reference must survive a systemically failing sweep.
+    _write_ref(data_dir, asof="2020-01-01")
+    before = pd.read_parquet(data_dir / "reference.parquet")
+    _run_refresh(monkeypatch, {"AAPL": RuntimeError("boom")}, ["AAPL"])
+    after = pd.read_parquet(data_dir / "reference.parquet")
+    assert after["shares"].notna().sum() == before["shares"].notna().sum() == 1
+    assert after.loc["AAPL", "asof"] == "2020-01-01"  # stale stamp kept -> retries
+    lines = capsys.readouterr().out.splitlines()
+    # GitHub parses '::' only at column 0 — both annotations must START their line
+    assert any(ln.startswith("::warning title=sp500-ref-shares-coverage::")
+               for ln in lines)
+    assert any(ln.startswith("::warning title=sp500-ref-refused-overwrite::")
+               for ln in lines)
+
+
+def test_refresh_low_coverage_bootstrap_still_writes(data_dir, monkeypatch, capsys):
+    # No committed reference yet: even a degraded sweep seeds the cache (today's
+    # behavior), but the coverage ::warning must fire so it can't rot silently.
+    by_sym = {"AAPL": {"weighted_shares_outstanding": 1.5e10},
+              "MSFT": RuntimeError("boom")}
+    _run_refresh(monkeypatch, by_sym, ["AAPL", "MSFT"])
+    ref = pd.read_parquet(data_dir / "reference.parquet")
+    assert bh._shares_coverage(ref) == 0.5
+    assert ref.loc["AAPL", "shares"] == 1.5e10
+    out = capsys.readouterr().out
+    assert any(ln.startswith("::warning title=sp500-ref-shares-coverage::")
+               and "MSFT: RuntimeError: boom" in ln
+               for ln in out.splitlines())
+
+
+def test_refresh_refuses_partial_coverage_regression(data_dir, monkeypatch, capsys):
+    # The hole the majority line alone leaves: 100% -> 60% is a 40-point collapse
+    # in which BOTH sides clear the 50% floor, so `gutted` is False and only the
+    # relative no-regress rule (build_polygon_universe's, same endpoint) sees it.
+    df = pd.DataFrame({"ticker": list("ABCDE"),
+                       "shares": [1e9, 2e9, 3e9, 4e9, 5e9]}).set_index("ticker")
+    df["asof"] = "2020-01-01"
+    df.to_parquet(data_dir / "reference.parquet")
+    by_sym = {"A": {"weighted_shares_outstanding": 1e9},
+              "B": {"weighted_shares_outstanding": 2e9},
+              "C": {"weighted_shares_outstanding": 3e9},
+              "D": RuntimeError("boom"), "E": RuntimeError("boom")}
+    _run_refresh(monkeypatch, by_sym, list("ABCDE"))
+    ref = pd.read_parquet(data_dir / "reference.parquet")
+    assert bh._shares_coverage(ref) == 1.0          # old 100% kept, not the new 60%
+    assert ref.loc["A", "asof"] == "2020-01-01"
+    assert any(ln.startswith("::warning title=sp500-ref-refused-overwrite::")
+               and "coverage regression" in ln
+               for ln in capsys.readouterr().out.splitlines())
+
+
+def test_refresh_accepts_coverage_within_tolerance(data_dir, monkeypatch):
+    # A sweep that loses one name out of ten is normal delist/404 churn and must
+    # still land — a no-regress guard that blocks ordinary attrition would freeze
+    # the cache and quietly stop tracking real share-count changes.
+    syms = [f"S{i}" for i in range(10)]
+    df = pd.DataFrame({"ticker": syms, "shares": [1e9] * 10}).set_index("ticker")
+    df["asof"] = "2020-01-01"
+    df.to_parquet(data_dir / "reference.parquet")
+    by_sym = {s: {"weighted_shares_outstanding": 2e9} for s in syms}
+    by_sym["S9"] = RuntimeError("404")
+    _run_refresh(monkeypatch, by_sym, syms)
+    ref = pd.read_parquet(data_dir / "reference.parquet")
+    assert bh._shares_coverage(ref) == 0.9          # 90% == tolerance, accepted
+    assert ref.loc["S0", "shares"] == 2e9           # fresh counts really landed
+    assert ref.loc["S0", "asof"] != "2020-01-01"
+
+
+def test_refresh_all_none_over_all_none_overwrites(data_dir, monkeypatch):
+    # The current committed cache is 0% populated — a fresh (even failing) sweep
+    # may replace it; the clobber veto belongs to majority-POPULATED caches only.
+    df = pd.DataFrame({"ticker": ["AAPL"], "shares": [None]}).set_index("ticker")
+    df["asof"] = "2020-01-01"
+    df.to_parquet(data_dir / "reference.parquet")
+    _run_refresh(monkeypatch, {"AAPL": RuntimeError("boom")}, ["AAPL"])
+    ref = pd.read_parquet(data_dir / "reference.parquet")
+    assert ref.loc["AAPL", "asof"] != "2020-01-01"  # rewritten, stamp advanced
+
+
 def test_complete_caps_screens_poisoned_record(monkeypatch):
     # calibration names: cap/weight ratio = 10bn per weight-pct
     weights = {"XLY": {"A": 10.0, "B": 8.0, "C": 6.0, "BKNG": 5.0, "MISS": 2.0}}

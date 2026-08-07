@@ -52,6 +52,35 @@ The filter therefore lives in the two READERS, not in the seven consumers:
 so every positional consumer inherits it. See each function's docstring for the measured
 corruption it removes.
 
+GAP DISCIPLINE (hard rule, tested — the 2026-08-03..08-05 outage class): session-filtering
+guarantees every snapshot IS a session; it does not guarantee every session HAS a snapshot.
+``polygon_gex`` is chronically gappy and always has been — measured on the committed chain
+store at 2026-08-06, four interior gaps (2026-07-06, 07-15, 07-17, and the three-session
+08-03..08-05 collection outage) punch holes in 31 snapshot dates, and the snapshot API is
+current-only so NONE of them can ever be backfilled. Positional slicing then lies a second
+way, independent of the weekend-row class above: ``usable[-6:]`` still returns six rows, but
+they span NINE sessions at as_of 2026-08-06, and ``usable[-2]`` is FOUR sessions back rather
+than one. The two chain readers answer this differently, because the honest answer differs:
+
+  * ``_doi_slope_stamp`` FITS — and an OLS fit does not require evenly spaced x. Fitting
+    against SESSION ORDINALS (``[0,1,2,3,4,8]`` rather than ``np.arange``) makes the slope
+    genuinely per-session across the hole instead of charging a nine-session move to five
+    steps. This is the correct estimator under irregular sampling, not a patch: on a dense
+    window the ordinals ARE ``np.arange`` and the value is unchanged. Measured over 14
+    liquid names at as_of 2026-08-06, positional overstated the per-session rate by ~1.6x
+    and flipped META's SIGN (−0.0028 → +0.0348) — and ``S-DOI`` buckets on ``slope > 0``.
+  * ``_voi_flag_stamp`` / ``_ovc_from_chain`` COMPARE TWO SNAPSHOTS, and both pin the older
+    one to a specific meaning: "YESTERDAY's open interest". There is no re-weighting that
+    rescues a boolean or an OI-weighted share whose baseline is four sessions stale — and
+    the staleness is not neutral (OI accrues, so an older baseline is a LOWER bar and the
+    vol>OI flag biases toward True). They therefore REFUSE: null unless ``usable[-2]`` is
+    the session immediately before ``usable[-1]``.
+
+Nulls printed, never a mislabeled basis. Refusing costs one as_of per gap for the two
+comparisons (4 of 30 measured), where refusing the FIT would have cost 46% of all as_of
+dates (12 of 26 windows are wider than six sessions) — a stat that is null half the time is
+not a ledger primitive, and no repo change heals a collector outage.
+
 The ledger's ``as_of`` column is a STRING (``YYYY-MM-DD``); store dates are datetimes.
 All comparisons are done on ``date`` objects to avoid tz / ms-precision traps.
 
@@ -156,6 +185,13 @@ _NULL_STAMP: dict = {c: None for c in STAMP_COLS}
 _NEAR_MONEY_FRAC = 0.10
 # window length for the ΔOI slope: today + 5 prior trading snapshots = 6 points
 _DOI_WINDOW = 6
+# ...but the six snapshots are only SIX SESSIONS apart when the collector ran every
+# session, and it does not (GAP DISCIPLINE, module header).  The fit is therefore taken
+# against session ordinals, and the window is allowed to stretch only so far: at most as
+# many sessions may be MISSING from it as the fit has steps (``_DOI_WINDOW - 1`` = 5), so
+# six snapshots must span ≤ 11 sessions.  Past that the sample is more gap than
+# observation and no re-weighting makes "5d" describe it → None.
+_DOI_MAX_SPAN = 2 * _DOI_WINDOW - 1
 # roots with a numeric suffix (e.g. AAPL1) are corporate-action-adjusted — never mis-parse
 _ADJUSTED_ROOT = re.compile(r"\d$")
 
@@ -192,14 +228,24 @@ def _default_read_summary(ticker: str) -> pd.DataFrame | None:
 
       * ``_summary_stamp`` / ``_spot_from_summary`` — ``iloc[-1]``; the "latest" reading
         becomes a Saturday whenever the store has no row for the fire's own session.
-      * ``_vanna_hedge_5d_from_summary`` — ``iloc[-6]``, which stops meaning "5 sessions
-        ago". Measured on the store at as_of 2026-07-21, the raw ``iloc[-6]`` resolved to
-        2026-07-14 where the true 5-sessions-back row is 2026-07-10, and the resulting
-        vanna_hedge_5d changed for 10 of 10 sampled names WITH SIGN FLIPS (META
+      * ``_vanna_hedge_5d_from_summary`` — historically ``iloc[-6]``, which stops meaning
+        "5 sessions ago". Measured on the store at as_of 2026-07-21, the raw ``iloc[-6]``
+        resolved to 2026-07-14 where the true 5-sessions-back row is 2026-07-10, and the
+        resulting vanna_hedge_5d changed for 10 of 10 sampled names WITH SIGN FLIPS (META
         +5.51e6 → −2.54e7, IWM +3.28e6 → −1.68e6). ``opt_vanna_relief`` gates on a
         cross-sectional tercile of that value, so a sign flip moves names across the gate.
-      * ``scripts/stamp_options_state._get_iv30_5d_chg_from_summary`` — the same
-        ``iloc[-6]``; it reads through THIS function, so it inherits the fix.
+        Since 2026-08-06 its 5-back endpoint is resolved by CALENDAR
+        (``_row_n_sessions_back``), which splits the two gap shapes that positional
+        slicing conflated. A gap INTERIOR to the window (the 08-03..08-05 collection
+        outage, at as_of 08-06) no longer widens the basis at all — only the endpoints
+        enter a difference and the 5-back session 07-30 is stored, so the stat recovers
+        exactly. A gap AT THE TARGET SESSION is the unmeasurable case and returns None:
+        measured over the committed store that is as_of 07-13 / 07-22 / 07-24, whose
+        5-back targets 07-06 / 07-15 / 07-17 have no row in ANY store. This filter
+        remains the first line of defence against weekend rows reaching that resolver.
+      * ``scripts/stamp_options_state._get_iv30_5d_chg_from_summary`` — the same 5-back
+        read; it reads through THIS function and ``_row_n_sessions_back``, so it
+        inherits both fixes.
 
     ``session_rows`` is fail-open by contract: if filtering would empty the frame it
     returns the input unchanged, so a calendar surprise degrades to the old behaviour
@@ -361,6 +407,45 @@ def _near_money_call_oi(chain: pd.DataFrame, ticker: str) -> float | None:
     return float(calls["oi"].fillna(0).sum())
 
 
+def _session_span(first: _dt.date, last: _dt.date) -> int:
+    """Sessions in the INCLUSIVE range — 1 for a single session, 0 when ``last < first``."""
+    return len(nyse_calendar.sessions_between(first, last))
+
+
+def _is_prior_session(prev_d: _dt.date, cur_d: _dt.date) -> bool:
+    """True only when ``prev_d`` is the session IMMEDIATELY before ``cur_d``.
+
+    The two-snapshot chain readers mean a literal "yesterday" by their older snapshot (see
+    GAP DISCIPLINE in the module header), and after a collection gap it is not one. Also
+    False when either date is a non-session, so a fabricated snapshot that slipped past the
+    session filter cannot be read as yesterday either — fail-closed in both directions."""
+    return _session_span(prev_d, cur_d) == 2
+
+
+def _session_ordinals(dates: list[_dt.date]) -> list[float] | None:
+    """0-based SESSION index of each date, counted from ``dates[0]``.
+
+    A dense window yields ``[0,1,2,3,4,5]`` — exactly ``np.arange``, so the fit is
+    unchanged wherever the collector ran every session. The 2026-08-06 window yields
+    ``[0,1,2,3,4,8]``: the three sessions the outage lost are counted as elapsed time
+    rather than silently collapsed into one step.
+
+    None when any date is not a session or the list is not strictly ascending. A caller
+    handing over unsorted or fabricated dates gets a null rather than a silent mis-fit."""
+    if not dates:
+        return None
+    base = dates[0]
+    out: list[float] = []
+    for d in dates:
+        span = nyse_calendar.sessions_between(base, d)
+        if not span or span[-1] != d:
+            return None          # d precedes base, or is not a session
+        out.append(float(len(span) - 1))
+    if any(b <= a for a, b in zip(out, out[1:])):
+        return None              # duplicate or out-of-order snapshot dates
+    return out
+
+
 def _doi_slope_stamp(
     as_of: _dt.date,
     ticker: str,
@@ -371,11 +456,29 @@ def _doi_slope_stamp(
     snapshots with date ≤ as_of. Needs ≥ 5 prior days (6 points total) or returns None.
 
     Normalized = OLS slope / mean(series) so it is comparable across names. Positive =
-    call-OI accumulating (informed-accumulation proxy, Garleanu-Pedersen-Poteshman)."""
+    call-OI accumulating (informed-accumulation proxy, Garleanu-Pedersen-Poteshman).
+
+    TIME-TRUE ACROSS COLLECTION GAPS (see GAP DISCIPLINE in the module header). The fit is
+    taken against SESSION ORDINALS, not snapshot positions, so the slope is a per-SESSION
+    rate whether or not the collector ran every session: the units the ``_5d`` name and the
+    ``S-DOI`` ``slope > 0`` bucket both assume. On a dense window the ordinals are
+    ``np.arange`` and the value is byte-identical to the positional fit; only gapped
+    windows change, where the positional number was wrong. The window may stretch to
+    ``_DOI_MAX_SPAN`` sessions; past that no re-weighting makes it a 5-day read → None.
+
+    That the chain filename is a RUN stamp carrying the PRIOR session's snapshot does not
+    disturb the ordinals: ``D → previous session`` shifts every session index by exactly
+    one, and OLS is invariant to a constant x offset, so the SPACING is identical whether
+    ordinals are counted over run dates or over vintages."""
     usable = [d for d in chain_dates if d <= as_of]
     if len(usable) < _DOI_WINDOW:
         return None
     window = usable[-_DOI_WINDOW:]
+    if _session_span(window[0], window[-1]) > _DOI_MAX_SPAN:
+        return None
+    x_vals = _session_ordinals(window)
+    if x_vals is None:
+        return None
     series: list[float] = []
     for d in window:
         ch = read_chain(d)
@@ -389,7 +492,7 @@ def _doi_slope_stamp(
     mean = float(y.mean())
     if not (mean > 0):
         return None
-    x = np.arange(len(y), dtype=float)
+    x = np.asarray(x_vals, dtype=float)
     slope = float(np.polyfit(x, y, 1)[0])
     return round(slope / mean, 6)
 
@@ -405,11 +508,21 @@ def _voi_flag_stamp(
 
     Requires the current + one prior snapshot; None when unavailable. Uses prior-day OI so
     the comparison is genuinely 'fresh volume against pre-existing positioning' (not vol vs
-    same-day OI, which trivially includes the new trades)."""
+    same-day OI, which trivially includes the new trades).
+
+    PRIOR-SESSION-STRICT (see GAP DISCIPLINE in the module header): the prior snapshot must
+    be the session immediately before the current one, else None. After a collection gap
+    ``usable[-2]`` is several sessions back — at as_of 2026-08-06 it is four — and OI accrues
+    over the sessions in between, so a stale baseline is a systematically LOWER bar and this
+    flag biases toward True. A boolean has no re-weighting escape the way the ΔOI fit does:
+    the honest output is a null, which ``S-VOI`` excludes from both buckets rather than
+    scoring as False."""
     usable = [d for d in chain_dates if d <= as_of]
     if len(usable) < 2:
         return None
     today_d, prev_d = usable[-1], usable[-2]
+    if not _is_prior_session(prev_d, today_d):
+        return None
     today = read_chain(today_d)
     prev = read_chain(prev_d)
     if today is None or prev is None:
@@ -617,6 +730,16 @@ def _ovc_from_chain(
 
     This matches _voi_flag_stamp's pattern (today chain for volume, prior chain for OI).
     When fewer than 2 usable snapshots exist the metric is null (cannot form prior-day OI).
+
+    PRIOR-SESSION-STRICT (see GAP DISCIPLINE in the module header): what certifies this
+    metric PIT-clean is that its OI is the study's ``shift(1)`` — the PRIOR SESSION's book.
+    Across a collection gap ``usable[-2]`` is a shift(4), which is a different construction
+    from the frozen one, and not a uniformly conservative one: front-week OI builds steeply
+    into expiry, so a stale book understates exactly the ≤7-day weights this share is made
+    of, by an amount that varies with each name's expiry ladder. That distorts the
+    per-as_of tercile ``S-FRONT-CHARM`` buckets on, so the share goes null rather than
+    mixed-basis. ``opt_root_class`` is unaffected — it is taxonomy from the ticker alone and
+    needs no chain at all.
     """
     # Import here to avoid circular dependency at module level
     from engine.greeks import bs_greeks
@@ -630,6 +753,8 @@ def _ovc_from_chain(
         return out
     chain_date = usable[-1]   # current snapshot — provides greeks (T, iv, spot, expiry)
     prev_date = usable[-2]    # prior snapshot — provides OI (pre-fire-day positions)
+    if not _is_prior_session(prev_date, chain_date):
+        return out            # gap: the OI book is not the study's shift(1) — null, not mixed-basis
 
     cdf = read_chain(chain_date)
     if cdf is None or cdf.empty:
@@ -727,26 +852,71 @@ def _ovc_from_chain(
     return out
 
 
-def _vanna_hedge_5d_from_summary(
+def _row_n_sessions_back(usable: pd.DataFrame, n: int) -> pd.Series | None:
+    """The row exactly ``n`` NYSE sessions before ``usable``'s last row, resolved by DATE.
+
+    A two-endpoint "n-session change" needs endpoints ``n`` SESSIONS apart, not ``n``
+    ROWS apart — the two differ whenever the store took a collection outage. The
+    2026-08-03..08-05 outage left every summary store's 6 trailing rows spanning 9
+    sessions inclusive, i.e. EIGHT steps between the endpoints, so the positional
+    ``iloc[-(n+1)]`` shipped an eight-session change under a five-session label.
+    Calendar resolution stays exact across an interior gap (only the endpoints matter
+    for a difference) and returns None when the target session has no row —
+    unmeasurable, never mislabeled."""
+    last_d = _as_date(usable.index[-1])
+    if last_d is None:
+        return None
+    sess = nyse_calendar.sessions_between(last_d - _dt.timedelta(days=3 * n + 10), last_d)
+    if len(sess) < n + 1:
+        return None
+    target = sess[-(n + 1)]
+    for pos in range(len(usable) - 1, -1, -1):
+        d = _as_date(usable.index[pos])
+        if d == target:
+            return usable.iloc[pos]
+        if d is not None and d < target:
+            break
+    return None
+
+
+# Why the 5-session basis was unavailable — the cross-sectional ranker in
+# scripts/stamp_options_state.py needs these apart, because they mean opposite things
+# for its tercile denominator:
+#   BASIS_NO_HISTORY — the name has no options coverage at this as_of.  It was never a
+#     candidate; counting it would depress the coverage ratio on a perfectly healthy
+#     date (most ledger rows are names with no options store at all: 214 of 2,287).
+#   BASIS_GAP — the name HAS history, but the store is missing the one session the
+#     basis needs.  That is a collection MISS, and a date where most names miss is a
+#     date whose surviving cross-section is coverage-SELECTED, not representative.
+BASIS_OK = "ok"
+BASIS_NO_HISTORY = "no_history"
+BASIS_GAP = "gap"
+
+
+def _vanna_hedge_5d_basis(
     as_of: _dt.date,
     sdf: pd.DataFrame | None,
-) -> float | None:
-    """Compute vanna_hedge_5d = −net_vex × iv30_5d_chg from summary frame.
+) -> tuple[float | None, str]:
+    """``(vanna_hedge_5d, status)`` — the value plus WHY it is null when it is null.
 
-    PIT: uses only rows with index date ≤ as_of. Needs ≥ 6 such rows.
-    Returns None when insufficient history, columns absent, or any value non-finite.
+    Same computation as ``_vanna_hedge_5d_from_summary`` (which wraps this); the status
+    exists so a caller ranking these values cross-sectionally can measure its own
+    coverage.  See the BASIS_* constants above.
     """
     if sdf is None or sdf.empty:
-        return None
+        return None, BASIS_NO_HISTORY
     if "net_vex" not in sdf.columns or "iv30" not in sdf.columns:
-        return None
+        return None, BASIS_NO_HISTORY
     idx_dates = [_as_date(d) for d in sdf.index]
     mask = [d is not None and d <= as_of for d in idx_dates]
     usable = sdf[mask]
     if len(usable) < 6:
-        return None
+        return None, BASIS_NO_HISTORY
     latest = usable.iloc[-1]
-    prior = usable.iloc[-6]
+    prior = _row_n_sessions_back(usable, 5)
+    if prior is None:
+        # ≥6 sessions of history, but not a row AT the 5-back session: a store gap.
+        return None, BASIS_GAP
 
     def _f(v) -> float | None:
         try:
@@ -759,9 +929,25 @@ def _vanna_hedge_5d_from_summary(
     iv30_latest = _f(latest.get("iv30"))
     iv30_prior = _f(prior.get("iv30"))
     if net_vex is None or iv30_latest is None or iv30_prior is None:
-        return None
+        return None, BASIS_GAP
     iv30_5d_chg = iv30_latest - iv30_prior
-    return round(-net_vex * iv30_5d_chg, 6)
+    return round(-net_vex * iv30_5d_chg, 6), BASIS_OK
+
+
+def _vanna_hedge_5d_from_summary(
+    as_of: _dt.date,
+    sdf: pd.DataFrame | None,
+) -> float | None:
+    """Compute vanna_hedge_5d = −net_vex × iv30_5d_chg from summary frame.
+
+    PIT: uses only rows with index date ≤ as_of. Needs ≥ 6 such rows, and a row AT the
+    session exactly 5 sessions before the latest usable row — resolved by CALENDAR via
+    ``_row_n_sessions_back``, not by position, so a collection outage degrades this
+    stat to None instead of silently widening its basis.
+    Returns None when insufficient history, the 5-back session's row is absent,
+    columns absent, or any value non-finite.
+    """
+    return _vanna_hedge_5d_basis(as_of, sdf)[0]
 
 
 def _pin_risk_flag(
@@ -845,8 +1031,9 @@ def stamp_options_state(
     # polygon_gex/summary_* ~11 of 39 dates, options_skew 8 of 28, options_ivspread
     # 6 of 21, polygon_gex/chains 11 of 39 snapshot files.  Unfiltered they corrupt this
     # module three ways: the PIT `date <= as_of` + `.iloc[-1]` pick can land on a
-    # Saturday recompute; `_vanna_hedge_5d_from_summary`'s positional `.iloc[-6]` and
-    # `_DOI_WINDOW`'s "today + 5 prior TRADING snapshots" stop meaning sessions; and a
+    # Saturday recompute; `_DOI_WINDOW`'s "today + 5 prior TRADING snapshots" stops
+    # meaning sessions (`_vanna_hedge_5d_from_summary` resolves its 5-back endpoint by
+    # calendar since 2026-08-06, but weekend rows would still pad its ≥6-row floor); and a
     # weekend chain snapshot enters the ΔOI slope as a duplicate day.
     # The DISK readers filter at their own source (_default_read_summary and the two
     # snapshot loaders) because two ledger-writing call paths in

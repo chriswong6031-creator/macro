@@ -1,0 +1,57 @@
+{
+  "_comment": "EDGAR's directory listing for the SAME filing as edgar_index_headers.html. It also carries a 'type' key, but the values are the web server's icon names, never an exhibit type. This fixture exists so the regression test can show that reading Exhibit 21 selection off THIS payload finds nothing for a filing that plainly declares EX-21.1.",
+  "directory": {
+    "name": "/Archives/edgar/data/1368622/000110465926000001",
+    "parent-dir": "../",
+    "item": [
+      {
+        "last-modified": "2026-06-29 17:04:05",
+        "name": "0001104659-26-000001-index-headers.html",
+        "type": "text.gif",
+        "size": ""
+      },
+      {
+        "last-modified": "2026-06-29 17:04:05",
+        "name": "0001104659-26-000001-index.html",
+        "type": "text.gif",
+        "size": ""
+      },
+      {
+        "last-modified": "2026-06-29 17:04:05",
+        "name": "0001104659-26-000001-xbrl.zip",
+        "type": "compressed.gif",
+        "size": "607853"
+      },
+      {
+        "last-modified": "2026-06-29 17:04:05",
+        "name": "vgd-20251231x10k.htm",
+        "type": "text.gif",
+        "size": "4303986"
+      },
+      {
+        "last-modified": "2026-06-29 17:04:05",
+        "name": "vgd-20251231x10k001.jpg",
+        "type": "image2.gif",
+        "size": "37453"
+      },
+      {
+        "last-modified": "2026-06-29 17:04:05",
+        "name": "vgd-20251231xex19.htm",
+        "type": "text.gif",
+        "size": "196339"
+      },
+      {
+        "last-modified": "2026-06-29 17:04:05",
+        "name": "vgd-20251231xex21d1.htm",
+        "type": "text.gif",
+        "size": "12265"
+      },
+      {
+        "last-modified": "2026-06-29 17:04:05",
+        "name": "vgd-20251231xex23d1.htm",
+        "type": "text.gif",
+        "size": "8112"
+      }
+    ]
+  }
+}

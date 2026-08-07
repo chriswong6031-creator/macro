@@ -1736,7 +1736,7 @@ def test_engine_context_lines_are_bilingual_engine_facts_carrying_their_as_of(
     # the AAPL row are not this story's facts.
     assert rows[0]["line_en"] == (
         "Congress: 2 buy and 1 sell filings on NVDA in the past 45 days")
-    assert rows[0]["line_zh"] == "国会：过去 45 天 NVDA 有 2 笔买入、1 笔卖出申报"
+    assert rows[0]["line_zh"] == "国会：过去 45 天 NVDA 有 2 笔买入、1 笔卖出披露"
     assert rows[0]["as_of"] == "2026-07-22", "the newest ReportDate it counted"
 
     assert rows[1]["line_en"] == (

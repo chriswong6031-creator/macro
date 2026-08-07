@@ -767,10 +767,19 @@ class TestNoMatchedContracts:
         assert c["prior_snapshot"] is None
 
     def test_reachable_on_the_real_store(self):
-        """2026-07-02 -> 2026-07-07 in the committed store: CRWD is listed on both dates
-        with zero shared contract ids (1 of 350 shared roots)."""
+        """2026-07-01 -> 2026-07-02 in the committed store: CRWD is listed on both dates
+        with zero shared contract ids (1,292 vs 216 contracts, 0 shared).
+
+        RE-DATED, NOT LOOSENED (2026-08-06).  This used to name 07-02 -> 07-07, which were
+        the RUN-DATE stamps of the same two vintages: the 2026-08-06 session-stamp
+        migration re-filed them under the sessions they actually describe, so the pair
+        moved back one session each and the old names now hold different vintages
+        entirely (07-02 -> 07-07 today shares 201 contracts).  Verified by re-scanning
+        every consecutive pair in the migrated store: (07-01, 07-02) is the zero-overlap
+        pair, exactly the turnover this case needs.
+        """
         import datetime as _d
-        a, b = _d.date(2026, 7, 2), _d.date(2026, 7, 7)
+        a, b = _d.date(2026, 7, 1), _d.date(2026, 7, 2)
         if not all((pp._chains_dir() / f"{d.isoformat()}.parquet").exists() for d in (a, b)):
             pytest.skip("that vintage pair is not in this checkout")
         st = pp.load(chain_dates=lambda: [a, b], read_chain=pp.default_read_chain,

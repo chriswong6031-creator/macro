@@ -34,20 +34,23 @@
     Zero animation, zero transition — so no reduced-motion block is required here.
     Add one and you must gate it, naming the pseudos.
 
-    WHERE IT SITS. Below the board since 2026-08-04, above it before that. It was
-    built as a lead-in — heat, then what the picks do with it, then the picks — and
-    at 692px that reading order cost the product two full screens of scroll to set
-    up a panel that ranks, gates and sizes nothing. Context that changes no decision
-    reads after the decision. The panel got shorter in the same pass; see the stance
-    note at the row markup for what moved down a tier and why.
+    WHERE IT SITS. LAST PANEL ON THE PAGE, and CLOSED — operator, 2026-08-06.
+    It shipped above the board as a lead-in (heat, then what the picks do with it,
+    then the picks). #4553 cut it to 498px and moved it below the board; #4605
+    merged a minute later with the washout-turn group and a second shelf group and
+    it was back to 680px desktop / 1004px phone. Two trims, two re-inflations, and
+    the panel still ranks, gates and sizes nothing — so it no longer competes for
+    position at all. It sits after the last board panel and folds into one line.
+    Anything added here from now on goes INSIDE the disclosure or into the gist;
+    the panel's closed height is the budget, and it is one line.
 
     TIERS (docs/DESIGN_DOCTRINE.md):
-      1 GLANCE  eyebrow · one grid line per theme · a stance line ONLY on a row
-                with live names · one footer sentence
+      1 GLANCE  eyebrow · ONE gist line — hottest theme, what is live on the board,
+                what sits off the heat list, and the stance
       2 HOVER   the panel `?` carries the method AND the Law-5 null receipt;
                 per-theme receipts (relative strength, score) ride data-tip-*
-      3 STUDY   rank, heat and the stance for every other row; the expanded member
-                list; and subsector_rotation.html for the full 41-theme table
+      3 STUDY   everything else — the ladder, the turn group, the shelf, the member
+                lists, and subsector_rotation.html for the full 41-theme table
     Every stance sentence is chosen MECHANICALLY from the counts by
     engine/theme_tape.py `_stance_for` — no free-form text reaches this file, and the
     verbs come from the doctrine's sanctioned stance vocabulary.
@@ -103,9 +106,58 @@
      are three pairs of magic numbers that drift the moment one is touched. */
   body.page-stocks #theme-tape{padding:15px 18px 14px;
     --tt-col:72px;--tt-quiet:76px;--tt-gk:74px}
-  body.page-stocks .tt-hd{display:flex;align-items:baseline;gap:6px 12px;flex-wrap:wrap;margin:0 0 4px}
+  body.page-stocks .tt-hd{display:flex;align-items:baseline;gap:6px 12px;flex-wrap:wrap;margin:0}
   body.page-stocks .tt-eyebrow{margin:0;font-size:11px;font-weight:800;letter-spacing:.18em;
     text-transform:uppercase;color:var(--muted);line-height:1.2}
+
+  /* ── THE PANEL IS ONE CLOSED DISCLOSURE (2026-08-06) ──────────────────────
+     Third operator complaint about this panel's footprint, and the first two
+     fixes both bounced. #4553 cut it 692px → 498px and moved it below the
+     board; #4605 merged ONE MINUTE later and added the washout-turn group and
+     a second shelf group, putting it back to 680px desktop / 1004px phone —
+     measured against tonight's real artifacts, not a fixture. A panel that
+     ranks, gates and sizes nothing had grown back to a full screen of scroll,
+     and trimming it row by row is what already failed twice.
+     So the whole accounting now folds behind ONE line, and that line is the
+     panel: hottest theme, whether anything is live on this board, how much
+     sits off the heat list, and the stance. 680px → ~52px closed.
+
+     WHY THIS IS NOT THE SILENCE THE PANEL EXISTS TO FIX. The charter's rule is
+     that the engine must never detect something and say nothing — it is why a
+     hot theme with zero board names still gets a line, and why the shelf was
+     built always-visible rather than folded. That rule is about NARRATION, not
+     about enumeration: the gist states every one of those facts in words on
+     the glance tier, including the shelf's ("N more off the heat list"), so a
+     reader who never opens this still learns what the engine found. What folds
+     is the per-name roster, which is study-tier by the panel's own doctrine.
+     Do NOT "restore" any section to always-visible to satisfy that rule — the
+     gist is how it is satisfied now, and an unfolded section is what the
+     operator has now rejected three times. Add a fact to the gist instead. */
+  body.page-stocks .tt-all-s{list-style:none;cursor:pointer;display:block}
+  body.page-stocks .tt-all-s::-webkit-details-marker{display:none}
+  body.page-stocks .tt-all-s:focus-visible{outline:2px solid var(--ink-link,var(--link,var(--text)));
+    outline-offset:3px;border-radius:4px}
+  /* The caret carries its own tracking: the eyebrow is set at .18em and a glyph
+     inheriting that hangs a visible gap between itself and the word. */
+  body.page-stocks .tt-eyebrow::before{content:"▸";letter-spacing:0;margin-right:7px;
+    display:inline-block;vertical-align:1px;font-size:10px}
+  body.page-stocks .tt-all[open] .tt-eyebrow::before{content:"▾"}
+  /* THE GIST — the panel's whole glance tier. Body face, not mono: it is a
+     sentence with figures in it, and the house rule puts mono on figures only
+     (`.tt-gf` below), never on the words around them. */
+  body.page-stocks .tt-gist{display:block;font-size:12.5px;line-height:1.5;
+    color:var(--text);margin:5px 0 0;max-width:88ch}
+  body.page-stocks .tt-gist .tt-gf{font-family:var(--font-mono,monospace);
+    font-variant-numeric:tabular-nums;font-weight:700}
+  /* The one coloured glyph on the closed panel, under the same rule the ladder
+     follows: only a non-zero `live` count takes --ink-up, because it is the only
+     figure here that means "there is something to do today". */
+  body.page-stocks .tt-gist .tt-gf.is-live{color:var(--ink-up,var(--up))}
+  body.page-stocks .tt-gist .tt-lead{font-weight:700}
+  /* The stance is held whole for the reason the shelf's is: broken across a line
+     "— not what to buy" reads as a fragment rather than an instruction. */
+  body.page-stocks .tt-gist .tt-nb{white-space:nowrap}
+  body.page-stocks .tt-body{padding-top:11px}
   /* zh Hanzi read wrong under Latin display tracking — theme.css makes the same
      call for headings; the eyebrow keeps its rhythm from weight and colour. */
   html[data-lang="zh"] body.page-stocks .tt-eyebrow{letter-spacing:.06em}
@@ -398,18 +450,50 @@
     body.page-stocks .tt-c .tt-ik{display:none}
   }
   </style>
+{#- THE GIST'S FIGURES. Counted here from the same dicts the ladder prints, so
+    the closed line and the open ladder cannot disagree — there is no second
+    source. `live` is summed across the heat rows only: a washout-turn row is by
+    construction unconfirmed, so folding its members into an "act today" figure
+    would promote the panel's least-proven group into its loudest number.
+    The off-list figure is the two groups the ladder does not carry — the turn
+    rows and the shelf — which is exactly what "off the heat list" names. -#}
+{%- set _g = namespace(live=0, off=0) -%}
+{%- for _r in _tt_rows -%}
+  {%- set _g.live = _g.live + ((_r.get('counts') or {}).get('live') or 0) -%}
+{%- endfor -%}
+{%- set _tt_turns = _tt.get('washout_turns') or [] -%}
+{%- set _tt_shelf = _tt.get('foresight_shelf') or [] -%}
+{%- for _sg in _tt_shelf -%}
+  {%- set _g.off = _g.off + ((_sg.get('names_en') or [])|length) + (_sg.get('more') or 0) -%}
+{%- endfor -%}
+{%- set _g.off = _g.off + (_tt_turns|length) -%}
+{%- set _lead = _tt_rows[0] -%}
   <div class="panel span12" id="theme-tape">
+    <details class="tt-all">
+      <summary class="tt-all-s">
     <div class="tt-hd">
       <h2 class="tt-eyebrow">{{ tt_t('Theme heat', '主题热度') }}</h2>
       {#- Tier-2: the method AND the Law-5 receipt live here, together, so the panel
           carries exactly one `?` and one footnote. -#}
-      <span class="help">?<span class="tip tip-wide"><span class="l-en">The market's fastest-accelerating themes, each one reconciled against this board: every member of the theme is placed in exactly one column, so the row adds up to the theme's whole membership. A name is counted at its most actionable state, and a name can sit in more than one theme. Scorecard: the rotation read grades its own calls nightly against realized member-equal-weight returns relative to SPY; after {{ _tt.get('n_days') or 0 }} graded days no horizon has cleared its significance bar, so treat the ordering as a place to look, not as an edge. Nothing on this panel ranks, gates or sizes anything — the board below is unchanged by it.</span><span class="l-zh">当前加速最快的主题，并逐一对照本榜：主题的每一只成分股都被归入且仅归入一列，因此整行相加等于该主题的全部成分股。同一只股票按其最可操作的状态计入，且可能同时属于多个主题。记分卡：轮动研判每晚以成分股等权、相对 SPY 的实际收益为自身研判评分；已评分 {{ _tt.get('n_days') or 0 }} 天，尚无周期通过显著性检验，因此这一排序只用于确定观察方向，不构成优势证据。本面板不参与任何排名、筛选或仓位决定，下方看板不受其影响。</span></span></span>
+      <span class="help">?<span class="tip tip-wide"><span class="l-en">The market's fastest-accelerating themes, each one reconciled against this board: every member of the theme is placed in exactly one column, so the row adds up to the theme's whole membership. A name is counted at its most actionable state, and a name can sit in more than one theme. Scorecard: the rotation read grades its own calls nightly against realized member-equal-weight returns relative to SPY; after {{ _tt.get('n_days') or 0 }} graded days no horizon has cleared its significance bar, so treat the ordering as a place to look, not as an edge. Nothing on this panel ranks, gates or sizes anything — the board on this page is unchanged by it.</span><span class="l-zh">当前加速最快的主题，并逐一对照本榜：主题的每一只成分股都被归入且仅归入一列，因此整行相加等于该主题的全部成分股。同一只股票按其最可操作的状态计入，且可能同时属于多个主题。记分卡：轮动研判每晚以成分股等权、相对 SPY 的实际收益为自身研判评分；已评分 {{ _tt.get('n_days') or 0 }} 天，尚无周期通过显著性检验，因此这一排序只用于确定观察方向，不构成优势证据。本面板不参与任何排名、筛选或仓位决定，本页看板不受其影响。</span></span></span>
       {%- if _tt.get('as_of') %}
       <span class="tt-asof">{{ tt_t('as of ' ~ _tt.as_of, '截至 ' ~ _tt.as_of) }}</span>
       {%- endif %}
     </div>
-    <p class="tt-sub">{{ tt_t('The market’s hottest themes, and what this board is doing with their names.',
-                              '当前最热的主题，以及本榜对其成分股的处理。') }}</p>
+        {#- THE GIST (Law 1 + Law 5 on one line). This replaces the standing
+            subtitle, which said "the market's hottest themes, and what this
+            board is doing with their names" — a description of the panel rather
+            than a reading of it, and on the only tier most readers will ever see
+            it now has to be the reading. Every figure in it is printed in the
+            ladder below; nothing is computed for this line alone.
+            The stance rides here unconditionally, because closed is this panel's
+            default state and Law 1 is answered on the tier the reader is on. -#}
+        <span class="tt-gist">
+          <span class="l-en"><span class="tt-lead">{{ _lead.name }}</span> hottest{% if _g.live %} · <span class="tt-gf is-live">{{ _g.live }}</span> live name{{ '' if _g.live == 1 else 's' }} on the board{% else %} · nothing live on the board today{% endif %}{% if _g.off %} · <span class="tt-gf">{{ _g.off }}</span> more off the heat list{% endif %} — <span class="tt-nb">where to look, not what to buy.</span></span>
+          <span class="l-zh"><span class="tt-lead">{{ _lead.name_zh }}</span>最热{% if _g.live %} · 本榜 <span class="tt-gf is-live">{{ _g.live }}</span> 只可操作{% else %} · 本榜今日无可操作{% endif %}{% if _g.off %} · 另有 <span class="tt-gf">{{ _g.off }}</span> 个主题不在热度榜上{% endif %} — <span class="tt-nb">指出值得关注的方向，而非买入对象。</span></span>
+        </span>
+      </summary>
+      <div class="tt-body">
 
     {#- The header row is the ONLY label source where it is visible; each cell also
         carries its own label for the phone layout, and exactly one of the two is in
@@ -425,8 +509,8 @@
     <details class="tt-i">
       <summary class="tt-s">
         <div class="tt-row"
-             data-tip-en="{{ _r.name }} — {{ tt_ord(_r.rank) }} of {{ _tt.get('rank_of') or 0 }} themes by acceleration{% if _r.get('rs_1m') is not none %}, {{ '%+.1f'|format(_r.rs_1m|float)|replace('-', '−') }}% against the market over the past month{% endif %}{% if _r.get('rs_1w') is not none %} and {{ '%+.1f'|format(_r.rs_1w|float)|replace('-', '−') }}% over the past week{% endif %}. {{ _r.n_on_board }} of its {{ _r.n_members }} members are on this board.{% if _r.get('foresight') %} Supply-chain read on {{ _r.foresight.sources_en }}: {{ _r.foresight.tip_en }}{% if not _r.foresight.confirmed %}, read from company filings and news language rather than a confirmed measurement{% endif %}.{% endif %} Display context only — this changes no ranking below."
-             data-tip-zh="{{ _r.name }} — 按加速度在 {{ _tt.get('rank_of') or 0 }} 个主题中排名第 {{ _r.rank }}{% if _r.get('rs_1m') is not none %}，过去一个月相对大盘 {{ '%+.1f'|format(_r.rs_1m|float)|replace('-', '−') }}%{% endif %}{% if _r.get('rs_1w') is not none %}，过去一周 {{ '%+.1f'|format(_r.rs_1w|float)|replace('-', '−') }}%{% endif %}。其 {{ _r.n_members }} 只成分股中有 {{ _r.n_on_board }} 只在本榜上。{% if _r.get('foresight') %}供应链研判 — {{ _r.foresight.sources_zh }}：{{ _r.foresight.tip_zh }}{% if not _r.foresight.confirmed %}，依据公司文件与新闻措辞，尚无确证测量{% endif %}。{% endif %}仅为展示参考，不改变下方任何排序。">
+             data-tip-en="{{ _r.name }} — {{ tt_ord(_r.rank) }} of {{ _tt.get('rank_of') or 0 }} themes by acceleration{% if _r.get('rs_1m') is not none %}, {{ '%+.1f'|format(_r.rs_1m|float)|replace('-', '−') }}% against the market over the past month{% endif %}{% if _r.get('rs_1w') is not none %} and {{ '%+.1f'|format(_r.rs_1w|float)|replace('-', '−') }}% over the past week{% endif %}. {{ _r.n_on_board }} of its {{ _r.n_members }} members are on this board.{% if _r.get('foresight') %} Supply-chain read on {{ _r.foresight.sources_en }}: {{ _r.foresight.tip_en }}{% if not _r.foresight.confirmed %}, read from company filings and news language rather than a confirmed measurement{% endif %}.{% endif %} Display context only — this changes no ranking on this page."
+             data-tip-zh="{{ _r.name }} — 按加速度在 {{ _tt.get('rank_of') or 0 }} 个主题中排名第 {{ _r.rank }}{% if _r.get('rs_1m') is not none %}，过去一个月相对大盘 {{ '%+.1f'|format(_r.rs_1m|float)|replace('-', '−') }}%{% endif %}{% if _r.get('rs_1w') is not none %}，过去一周 {{ '%+.1f'|format(_r.rs_1w|float)|replace('-', '−') }}%{% endif %}。其 {{ _r.n_members }} 只成分股中有 {{ _r.n_on_board }} 只在本榜上。{% if _r.get('foresight') %}供应链研判 — {{ _r.foresight.sources_zh }}：{{ _r.foresight.tip_zh }}{% if not _r.foresight.confirmed %}，依据公司文件与新闻措辞，尚无确证测量{% endif %}。{% endif %}仅为展示参考，不改变本页任何排序。">
           <span class="tt-nm">{{ tt_t(_r.name, _r.name_zh) }}{% if _r.get('foresight') %}<span class="tt-fs">{{ tt_t(_r.foresight.label_en, _r.foresight.label_zh) }}</span>{% endif %}</span>
           {%- for _k, _en, _zh in _tt_cols %}
           {%- set _n = _c.get(_k) or 0 %}
@@ -494,7 +578,7 @@
         table whose strongest verb is "act per row", and no row in this group has
         earned a verb — the whole group is early and unconfirmed, and it says so
         once, at the bottom, in the group's own reason line. -#}
-    {%- set _tt_turns = _tt.get('washout_turns') or [] %}
+    {#- _tt_turns is set once at the top, where the gist counts it. -#}
     {%- if _tt_turns %}
     <div class="tt-turn">
       <p class="tt-turn-hd">{{ tt_t('Turning from washout — early, unconfirmed', '洗盘转折——早期，未确认') }}</p>
@@ -505,8 +589,8 @@
       <details class="tt-i">
         <summary class="tt-s">
           <div class="tt-row"
-               data-tip-en="{{ _r.name }} — {{ tt_ord(_r.rank) }} of {{ _tt.get('rank_of') or 0 }} themes by acceleration, so the heat list above does not carry it{% if _r.get('lead_en') %}. Its {{ _r.lead_en }} group is the part that turned: {% else %}: {% endif %}{{ _m }}% against the market over the past month and {{ _w }}% over the past week. On this board: {{ _r.n_on_board }} of its {{ _r.n_members }} members. A turn this early is not confirmed by trend or by this board, and this pattern carries no measured edge. Display context only — this changes no ranking below."
-               data-tip-zh="{{ _r.name }} — 按加速度在 {{ _tt.get('rank_of') or 0 }} 个主题中排名第 {{ _r.rank }}，因此不在上方热度榜内{% if _r.get('lead_zh') %}。其中转折的是{{ _r.lead_zh }}板块：{% else %}：{% endif %}过去一个月相对大盘 {{ _m }}%，过去一周 {{ _w }}%。其 {{ _r.n_members }} 只成分股中有 {{ _r.n_on_board }} 只在本榜上。如此早期的转折未获趋势或本榜确认，该形态也没有经检验的优势证据。仅为展示参考，不改变下方任何排序。">
+               data-tip-en="{{ _r.name }} — {{ tt_ord(_r.rank) }} of {{ _tt.get('rank_of') or 0 }} themes by acceleration, so the heat list above does not carry it{% if _r.get('lead_en') %}. Its {{ _r.lead_en }} group is the part that turned: {% else %}: {% endif %}{{ _m }}% against the market over the past month and {{ _w }}% over the past week. On this board: {{ _r.n_on_board }} of its {{ _r.n_members }} members. A turn this early is not confirmed by trend or by this board, and this pattern carries no measured edge. Display context only — this changes no ranking on this page."
+               data-tip-zh="{{ _r.name }} — 按加速度在 {{ _tt.get('rank_of') or 0 }} 个主题中排名第 {{ _r.rank }}，因此不在上方热度榜内{% if _r.get('lead_zh') %}。其中转折的是{{ _r.lead_zh }}板块：{% else %}：{% endif %}过去一个月相对大盘 {{ _m }}%，过去一周 {{ _w }}%。其 {{ _r.n_members }} 只成分股中有 {{ _r.n_on_board }} 只在本榜上。如此早期的转折未获趋势或本榜确认，该形态也没有经检验的优势证据。仅为展示参考，不改变本页任何排序。">
             <span class="tt-nm">{{ tt_t(_r.name, _r.name_zh) }}
               <span class="tt-turn-line">{% if _r.get('lead_en') %}{{ tt_t(_r.lead_en, _r.lead_zh) }} · {% endif %}{{ tt_t('past week', '近一周') }} <span class="tt-f">{{ _w }}%</span>{{ tt_t(', past month', '，近一月') }} <span class="tt-f">{{ _m }}%</span>{{ tt_t(', against the market', '，相对大盘') }}</span>
             </span>
@@ -555,13 +639,16 @@
         half is CONDITIONAL on what is actually on the panel tonight — nothing
         here is a fixed sentence that would keep claiming this after the desk's
         numeric legs light up. -#}
-    {%- if _tt.get('foresight_shelf') %}
+    {#- _tt_shelf is set once at the top, where the gist counts it. The loop
+        variable is _sg, not _g: `_g` is the gist namespace and shadowing it here
+        would leave the counted figures unreadable to anything below. -#}
+    {%- if _tt_shelf %}
     <div class="tt-shelf">
       <p class="tt-shelf-hd">{{ tt_t('Off the heat list', '不在热度榜上') }}</p>
-      {%- for _g in _tt.foresight_shelf %}
+      {%- for _sg in _tt_shelf %}
       <div class="tt-g">
-        <span class="tt-gk"><span class="tt-fs">{{ tt_t(_g.label_en, _g.label_zh) }}</span></span>
-        <span class="tt-load">{% for _n in _g.names_en %}<span class="tt-n">{{ tt_t(_n, _g.names_zh[loop.index0]) }}</span>{% endfor %}{% if _g.get('more') %}<span class="tt-n tt-more">+{{ _g.more }}</span>{% endif %}</span>
+        <span class="tt-gk"><span class="tt-fs">{{ tt_t(_sg.label_en, _sg.label_zh) }}</span></span>
+        <span class="tt-load">{% for _n in _sg.names_en %}<span class="tt-n">{{ tt_t(_n, _sg.names_zh[loop.index0]) }}</span>{% endfor %}{% if _sg.get('more') %}<span class="tt-n tt-more">+{{ _sg.more }}</span>{% endif %}</span>
       </div>
       {%- endfor %}
       <p class="tt-shelf-why">
@@ -586,8 +673,10 @@
         visible tier is the stacked footnote Law 4 forbids. -#}
     <hr class="tt-rule">
     <p class="tt-foot">
-      <span class="l-en">Theme heat{% if _tt.get('measuring') %} is a read still being measured — it{% endif %} points you at where to look, not at what to buy. The picks above are unchanged by it. <a href="subsector_rotation.html">All {{ _tt.get('rank_of') or 0 }} themes →</a></span>
-      <span class="l-zh">主题热度{% if _tt.get('measuring') %}仍在检验中 — 它{% endif %}指出值得关注的方向，而非买入对象。上方选股不受其影响。<a href="subsector_rotation.html">查看全部 {{ _tt.get('rank_of') or 0 }} 个主题 →</a></span>
+      <span class="l-en">Theme heat{% if _tt.get('measuring') %} is a read still being measured — it{% endif %} points you at where to look, not at what to buy. The picks on this page are unchanged by it. <a href="subsector_rotation.html">All {{ _tt.get('rank_of') or 0 }} themes →</a></span>
+      <span class="l-zh">主题热度{% if _tt.get('measuring') %}仍在检验中 — 它{% endif %}指出值得关注的方向，而非买入对象。本页选股不受其影响。<a href="subsector_rotation.html">查看全部 {{ _tt.get('rank_of') or 0 }} 个主题 →</a></span>
     </p>
+      </div>
+    </details>
   </div>
 {%- endif -%}

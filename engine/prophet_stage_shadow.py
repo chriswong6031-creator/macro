@@ -14,15 +14,28 @@ decision — every artifact it writes is display / shadow tier. The fusion
 win-rate-gate construction is KILLED per ``research/DO_NOT_REBUILD.md``; this
 shadow is a measurement, not a gate. A null here NEVER blocks or changes Prophet.
 
-REUSE (measured identically to the backtest — nothing reinvented):
-  * stage-at-entry  -> ``prophet_stage_fusion.stage_at_entry`` (PIT close[:entry]
+REUSE (measured identically to the backtest — nothing reinvented). R0-C moved the
+shared point-in-time primitives into ``engine/prophet_stage_inputs.py``; the backtest
+harness re-exports them, so this module reads the SAME code without importing a
+research harness into a nightly production lane:
+  * stage-at-entry  -> ``prophet_stage_inputs.stage_at_entry`` (PIT close[:entry]
       truncation → weinstein_stage.classify) and ``load_ticker_prices`` /
       ``load_bench_close``.
-  * EC join         -> ``prophet_stage_fusion.load_ec_table`` / ``ec_index`` /
+  * EC join         -> ``prophet_stage_inputs.load_ec_table`` / ``ec_index`` /
       ``ec_sent_at_entry`` (earnings_calls.parquet, most-recent call STRICTLY before
       entry).
   * grading         -> ``grading.terminal_state`` (clean15_126 & clean8_21) +
       ``grading.forward_metrics`` (21/63/126). Win = ``CLEAN_LIFTOFF``.
+
+EC SOURCE STARVATION (R0-C — read before grading ``median_tilt``). The EC join's
+backing parquet is a local-only EquityDesk backfill: gitignored, never committed, and
+absent on every CI/deploy host. Where it is absent, every ``last_ec`` tag is null, the
+Stage-2 ∩ EC cohort is empty, and ``median_tilt`` is computed on ZERO EC-tagged
+entries. The hold-leash's §4 auto-demote clause reads exactly that cohort's count, so a
+starved join does not merely weaken the measurement — it makes the clause unreachable,
+and the promoted tilt can never be graded or self-demoted. ``median_tilt.ec_coverage``
+and the summary's ``ec_source`` block state this explicitly so a starved sample is
+never read as a real ≤0 tilt.
 
 FORWARD LEDGER (house law): ``data/prophet_stage_shadow/ledger.jsonl`` is a
 forward ledger; NIGHTLY IS THE SOLE ADVANCER of its grades. The grade advance is
@@ -42,7 +55,7 @@ from typing import Any
 
 import pandas as pd
 
-from engine import grading, prophet_stage_fusion as psf
+from engine import confluence_tiers, grading, prophet_stage_inputs as psi
 from engine.ledger_lane import nightly_advance_enabled
 
 log = logging.getLogger(__name__)
@@ -54,14 +67,15 @@ LEDGER_SCHEMA = "prophet_stage_shadow.ledger/v1"
 SUMMARY_SCHEMA = "prophet_stage_shadow.v1"
 
 # Grading parameterizations — the SAME two rulers the backtest uses (reused verbatim
-# from prophet_stage_fusion so the shadow is graded identically to the mechanism test).
-PARAM_CLEAN15_126 = psf.PARAM_CLEAN15_126   # liftoff 1.15, horizon 126 (positional)
-PARAM_CLEAN8_21 = psf.PARAM_CLEAN8_21        # liftoff 1.08, horizon 21  (rotational)
-FWD_HORIZONS = psf.FWD_HORIZONS              # (21, 63, 126)
+# from prophet_stage_inputs, which the backtest re-exports, so the shadow is graded
+# identically to the mechanism test without importing the research harness).
+PARAM_CLEAN15_126 = psi.PARAM_CLEAN15_126   # liftoff 1.15, horizon 126 (positional)
+PARAM_CLEAN8_21 = psi.PARAM_CLEAN8_21        # liftoff 1.08, horizon 21  (rotational)
+FWD_HORIZONS = psi.FWD_HORIZONS              # (21, 63, 126)
 
 # The longest horizon that must have elapsed (+ fill) before a horizon can grade.
-FRESH_WEEKS_MAX = psf.FRESH_WEEKS_MAX        # fresh Stage-2 = weeks_in_stage <= 10
-STAGE2 = psf.STAGE2
+FRESH_WEEKS_MAX = psi.FRESH_WEEKS_MAX        # fresh Stage-2 = weeks_in_stage <= 10
+STAGE2 = psi.STAGE2
 
 ACCRUAL_DISCLAIMER = (
     "accruing — first 126-day cohort matures ~2026-12; n is tiny until then; NOT "
@@ -252,14 +266,14 @@ def _tag_one(entry: dict[str, Any], data_root: Path, bench: pd.Series | None,
         "fwd": {},
     }
 
-    close, vol = psf.load_ticker_prices(asset, Path(data_root))
+    close, vol = psi.load_ticker_prices(asset, Path(data_root))
     if close is None or close.empty:
         row["tag_reason"] = "no OHLCV in baskets/ohlcv or data/stocks — tagged null"
         return row
 
     # PIT stage (truncating classify — the look-ahead guard).
     try:
-        st, wis, nwk = psf.stage_at_entry(close, vol, bench, sig)
+        st, wis, nwk = psi.stage_at_entry(close, vol, bench, sig)
     except Exception as e:  # noqa: BLE001
         row["tag_reason"] = f"stage classify failed ({e}) — tagged null"
         return row
@@ -281,7 +295,7 @@ def _tag_one(entry: dict[str, Any], data_root: Path, bench: pd.Series | None,
         log.debug("prophet_stage_shadow: fresh/detailed lookup failed for %s (%s)", asset, e)
 
     # last EC strictly before entry.
-    ec_val = psf.ec_sent_at_entry(ec_by_ticker, asset, sig)
+    ec_val = psi.ec_sent_at_entry(ec_by_ticker, asset, sig)
     last_ec = None
     if ec_val is not None:
         g = ec_by_ticker.get(str(asset))
@@ -295,7 +309,7 @@ def _tag_one(entry: dict[str, Any], data_root: Path, bench: pd.Series | None,
     # T-tier at entry (if the confluence cascade classifies it) — informational.
     t_tier = None
     try:
-        stream = psf.confluence_tiers.tier_stream(close[close.index <= pd.Timestamp(sig)])
+        stream = confluence_tiers.tier_stream(close[close.index <= pd.Timestamp(sig)])
         if stream is not None and not stream.empty and "tier" in stream.columns:
             prior = stream[stream.index <= pd.Timestamp(sig)]
             if not prior.empty:
@@ -335,9 +349,19 @@ def tag_entries(root: str | Path | None = None, *, site_root: str | Path | None 
     entries = collect_prophet_entries(site_root, data_root)
     existing = _load_ledger(data_root)
 
-    bench = psf.load_bench_close(data_root)
-    ec_df = psf.load_ec_table(ec_path)
-    ec_by_ticker = psf.ec_index(ec_df)
+    bench = psi.load_bench_close(data_root)
+    ec_df, ec_source = psi.load_ec_table_with_source(ec_path)
+    ec_by_ticker = psi.ec_index(ec_df)
+    if ec_source.get("state") != psi.EC_SOURCE_AVAILABLE:
+        # R0-C: the join that feeds median_tilt (and therefore the hold-leash's §4
+        # auto-demote floor) has no source here. Every tag written in this run will
+        # carry last_ec=null, so the Stage-2 ∩ earnings cohort stays empty by absence.
+        # "::" MUST start the line — a logger's prefix would silently drop the annotation.
+        print("::warning:: prophet_stage_shadow: earnings-call source unavailable "
+              f"({ec_source.get('path')}) — {ec_source.get('reason')}; entries tagged in "
+              "this run carry no earnings reading, so median_tilt accrues an EMPTY "
+              "Stage-2 ∩ earnings cohort and the hold-leash demote floor stays unreachable",
+              flush=True)
 
     n_tagged_now = 0
     n_null = 0
@@ -361,6 +385,8 @@ def tag_entries(root: str | Path | None = None, *, site_root: str | Path | None 
         "n_already": len(entries) - n_tagged_now,
         "n_null": n_null,
         "n_ledger": len(existing),
+        # R0-C: whether this run's EC join had a source at all (starved vs honest null).
+        "ec_source": ec_source,
     }
 
 
@@ -385,7 +411,7 @@ def _grade_one(row: dict[str, Any], data_root: Path) -> bool:
     asset = row["asset"]
     sig = row["signal_date"]
     changed = False
-    close, _ = psf.load_ticker_prices(asset, Path(data_root))
+    close, _ = psi.load_ticker_prices(asset, Path(data_root))
     if close is None or close.empty:
         # delisted / absent: try the dead-name-resolved grading series (survivorship).
         try:
@@ -504,15 +530,24 @@ def _median_tilt(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
     stage2_ec = stage_at_entry == STAGE2 AND last_ec.sent >= EC_SENT_GATE.
     diff = median(stage2_ec) - median(rest) (null when either side is unmatured).
+
+    ``ec_coverage`` (R0-C) is the starvation disclosure: how many ledger rows carry ANY
+    earnings-call tag at all. When it is zero the stage2_ec cohort is empty BY SOURCE
+    ABSENCE, not because Stage-2 ∩ EC entries did not occur — an empty-sample null that
+    must never be read as a real ≤0 tilt. It is disclosure only: no count here changes
+    a median, a diff, or a pick.
     """
     matured = [r for r in rows if (r.get("fwd") or {}).get("fwd_ret_126") is not None]
 
+    def _ec_sent(r: dict[str, Any]) -> Any:
+        return (r.get("last_ec") or {}).get("sent")
+
     def _is_stage2_ec(r: dict[str, Any]) -> bool:
-        sent = (r.get("last_ec") or {}).get("sent")
+        sent = _ec_sent(r)
         return (
             r.get("stage_at_entry") == STAGE2
             and sent is not None
-            and sent >= psf.EC_SENT_GATE
+            and sent >= psi.EC_SENT_GATE
         )
 
     s2ec = [r for r in matured if _is_stage2_ec(r)]
@@ -526,15 +561,43 @@ def _median_tilt(rows: list[dict[str, Any]]) -> dict[str, Any]:
     med_rest = _median(rest)
     diff = (med_s2ec - med_rest) if (med_s2ec is not None and med_rest is not None) else None
 
+    n_rows_with_ec = sum(1 for r in rows if _ec_sent(r) is not None)
+    n_matured_with_ec = sum(1 for r in matured if _ec_sent(r) is not None)
+    ec_join_state = (
+        psi.EC_SOURCE_AVAILABLE if n_rows_with_ec else psi.EC_SOURCE_UNAVAILABLE
+    )
+    if n_rows_with_ec:
+        coverage_note = (
+            f"{n_rows_with_ec} of {len(rows)} tagged entries carry an earnings-call "
+            "reading; the cohort split below is measured on real tags."
+        )
+    else:
+        coverage_note = (
+            "NO tagged entry carries an earnings-call reading — the earnings-call "
+            "source is absent on the host that tagged this ledger, so the Stage-2 ∩ "
+            "earnings cohort is empty by source absence, not by outcome. Every number "
+            "in this block is an empty-sample null, NOT a measured result, and the "
+            "hold-leash's demote floor cannot be reached while this stays zero."
+        )
+
     return {
         "median_fwd_ret_126": {"stage2_ec": med_s2ec, "rest": med_rest},
         "diff": diff,
         "n_matured_126": {"stage2_ec": len(s2ec), "rest": len(rest)},
+        "ec_coverage": {
+            "state": ec_join_state,
+            "n_rows_with_ec": n_rows_with_ec,
+            "n_rows": len(rows),
+            "n_matured_126_with_ec": n_matured_with_ec,
+            "note": coverage_note,
+        },
         "note": (
             "median fwd_ret_126 split for the Stage-2 ∩ EC-positive cohort vs the "
             "rest, over matured-126 entries. MEASUREMENT ONLY — the hold-leash reads "
             "diff/n to self-demote; this layer never gates, ranks, or alters a pick. "
-            "diff/medians are null until both sides mature (~2026-12)."
+            "diff/medians are null until both sides mature (~2026-12). Read "
+            "ec_coverage first: with no earnings-call tags the split is an empty "
+            "sample, not a result."
         ),
     }
 
@@ -560,7 +623,7 @@ def summarize(root: str | Path | None = None, *, asof: str | None = None) -> dic
     fresh_stage2 = [r for r in stage2 if r.get("fresh")]
     pos_ec = [r for r in n_stageable
               if (r.get("last_ec") or {}).get("sent") is not None
-              and (r.get("last_ec") or {}).get("sent") >= psf.EC_SENT_GATE]
+              and (r.get("last_ec") or {}).get("sent") >= psi.EC_SENT_GATE]
 
     # per-horizon maturity counts (how many entries have each horizon graded).
     n_matured = {}
@@ -592,6 +655,9 @@ def summarize(root: str | Path | None = None, *, asof: str | None = None) -> dic
         "n_tagged": n_tagged,
         "n_stageable": len(n_stageable),
         "n_matured": n_matured,
+        # R0-C: whether an earnings-call source exists on THIS host at summarize time.
+        # Disclosure only — nothing below reads it.
+        "ec_source": psi.resolve_ec_source(),
         "split": {
             "stage2": _both_params(stage2),
             "rest": _both_params(rest),

@@ -203,6 +203,10 @@
     resetMismatch:["Both passwords must match.", "两次输入的密码不一致。"],
     resetShort:   ["Use at least 8 characters.", "密码至少需要 8 个字符。"],
     resetDead:    ["This link has expired, was already used, or was opened in a different browser from the one that requested it. Send yourself a fresh one.", "此链接已过期、已被使用，或在非发起请求的浏览器中打开。请重新发送一封。"],
+    // The older link shape (tokens in the URL fragment). We cannot complete it — see
+    // implicitRecoveryHash() — but the customer is HERE, so say what to do next
+    // instead of leaving them on the marketing page hunting for a button.
+    resetOldLink: ["This reset link is an older format we can't complete safely. Send yourself a fresh one — it takes a moment, and the new link works.", "此重置链接为旧格式，我们无法安全完成。请重新发送一封——很快，新链接可正常使用。"],
     resetDone:    ["Password updated. Taking you to your desk…", "密码已更新，正在进入你的台席…"],
 
     // step 2 — preferences
@@ -1158,7 +1162,7 @@
       if (!sb) { setSubmitBusy(false); showErr(tx("billNotConfigured")); return; }
       if (S.mode === "signin") {
         sb.auth.signInWithPassword({ email: S.email, password: S.password }).then(function (r) {
-          if (r.error) { showErr(r.error.message); setSubmitBusy(false); return; }
+          if (r.error) { showErr(authMsg(r.error)); setSubmitBusy(false); return; }
           S.password = ""; stashClear();
           // Signin fired from the Upgrade entry: don't redirect — resolve the
           // account and continue into the upgrade panel in place.
@@ -1295,7 +1299,7 @@
           // an error here is a REAL failure — a per-address cooldown, a mail-transport
           // fault, or a redirect the project has not allow-listed. Show it verbatim
           // rather than claiming a send that did not happen.
-          if (r && r.error) { showErr(r.error.message); setBusy(false, "recoverSend"); return; }
+          if (r && r.error) { showErr(authMsg(r.error)); setBusy(false, "recoverSend"); return; }
           S.recoverSent = true; render();
         });
     }).catch(function () { setBusy(false, "recoverSend"); showErr(tx("billNotConfigured")); });
@@ -1306,17 +1310,108 @@
   // ?code= exchange — so it is the honest "did the link work" test. No session
   // means the code was missing, spent, expired, or opened in a browser that never
   // held the PKCE verifier.
+  // ── the three shapes a reset link can arrive in ────────────────────────────
+  // 1 ?code=…        browser-initiated PKCE (our own "Forgot your password?").
+  //                  The SDK exchanges it during _initialize; getSession() waits.
+  // 2 ?token_hash=…  a link built from {{ .TokenHash }} — what the Supabase email
+  //                  TEMPLATE should emit. verifyOtp() redeems it server-side and
+  //                  needs no code_verifier, so it completes even though the client
+  //                  is pinned to flowType:'pkce'. This is the shape that makes a
+  //                  dashboard-issued / server-issued link work here.
+  // 3 #access_token= the implicit fragment gotrue falls back to when the /recover
+  //                  that minted the link carried no code_challenge (the Supabase
+  //                  dashboard's own Reset-password button, today). theme.js refuses
+  //                  fragment tokens BY DESIGN — consuming them would let a pasted
+  //                  link seed a session for someone else's account (fixation), and
+  //                  a customer who then types a password is setting one on the
+  //                  attacker's account. We do NOT complete these; we recognise the
+  //                  shape and hand the customer a fresh-link form instead, which is
+  //                  the difference between a dead end and one extra click.
+  // gotrue speaks English. In 中文 mode its raw message is the one untranslated
+  // string left in the flow, and it lands exactly where the customer is already
+  // stuck. Map the handful we actually see; anything unmapped falls through
+  // VERBATIM — the vendor changing its wording degrades to today's behaviour, never
+  // to a wrong translation.
+  var GOTRUE_ZH = [
+    [/invalid or has expired/i,          "邮件链接无效或已过期。请重新发送一封。"],
+    [/token has expired|expired or is invalid/i, "链接已过期或无效。请重新发送一封。"],
+    [/only request this after (\d+) second/i, "出于安全考虑，请在 $1 秒后再试。"],
+    [/should be different from the old/i, "新密码不能与旧密码相同。"],
+    [/at least (\d+) characters/i,       "密码至少需要 $1 个字符。"],
+    [/weak|pwned|breach/i,               "该密码强度不足或已在数据泄露中出现，请换一个。"],
+    [/rate limit|too many requests/i,    "请求过于频繁，请稍后再试。"],
+    [/session|not authenticated|jwt/i,   "登录状态已失效，请重新发送重置链接。"]
+  ];
+  function authMsg(err) {
+    var raw = (err && err.message) ? String(err.message) : "";
+    if (!raw) return null;
+    if (lang() !== "zh") return raw;
+    for (var i = 0; i < GOTRUE_ZH.length; i++) {
+      var m = raw.match(GOTRUE_ZH[i][0]);
+      if (!m) continue;
+      // Replace the WHOLE message, not just the matched span — a partial swap
+      // leaves the English prefix stranded in front of the 中文 ("Email link is
+      // 邮件链接无效…"), which is worse than either language alone.
+      return GOTRUE_ZH[i][1].replace(/\$(\d)/g, function (_, d) { return m[+d] || ""; });
+    }
+    return raw;
+  }
+
+  var _recoveryArg = null;    // captured BEFORE the URL is scrubbed
+  function readRecoveryArg() {
+    var out = { tokenHash: null, implicit: false, present: false };
+    try {
+      var sp = new URLSearchParams(location.search);
+      var th = sp.get("token_hash");
+      var ty = sp.get("type");
+      if (th && (!ty || ty === "recovery")) { out.tokenHash = th; out.present = true; }
+      if (sp.get("onboard") === "recovery") out.present = true;
+    } catch (e) {}
+    var hash = location.hash || "";
+    if (!out.tokenHash && /[#&]access_token=/.test(hash) && /[#&]type=recovery/.test(hash)) {
+      out.implicit = true; out.present = true;
+    }
+    return out;
+  }
+  // A spent one-time token must not sit in history or in a shared screenshot.
+  function stripRecoveryParams() {
+    try {
+      var sp = new URLSearchParams(location.search);
+      ["onboard", "token_hash", "type"].forEach(function (k) { sp.delete(k); });
+      var qs = sp.toString();
+      var hash = location.hash || "";
+      if (/[#&]access_token=/.test(hash) || /[#&]type=recovery/.test(hash)) hash = "";
+      window.history.replaceState(null, "", location.pathname + (qs ? "?" + qs : "") + hash);
+    } catch (e) {}
+  }
+
   function armReset() {
     S.resetReady = false; S.resetErr = null;
+    // bootDeepLinks captures the arg before scrubbing the URL; fall back to reading
+    // the URL directly so an opener that did NOT come through it still redeems
+    // (the mode owns its own arming — same reason openSheet calls armReset at all).
+    var arg = _recoveryArg || readRecoveryArg();
+    _recoveryArg = null;                       // single-use; a re-render must not redeem twice
+    stripRecoveryParams();                     // idempotent — the fallback path must scrub too
+    if (arg.implicit) { S.resetErr = tx("resetOldLink"); render(); return; }
     sbClient().then(function (sb) {
       if (!sb) { S.resetErr = tx("billNotConfigured"); render(); return; }
-      return sb.auth.getSession().then(function (r) {
+      var redeem = arg.tokenHash
+        ? sb.auth.verifyOtp({ token_hash: arg.tokenHash, type: "recovery" })
+            .then(function (r) { if (r && r.error) throw r.error; return r; })
+        : Promise.resolve(null);
+      return redeem.then(function () { return sb.auth.getSession(); }).then(function (r) {
         var sess = r && r.data && r.data.session;
         if (sess) { S.resetReady = true; S.resetErr = null; }
         else { S.resetErr = tx("resetDead"); }
         render();
       });
-    }).catch(function () { S.resetErr = tx("resetDead"); render(); });
+    }).catch(function (e) {
+      // gotrue's own words when it has them ("Token has expired or is invalid"),
+      // because "expired" and "already used" are different fixes for the customer.
+      S.resetErr = authMsg(e) || tx("resetDead");
+      render();
+    });
   }
 
   function viewReset() {
@@ -1362,7 +1457,7 @@
     sbClient().then(function (sb) {
       if (!sb) { setBusy(false, "resetSubmit"); showErr(tx("billNotConfigured")); return; }
       return sb.auth.updateUser({ password: S.password }).then(function (r) {
-        if (r && r.error) { showErr(r.error.message); setBusy(false, "resetSubmit"); return; }
+        if (r && r.error) { showErr(authMsg(r.error)); setBusy(false, "resetSubmit"); return; }
         S.password = ""; S.password2 = ""; stashClear();
         var b = el.body.querySelector("[data-obm-submit]");
         if (b) { b.removeAttribute("data-k"); b.textContent = tx("resetDone"); }
@@ -2933,8 +3028,12 @@
     // (created a moment later by openSheet's sbClient warm-up) still sees the
     // exchange it needs.
     try {
-      if (new URLSearchParams(location.search).get("onboard") === "recovery") {
-        stripOnboardParams(); openSheet("reset", {}); return;   // openSheet arms it
+      var rec = readRecoveryArg();
+      if (rec.present) {
+        _recoveryArg = rec;          // captured before the scrub; armReset consumes it
+        stripRecoveryParams();
+        openSheet("reset", {});      // openSheet arms it
+        return;
       }
     } catch (e) {}
     var intent = parseIntent(window.location.search.replace(/^\?/, ""));

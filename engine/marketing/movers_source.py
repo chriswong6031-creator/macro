@@ -154,18 +154,37 @@ _EMPTY_FACTS: dict = {"facts": [], "numbers_whitelist": []}
 #      shows whether it was a theme or one story) and it prescribes nothing.
 #      ``copywriter.uncomputed_stance`` is the executable form of this rule and
 #      ``tests/test_marketing_mover_stance.py`` walks both banks through it.
+#
+#   7. **THE QUESTION IS ABOUT THE TAPE'S NEXT MOVE, NOT ABOUT WHETHER THE
+#      AUTHOR IS ANY GOOD** (operator 2026-08-06, the abstention law). The
+#      2026-08-03 bank kept the cost by making the author admit he could not read
+#      the group: "Do I know why they all went at once?", "Is my read on this
+#      group any good today?", "Is this a theme or a headline I missed?". The
+#      operator on that whole register: "it makes us look indecisive and provides
+#      zero value... It kills authority and causes unfollows."
+#
+#      Constraint 6 is unchanged — still no instruction, still nothing the
+#      engines did not compute — and so are the two structural rules the tail
+#      cannot escape: `copywriter.validate_copy` requires a theme_list body to
+#      end on "?", and `publish_time_content._tail_is_bait` requires that final
+#      question to carry a first-person marker (a question handed to the timeline
+#      commits to nothing). What changes is the OBJECT of the question. Asking
+#      "do I get a second session out of this?" still costs the author — it is a
+#      forward claim the next open grades — while giving the reader a condition
+#      they can check for themselves. Asking whether the author can read a chart
+#      gives them nothing at all.
 # ─────────────────────────────────────────────────────────────────────────────
 _TAIL_DOWN = [
-    "Am I looking at damage or a loud afternoon?",
-    "Do I know why they all went at once?",
-    "Is my read on this group any good today?",
-    "Am I seeing pressure or one story repeated?",
+    "Do these lows hold when I look tomorrow?",
+    "Am I seeing this group heavy again at the open?",
+    "Do I get a second session of this?",
+    "Will I still see these names on the lows list?",
 ]
 _TAIL_UP = [
-    "Am I watching a rotation or one loud day?",
-    "Do I trust a group move I cannot explain?",
-    "Is this a theme or a headline I missed?",
-    "Am I sure this is the group and not a name?",
+    "Do I see follow-through at tomorrow's open?",
+    "Am I getting a second session out of this?",
+    "Do these highs hold when I look tomorrow?",
+    "Will I still see this group leading next week?",
 ]
 
 #: Hard ceiling every tail must satisfy — pinned in tests so a future "better"
