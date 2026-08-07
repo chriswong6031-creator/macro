@@ -1,0 +1,1 @@
+{"date":"2026-08-06","workflow":"daily","job":"collect","run_id":"31067383446","run_attempt":"1","runner":"mac-builder-2","cap_minutes":240.0,"start":"2026-08-06T06:56:48Z","end":"2026-08-06T10:02:35Z","elapsed_minutes":185.8,"pct_of_cap":77.4,"bands":[],"source":"backfill-gh-api","conclusion":"failure"}

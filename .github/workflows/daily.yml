@@ -73,6 +73,16 @@ jobs:
     outputs:
       government_revenue_projection_needed: ${{ steps.pushdata.outputs.published }}
     steps:
+      # W2 runtime telemetry (research/NIGHTLY_RESILIENCE_AND_LIVE_TRANSITION_MASTERPLAN_2026-08-06.md
+      # §A2): stamp the job's wall-clock start BEFORE checkout (checkout alone has run 3s→14.5m on
+      # this tree), so the timings ledger measures the same clock the job cap kills. The matching
+      # LAST step (scripts/ci/nightly_timings_finish.sh, if: always()) appends the per-band row to
+      # data/ops/nightly_timings/<job>.jsonl and trips a ::warning above 85% of timeout-minutes —
+      # every cap in this file was historically raised only AFTER nights died at it; this makes the
+      # creep visible BEFORE a kill night. Same two steps on every self-hosted job here
+      # (tests/test_nightly_timings.py pins the wiring + cap args).
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
       - name: python 3.12 (Homebrew venv — self-hosted runner)
         run: |
@@ -193,6 +203,8 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.fetch_r2 --dirs massive_stock_day --workers 24
+      - name: timings band — collectors (W2)
+        run: python3 scripts/nightly_timings.py mark --band collectors || echo "::warning::timings band mark failed (non-fatal)"
       - name: run collectors (graceful degradation — never fails the build on one source)
         # id is load-bearing: BOTH checkpoints ("commit market data" and "commit
         # capital-structure data") gate on THIS step's outcome by name.
@@ -323,6 +335,8 @@ jobs:
         run: |
           python -m scripts.audit_stocks_freshness \
             || echo "::warning::audit_stocks_freshness crashed (non-fatal — per-name freshness disclosure absent this run)"
+      - name: timings band — market-commit-push (W2)
+        run: python3 scripts/nightly_timings.py mark --band market-commit-push || echo "::warning::timings band mark failed (non-fatal)"
       # ── MARKET CHECKPOINT (1 of 2) ──────────────────────────────────────────
       # TWO-CHECKPOINT SPLIT (2026-08-06). This job used to land the whole night in
       # ONE commit that sat AFTER the five capital-structure steps, so a
@@ -504,6 +518,8 @@ jobs:
           perl -e 'alarm 120; exec @ARGV or die' -- git push \
             && echo "salvage push landed the collections" \
             || echo "::warning::salvage push failed — tonight's collections stay uncommitted"
+      - name: timings band — capital-structure (W2)
+        run: python3 scripts/nightly_timings.py mark --band capital-structure || echo "::warning::timings band mark failed (non-fatal)"
       - name: materialize authenticated capital-structure share counts (context-only)
         # PRE-PRODUCTION GATE: leave false until publication protocol v2 and the
         # bounded full-generation retention lane pass their release audits. A
@@ -736,6 +752,8 @@ jobs:
           done
           push_lost
           echo "::warning::could not push the capital-structure generation after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal — the market data is already published; the next night recompiles)"
+      - name: timings band — r2-publish (W2)
+        run: python3 scripts/nightly_timings.py mark --band r2-publish || echo "::warning::timings band mark failed (non-fatal)"
       - name: publish attention store back to R2 (gated on the restore)
         # The day's upserted increments ride back to R2 so tomorrow's restore (and the
         # engine job's render-side restore) reads a CURRENT deep store — a frozen R2
@@ -788,6 +806,11 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.publish_r2 --dirs massive_stock_day || echo "::warning::massive_stock_day R2 publish failed (non-fatal — R2 copy goes stale; the engine job's strict audit_r2 anchor goes red within 26h)"
+      # W2: per-band timings row + >85%-of-cap tripwire. always() so a job-cap cancel
+      # still records the night in the grace window (elapsed ≈ cap → the warning fires).
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 240
 
   government_revenue_projection:
     # A GITHUB_TOKEN push intentionally cannot recursively launch a push workflow.
@@ -857,6 +880,8 @@ jobs:
     # backstop if a freak night stacks every budget at once.
     timeout-minutes: 200
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -887,6 +912,8 @@ jobs:
           else
             echo "::warning::ThetaData Terminal not reachable on this runner host — tape_flow steps will self-skip (Terminal is launchd-managed on the M1 since 2026-07-25; CI must never launch one)"
           fi
+      - name: timings band — tape-flow (W2)
+        run: python3 scripts/nightly_timings.py mark --band tape-flow || echo "::warning::timings band mark failed (non-fatal)"
       - name: T2a tape-flow features — forward accrual (collect-tail lane, non-fatal)
         # Pulls prior-trading-day trade+NBBO tape for the full gex_symbols() universe
         # (~360 roots) via wildcard-bulk ThetaData endpoint (2 requests/root-day).
@@ -934,6 +961,8 @@ jobs:
         run: |
           python -m scripts.build_tape_flow_daily --mode etf-history --budget-minutes 20 \
             || echo "::warning::T2a tape-flow ETF-history backfill failed (non-fatal)"
+      - name: timings band — til-organs (W2)
+        run: python3 scripts/nightly_timings.py mark --band til-organs || echo "::warning::timings band mark failed (non-fatal)"
       # ── TIL collect-lane organs (W8/W9/W10/W11) ───────────────────────────
       # Moved here from the collect job (2026-07-14 split); placement and order
       # follow the declared dag.yml collect_tail lane. W7 (dol_certs) stays
@@ -1044,6 +1073,8 @@ jobs:
         run: |
           python -m scripts.audit_earnings_freshness \
             || echo "::warning::audit_earnings_freshness crashed (non-fatal)"
+      - name: timings band — shadow-scorers (W2)
+        run: python3 scripts/nightly_timings.py mark --band shadow-scorers || echo "::warning::timings band mark failed (non-fatal)"
       # ── importance_v0 SHADOW lanes (W3 + W4) ──────────────────────────────
       # Moved out of scripts.collect (2026-07-14 split; collect core passes
       # --skip-shadow-importance). Both passes score the FULL US+CN qbus store
@@ -1078,6 +1109,8 @@ jobs:
         run: |
           python -m scripts.shadow_importance_v0_pit \
             || echo "::warning::shadow_importance_v0_pit failed (non-fatal)"
+      - name: timings band — qledger-ccw (W2)
+        run: python3 scripts/nightly_timings.py mark --band qledger-ccw || echo "::warning::timings band mark failed (non-fatal)"
       - name: qledger backfill (altdata + radar + policy → claims.jsonl)
         # ALTDATA_REBOOT W2 (2026-07-12): routes new altdata theses to per-channel
         # claim families with pre-registered horizon rulers; emits 2 placebo claims
@@ -1121,6 +1154,8 @@ jobs:
         run: |
           python -m engine.credit_momentum \
             || echo "::warning::credit_momentum engine failed (non-fatal)"
+      - name: timings band — commit (W2)
+        run: python3 scripts/nightly_timings.py mark --band commit || echo "::warning::timings band mark failed (non-fatal)"
       - name: commit tail data
         # if: always() — last-resort backstop for the job-timeout cancel class
         # (07-29→08-02: five nights of completed accrual evaporated because this
@@ -1176,6 +1211,9 @@ jobs:
           done
           push_lost
           echo "::warning::could not push collect-tail data after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 200
 
   engine:
     needs: [collect, government_revenue_projection]
@@ -1190,6 +1228,8 @@ jobs:
                               # archive_context_snapshots, build_thematic_state,
                               # grade_thematic) can advance their ledgers.
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -1201,6 +1241,8 @@ jobs:
           echo "$VENV/bin" >> "$GITHUB_PATH"
           "$VENV/bin/python" -m pip install --quiet --upgrade pip
       - run: pip install -r requirements.txt
+      - name: timings band — restores-preamble (W2)
+        run: python3 scripts/nightly_timings.py mark --band restores-preamble || echo "::warning::timings band mark failed (non-fatal)"
       - name: restore, acquire, project, and snapshot Filing Forensics SEC sources (hard gate)
         # This is intentionally BEFORE every broad Filing Forensics state build.
         # The SEC source cache is private/ignored, so a clean nightly checkout has
@@ -1471,6 +1513,8 @@ jobs:
           MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
         run: |
           python -m scripts.build_sp500_heatmap --refresh-caps-only || echo "::warning title=sp500 heatmap cap refresh::rc!=0 (non-fatal — previous cache/fallbacks remain)"
+      - name: timings band — engine-core (W2)
+        run: python3 scripts/nightly_timings.py mark --band engine-core || echo "::warning::timings band mark failed (non-fatal)"
       - name: run regime engine + build dashboard + daily brief (resilient)
         # Self-diagnosing + deploy-resilient: each builder runs isolated; a failure
         # is surfaced as a ::error:: annotation (readable on the run page + via the
@@ -1748,6 +1792,8 @@ jobs:
           cat "$RUNNER_TEMP/flip_confirmation.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_flip_confirmation::rc=$rc (non-fatal)"; fi
           exit 0
+      - name: timings band — prophet (W2)
+        run: python3 scripts/nightly_timings.py mark --band prophet || echo "::warning::timings band mark failed (non-fatal)"
       - name: Prophet nightly (plan refresh + ledger advancement + R2 mirror)
         # AFTER build_site: reads site/factordata/us_standouts.json (just written).
         # Originates new prophet.trade_plan/v1 envelopes, runs the management engine
@@ -1873,6 +1919,8 @@ jobs:
           echo "::endgroup::"
           if [ "$rc" -ne 0 ]; then echo "::warning title=reconcile_prophet_live::rc=$rc (non-fatal — the R2 spool is durable, tomorrow picks the day back up)"; fi
           exit 0
+      - name: timings band — builders-parallel (W2)
+        run: python3 scripts/nightly_timings.py mark --band builders-parallel || echo "::warning::timings band mark failed (non-fatal)"
       - name: regional + desk builders (parallelised — independent clusters, barrier before the hub)
         # The ~22 builders between build_site and the landing hub split into mutually
         # INDEPENDENT clusters (each internally ordered by its own data deps). They used
@@ -2107,6 +2155,8 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python -m scripts.check_builder_failstreaks --art-dir "$RUNNER_TEMP/band" --lane nightly || echo "::warning::builder fail-streak check failed (non-fatal)"
+      - name: timings band — tail-desks (W2)
+        run: python3 scripts/nightly_timings.py mark --band tail-desks || echo "::warning::timings band mark failed (non-fatal)"
       - name: OEU M-CMD — the Options workspace (build_options_command)
         # OEU M-CMD: options.html, the canonical options surface (4 modes). It is a
         # pure re-serialisation of stores four OTHER builders write, and those deps
@@ -3098,6 +3148,8 @@ jobs:
             echo "::warning title=chronicle_governor::rc=$rc (chronicle events/state_log/rollups may be stale)"
           fi
           exit 0
+      - name: timings band — commit-publish (W2)
+        run: python3 scripts/nightly_timings.py mark --band commit-publish || echo "::warning::timings band mark failed (non-fatal)"
       - name: commit chronicle artifacts
         if: always()
         # always() for the same reason as the build step above — and it matters
@@ -3528,6 +3580,9 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: site/
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 240
 
   # The factor-portfolio RETURN SERIES (factors-page chart) is a ~22-min month-end
   # walk (compute_factors x ~38 month-ends x 2 universes) — it was the real engine
@@ -3544,6 +3599,8 @@ jobs:
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 45
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -3610,6 +3667,9 @@ jobs:
           done
           push_lost
           echo "::warning::could not push factor series after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal — daily reads the last committed json)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 45
 
   # Factor Intelligence panel — incremental nightly append (RULING-C).
   #
@@ -3628,6 +3688,8 @@ jobs:
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 20
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -3715,6 +3777,9 @@ jobs:
           done
           push_lost
           echo "::warning::could not push factor intelligence after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 20
 
   # ── Oracle Rotation Time Machine feed (OFF-RENDER) ─────────────────────────
   # The Time Machine (site/subsector_rotation.html) reads site/oracledata/tm_*.json.
@@ -3736,6 +3801,8 @@ jobs:
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 40
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -3843,6 +3910,9 @@ jobs:
           done
           push_lost
           echo "::warning::could not push oracle Time Machine feed after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 40
 
   # ── TLT-R2: Technical Lab data refresh (off-render) ─────────────────────
   # build_tech_lab_data.py is heavy (231 tickers × 195 signals, ~57 min) and
@@ -3859,6 +3929,8 @@ jobs:
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 120    # was 40 — EVERY nightly 2026-07-19→07-26 was CANCELLED at exactly the 40m cap, mid-way through the first heavy step, so steps 2-5 (incl. the confluence-screener page render AND the commit) were skipped and NOTHING published for 8 days. Cause: #3013 (merged 2026-07-19T01:40, ~4.5h before #3061 added the screener render here) expanded the single-pass build from 64 signals to 195 on a 231-ticker universe — a ~3x workload increase with no re-budget. Measured from the 07-26 job log: 50 tickers/12m28s then 50/11m50s ≈ 14.6s/ticker → 231 tickers ≈ 56m for build_tech_lab_data alone. Whole-job worst case: checkout up to ~15m (the 14k-file tree, see the engine job's note) + 57m lab data + 11m combo miner + ~1m screener page + ~2m m2_profiles + up to ~10m commit/push-retry band ≈ 96m. 120 clears that with headroom. The combo-miner figure is measured end-to-end, not inherited and not extrapolated: this job's own comment claimed "~8 min", and a full 2026-07-27 run on the runner host logged `panel: 323.4s` + `mine_long: 187.7s` + `mine_short: 140.9s` + `artifact: 1.7s` = **654.4s ≈ 11m**. Note mine_short is ~25% CHEAPER than mine_long (58 vs 59 legs but far fewer surviving combos) — an earlier symmetry estimate put the total at ~13m, so even the arithmetic shortcut was wrong. A stale step-cost label is precisely what produced this outage; re-measure, never inherit, and never extrapolate one half from the other. NOTE the per-step `set +e … exit 0` wrappers make a *script* error non-fatal but do NOTHING for a job timeout: the cap hard-cancels the running step, skips every later step, and the `::warning` alarm the step would have printed never fires — the job just reports "cancelled", which reads like this repo's known-benign cancellations. That is why an 8-day publish outage went unnoticed. If the signal count or universe grows again, re-measure and re-budget HERE.
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -3870,6 +3942,8 @@ jobs:
           echo "$VENV/bin" >> "$GITHUB_PATH"
           "$VENV/bin/python" -m pip install --quiet --upgrade pip
       - run: pip install -r requirements.txt
+      - name: timings band — lab-data (W2)
+        run: python3 scripts/nightly_timings.py mark --band lab-data || echo "::warning::timings band mark failed (non-fatal)"
       - name: rebuild Technical Lab screener + lab data (195-signal, ~231-ticker, ~57 min)
         run: |
           set +e
@@ -3878,6 +3952,8 @@ jobs:
             echo "::warning title=tech_lab_data::build_tech_lab_data rc=$rc (artifacts may be stale)"
           fi
           exit 0
+      - name: timings band — combo-miner (W2)
+        run: python3 scripts/nightly_timings.py mark --band combo-miner || echo "::warning::timings band mark failed (non-fatal)"
       - name: rebuild Technical Lab combo miner (tech_confluence, ~8 min)
         run: |
           set +e
@@ -3886,6 +3962,8 @@ jobs:
             echo "::warning title=tech_confluence::build_tech_confluence rc=$rc (combo artifact may be stale)"
           fi
           exit 0
+      - name: timings band — pages-m2 (W2)
+        run: python3 scripts/nightly_timings.py mark --band pages-m2 || echo "::warning::timings band mark failed (non-fatal)"
       - name: render free confluence screener page (+ share card)
         run: |
           set +e
@@ -3902,6 +3980,8 @@ jobs:
             echo "::warning title=m2_profiles::build_m2_profiles rc=$rc (M2 artifact may be stale)"
           fi
           exit 0
+      - name: timings band — commit (W2)
+        run: python3 scripts/nightly_timings.py mark --band commit || echo "::warning::timings band mark failed (non-fatal)"
       # DELIBERATELY NOT `if: always()`, unlike the engine and ledger_heartbeat
       # commit steps. Those salvage completed work when the job is cancelled;
       # here that would be a downgrade. build_tech_lab_data writes its payloads
@@ -3962,6 +4042,9 @@ jobs:
           done
           push_lost
           echo "::warning::could not push tech-lab artifacts after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 120
 
   # SA-W1 — US standout attribution organ (off-render, ~40 min budget)
   # Reads the committed retro_grades.parquet produced by the engine job, runs
@@ -3975,6 +4058,8 @@ jobs:
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 40
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -4294,6 +4379,9 @@ jobs:
           done
           push_lost
           echo "::warning::could not push standout audit US artifacts after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 40
 
   # PROPHET US §4.5 SCAN TIER — "see everything, admit selectively".
   # Operator-ratified 2026-08-05 after the receipts that FNV/FSM/EXK/AG/SBSW were
@@ -4324,6 +4412,8 @@ jobs:
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 60
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -4397,6 +4487,9 @@ jobs:
           done
           push_lost
           echo "::warning::could not push US scan tier artifacts after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 60
 
   # Prophet US trend-intelligence — the program's four post-board nightly modules, moved
   # OFF the engine job's critical path 2026-08-06 (sibling of us_scan_tier, same shape).
@@ -4576,6 +4669,8 @@ jobs:
     env:
       DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -4663,6 +4758,9 @@ jobs:
         # heavy store is R2-only), so a manifest built here would clobber the engine job's
         # full ~5000-name one — and bulk consumers prune against that list.
         run: python -m scripts.publish_r2 --dirs stockdata --no-manifest || echo "::warning::R2 stockdata sync failed (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 45
 
   # ── Neural Web W7b: cortex deliberation job ──────────────────────────────
   # Runs after the engine job; own checkout + own commit lane.
@@ -4691,6 +4789,8 @@ jobs:
       # shared ANTHROPIC_API_KEY above; nothing breaks if the secret is not set.
       CORTEX_ANTHROPIC_API_KEY: ${{ secrets.CORTEX_ANTHROPIC_API_KEY }}
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -4867,6 +4967,9 @@ jobs:
           done
           push_lost
           echo "::warning::could not push cortex after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal — downstream reads last committed)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 30
 
   # ──────────────────────────────────────────────────────────────────────────
   # CHF W3 — Causal Hypothesis Factory: nightly drift + weekly bounded battery
@@ -4882,6 +4985,8 @@ jobs:
     env:
       REPLAY_BOARDED_PATH: ${{ vars.REPLAY_BOARDED_PATH }}
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -5063,6 +5168,9 @@ jobs:
           push_lost
           echo "::warning::could not push sf forward outputs after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
           exit 0
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 45
 
   # Light advisory job: generates docs/ACTIVE_BUILD_MAP.md and
   # data/governance/active_builds.json — a map of open PRs, file collisions,
@@ -5074,6 +5182,8 @@ jobs:
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 10
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -5119,6 +5229,9 @@ jobs:
           done
           push_lost
           echo "::warning::could not push active build map after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 10
 
   publish:
     # GitHub Pages can't serve a /site folder from a branch — deploy the
@@ -5145,6 +5258,8 @@ jobs:
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 5
     steps:
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -5187,3 +5302,6 @@ jobs:
           done
           push_lost
           echo "::warning::could not push heartbeat state after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 5
