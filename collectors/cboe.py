@@ -426,12 +426,17 @@ def check_chain_session_coverage(lookback_sessions: int = 5) -> list[dict]:
               f"the parquet) — look at the job's failing STEP, not at CBOE. `-> failed` "
               f"or `gex: <sym> failed: HTTP 429` is a genuine source loss. "
               f"For a gex_<name> hole ONLY: if data/polygon_gex/summary_<name>.parquet "
-              f"carries the same session (same engine, identical schema — note the "
-              f"accrual stamps UTC now(), so an evening session usually sits in the "
-              f"row stamped session+1), it can be honestly cross-filled — see "
-              f"scripts/backfill_cboe_gex_20260730_from_polygon.py for the pattern "
-              f"(verify spot against the yahoo close for that session before copying; "
-              f"never fabricate a row)", flush=True)
+              f"carries the same session (same engine, identical schema), it can be "
+              f"honestly cross-filled — see "
+              f"scripts/backfill_cboe_gex_20260730_from_polygon.py for the pattern. "
+              f"ASSUME NO FIXED STAMP OFFSET: the store spans two eras — rows written "
+              f"before the session-stamp fix (#4807, 2026-08-07) are stamped UTC "
+              f"run-date, i.e. session+1; rows written after it carry the session they "
+              f"describe, no shift; and a pre-market-tape row matches no session's "
+              f"close at all. Pin the session on the DATA, never on the stamp: the "
+              f"row's spot must match the yahoo close of the TARGET session, and match "
+              f"it closer than either neighbouring session, before copying — never "
+              f"fabricate a row", flush=True)
         core_missing = set.intersection(
             *(set(missing_by_series.get(s, [])) for s in CORE_CHAIN_SERIES))
         if core_missing:
