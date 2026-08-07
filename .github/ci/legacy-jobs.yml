@@ -679,7 +679,13 @@ jobs:
       - name: install minimal deps
         # beautifulsoup4: test_china_news_engine.py patches bs4.BeautifulSoup on the
         # official-pages fetch path, and patch() imports the module.
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4 fastapi httpx jsonschema
+        # boto3 (which brings botocore) is here for the Wave 0A dedicated
+        # attested-history serving boundary below: two of its tests exercise the
+        # production boto3 client factory and the real receipt reader, and
+        # without the module they importorskip -- i.e. they execute in NO job,
+        # which check_skip_only_suites.py correctly rejects. This install line is
+        # unique to this job, so adding it costs no venv sharing.
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4 fastapi httpx jsonschema boto3
       # The import-light tier-gate runs the shell/boundary cases, while the two
       # builder assertions intentionally require pandas + plotly. Pair the suite
       # with this fat lane so those assertions execute instead of skip everywhere.
