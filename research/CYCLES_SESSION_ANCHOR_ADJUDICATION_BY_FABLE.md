@@ -73,7 +73,13 @@ construction: `scripts/calibrate_china.py` passes `"CN"`, `scripts/calibrate_hk.
 `"HK"`; per-name suffix inference was REJECTED because the HK/CN panels mix suffixed
 constituents with unsuffixed index tickers, which would silently split one panel across
 two calendars). `tf_state_2d` gains `market: str = "US"` for symmetry (its leader-radar
-callers are US). FX (`kind="fx"`) routes to the US reference, disclosed: FX has no
+callers are US). `engine/basket_mtf.basket_mtf` gains `market` too, threaded from
+`theme_scoring._basket_signals`' existing `region` through the explicit map
+`{us: US, china: CN, hk: HK, canada: CA, intl: US}`: a CN basket's COMPOSITE trades CN
+sessions, and that call site already knew its region, so routing it beats inheriting the
+default (censused during this build — `compute_theme_intel` runs for us/china/hk/canada/
+intl and every region reaches `cycles.analyze`). FX (`kind="fx"`) routes to the US
+reference, disclosed: FX has no
 exchange calendar; sessions absent from the reference (an FX bar on a NYSE holiday)
 deterministically share the next reference session's bucket (R2's absent-date rule) —
 the same approximation class the old `"3B"` bins applied everywhere, now fixed instead
