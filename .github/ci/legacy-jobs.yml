@@ -5647,3 +5647,35 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: prospective candidate grader — issuance log, no-leakage, denominators, coverage
         run: python -m pytest tests/test_government_revenue_candidate_grader.py -q
+
+  zh-filing-term:
+    # ui.zh_filing_term PR gate: 申报 must never reach user-facing Chinese copy.
+    # A native reader hears a TAX or CUSTOMS declaration (申报纳税, 海关申报) where
+    # the platform means a market DISCLOSURE — an SEC 10-K, a 13F, a congressional
+    # STOCK Act report is a 披露. The term recurs 20-50x site-wide because every
+    # builder writing a zh filings label reaches for the same wrong word, and it
+    # has already been swept BY HAND twice (#4830 Filing Forensics, #4855 site-wide)
+    # with nothing to stop the third regression. Hence a gate.
+    #
+    # The selftest step runs FIRST on purpose: a diction guard whose scan comes back
+    # clean is indistinguishable from a diction guard that no longer fires, so the
+    # green below only means something because the synthetic insertion above it went
+    # red. The pytest step then pins the allowlist's narrowness (phrase AND file) and
+    # the pending ratchet, which is what keeps this from turning into a blanket
+    # file-level exemption the next time a sweep is in flight.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: zh-filing-term selftest (gate fires on a synthetic 申报 insertion)
+        run: python3 scripts/check_zh_filing_term.py --selftest
+      - name: no unlicensed 申报 in user-facing Chinese copy
+        run: python3 scripts/check_zh_filing_term.py
+      - name: zh-filing-term guard suite (allowlist narrowness + pending ratchet)
+        run: python -m pytest tests/test_zh_filing_term.py -q

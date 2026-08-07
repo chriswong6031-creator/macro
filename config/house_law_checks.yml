@@ -348,6 +348,58 @@ checks:
     owner_program: engine-fix-masterplan
     notes: null
 
+  - law_id: ui.zh_filing_term
+    summary: >
+      申报 must never appear in user-facing Chinese copy. A native reader hears a
+      TAX or CUSTOMS declaration (申报纳税, 海关申报) — a self-report filed under
+      legal compulsion — where the platform means a market DISCLOSURE: an SEC
+      10-K, a 13F, a congressional STOCK Act report is a 披露. Scans templates/
+      line by line plus the string literals of engine/ and scripts/ builders, so
+      a wrong label is caught at its source rather than a nightly render later.
+      Swept by hand twice before the gate existed (PR #4830 Filing Forensics,
+      PR #4855 site-wide).
+    source_ref:
+      - scripts/check_zh_filing_term.py
+      - "PR #4855"
+      - "PR #4830"
+    severity: hard
+    check_script: scripts/check_zh_filing_term.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: zh-filing-term
+        lane: pr_ci
+    selftest: true
+    allowlist: config/zh_filing_term_allowlist.json
+    ratchet:
+      date: "2026-09-07"
+      action: >-
+        Drop the three `pending` entries in config/zh_filing_term_allowlist.json
+        (templates/index.html behind PR #4765; templates/fundamental_forensics.js
+        and .html.j2 behind PR #4830) once those PRs land. The guard prints a
+        ::notice the moment a pending file's count falls below its frozen budget,
+        so the cleanup announces itself; this clock catches the case where the
+        PRs are abandoned and the exemptions quietly become permanent.
+    known_limits:
+      - Python COMMENTS and DOCSTRINGS are skipped by construction — developer
+        documentation is never rendered, and without the skip, writing the law
+        down ("use 披露, never 申报") would break the law wherever it is recorded.
+      - Rendered site/ is NOT scanned. A hit there always originates in templates/
+        or a builder, both of which are; scanning the render output would red main
+        on a stale artifact no PR author can fix by hand.
+      - data/ is NOT scanned. Exchange announcements collected upstream use 申报
+        as an order-entry term of art; the platform does not author that text.
+      - The `pending` ratchet is per-FILE, not per-phrase, so while an in-flight
+        PR owns a file the guard only caps its count — it cannot tell a swapped
+        occurrence from an original one.
+    owner_program: engine-fix-masterplan
+    notes: >
+      Allowlist entries are phrase-scoped AND file-scoped: an occurrence is exempt
+      only inside a licensed phrase's span in a licensed file. The two live
+      exemptions are the genuine other senses — 申报失业金 (filing for unemployment
+      benefits, engine/release_quirks.py) and 买入申报 (SSE/HKEX order-entry term in
+      the hk-connect scraper's title filter). Narrowness is pinned by --selftest and
+      by tests/test_zh_filing_term.py::test_allowlist_is_file_scoped.
+
   - law_id: ui.template_site_sync
     summary: >
       Every plain-copy page asset (a non-.j2 file directly under templates/ that
@@ -1377,6 +1429,47 @@ checks:
       unbundled from the alerts try/except (candidate structural cause) and the
       wrapper now annotates failures; this sentinel catches whatever class of
       freeze comes next, on every surface it audits.
+
+  - law_id: ops.tushare_freshness
+    summary: >
+      The token-gated Tushare stores must stay within reach of the exchange
+      calendar's expected last session. collectors/tushare_client.py returns None
+      (never raises) for every failure mode it has, its callers omit the leg
+      rather than fabricate a zero, and asia-close's collect step is graceful by
+      design — so the whole plane can die with every signal still green.
+      data/tushare/flow_hist.parquet and moneyflow.parquet froze at 2026-07-24
+      and were still rendering on flow_velocity.html on 2026-08-06, thirteen days
+      later, with nobody told. Anchored to the wall clock deliberately: a frozen
+      feed is perfectly self-consistent, so comparing a store against itself or
+      against a sibling reads "fresh" straight through a total outage.
+    source_ref:
+      - scripts/check_tushare_freshness.py
+      - "PR #4811"
+    severity: warn
+    check_script: scripts/check_tushare_freshness.py
+    ci_wiring:
+      - workflow: .github/workflows/asia-close.yml
+        job: asia
+        lane: scheduled
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - There is no mainland A-share calendar in lib/; HKEX is the proxy and
+        diverges on mainland-only closures (Golden Week most notably), so this
+        can warn benignly for a few days each October.
+      - Freshness only. A store that is current but wrong — partial rows, a
+        silently narrowed universe — passes.
+    owner_program: engine-fix-masterplan
+    notes: >
+      Warn-only permanently, not on a ratchet: this rides inside the asia-close
+      collect lane, and a hard exit there would abort the whole Asia data commit
+      over one gated third-party source that is expected to lapse whenever the
+      token's credits run out. Its teeth are the ::warning annotation naming the
+      specific store and collector. Registered here as census catch-up — the
+      script shipped in #4811 unregistered, which left meta.house_law_registry
+      HARD-RED on origin/main and blocked every PR from the merge-on-green
+      sweeper until this entry landed (the recurrence class of #4649 → #4826).
 
   - law_id: ops.workflow_yaml_parses
     summary: >
