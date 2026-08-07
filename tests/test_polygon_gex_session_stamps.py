@@ -42,6 +42,21 @@ import scripts.build_polygon_gex as bpg  # noqa: E402
 import scripts.complete_polygon_gex_session_stamps as comp  # noqa: E402
 import scripts.migrate_polygon_gex_session_stamps as mig  # noqa: E402
 
+#: The chains files the two rulings kept: #4807's adjudication of the 42 run-date files
+#: that existed when its manifest was frozen, plus PINNED_COMPLETION's re-adjudication of
+#: the one that arrived ~4h after (2026-08-07 -> session 2026-08-06).
+_ADJUDICATED_KEEPS = sorted(
+    [session for session, _cls, disp in mig.PINNED_ADJUDICATION.values()
+     if disp == mig.KEEP]
+    + [session for session, _cls, disp in comp.PINNED_COMPLETION.values()
+       if disp == mig.KEEP])
+
+#: Where the adjudicated window closes. Through this date the store must be EXACTLY the
+#: ruled-on survivors; past it the nightly writer adds sessions of its own and the store
+#: is expected to grow. Pinning the tail instead of the window is what made these
+#: assertions red main the night chains/2026-08-07.parquet landed.
+_WINDOW_END = _ADJUDICATED_KEEPS[-1]
+
 
 # ═══════════════ 1. _resolve_session — instant vs explicit session ══════════════
 
@@ -275,16 +290,25 @@ class TestTheMigratedStore:
         if not files:
             pytest.skip("polygon_gex chains absent on this runner")
         stems = [p.stem for p in files]
-        assert stems[0] == "2026-06-15" and stems[-1] == "2026-08-06", stems[:3] + stems[-3:]
+        assert stems[0] == "2026-06-15", stems[:3]
         assert "2026-08-05" not in stems, (
             "session 08-05 is quarantined — its only snapshot was a pre-market tape")
-        # Every stamp in the store is a SESSION; the run-date stamps that both migrations
-        # existed to remove must never reappear as filenames.
-        assert "2026-08-07" not in stems, (
-            "2026-08-07 is a run-date stamp — the 08-07 accrual describes session 08-06. "
-            "Its reappearance means the writer regressed to UTC run-date stamping")
+        # Every stamp in the store is a SESSION. This is the invariant both migrations
+        # exist to hold; a weekend or holiday stem means run-date stamping is back.
         assert not [s for s in stems
                     if not nyse_calendar.is_session(date.fromisoformat(s))], stems
+        # Inside the adjudicated window the store is EXACTLY what was ruled on — no
+        # dropped or quarantined run-date stamp may come back. Past it the nightly is
+        # free to add sessions, so the window is bounded rather than the store frozen.
+        # (`assert stems[-1] == ...` used to pin the tail; the nightly commits a chains
+        # file most evenings, so that form red-ed main the night 2026-08-07 landed.)
+        assert stems[-1] >= _WINDOW_END, (
+            f"the store ends at {stems[-1]}, before the adjudicated window closes at "
+            f"{_WINDOW_END} — sessions have gone missing")
+        inside = [s for s in stems if s <= _WINDOW_END]
+        assert inside == _ADJUDICATED_KEEPS, (
+            f"inside the adjudicated window the store must be exactly the ruled-on "
+            f"survivors; {sorted(set(inside) ^ set(_ADJUDICATED_KEEPS))} is not")
 
 
 class TestTheAdjudicationOutcomes:
@@ -537,14 +561,17 @@ def test_the_committed_chains_files_are_the_ones_the_adjudications_kept():
     files = sorted(p.stem for p in _chain_files())
     if not files:
         pytest.skip("polygon_gex chains absent on this runner")
-    expected = sorted(
-        [session for session, _cls, disp in mig.PINNED_ADJUDICATION.values()
-         if disp == mig.KEEP]
-        + [session for session, _cls, disp in comp.PINNED_COMPLETION.values()
-           if disp == mig.KEEP])
-    assert files == expected, (
-        f"the store holds {len(files)} chains files; the two adjudications kept "
-        f"{len(expected)} — {sorted(set(files) ^ set(expected))} is ruled on by neither")
+    inside = [s for s in files if s <= _WINDOW_END]
+    assert inside == _ADJUDICATED_KEEPS, (
+        f"inside the adjudicated window (through {_WINDOW_END}) the store holds "
+        f"{len(inside)} chains files; the two rulings kept {len(_ADJUDICATED_KEEPS)} — "
+        f"{sorted(set(inside) ^ set(_ADJUDICATED_KEEPS))} is ruled on by neither")
+    # Anything past the window is the fixed writer's own output. It is not adjudicated,
+    # but it still has to be a session — that is the property the migrations restored.
+    after = [s for s in files if s > _WINDOW_END]
+    assert not [s for s in after if not nyse_calendar.is_session(date.fromisoformat(s))], (
+        f"post-window chains files that are not NYSE sessions: {after} — the writer "
+        "regressed to UTC run-date stamping")
 
 
 def test_no_stray_files_shadow_the_chains_glob():
