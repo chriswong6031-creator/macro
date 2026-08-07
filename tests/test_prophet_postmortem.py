@@ -208,6 +208,54 @@ class TestCohortGates:
 
 
 # ===========================================================================
+# 1b. path_tails — the gates the PATH crossed that the VERDICT does not show
+# ===========================================================================
+class TestPathTails:
+    """The round-trip record.
+
+    A verdict is one number off one bar. FN 2026-07-21 fell 19.3% and closed +1.66%:
+    `neutral` is the right verdict and a useless description of the episode. These
+    flags carry the other half.
+    """
+
+    def test_a_neutral_verdict_that_crossed_the_loser_gate_is_recorded(self):
+        # The FN shape, in miniature.
+        assert pm.path_tails("neutral", -19.31, 3.38) == ["loser"]
+
+    def test_a_neutral_verdict_that_crossed_the_winner_gate_is_recorded(self):
+        assert pm.path_tails("neutral", -2.0, 12.0) == ["winner"]
+
+    def test_an_episode_can_cross_both_gates(self):
+        assert pm.path_tails("neutral", -12.0, 14.0) == ["loser", "winner"]
+
+    def test_an_uneventful_episode_records_nothing(self):
+        assert pm.path_tails("neutral", -3.0, 4.0) == []
+
+    def test_a_tail_verdict_never_reports_its_own_tail(self):
+        # A loser that bottomed at -20% did not "round trip" into the loser gate — it
+        # LIVES there, and its own table already prints the MAE. Only the gate it did
+        # NOT finish in is news.
+        assert pm.path_tails("loser", -20.0, 1.0) == []
+        assert pm.path_tails("winner", -1.0, 25.0) == []
+        # ...but the crossing a tail verdict hides IS reported: a winner that was 12%
+        # under water first is the exact case a stop would have destroyed.
+        assert pm.path_tails("winner", -12.0, 25.0) == ["loser"]
+        assert pm.path_tails("loser", -20.0, 9.0) == ["winner"]
+
+    def test_the_gates_are_inclusive_and_walk_the_boundary(self):
+        assert pm.path_tails("neutral", -8.0, 0.0) == ["loser"]
+        assert pm.path_tails("neutral", -7.99, 0.0) == []
+        assert pm.path_tails("neutral", 0.0, 8.0) == ["winner"]
+        assert pm.path_tails("neutral", 0.0, 7.99) == []
+
+    def test_a_missing_excursion_is_not_a_crossing(self):
+        # An unscored episode has no path. Absence must never read as a gate crossing.
+        assert pm.path_tails("unscored", None, None) == []
+        assert pm.path_tails("neutral", None, 12.0) == ["winner"]
+        assert pm.path_tails("neutral", -12.0, None) == ["loser"]
+
+
+# ===========================================================================
 # 2. sector_headwind
 # ===========================================================================
 class TestSectorHeadwind:
@@ -964,12 +1012,36 @@ class TestPriorEpisodeScan:
 #: The 2026-07-31 track-record worst rows (masterplan §0 G1). Dates are the BOARD log
 #: dates; the episode's entry_date is matched with a one-session tolerance because a
 #: name can be re-admitted on the adjacent night.
-LOSER_COHORT = [
-    ("OLN", "2026-07-21"), ("AMKR", "2026-07-17"), ("IPGP", "2026-07-15"),
-    ("STAA", "2026-07-15"), ("PSKY", "2026-07-01"), ("FN", "2026-07-21"),
-    ("CDNS", "2026-07-09"), ("IPGP", "2026-07-10"), ("UNIT", "2026-07-21"),
-    ("HL", "2026-07-01"), ("BG", "2026-07-17"),
+#:
+#: SPLIT BY WHETHER THE VERDICT HAD LANDED ON 2026-07-31. The operator's list is the
+#: worst rows on the board THAT NIGHT — and a board shows MARKS. Six of these had already
+#: run their full H=10 and were reporting a realised loss. The other five were still
+#: open: their horizon ended on 08-03/08-05, so the number that put them on the list was
+#: an outcome-conditioned mark, not a result.
+#:
+#: Pinning all eleven as `cohort == "loser"` therefore pinned a mark as a verdict, and it
+#: detonated the night the last of those horizons completed. `data: daily collection
+#: 2026-08-06` (361136284f2) added the 08-03/04/05 bars; FN 07-21, marked -15.24% on
+#: 07-31 with a -19.31% MAE, closed its tenth bar at +1.66%. `neutral` is the correct
+#: verdict and the fixture said it was false. The other four stayed down and merely
+#: hid the same defect.
+#:
+#: So the two blocks are asserted on what is actually true of each, and neither
+#: assertion can drift again: a matured episode's cohort is fixed forever, and MAE is
+#: fixed once the window closes.
+RESOLVED_BY_ASOF = [
+    ("IPGP", "2026-07-15"), ("STAA", "2026-07-15"), ("PSKY", "2026-07-01"),
+    ("CDNS", "2026-07-09"), ("IPGP", "2026-07-10"), ("HL", "2026-07-01"),
 ]
+#: Still open on 2026-07-31 — on the list by their mark. The tape decided them later.
+OPEN_AT_ASOF = [
+    ("OLN", "2026-07-21"), ("AMKR", "2026-07-17"), ("FN", "2026-07-21"),
+    ("UNIT", "2026-07-21"), ("BG", "2026-07-17"),
+]
+#: The operator's full cohort. Everything the gate demands of the ENGINE — found,
+#: classified, labelled, full entry context, named in the report — is demanded of all
+#: eleven. Only the cohort LABEL is split, because only the label was ever in doubt.
+LOSER_COHORT = RESOLVED_BY_ASOF + OPEN_AT_ASOF
 
 
 @pytest.fixture(scope="module")
@@ -1013,13 +1085,80 @@ class TestLoserCohortFixture:
         assert not missing, f"cohort names absent from the ledgers: {missing}"
         assert not unlabelled, f"cohort names with no classification: {unlabelled}"
 
-    def test_every_cohort_name_is_in_the_loser_cohort(self, artifact):
+    def test_every_resolved_name_is_in_the_loser_cohort(self, artifact):
+        """The six whose H=10 verdict had landed by 2026-07-31. Permanent: a matured
+        episode's outcome is read off a bar that has already printed, so this can never
+        drift the way the pooled version did."""
         not_losers = [
             f"{t}@{d} -> {(_match(artifact, t, d) or {}).get('cohort')}"
-            for t, d in LOSER_COHORT
+            for t, d in RESOLVED_BY_ASOF
             if (_match(artifact, t, d) or {}).get("cohort") != "loser"
         ]
         assert not not_losers, not_losers
+
+    def test_every_resolved_name_really_had_resolved(self, artifact):
+        """Guards the SPLIT itself: if a name in the resolved block were still open, the
+        block above would be pinning a mark again under a name that says otherwise."""
+        for ticker, date in RESOLVED_BY_ASOF:
+            row = _match(artifact, ticker, date)
+            assert row["maturity"] == "matured", f"{ticker}@{date} is {row['maturity']}"
+            assert row["outcome_pct"] == row["pnl_pct"], \
+                f"{ticker}@{date} outcome is a mark, not a realised pnl"
+
+    def test_every_open_name_crossed_the_loser_gate_on_its_path(self, artifact):
+        """The five that were open on 2026-07-31 earned their place on the operator's
+        list — by the PATH, which is the claim the board was actually making.
+
+        This is the assertion the old pooled one should always have been. It is what put
+        them on a worst-rows list on a night they had not finished, it is true of all
+        five, and MAE is frozen once the window closes — so it cannot rot.
+        """
+        for ticker, date in OPEN_AT_ASOF:
+            row = _match(artifact, ticker, date)
+            assert row["mae_pct"] is not None, f"{ticker}@{date} has no MAE"
+            assert row["mae_pct"] <= pm.LOSER_ABS_PCT, (
+                f"{ticker}@{date} never crossed the {pm.LOSER_ABS_PCT}% loser gate "
+                f"(MAE {row['mae_pct']}%) — it does not belong in this block")
+
+    def test_the_recovered_loser_is_carried_as_a_round_trip_not_a_loss(self, artifact):
+        """FN 2026-07-21 by name — the episode that broke the pooled gate.
+
+        Down 19.31% at its worst and marked -15.24% on the as-of date, it closed its
+        tenth bar at +1.66%. Every clause below is a fact about the tape, and together
+        they pin the whole failure mode: the verdict is honest, the drawdown is not
+        thrown away with it, and the row survives serialization intact.
+        """
+        row = _match(artifact, "FN", "2026-07-21")
+        assert row["maturity"] == "matured"
+        assert row["outcome_pct"] > 0, "FN's tenth bar closed green"
+        assert row["cohort"] == "neutral", \
+            "a +1.66% forced-horizon verdict is not a loss, whatever the mark once said"
+        assert row["mae_pct"] <= pm.LOSER_ABS_PCT
+        assert "loser" in row["path_tails"], \
+            "the drawdown must survive on the row — it is the exit-policy evidence"
+        assert not row["entry_context"].get("compact"), \
+            "the round-trip rows are exactly the ones whose context must NOT be trimmed"
+
+    def test_the_round_trip_set_is_not_silently_empty(self, artifact):
+        """A `path_tails` that stopped populating would compact these rows away again and
+        every assertion above would still pass on a re-derived empty set."""
+        rt = artifact["summary"]["round_trips"]
+        assert rt["n_crossed_loser_gate"] > 0 and rt["n_crossed_winner_gate"] > 0
+        assert rt["n"] == (rt["n_crossed_loser_gate"] + rt["n_crossed_winner_gate"]
+                           - rt["n_crossed_both"])
+        assert rt["n"] == len([r for r in artifact["episodes"] if r["path_tails"]])
+
+    def test_a_round_trip_row_keeps_its_full_context_but_a_flat_one_does_not(
+            self, artifact):
+        """The retention rule, both directions — a rule that kept EVERYTHING would pass
+        the round-trip half while quietly abandoning the compaction it replaced."""
+        kept = [r for r in artifact["episodes"]
+                if r["cohort"] not in ("loser", "winner") and r["path_tails"]]
+        trimmed = [r for r in artifact["episodes"]
+                   if r["cohort"] not in ("loser", "winner") and not r["path_tails"]]
+        assert kept and trimmed, "one side of the retention rule is unexercised"
+        assert not any(r["entry_context"].get("compact") for r in kept)
+        assert all(r["entry_context"].get("compact") for r in trimmed)
 
     def test_every_cohort_name_carries_entry_time_context(self, artifact):
         for ticker, date in LOSER_COHORT:
@@ -1154,6 +1293,32 @@ class TestLoserCohortFixture:
             assert f"| {ticker} |" in text, f"{ticker} missing from the report tables"
         assert "Winners forfeited" in text
         assert "validated" not in text.lower()
+
+    def test_the_report_tables_the_round_trips_after_the_loser_book(self, artifact):
+        """The round trips appear in no verdict-keyed table, so the page needs its own —
+        placed AFTER the loser book so it can never be read as a third maturity block.
+
+        Without this section a recovered loser is simply absent from the report: FN was
+        missing from every table on the page the night its horizon completed.
+        """
+        text = ppm.render_report(artifact)
+        rt = artifact["summary"]["round_trips"]
+        head, sep, tail = text.partition(
+            "## Round trips — crossed a gate, finished outside both tails")
+        assert sep, "the round-trip section is missing from the report"
+        assert "Every loser, with its trigger values" in head, \
+            "the round trips must not precede the loser book"
+        # the reconciliation is printed, not left for the reader to do
+        assert (f"{rt['n_crossed_loser_gate']} through the {rt['loser_gate_pct']}% loser "
+                f"gate + {rt['n_crossed_winner_gate']} through the "
+                f"+{rt['winner_gate_pct']}% winner gate − {rt['n_crossed_both']} that "
+                f"crossed both = {rt['n']}") in tail
+        # ...and it is stated as evidence, never as a rate
+        assert "NOT a rate" in tail
+        for r in artifact["episodes"]:
+            if r["path_tails"] and r["cohort"] not in ("loser", "winner"):
+                assert f"| {r['ticker']} | {r['entry_date']} |" in tail, \
+                    f"{r['ticker']}@{r['entry_date']} round-tripped but is not tabled"
 
     def test_the_report_splits_the_loser_book_by_maturity_and_the_counts_add_up(
             self, artifact):
