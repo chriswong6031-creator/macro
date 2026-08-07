@@ -45,11 +45,19 @@
 	# and the edge arrives from PUBLIC addresses (43.175.104.x observed on
 	# origin-pull), so it is deliberately UNTRUSTED: {remote_host}, {client_ip} and
 	# the access log all resolve to the EDGE, not the client. That default is the safe
-	# one — every real-client header the edge forwards (EO-Client-IP, CF-Connecting-IP,
-	# X-Forwarded-For) is attacker-suppliable here, because ufw lets anyone reach this
-	# box directly. Consequence worth knowing before you read a peer IP as identity:
-	# per-client keying off the peer now buckets ALL edge-borne traffic together (see
-	# X-Admin-Client-IP on the admin host below, where that is a live defect).
+	# one, because ufw lets anyone reach this box directly: a caller can forge ANY
+	# forwarding header. #4922 probed the live host through the edge and found it
+	# overwrites exactly ONE of them — `EO-Connecting-IP`. `EO-Client-IP`,
+	# `True-Client-IP`, `X-Real-IP` and `CF-Connecting-IP` all arrive carrying
+	# whatever the caller sent, and a clean edge request carries no `EO-Client-IP` at
+	# all. (#4915 wrote this paragraph listing EO-Client-IP among the headers "the
+	# edge forwards". It does not forward it — corrected here 2026-08-07.)
+	#
+	# Consequence before you key anything on a peer IP: per-client keying off
+	# {remote_host} buckets ALL edge-borne traffic into one. That bit the admin login
+	# lockout, and it is FIXED in `admin/edge_trust.py` (resolve behind an ATTESTED
+	# edge peer, fall back to the peer otherwise) — NOT by reading a header here.
+	# Read that module before adding a `header_up` anywhere in this file.
 	servers {
 		trusted_proxies static private_ranges
 	}
