@@ -439,8 +439,16 @@ jobs:
               echo "::error title=award-event receipts missing::a receipt-bound award bundle requires the committed canonical receipt ledger"
               return 1
             fi
+            # Positional contract is STATE SNAPSHOTS ACTIONS — NOT the bundle
+            # array order (snapshots, actions, state): passing the array fed the
+            # snapshots parquet to json.loads and killed the lane with
+            # "activation state is unreadable" (first surfaced 2026-08-08, the
+            # first run ever to reach this step). Wiring pinned by
+            # tests/test_government_revenue_award_validator_wiring.py.
             python scripts/ci/validate_government_revenue_award_event_bundle.py \
-              "${award_event_bundle_paths[@]}"
+              data/government_revenue/award_event_projection_state.json \
+              data/government_revenue/award_event_snapshots.parquet \
+              data/government_revenue/award_action_versions.parquet
             AWARD_EVENT_BUNDLE_PRESENT=true
           }
 
