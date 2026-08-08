@@ -2346,6 +2346,28 @@ jobs:
           echo "::endgroup::"
           if [ "$rc" -ne 0 ]; then echo "::warning title=reconcile_prophet_live::rc=$rc (non-fatal — the R2 spool is durable, tomorrow picks the day back up)"; fi
           exit 0
+      - name: TURN WATCH desk (early-surfacing deck — display tier)
+        # ANTICIPATION §6.9 R8. Rebuilds site/prophet/turn_watch.json: every name whose
+        # earliest turn evidence fired in the last 5 sessions, with the operator's review
+        # checklist pre-computed. Reads committed stores only (data/yahoo, membership.json,
+        # site/basketdata/us_basket_turn.json); writes ONE site/ artifact and advances NO
+        # ledger, so a re-run is idempotent and a failure loses nothing but a day's refresh.
+        #
+        # DISPLAY TIER, ZERO SCORED AUTHORITY — nothing here ranks, gates or sizes a graded
+        # position. Measured 2026-08-08: ~135s over 702 graded names; the cap below is ~4x
+        # that so a slow night annotates rather than silently eating the budget. Runs after
+        # the Prophet steps because the deck's "what the slow tier says now" column is most
+        # useful read beside the board those steps just refreshed.
+        timeout-minutes: 12
+        continue-on-error: true
+        run: |
+          set +e
+          echo "::group::build_turn_watch (early-surfacing deck)"
+          python -m scripts.build_turn_watch > "$RUNNER_TEMP/turn_watch.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/turn_watch.log"
+          echo "::endgroup::"
+          if [ "$rc" -ne 0 ]; then echo "::warning title=build_turn_watch::rc=$rc (non-fatal — the deck keeps yesterday's artifact until tomorrow's run)"; fi
+          exit 0
       - name: timings band — builders-parallel (W2)
         run: python3 scripts/nightly_timings.py mark --band builders-parallel || echo "::warning::timings band mark failed (non-fatal)"
       - name: regional + desk builders (parallelised — independent clusters, barrier before the hub)

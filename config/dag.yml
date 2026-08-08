@@ -655,6 +655,18 @@ lanes:
           on (date, ticker, kind) so a rebake or double run only ever ADDS information.
           MEASURE-DARK: nothing reads this ledger — it accrues the evidence the §6 promotion
           gauntlet must be pre-registered on. Non-fatal; runs after the arming pass.
+      - id: build_turn_watch
+        module: scripts.build_turn_watch
+        note: >
+          TURN WATCH desk (ANTICIPATION §6.9 R8) — nightly early-surfacing deck of names whose
+          earliest turn evidence fired in the last 5 sessions, with the operator's review
+          checklist pre-computed. Reads data/yahoo/*.parquet, data/baskets/membership.json and
+          site/basketdata/us_basket_turn.json; writes site/prophet/turn_watch.json ONLY.
+          Advances NO ledger and writes no data/ path. DISPLAY TIER, ZERO SCORED AUTHORITY —
+          its context_score orders the deck for reading and nothing else. Optimised for RECALL,
+          not precision: the operator is the second-stage filter. Never-raise; non-fatal.
+          Measured 2026-08-08: ~135s over 702 graded names (budget 600s, self-reported as
+          runtime_seconds and ::warning past it).
       # parallel band
       - id: band
         cluster:
